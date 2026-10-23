@@ -1005,7 +1005,7 @@ class UserTile extends StatelessWidget {
         padding: EdgeInsets.symmetric(vertical: 8, horizontal: 4),
         child: Row(
           children: [
-            Avatar(url: text(user['avatar_url']), name: name, size: size, online: user['is_online'] == true, frame: PlusMark.of(user)?.frame),
+            Avatar(url: text(user['avatar_url']), name: name, size: size, online: user['is_online'] == true, frame: avatarFrameOf(user)),
             SizedBox(width: 12),
             Expanded(
               child: Column(

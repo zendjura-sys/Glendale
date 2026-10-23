@@ -22,18 +22,9 @@ import { TrackMenu } from '@/components/am/track-actions';
 import { formatDuration } from '@/lib/format';
 import { tr } from '@/lib/i18n';
 import { motionOr, SNAP } from '@/lib/motion';
-import {
-    cycleRepeat,
-    next,
-    prev,
-    seek,
-    setVolume,
-    toggle,
-    toggleMute,
-    toggleShuffle,
-    usePlayer,
-} from '@/lib/player';
+import { usePlayback } from '@/lib/connect';
 import { cn } from '@/lib/utils';
+import { DevicesButton, RemoteLine } from './connect-ui';
 import { SpotifyLogo, TrackCover } from './track-cover';
 
 type View = 'artwork' | 'lyrics' | 'queue';
@@ -54,7 +45,19 @@ export function PlayerCapsule({
     /** Додаткові кнопки праворуч (слухати разом, закрити плеєр). */
     extra?: ReactNode;
 }) {
-    const player = usePlayer();
+    // У віддаленому режимі (грає інший пристрій) — його трек, а кнопки керують ним.
+    const player = usePlayback();
+    const {
+        cycleRepeat,
+        next,
+        prev,
+        seek,
+        setVolume,
+        toggle,
+        toggleMute,
+        toggleShuffle,
+    } = player;
+    const remote = player.remote;
     const reduce = useReducedMotion();
     const track = player.current;
     const [output, setOutput] = useState(false);
@@ -130,9 +133,15 @@ export function PlayerCapsule({
                             <span className="block truncate text-[13px] font-semibold text-foreground">
                                 {track.title}
                             </span>
-                            <span className="block truncate text-xs text-muted-foreground">
-                                {live ? tr('Пряма трансляція') : track.artist}
-                            </span>
+                            {remote ? (
+                                <RemoteLine device={remote} />
+                            ) : (
+                                <span className="block truncate text-xs text-muted-foreground">
+                                    {live
+                                        ? tr('Пряма трансляція')
+                                        : track.artist}
+                                </span>
+                            )}
                         </span>
                     </button>
 
@@ -142,7 +151,7 @@ export function PlayerCapsule({
                             onClick={toggleShuffle}
                             aria-label={tr('Перемішати')}
                             aria-pressed={player.shuffle}
-                            disabled={live}
+                            disabled={live || !!remote}
                             className={btn(player.shuffle)}
                         >
                             <Shuffle className="size-4" />
@@ -192,7 +201,7 @@ export function PlayerCapsule({
                                       : tr('Без повтору')
                             }
                             aria-pressed={player.repeat !== 'off'}
-                            disabled={live}
+                            disabled={live || !!remote}
                             className={btn(player.repeat !== 'off')}
                         >
                             <RepeatIcon className="size-4" />
@@ -282,6 +291,10 @@ export function PlayerCapsule({
                         >
                             <ListMusic className="size-[18px]" />
                         </button>
+                        <DevicesButton
+                            className={btn()}
+                            sheetClassName="right-0 mb-4"
+                        />
                         <div ref={outputRef} className="relative">
                             <AnimatePresence>
                                 {output && (

@@ -15,7 +15,7 @@ use Symfony\Component\HttpFoundation\Response;
  */
 class BlockCountries
 {
-    private const OPEN = ['up', 'api/livekit/webhook', 'mail/unsubscribe/*'];
+    private const OPEN = ['up', 'api/livekit/webhook', 'mail/unsubscribe/*', '.well-known/assetlinks.json'];
 
     public function __construct(private readonly SiteSettings $settings, private readonly VisitorCountry $country) {}
 

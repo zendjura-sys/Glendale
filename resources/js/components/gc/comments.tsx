@@ -12,6 +12,10 @@ import { UserAvatar } from './user-avatar';
 import { VerifiedBadge } from './verified-badge';
 import { PlusBadge, plusNameStyle } from './plus';
 import {
+    CosmeticBadge,
+    cosmeticNameStyle,
+} from '@/components/season/cosmetics';
+import {
     TranslateToggle,
     useContentTranslation,
 } from '@/components/gc/translate';
@@ -239,9 +243,14 @@ export function Comments({
                                         className="flex items-center gap-1 text-[13px] font-semibold text-white hover:underline"
                                     >
                                         <span
-                                            style={plusNameStyle(
-                                                comment.user.plus,
-                                            )}
+                                            style={
+                                                plusNameStyle(
+                                                    comment.user.plus,
+                                                ) ??
+                                                cosmeticNameStyle(
+                                                    comment.user.cosmetics,
+                                                )
+                                            }
                                         >
                                             {comment.user.name}
                                         </span>
@@ -251,6 +260,10 @@ export function Comments({
                                         {comment.user.plus && (
                                             <PlusBadge className="size-3.5" />
                                         )}
+                                        <CosmeticBadge
+                                            cosmetics={comment.user.cosmetics}
+                                            className="size-3.5"
+                                        />
                                     </Link>
                                     <p className="text-[14px] leading-snug break-words whitespace-pre-line text-white/85">
                                         {parent && (

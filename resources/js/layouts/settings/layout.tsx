@@ -1,5 +1,6 @@
 import { Link } from '@inertiajs/react';
 import {
+    LifeBuoy,
     MonitorSmartphone,
     Palette,
     PanelBottom,
@@ -63,6 +64,14 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
                 </h1>
                 <p className="mt-1 text-sm text-white/45">
                     {tr('Керуйте сторінкою, приватністю та безпекою акаунта')}
+                    {' · '}
+                    <Link
+                        href="/help"
+                        className="inline-flex items-center gap-1 text-primary hover:underline"
+                    >
+                        <LifeBuoy className="size-3.5" />
+                        {tr('Довідка')}
+                    </Link>
                 </p>
             </div>
 

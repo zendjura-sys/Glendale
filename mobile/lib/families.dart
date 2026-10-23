@@ -15,6 +15,7 @@ import 'shell.dart';
 import 'state.dart';
 import 'theme.dart';
 import 'voice_room.dart';
+import 'listen_rooms.dart';
 import 'widgets.dart';
 import 'i18n.dart';
 
@@ -980,6 +981,7 @@ List<Widget> overviewTab(FamilyContext ctx, {required VoidCallback onReport, req
       label: '[${text(family['tag']) ?? ''}] ${text(family['name']) ?? ''}',
       route: '/families/${ctx.slug}',
     ),
+    ListenRoomPanel(key: ValueKey('listen-family-${family['id']}'), type: 'family', id: intOf(family['id'])),
     Row(children: [
       Expanded(child: MetricTile(caps: true, label: tr('Заробив за тиждень'), value: hryvniaShort(stats['week_earned']), icon: LucideIcons.trendingUp, color: green)),
       const SizedBox(width: 8),

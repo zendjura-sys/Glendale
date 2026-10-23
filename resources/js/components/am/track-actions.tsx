@@ -1,7 +1,6 @@
 import { router, usePage } from '@inertiajs/react';
 import {
     Disc3,
-    Download,
     ExternalLink,
     Info,
     FileText,
@@ -456,11 +455,6 @@ export function TrackMenu({
                             }
                         >
                             <Headphones /> {tr('Слухати разом')}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className={item} asChild>
-                            <a href={`/music/tracks/${local.id}/download`}>
-                                <Download /> {tr('Завантажити')}
-                            </a>
                         </DropdownMenuItem>
                     </>
                 )}

@@ -7,11 +7,13 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'api.dart';
+import 'downloads.dart';
 import 'feed.dart';
 import 'i18n.dart';
 import 'music.dart';
 import 'music_home.dart';
 import 'music_ui.dart';
+import 'offline_music.dart';
 import 'state.dart';
 import 'theme.dart';
 import 'widgets.dart';
@@ -332,6 +334,20 @@ class MusicAlbumScreen extends StatelessWidget {
           ]),
         ),
         PlayShuffle(tracks: tracks),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(gutter, 8, gutter, 0),
+          child: Center(
+            child: CollectionDownloadButton(
+              collectionKey: albumDownloadKey(text(album['artist']) ?? artist, text(album['title']) ?? title),
+              kind: 'album',
+              title: text(album['title']) ?? title,
+              subtitle: text(album['artist']) ?? artist,
+              coverUrl: text(album['cover_url']),
+              path: albumPath(artist, title),
+              tracks: tracks,
+            ),
+          ),
+        ),
         const SizedBox(height: 8),
         for (var i = 0; i < tracks.length; i++) SongRow(tracks: tracks, index: i, rank: intOf(tracks[i]['track_no'], i + 1), cover: false, onChanged: reload),
         Padding(

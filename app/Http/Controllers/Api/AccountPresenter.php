@@ -56,6 +56,8 @@ class AccountPresenter
             'google' => filled($user->google_id),
             // Застосунок ховає мат зірочками сам, якщо людина це ввімкнула.
             'profanity_mask' => $user->pref('hide_profanity') ? app(ContentFilter::class)->clientPattern() : null,
+            // «Показувати, що я слухаю»: одне налаштування для сайту й застосунку.
+            'show_listening' => $user->showsListening(),
         ];
     }
 }

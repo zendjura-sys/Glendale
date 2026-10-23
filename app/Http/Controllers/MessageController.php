@@ -16,6 +16,7 @@ use App\Services\Moderation\ContentFilter;
 use App\Services\Moderation\MessageReports;
 use App\Services\Plus\Plus;
 use App\Services\PostCards;
+use App\Services\Quests\SeasonPass;
 use App\Support\Plugins\Plugins;
 use App\Support\Settings\SiteSettings;
 use Carbon\CarbonInterface;
@@ -102,7 +103,7 @@ class MessageController extends Controller
             isset($data['sticker_id']) => $this->messenger->sendSticker(
                 $conversation,
                 $user,
-                Sticker::query()->whereKey($data['sticker_id'])->whereHas('pack', fn ($q) => $q->active()->when(! $user->isPlus(), fn ($q) => $q->where('is_plus', false)))->firstOr(
+                Sticker::query()->whereKey($data['sticker_id'])->whereHas('pack', fn ($q) => $q->active()->when(! $user->isPlus(), fn ($q) => $q->where(fn ($q) => $q->where('is_plus', false)->orWhereIn('slug', app(SeasonPass::class)->stickerPacks($user)))))->firstOr(
                     fn () => throw ValidationException::withMessages(['sticker_id' => 'Стікер недоступний.'])
                 ),
                 $replyTo,
@@ -152,8 +153,10 @@ class MessageController extends Controller
     {
         // Набори GameCon+ видно всім (як рекламу), але надсилати їх можна лише з підпискою.
         $plus = (bool) request()->user()?->isPlus();
+        // Набори, відкриті нагородою сезонного пропуску, доступні й без підписки.
+        $owned = request()->user() ? app(SeasonPass::class)->stickerPacks(request()->user()) : [];
 
-        return response()->json(['packs' => array_map(fn (array $pack) => [...$pack, 'locked' => $pack['is_plus'] && ! $plus], StickerPack::catalog())]);
+        return response()->json(['packs' => array_map(fn (array $pack) => [...$pack, 'locked' => $pack['is_plus'] && ! $plus && ! in_array($pack['slug'], $owned, true)], StickerPack::catalog())]);
     }
 
     public function download(Request $request, MessageAttachment $attachment): StreamedResponse

@@ -6,7 +6,9 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'account.dart';
 import 'chrome.dart';
+import 'connect.dart';
 import 'api.dart';
+import 'app_login.dart' show appLoginIdFrom;
 import 'family_widget.dart';
 import 'player_view.dart';
 import 'state.dart';
@@ -42,12 +44,15 @@ String appPathFor(String? sitePath) {
       return '/phone$query';
     case 'moments':
     case 'quests':
+    case 'season':
     case 'wrapped':
     case 'saved':
     case 'invite':
       return '/$head';
     case 'join':
       return '/join/${rest(1)}';
+    case 'app-login':
+      return '/app-login/${rest(1)}';
     case 'albums':
       return '/albums/${rest(1)}$query';
     case 'photos':
@@ -56,7 +61,7 @@ String appPathFor(String? sitePath) {
       if (rest(1) == 'u' && parts.length > 2) return '/music?user=${rest(2)}';
       if (rest(1) == 'playlists' && parts.length > 2) return '/music/playlists/${rest(2)}';
       // Розділ у стилі Apple Music: ті самі шляхи, що на сайті.
-      if (const {'new', 'radio', 'library', 'search', 'artist', 'album', 'mix', 'genre', 'charts', 'replay'}.contains(rest(1)) && parts.length <= 3) return '$path$query';
+      if (const {'new', 'radio', 'library', 'search', 'artist', 'album', 'mix', 'genre', 'charts', 'replay', 'rooms'}.contains(rest(1)) && parts.length <= 3) return '$path$query';
       // Старі вкладки ?tab=… ведуть у нові розділи (як OLD_TABS у MusicHubController).
       return switch (uri?.queryParameters['tab']) {
         'mine' => '/music/library/songs',
@@ -128,6 +133,13 @@ class _AppShellState extends State<AppShell> {
     final uri = widget.session.handoff;
     if (!mounted || uri == null) return;
     // Натискання на віджет «Моя сім'я» — відкриваємо сім'ю.
+    // Вхід на сайт через застосунок: gamecon://app-login/{id}. Без акаунта посилання чекає входу.
+    final login = appLoginIdFrom(uri);
+    if (login != null) {
+      widget.session.consumeLink();
+      context.push('/app-login/$login');
+      return;
+    }
     final fromWidget = FamilyWidget.routeFor(uri);
     if (fromWidget != null) {
       widget.session.consumeLink();
@@ -158,11 +170,15 @@ class _AppShellState extends State<AppShell> {
       player: widget.player,
       child: Stage(
         child: ListenableBuilder(
-          listenable: Listenable.merge([widget.player, widget.session, VoiceCall.instance]),
+          listenable: Listenable.merge([widget.player, widget.session, VoiceCall.instance, ?GameConnect.instance]),
           builder: (context, _) {
             final keyboard = MediaQuery.viewInsetsOf(context).bottom > 0;
             final hideChrome = chatOpen && keyboard;
-            final playing = widget.player.current != null && !hideChrome && !widget.player.covered;
+            // GameCon Connect: музика грає на іншому пристрої — міні-плеєр керує ним.
+            final connect = GameConnect.instance;
+            final remote = connect?.remote;
+            final playing = (widget.player.current != null || remote != null) && !hideChrome && !widget.player.covered;
+            final Widget mini = remote != null ? RemoteMiniPlayer(connect: connect!, device: remote) : (playing ? MiniPlayer(player: widget.player) : const SizedBox.shrink());
             // Широкий екран (планшет): як сайт на комп'ютері — шапка на всю ширину, ліворуч список розділів.
             // Телефон і вертикальний планшет: як сайт на телефоні — шапка й острів-меню внизу.
             final screen = MediaQuery.sizeOf(context);
@@ -227,12 +243,12 @@ class _AppShellState extends State<AppShell> {
                             if (playing && wide && !bottomBar)
                               Padding(
                                 padding: EdgeInsets.only(bottom: systemBottom + 8),
-                                child: Center(child: ConstrainedBox(constraints: BoxConstraints(maxWidth: contentWidth), child: MiniPlayer(player: widget.player))),
+                                child: Center(child: ConstrainedBox(constraints: BoxConstraints(maxWidth: contentWidth), child: mini)),
                               )
                             else if (playing && (wide || tabletPortrait))
-                              Center(child: ConstrainedBox(constraints: BoxConstraints(maxWidth: contentWidth), child: MiniPlayer(player: widget.player)))
+                              Center(child: ConstrainedBox(constraints: BoxConstraints(maxWidth: contentWidth), child: mini))
                             else if (playing)
-                              MiniPlayer(player: widget.player),
+                              mini,
                           ],
                         ),
                       ),

@@ -16,6 +16,7 @@ import 'theme.dart';
 import 'widgets.dart';
 import 'i18n.dart';
 import 'language_picker.dart';
+import 'music.dart' show ListeningSwitch;
 import 'extras.dart';
 
 // ───────────────────────── Сповіщення ─────────────────────────
@@ -348,6 +349,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             subtitle: Text(tr('Записи, друзів і фото бачитимуть лише ваші друзі.'), style: body(12.5, color: muted)),
             onChanged: (value) => setState(() => private = value),
           ),
+          // Зберігається одразу, без «Зберегти» — те саме налаштування, що й на сайті.
+          const ListeningSwitch(),
           const SizedBox(height: 6),
           Text(tr('Хто може писати мені'), style: body(13, color: muted)),
           SizedBox(height: 6),
@@ -402,6 +405,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           const SizedBox(height: 4),
           Text(tr('Під’єднати новий акаунт можна на сайті — вхід через Google і Discord потім працюватиме й тут.'), style: body(12, color: faint)),
+        ]),
+      ),
+      const SizedBox(height: 12),
+      // Вхід на сайт через застосунок: QR-код зі сторінки входу (запити з push відкриваються самі).
+      Glass(
+        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          CardTitle(tr('Вхід на сайт через застосунок'), icon: LucideIcons.monitorSmartphone),
+          const SizedBox(height: 8),
+          Text(tr('На сайті виберіть «Увійти через застосунок GameCon», відскануйте QR-код і підтвердіть вхід — без пароля.'), style: body(13.5, color: soft)),
+          const SizedBox(height: 10),
+          GhostButton(label: tr('Сканувати QR для входу'), icon: LucideIcons.scanLine, onPressed: () => context.push('/scan-login')),
         ]),
       ),
       const SizedBox(height: 12),

@@ -1,4 +1,4 @@
-import { router, usePage } from '@inertiajs/react';
+import { Link, router, usePage } from '@inertiajs/react';
 import {
     ArrowLeft,
     Clock3,
@@ -23,6 +23,7 @@ import type {
     SpotifyPlaylist,
     SpotifyTrack,
 } from '@/types';
+import { useShowListening } from './listening-switch';
 import { SpotifyLogo } from './track-cover';
 import { TrackList } from './track-list';
 import { tr } from '@/lib/i18n';
@@ -256,6 +257,7 @@ export function SpotifyPanel({
     account: SpotifyAccountCard | null;
 }) {
     const { auth } = usePage().props;
+    const showListening = useShowListening();
     const [section, setSection] = useState<Section>(account ? 'top' : 'search');
 
     if (!configured) {
@@ -341,13 +343,29 @@ export function SpotifyPanel({
                         </div>
                     </div>
                     <div className="relative border-t border-white/10">
-                        <label className="flex min-h-12 items-center gap-3 px-4 text-[15px] text-white/85">
+                        <label className="flex min-h-12 items-center gap-3 px-4 py-2 text-[15px] text-white/85">
                             <Radio className="size-5 shrink-0 text-spotify" />
                             <span className="min-w-0 flex-1">
                                 {tr('Показувати «Зараз грає»')}
+                                {!showListening && (
+                                    <span className="mt-0.5 block text-[13px] leading-snug text-white/50">
+                                        {tr(
+                                            'Вимкнено в налаштуваннях «Показувати, що я слухаю» — для всієї музики.',
+                                        )}{' '}
+                                        <Link
+                                            href="/settings/profile"
+                                            className="text-white/75 underline-offset-2 hover:underline"
+                                        >
+                                            {tr('Змінити')}
+                                        </Link>
+                                    </span>
+                                )}
                             </span>
                             <Toggle
-                                checked={account.show_now_playing}
+                                checked={
+                                    showListening && account.show_now_playing
+                                }
+                                disabled={!showListening}
                                 onChange={(value) =>
                                     router.patch(
                                         '/music/spotify',

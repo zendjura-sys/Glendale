@@ -10,16 +10,15 @@ import {
 } from 'lucide-react';
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { useCurrentUrl } from '@/hooks/use-current-url';
+import { usePlayback } from '@/lib/connect';
 import {
     closePlayer,
     jumpTo,
-    next,
     removeFromQueue,
     setSpotifyAuth,
-    toggle,
-    usePlayer,
 } from '@/lib/player';
 import { cn } from '@/lib/utils';
+import { RemoteLine } from './connect-ui';
 import { CapsuleButton, PlayerCapsule } from './player-capsule';
 import { Equalizer, SpotifyLogo, TrackCover } from './track-cover';
 import { tr } from '@/lib/i18n';
@@ -66,7 +65,9 @@ function IconButton({
 }
 
 export function PlayerBar({ standalone }: { standalone?: boolean }) {
-    const player = usePlayer();
+    // Грає інший пристрій (GameCon Connect) — показуємо його трек, кнопки керують ним.
+    const player = usePlayback();
+    const { toggle, next, remote } = player;
     const { music } = usePage().props;
     const { currentUrl } = useCurrentUrl();
     const [queueOpen, setQueueOpen] = useState(false);
@@ -263,7 +264,13 @@ export function PlayerBar({ standalone }: { standalone?: boolean }) {
                                 <span className="block truncate text-sm font-semibold text-white">
                                     {track.title}
                                 </span>
-                                <span className="block truncate text-xs text-white/50">
+                                {remote && <RemoteLine device={remote} />}
+                                <span
+                                    className={cn(
+                                        'block truncate text-xs text-white/50',
+                                        remote && 'hidden',
+                                    )}
+                                >
                                     {track.artist}
                                     {player.engine === 'embed' && (
                                         <span className="ml-1.5 text-spotify/80">

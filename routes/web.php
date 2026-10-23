@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\Admin;
+use App\Http\Controllers\AppLinksController;
+use App\Http\Controllers\Auth\AppLoginController;
 use App\Http\Controllers\Auth\SocialAuthController;
 use App\Http\Controllers\BillingController;
 use App\Http\Controllers\Bots;
@@ -20,15 +22,18 @@ use App\Http\Controllers\FollowController;
 use App\Http\Controllers\FriendController;
 use App\Http\Controllers\GameController;
 use App\Http\Controllers\GooglePlayRtdnController;
+use App\Http\Controllers\HelpController;
 use App\Http\Controllers\InviteLinkController;
 use App\Http\Controllers\LegalController;
 use App\Http\Controllers\ListenPartyController;
+use App\Http\Controllers\ListenRoomController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\Mail\UnsubscribeController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\MessengerController;
 use App\Http\Controllers\MomentController;
 use App\Http\Controllers\MonobankWebhookController;
+use App\Http\Controllers\MusicConnectController;
 use App\Http\Controllers\MusicController;
 use App\Http\Controllers\MusicHubController;
 use App\Http\Controllers\NotificationController;
@@ -47,6 +52,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\QuestController;
 use App\Http\Controllers\ReferralController;
 use App\Http\Controllers\SavedController;
+use App\Http\Controllers\SeasonController;
 use App\Http\Controllers\ServerAppController;
 use App\Http\Controllers\ServerController;
 use App\Http\Controllers\SitemapController;
@@ -84,6 +90,14 @@ Route::get('pricing', [LegalController::class, 'pricing'])->name('legal.pricing'
 Route::get('sitemap.xml', SitemapController::class)->middleware('throttle:30,1')->name('sitemap');
 Route::get('contacts', [LegalController::class, 'contacts'])->name('legal.contacts');
 
+// Довідка для новачків — відкрита без входу (тексти: App\Support\Help\HelpCatalog).
+Route::prefix('help')->name('help.')->controller(HelpController::class)->where(['category' => '[a-z0-9-]+', 'article' => '[a-z0-9-]+'])->group(function () {
+    Route::get('/', 'index')->name('index');
+    Route::get('{category}', 'category')->name('category');
+    Route::get('{category}/{article}', 'article')->name('article');
+    Route::post('{category}/{article}/vote', 'vote')->middleware('throttle:20,1')->name('vote');
+});
+
 Route::redirect('dashboard', '/feed')->name('dashboard');
 
 // Особисте посилання-запрошення: запам’ятовуємо запрошувача й ведемо на реєстрацію.
@@ -95,6 +109,15 @@ Route::prefix('auth')->name('auth.')->group(function () {
     Route::post('firebase', [SocialAuthController::class, 'firebase'])->middleware('throttle:20,1')->name('firebase');
     Route::delete('social/{provider}', [SocialAuthController::class, 'unlink'])->middleware('auth')->whereIn('provider', ['discord', 'google'])->name('social.unlink');
 });
+
+// «Увійти через застосунок GameCon»: браузер гостя створює запит і опитує його стан;
+// app-login/{id} — те, що кодує QR (відкриває застосунок або підказує, як це зробити).
+Route::middleware('guest')->prefix('login/app')->name('login.app.')->group(function () {
+    Route::post('requests', [AppLoginController::class, 'store'])->middleware('throttle:app-login')->name('store');
+    Route::get('requests/{id}', [AppLoginController::class, 'show'])->whereUuid('id')->middleware('throttle:app-login-poll')->name('show');
+});
+Route::get('app-login/{id}', [AppLoginController::class, 'open'])->whereUuid('id')->middleware('throttle:60,1')->name('app-login.open');
+Route::get('.well-known/assetlinks.json', AppLinksController::class)->middleware('throttle:60,1')->name('app-links');
 
 Route::middleware(['auth', 'verified.site'])->group(function () {
     Route::get('join/{token}', [InviteLinkController::class, 'show'])->name('invites.show');
@@ -344,6 +367,9 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::get('search', [MusicController::class, 'search'])->middleware('throttle:120,1')->name('music.search');
         Route::post('now-playing', [NowPlayingController::class, 'store'])->middleware('throttle:60,1')->name('music.now-playing');
         Route::delete('now-playing', [NowPlayingController::class, 'destroy'])->name('music.now-playing.destroy');
+        // GameCon Connect: пристрої користувача бачать, що грає на іншому, і керують ним.
+        Route::post('connect/heartbeat', [MusicConnectController::class, 'heartbeat'])->middleware('throttle:music-connect')->name('music.connect.heartbeat');
+        Route::post('connect/command', [MusicConnectController::class, 'command'])->middleware('throttle:60,1')->name('music.connect.command');
 
         Route::post('tracks', [TrackController::class, 'store'])->middleware('throttle:60,1')->name('tracks.store');
         // «Завантажити за посиланням»: файл завантажує сервер у фоні (ImportTrackFromUrl).
@@ -351,6 +377,11 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::get('imports', [TrackImportController::class, 'index'])->name('music.imports.index');
         Route::delete('imports/{import}', [TrackImportController::class, 'destroy'])->whereNumber('import')->name('music.imports.destroy');
         Route::post('together', [ListenPartyController::class, 'store'])->middleware('throttle:10,1')->name('listen.store');
+        // Кімнати «Слухати разом» для сім’ї, клану, спільноти чи друзів.
+        Route::get('rooms', [ListenRoomController::class, 'index'])->name('music.rooms');
+        Route::post('rooms', [ListenRoomController::class, 'store'])->middleware('throttle:10,1')->name('music.rooms.store');
+        Route::get('rooms/{type}/{id}', [ListenRoomController::class, 'group'])->whereIn('type', ['family', 'clan', 'community'])->whereNumber('id')->name('music.rooms.group');
+        Route::put('rooms/{type}/{id}/policy', [ListenRoomController::class, 'policy'])->whereIn('type', ['family', 'clan', 'community'])->whereNumber('id')->name('music.rooms.policy');
         Route::post('playlists', [PlaylistController::class, 'store'])->middleware('throttle:20,1')->name('playlists.store');
 
         Route::whereNumber(['track', 'playlist'])->group(function () {
@@ -491,6 +522,12 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::post('shared', [ListenPartyController::class, 'shared'])->name('shared');
         Route::post('invite', [ListenPartyController::class, 'invite'])->middleware('throttle:10,1')->name('invite');
         Route::post('share', [ListenPartyController::class, 'share'])->middleware('throttle:10,1')->name('share');
+        Route::post('suggest', [ListenRoomController::class, 'suggest'])->middleware('throttle:30,1')->name('suggest');
+        Route::post('suggestions/{index}', [ListenRoomController::class, 'review'])->whereNumber('index')->middleware('throttle:60,1')->name('review');
+        Route::post('react', [ListenRoomController::class, 'react'])->middleware('throttle:40,1')->name('react');
+        Route::post('chat', [ListenRoomController::class, 'chat'])->middleware('throttle:30,1')->name('chat');
+        Route::post('kick', [ListenRoomController::class, 'kick'])->middleware('throttle:30,1')->name('kick');
+        Route::post('host', [ListenRoomController::class, 'host'])->middleware('throttle:20,1')->name('host');
         Route::delete('/', [ListenPartyController::class, 'end'])->name('end');
     });
 
@@ -518,6 +555,13 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     Route::prefix('quests')->name('quests.')->middleware('module:quests')->group(function () {
         Route::get('/', [QuestController::class, 'index'])->name('index');
         Route::post('{quest}/claim', [QuestController::class, 'claim'])->where('quest', '[a-z]{2,24}')->middleware('throttle:30,1')->name('claim');
+    });
+
+    // Сезонний пропуск: рівні з очок сезону, нагороди двох доріжок, інвентар косметики.
+    Route::prefix('season')->name('season.')->middleware('module:quests')->group(function () {
+        Route::get('/', [SeasonController::class, 'index'])->name('index');
+        Route::post('levels/{level}/{track}/claim', [SeasonController::class, 'claim'])->whereNumber('level')->whereIn('track', ['free', 'plus'])->middleware('throttle:60,1')->name('claim');
+        Route::post('equip', [SeasonController::class, 'equip'])->middleware('throttle:60,1')->name('equip');
     });
 
     Route::prefix('moments')->name('moments.')->middleware('module:moments')->whereNumber('moment')->group(function () {
@@ -730,6 +774,8 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
             Route::put('rules', 'rules')->name('rules');
             Route::put('google-pay', 'googlePay')->name('google-pay');
         });
+        Route::get('seasons', [Admin\SeasonController::class, 'index'])->name('seasons.index');
+        Route::put('seasons/{key}', [Admin\SeasonController::class, 'update'])->where('key', '\d{4}-\d{2}')->name('seasons.update');
         Route::get('stickers', [Admin\StickerController::class, 'index'])->name('stickers.index');
         Route::post('stickers', [Admin\StickerController::class, 'store'])->name('stickers.store');
         Route::patch('stickers/{pack}', [Admin\StickerController::class, 'update'])->name('stickers.update');

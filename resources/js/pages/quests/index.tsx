@@ -1,5 +1,5 @@
 import { Head, Link } from '@inertiajs/react';
-import { Clock, Medal, Target, Trophy } from 'lucide-react';
+import { Clock, Medal, Target, Ticket, Trophy } from 'lucide-react';
 import { UserAvatar } from '@/components/gc/user-avatar';
 import { QuestList } from '@/components/quests/quest-list';
 import type { Quest } from '@/components/quests/quest-list';
@@ -129,6 +129,16 @@ export default function Quests({
                             'Очки сезону — досвід за виконані завдання цього місяця. Він же додається до вашого рівня.',
                         )}
                     </p>
+                    <Link
+                        href="/season"
+                        className="mt-3 flex items-center gap-3 rounded-xl bg-primary/10 px-4 py-3 text-sm font-semibold text-white transition hover:bg-primary/15"
+                    >
+                        <Ticket className="size-5 shrink-0 text-primary" />
+                        <span className="flex-1">{tr('Сезонний пропуск')}</span>
+                        <span className="text-xs font-normal text-white/55">
+                            {tr('Нагороди за очки сезону')}
+                        </span>
+                    </Link>
                 </section>
             </div>
         </>

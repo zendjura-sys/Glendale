@@ -4,6 +4,7 @@ import {
     Clock3,
     Disc3,
     FastForward,
+    Headphones,
     House,
     LayoutGrid,
     Library,
@@ -28,10 +29,12 @@ import { InboxListener } from '@/components/gc/inbox-listener';
 import { NotificationsMenu } from '@/components/gc/notifications-menu';
 import { VoiceBar } from '@/components/gc/voice-bar';
 import { BillingHost } from '@/components/billing/billing-host';
+import { ConnectListener, RemoteLine } from '@/components/music/connect-ui';
 import { PlayerCapsule } from '@/components/music/player-capsule';
 import { SpotifyLogo, TrackCover } from '@/components/music/track-cover';
 import { UploadTracksDialog } from '@/components/music/upload-dialog';
 import { api } from '@/lib/api';
+import { usePlayback } from '@/lib/connect';
 import { tr } from '@/lib/i18n';
 import { motionOr, SNAP } from '@/lib/motion';
 import {
@@ -42,7 +45,6 @@ import {
     setVolume,
     toggle,
     toggleMute,
-    usePlayer,
 } from '@/lib/player';
 import { cn } from '@/lib/utils';
 import { LAST_PAGE_KEY, UserMenu } from '@/layouts/social-layout';
@@ -211,6 +213,11 @@ function Sidebar({ onUpload }: { onUpload: () => void }) {
                     label="Spotify"
                     icon={<SpotifyLogo className="size-4" />}
                 />
+                <SideLink
+                    href="/music/rooms"
+                    label={tr('Кімнати')}
+                    icon={<Headphones />}
+                />
             </nav>
             <p className="am-footnote mt-5 mb-1 px-2.5 font-semibold text-[var(--am-label2)]">
                 {tr('Плейлисти')}
@@ -289,7 +296,9 @@ function PhoneHeader() {
 // ───────────────────────── Телефон: міні-плеєр і панель вкладок ─────────────────────────
 
 function MiniPlayer() {
-    const player = usePlayer();
+    // Грає інший пристрій (GameCon Connect) — його трек і «Грає на: …», кнопки керують ним.
+    const player = usePlayback();
+    const { next, prev, toggle, remote } = player;
     const reduce = useReducedMotion();
     const track = player.current;
 
@@ -327,11 +336,15 @@ function MiniPlayer() {
                             <span className="am-subhead block truncate font-medium">
                                 {track.title}
                             </span>
-                            <span className="am-footnote block truncate text-[var(--am-label2)]">
-                                {track.source === 'radio'
-                                    ? tr('Пряма трансляція')
-                                    : track.artist}
-                            </span>
+                            {remote ? (
+                                <RemoteLine device={remote} />
+                            ) : (
+                                <span className="am-footnote block truncate text-[var(--am-label2)]">
+                                    {track.source === 'radio'
+                                        ? tr('Пряма трансляція')
+                                        : track.artist}
+                                </span>
+                            )}
                         </span>
                     </button>
                     <button
@@ -483,7 +496,7 @@ export default function MusicLayout({ children }: PropsWithChildren) {
     const { auth, modules, site } = usePage().props;
     const [view, setView] = useState<View | null>(null);
     const [uploading, setUploading] = useState(false);
-    const player = usePlayer();
+    const player = usePlayback();
     useMusicShortcuts();
 
     useEffect(() => {
@@ -505,6 +518,7 @@ export default function MusicLayout({ children }: PropsWithChildren) {
                     <IncomingCall userId={auth.user.id} />
                 </>
             )}
+            <ConnectListener />
             <TrackActionsProvider>
                 <div className="flex">
                     <Sidebar onUpload={() => setUploading(true)} />

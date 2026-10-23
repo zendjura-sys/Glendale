@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\Quests\SeasonPass;
 use App\Support\Palette;
 use App\Support\Plugins\Plugins;
 use App\Support\PlusStyle;
@@ -80,6 +81,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property Carbon|null $plus_until GameCon+ активний до (кеш plus_grants)
  * @property int $balance Особистий рахунок, копійок (журнал — wallet_transactions)
  * @property array<string, string>|null $plus_style Колір ніку, рамка, акцент профілю
+ * @property array<string, string>|null $cosmetics Вдягнута косметика сезонного пропуску (тип → ключ)
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
@@ -142,6 +144,7 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
             'preferences' => 'array',
             'plus_until' => 'datetime',
             'plus_style' => 'array',
+            'cosmetics' => 'array',
             'balance' => 'integer',
         ];
     }
@@ -301,6 +304,7 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
             'status' => $this->status,
             'playing' => $this->playing(),
             'plus' => $this->plusCard(),
+            'cosmetics' => SeasonPass::card($this->cosmetics),
         ];
     }
 
@@ -386,6 +390,15 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
     {
         $this->preferences = array_merge($this->preferences ?? [], $patch);
         $this->save();
+    }
+
+    /**
+     * «Показувати, що я слухаю»: чи бачать інші, що грає в людини (треки GameCon, радіо, Spotify).
+     * Типово ввімкнено; Spotify додатково вимикається своїм перемикачем show_now_playing.
+     */
+    public function showsListening(): bool
+    {
+        return $this->pref('show_listening', true) !== false;
     }
 
     public function palette(): string

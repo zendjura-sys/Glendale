@@ -5,6 +5,7 @@ import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileCo
 import { ConnectedAccounts } from '@/components/auth/connected-accounts';
 import { PlayingSettingsCard } from '@/components/gc/playing';
 import DeleteUser from '@/components/delete-user';
+import { ListeningSwitch } from '@/components/music/listening-switch';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -424,6 +425,12 @@ export default function Profile({
                     </Button>
                 </div>
             </form>
+
+            <div className="mt-7">
+                <SettingsCard list title={tr('Приватність')}>
+                    <ListeningSwitch />
+                </SettingsCard>
+            </div>
 
             {playingOn && <PlayingSettingsCard />}
 

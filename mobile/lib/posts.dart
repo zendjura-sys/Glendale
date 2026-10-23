@@ -230,7 +230,7 @@ class _PostCardState extends State<PostCard> {
               children: [
                 GestureDetector(
                   onTap: openWho,
-                  child: Avatar(url: text(who['avatar_url']), name: name, size: 44, online: publisher == null && author['is_online'] == true, square: publisher != null, frame: publisher == null ? PlusMark.of(author)?.frame : null),
+                  child: Avatar(url: text(who['avatar_url']), name: name, size: 44, online: publisher == null && author['is_online'] == true, square: publisher != null, frame: publisher == null ? avatarFrameOf(author) : null),
                 ),
                 SizedBox(width: 12),
                 Expanded(
@@ -241,9 +241,10 @@ class _PostCardState extends State<PostCard> {
                         crossAxisAlignment: WrapCrossAlignment.center,
                         spacing: 4,
                         children: [
-                          GestureDetector(onTap: openWho, child: PlusName(name, plus: publisher == null ? PlusMark.of(author) : null, style: body(15, weight: FontWeight.w700), maxLines: null)),
+                          GestureDetector(onTap: openWho, child: PlusName(name, plus: publisher == null ? nameMarkOf(author) : null, style: body(15, weight: FontWeight.w700), maxLines: null)),
                           if (who['is_verified'] == true) Icon(LucideIcons.badgeCheck, size: 15, color: primary),
                           if (publisher == null && PlusMark.of(author) != null) PlusBadge(size: 15),
+                          if (publisher == null) SeasonBadge(user: author),
                           if (badge != null) RoleBadge(title: text(badge['title']) ?? '', color: text(badge['color'])),
                           if (wall != null) ...[
                             Icon(LucideIcons.chevronRight, size: 16, color: faint),

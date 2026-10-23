@@ -123,6 +123,8 @@ class HandleInertiaRequests extends Middleware
                     'phone' => $this->modules->enabled('phone') ? app(PhoneNumbers::class)->current($user)?->toCard() : null,
                     'hide_spoilers' => app(Plugins::class)->on('spoiler_switch') && (bool) $user->pref('hide_spoilers'),
                     'profanity_mask' => $user->pref('hide_profanity') ? app(ContentFilter::class)->clientPattern() : null,
+                    // «Показувати, що я слухаю» (усі джерела музики; Spotify — ще й своїм перемикачем).
+                    'show_listening' => $user->showsListening(),
                     // До коли діє GameCon+ (оплата — карткою через monobank, без балансу).
                     'plus_until' => $user->plus_until?->toIso8601String(),
                     'created_at' => $user->created_at,

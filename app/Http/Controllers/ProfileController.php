@@ -24,6 +24,7 @@ use App\Services\PlayedTogether;
 use App\Services\PostCards;
 use App\Services\PostPresenter;
 use App\Services\Presence\SteamPresence;
+use App\Services\Quests\SeasonPass;
 use App\Services\Streams\LiveStreams;
 use App\Support\Backgrounds;
 use App\Support\Modules\ModuleManager;
@@ -128,7 +129,8 @@ class ProfileController extends Controller
                 'cover_url' => $user->cover_url,
                 // GameCon+: власні кольори сторінки (з палітр сайту).
                 'accent' => $user->isPlus() ? Palette::colors((string) ($user->plus_style['accent'] ?? '')) : null,
-                'header_fx' => $user->isPlus() ? PlusStyle::header($user->plus_style) : null,
+                // Ефект шапки: з GameCon+ або вдягнутий із сезонного пропуску.
+                'header_fx' => ($user->isPlus() ? PlusStyle::header($user->plus_style) : null) ?? SeasonPass::header($user->cosmetics),
                 // GameCon+: власний відеофон власника видно й гостям його сторінки.
                 'background_video' => $canSeeContent ? Backgrounds::for($user)['video'] : null,
                 // Внутрішній номер (якщо власник не сховав його з профілю); can_call — чи можна набрати.

@@ -12,6 +12,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'api.dart';
 import 'feed.dart';
 import 'music_ui.dart';
+import 'offline_music.dart';
 import 'posts.dart';
 import 'state.dart';
 import 'theme.dart';
@@ -370,12 +371,15 @@ class _LibraryTrackState extends State<LibraryTrack> {
   Widget build(BuildContext context) {
     final player = AppScope.of(context).player;
     return ListenableBuilder(
-      listenable: player,
-      builder: (context, _) => TrackRow(
+      listenable: musicRowListenable(player),
+      builder: (context, _) => Opacity(
+        opacity: dimmedOffline(track) ? 0.4 : 1,
+        child: TrackRow(
         track: track,
         playing: player.isCurrentCard(track),
         onTap: () => playTracks(context, widget.tracks, widget.index),
         trailing: Row(mainAxisSize: MainAxisSize.min, children: [
+          DownloadBadge(track),
           if (text(track['source']) != 'spotify')
             IconButton(
               visualDensity: VisualDensity.compact,
@@ -385,6 +389,7 @@ class _LibraryTrackState extends State<LibraryTrack> {
             ),
           IconButton(visualDensity: VisualDensity.compact, onPressed: _menu, icon: Icon(LucideIcons.ellipsis, color: muted, size: 20)),
         ]),
+      ),
       ),
     );
   }
@@ -1017,6 +1022,16 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
                   const SizedBox(width: 10),
                   Expanded(child: GhostButton(label: tr('Перемішати'), icon: LucideIcons.shuffle, onPressed: () => playTracks(context, tracks, DateTime.now().millisecond % tracks.length, shuffle: true))),
                 ]),
+                const SizedBox(height: 10),
+                CollectionDownloadButton(
+                  collectionKey: 'playlist:${widget.id}',
+                  kind: 'playlist',
+                  title: text(playlist['title']) ?? tr('Плейлист'),
+                  subtitle: text(owner['name']),
+                  coverUrl: text(playlist['cover_url']),
+                  path: '/music/playlists/${widget.id}',
+                  tracks: tracks,
+                ),
               ],
             ]),
           ),
@@ -1037,6 +1052,52 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
 }
 
 // ───────────────────────── Spotify ─────────────────────────
+
+/// Чи бачать інші, що людина слухає: одне налаштування сайту й застосунку для всієї музики.
+bool showsListening(Map<String, dynamic>? me) => me?['show_listening'] != false;
+
+/// «Показувати, що я слухаю» (треки GameCon, радіо й Spotify). Перемикається одразу,
+/// а якщо сервер відмовив — повертається назад.
+class ListeningSwitch extends StatefulWidget {
+  const ListeningSwitch({super.key});
+
+  @override
+  State<ListeningSwitch> createState() => _ListeningSwitchState();
+}
+
+class _ListeningSwitchState extends State<ListeningSwitch> {
+  bool? pending;
+
+  Future<void> _toggle(bool value) async {
+    final session = AppScope.read(context).session;
+    setState(() => pending = value);
+    if (!await attempt(context, () => session.api.patch(Api.site('/settings/listening'), {'show_listening': value}))) {
+      if (mounted) setState(() => pending = null);
+      return;
+    }
+    try {
+      await session.refreshMe();
+      if (mounted) setState(() => pending = null);
+    } catch (_) {
+      // Збережено, а профіль не оновився — лишаємо нове значення до наступного оновлення.
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final session = AppScope.read(context).session;
+    return ListenableBuilder(
+      listenable: session,
+      builder: (context, _) => SwitchListTile(
+        value: pending ?? showsListening(session.me),
+        contentPadding: EdgeInsets.zero,
+        title: Text(tr('Показувати, що я слухаю'), style: body(14.5, weight: FontWeight.w600)),
+        subtitle: Text(tr('Друзі бачать трек у профілі й у «Зараз слухають»'), style: body(12.5, color: muted)),
+        onChanged: _toggle,
+      ),
+    );
+  }
+}
 
 class SpotifyPanel extends StatefulWidget {
   const SpotifyPanel({required this.configured, required this.account, required this.onChanged, super.key});
@@ -1148,13 +1209,22 @@ class _SpotifyPanelState extends State<SpotifyPanel> {
             ),
             const SpotifyMark(size: 26),
           ]),
-          SwitchListTile(
-            value: account['show_now_playing'] == true,
-            contentPadding: EdgeInsets.zero,
-            title: Text(tr('Показувати, що я слухаю'), style: body(14)),
-            subtitle: Text(tr('У профілі й у друзів'), style: body(12, color: muted)),
-            onChanged: (value) async {
-              if (await attempt(context, () => api.patch(Api.site('/music/spotify'), {'show_now_playing': value}))) widget.onChanged();
+          // Spotify — додатковий перемикач: діє, лише коли ввімкнено «Показувати, що я слухаю».
+          ListenableBuilder(
+            listenable: AppScope.read(context).session,
+            builder: (context, _) {
+              final main = showsListening(AppScope.read(context).session.me);
+              return SwitchListTile(
+                value: main && account['show_now_playing'] == true,
+                contentPadding: EdgeInsets.zero,
+                title: Text(tr('Показувати «Зараз грає» зі Spotify'), style: body(14)),
+                subtitle: Text(main ? tr('У профілі й у друзів') : tr('Вимкнено в налаштуваннях «Показувати, що я слухаю» — для всієї музики.'), style: body(12, color: muted)),
+                onChanged: main
+                    ? (value) async {
+                        if (await attempt(context, () => api.patch(Api.site('/music/spotify'), {'show_now_playing': value}))) widget.onChanged();
+                      }
+                    : null,
+              );
             },
           ),
           Align(

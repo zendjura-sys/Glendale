@@ -33,6 +33,10 @@ import { ReportPersonButton } from '@/components/gc/report-person';
 import { UserAvatar } from '@/components/gc/user-avatar';
 import { VerifiedBadge } from '@/components/gc/verified-badge';
 import { PlusBadge, plusNameProps } from '@/components/gc/plus';
+import {
+    CosmeticBadge,
+    cosmeticNameStyle,
+} from '@/components/season/cosmetics';
 import { WatchedTogether } from '@/components/profile/watched-together';
 import type { TogetherPerson } from '@/components/profile/watched-together';
 import { EmptyState, Widget } from '@/components/gc/widget';
@@ -266,7 +270,12 @@ export default function ProfileShow({
         : profile.plus?.name?.length
           ? [...profile.plus.name, '#a855f7']
           : ['#6366f1', '#a855f7', '#22d3ee'];
-    const nameProps = plusNameProps(profile.plus);
+    const nameProps = profile.plus
+        ? plusNameProps(profile.plus)
+        : {
+              style: cosmeticNameStyle(profile.cosmetics),
+              className: undefined,
+          };
     // Відеофон учасника GameCon+ замінює фон сайту, поки відкрита його сторінка.
     useEffect(() => {
         setPageBackgroundVideo(profile.background_video ?? null);
@@ -384,6 +393,10 @@ export default function ProfileShow({
                                         <PlusBadge className="size-6 rounded-lg [&_svg]:size-4" />
                                     </Link>
                                 )}
+                                <CosmeticBadge
+                                    cosmetics={profile.cosmetics}
+                                    className="size-6"
+                                />
                                 {roleBadge && (
                                     <span className="inline-flex items-center gap-1 rounded-chip border border-gold/30 bg-gold/10 px-2.5 py-0.5 text-xs font-semibold text-gold">
                                         <ShieldCheck className="size-3" />{' '}

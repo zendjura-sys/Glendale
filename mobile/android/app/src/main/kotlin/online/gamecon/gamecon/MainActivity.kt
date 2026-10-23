@@ -1,6 +1,8 @@
 package online.gamecon.gamecon
 
 import android.content.pm.PackageManager
+import android.os.Bundle
+import androidx.core.view.WindowCompat
 import com.ryanheise.audioservice.AudioServiceActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -8,6 +10,13 @@ import java.security.MessageDigest
 
 // Медіасесія плеєра (фон, шторка, заблокований екран) потребує AudioServiceActivity.
 class MainActivity : AudioServiceActivity() {
+    // Від краю до краю (Android 15, SDK 35): вмикаємо явно й на старших версіях, щоб вигляд був однаковий;
+    // відступи під системні панелі Flutter бере з MediaQuery (viewPadding), див. main.dart (SystemUiMode.edgeToEdge).
+    override fun onCreate(savedInstanceState: Bundle?) {
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        super.onCreate(savedInstanceState)
+    }
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         // Скрипт плеєра в iframe балансера (див. FrameScriptPlugin).

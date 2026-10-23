@@ -31,6 +31,7 @@ import {
     ShieldCheck,
     Sparkles,
     Sticker,
+    Trophy,
     UsersRound,
     Wallet,
 } from 'lucide-react';
@@ -40,6 +41,7 @@ import type { PropsWithChildren } from 'react';
 import { SiteBackground } from '@/components/backgrounds/site-background';
 import { LogoMark } from '@/components/gc/logo';
 import { UserAvatar } from '@/components/gc/user-avatar';
+import { ConnectListener } from '@/components/music/connect-ui';
 import { PlayerBar } from '@/components/music/player-bar';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import { usePlayer } from '@/lib/player';
@@ -122,6 +124,11 @@ function groups(): { title: string; items: Item[] }[] {
                     label: tr('Стікери'),
                     href: '/admin/stickers',
                     icon: Sticker,
+                },
+                {
+                    label: tr('Сезони'),
+                    href: '/admin/seasons',
+                    icon: Trophy,
                 },
             ],
         },
@@ -568,7 +575,12 @@ export default function AdminLayout({ children }: PropsWithChildren) {
                     {children}
                 </PageTransition>
             </main>
-            {modules.includes('music') && <PlayerBar standalone />}
+            {modules.includes('music') && (
+                <>
+                    <PlayerBar standalone />
+                    <ConnectListener />
+                </>
+            )}
         </div>
     );
 }

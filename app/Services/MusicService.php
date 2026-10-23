@@ -351,12 +351,17 @@ class MusicService
 
     /**
      * Що зараз слухає користувач: трек із плеєра GameCon або з Spotify.
+     * Іншим — лише якщо ввімкнено «Показувати, що я слухаю» (для Spotify ще й show_now_playing).
      * Позначка «вже у моїх аудіозаписах» рахується для [$viewer] поза кешем, бо кеш спільний для всіх глядачів.
      *
      * @return array<string, mixed>|null
      */
     public function currentFor(User $user, ?User $viewer = null): ?array
     {
+        // «Показувати, що я слухаю» вимкнено — статус бачить лише сам власник.
+        if (($viewer === null || $viewer->isNot($user)) && ! $user->showsListening()) {
+            return null;
+        }
         $now = $this->cachedCurrent($user);
         if ($now !== null && ($now['source'] ?? null) === 'local' && isset($now['id'])) {
             $now['in_library'] = $viewer !== null && $viewer->library()->whereKey($now['id'])->exists();

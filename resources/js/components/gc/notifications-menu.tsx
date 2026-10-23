@@ -1,5 +1,6 @@
 import { Link, usePage } from '@inertiajs/react';
 import {
+    Headphones,
     Radio,
     UserRoundSearch,
     AlarmClock,
@@ -54,6 +55,7 @@ const kindIcon: Record<string, { icon: typeof Bell; className: string }> = {
     event_reminder: { icon: AlarmClock, className: 'bg-amber-500' },
     party_join: { icon: UserRoundSearch, className: 'bg-gc-indigo' },
     stream_live: { icon: Radio, className: 'bg-rose-500' },
+    listen_room: { icon: Headphones, className: 'bg-gc-indigo' },
     referral_joined: { icon: UserPlus, className: 'bg-emerald-500' },
     plus_gifted: { icon: Gift, className: 'bg-indigo-500' },
     wallet_topup: { icon: Wallet, className: 'bg-emerald-500' },

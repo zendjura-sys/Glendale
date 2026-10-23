@@ -2,6 +2,7 @@ import { Cast, Headphones, Smartphone, Speaker } from 'lucide-react';
 import { m, useReducedMotion } from 'motion/react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { DeviceList } from '@/components/music/connect-ui';
 import { tr } from '@/lib/i18n';
 import { EASE_OUT } from '@/lib/motion';
 import { mediaElements, playingElement, usePlayer } from '@/lib/player';
@@ -32,6 +33,7 @@ async function applySink(deviceId: string) {
 /**
  * Аркуш «Вивід звуку» як AirPlay в Apple Music: цей пристрій, навушники й колонки (де браузер дозволяє
  * вибір), трансляція на телевізор чи колонку (Chromecast на Android, AirPlay у Safari). Помилки — тостом.
+ * Згори — інші пристрої GameCon Connect (телефон, інший браузер), куди можна перекинути відтворення.
  */
 export function OutputSheet({
     onClose,
@@ -133,6 +135,7 @@ export function OutputSheet({
             role="dialog"
             aria-label={tr('Вивід звуку')}
         >
+            <DeviceList onDone={onClose} />
             <p className="px-4 pt-3 pb-1 text-[13px] font-semibold text-white/60">
                 {tr('Вивід звуку')}
             </p>

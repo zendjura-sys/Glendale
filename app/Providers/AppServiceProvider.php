@@ -87,6 +87,11 @@ class AppServiceProvider extends ServiceProvider
         // з одного акаунта чи адреси. Із запасом для звичайної роботи й оновлень у реальному часі.
         RateLimiter::for('web-global', fn (Request $request) => Limit::perMinute(600)->by('web|'.($request->user()?->id ?: $request->ip())));
         RateLimiter::for('api-global', fn (Request $request) => Limit::perMinute(600)->by('api|'.($request->user()?->id ?: $request->ip())));
+        // GameCon Connect: heartbeat кожного пристрою окремо (застосунок шле раз на 3–5 с) і загальна межа акаунта.
+        RateLimiter::for('music-connect', fn (Request $request) => [
+            Limit::perMinute(60)->by('connect|'.($request->user()?->id ?: $request->ip()).'|'.substr((string) $request->input('device_id'), 0, 64)),
+            Limit::perMinute(300)->by('connect|'.($request->user()?->id ?: $request->ip())),
+        ]);
 
         // $t у шаблонах листів: переклад мовою отримувача (Laravel ставить її з preferredLocale).
         View::share('t', fn (string $text, array $params = []) => (string) preg_replace_callback(

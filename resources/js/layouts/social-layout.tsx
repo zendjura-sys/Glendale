@@ -5,6 +5,7 @@ import {
     ChevronDown,
     Keyboard,
     LayoutDashboard,
+    LifeBuoy,
     LogOut,
     Megaphone,
     PanelBottom,
@@ -40,6 +41,7 @@ import { BillingHost } from '@/components/billing/billing-host';
 import { PhonePrompt } from '@/components/phone/phone-prompt';
 import { PlusMenuCard } from '@/components/gc/plus-card';
 import { PlusBadge, plusNameProps, plusNameStyle } from '@/components/gc/plus';
+import { ConnectListener } from '@/components/music/connect-ui';
 import { PlayerBar } from '@/components/music/player-bar';
 import {
     DropdownMenu,
@@ -271,6 +273,14 @@ export function UserMenu() {
                     onSelect={openFeedback}
                 >
                     <MessageSquareHeart /> {tr('Відгук адмінам')}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                    asChild
+                    className="rounded-lg focus:bg-white/[0.06]"
+                >
+                    <Link href="/help">
+                        <LifeBuoy /> {tr('Довідка')}
+                    </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem
                     className="hidden rounded-lg focus:bg-white/[0.06] lg:flex"
@@ -612,6 +622,11 @@ function MenuContent({ onClose }: { onClose: () => void }) {
             label: tr('Налаштування'),
             icon: Settings,
         },
+        {
+            href: '/help',
+            label: tr('Довідка'),
+            icon: LifeBuoy,
+        },
         ...(user.is_admin
             ? [{ href: '/admin', label: tr('Адмін-панель'), icon: ShieldCheck }]
             : []),
@@ -786,7 +801,12 @@ export default function SocialLayout({ children }: PropsWithChildren) {
                 </main>
             </div>
             <VoiceBar />
-            {modules.includes('music') && <PlayerBar />}
+            {modules.includes('music') && (
+                <>
+                    <PlayerBar />
+                    <ConnectListener />
+                </>
+            )}
             <BillingHost />
             <PhonePrompt />
             <MobileNav />

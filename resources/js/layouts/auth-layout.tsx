@@ -207,8 +207,14 @@ export default function AuthLayout({
                     </LayoutGroup>
                 </m.div>
 
-                <div className="mt-5 flex justify-center">
+                <div className="mt-5 flex items-center justify-center gap-4">
                     <LanguageSelect />
+                    <Link
+                        href="/help/start"
+                        className="text-sm text-white/55 transition hover:text-white"
+                    >
+                        {tr('Довідка')}
+                    </Link>
                 </div>
                 <SiteFooter className="mt-4 border-t-0 px-0" />
             </main>

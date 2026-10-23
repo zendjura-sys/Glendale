@@ -5,15 +5,19 @@ namespace Tests\Feature;
 use App\Models\Movie;
 use App\Models\MovieSource;
 use App\Models\Post;
+use App\Models\QuestClaim;
+use App\Models\Season;
 use App\Models\Track;
 use App\Models\User;
 use App\Services\Auth\ApiTokens;
 use App\Services\FriendshipService;
 use App\Services\Phones\PhoneNumbers;
+use App\Services\Quests\SeasonPass;
 use App\Support\Net\PublicUrl;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 /** Розділи сайту, які застосунок відкриває через міст /api/v1/site: ті самі контролери, відповіді — JSON. */
@@ -72,6 +76,8 @@ class AppSiteParityTest extends TestCase
         $this->withToken($token)->putJson('/api/v1/site/settings/stream', ['platform' => 'twitch', 'channel' => 'neo_live'])->assertOk()->assertJsonPath('ok', true);
         $this->withToken($token)->getJson('/api/v1/site/u/neo')->assertOk()->assertJsonPath('stream.channel', 'neo_live');
         $this->withToken($token)->deleteJson('/api/v1/site/settings/stream')->assertOk();
+        $this->withToken($token)->patchJson('/api/v1/site/settings/listening', ['show_listening' => false])->assertOk()->assertJsonPath('ok', true);
+        $this->assertFalse($user->fresh()->showsListening());
     }
 
     public function test_app_post_menu_matches_the_site(): void
@@ -120,6 +126,26 @@ class AppSiteParityTest extends TestCase
 
         $this->withToken($this->app_token($user))->getJson("/api/v1/site/music/tracks/{$track->id}/lyrics")
             ->assertOk()->assertJsonPath('lyrics', "[00:01.00]перший\n[00:05.00]другий\n[00:09.00]третій");
+    }
+
+    public function test_app_downloads_original_track_for_offline_music(): void
+    {
+        Storage::fake('public');
+        Storage::disk('public')->put('music/offline.flac', 'flac-bytes');
+        $user = User::factory()->create();
+        $track = Track::query()->create([
+            'user_id' => $user->id,
+            'title' => 'Neon',
+            'artist' => 'Nightdrive',
+            'duration' => 100,
+            'path' => 'music/offline.flac',
+            'mime' => 'audio/flac',
+            'size' => 10,
+        ]);
+
+        $response = $this->withToken($this->app_token($user))->get("/api/v1/site/music/tracks/{$track->id}/download");
+        $response->assertOk();
+        $this->assertSame('flac-bytes', $response->streamedContent());
     }
 
     public function test_app_phone_section_matches_the_site(): void
@@ -209,5 +235,44 @@ class AppSiteParityTest extends TestCase
         Http::fake(['*' => Http::response([])]);
         $this->withToken($token)->getJson('/api/v1/site/music/artist/info?name=Nightdrive')->assertOk()->assertJsonStructure(['info' => ['bio', 'origin']]);
         $this->withToken($token)->getJson('/api/v1/site/music/lyrics/find?artist=Nightdrive&title=Neon')->assertOk()->assertJsonPath('lyrics', null);
+    }
+
+    public function test_app_joins_gamecon_connect_through_bridge(): void
+    {
+        $user = User::factory()->create();
+        $token = $this->app_token($user);
+
+        $this->actingAs($user)->postJson('/music/connect/heartbeat', ['device_id' => 'web-device-0001', 'name' => 'Chrome · Windows', 'kind' => 'web'])->assertOk();
+        $this->withToken($token)->postJson('/api/v1/site/music/connect/heartbeat', ['device_id' => 'app-device-0002', 'name' => 'Pixel 8', 'kind' => 'app'])
+            ->assertOk()->assertJsonCount(2, 'devices')->assertJsonStructure(['devices' => [['id', 'name', 'kind', 'last_seen', 'is_active', 'state']], 'active_device_id', 'commands']);
+        $this->withToken($token)->postJson('/api/v1/site/music/connect/command', ['target_device_id' => 'web-device-0001', 'action' => 'pause'])->assertStatus(202);
+    }
+
+    public function test_app_opens_the_season_pass_claims_and_equips(): void
+    {
+        $user = User::factory()->create();
+        $token = $this->app_token($user);
+        $pass = app(SeasonPass::class);
+        Season::query()->create(['key' => $pass->currentKey(), 'title' => 'Сезон', 'theme' => 'neon', 'rewards' => ['1' => ['free' => ['type' => 'frame', 'value' => 'pass_mint'], 'plus' => ['type' => 'badge', 'value' => 'pass_star']]]]);
+        QuestClaim::query()->create(['user_id' => $user->id, 'quest' => 'post', 'day' => now()->toDateString(), 'season' => $pass->currentKey(), 'xp' => 500]);
+
+        $this->withToken($token)->getJson('/api/v1/site/season')->assertOk()
+            ->assertJsonPath('plus', false)->assertJsonPath('levels.0.free.value', 'pass_mint')->assertJsonStructure(['season' => ['title', 'ends_at'], 'level', 'points', 'levels', 'inventory']);
+        $this->withToken($token)->postJson('/api/v1/site/season/levels/1/free/claim')->assertOk()->assertJsonPath('ok', true);
+        $this->withToken($token)->postJson('/api/v1/site/season/levels/1/plus/claim')->assertStatus(422);
+        $this->withToken($token)->postJson('/api/v1/site/season/equip', ['type' => 'frame', 'value' => 'pass_mint'])->assertOk()->assertJsonPath('ok', true);
+        $this->withToken($token)->getJson('/api/v1/site/season')->assertOk()->assertJsonPath('inventory.0.equipped', true);
+    }
+
+    public function test_app_opens_listen_rooms_through_bridge(): void
+    {
+        // «Слухати разом» для груп: розділ «Кімнати», статус кімнати групи й налаштування — ті самі шляхи, що на сайті.
+        $user = User::factory()->create();
+        $token = $this->app_token($user);
+        $this->withToken($token)->getJson('/api/v1/site/music/rooms')->assertOk()->assertJsonStructure(['rooms', 'groups', 'stations']);
+        $code = $this->withToken($token)->postJson('/api/v1/site/music/rooms', ['title' => 'З друзями'])->assertCreated()->json('code');
+        $this->withToken($token)->getJson("/api/v1/listen/{$code}/state")->assertOk()->assertJsonPath('room.title', 'З друзями');
+        $this->withToken($token)->getJson('/api/v1/site/music/rooms/community/999')->assertNotFound();
+        $this->withToken($token)->putJson('/api/v1/site/music/rooms/community/999/policy', ['who' => 'off'])->assertNotFound();
     }
 }

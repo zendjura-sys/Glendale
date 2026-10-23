@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
@@ -7,6 +8,7 @@ import 'package:just_audio/just_audio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'api.dart';
+import 'app_login.dart' show appLoginIdFrom;
 import 'nav_items.dart';
 import 'subscription.dart';
 import 'theme_controller.dart';
@@ -36,6 +38,12 @@ class Session extends ChangeNotifier {
   int unreadNotifications = 0;
   int unreadChats = 0;
   Timer? _poll;
+
+  /// Що зробити при виході з акаунта (напр. стерти завантажену музику — приватність).
+  final logoutHooks = <Future<void> Function()>[];
+
+  /// Профіль узято з телефону, бо на старті не було інтернету: оновиться, щойно зв’язок повернеться.
+  bool _staleMe = false;
 
   String? get username => text(me?['username']);
   int? get myId => me?['id'] is int ? me!['id'] as int : int.tryParse('${me?['id']}');
@@ -85,11 +93,20 @@ class Session extends ChangeNotifier {
     if (_token != null) {
       try {
         me = await api.me();
+        _rememberMe();
         _syncTheme();
         _startPolling();
         unawaited(subscription.refreshSubscriptionStatus());
-      } catch (_) {
-        await clear();
+      } catch (e) {
+        final cached = _cachedMe();
+        if (e is ApiException && e.status == null && cached != null) {
+          // Немає інтернету: лишаємося в акаунті (завантажена музика грає офлайн).
+          me = cached;
+          _staleMe = true;
+          _startPolling();
+        } else {
+          await clear();
+        }
       }
     }
     ready = true;
@@ -100,6 +117,7 @@ class Session extends ChangeNotifier {
     _token = value;
     await prefs.setString('token', value);
     me = user ?? await api.me();
+    _rememberMe();
     _syncTheme();
     _startPolling();
     unawaited(subscription.refreshSubscriptionStatus());
@@ -108,6 +126,8 @@ class Session extends ChangeNotifier {
 
   Future<void> refreshMe() async {
     me = await api.me();
+    _staleMe = false;
+    _rememberMe();
     _syncTheme();
     notifyListeners();
   }
@@ -119,8 +139,32 @@ class Session extends ChangeNotifier {
     unreadChats = 0;
     unreadNotifications = 0;
     await prefs.remove('token');
+    await prefs.remove('me.cache');
+    _staleMe = false;
+    for (final hook in logoutHooks) {
+      try {
+        await hook();
+      } catch (_) {}
+    }
     await subscription.reset();
     notifyListeners();
+  }
+
+  void _rememberMe() {
+    final value = me;
+    if (value == null) return;
+    try {
+      unawaited(prefs.setString('me.cache', jsonEncode(value)));
+    } catch (_) {}
+  }
+
+  Map<String, dynamic>? _cachedMe() {
+    try {
+      final raw = jsonDecode(prefs.getString('me.cache') ?? '');
+      return raw is Map ? Map<String, dynamic>.from(raw) : null;
+    } catch (_) {
+      return null;
+    }
   }
 
   /// Тема з акаунта (та сама, що на сайті).
@@ -153,6 +197,7 @@ class Session extends ChangeNotifier {
     try {
       final notes = await api.get('/api/v1/notifications');
       final chats = await api.get('/api/v1/messages');
+      if (_staleMe) unawaited(refreshMe().catchError((_) {}));
       final n = int.tryParse('${notes['unread'] ?? 0}') ?? 0;
       final c = int.tryParse('${chats['unread'] ?? 0}') ?? 0;
       if (n != unreadNotifications || c != unreadChats) {
@@ -164,7 +209,7 @@ class Session extends ChangeNotifier {
   }
 
   void takeLink(Uri uri) {
-    if (uri.scheme != 'gamecon') return;
+    if (uri.scheme != 'gamecon' && appLoginIdFrom(uri) == null) return;
     handoff = uri;
     notifyListeners();
   }
@@ -385,6 +430,15 @@ class TrackPlayer extends ChangeNotifier {
   /// Викликається на початку кожного треку (тут лагодять «сміттєві» назви).
   void Function(QueueTrack track)? onStart;
 
+  /// Файл завантаженого треку на телефоні (див. downloads.dart) — грає без інтернету й без трафіку.
+  static String? Function(int? id)? localFile;
+
+  /// Що відкрити для [track]: локальний файл, якщо трек завантажено, інакше — адресу з сервера.
+  static String sourceFor(QueueTrack track) {
+    final path = track.local ? localFile?.call(track.id) : null;
+    return path == null ? track.url : Uri.file(path).toString();
+  }
+
   /// Рушій відтворення — для медіасесії в шторці (`GcAudioHandler`).
   AudioPlayer get engine => _player;
   Session? _session;
@@ -545,7 +599,7 @@ class TrackPlayer extends ChangeNotifier {
     // Черга добігає кінця — заздалегідь дописуємо наступну порцію станції чи ∞.
     if (queue.length - i <= 3) unawaited(_extend());
     try {
-      await _player.setUrl(track.url);
+      await _player.setUrl(sourceFor(track));
       unawaited(_player.play());
       if (track.local) {
         unawaited(session?.api.post('/api/v1/music/now-playing', {'track_id': track.id}).catchError((_) => <String, dynamic>{}));
@@ -589,6 +643,13 @@ class TrackPlayer extends ChangeNotifier {
     } else if (current != null) {
       await _player.play();
     }
+  }
+
+  /// Пауза (команда з іншого пристрою GameCon Connect чи передача музики туди).
+  Future<void> pause() async {
+    try {
+      await _player.pause();
+    } catch (_) {}
   }
 
   /// Трек дограв: таймер сну «наприкінці треку» зупиняє музику, інакше — наступний.

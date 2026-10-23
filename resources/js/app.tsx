@@ -99,8 +99,13 @@ function shouldViewTransition(options: VisitOptions): boolean {
 
 void createInertiaApp({
     title: (title) => (title ? `${title} · ${appName}` : appName),
-    layout: (name) => {
+    layout: (name, page) => {
         switch (true) {
+            // Довідка відкрита гостям: без входу — власна легка оболонка (components/help/help-shell).
+            case name.startsWith('help/') &&
+                !(page?.props as { auth?: { user?: unknown } } | undefined)
+                    ?.auth?.user:
+                return null;
             case name === 'welcome':
             case name === 'error':
             case name === 'wrapped':

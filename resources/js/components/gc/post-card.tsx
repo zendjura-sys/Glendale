@@ -44,6 +44,10 @@ import { ReactionBar } from './reaction-bar';
 import { MediaGrid } from './media-grid';
 import { UserAvatar } from './user-avatar';
 import { PlusBadge, plusNameStyle } from './plus';
+import {
+    CosmeticBadge,
+    cosmeticNameStyle,
+} from '@/components/season/cosmetics';
 import { VerifiedBadge } from './verified-badge';
 import {
     TranslateToggle,
@@ -143,7 +147,12 @@ export function PostCard({
                             {post.publisher ? (
                                 post.publisher.name
                             ) : (
-                                <span style={plusNameStyle(post.author.plus)}>
+                                <span
+                                    style={
+                                        plusNameStyle(post.author.plus) ??
+                                        cosmeticNameStyle(post.author.cosmetics)
+                                    }
+                                >
                                     {post.author.name}
                                 </span>
                             )}
@@ -152,6 +161,12 @@ export function PostCard({
                             )}
                             {!post.publisher && post.author.plus && (
                                 <PlusBadge />
+                            )}
+                            {!post.publisher && (
+                                <CosmeticBadge
+                                    cosmetics={post.author.cosmetics}
+                                    className="size-4"
+                                />
                             )}
                         </Link>
                         {post.badge && (

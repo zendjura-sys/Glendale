@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Support\Help\HelpCatalog;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Cache;
 
@@ -28,6 +29,15 @@ class SitemapController extends Controller
                 ['loc' => url('/privacy'), 'changefreq' => 'yearly', 'priority' => '0.3'],
                 ['loc' => url('/refund-policy'), 'changefreq' => 'yearly', 'priority' => '0.3'],
             ];
+
+            // Довідка: головна, розділи й статті (лише розділи з увімкненими модулями).
+            $urls[] = ['loc' => url('/help'), 'lastmod' => HelpCatalog::UPDATED, 'changefreq' => 'weekly', 'priority' => '0.7'];
+            foreach (app(HelpCatalog::class)->categories() as $category) {
+                $urls[] = ['loc' => url('/help/'.$category['slug']), 'lastmod' => HelpCatalog::UPDATED, 'changefreq' => 'monthly', 'priority' => '0.5'];
+                foreach ($category['articles'] as $article) {
+                    $urls[] = ['loc' => url('/help/'.$category['slug'].'/'.$article['slug']), 'lastmod' => HelpCatalog::UPDATED, 'changefreq' => 'monthly', 'priority' => '0.5'];
+                }
+            }
 
             // Лише відкриті профілі: не закриті, не заблоковані, не заморожені, з підтвердженою поштою.
             User::query()

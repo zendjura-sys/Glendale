@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'api.dart';
+import 'listen_rooms.dart';
 import 'state.dart';
 import 'theme.dart';
 import 'widgets.dart';
@@ -35,12 +36,14 @@ class ListenScreen extends StatefulWidget {
 
 class _ListenScreenState extends State<ListenScreen> {
   /// На скільки секунд можна розійтися з ведучим, перш ніж підтягнутися.
-  static const _drift = 2.5;
+  static const _drift = 1.5;
 
   Map<String, dynamic>? party;
   List<Map<String, dynamic>> friends = [];
   List<Map<String, dynamic>> results = [];
+  List<Map<String, dynamic>> stations = [];
   final search = TextEditingController();
+  final chat = TextEditingController();
   Timer? _poll;
   Timer? _debounce;
   int _offset = 0;
@@ -61,10 +64,12 @@ class _ListenScreenState extends State<ListenScreen> {
         friends = maps(data['friends']);
         _apply(mapOf(data['party']));
         _search();
+        if (room.isNotEmpty) _stations();
       } catch (e) {
         if (mounted) toast(context, e);
       }
-      _poll = Timer.periodic(const Duration(seconds: 3), (_) => _refresh());
+      // Кімната групи живе швидше (чат, реакції) — опитуємо що 2 с.
+      _poll = Timer.periodic(Duration(seconds: room.isNotEmpty ? 2 : 3), (_) => _refresh());
     });
   }
 
@@ -73,10 +78,14 @@ class _ListenScreenState extends State<ListenScreen> {
     _poll?.cancel();
     _debounce?.cancel();
     search.dispose();
+    chat.dispose();
     super.dispose();
   }
 
   Map<String, dynamic> get state => mapOf(party?['state']);
+
+  /// Кімната групи чи друзів: діджей, пропозиції, чат, реакції (порожньо — звичайне «Слухаємо разом»).
+  Map<String, dynamic> get room => mapOf(party?['room']);
 
   /// Де трек має бути зараз за годинником сервера (секунди).
   double get expected {
@@ -98,6 +107,20 @@ class _ListenScreenState extends State<ListenScreen> {
   Future<void> _refresh() async {
     try {
       _apply(await api.get('$base/state'));
+    } on ApiException catch (e) {
+      // Діджей прибрав із кімнати — більше не опитуємо.
+      if (e.status == 403 && mounted) {
+        _poll?.cancel();
+        toast(context, e.message);
+        if (context.canPop()) context.pop();
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _stations() async {
+    try {
+      final data = await api.get(Api.site('/music/rooms'));
+      if (mounted) setState(() => stations = maps(data['stations']));
     } catch (_) {}
   }
 
@@ -112,6 +135,7 @@ class _ListenScreenState extends State<ListenScreen> {
       return;
     }
     final duration = intOf(track['duration']);
+    // Радіо (duration 0) не дограє й не перемотується — лише грає чи ні.
     if (playing && duration > 0 && expected >= duration - 0.5) {
       final wait = p['is_host'] == true ? 0 : 2;
       if (DateTime.now().difference(_lastNext).inSeconds > 3 && expected >= duration + wait) {
@@ -122,15 +146,15 @@ class _ListenScreenState extends State<ListenScreen> {
       }
       return;
     }
-    if (!player.isCurrent(track['id'])) {
+    if (!player.isCurrentCard(track)) {
       if (playing) {
         await player.playList([track], 0, extend: false);
-        await player.seek(Duration(milliseconds: (expected * 1000).round()));
+        if (duration > 0) await player.seek(Duration(milliseconds: (expected * 1000).round()));
       }
       return;
     }
     if (player.playing != playing) await player.toggle(forcePlay: playing);
-    if (playing && (player.position.inMilliseconds / 1000 - expected).abs() > _drift) {
+    if (playing && duration > 0 && (player.position.inMilliseconds / 1000 - expected).abs() > _drift) {
       await player.seek(Duration(milliseconds: (expected * 1000).round()));
     }
   }
@@ -169,6 +193,31 @@ class _ListenScreenState extends State<ListenScreen> {
     );
   }
 
+  /// Трек чи станція: діджей додає в чергу, слухач у кімнаті з погодженням — пропонує.
+  Future<void> _add(Map<String, dynamic> item, bool suggests) async {
+    final radio = item['source'] == 'radio';
+    final body = radio ? {'station_id': item['id']} : {'track_id': item['id']};
+    try {
+      _apply(await api.post(room.isNotEmpty ? '$base/suggest' : '$base/queue', body));
+      if (mounted) toast(context, suggests ? tr('Запропоновано діджею: «{v}»', {'v': item['title']}) : tr('«{v}» у черзі', {'v': item['title']}));
+    } catch (e) {
+      if (mounted) toast(context, e);
+    }
+  }
+
+  Future<void> _say() async {
+    final message = chat.text.trim();
+    if (message.isEmpty) return;
+    chat.clear();
+    try {
+      await api.post('$base/chat', {'body': message});
+      await _refresh();
+    } catch (e) {
+      chat.text = message;
+      if (mounted) toast(context, e);
+    }
+  }
+
   String _clock(num seconds) {
     final t = seconds.floor().clamp(0, 86400);
     return '${t ~/ 60}:${(t % 60).toString().padLeft(2, '0')}';
@@ -193,7 +242,11 @@ class _ListenScreenState extends State<ListenScreen> {
   }
 
   Widget _content(BuildContext context, Map<String, dynamic> p, Map<String, dynamic> track, bool playing, bool canControl, bool ended, List<Map<String, dynamic>> queue, List<Map<String, dynamic>> members, Map<String, dynamic>? me) {
-    final position = track.isEmpty ? 0.0 : (player.isCurrent(track['id']) ? player.position.inMilliseconds / 1000 : expected);
+    final position = track.isEmpty ? 0.0 : (player.isCurrentCard(track) ? player.position.inMilliseconds / 1000 : expected);
+    final isRoom = room.isNotEmpty;
+    final suggests = isRoom && room['moderated'] == true && !canControl;
+    final canManage = room['can_manage'] == true && !ended;
+    final group = mapOf(room['group']);
     return ScreenScroll(
       onRefresh: _refresh,
       children: [
@@ -206,14 +259,27 @@ class _ListenScreenState extends State<ListenScreen> {
                   : Container(width: 190, height: 190, color: raised, child: Icon(LucideIcons.headphones, color: faint, size: 56)),
             ),
             const SizedBox(height: 14),
-            Text(ended ? tr('СЛУХАЄМО РАЗОМ · ЗАВЕРШЕНО') : tr('СЛУХАЄМО РАЗОМ'), style: body(11.5, color: primary, weight: FontWeight.w700)),
+            Text(
+              [text(room['title']) ?? (isRoom ? tr('Слухаємо разом') : tr('СЛУХАЄМО РАЗОМ')), ?text(group['name']), if (ended) tr('завершено')].join(' · '),
+              textAlign: TextAlign.center,
+              style: body(11.5, color: primary, weight: FontWeight.w700),
+            ),
             const SizedBox(height: 6),
             Text(text(track['title']) ?? tr('Нічого не грає'), textAlign: TextAlign.center, style: display(20)),
             const SizedBox(height: 4),
             Text(text(track['artist']) ?? tr('Додайте трек у чергу — він заграє одразу'), textAlign: TextAlign.center, style: body(13.5, color: muted)),
             const SizedBox(height: 6),
-            Text(tr('Ведучий: {v}{v2}', {'v': mapOf(p['host'])['name'] ?? '', 'v2': state['shared_control'] == true ? ' · керують усі' : ''}), style: body(12, color: faint)),
-            if (track.isNotEmpty) ...[
+            Text(
+              isRoom
+                  ? tr('Діджей: {v}', {'v': mapOf(p['host'])['name'] ?? ''})
+                  : tr('Ведучий: {v}{v2}', {'v': mapOf(p['host'])['name'] ?? '', 'v2': state['shared_control'] == true ? ' · керують усі' : ''}),
+              style: body(12, color: faint),
+            ),
+            if (track.isNotEmpty && intOf(track['duration']) <= 0) ...[
+              const SizedBox(height: 10),
+              Text(tr('Радіо наживо'), style: body(12, color: gold, weight: FontWeight.w700)),
+            ],
+            if (track.isNotEmpty && intOf(track['duration']) > 0) ...[
               Slider(
                 value: position.clamp(0, intOf(track['duration']).toDouble()).toDouble(),
                 max: intOf(track['duration']).toDouble().clamp(1, 86400).toDouble(),
@@ -221,6 +287,8 @@ class _ListenScreenState extends State<ListenScreen> {
                 onChangeEnd: canControl ? (v) => _act(() => api.post('$base/state', {'playing': playing, 'position': v})) : null,
               ),
               Row(children: [Text(_clock(position), style: body(12, color: faint)), const Spacer(), Text(_clock(intOf(track['duration'])), style: body(12, color: faint))]),
+            ],
+            if (track.isNotEmpty) ...[
               const SizedBox(height: 8),
               if (canControl)
                 Row(mainAxisAlignment: MainAxisAlignment.center, children: [
@@ -247,6 +315,52 @@ class _ListenScreenState extends State<ListenScreen> {
             ],
           ]),
         ),
+        if (isRoom && !ended) ...[
+          const SizedBox(height: 10),
+          Wrap(alignment: WrapAlignment.center, spacing: 4, children: [
+            for (final emoji in List<String>.from(room['emoji'] as List? ?? const []))
+              IconButton(
+                tooltip: tr('Реакція {emoji}', {'emoji': emoji}),
+                onPressed: () => attempt(context, () => api.post('$base/react', {'emoji': emoji})),
+                icon: Text(emoji, style: const TextStyle(fontSize: 20)),
+              ),
+          ]),
+          if (maps(room['reactions']).isNotEmpty)
+            Wrap(alignment: WrapAlignment.center, spacing: 6, runSpacing: 6, children: [
+              for (final r in maps(room['reactions'])) Pill(label: '${r['emoji']} ${mapOf(r['user'])['name'] ?? ''}'),
+            ]),
+        ],
+        if (isRoom && !ended && maps(room['suggestions']).isNotEmpty) ...[
+          SectionLabel(tr('Пропозиції'), trailing: '${maps(room['suggestions']).length}'),
+          for (final sug in maps(room['suggestions']))
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Glass(
+                padding: const EdgeInsets.all(10),
+                radius: 16,
+                child: Row(children: [
+                  Expanded(
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text(text(mapOf(sug['track'])['title']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14)),
+                      Text(tr('пропонує {v}', {'v': mapOf(sug['by'])['name'] ?? ''}), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: muted)),
+                    ]),
+                  ),
+                  if (room['can_review'] == true)
+                    IconButton(
+                      tooltip: tr('Додати в чергу'),
+                      icon: const Icon(LucideIcons.check, size: 18, color: green),
+                      onPressed: () => _act(() => api.post('$base/suggestions/${sug['index']}', {'approve': true})),
+                    ),
+                  if (room['can_review'] == true || mapOf(sug['by'])['id'] == me?['id'])
+                    IconButton(
+                      tooltip: room['can_review'] == true ? tr('Відхилити') : tr('Відкликати'),
+                      icon: Icon(LucideIcons.x, size: 18, color: faint),
+                      onPressed: () => _act(() => api.post('$base/suggestions/${sug['index']}', {'approve': false})),
+                    ),
+                ]),
+              ),
+            ),
+        ],
         if (!ended) ...[
           const SizedBox(height: 12),
           Row(children: [
@@ -266,7 +380,11 @@ class _ListenScreenState extends State<ListenScreen> {
           ]),
         ],
         SectionLabel(tr('Черга'), trailing: '${queue.length}'),
-        if (queue.isEmpty) QuietEmpty(icon: LucideIcons.listMusic, text: tr('Черга порожня. Знайдіть трек нижче — додати може кожен.')),
+        if (queue.isEmpty)
+          QuietEmpty(
+            icon: LucideIcons.listMusic,
+            text: suggests ? tr('Черга порожня. Запропонуйте трек — діджей вирішить.') : tr('Черга порожня. Знайдіть трек нижче — додати може кожен.'),
+          ),
         for (var i = 0; i < queue.length; i++)
           Padding(
             padding: const EdgeInsets.only(bottom: 8),
@@ -311,10 +429,27 @@ class _ListenScreenState extends State<ListenScreen> {
               title: Text(text(t['title']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14)),
               subtitle: Text('${t['artist'] ?? ''} · ${_clock(intOf(t['duration']))}', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: muted)),
               trailing: Icon(LucideIcons.plus, color: primary),
-              onTap: () async {
-                await _act(() => api.post('$base/queue', {'track_id': t['id']}));
-                if (context.mounted) toast(context, tr('«{v}» у черзі', {'v': t['title']}));
-              },
+              onTap: () => _add(t, suggests),
+            ),
+          if (stations.isNotEmpty) SectionLabel(tr('Радіо GameCon')),
+          for (final st in stations.where((st) => (text(st['title']) ?? '').toLowerCase().contains(search.text.trim().toLowerCase())))
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: text(st['cover_url']) != null
+                  ? NetImage(text(st['cover_url']), width: 42, height: 42, radius: 10)
+                  : Container(width: 42, height: 42, decoration: BoxDecoration(color: raised, borderRadius: BorderRadius.circular(10)), child: Icon(LucideIcons.radio, color: faint, size: 18)),
+              title: Text(text(st['title']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14)),
+              trailing: Icon(LucideIcons.plus, color: primary),
+              onTap: () => _add(st, suggests),
+            ),
+          if (isRoom)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Icon(LucideIcons.info, size: 15, color: faint),
+                const SizedBox(width: 8),
+                Expanded(child: Text(spotifyRoomNote(), style: body(12, color: faint))),
+              ]),
             ),
         ],
         SectionLabel(tr('Слухають'), trailing: '${members.length}'),
@@ -328,11 +463,61 @@ class _ListenScreenState extends State<ListenScreen> {
                   const SizedBox(width: 10),
                   Expanded(child: Text(text(m['name']) ?? '', style: body(14))),
                   if (m['is_host'] == true) const Icon(LucideIcons.crown, size: 16, color: gold),
+                  if (canManage && m['is_host'] != true) ...[
+                    IconButton(
+                      tooltip: tr('Передати роль діджея'),
+                      icon: Icon(LucideIcons.crown, size: 17, color: faint),
+                      onPressed: () async {
+                        if (await confirm(context, tr('Передати роль діджея: {v}?', {'v': m['name']}), action: tr('Передати'))) {
+                          await _act(() => api.post('$base/host', {'user_id': m['id']}));
+                        }
+                      },
+                    ),
+                    IconButton(
+                      tooltip: tr('Прибрати з кімнати'),
+                      icon: Icon(LucideIcons.userMinus, size: 17, color: faint),
+                      onPressed: () async {
+                        if (await confirm(context, tr('Прибрати з кімнати: {v}?', {'v': m['name']}), danger: true, action: tr('Прибрати'))) {
+                          await _act(() => api.post('$base/kick', {'user_id': m['id']}));
+                        }
+                      },
+                    ),
+                  ],
                 ]),
               ),
           ]),
         ),
-        if (p['is_host'] == true && !ended) ...[
+        if (isRoom) ...[
+          SectionLabel(tr('Чат кімнати')),
+          Glass(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              if (maps(room['messages']).isEmpty) Text(tr('Поки тихо. Напишіть, як вам трек.'), style: body(13, color: muted)),
+              for (final msg in maps(room['messages']).reversed.take(20).toList().reversed)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Avatar(url: text(mapOf(msg['user'])['avatar_url']), name: text(mapOf(msg['user'])['name']) ?? '?', size: 26),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text.rich(TextSpan(children: [
+                        TextSpan(text: '${mapOf(msg['user'])['name'] ?? ''} ', style: body(13, weight: FontWeight.w700)),
+                        TextSpan(text: text(msg['body']) ?? '', style: body(13)),
+                      ])),
+                    ),
+                  ]),
+                ),
+              if (!ended) ...[
+                const SizedBox(height: 8),
+                Row(children: [
+                  Expanded(child: GcField(controller: chat, label: tr('Повідомлення'), dense: true)),
+                  const SizedBox(width: 8),
+                  RoundIcon(icon: LucideIcons.send, tooltip: tr('Надіслати'), onTap: _say),
+                ]),
+              ],
+            ]),
+          ),
+        ],
+        if ((p['is_host'] == true || canManage) && !ended) ...[
           const SizedBox(height: 12),
           Glass(
             child: Column(children: [

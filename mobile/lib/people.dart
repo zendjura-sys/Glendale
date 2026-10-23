@@ -559,7 +559,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final open = data['canSeeContent'] != false;
     final fullName = text(profile['name']) ?? name;
     final plus = PlusMark.of(profile);
-    final headerFx = plus == null ? null : text(profile['header_fx']);
+    // Ефект шапки сервер віддає лише з GameCon+ або вдягнутий із сезонного пропуску.
+    final headerFx = text(profile['header_fx']);
     final headerColors = plusHeaderColors(profile);
 
     return ScreenScroll(
@@ -626,7 +627,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         onTap: self ? () => _avatarMenu(text(profile['avatar_url']) != null) : null,
                         child: Stack(
                           children: [
-                            Avatar(url: text(profile['avatar_url']), name: fullName, size: 128, ring: true, online: profile['is_online'] == true, frame: plus?.frame),
+                            Avatar(url: text(profile['avatar_url']), name: fullName, size: 128, ring: true, online: profile['is_online'] == true, frame: avatarFrameOf(profile)),
                             if (uploading) const Positioned.fill(child: Center(child: CircularProgressIndicator(strokeWidth: 2.4))),
                           ],
                         ),
@@ -641,9 +642,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(children: [
-                      Flexible(child: PlusName(fullName, plus: plus, style: display(24), animate: true, maxLines: 2)),
+                      Flexible(child: PlusName(fullName, plus: nameMarkOf(profile), style: display(24), animate: true, maxLines: 2)),
                       if (profile['is_verified'] == true) ...[const SizedBox(width: 6), Icon(LucideIcons.badgeCheck, color: primary, size: 20)],
                       if (plus != null) ...[const SizedBox(width: 6), const PlusBadge(size: 20)],
+                      SeasonBadge(user: profile, size: 20),
                     ]),
                     if (text(profile['status']) != null) Padding(padding: const EdgeInsets.only(top: 4), child: Text(text(profile['status'])!, style: body(14, color: soft))),
                     // Внутрішній номер, як на сайті: торкнутися — набрати його в «Телефоні».
@@ -672,7 +674,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     const SizedBox(height: 16),
                     if (self)
-                      GhostButton(label: tr('Редагувати профіль'), icon: LucideIcons.pencil, expand: false, compact: true, onPressed: () => context.push('/settings'))
+                      Wrap(spacing: 10, runSpacing: 10, children: [
+                        GhostButton(label: tr('Редагувати профіль'), icon: LucideIcons.pencil, expand: false, compact: true, onPressed: () => context.push('/settings')),
+                        GhostButton(label: tr('Сезонний пропуск'), icon: LucideIcons.ticket, expand: false, compact: true, onPressed: () => context.push('/season')),
+                      ])
                     else
                       Wrap(spacing: 10, runSpacing: 10, children: [
                         FriendAction(username: name, relation: relation, compact: true, onChanged: (_) => _load()),

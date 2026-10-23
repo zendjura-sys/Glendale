@@ -101,15 +101,18 @@ class AccountSecurity
         return $sessions->count() + $tokens;
     }
 
-    public function logLogin(User $user, string $method, bool $success, ?Request $request = null): void
+    /**
+     * @param  string|null  $ip  IP і браузер іншого пристрою (напр. браузера, чий вхід відхилили в застосунку)
+     */
+    public function logLogin(User $user, string $method, bool $success, ?Request $request = null, ?string $ip = null, ?string $agent = null): void
     {
         $request ??= request();
         LoginEvent::query()->create([
             'user_id' => $user->id,
             'method' => $method,
             'success' => $success,
-            'ip' => $request->ip(),
-            'user_agent' => Str::limit((string) $request->userAgent(), 250, ''),
+            'ip' => $ip ?? $request->ip(),
+            'user_agent' => Str::limit($agent ?? (string) $request->userAgent(), 250, ''),
             'created_at' => now(),
         ]);
         if ($success && $user->frozen_at !== null) {
@@ -169,6 +172,7 @@ class AccountSecurity
             str_contains($route, 'google') || str_contains($route, 'firebase') => 'google',
             str_contains($route, 'register') => 'register',
             str_contains($route, 'discord') => 'discord',
+            str_starts_with($route, 'login.app.') => 'app',
             default => 'password',
         };
     }

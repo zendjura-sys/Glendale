@@ -47,7 +47,7 @@ Broadcast::channel('watch.{partyId}', function (User $user, int $partyId) {
 
 // Спільне прослуховування: стан плеєра, черга й хто слухає — для тих, хто відкрив посилання.
 Broadcast::channel('listen.{partyId}', function (User $user, int $partyId) {
-    return ListenPartyMember::query()->where('listen_party_id', $partyId)->where('user_id', $user->id)->exists();
+    return ListenPartyMember::query()->where('listen_party_id', $partyId)->where('user_id', $user->id)->whereNull('kicked_at')->exists();
 });
 
 // Клан: голосові кімнати (хто зайшов і вийшов).

@@ -33,7 +33,9 @@
         @php
             $seo = app(\App\Support\Settings\SiteSettings::class);
             $seoName = $seo->get('site_name') ?: config('app.name', 'GameCon');
-            $seoDescription = $seo->seoDescription();
+            // Сторінка може задати свою назву й опис (withViewData: seoTitle, seoDescription) — напр. довідка.
+            $seoDescription = isset($seoDescription) && $seoDescription !== '' ? (string) $seoDescription : $seo->seoDescription();
+            $seoPageTitle = isset($seoTitle) && $seoTitle !== '' ? $seoTitle.' · '.$seoName : $seoName;
             $seoUrl = request()->url();
             $seoImage = url('/og.jpg');
         @endphp
@@ -43,7 +45,7 @@
         <link rel="canonical" href="{{ $seoUrl }}">
 
         <meta property="og:site_name" content="{{ $seoName }}">
-        <meta property="og:title" content="{{ $seoName }}">
+        <meta property="og:title" content="{{ $seoPageTitle }}">
         <meta property="og:description" content="{{ $seoDescription }}">
         <meta property="og:type" content="website">
         <meta property="og:url" content="{{ $seoUrl }}">
@@ -54,7 +56,7 @@
         <meta property="og:locale" content="uk_UA">
 
         <meta name="twitter:card" content="summary_large_image">
-        <meta name="twitter:title" content="{{ $seoName }}">
+        <meta name="twitter:title" content="{{ $seoPageTitle }}">
         <meta name="twitter:description" content="{{ $seoDescription }}">
         <meta name="twitter:image" content="{{ $seoImage }}">
         <meta name="twitter:image:alt" content="{{ $seoName }}">
@@ -131,7 +133,7 @@
             <link rel="stylesheet" href="{{ $designTheme }}" data-site-theme>
         @endif
         <x-inertia::head>
-            <title>{{ config('app.name', 'GameCon') }}</title>
+            <title>{{ isset($seoTitle) && $seoTitle !== '' ? $seoPageTitle : config('app.name', 'GameCon') }}</title>
         </x-inertia::head>
     </head>
     <body class="font-sans antialiased">

@@ -144,6 +144,15 @@ export function getPlayerState(): PlayerState {
     return state;
 }
 
+/** Підписка поза React: GameCon Connect звітує іншим пристроям, що змінилось. */
+export function subscribePlayer(listener: () => void): () => void {
+    listeners.add(listener);
+
+    return () => {
+        listeners.delete(listener);
+    };
+}
+
 /** Множник гучності для плавного переходу (1 — без затухання). */
 let fadeLevel = 1;
 let fadeTimer: ReturnType<typeof setInterval> | undefined;
@@ -815,6 +824,26 @@ export function shuffled<T>(items: T[]): T[] {
     }
 
     return copy;
+}
+
+/**
+ * GameCon Connect, «Грати тут»: черга з іншого пристрою з того самого місця. Без дотику людини
+ * браузер може не дати звуку — тоді трек стоїть на паузі на потрібній секунді.
+ */
+export async function playFrom(
+    tracks: TrackCard[],
+    index: number,
+    position: number,
+    playing: boolean,
+    from: PlayFrom | null = null,
+) {
+    const at = Math.max(0, Math.min(index, tracks.length - 1));
+    if (!tracks[at]) return;
+    history = [];
+    set({ queue: tracks, index: at, station: null, from });
+    await start(at);
+    if (position > 1 && state.current?.source !== 'radio') seek(position);
+    if (!playing && state.playing) toggle();
 }
 
 export function playTrack(track: TrackCard) {

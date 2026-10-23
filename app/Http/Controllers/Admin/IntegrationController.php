@@ -767,6 +767,10 @@ class IntegrationController extends Controller
                         'rules' => ['nullable', 'string', 'max:200', 'regex:/^[a-z0-9][a-z0-9_.]*(\s*,\s*[a-z0-9][a-z0-9_.]*)*$/'], 'message' => 'ID — малі латинські літери, цифри, _ і крапка; кілька — через кому.'],
                     ['name' => 'package', 'setting' => 'google_play_package', 'type' => 'text', 'label' => 'Пакет застосунку', 'placeholder' => (string) config('services.google_play.package'),
                         'rules' => ['nullable', 'string', 'max:100', 'regex:/^[a-zA-Z][a-zA-Z0-9_]*(\.[a-zA-Z][a-zA-Z0-9_]*)+$/'], 'message' => 'Напр. online.gamecon.app'],
+                    ['name' => 'app_link_fingerprints', 'setting' => 'app_link_fingerprints', 'type' => 'textarea', 'label' => 'SHA-256 відбитки підпису застосунку',
+                        'placeholder' => '14:6D:E9:…:B4', 'help' => 'Play Console → Цілісність застосунку → Підпис застосунку → SHA-256 (ключ підпису застосунку; для локальних збірок — ще й ключ завантаження). По одному в рядку. Публікуються в /.well-known/assetlinks.json для Android App Links; порожньо — App Links вимкнено. Не секрет.',
+                        'rules' => ['nullable', 'string', 'max:2000', 'regex:/^\s*([0-9A-Fa-f]{2}(:[0-9A-Fa-f]{2}){31})(\s*[,\n]\s*[0-9A-Fa-f]{2}(:[0-9A-Fa-f]{2}){31})*\s*$/'],
+                        'message' => 'Відбиток — 32 пари шістнадцяткових цифр через двокрапку; кілька — через кому або з нового рядка.'],
                     ['name' => 'service_account', 'setting' => 'google_play_service_account', 'type' => 'secret', 'label' => 'Ключ сервісного акаунта (JSON)', 'placeholder' => '{"type": "service_account", …}',
                         'env' => config('services.google_play.credentials'), 'help' => 'Порожньо — ключ Firebase з блоку Push-сповіщень (якщо йому дано доступ у Play Console).',
                         'rules' => ['nullable', 'string', 'max:10000', fn (string $attribute, mixed $value, \Closure $fail) => is_string($value) && FcmClient::parse($value) === null

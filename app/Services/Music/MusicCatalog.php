@@ -77,7 +77,7 @@ class MusicCatalog
      */
     public function friendsListening(User $user): array
     {
-        $ids = $this->friends->friendIds($user);
+        $ids = $this->listeningFriendIds($user);
         if ($ids === []) {
             return [];
         }
@@ -88,6 +88,23 @@ class MusicCatalog
             ->filter(fn (MusicStatus $s) => $s->user !== null && $s->track !== null)
             ->map(fn (MusicStatus $s) => ['user' => $s->user->toCard(), 'track' => $s->track->toCard()])
             ->all());
+    }
+
+    /**
+     * Друзі, які не вимкнули «Показувати, що я слухаю».
+     *
+     * @return list<int>
+     */
+    private function listeningFriendIds(User $user): array
+    {
+        $ids = $this->friends->friendIds($user);
+        if ($ids === []) {
+            return [];
+        }
+        $hidden = User::query()->whereIn('id', $ids)->where('preferences->show_listening', false)
+            ->pluck('id')->map(fn ($id) => (int) $id)->all();
+
+        return array_values(array_diff($ids, $hidden));
     }
 
     /**
@@ -196,7 +213,7 @@ class MusicCatalog
      */
     private function friendsTop(User $user, int $limit): array
     {
-        $ids = $this->friends->friendIds($user);
+        $ids = $this->listeningFriendIds($user);
         if ($ids === []) {
             return [];
         }

@@ -28,6 +28,7 @@ export function SiteFooter({
     const t = { ...footer, ...labels };
     const q = lang ? `?lang=${lang}` : '';
     const links = [
+        { href: '/help', label: tr('Довідка') },
         { href: `/terms${q}`, label: t.terms },
         { href: `/privacy${q}`, label: t.privacy },
         { href: `/refund-policy${q}`, label: t.refund },

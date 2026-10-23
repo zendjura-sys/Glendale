@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -6,10 +8,12 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'api.dart';
+import 'downloads.dart';
 import 'i18n.dart';
 import 'listen_together.dart';
 import 'lyrics.dart';
 import 'music.dart';
+import 'offline_music.dart';
 import 'posts.dart';
 import 'shell.dart';
 import 'state.dart';
@@ -65,6 +69,7 @@ PlayFrom? playFromRoute(Uri uri) {
     'charts' => tr('Чарти'),
     'replay' => segments.length > 2 ? tr('Replay {year}', {'year': segments[2]}) : 'Replay',
     'library' => tr('Медіатека'),
+    'downloads' => tr('Завантажене'),
     'new' => tr('Нове'),
     'radio' => tr('Радіо'),
     _ => tr('Музика'),
@@ -250,7 +255,13 @@ class Artwork extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final src = absolute(url);
-    final image = src == null ? MusicPlaceholder(seed: seed, icon: icon) : NetImage(src);
+    // Завантажена обкладинка — з телефона (видно й без інтернету).
+    final local = Downloads.instance?.coverFor(src);
+    final image = src == null
+        ? MusicPlaceholder(seed: seed, icon: icon)
+        : local != null
+            ? Image.file(File(local), fit: BoxFit.cover, errorBuilder: (_, _, _) => NetImage(src))
+            : NetImage(src);
     return AspectRatio(
       aspectRatio: 1,
       child: round ? ClipOval(child: image) : ClipRRect(borderRadius: BorderRadius.circular(radius), child: image),
@@ -584,11 +595,13 @@ class _SongRowState extends State<SongRow> {
   Widget build(BuildContext context) {
     final player = AppScope.of(context).player;
     return ListenableBuilder(
-      listenable: player,
+      listenable: musicRowListenable(player),
       builder: (context, _) {
         final on = player.isCurrentCard(track);
         final album = text(track['album']);
-        return InkWell(
+        return Opacity(
+          opacity: dimmedOffline(track) ? 0.4 : 1,
+          child: InkWell(
           onTap: () => playTracks(context, widget.tracks, widget.index),
           onLongPress: _menu,
           child: Padding(
@@ -622,8 +635,10 @@ class _SongRowState extends State<SongRow> {
               ),
               if (track['favorite'] == true) Padding(padding: const EdgeInsets.only(left: 6), child: Icon(LucideIcons.star, size: 13, color: accent)),
               if (text(track['source']) == 'spotify') const Padding(padding: EdgeInsets.only(left: 6), child: SpotifyMark(size: 15)),
+              DownloadBadge(track),
               IconButton(visualDensity: VisualDensity.compact, tooltip: tr('Ще'), onPressed: _menu, icon: Icon(LucideIcons.ellipsis, size: 20, color: muted)),
             ]),
+          ),
           ),
         );
       },
@@ -703,6 +718,7 @@ Future<void> showTrackMenu(BuildContext context, Map<String, dynamic> track, {Vo
   final album = text(track['album']);
   final me = scope.session;
   final own = local && (intOf(track['user_id']) == me.myId || me.isAdmin || me.me?['role'] == 'moderator');
+  final offlineItem = downloadMenuItem(track);
 
   final choice = await showGcSheet<String>(
     context,
@@ -722,6 +738,7 @@ Future<void> showTrackMenu(BuildContext context, Map<String, dynamic> track, {Vo
             item('next', LucideIcons.listStart, tr('Грати наступним')),
             item('last', LucideIcons.listEnd, tr('Грати останнім')),
           ],
+          if (offlineItem != null) item('download', offlineItem.$2, offlineItem.$1),
           if (local) item('station', LucideIcons.radio, tr('Створити станцію')),
           if (local && album != null) item('album', LucideIcons.disc3, tr('Перейти до альбому')),
           if (!radio && artist != null && !junkMeta(artist)) item('artist', LucideIcons.userRound, tr('Перейти до виконавця')),
@@ -761,6 +778,9 @@ Future<void> showTrackMenu(BuildContext context, Map<String, dynamic> track, {Vo
       onChanged?.call();
     case 'playlist':
       await addToPlaylist(context, track);
+    case 'download':
+      await toggleDownload(context, track);
+      onChanged?.call();
     case 'next' || 'last':
       await player.enqueue(track, next: choice == 'next');
       if (context.mounted) toast(context, choice == 'next' ? tr('Трек буде наступним.') : tr('Трек гратиме останнім.'));
@@ -808,6 +828,8 @@ Future<void> toggleFavorite(BuildContext context, Map<String, dynamic> track) as
     track['favorite'] = result['favorite'] == true;
     track['in_library'] = result['in_library'] == true;
     scope.player.markTrack(id, favorite: track['favorite'] as bool, inLibrary: track['in_library'] as bool);
+    // «Автозавантаження улюбленого»: зірочка — і трек на телефоні.
+    unawaited(Downloads.instance?.favoriteChanged(track, track['favorite'] as bool));
     if (context.mounted) toast(context, on ? tr('Прибрано з «Улюбленого».') : tr('Додано в «Улюблене».'));
   } catch (e) {
     if (context.mounted) toast(context, e);

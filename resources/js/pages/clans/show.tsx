@@ -22,6 +22,7 @@ import {
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { InviteLinkButton } from '@/components/gc/invite-link';
+import { ListenRoomButton } from '@/components/music/listen-room-button';
 import { UserAvatar } from '@/components/gc/user-avatar';
 import { VoiceRooms } from '@/components/gc/voice-rooms';
 import { timeAgo } from '@/lib/format';
@@ -291,6 +292,14 @@ export default function ClanShow(props: Props) {
                         <a href={`${base}/chat`} className={ghost}>
                             <MessageCircle className="size-4" /> {tr('Чат')}
                         </a>
+                    )}
+                    {me && (
+                        <ListenRoomButton
+                            group="clan"
+                            id={clan.id}
+                            variant="button"
+                            className={ghost}
+                        />
                     )}
                     {me?.can['members.manage'] && (
                         <InviteLinkButton

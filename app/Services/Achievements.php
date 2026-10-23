@@ -16,6 +16,7 @@ use App\Models\Track;
 use App\Models\User;
 use App\Models\WatchParty;
 use App\Services\Quests\DailyQuests;
+use App\Services\Quests\SeasonPass;
 use App\Services\Servers\ServerVotes;
 use Illuminate\Support\Facades\Cache;
 
@@ -31,6 +32,7 @@ class Achievements
         'photos' => 3, 'tracks' => 8, 'stories' => 4, 'events' => 15, 'parties' => 10,
         'votes' => ServerVotes::XP,
         'quest_xp' => 1,
+        'pass_xp' => 1,
         'referrals' => Referrals::XP,
     ];
 
@@ -163,6 +165,7 @@ class Achievements
             'pioneer' => $user->id <= 100 ? 1 : 0,
             'votes' => app(ServerVotes::class)->countFor($user),
             'quest_xp' => app(DailyQuests::class)->totalXp($user),
+            'pass_xp' => app(SeasonPass::class)->bonusXp($user),
             'quests' => app(DailyQuests::class)->completed($user),
             'referrals' => app(Referrals::class)->active($user),
         ];

@@ -1,5 +1,5 @@
-import { Head } from '@inertiajs/react';
-import { Play, Radio as RadioIcon } from 'lucide-react';
+import { Head, Link } from '@inertiajs/react';
+import { Headphones, Play, Radio as RadioIcon } from 'lucide-react';
 import { StationTile, stationTitle } from '@/components/am/cards';
 import { TrackMenu } from '@/components/am/track-actions';
 import { MixArt, SectionHeader, Shelf } from '@/components/am/ui';
@@ -78,6 +78,12 @@ export default function MusicRadio({ data }: { data: Data }) {
             <h1 className="am-large-title px-[var(--am-gutter)] pt-1 pb-2 lg:pt-4">
                 {tr('Радіо')}
             </h1>
+            <Link
+                href="/music/rooms"
+                className="am-subhead mx-[var(--am-gutter)] inline-flex items-center gap-1.5 text-[var(--am-accent)]"
+            >
+                <Headphones className="size-4" /> {tr('Слухати радіо разом')}
+            </Link>
 
             <div className="px-[var(--am-gutter)] pt-2">
                 <button

@@ -35,6 +35,7 @@ import { PostCard } from '@/components/gc/post-card';
 import { PostComposer } from '@/components/gc/post-composer';
 import { PostSkeleton } from '@/components/gc/post-skeleton';
 import { VoiceRooms } from '@/components/gc/voice-rooms';
+import { ListenRoomButton } from '@/components/music/listen-room-button';
 import { UserAvatar } from '@/components/gc/user-avatar';
 import { VerifiedBadge } from '@/components/gc/verified-badge';
 import { EmptyState, Widget } from '@/components/gc/widget';
@@ -385,6 +386,12 @@ export default function CommunityShow({
                                 owner={{ type: 'community', id: community.id }}
                                 label={community.name}
                                 href={`/c/${community.slug}`}
+                            />
+                        )}
+                        {membership?.status === 'active' && (
+                            <ListenRoomButton
+                                group="community"
+                                id={community.id}
                             />
                         )}
                         <DonationJarCard

@@ -390,6 +390,18 @@ class _QuestsScreenState extends State<QuestsScreen> with _SitePage {
         const SizedBox(height: 10),
         Glass(
           padding: const EdgeInsets.all(14),
+          radius: 12,
+          onTap: () => context.push('/season'),
+          child: Row(children: [
+            Icon(LucideIcons.ticket, color: primary, size: 20),
+            const SizedBox(width: 12),
+            Expanded(child: Text(tr('Сезонний пропуск'), style: body(14, weight: FontWeight.w600))),
+            Text(tr('Нагороди за очки сезону'), style: body(12, color: muted)),
+          ]),
+        ),
+        const SizedBox(height: 10),
+        Glass(
+          padding: const EdgeInsets.all(14),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             CardTitle(tr('Сезон'), icon: LucideIcons.trophy),
             Text(tr('До кінця сезону: {n} дн.', {'n': daysLeft}), style: body(12.5, color: muted)),

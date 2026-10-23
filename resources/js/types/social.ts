@@ -25,6 +25,8 @@ export type UserCard = {
     playing?: PlayingInfo | null;
     /** GameCon+: null — без підписки. */
     plus?: PlusMark | null;
+    /** Вдягнута косметика сезонного пропуску: null — нічого. */
+    cosmetics?: Cosmetics | null;
     /** Лише в чаті сім’ї. */
     family_rank?: { rank: number; title: string | null; tag: string };
 };
@@ -213,6 +215,13 @@ export type ClanCard = {
 };
 
 /** Оформлення GameCon+ у картці: готові кольори ніку й рамки (null — стандартні). */
+/** Косметика сезонного пропуску на картці користувача (значення лише з сервера). */
+export type Cosmetics = {
+    frame: string[] | null;
+    name: string[] | null;
+    badge: { icon: string; color: string; name: string } | null;
+};
+
 export type PlusMark = {
     name: string[] | null;
     frame: string[] | null;

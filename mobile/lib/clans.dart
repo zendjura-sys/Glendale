@@ -10,6 +10,7 @@ import 'shell.dart';
 import 'state.dart';
 import 'theme.dart';
 import 'voice_room.dart';
+import 'listen_rooms.dart';
 import 'widgets.dart';
 import 'i18n.dart';
 
@@ -511,6 +512,7 @@ class _ClanScreenState extends State<ClanScreen> {
         const SizedBox(height: 12),
         VoiceRoomsPanel(key: ValueKey('voice-clan-${clan['id']}'), type: 'clan', id: intOf(clan['id']), label: text(clan['display_name']) ?? '', route: base),
       ],
+      if (me != null) ListenRoomPanel(key: ValueKey('listen-clan-${clan['id']}'), type: 'clan', id: intOf(clan['id'])),
       if (news.isNotEmpty) ...[
         const SizedBox(height: 12),
         Glass(

@@ -7,6 +7,8 @@ import 'package:go_router/go_router.dart';
 import 'package:home_widget/home_widget.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'api.dart';
+import 'app_login.dart';
 import 'audio.dart';
 import 'auth_screen.dart';
 import 'chat.dart';
@@ -14,6 +16,8 @@ import 'cinema.dart';
 import 'movie_screen.dart';
 import 'clans.dart';
 import 'communities.dart';
+import 'connect.dart';
+import 'downloads.dart';
 import 'families.dart';
 import 'i18n.dart';
 import 'events.dart';
@@ -23,14 +27,17 @@ import 'feed.dart';
 import 'characters.dart';
 import 'games.dart';
 import 'listen_together.dart';
+import 'listen_rooms.dart';
 import 'music.dart';
 import 'music_home.dart';
 import 'music_pages.dart';
+import 'offline_music.dart';
 import 'party.dart';
 import 'people.dart';
 import 'photos.dart';
 import 'playing.dart';
 import 'push.dart';
+import 'season.dart';
 import 'servers.dart';
 import 'settings.dart';
 import 'shell.dart';
@@ -53,6 +60,14 @@ Future<void> main() async {
   await I18n.restore(prefs);
   final session = Session(prefs);
   final player = TrackPlayer()..session = session;
+  // Музика на телефоні: плеєр бере файл, якщо трек завантажено; вихід з акаунта все стирає.
+  final downloads = Downloads(session: session)..watchNetwork();
+  Downloads.instance = downloads;
+  TrackPlayer.localFile = downloads.fileFor;
+  session.logoutHooks.add(downloads.clearAll);
+  try {
+    await downloads.load();
+  } catch (_) {}
   player.onStart = (track) => repairTrackMeta(session, track.toCard()).then((fixed) {
         if (fixed != null) player.updateMeta(fixed);
       }).catchError((_) {});
@@ -66,6 +81,9 @@ Future<void> main() async {
     unawaited(player.play(audioTestUrl, 'GameCon CI', 'Background audio'));
   }
   await session.boot();
+  unawaited(downloads.syncFavorites());
+  // GameCon Connect: що грає на сайті й інших пристроях, керування й передача музики.
+  GameConnect.instance = GameConnect(session, player)..start();
   // Віджет «Моя сім'я»: фонове оновлення й свіжі дані при кожному запуску.
   await HomeWidget.registerInteractivityCallback(familyWidgetBackground);
   unawaited(FamilyWidget.refresh(session.token == null ? null : session.api, prefs).then((_) => null, onError: (_) => null));
@@ -76,7 +94,8 @@ Future<void> main() async {
 
   final router = GoRouter(
     refreshListenable: session,
-    initialLocation: session.token == null ? '/login' : '/feed',
+    // Без інтернету, але з завантаженою музикою — одразу в розділ музики.
+    initialLocation: session.token == null ? '/login' : (!Api.online.value && !downloads.isEmpty ? '/music' : '/feed'),
     redirect: (context, state) {
       final logging = state.matchedLocation == '/login';
       if (session.token == null && !logging) return '/login';
@@ -89,6 +108,9 @@ Future<void> main() async {
       GoRoute(path: '/login', builder: (_, _) => AuthScreen(session: session)),
       // «Підсумки року» — на весь екран, без шапки й нижнього меню.
       GoRoute(path: '/wrapped', builder: (_, _) => const WrappedScreen()),
+      // Вхід на сайт через застосунок — на весь екран: запит і сканер QR.
+      GoRoute(path: '/app-login/:id', builder: (_, state) => AppLoginScreen(key: ValueKey(state.pathParameters['id']), api: session.api, id: state.pathParameters['id']!)),
+      GoRoute(path: '/scan-login', builder: (_, _) => const AppLoginScanScreen()),
       ShellRoute(
         builder: (_, _, child) => AppShell(session: session, player: player, child: child),
         routes: [
@@ -137,6 +159,11 @@ Future<void> main() async {
             },
             routes: [
               GoRoute(path: 'playlists/:id', builder: (_, state) => PlaylistScreen(id: int.tryParse(state.pathParameters['id']!) ?? 0)),
+              GoRoute(
+                path: 'downloads',
+                builder: (_, _) => const DownloadsScreen(),
+                routes: [GoRoute(path: 'collection', builder: (_, state) => DownloadedCollectionScreen(key: ValueKey(state.uri.toString()), collectionKey: state.uri.queryParameters['key'] ?? ''))],
+              ),
               GoRoute(path: 'new', builder: (_, _) => const MusicHub(key: ValueKey('music-new'), tab: 'new')),
               GoRoute(path: 'radio', builder: (_, _) => const MusicHub(key: ValueKey('music-radio'), tab: 'radio')),
               GoRoute(
@@ -153,6 +180,7 @@ Future<void> main() async {
               GoRoute(path: 'mix/:key', builder: (_, state) => MixScreen(key: ValueKey(state.uri.toString()), mixKey: state.pathParameters['key']!)),
               GoRoute(path: 'genre', builder: (_, state) => GenreScreen(key: ValueKey(state.uri.toString()), name: state.uri.queryParameters['name'] ?? '')),
               GoRoute(path: 'charts', builder: (_, _) => const ChartsScreen()),
+              GoRoute(path: 'rooms', builder: (_, _) => const ListenRoomsScreen()),
               GoRoute(
                 path: 'replay',
                 builder: (_, _) => const ReplayScreen(),
@@ -173,6 +201,7 @@ Future<void> main() async {
           GoRoute(path: '/moments', builder: (_, _) => const MomentsScreen()),
           GoRoute(path: '/phone', builder: (_, state) => PhoneScreen(key: ValueKey(state.uri.queryParameters['dial']), dial: state.uri.queryParameters['dial'])),
           GoRoute(path: '/quests', builder: (_, _) => const QuestsScreen()),
+          GoRoute(path: '/season', builder: (_, _) => const SeasonScreen()),
           GoRoute(path: '/saved', builder: (_, _) => const SavedScreen()),
           GoRoute(path: '/drafts', builder: (_, _) => const DraftsScreen()),
           GoRoute(path: '/starred', builder: (_, _) => const SavedMessagesScreen()),

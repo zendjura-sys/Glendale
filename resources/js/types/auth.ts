@@ -33,6 +33,8 @@ export type User = {
     /** GameCon+ активний до (ISO), null — немає. */
     plus_until?: string | null;
     profanity_mask?: string | null;
+    /** «Показувати, що я слухаю»: інші бачать, що грає (усі джерела). */
+    show_listening?: boolean;
     created_at: string;
     updated_at: string;
     /** Сумісність зі стартовими компонентами Laravel. */

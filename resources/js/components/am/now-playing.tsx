@@ -35,8 +35,10 @@ import type {
     ReactNode,
 } from 'react';
 import { toast } from 'sonner';
+import { DevicesButton, RemoteLine } from '@/components/music/connect-ui';
 import { TrackCover } from '@/components/music/track-cover';
 import { api } from '@/lib/api';
+import { usePlayback } from '@/lib/connect';
 import { setSing as setSingLevel } from '@/lib/audio-graph';
 import { useCoverColor } from '@/lib/cover-color';
 import { formatDuration } from '@/lib/format';
@@ -51,16 +53,12 @@ import {
     cycleRepeat,
     jumpTo,
     moveInQueue,
-    next,
-    prev,
     removeFromQueue,
     seek,
     setCrossfade,
     setLyricsTranslate,
     setNormalizeVolume,
     setSleepTimer,
-    setVolume,
-    toggle,
     toggleAutoplay,
     toggleShuffle,
     usePlayer,
@@ -153,7 +151,8 @@ const setSing = (level: number) => setSingLevel(audioElement(), level);
 // ───────────────────────── Частини екрана ─────────────────────────
 
 function Progress({ live }: { live: boolean }) {
-    const player = usePlayer();
+    const player = usePlayback();
+    const { seek } = player;
     const actions = useTrackActions();
     const bar = useRef<HTMLDivElement>(null);
     const [drag, setDrag] = useState<number | null>(null);
@@ -249,12 +248,17 @@ function Progress({ live }: { live: boolean }) {
 function SkipButton({
     direction,
     disabled,
+    remote,
+    onStep,
     label,
     className,
     children,
 }: {
     direction: 1 | -1;
     disabled: boolean;
+    /** Інший пристрій: лише дотик (перемотка утриманням — тільки тут). */
+    remote: boolean;
+    onStep: () => void;
     label: string;
     className: string;
     children: ReactNode;
@@ -278,6 +282,7 @@ function SkipButton({
             onPointerDown={() => {
                 held.current = false;
                 since.current = Date.now();
+                if (remote) return;
                 timer.current = setTimeout(() => {
                     held.current = true;
                     timer.current = setInterval(() => {
@@ -295,8 +300,7 @@ function SkipButton({
 
                     return;
                 }
-                if (direction > 0) next();
-                else prev();
+                onStep();
             }}
         >
             {children}
@@ -305,7 +309,7 @@ function SkipButton({
 }
 
 function Controls({ live }: { live: boolean }) {
-    const player = usePlayer();
+    const player = usePlayback();
     const reduce = useReducedMotion();
     const btn =
         'flex size-16 items-center justify-center rounded-full text-white transition active:scale-90 disabled:opacity-30';
@@ -315,6 +319,8 @@ function Controls({ live }: { live: boolean }) {
             <SkipButton
                 direction={-1}
                 disabled={live}
+                remote={!!player.remote}
+                onStep={player.prev}
                 label={tr('Попередній')}
                 className={btn}
             >
@@ -322,7 +328,7 @@ function Controls({ live }: { live: boolean }) {
             </SkipButton>
             <m.button
                 type="button"
-                onClick={toggle}
+                onClick={player.toggle}
                 whileTap={reduce ? undefined : { scale: 0.85 }}
                 transition={SNAP}
                 aria-label={player.playing ? tr('Пауза') : tr('Відтворити')}
@@ -339,6 +345,8 @@ function Controls({ live }: { live: boolean }) {
             <SkipButton
                 direction={1}
                 disabled={live}
+                remote={!!player.remote}
+                onStep={player.next}
                 label={tr('Наступний')}
                 className={btn}
             >
@@ -349,7 +357,7 @@ function Controls({ live }: { live: boolean }) {
 }
 
 function Volume() {
-    const player = usePlayer();
+    const player = usePlayback();
     const value = player.muted ? 0 : player.volume;
 
     return (
@@ -361,7 +369,7 @@ function Volume() {
                 max={1}
                 step={0.01}
                 value={value}
-                onChange={(e) => setVolume(Number(e.target.value))}
+                onChange={(e) => player.setVolume(Number(e.target.value))}
                 aria-label={tr('Гучність')}
                 className="am-np-range flex-1"
                 style={{ '--value': `${value * 100}%` } as CSSProperties}
@@ -411,6 +419,12 @@ function BottomRow({
             >
                 <Airplay className="size-[22px]" />
             </button>
+            <DevicesButton
+                className={btn(false)}
+                iconClassName="size-[22px]"
+                wrapperClassName="static"
+                sheetClassName="inset-x-0 w-auto"
+            />
             <button
                 type="button"
                 onClick={() => onView(view === 'queue' ? 'artwork' : 'queue')}
@@ -1325,7 +1339,8 @@ export function NowPlaying({
     onView: (view: View) => void;
     onClose: () => void;
 }) {
-    const player = usePlayer();
+    // Грає інший пристрій — його трек; кнопки керують ним (GameCon Connect).
+    const player = usePlayback();
     const reduce = useReducedMotion();
     const track = player.current;
     const lyrics = useLyrics(track);
@@ -1365,6 +1380,13 @@ export function NowPlaying({
 
     const controls = (
         <div className="mx-auto w-full max-w-[560px]">
+            {player.remote && (
+                <RemoteLine
+                    device={player.remote}
+                    withButton
+                    className="mb-2 text-[13px]"
+                />
+            )}
             <Progress live={live} />
             <Controls live={live} />
             <Volume />

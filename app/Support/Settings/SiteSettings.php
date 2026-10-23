@@ -135,6 +135,8 @@ class SiteSettings
         'google_play_phones_enabled' => false,
         'google_play_service_account' => null,
         'google_play_rtdn_token' => null,
+        // SHA-256 відбитки підпису застосунку для Android App Links (/.well-known/assetlinks.json). Не секрет.
+        'app_link_fingerprints' => null,
     ];
 
     /** Ключі, які не можна віддавати у фронтенд. */

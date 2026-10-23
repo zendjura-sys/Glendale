@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AccountApiController;
+use App\Http\Controllers\Api\AppLoginApiController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ChatApiController;
 use App\Http\Controllers\Api\FeedApiController;
@@ -24,10 +25,12 @@ use App\Http\Controllers\FollowController;
 use App\Http\Controllers\GameController;
 use App\Http\Controllers\InviteLinkController;
 use App\Http\Controllers\ListenPartyController;
+use App\Http\Controllers\ListenRoomController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\MessengerController;
 use App\Http\Controllers\MomentController;
+use App\Http\Controllers\MusicConnectController;
 use App\Http\Controllers\MusicController;
 use App\Http\Controllers\MusicHubController;
 use App\Http\Controllers\NowPlayingController;
@@ -43,8 +46,10 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\QuestController;
 use App\Http\Controllers\ReferralController;
 use App\Http\Controllers\SavedController;
+use App\Http\Controllers\SeasonController;
 use App\Http\Controllers\ServerController;
 use App\Http\Controllers\Settings\AppearanceController;
+use App\Http\Controllers\Settings\ListeningController;
 use App\Http\Controllers\Settings\NavigationController;
 use App\Http\Controllers\Settings\ProfileController as SettingsProfileController;
 use App\Http\Controllers\Settings\StreamController;
@@ -88,6 +93,12 @@ Route::prefix('v1')->group(function () {
 
     Route::middleware(['auth.api', 'verified.site'])->group(function () {
         Route::get('me', [AuthController::class, 'me']);
+        // «Увійти через застосунок GameCon»: застосунок підтверджує або відхиляє вхід браузера.
+        Route::prefix('auth/app-login/{id}')->whereUuid('id')->middleware('throttle:app-login-app')->group(function () {
+            Route::get('/', [AppLoginApiController::class, 'show']);
+            Route::post('approve', [AppLoginApiController::class, 'approve']);
+            Route::post('deny', [AppLoginApiController::class, 'deny']);
+        });
         // GameCon+ у застосунку: лише статус доступу, без жодних цін і посилань на оплату.
         Route::get('user/subscription-status', SubscriptionStatusController::class)->middleware('throttle:60,1');
         // Покупка GameCon+ у застосунку — лише через Google Play Billing; сервер перевіряє токен у Google.
@@ -213,6 +224,12 @@ Route::prefix('v1')->group(function () {
                 Route::post('shared', [ListenPartyController::class, 'shared']);
                 Route::post('invite', [ListenPartyController::class, 'invite'])->middleware('throttle:10,1');
                 Route::post('share', [ListenPartyController::class, 'share'])->middleware('throttle:10,1');
+                Route::post('suggest', [ListenRoomController::class, 'suggest'])->middleware('throttle:30,1');
+                Route::post('suggestions/{index}', [ListenRoomController::class, 'review'])->whereNumber('index')->middleware('throttle:60,1');
+                Route::post('react', [ListenRoomController::class, 'react'])->middleware('throttle:40,1');
+                Route::post('chat', [ListenRoomController::class, 'chat'])->middleware('throttle:30,1');
+                Route::post('kick', [ListenRoomController::class, 'kick'])->middleware('throttle:30,1');
+                Route::post('host', [ListenRoomController::class, 'host'])->middleware('throttle:20,1');
                 Route::delete('/', [ListenPartyController::class, 'end']);
             });
         });
@@ -345,6 +362,8 @@ Route::prefix('v1')->group(function () {
             Route::put('settings/stream', [StreamController::class, 'update'])->middleware('throttle:10,1');
             Route::delete('settings/stream', [StreamController::class, 'destroy']);
             Route::post('settings/stream/live', [StreamController::class, 'live'])->middleware('throttle:20,1');
+            // «Показувати, що я слухаю» — те саме налаштування, що й на сайті.
+            Route::patch('settings/listening', [ListeningController::class, 'update'])->middleware('throttle:30,1');
 
             // Збережене: пости, фільми, ігри й сервери.
             Route::get('saved', [SavedController::class, 'index']);
@@ -473,6 +492,11 @@ Route::prefix('v1')->group(function () {
                 Route::get('replay/{year?}', [MusicHubController::class, 'replay'])->whereNumber('year');
                 Route::get('station', [MusicHubController::class, 'station'])->middleware('throttle:120,1');
                 Route::get('playlists/mine', [MusicHubController::class, 'myPlaylists']);
+                // Кімнати «Слухати разом» (ті самі шляхи, що на сайті).
+                Route::get('rooms', [ListenRoomController::class, 'index']);
+                Route::post('rooms', [ListenRoomController::class, 'store'])->middleware('throttle:10,1');
+                Route::get('rooms/{type}/{id}', [ListenRoomController::class, 'group'])->whereIn('type', ['family', 'clan', 'community'])->whereNumber('id');
+                Route::put('rooms/{type}/{id}/policy', [ListenRoomController::class, 'policy'])->whereIn('type', ['family', 'clan', 'community'])->whereNumber('id');
                 Route::get('find', [MusicHubController::class, 'search']);
                 Route::post('tracks/{track}/favorite', [MusicHubController::class, 'favorite'])->whereNumber('track');
                 Route::delete('tracks/{track}/favorite', [MusicHubController::class, 'unfavorite'])->whereNumber('track');
@@ -484,10 +508,14 @@ Route::prefix('v1')->group(function () {
                 Route::post('playlists', [PlaylistController::class, 'store'])->middleware('throttle:20,1');
                 Route::get('search', [MusicController::class, 'search'])->middleware('throttle:120,1');
                 Route::delete('now-playing', [NowPlayingController::class, 'destroy']);
+                Route::post('connect/heartbeat', [MusicConnectController::class, 'heartbeat'])->middleware('throttle:music-connect');
+                Route::post('connect/command', [MusicConnectController::class, 'command'])->middleware('throttle:60,1');
                 Route::get('lyrics/find', [TrackController::class, 'findLyrics'])->middleware('throttle:60,1');
                 Route::whereNumber(['track', 'playlist'])->group(function () {
                     Route::post('tracks/{track}/library', [TrackController::class, 'add']);
                     Route::get('tracks/{track}/lyrics', [TrackController::class, 'lyrics']);
+                    // «Завантажити на пристрій» в оригінальній якості (офлайн-музика застосунку).
+                    Route::get('tracks/{track}/download', [TrackController::class, 'download']);
                     Route::get('tracks/{track}/metadata', [TrackController::class, 'metadata'])->middleware('throttle:10,1');
                     Route::delete('tracks/{track}/library', [TrackController::class, 'remove']);
                     Route::get('playlists/{playlist}', [PlaylistController::class, 'show']);
@@ -538,6 +566,12 @@ Route::prefix('v1')->group(function () {
             Route::prefix('quests')->middleware('module:quests')->group(function () {
                 Route::get('/', [QuestController::class, 'index']);
                 Route::post('{quest}/claim', [QuestController::class, 'claim'])->where('quest', '[a-z]{2,24}')->middleware('throttle:30,1');
+            });
+
+            Route::prefix('season')->middleware('module:quests')->group(function () {
+                Route::get('/', [SeasonController::class, 'index']);
+                Route::post('levels/{level}/{track}/claim', [SeasonController::class, 'claim'])->whereNumber('level')->whereIn('track', ['free', 'plus'])->middleware('throttle:60,1');
+                Route::post('equip', [SeasonController::class, 'equip'])->middleware('throttle:60,1');
             });
 
             Route::prefix('moments')->middleware('module:moments')->whereNumber('moment')->group(function () {

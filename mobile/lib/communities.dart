@@ -13,6 +13,7 @@ import 'posts.dart';
 import 'state.dart';
 import 'theme.dart';
 import 'voice_room.dart';
+import 'listen_rooms.dart';
 import 'widgets.dart';
 import 'i18n.dart';
 
@@ -575,6 +576,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
               label: text(c['name']) ?? '',
               route: '/communities/${widget.slug}',
             ),
+            ListenRoomPanel(key: ValueKey('listen-community-${c['id']}'), type: 'community', id: intOf(c['id'])),
           ],
           if (mapOf(page?['rules'])['rules'] == true || mapOf(page?['rules'])['handbook'] == true) ...[
             const SizedBox(height: 12),

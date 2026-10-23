@@ -3,9 +3,11 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'api.dart';
+import 'downloads.dart';
 import 'i18n.dart';
 import 'music.dart';
 import 'music_ui.dart';
+import 'offline_music.dart';
 import 'state.dart';
 import 'theme.dart';
 import 'widgets.dart';
@@ -60,7 +62,12 @@ class _MusicHubState extends State<MusicHub> {
         };
     return Stack(children: [
       Positioned.fill(
-        child: IndexedStack(index: _tabs.indexOf(tab), children: [for (final key in _tabs) opened.contains(key) ? page(key) : const SizedBox.shrink()]),
+        // Без інтернету розділ показує завантажене на телефон (плеєр грає з файлів).
+        child: ValueListenableBuilder<bool>(
+          valueListenable: Api.online,
+          builder: (context, online, tabs) => online || Downloads.instance == null ? tabs! : const DownloadsScreen(offline: true),
+          child: IndexedStack(index: _tabs.indexOf(tab), children: [for (final key in _tabs) opened.contains(key) ? page(key) : const SizedBox.shrink()]),
+        ),
       ),
       Positioned(
         left: 12,
@@ -337,6 +344,8 @@ class _RadioTab extends StatelessWidget {
       final width = MediaQuery.sizeOf(context).width - gutter * 2;
       return MusicList(onRefresh: reload, children: [
         LargeTitle(tr('Радіо')),
+        // «Слухати разом»: радіо й треки GameCon синхронно з групою чи друзями.
+        LinkRow(icon: LucideIcons.headphones, label: tr('Кімнати «Слухати разом»'), onTap: () => context.push('/music/rooms')),
         if (mine.isNotEmpty)
           Padding(
             padding: const EdgeInsets.fromLTRB(gutter, 12, gutter, 0),
@@ -413,6 +422,16 @@ class _LibraryTab extends StatelessWidget {
           }),
         ]),
         const SizedBox(height: 8),
+        if (Downloads.instance != null)
+          ListenableBuilder(
+            listenable: Downloads.instance!,
+            builder: (context, _) => LinkRow(
+              icon: LucideIcons.arrowDownToLine,
+              label: tr('Завантажене'),
+              count: Downloads.instance!.tracks.isEmpty ? null : Downloads.instance!.tracks.length,
+              onTap: () => context.push('/music/downloads'),
+            ),
+          ),
         for (final key in sections)
           Builder(builder: (context) {
             final (label, icon) = librarySection(key);

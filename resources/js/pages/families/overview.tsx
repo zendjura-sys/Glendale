@@ -15,6 +15,7 @@ import type { DonationJar } from '@/components/gc/donation-jar';
 import { FamilyShell } from '@/components/families/family-shell';
 import { InviteLinkButton } from '@/components/gc/invite-link';
 import { VoiceRooms } from '@/components/gc/voice-rooms';
+import { ListenRoomButton } from '@/components/music/listen-room-button';
 import {
     Amount,
     Empty,
@@ -115,6 +116,7 @@ export default function FamilyOverview(props: Props) {
                 label={`[${family.tag}] ${family.name}`}
                 href={`/f/${family.slug}`}
             />
+            <ListenRoomButton group="family" id={family.id} />
 
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
                 <div className="space-y-4">
