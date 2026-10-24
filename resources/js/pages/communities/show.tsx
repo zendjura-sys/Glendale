@@ -170,7 +170,7 @@ export default function CommunityShow({
             <Head title={community.name} />
 
             <section className="glass relative overflow-hidden rounded-2xl">
-                <div className="relative h-48 overflow-hidden sm:h-64">
+                <div className="relative isolate h-48 overflow-hidden sm:h-64">
                     {community.cover_url ? (
                         <img
                             decoding="async"

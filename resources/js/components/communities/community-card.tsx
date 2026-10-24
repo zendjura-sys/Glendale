@@ -29,12 +29,12 @@ export function CommunityTile({ community }: { community: CommunityListItem }) {
                     href={`/c/${community.slug}`}
                     className="flex items-center gap-1.5 font-display text-[15px] font-semibold text-white hover:underline"
                 >
-                    <span className="truncate">{community.name}</span>
+                    <span className="break-words">{community.name}</span>
                     {community.is_verified && (
                         <VerifiedBadge className="size-4 shrink-0" />
                     )}
                 </Link>
-                <p className="mt-0.5 line-clamp-1 text-[13px] text-white/60">
+                <p className="mt-0.5 text-[13px] break-words text-white/60">
                     {community.status ?? community.category_label}
                 </p>
                 <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-white/55">

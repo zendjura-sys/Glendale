@@ -133,7 +133,7 @@ function Bracket({
                                 const side = (entry: EntryCard | null) => (
                                     <div
                                         className={cn(
-                                            'flex h-9 items-center gap-2 px-2.5 text-sm',
+                                            'flex min-h-9 items-center gap-2 px-2.5 py-1.5 text-sm',
                                             entry === null && 'text-white/30',
                                             match.winner_id !== null &&
                                                 entry?.id !== match.winner_id &&
@@ -148,7 +148,7 @@ function Bracket({
                                                     entry={entry}
                                                     className="size-5"
                                                 />
-                                                <span className="min-w-0 flex-1 truncate">
+                                                <span className="min-w-0 flex-1 break-words">
                                                     {entry.name}
                                                 </span>
                                                 {entry.id ===
@@ -263,7 +263,7 @@ function ReportDialog({
                                     )}
                                 >
                                     <EntryAvatar entry={entry} />
-                                    <span className="min-w-0 flex-1 truncate">
+                                    <span className="min-w-0 flex-1 break-words">
                                         {entry.name}
                                     </span>
                                     <Crown className="size-4 text-white/40" />
@@ -331,7 +331,7 @@ function SubmitForm({ tournament }: { tournament: Props['tournament'] }) {
                 value={form.data.note}
                 maxLength={200}
                 onChange={(e) => form.setData('note', e.target.value)}
-                placeholder={tr('Коментар для організатора (необов’язково)')}
+                placeholder={tr('Коментар (необов’язково)')}
                 className="input-glass h-10 w-full rounded-control px-3 text-sm text-white placeholder:text-white/30 focus:outline-none sm:col-span-3"
             />
             {Object.values(form.errors)[0] && (
@@ -618,7 +618,7 @@ export default function TournamentShow({
                                             <EntryAvatar entry={row.entry} />
                                             <Link
                                                 href={row.entry.url}
-                                                className="min-w-0 flex-1 truncate text-sm font-medium text-white"
+                                                className="min-w-0 flex-1 text-sm font-medium break-words text-white"
                                             >
                                                 {row.entry.name}
                                             </Link>

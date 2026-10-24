@@ -589,7 +589,7 @@ export default function ServerShow({
                                     </span>
                                     <FamilyLogo family={family} />
                                     <div className="min-w-0 flex-1">
-                                        <div className="truncate font-semibold text-white">
+                                        <div className="font-semibold break-words text-white">
                                             <span className="text-gc-lilac-200">
                                                 [{family.tag}]
                                             </span>{' '}

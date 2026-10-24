@@ -433,7 +433,7 @@ export default function AdminDashboard({
                                     href={`/${u.username}`}
                                     className="min-w-0 flex-1"
                                 >
-                                    <span className="block truncate text-sm font-medium text-white">
+                                    <span className="block text-sm font-medium break-words text-white">
                                         {u.name}
                                     </span>
                                     <span className="block text-xs text-white/40">

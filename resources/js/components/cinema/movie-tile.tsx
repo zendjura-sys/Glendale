@@ -109,7 +109,7 @@ export function MovieTile({
             <p className="mt-2 line-clamp-2 text-[13px] leading-snug font-semibold text-white/90 group-hover:text-white">
                 {movie.title}
             </p>
-            <p className="mt-0.5 truncate text-xs text-white/40">
+            <p className="mt-0.5 text-xs break-words text-white/40">
                 {[
                     movie.progress
                         ? movie.progress.season

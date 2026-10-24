@@ -81,7 +81,7 @@ export function ConnectedAccounts({
                                         <CheckCircle2 className="size-4 text-emerald-300" />
                                     )}
                                 </span>
-                                <span className="mt-0.5 block truncate text-xs text-white/45">
+                                <span className="mt-0.5 block text-xs break-words text-white/45">
                                     {c.connected
                                         ? (c.account ?? tr('Під’єднано'))
                                         : c.available

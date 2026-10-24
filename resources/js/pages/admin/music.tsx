@@ -181,7 +181,7 @@ function MetadataPanel({ metadata }: { metadata: MetadataStatus }) {
                                             : 'text-indigo-300',
                                     )}
                                 />
-                                <span className="truncate text-sm font-medium text-white">
+                                <span className="text-sm font-medium break-words text-white">
                                     {source.label}
                                 </span>
                                 <span
@@ -205,7 +205,7 @@ function MetadataPanel({ metadata }: { metadata: MetadataStatus }) {
                             </div>
                             <p
                                 className={cn(
-                                    'mt-1 truncate text-xs',
+                                    'mt-1 text-xs break-words',
                                     result && !result.ok
                                         ? 'text-rose-300/80'
                                         : 'text-white/40',
@@ -352,7 +352,7 @@ export default function AdminMusic({
                 <Input
                     value={q}
                     onChange={(e) => setQ(e.target.value)}
-                    placeholder={tr('Назва, виконавець, альбом або жанр')}
+                    placeholder={tr('Пошук треку')}
                     className="h-10 pl-10"
                 />
             </form>

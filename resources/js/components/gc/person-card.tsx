@@ -25,16 +25,19 @@ export function PersonCard({ person }: { person: Person }) {
             </Link>
             <Link
                 href={`/${person.username}`}
-                className="relative mt-3 flex max-w-full items-center gap-1 truncate text-[15px] font-semibold text-white hover:underline"
+                className="relative mt-3 flex max-w-full flex-wrap items-center justify-center gap-1 text-[15px] font-semibold break-words text-white hover:underline"
             >
-                <span className="truncate" style={plusNameStyle(person.plus)}>
+                <span
+                    className="break-words"
+                    style={plusNameStyle(person.plus)}
+                >
                     {person.alias || person.name}
                 </span>
                 {person.is_verified && <VerifiedBadge />}
                 {person.plus && <PlusBadge />}
             </Link>
             {person.alias && (
-                <p className="relative mt-0.5 truncate text-xs text-white/40">
+                <p className="relative mt-0.5 text-xs break-words text-white/40">
                     {person.name}
                 </p>
             )}
@@ -168,10 +171,10 @@ export function PersonRow({
             <div className="min-w-0 flex-1">
                 <Link
                     href={`/${person.username}`}
-                    className="flex items-center gap-1 truncate text-sm font-semibold text-white hover:underline"
+                    className="flex flex-wrap items-center gap-1 text-sm font-semibold break-words text-white hover:underline"
                 >
                     <span
-                        className="truncate"
+                        className="break-words"
                         style={plusNameStyle(person.plus)}
                     >
                         {person.name}
@@ -187,7 +190,7 @@ export function PersonRow({
                         className="mt-0.5 py-0.5"
                     />
                 ) : (
-                    <div className="truncate text-xs text-white/45">
+                    <div className="text-xs break-words text-white/45">
                         {person.mutual
                             ? `${person.mutual} ${plural(person.mutual, ['спільний друг', 'спільні друзі', 'спільних друзів'])}`
                             : person.status ||

@@ -46,7 +46,13 @@ import { PlayingBadge } from '@/components/gc/playing';
 import type { AchievementsData } from '@/components/gc/achievements';
 import { CharactersWidget } from '@/components/characters/character-card';
 import type { CharacterCardData } from '@/components/characters/character-card';
-import { compactNumber, formatDate, lastSeen, plural } from '@/lib/format';
+import {
+    compactNumber,
+    formatDate,
+    languageName,
+    lastSeen,
+    plural,
+} from '@/lib/format';
 import { cn } from '@/lib/utils';
 import type {
     NowPlaying,
@@ -56,7 +62,7 @@ import type {
     ScrollData,
     UserCard,
 } from '@/types';
-import { tr } from '@/lib/i18n';
+import { LOCALE, tr } from '@/lib/i18n';
 import { LiveBadge, ProfileStream } from '@/components/streams/stream';
 import type { StreamInfo } from '@/components/streams/stream';
 import { useFeature, usePlugin } from '@/lib/plugins';
@@ -306,7 +312,7 @@ export default function ProfileShow({
                         }}
                     />
                 )}
-                <div className="relative h-52 overflow-hidden sm:h-72">
+                <div className="relative isolate h-52 overflow-hidden sm:h-72">
                     {profile.cover_url ? (
                         <img
                             decoding="async"
@@ -432,7 +438,7 @@ export default function ProfileShow({
                                             key={code}
                                             className="rounded-chip bg-white/[0.05] px-2.5 py-1 text-xs text-white/70"
                                         >
-                                            {code}
+                                            {languageName(code, LOCALE)}
                                         </span>
                                     ))}
                                 </div>

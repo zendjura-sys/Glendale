@@ -53,7 +53,7 @@ export function ConnectButton({
             ) : (
                 <Copy className="size-3 shrink-0" />
             )}
-            <span className="truncate">{value}</span>
+            <span className="text-left break-all">{value}</span>
         </button>
     );
 }
@@ -255,7 +255,7 @@ export function ServerRow({ server }: { server: GtaServerCard }) {
                     href={href}
                     className="flex items-center gap-1.5 font-display text-[15px] font-semibold text-white hover:underline"
                 >
-                    <span className="truncate">{server.name}</span>
+                    <span className="break-words">{server.name}</span>
                     {server.is_featured && (
                         <Sparkles className="size-3.5 shrink-0 text-amber-300" />
                     )}

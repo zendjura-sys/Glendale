@@ -85,7 +85,7 @@ export default function Invite({
                         )}
                     </p>
                     <div className="mt-4 flex min-w-0 items-center gap-2 rounded-2xl bg-white/[0.05] p-2 pl-4">
-                        <code className="min-w-0 flex-1 truncate font-mono text-sm text-white/85">
+                        <code className="min-w-0 flex-1 font-mono text-sm break-all text-white/85">
                             {link}
                         </code>
                         <button

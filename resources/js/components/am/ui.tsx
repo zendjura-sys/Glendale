@@ -152,7 +152,7 @@ export function Tile({
             <div className="transition group-active:scale-[0.97]">{art}</div>
             <p className="am-footnote mt-1.5 truncate font-medium">{title}</p>
             {subtitle && (
-                <p className="am-footnote truncate text-[var(--am-label2)]">
+                <p className="am-footnote break-words text-[var(--am-label2)]">
                     {subtitle}
                 </p>
             )}

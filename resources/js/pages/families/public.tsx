@@ -147,7 +147,7 @@ export default function FamilyPublic({
                                             size="sm"
                                         />
                                         <div className="min-w-0">
-                                            <div className="truncate font-mono text-sm text-white">
+                                            <div className="font-mono text-sm break-words text-white">
                                                 {m.display}
                                             </div>
                                             <RankBadge

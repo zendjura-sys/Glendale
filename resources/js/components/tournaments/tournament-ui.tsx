@@ -88,10 +88,10 @@ export function TournamentRow({
                 </span>
             )}
             <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm font-semibold text-white">
+                <span className="block text-sm font-semibold break-words text-white">
                     {tournament.title}
                 </span>
-                <span className="block truncate text-xs text-white/50">
+                <span className="block text-xs break-words text-white/50">
                     {[
                         showServer ? tournament.server.name : null,
                         tournament.kind === 'bracket'

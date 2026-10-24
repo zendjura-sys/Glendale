@@ -127,7 +127,7 @@ export function MatchRow({
                         </span>
                     )}
                 </div>
-                <p className="mt-0.5 truncate text-xs text-white/50">
+                <p className="mt-0.5 text-xs break-words text-white/50">
                     {[
                         match.games.slice(0, 3).join(', '),
                         match.skill ? SKILL_LABELS[match.skill] : null,

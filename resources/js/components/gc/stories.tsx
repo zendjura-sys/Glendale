@@ -652,7 +652,7 @@ export function StoriesBar() {
                             <Plus className="size-3" />
                         </span>
                     </span>
-                    <span className="w-full truncate text-center text-xs text-white/70">
+                    <span className="w-full text-center text-xs leading-tight break-words text-white/70">
                         {tr('Ваша історія')}
                     </span>
                 </button>
@@ -671,7 +671,7 @@ export function StoriesBar() {
                                     showOnline={false}
                                 />
                             </Ring>
-                            <span className="w-full truncate text-center text-xs text-white/70">
+                            <span className="w-full text-center text-xs leading-tight break-words text-white/70">
                                 {group.user.first_name}
                             </span>
                         </button>
