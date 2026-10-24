@@ -6,6 +6,9 @@ void main() {
   test('нові розділи сайту відкриваються в застосунку', () {
     expect(appPathFor('/moments'), '/moments');
     expect(appPathFor('/quests'), '/quests');
+    expect(appPathFor('/tonny/card'), '/u/tonny/card');
+    expect(appPathFor('/tournaments/7'), '/tournaments/7');
+    expect(appPathFor('/party/match'), '/party/match');
     expect(appPathFor('/saved'), '/saved');
     expect(appPathFor('/invite'), '/invite');
     expect(appPathFor('/join/abc123'), '/join/abc123');

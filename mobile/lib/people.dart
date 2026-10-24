@@ -677,11 +677,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       Wrap(spacing: 10, runSpacing: 10, children: [
                         GhostButton(label: tr('Редагувати профіль'), icon: LucideIcons.pencil, expand: false, compact: true, onPressed: () => context.push('/settings')),
                         GhostButton(label: tr('Сезонний пропуск'), icon: LucideIcons.ticket, expand: false, compact: true, onPressed: () => context.push('/season')),
+                        GhostButton(label: 'Game Card', icon: LucideIcons.qrCode, expand: false, compact: true, onPressed: () => context.push('/u/$name/card')),
                       ])
                     else
                       Wrap(spacing: 10, runSpacing: 10, children: [
                         FriendAction(username: name, relation: relation, compact: true, onChanged: (_) => _load()),
                         if (data['canMessage'] == true) GhostButton(label: tr('Написати'), icon: LucideIcons.messageCircle, compact: true, expand: false, onPressed: _message),
+                        GhostButton(label: 'Game Card', icon: LucideIcons.qrCode, compact: true, expand: false, onPressed: () => context.push('/u/$name/card')),
                         GhostButton(label: tr('Поскаржитися'), icon: LucideIcons.flag, compact: true, expand: false, color: muted, onPressed: () => showReportSheet(context, name, text(profile['name']) ?? name)),
                       ]),
                     const SizedBox(height: 16),

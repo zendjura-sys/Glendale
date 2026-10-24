@@ -356,6 +356,7 @@ Route::prefix('v1')->group(function () {
 
             // Шапка профілю як на сайті: статистика, друзі, фото, аудіо, права (canPost, canMessage).
             Route::get('u/{user}', [ProfileController::class, 'show']);
+            Route::get('u/{user}/card', [ProfileController::class, 'card']);
             Route::post('me/avatar', [ProfileController::class, 'updateAvatar']);
             Route::delete('me/avatar', [ProfileController::class, 'destroyAvatar']);
             Route::post('me/cover', [ProfileController::class, 'updateCover']);

@@ -23,6 +23,7 @@ import 'i18n.dart';
 import 'events.dart';
 import 'extras.dart';
 import 'family_widget.dart';
+import 'game_card.dart';
 import 'pulse_widget.dart';
 import 'feed.dart';
 import 'characters.dart';
@@ -132,6 +133,7 @@ Future<void> main() async {
           GoRoute(path: '/friends', builder: (_, state) => FriendsScreen(tab: state.uri.queryParameters['tab'] ?? 'all')),
           GoRoute(path: '/people', builder: (_, state) => PeopleScreen(initial: state.uri.queryParameters['q'] ?? '')),
           GoRoute(path: '/profile', builder: (_, _) => const ProfileScreen()),
+          GoRoute(path: '/u/:username/card', builder: (_, state) => GameCardScreen(username: state.pathParameters['username']!)),
           GoRoute(path: '/u/:username', builder: (_, state) => ProfileScreen(key: ValueKey(state.pathParameters['username']), username: state.pathParameters['username'])),
           GoRoute(
             path: '/communities',

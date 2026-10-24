@@ -101,7 +101,7 @@ String appPathFor(String? sitePath) {
     case 'id':
       return '/feed';
     default:
-      return '/u/$head';
+      return rest(1) == 'card' ? '/u/$head/card' : '/u/$head';
   }
 }
 

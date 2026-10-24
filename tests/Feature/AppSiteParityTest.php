@@ -296,6 +296,16 @@ class AppSiteParityTest extends TestCase
             ->assertJsonStructure(['profile' => ['looking_until'], 'matches', 'parties', 'options' => ['games', 'times', 'skills', 'languages', 'platforms']]);
     }
 
+    public function test_app_opens_game_card_and_digest_switch_through_bridge(): void
+    {
+        $owner = User::factory()->create();
+        $token = $this->app_token(User::factory()->create());
+        $this->withToken($token)->getJson("/api/v1/site/u/{$owner->username}/card")->assertOk()
+            ->assertJsonStructure(['profile' => ['name', 'username'], 'game' => ['level', 'title', 'badges', 'since', 'games'], 'url', 'qr']);
+        $this->withToken($token)->patchJson('/api/v1/site/settings/digest', ['morning_digest' => false])->assertSuccessful();
+        $this->withToken($token)->getJson('/api/v1/me')->assertOk()->assertJsonPath('user.morning_digest', false);
+    }
+
     public function test_app_opens_listen_rooms_through_bridge(): void
     {
         // «Слухати разом» для груп: розділ «Кімнати», статус кімнати групи й налаштування — ті самі шляхи, що на сайті.
