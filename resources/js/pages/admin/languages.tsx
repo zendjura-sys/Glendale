@@ -1,5 +1,6 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import {
+    Cloud,
     Languages,
     Loader2,
     PencilLine,
@@ -11,6 +12,7 @@ import {
 } from 'lucide-react';
 import { useEffect } from 'react';
 import { PageHeader, StatCard } from '@/components/gc/admin';
+import { formatDate } from '@/lib/format';
 import { tr } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
@@ -45,6 +47,7 @@ type Props = {
         configured: boolean;
         region: string | null;
         exhausted: boolean;
+        usage: { used: number; limit: number; resets_at: string };
     };
     libretranslate: {
         configured: boolean;
@@ -109,7 +112,7 @@ export default function AdminLanguages({
                 )}
             />
 
-            <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
                 <StatCard
                     label={tr('Рядків інтерфейсу')}
                     value={catalog}
@@ -139,6 +142,23 @@ export default function AdminLanguages({
                     }
                     icon={RefreshCw}
                     delay={100}
+                />
+                <StatCard
+                    label={tr('Azure за місяць')}
+                    value={
+                        !azure.configured
+                            ? '—'
+                            : azure.exhausted
+                              ? tr('Вичерпано')
+                              : `${pct(azure.usage.used, azure.usage.limit)}%`
+                    }
+                    hint={
+                        azure.configured
+                            ? `${azure.usage.used.toLocaleString()} / ${azure.usage.limit.toLocaleString()}`
+                            : tr('ключ не додано')
+                    }
+                    icon={Cloud}
+                    delay={150}
                 />
             </div>
 
@@ -423,6 +443,9 @@ function EnginesCard({
     azure,
     libretranslate,
 }: Pick<Props, 'active' | 'deepl' | 'azure' | 'libretranslate'>) {
+    const azureUsed = azure.exhausted
+        ? 100
+        : pct(azure.usage.used, azure.usage.limit);
     const used = deepl.usage
         ? pct(deepl.usage.used, deepl.usage.limit)
         : deepl.exhausted
@@ -500,6 +523,19 @@ function EnginesCard({
                         </span>
                     )}
                 </div>
+                {azure.configured && (
+                    <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
+                        <div
+                            className={cn(
+                                'h-full rounded-full transition-all',
+                                azure.exhausted || azureUsed >= 90
+                                    ? 'bg-amber-400'
+                                    : 'bg-gc-blue',
+                            )}
+                            style={{ width: `${azureUsed}%` }}
+                        />
+                    </div>
+                )}
                 <p className="mt-2 flex items-center gap-1.5 text-xs text-white/50">
                     <span
                         className={cn(
@@ -519,9 +555,21 @@ function EnginesCard({
                                 region: azure.region ?? 'global',
                             })}
                 </p>
+                {azure.configured && (
+                    <p className="mt-1 text-xs text-white/50">
+                        {tr('{used} з {limit} символів цього місяця', {
+                            used: azure.usage.used.toLocaleString(),
+                            limit: azure.usage.limit.toLocaleString(),
+                        })}
+                        {' · '}
+                        {tr('обнулиться {date}', {
+                            date: formatDate(azure.usage.resets_at, false),
+                        })}
+                    </p>
+                )}
                 <p className="mt-1 text-xs text-white/35">
                     {tr(
-                        'Хмара Microsoft, сервер не навантажує. Безкоштовно до 2 млн символів на місяць.',
+                        'Хмара Microsoft, сервер не навантажує. Безкоштовно до 2 млн символів на місяць. Витрату рахує сайт — Azure її за ключем не показує.',
                     )}
                 </p>
             </div>

@@ -191,6 +191,14 @@ class TranslatorFallbackTest extends TestCase
         Http::assertSent(fn (Request $r) => str_contains($r->url(), 'microsofttranslator.com/translate')
             && $r->hasHeader('Ocp-Apim-Subscription-Region', 'westeurope') && $r->hasHeader('Ocp-Apim-Subscription-Key'));
         Http::assertNotSent(fn (Request $r) => str_contains($r->url(), 'lt.test/translate'));
+
+        // Витрату рахує сайт: символи відправленого тексту за цей місяць.
+        Http::fake(['api-free.deepl.com/v2/usage' => Http::response(['character_count' => 500000, 'character_limit' => 500000])]);
+        $this->assertSame(11, app(AzureTranslator::class)->usage()['used']);
+        $this->actingAs(User::factory()->admin()->create())->get('/admin/languages')->assertInertia(fn ($page) => $page
+            ->where('active', 'azure')->where('azure.usage.used', 11)->where('azure.usage.limit', AzureTranslator::FREE_LIMIT));
+        $this->actingAs(User::factory()->admin()->create())->get('/admin/integrations')->assertInertia(fn ($page) => $page
+            ->where('cinema', fn ($cards) => collect($cards)->firstWhere('key', 'azure_translator')['stat'] === 'Цього місяця: 11 з 2 000 000 символів'));
     }
 
     public function test_azure_translates_interface_and_keeps_placeholders(): void

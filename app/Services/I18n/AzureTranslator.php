@@ -26,6 +26,12 @@ class AzureTranslator
 
     public const EXHAUSTED = 'azure_translator.exhausted';
 
+    /** Безкоштовний тариф F0 — символів на календарний місяць. */
+    public const FREE_LIMIT = 2000000;
+
+    /** Лічильник символів за місяць (+ рік-місяць). Azure не віддає витрату за ключем, тож рахуємо самі. */
+    public const USAGE = 'azure_translator.chars.';
+
     public function __construct(private readonly SiteSettings $settings) {}
 
     private function key(): ?string
@@ -67,6 +73,27 @@ class AzureTranslator
     public function clearExhausted(): void
     {
         Cache::forget(self::EXHAUSTED);
+    }
+
+    /**
+     * Витрата цього місяця за підрахунком сайту (Azure рахує символи тексту з пробілами).
+     *
+     * @return array{used: int, limit: int, resets_at: string}
+     */
+    public function usage(): array
+    {
+        return [
+            'used' => (int) Cache::get(self::USAGE.now()->format('Y-m'), 0),
+            'limit' => self::FREE_LIMIT,
+            'resets_at' => now()->addMonthNoOverflow()->startOfMonth()->toIso8601String(),
+        ];
+    }
+
+    private function record(int $chars): void
+    {
+        $key = self::USAGE.now()->format('Y-m');
+        Cache::add($key, 0, now()->addDays(40));
+        Cache::increment($key, $chars);
     }
 
     /** Кнопка «Перевірити»: короткий переклад. Успіх знімає позначку «вичерпано». */
@@ -189,6 +216,7 @@ class AzureTranslator
         if (! is_array($rows) || count($rows) !== count($texts)) {
             return null;
         }
+        $this->record(array_sum(array_map('mb_strlen', $texts)));
         $out = [];
         foreach ($rows as $row) {
             $text = is_array($row) && is_array($row['translations'][0] ?? null) ? ($row['translations'][0]['text'] ?? null) : null;

@@ -101,7 +101,7 @@ class Translator
     /**
      * Стан для Адмінки → Мови / Інтеграції.
      *
-     * @return array{active: string|null, deepl: array{configured: bool, usage: array{used: int, limit: int}|null, exhausted: bool, exhausted_at: string|null}, azure: array{configured: bool, region: string|null, exhausted: bool}, libretranslate: array{configured: bool, url: string|null, up: bool, languages: list<string>}}
+     * @return array{active: string|null, deepl: array{configured: bool, usage: array{used: int, limit: int}|null, exhausted: bool, exhausted_at: string|null}, azure: array{configured: bool, region: string|null, exhausted: bool, usage: array{used: int, limit: int, resets_at: string}}, libretranslate: array{configured: bool, url: string|null, up: bool, languages: list<string>}}
      */
     public function status(): array
     {
@@ -122,6 +122,7 @@ class Translator
                 'configured' => $this->azure->configured(),
                 'region' => $this->azure->region(),
                 'exhausted' => $this->azure->exhausted(),
+                'usage' => $this->azure->usage(),
             ],
             'libretranslate' => [
                 'configured' => $this->libre->configured(),

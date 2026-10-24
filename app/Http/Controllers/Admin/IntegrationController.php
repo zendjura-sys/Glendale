@@ -187,6 +187,19 @@ class IntegrationController extends Controller
         return back();
     }
 
+    /** Витрата Azure Translator цього місяця (рахує сайт) — рядок на картці інтеграції. */
+    private function azureStat(): ?string
+    {
+        $azure = app(AzureTranslator::class);
+        if (! $azure->configured()) {
+            return null;
+        }
+        $usage = $azure->usage();
+        $line = 'Цього місяця: '.number_format($usage['used'], 0, ',', ' ').' з '.number_format($usage['limit'], 0, ',', ' ').' символів';
+
+        return $azure->exhausted() ? $line.' · ліміт вичерпано до 1 числа' : $line;
+    }
+
     public function testCinema(string $provider): RedirectResponse
     {
         $meta = $this->cinemaProviders()[$provider] ?? abort(404);
@@ -692,7 +705,7 @@ class IntegrationController extends Controller
                     'Ресурс → Keys and Endpoint: скопіюйте KEY 1 і Location/Region сюди, натисніть «Перевірити».',
                 ],
                 'configured' => app(AzureTranslator::class)->configured(),
-                'stat' => app(AzureTranslator::class)->exhausted() ? 'Ліміт цього місяця вичерпано — до 1 числа працює LibreTranslate' : null,
+                'stat' => $this->azureStat(),
                 'test' => fn () => app(AzureTranslator::class)->test(),
                 'fields' => [
                     ['name' => 'key', 'setting' => 'azure_translator_key', 'type' => 'secret', 'label' => 'Key', 'env' => config('services.azure_translator.key'),
