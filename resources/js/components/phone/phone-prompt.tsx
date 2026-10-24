@@ -38,7 +38,7 @@ export function PhonePrompt() {
             aria-label={tr('Отримайте свій номер')}
             className="fixed inset-0 z-[70] flex items-end justify-center bg-black/60 backdrop-blur-sm sm:items-center sm:p-4"
         >
-            <div className="max-h-[92dvh] w-full max-w-4xl overflow-y-auto rounded-t-3xl bg-[var(--matte-solid,#1c1c1f)] p-4 sm:rounded-3xl sm:p-6">
+            <div className="max-h-[92dvh] w-full max-w-4xl overflow-y-auto rounded-t-2xl bg-[var(--matte-solid,#1c1c1f)] p-4 sm:rounded-2xl sm:p-6">
                 <header className="mb-4 flex items-start gap-3">
                     <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-primary/15 text-primary">
                         <Phone className="size-5" />

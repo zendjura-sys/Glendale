@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Services\Geo\CountryRestrictions;
 use App\Support\Modules\ModuleManager;
 use Closure;
 use Illuminate\Http\Request;
@@ -13,6 +14,10 @@ class EnsureModuleEnabled
 
     public function handle(Request $request, Closure $next, string $module): Response
     {
+        // Розділ працює, але закритий для країни відвідувача — пояснюємо, а не «не знайдено».
+        if ($this->modules->blockedByCountry($module)) {
+            abort(403, CountryRestrictions::MESSAGE);
+        }
         abort_unless($this->modules->enabled($module), 404);
 
         return $next($request);

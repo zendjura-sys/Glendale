@@ -24,6 +24,7 @@ export type User = {
     network_mode?: string;
     /** Стиль інтерфейсу: flat (основний), hero, material, flex. */
     skin?: string;
+    theme?: 'system' | 'dark' | 'light';
     /** Фон сайту: сцена, чи рухається вона, і відео YouTube (лише з GameCon+). */
     background?: SiteBackgroundPrefs;
     /** Внутрішній номер GameCon (+555 випадковий / +777 куплений). */
@@ -32,6 +33,9 @@ export type User = {
     /** GameCon+ активний до (ISO), null — немає. */
     plus_until?: string | null;
     profanity_mask?: string | null;
+    /** «Показувати, що я слухаю»: інші бачать, що грає (усі джерела). */
+    show_listening?: boolean;
+    morning_digest?: boolean;
     created_at: string;
     updated_at: string;
     /** Сумісність зі стартовими компонентами Laravel. */

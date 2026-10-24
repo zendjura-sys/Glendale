@@ -144,7 +144,7 @@ function Section({
     children: ReactNode;
 }) {
     return (
-        <section className="glass mt-4 rounded-3xl p-4 sm:p-5">
+        <section className="glass mt-4 rounded-2xl p-4 sm:p-5">
             <div className="mb-3 flex items-center gap-2">
                 <Icon className="size-4 text-gc-lilac-200" />
                 <h2 className="font-display text-base font-semibold text-white">
@@ -358,7 +358,7 @@ export default function GameShow({
                 <ArrowLeft className="size-4" /> {tr('Каталог ігор')}
             </Link>
             <div
-                className="glass overflow-hidden rounded-3xl"
+                className="glass overflow-hidden rounded-2xl"
                 style={
                     palette
                         ? {
@@ -503,7 +503,7 @@ export default function GameShow({
             </div>
 
             {(steam_friends.length > 0 || can_curate) && (
-                <section className="glass mt-4 space-y-3 rounded-3xl p-4 sm:p-5">
+                <section className="glass mt-4 space-y-3 rounded-2xl p-4 sm:p-5">
                     {steam_friends.length > 0 && (
                         <div>
                             <h2 className="font-display text-base font-semibold text-white">
@@ -560,7 +560,7 @@ export default function GameShow({
             )}
 
             {(events.length > 0 || can_add_event) && (
-                <section className="glass mt-4 rounded-3xl p-4 sm:p-5">
+                <section className="glass mt-4 rounded-2xl p-4 sm:p-5">
                     <div className="mb-3 flex items-center gap-2">
                         <CalendarDays className="size-4 text-gc-lilac-200" />
                         <h2 className="flex-1 font-display text-base font-semibold text-white">
@@ -964,7 +964,7 @@ export default function GameShow({
             )}
 
             {features.clans !== false && (
-                <section className="glass mt-4 rounded-3xl p-4 sm:p-5">
+                <section className="glass mt-4 rounded-2xl p-4 sm:p-5">
                     <div className="mb-3 flex items-center gap-2">
                         <Swords className="size-4 text-gc-lilac-200" />
                         <h2 className="flex-1 font-display text-base font-semibold text-white">

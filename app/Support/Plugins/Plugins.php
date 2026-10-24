@@ -2,6 +2,7 @@
 
 namespace App\Support\Plugins;
 
+use App\Services\Geo\CountryRestrictions;
 use App\Support\Settings\SiteSettings;
 
 /**
@@ -17,17 +18,27 @@ class Plugins
             return false;
         }
 
+        // Функцію вимкнено для країни відвідувача (Адмінка → Країни → Обмеження).
+        return $this->onSite($key) && ! app(CountryRestrictions::class)->pluginBlocked($key);
+    }
+
+    public function ensure(string $key): void
+    {
+        if ($this->find($key) !== null && $this->onSite($key) && app(CountryRestrictions::class)->pluginBlocked($key)) {
+            abort(403, CountryRestrictions::MESSAGE);
+        }
+        abort_unless($this->on($key), 404);
+    }
+
+    /** Увімкнено для всього сайту (без урахування країни). */
+    private function onSite(string $key): bool
+    {
         $stored = $this->settings->get('plugins');
         if (! is_array($stored) || ! array_key_exists($key, $stored)) {
             return true;
         }
 
         return (bool) $stored[$key];
-    }
-
-    public function ensure(string $key): void
-    {
-        abort_unless($this->on($key), 404);
     }
 
     public function set(string $key, bool $enabled): void

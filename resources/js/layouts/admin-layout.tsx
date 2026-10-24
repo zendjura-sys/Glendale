@@ -15,8 +15,10 @@ import {
     LayoutDashboard,
     Palette,
     Phone,
+    ListMusic,
     Music2,
     PlugZap,
+    Radio,
     Puzzle,
     Server,
     Settings2,
@@ -25,9 +27,11 @@ import {
     ShieldAlert,
     Languages,
     Globe2,
+    MapPinOff,
     ShieldCheck,
     Sparkles,
     Sticker,
+    Trophy,
     UsersRound,
     Wallet,
 } from 'lucide-react';
@@ -37,6 +41,7 @@ import type { PropsWithChildren } from 'react';
 import { SiteBackground } from '@/components/backgrounds/site-background';
 import { LogoMark } from '@/components/gc/logo';
 import { UserAvatar } from '@/components/gc/user-avatar';
+import { ConnectListener } from '@/components/music/connect-ui';
 import { PlayerBar } from '@/components/music/player-bar';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import { usePlayer } from '@/lib/player';
@@ -87,7 +92,22 @@ function groups(): { title: string; items: Item[] }[] {
                     icon: Shield,
                 },
                 { label: tr('Фото'), href: '/admin/photos', icon: Images },
-                { label: tr('Музика'), href: '/admin/music', icon: Music2 },
+                {
+                    label: tr('Музика'),
+                    href: '/admin/music',
+                    icon: Music2,
+                    exact: true,
+                },
+                {
+                    label: tr('Радіостанції'),
+                    href: '/admin/music/radio',
+                    icon: Radio,
+                },
+                {
+                    label: tr('Підбірки'),
+                    href: '/admin/music/featured',
+                    icon: ListMusic,
+                },
                 {
                     label: tr('Кіно'),
                     href: '/admin/cinema',
@@ -104,6 +124,11 @@ function groups(): { title: string; items: Item[] }[] {
                     label: tr('Стікери'),
                     href: '/admin/stickers',
                     icon: Sticker,
+                },
+                {
+                    label: tr('Сезони'),
+                    href: '/admin/seasons',
+                    icon: Trophy,
                 },
             ],
         },
@@ -123,7 +148,17 @@ function groups(): { title: string; items: Item[] }[] {
                     href: '/admin/languages',
                     icon: Languages,
                 },
-                { label: tr('Країни'), href: '/admin/geo', icon: Globe2 },
+                {
+                    label: tr('Країни'),
+                    href: '/admin/geo',
+                    icon: Globe2,
+                    exact: true,
+                },
+                {
+                    label: tr('Обмеження за країнами'),
+                    href: '/admin/geo/restrictions',
+                    icon: MapPinOff,
+                },
                 { label: tr('Дизайн'), href: '/admin/design', icon: Palette },
                 {
                     label: tr('Режими'),
@@ -212,7 +247,7 @@ function NavPanel({
                     {!rail && (
                         <span className="min-w-0 leading-tight">
                             <span className="block font-display text-[15px] font-bold text-white">
-                                Game<span className="text-gradient">Con</span>
+                                Game<span className="text-primary">Con</span>
                             </span>
                             <span className="flex items-center gap-1 text-xs font-medium text-gold">
                                 <ShieldCheck className="size-3" />{' '}
@@ -422,7 +457,7 @@ export default function AdminLayout({ children }: PropsWithChildren) {
                 initial={false}
                 animate={{ width: rail ? 76 : 260 }}
                 transition={motionOr(reduce, SNAP)}
-                className="liquid-glass liquid-glass--dense fixed top-3 bottom-3 left-3 z-40 hidden flex-col rounded-[24px] p-3 [view-transition-name:gc-sidebar] lg:flex"
+                className="liquid-glass liquid-glass--dense fixed top-3 bottom-3 left-3 z-40 hidden flex-col rounded-2xl p-3 [view-transition-name:gc-sidebar] lg:flex"
             >
                 <NavPanel rail={rail} onToggle={toggleRail} layoutKey="side" />
             </m.aside>
@@ -430,7 +465,7 @@ export default function AdminLayout({ children }: PropsWithChildren) {
             {/* Планшет і телефон: шапка-острів. Лого плавно від'їжджає праворуч, звільняючи місце,
                 і тоді з'являється квадратна кнопка меню (як у референсі). */}
             <header className="sticky top-0 z-30 px-2 pt-[calc(0.5rem+env(safe-area-inset-top))] [view-transition-name:gc-topbar] lg:hidden">
-                <div className="liquid-glass liquid-glass--dense relative flex h-14 items-center rounded-[22px] px-2">
+                <div className="liquid-glass liquid-glass--dense relative flex h-14 items-center rounded-2xl px-2">
                     <m.button
                         type="button"
                         onClick={() => setDrawer(true)}
@@ -460,7 +495,7 @@ export default function AdminLayout({ children }: PropsWithChildren) {
                             <span className="leading-tight">
                                 <span className="block font-display text-[15px] font-bold text-white">
                                     Game
-                                    <span className="text-gradient">Con</span>
+                                    <span className="text-primary">Con</span>
                                 </span>
                                 <span className="flex items-center gap-1 text-[11px] font-medium text-gold">
                                     <ShieldCheck className="size-3" />{' '}
@@ -505,7 +540,7 @@ export default function AdminLayout({ children }: PropsWithChildren) {
                                         reduce ? { opacity: 0 } : { x: '-105%' }
                                     }
                                     transition={motionOr(reduce, SNAP)}
-                                    className="liquid-glass liquid-glass--dense fixed top-2 bottom-2 left-2 z-50 flex w-[min(300px,calc(100vw-1rem))] flex-col rounded-[24px] p-3 pt-[calc(0.75rem+env(safe-area-inset-top))] focus:outline-none lg:hidden"
+                                    className="liquid-glass liquid-glass--dense fixed top-2 bottom-2 left-2 z-50 flex w-[min(300px,calc(100vw-1rem))] flex-col rounded-2xl p-3 pt-[calc(0.75rem+env(safe-area-inset-top))] focus:outline-none lg:hidden"
                                 >
                                     <DialogPrimitive.Title className="sr-only">
                                         {tr('Меню адмінки')}
@@ -540,7 +575,12 @@ export default function AdminLayout({ children }: PropsWithChildren) {
                     {children}
                 </PageTransition>
             </main>
-            {modules.includes('music') && <PlayerBar standalone />}
+            {modules.includes('music') && (
+                <>
+                    <PlayerBar standalone />
+                    <ConnectListener />
+                </>
+            )}
         </div>
     );
 }

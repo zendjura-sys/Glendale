@@ -23,6 +23,7 @@ declare module '@inertiajs/core' {
                 refund: string;
                 pricing: string;
                 contacts: string;
+                child_safety: string;
                 rights: string;
             };
             auth: Auth;
@@ -39,6 +40,10 @@ declare module '@inertiajs/core' {
                 max_attachments: number;
                 max_message_file_mb: number;
                 announcement: string | null;
+                analytics?: string | null;
+                music_upload?: { max_mb: number; formats: string[] };
+                /** Рік «Підсумків року», якщо зараз їхній сезон (грудень — січень). */
+                wrapped?: number | null;
                 social: {
                     discord: boolean;
                     google: FirebaseConfig | null;

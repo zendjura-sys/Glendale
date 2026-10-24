@@ -58,7 +58,7 @@ class GcAudioHandler extends BaseAudioHandler with SeekHandler {
     _shownLength = player.queue.length;
     final cover = track.cover == null ? null : Uri.tryParse(track.cover!);
     mediaItem.add(MediaItem(
-      id: '${track.id ?? track.url}',
+      id: track.key,
       title: track.title,
       artist: artistOf(track.artist),
       album: track.album,
@@ -67,7 +67,7 @@ class GcAudioHandler extends BaseAudioHandler with SeekHandler {
       artUri: cover,
     ));
     queue.add([
-      for (final t in player.queue) MediaItem(id: '${t.id ?? t.url}', title: t.title, artist: artistOf(t.artist), album: t.album, artUri: t.cover == null ? null : Uri.tryParse(t.cover!)),
+      for (final t in player.queue) MediaItem(id: t.key, title: t.title, artist: artistOf(t.artist), album: t.album, artUri: t.cover == null ? null : Uri.tryParse(t.cover!)),
     ]);
     _broadcast();
   }
@@ -100,7 +100,7 @@ class GcAudioHandler extends BaseAudioHandler with SeekHandler {
       speed: engine.speed,
       queueIndex: active ? player.index : null,
       shuffleMode: player.shuffle ? AudioServiceShuffleMode.all : AudioServiceShuffleMode.none,
-      repeatMode: player.repeat ? AudioServiceRepeatMode.one : AudioServiceRepeatMode.none,
+      repeatMode: switch (player.repeatMode) { 'one' => AudioServiceRepeatMode.one, 'all' => AudioServiceRepeatMode.all, _ => AudioServiceRepeatMode.none },
     ));
   }
 
@@ -129,7 +129,7 @@ class GcAudioHandler extends BaseAudioHandler with SeekHandler {
 
   @override
   Future<void> setRepeatMode(AudioServiceRepeatMode repeatMode) async {
-    if ((repeatMode != AudioServiceRepeatMode.none) != player.repeat) player.toggleRepeat();
+    player.setRepeat(switch (repeatMode) { AudioServiceRepeatMode.none => 'off', AudioServiceRepeatMode.one => 'one', _ => 'all' });
   }
 
   @override

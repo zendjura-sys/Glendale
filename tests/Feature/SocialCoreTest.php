@@ -45,7 +45,7 @@ class SocialCoreTest extends TestCase
         $this->assertMatchesRegularExpression('/^[a-z][a-z0-9_.]*[a-z0-9]$/', $user->username);
     }
 
-    public function test_friend_request_flow_matches_vk_semantics(): void
+    public function test_friend_request_flow_uses_two_way_semantics(): void
     {
         [$anna, $boris] = User::factory()->count(2)->create();
         $service = app(FriendshipService::class);

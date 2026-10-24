@@ -79,7 +79,7 @@ class CinemaTest extends TestCase
             'material_data' => [
                 'title' => 'Матрица',
                 'description' => 'Опис російською',
-                'poster_url' => 'https://st.kp.yandex.net/images/film_big/301.jpg',
+                'poster_url' => 'https://image.tmdb.org/t/p/w500/test.jpg',
                 'genres' => ['фантастика', 'боевик'],
                 'imdb_rating' => 8.7,
                 'kinopoisk_rating' => 8.5,
@@ -262,7 +262,7 @@ class CinemaTest extends TestCase
 
         $this->actingAs($admin)->getJson('/admin/cinema/remote/kodik/search?q=test')
             ->assertStatus(500)
-            ->assertJsonPath('message', 'Kodik відхилив токен. Перевірте його в налаштуваннях інтеграції.');
+            ->assertJsonPath('message', 'Плеєр 1 відхилив токен. Перевірте його в налаштуваннях інтеграції.');
     }
 
     public function test_auto_import_creates_titles_enriches_them_from_tmdb_and_skips_trashed(): void
@@ -409,7 +409,7 @@ class CinemaTest extends TestCase
         $this->assertStringNotContainsString('КіноПошук', $response->getContent());
         $response->assertInertia(fn (Assert $page) => $page
             ->component('admin/integrations')
-            ->has('cinema', 20)
+            ->has('cinema', 26)
             ->where('cinema.2.key', 'push')
             ->where('cinema.3.key', 'telegram_bot')
             ->where('cinema.4.key', 'discord_bot')

@@ -53,7 +53,7 @@ export function Logo({
             <LogoMark />
             {!compact && (
                 <span className="font-display text-[19px] font-bold tracking-tight text-white">
-                    Game<span className="text-gradient">Con</span>
+                    Game<span className="text-primary">Con</span>
                 </span>
             )}
         </span>

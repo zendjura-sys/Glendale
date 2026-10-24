@@ -64,7 +64,7 @@ class MusicController extends Controller
             ],
             'limits' => [
                 'max_mb' => (int) $settings->get('music_max_track_mb'),
-                'formats' => Track::AUDIO_MIMES,
+                'formats' => Track::uploadFormats(),
             ],
         ]);
     }
@@ -86,8 +86,12 @@ class MusicController extends Controller
         ]);
     }
 
-    public function search(Request $request): JsonResponse
+    public function search(Request $request): JsonResponse|Response
     {
+        // Відкриття сторінкою (вкладка «Пошук») — сторінка розділу; запит із вибору треку — JSON.
+        if ($request->header('X-Inertia') || ! $request->wantsJson()) {
+            return app(MusicHubController::class)->search($request);
+        }
         $user = $request->user();
         $data = $request->validate([
             'q' => ['nullable', 'string', 'max:100'],

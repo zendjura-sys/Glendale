@@ -7,6 +7,8 @@ import 'package:go_router/go_router.dart';
 import 'package:home_widget/home_widget.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'api.dart';
+import 'app_login.dart';
 import 'audio.dart';
 import 'auth_screen.dart';
 import 'chat.dart';
@@ -14,46 +16,62 @@ import 'cinema.dart';
 import 'movie_screen.dart';
 import 'clans.dart';
 import 'communities.dart';
+import 'connect.dart';
+import 'downloads.dart';
 import 'families.dart';
 import 'i18n.dart';
 import 'events.dart';
 import 'extras.dart';
 import 'family_widget.dart';
+import 'game_card.dart';
+import 'pulse_widget.dart';
 import 'feed.dart';
 import 'characters.dart';
 import 'games.dart';
 import 'listen_together.dart';
+import 'listen_rooms.dart';
 import 'music.dart';
+import 'music_home.dart';
+import 'music_pages.dart';
+import 'offline_music.dart';
 import 'party.dart';
 import 'people.dart';
 import 'photos.dart';
 import 'playing.dart';
 import 'push.dart';
+import 'season.dart';
+import 'teammates.dart';
+import 'tournaments.dart';
 import 'servers.dart';
 import 'settings.dart';
 import 'shell.dart';
 import 'state.dart';
+import 'phone.dart';
 import 'theme.dart';
 import 'track_edit.dart';
 import 'watch_party.dart';
+import 'theme_controller.dart';
 import 'widgets.dart';
+import 'wrapped.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-    statusBarColor: Colors.transparent,
-    statusBarIconBrightness: Brightness.light,
-    statusBarBrightness: Brightness.dark,
-    systemNavigationBarColor: Colors.transparent,
-    systemNavigationBarIconBrightness: Brightness.light,
-    systemNavigationBarContrastEnforced: false,
-  ));
   final prefs = await SharedPreferences.getInstance();
+  // Тема до першого кадру (збережена на телефоні); з акаунта — після входу (Session).
+  ThemeController.instance.init(prefs);
   // Словник мови — до першого кадру (збережений на телефоні), свіжий — із сервера у фоні.
   await I18n.restore(prefs);
   final session = Session(prefs);
   final player = TrackPlayer()..session = session;
+  // Музика на телефоні: плеєр бере файл, якщо трек завантажено; вихід з акаунта все стирає.
+  final downloads = Downloads(session: session)..watchNetwork();
+  Downloads.instance = downloads;
+  TrackPlayer.localFile = downloads.fileFor;
+  session.logoutHooks.add(downloads.clearAll);
+  try {
+    await downloads.load();
+  } catch (_) {}
   player.onStart = (track) => repairTrackMeta(session, track.toCard()).then((fixed) {
         if (fixed != null) player.updateMeta(fixed);
       }).catchError((_) {});
@@ -67,9 +85,14 @@ Future<void> main() async {
     unawaited(player.play(audioTestUrl, 'GameCon CI', 'Background audio'));
   }
   await session.boot();
+  unawaited(downloads.syncFavorites());
+  // GameCon Connect: що грає на сайті й інших пристроях, керування й передача музики.
+  GameConnect.instance = GameConnect(session, player)..start();
   // Віджет «Моя сім'я»: фонове оновлення й свіжі дані при кожному запуску.
   await HomeWidget.registerInteractivityCallback(familyWidgetBackground);
   unawaited(FamilyWidget.refresh(session.token == null ? null : session.api, prefs).then((_) => null, onError: (_) => null));
+  // Віджет «Пульс GameCon»: непрочитане, друзі онлайн, завдання дня.
+  unawaited(PulseWidget.refresh(session.token == null ? null : session.api).then((_) => null, onError: (_) => null));
   final links = AppLinks();
   links.uriLinkStream.listen(session.takeLink);
   final initial = await links.getInitialLink();
@@ -77,7 +100,8 @@ Future<void> main() async {
 
   final router = GoRouter(
     refreshListenable: session,
-    initialLocation: session.token == null ? '/login' : '/feed',
+    // Без інтернету, але з завантаженою музикою — одразу в розділ музики.
+    initialLocation: session.token == null ? '/login' : (!Api.online.value && !downloads.isEmpty ? '/music' : '/feed'),
     redirect: (context, state) {
       final logging = state.matchedLocation == '/login';
       if (session.token == null && !logging) return '/login';
@@ -88,6 +112,11 @@ Future<void> main() async {
     routes: [
       GoRoute(path: '/', redirect: (_, _) => '/feed'),
       GoRoute(path: '/login', builder: (_, _) => AuthScreen(session: session)),
+      // «Підсумки року» — на весь екран, без шапки й нижнього меню.
+      GoRoute(path: '/wrapped', builder: (_, _) => const WrappedScreen()),
+      // Вхід на сайт через застосунок — на весь екран: запит і сканер QR.
+      GoRoute(path: '/app-login/:id', builder: (_, state) => AppLoginScreen(key: ValueKey(state.pathParameters['id']), api: session.api, id: state.pathParameters['id']!)),
+      GoRoute(path: '/scan-login', builder: (_, _) => const AppLoginScanScreen()),
       ShellRoute(
         builder: (_, _, child) => AppShell(session: session, player: player, child: child),
         routes: [
@@ -104,6 +133,7 @@ Future<void> main() async {
           GoRoute(path: '/friends', builder: (_, state) => FriendsScreen(tab: state.uri.queryParameters['tab'] ?? 'all')),
           GoRoute(path: '/people', builder: (_, state) => PeopleScreen(initial: state.uri.queryParameters['q'] ?? '')),
           GoRoute(path: '/profile', builder: (_, _) => const ProfileScreen()),
+          GoRoute(path: '/u/:username/card', builder: (_, state) => GameCardScreen(username: state.pathParameters['username']!)),
           GoRoute(path: '/u/:username', builder: (_, state) => ProfileScreen(key: ValueKey(state.pathParameters['username']), username: state.pathParameters['username'])),
           GoRoute(
             path: '/communities',
@@ -127,9 +157,42 @@ Future<void> main() async {
           ),
           GoRoute(
             path: '/music',
-            builder: (_, state) => MusicScreen(key: ValueKey(state.uri.queryParameters['user']), username: state.uri.queryParameters['user'], tab: state.uri.queryParameters['tab']),
+            builder: (_, state) {
+              // Аудіозаписи іншого користувача — старий екран; свій розділ — у стилі Apple Music.
+              final user = state.uri.queryParameters['user'];
+              if (user != null) return MusicScreen(key: ValueKey(user), username: user);
+              final tab = MusicHub.tabFor(state.uri.queryParameters['tab']);
+              return MusicHub(key: ValueKey('music-$tab'), tab: tab);
+            },
             routes: [
               GoRoute(path: 'playlists/:id', builder: (_, state) => PlaylistScreen(id: int.tryParse(state.pathParameters['id']!) ?? 0)),
+              GoRoute(
+                path: 'downloads',
+                builder: (_, _) => const DownloadsScreen(),
+                routes: [GoRoute(path: 'collection', builder: (_, state) => DownloadedCollectionScreen(key: ValueKey(state.uri.toString()), collectionKey: state.uri.queryParameters['key'] ?? ''))],
+              ),
+              GoRoute(path: 'new', builder: (_, _) => const MusicHub(key: ValueKey('music-new'), tab: 'new')),
+              GoRoute(path: 'radio', builder: (_, _) => const MusicHub(key: ValueKey('music-radio'), tab: 'radio')),
+              GoRoute(
+                path: 'library',
+                builder: (_, _) => const MusicHub(key: ValueKey('music-library'), tab: 'library'),
+                routes: [GoRoute(path: ':section', builder: (_, state) => LibrarySectionScreen(key: ValueKey(state.uri.toString()), section: state.pathParameters['section']!))],
+              ),
+              GoRoute(path: 'search', builder: (_, state) => MusicSearchScreen(initial: state.uri.queryParameters['q'] ?? '')),
+              GoRoute(path: 'artist', builder: (_, state) => ArtistScreen(key: ValueKey(state.uri.toString()), name: state.uri.queryParameters['name'] ?? '')),
+              GoRoute(
+                path: 'album',
+                builder: (_, state) => MusicAlbumScreen(key: ValueKey(state.uri.toString()), artist: state.uri.queryParameters['artist'] ?? '', title: state.uri.queryParameters['title'] ?? ''),
+              ),
+              GoRoute(path: 'mix/:key', builder: (_, state) => MixScreen(key: ValueKey(state.uri.toString()), mixKey: state.pathParameters['key']!)),
+              GoRoute(path: 'genre', builder: (_, state) => GenreScreen(key: ValueKey(state.uri.toString()), name: state.uri.queryParameters['name'] ?? '')),
+              GoRoute(path: 'charts', builder: (_, _) => const ChartsScreen()),
+              GoRoute(path: 'rooms', builder: (_, _) => const ListenRoomsScreen()),
+              GoRoute(
+                path: 'replay',
+                builder: (_, _) => const ReplayScreen(),
+                routes: [GoRoute(path: ':year', builder: (_, state) => ReplayScreen(key: ValueKey(state.uri.toString()), year: int.tryParse(state.pathParameters['year']!)))],
+              ),
             ],
           ),
           GoRoute(
@@ -143,7 +206,11 @@ Future<void> main() async {
           ),
           GoRoute(path: '/events', builder: (_, _) => const EventsScreen(), routes: [GoRoute(path: 'releases', builder: (_, _) => const ReleasesScreen())]),
           GoRoute(path: '/moments', builder: (_, _) => const MomentsScreen()),
+          GoRoute(path: '/phone', builder: (_, state) => PhoneScreen(key: ValueKey(state.uri.queryParameters['dial']), dial: state.uri.queryParameters['dial'])),
           GoRoute(path: '/quests', builder: (_, _) => const QuestsScreen()),
+          GoRoute(path: '/season', builder: (_, _) => const SeasonScreen()),
+          GoRoute(path: '/tournaments', builder: (_, _) => const TournamentsScreen()),
+          GoRoute(path: '/tournaments/:id', builder: (_, state) => TournamentScreen(id: int.tryParse(state.pathParameters['id']!) ?? 0)),
           GoRoute(path: '/saved', builder: (_, _) => const SavedScreen()),
           GoRoute(path: '/drafts', builder: (_, _) => const DraftsScreen()),
           GoRoute(path: '/starred', builder: (_, _) => const SavedMessagesScreen()),
@@ -172,6 +239,7 @@ Future<void> main() async {
             ],
           ),
           GoRoute(path: '/party', builder: (_, _) => const PartyBoardScreen()),
+          GoRoute(path: '/party/match', builder: (_, _) => const TeammatesScreen()),
           GoRoute(path: '/party/:id', builder: (_, state) => PartyScreen(key: ValueKey(state.pathParameters['id']), id: state.pathParameters['id']!)),
           GoRoute(path: '/characters/create', builder: (_, state) => CharacterEditScreen(server: state.uri.queryParameters['server'])),
           GoRoute(path: '/characters/:id', builder: (_, state) => CharacterScreen(key: ValueKey(state.pathParameters['id']), id: state.pathParameters['id']!)),

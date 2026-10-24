@@ -118,7 +118,7 @@ class EventTile extends StatelessWidget {
           Container(
             width: 56,
             padding: const EdgeInsets.symmetric(vertical: 8),
-            decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.04), borderRadius: BorderRadius.circular(12)),
+            decoration: BoxDecoration(color: fg.withValues(alpha: 0.04), borderRadius: BorderRadius.circular(12)),
             child: Column(children: [
               event['all_day'] == true
                   ? Text(tr('Весь\nдень'), textAlign: TextAlign.center, style: body(11.5, weight: FontWeight.w700))
@@ -148,7 +148,7 @@ class EventTile extends StatelessWidget {
                   GestureDetector(
                     onTap: () => launchUrl(Uri.parse(link), mode: LaunchMode.externalApplication),
                     child: Row(mainAxisSize: MainAxisSize.min, children: [
-                      const Icon(LucideIcons.externalLink, size: 13, color: primary),
+                      Icon(LucideIcons.externalLink, size: 13, color: primary),
                       const SizedBox(width: 4),
                       Text(
                         link.contains('discord.com') ? tr('Відкрити в Discord') : (RegExp(r'twitch\.tv|youtube\.com|youtu\.be').hasMatch(link) ? tr('Дивитися трансляцію') : tr('Детальніше')),

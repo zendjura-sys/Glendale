@@ -13,7 +13,8 @@
 - **Никаких кнопок и ссылок на внешнюю оплату:** не открывать `/plus/billing`, `/plus`, `/pricing`,
   страницы донат-сервисов (Donatello, Diaka, Donatik, Buy Me a Coffee, Patreon) ни через браузер,
   ни через WebView, и не писать «купите на сайте».
-- Цифровые покупки внутри приложения — только через Google Play Billing.
+- Цифровые покупки внутри приложения — только через Google Play Billing (`mobile/lib/play_billing.dart`):
+  цены и планы из Google Play, покупку проверяет сервер (`POST /api/v1/google-play/verify`).
 - Показывать уже купленное можно: значок GameCon+, оформление профиля, срок действия.
 
 ## Инструкция для Cursor
@@ -209,6 +210,25 @@
 - [ ] Установка как PWA — `public/sw.js`, manifest (**только сайт**)
 - [ ] Главная страница для гостей — `pages/welcome.tsx` (**только сайт**)
 - [ ] Админ-панель и модерация — `pages/admin/*` (**только сайт**)
+
+## 16. Новое (октябрь 2026)
+
+- [x] Турниры и челленджи серверов: список, сетка, таблица, заявка, результат со скриншотом, управление организатора — `pages/tournaments/*`, `mobile/lib/tournaments.dart` (создание турнира — только сайт)
+- [x] Подбор тиммейтов: анкета, «Шукаю зараз», совместимость, приглашение в пати — `pages/party/match.tsx`, `mobile/lib/teammates.dart`
+- [x] Сезонный пропуск — `pages/season/index.tsx`, `mobile/lib/season.dart` (админка сезонов — только сайт)
+- [x] Комнаты «Слухати разом» для групп — `pages/music/rooms.tsx`, `mobile/lib/listen_rooms.dart` (политика «кто может открывать» — только сайт)
+- [x] Станции групп в «Радіо» — `pages/music/radio.tsx`, `mobile/lib/music_home.dart`
+- [x] GameCon Connect — `lib/connect.ts`, `mobile/lib/connect.dart`
+- [x] Вход на сайт через приложение — `pages/auth/app-login.tsx`, `mobile/lib/app_login.dart`
+- [x] Game Card — `pages/profile/card.tsx`, `mobile/lib/game_card.dart`
+- [x] Прогресс приглашений — `pages/invite/index.tsx`, `mobile/lib/extras.dart` (`InviteScreen`)
+- [x] Ранковий дайджест: переключатель — `components/settings/digest-switch.tsx`, `mobile/lib/settings.dart` (`DigestSwitch`)
+- [x] «Показувати, що я слухаю» — `components/music/listening-switch.tsx`, `mobile/lib/music.dart`
+- [x] Офлайн-музыка — **только приложение** (`mobile/lib/downloads.dart`)
+- [x] Виджеты Android «Моя сім’я» и «Пульс GameCon» — **только приложение**
+- [x] Стандарты безопасности детей `/child-safety` и причина жалобы «Загроза дитині» — сайт и приложение
+- [x] Довідка `/help` — **только сайт** (в приложении ссылки открываются в браузере)
+- [x] Музыка в ботах Discord/Telegram — **только сайт** (настройки ботов группы)
 
 ---
 

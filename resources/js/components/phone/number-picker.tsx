@@ -125,7 +125,7 @@ function RandomCard({
     };
 
     return (
-        <section className="glass flex min-w-0 flex-col rounded-3xl p-4 sm:p-5">
+        <section className="glass flex min-w-0 flex-col rounded-2xl p-4 sm:p-5">
             <header className="flex items-start gap-3">
                 <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-white/[0.06] text-white">
                     <Dices className="size-5" />
@@ -315,7 +315,7 @@ function BuyCard({
     );
 
     return (
-        <section className="glass flex min-w-0 flex-col rounded-3xl p-4 sm:p-5">
+        <section className="glass flex min-w-0 flex-col rounded-2xl p-4 sm:p-5">
             <header className="flex items-start gap-3">
                 <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-white/[0.06] text-white">
                     <ShoppingBag className="size-5" />
@@ -500,7 +500,7 @@ function BuyCard({
                     type="button"
                     onClick={buy}
                     disabled={!check?.available || (gift && !giftTo)}
-                    className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[var(--btn-primary,#6366f1)] text-[15px] font-semibold text-white transition hover:opacity-90 disabled:opacity-40"
+                    className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-primary text-[15px] font-semibold text-white transition hover:opacity-90 disabled:opacity-40"
                 >
                     {gift ? (
                         <Gift className="size-4" />

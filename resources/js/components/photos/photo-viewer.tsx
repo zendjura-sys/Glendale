@@ -209,7 +209,7 @@ export function PhotoViewer({
                                     <button
                                         type="button"
                                         onClick={() => setRevealed(true)}
-                                        className="absolute rounded-full bg-black/60 px-4 py-2 text-sm font-medium text-white ring-1 ring-white/15"
+                                        className="absolute rounded-control bg-black/60 px-4 py-2 text-sm font-medium text-white ring-1 ring-white/15"
                                     >
                                         {tr('Показати')}
                                     </button>
@@ -242,7 +242,7 @@ export function PhotoViewer({
 
                         <div className="absolute top-3 left-3 flex items-center gap-2 sm:top-5 sm:left-6">
                             {photo && (
-                                <span className="rounded-full bg-black/40 px-3 py-1.5 text-xs font-medium text-white/75 backdrop-blur">
+                                <span className="rounded-chip bg-black/40 px-3 py-1.5 text-xs font-medium text-white/75 backdrop-blur">
                                     {photo.position} {tr('з')}{' '}
                                     {photo.album.photos_count} ·{' '}
                                     <Link
@@ -469,7 +469,7 @@ export function PhotoViewer({
                                                 {photo.tags.map((person) => (
                                                     <span
                                                         key={person.username}
-                                                        className="inline-flex items-center gap-1 rounded-full bg-white/[0.06] px-2.5 py-1 text-sm text-white"
+                                                        className="inline-flex items-center gap-1 rounded-chip bg-white/[0.06] px-2.5 py-1 text-sm text-white"
                                                     >
                                                         <Link
                                                             href={`/${person.username}`}
@@ -554,7 +554,7 @@ export function PhotoViewer({
                                             onToggle={toggleLike}
                                         />
                                         {photo.is_cover && (
-                                            <span className="rounded-full bg-gc-indigo/15 px-3 py-1.5 text-xs font-medium text-[#b3bcff]">
+                                            <span className="rounded-chip bg-gc-indigo/15 px-3 py-1.5 text-xs font-medium text-[#b3bcff]">
                                                 {tr('Обкладинка альбому')}
                                             </span>
                                         )}

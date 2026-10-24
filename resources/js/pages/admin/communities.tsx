@@ -280,7 +280,7 @@ export default function AdminCommunities({
                     </article>
                 ))}
                 {communities.data.length === 0 && (
-                    <div className="glass rounded-3xl px-6 py-14 text-center text-sm text-white/40">
+                    <div className="glass rounded-2xl px-6 py-14 text-center text-sm text-white/40">
                         {tr('Спільнот не знайдено')}
                     </div>
                 )}

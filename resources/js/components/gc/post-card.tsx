@@ -44,6 +44,10 @@ import { ReactionBar } from './reaction-bar';
 import { MediaGrid } from './media-grid';
 import { UserAvatar } from './user-avatar';
 import { PlusBadge, plusNameStyle } from './plus';
+import {
+    CosmeticBadge,
+    cosmeticNameStyle,
+} from '@/components/season/cosmetics';
 import { VerifiedBadge } from './verified-badge';
 import {
     TranslateToggle,
@@ -125,7 +129,7 @@ export function PostCard({
     }
 
     return (
-        <article className="glass animate-rise rounded-3xl p-4 sm:p-5">
+        <article className="gc-post animate-rise px-1 py-5 sm:px-2">
             <header className="flex items-start gap-3">
                 <Link href={publisherHref} className="shrink-0">
                     {post.publisher ? (
@@ -143,7 +147,12 @@ export function PostCard({
                             {post.publisher ? (
                                 post.publisher.name
                             ) : (
-                                <span style={plusNameStyle(post.author.plus)}>
+                                <span
+                                    style={
+                                        plusNameStyle(post.author.plus) ??
+                                        cosmeticNameStyle(post.author.cosmetics)
+                                    }
+                                >
                                     {post.author.name}
                                 </span>
                             )}
@@ -152,6 +161,12 @@ export function PostCard({
                             )}
                             {!post.publisher && post.author.plus && (
                                 <PlusBadge />
+                            )}
+                            {!post.publisher && (
+                                <CosmeticBadge
+                                    cosmetics={post.author.cosmetics}
+                                    className="size-4"
+                                />
                             )}
                         </Link>
                         {post.badge && (
@@ -188,20 +203,20 @@ export function PostCard({
                         {post.tag && (
                             <Link
                                 href={post.tag.href}
-                                className="ml-1 inline-flex items-center gap-1 rounded-full bg-white/[0.06] px-2 py-0.5 text-xs font-medium text-white/70 hover:text-white"
+                                className="ml-1 inline-flex items-center gap-1 rounded-control bg-white/[0.06] px-2 py-0.5 text-xs font-medium text-white/70 hover:text-white"
                             >
                                 <Hash className="size-3" />
                                 {post.tag.name}
                             </Link>
                         )}
                         {post.pending && (
-                            <span className="ml-1 inline-flex items-center gap-1 rounded-full bg-gc-amber/15 px-2 py-0.5 text-xs font-medium text-gc-amber">
+                            <span className="ml-1 inline-flex items-center gap-1 rounded-chip bg-gc-amber/15 px-2 py-0.5 text-xs font-medium text-gc-amber">
                                 <Clock className="size-3" />{' '}
                                 {tr('На перевірці')}
                             </span>
                         )}
                         {post.is_pinned && (
-                            <span className="ml-1 inline-flex items-center gap-1 rounded-full bg-gc-blue/15 px-2 py-0.5 text-xs font-medium text-[#9fb6ff]">
+                            <span className="ml-1 inline-flex items-center gap-1 rounded-chip bg-gc-blue/15 px-2 py-0.5 text-xs font-medium text-[#9fb6ff]">
                                 <Pin className="size-3" /> {tr('Закріплено')}
                             </span>
                         )}
@@ -649,7 +664,7 @@ export function PostCard({
                         setFocusComment(true);
                     }}
                     className={cn(
-                        'inline-flex h-9 items-center gap-1.5 rounded-full bg-white/[0.045] px-3.5 text-sm font-medium text-white/65 transition hover:bg-white/[0.08] hover:text-white',
+                        'inline-flex h-9 items-center gap-1.5 rounded-control bg-white/[0.045] px-3.5 text-sm font-medium text-white/65 transition hover:bg-white/[0.08] hover:text-white',
                         !post.comments_enabled &&
                             'pointer-events-none opacity-40',
                     )}
@@ -671,7 +686,7 @@ export function PostCard({
                 <button
                     type="button"
                     onClick={copyLink}
-                    className="inline-flex h-9 items-center gap-1.5 rounded-full bg-white/[0.045] px-3.5 text-sm font-medium text-white/65 transition hover:bg-white/[0.08] hover:text-white"
+                    className="inline-flex h-9 items-center gap-1.5 rounded-control bg-white/[0.045] px-3.5 text-sm font-medium text-white/65 transition hover:bg-white/[0.08] hover:text-white"
                     aria-label={tr('Поділитися')}
                 >
                     <Link2 className="size-[18px]" />

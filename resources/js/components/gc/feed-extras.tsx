@@ -19,7 +19,7 @@ export function TomorrowCard({ events }: { events: TomorrowEvent[] }) {
     if (events.length === 0) return null;
 
     return (
-        <section className="glass rounded-3xl p-4">
+        <section className="glass rounded-2xl p-4">
             <h2 className="mb-2 flex items-center gap-2 text-sm font-semibold text-white">
                 <CalendarClock className="size-4 text-gc-lilac-300" />
                 {tr('Завтра')}

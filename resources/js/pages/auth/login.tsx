@@ -1,4 +1,5 @@
 import { Form, Head } from '@inertiajs/react';
+import { AppLoginButton } from '@/components/auth/app-login';
 import { SocialLogin } from '@/components/auth/social-login';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
@@ -28,7 +29,8 @@ export default function Login({ status, canResetPassword }: Props) {
                 </div>
             )}
 
-            <div className="mb-6 empty:hidden">
+            <div className="mb-6 grid gap-2.5">
+                <AppLoginButton />
                 <SocialLogin mode="login" />
             </div>
 

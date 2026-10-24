@@ -36,6 +36,7 @@ export type SharedBilling = {
 };
 
 export type PaymentBadge =
+    | 'plata'
     | 'visa'
     | 'mastercard'
     | 'maestro'

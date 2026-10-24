@@ -17,6 +17,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $expires_at
  * @property Carbon|null $updated_at
  * @property-read Track|null $track
+ * @property-read User|null $user
  */
 #[Fillable(['user_id', 'source', 'track_id', 'payload', 'expires_at'])]
 class MusicStatus extends Model
@@ -33,6 +34,14 @@ class MusicStatus extends Model
             'payload' => 'array',
             'expires_at' => 'datetime',
         ];
+    }
+
+    /**
+     * @return BelongsTo<User, $this>
+     */
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
     }
 
     /**

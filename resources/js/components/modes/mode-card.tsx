@@ -46,7 +46,7 @@ export function ModeCard({
             aria-checked={active}
             onClick={onSelect}
             className={cn(
-                'group relative flex h-full flex-col rounded-[24px] text-left transition-colors',
+                'group relative flex h-full flex-col rounded-2xl text-left transition-colors',
                 compact ? 'p-4' : 'p-5 sm:p-6',
                 active
                     ? 'text-white'
@@ -57,7 +57,7 @@ export function ModeCard({
                 <m.span
                     layoutId={layoutId}
                     transition={motionOr(reduce, SNAP)}
-                    className="liquid-glass absolute inset-0 rounded-[24px] shadow-[0_0_40px_-12px_var(--primary)] ring-2 ring-primary"
+                    className="liquid-glass absolute inset-0 rounded-2xl shadow-[0_0_40px_-12px_var(--primary)] ring-2 ring-primary"
                 />
             )}
             <span className="relative flex items-start gap-3">
@@ -102,7 +102,7 @@ export function ModeCard({
                     {shown.map((key) => (
                         <span
                             key={key}
-                            className="rounded-full bg-white/[0.08] px-2.5 py-1 text-xs text-white/80"
+                            className="rounded-chip bg-white/[0.08] px-2.5 py-1 text-xs text-white/80"
                         >
                             {tr(moduleNames[key] ?? key)}
                         </span>

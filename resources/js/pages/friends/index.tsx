@@ -107,7 +107,7 @@ export default function Friends({ tab, q, users, counts, suggestions }: Props) {
         <>
             <Head title={tr('Друзі')} />
             <div className="space-y-5">
-                <div className="glass flex flex-col gap-3 rounded-3xl p-3 md:flex-row md:items-center">
+                <div className="glass flex flex-col gap-3 rounded-2xl p-3 md:flex-row md:items-center">
                     <div className="scrollbar-none flex gap-1 overflow-x-auto">
                         {tabs.map((item) => (
                             <Link

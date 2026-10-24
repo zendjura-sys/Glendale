@@ -92,7 +92,7 @@ class _PostCardState extends State<PostCard> {
     final choice = await showGcSheet<String>(
       context,
       builder: (sheet) => Padding(
-        padding: const EdgeInsets.fromLTRB(12, 0, 12, 20),
+        padding: EdgeInsets.fromLTRB(12, 0, 12, 20),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -189,7 +189,7 @@ class _PostCardState extends State<PostCard> {
 
   @override
   Widget build(BuildContext context) {
-    if (deleted) return const SizedBox.shrink();
+    if (deleted) return SizedBox.shrink();
     final author = mapOf(post['author']);
     final publisher = post['publisher'] is Map ? mapOf(post['publisher']) : null;
     final wall = post['wall'] is Map ? mapOf(post['wall']) : null;
@@ -218,9 +218,9 @@ class _PostCardState extends State<PostCard> {
     }
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: EdgeInsets.only(bottom: 12),
       child: Glass(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
+        padding: EdgeInsets.fromLTRB(16, 16, 16, 14),
         radius: 24,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -230,9 +230,9 @@ class _PostCardState extends State<PostCard> {
               children: [
                 GestureDetector(
                   onTap: openWho,
-                  child: Avatar(url: text(who['avatar_url']), name: name, size: 44, online: publisher == null && author['is_online'] == true, square: publisher != null, frame: publisher == null ? PlusMark.of(author)?.frame : null),
+                  child: Avatar(url: text(who['avatar_url']), name: name, size: 44, online: publisher == null && author['is_online'] == true, square: publisher != null, frame: publisher == null ? avatarFrameOf(author) : null),
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -241,12 +241,13 @@ class _PostCardState extends State<PostCard> {
                         crossAxisAlignment: WrapCrossAlignment.center,
                         spacing: 4,
                         children: [
-                          GestureDetector(onTap: openWho, child: PlusName(name, plus: publisher == null ? PlusMark.of(author) : null, style: body(15, weight: FontWeight.w700), maxLines: null)),
-                          if (who['is_verified'] == true) const Icon(LucideIcons.badgeCheck, size: 15, color: primary),
-                          if (publisher == null && PlusMark.of(author) != null) const PlusBadge(size: 15),
+                          GestureDetector(onTap: openWho, child: PlusName(name, plus: publisher == null ? nameMarkOf(author) : null, style: body(15, weight: FontWeight.w700), maxLines: null)),
+                          if (who['is_verified'] == true) Icon(LucideIcons.badgeCheck, size: 15, color: primary),
+                          if (publisher == null && PlusMark.of(author) != null) PlusBadge(size: 15),
+                          if (publisher == null) SeasonBadge(user: author),
                           if (badge != null) RoleBadge(title: text(badge['title']) ?? '', color: text(badge['color'])),
                           if (wall != null) ...[
-                            const Icon(LucideIcons.chevronRight, size: 16, color: faint),
+                            Icon(LucideIcons.chevronRight, size: 16, color: faint),
                             GestureDetector(
                               onTap: () => context.push(appPathFor(text(wall['href']))),
                               child: Text(text(wall['name']) ?? '', style: body(15, color: soft, weight: FontWeight.w600)),
@@ -254,7 +255,7 @@ class _PostCardState extends State<PostCard> {
                           ],
                         ],
                       ),
-                      const SizedBox(height: 4),
+                      SizedBox(height: 4),
                       Wrap(
                         crossAxisAlignment: WrapCrossAlignment.center,
                         spacing: 6,
@@ -270,24 +271,24 @@ class _PostCardState extends State<PostCard> {
                               onTap: () => context.push(appPathFor(text(tag['href']))),
                               child: Pill(label: '#${tag['name']}', color: soft),
                             ),
-                          if (post['pending'] == true) Pill(label: tr('На перевірці'), icon: LucideIcons.clock, color: const Color(0xFFF5B342)),
-                          if (post['is_pinned'] == true) Pill(label: tr('Закріплено'), icon: LucideIcons.pin, color: const Color(0xFF9FB6FF)),
+                          if (post['pending'] == true) Pill(label: tr('На перевірці'), icon: LucideIcons.clock, color: Color(0xFFF5B342)),
+                          if (post['is_pinned'] == true) Pill(label: tr('Закріплено'), icon: LucideIcons.pin, color: Color(0xFF9FB6FF)),
                         ],
                       ),
                     ],
                   ),
                 ),
-                IconButton(onPressed: _menu, icon: const Icon(LucideIcons.ellipsis, color: muted), visualDensity: VisualDensity.compact),
+                IconButton(onPressed: _menu, icon: Icon(LucideIcons.ellipsis, color: muted), visualDensity: VisualDensity.compact),
               ],
             ),
             if (bodyText.isNotEmpty && lang != null && lang != I18n.locale.split('-').first)
               Padding(
-                padding: const EdgeInsets.only(top: 10),
+                padding: EdgeInsets.only(top: 10),
                 child: Text(tr('Оригінал: {language}', {'language': languageName(lang)}), style: body(11.5, color: faint)),
               ),
             if (bodyText.isNotEmpty)
               Padding(
-                padding: const EdgeInsets.only(top: 12),
+                padding: EdgeInsets.only(top: 12),
                 child: Translatable(
                   api: AppScope.read(context).session.api,
                   type: 'post',
@@ -298,7 +299,7 @@ class _PostCardState extends State<PostCard> {
                     child: Text.rich(
                       TextSpan(children: [
                         TextSpan(text: long && shownText.length > 420 ? '${shownText.substring(0, 420).trimRight()}… ' : shownText),
-                        if (long) TextSpan(text: tr('Показати повністю'), style: body(15, color: const Color(0xFF9AA8FF), weight: FontWeight.w600)),
+                        if (long) TextSpan(text: tr('Показати повністю'), style: body(15, color: Color(0xFF9AA8FF), weight: FontWeight.w600)),
                       ]),
                       style: body(15, color: ink.withValues(alpha: 0.92)).copyWith(height: 1.5),
                     ),
@@ -306,32 +307,32 @@ class _PostCardState extends State<PostCard> {
                 ),
               ),
             if (post['shared'] is Map) _SharedCard(shared: mapOf(post['shared']), ownText: bodyText),
-            if (images.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 12), child: MediaGrid(items: images)),
-            if (music != null) Padding(padding: const EdgeInsets.only(top: 12), child: MusicAttachment(track: music)),
-            if (movie != null) Padding(padding: const EdgeInsets.only(top: 12), child: MovieAttachment(movie: movie)),
-            const SizedBox(height: 14),
+            if (images.isNotEmpty) Padding(padding: EdgeInsets.only(top: 12), child: MediaGrid(items: images)),
+            if (music != null) Padding(padding: EdgeInsets.only(top: 12), child: MusicAttachment(track: music)),
+            if (movie != null) Padding(padding: EdgeInsets.only(top: 12), child: MovieAttachment(movie: movie)),
+            SizedBox(height: 14),
             Row(
               children: [
                 ReactionButton(reaction: reaction, count: likes, onPick: _react),
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 _ActionPill(
                   icon: LucideIcons.messageCircle,
                   label: comments > 0 ? compact(comments) : null,
                   onTap: commentsEnabled ? () => setState(() => showComments = true) : null,
                 ),
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 _ActionPill(icon: LucideIcons.link, onTap: _copyLink),
-                const Spacer(),
+                Spacer(),
                 if (views > 0) ...[
-                  const Icon(LucideIcons.eye, size: 16, color: faint),
-                  const SizedBox(width: 4),
+                  Icon(LucideIcons.eye, size: 16, color: faint),
+                  SizedBox(width: 4),
                   Text(compact(views), style: body(12, color: faint)),
                 ],
               ],
             ),
             if (showComments)
               Padding(
-                padding: const EdgeInsets.only(top: 12),
+                padding: EdgeInsets.only(top: 12),
                 child: CommentsThread(
                   endpoint: '/api/v1/posts/${post['id']}/comments',
                   initial: maps(post['comments']),
@@ -358,18 +359,18 @@ class _ActionPill extends StatelessWidget {
     return Opacity(
       opacity: onTap == null ? 0.4 : 1,
       child: Material(
-        color: Colors.white.withValues(alpha: 0.045),
+        color: fg.withValues(alpha: 0.045),
         borderRadius: BorderRadius.circular(20),
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(20),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            padding: EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(icon, size: 18, color: soft.withValues(alpha: 0.7)),
-                if (label != null) ...[const SizedBox(width: 6), Text(label!, style: body(13.5, color: soft.withValues(alpha: 0.75), weight: FontWeight.w600))],
+                if (label != null) ...[SizedBox(width: 6), Text(label!, style: body(13.5, color: soft.withValues(alpha: 0.75), weight: FontWeight.w600))],
               ],
             ),
           ),
@@ -380,7 +381,7 @@ class _ActionPill extends StatelessWidget {
 }
 
 class _SheetAction extends StatelessWidget {
-  const _SheetAction({required this.icon, required this.label, required this.onTap, this.color = ink});
+  _SheetAction({required this.icon, required this.label, required this.onTap, Color? color}) : color = color ?? ink;
   final IconData icon;
   final String label;
   final VoidCallback onTap;
@@ -400,7 +401,7 @@ class _SheetAction extends StatelessWidget {
 /// Пункт у шторці дій (використовується різними екранами).
 class SheetAction extends _SheetAction {
   // ignore: use_key_in_widget_constructors
-  const SheetAction({required super.icon, required super.label, required super.onTap, super.color});
+  SheetAction({required super.icon, required super.label, required super.onTap, super.color});
 }
 
 // ───────────────────────── Вкладення ─────────────────────────
@@ -550,7 +551,7 @@ class MusicAttachment extends StatelessWidget {
         return Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: current ? primary.withValues(alpha: 0.1) : Colors.white.withValues(alpha: 0.04),
+            color: current ? primary.withValues(alpha: 0.1) : fg.withValues(alpha: 0.04),
             borderRadius: BorderRadius.circular(18),
             border: Border.all(color: current ? primary.withValues(alpha: 0.35) : line),
           ),
@@ -583,7 +584,7 @@ class MusicAttachment extends StatelessWidget {
               ),
               if (spotify) const Padding(padding: EdgeInsets.only(right: 6), child: SpotifyMark(size: 18)),
               if (!spotify && intOf(track['duration']) > 0) Text(duration(track['duration']), style: body(12, color: muted)),
-              if (onRemove != null) IconButton(onPressed: onRemove, icon: const Icon(LucideIcons.x, color: muted, size: 20)),
+              if (onRemove != null) IconButton(onPressed: onRemove, icon: Icon(LucideIcons.x, color: muted, size: 20)),
             ],
           ),
         );
@@ -634,7 +635,7 @@ class MovieAttachment extends StatelessWidget {
               ],
             ),
           ),
-          const Icon(LucideIcons.circlePlay, color: primary, size: 30),
+          Icon(LucideIcons.circlePlay, color: primary, size: 30),
         ],
       ),
     );
@@ -770,10 +771,10 @@ class _CommentsThreadState extends State<CommentsThread> {
             Padding(
               padding: const EdgeInsets.only(left: 44, bottom: 4),
               child: Row(children: [
-                const Icon(LucideIcons.cornerDownRight, size: 14, color: muted),
+                Icon(LucideIcons.cornerDownRight, size: 14, color: muted),
                 const SizedBox(width: 4),
                 Expanded(child: Text(tr('Відповідь {v}', {'v': text(mapOf(replyTo!['user'])['first_name']) ?? ''}), style: body(12, color: muted))),
-                GestureDetector(onTap: () => setState(() => replyTo = null), child: const Icon(LucideIcons.x, size: 16, color: muted)),
+                GestureDetector(onTap: () => setState(() => replyTo = null), child: Icon(LucideIcons.x, size: 16, color: muted)),
               ]),
             ),
           Row(
@@ -795,9 +796,9 @@ class _CommentsThreadState extends State<CommentsThread> {
                     fillColor: field,
                     isDense: true,
                     contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: const BorderSide(color: lineStrong)),
-                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: const BorderSide(color: lineStrong)),
-                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: const BorderSide(color: primary, width: 1.4)),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: BorderSide(color: lineStrong)),
+                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: BorderSide(color: lineStrong)),
+                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: BorderSide(color: primary, width: 1.4)),
                   ),
                 ),
               ),
@@ -827,7 +828,7 @@ class _CommentsThreadState extends State<CommentsThread> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.045),
+                    color: fg.withValues(alpha: 0.045),
                     borderRadius: const BorderRadius.only(topLeft: Radius.circular(6), topRight: Radius.circular(18), bottomLeft: Radius.circular(18), bottomRight: Radius.circular(18)),
                   ),
                   child: Column(
@@ -868,7 +869,7 @@ class _CommentsThreadState extends State<CommentsThread> {
                       ],
                       if (comment['can_delete'] == true) ...[
                         const SizedBox(width: 12),
-                        GestureDetector(onTap: () => _remove(comment), child: const Icon(LucideIcons.trash2, size: 15, color: faint)),
+                        GestureDetector(onTap: () => _remove(comment), child: Icon(LucideIcons.trash2, size: 15, color: faint)),
                       ],
                       const Spacer(),
                       GestureDetector(
@@ -1004,9 +1005,9 @@ class _ComposerState extends State<Composer> {
                       fillColor: field,
                       isDense: true,
                       contentPadding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: lineStrong)),
-                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: lineStrong)),
-                      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: primary, width: 1.4)),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: lineStrong)),
+                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: lineStrong)),
+                      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: primary, width: 1.4)),
                     ),
                   ),
                 ),
@@ -1046,7 +1047,7 @@ class _ComposerState extends State<Composer> {
                 const SizedBox(width: 6),
                 Container(
                   padding: const EdgeInsets.all(3),
-                  decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.04), borderRadius: BorderRadius.circular(14), border: Border.all(color: line)),
+                  decoration: BoxDecoration(color: fg.withValues(alpha: 0.04), borderRadius: BorderRadius.circular(14), border: Border.all(color: line)),
                   child: Row(
                     children: [
                       for (final entry in _visibility.entries)
@@ -1056,7 +1057,7 @@ class _ComposerState extends State<Composer> {
                             onTap: () => setState(() => visibility = entry.key),
                             child: Container(
                               padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
-                              decoration: BoxDecoration(color: visibility == entry.key ? Colors.white.withValues(alpha: 0.1) : Colors.transparent, borderRadius: BorderRadius.circular(10)),
+                              decoration: BoxDecoration(color: visibility == entry.key ? fg.withValues(alpha: 0.1) : Colors.transparent, borderRadius: BorderRadius.circular(10)),
                               child: Icon(entry.value.$1, size: 16, color: visibility == entry.key ? ink : muted),
                             ),
                           ),
@@ -1070,7 +1071,7 @@ class _ComposerState extends State<Composer> {
                   onTap: () => setState(() => asCommunity = !asCommunity),
                   child: Padding(
                     padding: const EdgeInsets.only(left: 6),
-                    child: Pill(label: asCommunity ? tr('Від спільноти') : tr('Від себе'), icon: LucideIcons.arrowLeftRight, color: const Color(0xFF9AA6FF)),
+                    child: Pill(label: asCommunity ? tr('Від спільноти') : tr('Від себе'), icon: LucideIcons.arrowLeftRight, color: accent),
                   ),
                 ),
               const Spacer(),
@@ -1095,7 +1096,7 @@ class _ToolIcon extends StatelessWidget {
       tooltip: tooltip,
       onPressed: onTap,
       visualDensity: VisualDensity.compact,
-      icon: Icon(icon, color: const Color(0xFF9AA6FF), size: 21),
+      icon: Icon(icon, color: accent, size: 21),
     );
   }
 }
@@ -1300,7 +1301,7 @@ class TrackRow extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(text(track['title']) ?? tr('Без назви'), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14.5, color: playing ? const Color(0xFF9AA6FF) : ink, weight: FontWeight.w600)),
+                  Text(text(track['title']) ?? tr('Без назви'), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14.5, color: playing ? accent : ink, weight: FontWeight.w600)),
                   Text(artistOf(track['artist'], '—'), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12.5, color: muted)),
                 ],
               ),
@@ -1353,7 +1354,7 @@ class ReactionButton extends StatelessWidget {
             child: Material(
               color: popover,
               elevation: 8,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30), side: const BorderSide(color: lineStrong)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30), side: BorderSide(color: lineStrong)),
               child: Padding(
                 padding: const EdgeInsets.all(6),
                 child: Row(mainAxisSize: MainAxisSize.min, children: [
@@ -1368,7 +1369,7 @@ class ReactionButton extends StatelessWidget {
                           height: 44,
                           alignment: Alignment.center,
                           decoration: BoxDecoration(
-                            color: reaction == id ? Colors.white.withValues(alpha: 0.12) : null,
+                            color: reaction == id ? fg.withValues(alpha: 0.12) : null,
                             shape: BoxShape.circle,
                           ),
                           child: Text(glyph, style: const TextStyle(fontSize: 24)),
@@ -1393,7 +1394,7 @@ class ReactionButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final current = reactionGlyphs.where((r) => r.$1 == reaction).firstOrNull;
     return Material(
-      color: current != null ? Colors.white.withValues(alpha: 0.1) : Colors.white.withValues(alpha: 0.045),
+      color: current != null ? fg.withValues(alpha: 0.1) : fg.withValues(alpha: 0.045),
       borderRadius: BorderRadius.circular(20),
       child: InkWell(
         onTap: () => onPick(reaction ?? 'like'),
@@ -1460,10 +1461,10 @@ class _SharedCard extends StatelessWidget {
         child: Container(
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.04), borderRadius: BorderRadius.circular(16), border: Border.all(color: line)),
+          decoration: BoxDecoration(color: fg.withValues(alpha: 0.04), borderRadius: BorderRadius.circular(16), border: Border.all(color: line)),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [
-              if (community != null) ...[const Icon(LucideIcons.usersRound, size: 13, color: muted), const SizedBox(width: 4)],
+              if (community != null) ...[Icon(LucideIcons.usersRound, size: 13, color: muted), const SizedBox(width: 4)],
               Flexible(
                 child: Text(
                   community != null ? tr('Із спільноти «{name}»', {'name': community['name']}) : tr('Запис'),

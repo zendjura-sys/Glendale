@@ -123,7 +123,7 @@ export function VoicePlayer({
                 className={cn(
                     'flex size-10 shrink-0 items-center justify-center rounded-full transition hover:scale-105',
                     own
-                        ? 'bg-white text-[#5b4cf0]'
+                        ? 'bg-white text-[#1d6fe0]'
                         : 'bg-gradient-brand text-white shadow-[0_0_18px_-4px_rgb(124_92_255/0.9)]',
                 )}
                 aria-label={isPlaying ? tr('Пауза') : tr('Відтворити')}

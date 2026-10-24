@@ -8,6 +8,7 @@ use App\Http\Middleware\EnsureUserIsAdmin;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\SetLocale;
 use App\Http\Middleware\TrackUserActivity;
+use App\Services\Geo\CountryRestrictions;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -27,6 +28,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->web(append: [
+            'throttle:web-global',
             SetLocale::class,
             BlockCountries::class,
             TrackUserActivity::class,
@@ -34,7 +36,7 @@ return Application::configure(basePath: dirname(__DIR__))
             AddLinkHeadersForPreloadedAssets::class,
         ]);
 
-        $middleware->api(append: [SetLocale::class, BlockCountries::class]);
+        $middleware->api(append: ['throttle:api-global', SetLocale::class, BlockCountries::class]);
         // Мова з cookie читається до розшифрування — вона не секретна.
         $middleware->encryptCookies(except: ['locale']);
 
@@ -55,11 +57,32 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // Відмова в дії з Inertia-форми — тост і повернення назад замість сторінки помилки.
         $exceptions->respond(function (Response $response, Throwable $e, Request $request) {
-            if ($e instanceof HttpExceptionInterface && $request->header('X-Inertia') && ! $request->isMethod('GET')
-                && in_array($response->getStatusCode(), [403, 409, 422, 423, 429], true)) {
-                Inertia::flash('toast', ['type' => 'error', 'message' => $e->getMessage() ?: 'Дію заборонено.']);
+            $status = $response->getStatusCode();
+            if ($request->header('X-Inertia') && ! $request->isMethod('GET')) {
+                // Сторінка застаріла (CSRF) — тост і назад, без втрати введеного.
+                if ($status === 419) {
+                    Inertia::flash('toast', ['type' => 'error', 'message' => 'Сторінка застаріла. Спробуйте ще раз.']);
 
-                return back();
+                    return back();
+                }
+                if ($e instanceof HttpExceptionInterface && in_array($status, [403, 409, 422, 423, 429], true)) {
+                    Inertia::flash('toast', ['type' => 'error', 'message' => $e->getMessage() ?: 'Дію заборонено.']);
+
+                    return back();
+                }
+            }
+
+            // Власні сторінки помилок у стилі сайту (у режимі налагодження лишаємо звичайний звіт Laravel).
+            if ($request->isMethod('GET') && ! $request->expectsJson() && ! $request->is('api/*')
+                && in_array($status, [403, 404, 410, 429, 500, 503], true) && (! config('app.debug') || $status !== 500)) {
+                try {
+                    // Розділ закритий для країни відвідувача — нейтральне пояснення замість загального тексту 403.
+                    $message = $e instanceof HttpExceptionInterface && $e->getMessage() === CountryRestrictions::MESSAGE ? $e->getMessage() : null;
+
+                    return Inertia::render('error', ['status' => $status, 'message' => $message])->toResponse($request)->setStatusCode($status);
+                } catch (Throwable) {
+                    // Не вийшло показати сторінку застосунку — лишається HTML із resources/views/errors.
+                }
             }
 
             return $response;

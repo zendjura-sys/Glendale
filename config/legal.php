@@ -15,8 +15,11 @@
 */
 
 return [
-    'operator' => env('LEGAL_OPERATOR', 'GameCon'),
-    'email' => env('LEGAL_EMAIL', 'support@gamecon.online'),
+    // Порожнє значення в .env (як у .env.example) не повинно лишати сторінки без назви й контакту.
+    'operator' => env('LEGAL_OPERATOR') ?: 'GameCon',
+    // Ім’я розробника, як на сторінці застосунку в Google Play (стандарти безпеки дітей мають його називати).
+    'developer' => env('LEGAL_DEVELOPER') ?: 'Monsory Apps',
+    'email' => env('LEGAL_EMAIL') ?: 'support@gamecon.online',
     'address' => env('LEGAL_ADDRESS'),
     'country' => env('LEGAL_COUNTRY', 'Ukraine'),
     'updated' => env('LEGAL_UPDATED', '2026-10-16'),
@@ -32,6 +35,7 @@ return [
         'terms' => 'terms',
         'privacy' => 'privacy',
         'refund-policy' => 'refund',
+        'child-safety' => 'child-safety',
     ],
 
     // Назви мов у перемикачі (рідною мовою).

@@ -14,6 +14,7 @@ use App\Models\UserReport;
 use App\Models\UserStream;
 use App\Services\Achievements;
 use App\Services\FriendshipService;
+use App\Services\GameCard;
 use App\Services\ImageStorage;
 use App\Services\Messenger;
 use App\Services\Moderation\PeopleModeration;
@@ -24,6 +25,7 @@ use App\Services\PlayedTogether;
 use App\Services\PostCards;
 use App\Services\PostPresenter;
 use App\Services\Presence\SteamPresence;
+use App\Services\Quests\SeasonPass;
 use App\Services\Streams\LiveStreams;
 use App\Support\Backgrounds;
 use App\Support\Modules\ModuleManager;
@@ -128,11 +130,12 @@ class ProfileController extends Controller
                 'cover_url' => $user->cover_url,
                 // GameCon+: власні кольори сторінки (з палітр сайту).
                 'accent' => $user->isPlus() ? Palette::colors((string) ($user->plus_style['accent'] ?? '')) : null,
-                'header_fx' => $user->isPlus() ? PlusStyle::header($user->plus_style) : null,
+                // Ефект шапки: з GameCon+ або вдягнутий із сезонного пропуску.
+                'header_fx' => ($user->isPlus() ? PlusStyle::header($user->plus_style) : null) ?? SeasonPass::header($user->cosmetics),
                 // GameCon+: власний відеофон власника видно й гостям його сторінки.
                 'background_video' => $canSeeContent ? Backgrounds::for($user)['video'] : null,
                 // Внутрішній номер (якщо власник не сховав його з профілю); can_call — чи можна набрати.
-                'phone' => $this->phoneCard($request->user(), $user),
+                'phone' => app(PhoneNumbers::class)->profileCard($request->user(), $user),
                 'about' => $canSeeContent ? $user->about : null,
                 'city' => $user->city,
                 'birthday' => $canSeeContent ? $user->birthday?->toDateString() : null,
@@ -228,8 +231,14 @@ class ProfileController extends Controller
             'scale' => 6,
         ])))->render($url);
 
+        // Game Card: закритий профіль стороннім показує лише публічне (рівень, сім’ю, клан).
+        $viewer = request()->user();
+        $full = ! $user->is_private || ($viewer !== null && ($viewer->id === $user->id || $viewer->isStaff()
+            || $this->friendships->status($viewer, $user) === FriendshipService::FRIENDS));
+
         return Inertia::render('profile/card', [
             'profile' => $user->toCard(),
+            'game' => app(GameCard::class)->for($user, $full),
             'url' => $url,
             'qr' => preg_replace('/^<\?xml[^>]*>\s*/', '', $svg) ?: $svg,
         ]);
@@ -384,14 +393,4 @@ class ProfileController extends Controller
     /**
      * @return array{number: string, tier: string, kind: string, can_call: bool}|null
      */
-    private function phoneCard(?User $viewer, User $owner): ?array
-    {
-        $phones = app(PhoneNumbers::class);
-        if (! app(ModuleManager::class)->enabled('phone') || ! $phones->visibleOnProfile($owner)) {
-            return null;
-        }
-        $number = $phones->current($owner);
-
-        return $number === null ? null : [...$number->toCard(), 'can_call' => $viewer !== null && $phones->reachable($viewer, $owner)];
-    }
 }

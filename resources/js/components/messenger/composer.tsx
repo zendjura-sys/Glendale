@@ -376,7 +376,7 @@ export function Composer({
                         <button
                             type="button"
                             onClick={() => setVanish(false)}
-                            className="inline-flex min-h-8 items-center gap-1.5 rounded-full bg-gc-indigo/15 px-3 text-gc-lilac-200"
+                            className="inline-flex min-h-8 items-center gap-1.5 rounded-chip bg-gc-indigo/15 px-3 text-gc-lilac-200"
                         >
                             <Timer className="size-3.5" />
                             {tr('Зникне за добу')}
@@ -387,7 +387,7 @@ export function Composer({
                         <button
                             type="button"
                             onClick={() => setPublishAt('')}
-                            className="inline-flex min-h-8 items-center gap-1.5 rounded-full bg-gc-indigo/15 px-3 text-gc-lilac-200"
+                            className="inline-flex min-h-8 items-center gap-1.5 rounded-chip bg-gc-indigo/15 px-3 text-gc-lilac-200"
                         >
                             <Clock className="size-3.5" />
                             {tr('Надішлеться {date}', {
@@ -536,7 +536,7 @@ export function Composer({
                     >
                         <Trash2 className="size-5" />
                     </button>
-                    <div className="input-glass flex h-11 min-w-0 flex-1 items-center gap-3 rounded-[22px] px-4">
+                    <div className="input-glass flex h-11 min-w-0 flex-1 items-center gap-3 rounded-control px-4">
                         <span className="relative flex size-2.5 shrink-0">
                             <span className="absolute inset-0 animate-ping rounded-full bg-rose-500/70" />
                             <span className="relative size-2.5 rounded-full bg-rose-500" />
@@ -653,7 +653,7 @@ export function Composer({
                         </div>
                     )}
 
-                    <div className="input-glass flex min-w-0 flex-1 items-end rounded-[22px] pr-1">
+                    <div className="input-glass flex min-w-0 flex-1 items-end rounded-control pr-1">
                         <textarea
                             ref={textRef}
                             value={body}
@@ -848,7 +848,7 @@ export function Composer({
                                 title={
                                     !editing && (vanishOn || scheduleOn)
                                         ? tr(
-                                              'Утримуйте, щоб відкласти або зробити зникаючим',
+                                              'Утримуйте, щоб відкласти або зробити тимчасовим',
                                           )
                                         : undefined
                                 }

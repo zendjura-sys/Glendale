@@ -5,17 +5,17 @@ const sizes = {
     xs: 'size-7 rounded-lg text-xs',
     sm: 'size-9 rounded-xl text-xs',
     md: 'size-11 rounded-[14px] text-sm',
-    lg: 'size-16 rounded-[20px] text-lg',
-    xl: 'size-24 rounded-[26px] text-2xl',
-    hero: 'size-36 rounded-[38px] text-4xl sm:size-40',
+    lg: 'size-16 rounded-xl text-lg',
+    xl: 'size-24 rounded-2xl text-2xl',
+    hero: 'size-36 rounded-[20px] text-4xl sm:size-40',
 } as const;
 
 const palettes = [
     'from-gc-blue via-gc-indigo to-gc-purple',
-    'from-gc-mint via-gc-cyan to-gc-blue',
+    'from-[#0e7490] via-gc-cyan to-gc-blue',
     'from-gc-pink via-gc-purple to-gc-indigo',
-    'from-gc-coral via-gc-pink to-gc-purple',
-    'from-gc-cyan via-gc-blue to-gc-mint',
+    'from-[#1e40af] via-gc-blue to-gc-cyan',
+    'from-gc-cyan via-gc-blue to-[#1e40af]',
 ];
 
 export function CommunityAvatar({

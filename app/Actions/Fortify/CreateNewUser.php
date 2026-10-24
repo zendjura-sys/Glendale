@@ -6,6 +6,7 @@ use App\Concerns\PasswordValidationRules;
 use App\Concerns\ProfileValidationRules;
 use App\Models\User;
 use App\Support\Settings\SiteSettings;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -14,6 +15,9 @@ use Laravel\Fortify\Contracts\CreatesNewUsers;
 class CreateNewUser implements CreatesNewUsers
 {
     use PasswordValidationRules, ProfileValidationRules;
+
+    /** Скільки акаунтів можна створити з однієї IP-адреси за годину. */
+    private const PER_HOUR = 5;
 
     public function __construct(private readonly SiteSettings $settings) {}
 
@@ -26,6 +30,16 @@ class CreateNewUser implements CreatesNewUsers
     {
         if (! $this->settings->get('registration_open')) {
             throw ValidationException::withMessages(['email' => 'Реєстрацію тимчасово закрито.']);
+        }
+
+        // Пастка для ботів: поле приховане від людей, боти його заповнюють.
+        if (filled($input['website'] ?? null)) {
+            throw ValidationException::withMessages(['email' => 'Не вдалося зареєструватися. Спробуйте ще раз.']);
+        }
+        // Не більше кількох нових акаунтів з однієї адреси за годину.
+        $key = 'register:'.request()->ip();
+        if (RateLimiter::tooManyAttempts($key, self::PER_HOUR)) {
+            throw ValidationException::withMessages(['email' => 'Забагато реєстрацій з вашої мережі. Спробуйте за годину.']);
         }
 
         Validator::make($input, [
@@ -49,6 +63,7 @@ class CreateNewUser implements CreatesNewUsers
         }
 
         $user->mergePref(['onboarded' => false]);
+        RateLimiter::hit($key, 3600);
 
         return $user;
     }

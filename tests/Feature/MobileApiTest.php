@@ -2,7 +2,9 @@
 
 namespace Tests\Feature;
 
+use App\Models\Track;
 use App\Models\User;
+use App\Services\Auth\ApiTokens;
 use App\Support\Settings\SiteSettings;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -108,6 +110,27 @@ class MobileApiTest extends TestCase
         $this->withToken($token)->deleteJson('/api/v1/friends/'.$other->username)
             ->assertOk()
             ->assertJsonPath('relation', 'none');
+    }
+
+    public function test_app_uploads_a_track_with_token(): void
+    {
+        Storage::fake('public');
+        $user = User::factory()->create();
+        $token = app(ApiTokens::class)->issue($user, 'android');
+
+        // Раніше застосунок отримував 500 (ArgumentCountError): міст не передавав AudioProbe у TrackController::store.
+        $this->withToken($token)->post('/api/v1/music/tracks', [
+            'audio' => UploadedFile::fake()->create('song.mp3', 800, 'audio/mpeg'),
+            'title' => 'Респаун',
+            'artist' => 'Lag Spike',
+            'duration' => 201,
+        ], ['Accept' => 'application/json'])->assertCreated()
+            ->assertJsonPath('track.title', 'Респаун')
+            ->assertJsonPath('track.in_library', true);
+
+        $track = Track::query()->sole();
+        $this->assertSame($user->id, $track->user_id);
+        Storage::disk('public')->assertExists($track->path);
     }
 
     public function test_wrong_password(): void

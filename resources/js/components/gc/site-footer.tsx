@@ -1,5 +1,7 @@
 import { Link, usePage } from '@inertiajs/react';
 import { PaymentBadges } from '@/components/billing/payment-badges';
+import { reopenConsent } from '@/lib/consent';
+import { tr } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
 /**
@@ -26,11 +28,13 @@ export function SiteFooter({
     const t = { ...footer, ...labels };
     const q = lang ? `?lang=${lang}` : '';
     const links = [
+        { href: '/help', label: tr('Довідка') },
         { href: `/terms${q}`, label: t.terms },
         { href: `/privacy${q}`, label: t.privacy },
         { href: `/refund-policy${q}`, label: t.refund },
         { href: `/pricing${q}`, label: t.pricing },
         { href: `/contacts${q}`, label: t.contacts },
+        { href: `/child-safety${q}`, label: t.child_safety },
     ];
 
     return (
@@ -40,18 +44,25 @@ export function SiteFooter({
                 className,
             )}
         >
-            <nav className="flex flex-wrap items-center justify-center gap-x-1 gap-y-1">
-                {links.map((link, i) => (
-                    <span key={link.href} className="flex items-center gap-x-1">
-                        {i > 0 && <span aria-hidden>|</span>}
-                        <Link
-                            href={link.href}
-                            className="rounded px-1 transition hover:text-white"
-                        >
-                            {link.label}
-                        </Link>
-                    </span>
+            {/* Посилання переносяться рядками без роздільників (жодних «|» на початку рядка); висота
+                рядка 40 px і проміжки між ними — зручно влучити пальцем. */}
+            <nav className="mx-auto flex max-w-2xl flex-wrap items-center justify-center gap-x-5">
+                {links.map((link) => (
+                    <Link
+                        key={link.href}
+                        href={link.href}
+                        className="inline-flex min-h-10 items-center transition hover:text-white"
+                    >
+                        {link.label}
+                    </Link>
                 ))}
+                <button
+                    type="button"
+                    onClick={reopenConsent}
+                    className="inline-flex min-h-10 items-center transition hover:text-white"
+                >
+                    {tr('Налаштування cookie')}
+                </button>
             </nav>
             <PaymentBadges className="mt-3 justify-center" />
             <p className="mt-2">

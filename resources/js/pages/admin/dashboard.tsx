@@ -51,8 +51,8 @@ type Props = {
 };
 
 const SERIES = {
-    posts: { label: tr('Записи'), color: '#a855f7' },
-    users: { label: tr('Реєстрації'), color: '#4f8bff' },
+    posts: { label: tr('Записи'), color: '#22d3ee' },
+    users: { label: tr('Реєстрації'), color: '#2f7bff' },
 } as const;
 
 function path(points: [number, number][]) {
@@ -311,7 +311,7 @@ export default function AdminDashboard({
             </div>
 
             <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-[1fr_340px]">
-                <section className="glass rounded-3xl p-5 sm:p-6">
+                <section className="glass rounded-2xl p-5 sm:p-6">
                     <div className="mb-4 flex items-center gap-2">
                         <Activity className="size-4 text-gc-lilac-400" />
                         <h2 className="font-display text-sm font-semibold text-white/90">
@@ -330,7 +330,7 @@ export default function AdminDashboard({
 
                 <div className="grid gap-4">
                     <div className="grid grid-cols-2 gap-4">
-                        <div className="glass rounded-3xl p-4">
+                        <div className="glass rounded-2xl p-4">
                             <UserPlus className="size-4 text-gc-sky" />
                             <div className="mt-3 font-display text-2xl font-bold text-white">
                                 {compactNumber(stats.friendships)}
@@ -339,7 +339,7 @@ export default function AdminDashboard({
                                 {tr('дружб')}
                             </div>
                         </div>
-                        <div className="glass rounded-3xl p-4">
+                        <div className="glass rounded-2xl p-4">
                             <Ban className="size-4 text-rose-300" />
                             <div className="mt-3 font-display text-2xl font-bold text-white">
                                 {stats.banned}
@@ -351,7 +351,7 @@ export default function AdminDashboard({
                     </div>
                     <Link
                         href="/admin/modules"
-                        className="glass group rounded-3xl p-5 transition hover:border-white/15"
+                        className="glass group rounded-2xl p-5 transition hover:border-white/15"
                     >
                         <div className="flex items-center justify-between">
                             <Blocks className="size-5 text-[#d3b0ff]" />
@@ -378,7 +378,7 @@ export default function AdminDashboard({
                             />
                         </div>
                     </Link>
-                    <section className="glass rounded-3xl p-5">
+                    <section className="glass rounded-2xl p-5">
                         <div className="mb-3 flex items-center gap-2">
                             <Server className="size-4 text-gc-lilac-400" />
                             <h2 className="font-display text-xs font-semibold text-white/80">
@@ -410,7 +410,7 @@ export default function AdminDashboard({
             </div>
 
             <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
-                <section className="glass rounded-3xl p-5">
+                <section className="glass rounded-2xl p-5">
                     <div className="mb-3 flex items-center justify-between">
                         <h2 className="font-display text-sm font-semibold text-white/90">
                             {tr('Нові користувачі')}
@@ -433,7 +433,7 @@ export default function AdminDashboard({
                                     href={`/${u.username}`}
                                     className="min-w-0 flex-1"
                                 >
-                                    <span className="block truncate text-sm font-medium text-white">
+                                    <span className="block text-sm font-medium break-words text-white">
                                         {u.name}
                                     </span>
                                     <span className="block text-xs text-white/40">
@@ -450,7 +450,7 @@ export default function AdminDashboard({
                         ))}
                     </ul>
                 </section>
-                <section className="glass rounded-3xl p-5">
+                <section className="glass rounded-2xl p-5">
                     <div className="mb-3 flex items-center justify-between">
                         <h2 className="font-display text-sm font-semibold text-white/90">
                             {tr('Останні записи')}

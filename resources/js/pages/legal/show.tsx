@@ -21,6 +21,7 @@ const PATHS = {
     privacy: '/privacy',
     refund: '/refund-policy',
     contacts: '/contacts',
+    'child-safety': '/child-safety',
 } as const;
 
 /**
@@ -46,7 +47,7 @@ export default function LegalDocument({
             labels={labels}
             languages={translations}
         >
-            <article lang={locale} className="glass rounded-3xl p-5 sm:p-8">
+            <article lang={locale} className="glass rounded-2xl p-5 sm:p-8">
                 <header className="mb-6 space-y-3 border-b border-white/[0.06] pb-5">
                     <div className="flex flex-wrap items-start gap-3">
                         <h1 className="min-w-0 flex-1 font-display text-2xl font-bold text-white sm:text-3xl">
@@ -55,7 +56,7 @@ export default function LegalDocument({
                         {!is_master && (
                             <Link
                                 href={`${PATHS[document]}?lang=${master}`}
-                                className="inline-flex h-10 shrink-0 items-center gap-2 rounded-xl bg-[var(--btn-primary,#6366f1)] px-4 text-sm font-semibold text-white transition hover:opacity-90"
+                                className="inline-flex h-10 shrink-0 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-white transition hover:opacity-90"
                             >
                                 <Languages className="size-4" />
                                 {labels.view_original}

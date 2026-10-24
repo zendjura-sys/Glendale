@@ -231,7 +231,7 @@ class _MovieScreenState extends State<MovieScreen> {
     final movie = mapOf(data?['movie']);
     final list = _episodic(source) ? voiceSeasons(seasons, source) : const <Season>[];
     final pick = chosen ?? (list.isEmpty ? null : _continuePick(list));
-    // Прямі потоки (якщо адміністратор додав ключ Kodik video-links) — і вибір плеєра, як в Anixart.
+    // Прямі потоки (якщо адміністратор додав ключ Kodik video-links) — і вибір плеєра в застосунку.
     final resolver = text(source['provider']) == 'kodik' && source['id'] != null ? _streams(source) : null;
     var first = <Stream>[];
     if (resolver != null) {
@@ -313,7 +313,7 @@ class _MovieScreenState extends State<MovieScreen> {
                 Padding(
                   padding: const EdgeInsets.only(bottom: 8),
                   child: Material(
-                    color: engine == option.key ? primary.withValues(alpha: 0.14) : Colors.white.withValues(alpha: 0.04),
+                    color: engine == option.key ? primary.withValues(alpha: 0.14) : fg.withValues(alpha: 0.04),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18), side: BorderSide(color: engine == option.key ? primary : line)),
                     child: InkWell(
                       borderRadius: BorderRadius.circular(18),
@@ -609,7 +609,7 @@ class _MovieScreenState extends State<MovieScreen> {
             // Кнопка лежить на темній підкладці, під нею в тій самій підкладці — «Додано: …».
             Expanded(
               child: DecoratedBox(
-                decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(28)),
+                decoration: BoxDecoration(color: fg.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(28)),
                 child: Column(children: [
                   _PlayPill(label: watchLabel, onTap: _watch),
                   if (added != null)
@@ -623,7 +623,7 @@ class _MovieScreenState extends State<MovieScreen> {
             SizedBox(
               width: 44,
               height: 54,
-              child: IconButton(onPressed: _menu, tooltip: tr('Ще'), icon: const Icon(LucideIcons.ellipsisVertical, color: soft)),
+              child: IconButton(onPressed: _menu, tooltip: tr('Ще'), icon: Icon(LucideIcons.ellipsisVertical, color: soft)),
             ),
           ]),
         ],
@@ -770,11 +770,11 @@ class _GlassIcon extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: Colors.black.withValues(alpha: 0.45),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14), side: BorderSide(color: Colors.white.withValues(alpha: 0.10))),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14), side: BorderSide(color: fg.withValues(alpha: 0.10))),
       child: InkWell(
         borderRadius: BorderRadius.circular(14),
         onTap: onTap,
-        child: SizedBox(width: 46, height: 46, child: Icon(icon, size: 21, color: Colors.white.withValues(alpha: 0.9))),
+        child: SizedBox(width: 46, height: 46, child: Icon(icon, size: 21, color: fg.withValues(alpha: 0.9))),
       ),
     );
   }
@@ -887,7 +887,7 @@ class _TrailerCard extends StatelessWidget {
                 Container(
                   width: 52,
                   height: 52,
-                  decoration: const BoxDecoration(color: primary, shape: BoxShape.circle),
+                  decoration: BoxDecoration(color: primary, shape: BoxShape.circle),
                   child: const Icon(LucideIcons.play, color: Colors.white, size: 26),
                 ),
                 const SizedBox(width: 12),
@@ -921,7 +921,7 @@ class _RatingBlock extends StatelessWidget {
       child: Column(children: [
         if (total == 0)
           Row(children: [
-            const Icon(LucideIcons.star, size: 20, color: faint),
+            Icon(LucideIcons.star, size: 20, color: faint),
             const SizedBox(width: 10),
             Expanded(child: Text(tr('Оцінок ще немає — будьте першими.'), style: body(14, color: muted))),
           ])
@@ -949,8 +949,8 @@ class _RatingBlock extends StatelessWidget {
                         child: LinearProgressIndicator(
                           value: top == 0 ? 0 : counts[i]! / top,
                           minHeight: 10,
-                          backgroundColor: Colors.white.withValues(alpha: 0.06),
-                          valueColor: const AlwaysStoppedAnimation(primary),
+                          backgroundColor: fg.withValues(alpha: 0.06),
+                          valueColor: AlwaysStoppedAnimation(primary),
                         ),
                       ),
                     ),
@@ -1105,7 +1105,7 @@ class _VoicePickerScreenState extends State<VoicePickerScreen> {
                           ),
                         ]),
                       ),
-                      if (active) const Icon(LucideIcons.circleCheck, color: primary),
+                      if (active) Icon(LucideIcons.circleCheck, color: primary),
                     ]),
                   ),
                 );
@@ -1162,7 +1162,7 @@ class _PageBar extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(6, 6, 6, 8),
       decoration: BoxDecoration(border: Border(bottom: BorderSide(color: line))),
       child: Row(children: [
-        IconButton(onPressed: onBack, icon: const Icon(LucideIcons.arrowLeft, color: ink)),
+        IconButton(onPressed: onBack, icon: Icon(LucideIcons.arrowLeft, color: ink)),
         const SizedBox(width: 4),
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -1186,10 +1186,10 @@ class _Hint extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
       padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
-      decoration: BoxDecoration(borderRadius: BorderRadius.circular(20), border: Border.all(color: lineStrong), color: Colors.white.withValues(alpha: 0.03)),
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(20), border: Border.all(color: lineStrong), color: fg.withValues(alpha: 0.03)),
       child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Expanded(child: Text(text, style: body(13.5, color: muted).copyWith(height: 1.45))),
-        IconButton(onPressed: onClose, icon: const Icon(LucideIcons.circleX, color: muted, size: 22)),
+        IconButton(onPressed: onClose, icon: Icon(LucideIcons.circleX, color: muted, size: 22)),
       ]),
     );
   }
@@ -1993,7 +1993,7 @@ class _MoviePlayerScreenState extends State<MoviePlayerScreen> {
               Expanded(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
                   Text(widget.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: display(17, color: Colors.white)),
-                  if (_subtitle.isNotEmpty) Text(_subtitle, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(13, color: Colors.white70)),
+                  if (_subtitle.isNotEmpty) Text(_subtitle, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(13, color: fgSoft)),
                 ]),
               ),
               _PillButton(icon: LucideIcons.gauge, label: speed == 1 ? '1x' : '${speed}x', onTap: _speedMenu),
@@ -2097,7 +2097,7 @@ class _SeekBarState extends State<_SeekBar> {
                 data: SliderTheme.of(context).copyWith(
                   trackHeight: 3.5,
                   activeTrackColor: primary,
-                  inactiveTrackColor: Colors.white24,
+                  inactiveTrackColor: fg.withValues(alpha: 0.24),
                   thumbColor: Colors.white,
                   overlayColor: primary.withValues(alpha: 0.2),
                   thumbShape: RoundSliderThumbShape(enabledThumbRadius: dragging == null ? 6 : 9),
@@ -2143,7 +2143,7 @@ class _TimeLabel extends StatelessWidget {
         builder: (context, position, _) => Text.rich(
           TextSpan(children: [
             TextSpan(text: clock(position), style: body(13.5, color: Colors.white, weight: FontWeight.w600)),
-            TextSpan(text: ' / ${duration > 0 ? clock(duration) : '--:--'}', style: body(13.5, color: Colors.white60)),
+            TextSpan(text: ' / ${duration > 0 ? clock(duration) : '--:--'}', style: body(13.5, color: fg.withValues(alpha: 0.60))),
           ]),
         ),
       ),
@@ -2169,7 +2169,7 @@ class _BigPlay extends StatelessWidget {
           width: 76,
           height: 76,
           child: Stack(alignment: Alignment.center, children: [
-            if (loading) const SizedBox(width: 76, height: 76, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white70)),
+            if (loading) SizedBox(width: 76, height: 76, child: CircularProgressIndicator(strokeWidth: 2.5, color: fgSoft)),
             AnimatedSwitcher(
               duration: const Duration(milliseconds: 180),
               transitionBuilder: (child, anim) => ScaleTransition(scale: anim, child: child),
@@ -2195,7 +2195,7 @@ class _PlayerIcon extends StatelessWidget {
       onPressed: onTap,
       tooltip: tooltip,
       iconSize: size,
-      icon: Icon(icon, color: onTap == null ? Colors.white30 : Colors.white),
+      icon: Icon(icon, color: onTap == null ? fg.withValues(alpha: 0.30) : Colors.white),
     );
   }
 }
@@ -2209,7 +2209,7 @@ class _PillButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.white.withValues(alpha: 0.12),
+      color: fg.withValues(alpha: 0.12),
       shape: const StadiumBorder(),
       child: InkWell(
         customBorder: const StadiumBorder(),
@@ -2248,7 +2248,7 @@ class _SkipRipple extends StatelessWidget {
           builder: (context, t, child) => Opacity(opacity: t, child: child),
           child: DecoratedBox(
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.12),
+              color: fg.withValues(alpha: 0.12),
               borderRadius: dir < 0 ? const BorderRadius.horizontal(right: Radius.circular(400)) : const BorderRadius.horizontal(left: Radius.circular(400)),
             ),
             child: Center(
@@ -2415,7 +2415,7 @@ class _EpisodeCell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: active ? primary : Colors.white.withValues(alpha: started ? 0.04 : 0.08),
+      color: active ? primary : fg.withValues(alpha: started ? 0.04 : 0.08),
       borderRadius: BorderRadius.circular(10),
       child: InkWell(
         borderRadius: BorderRadius.circular(10),

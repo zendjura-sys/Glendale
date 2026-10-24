@@ -3,14 +3,14 @@ import { cn } from '@/lib/utils';
 const sizes = {
     sm: 'size-9 rounded-xl text-xs',
     md: 'size-12 rounded-2xl text-sm',
-    lg: 'size-16 rounded-[20px] text-base',
-    xl: 'size-24 rounded-[26px] text-2xl',
+    lg: 'size-16 rounded-xl text-base',
+    xl: 'size-24 rounded-2xl text-2xl',
 } as const;
 
 const tones = [
-    'from-[#facc15] via-[#f59e0b] to-[#ef4444]',
+    'from-[#38bdf8] via-gc-blue to-[#1e40af]',
     'from-gc-blue via-gc-indigo to-gc-purple',
-    'from-gc-mint via-gc-cyan to-gc-blue',
+    'from-[#0e7490] via-gc-cyan to-gc-blue',
     'from-gc-pink via-gc-purple to-gc-indigo',
 ];
 

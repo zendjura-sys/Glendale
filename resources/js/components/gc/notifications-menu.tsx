@@ -1,5 +1,6 @@
 import { Link, usePage } from '@inertiajs/react';
 import {
+    Headphones,
     Radio,
     UserRoundSearch,
     AlarmClock,
@@ -18,6 +19,8 @@ import {
     Shield,
     ShieldCheck,
     UserCheck,
+    Sunrise,
+    Trophy,
     UserPlus,
     Gift,
     RefreshCw,
@@ -53,7 +56,11 @@ const kindIcon: Record<string, { icon: typeof Bell; className: string }> = {
     family_event: { icon: CalendarDays, className: 'bg-gc-indigo' },
     event_reminder: { icon: AlarmClock, className: 'bg-amber-500' },
     party_join: { icon: UserRoundSearch, className: 'bg-gc-indigo' },
+    party_invite: { icon: UserRoundSearch, className: 'bg-primary' },
     stream_live: { icon: Radio, className: 'bg-rose-500' },
+    listen_room: { icon: Headphones, className: 'bg-gc-indigo' },
+    tournament: { icon: Trophy, className: 'bg-amber-500' },
+    morning_digest: { icon: Sunrise, className: 'bg-primary' },
     referral_joined: { icon: UserPlus, className: 'bg-emerald-500' },
     plus_gifted: { icon: Gift, className: 'bg-indigo-500' },
     wallet_topup: { icon: Wallet, className: 'bg-emerald-500' },
@@ -114,7 +121,7 @@ export function NotificationsMenu() {
                 type="button"
                 onClick={toggle}
                 className={cn(
-                    'relative flex size-10 items-center justify-center rounded-full bg-black/25 text-white/75 ring-1 ring-white/[0.06] transition hover:bg-black/40 hover:text-white',
+                    'gc-icon-button relative flex size-10 items-center justify-center rounded-xl transition',
                     open && 'bg-white/[0.07] text-white',
                 )}
                 aria-label={
@@ -127,7 +134,7 @@ export function NotificationsMenu() {
                 {unread > 0 && (
                     <span
                         aria-hidden
-                        className="absolute -top-0.5 -right-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-gradient-to-r from-rose-500 to-pink-500 px-1 text-[11px] leading-none font-bold text-white ring-2 ring-background"
+                        className="absolute top-0.5 right-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-rose-500 px-1 text-[11px] leading-none font-bold text-white"
                     >
                         {unread > 99 ? '99+' : unread}
                     </span>

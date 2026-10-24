@@ -55,7 +55,7 @@ export function MomentCard({ moment }: { moment: MomentCardData }) {
     };
 
     return (
-        <article className="glass flex min-w-0 flex-col overflow-hidden rounded-3xl">
+        <article className="glass flex min-w-0 flex-col overflow-hidden rounded-2xl">
             <div className="relative aspect-video w-full bg-black/40">
                 {playing && moment.player ? (
                     <iframe
@@ -99,7 +99,7 @@ export function MomentCard({ moment }: { moment: MomentCardData }) {
                         </span>
                         <span
                             className={cn(
-                                'absolute top-2.5 left-2.5 rounded-full px-2 py-0.5 text-[11px] font-semibold text-white',
+                                'absolute top-2.5 left-2.5 rounded-chip px-2 py-0.5 text-[11px] font-semibold text-white',
                                 PROVIDER_TONE[moment.provider],
                             )}
                         >
@@ -116,7 +116,7 @@ export function MomentCard({ moment }: { moment: MomentCardData }) {
                     {moment.game && (
                         <Link
                             href={`/moments?game=${moment.game.slug}`}
-                            className="max-w-full truncate rounded-full bg-white/[0.06] px-2.5 py-0.5 text-white/70 hover:text-white"
+                            className="max-w-full truncate rounded-control bg-white/[0.06] px-2.5 py-0.5 text-white/70 hover:text-white"
                         >
                             🎮 {moment.game.name}
                         </Link>
@@ -124,7 +124,7 @@ export function MomentCard({ moment }: { moment: MomentCardData }) {
                     {moment.server && (
                         <Link
                             href={`/servers/${moment.server.slug}`}
-                            className="max-w-full truncate rounded-full bg-white/[0.06] px-2.5 py-0.5 text-white/70 hover:text-white"
+                            className="max-w-full truncate rounded-control bg-white/[0.06] px-2.5 py-0.5 text-white/70 hover:text-white"
                         >
                             {moment.server.name}
                         </Link>
@@ -173,7 +173,7 @@ export function MomentCard({ moment }: { moment: MomentCardData }) {
                         aria-pressed={liked}
                         aria-label={tr('Подобається')}
                         className={cn(
-                            'inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full px-3 text-sm transition',
+                            'inline-flex h-9 shrink-0 items-center gap-1.5 rounded-control px-3 text-sm transition',
                             liked
                                 ? 'bg-rose-500/15 text-rose-200'
                                 : 'bg-white/[0.05] text-white/70 hover:text-white',

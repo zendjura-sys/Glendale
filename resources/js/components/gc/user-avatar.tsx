@@ -1,7 +1,7 @@
 import { initials } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { tr } from '@/lib/i18n';
-import type { PlusMark } from '@/types';
+import type { Cosmetics, PlusMark } from '@/types';
 import { plusFrameStyle } from './plus';
 
 const sizes = {
@@ -27,8 +27,8 @@ const palettes = [
     'from-gc-indigo to-gc-purple',
     'from-gc-purple to-gc-pink',
     'from-gc-cyan to-gc-blue',
-    'from-gc-pink to-gc-coral',
-    'from-gc-mint to-gc-cyan',
+    'from-[#1e40af] to-gc-blue',
+    'from-[#0e7490] to-gc-cyan',
 ];
 
 type Props = {
@@ -38,6 +38,7 @@ type Props = {
         is_online?: boolean;
         id?: number;
         plus?: PlusMark | null;
+        cosmetics?: Cosmetics | null;
     };
     size?: keyof typeof sizes;
     ring?: boolean;
@@ -53,6 +54,12 @@ export function UserAvatar({
     className,
 }: Props) {
     const palette = palettes[(user.id ?? user.name.length) % palettes.length];
+    // Рамка GameCon+, інакше — вдягнута з сезонного пропуску.
+    const frame = user.plus?.frame?.length
+        ? user.plus
+        : user.cosmetics?.frame?.length
+          ? { name: null, frame: user.cosmetics.frame }
+          : null;
 
     const inner = user.avatar_url ? (
         <img
@@ -80,10 +87,10 @@ export function UserAvatar({
                 className,
             )}
         >
-            {!ring && user.plus?.frame ? (
+            {!ring && frame ? (
                 <span
                     className="flex size-full rounded-full p-[2px]"
-                    style={plusFrameStyle(user.plus)}
+                    style={plusFrameStyle(frame)}
                 >
                     <span className="flex size-full overflow-hidden rounded-full bg-void p-[1.5px]">
                         <span className="flex size-full overflow-hidden rounded-full">
@@ -92,7 +99,7 @@ export function UserAvatar({
                     </span>
                 </span>
             ) : ring ? (
-                <span className="ring-gradient flex size-full rounded-full p-[3px] shadow-[0_0_40px_-6px_rgb(124_92_255/0.8)]">
+                <span className="ring-gradient flex size-full rounded-full p-[3px]">
                     <span className="flex size-full rounded-full bg-void p-[3px]">
                         {inner}
                     </span>

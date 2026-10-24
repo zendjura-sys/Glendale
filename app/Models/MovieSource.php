@@ -28,9 +28,9 @@ class MovieSource extends Model
     public const RETIRE_DAYS = 30;
 
     public const PROVIDERS = [
-        'kodik' => 'Kodik',
-        'videoseed' => 'Videoseed',
-        'flixcdn' => 'FlixCDN',
+        'kodik' => 'Плеєр 1',
+        'videoseed' => 'Плеєр 2',
+        'flixcdn' => 'Плеєр 3',
         'custom' => 'Власний плеєр',
     ];
 

@@ -51,7 +51,7 @@ const CHANGELOG = () => [
                 'Просування серверів: місце в топі, виділена картка й банер із позначкою «Реклама».',
             ),
             tr(
-                'Кіно: другий плеєр Videoseed, порядок і фільтри озвучок в адмінці, автопарсинг TMDB з автододаванням популярних тайтлів, посерійний вибір серій.',
+                'Кіно: ще один вбудований плеєр, порядок і фільтри озвучок в адмінці, автопарсинг TMDB з автододаванням популярних тайтлів, посерійний вибір серій.',
             ),
             tr(
                 'Білінг у GameCon+: особистий рахунок, поповнення донатом (Donatello, Diaka та інші), покупки з рахунку й автопродовження. Нова картка GameCon+ у меню. Оформлення профілю: анімований нік (перелив, відблиск) і ефект шапки (сяйво, жива рамка). «Дивилися й слухали разом» — з назвою фільму чи треку, можна прибрати людину або сховати блок. Сторінки: умови використання, конфіденційність, повернення коштів і ціни — вісьмома мовами.',
@@ -171,7 +171,7 @@ export function WhatsNewButton() {
                 aria-label={tr('Що нового')}
                 title={tr('Що нового')}
                 className={cn(
-                    'relative size-11 items-center justify-center rounded-xl text-white/70 transition hover:bg-white/[0.06] hover:text-white',
+                    'gc-icon-button relative size-10 items-center justify-center rounded-xl transition',
                     unseen ? 'flex' : 'hidden sm:flex',
                 )}
             >
@@ -179,12 +179,12 @@ export function WhatsNewButton() {
                 {unseen && (
                     <span
                         aria-hidden
-                        className="absolute top-2.5 right-2.5 size-2 rounded-full bg-gc-indigo ring-2 ring-background"
+                        className="absolute top-2 right-2 size-2 rounded-full bg-primary"
                     />
                 )}
             </button>
             <Dialog open={open} onOpenChange={setOpen}>
-                <DialogContent className="glass-strong max-h-[85dvh] overflow-y-auto rounded-3xl border-white/10 p-6 text-white sm:max-w-lg">
+                <DialogContent className="glass-strong max-h-[85dvh] overflow-y-auto rounded-dialog border-white/10 p-6 text-white sm:max-w-lg">
                     <DialogTitle className="flex items-center gap-2 font-display text-lg">
                         <Sparkles className="size-5 text-gc-lilac-300" />
                         {tr('Що нового')}
@@ -245,7 +245,7 @@ export function FeedbackDialog() {
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
-            <DialogContent className="glass-strong rounded-3xl border-white/10 p-6 text-white sm:max-w-md">
+            <DialogContent className="glass-strong rounded-dialog border-white/10 p-6 text-white sm:max-w-md">
                 <DialogTitle className="font-display text-lg">
                     {tr('Відгук адмінам')}
                 </DialogTitle>
@@ -399,7 +399,7 @@ export function KeyboardShortcuts({ username }: { username: string }) {
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
-            <DialogContent className="glass-strong rounded-3xl border-white/10 p-6 text-white sm:max-w-sm">
+            <DialogContent className="glass-strong rounded-dialog border-white/10 p-6 text-white sm:max-w-sm">
                 <DialogTitle className="flex items-center gap-2 font-display text-lg">
                     <Keyboard className="size-5 text-gc-lilac-300" />
                     {tr('Гарячі клавіші')}

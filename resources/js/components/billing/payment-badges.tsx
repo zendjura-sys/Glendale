@@ -5,23 +5,50 @@ import { cn } from '@/lib/utils';
 import type { PaymentBadge } from '@/types/billing';
 
 /**
- * Значки способів оплати (футер, сторінка оплати). Пласкі «плитки» з власними
- * спрощеними позначками: без зображень з чужих серверів, у кольорах теми.
+ * Значки способів оплати (футер, сторінка оплати). Visa, Mastercard, Apple Pay, Google Pay
+ * і plata by mono — офіційні логотипи з бренд-кіту monobank (public/images/payments, світла й
+ * темна версії під тему); Maestro й ПРОСТІР — власні спрощені позначки.
  * Список вмикає адміністратор (Адмінка → Білінг → Правила): показуємо лише те,
  * що справді приймає еквайринг monobank.
  */
+
+/** Офіційний логотип: темна версія в темній темі, світла — у світлій. */
+function Logo({ name, className }: { name: string; className: string }) {
+    return (
+        <>
+            <img
+                src={`/images/payments/${name}-dark.svg`}
+                alt=""
+                loading="lazy"
+                decoding="async"
+                className={cn(className, '[html[data-theme=light]_&]:hidden')}
+            />
+            <img
+                src={`/images/payments/${name}-light.svg`}
+                alt=""
+                loading="lazy"
+                decoding="async"
+                className={cn(
+                    className,
+                    'hidden [html[data-theme=light]_&]:block',
+                )}
+            />
+        </>
+    );
+}
+
 const MARKS: Record<PaymentBadge, { label: string; mark: () => ReactNode }> = {
+    plata: {
+        label: 'plata by mono',
+        mark: () => <Logo name="plata" className="h-3.5 w-auto" />,
+    },
     visa: {
         label: 'Visa',
-        mark: () => (
-            <span className="text-[13px] font-black tracking-tight italic">
-                VISA
-            </span>
-        ),
+        mark: () => <Logo name="visa" className="h-3 w-auto" />,
     },
     mastercard: {
         label: 'Mastercard',
-        mark: () => <Circles left="#eb001b" right="#f79e1b" middle="#ff5f00" />,
+        mark: () => <Logo name="mastercard" className="h-4 w-auto" />,
     },
     maestro: {
         label: 'Maestro',
@@ -37,17 +64,11 @@ const MARKS: Record<PaymentBadge, { label: string; mark: () => ReactNode }> = {
     },
     apple_pay: {
         label: 'Apple Pay',
-        mark: () => (
-            <span className="text-[11px] font-semibold">Apple Pay</span>
-        ),
+        mark: () => <Logo name="apple-pay" className="h-4 w-auto" />,
     },
     google_pay: {
         label: 'Google Pay',
-        mark: () => (
-            <span className="text-[11px] font-semibold">
-                <span className="text-[#4285f4]">G</span> Pay
-            </span>
-        ),
+        mark: () => <Logo name="google-pay" className="h-4 w-auto" />,
     },
 };
 
@@ -89,7 +110,7 @@ export function PaymentBadges({ className }: { className?: string }) {
                     <li
                         key={key}
                         title={badge.label}
-                        className="flex h-7 min-w-11 items-center justify-center rounded-md border border-white/10 bg-white/[0.05] px-2 text-white/80"
+                        className="flex h-8 min-w-12 items-center justify-center rounded-lg border border-white/10 bg-white/[0.05] px-2.5 text-white/80"
                     >
                         {badge.mark()}
                         <span className="sr-only">{badge.label}</span>

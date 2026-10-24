@@ -8,6 +8,7 @@ import {
     SearchX,
     Server,
     Smartphone,
+    Trophy,
     UsersRound,
     XCircle,
 } from 'lucide-react';
@@ -15,7 +16,7 @@ import { useEffect, useState } from 'react';
 import { selectClass } from '@/components/gc/admin';
 import { EmptyState } from '@/components/gc/widget';
 import { ServerIcon } from '@/components/servers/server-icon';
-import { ServerCard } from '@/components/servers/server-card';
+import { ServerRow } from '@/components/servers/server-card';
 import { VoteTops } from '@/components/servers/server-votes';
 import type { VoteTopRow } from '@/components/servers/server-votes';
 import {
@@ -74,6 +75,10 @@ type Props = {
     };
 };
 
+/** Рядки серверів із тонкими розділювачами; на широкому ПК — дві колонки, як каталог спільнот. */
+const ROWS =
+    'grid grid-cols-1 gap-x-8 divide-y divide-white/[0.07] xl:grid-cols-2 xl:divide-y-0 xl:[&>*]:border-b xl:[&>*]:border-white/[0.07]';
+
 const SORTS = (votes: boolean) =>
     [
         ['online', tr('За онлайном')],
@@ -98,6 +103,7 @@ export default function Servers({
     const [q, setQ] = useState(filters.q);
     const tagsOn = usePlugin('server_tags');
     const favoritesOn = usePlugin('server_favorites');
+    const tournamentsOn = usePlugin('server_tournaments');
     const [suggesting, setSuggesting] = useState(false);
     const myLanguage = LOCALE.split('-')[0];
     const form = useForm({
@@ -158,12 +164,12 @@ export default function Servers({
         <>
             <Head title={tr('Сервери GTA')} />
             <div className="space-y-5">
-                <section className="glass noise relative overflow-hidden rounded-3xl p-5 sm:p-7">
+                <section className="glass noise relative overflow-hidden rounded-2xl p-5 sm:p-7">
                     <div className="pointer-events-none absolute -top-24 -right-16 size-96 rounded-full bg-[#facc15]/15 blur-3xl" />
                     <div className="pointer-events-none absolute -bottom-36 -left-10 size-96 rounded-full bg-[#2563eb]/25 blur-3xl" />
                     <div className="relative flex flex-wrap items-start justify-between gap-5">
                         <div className="max-w-xl">
-                            <span className="inline-flex items-center gap-2 rounded-full border border-[#facc15]/25 bg-[#facc15]/10 px-3 py-1 text-xs font-semibold text-[#fde68a]">
+                            <span className="inline-flex items-center gap-2 rounded-chip border border-[#facc15]/25 bg-[#facc15]/10 px-3 py-1 text-xs font-semibold text-[#fde68a]">
                                 {tr('🇺🇦 Зроблено в Україні')}
                             </span>
                             <h1 className="mt-3 font-display text-3xl font-bold text-white sm:text-4xl">
@@ -177,6 +183,15 @@ export default function Servers({
                                     'ПК і мобільні проєкти з живим онлайном. Іконки, онлайн і Discord оновлюються автоматично. Не знайшли свій сервер — додайте його.',
                                 )}
                             </p>
+                            {tournamentsOn && (
+                                <Link
+                                    href="/tournaments"
+                                    className="mt-3 inline-flex h-9 items-center gap-2 rounded-xl bg-white/[0.06] px-3 text-sm font-medium text-white transition hover:bg-white/10"
+                                >
+                                    <Trophy className="size-4" />
+                                    {tr('Турніри й челенджі')}
+                                </Link>
+                            )}
                         </div>
                         <div className="grid w-full grid-cols-3 gap-2 sm:w-auto">
                             {[
@@ -245,7 +260,7 @@ export default function Servers({
                                 </button>
                             ))}
                         </div>
-                        <label className="input-glass flex h-11 min-h-11 min-w-0 flex-1 items-center gap-2.5 rounded-xl px-3.5">
+                        <label className="input-glass flex h-11 min-h-11 min-w-[12rem] flex-1 items-center gap-2.5 rounded-xl px-3.5">
                             <Search className="size-4 text-white/40" />
                             <input
                                 value={q}
@@ -331,7 +346,7 @@ export default function Servers({
                                 key={s.id}
                                 title={s.review_note ?? undefined}
                                 className={cn(
-                                    'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-medium',
+                                    'inline-flex items-center gap-1.5 rounded-chip px-2.5 py-1 font-medium',
                                     s.status === 'pending'
                                         ? 'bg-amber-300/10 text-amber-200'
                                         : 'bg-rose-400/10 text-rose-200',
@@ -358,7 +373,7 @@ export default function Servers({
                 {banner && (
                     <Link
                         href={`/servers/${banner.slug}`}
-                        className="glass flex items-center gap-4 rounded-3xl border-indigo-400/40 p-4 transition hover:border-indigo-300/60 sm:p-5"
+                        className="glass flex items-center gap-4 rounded-2xl border-indigo-400/40 p-4 transition hover:border-indigo-300/60 sm:p-5"
                     >
                         <ServerIcon
                             name={banner.name}
@@ -375,7 +390,7 @@ export default function Servers({
                                 </span>
                             )}
                         </span>
-                        <span className="shrink-0 rounded-full bg-white/[0.06] px-2 py-0.5 text-[10px] font-semibold text-white/55">
+                        <span className="shrink-0 rounded-chip bg-white/[0.06] px-2 py-0.5 text-[10px] font-semibold text-white/55">
                             {tr('Реклама')}
                         </span>
                     </Link>
@@ -394,13 +409,9 @@ export default function Servers({
                         <h2 className="font-display text-xl font-bold text-white">
                             {tr('Обрані')}
                         </h2>
-                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                            {favorites.map((server, index) => (
-                                <ServerCard
-                                    key={server.id}
-                                    server={server}
-                                    index={index}
-                                />
+                        <div className={ROWS}>
+                            {favorites.map((server) => (
+                                <ServerRow key={server.id} server={server} />
                             ))}
                         </div>
                     </section>
@@ -424,18 +435,14 @@ export default function Servers({
                         }
                     />
                 ) : (
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                        {servers.map((server, index) => (
-                            <ServerCard
-                                key={server.id}
-                                server={server}
-                                index={index}
-                            />
+                    <div className={ROWS}>
+                        {servers.map((server) => (
+                            <ServerRow key={server.id} server={server} />
                         ))}
                     </div>
                 )}
 
-                <div className="glass flex flex-col gap-4 rounded-3xl p-5 sm:flex-row sm:items-center">
+                <div className="glass flex flex-col gap-4 rounded-2xl p-5 sm:flex-row sm:items-center">
                     <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-brand">
                         <Crown className="size-6 text-white" />
                     </span>
@@ -459,7 +466,7 @@ export default function Servers({
             </div>
 
             <Dialog open={suggesting} onOpenChange={setSuggesting}>
-                <DialogContent className="glass-strong max-h-[92dvh] gap-0 overflow-y-auto rounded-3xl border-white/10 p-6 text-white sm:max-w-2xl">
+                <DialogContent className="glass-strong max-h-[92dvh] gap-0 overflow-y-auto rounded-dialog border-white/10 p-6 text-white sm:max-w-2xl">
                     <DialogTitle className="font-display text-xl">
                         {tr('Додати відсутній сервер')}
                     </DialogTitle>

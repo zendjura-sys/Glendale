@@ -12,6 +12,7 @@ use App\Models\Playlist;
 use App\Models\Track;
 use App\Models\User;
 use App\Services\Cinema\CinemaService;
+use App\Services\Music\AudioProbe;
 use App\Services\MusicService;
 use App\Services\PhotoService;
 use App\Services\Spotify\SpotifyClient;
@@ -201,7 +202,7 @@ class MediaApiController extends ApiController
 
     public function storeTrack(Request $request, SiteSettings $settings): JsonResponse
     {
-        return app(TrackController::class)->store($request, $settings);
+        return app(TrackController::class)->store($request, $settings, app(AudioProbe::class));
     }
 
     public function nowPlaying(Request $request): JsonResponse

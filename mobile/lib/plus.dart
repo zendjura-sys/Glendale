@@ -39,6 +39,69 @@ class PlusMark {
   }
 }
 
+/// Косметика сезонного пропуску з картки (`user['cosmetics']`): рамка, колір ніку, значок.
+/// Отримується за очки сезону (season.dart); кольори й іконки — лише з сервера.
+class SeasonCosmetics {
+  const SeasonCosmetics({this.frame, this.name, this.badgeIcon, this.badgeColor, this.badgeName});
+  final List<Color>? frame;
+  final List<Color>? name;
+  final String? badgeIcon;
+  final Color? badgeColor;
+  final String? badgeName;
+
+  static SeasonCosmetics? of(dynamic user) {
+    if (user is! Map || user['cosmetics'] is! Map) return null;
+    final c = user['cosmetics'] as Map;
+    final badge = c['badge'] is Map ? c['badge'] as Map : null;
+    return SeasonCosmetics(
+      frame: _colors(c['frame']),
+      name: _colors(c['name']),
+      badgeIcon: text(badge?['icon']),
+      badgeColor: _hex(badge?['color']),
+      badgeName: text(badge?['name']),
+    );
+  }
+}
+
+/// Рамка аватара: GameCon+, інакше вдягнута із сезонного пропуску.
+List<Color>? avatarFrameOf(dynamic user) => PlusMark.of(user)?.frame ?? SeasonCosmetics.of(user)?.frame;
+
+/// Колір ніку: GameCon+, інакше з пропуску (без позначки GameCon+).
+PlusMark? nameMarkOf(dynamic user) {
+  final plus = PlusMark.of(user);
+  if (plus != null) return plus;
+  final name = SeasonCosmetics.of(user)?.name;
+  return name == null ? null : PlusMark(name: name);
+}
+
+/// Іконки значків пропуску (ключі — з config/season_pass.php).
+const seasonBadgeIcons = {
+  'star': LucideIcons.star,
+  'flame': LucideIcons.flame,
+  'zap': LucideIcons.zap,
+  'shield': LucideIcons.shield,
+  'crown': LucideIcons.crown,
+  'gem': LucideIcons.gem,
+};
+
+/// Значок сезону біля імені.
+class SeasonBadge extends StatelessWidget {
+  const SeasonBadge({required this.user, this.size = 15, super.key});
+  final dynamic user;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = SeasonCosmetics.of(user);
+    final icon = seasonBadgeIcons[c?.badgeIcon];
+    if (c == null || icon == null) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(left: 5),
+      child: Tooltip(message: c.badgeName ?? '', child: Icon(icon, size: size, color: c.badgeColor ?? primary)),
+    );
+  }
+}
+
 /// Кольори шапки профілю: палітра сторінки, інакше колір ніку, інакше фірмові.
 List<Color> plusHeaderColors(Map<String, dynamic> profile) {
   final accent = _colors(profile['accent']);
@@ -173,9 +236,10 @@ class PlusNameRow extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Flexible(child: PlusName(text(user['name']) ?? 'GameCon', plus: plus, style: style, animate: animate)),
+        Flexible(child: PlusName(text(user['name']) ?? 'GameCon', plus: nameMarkOf(user), style: style, animate: animate)),
         if (user['is_verified'] == true) ...[const SizedBox(width: 4), Icon(LucideIcons.badgeCheck, size: verifiedSize, color: primary)],
         if (plus != null) ...[const SizedBox(width: 5), PlusBadge(size: badgeSize)],
+        SeasonBadge(user: user, size: badgeSize),
       ],
     );
   }

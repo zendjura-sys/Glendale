@@ -10,8 +10,12 @@ use App\Models\Family;
 use App\Models\FamilyEvent;
 use App\Models\FamilyEventAttendance;
 use App\Models\FamilyMember;
+use App\Models\ListenParty;
+use App\Models\MusicStatus;
 use App\Models\Post;
 use App\Models\User;
+use App\Services\Music\ListenRooms;
+use App\Services\MusicService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\URL;
@@ -21,7 +25,7 @@ use Illuminate\Support\Str;
  * Картки бота — одна розмітка для Telegram і Discord: заголовок, рядки, поля, кнопки.
  * Кнопка — або дія (action, ≤ 64 байт для Telegram), або посилання (url).
  *
- * Дії: home | ev (події) | e (подія) | r (піду/не піду) | mb (склад) | ps (пости) | me (я).
+ * Дії: home | ev (події) | e (подія) | r (піду/не піду) | mb (склад) | ps (пости) | me (я) | mu (музика).
  * Формат: «дія:тип:id[:аргумент[:аргумент]]», тип — f (сім’я), c (клан), m (спільнота).
  */
 class BotCards
@@ -107,6 +111,7 @@ class BotCards
             : [['label' => '📅 Події', 'action' => self::act($owner, 'ev'), 'style' => 'primary']];
         $row[] = ['label' => '👥 Склад', 'action' => self::act($owner, 'mb'), 'style' => 'secondary'];
         $row[] = ['label' => '🙋 Я', 'action' => self::act($owner, 'me'), 'style' => 'secondary'];
+        $row[] = ['label' => '🎧 Музика', 'action' => self::act($owner, 'mu'), 'style' => 'secondary'];
 
         return [
             'title' => self::name($owner),
@@ -252,6 +257,63 @@ class BotCards
             'footer' => self::name($community),
             'buttons' => [[['label' => '💬 Коментувати', 'url' => URL::to('/posts/'.$post->id)]]],
         ];
+    }
+
+    /**
+     * «Що слухає група»: учасники, які зараз слухають музику (крім тих, хто це приховав), і кімната «Слухати разом».
+     *
+     * @return array<string, mixed>
+     */
+    public function music(Family|Clan|Community $owner): array
+    {
+        $ids = $owner->activeMembers()->pluck('user_id')->all();
+        $listening = MusicStatus::query()->with('user')->whereIn('user_id', $ids)->where('expires_at', '>', now())->latest('updated_at')->limit(30)->get();
+        $music = app(MusicService::class);
+        $lines = [];
+        foreach ($listening as $status) {
+            $now = $status->user ? $music->currentFor($status->user) : null;
+            if ($now === null) {
+                continue;
+            }
+            $lines[] = '🎧 **'.$status->user->name.'** — '.Str::limit(trim(($now['title'] ?? '').' · '.($now['artist'] ?? ''), ' ·'), 90);
+            if (count($lines) >= 10) {
+                break;
+            }
+        }
+        $room = app(ListenRooms::class)->active(self::roomType($owner), $owner->id);
+        if ($room !== null) {
+            array_unshift($lines, '🔴 Відкрита кімната «'.$room->title.'» — заходьте слухати разом.');
+        }
+
+        return [
+            'title' => '🎧 Музика · '.self::name($owner),
+            'lines' => $lines === [] ? ['Зараз ніхто не слухає музику.'] : $lines,
+            'buttons' => [[self::back($owner), ['label' => $room ? '🎧 Приєднатися' : '🎧 Слухати разом', 'url' => URL::to($room ? '/listen/'.$room->code : '/music/rooms')]]],
+        ];
+    }
+
+    /**
+     * Оголошення в чат: у групі відкрили кімнату «Слухати разом».
+     *
+     * @return array<string, mixed>
+     */
+    public function listenRoom(Family|Clan|Community $owner, ListenParty $party, User $host): array
+    {
+        return [
+            'title' => '🎧 Слухаємо разом · '.self::name($owner),
+            'lines' => ['**'.$host->name.'** відкрив(-ла) кімнату «'.$party->title.'». Музика грає синхронно в усіх — приєднуйтесь із сайту чи застосунку GameCon.'],
+            'buttons' => [[['label' => '🎧 Приєднатися', 'url' => URL::to('/listen/'.$party->code)]]],
+        ];
+    }
+
+    /** Тип групи в кімнатах «Слухати разом». */
+    public static function roomType(Family|Clan|Community $owner): string
+    {
+        return match (true) {
+            $owner instanceof Family => 'family',
+            $owner instanceof Clan => 'clan',
+            default => 'community',
+        };
     }
 
     /**

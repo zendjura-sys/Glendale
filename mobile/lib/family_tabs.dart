@@ -309,7 +309,7 @@ class _QueueTabState extends State<QueueTab> {
               Container(
                 margin: const EdgeInsets.only(bottom: 10),
                 padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.035), borderRadius: BorderRadius.circular(14), border: Border.all(color: line)),
+                decoration: BoxDecoration(color: fg.withValues(alpha: 0.035), borderRadius: BorderRadius.circular(14), border: Border.all(color: line)),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                   Row(children: [
                     Expanded(child: Text(text(mapOf(c['member'])['display']) ?? '', style: body(13.5, weight: FontWeight.w600).copyWith(fontFamily: 'monospace'))),
@@ -437,13 +437,13 @@ class _BankTabState extends State<BankTab> {
                       visualDensity: VisualDensity.compact,
                       tooltip: tr('Скасувати'),
                       onPressed: () => ctx.act(context, () => ctx.api.post(ctx.path('bank/cashouts/${c['id']}/cancel')), keep: keep),
-                      icon: const Icon(LucideIcons.x, size: 18, color: muted),
+                      icon: Icon(LucideIcons.x, size: 18, color: muted),
                     ),
                   if (c['has_proof'] == true)
                     IconButton(
                       visualDensity: VisualDensity.compact,
                       onPressed: () => openAuthImages(context, [ctx.path('bank/cashouts/${c['id']}/proof')], 0),
-                      icon: const Icon(LucideIcons.image, size: 18, color: muted),
+                      icon: Icon(LucideIcons.image, size: 18, color: muted),
                     ),
                 ]),
               ),
@@ -489,7 +489,7 @@ class _BankTabState extends State<BankTab> {
               Container(
                 margin: const EdgeInsets.only(top: 10),
                 padding: EdgeInsets.all(10),
-                decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.035), borderRadius: BorderRadius.circular(12), border: Border.all(color: line)),
+                decoration: BoxDecoration(color: fg.withValues(alpha: 0.035), borderRadius: BorderRadius.circular(12), border: Border.all(color: line)),
                 child: Row(children: [
                   Expanded(
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -720,7 +720,7 @@ class WarehouseTab extends StatelessWidget {
                   margin: const EdgeInsets.only(bottom: 8),
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: item['is_archived'] == true ? 0.015 : 0.035),
+                    color: fg.withValues(alpha: item['is_archived'] == true ? 0.015 : 0.035),
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(color: item['low'] == true ? danger.withValues(alpha: 0.4) : line),
                   ),
@@ -741,7 +741,7 @@ class WarehouseTab extends StatelessWidget {
                       Expanded(child: GhostButton(label: tr('Взяти'), icon: LucideIcons.upload, compact: true, onPressed: intOf(item['quantity']) > 0 && item['is_archived'] != true ? () => _move(context, item, 'take') : null)),
                       const SizedBox(width: 8),
                       Expanded(child: GhostButton(label: tr('Покласти'), icon: LucideIcons.download, compact: true, onPressed: item['is_archived'] != true ? () => _move(context, item, 'put') : null)),
-                      if (manage) IconButton(visualDensity: VisualDensity.compact, onPressed: () => _editItem(context, item: item), icon: const Icon(LucideIcons.pencil, size: 18, color: muted)),
+                      if (manage) IconButton(visualDensity: VisualDensity.compact, onPressed: () => _editItem(context, item: item), icon: Icon(LucideIcons.pencil, size: 18, color: muted)),
                     ]),
                   ]),
                 ),
@@ -787,7 +787,7 @@ class WarehouseTab extends StatelessWidget {
                   ]),
                 ),
                 if (text(l['proof_url']) != null)
-                  IconButton(visualDensity: VisualDensity.compact, onPressed: () => openAuthImages(context, [sitePathOf(text(l['proof_url'])!)], 0), icon: const Icon(LucideIcons.image, size: 18, color: muted)),
+                  IconButton(visualDensity: VisualDensity.compact, onPressed: () => openAuthImages(context, [sitePathOf(text(l['proof_url'])!)], 0), icon: Icon(LucideIcons.image, size: 18, color: muted)),
               ]),
             ),
         ],
@@ -884,7 +884,7 @@ class _MembersTabState extends State<MembersTab> {
     final saved = await showGcSheet<bool>(
       context,
       title: tr('Ранги й права'),
-      subtitle: tr('Ранг 10 і власник можуть усе. Відмітьте, які ранги мають кожне право.'),
+      subtitle: tr('Ранг 10 і власник можуть усе. Позначте, які ранги мають кожне право.'),
       height: MediaQuery.sizeOf(context).height * 0.9,
       builder: (sheet) => StatefulBuilder(
         builder: (context, set) => ListView(padding: const EdgeInsets.fromLTRB(16, 4, 16, 24), children: [
@@ -964,7 +964,7 @@ class _MembersTabState extends State<MembersTab> {
                 ].join(' · '),
                 trailing: Row(mainAxisSize: MainAxisSize.min, children: [
                   if (m['balance'] != null) Text(hryvnia(m['balance']), style: body(12.5, color: green, weight: FontWeight.w700)),
-                  IconButton(visualDensity: VisualDensity.compact, onPressed: () => _manage(m), icon: const Icon(LucideIcons.slidersHorizontal, size: 18, color: muted)),
+                  IconButton(visualDensity: VisualDensity.compact, onPressed: () => _manage(m), icon: Icon(LucideIcons.slidersHorizontal, size: 18, color: muted)),
                 ]),
               ),
           ]),
@@ -1127,7 +1127,7 @@ class _DisciplineTabState extends State<DisciplineTab> {
             Container(
               margin: const EdgeInsets.only(bottom: 8),
               padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.035), borderRadius: BorderRadius.circular(12), border: Border.all(color: p['active'] == true ? danger.withValues(alpha: 0.35) : line)),
+              decoration: BoxDecoration(color: fg.withValues(alpha: 0.035), borderRadius: BorderRadius.circular(12), border: Border.all(color: p['active'] == true ? danger.withValues(alpha: 0.35) : line)),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Row(children: [
                   Text(text(p['type_label']) ?? '', style: body(13.5, weight: FontWeight.w700, color: p['active'] == true ? dangerSoft : soft)),
@@ -1227,7 +1227,7 @@ class EventsTab extends StatelessWidget {
     final ok = await showGcSheet<String>(
       context,
       title: tr('Підсумок: {v}', {'v': event['title']}),
-      subtitle: tr('Відмітьте присутніх — їм нарахуються бали й нагорода.'),
+      subtitle: tr('Позначте присутніх — їм нарахуються бали й нагорода.'),
       height: MediaQuery.sizeOf(context).height * 0.8,
       builder: (sheet) => StatefulBuilder(
         builder: (context, set) => Column(children: [
@@ -1371,7 +1371,7 @@ List<Widget> ratingTab(FamilyContext ctx) {
             SizedBox(width: 44, child: Text(tr('КОНТР.'), textAlign: TextAlign.center, style: body(11, color: faint, weight: FontWeight.w700))),
             SizedBox(width: 44, child: Text(tr('БАЛИ'), textAlign: TextAlign.right, style: body(11, color: faint, weight: FontWeight.w700))),
           ]),
-          const Divider(color: line),
+          Divider(color: line),
           for (final r in rows)
             Container(
               padding: const EdgeInsets.symmetric(vertical: 7, horizontal: 4),
@@ -1413,7 +1413,7 @@ List<Widget> auditTab(FamilyContext ctx) {
         ),
         const SizedBox(height: 8),
         Row(children: [
-          const Icon(LucideIcons.lock, size: 14, color: muted),
+          Icon(LucideIcons.lock, size: 14, color: muted),
           const SizedBox(width: 6),
           Expanded(child: Text(tr('Записи незмінні: їх не може відредагувати чи видалити навіть лідер.'), style: body(12, color: muted))),
         ]),
@@ -1516,7 +1516,7 @@ class _SettingsTabState extends State<SettingsTab> {
   Widget _group(String title, List<Widget> children) => Container(
         margin: const EdgeInsets.only(bottom: 10),
         padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.03), borderRadius: BorderRadius.circular(16), border: Border.all(color: line)),
+        decoration: BoxDecoration(color: fg.withValues(alpha: 0.03), borderRadius: BorderRadius.circular(16), border: Border.all(color: line)),
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [Text(title, style: body(14, weight: FontWeight.w700)), const SizedBox(height: 10), ...children]),
       );
 

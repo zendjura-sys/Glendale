@@ -32,10 +32,17 @@ use App\Services\Cinema\Metadata\TmdbProvider;
 use App\Services\Cinema\VideoseedClient;
 use App\Services\Games\GameCatalog;
 use App\Services\Games\Igdb;
+use App\Services\I18n\AzureTranslator;
 use App\Services\I18n\DeepL;
+use App\Services\I18n\LibreTranslate;
 use App\Services\Moderation\NsfwCheck;
+use App\Services\Music\AcoustId;
+use App\Services\Music\AudioProbe;
+use App\Services\Music\Discogs;
+use App\Services\Music\LastFm;
 use App\Services\Presence\SteamPresence;
 use App\Services\Push\FcmClient;
+use App\Services\Spellcheck\Spellchecker;
 use App\Services\Spotify\SpotifyClient;
 use App\Services\Streams\LiveStreams;
 use App\Services\Voice\LiveKit;
@@ -43,6 +50,7 @@ use App\Support\Settings\SiteSettings;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -161,13 +169,35 @@ class IntegrationController extends Controller
             };
         }
         Cache::forget('cinema.meta.down.'.$provider);
+        if ($provider === 'azure_translator') {
+            app(AzureTranslator::class)->clearExhausted();
+        }
+        if ($provider === 'libretranslate') {
+            Cache::forget('libretranslate.up');
+            Cache::forget('libretranslate.languages');
+        }
         if ($provider === 'push') {
             $this->fcm->forgetAccessToken();
         }
 
+        // Журнал адмінки: що й хто змінив (без значень ключів).
+        Log::info('integrations: updated', ['provider' => $provider, 'by' => $request->user()?->id]);
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Налаштування '.$this->cinemaProviders()[$provider]['label'].' збережено.']);
 
         return back();
+    }
+
+    /** Витрата Azure Translator цього місяця (рахує сайт) — рядок на картці інтеграції. */
+    private function azureStat(): ?string
+    {
+        $azure = app(AzureTranslator::class);
+        if (! $azure->configured()) {
+            return null;
+        }
+        $usage = $azure->usage();
+        $line = 'Цього місяця: '.number_format($usage['used'], 0, ',', ' ').' з '.number_format($usage['limit'], 0, ',', ' ').' символів';
+
+        return $azure->exhausted() ? $line.' · ліміт вичерпано до 1 числа' : $line;
     }
 
     public function testCinema(string $provider): RedirectResponse
@@ -486,29 +516,27 @@ class IntegrationController extends Controller
                 ],
             ],
             'kodik' => [
-                'label' => 'Kodik',
+                'label' => 'Відеоплеєр 1 — ключ партнера',
                 'group' => 'players',
-                'description' => 'Плеєр з усіма озвучками, пошук та автоімпорт фільмів, серіалів і аніме.',
-                'docs' => 'https://kodik.biz',
-                'steps' => ['Зареєструйтеся на kodik.biz і отримайте API-токен.', 'Вставте токен і натисніть «Перевірити».', 'Увімкніть автонаповнення в Адмінка → Кіно.'],
+                'description' => 'Плеєр 1: усі озвучки, пошук та автоімпорт фільмів, серіалів і аніме.',
+                'steps' => ['Отримайте API-токен у кабінеті партнера плеєра.', 'Вставте токен і натисніть «Перевірити».', 'Увімкніть автонаповнення в Адмінка → Кіно.'],
                 'configured' => $this->kodik->configured(),
                 'stat' => MovieSource::query()->where('provider', 'kodik')->count().' плеєрів у каталозі',
                 'test' => fn () => $this->kodik->test(),
                 'fields' => [
                     ['name' => 'token', 'setting' => 'kodik_token', 'type' => 'secret', 'label' => 'API-токен', 'env' => config('services.kodik.token'),
-                        'rules' => ['nullable', 'string', 'regex:/^[A-Za-z0-9]{16,64}$/'], 'message' => 'Токен Kodik — це 16–64 латинські літери та цифри.'],
-                    // Прямі посилання на потоки (video-links) — для власного плеєра застосунку. Ключ видає Kodik.
-                    ['name' => 'links_key', 'setting' => 'kodik_links_key', 'type' => 'secret', 'label' => 'Ключ прямих посилань (video-links) — для плеєра застосунку; порожньо — використовується токен Kodik', 'env' => config('services.kodik.links_key'),
+                        'rules' => ['nullable', 'string', 'regex:/^[A-Za-z0-9]{16,64}$/'], 'message' => 'Токен Плеєра 1 — це 16–64 латинські літери та цифри.'],
+                    // Прямі посилання на потоки (video-links) — для власного плеєра застосунку. Ключ видає партнер плеєра 1.
+                    ['name' => 'links_key', 'setting' => 'kodik_links_key', 'type' => 'secret', 'label' => 'Ключ прямих посилань (video-links) — для плеєра застосунку; порожньо — використовується токен Плеєра 1', 'env' => config('services.kodik.links_key'),
                         'rules' => ['nullable', 'string', 'regex:/^[A-Za-z0-9]{16,64}$/'], 'message' => 'Ключ — 16–64 латинські літери та цифри.'],
                 ],
             ],
             'flixcdn' => [
-                'label' => 'FlixCDN',
+                'label' => 'Відеоплеєр 3 — ключ партнера',
                 'group' => 'players',
-                'description' => 'Другий балансер: плеєр за шаблоном адреси та автоімпорт через API з кабінету FlixCDN.',
-                'docs' => 'https://t.me/FlixCDN',
+                'description' => 'Плеєр 3: плеєр за шаблоном адреси та автоімпорт через API з кабінету партнера.',
                 'steps' => [
-                    'Отримайте токен і адреси API в кабінеті FlixCDN (або в їхній підтримці @FlixCDN).',
+                    'Отримайте токен і адреси API в кабінеті партнера плеєра (або в його підтримці).',
                     'Шаблон плеєра: адреса iframe з {imdb_id} та {token}.',
                     'Пошук API: адреса з {token} та {imdb_id} або {title}. Оновлення: з {token} і {page}.',
                 ],
@@ -519,7 +547,7 @@ class IntegrationController extends Controller
                     ['name' => 'token', 'setting' => 'flixcdn_token', 'type' => 'secret', 'label' => 'Токен', 'env' => config('services.flixcdn.token'),
                         'rules' => ['nullable', 'string', 'max:2000', 'regex:/^[A-Za-z0-9_\-.]+$/'], 'message' => 'Токен містить недопустимі символи.'],
                     ['name' => 'template', 'setting' => 'flixcdn_template', 'type' => 'url', 'label' => 'Шаблон плеєра',
-                        'placeholder' => 'https://player.example/?imdb={imdb_id}&token={token}', 'help' => 'Підставляються {imdb_id} і {token}; працюють і інші ID з кабінету FlixCDN.',
+                        'placeholder' => 'https://player.example/?imdb={imdb_id}&token={token}', 'help' => 'Підставляються {imdb_id} і {token}; працюють і інші ID з кабінету партнера.',
                         'rules' => [...$url, $this->placeholderRule(['{kinopoisk_id}', '{imdb_id}'])]],
                     ['name' => 'api_search', 'setting' => 'flixcdn_api_search', 'type' => 'url', 'label' => 'API: пошук',
                         'placeholder' => 'https://api.example/search?token={token}&imdb_id={imdb_id}', 'help' => 'Для імпорту й оновлення плеєрів окремого фільму.',
@@ -533,21 +561,20 @@ class IntegrationController extends Controller
                 ],
             ],
             'videoseed' => [
-                'label' => 'Videoseed',
+                'label' => 'Відеоплеєр 2 — ключ партнера',
                 'group' => 'players',
-                'description' => 'Другий плеєр поруч із Kodik: фільми й серіали з озвучками, пошук за ID Кінопошуку, IMDb і TMDB, автоімпорт новинок.',
-                'docs' => 'https://videoseed.tv',
+                'description' => 'Плеєр 2: фільми й серіали з озвучками, пошук за ID каталогу, IMDb і TMDB, автоімпорт новинок.',
                 'steps' => [
-                    'Зареєструйтеся на videoseed.tv і відкрийте «Редагування профілю» — там API-токен.',
+                    'Отримайте API-токен у профілі кабінету партнера плеєра.',
                     'Вставте токен і натисніть «Перевірити».',
-                    'Адмінка → Кіно: позначте Videoseed в автонаповненні, а в «Плеєри» — порядок вкладок і озвучки.',
+                    'Адмінка → Кіно: позначте Плеєр 2 в автонаповненні, а в «Плеєри» — порядок вкладок і озвучки.',
                 ],
                 'configured' => app(VideoseedClient::class)->configured(),
                 'stat' => MovieSource::query()->where('provider', 'videoseed')->count().' плеєрів у каталозі',
                 'test' => fn () => app(VideoseedClient::class)->test(),
                 'fields' => [
                     ['name' => 'token', 'setting' => 'videoseed_token', 'type' => 'secret', 'label' => 'API-токен', 'env' => config('services.videoseed.token'),
-                        'rules' => ['nullable', 'string', 'regex:/^[A-Za-z0-9]{16,64}$/'], 'message' => 'Токен Videoseed — це 16–64 латинські літери та цифри.'],
+                        'rules' => ['nullable', 'string', 'regex:/^[A-Za-z0-9]{16,64}$/'], 'message' => 'Токен Плеєра 2 — це 16–64 латинські літери та цифри.'],
                 ],
             ],
             'tmdb' => [
@@ -597,6 +624,57 @@ class IntegrationController extends Controller
                         'rules' => ['nullable', 'string', 'regex:/^[A-F0-9]{32}$/'], 'message' => 'Ключ Steam — 32 символи (цифри й літери A–F).'],
                 ],
             ],
+            'acoustid' => [
+                'label' => 'AcoustID (розпізнавання за звуком)',
+                'group' => 'music',
+                'description' => 'Відбиток Chromaprint (fpcalc) кожного завантаженого треку → AcoustID → запис MusicBrainz: точні назва, альбом, рік, номер доріжки й обкладинка з Cover Art Archive навіть без тегів у файлі.',
+                'docs' => 'https://acoustid.org/new-application',
+                'steps' => [
+                    'Увійдіть на acoustid.org (через MusicBrainz або Google) → «Register a new application».',
+                    'Назва — GameCon, версія — 1.0, сайт — '.url('/').'. Скопіюйте API key застосунку сюди. Безкоштовно.',
+                    'На сервері має бути fpcalc: sudo apt-get install libchromaprint-tools (deploy/remote.sh ставить сам).',
+                    'Старі треки: Адмінка → Музика → «Оновити метадані» або php artisan music:enrich.',
+                ],
+                'configured' => app(AcoustId::class)->configured(),
+                'stat' => app(AudioProbe::class)->fpcalc() !== null ? 'fpcalc встановлено' : 'fpcalc не знайдено на сервері',
+                'test' => fn () => app(AcoustId::class)->test(),
+                'fields' => [
+                    ['name' => 'key', 'setting' => 'acoustid_key', 'type' => 'secret', 'label' => 'API key застосунку', 'env' => config('services.acoustid.key'),
+                        'rules' => ['nullable', 'string', 'regex:/^[A-Za-z0-9]{6,32}$/'], 'message' => 'Ключ AcoustID — латинські літери й цифри.'],
+                ],
+            ],
+            'lastfm' => [
+                'label' => 'Last.fm',
+                'group' => 'music',
+                'description' => 'Жанри з тегів слухачів, біографії й схожі виконавці для сторінок виконавців, підказки альбому. Фото Last.fm не використовуємо (там заглушки).',
+                'docs' => 'https://www.last.fm/api/account/create',
+                'steps' => [
+                    'Увійдіть на last.fm → «Create API account»: назва — GameCon, опис і сайт — '.url('/').'.',
+                    'Скопіюйте «API key» сюди (Shared secret не потрібен). Безкоштовно.',
+                ],
+                'configured' => app(LastFm::class)->configured(),
+                'test' => fn () => app(LastFm::class)->test(),
+                'fields' => [
+                    ['name' => 'key', 'setting' => 'lastfm_key', 'type' => 'secret', 'label' => 'API key', 'env' => config('services.lastfm.key'),
+                        'rules' => ['nullable', 'string', 'regex:/^[a-f0-9]{32}$/'], 'message' => 'API key Last.fm — 32 символи 0–9, a–f.'],
+                ],
+            ],
+            'discogs' => [
+                'label' => 'Discogs',
+                'group' => 'music',
+                'description' => 'Рік, лейбл, жанри й стилі, номер доріжки й обкладинка релізу; фото й опис виконавця. До 60 запитів на хвилину.',
+                'docs' => 'https://www.discogs.com/settings/developers',
+                'steps' => [
+                    'Увійдіть на discogs.com → Settings → Developers → «Generate new token».',
+                    'Скопіюйте Personal access token сюди. Безкоштовно.',
+                ],
+                'configured' => app(Discogs::class)->configured(),
+                'test' => fn () => app(Discogs::class)->test(),
+                'fields' => [
+                    ['name' => 'token', 'setting' => 'discogs_token', 'type' => 'secret', 'label' => 'Personal access token', 'env' => config('services.discogs.token'),
+                        'rules' => ['nullable', 'string', 'regex:/^[A-Za-z0-9]{20,64}$/'], 'message' => 'Токен Discogs — латинські літери й цифри.'],
+                ],
+            ],
             'deepl' => [
                 'label' => 'DeepL',
                 'group' => 'translate',
@@ -608,10 +686,83 @@ class IntegrationController extends Controller
                     'Вставте ключ нижче й натисніть «Перевірити», потім додайте мови в Адмінці → Мови.',
                 ],
                 'configured' => $this->deepl->configured(),
+                // DeepL рахує символи тексту з пробілами й розділовими знаками; Free — 500 000 на місяць.
+                'stat' => $this->deeplStat(),
                 'test' => fn () => $this->deepl->test(),
                 'fields' => [
                     ['name' => 'key', 'setting' => 'deepl_key', 'type' => 'secret', 'label' => 'Authentication Key', 'env' => config('services.deepl.key'),
                         'rules' => ['nullable', 'string', 'regex:/^[A-Za-z0-9\-]{30,48}(:fx)?$/'], 'message' => 'Ключ DeepL має вигляд xxxxxxxx-xxxx-…:fx'],
+                ],
+            ],
+            'azure_translator' => [
+                'label' => 'Azure Translator',
+                'group' => 'translate',
+                'description' => 'Хмарний перекладач Microsoft — працює, коли вичерпано ліміт DeepL, і не навантажує сервер. Безкоштовний тариф F0 — 2 000 000 символів на місяць. LibreTranslate лишається останнім запасним.',
+                'docs' => 'https://learn.microsoft.com/azure/ai-services/translator/create-translator-resource',
+                'steps' => [
+                    'Увійдіть на portal.azure.com (потрібен акаунт Microsoft; картку просять для перевірки, тариф F0 безкоштовний).',
+                    'Create a resource → Translator → Pricing tier: Free F0. Region — найближчий, напр. West Europe (або Global).',
+                    'Ресурс → Keys and Endpoint: скопіюйте KEY 1 і Location/Region сюди, натисніть «Перевірити».',
+                ],
+                'configured' => app(AzureTranslator::class)->configured(),
+                'stat' => $this->azureStat(),
+                'test' => fn () => app(AzureTranslator::class)->test(),
+                'fields' => [
+                    ['name' => 'key', 'setting' => 'azure_translator_key', 'type' => 'secret', 'label' => 'Key', 'env' => config('services.azure_translator.key'),
+                        'rules' => ['nullable', 'string', 'regex:/^[A-Za-z0-9]{32,100}$/'], 'message' => 'Ключ Azure — латинські літери й цифри (KEY 1 з Keys and Endpoint).'],
+                    ['name' => 'region', 'setting' => 'azure_translator_region', 'type' => 'text', 'label' => 'Region', 'placeholder' => 'westeurope',
+                        'help' => 'Location/Region ресурсу. Порожньо — global.',
+                        'rules' => ['nullable', 'string', 'max:40', 'regex:/^[A-Za-z0-9]+$/'], 'message' => 'Регіон — латинські літери й цифри, напр. westeurope.'],
+                ],
+            ],
+            'libretranslate' => [
+                'label' => 'LibreTranslate (запасний перекладач)',
+                'group' => 'translate',
+                'description' => 'Безкоштовний перекладач без ліміту на вашому сервері. Працює останнім — коли вичерпано ліміти DeepL і Azure (або вони не відповідають): автопереклад мов і кнопка «Перекласти».',
+                'docs' => 'https://github.com/LibreTranslate/LibreTranslate',
+                'steps' => [
+                    'Встановлення на сервері: запустіть деплой з INSTALL_LIBRETRANSLATE=1 — створиться служба libretranslate (Python у /opt/libretranslate, мови uk, en, pl, de). Потрібно 2–4 ГБ RAM і кілька ГБ диска.',
+                    'Типова адреса — http://127.0.0.1:5000 (сервер слухає лише локально, ключ не потрібен). Мови — змінна LT_LANGUAGES у деплої (типово всі мови проєкту).',
+                    'Натисніть «Перевірити». Стан і лічильник DeepL — в Адмінці → Мови.',
+                ],
+                'configured' => app(LibreTranslate::class)->configured(),
+                'stat' => app(LibreTranslate::class)->available()
+                    ? 'Працює · мови: '.implode(', ', app(LibreTranslate::class)->languages())
+                    : 'Сервер не відповідає',
+                'test' => fn () => app(LibreTranslate::class)->test(),
+                'fields' => [
+                    ['name' => 'url', 'setting' => 'libretranslate_url', 'type' => 'text', 'label' => 'Адреса сервера', 'placeholder' => (string) config('services.libretranslate.url'),
+                        'help' => 'Порожньо — '.(config('services.libretranslate.url') ?: 'вимкнено').'.',
+                        'rules' => ['nullable', 'string', 'max:255', 'regex:#^https?://[^\s/$.?\#].[^\s]*$#'], 'message' => 'Адреса має починатися з http:// або https://'],
+                    ['name' => 'key', 'setting' => 'libretranslate_key', 'type' => 'secret', 'label' => 'API key (необов’язково)', 'env' => config('services.libretranslate.key'),
+                        'rules' => ['nullable', 'string', 'max:200', 'regex:/^[A-Za-z0-9\-_]+$/'], 'message' => 'Ключ — латинські літери, цифри, - і _.'],
+                ],
+            ],
+            'spellcheck' => [
+                'label' => 'Перевірка орфографії',
+                'group' => 'translate',
+                'description' => 'Підкреслює помилки в текстах адміністрації й модераторів: причини блокувань, відповіді на апеляції, оголошення. Hunspell на сервері — безкоштовно й без лімітів; LanguageTool додає граматику.',
+                'docs' => 'https://dev.languagetool.org/http-server',
+                'steps' => [
+                    'Hunspell ставить деплой (sudo apt-get install hunspell hunspell-uk hunspell-en-us).',
+                    'Граматика (необов’язково): адреса власного сервера LanguageTool, напр. http://127.0.0.1:8010, або https://api.languagetoolplus.com з логіном і ключем Premium.',
+                    'Слова, які не помилка (ігрові терміни, назви серверів), — у полі нижче, по одному в рядку. Базовий словник GameCon уже вбудовано.',
+                ],
+                'configured' => app(Spellchecker::class)->available(),
+                'stat' => app(Spellchecker::class)->available()
+                    ? 'Hunspell: '.implode(', ', app(Spellchecker::class)->dictionaries())
+                    : 'Hunspell не знайдено на сервері',
+                'test' => fn () => app(Spellchecker::class)->test(),
+                'fields' => [
+                    ['name' => 'languagetool_url', 'setting' => 'languagetool_url', 'type' => 'text', 'label' => 'Адреса LanguageTool (необов’язково)', 'placeholder' => 'http://127.0.0.1:8010',
+                        'rules' => ['nullable', 'string', 'max:255', 'regex:#^https?://[^\s/$.?\#].[^\s]*$#'], 'message' => 'Адреса має починатися з http:// або https://'],
+                    ['name' => 'languagetool_username', 'setting' => 'languagetool_username', 'type' => 'text', 'label' => 'Логін LanguageTool (для Premium)', 'placeholder' => 'email@example.com',
+                        'rules' => ['nullable', 'string', 'max:120']],
+                    ['name' => 'languagetool_key', 'setting' => 'languagetool_key', 'type' => 'secret', 'label' => 'API key LanguageTool (для Premium)', 'env' => config('services.languagetool.key'),
+                        'rules' => ['nullable', 'string', 'max:200', 'regex:/^[A-Za-z0-9\-_]+$/'], 'message' => 'Ключ — латинські літери, цифри, - і _.'],
+                    ['name' => 'words', 'setting' => 'spellcheck_words', 'type' => 'textarea', 'label' => 'Слова словника GameCon', 'placeholder' => "бізвар\nкапт",
+                        'help' => 'По одному слову в рядку. Форми слова (відмінки, множина) зараховуються самі.',
+                        'rules' => ['nullable', 'string', 'max:20000']],
                 ],
             ],
             'omdb' => [
@@ -635,6 +786,7 @@ class IntegrationController extends Controller
                 'steps' => [
                     'Play Console → Налаштування → Платіжний профіль: дані ФОП і рахунок для виплат (валютний рахунок ФОП у monobank).',
                     'Play Console → Монетизація → Підписки: створіть підписку з ID gamecon_plus (або власним — впишіть нижче) і базові плани, напр. monthly і yearly, з цінами.',
+                    'Номери телефону (за бажанням): Play Console → Монетизація → Продукти → Разові продукти — створіть phone_regular, phone_bronze, phone_silver, phone_gold, phone_platinum, phone_diamond з ціною рівня й увімкніть «Продавати номери» нижче.',
                     'Google Cloud Console (проєкт, пов’язаний із Play Console): увімкніть Google Play Android Developer API, створіть сервісний акаунт і ключ JSON.',
                     'Play Console → Користувачі й дозволи → запросіть email сервісного акаунта з правами «Перегляд фінансових даних» і «Керування замовленнями й підписками». Можна використати акаунт Firebase — тоді поле ключа лишіть порожнім.',
                     'Real-time developer notifications: створіть тему Pub/Sub, дайте google-play-developer-notifications@system.gserviceaccount.com роль Publisher, push-підписку на адресу '.app(GooglePlay::class)->rtdnUrl().' і вкажіть тему в Play Console → Монетизація → Налаштування монетизації.',
@@ -645,11 +797,18 @@ class IntegrationController extends Controller
                 'test' => fn () => app(GooglePlay::class)->test(),
                 'fields' => [
                     ['name' => 'enabled', 'setting' => 'google_play_enabled', 'type' => 'bool', 'label' => 'Продавати GameCon+ у застосунку', 'rules' => ['required', 'boolean']],
+                    ['name' => 'phones', 'setting' => 'google_play_phones_enabled', 'type' => 'bool', 'label' => 'Продавати номери телефону в застосунку',
+                        'help' => 'Разові товари Play Console з ID phone_regular, phone_bronze, phone_silver, phone_gold, phone_platinum, phone_diamond (ціна — за рівнем).',
+                        'rules' => ['required', 'boolean']],
                     ['name' => 'products', 'setting' => 'google_play_products', 'type' => 'text', 'label' => 'ID підписок', 'placeholder' => 'gamecon_plus',
                         'help' => 'Через кому, як у Play Console. Порожньо — gamecon_plus.',
                         'rules' => ['nullable', 'string', 'max:200', 'regex:/^[a-z0-9][a-z0-9_.]*(\s*,\s*[a-z0-9][a-z0-9_.]*)*$/'], 'message' => 'ID — малі латинські літери, цифри, _ і крапка; кілька — через кому.'],
                     ['name' => 'package', 'setting' => 'google_play_package', 'type' => 'text', 'label' => 'Пакет застосунку', 'placeholder' => (string) config('services.google_play.package'),
                         'rules' => ['nullable', 'string', 'max:100', 'regex:/^[a-zA-Z][a-zA-Z0-9_]*(\.[a-zA-Z][a-zA-Z0-9_]*)+$/'], 'message' => 'Напр. online.gamecon.app'],
+                    ['name' => 'app_link_fingerprints', 'setting' => 'app_link_fingerprints', 'type' => 'textarea', 'label' => 'SHA-256 відбитки підпису застосунку',
+                        'placeholder' => '14:6D:E9:…:B4', 'help' => 'Play Console → Цілісність застосунку → Підпис застосунку → SHA-256 (ключ підпису застосунку; для локальних збірок — ще й ключ завантаження). По одному в рядку. Публікуються в /.well-known/assetlinks.json для Android App Links; порожньо — App Links вимкнено. Не секрет.',
+                        'rules' => ['nullable', 'string', 'max:2000', 'regex:/^\s*([0-9A-Fa-f]{2}(:[0-9A-Fa-f]{2}){31})(\s*[,\n]\s*[0-9A-Fa-f]{2}(:[0-9A-Fa-f]{2}){31})*\s*$/'],
+                        'message' => 'Відбиток — 32 пари шістнадцяткових цифр через двокрапку; кілька — через кому або з нового рядка.'],
                     ['name' => 'service_account', 'setting' => 'google_play_service_account', 'type' => 'secret', 'label' => 'Ключ сервісного акаунта (JSON)', 'placeholder' => '{"type": "service_account", …}',
                         'env' => config('services.google_play.credentials'), 'help' => 'Порожньо — ключ Firebase з блоку Push-сповіщень (якщо йому дано доступ у Play Console).',
                         'rules' => ['nullable', 'string', 'max:10000', fn (string $attribute, mixed $value, \Closure $fail) => is_string($value) && FcmClient::parse($value) === null
@@ -702,6 +861,20 @@ class IntegrationController extends Controller
         } catch (CinemaException) {
             return false;
         }
+    }
+
+    /** Лічильник DeepL для картки: «123 456 / 500 000 символів» або «Вичерпано — працює LibreTranslate». */
+    private function deeplStat(): ?string
+    {
+        if (! $this->deepl->configured()) {
+            return null;
+        }
+        $usage = $this->deepl->quota();
+        if ($this->deepl->exhausted()) {
+            return app(LibreTranslate::class)->available() ? 'Ліміт вичерпано — працює LibreTranslate' : 'Ліміт вичерпано до нового місяця';
+        }
+
+        return $usage === null ? null : number_format($usage['used'], 0, '.', ' ').' / '.number_format($usage['limit'], 0, '.', ' ').' символів за місяць';
     }
 
     private function hint(?string $secret): ?string

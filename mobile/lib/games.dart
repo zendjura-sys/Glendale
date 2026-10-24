@@ -622,8 +622,8 @@ class _GameHero extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Wrap(spacing: 10, runSpacing: 4, crossAxisAlignment: WrapCrossAlignment.center, children: [
-                    if (game['year'] != null) Text('${game['year']}', style: body(13, color: Colors.white.withValues(alpha: 0.88), weight: FontWeight.w600)),
-                    if (platformsLabel(game, 8).isNotEmpty) Text(platformsLabel(game, 8), style: body(13, color: Colors.white.withValues(alpha: 0.85), weight: FontWeight.w500)),
+                    if (game['year'] != null) Text('${game['year']}', style: body(13, color: fg.withValues(alpha: 0.88), weight: FontWeight.w600)),
+                    if (platformsLabel(game, 8).isNotEmpty) Text(platformsLabel(game, 8), style: body(13, color: fg.withValues(alpha: 0.85), weight: FontWeight.w500)),
                     if (rating is num)
                       Row(mainAxisSize: MainAxisSize.min, children: [
                         const Icon(LucideIcons.star, size: 14, color: gold),
@@ -637,8 +637,8 @@ class _GameHero extends StatelessWidget {
                       for (final a in ages)
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(6), border: Border.all(color: Colors.white.withValues(alpha: 0.3))),
-                          child: Text(a, style: body(11.5, color: Colors.white.withValues(alpha: 0.9), weight: FontWeight.w500)),
+                          decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(6), border: Border.all(color: fg.withValues(alpha: 0.3))),
+                          child: Text(a, style: body(11.5, color: fg.withValues(alpha: 0.9), weight: FontWeight.w500)),
                         ),
                     ]),
                   ],

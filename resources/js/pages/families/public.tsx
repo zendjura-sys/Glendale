@@ -57,7 +57,7 @@ export default function FamilyPublic({
                 >
                     <ArrowLeft className="size-4" /> {tr('До сімей')}
                 </Link>
-                <section className="glass noise relative overflow-hidden rounded-3xl">
+                <section className="glass noise relative overflow-hidden rounded-2xl">
                     <div className="h-40 sm:h-52">
                         {family.cover_url ? (
                             <img
@@ -68,7 +68,7 @@ export default function FamilyPublic({
                                 className="size-full object-cover"
                             />
                         ) : (
-                            <div className="size-full bg-[radial-gradient(120%_120%_at_0%_0%,#f59e0b55,transparent_55%),radial-gradient(120%_120%_at_100%_0%,#6d5dfc66,transparent_60%),linear-gradient(135deg,#0b0f1d,#141a33)]" />
+                            <div className="size-full bg-[radial-gradient(120%_120%_at_0%_0%,#38bdf855,transparent_55%),radial-gradient(120%_120%_at_100%_0%,#2f7bff66,transparent_60%),linear-gradient(135deg,#0b0f1d,#141a33)]" />
                         )}
                     </div>
                     <div className="relative -mt-14 flex flex-wrap items-end gap-4 px-5 pb-5 sm:px-7">
@@ -116,7 +116,7 @@ export default function FamilyPublic({
                 <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_360px]">
                     <div className="space-y-4">
                         {family.description && (
-                            <section className="glass rounded-3xl p-5">
+                            <section className="glass rounded-2xl p-5">
                                 <h2 className="mb-2 font-display font-semibold text-white">
                                     {tr('Про сім’ю')}
                                 </h2>
@@ -129,7 +129,7 @@ export default function FamilyPublic({
                             jar={donation}
                             title={tr('Підтримати сім’ю')}
                         />
-                        <section className="glass rounded-3xl p-5">
+                        <section className="glass rounded-2xl p-5">
                             <h2 className="mb-3 font-display font-semibold text-white">
                                 {tr('Керівництво')}
                             </h2>
@@ -147,7 +147,7 @@ export default function FamilyPublic({
                                             size="sm"
                                         />
                                         <div className="min-w-0">
-                                            <div className="truncate font-mono text-sm text-white">
+                                            <div className="font-mono text-sm break-words text-white">
                                                 {m.display}
                                             </div>
                                             <RankBadge
@@ -161,7 +161,7 @@ export default function FamilyPublic({
                         </section>
                     </div>
 
-                    <section className="glass h-fit rounded-3xl p-5">
+                    <section className="glass h-fit rounded-2xl p-5">
                         {pending ? (
                             <div className="text-center">
                                 <Clock3 className="mx-auto size-8 text-amber-300" />
@@ -273,7 +273,7 @@ export default function FamilyPublic({
                         )}
                     </section>
                     {can_block && (
-                        <section className="glass space-y-3 rounded-3xl p-4">
+                        <section className="glass space-y-3 rounded-2xl p-4">
                             <h2 className="font-display text-base font-semibold text-white">
                                 {tr('Чорний список')}
                             </h2>

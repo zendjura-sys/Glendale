@@ -69,7 +69,7 @@ export default function CharacterShow({
                     {character.player.name}
                 </Link>
 
-                <section className="glass overflow-hidden rounded-3xl">
+                <section className="glass overflow-hidden rounded-2xl">
                     <div className="flex flex-col gap-5 p-5 sm:flex-row sm:p-6">
                         <CharacterPortrait
                             character={character}
@@ -82,14 +82,14 @@ export default function CharacterShow({
                                         {character.name}
                                     </h1>
                                     {character.is_main && (
-                                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-300/10 px-2.5 py-1 text-xs font-semibold text-amber-200">
+                                        <span className="inline-flex items-center gap-1 rounded-chip bg-amber-300/10 px-2.5 py-1 text-xs font-semibold text-amber-200">
                                             <Star className="size-3.5 fill-amber-300" />
                                             {tr('Головний')}
                                         </span>
                                     )}
                                     <span
                                         className={cn(
-                                            'rounded-full px-2.5 py-1 text-xs font-medium',
+                                            'rounded-chip px-2.5 py-1 text-xs font-medium',
                                             STATUS_TONE[character.status],
                                         )}
                                     >
@@ -187,7 +187,7 @@ export default function CharacterShow({
                 </section>
 
                 {character.story && (
-                    <section className="glass rounded-3xl p-5 sm:p-6">
+                    <section className="glass rounded-2xl p-5 sm:p-6">
                         <h2 className="font-display text-lg font-bold text-white">
                             {tr('Історія')}
                         </h2>
@@ -198,7 +198,7 @@ export default function CharacterShow({
                 )}
 
                 {(character.photos.length > 0 || can_edit) && (
-                    <section className="glass rounded-3xl p-5 sm:p-6">
+                    <section className="glass rounded-2xl p-5 sm:p-6">
                         <div className="flex items-center justify-between gap-3">
                             <h2 className="font-display text-lg font-bold text-white">
                                 {tr('Фото')}
@@ -284,7 +284,7 @@ export default function CharacterShow({
                 )}
 
                 {others.length > 0 && (
-                    <section className="glass rounded-3xl p-5">
+                    <section className="glass rounded-2xl p-5">
                         <h2 className="font-display text-lg font-bold text-white">
                             {tr('Інші персонажі гравця')}
                         </h2>

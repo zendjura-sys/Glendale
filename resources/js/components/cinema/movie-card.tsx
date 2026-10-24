@@ -48,7 +48,7 @@ export function MovieCardEmbed({
                     <p className="mt-1.5 line-clamp-2 font-display text-base leading-tight font-semibold text-white">
                         {movie.title}
                     </p>
-                    <p className="mt-0.5 truncate text-xs text-white/50">
+                    <p className="mt-0.5 text-xs break-words text-white/50">
                         {meta}
                     </p>
                     {movie.description && (

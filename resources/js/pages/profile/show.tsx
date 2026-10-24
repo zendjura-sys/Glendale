@@ -33,6 +33,10 @@ import { ReportPersonButton } from '@/components/gc/report-person';
 import { UserAvatar } from '@/components/gc/user-avatar';
 import { VerifiedBadge } from '@/components/gc/verified-badge';
 import { PlusBadge, plusNameProps } from '@/components/gc/plus';
+import {
+    CosmeticBadge,
+    cosmeticNameStyle,
+} from '@/components/season/cosmetics';
 import { WatchedTogether } from '@/components/profile/watched-together';
 import type { TogetherPerson } from '@/components/profile/watched-together';
 import { EmptyState, Widget } from '@/components/gc/widget';
@@ -42,7 +46,13 @@ import { PlayingBadge } from '@/components/gc/playing';
 import type { AchievementsData } from '@/components/gc/achievements';
 import { CharactersWidget } from '@/components/characters/character-card';
 import type { CharacterCardData } from '@/components/characters/character-card';
-import { compactNumber, formatDate, lastSeen, plural } from '@/lib/format';
+import {
+    compactNumber,
+    formatDate,
+    languageName,
+    lastSeen,
+    plural,
+} from '@/lib/format';
 import { cn } from '@/lib/utils';
 import type {
     NowPlaying,
@@ -52,7 +62,7 @@ import type {
     ScrollData,
     UserCard,
 } from '@/types';
-import { tr } from '@/lib/i18n';
+import { LOCALE, tr } from '@/lib/i18n';
 import { LiveBadge, ProfileStream } from '@/components/streams/stream';
 import type { StreamInfo } from '@/components/streams/stream';
 import { useFeature, usePlugin } from '@/lib/plugins';
@@ -266,7 +276,12 @@ export default function ProfileShow({
         : profile.plus?.name?.length
           ? [...profile.plus.name, '#a855f7']
           : ['#6366f1', '#a855f7', '#22d3ee'];
-    const nameProps = plusNameProps(profile.plus);
+    const nameProps = profile.plus
+        ? plusNameProps(profile.plus)
+        : {
+              style: cosmeticNameStyle(profile.cosmetics),
+              className: undefined,
+          };
     // Відеофон учасника GameCon+ замінює фон сайту, поки відкрита його сторінка.
     useEffect(() => {
         setPageBackgroundVideo(profile.background_video ?? null);
@@ -287,7 +302,7 @@ export default function ProfileShow({
         <>
             <Head title={profile.name} />
 
-            <section className="glass relative overflow-hidden rounded-[28px]">
+            <section className="glass relative overflow-hidden rounded-2xl">
                 {profile.header_fx === 'rim' && (
                     <div
                         aria-hidden
@@ -297,7 +312,7 @@ export default function ProfileShow({
                         }}
                     />
                 )}
-                <div className="relative h-52 overflow-hidden sm:h-72">
+                <div className="relative isolate h-52 overflow-hidden sm:h-72">
                     {profile.cover_url ? (
                         <img
                             decoding="async"
@@ -314,7 +329,7 @@ export default function ProfileShow({
                             }}
                         />
                     ) : (
-                        <div className="size-full bg-[radial-gradient(circle_at_20%_20%,#4f8bff_0%,transparent_45%),radial-gradient(circle_at_80%_30%,#a855f7_0%,transparent_45%),radial-gradient(circle_at_50%_100%,#f04fd8_0%,transparent_50%)] opacity-80" />
+                        <div className="size-full bg-[radial-gradient(circle_at_20%_20%,#4f8bff_0%,transparent_45%),radial-gradient(circle_at_80%_30%,#22d3ee_0%,transparent_45%),radial-gradient(circle_at_50%_100%,#0ea5e9_0%,transparent_50%)] opacity-80" />
                     )}
                     {profile.header_fx === 'aurora' && (
                         <div
@@ -384,8 +399,12 @@ export default function ProfileShow({
                                         <PlusBadge className="size-6 rounded-lg [&_svg]:size-4" />
                                     </Link>
                                 )}
+                                <CosmeticBadge
+                                    cosmetics={profile.cosmetics}
+                                    className="size-6"
+                                />
                                 {roleBadge && (
-                                    <span className="inline-flex items-center gap-1 rounded-full border border-gold/30 bg-gold/10 px-2.5 py-0.5 text-xs font-semibold text-gold">
+                                    <span className="inline-flex items-center gap-1 rounded-chip border border-gold/30 bg-gold/10 px-2.5 py-0.5 text-xs font-semibold text-gold">
                                         <ShieldCheck className="size-3" />{' '}
                                         {roleBadge}
                                     </span>
@@ -410,16 +429,16 @@ export default function ProfileShow({
                                 (profile.languages?.length ?? 0) > 0) && (
                                 <div className="mt-2 flex flex-wrap gap-1.5">
                                     {profile.looking_for_group && (
-                                        <span className="rounded-full bg-white/[0.08] px-2.5 py-1 text-xs font-medium text-white">
+                                        <span className="rounded-chip bg-white/[0.08] px-2.5 py-1 text-xs font-medium text-white">
                                             {tr('Шукаю групу')}
                                         </span>
                                     )}
                                     {profile.languages?.map((code) => (
                                         <span
                                             key={code}
-                                            className="rounded-full bg-white/[0.05] px-2.5 py-1 text-xs text-white/70"
+                                            className="rounded-chip bg-white/[0.05] px-2.5 py-1 text-xs text-white/70"
                                         >
-                                            {code}
+                                            {languageName(code, LOCALE)}
                                         </span>
                                     ))}
                                 </div>
@@ -428,7 +447,7 @@ export default function ProfileShow({
                             {profile.pin && (
                                 <Link
                                     href={profile.pin.href}
-                                    className="mt-2 inline-flex items-center gap-2 rounded-full bg-white/[0.06] px-3 py-1 text-xs text-white/80"
+                                    className="mt-2 inline-flex items-center gap-2 rounded-chip bg-white/[0.06] px-3 py-1 text-xs text-white/80"
                                 >
                                     <span className="text-white/40">
                                         {tr(profile.pin.hint)}
@@ -471,7 +490,7 @@ export default function ProfileShow({
                                 href={`/${profile.username}/card`}
                                 className="inline-flex h-10 items-center gap-2 rounded-xl bg-white/[0.07] px-4 text-sm font-semibold text-white transition hover:bg-white/[0.11]"
                             >
-                                <QrCode className="size-4" /> {tr('Картка')}
+                                <QrCode className="size-4" /> Game Card
                             </Link>
                             {isSelf ? (
                                 <Link
@@ -713,7 +732,7 @@ export default function ProfileShow({
                                                             profile.platforms
                                                                 .steam
                                                         }
-                                                        className="rounded-full bg-white/10 px-3 py-1 text-xs text-white"
+                                                        className="rounded-chip bg-white/10 px-3 py-1 text-xs text-white"
                                                         target="_blank"
                                                         rel="noreferrer"
                                                     >
@@ -726,7 +745,7 @@ export default function ProfileShow({
                                                             profile.platforms
                                                                 .xbox
                                                         }
-                                                        className="rounded-full bg-white/10 px-3 py-1 text-xs text-white"
+                                                        className="rounded-chip bg-white/10 px-3 py-1 text-xs text-white"
                                                         target="_blank"
                                                         rel="noreferrer"
                                                     >
@@ -744,7 +763,7 @@ export default function ProfileShow({
                                                             profile.platforms
                                                                 .playstation
                                                         }
-                                                        className="rounded-full bg-white/10 px-3 py-1 text-xs text-white"
+                                                        className="rounded-chip bg-white/10 px-3 py-1 text-xs text-white"
                                                         target="_blank"
                                                         rel="noreferrer"
                                                     >
@@ -828,7 +847,7 @@ export default function ProfileShow({
                                         {audio.tracks > 0 && (
                                             <Link
                                                 href={audio.href}
-                                                className="glass group flex items-center gap-3 rounded-3xl p-4 transition hover:border-white/15"
+                                                className="glass group flex items-center gap-3 rounded-2xl p-4 transition hover:border-white/15"
                                             >
                                                 <span className="flex size-11 items-center justify-center rounded-2xl bg-gradient-to-br from-gc-purple to-gc-blue shadow-[0_10px_30px_-10px_rgb(168_85_247/0.9)]">
                                                     <Music2 className="size-5 text-white" />

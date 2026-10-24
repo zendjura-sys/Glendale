@@ -76,7 +76,7 @@ export default function Communities({
         <>
             <Head title={tr('Спільноти')} />
             <div className="space-y-5">
-                <section className="glass relative overflow-hidden rounded-3xl p-5 sm:p-6">
+                <section className="glass relative overflow-hidden rounded-2xl p-5 sm:p-6">
                     <div className="pointer-events-none absolute -top-28 -right-10 size-80 rounded-full bg-gc-purple/25 blur-3xl" />
                     <div className="pointer-events-none absolute -bottom-32 left-10 size-72 rounded-full bg-gc-blue/15 blur-3xl" />
                     <div className="relative flex flex-wrap items-start justify-between gap-4">
@@ -153,7 +153,7 @@ export default function Communities({
                                         visit({ category: key || null })
                                     }
                                     className={cn(
-                                        'shrink-0 rounded-full border px-3.5 py-1.5 text-xs font-medium transition',
+                                        'shrink-0 rounded-control border px-3.5 py-1.5 text-xs font-medium transition',
                                         active
                                             ? 'border-transparent bg-gradient-brand text-white shadow-[0_0_18px_-4px_rgb(124_92_255/0.9)]'
                                             : 'border-white/[0.08] text-white/55 hover:border-white/20 hover:text-white',
@@ -205,7 +205,7 @@ export default function Communities({
                     <InfiniteScroll
                         data="communities"
                         preserveUrl
-                        className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3"
+                        className="grid grid-cols-1 gap-x-8 divide-y divide-white/[0.07] lg:grid-cols-2 lg:divide-y-0 lg:[&>*]:border-b lg:[&>*]:border-white/[0.07]"
                     >
                         {communities.data.map((community) => (
                             <CommunityTile

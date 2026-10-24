@@ -372,7 +372,7 @@ function CashoutPanel({
                             )}
                             <span
                                 className={cn(
-                                    'rounded-full px-2 py-0.5 text-xs font-medium',
+                                    'rounded-chip px-2 py-0.5 text-xs font-medium',
                                     cashoutStatus[c.status][1],
                                 )}
                             >
@@ -542,7 +542,7 @@ function DepositPanel({
                             </div>
                             <span
                                 className={cn(
-                                    'rounded-full px-2 py-0.5 text-xs font-medium',
+                                    'rounded-chip px-2 py-0.5 text-xs font-medium',
                                     depositStatus[d.status][1],
                                 )}
                             >

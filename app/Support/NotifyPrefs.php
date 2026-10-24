@@ -25,6 +25,8 @@ class NotifyPrefs
         'photo_comment' => 'comments',
         'mention' => 'mentions',
         'event_reminder' => 'events',
+        'listen_room' => 'events',
+        'tournament' => 'events',
         'friend_playing' => 'playing',
     ];
 

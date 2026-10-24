@@ -349,9 +349,9 @@ export default function GamesIndex({
                                     <p className="line-clamp-2 text-[13px] leading-tight font-semibold text-white sm:text-sm">
                                         {g.name}
                                     </p>
-                                    <p className="mt-1 flex items-center gap-1.5 text-[11px] text-white/70">
+                                    <p className="mt-1 flex items-start gap-1.5 text-[11px] text-white/70">
                                         <Icon className="size-3.5 shrink-0" />
-                                        <span className="truncate">
+                                        <span className="break-words">
                                             {g.platforms
                                                 .map((p) => p.label)
                                                 .slice(0, 3)

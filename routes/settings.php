@@ -3,6 +3,8 @@
 use App\Http\Controllers\AppealController;
 use App\Http\Controllers\Settings\AccountController;
 use App\Http\Controllers\Settings\AppearanceController;
+use App\Http\Controllers\Settings\DigestController;
+use App\Http\Controllers\Settings\ListeningController;
 use App\Http\Controllers\Settings\NavigationController;
 use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\Settings\SecurityController;
@@ -18,6 +20,8 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('settings/appearance', [AppearanceController::class, 'edit'])->name('appearance.edit');
     Route::put('settings/appearance', [AppearanceController::class, 'update'])->name('appearance.update');
+    Route::put('settings/theme', [AppearanceController::class, 'theme'])->name('appearance.theme');
+    Route::put('settings/mode', [AppearanceController::class, 'mode'])->name('appearance.mode');
 
     Route::get('settings/navigation', [NavigationController::class, 'edit'])->name('navigation.edit');
     Route::put('settings/navigation', [NavigationController::class, 'update'])->name('navigation.update');
@@ -30,6 +34,8 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('settings/stream', [StreamController::class, 'destroy'])->name('stream.destroy');
     Route::post('settings/stream/live', [StreamController::class, 'live'])->middleware('throttle:20,1')->name('stream.live');
     Route::delete('settings/account/connections/{client}', [AccountController::class, 'disconnect'])->whereNumber('client')->name('account.connections.destroy');
+    Route::patch('settings/digest', [DigestController::class, 'update'])->middleware('throttle:30,1')->name('digest.update');
+    Route::patch('settings/listening', [ListeningController::class, 'update'])->middleware('throttle:30,1')->name('listening.update');
     Route::put('settings/account/profanity', [AccountController::class, 'profanity'])->name('account.profanity');
     Route::get('settings/account/export', [AccountController::class, 'export'])->middleware('throttle:3,60')->name('account.export');
     Route::post('settings/account/freeze', [AccountController::class, 'freeze'])->middleware('throttle:6,1')->name('account.freeze');

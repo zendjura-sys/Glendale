@@ -107,10 +107,7 @@ const PERKS = (): { icon: LucideIcon; title: string; text: string }[] => [
 
 const btn =
     'inline-flex h-10 items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold transition disabled:opacity-40';
-const primary = cn(
-    btn,
-    'bg-[var(--btn-primary,#6366f1)] text-white hover:opacity-90',
-);
+const primary = cn(btn, 'bg-primary text-white hover:opacity-90');
 const secondary = cn(btn, 'bg-white/[0.06] text-white/85 hover:bg-white/10');
 
 export default function PlusPage({
@@ -133,7 +130,7 @@ export default function PlusPage({
             <Head title="GameCon+" />
             <div className="mx-auto max-w-4xl space-y-5">
                 <PlusTabs current="plus" />
-                <section className="glass rounded-3xl p-5 sm:p-7">
+                <section className="glass rounded-2xl p-5 sm:p-7">
                     <h1 className="flex items-center gap-2.5 font-display text-2xl font-bold text-white sm:text-3xl">
                         <PlusBadge className="size-7 rounded-lg [&_svg]:size-5" />
                         GameCon+
@@ -190,7 +187,7 @@ export default function PlusPage({
                                         {periodLabel(plan)}
                                     </span>
                                     {plan.badge && (
-                                        <span className="rounded-full bg-indigo-500/20 px-2 py-0.5 text-[11px] font-semibold text-indigo-200">
+                                        <span className="rounded-chip bg-indigo-500/20 px-2 py-0.5 text-[11px] font-semibold text-indigo-200">
                                             {plan.badge}
                                         </span>
                                     )}
@@ -234,7 +231,7 @@ export default function PlusPage({
 
                 <section className="grid gap-3 sm:grid-cols-2">
                     {PERKS().map(({ icon: Icon, title, text }) => (
-                        <div key={title} className="glass rounded-3xl p-5">
+                        <div key={title} className="glass rounded-2xl p-5">
                             <span className="flex items-center gap-2 font-semibold text-white">
                                 <Icon className="size-4 text-indigo-300" />
                                 {title}
@@ -267,7 +264,7 @@ export default function PlusPage({
                 />
 
                 {payments.length > 0 && (
-                    <section className="glass rounded-3xl p-5">
+                    <section className="glass rounded-2xl p-5">
                         <h2 className="font-display text-lg font-bold text-white">
                             {tr('Історія оплат')}
                         </h2>
@@ -371,7 +368,7 @@ function StyleEditor({
     };
 
     return (
-        <form onSubmit={submit} className="glass space-y-4 rounded-3xl p-5">
+        <form onSubmit={submit} className="glass space-y-4 rounded-2xl p-5">
             <h2 className="flex items-center gap-2 font-display text-lg font-bold text-white">
                 <Palette className="size-5 text-indigo-300" />
                 {tr('Оформлення')}
@@ -584,7 +581,7 @@ function GiftForm({
     const ready = username.trim().length > 1 && busy === null;
 
     return (
-        <section className="glass flex flex-col gap-3 rounded-3xl p-5">
+        <section className="glass flex flex-col gap-3 rounded-2xl p-5">
             <h2 className="flex items-center gap-2 font-display text-lg font-bold text-white">
                 <Gift className="size-5 text-indigo-300" />
                 {tr('Подарувати другу')}
@@ -623,7 +620,7 @@ function RedeemForm() {
 
     return (
         <form
-            className="glass flex flex-col gap-3 rounded-3xl p-5"
+            className="glass flex flex-col gap-3 rounded-2xl p-5"
             onSubmit={(event) => {
                 event.preventDefault();
                 form.post('/plus/redeem', {
@@ -672,7 +669,7 @@ function FamilyPlans({
 }) {
     const plans = useKind('family');
     return (
-        <section className="glass rounded-3xl p-5">
+        <section className="glass rounded-2xl p-5">
             <h2 className="flex items-center gap-2 font-display text-lg font-bold text-white">
                 <Users className="size-5 text-indigo-300" />
                 {tr('GameCon+ для сім’ї')}

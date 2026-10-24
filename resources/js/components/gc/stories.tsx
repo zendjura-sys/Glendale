@@ -127,7 +127,7 @@ function Composer({
             onClick={onClose}
         >
             <div
-                className="glass-strong w-full max-w-sm rounded-3xl p-4"
+                className="glass-strong w-full max-w-sm rounded-2xl p-4"
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="mb-3 flex items-center">
@@ -526,7 +526,7 @@ function StoryViewer({
                 </div>
 
                 {viewers && (
-                    <div className="absolute inset-x-0 bottom-0 z-30 max-h-[60%] overflow-y-auto rounded-t-3xl bg-[#0d1222] p-4">
+                    <div className="absolute inset-x-0 bottom-0 z-30 max-h-[60%] overflow-y-auto rounded-t-2xl bg-[#0d1222] p-4">
                         <div className="mb-2 flex items-center">
                             <h3 className="flex-1 text-sm font-semibold text-white">
                                 {tr('Переглянули (')}
@@ -613,7 +613,7 @@ export function StoriesBar() {
 
     return (
         <>
-            <div className="glass flex [scrollbar-width:none] gap-3 overflow-x-auto rounded-3xl p-3">
+            <div className="glass flex [scrollbar-width:none] gap-3 overflow-x-auto rounded-2xl p-3">
                 <button
                     type="button"
                     onClick={() =>
@@ -652,7 +652,7 @@ export function StoriesBar() {
                             <Plus className="size-3" />
                         </span>
                     </span>
-                    <span className="w-full truncate text-center text-xs text-white/70">
+                    <span className="w-full text-center text-xs leading-tight break-words text-white/70">
                         {tr('Ваша історія')}
                     </span>
                 </button>
@@ -671,7 +671,7 @@ export function StoriesBar() {
                                     showOnline={false}
                                 />
                             </Ring>
-                            <span className="w-full truncate text-center text-xs text-white/70">
+                            <span className="w-full text-center text-xs leading-tight break-words text-white/70">
                                 {group.user.first_name}
                             </span>
                         </button>

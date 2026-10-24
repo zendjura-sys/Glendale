@@ -110,7 +110,7 @@ export function GroupInfoDialog({
 
     return (
         <Dialog open={open} onOpenChange={close}>
-            <DialogContent className="glass-strong gap-0 overflow-hidden rounded-3xl border-white/10 p-0 text-white sm:max-w-md">
+            <DialogContent className="glass-strong gap-0 overflow-hidden rounded-dialog border-white/10 p-0 text-white sm:max-w-md">
                 <div className="relative flex flex-col items-center bg-gradient-to-b from-gc-indigo/25 to-transparent px-5 pt-7 pb-5 text-center">
                     <button
                         type="button"
@@ -307,12 +307,12 @@ export function GroupInfoDialog({
                                             </span>
                                         </Link>
                                         {member.role === 'owner' ? (
-                                            <span className="flex items-center gap-1 rounded-full bg-gc-gold/10 px-2 py-0.5 text-xs font-medium text-gc-gold">
+                                            <span className="flex items-center gap-1 rounded-chip bg-gc-gold/10 px-2 py-0.5 text-xs font-medium text-gc-gold">
                                                 <Crown className="size-3" />
                                                 {tr('Творець')}
                                             </span>
                                         ) : member.role === 'admin' ? (
-                                            <span className="flex items-center gap-1 rounded-full bg-gc-blue/10 px-2 py-0.5 text-xs font-medium text-[#8fb4ff]">
+                                            <span className="flex items-center gap-1 rounded-chip bg-gc-blue/10 px-2 py-0.5 text-xs font-medium text-[#8fb4ff]">
                                                 <ShieldCheck className="size-3" />
                                                 {tr('Адмін')}
                                             </span>

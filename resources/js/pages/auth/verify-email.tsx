@@ -40,7 +40,7 @@ export default function VerifyEmail({ status }: { status?: string }) {
 }
 
 VerifyEmail.layout = {
-    title: tr('Підтвердіть пошту'),
+    title: tr('Підтвердьте пошту'),
     description: tr(
         'Ми надіслали лист із посиланням. Перейдіть за ним, щоб активувати акаунт.',
     ),

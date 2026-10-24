@@ -7,8 +7,10 @@ use App\Models\Conversation;
 use App\Models\ConversationParticipant;
 use App\Models\ListenParty;
 use App\Models\ListenPartyMember;
+use App\Models\RadioStation;
 use App\Models\Track;
 use App\Models\User;
+use App\Services\Music\ListenRooms;
 use App\Support\Plugins\Plugins;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -53,27 +55,44 @@ class ListenParties
 
     public function isMember(ListenParty $party, User $user): bool
     {
-        return ListenPartyMember::query()->where('listen_party_id', $party->id)->where('user_id', $user->id)->exists();
+        return ListenPartyMember::query()->where('listen_party_id', $party->id)->where('user_id', $user->id)->whereNull('kicked_at')->exists();
     }
 
     /** Плей, пауза, перемотка або інший трек — від ведучого (чи будь-кого, якщо керування спільне). */
-    public function control(ListenParty $party, User $user, bool $playing, float $position, ?Track $track = null): void
+    public function control(ListenParty $party, User $user, bool $playing, float $position, ?Track $track = null, ?RadioStation $station = null): void
     {
         abort_unless($party->canControl($user), 403, 'Плеєром керує ведучий.');
         $party->update([
-            'track_id' => $track->id ?? $party->track_id,
+            'track_id' => $station ? null : ($track->id ?? $party->track_id),
+            'station_id' => $track ? null : ($station->id ?? $party->station_id),
             'playing' => $playing,
             'position' => max(0, $position),
             'state_ms' => $this->now(),
         ]);
+        $party->unsetRelation('track')->unsetRelation('station');
         $this->broadcast($party, ['state' => $this->playback($party), 'by' => $user->id]);
     }
 
-    /** Додати трек у чергу може кожен слухач; якщо нічого не грає — трек одразу стає поточним. */
-    public function enqueue(ListenParty $party, User $user, Track $track): void
+    /**
+     * Додати трек (або радіостанцію) у чергу може кожен слухач; якщо нічого не грає — одразу стає поточним.
+     * У кімнаті з погодженням слухач лише пропонує — вирішує діджей.
+     */
+    public function enqueue(ListenParty $party, User $user, Track|RadioStation $item, ?int $by = null): void
     {
-        if ($party->track_id === null) {
-            $party->update(['track_id' => $track->id, 'playing' => true, 'position' => 0, 'state_ms' => $this->now()]);
+        if ($by === null && $party->moderated && ! $party->canControl($user)) {
+            app(ListenRooms::class)->suggest($party, $user, $item);
+
+            return;
+        }
+        $by ??= $user->id;
+        $entry = $item instanceof Track ? ['track_id' => $item->id] : ['station_id' => $item->id];
+        if ($party->track_id === null && $party->station_id === null) {
+            $party->update([
+                'track_id' => $entry['track_id'] ?? null,
+                'station_id' => $entry['station_id'] ?? null,
+                'playing' => true, 'position' => 0, 'state_ms' => $this->now(),
+            ]);
+            $party->unsetRelation('track')->unsetRelation('station');
             $this->broadcast($party, ['state' => $this->playback($party), 'queue' => $this->queue($party), 'by' => $user->id]);
 
             return;
@@ -82,7 +101,7 @@ class ListenParties
         if (count($queue) >= ListenParty::QUEUE_LIMIT) {
             throw ValidationException::withMessages(['track_id' => 'Черга заповнена.']);
         }
-        $queue[] = ['track_id' => $track->id, 'by' => $user->id];
+        $queue[] = [...$entry, 'by' => $by];
         $party->update(['queue' => $queue]);
         $this->broadcast($party, ['queue' => $this->queue($party), 'by' => $user->id]);
     }
@@ -105,7 +124,9 @@ class ListenParties
      */
     public function next(ListenParty $party, User $user): void
     {
-        $finished = $party->track === null || $party->currentPosition() >= max(0, $party->track->duration - 2);
+        // Радіо не «дограє»: перемикає лише той, хто керує.
+        $finished = $party->station_id === null
+            && ($party->track === null || $party->currentPosition() >= max(0, $party->track->duration - 2));
         abort_unless($party->canControl($user) || $finished, 403, 'Перемикає ведучий.');
         if ($party->repeat && $finished && $party->track_id !== null && app(Plugins::class)->on('listen_repeat')) {
             $party->update(['playing' => true, 'position' => 0, 'state_ms' => $this->now()]);
@@ -117,12 +138,13 @@ class ListenParties
         $nextItem = array_shift($queue);
         $party->update([
             'track_id' => $nextItem['track_id'] ?? null,
+            'station_id' => $nextItem['station_id'] ?? null,
             'queue' => $queue,
             'playing' => $nextItem !== null,
             'position' => 0,
             'state_ms' => $this->now(),
         ]);
-        $party->unsetRelation('track');
+        $party->unsetRelation('track')->unsetRelation('station');
         $this->broadcast($party, ['state' => $this->playback($party), 'queue' => $this->queue($party), 'by' => $user->id]);
     }
 
@@ -143,7 +165,7 @@ class ListenParties
 
     public function end(ListenParty $party, User $user): void
     {
-        abort_unless($user->id === $party->host_id, 403, 'Завершити може лише ведучий.');
+        abort_unless($user->id === $party->host_id || app(ListenRooms::class)->canManage($party, $user), 403, 'Завершити може лише ведучий.');
         $party->update(['ended_at' => now(), 'playing' => false]);
         $this->broadcast($party, ['ended' => true]);
     }
@@ -197,6 +219,7 @@ class ListenParties
             'state' => $this->playback($party),
             'queue' => $this->queue($party),
             'members' => $this->members($party),
+            'room' => $party->isGroupRoom() || $party->moderated ? app(ListenRooms::class)->extras($party, $viewer) : null,
         ];
     }
 
@@ -206,10 +229,12 @@ class ListenParties
     public function playback(ListenParty $party): array
     {
         $track = $party->track;
+        // Радіостанція — така сама картка, як трек (duration 0, live), тож грає тим самим плеєром.
+        $card = $track?->toCard() ?? $party->station?->toCard();
 
         return [
-            'track' => $track?->toCard(),
-            'playing' => $party->playing && $track !== null,
+            'track' => $card,
+            'playing' => $party->playing && $card !== null,
             'position' => round($party->position, 2),
             'state_ms' => $party->state_ms,
             'server_ms' => $this->now(),
@@ -225,14 +250,25 @@ class ListenParties
      */
     public function queue(ListenParty $party): array
     {
-        $queue = $party->queue ?? [];
-        $tracks = Track::query()->whereIn('id', array_column($queue, 'track_id'))->get()->keyBy('id');
-        $users = User::query()->whereIn('id', array_column($queue, 'by'))->get()->keyBy('id');
+        return $this->cards($party->queue ?? []);
+    }
+
+    /**
+     * Картки для черги чи пропозицій: трек або радіостанція й хто додав.
+     *
+     * @param  list<array{track_id?: int, station_id?: int, by: int}>  $items
+     * @return list<array<string, mixed>>
+     */
+    public function cards(array $items): array
+    {
+        $tracks = Track::query()->whereIn('id', array_filter(array_column($items, 'track_id')))->get()->keyBy('id');
+        $stations = RadioStation::query()->whereIn('id', array_filter(array_column($items, 'station_id')))->get()->keyBy('id');
+        $users = User::query()->whereIn('id', array_column($items, 'by'))->get()->keyBy('id');
         $out = [];
-        foreach ($queue as $index => $item) {
-            $track = $tracks->get($item['track_id']);
-            if ($track instanceof Track) {
-                $out[] = ['index' => $index, 'track' => $track->toCard(), 'by' => $users->get($item['by'])?->toCard()];
+        foreach ($items as $index => $item) {
+            $card = isset($item['station_id']) ? $stations->get($item['station_id'])?->toCard() : $tracks->get($item['track_id'] ?? 0)?->toCard();
+            if ($card !== null) {
+                $out[] = ['index' => $index, 'track' => $card, 'by' => $users->get($item['by'])?->toCard()];
             }
         }
 
@@ -250,10 +286,11 @@ class ListenParties
     /**
      * @return list<array<string, mixed>>
      */
-    private function members(ListenParty $party): array
+    public function members(ListenParty $party): array
     {
         return array_values($party->members()->with('user')
             ->where('last_seen_at', '>=', now()->subSeconds(ListenParty::ONLINE_SECONDS))
+            ->whereNull('kicked_at')
             ->orderBy('id')
             ->get()
             ->map(fn (ListenPartyMember $m) => $m->user ? [...$m->user->toCard(), 'is_host' => $m->user_id === $party->host_id] : null)
@@ -265,12 +302,12 @@ class ListenParties
     /**
      * @param  array<string, mixed>  $payload
      */
-    private function broadcast(ListenParty $party, array $payload): void
+    public function broadcast(ListenParty $party, array $payload): void
     {
         rescue(fn () => broadcast(new ListenPartyUpdated($party->id, $payload)), report: false);
     }
 
-    private function now(): int
+    public function now(): int
     {
         return (int) floor(microtime(true) * 1000);
     }

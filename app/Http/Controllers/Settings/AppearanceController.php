@@ -35,6 +35,7 @@ class AppearanceController extends Controller
             ],
             'backgrounds' => Backgrounds::presets(),
             'skin' => Skins::for($user),
+            'theme' => Skins::theme($user),
             'seasonal' => $user->pref('seasonal') !== false,
             'modes' => app(NetworkModes::class)->available(),
             'networkMode' => app(NetworkModes::class)->for($user)['id'],
@@ -89,6 +90,7 @@ class AppearanceController extends Controller
             'background_motion' => ['sometimes', 'boolean'],
             'background_video' => ['sometimes', 'nullable', 'string', 'max:200'],
             'skin' => ['sometimes', 'string', 'in:'.implode(',', Skins::ALL)],
+            'theme' => ['sometimes', 'string', 'in:'.implode(',', Skins::THEMES)],
             'seasonal' => ['sometimes', 'boolean'],
             'network_mode' => ['sometimes', 'string', 'in:'.implode(',', array_column(app(NetworkModes::class)->available(), 'id'))],
         ]);
@@ -147,6 +149,9 @@ class AppearanceController extends Controller
         if (array_key_exists('skin', $data)) {
             $patch['skin'] = $data['skin'];
         }
+        if (array_key_exists('theme', $data)) {
+            $patch['theme'] = $data['theme'];
+        }
         if (array_key_exists('network_mode', $data)) {
             $patch['network_mode'] = $data['network_mode'];
         }
@@ -172,5 +177,25 @@ class AppearanceController extends Controller
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Вигляд збережено.']);
 
         return to_route('appearance.edit');
+    }
+
+    /** Швидкий перемикач теми (меню облікового запису): лише тема, без решти налаштувань. */
+    public function theme(Request $request): RedirectResponse
+    {
+        $data = $request->validate(['theme' => ['required', 'string', 'in:'.implode(',', Skins::THEMES)]]);
+        $request->user()->mergePref(['theme' => $data['theme']]);
+
+        return back();
+    }
+
+    /** Швидка зміна режиму соцмережі (застосунок: Налаштування → Вигляд). */
+    public function mode(Request $request): RedirectResponse
+    {
+        $modes = app(NetworkModes::class);
+        $data = $request->validate(['mode' => ['required', 'string', 'in:'.implode(',', array_column($modes->available(), 'id'))]]);
+        $request->user()->mergePref(['network_mode' => $data['mode']]);
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Режим змінено.']);
+
+        return back();
     }
 }

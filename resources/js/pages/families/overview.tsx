@@ -15,6 +15,7 @@ import type { DonationJar } from '@/components/gc/donation-jar';
 import { FamilyShell } from '@/components/families/family-shell';
 import { InviteLinkButton } from '@/components/gc/invite-link';
 import { VoiceRooms } from '@/components/gc/voice-rooms';
+import { ListenRoomButton } from '@/components/music/listen-room-button';
 import {
     Amount,
     Empty,
@@ -115,12 +116,13 @@ export default function FamilyOverview(props: Props) {
                 label={`[${family.tag}] ${family.name}`}
                 href={`/f/${family.slug}`}
             />
+            <ListenRoomButton group="family" id={family.id} />
 
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
                 <div className="space-y-4">
                     <Link
                         href={`${base}/reports?new=1`}
-                        className="glass group flex items-center gap-4 overflow-hidden rounded-3xl p-5 transition hover:bg-white/[0.06]"
+                        className="glass group flex items-center gap-4 overflow-hidden rounded-2xl p-5 transition hover:bg-white/[0.06]"
                     >
                         <span className="flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-300 to-rose-500 shadow-[0_10px_30px_-10px_rgb(250_204_21/0.8)]">
                             <FilePlus2 className="size-6 text-white" />

@@ -91,7 +91,7 @@ export default function StartPhone(props: PickerProps) {
                 transition={motionOr(reduce, { ...RISE, delay: 0.5 })}
                 className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center px-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)]"
             >
-                <div className="liquid-glass liquid-glass--dense pointer-events-auto flex w-full max-w-[560px] items-center gap-3 rounded-[24px] py-2.5 pr-2.5 pl-5">
+                <div className="liquid-glass liquid-glass--dense pointer-events-auto flex w-full max-w-[560px] items-center gap-3 rounded-2xl py-2.5 pr-2.5 pl-5">
                     <span className="min-w-0 flex-1 truncate text-sm text-white/60">
                         {phone ? (
                             <PhoneBadge phone={phone} size="sm" />

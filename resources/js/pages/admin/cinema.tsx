@@ -26,6 +26,7 @@ import { BulkPlayersPanel } from '@/components/cinema/bulk-players';
 import type { BulkData } from '@/components/cinema/bulk-players';
 import type { PlayersData, TmdbData } from '@/components/cinema/admin-panels';
 import { MoviePoster } from '@/components/cinema/movie-tile';
+import { playerName } from '@/components/cinema/player-names';
 import {
     PageHeader,
     Pagination,
@@ -195,26 +196,26 @@ function AutoImportPanel({
     const providerCards = [
         {
             key: 'kodik' as const,
-            label: 'Kodik',
+            label: playerName('kodik'),
             ready: providers.kodik,
             hint: tr('Оновлення каталогу з усіма озвучками'),
         },
         {
             key: 'videoseed' as const,
-            label: 'Videoseed',
+            label: playerName('videoseed'),
             ready: providers.videoseed,
             hint: tr('Новинки фільмів і серіалів з озвучками'),
         },
         {
             key: 'flixcdn' as const,
-            label: 'FlixCDN',
+            label: playerName('flixcdn'),
             ready: providers.flixcdn_api,
             hint: tr('Через «API: оновлення» з кабінету'),
         },
     ];
 
     return (
-        <section className="glass relative mb-5 overflow-hidden rounded-3xl p-5 sm:p-6">
+        <section className="glass relative mb-5 overflow-hidden rounded-2xl p-5 sm:p-6">
             <div className="pointer-events-none absolute -top-24 -right-20 size-80 rounded-full bg-gc-indigo/15 blur-3xl" />
             <header className="relative mb-5 flex flex-wrap items-center gap-4">
                 <span className="flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br from-gc-indigo to-gc-pink shadow-[0_10px_30px_-10px_rgb(168_85_247/0.9)]">
@@ -305,7 +306,7 @@ function AutoImportPanel({
 
                     <div>
                         <p className="mb-2 text-xs font-medium text-white/50">
-                            {tr('Типи Kodik')}{' '}
+                            {tr('Типи Плеєра 1')}{' '}
                             <span className="text-white/30">
                                 {tr('(нічого не вибрано — усі)')}
                             </span>
@@ -319,7 +320,7 @@ function AutoImportPanel({
                                         toggleIn('kodik_types', t.key)
                                     }
                                     className={cn(
-                                        'rounded-full border px-3 py-1 text-xs transition',
+                                        'rounded-control border px-3 py-1 text-xs transition',
                                         data.kodik_types.includes(t.key)
                                             ? 'border-gc-lilac-400/50 bg-gc-indigo/20 text-white'
                                             : 'border-white/10 text-white/55 hover:text-white',
@@ -334,7 +335,7 @@ function AutoImportPanel({
                     {data.providers.includes('videoseed') && (
                         <div>
                             <p className="mb-2 text-xs font-medium text-white/50">
-                                {tr('Що брати з Videoseed')}
+                                {tr('Що брати з Плеєра 2')}
                             </p>
                             <div className="flex flex-wrap gap-1.5">
                                 {(
@@ -365,7 +366,7 @@ function AutoImportPanel({
                                             )
                                         }
                                         className={cn(
-                                            'rounded-full border px-3 py-1 text-xs transition',
+                                            'rounded-control border px-3 py-1 text-xs transition',
                                             data.videoseed_lists.includes(key)
                                                 ? 'border-gc-lilac-400/50 bg-gc-indigo/20 text-white'
                                                 : 'border-white/10 text-white/55 hover:text-white',
@@ -607,7 +608,7 @@ function AutoImportPanel({
                     ) : (
                         <p className="mt-1 text-xs text-white/45">
                             {tr(
-                                'Ще не запускалося. Підключіть Kodik або FlixCDN в',
+                                'Ще не запускалося. Підключіть Плеєр 1 або Плеєр 3 в',
                             )}{' '}
                             <Link
                                 href="/admin/integrations"
@@ -630,11 +631,11 @@ function AutoImportPanel({
     );
 }
 
-/** Підписи й порядок джерел у звіті «Останній запуск»: Kodik, FlixCDN, Videoseed, далі TMDB. */
+/** Підписи й порядок джерел у звіті «Останній запуск»: плеєри 1, 3, 2, далі TMDB. */
 const PROVIDER_LABELS = (): Record<string, string> => ({
-    kodik: 'Kodik',
-    flixcdn: 'FlixCDN',
-    videoseed: 'Videoseed',
+    kodik: playerName('kodik'),
+    flixcdn: playerName('flixcdn'),
+    videoseed: playerName('videoseed'),
     tmdb: tr('TMDB (автопарсинг)'),
 });
 const providerOrder = (key: string) => {
@@ -700,7 +701,7 @@ export default function AdminCinema({
             <PageHeader
                 title={tr('Кіно')}
                 description={tr(
-                    'Каталог фільмів, плеєри Kodik/FlixCDN, автонаповнення й метадані',
+                    'Каталог фільмів, вбудовані плеєри, автонаповнення й метадані',
                 )}
                 actions={
                     <div className="flex flex-wrap gap-2">
@@ -816,7 +817,7 @@ export default function AdminCinema({
                 </select>
             </div>
 
-            <div className="glass overflow-hidden rounded-3xl">
+            <div className="glass overflow-hidden rounded-2xl">
                 <div className="overflow-x-auto">
                     <table className="w-full min-w-[900px] text-sm">
                         <thead>
@@ -891,12 +892,7 @@ export default function AdminCinema({
                                             >
                                                 {movie.origin === 'manual'
                                                     ? tr('Вручну')
-                                                    : movie.origin === 'kodik'
-                                                      ? 'Kodik'
-                                                      : movie.origin ===
-                                                          'videoseed'
-                                                        ? 'Videoseed'
-                                                        : 'FlixCDN'}
+                                                    : playerName(movie.origin)}
                                             </Pill>
                                             {movie.enriched_at ? (
                                                 <Pill tone="violet">
@@ -1030,7 +1026,7 @@ export default function AdminCinema({
 /** Фільми, яких глядачі не знайшли в каталозі («Немає в каталозі» на сторінці кіно). */
 function MovieRequests({ requests }: { requests: MovieRequestRow[] }) {
     return (
-        <section className="glass mb-5 rounded-3xl p-5">
+        <section className="glass mb-5 rounded-2xl p-5">
             <h2 className="flex items-center gap-2 text-sm font-semibold text-white">
                 <Film className="size-4 text-gc-lilac-400" />
                 {tr('Запити глядачів')}

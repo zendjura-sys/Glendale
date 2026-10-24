@@ -15,12 +15,14 @@ import {
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { MoviePoster } from '@/components/cinema/movie-tile';
+import { playerName } from '@/components/cinema/player-names';
 import { PageHeader, Pill, Toggle, selectClass } from '@/components/gc/admin';
 import { Input } from '@/components/ui/input';
 import { timeAgo } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import type { MovieCard, MovieOption, MoviePlayer, MovieType } from '@/types';
 import { tr } from '@/lib/i18n';
+import { SpellcheckTextarea } from '@/components/gc/spellcheck';
 
 type EditableMovie = MovieCard & {
     tagline: string | null;
@@ -200,9 +202,7 @@ export default function AdminCinemaEdit({
                               v:
                                   movie.origin === 'manual'
                                       ? tr('вручну')
-                                      : movie.origin === 'kodik'
-                                        ? 'Kodik'
-                                        : 'FlixCDN',
+                                      : playerName(movie.origin),
                               v2: movie.enriched_at
                                   ? tr(' · метадані {timeAgo}', {
                                         timeAgo: timeAgo(movie.enriched_at),
@@ -215,7 +215,7 @@ export default function AdminCinemaEdit({
                                   : '',
                           })
                         : tr(
-                              'Заповніть дані вручну або скористайтеся імпортом із Kodik/FlixCDN',
+                              'Заповніть дані вручну або скористайтеся імпортом із вбудованих плеєрів',
                           )
                 }
                 actions={
@@ -283,7 +283,7 @@ export default function AdminCinemaEdit({
 
             <div className="grid grid-cols-1 gap-5 xl:grid-cols-[1fr_320px]">
                 <div className="space-y-5">
-                    <section className="glass grid grid-cols-1 gap-4 rounded-3xl p-5 sm:grid-cols-2">
+                    <section className="glass grid grid-cols-1 gap-4 rounded-2xl p-5 sm:grid-cols-2">
                         <Field
                             label={tr('Назва')}
                             error={errors.title}
@@ -357,12 +357,10 @@ export default function AdminCinemaEdit({
                             error={errors.description}
                             className="sm:col-span-2"
                         >
-                            <textarea
+                            <SpellcheckTextarea
                                 className={cn(field, 'min-h-32 resize-y')}
                                 value={data.description}
-                                onChange={(e) =>
-                                    setData('description', e.target.value)
-                                }
+                                onValueChange={(v) => setData('description', v)}
                             />
                         </Field>
                         <Field
@@ -427,7 +425,7 @@ export default function AdminCinemaEdit({
                         </Field>
                     </section>
 
-                    <section className="glass rounded-3xl p-5">
+                    <section className="glass rounded-2xl p-5">
                         <h2 className="mb-1 font-display text-base font-semibold text-white">
                             {tr('Рейтинги та зовнішні ID')}
                         </h2>
@@ -509,7 +507,7 @@ export default function AdminCinemaEdit({
                         </div>
                     </section>
 
-                    <section className="glass rounded-3xl p-5">
+                    <section className="glass rounded-2xl p-5">
                         <h2 className="mb-4 font-display text-base font-semibold text-white">
                             {tr('Зображення')}
                         </h2>
@@ -598,7 +596,7 @@ export default function AdminCinemaEdit({
                     </section>
 
                     {movie && (
-                        <section className="glass rounded-3xl p-5">
+                        <section className="glass rounded-2xl p-5">
                             <h2 className="mb-1 flex items-center gap-2 font-display text-base font-semibold text-white">
                                 <Tv className="size-4 text-gc-lilac-400" />
                                 {tr('Плеєри')}
@@ -608,12 +606,14 @@ export default function AdminCinemaEdit({
                             </h2>
                             <p className="mb-4 text-xs text-white/45">
                                 {tr(
-                                    'Kodik, Videoseed і FlixCDN оновлюються автоматично; сховані озвучки лишаються схованими. Власний плеєр — будь-який iframe або YouTube/Vimeo.',
+                                    'Вбудовані плеєри оновлюються автоматично; сховані озвучки лишаються схованими. Власний плеєр — будь-який iframe або YouTube/Vimeo.',
                                 )}
                             </p>
                             {movie.flixcdn_link && (
                                 <div className="mb-2 flex items-center gap-3 rounded-xl bg-white/[0.03] px-3.5 py-2.5 text-sm">
-                                    <Pill tone="violet">FlixCDN</Pill>
+                                    <Pill tone="violet">
+                                        {playerName('flixcdn')}
+                                    </Pill>
                                     <span className="flex-1 truncate text-white/60">
                                         {tr('За шаблоном адреси')}
                                     </span>
@@ -747,7 +747,7 @@ export default function AdminCinemaEdit({
                 </div>
 
                 <aside className="space-y-5">
-                    <section className="glass rounded-3xl p-5">
+                    <section className="glass rounded-2xl p-5">
                         <MoviePoster
                             movie={preview}
                             className="mx-auto aspect-[2/3] w-full max-w-[220px] rounded-2xl ring-1 ring-white/10"
@@ -775,7 +775,7 @@ export default function AdminCinemaEdit({
                         </div>
                     </section>
                     {movie && (
-                        <section className="glass grid grid-cols-2 gap-3 rounded-3xl p-5 text-center">
+                        <section className="glass grid grid-cols-2 gap-3 rounded-2xl p-5 text-center">
                             {(
                                 [
                                     [tr('Переглядів'), movie.views_count],
@@ -798,7 +798,7 @@ export default function AdminCinemaEdit({
                             ))}
                         </section>
                     )}
-                    <section className="glass rounded-3xl p-5 text-sm">
+                    <section className="glass rounded-2xl p-5 text-sm">
                         <p className="mb-2 font-semibold text-white">
                             {tr('Джерела метаданих')}
                         </p>

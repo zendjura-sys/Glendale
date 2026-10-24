@@ -8,6 +8,7 @@ use App\Models\PlayedPlace;
 use App\Models\User;
 use App\Services\FollowAlerts;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 /**
@@ -72,6 +73,13 @@ class PlayingStatus
                 'user_id' => $user->id,
                 'kind' => $target['kind'],
                 'subject_id' => $target['id'],
+            ]);
+            // День гри — для «Підсумків року» (топ ігор і серверів за кількістю днів).
+            DB::table('play_days')->insertOrIgnore([
+                'user_id' => $user->id,
+                'kind' => $target['kind'],
+                'subject_id' => $target['id'],
+                'day' => now()->toDateString(),
             ]);
         }
 

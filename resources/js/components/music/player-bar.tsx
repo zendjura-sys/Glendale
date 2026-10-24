@@ -5,72 +5,32 @@ import {
     Loader2,
     Pause,
     Play,
-    Repeat,
-    Repeat1,
-    Shuffle,
-    SkipBack,
     SkipForward,
-    Volume1,
-    Volume2,
-    VolumeX,
     X,
 } from 'lucide-react';
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { useCurrentUrl } from '@/hooks/use-current-url';
-import { formatDuration } from '@/lib/format';
+import { usePlayback } from '@/lib/connect';
 import {
     closePlayer,
-    cycleRepeat,
     jumpTo,
-    next,
-    prev,
     removeFromQueue,
-    seek,
     setSpotifyAuth,
-    setVolume,
-    toggle,
-    toggleMute,
-    toggleShuffle,
-    usePlayer,
 } from '@/lib/player';
 import { cn } from '@/lib/utils';
+import { RemoteLine } from './connect-ui';
+import { CapsuleButton, PlayerCapsule } from './player-capsule';
 import { Equalizer, SpotifyLogo, TrackCover } from './track-cover';
 import { tr } from '@/lib/i18n';
+import { TrackActionsProvider } from '@/components/am/track-actions';
 
-// Повноекранний плеєр — окремим файлом: вантажиться, лише коли його вперше відкривають.
-const FullPlayer = lazy(() =>
-    import('./full-player').then((module) => ({ default: module.FullPlayer })),
+// Повноекранний «Зараз грає» (як у розділі «Музика», стиль Apple Music) — окремим файлом:
+// вантажиться, лише коли його вперше відкривають.
+const NowPlaying = lazy(() =>
+    import('@/components/am/now-playing').then((module) => ({
+        default: module.NowPlaying,
+    })),
 );
-
-function Range({
-    value,
-    max,
-    onChange,
-    label,
-    className,
-}: {
-    value: number;
-    max: number;
-    onChange: (value: number) => void;
-    label: string;
-    className?: string;
-}) {
-    const percent = max > 0 ? Math.min((value / max) * 100, 100) : 0;
-
-    return (
-        <input
-            type="range"
-            min={0}
-            max={max || 1}
-            step={max > 10 ? 0.5 : 0.01}
-            value={Math.min(value, max || 1)}
-            aria-label={label}
-            onChange={(event) => onChange(Number(event.target.value))}
-            className={cn('gc-range w-full', className)}
-            style={{ '--value': `${percent}%` } as React.CSSProperties}
-        />
-    );
-}
 
 function IconButton({
     onClick,
@@ -105,12 +65,15 @@ function IconButton({
 }
 
 export function PlayerBar({ standalone }: { standalone?: boolean }) {
-    const player = usePlayer();
+    // Грає інший пристрій (GameCon Connect) — показуємо його трек, кнопки керують ним.
+    const player = usePlayback();
+    const { toggle, next, remote } = player;
     const { music } = usePage().props;
     const { currentUrl } = useCurrentUrl();
     const [queueOpen, setQueueOpen] = useState(false);
     const [expanded, setExpanded] = useState(false);
     const [fullLoaded, setFullLoaded] = useState(false);
+    const [view, setView] = useState<'artwork' | 'lyrics' | 'queue'>('artwork');
     const track = player.current;
 
     useEffect(() => {
@@ -119,13 +82,6 @@ export function PlayerBar({ standalone }: { standalone?: boolean }) {
 
     if (!track) return null;
 
-    const VolumeIcon =
-        player.muted || player.volume === 0
-            ? VolumeX
-            : player.volume < 0.5
-              ? Volume1
-              : Volume2;
-    const RepeatIcon = player.repeat === 'one' ? Repeat1 : Repeat;
     const playButton = (
         <button
             type="button"
@@ -148,7 +104,7 @@ export function PlayerBar({ standalone }: { standalone?: boolean }) {
             {queueOpen && (
                 <div
                     className={cn(
-                        'glass-strong fixed right-3 z-50 flex max-h-[min(460px,60vh)] w-[min(380px,calc(100vw-1.5rem))] animate-in flex-col overflow-hidden rounded-3xl border border-white/10 fade-in-0 slide-in-from-bottom-2 lg:bottom-[92px]',
+                        'glass-strong fixed right-3 z-50 flex max-h-[min(460px,60vh)] w-[min(380px,calc(100vw-1.5rem))] animate-in flex-col overflow-hidden rounded-3xl border border-white/10 fade-in-0 slide-in-from-bottom-2 lg:hidden',
                         standalone ? 'bottom-[92px]' : 'bottom-[148px]',
                     )}
                 >
@@ -217,34 +173,70 @@ export function PlayerBar({ standalone }: { standalone?: boolean }) {
                 </div>
             )}
 
+            {/* ПК: та сама капсула, що й у «Музиці», — внизу вікна, з усім керуванням. */}
             <div
                 className={cn(
-                    'pointer-events-none fixed inset-x-0 z-40 bg-transparent px-3 [view-transition-name:gc-player]',
-                    standalone
-                        ? 'bottom-[calc(env(safe-area-inset-bottom)+12px)] lg:left-[276px]'
-                        : 'bottom-[calc(4.75rem+env(safe-area-inset-bottom))] lg:bottom-4',
+                    'pointer-events-none fixed inset-x-0 bottom-4 z-[45] hidden px-6 lg:block',
+                    standalone && 'lg:left-[276px]',
                 )}
             >
-                <div className="liquid-glass liquid-glass--dense pointer-events-auto relative mx-auto max-w-[1100px] overflow-hidden rounded-[22px]">
-                    {player.current?.cover_url && (
-                        <img
-                            decoding="async"
-                            src={player.current.cover_url}
-                            alt=""
-                            className="pointer-events-none absolute inset-0 size-full scale-125 object-cover opacity-[0.16] blur-3xl"
-                        />
-                    )}
+                {/* Меню «⋯» капсули відкриває діалоги (поділитися, відомості) — потрібен провайдер дій. */}
+                <TrackActionsProvider>
+                    <PlayerCapsule
+                        onOpen={(v) => {
+                            setQueueOpen(false);
+                            setView(v ?? 'artwork');
+                            setFullLoaded(true);
+                            setExpanded(true);
+                        }}
+                        extra={
+                            <>
+                                {track.source === 'local' &&
+                                    !currentUrl.startsWith('/listen/') && (
+                                        <CapsuleButton
+                                            onClick={() =>
+                                                router.post('/music/together', {
+                                                    track_id: track.id,
+                                                })
+                                            }
+                                            label={tr('Слухати разом')}
+                                        >
+                                            <Headphones className="size-[18px]" />
+                                        </CapsuleButton>
+                                    )}
+                                <CapsuleButton
+                                    onClick={closePlayer}
+                                    label={tr('Закрити плеєр')}
+                                >
+                                    <X className="size-[18px]" />
+                                </CapsuleButton>
+                            </>
+                        }
+                    />
+                </TrackActionsProvider>
+            </div>
 
-                    <div className="absolute inset-x-0 top-0 lg:hidden">
+            {/* Телефон: міні-плеєр над нижньою панеллю. */}
+            <div
+                className={cn(
+                    'pointer-events-none fixed inset-x-0 z-[45] bg-transparent px-3 lg:hidden',
+                    standalone
+                        ? 'bottom-[calc(env(safe-area-inset-bottom)+12px)]'
+                        : 'bottom-[calc(5.25rem+env(safe-area-inset-bottom))]',
+                )}
+            >
+                {/* Матове нейтральне скло без підсвітки кольором обкладинки; ім'я переходу — на самій панелі, інакше розмиття не бачить сторінку. */}
+                <div className="glass-matte pointer-events-auto relative mx-auto max-w-[1100px] overflow-hidden rounded-full [view-transition-name:gc-player]">
+                    <div className="absolute inset-x-0 top-0">
                         <div
-                            className="h-0.5 bg-white/80 transition-[width]"
+                            className="h-0.5 bg-primary transition-[width]"
                             style={{
                                 width: `${player.duration ? (player.position / player.duration) * 100 : 0}%`,
                             }}
                         />
                     </div>
 
-                    <div className="relative mx-auto flex h-16 max-w-[1320px] items-center gap-3 px-3 lg:h-[76px] lg:gap-6 lg:px-5">
+                    <div className="relative mx-auto flex h-16 max-w-[1320px] items-center gap-3 px-3">
                         <button
                             type="button"
                             onClick={() => {
@@ -254,13 +246,13 @@ export function PlayerBar({ standalone }: { standalone?: boolean }) {
                             }}
                             aria-label={tr('Відкрити плеєр')}
                             title={tr('Відкрити плеєр')}
-                            className="flex min-w-0 flex-1 items-center gap-3 rounded-xl text-left focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none lg:w-[30%] lg:flex-none"
+                            className="flex min-w-0 flex-1 items-center gap-3 rounded-xl text-left focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                         >
                             <span className="relative shrink-0">
                                 <TrackCover
                                     url={track.cover_url}
                                     seed={track.key}
-                                    className="size-11 rounded-xl lg:size-12"
+                                    className="size-11 rounded-xl"
                                 />
                                 {track.source === 'spotify' && (
                                     <span className="absolute -right-1 -bottom-1 rounded-full bg-[#0b0d1d] p-0.5">
@@ -272,7 +264,13 @@ export function PlayerBar({ standalone }: { standalone?: boolean }) {
                                 <span className="block truncate text-sm font-semibold text-white">
                                     {track.title}
                                 </span>
-                                <span className="block truncate text-xs text-white/50">
+                                {remote && <RemoteLine device={remote} />}
+                                <span
+                                    className={cn(
+                                        'block truncate text-xs text-white/50',
+                                        remote && 'hidden',
+                                    )}
+                                >
                                     {track.artist}
                                     {player.engine === 'embed' && (
                                         <span className="ml-1.5 text-spotify/80">
@@ -288,82 +286,11 @@ export function PlayerBar({ standalone }: { standalone?: boolean }) {
                             </span>
                         </button>
 
-                        <div className="hidden flex-1 flex-col items-center gap-1 lg:flex">
-                            <div className="flex items-center gap-2">
-                                <IconButton
-                                    onClick={toggleShuffle}
-                                    label={tr('Перемішати')}
-                                    active={player.shuffle}
-                                >
-                                    <Shuffle className="size-4" />
-                                </IconButton>
-                                <IconButton
-                                    onClick={prev}
-                                    label={tr('Попередній')}
-                                >
-                                    <SkipBack className="size-5 fill-current" />
-                                </IconButton>
-                                {playButton}
-                                <IconButton
-                                    onClick={next}
-                                    label={tr('Наступний')}
-                                >
-                                    <SkipForward className="size-5 fill-current" />
-                                </IconButton>
-                                <IconButton
-                                    onClick={cycleRepeat}
-                                    label={
-                                        player.repeat === 'one'
-                                            ? tr('Повторювати трек')
-                                            : player.repeat === 'all'
-                                              ? tr('Повторювати чергу')
-                                              : tr('Без повтору')
-                                    }
-                                    active={player.repeat !== 'off'}
-                                >
-                                    <RepeatIcon className="size-4" />
-                                </IconButton>
-                            </div>
-                            <div className="flex w-full max-w-[560px] items-center gap-2.5 text-xs text-white/45 tabular-nums">
-                                <span className="w-9 text-right">
-                                    {formatDuration(player.position)}
-                                </span>
-                                <Range
-                                    value={player.position}
-                                    max={player.duration}
-                                    onChange={seek}
-                                    label={tr('Перемотати')}
-                                />
-                                <span className="w-9">
-                                    {formatDuration(player.duration)}
-                                </span>
-                            </div>
-                        </div>
-
-                        <div className="flex items-center gap-1 lg:w-[30%] lg:justify-end">
-                            <div className="lg:hidden">{playButton}</div>
-                            <IconButton
-                                onClick={next}
-                                label={tr('Наступний')}
-                                className="lg:hidden"
-                            >
+                        <div className="flex items-center gap-1">
+                            {playButton}
+                            <IconButton onClick={next} label={tr('Наступний')}>
                                 <SkipForward className="size-5 fill-current" />
                             </IconButton>
-                            <div className="hidden items-center gap-1 lg:flex">
-                                <IconButton
-                                    onClick={toggleMute}
-                                    label={tr('Гучність')}
-                                >
-                                    <VolumeIcon className="size-[18px]" />
-                                </IconButton>
-                                <Range
-                                    value={player.muted ? 0 : player.volume}
-                                    max={1}
-                                    onChange={setVolume}
-                                    label={tr('Гучність')}
-                                    className="w-24"
-                                />
-                            </div>
                             {track?.source === 'local' &&
                                 !currentUrl.startsWith('/listen/') && (
                                     <IconButton
@@ -397,9 +324,15 @@ export function PlayerBar({ standalone }: { standalone?: boolean }) {
                     </div>
                 </div>
             </div>
-            {fullLoaded && (
+            {fullLoaded && expanded && (
                 <Suspense fallback={null}>
-                    <FullPlayer open={expanded} onOpenChange={setExpanded} />
+                    <TrackActionsProvider>
+                        <NowPlaying
+                            view={view}
+                            onView={setView}
+                            onClose={() => setExpanded(false)}
+                        />
+                    </TrackActionsProvider>
                 </Suspense>
             )}
         </>

@@ -59,7 +59,7 @@ class NetworkModes
 
         // Через normalize(): ті самі правила, що й для збережених режимів.
         return array_values(array_filter(array_map(fn (array $item) => $this->normalize($item), [
-            $mode('all', 'Все включено', 'Усе, що вміє GameCon: ігри, кіно, музика, спільноти й історії.', 'layers', $all, []),
+            $mode('all', 'Усе включено', 'Усе, що вміє GameCon: ігри, кіно, музика, спільноти й історії.', 'layers', $all, []),
             $mode('gamer', 'Геймер', 'Ігри, сервери, клани, пошук паті, завдання й моменти. Без історій і кіно — лише гра.', 'gamepad-2', $without(['cinema']), ['stories' => false]),
             $mode('classic', 'Класика', 'Звична соцмережа: друзі, повідомлення, музика, фото, спільноти й події. Без кіно, ігрових розділів і моментів.', 'sparkles', $without(['cinema', ...self::GAMING]), ['live' => false, 'playing' => false]),
             $mode('adventure', 'Пригоди', 'Музика, кіно, фото, спільноти й події. Без ігрових розділів.', 'compass', $without(self::GAMING), ['live' => false, 'playing' => false]),

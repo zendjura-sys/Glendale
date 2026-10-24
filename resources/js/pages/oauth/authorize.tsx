@@ -27,7 +27,7 @@ export default function OAuthAuthorize({ app, server, scopes, query }: Props) {
         <>
             <Head title={tr('Увійти через GameCon')} />
             <div className="mx-auto max-w-md py-4">
-                <section className="glass space-y-5 rounded-3xl p-6">
+                <section className="glass space-y-5 rounded-2xl p-6">
                     <div className="flex items-center justify-center gap-3">
                         <ServerIcon
                             name={server.name}

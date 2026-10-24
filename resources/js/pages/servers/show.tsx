@@ -29,6 +29,11 @@ import type { ServerPromotionData } from '@/components/servers/server-promotion'
 import type { ServerApp, VerifiedInfo } from '@/components/servers/server-apps';
 import { CharacterRow } from '@/components/characters/character-card';
 import type { CharacterCardData } from '@/components/characters/character-card';
+import {
+    CreateTournamentDialog,
+    TournamentRow,
+} from '@/components/tournaments/tournament-ui';
+import type { TournamentCard } from '@/components/tournaments/tournament-ui';
 import type { ServerVotesInfo } from '@/components/servers/server-votes';
 import { timeAgo, shortNumber } from '@/lib/format';
 import { cn, formText } from '@/lib/utils';
@@ -90,6 +95,11 @@ type Props = {
     analytics?: ServerAnalyticsData | null;
     promotion?: ServerPromotionData | null;
     verified: VerifiedInfo;
+    tournaments: {
+        list: TournamentCard[];
+        can_host: boolean;
+        sizes: number[];
+    } | null;
 };
 
 export default function ServerShow({
@@ -115,8 +125,10 @@ export default function ServerShow({
     verified,
     analytics,
     promotion,
+    tournaments,
 }: Props) {
     const [inviteUsername, setInviteUsername] = useState('');
+    const [hosting, setHosting] = useState(false);
     const compareOn = usePlugin('server_compare');
     const chartOn = usePlugin('server_online');
     const tagsOn = usePlugin('server_tags');
@@ -148,7 +160,7 @@ export default function ServerShow({
                     )}
                 </div>
 
-                <section className="glass noise relative overflow-hidden rounded-3xl p-6 sm:p-8">
+                <section className="glass noise relative overflow-hidden rounded-2xl p-6 sm:p-8">
                     {server.icon && (
                         <img
                             loading="lazy"
@@ -162,17 +174,17 @@ export default function ServerShow({
                         <ServerIcon
                             name={server.name}
                             icon={server.icon}
-                            className="size-24 rounded-3xl"
+                            className="size-24 rounded-2xl"
                         />
                         <div className="min-w-0 flex-1">
                             <div className="flex flex-wrap items-center gap-2 text-xs font-medium">
-                                <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-white/65">
+                                <span className="rounded-chip bg-white/[0.06] px-2 py-0.5 text-white/65">
                                     {server.platform_label}
                                 </span>
-                                <span className="rounded-full bg-gc-indigo/15 px-2 py-0.5 text-[#b9b0ff]">
+                                <span className="rounded-chip bg-gc-indigo/15 px-2 py-0.5 text-[#b9b0ff]">
                                     {server.multiplayer_label}
                                 </span>
-                                <span className="rounded-full bg-[#facc15]/10 px-2 py-0.5 text-[#fde68a]">
+                                <span className="rounded-chip bg-[#facc15]/10 px-2 py-0.5 text-[#fde68a]">
                                     {server.language === 'uk'
                                         ? tr('🇺🇦 Україна')
                                         : server.language.toUpperCase()}
@@ -311,7 +323,7 @@ export default function ServerShow({
                     href={`/servers/${server.slug}`}
                 />
                 <PlayingNow users={playing_now} count={playing_count} />
-                <section className="glass rounded-3xl p-5">
+                <section className="glass rounded-2xl p-5">
                     <h2 className="mb-3 flex items-center gap-2 font-display text-lg font-semibold text-white">
                         <CalendarDays className="size-5 text-gc-lilac-200" />{' '}
                         {tr('Події сервера')}
@@ -373,8 +385,61 @@ export default function ServerShow({
                     <ServerPromotion serverId={server.id} data={promotion} />
                 )}
                 {apps && <ServerApps slug={server.slug} apps={apps} />}
+                {tournaments &&
+                    (tournaments.list.length > 0 || tournaments.can_host) && (
+                        <section className="glass rounded-2xl p-5">
+                            <div className="flex items-center justify-between gap-3">
+                                <h2 className="font-display text-lg font-semibold text-white">
+                                    {tr('Турніри')}
+                                </h2>
+                                <div className="flex items-center gap-1">
+                                    <Link
+                                        href="/tournaments"
+                                        className="rounded-xl px-3 py-2 text-sm text-white/55 hover:text-white"
+                                    >
+                                        {tr('Усі')}
+                                    </Link>
+                                    {tournaments.can_host && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setHosting(true)}
+                                            className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-xl bg-white/[0.06] px-3 text-sm font-medium text-white transition hover:bg-white/10"
+                                        >
+                                            <Plus className="size-4" />
+                                            {tr('Провести турнір')}
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                            {tournaments.list.length === 0 ? (
+                                <p className="mt-3 text-sm text-white/45">
+                                    {tr(
+                                        'Проведіть турнір із сіткою або челендж із таблицею результатів — гравці сервера отримають сторінку з реєстрацією.',
+                                    )}
+                                </p>
+                            ) : (
+                                <div className="-mx-2 mt-2">
+                                    {tournaments.list.map((tournament) => (
+                                        <TournamentRow
+                                            key={tournament.id}
+                                            tournament={tournament}
+                                            showServer={false}
+                                        />
+                                    ))}
+                                </div>
+                            )}
+                            {tournaments.can_host && (
+                                <CreateTournamentDialog
+                                    serverSlug={server.slug}
+                                    sizes={tournaments.sizes}
+                                    open={hosting}
+                                    onOpenChange={setHosting}
+                                />
+                            )}
+                        </section>
+                    )}
                 {charactersOn && (
-                    <section className="glass rounded-3xl p-5">
+                    <section className="glass rounded-2xl p-5">
                         <div className="flex items-center justify-between gap-3">
                             <h2 className="font-display text-lg font-semibold text-white">
                                 {tr('Персонажі гравців')}
@@ -406,7 +471,7 @@ export default function ServerShow({
                         )}
                     </section>
                 )}
-                <section className="glass rounded-3xl p-5">
+                <section className="glass rounded-2xl p-5">
                     <h2 className="font-display text-lg font-semibold text-white">
                         {tr('Відгуки')}
                         {reviews.average !== null && (
@@ -475,7 +540,7 @@ export default function ServerShow({
                         ))}
                     </div>
                 </section>
-                <section className="glass rounded-3xl p-5">
+                <section className="glass rounded-2xl p-5">
                     <header className="mb-4 flex flex-wrap items-center gap-3">
                         <Trophy className="size-5 text-amber-300" />
                         <h2 className="font-display text-lg font-semibold text-white">
@@ -524,7 +589,7 @@ export default function ServerShow({
                                     </span>
                                     <FamilyLogo family={family} />
                                     <div className="min-w-0 flex-1">
-                                        <div className="truncate font-semibold text-white">
+                                        <div className="font-semibold break-words text-white">
                                             <span className="text-gc-lilac-200">
                                                 [{family.tag}]
                                             </span>{' '}
@@ -551,7 +616,7 @@ export default function ServerShow({
                 </section>
 
                 {(chartOn || tagsOn || similarOn) && (
-                    <section className="glass space-y-4 rounded-3xl p-5">
+                    <section className="glass space-y-4 rounded-2xl p-5">
                         {chartOn && (
                             <h2 className="font-display text-xl font-bold text-white">
                                 {tr('Онлайн за два тижні')}
@@ -593,12 +658,12 @@ export default function ServerShow({
                         {tagsOn && (
                             <div className="flex flex-wrap items-center gap-2 text-xs text-white/70">
                                 {server.tags?.mode && (
-                                    <span className="rounded-full bg-white/10 px-2 py-0.5">
+                                    <span className="rounded-chip bg-white/10 px-2 py-0.5">
                                         {server.tags.mode.toUpperCase()}
                                     </span>
                                 )}
                                 {server.tags?.region && (
-                                    <span className="rounded-full bg-white/10 px-2 py-0.5">
+                                    <span className="rounded-chip bg-white/10 px-2 py-0.5">
                                         {server.tags.region}
                                     </span>
                                 )}
@@ -652,7 +717,7 @@ export default function ServerShow({
                                     <Link
                                         key={item.id}
                                         href={`/servers/${item.slug}`}
-                                        className="rounded-full bg-white/10 px-3 py-1 text-sm text-white/80 hover:text-white"
+                                        className="rounded-control bg-white/10 px-3 py-1 text-sm text-white/80 hover:text-white"
                                     >
                                         {item.name}
                                     </Link>
@@ -663,7 +728,7 @@ export default function ServerShow({
                 )}
 
                 {(newsOn || claimOn) && (
-                    <section className="glass space-y-4 rounded-3xl p-5">
+                    <section className="glass space-y-4 rounded-2xl p-5">
                         {newsOn && (
                             <h2 className="font-display text-xl font-bold text-white">
                                 {tr('Новини власника')}

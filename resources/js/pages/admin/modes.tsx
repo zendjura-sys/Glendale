@@ -212,7 +212,7 @@ export default function AdminModes({
 
                 {/* Редактор вибраного режиму */}
                 {mode && (
-                    <div className="glass space-y-6 rounded-3xl p-5 sm:p-6">
+                    <div className="glass space-y-6 rounded-2xl p-5 sm:p-6">
                         <div className="grid gap-3 sm:grid-cols-2">
                             <label className="text-sm text-white/70">
                                 {tr('Назва')}

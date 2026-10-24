@@ -64,7 +64,7 @@ export default function Navigation({ defaults, max }: Props) {
                 )}
             >
                 <div
-                    className="mb-6 flex items-stretch rounded-2xl border border-white/[0.08] bg-[#0f0a1e]/60"
+                    className="mb-6 flex items-stretch rounded-xl border border-[var(--gc-hairline)] bg-black/20"
                     aria-label={tr('Попередній перегляд')}
                 >
                     {[...pinned, null].map((item) => (
@@ -89,18 +89,21 @@ export default function Navigation({ defaults, max }: Props) {
                     ))}
                 </div>
 
-                <h3 className="mb-2 text-xs font-semibold text-white/45">
+                <h3 className="mb-1 text-[13px] font-semibold text-white/50">
                     {tr('У панелі')}
                 </h3>
-                <ul className="grid gap-1.5" data-test="nav-pinned">
+                <ul
+                    className="-mx-4 border-y border-[var(--gc-hairline)] px-4 sm:-mx-5 sm:px-5"
+                    data-test="nav-pinned"
+                >
                     {pinned.map((item, index) => (
                         <li
                             key={item.key}
-                            className="flex items-center gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.03] py-1.5 pr-1.5 pl-3"
+                            className="gc-row flex min-h-12 items-center gap-3 py-1.5"
                         >
                             <ModuleIcon
                                 name={item.icon}
-                                className="size-5 shrink-0 text-[#9aa6ff]"
+                                className="size-5 shrink-0 text-primary"
                             />
                             <span className="min-w-0 flex-1 truncate text-sm font-medium text-white">
                                 {item.label}
@@ -134,7 +137,7 @@ export default function Navigation({ defaults, max }: Props) {
                 </ul>
 
                 <div className="mt-6 mb-2 flex items-center justify-between">
-                    <h3 className="text-xs font-semibold text-white/45">
+                    <h3 className="text-[13px] font-semibold text-white/50">
                         {tr('У меню')}
                     </h3>
                     {full && (
@@ -150,12 +153,12 @@ export default function Navigation({ defaults, max }: Props) {
                             type="button"
                             disabled={full}
                             onClick={() => save([...tabs, item.key])}
-                            className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[13px] font-medium text-white/75 transition hover:bg-white/[0.07] disabled:opacity-40"
+                            className="flex items-center gap-2 rounded-control border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[13px] font-medium text-white/75 transition hover:bg-white/[0.07] disabled:opacity-40"
                         >
                             <Plus className="size-3.5 text-white/45" />
                             <ModuleIcon
                                 name={item.icon}
-                                className="size-4 text-[#9aa6ff]"
+                                className="size-4 text-primary"
                             />
                             {item.label}
                         </button>
@@ -168,7 +171,7 @@ export default function Navigation({ defaults, max }: Props) {
                         onClick={() =>
                             save(defaults.filter((key) => byKey.has(key)))
                         }
-                        className="mt-6 inline-flex items-center gap-2 rounded-xl border border-white/10 px-3.5 py-2 text-sm font-medium text-white/75 transition hover:bg-white/[0.06]"
+                        className="mt-6 inline-flex items-center gap-2 rounded-lg border border-white/10 px-3.5 py-2 text-sm font-medium text-white/75 transition hover:bg-white/[0.06]"
                     >
                         <RotateCcw className="size-4" />
                         {tr('Повернути як було')}

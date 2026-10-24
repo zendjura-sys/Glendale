@@ -9,6 +9,7 @@ return [
     'refund' => 'Politica di rimborso e cancellazione',
     'pricing' => 'Prezzi',
     'contacts' => 'Contatti',
+    'child_safety' => 'Standard di sicurezza dei minori',
     'view_original' => 'Visualizza l’originale (ucraino)',
     'prevail' => 'In caso di conflitto, discrepanza o incoerenza tra la versione ucraina e qualsiasi versione tradotta, prevarrà la versione ucraina.',
     'last_updated' => 'Ultimo aggiornamento',

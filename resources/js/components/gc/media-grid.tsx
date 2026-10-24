@@ -79,7 +79,7 @@ export function Lightbox({
                     >
                         <ChevronRight className="size-6" />
                     </button>
-                    <div className="absolute bottom-6 rounded-full bg-white/10 px-3 py-1 text-sm text-white/80">
+                    <div className="absolute bottom-6 rounded-chip bg-white/10 px-3 py-1 text-sm text-white/80">
                         {current + 1} / {items.length}
                     </div>
                 </>
@@ -90,7 +90,7 @@ export function Lightbox({
 }
 
 /**
- * Сітка фото у стилі ВК: 1 — велике, 2 — пополам, 3 — велике + 2, 4+ — 2×2 з «+N».
+ * Сітка фото як у класичних соцмережах: 1 — велике, 2 — пополам, 3 — велике + 2, 4+ — 2×2 з «+N».
  */
 export function MediaGrid({ items }: { items: Attachment[] }) {
     const [open, setOpen] = useState<number | null>(null);
@@ -114,7 +114,7 @@ export function MediaGrid({ items }: { items: Attachment[] }) {
         <>
             <div
                 className={cn(
-                    'grid gap-1 overflow-hidden rounded-2xl',
+                    'grid gap-1 overflow-hidden rounded-[10px]',
                     layout,
                     items.length > 1 && 'aspect-[4/3]',
                 )}

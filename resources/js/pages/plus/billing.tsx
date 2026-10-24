@@ -86,7 +86,7 @@ export default function BillingPage({
 
                 {opened && <OrderResult order={opened} />}
 
-                <section className="glass rounded-3xl p-5 sm:p-7">
+                <section className="glass rounded-2xl p-5 sm:p-7">
                     <p className="flex items-center gap-2 text-sm text-white/55">
                         <CreditCard className="size-4 text-indigo-300" />
                         {tr('Оплата карткою через monobank')}
@@ -117,7 +117,7 @@ export default function BillingPage({
                     </div>
                 </section>
 
-                <section className="glass rounded-3xl p-5">
+                <section className="glass rounded-2xl p-5">
                     <h2 className="flex items-center gap-2 font-display text-lg font-bold text-white">
                         <RefreshCw className="size-4 text-indigo-300" />
                         {tr('Автопродовження')}
@@ -138,7 +138,7 @@ export default function BillingPage({
                     </ul>
                 </section>
 
-                <section className="glass rounded-3xl p-5">
+                <section className="glass rounded-2xl p-5">
                     <h2 className="flex items-center gap-2 font-display text-lg font-bold text-white">
                         <CreditCard className="size-4 text-indigo-300" />
                         {tr('Збережені картки')}
@@ -158,7 +158,7 @@ export default function BillingPage({
                     )}
                 </section>
 
-                <section className="glass rounded-3xl p-5">
+                <section className="glass rounded-2xl p-5">
                     <h2 className="font-display text-lg font-bold text-white">
                         {tr('Історія оплат')}
                     </h2>
@@ -198,7 +198,7 @@ function OrderResult({ order }: { order: PaymentOrderCard }) {
     return (
         <section
             className={cn(
-                'flex items-start gap-3 rounded-3xl border p-4',
+                'flex items-start gap-3 rounded-2xl border p-4',
                 tone,
             )}
         >

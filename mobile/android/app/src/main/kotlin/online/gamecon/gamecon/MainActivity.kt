@@ -1,6 +1,8 @@
 package online.gamecon.gamecon
 
 import android.content.pm.PackageManager
+import android.os.Bundle
+import androidx.core.view.WindowCompat
 import com.ryanheise.audioservice.AudioServiceActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -8,6 +10,13 @@ import java.security.MessageDigest
 
 // Медіасесія плеєра (фон, шторка, заблокований екран) потребує AudioServiceActivity.
 class MainActivity : AudioServiceActivity() {
+    // Від краю до краю (Android 15, SDK 35): вмикаємо явно й на старших версіях, щоб вигляд був однаковий;
+    // відступи під системні панелі Flutter бере з MediaQuery (viewPadding), див. main.dart (SystemUiMode.edgeToEdge).
+    override fun onCreate(savedInstanceState: Bundle?) {
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        super.onCreate(savedInstanceState)
+    }
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         // Скрипт плеєра в iframe балансера (див. FrameScriptPlugin).
@@ -30,8 +39,34 @@ class MainActivity : AudioServiceActivity() {
                     PlayingDetector.checkNow(this)
                     result.success(true)
                 }
+                // «Вивід звуку» в плеєрі: системний перемикач навушників, колонок і Cast.
+                "audioOutput" -> result.success(showOutputSwitcher())
+                "bluetoothSettings" -> {
+                    startActivity(android.content.Intent(android.provider.Settings.ACTION_BLUETOOTH_SETTINGS))
+                    result.success(true)
+                }
                 else -> result.notImplemented()
             }
+        }
+    }
+
+    /** Системний перемикач виводу звуку: Android 14+ — MediaRouter2, Android 11–13 — діалог SystemUI. */
+    private fun showOutputSwitcher(): Boolean {
+        return try {
+            if (android.os.Build.VERSION.SDK_INT >= 34) {
+                android.media.MediaRouter2.getInstance(this).showSystemOutputSwitcher()
+            } else if (android.os.Build.VERSION.SDK_INT >= 30) {
+                sendBroadcast(
+                    android.content.Intent("com.android.systemui.action.LAUNCH_MEDIA_OUTPUT_DIALOG")
+                        .setPackage("com.android.systemui")
+                        .putExtra("package_name", packageName),
+                )
+                true
+            } else {
+                false
+            }
+        } catch (e: Exception) {
+            false
         }
     }
 

@@ -1,6 +1,6 @@
 export function PostSkeleton() {
     return (
-        <div className="glass space-y-4 rounded-3xl p-5">
+        <div className="gc-post space-y-4 px-1 py-5 sm:px-2">
             <div className="flex items-center gap-3">
                 <span className="skeleton size-11 rounded-full" />
                 <span className="flex-1 space-y-2">
@@ -10,7 +10,7 @@ export function PostSkeleton() {
             </div>
             <span className="skeleton block h-3.5 w-full rounded" />
             <span className="skeleton block h-3.5 w-4/5 rounded" />
-            <span className="skeleton block h-56 w-full rounded-2xl" />
+            <span className="skeleton block h-56 w-full rounded-[10px]" />
         </div>
     );
 }

@@ -78,10 +78,19 @@ String? _urlOf(String? payload) {
   if (payload == null || payload.isEmpty) return null;
   if (!payload.startsWith('{')) return payload;
   try {
-    return text((jsonDecode(payload) as Map)['url']);
+    return pushTarget(Map<String, dynamic>.from(jsonDecode(payload) as Map));
   } catch (_) {
     return null;
   }
+}
+
+/// Куди веде push: шлях сайту з `url`, а запит на вхід {type: 'app_login', id} — на екран підтвердження.
+String? pushTarget(Map<String, dynamic> data) {
+  final url = text(data['url']);
+  if (url != null) return url;
+  final login = text(data['id']);
+  if (data['type'] == 'app_login' && login != null) return '/app-login/$login';
+  return null;
 }
 
 /// Вхідний дзвінок у шторці: «Відповісти» відкриває застосунок і підключає розмову,
@@ -346,7 +355,7 @@ class Push {
 
     await FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(alert: false, badge: true, sound: false);
     FirebaseMessaging.onMessage.listen(_foreground);
-    FirebaseMessaging.onMessageOpenedApp.listen((message) => _open(message.data['url']));
+    FirebaseMessaging.onMessageOpenedApp.listen((message) => _open(pushTarget(message.data)));
 
     // Застосунок запущено натисканням на push або локальне сповіщення.
     final initial = await FirebaseMessaging.instance.getInitialMessage();
@@ -355,7 +364,7 @@ class Push {
     if (response != null && response.actionId == 'call_accept') {
       WidgetsBinding.instance.addPostFrameCallback((_) => _answer(response));
     }
-    final url = initial?.data['url'] ?? (response != null && response.actionId == null ? response.payload : null);
+    final url = (initial == null ? null : pushTarget(initial.data)) ?? (response != null && response.actionId == null ? response.payload : null);
     if (url != null) WidgetsBinding.instance.addPostFrameCallback((_) => _open(url));
 
     session.addListener(_sync);
@@ -407,6 +416,11 @@ class Push {
       // Уже в цій розмові — не дзвонимо.
       if (data['type'] == 'call' && VoiceCall.instance.callId == int.tryParse('${data['call_id']}')) return;
       await _callNotes.incoming(data);
+      return;
+    }
+    // Запит на вхід на сайт: застосунок відкритий — одразу показуємо екран підтвердження.
+    if (data['type'] == 'app_login') {
+      _open(pushTarget(data));
       return;
     }
     final chat = data['type'] == 'message';

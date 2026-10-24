@@ -152,7 +152,7 @@ export function FamilyShell({
             <div
                 className={cn('space-y-4', showReportButton && 'pb-20 lg:pb-0')}
             >
-                <header className="glass noise relative overflow-hidden rounded-3xl">
+                <header className="glass noise relative overflow-hidden rounded-2xl">
                     <div className="relative h-28 sm:h-36">
                         {family.cover_url ? (
                             <img
@@ -169,7 +169,7 @@ export function FamilyShell({
                                 }}
                             />
                         ) : (
-                            <div className="size-full bg-[radial-gradient(120%_120%_at_0%_0%,#f59e0b55,transparent_55%),radial-gradient(120%_120%_at_100%_0%,#6d5dfc66,transparent_60%),linear-gradient(135deg,#0b0f1d,#141a33)]" />
+                            <div className="size-full bg-[radial-gradient(120%_120%_at_0%_0%,#38bdf855,transparent_55%),radial-gradient(120%_120%_at_100%_0%,#2f7bff66,transparent_60%),linear-gradient(135deg,#0b0f1d,#141a33)]" />
                         )}
                         <div className="scrim absolute inset-0" />
                         {family.plus?.accent && (

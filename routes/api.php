@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AccountApiController;
+use App\Http\Controllers\Api\AppLoginApiController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ChatApiController;
 use App\Http\Controllers\Api\FeedApiController;
@@ -10,6 +11,7 @@ use App\Http\Controllers\Api\MediaApiController;
 use App\Http\Controllers\Api\PushApiController;
 use App\Http\Controllers\Api\SocialApiController;
 use App\Http\Controllers\Api\SubscriptionStatusController;
+use App\Http\Controllers\Api\WidgetApiController;
 use App\Http\Controllers\Bots;
 use App\Http\Controllers\CallController;
 use App\Http\Controllers\CharacterController;
@@ -24,14 +26,18 @@ use App\Http\Controllers\FollowController;
 use App\Http\Controllers\GameController;
 use App\Http\Controllers\InviteLinkController;
 use App\Http\Controllers\ListenPartyController;
+use App\Http\Controllers\ListenRoomController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\MessengerController;
 use App\Http\Controllers\MomentController;
+use App\Http\Controllers\MusicConnectController;
 use App\Http\Controllers\MusicController;
+use App\Http\Controllers\MusicHubController;
 use App\Http\Controllers\NowPlayingController;
 use App\Http\Controllers\OAuth\TokenController as OAuthTokenController;
 use App\Http\Controllers\PartyController;
+use App\Http\Controllers\PhoneController;
 use App\Http\Controllers\PhotoAlbumController;
 use App\Http\Controllers\PhotoController;
 use App\Http\Controllers\PlayingController;
@@ -41,16 +47,24 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\QuestController;
 use App\Http\Controllers\ReferralController;
 use App\Http\Controllers\SavedController;
+use App\Http\Controllers\SeasonController;
 use App\Http\Controllers\ServerController;
+use App\Http\Controllers\Settings\AppearanceController;
+use App\Http\Controllers\Settings\DigestController;
+use App\Http\Controllers\Settings\ListeningController;
 use App\Http\Controllers\Settings\NavigationController;
 use App\Http\Controllers\Settings\ProfileController as SettingsProfileController;
 use App\Http\Controllers\Settings\StreamController;
 use App\Http\Controllers\SpotifyController;
 use App\Http\Controllers\StoryController;
+use App\Http\Controllers\TeammateController;
+use App\Http\Controllers\TournamentController;
 use App\Http\Controllers\TrackController;
+use App\Http\Controllers\TrackImportController;
 use App\Http\Controllers\TranslateController;
 use App\Http\Controllers\VoiceController;
 use App\Http\Controllers\WatchPartyController;
+use App\Http\Controllers\WrappedController;
 use App\Http\Middleware\BridgeSiteAction;
 use App\Models\VoiceRoom;
 use Illuminate\Support\Facades\Route;
@@ -83,11 +97,19 @@ Route::prefix('v1')->group(function () {
 
     Route::middleware(['auth.api', 'verified.site'])->group(function () {
         Route::get('me', [AuthController::class, 'me']);
+        // «Увійти через застосунок GameCon»: застосунок підтверджує або відхиляє вхід браузера.
+        Route::prefix('auth/app-login/{id}')->whereUuid('id')->middleware('throttle:app-login-app')->group(function () {
+            Route::get('/', [AppLoginApiController::class, 'show']);
+            Route::post('approve', [AppLoginApiController::class, 'approve']);
+            Route::post('deny', [AppLoginApiController::class, 'deny']);
+        });
         // GameCon+ у застосунку: лише статус доступу, без жодних цін і посилань на оплату.
         Route::get('user/subscription-status', SubscriptionStatusController::class)->middleware('throttle:60,1');
         // Покупка GameCon+ у застосунку — лише через Google Play Billing; сервер перевіряє токен у Google.
         Route::get('google-play', [GooglePlayController::class, 'show'])->middleware('throttle:60,1');
         Route::post('google-play/verify', [GooglePlayController::class, 'verify'])->middleware('throttle:30,1');
+        Route::post('google-play/phone/hold', [GooglePlayController::class, 'phoneHold'])->middleware(['throttle:20,1', 'module:phone']);
+        Route::post('google-play/phone/verify', [GooglePlayController::class, 'phoneVerify'])->middleware(['throttle:30,1', 'module:phone']);
         Route::post('me/locale', [LocaleController::class, 'update'])->middleware('throttle:30,1');
         Route::post('translate', TranslateController::class)->middleware('throttle:60,1');
         Route::post('logout', [AuthController::class, 'logout']);
@@ -206,6 +228,12 @@ Route::prefix('v1')->group(function () {
                 Route::post('shared', [ListenPartyController::class, 'shared']);
                 Route::post('invite', [ListenPartyController::class, 'invite'])->middleware('throttle:10,1');
                 Route::post('share', [ListenPartyController::class, 'share'])->middleware('throttle:10,1');
+                Route::post('suggest', [ListenRoomController::class, 'suggest'])->middleware('throttle:30,1');
+                Route::post('suggestions/{index}', [ListenRoomController::class, 'review'])->whereNumber('index')->middleware('throttle:60,1');
+                Route::post('react', [ListenRoomController::class, 'react'])->middleware('throttle:40,1');
+                Route::post('chat', [ListenRoomController::class, 'chat'])->middleware('throttle:30,1');
+                Route::post('kick', [ListenRoomController::class, 'kick'])->middleware('throttle:30,1');
+                Route::post('host', [ListenRoomController::class, 'host'])->middleware('throttle:20,1');
                 Route::delete('/', [ListenPartyController::class, 'end']);
             });
         });
@@ -262,6 +290,7 @@ Route::prefix('v1')->group(function () {
 
         Route::middleware('module:families')->group(function () {
             Route::get('me/family-widget', [GroupsApiController::class, 'familyWidget']);
+            Route::get('me/pulse-widget', [WidgetApiController::class, 'pulse'])->middleware('throttle:30,1');
             // Застосунок на Android: гра на екрані → «Граю в…».
             Route::post('me/playing/mobile', [PlayingController::class, 'mobile'])->middleware('throttle:30,1');
             Route::get('me/playing/packages', [PlayingController::class, 'packages']);
@@ -294,6 +323,24 @@ Route::prefix('v1')->group(function () {
          * шляхами з префіксом /api/v1/site. BridgeSiteAction перетворює редиректи й Inertia-сторінки на JSON.
          */
         Route::prefix('site')->middleware(BridgeSiteAction::class)->group(function () {
+            // «Телефон»: свій номер, набирач, дзвінки й повідомлення за номером, подарунки й передача.
+            // Купити номер у застосунку можна лише через Google Play Billing (google-play/phone/*).
+            Route::prefix('phone')->middleware('module:phone')->controller(PhoneController::class)->group(function () {
+                Route::get('/', 'index');
+                Route::post('random', 'random')->middleware('throttle:10,1');
+                Route::get('lookup', 'lookup')->middleware('throttle:60,1');
+                Route::get('check', 'check')->middleware('throttle:120,1');
+                Route::get('suggest', 'suggest')->middleware('throttle:60,1');
+                Route::post('dial', 'dial')->middleware('throttle:30,1');
+                Route::put('settings', 'settings');
+                Route::post('dismiss', 'dismiss');
+                Route::post('transfer', 'transfer')->middleware('throttle:20,1');
+                Route::post('offers/{offer}/accept', 'accept')->whereNumber('offer');
+                Route::post('offers/{offer}/decline', 'decline')->whereNumber('offer');
+                Route::delete('offers/{offer}', 'cancel')->whereNumber('offer');
+                Route::post('gifts/{number}/give', 'regift')->whereNumber('number')->middleware('throttle:20,1');
+                Route::post('gifts/{number}/claim', 'claim')->whereNumber('number');
+            });
             Route::middleware('module:feed')->group(function () {
                 Route::post('posts/{post}/pin', [PostController::class, 'pin'])->whereNumber('post');
                 Route::get('posts/drafts', [PostController::class, 'drafts']);
@@ -309,15 +356,21 @@ Route::prefix('v1')->group(function () {
 
             // Шапка профілю як на сайті: статистика, друзі, фото, аудіо, права (canPost, canMessage).
             Route::get('u/{user}', [ProfileController::class, 'show']);
+            Route::get('u/{user}/card', [ProfileController::class, 'card']);
             Route::post('me/avatar', [ProfileController::class, 'updateAvatar']);
             Route::delete('me/avatar', [ProfileController::class, 'destroyAvatar']);
             Route::post('me/cover', [ProfileController::class, 'updateCover']);
             Route::delete('settings/profile', [SettingsProfileController::class, 'destroy']);
             Route::put('settings/navigation', [NavigationController::class, 'update']);
+            Route::put('settings/theme', [AppearanceController::class, 'theme']);
+            Route::put('settings/mode', [AppearanceController::class, 'mode']);
             // Свій канал Twitch/YouTube і позначка LIVE у профілі.
             Route::put('settings/stream', [StreamController::class, 'update'])->middleware('throttle:10,1');
             Route::delete('settings/stream', [StreamController::class, 'destroy']);
             Route::post('settings/stream/live', [StreamController::class, 'live'])->middleware('throttle:20,1');
+            // «Показувати, що я слухаю» — те саме налаштування, що й на сайті.
+            Route::patch('settings/digest', [DigestController::class, 'update'])->middleware('throttle:30,1');
+            Route::patch('settings/listening', [ListeningController::class, 'update'])->middleware('throttle:30,1');
 
             // Збережене: пости, фільми, ігри й сервери.
             Route::get('saved', [SavedController::class, 'index']);
@@ -430,13 +483,47 @@ Route::prefix('v1')->group(function () {
 
             Route::prefix('music')->middleware('module:music')->group(function () {
                 Route::get('/', [MusicController::class, 'index']);
+                // Розділ у стилі Apple Music (ті самі контролери, що й на сайті).
+                Route::get('home', [MusicHubController::class, 'home']);
+                Route::get('new', [MusicHubController::class, 'newest']);
+                Route::get('radio', [MusicHubController::class, 'radio']);
+                Route::get('library', [MusicHubController::class, 'library']);
+                Route::post('library/sections', [MusicHubController::class, 'sections']);
+                Route::get('library/{section}', [MusicHubController::class, 'librarySection'])->where('section', '[a-z]+');
+                Route::get('artist', [MusicHubController::class, 'artist']);
+                Route::get('artist/info', [MusicHubController::class, 'artistInfo'])->middleware('throttle:60,1');
+                Route::get('album', [MusicHubController::class, 'album']);
+                Route::get('mix/{key}', [MusicHubController::class, 'mix'])->where('key', '[a-z]+');
+                Route::get('genre', [MusicHubController::class, 'genre']);
+                Route::get('charts', [MusicHubController::class, 'charts']);
+                Route::get('replay/{year?}', [MusicHubController::class, 'replay'])->whereNumber('year');
+                Route::get('station', [MusicHubController::class, 'station'])->middleware('throttle:120,1');
+                Route::get('playlists/mine', [MusicHubController::class, 'myPlaylists']);
+                // Кімнати «Слухати разом» (ті самі шляхи, що на сайті).
+                Route::get('rooms', [ListenRoomController::class, 'index']);
+                Route::post('rooms', [ListenRoomController::class, 'store'])->middleware('throttle:10,1');
+                Route::get('rooms/{type}/{id}', [ListenRoomController::class, 'group'])->whereIn('type', ['family', 'clan', 'community'])->whereNumber('id');
+                Route::put('rooms/{type}/{id}/policy', [ListenRoomController::class, 'policy'])->whereIn('type', ['family', 'clan', 'community'])->whereNumber('id');
+                Route::get('find', [MusicHubController::class, 'search']);
+                Route::post('tracks/{track}/favorite', [MusicHubController::class, 'favorite'])->whereNumber('track');
+                Route::delete('tracks/{track}/favorite', [MusicHubController::class, 'unfavorite'])->whereNumber('track');
                 Route::get('u/{user}', [MusicController::class, 'user']);
                 Route::post('tracks', [TrackController::class, 'store'])->middleware('throttle:60,1');
+                Route::post('tracks/import', [TrackImportController::class, 'store'])->middleware('throttle:10,1');
+                Route::get('imports', [TrackImportController::class, 'index']);
+                Route::delete('imports/{import}', [TrackImportController::class, 'destroy'])->whereNumber('import');
                 Route::post('playlists', [PlaylistController::class, 'store'])->middleware('throttle:20,1');
                 Route::get('search', [MusicController::class, 'search'])->middleware('throttle:120,1');
                 Route::delete('now-playing', [NowPlayingController::class, 'destroy']);
+                Route::post('connect/heartbeat', [MusicConnectController::class, 'heartbeat'])->middleware('throttle:music-connect');
+                Route::post('connect/command', [MusicConnectController::class, 'command'])->middleware('throttle:60,1');
+                Route::get('lyrics/find', [TrackController::class, 'findLyrics'])->middleware('throttle:60,1');
                 Route::whereNumber(['track', 'playlist'])->group(function () {
                     Route::post('tracks/{track}/library', [TrackController::class, 'add']);
+                    Route::get('tracks/{track}/lyrics', [TrackController::class, 'lyrics']);
+                    // «Завантажити на пристрій» в оригінальній якості (офлайн-музика застосунку).
+                    Route::get('tracks/{track}/download', [TrackController::class, 'download']);
+                    Route::get('tracks/{track}/metadata', [TrackController::class, 'metadata'])->middleware('throttle:10,1');
                     Route::delete('tracks/{track}/library', [TrackController::class, 'remove']);
                     Route::get('playlists/{playlist}', [PlaylistController::class, 'show']);
                     Route::patch('tracks/{track}', [TrackController::class, 'update']);
@@ -481,9 +568,31 @@ Route::prefix('v1')->group(function () {
                 Route::get('{server}', [ServerController::class, 'show']);
             });
 
+            Route::post('servers/{server}/tournaments', [TournamentController::class, 'store'])->middleware(['module:servers', 'throttle:10,10']);
+            Route::prefix('tournaments')->middleware('module:servers')->whereNumber(['tournament', 'match', 'submission'])->group(function () {
+                Route::get('/', [TournamentController::class, 'index']);
+                Route::get('{tournament}', [TournamentController::class, 'show']);
+                Route::post('{tournament}/join', [TournamentController::class, 'join'])->middleware('throttle:20,1');
+                Route::delete('{tournament}/join', [TournamentController::class, 'leave']);
+                Route::post('{tournament}/start', [TournamentController::class, 'start']);
+                Route::post('{tournament}/matches/{match}', [TournamentController::class, 'report'])->middleware('throttle:60,1');
+                Route::post('{tournament}/submissions', [TournamentController::class, 'submit'])->middleware('throttle:10,1');
+                Route::post('{tournament}/submissions/{submission}', [TournamentController::class, 'review'])->middleware('throttle:120,1');
+                Route::post('{tournament}/finish', [TournamentController::class, 'finish']);
+                Route::delete('{tournament}', [TournamentController::class, 'destroy']);
+            });
+
+            Route::get('wrapped', [WrappedController::class, 'show'])->middleware('throttle:30,1');
+
             Route::prefix('quests')->middleware('module:quests')->group(function () {
                 Route::get('/', [QuestController::class, 'index']);
                 Route::post('{quest}/claim', [QuestController::class, 'claim'])->where('quest', '[a-z]{2,24}')->middleware('throttle:30,1');
+            });
+
+            Route::prefix('season')->middleware('module:quests')->group(function () {
+                Route::get('/', [SeasonController::class, 'index']);
+                Route::post('levels/{level}/{track}/claim', [SeasonController::class, 'claim'])->whereNumber('level')->whereIn('track', ['free', 'plus'])->middleware('throttle:60,1');
+                Route::post('equip', [SeasonController::class, 'equip'])->middleware('throttle:60,1');
             });
 
             Route::prefix('moments')->middleware('module:moments')->whereNumber('moment')->group(function () {
@@ -496,6 +605,10 @@ Route::prefix('v1')->group(function () {
             Route::prefix('party')->middleware('module:party')->whereNumber('party')->group(function () {
                 Route::get('/', [PartyController::class, 'index']);
                 Route::post('/', [PartyController::class, 'store'])->middleware('throttle:10,10');
+                Route::get('match', [TeammateController::class, 'index']);
+                Route::put('match/profile', [TeammateController::class, 'update'])->middleware('throttle:20,1');
+                Route::post('match/looking', [TeammateController::class, 'looking'])->middleware('throttle:20,1');
+                Route::post('{party}/invite', [TeammateController::class, 'invite'])->middleware('throttle:30,1');
                 Route::get('{party}', [PartyController::class, 'show']);
                 Route::post('{party}/join', [PartyController::class, 'join'])->middleware('throttle:20,1');
                 Route::delete('{party}/join', [PartyController::class, 'leave']);

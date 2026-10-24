@@ -1,5 +1,5 @@
-import { Head, router, useForm } from '@inertiajs/react';
-import { Plus, UserRoundSearch, X } from 'lucide-react';
+import { Head, Link, router, useForm } from '@inertiajs/react';
+import { Plus, Radar, UserRoundSearch, X } from 'lucide-react';
 import { useState } from 'react';
 import { selectClass } from '@/components/gc/admin';
 import { EmptyState } from '@/components/gc/widget';
@@ -99,7 +99,7 @@ export default function PartyBoard({ parties, filters, options }: Props) {
         <>
             <Head title={tr('Пошук паті')} />
             <div className="space-y-5">
-                <section className="glass rounded-3xl p-5 sm:p-6">
+                <section className="glass rounded-2xl p-5 sm:p-6">
                     <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
                         <div className="min-w-0 flex-1">
                             <h1 className="flex items-center gap-2 font-display text-2xl font-bold text-white">
@@ -112,6 +112,13 @@ export default function PartyBoard({ parties, filters, options }: Props) {
                                 )}
                             </p>
                         </div>
+                        <Link
+                            href="/party/match"
+                            className="inline-flex h-11 w-full shrink-0 items-center justify-center gap-2 rounded-xl bg-white/[0.08] px-4 text-sm font-semibold text-white transition hover:bg-white/[0.12] sm:w-auto"
+                        >
+                            <Radar className="size-4" />
+                            {tr('Підбір тиммейтів')}
+                        </Link>
                         <button
                             type="button"
                             onClick={() => setCreating(true)}
@@ -199,7 +206,7 @@ export default function PartyBoard({ parties, filters, options }: Props) {
             </div>
 
             <Dialog open={creating} onOpenChange={setCreating}>
-                <DialogContent className="glass-strong max-h-[92dvh] overflow-y-auto rounded-3xl border-white/10 p-6 text-white sm:max-w-lg">
+                <DialogContent className="glass-strong max-h-[92dvh] overflow-y-auto rounded-dialog border-white/10 p-6 text-white sm:max-w-lg">
                     <DialogTitle className="font-display text-xl">
                         {tr('Шукаю паті')}
                     </DialogTitle>

@@ -16,7 +16,26 @@ type Result =
     | { kind: 'community'; href: string; item: CommunityCard }
     | { kind: 'hit'; href: string; item: Hit };
 
+/** Чи вміщається повна підказка пошуку (на вузькому екрані — коротка, без обрізання). */
+function useWideSearch(): boolean {
+    const [wide, setWide] = useState(
+        () =>
+            typeof window === 'undefined' ||
+            window.matchMedia('(min-width: 640px)').matches,
+    );
+    useEffect(() => {
+        const media = window.matchMedia('(min-width: 640px)');
+        const update = () => setWide(media.matches);
+        media.addEventListener('change', update);
+
+        return () => media.removeEventListener('change', update);
+    }, []);
+
+    return wide;
+}
+
 export function QuickSearch({ className }: { className?: string }) {
+    const wide = useWideSearch();
     const [query, setQuery] = useState('');
     const [results, setResults] = useState<Result[]>([]);
     const [recent, setRecent] = useState<string[]>([]);
@@ -162,7 +181,11 @@ export function QuickSearch({ className }: { className?: string }) {
                             inputRef.current?.blur();
                         }
                     }}
-                    placeholder={tr('Пошук людей, ігор, кіно, серверів…')}
+                    placeholder={
+                        wide
+                            ? tr('Пошук людей, ігор, кіно, серверів…')
+                            : tr('Пошук')
+                    }
                     className="min-w-0 flex-1 bg-transparent text-sm text-white placeholder:text-white/40 focus:outline-none"
                 />
                 {query ? (

@@ -40,7 +40,7 @@ export function ServerAnalytics({ data }: { data: ServerAnalyticsData }) {
     ];
 
     return (
-        <section className="glass rounded-3xl p-5">
+        <section className="glass rounded-2xl p-5">
             <div className="flex flex-wrap items-center justify-between gap-2">
                 <h2 className="flex items-center gap-2 font-display text-lg font-semibold text-white">
                     <BarChart3 className="size-5 text-gc-lilac-300" />
@@ -49,7 +49,7 @@ export function ServerAnalytics({ data }: { data: ServerAnalyticsData }) {
                 {delta !== null && (
                     <span
                         className={cn(
-                            'inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold',
+                            'inline-flex items-center gap-1 rounded-chip px-2.5 py-1 text-xs font-semibold',
                             delta >= 0
                                 ? 'bg-emerald-400/10 text-emerald-200'
                                 : 'bg-rose-400/10 text-rose-200',
@@ -104,7 +104,7 @@ export function ServerAnalytics({ data }: { data: ServerAnalyticsData }) {
             </div>
             <p className="mt-3 text-xs text-white/40">
                 {tr(
-                    'Бачите лише ви як власник. Один перегляд від людини за годину; свої перегляди не рахуються.',
+                    'Бачите лише ви як власник. Один перегляд від людини за годину; свої перегляди не враховуються.',
                 )}
             </p>
         </section>

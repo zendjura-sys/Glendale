@@ -21,8 +21,8 @@ export function VerifiedBadge({ className }: { className?: string }) {
                     y2="24"
                     gradientUnits="userSpaceOnUse"
                 >
-                    <stop stopColor="#4f8bff" />
-                    <stop offset="1" stopColor="#a855f7" />
+                    <stop stopColor="#2f7bff" />
+                    <stop offset="1" stopColor="#22d3ee" />
                 </linearGradient>
             </defs>
             <path

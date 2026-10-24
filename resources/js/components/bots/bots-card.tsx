@@ -20,6 +20,7 @@ type Flags = {
     post_events: boolean;
     post_reminders: boolean;
     post_posts: boolean;
+    post_music: boolean;
 };
 
 type BotsState = {
@@ -174,7 +175,7 @@ export function BotsCard({
 
     if (state === null) {
         return (
-            <section className="glass rounded-3xl p-5">
+            <section className="glass rounded-2xl p-5">
                 <h2 className="flex items-center gap-2 font-display text-lg font-semibold text-white">
                     <Megaphone className="size-5 text-gc-lilac-300" />
                     {tr('Боти Telegram і Discord')}
@@ -225,6 +226,13 @@ export function BotsCard({
                     }
                 />
             )}
+            <Toggle
+                label={tr('Кімнати «Слухати разом»: хто відкрив і що грає')}
+                checked={link.post_music}
+                onChange={(v) =>
+                    act('patch', `/bots/links/${linkId}`, { post_music: v })
+                }
+            />
         </div>
     );
     const footer = (linkId: number) => (
@@ -258,7 +266,7 @@ export function BotsCard({
     const dc = state.discord;
 
     return (
-        <section className="glass space-y-4 rounded-3xl p-5">
+        <section className="glass space-y-4 rounded-2xl p-5">
             <div>
                 <h2 className="flex items-center gap-2 font-display text-lg font-semibold text-white">
                     <Megaphone className="size-5 text-gc-lilac-300" />
