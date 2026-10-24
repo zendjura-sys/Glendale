@@ -79,6 +79,12 @@ return [
         'url' => env('DEEPL_URL'),
     ],
 
+    // Хмарний запасний перекладач після DeepL: Azure Translator (F0 — 2 млн символів на місяць).
+    'azure_translator' => [
+        'key' => env('AZURE_TRANSLATOR_KEY'),
+        'region' => env('AZURE_TRANSLATOR_REGION'),
+    ],
+
     // Запасний перекладач, коли ліміт DeepL вичерпано: власний LibreTranslate на сервері
     // (deploy/libretranslate.sh, INSTALL_LIBRETRANSLATE=1). Порожня адреса — вимкнено.
     'libretranslate' => [

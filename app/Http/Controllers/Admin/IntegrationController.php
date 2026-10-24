@@ -32,6 +32,7 @@ use App\Services\Cinema\Metadata\TmdbProvider;
 use App\Services\Cinema\VideoseedClient;
 use App\Services\Games\GameCatalog;
 use App\Services\Games\Igdb;
+use App\Services\I18n\AzureTranslator;
 use App\Services\I18n\DeepL;
 use App\Services\I18n\LibreTranslate;
 use App\Services\Moderation\NsfwCheck;
@@ -168,6 +169,9 @@ class IntegrationController extends Controller
             };
         }
         Cache::forget('cinema.meta.down.'.$provider);
+        if ($provider === 'azure_translator') {
+            app(AzureTranslator::class)->clearExhausted();
+        }
         if ($provider === 'libretranslate') {
             Cache::forget('libretranslate.up');
             Cache::forget('libretranslate.languages');
@@ -677,14 +681,35 @@ class IntegrationController extends Controller
                         'rules' => ['nullable', 'string', 'regex:/^[A-Za-z0-9\-]{30,48}(:fx)?$/'], 'message' => 'Ключ DeepL має вигляд xxxxxxxx-xxxx-…:fx'],
                 ],
             ],
+            'azure_translator' => [
+                'label' => 'Azure Translator',
+                'group' => 'translate',
+                'description' => 'Хмарний перекладач Microsoft — працює, коли вичерпано ліміт DeepL, і не навантажує сервер. Безкоштовний тариф F0 — 2 000 000 символів на місяць. LibreTranslate лишається останнім запасним.',
+                'docs' => 'https://learn.microsoft.com/azure/ai-services/translator/create-translator-resource',
+                'steps' => [
+                    'Увійдіть на portal.azure.com (потрібен акаунт Microsoft; картку просять для перевірки, тариф F0 безкоштовний).',
+                    'Create a resource → Translator → Pricing tier: Free F0. Region — найближчий, напр. West Europe (або Global).',
+                    'Ресурс → Keys and Endpoint: скопіюйте KEY 1 і Location/Region сюди, натисніть «Перевірити».',
+                ],
+                'configured' => app(AzureTranslator::class)->configured(),
+                'stat' => app(AzureTranslator::class)->exhausted() ? 'Ліміт цього місяця вичерпано — до 1 числа працює LibreTranslate' : null,
+                'test' => fn () => app(AzureTranslator::class)->test(),
+                'fields' => [
+                    ['name' => 'key', 'setting' => 'azure_translator_key', 'type' => 'secret', 'label' => 'Key', 'env' => config('services.azure_translator.key'),
+                        'rules' => ['nullable', 'string', 'regex:/^[A-Za-z0-9]{32,100}$/'], 'message' => 'Ключ Azure — латинські літери й цифри (KEY 1 з Keys and Endpoint).'],
+                    ['name' => 'region', 'setting' => 'azure_translator_region', 'type' => 'text', 'label' => 'Region', 'placeholder' => 'westeurope',
+                        'help' => 'Location/Region ресурсу. Порожньо — global.',
+                        'rules' => ['nullable', 'string', 'max:40', 'regex:/^[A-Za-z0-9]+$/'], 'message' => 'Регіон — латинські літери й цифри, напр. westeurope.'],
+                ],
+            ],
             'libretranslate' => [
                 'label' => 'LibreTranslate (запасний перекладач)',
                 'group' => 'translate',
-                'description' => 'Безкоштовний перекладач без ліміту на вашому сервері. Працює, коли вичерпано місячний ліміт DeepL (або DeepL не відповідає): автопереклад мов і кнопка «Перекласти».',
+                'description' => 'Безкоштовний перекладач без ліміту на вашому сервері. Працює останнім — коли вичерпано ліміти DeepL і Azure (або вони не відповідають): автопереклад мов і кнопка «Перекласти».',
                 'docs' => 'https://github.com/LibreTranslate/LibreTranslate',
                 'steps' => [
                     'Встановлення на сервері: запустіть деплой з INSTALL_LIBRETRANSLATE=1 — створиться служба libretranslate (Python у /opt/libretranslate, мови uk, en, pl, de). Потрібно 2–4 ГБ RAM і кілька ГБ диска.',
-                    'Типова адреса — http://127.0.0.1:5000 (сервер слухає лише локально, ключ не потрібен). Інша мова — додайте її в --load-only у deploy/systemd/libretranslate.service.',
+                    'Типова адреса — http://127.0.0.1:5000 (сервер слухає лише локально, ключ не потрібен). Мови — змінна LT_LANGUAGES у деплої (типово всі мови проєкту).',
                     'Натисніть «Перевірити». Стан і лічильник DeepL — в Адмінці → Мови.',
                 ],
                 'configured' => app(LibreTranslate::class)->configured(),

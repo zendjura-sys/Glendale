@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Post;
 use App\Models\Translation;
 use App\Models\User;
+use App\Services\I18n\AzureTranslator;
 use App\Services\I18n\CatalogTranslator;
 use App\Services\I18n\DeepL;
 use App\Services\I18n\LibreTranslate;
@@ -161,5 +162,70 @@ class TranslatorFallbackTest extends TestCase
         $this->actingAs($admin)->post('/admin/languages/libretranslate/test')->assertRedirect();
         $this->assertSame('success', session('inertia.flash_data.toast.type'));
         $this->actingAs(User::factory()->create())->post('/admin/languages/libretranslate/test')->assertForbidden();
+    }
+
+    private function azure(int $status = 200): void
+    {
+        app(SiteSettings::class)->putSecret('azure_translator_key', str_repeat('a1', 20));
+        app(SiteSettings::class)->put(['azure_translator_region' => 'westeurope']);
+        Http::fake([
+            'api.cognitive.microsofttranslator.com/translate*' => $status === 200
+                ? fn (Request $r) => Http::response(array_map(fn (array $row) => [
+                    'detectedLanguage' => ['language' => 'en', 'score' => 1],
+                    'translations' => [['text' => 'AZ:'.$row['Text'], 'to' => 'x']],
+                ], $r->data()))
+                : Http::response(['error' => ['code' => 403001]], $status),
+        ]);
+    }
+
+    public function test_deepl_exhausted_uses_azure_before_libretranslate(): void
+    {
+        app(SiteSettings::class)->putSecret('deepl_key', self::DEEPL_KEY);
+        app(DeepL::class)->markExhausted();
+        $this->azure();
+        $this->libre();
+        $reader = User::factory()->create();
+
+        $this->actingAs($reader)->postJson('/translate', ['type' => 'post', 'id' => $this->makePost('Hello world')->id])
+            ->assertOk()->assertJsonPath('translation', 'AZ:Hello world');
+        Http::assertSent(fn (Request $r) => str_contains($r->url(), 'microsofttranslator.com/translate')
+            && $r->hasHeader('Ocp-Apim-Subscription-Region', 'westeurope') && $r->hasHeader('Ocp-Apim-Subscription-Key'));
+        Http::assertNotSent(fn (Request $r) => str_contains($r->url(), 'lt.test/translate'));
+    }
+
+    public function test_azure_translates_interface_and_keeps_placeholders(): void
+    {
+        $this->azure();
+        $texts = app(AzureTranslator::class)->interface(['Кімнату «{0}» прибрано, :attribute & {name}'], 'de');
+
+        $this->assertSame(['AZ:Кімнату «{0}» прибрано, :attribute & {name}'], $texts);
+        Http::assertSent(fn (Request $r) => str_contains($r->url(), 'from=uk') && str_contains($r->url(), 'textType=html')
+            && str_contains($r->data()[0]['Text'], '<span class="notranslate">{0}</span>'));
+    }
+
+    public function test_azure_quota_exceeded_falls_back_to_libretranslate(): void
+    {
+        $this->azure(403);
+        $this->libre();
+        $reader = User::factory()->create();
+
+        $this->actingAs($reader)->postJson('/translate', ['type' => 'post', 'id' => $this->makePost('Hello world')->id])
+            ->assertOk()->assertJsonPath('translation', 'LT: Hello world');
+        $this->assertTrue(app(AzureTranslator::class)->exhausted());
+
+        $admin = User::factory()->admin()->create();
+        $this->actingAs($admin)->get('/admin/languages')->assertInertia(fn ($page) => $page
+            ->where('active', 'libretranslate')->where('azure.configured', true)->where('azure.exhausted', true));
+    }
+
+    public function test_azure_language_codes(): void
+    {
+        $azure = app(AzureTranslator::class);
+        $this->assertSame('zh-Hans', $azure->target('zh'));
+        $this->assertSame('zh-Hant', $azure->target('zh-TW'));
+        $this->assertSame('pt', $azure->target('pt-BR'));
+        $this->assertSame('pt-pt', $azure->target('pt-PT'));
+        $this->assertSame('nb', $azure->target('no'));
+        $this->assertSame('kk', $azure->target('kk'));
     }
 }

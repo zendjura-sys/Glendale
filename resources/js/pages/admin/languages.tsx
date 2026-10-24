@@ -34,12 +34,17 @@ type Props = {
     languages: Language[];
     default_locale: string;
     suggested: { code: string; native: string }[];
-    active: 'deepl' | 'libretranslate' | null;
+    active: 'deepl' | 'azure' | 'libretranslate' | null;
     deepl: {
         configured: boolean;
         usage: { used: number; limit: number } | null;
         exhausted: boolean;
         exhausted_at: string | null;
+    };
+    azure: {
+        configured: boolean;
+        region: string | null;
+        exhausted: boolean;
     };
     libretranslate: {
         configured: boolean;
@@ -61,6 +66,7 @@ export default function AdminLanguages({
     suggested,
     active,
     deepl,
+    azure,
     libretranslate,
     catalog,
     content_translation,
@@ -139,6 +145,7 @@ export default function AdminLanguages({
             <EnginesCard
                 active={active}
                 deepl={deepl}
+                azure={azure}
                 libretranslate={libretranslate}
             />
 
@@ -407,14 +414,15 @@ export default function AdminLanguages({
 }
 
 /**
- * Перекладачі: DeepL (лічильник символів за місяць — рахуються й пробіли та розділові знаки;
- * Free — 500 000) і запасний LibreTranslate на сервері, що працює, коли ліміт вичерпано.
+ * Перекладачі по черзі: DeepL (лічильник символів за місяць — рахуються й пробіли та розділові знаки;
+ * Free — 500 000), Azure Translator (F0 — 2 млн) і останнім — LibreTranslate на сервері.
  */
 function EnginesCard({
     active,
     deepl,
+    azure,
     libretranslate,
-}: Pick<Props, 'active' | 'deepl' | 'libretranslate'>) {
+}: Pick<Props, 'active' | 'deepl' | 'azure' | 'libretranslate'>) {
     const used = deepl.usage
         ? pct(deepl.usage.used, deepl.usage.limit)
         : deepl.exhausted
@@ -422,7 +430,7 @@ function EnginesCard({
           : 0;
 
     return (
-        <section className="glass mb-6 grid gap-4 rounded-3xl p-4 sm:grid-cols-2 sm:p-5">
+        <section className="glass mb-6 grid gap-4 rounded-3xl p-4 sm:grid-cols-2 sm:p-5 lg:grid-cols-3">
             <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
                     <h2 className="font-display text-base font-semibold text-white">
@@ -466,17 +474,55 @@ function EnginesCard({
                     {!deepl.configured
                         ? tr('Ключ не додано')
                         : deepl.exhausted
-                          ? libretranslate.up
-                              ? tr('Вичерпано — працює LibreTranslate')
-                              : tr(
-                                    'Вичерпано до нового місяця, LibreTranslate недоступний',
-                                )
+                          ? azure.configured && !azure.exhausted
+                              ? tr('Вичерпано — працює Azure Translator')
+                              : libretranslate.up
+                                ? tr('Вичерпано — працює LibreTranslate')
+                                : tr(
+                                      'Вичерпано до нового місяця, LibreTranslate недоступний',
+                                  )
                           : deepl.usage
                             ? tr('{used} з {limit} символів цього місяця', {
                                   used: deepl.usage.used.toLocaleString(),
                                   limit: deepl.usage.limit.toLocaleString(),
                               })
                             : tr('немає даних')}
+                </p>
+            </div>
+            <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="font-display text-base font-semibold text-white">
+                        Azure Translator
+                    </h2>
+                    {active === 'azure' && (
+                        <span className="rounded-md bg-emerald-500/15 px-2 py-0.5 text-xs text-emerald-200">
+                            {tr('Перекладає зараз')}
+                        </span>
+                    )}
+                </div>
+                <p className="mt-2 flex items-center gap-1.5 text-xs text-white/50">
+                    <span
+                        className={cn(
+                            'size-2 rounded-full',
+                            !azure.configured
+                                ? 'bg-white/25'
+                                : azure.exhausted
+                                  ? 'bg-amber-400'
+                                  : 'bg-emerald-400',
+                        )}
+                    />
+                    {!azure.configured
+                        ? tr('Ключ не додано — Адмінка → Інтеграції')
+                        : azure.exhausted
+                          ? tr('Ліміт цього місяця вичерпано')
+                          : tr('Готовий · регіон {region}', {
+                                region: azure.region ?? 'global',
+                            })}
+                </p>
+                <p className="mt-1 text-xs text-white/35">
+                    {tr(
+                        'Хмара Microsoft, сервер не навантажує. Безкоштовно до 2 млн символів на місяць.',
+                    )}
                 </p>
             </div>
             <div className="min-w-0">
@@ -525,7 +571,7 @@ function EnginesCard({
                 </p>
                 <p className="mt-1 text-xs text-white/35">
                     {tr(
-                        'Безкоштовно й без ліміту, на вашому сервері. Вмикається сам, коли ліміт DeepL вичерпано.',
+                        'Безкоштовно й без ліміту, на вашому сервері. Вмикається сам, коли вичерпано ліміти DeepL і Azure.',
                     )}
                 </p>
             </div>
