@@ -7,6 +7,7 @@ use App\Support\Settings\SiteSettings;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Sleep;
 
 /**
@@ -14,7 +15,7 @@ use Illuminate\Support\Sleep;
  * безкоштовний тариф F0 — 2 000 000 символів на місяць. Ключ і регіон ресурсу — в Адмінці → Інтеграції.
  *
  * API: POST /translate?api-version=3.0&to=…[&from=…][&textType=html], тіло [{"Text": "…"}].
- * 403 — вичерпано місячну квоту (позначка до нового місяця), 401 — неправильний ключ.
+ * 403001 — вичерпано безкоштовну квоту (позначка до нового місяця), 401 — неправильний ключ, 429 — забагато за хвилину.
  */
 class AzureTranslator
 {
@@ -67,9 +68,13 @@ class AzureTranslator
         return $this->configured() && ! $this->exhausted();
     }
 
+    /**
+     * Ліміт вичерпано: Azure відповів 403001 або лічильник сайту дійшов до 2 млн — тоді Azure
+     * пропускаємо до нового місяця, а без інших перекладачів кнопка «Перекласти» ховається сама.
+     */
     public function exhausted(): bool
     {
-        return Cache::get(self::EXHAUSTED) !== null;
+        return Cache::get(self::EXHAUSTED) !== null || $this->usage()['used'] >= self::FREE_LIMIT;
     }
 
     public function markExhausted(): void
@@ -139,7 +144,8 @@ class AzureTranslator
      */
     public function content(string $text, string $target): ?array
     {
-        $rows = $this->translate([$text], $target);
+        // Кнопка «Перекласти»: на 429 одна коротка повторна спроба, людина чекає відповіді.
+        $rows = $this->translate([$text], $target, retries: 1, maxWait: 5);
         if ($rows === null) {
             return null;
         }
@@ -158,7 +164,7 @@ class AzureTranslator
     {
         $out = [];
         foreach ($this->chunks(array_map(fn (string $t) => $this->protect($t), $texts)) as $chunk) {
-            $rows = $this->translate($chunk, $target, 'uk', true, patient: true);
+            $rows = $this->translate($chunk, $target, 'uk', true, retries: self::RETRIES, maxWait: 30);
             if ($rows === null) {
                 return null;
             }
@@ -200,7 +206,7 @@ class AzureTranslator
      * @param  list<string>  $texts
      * @return list<array{text: string, source: string|null}>|null
      */
-    private function translate(array $texts, string $target, ?string $source = null, bool $html = false, bool $patient = false): ?array
+    private function translate(array $texts, string $target, ?string $source = null, bool $html = false, int $retries = 0, int $maxWait = 0): ?array
     {
         $this->lastError = null;
         $key = $this->key();
@@ -219,24 +225,26 @@ class AzureTranslator
 
                 return null;
             }
-            if ($response->status() !== 429 || ! $patient || $attempt >= self::RETRIES) {
+            if ($response->status() !== 429 || $attempt >= $retries) {
                 break;
             }
-            Sleep::for(min(30, max(2, (int) $response->header('Retry-After') ?: 10 * ($attempt + 1))))->seconds();
-        }
-        if ($response->status() === 403) {
-            $this->markExhausted();
-            $this->lastError = 'вичерпано місячний ліміт';
-
-            return null;
+            Sleep::for(min($maxWait, max(2, (int) $response->header('Retry-After') ?: 10 * ($attempt + 1))))->seconds();
         }
         if (! $response->successful()) {
-            $this->lastError = match ($response->status()) {
-                401 => 'ключ відхилено',
-                429 => 'забагато запитів — спробуйте за кілька хвилин',
-                400 => 'не знає цієї мови',
+            $code = (int) $response->json('error.code');
+            // Лише 403001 — справді вичерпано безкоштовну квоту; інші 403 не вимикають Azure на місяць.
+            if ($code === 403001) {
+                $this->markExhausted();
+            }
+            $this->lastError = match (true) {
+                $code === 403001 => 'вичерпано місячний ліміт',
+                $response->status() === 401 => 'ключ відхилено (перевірте ключ і регіон)',
+                $response->status() === 429 => 'забагато запитів — спробуйте за кілька хвилин',
+                $response->status() === 400 => 'не знає цієї мови',
                 default => 'помилка '.$response->status(),
             };
+            $message = $response->json('error.message');
+            Log::warning('translate: azure failed', ['status' => $response->status(), 'code' => $code, 'message' => is_string($message) ? mb_substr($message, 0, 200) : null]);
 
             return null;
         }

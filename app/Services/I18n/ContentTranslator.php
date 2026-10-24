@@ -17,8 +17,8 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 
 /**
- * Кнопка «Перекласти» під записом, коментарем чи повідомленням: перекладач (DeepL, а коли його
- * місячний ліміт вичерпано — LibreTranslate, див. Translator) визначає мову тексту й перекладає
+ * Кнопка «Перекласти» під записом, коментарем чи повідомленням: перекладач (DeepL, далі Azure
+ * і LibreTranslate, див. Translator) визначає мову тексту й перекладає
  * мовою інтерфейсу людини. Переклад зберігається — повторно перекладач не викликаємо.
  */
 class ContentTranslator
@@ -32,7 +32,7 @@ class ContentTranslator
         private readonly PhotoService $photos,
     ) {}
 
-    /** Кнопку показуємо, лише якщо працює DeepL або LibreTranslate і її не вимкнено в Адмінці → Мови. */
+    /** Кнопку показуємо, лише якщо працює хоч один перекладач і її не вимкнено в Адмінці → Мови. */
     public function enabled(): bool
     {
         return $this->settings->get('content_translation') !== false && $this->translator->available();
@@ -58,7 +58,10 @@ class ContentTranslator
         }
         $result = $this->translator->content($text, $locale);
         if ($result === null) {
-            throw ValidationException::withMessages(['text' => 'Не вдалося перекласти — спробуйте пізніше.']);
+            $reason = $this->translator->lastError();
+            Log::warning('translate: content failed', ['type' => $type, 'locale' => $locale, 'reason' => $reason]);
+            // Адмін одразу бачить, який перекладач і чому не спрацював.
+            throw ValidationException::withMessages(['text' => 'Не вдалося перекласти — спробуйте пізніше.'.($user->isAdmin() ? ' ('.$reason.')' : '')]);
         }
         Log::info('translate: content', ['engine' => $result['engine'], 'type' => $type, 'locale' => $locale, 'chars' => mb_strlen($text)]);
         DB::table('content_translations')->insertOrIgnore([

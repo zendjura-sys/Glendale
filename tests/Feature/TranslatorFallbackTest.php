@@ -12,6 +12,7 @@ use App\Services\I18n\LibreTranslate;
 use App\Support\Settings\SiteSettings;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Sleep;
 use Tests\TestCase;
@@ -175,7 +176,7 @@ class TranslatorFallbackTest extends TestCase
                     'detectedLanguage' => ['language' => 'en', 'score' => 1],
                     'translations' => [['text' => 'AZ:'.$row['Text'], 'to' => 'x']],
                 ], $r->data()))
-                : Http::response(['error' => ['code' => 403001]], $status),
+                : Http::response(['error' => ['code' => $status === 403 ? 403001 : $status * 1000]], $status),
         ]);
     }
 
@@ -285,5 +286,37 @@ class TranslatorFallbackTest extends TestCase
         $this->assertSame(0, $result['translated']);
         $this->assertStringContainsString('DeepL — вимкнено', (string) $result['error']);
         $this->assertStringContainsString('Azure — ключ відхилено', (string) $result['error']);
+    }
+
+    public function test_limit_reached_hides_translate_button(): void
+    {
+        $this->azure();
+        $reader = User::factory()->create();
+        $this->actingAs($reader)->get('/feed')->assertInertia(fn ($page) => $page->where('site.translate', true));
+
+        // Лічильник сайту дійшов до ліміту F0 — Azure вимикається сам, інших перекладачів немає.
+        Cache::put(AzureTranslator::USAGE.now()->format('Y-m'), AzureTranslator::FREE_LIMIT, now()->addDay());
+        $this->assertTrue(app(AzureTranslator::class)->exhausted());
+        $this->actingAs($reader)->get('/feed')->assertInertia(fn ($page) => $page->where('site.translate', false));
+    }
+
+    public function test_other_forbidden_errors_do_not_disable_azure_for_month(): void
+    {
+        app(SiteSettings::class)->putSecret('azure_translator_key', str_repeat('a1', 20));
+        Http::fake(['api.cognitive.microsofttranslator.com/translate*' => Http::response(['error' => ['code' => 403000, 'message' => 'Forbidden']], 403)]);
+
+        $this->assertNull(app(AzureTranslator::class)->content('Hello', 'uk'));
+        $this->assertFalse(app(AzureTranslator::class)->exhausted());
+    }
+
+    public function test_admin_sees_why_content_translation_failed(): void
+    {
+        $this->azure(401);
+        $admin = User::factory()->admin()->create();
+
+        $this->actingAs($admin)->postJson('/translate', ['type' => 'post', 'id' => $this->makePost('Hello world')->id])
+            ->assertUnprocessable()->assertJsonPath('errors.text.0', fn (string $m) => str_contains($m, 'Azure — ключ відхилено'));
+        $this->actingAs(User::factory()->create())->postJson('/translate', ['type' => 'post', 'id' => $this->makePost('Good night')->id])
+            ->assertUnprocessable()->assertJsonPath('errors.text.0', 'Не вдалося перекласти — спробуйте пізніше.');
     }
 }
