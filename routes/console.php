@@ -24,6 +24,7 @@ Schedule::command('calls:expire')->everyMinute()->withoutOverlapping(5);
 // «Слухати разом»: кімнати без слухачів 10 хвилин завершуються.
 Schedule::command('listen:sweep')->everyMinute()->withoutOverlapping(5);
 Schedule::command('tournaments:tick')->everyFiveMinutes()->withoutOverlapping(10);
+Schedule::command('digest:morning')->dailyAt('09:00')->timezone('Europe/Kyiv')->withoutOverlapping(60)->runInBackground();
 
 // Білінг: донати Donatello → поповнення; автопродовження GameCon+ з рахунку.
 Schedule::command('billing:tick')->hourly()->withoutOverlapping(30);

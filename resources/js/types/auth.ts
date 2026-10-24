@@ -35,6 +35,7 @@ export type User = {
     profanity_mask?: string | null;
     /** «Показувати, що я слухаю»: інші бачать, що грає (усі джерела). */
     show_listening?: boolean;
+    morning_digest?: boolean;
     created_at: string;
     updated_at: string;
     /** Сумісність зі стартовими компонентами Laravel. */

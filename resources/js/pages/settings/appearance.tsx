@@ -14,6 +14,7 @@ import { m, useReducedMotion } from 'motion/react';
 import { type FormEvent, useEffect, useRef, useState } from 'react';
 import AppearanceController from '@/actions/App/Http/Controllers/Settings/AppearanceController';
 import { PlusBadge } from '@/components/gc/plus';
+import { DigestSwitch } from '@/components/settings/digest-switch';
 import { UserAvatar } from '@/components/gc/user-avatar';
 import { ModeCard } from '@/components/modes/mode-card';
 import { countChanges, PendingBar } from '@/components/settings/pending-bar';
@@ -781,6 +782,10 @@ export default function Appearance({
                         </SettingsRow>
                     </SettingsCard>
                 )}
+
+                <SettingsCard list title={tr('Дайджест')}>
+                    <DigestSwitch />
+                </SettingsCard>
 
                 {notifyOn && (
                     <SettingsCard

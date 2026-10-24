@@ -351,6 +351,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           // Зберігається одразу, без «Зберегти» — те саме налаштування, що й на сайті.
           const ListeningSwitch(),
+          const DigestSwitch(),
           const SizedBox(height: 6),
           Text(tr('Хто може писати мені'), style: body(13, color: muted)),
           SizedBox(height: 6),
@@ -832,6 +833,46 @@ class _ModePickerState extends State<ModePicker> {
           ]),
         );
       },
+    );
+  }
+}
+
+/// «Ранковий дайджест» — одне налаштування сайту й застосунку: о 9:00 одне сповіщення про те, що чекає сьогодні.
+class DigestSwitch extends StatefulWidget {
+  const DigestSwitch({super.key});
+
+  @override
+  State<DigestSwitch> createState() => _DigestSwitchState();
+}
+
+class _DigestSwitchState extends State<DigestSwitch> {
+  bool? pending;
+
+  Future<void> _toggle(bool value) async {
+    final session = AppScope.read(context).session;
+    setState(() => pending = value);
+    if (!await attempt(context, () => session.api.patch(Api.site('/settings/digest'), {'morning_digest': value}))) {
+      if (mounted) setState(() => pending = null);
+      return;
+    }
+    try {
+      await session.refreshMe();
+      if (mounted) setState(() => pending = null);
+    } catch (_) {}
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final session = AppScope.read(context).session;
+    return ListenableBuilder(
+      listenable: session,
+      builder: (context, _) => SwitchListTile(
+        value: pending ?? (session.me?['morning_digest'] != false),
+        contentPadding: EdgeInsets.zero,
+        title: Text(tr('Ранковий дайджест'), style: body(14.5, weight: FontWeight.w600)),
+        subtitle: Text(tr('О 9:00 — що чекає сьогодні: події, турніри, дні народження друзів і непрочитане'), style: body(12.5, color: muted)),
+        onChanged: _toggle,
+      ),
     );
   }
 }

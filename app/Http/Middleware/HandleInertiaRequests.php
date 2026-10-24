@@ -126,6 +126,7 @@ class HandleInertiaRequests extends Middleware
                     'profanity_mask' => $user->pref('hide_profanity') ? app(ContentFilter::class)->clientPattern() : null,
                     // «Показувати, що я слухаю» (усі джерела музики; Spotify — ще й своїм перемикачем).
                     'show_listening' => $user->showsListening(),
+                    'morning_digest' => $user->wantsDigest(),
                     // До коли діє GameCon+ (оплата — карткою через monobank, без балансу).
                     'plus_until' => $user->plus_until?->toIso8601String(),
                     'created_at' => $user->created_at,

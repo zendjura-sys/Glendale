@@ -58,6 +58,7 @@ class AccountPresenter
             'profanity_mask' => $user->pref('hide_profanity') ? app(ContentFilter::class)->clientPattern() : null,
             // «Показувати, що я слухаю»: одне налаштування для сайту й застосунку.
             'show_listening' => $user->showsListening(),
+            'morning_digest' => $user->wantsDigest(),
         ];
     }
 }

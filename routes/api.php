@@ -50,6 +50,7 @@ use App\Http\Controllers\SavedController;
 use App\Http\Controllers\SeasonController;
 use App\Http\Controllers\ServerController;
 use App\Http\Controllers\Settings\AppearanceController;
+use App\Http\Controllers\Settings\DigestController;
 use App\Http\Controllers\Settings\ListeningController;
 use App\Http\Controllers\Settings\NavigationController;
 use App\Http\Controllers\Settings\ProfileController as SettingsProfileController;
@@ -367,6 +368,7 @@ Route::prefix('v1')->group(function () {
             Route::delete('settings/stream', [StreamController::class, 'destroy']);
             Route::post('settings/stream/live', [StreamController::class, 'live'])->middleware('throttle:20,1');
             // «Показувати, що я слухаю» — те саме налаштування, що й на сайті.
+            Route::patch('settings/digest', [DigestController::class, 'update'])->middleware('throttle:30,1');
             Route::patch('settings/listening', [ListeningController::class, 'update'])->middleware('throttle:30,1');
 
             // Збережене: пости, фільми, ігри й сервери.

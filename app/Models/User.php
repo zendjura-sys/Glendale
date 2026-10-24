@@ -411,6 +411,12 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
         return $this->pref('show_listening', true) !== false;
     }
 
+    /** Ранковий дайджест (одне сповіщення о 9:00): увімкнено, доки людина не вимкне. */
+    public function wantsDigest(): bool
+    {
+        return $this->pref('morning_digest', true) !== false;
+    }
+
     public function palette(): string
     {
         if (! app(Plugins::class)->on('palettes')) {
