@@ -60,6 +60,9 @@ class SiteSettings
         'steam_api_key' => null,
         'deepl_key' => null,
         // Запасний перекладач (коли ліміт DeepL вичерпано): адреса власного LibreTranslate і ключ (необов’язковий).
+        'translate_deepl' => true,
+        'translate_azure' => true,
+        'translate_libre' => true,
         'azure_translator_key' => null,
         'azure_translator_region' => null,
         'libretranslate_url' => null,

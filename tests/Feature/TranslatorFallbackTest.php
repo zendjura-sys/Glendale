@@ -13,6 +13,7 @@ use App\Support\Settings\SiteSettings;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Sleep;
 use Tests\TestCase;
 
 /**
@@ -235,5 +236,54 @@ class TranslatorFallbackTest extends TestCase
         $this->assertSame('pt-pt', $azure->target('pt-PT'));
         $this->assertSame('nb', $azure->target('no'));
         $this->assertSame('kk', $azure->target('kk'));
+    }
+
+    public function test_admin_switch_turns_engine_off(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $this->azure();
+        $this->libre();
+
+        $this->actingAs($admin)->put('/admin/languages/settings', ['translate_azure' => false])->assertRedirect();
+        $this->assertFalse(app(SiteSettings::class)->get('translate_azure'));
+
+        $this->actingAs(User::factory()->create())->postJson('/translate', ['type' => 'post', 'id' => $this->makePost('Hello world')->id])
+            ->assertOk()->assertJsonPath('translation', 'LT: Hello world');
+        Http::assertNotSent(fn (Request $r) => str_contains($r->url(), 'microsofttranslator.com'));
+        $this->actingAs($admin)->get('/admin/languages')->assertInertia(fn ($page) => $page
+            ->where('enabled.azure', false)->where('enabled.deepl', true)->where('active', 'libretranslate'));
+
+        // Усі вимкнено — кнопки «Перекласти» немає.
+        $this->actingAs($admin)->put('/admin/languages/settings', ['translate_libre' => false])->assertRedirect();
+        $this->actingAs(User::factory()->create())->get('/feed')->assertInertia(fn ($page) => $page->where('site.translate', false));
+        $this->actingAs(User::factory()->create())->put('/admin/languages/settings', ['translate_libre' => true])->assertForbidden();
+    }
+
+    public function test_azure_waits_and_retries_on_rate_limit(): void
+    {
+        Sleep::fake();
+        app(SiteSettings::class)->putSecret('azure_translator_key', str_repeat('a1', 20));
+        Http::fake([
+            'api.cognitive.microsofttranslator.com/translate*' => Http::sequence()
+                ->push(['error' => ['code' => 429001]], 429, ['Retry-After' => '3'])
+                ->push([['translations' => [['text' => 'Hallo', 'to' => 'de']]]]),
+        ]);
+
+        $this->assertSame(['Hallo'], app(AzureTranslator::class)->interface(['Привіт'], 'de'));
+        Sleep::assertSleptTimes(1);
+    }
+
+    public function test_stopped_translation_explains_each_engine(): void
+    {
+        app(SiteSettings::class)->put(['translate_deepl' => false]);
+        $this->azure(401);
+        $this->libre(up: false);
+        app(SiteSettings::class)->put(['libretranslate_url' => null]);
+
+        $result = app(CatalogTranslator::class)->run('de');
+
+        $this->assertSame(0, $result['translated']);
+        $this->assertStringContainsString('DeepL — вимкнено', (string) $result['error']);
+        $this->assertStringContainsString('Azure — ключ відхилено', (string) $result['error']);
     }
 }

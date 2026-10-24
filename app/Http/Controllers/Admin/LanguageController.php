@@ -167,8 +167,11 @@ class LanguageController extends Controller
         $data = $request->validate([
             'default_locale' => ['sometimes', 'string', Rule::in($this->locales->enabled())],
             'content_translation' => ['sometimes', 'boolean'],
+            ...array_fill_keys(array_values(Translator::SWITCHES), ['sometimes', 'boolean']),
         ]);
         $this->settings->put(array_map(fn ($v) => is_string($v) ? $v : (bool) $v, $data));
+        // Журнал адмінки: що перемкнули.
+        Log::info('admin: languages settings', ['changes' => $data, 'by' => $request->user()?->id]);
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Налаштування мов збережено.']);
 
         return back();

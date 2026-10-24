@@ -32,11 +32,14 @@ type Language = {
     };
 };
 
+type Engine = 'deepl' | 'azure' | 'libretranslate';
+
 type Props = {
     languages: Language[];
     default_locale: string;
     suggested: { code: string; native: string }[];
-    active: 'deepl' | 'azure' | 'libretranslate' | null;
+    active: Engine | null;
+    enabled: Record<Engine, boolean>;
     deepl: {
         configured: boolean;
         usage: { used: number; limit: number } | null;
@@ -68,6 +71,7 @@ export default function AdminLanguages({
     default_locale,
     suggested,
     active,
+    enabled,
     deepl,
     azure,
     libretranslate,
@@ -164,6 +168,7 @@ export default function AdminLanguages({
 
             <EnginesCard
                 active={active}
+                enabled={enabled}
                 deepl={deepl}
                 azure={azure}
                 libretranslate={libretranslate}
@@ -172,7 +177,7 @@ export default function AdminLanguages({
             {!active && (
                 <p className="mb-6 rounded-2xl bg-amber-500/10 p-4 text-sm text-amber-100">
                     {tr(
-                        'Щоб перекладати автоматично, додайте ключ DeepL або підключіть LibreTranslate в Інтеграціях. Без них переклади можна вписати вручну.',
+                        'Щоб перекладати автоматично, додайте ключ DeepL чи Azure або підключіть LibreTranslate в Інтеграціях і увімкніть їх тут. Без них переклади можна вписати вручну.',
                     )}{' '}
                     <Link
                         href="/admin/integrations"
@@ -439,10 +444,11 @@ export default function AdminLanguages({
  */
 function EnginesCard({
     active,
+    enabled,
     deepl,
     azure,
     libretranslate,
-}: Pick<Props, 'active' | 'deepl' | 'azure' | 'libretranslate'>) {
+}: Pick<Props, 'active' | 'enabled' | 'deepl' | 'azure' | 'libretranslate'>) {
     const azureUsed = azure.exhausted
         ? 100
         : pct(azure.usage.used, azure.usage.limit);
@@ -459,6 +465,7 @@ function EnginesCard({
                     <h2 className="font-display text-base font-semibold text-white">
                         DeepL
                     </h2>
+                    <EngineSwitch engine="deepl" on={enabled.deepl} />
                     {active === 'deepl' && (
                         <span className="rounded-md bg-emerald-500/15 px-2 py-0.5 text-xs text-emerald-200">
                             {tr('Перекладає зараз')}
@@ -497,9 +504,11 @@ function EnginesCard({
                     {!deepl.configured
                         ? tr('Ключ не додано')
                         : deepl.exhausted
-                          ? azure.configured && !azure.exhausted
+                          ? enabled.azure &&
+                            azure.configured &&
+                            !azure.exhausted
                               ? tr('Вичерпано — працює Azure Translator')
-                              : libretranslate.up
+                              : enabled.libretranslate && libretranslate.up
                                 ? tr('Вичерпано — працює LibreTranslate')
                                 : tr(
                                       'Вичерпано до нового місяця, LibreTranslate недоступний',
@@ -517,6 +526,7 @@ function EnginesCard({
                     <h2 className="font-display text-base font-semibold text-white">
                         Azure Translator
                     </h2>
+                    <EngineSwitch engine="azure" on={enabled.azure} />
                     {active === 'azure' && (
                         <span className="rounded-md bg-emerald-500/15 px-2 py-0.5 text-xs text-emerald-200">
                             {tr('Перекладає зараз')}
@@ -578,6 +588,10 @@ function EnginesCard({
                     <h2 className="font-display text-base font-semibold text-white">
                         LibreTranslate
                     </h2>
+                    <EngineSwitch
+                        engine="libretranslate"
+                        on={enabled.libretranslate}
+                    />
                     {active === 'libretranslate' && (
                         <span className="rounded-md bg-emerald-500/15 px-2 py-0.5 text-xs text-emerald-200">
                             {tr('Перекладає зараз')}
@@ -624,5 +638,44 @@ function EnginesCard({
                 </p>
             </div>
         </section>
+    );
+}
+
+const SWITCH_SETTING: Record<Engine, string> = {
+    deepl: 'translate_deepl',
+    azure: 'translate_azure',
+    libretranslate: 'translate_libre',
+};
+
+/** Ручний вимикач перекладача. Вичерпаний ліміт і так вимикає перекладач сам — до нового місяця. */
+function EngineSwitch({ engine, on }: { engine: Engine; on: boolean }) {
+    return (
+        <button
+            type="button"
+            role="switch"
+            aria-checked={on}
+            aria-label={
+                on ? tr('Вимкнути перекладач') : tr('Увімкнути перекладач')
+            }
+            title={on ? tr('Вимкнути перекладач') : tr('Увімкнути перекладач')}
+            onClick={() =>
+                router.put(
+                    '/admin/languages/settings',
+                    { [SWITCH_SETTING[engine]]: !on },
+                    { preserveScroll: true },
+                )
+            }
+            className={cn(
+                'relative inline-flex h-6 w-10 shrink-0 items-center rounded-full transition-colors',
+                on ? 'bg-primary' : 'bg-white/15',
+            )}
+        >
+            <span
+                className={cn(
+                    'inline-block size-5 rounded-full bg-white shadow transition-transform motion-reduce:transition-none',
+                    on ? 'translate-x-[18px]' : 'translate-x-0.5',
+                )}
+            />
+        </button>
     );
 }

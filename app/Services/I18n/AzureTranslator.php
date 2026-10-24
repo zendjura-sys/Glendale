@@ -7,6 +7,7 @@ use App\Support\Settings\SiteSettings;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Sleep;
 
 /**
  * Microsoft Azure Translator — хмарний перекладач між DeepL і LibreTranslate: не навантажує сервер,
@@ -31,6 +32,12 @@ class AzureTranslator
 
     /** Лічильник символів за місяць (+ рік-місяць). Azure не віддає витрату за ключем, тож рахуємо самі. */
     public const USAGE = 'azure_translator.chars.';
+
+    /** Скільки разів повторити запит після 429 (забагато символів за хвилину на F0). */
+    public const RETRIES = 4;
+
+    /** Чому останній запит не вдався — для повідомлення в Адмінці → Мови. */
+    public ?string $lastError = null;
 
     public function __construct(private readonly SiteSettings $settings) {}
 
@@ -151,7 +158,7 @@ class AzureTranslator
     {
         $out = [];
         foreach ($this->chunks(array_map(fn (string $t) => $this->protect($t), $texts)) as $chunk) {
-            $rows = $this->translate($chunk, $target, 'uk', true);
+            $rows = $this->translate($chunk, $target, 'uk', true, patient: true);
             if ($rows === null) {
                 return null;
             }
@@ -193,27 +200,50 @@ class AzureTranslator
      * @param  list<string>  $texts
      * @return list<array{text: string, source: string|null}>|null
      */
-    private function translate(array $texts, string $target, ?string $source = null, bool $html = false): ?array
+    private function translate(array $texts, string $target, ?string $source = null, bool $html = false, bool $patient = false): ?array
     {
+        $this->lastError = null;
         $key = $this->key();
         if ($key === null || $texts === []) {
             return null;
         }
         $query = array_filter(['api-version' => '3.0', 'to' => $target, 'from' => $source, 'textType' => $html ? 'html' : null]);
         $headers = array_filter(['Ocp-Apim-Subscription-Key' => $key, 'Ocp-Apim-Subscription-Region' => $this->region()]);
-        try {
-            $response = Http::timeout(60)->connectTimeout(5)->acceptJson()->withHeaders($headers)
-                ->asJson()->post(self::ENDPOINT.'/translate?'.http_build_query($query), array_map(fn (string $t) => ['Text' => $t], $texts));
-        } catch (ConnectionException) {
-            return null;
+        // Автопереклад мови шле багато запитів поспіль: на 429 чекаємо (Retry-After, до 30 с) і пробуємо ще.
+        for ($attempt = 0; ; $attempt++) {
+            try {
+                $response = Http::timeout(60)->connectTimeout(5)->acceptJson()->withHeaders($headers)
+                    ->asJson()->post(self::ENDPOINT.'/translate?'.http_build_query($query), array_map(fn (string $t) => ['Text' => $t], $texts));
+            } catch (ConnectionException) {
+                $this->lastError = 'не відповів';
+
+                return null;
+            }
+            if ($response->status() !== 429 || ! $patient || $attempt >= self::RETRIES) {
+                break;
+            }
+            Sleep::for(min(30, max(2, (int) $response->header('Retry-After') ?: 10 * ($attempt + 1))))->seconds();
         }
         if ($response->status() === 403) {
             $this->markExhausted();
+            $this->lastError = 'вичерпано місячний ліміт';
 
             return null;
         }
-        $rows = $response->successful() ? $response->json() : null;
+        if (! $response->successful()) {
+            $this->lastError = match ($response->status()) {
+                401 => 'ключ відхилено',
+                429 => 'забагато запитів — спробуйте за кілька хвилин',
+                400 => 'не знає цієї мови',
+                default => 'помилка '.$response->status(),
+            };
+
+            return null;
+        }
+        $rows = $response->json();
         if (! is_array($rows) || count($rows) !== count($texts)) {
+            $this->lastError = 'незрозуміла відповідь';
+
             return null;
         }
         $this->record(array_sum(array_map('mb_strlen', $texts)));

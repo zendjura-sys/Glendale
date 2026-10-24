@@ -2,6 +2,8 @@
 
 namespace App\Services\I18n;
 
+use App\Support\Settings\SiteSettings;
+
 /**
  * Вибір перекладача: DeepL, поки є ключ і не вичерпано місячний ліміт символів
  * (Free — 500 000 символів на місяць, рахуються й пробіли та розділові знаки), далі — Azure Translator
@@ -16,26 +18,75 @@ class Translator
 
     public const LIBRE = 'libretranslate';
 
-    public function __construct(private readonly DeepL $deepl, private readonly AzureTranslator $azure, private readonly LibreTranslate $libre) {}
+    /** Перемикачі в Адмінці → Мови: вимкнений перекладач пропускаємо (вичерпаний ліміт вимикає сам, до нового місяця). */
+    public const SWITCHES = [self::DEEPL => 'translate_deepl', self::AZURE => 'translate_azure', self::LIBRE => 'translate_libre'];
 
-    /** DeepL можна використовувати: ключ є й позначки «вичерпано» немає. */
+    /** Чому не переклав кожен перекладач в останній спробі (для повідомлення адміну). */
+    /** @var array<string, string> */
+    private array $failures = [];
+
+    public function __construct(private readonly DeepL $deepl, private readonly AzureTranslator $azure, private readonly LibreTranslate $libre, private readonly SiteSettings $settings) {}
+
+    /** Чи увімкнено перекладач перемикачем адміна. */
+    public function enabled(string $engine): bool
+    {
+        return $this->settings->get(self::SWITCHES[$engine] ?? '', true) !== false;
+    }
+
+    /** DeepL можна використовувати: увімкнено, ключ є й позначки «вичерпано» немає. */
     public function deeplReady(bool $check = false): bool
     {
-        return $this->deepl->configured() && ! $this->deepl->exhausted($check);
+        return $this->enabled(self::DEEPL) && $this->deepl->configured() && ! $this->deepl->exhausted($check);
+    }
+
+    private function azureReady(): bool
+    {
+        return $this->enabled(self::AZURE) && $this->azure->available();
+    }
+
+    private function libreReady(): bool
+    {
+        return $this->enabled(self::LIBRE) && $this->libre->available();
     }
 
     /** Чи є хоч один робочий перекладач (кнопка «Перекласти», автопереклад мов). */
     public function available(): bool
     {
-        return $this->deeplReady() || $this->azure->available() || $this->libre->available();
+        return $this->deeplReady() || $this->azureReady() || $this->libreReady();
     }
 
     /** Чи вміє хоч один перекладач цю мову. */
     public function supports(string $locale): bool
     {
         return ($this->deeplReady() && $this->deepl->target($locale) !== null)
-            || ($this->azure->available() && $this->azure->target($locale) !== null)
-            || ($this->libre->available() && $this->libre->target($locale) !== null);
+            || ($this->azureReady() && $this->azure->target($locale) !== null)
+            || ($this->libreReady() && $this->libre->target($locale) !== null);
+    }
+
+    /** Чому останній переклад не вдався: «DeepL — вимкнено; Azure — …; LibreTranslate — …». */
+    public function lastError(): string
+    {
+        $names = [self::DEEPL => 'DeepL', self::AZURE => 'Azure', self::LIBRE => 'LibreTranslate'];
+        $parts = [];
+        foreach ($this->failures as $engine => $reason) {
+            $parts[] = $names[$engine].' — '.$reason;
+        }
+
+        return $parts === [] ? 'жоден перекладач не відповів' : implode('; ', $parts);
+    }
+
+    /** Причина, з якої перекладач пропущено (null — можна пробувати). */
+    private function skip(string $engine, bool $check = false): ?string
+    {
+        if (! $this->enabled($engine)) {
+            return 'вимкнено';
+        }
+
+        return match ($engine) {
+            self::DEEPL => ! $this->deepl->configured() ? 'немає ключа' : ($this->deepl->exhausted($check) ? 'вичерпано ліміт' : null),
+            self::AZURE => ! $this->azure->configured() ? 'немає ключа' : ($this->azure->exhausted() ? 'вичерпано ліміт' : null),
+            default => ! $this->libre->configured() ? 'не налаштовано' : (! $this->libre->available() ? 'не відповідає' : null),
+        };
     }
 
     /**
@@ -45,22 +96,15 @@ class Translator
      */
     public function content(string $text, string $locale): ?array
     {
-        if ($this->deeplReady() && ($target = $this->deepl->target($locale)) !== null) {
-            $result = $this->deepl->content($text, $target);
+        $this->failures = [];
+        foreach ([self::DEEPL, self::AZURE, self::LIBRE] as $engine) {
+            $result = $this->attempt($engine, $locale, false, fn (string $target) => match ($engine) {
+                self::DEEPL => $this->deepl->content($text, $target),
+                self::AZURE => $this->azure->content($text, $target),
+                default => $this->libre->content($text, $target),
+            });
             if ($result !== null) {
-                return [...$result, 'engine' => self::DEEPL];
-            }
-        }
-        if ($this->azure->available() && ($target = $this->azure->target($locale)) !== null) {
-            $result = $this->azure->content($text, $target);
-            if ($result !== null) {
-                return [...$result, 'engine' => self::AZURE];
-            }
-        }
-        if ($this->libre->available() && ($target = $this->libre->target($locale)) !== null) {
-            $result = $this->libre->content($text, $target);
-            if ($result !== null) {
-                return [...$result, 'engine' => self::LIBRE];
+                return [...$result, 'engine' => $engine];
             }
         }
 
@@ -75,23 +119,16 @@ class Translator
      */
     public function interface(array $texts, string $locale): ?array
     {
-        // Автопереклад мови — сотні запитів, тож перед ним дивимося свіжий лічильник DeepL.
-        if ($this->deeplReady(true) && ($target = $this->deepl->target($locale)) !== null) {
-            $result = $this->deepl->interface($texts, $target);
+        $this->failures = [];
+        foreach ([self::DEEPL, self::AZURE, self::LIBRE] as $engine) {
+            // Автопереклад мови — сотні запитів, тож перед DeepL дивимося свіжий лічильник.
+            $result = $this->attempt($engine, $locale, true, fn (string $target) => match ($engine) {
+                self::DEEPL => $this->deepl->interface($texts, $target),
+                self::AZURE => $this->azure->interface($texts, $target),
+                default => $this->libre->interface($texts, $target),
+            });
             if ($result !== null) {
-                return ['texts' => $result, 'engine' => self::DEEPL];
-            }
-        }
-        if ($this->azure->available() && ($target = $this->azure->target($locale)) !== null) {
-            $result = $this->azure->interface($texts, $target);
-            if ($result !== null) {
-                return ['texts' => $result, 'engine' => self::AZURE];
-            }
-        }
-        if ($this->libre->available() && ($target = $this->libre->target($locale)) !== null) {
-            $result = $this->libre->interface($texts, $target);
-            if ($result !== null) {
-                return ['texts' => $result, 'engine' => self::LIBRE];
+                return ['texts' => $result, 'engine' => $engine];
             }
         }
 
@@ -99,19 +136,57 @@ class Translator
     }
 
     /**
+     * Спроба одним перекладачем; невдача — причина в $failures.
+     *
+     * @template T
+     *
+     * @param  callable(string): (T|null)  $run
+     * @return T|null
+     */
+    private function attempt(string $engine, string $locale, bool $check, callable $run): mixed
+    {
+        if (($reason = $this->skip($engine, $check)) !== null) {
+            $this->failures[$engine] = $reason;
+
+            return null;
+        }
+        $target = match ($engine) {
+            self::DEEPL => $this->deepl->target($locale),
+            self::AZURE => $this->azure->target($locale),
+            default => $this->libre->target($locale),
+        };
+        if ($target === null) {
+            $this->failures[$engine] = 'не знає цієї мови';
+
+            return null;
+        }
+        $result = $run($target);
+        if ($result === null) {
+            $this->failures[$engine] = match ($engine) {
+                self::AZURE => $this->azure->lastError ?? 'не відповів',
+                self::DEEPL => $this->deepl->exhausted() ? 'вичерпано ліміт' : 'не відповів',
+                default => 'не відповів',
+            };
+        }
+
+        return $result;
+    }
+
+    /**
      * Стан для Адмінки → Мови / Інтеграції.
      *
-     * @return array{active: string|null, deepl: array{configured: bool, usage: array{used: int, limit: int}|null, exhausted: bool, exhausted_at: string|null}, azure: array{configured: bool, region: string|null, exhausted: bool, usage: array{used: int, limit: int, resets_at: string}}, libretranslate: array{configured: bool, url: string|null, up: bool, languages: list<string>}}
+     * @return array{active: string|null, enabled: array<string, bool>, deepl: array{configured: bool, usage: array{used: int, limit: int}|null, exhausted: bool, exhausted_at: string|null}, azure: array{configured: bool, region: string|null, exhausted: bool, usage: array{used: int, limit: int, resets_at: string}}, libretranslate: array{configured: bool, url: string|null, up: bool, languages: list<string>}}
      */
     public function status(): array
     {
         $usage = $this->deepl->quota();
         $deeplReady = $this->deeplReady();
-        $azureReady = $this->azure->available();
+        $azureReady = $this->azureReady();
         $libreUp = $this->libre->available();
 
         return [
-            'active' => $deeplReady ? self::DEEPL : ($azureReady ? self::AZURE : ($libreUp ? self::LIBRE : null)),
+            'active' => $deeplReady ? self::DEEPL : ($azureReady ? self::AZURE : ($libreUp && $this->enabled(self::LIBRE) ? self::LIBRE : null)),
+            'enabled' => array_map(fn (string $engine) => $this->enabled($engine), array_combine(array_keys(self::SWITCHES), array_keys(self::SWITCHES))),
             'deepl' => [
                 'configured' => $this->deepl->configured(),
                 'usage' => $usage,

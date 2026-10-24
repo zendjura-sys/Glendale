@@ -56,7 +56,7 @@ class CatalogTranslator
     public function run(string $locale, bool $all = false): array
     {
         if (! $this->translator->available()) {
-            return $this->finish($locale, 0, 0, 'Додайте ключ DeepL або підключіть LibreTranslate в Адмінці → Інтеграції.');
+            return $this->finish($locale, 0, 0, 'Немає робочого перекладача. Додайте ключ DeepL чи Azure в Адмінці → Інтеграції або увімкніть перекладач в Адмінці → Мови.');
         }
         if (! $this->translator->supports($locale)) {
             return $this->finish($locale, 0, 0, 'Перекладач не знає цієї мови — заповніть переклади вручну.');
@@ -85,7 +85,7 @@ class CatalogTranslator
             if ($translated === null) {
                 Log::warning('i18n: translate failed', ['locale' => $locale, 'done' => $done, 'total' => $total]);
 
-                return $this->finish($locale, $done, $total, 'Ні DeepL (не відповів або вичерпано ліміт символів), ні LibreTranslate не переклали. Решту можна докласти пізніше.');
+                return $this->finish($locale, $done, $total, 'Переклад зупинився: '.$this->translator->lastError().'. Решту можна докласти пізніше.');
             }
             $result = $translated['texts'];
             $engines[$translated['engine']] = ($engines[$translated['engine']] ?? 0) + count($chunk);
