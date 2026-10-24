@@ -40,6 +40,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Auth\Events\Failed;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Logout;
+use Illuminate\Auth\Events\Verified;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Contracts\Translation\Loader;
 use Illuminate\Database\Eloquent\Model;
@@ -164,6 +165,12 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(Failed::class, function (Failed $event) {
             if ($event->user instanceof User) {
                 app(AccountSecurity::class)->logLogin($event->user, 'password', false);
+            }
+        });
+        // Запрошений підтвердив пошту — запрошувач бачить прогрес до нагороди.
+        Event::listen(Verified::class, function (Verified $event) {
+            if ($event->user instanceof User) {
+                app(Referrals::class)->activated($event->user);
             }
         });
         Event::listen(Logout::class, function () {

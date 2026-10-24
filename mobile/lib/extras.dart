@@ -1141,6 +1141,8 @@ class _InviteScreenState extends State<InviteScreen> with _SitePage {
     final ladder = maps(d['ladder']);
     final people = maps(d['people']);
     final rewards = _referralRewards();
+    final next = d['next'] is Map ? mapOf(d['next']) : null;
+    final active = intOf(d['active']);
     return ScreenScroll(
       onRefresh: load,
       children: [
@@ -1175,7 +1177,29 @@ class _InviteScreenState extends State<InviteScreen> with _SitePage {
         Glass(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             CardTitle(tr('Нагороди'), icon: LucideIcons.gift),
-            const SizedBox(height: 8),
+            if (next != null) ...[
+              Row(children: [
+                Expanded(child: Text(tr('До нагороди «{reward}»', {'reward': rewards[intOf(next['target'])] ?? ''}), style: body(13.5, color: soft))),
+                Text('$active/${next['target']}', style: body(13.5, weight: FontWeight.w700)),
+              ]),
+              const SizedBox(height: 8),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: LinearProgressIndicator(
+                  value: ((active - intOf(next['from'])) / (intOf(next['target']) - intOf(next['from'])).clamp(1, 1000)).clamp(0.04, 1.0).toDouble(),
+                  minHeight: 6,
+                  color: primary,
+                  backgroundColor: fg.withValues(alpha: 0.06),
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                tr('Ще {n} {friends} — і нагорода ваша.', {'n': next['left'], 'friends': plural(intOf(next['left']), 'активний друг', 'активні друзі', 'активних друзів')}),
+                style: body(12, color: muted),
+              ),
+              const SizedBox(height: 10),
+            ] else
+              Padding(padding: const EdgeInsets.only(bottom: 8), child: Text(tr('Усі нагороди отримано — дякуємо, що кличете друзів!'), style: body(13, color: green))),
             for (final step in ladder)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 6),
@@ -1191,14 +1215,36 @@ class _InviteScreenState extends State<InviteScreen> with _SitePage {
         if (people.isNotEmpty) ...[
           const SizedBox(height: 12),
           Glass(
-            child: Column(children: [
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              CardTitle(tr('Ви запросили'), icon: LucideIcons.users),
+              Text(tr('Смужки — перші кроки друга: пошта, аватар, перший допис і «Граю в…».'), style: body(12, color: muted)),
+              const SizedBox(height: 6),
               for (final p in people)
-                UserTile(
-                  user: p,
-                  size: 40,
-                  onTap: () => context.push('/u/${p['username']}'),
-                  trailing: Icon(p['active'] == true ? LucideIcons.circleCheck : LucideIcons.clock, size: 18, color: p['active'] == true ? green : faint),
-                ),
+                Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                  UserTile(
+                    user: p,
+                    size: 40,
+                    onTap: () => context.push('/u/${p['username']}'),
+                    trailing: Icon(p['active'] == true ? LucideIcons.circleCheck : LucideIcons.clock, size: 18, color: p['active'] == true ? green : faint),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 52, bottom: 8),
+                    child: Row(children: [
+                      for (final key in const ['verified', 'avatar', 'post', 'played']) ...[
+                        Expanded(
+                          child: Container(
+                            height: 4,
+                            decoration: BoxDecoration(
+                              color: mapOf(p['steps'])[key] == true ? primary : fg.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                          ),
+                        ),
+                        if (key != 'played') const SizedBox(width: 4),
+                      ],
+                    ]),
+                  ),
+                ]),
             ]),
           ),
         ],

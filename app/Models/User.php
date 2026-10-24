@@ -203,6 +203,16 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
     }
 
     /**
+     * «Граю в…»: ігри й сервери, які людина позначила.
+     *
+     * @return HasMany<PlayedPlace, $this>
+     */
+    public function playedPlaces(): HasMany
+    {
+        return $this->hasMany(PlayedPlace::class);
+    }
+
+    /**
      * @return MorphMany<Post, $this>
      */
     public function wallPosts(): MorphMany
