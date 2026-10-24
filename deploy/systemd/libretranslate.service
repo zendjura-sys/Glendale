@@ -1,6 +1,6 @@
 # Запасний перекладач GameCon (коли вичерпано ліміт DeepL). Ставить deploy/libretranslate.sh
 # (INSTALL_LIBRETRANSLATE=1). Слухає лише 127.0.0.1 — ззовні недоступний, ключ не потрібен.
-# Інші мови — додайте коди в --load-only і перезапустіть: sudo systemctl restart libretranslate
+# Мови — у /opt/libretranslate/languages.env (LT_LOAD_ONLY), їх пише deploy/libretranslate.sh.
 [Unit]
 Description=LibreTranslate (GameCon fallback translator)
 After=network.target
@@ -11,11 +11,13 @@ Group=libretranslate
 WorkingDirectory=/opt/libretranslate
 Environment=HOME=/opt/libretranslate
 Environment=ARGOS_DEVICE_TYPE=cpu
-ExecStart=/opt/libretranslate/venv/bin/libretranslate --host 127.0.0.1 --port 5000 --load-only uk,en,pl,de --threads 2 --disable-web-ui
+Environment=LT_LOAD_ONLY=uk,en,pl,de
+EnvironmentFile=-/opt/libretranslate/languages.env
+ExecStart=/opt/libretranslate/venv/bin/libretranslate --host 127.0.0.1 --port 5000 --threads 2 --disable-web-ui
 Restart=always
 RestartSec=10
 # Моделі важкі: не даємо службі «з'їсти» всю пам'ять сервера.
-MemoryMax=4G
+MemoryMax=6G
 
 [Install]
 WantedBy=multi-user.target
