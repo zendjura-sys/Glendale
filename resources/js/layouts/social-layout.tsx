@@ -310,8 +310,9 @@ function Topbar() {
         'gc-icon-button relative hidden size-10 items-center justify-center rounded-xl transition sm:flex';
 
     return (
-        <header className="gc-bar fixed inset-x-0 top-0 z-40 pt-[env(safe-area-inset-top)] [view-transition-name:gc-topbar]">
-            <div className="mx-auto flex h-14 max-w-[1320px] items-center gap-2 px-3 sm:gap-4 sm:px-5">
+        <header className="pointer-events-none fixed inset-x-0 top-0 z-40 px-3 pt-[calc(env(safe-area-inset-top)+8px)] [view-transition-name:gc-topbar] sm:px-5">
+            {/* Шапка — плаваюча капсула з того самого матового скла, що й острів-меню знизу. */}
+            <div className="gc-island pointer-events-auto mx-auto flex h-14 max-w-[1320px] items-center gap-2 rounded-full pr-2 pl-3 sm:gap-4 sm:pl-5">
                 <Link href="/feed" className="shrink-0 lg:w-[220px]">
                     <Logo className="hidden sm:inline-flex" />
                     <LogoMark className="sm:hidden" />

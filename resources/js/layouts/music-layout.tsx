@@ -275,8 +275,9 @@ function PhoneHeader() {
     useEffect(() => setBack(lastSitePage()), []);
 
     return (
-        <header className="glass-matte glass-matte--bar am-site-controls sticky top-0 z-30 pt-[env(safe-area-inset-top)] lg:hidden">
-            <div className="flex h-14 items-center gap-1 px-2">
+        <header className="am-site-controls pointer-events-none sticky top-0 z-30 px-3 pt-[calc(env(safe-area-inset-top)+8px)] lg:hidden">
+            {/* Шапка «Музики» — плаваюча капсула, як острів і вкладки знизу. */}
+            <div className="glass-matte pointer-events-auto flex h-14 items-center gap-1 rounded-full px-2">
                 <Link
                     href={back}
                     className="am-body inline-flex min-h-11 items-center gap-0.5 rounded-[10px] pr-2 pl-1 font-medium text-[var(--am-accent)] active:opacity-70"

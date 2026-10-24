@@ -75,7 +75,25 @@ Widget _headerButton(IconData icon, String label, VoidCallback onTap, {int badge
   );
 }
 
-/// Шапка на всю ширину: матове скло, логотип, пошук і кнопки — як `Topbar` на сайті.
+/// Висота капсули шапки: разом із верхнім відступом займає ту саму смугу, що й колишня шапка.
+const headerCapsuleHeight = siteBarHeight - 4;
+
+/// Плаваюча капсула шапки — за формою як острів-меню знизу: відступи по краях, повне скруглення.
+class HeaderCapsule extends StatelessWidget {
+  const HeaderCapsule({required this.topInset, required this.child, super.key});
+  final double topInset;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.fromLTRB(12, topInset + 4, 12, 0),
+      child: MatteGlass(borderRadius: headerCapsuleHeight / 2, child: child),
+    );
+  }
+}
+
+/// Шапка-капсула: матове скло, логотип, пошук і кнопки — як `Topbar` на сайті.
 class TopBar extends StatelessWidget {
   const TopBar({required this.session, required this.player, required this.wide, required this.topInset, super.key});
   final Session session;
@@ -88,13 +106,13 @@ class TopBar extends StatelessWidget {
     final me = session.me;
     const iconButton = _headerButton;
 
-    // Шапка — те саме глибоке матове скло, що й нижні панелі, лише без заокруглень.
-    return MatteGlass(
-      borderRadius: 0,
+    // Шапка — плаваюча капсула з того самого глибокого матового скла, що й острів-меню знизу.
+    return HeaderCapsule(
+      topInset: topInset,
       child: Padding(
-        padding: EdgeInsets.fromLTRB(wide ? 20 : 12, topInset, wide ? 16 : 8, 0),
+        padding: EdgeInsets.fromLTRB(wide ? 18 : 8, 0, wide ? 10 : 6, 0),
         child: SizedBox(
-          height: siteBarHeight,
+          height: headerCapsuleHeight,
           child: Row(
             children: [
               GestureDetector(
@@ -144,12 +162,12 @@ class MusicTopBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final me = session.me ?? const {};
-    return MatteGlass(
-      borderRadius: 0,
+    return HeaderCapsule(
+      topInset: topInset,
       child: Padding(
-        padding: EdgeInsets.fromLTRB(4, topInset, 8, 0),
+        padding: EdgeInsets.fromLTRB(4, 0, 6, 0),
         child: SizedBox(
-          height: siteBarHeight,
+          height: headerCapsuleHeight,
           child: Row(
             children: [
               TextButton.icon(
@@ -212,9 +230,9 @@ class _SearchField extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: field,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(20),
       child: InkWell(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(20),
         onTap: () => context.push('/search'),
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -222,7 +240,8 @@ class _SearchField extends StatelessWidget {
             children: [
               Icon(LucideIcons.search, color: muted, size: 17),
               SizedBox(width: 8),
-              Expanded(child: Text(tr('Пошук людей і спільнот...'), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(13.5, color: muted))),
+              // Коротка підказка — уміщується цілою навіть на вузькому телефоні.
+              Expanded(child: Text(tr('Пошук'), maxLines: 1, style: body(13.5, color: muted))),
             ],
           ),
         ),

@@ -164,11 +164,12 @@ export function PersonRow({
     action?: React.ReactNode;
 }) {
     return (
-        <div className="flex items-center gap-3 rounded-2xl px-2 py-2 transition hover:bg-white/[0.035]">
-            <Link href={`/${person.username}`}>
+        // Кнопка дії переноситься під ім'я, коли колонка вузька, — ім'я й підпис лишаються в один рядок.
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-2xl px-2 py-2 transition hover:bg-white/[0.035]">
+            <Link href={`/${person.username}`} className="shrink-0">
                 <UserAvatar user={person} size="md" />
             </Link>
-            <div className="min-w-0 flex-1">
+            <div className="min-w-[9rem] flex-1">
                 <Link
                     href={`/${person.username}`}
                     className="flex flex-wrap items-center gap-1 text-sm font-semibold break-words text-white hover:underline"
@@ -199,7 +200,7 @@ export function PersonRow({
                     </div>
                 )}
             </div>
-            {action}
+            {action && <div className="ml-auto shrink-0">{action}</div>}
         </div>
     );
 }
