@@ -1,3 +1,4 @@
+import { cn } from '@/lib/utils';
 import { Link, router } from '@inertiajs/react';
 import { MapPin } from 'lucide-react';
 import { useState } from 'react';
@@ -7,7 +8,7 @@ import { FriendButton } from './friend-button';
 import { PlayingBadge } from './playing';
 import { UserAvatar } from './user-avatar';
 import { VerifiedBadge } from './verified-badge';
-import { PlusBadge, plusNameStyle } from './plus';
+import { nameDisplayProps, PlusBadge } from './plus';
 import { tr } from '@/lib/i18n';
 
 const listLabel: Record<FriendList, string> = {
@@ -28,8 +29,11 @@ export function PersonCard({ person }: { person: Person }) {
                 className="relative mt-3 flex max-w-full flex-wrap items-center justify-center gap-1 text-[15px] font-semibold break-words text-white hover:underline"
             >
                 <span
-                    className="break-words"
-                    style={plusNameStyle(person.plus)}
+                    {...nameDisplayProps(person.plus)}
+                    className={cn(
+                        'break-words',
+                        nameDisplayProps(person.plus).className,
+                    )}
                 >
                     {person.alias || person.name}
                 </span>
@@ -175,8 +179,11 @@ export function PersonRow({
                     className="flex flex-wrap items-center gap-1 text-sm font-semibold break-words text-white hover:underline"
                 >
                     <span
-                        className="break-words"
-                        style={plusNameStyle(person.plus)}
+                        {...nameDisplayProps(person.plus)}
+                        className={cn(
+                            'break-words',
+                            nameDisplayProps(person.plus).className,
+                        )}
                     >
                         {person.name}
                     </span>

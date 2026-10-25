@@ -4,6 +4,7 @@ use App\Http\Controllers\AppealController;
 use App\Http\Controllers\Settings\AccountController;
 use App\Http\Controllers\Settings\AppearanceController;
 use App\Http\Controllers\Settings\DigestController;
+use App\Http\Controllers\Settings\GameThemeController;
 use App\Http\Controllers\Settings\ListeningController;
 use App\Http\Controllers\Settings\NavigationController;
 use App\Http\Controllers\Settings\ProfileController;
@@ -35,6 +36,8 @@ Route::middleware(['auth'])->group(function () {
     Route::post('settings/stream/live', [StreamController::class, 'live'])->middleware('throttle:20,1')->name('stream.live');
     Route::delete('settings/account/connections/{client}', [AccountController::class, 'disconnect'])->whereNumber('client')->name('account.connections.destroy');
     Route::patch('settings/digest', [DigestController::class, 'update'])->middleware('throttle:30,1')->name('digest.update');
+    Route::put('settings/game-theme', [GameThemeController::class, 'update'])->middleware('throttle:20,1')->name('game-theme.update');
+    Route::patch('settings/notify-sound', [GameThemeController::class, 'sound'])->middleware('throttle:30,1')->name('notify-sound.update');
     Route::patch('settings/listening', [ListeningController::class, 'update'])->middleware('throttle:30,1')->name('listening.update');
     Route::put('settings/account/profanity', [AccountController::class, 'profanity'])->name('account.profanity');
     Route::get('settings/account/export', [AccountController::class, 'export'])->middleware('throttle:3,60')->name('account.export');

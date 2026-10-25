@@ -10,7 +10,7 @@ import type { CommentItem } from '@/types';
 import { LikeButton } from './like-button';
 import { UserAvatar } from './user-avatar';
 import { VerifiedBadge } from './verified-badge';
-import { PlusBadge, plusNameStyle } from './plus';
+import { nameDisplayProps, PlusBadge } from './plus';
 import {
     CosmeticBadge,
     cosmeticNameStyle,
@@ -243,14 +243,12 @@ export function Comments({
                                         className="flex items-center gap-1 text-[13px] font-semibold text-white hover:underline"
                                     >
                                         <span
-                                            style={
-                                                plusNameStyle(
-                                                    comment.user.plus,
-                                                ) ??
+                                            {...nameDisplayProps(
+                                                comment.user.plus,
                                                 cosmeticNameStyle(
                                                     comment.user.cosmetics,
-                                                )
-                                            }
+                                                ),
+                                            )}
                                         >
                                             {comment.user.name}
                                         </span>

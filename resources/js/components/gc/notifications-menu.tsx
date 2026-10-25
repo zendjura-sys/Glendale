@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { api } from '@/lib/api';
+import { playNotifySound } from '@/lib/sounds';
 import { timeAgo } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import type { NotificationItem } from '@/types';
@@ -80,6 +81,14 @@ export function NotificationsMenu() {
     const [open, setOpen] = useState(false);
     const [items, setItems] = useState<NotificationItem[] | null>(null);
     const [unread, setUnread] = useState(counters?.notifications ?? 0);
+    // Звук, коли непрочитаних сповіщень побільшало (нове прийшло з наступною сторінкою).
+    const sound = usePage().props.auth.user?.notify_sound;
+    const seen = useRef(counters?.notifications ?? 0);
+    useEffect(() => {
+        const count = counters?.notifications ?? 0;
+        if (count > seen.current) playNotifySound(sound);
+        seen.current = count;
+    }, [counters?.notifications, sound]);
     const boxRef = useRef<HTMLDivElement>(null);
 
     useEffect(

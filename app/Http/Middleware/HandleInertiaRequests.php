@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Http\Controllers\Settings\GameThemeController;
 use App\Models\Track;
 use App\Models\User;
 use App\Services\Auth\DiscordOAuth;
@@ -127,6 +128,8 @@ class HandleInertiaRequests extends Middleware
                     // «Показувати, що я слухаю» (усі джерела музики; Spotify — ще й своїм перемикачем).
                     'show_listening' => $user->showsListening(),
                     'morning_digest' => $user->wantsDigest(),
+                    // Звук нових повідомлень і сповіщень (Налаштування → Оформлення).
+                    'notify_sound' => in_array($sound = $user->pref('notify_sound', 'soft'), GameThemeController::SOUNDS, true) ? $sound : 'soft',
                     // До коли діє GameCon+ (оплата — карткою через monobank, без балансу).
                     'plus_until' => $user->plus_until?->toIso8601String(),
                     'created_at' => $user->created_at,

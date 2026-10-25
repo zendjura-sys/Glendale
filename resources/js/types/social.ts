@@ -226,5 +226,5 @@ export type PlusMark = {
     name: string[] | null;
     frame: string[] | null;
     /** Анімація ніку: flow — перелив, shine — відблиск. */
-    fx?: 'flow' | 'shine' | null;
+    fx?: 'flow' | 'shine' | 'neon' | 'rainbow' | null;
 };

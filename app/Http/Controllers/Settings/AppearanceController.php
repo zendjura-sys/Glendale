@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Settings;
 use App\Http\Controllers\Controller;
 use App\Services\FriendshipService;
 use App\Support\Backgrounds;
+use App\Support\GameTheme;
 use App\Support\I18n\Locales;
 use App\Support\MutedWords;
 use App\Support\NetworkModes;
@@ -56,6 +57,7 @@ class AppearanceController extends Controller
             'notify' => NotifyPrefs::for($user),
             'muteWords' => MutedWords::phrases($user),
             'hideSpoilers' => (bool) $user->pref('hide_spoilers'),
+            'gameTheme' => ($game = GameTheme::game($user)) !== null ? ['game' => $game->toCard(), 'colors' => GameTheme::colors($user)] : null,
         ]);
     }
 

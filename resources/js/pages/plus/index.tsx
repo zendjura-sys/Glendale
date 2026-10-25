@@ -484,6 +484,8 @@ const NAME_FX = (): Record<string, string> => ({
     '': tr('Без анімації'),
     flow: tr('Перелив'),
     shine: tr('Відблиск'),
+    neon: tr('Неон'),
+    rainbow: tr('Веселка'),
 });
 
 const HEADER_FX = (): Record<string, string> => ({

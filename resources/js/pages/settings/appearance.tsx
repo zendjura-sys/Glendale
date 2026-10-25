@@ -15,6 +15,9 @@ import { type FormEvent, useEffect, useRef, useState } from 'react';
 import AppearanceController from '@/actions/App/Http/Controllers/Settings/AppearanceController';
 import { PlusBadge } from '@/components/gc/plus';
 import { DigestSwitch } from '@/components/settings/digest-switch';
+import { GameThemePicker } from '@/components/settings/game-theme-picker';
+import type { GameThemeValue } from '@/components/settings/game-theme-picker';
+import { NotifySoundPicker } from '@/components/settings/notify-sound-picker';
 import { UserAvatar } from '@/components/gc/user-avatar';
 import { ModeCard } from '@/components/modes/mode-card';
 import { countChanges, PendingBar } from '@/components/settings/pending-bar';
@@ -134,6 +137,7 @@ export default function Appearance({
     skin,
     theme,
     seasonal,
+    gameTheme,
 }: {
     palette: string;
     palettes: PaletteOption[];
@@ -156,6 +160,7 @@ export default function Appearance({
     skin: string;
     theme: ThemePref;
     seasonal: boolean;
+    gameTheme?: GameThemeValue;
 }) {
     const palettesOn = usePlugin('palettes');
     const quietOn = usePlugin('quiet_hours');
@@ -789,6 +794,16 @@ export default function Appearance({
                     <DigestSwitch />
                 </SettingsCard>
 
+                <SettingsCard
+                    list
+                    title={tr('Звук сповіщень')}
+                    description={tr(
+                        'Нові повідомлення й сповіщення, поки сайт відкритий.',
+                    )}
+                >
+                    <NotifySoundPicker />
+                </SettingsCard>
+
                 {notifyOn && (
                     <SettingsCard
                         list
@@ -1054,6 +1069,16 @@ export default function Appearance({
                             );
                         })}
                     </div>
+                </SettingsCard>
+
+                <SettingsCard
+                    list
+                    title={tr('Тема профілю за грою')}
+                    description={tr(
+                        'Шапка й акценти вашої сторінки — кольорами обкладинки улюбленої гри. Власні кольори GameCon+ мають перевагу.',
+                    )}
+                >
+                    <GameThemePicker value={gameTheme ?? null} />
                 </SettingsCard>
 
                 {orderOn && (

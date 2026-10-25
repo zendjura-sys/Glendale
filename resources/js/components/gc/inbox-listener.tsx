@@ -4,6 +4,7 @@ import { X } from 'lucide-react';
 import { toast } from 'sonner';
 import { useRealtime } from '@/hooks/use-realtime';
 import { inbox } from '@/lib/inbox';
+import { playNotifySound, unlockSoundOnGesture } from '@/lib/sounds';
 import type { ChatMessage, InboxEvent } from '@/types';
 import { UserAvatar } from './user-avatar';
 import { tr } from '@/lib/i18n';
@@ -67,10 +68,12 @@ function notify(message: ChatMessage) {
  * Персональний канал користувача: лічильник непрочитаних та тости про нові повідомлення.
  */
 export function InboxListener({ userId }: { userId: number }) {
-    const { counters } = usePage().props;
+    const { counters, auth } = usePage().props;
     const initial = counters?.messages ?? 0;
+    const sound = auth.user?.notify_sound;
 
     useEffect(() => inbox.setUnread(initial), [initial]);
+    useEffect(unlockSoundOnGesture, []);
 
     useRealtime(`App.Models.User.${userId}`, {
         'inbox.updated': (event: InboxEvent) => {
@@ -87,6 +90,7 @@ export function InboxListener({ userId }: { userId: number }) {
                 inbox.active() !== event.conversation_id
             ) {
                 notify(message);
+                playNotifySound(sound);
             }
         },
     });

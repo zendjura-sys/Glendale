@@ -43,7 +43,7 @@ import { CommunityAvatar } from './community-avatar';
 import { ReactionBar } from './reaction-bar';
 import { MediaGrid } from './media-grid';
 import { UserAvatar } from './user-avatar';
-import { PlusBadge, plusNameStyle } from './plus';
+import { nameDisplayProps, PlusBadge } from './plus';
 import {
     CosmeticBadge,
     cosmeticNameStyle,
@@ -148,10 +148,12 @@ export function PostCard({
                                 post.publisher.name
                             ) : (
                                 <span
-                                    style={
-                                        plusNameStyle(post.author.plus) ??
-                                        cosmeticNameStyle(post.author.cosmetics)
-                                    }
+                                    {...nameDisplayProps(
+                                        post.author.plus,
+                                        cosmeticNameStyle(
+                                            post.author.cosmetics,
+                                        ),
+                                    )}
                                 >
                                     {post.author.name}
                                 </span>

@@ -302,7 +302,17 @@ export default function ProfileShow({
         <>
             <Head title={profile.name} />
 
-            <section className="glass relative overflow-hidden rounded-2xl">
+            <section className="glass relative isolate overflow-hidden rounded-2xl">
+                {profile.accent && (
+                    // Кольори сторінки (GameCon+ або улюблена гра): м’який відсвіт під шапкою.
+                    <div
+                        aria-hidden
+                        className="pointer-events-none absolute inset-x-0 top-40 -z-10 h-72 opacity-25 blur-3xl sm:top-56"
+                        style={{
+                            backgroundImage: `radial-gradient(circle at 20% 30%, ${profile.accent[0]} 0%, transparent 55%), radial-gradient(circle at 80% 40%, ${profile.accent[1]} 0%, transparent 55%), radial-gradient(circle at 50% 90%, ${profile.accent[2]} 0%, transparent 60%)`,
+                        }}
+                    />
+                )}
                 {profile.header_fx === 'rim' && (
                     <div
                         aria-hidden
@@ -342,6 +352,15 @@ export default function ProfileShow({
                     )}
                     <div className="scrim absolute inset-0" />
                     <div className="grid-lines absolute inset-0 opacity-40" />
+                    {profile.accent && profile.cover_url && (
+                        <div
+                            aria-hidden
+                            className="absolute inset-x-0 bottom-0 z-10 h-1"
+                            style={{
+                                backgroundImage: `linear-gradient(90deg, ${profile.accent.join(', ')})`,
+                            }}
+                        />
+                    )}
                     {isSelf && (
                         <Uploader
                             field="cover"
