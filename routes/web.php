@@ -21,6 +21,7 @@ use App\Http\Controllers\FeedController;
 use App\Http\Controllers\FollowController;
 use App\Http\Controllers\FriendController;
 use App\Http\Controllers\GameController;
+use App\Http\Controllers\GameDealsController;
 use App\Http\Controllers\GooglePlayRtdnController;
 use App\Http\Controllers\HelpController;
 use App\Http\Controllers\InviteLinkController;
@@ -449,7 +450,15 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     Route::prefix('games')->name('games.')->middleware('module:games')->group(function () {
         Route::get('/', [GameController::class, 'index'])->name('index');
         Route::get('search', [GameController::class, 'search'])->middleware('throttle:120,1')->name('search');
+        // Роздачі, бажане й знижки, «чи потягне мій ПК».
+        Route::get('deals', [GameDealsController::class, 'index'])->name('deals');
+        Route::post('deals/subscribe', [GameDealsController::class, 'subscribe'])->name('deals.subscribe');
+        Route::get('pc', [GameDealsController::class, 'pcShow'])->name('pc.show');
+        Route::put('pc', [GameDealsController::class, 'pcSave'])->middleware('throttle:30,1')->name('pc.update');
         Route::get('{game}', [GameController::class, 'show'])->name('show');
+        Route::get('{game}/prices', [GameDealsController::class, 'prices'])->middleware('throttle:60,1')->name('prices');
+        Route::post('{game}/wish', [GameDealsController::class, 'wish'])->middleware('throttle:60,1')->name('wish');
+        Route::get('{game}/pc-check', [GameDealsController::class, 'pcCheck'])->middleware('throttle:60,1')->name('pc-check');
         Route::post('{game}/collections', [GameController::class, 'collections'])->name('collections');
         Route::post('{game}/guides', [GameController::class, 'guide'])->middleware('throttle:20,1')->name('guides.store');
         Route::delete('{game}/guides/{guide}', [GameController::class, 'deleteGuide'])->whereNumber('guide')->name('guides.destroy');

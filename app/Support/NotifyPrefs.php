@@ -15,7 +15,7 @@ use Illuminate\Notifications\DatabaseNotification;
 class NotifyPrefs
 {
     /** @var list<string> */
-    public const KEYS = ['likes', 'comments', 'mentions', 'events', 'playing', 'site', 'email', 'push'];
+    public const KEYS = ['likes', 'comments', 'mentions', 'events', 'playing', 'deals', 'site', 'email', 'push'];
 
     /** @var array<string, string> */
     private const KINDS = [
@@ -28,6 +28,8 @@ class NotifyPrefs
         'listen_room' => 'events',
         'tournament' => 'events',
         'friend_playing' => 'playing',
+        'giveaway' => 'deals',
+        'price_drop' => 'deals',
     ];
 
     /**

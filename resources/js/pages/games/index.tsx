@@ -1,5 +1,6 @@
 import { Head, Link, router } from '@inertiajs/react';
 import {
+    Gift,
     Gamepad2,
     Monitor,
     Search,
@@ -113,6 +114,8 @@ export default function GamesIndex({
 }: Props) {
     const [q, setQ] = useState(filters.q);
     const collectionsOn = usePlugin('game_collections');
+    const giveawaysOn = usePlugin('game_giveaways');
+    const dealsOn = usePlugin('game_deals');
 
     const visit = (patch: Partial<Props['filters']>) =>
         router.get(
@@ -149,6 +152,15 @@ export default function GamesIndex({
                         )}
                     </p>
                 </div>
+                {(giveawaysOn || dealsOn) && (
+                    <Link
+                        href="/games/deals"
+                        className="inline-flex h-10 items-center gap-2 rounded-xl bg-white/[0.06] px-3.5 text-sm font-semibold text-white/80 transition hover:bg-white/10 hover:text-white"
+                    >
+                        <Gift className="size-4 text-emerald-300" />
+                        {tr('Роздачі й знижки')}
+                    </Link>
+                )}
             </div>
 
             <div className="glass mb-4 space-y-3 rounded-2xl p-3">

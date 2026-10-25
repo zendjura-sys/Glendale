@@ -69,6 +69,7 @@ type NotifyPrefs = {
     mentions: boolean;
     events: boolean;
     playing: boolean;
+    deals: boolean;
     site: boolean;
     email: boolean;
     push: boolean;
@@ -80,6 +81,7 @@ const NOTIFY_TYPES: { key: keyof NotifyPrefs; label: string }[] = [
     { key: 'mentions', label: 'Згадки' },
     { key: 'events', label: 'Події' },
     { key: 'playing', label: 'Друзі в грі' },
+    { key: 'deals', label: 'Роздачі й знижки' },
 ];
 
 const NOTIFY_CHANNELS: { key: keyof NotifyPrefs; label: string }[] = [

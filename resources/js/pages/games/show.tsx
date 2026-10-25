@@ -1,5 +1,7 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import {
+    MonitorCog,
+    Tag,
     ArrowLeft,
     BookOpen,
     Clapperboard,
@@ -35,6 +37,8 @@ import { LOCALE, tr } from '@/lib/i18n';
 import { MomentCard } from '@/components/moments/moment-card';
 import type { MomentCardData } from '@/components/moments/moment-card';
 import { usePlugin } from '@/lib/plugins';
+import { GamePrices } from '@/components/games/game-prices';
+import { PcCheck } from '@/components/games/pc-check';
 
 type Details = {
     summary?: string;
@@ -285,6 +289,9 @@ export default function GameShow({
 }: Props) {
     const d = game.details ?? {};
     const guidesOn = usePlugin('game_guides');
+    const dealsOn = usePlugin('game_deals');
+    const pcCheckOn = usePlugin('pc_check');
+    const onSteam = game.links.some((l) => l.store === 'steam');
     const [video, setVideo] = useState<string | null>(null);
     const [shot, setShot] = useState<string | null>(null);
     const mp = d.multiplayer ?? {};
@@ -557,6 +564,18 @@ export default function GameShow({
                         </form>
                     )}
                 </section>
+            )}
+
+            {onSteam && dealsOn && (
+                <Section title={tr('Ціни й знижки')} icon={Tag}>
+                    <GamePrices slug={game.slug} />
+                </Section>
+            )}
+
+            {onSteam && pcCheckOn && (
+                <Section title={tr('Чи потягне мій ПК')} icon={MonitorCog}>
+                    <PcCheck slug={game.slug} />
+                </Section>
             )}
 
             {(events.length > 0 || can_add_event) && (
