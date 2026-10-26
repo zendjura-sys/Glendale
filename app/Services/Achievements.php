@@ -19,6 +19,7 @@ use App\Services\Moments\ClipOfWeek;
 use App\Services\Quests\DailyQuests;
 use App\Services\Quests\SeasonPass;
 use App\Services\Servers\ServerVotes;
+use App\Support\Modules\ModuleManager;
 use Illuminate\Support\Facades\Cache;
 
 /**
@@ -45,7 +46,9 @@ class Achievements
     /**
      * Бейджі: лічильник, поріг, назва, опис, іконка Lucide.
      *
-     * @var list<array{key: string, stat: string, target: int, title: string, text: string, icon: string}>
+     * Бейдж із 'module' показується, лише якщо розділ є в режимі глядача (у «Класиці» — без сімей і кланів).
+     *
+     * @var list<array{key: string, stat: string, target: int, title: string, text: string, icon: string, module?: string}>
      */
     private const BADGES = [
         ['key' => 'first_post', 'stat' => 'posts', 'target' => 1, 'title' => 'Перший пост', 'text' => 'Опублікувати перший запис.', 'icon' => 'pen-line'],
@@ -56,21 +59,21 @@ class Achievements
         ['key' => 'likes_1000', 'stat' => 'likes', 'target' => 1000, 'title' => 'Зірка', 'text' => 'Зібрати 1000 вподобань на записах.', 'icon' => 'star'],
         ['key' => 'month', 'stat' => 'days', 'target' => 30, 'title' => 'Місяць у GameCon', 'text' => 'Бути з нами 30 днів.', 'icon' => 'calendar-check'],
         ['key' => 'year', 'stat' => 'days', 'target' => 365, 'title' => 'Рік у GameCon', 'text' => 'Бути з нами рік.', 'icon' => 'cake'],
-        ['key' => 'family', 'stat' => 'in_family', 'target' => 1, 'title' => 'У сім’ї', 'text' => 'Вступити до сім’ї.', 'icon' => 'house'],
-        ['key' => 'family_leader', 'stat' => 'family_leader', 'target' => 1, 'title' => 'Лідер сім’ї', 'text' => 'Очолювати підтверджену сім’ю.', 'icon' => 'crown'],
-        ['key' => 'events_10', 'stat' => 'events', 'target' => 10, 'title' => 'Завжди на зборах', 'text' => 'Відвідати 10 подій сім’ї.', 'icon' => 'calendar-days'],
-        ['key' => 'clan_founder', 'stat' => 'clan_founder', 'target' => 1, 'title' => 'Засновник клану', 'text' => 'Створити клан або гільдію.', 'icon' => 'swords'],
-        ['key' => 'musician', 'stat' => 'tracks', 'target' => 1, 'title' => 'Музикант', 'text' => 'Завантажити перший трек.', 'icon' => 'music'],
-        ['key' => 'photographer', 'stat' => 'photos', 'target' => 50, 'title' => 'Фотограф', 'text' => 'Завантажити 50 фото.', 'icon' => 'camera'],
+        ['key' => 'family', 'stat' => 'in_family', 'target' => 1, 'title' => 'У сім’ї', 'text' => 'Вступити до сім’ї.', 'icon' => 'house', 'module' => 'families'],
+        ['key' => 'family_leader', 'stat' => 'family_leader', 'target' => 1, 'title' => 'Лідер сім’ї', 'text' => 'Очолювати підтверджену сім’ю.', 'icon' => 'crown', 'module' => 'families'],
+        ['key' => 'events_10', 'stat' => 'events', 'target' => 10, 'title' => 'Завжди на зборах', 'text' => 'Відвідати 10 подій сім’ї.', 'icon' => 'calendar-days', 'module' => 'families'],
+        ['key' => 'clan_founder', 'stat' => 'clan_founder', 'target' => 1, 'title' => 'Засновник клану', 'text' => 'Створити клан або гільдію.', 'icon' => 'swords', 'module' => 'clans'],
+        ['key' => 'musician', 'stat' => 'tracks', 'target' => 1, 'title' => 'Музикант', 'text' => 'Завантажити перший трек.', 'icon' => 'music', 'module' => 'music'],
+        ['key' => 'photographer', 'stat' => 'photos', 'target' => 50, 'title' => 'Фотограф', 'text' => 'Завантажити 50 фото.', 'icon' => 'camera', 'module' => 'photos'],
         ['key' => 'stories', 'stat' => 'stories', 'target' => 10, 'title' => 'Сторісмейкер', 'text' => 'Опублікувати 10 сторіс.', 'icon' => 'circle-play'],
         ['key' => 'host', 'stat' => 'parties', 'target' => 1, 'title' => 'Ведучий', 'text' => 'Влаштувати спільний перегляд або прослуховування.', 'icon' => 'clapperboard'],
         ['key' => 'verified', 'stat' => 'verified', 'target' => 1, 'title' => 'Верифікований', 'text' => 'Мати підтверджений профіль.', 'icon' => 'badge-check'],
-        ['key' => 'voter', 'stat' => 'votes', 'target' => 30, 'title' => 'Голос спільноти', 'text' => 'Проголосувати за сервери 30 разів.', 'icon' => 'vote'],
-        ['key' => 'quests_30', 'stat' => 'quests', 'target' => 30, 'title' => 'Сезонний гравець', 'text' => 'Виконати 30 щоденних завдань.', 'icon' => 'target'],
+        ['key' => 'voter', 'stat' => 'votes', 'target' => 30, 'title' => 'Голос спільноти', 'text' => 'Проголосувати за сервери 30 разів.', 'icon' => 'vote', 'module' => 'servers'],
+        ['key' => 'quests_30', 'stat' => 'quests', 'target' => 30, 'title' => 'Сезонний гравець', 'text' => 'Виконати 30 щоденних завдань.', 'icon' => 'target', 'module' => 'quests'],
         ['key' => 'invite_1', 'stat' => 'referrals', 'target' => 1, 'title' => 'Запросив друга', 'text' => 'Запросити друга, який підтвердив пошту.', 'icon' => 'user-plus'],
         ['key' => 'invite_5', 'stat' => 'referrals', 'target' => 5, 'title' => 'Збирач команди', 'text' => 'Запросити 5 друзів.', 'icon' => 'users-round'],
         ['key' => 'invite_25', 'stat' => 'referrals', 'target' => 25, 'title' => 'Амбасадор GameCon', 'text' => 'Запросити 25 друзів.', 'icon' => 'megaphone'],
-        ['key' => 'clip_of_week', 'stat' => 'clip_wins', 'target' => 1, 'title' => 'Кліп тижня', 'text' => 'Ваш кліп переміг у «Кліпі тижня».', 'icon' => 'trophy'],
+        ['key' => 'clip_of_week', 'stat' => 'clip_wins', 'target' => 1, 'title' => 'Кліп тижня', 'text' => 'Ваш кліп переміг у «Кліпі тижня».', 'icon' => 'trophy', 'module' => 'moments'],
         ['key' => 'pioneer', 'stat' => 'pioneer', 'target' => 1, 'title' => 'Перші 100', 'text' => 'Бути серед перших ста користувачів.', 'icon' => 'rocket'],
     ];
 
@@ -82,7 +85,13 @@ class Achievements
     public function for(User $user): array
     {
         /** @var array{level: int, title: string, xp: int, level_xp: int, next_xp: int, earned: int, total: int, badges: list<array<string, mixed>>} */
-        return Cache::remember("achievements.{$user->id}", now()->addMinutes(10), fn () => $this->compute($user));
+        $data = Cache::remember("achievements.{$user->id}", now()->addMinutes(10), fn () => $this->compute($user));
+        $modules = app(ModuleManager::class);
+        $data['badges'] = array_values(array_filter($data['badges'], fn (array $badge) => ! is_string($badge['module'] ?? null) || $modules->enabled($badge['module'])));
+        $data['earned'] = count(array_filter($data['badges'], fn (array $badge) => (bool) ($badge['earned'] ?? false)));
+        $data['total'] = count($data['badges']);
+
+        return $data;
     }
 
     /**
@@ -108,6 +117,7 @@ class Achievements
                 'earned' => $current >= $badge['target'],
                 'progress' => min($current, $badge['target']),
                 'target' => $badge['target'],
+                'module' => $badge['module'] ?? null,
             ];
         }
         $title = 'Новачок';

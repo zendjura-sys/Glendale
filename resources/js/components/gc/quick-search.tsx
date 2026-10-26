@@ -1,4 +1,4 @@
-import { Link, router } from '@inertiajs/react';
+import { Link, router, usePage } from '@inertiajs/react';
 import { Search, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { api } from '@/lib/api';
@@ -36,6 +36,16 @@ function useWideSearch(): boolean {
 
 export function QuickSearch({ className }: { className?: string }) {
     const wide = useWideSearch();
+    // Підказка — лише про розділи режиму людини: у «Класиці» немає ігор, кіно й серверів.
+    const { modules } = usePage().props;
+    const scope = [
+        tr('людей'),
+        modules.includes('games') && tr('ігор'),
+        modules.includes('cinema') && tr('кіно'),
+        modules.includes('music') && tr('музики'),
+        modules.includes('servers') && tr('серверів'),
+        modules.includes('communities') && tr('спільнот'),
+    ].filter(Boolean);
     const [query, setQuery] = useState('');
     const [results, setResults] = useState<Result[]>([]);
     const [recent, setRecent] = useState<string[]>([]);
@@ -187,7 +197,9 @@ export function QuickSearch({ className }: { className?: string }) {
                     }}
                     placeholder={
                         wide
-                            ? tr('Пошук людей, ігор, кіно, серверів…')
+                            ? tr('Пошук: {scope}…', {
+                                  scope: scope.slice(0, 4).join(', '),
+                              })
                             : tr('Пошук')
                     }
                     className="min-w-0 flex-1 bg-transparent text-sm text-white placeholder:text-white/40 focus:outline-none"

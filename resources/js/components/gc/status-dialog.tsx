@@ -1,4 +1,4 @@
-import { router } from '@inertiajs/react';
+import { router, usePage } from '@inertiajs/react';
 import { Loader2, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
@@ -14,11 +14,11 @@ import { cn } from '@/lib/utils';
 import type { UserCard } from '@/types';
 
 /** Готові статуси: емодзі й підпис (підпис можна змінити). */
-const PRESETS: { emoji: string; text: () => string }[] = [
-    { emoji: '🎮', text: () => tr('Граю') },
-    { emoji: '⚔️', text: () => tr('У рейді') },
-    { emoji: '🎧', text: () => tr('Слухаю музику') },
-    { emoji: '🍿', text: () => tr('Дивлюсь кіно') },
+const PRESETS: { emoji: string; text: () => string; module?: string }[] = [
+    { emoji: '🎮', text: () => tr('Граю'), module: 'games' },
+    { emoji: '⚔️', text: () => tr('У рейді'), module: 'games' },
+    { emoji: '🎧', text: () => tr('Слухаю музику'), module: 'music' },
+    { emoji: '🍿', text: () => tr('Дивлюсь кіно'), module: 'cinema' },
     { emoji: '📚', text: () => tr('Навчаюсь') },
     { emoji: '💼', text: () => tr('Працюю') },
     { emoji: '🚗', text: () => tr('У дорозі') },
@@ -78,6 +78,11 @@ export function StatusDialog({
     open: boolean;
     onOpenChange: (open: boolean) => void;
 }) {
+    const { modules } = usePage().props;
+    // Готові статуси лише для розділів режиму: без ігор — без «Граю», без кіно — без «Дивлюсь кіно».
+    const presets = PRESETS.filter(
+        (p) => !p.module || modules.includes(p.module),
+    );
     const [emoji, setEmoji] = useState<string | null>(null);
     const [text, setText] = useState('');
     const [duration, setDuration] = useState('today');
@@ -138,7 +143,7 @@ export function StatusDialog({
                 </div>
 
                 <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
-                    {PRESETS.map((p) => {
+                    {presets.map((p) => {
                         const active = emoji === p.emoji && text === p.text();
 
                         return (

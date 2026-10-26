@@ -105,6 +105,7 @@ class NetworkModes
     {
         $modes = array_values(array_filter(array_map(fn ($mode) => $this->normalize($mode), $config['modes'])));
         $this->settings->put([self::SETTING => ['default' => $config['default'], 'modes' => $modes, 'known_modules' => $this->moduleKeys()]]);
+        $this->modules->flush();
     }
 
     /**
@@ -215,7 +216,7 @@ class NetworkModes
             return null;
         }
         $modules = $this->moduleKeys();
-        $plugins = array_keys($this->plugins->flags());
+        $plugins = $this->plugins->keys();
         $features = is_array($mode['features'] ?? null) ? $mode['features'] : [];
         $icon = is_string($mode['icon'] ?? null) && in_array($mode['icon'], self::ICONS, true) ? $mode['icon'] : 'layers';
 

@@ -74,7 +74,14 @@ export function Composer({
     onEditLast,
     draft = null,
 }: Props) {
-    const { site } = usePage().props;
+    const { site, modules } = usePage().props;
+    // Картки — лише розділів режиму (гра, фільм, сервер); без жодного пункт ховається.
+    const cardWords = [
+        modules.includes('games') && tr('гра'),
+        modules.includes('cinema') && tr('фільм'),
+        modules.includes('servers') && tr('сервер'),
+    ].filter((word): word is string => Boolean(word));
+    const cardScope = cardWords.join(', ');
     const vanishOn = usePlugin('disappearing_messages');
     const scheduleOn = usePlugin('scheduled_messages');
     const videoNotesPlugin = usePlugin('video_notes');
@@ -359,7 +366,10 @@ export function Composer({
                                 `/messages/cards?q=${encodeURIComponent(value.trim())}`,
                             ).then((response) => setCardHits(response.cards));
                         }}
-                        placeholder={tr('Гра, фільм або сервер')}
+                        placeholder={
+                            cardScope.charAt(0).toUpperCase() +
+                            cardScope.slice(1)
+                        }
                         className="input-glass h-10 w-full rounded-xl px-3 text-sm text-white"
                     />
                     <div className="mt-1 max-h-36 overflow-y-auto">
@@ -622,13 +632,22 @@ export function Composer({
                                             tone: 'from-gc-mint to-gc-cyan',
                                             run: () => setContactOpen(true),
                                         },
-                                        {
-                                            label: tr('Картка'),
-                                            hint: tr('Гра, фільм, сервер'),
-                                            icon: LayoutGrid,
-                                            tone: 'from-gc-amber to-gc-coral',
-                                            run: () => setPickingCard(true),
-                                        },
+                                        ...(cardWords.length > 0
+                                            ? [
+                                                  {
+                                                      label: tr('Картка'),
+                                                      hint:
+                                                          cardScope
+                                                              .charAt(0)
+                                                              .toUpperCase() +
+                                                          cardScope.slice(1),
+                                                      icon: LayoutGrid,
+                                                      tone: 'from-gc-amber to-gc-coral',
+                                                      run: () =>
+                                                          setPickingCard(true),
+                                                  },
+                                              ]
+                                            : []),
                                     ].map((item) => (
                                         <button
                                             key={item.label}

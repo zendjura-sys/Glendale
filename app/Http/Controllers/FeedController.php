@@ -19,6 +19,7 @@ use App\Services\Streams\LiveStreams;
 use App\Support\I18n\LanguageGuess;
 use App\Support\Modules\ModuleManager;
 use App\Support\MutedWords;
+use App\Support\NetworkModes;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
@@ -106,8 +107,9 @@ class FeedController extends Controller
                 ->map->toCard()
                 ->all()),
             'picks' => $this->picks($user),
-            'sameGame' => app(FollowAlerts::class)->sameGame($user),
-            'playingNow' => User::query()
+            'sameGame' => app(ModuleManager::class)->enabled('games') ? app(FollowAlerts::class)->sameGame($user) : [],
+            // «Граю в…» друзів — лише в режимах, де є ця можливість (у «Класиці», «Мінімалі» — ні).
+            'playingNow' => ! (app(NetworkModes::class)->featuresFor($user)['playing'] ?? true) ? [] : User::query()
                 ->whereIn('id', $friendIds === [] ? [0] : $friendIds)
                 ->whereNotNull('playing_label')
                 ->where('playing_until', '>', now())
@@ -147,7 +149,8 @@ class FeedController extends Controller
     {
         $day = now(ReportService::TIMEZONE)->addDay()->toDateString();
         $items = [];
-        foreach (['clan', 'family'] as $kind) {
+        // Події кланів і сімей — лише якщо ці розділи є в режимі людини.
+        foreach (array_keys(array_filter(['clan' => 'clans', 'family' => 'families'], fn (string $module) => app(ModuleManager::class)->enabled($module))) as $kind) {
             foreach (app(EventCalendar::class)->upcoming($user, $kind) as $item) {
                 $startsAt = Carbon::parse((string) $item['starts_at'])->setTimezone(ReportService::TIMEZONE);
                 if ($startsAt->toDateString() === $day && ($item['status'] ?? null) !== 'declined') {
@@ -166,15 +169,17 @@ class FeedController extends Controller
     private function picks(User $user): array
     {
         $rows = Follow::query()->where('user_id', $user->id)->latest('id')->limit(12)->get();
+        $gamesOn = app(ModuleManager::class)->enabled('games');
+        $serversOn = app(ModuleManager::class)->enabled('servers');
         $games = Game::query()->whereIn('id', $rows->where('kind', Follow::GAME)->pluck('subject_id'))->get()->keyBy('id');
         $servers = GtaServer::query()->whereIn('id', $rows->where('kind', Follow::SERVER)->pluck('subject_id'))->get()->keyBy('id');
         $items = [];
         foreach ($rows as $row) {
-            if ($row->kind === Follow::GAME && isset($games[$row->subject_id])) {
+            if ($row->kind === Follow::GAME && $gamesOn && isset($games[$row->subject_id])) {
                 $game = $games[$row->subject_id];
                 $items[] = ['kind' => 'game', 'title' => $game->name, 'href' => '/games/'.$game->slug, 'image' => $game->cover];
             }
-            if ($row->kind === Follow::SERVER && isset($servers[$row->subject_id])) {
+            if ($row->kind === Follow::SERVER && $serversOn && isset($servers[$row->subject_id])) {
                 $server = $servers[$row->subject_id];
                 $items[] = ['kind' => 'server', 'title' => $server->name, 'href' => '/servers/'.$server->slug, 'image' => $server->icon];
             }

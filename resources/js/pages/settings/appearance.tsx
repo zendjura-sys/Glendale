@@ -46,7 +46,7 @@ import { SKINS, THEMES } from '@/lib/skins';
 import { applyTheme } from '@/lib/theme';
 import type { ThemePref } from '@/lib/theme';
 import { motionOr, POP, SNAP } from '@/lib/motion';
-import { usePlugin } from '@/lib/plugins';
+import { useFeature, usePlugin } from '@/lib/plugins';
 import { cn } from '@/lib/utils';
 import type {
     SiteBackgroundPreset,
@@ -140,6 +140,7 @@ export default function Appearance({
     theme,
     seasonal,
     gameTheme,
+    gameThemeOn = true,
 }: {
     palette: string;
     palettes: PaletteOption[];
@@ -163,6 +164,7 @@ export default function Appearance({
     theme: ThemePref;
     seasonal: boolean;
     gameTheme?: GameThemeValue;
+    gameThemeOn?: boolean;
 }) {
     const palettesOn = usePlugin('palettes');
     const quietOn = usePlugin('quiet_hours');
@@ -199,6 +201,15 @@ export default function Appearance({
     const [phrase, setPhrase] = useState('');
     const reduce = useReducedMotion();
     const user = usePage().props.auth.user;
+    const activeModules = usePage().props.modules ?? [];
+    const playingOn = useFeature('playing');
+    // Перемикачі лише для розділів, що є в режимі.
+    const notifyTypes = NOTIFY_TYPES.filter(
+        (item) =>
+            (item.key !== 'events' || activeModules.includes('events')) &&
+            (item.key !== 'playing' || playingOn) &&
+            (item.key !== 'deals' || activeModules.includes('games')),
+    );
     const siteBackground = usePage().props.siteBackground ?? null;
     const savedSkin = useRef(skin);
     const savedTheme = useRef<ThemePref>(theme);
@@ -812,10 +823,10 @@ export default function Appearance({
                         list
                         title={tr('Сповіщення')}
                         description={tr(
-                            'Лайки, коментарі, згадки, події й друзі в грі. Сайт, пошта і push вмикаються окремо.',
+                            'Про що повідомляти. Сайт, пошта і push вмикаються окремо.',
                         )}
                     >
-                        {NOTIFY_TYPES.map((item) => (
+                        {notifyTypes.map((item) => (
                             <SettingsSwitch
                                 key={item.key}
                                 label={tr(item.label)}
@@ -1074,15 +1085,17 @@ export default function Appearance({
                     </div>
                 </SettingsCard>
 
-                <SettingsCard
-                    list
-                    title={tr('Тема профілю за грою')}
-                    description={tr(
-                        'Шапка й акценти вашої сторінки — кольорами обкладинки улюбленої гри. Власні кольори GameCon+ мають перевагу.',
-                    )}
-                >
-                    <GameThemePicker value={gameTheme ?? null} />
-                </SettingsCard>
+                {gameThemeOn && (
+                    <SettingsCard
+                        list
+                        title={tr('Тема профілю за грою')}
+                        description={tr(
+                            'Шапка й акценти вашої сторінки — кольорами обкладинки улюбленої гри. Власні кольори GameCon+ мають перевагу.',
+                        )}
+                    >
+                        <GameThemePicker value={gameTheme ?? null} />
+                    </SettingsCard>
+                )}
 
                 {orderOn && (
                     <SettingsCard

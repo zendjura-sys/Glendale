@@ -1,9 +1,10 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import { Bookmark } from 'lucide-react';
 import { PostCard } from '@/components/gc/post-card';
 import { EmptyState } from '@/components/gc/widget';
 import type { PostItem } from '@/types';
 import { tr } from '@/lib/i18n';
+import { listWords } from '@/lib/modes';
 
 type Card = {
     kind: 'movie' | 'game' | 'server';
@@ -16,6 +17,7 @@ type Card = {
 type Item = { kind: 'post'; post: PostItem } | Card;
 
 export default function Saved({ items }: { items: Item[] }) {
+    const { modules } = usePage().props;
     return (
         <>
             <Head title={tr('Збережене')} />
@@ -26,9 +28,14 @@ export default function Saved({ items }: { items: Item[] }) {
                 {items.length === 0 ? (
                     <EmptyState
                         icon={Bookmark}
-                        title={tr(
-                            'Тут з’являться пости, фільми, ігри й сервери',
-                        )}
+                        title={tr('Тут з’являться {what}', {
+                            what: listWords([
+                                tr('пости'),
+                                modules.includes('cinema') && tr('фільми'),
+                                modules.includes('games') && tr('ігри'),
+                                modules.includes('servers') && tr('сервери'),
+                            ]),
+                        })}
                     />
                 ) : (
                     items.map((item, index) =>

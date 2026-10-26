@@ -49,35 +49,45 @@ export default function Start({
                         {tr('Обери, у що граєш')}
                     </h1>
                     <p className="mt-2 text-sm text-white/55">
-                        {tr(
-                            'Ми скажемо, коли друг зайде в цю гру чи на цей сервер.',
-                        )}
+                        {games.length > 0 && servers.length > 0
+                            ? tr(
+                                  'Ми скажемо, коли друг зайде в цю гру чи на цей сервер.',
+                              )
+                            : servers.length > 0
+                              ? tr('Ми скажемо, коли друг зайде на цей сервер.')
+                              : tr('Ми скажемо, коли друг зайде в цю гру.')}
                     </p>
                 </div>
-                <section className="space-y-3">
-                    <h2 className="text-sm font-medium text-white/70">
-                        {tr('Ігри')}
-                    </h2>
-                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                        {games.map((game) => (
-                            <button
-                                key={game.id}
-                                type="button"
-                                onClick={() =>
-                                    toggle(pickedGames, game.id, setPickedGames)
-                                }
-                                className={cn(
-                                    'rounded-2xl border px-3 py-3 text-left text-sm font-medium text-white transition',
-                                    pickedGames.includes(game.id)
-                                        ? 'border-gc-lilac-400/60 bg-gc-indigo/20'
-                                        : 'border-white/10 bg-white/[0.04] hover:bg-white/[0.07]',
-                                )}
-                            >
-                                {game.name}
-                            </button>
-                        ))}
-                    </div>
-                </section>
+                {games.length > 0 && (
+                    <section className="space-y-3">
+                        <h2 className="text-sm font-medium text-white/70">
+                            {tr('Ігри')}
+                        </h2>
+                        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                            {games.map((game) => (
+                                <button
+                                    key={game.id}
+                                    type="button"
+                                    onClick={() =>
+                                        toggle(
+                                            pickedGames,
+                                            game.id,
+                                            setPickedGames,
+                                        )
+                                    }
+                                    className={cn(
+                                        'rounded-2xl border px-3 py-3 text-left text-sm font-medium text-white transition',
+                                        pickedGames.includes(game.id)
+                                            ? 'border-gc-lilac-400/60 bg-gc-indigo/20'
+                                            : 'border-white/10 bg-white/[0.04] hover:bg-white/[0.07]',
+                                    )}
+                                >
+                                    {game.name}
+                                </button>
+                            ))}
+                        </div>
+                    </section>
+                )}
                 {servers.length > 0 && (
                     <section className="space-y-3">
                         <h2 className="text-sm font-medium text-white/70">

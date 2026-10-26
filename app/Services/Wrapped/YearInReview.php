@@ -11,6 +11,7 @@ use App\Models\Post;
 use App\Models\Track;
 use App\Models\User;
 use App\Services\FriendshipService;
+use App\Support\NetworkModes;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -49,7 +50,31 @@ class YearInReview
      */
     public function build(User $user, int $year): array
     {
-        return Cache::remember("wrapped:v2:{$year}:{$user->id}", now()->addHours(self::CACHE_HOURS), fn () => $this->compute($user, $year));
+        $data = Cache::remember("wrapped:v2:{$year}:{$user->id}", now()->addHours(self::CACHE_HOURS), fn () => $this->compute($user, $year));
+        // Розділів, яких немає в режимі людини, у підсумках теж немає (нулі — слайд не показується).
+        $modules = app(NetworkModes::class)->modulesFor($user);
+        $sections = ['music' => ['music'], 'cinema' => ['cinema'], 'games' => ['games', 'servers', 'moments']];
+        foreach ($sections as $section => $need) {
+            if (array_intersect($need, $modules) === [] && is_array($data[$section] ?? null)) {
+                $data[$section] = self::blank($data[$section]);
+                $data['persona'] = $this->persona($data['posts'], $data['social'], $data['music'], $data['cinema'], $data['games']);
+            }
+        }
+
+        return $data;
+    }
+
+    /**
+     * @param  array<mixed>  $section
+     * @return array<mixed>
+     */
+    private static function blank(array $section): array
+    {
+        return array_map(fn ($value) => match (true) {
+            is_int($value), is_float($value) => 0,
+            is_array($value) => array_is_list($value) ? [] : self::blank($value),
+            default => null,
+        }, $section);
     }
 
     /**

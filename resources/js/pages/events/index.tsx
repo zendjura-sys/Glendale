@@ -1,10 +1,11 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import { Bell, CalendarDays } from 'lucide-react';
 import { EventList } from '@/components/events/event-card';
 import type { CalendarEvent } from '@/components/events/event-card';
 import { EmptyState } from '@/components/gc/widget';
 import { cn } from '@/lib/utils';
 import { tr } from '@/lib/i18n';
+import { listWords } from '@/lib/modes';
 
 type Props = {
     events: CalendarEvent[];
@@ -12,6 +13,7 @@ type Props = {
     kinds: Record<string, string>;
     reminder_lead: number;
     reminder_leads: number[];
+    releasesOn?: boolean;
 };
 
 const leadLabel = (minutes: number) =>
@@ -28,7 +30,9 @@ export default function EventsIndex({
     kinds,
     reminder_lead,
     reminder_leads,
+    releasesOn = true,
 }: Props) {
+    const { modules } = usePage().props;
     const tabs: [string | null, string][] = [
         [null, tr('Усі')],
         ...Object.entries(kinds),
@@ -43,15 +47,27 @@ export default function EventsIndex({
                     {tr('Календар подій')}
                 </h1>
                 <p className="text-sm text-white/50">
-                    {tr(
-                        'Події ваших сімей, кланів, серверів та ігор. Події серверів з Discord і ігор з IGDB підтягуються самі. Час показано у вашому часовому поясі.',
-                    )}{' '}
-                    <Link
-                        href="/events/releases"
-                        className="text-gc-lilac-200 hover:text-white"
-                    >
-                        {tr('Релізи і сезони')}
-                    </Link>
+                    {tr('Події ваших {what}.', {
+                        what: listWords([
+                            modules.includes('families') && tr('сімей'),
+                            modules.includes('clans') && tr('кланів'),
+                            modules.includes('servers') && tr('серверів'),
+                            modules.includes('games') && tr('ігор'),
+                        ]),
+                    })}{' '}
+                    {modules.includes('servers') &&
+                        tr('Події серверів з Discord підтягуються самі.')}{' '}
+                    {modules.includes('games') &&
+                        tr('Події ігор з IGDB підтягуються самі.')}{' '}
+                    {tr('Час показано у вашому часовому поясі.')}{' '}
+                    {releasesOn && (
+                        <Link
+                            href="/events/releases"
+                            className="text-gc-lilac-200 hover:text-white"
+                        >
+                            {tr('Релізи і сезони')}
+                        </Link>
+                    )}
                 </p>
             </div>
             <label className="mb-3 flex flex-wrap items-center gap-2 text-sm text-white/60">
@@ -109,7 +125,7 @@ export default function EventsIndex({
                                   'Шоукейси, трансляції й виходи ігор з’являються тут автоматично.',
                               )
                             : tr(
-                                  'Події з’являються, коли їх створюють у сім’ї, клані, на сторінці сервера або в Discord проєкту.',
+                                  'Події з’являються, коли їх створюють у розділах вашого режиму.',
                               )
                     }
                 />

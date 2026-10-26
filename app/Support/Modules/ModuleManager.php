@@ -5,6 +5,8 @@ namespace App\Support\Modules;
 use App\Models\Module;
 use App\Models\User;
 use App\Services\Geo\CountryRestrictions;
+use App\Support\NetworkModes;
+use App\Support\Plugins\Plugins;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Route;
@@ -21,6 +23,9 @@ class ModuleManager
      * @param  array<string, array<string, mixed>>  $definitions
      */
     public function __construct(private readonly array $definitions) {}
+
+    /** @var array<string, list<string>> Розділи режиму людини за запит (ключ — id і режим). */
+    private array $modeModules = [];
 
     /**
      * @return Collection<string, array{key: string, name: string, description: string, icon: string, core: bool, available: bool, enabled: bool, nav: array{label: string, route: string, position: int}|null}>
@@ -53,7 +58,28 @@ class ModuleManager
         return array_key_exists($key, $this->definitions);
     }
 
+    /**
+     * Розділ доступний зараз: увімкнений на сайті й є в режимі людини, що зайшла («Класика» —
+     * без ігор і кіно, «Мінімал»…). Без людини (гість, фонова задача) — лише налаштування сайту.
+     */
     public function enabled(string $key): bool
+    {
+        if (! $this->enabledForSite($key)) {
+            return false;
+        }
+        $user = Plugins::viewer();
+        if ($user === null) {
+            return true;
+        }
+        // Розділи режиму — один раз на запит (країна відвідувача теж впливає) для людини й її режиму.
+        $memo = spl_object_id(request()).'|'.$user->id.'|'.(string) $user->pref('network_mode');
+        $this->modeModules[$memo] ??= app(NetworkModes::class)->modulesFor($user);
+
+        return in_array($key, $this->modeModules[$memo], true);
+    }
+
+    /** Розділ увімкнено для всього сайту (без режиму людини) — для адмінки й рішень за інших людей. */
+    public function enabledForSite(string $key): bool
     {
         if (! $this->exists($key)) {
             return false;
@@ -141,6 +167,7 @@ class ModuleManager
     public function flush(): void
     {
         $this->state = null;
+        $this->modeModules = [];
         Cache::forget(self::CACHE_KEY);
     }
 

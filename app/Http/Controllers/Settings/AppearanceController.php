@@ -7,6 +7,7 @@ use App\Services\FriendshipService;
 use App\Support\Backgrounds;
 use App\Support\GameTheme;
 use App\Support\I18n\Locales;
+use App\Support\Modules\ModuleManager;
 use App\Support\MutedWords;
 use App\Support\NetworkModes;
 use App\Support\NotifyPrefs;
@@ -50,13 +51,14 @@ class AppearanceController extends Controller
             'languages' => array_values(array_filter((array) $user->pref('languages', []), 'is_string')),
             'looking_for_group' => (bool) $user->pref('looking_for_group'),
             'show_visitors' => (bool) $user->pref('show_visitors'),
-            'profile_blocks' => ProfileBlocks::normalize($user->pref('profile_blocks')),
+            'profile_blocks' => ProfileBlocks::visible($user->pref('profile_blocks')),
             'languageOptions' => app(Locales::class)->options(),
             'friends' => app(FriendshipService::class)->friendsQuery($user)->limit(40)->get()->map->toCard()->values(),
             'closeFriends' => array_map('intval', (array) $user->pref('close_friends', [])),
             'notify' => NotifyPrefs::for($user),
             'muteWords' => MutedWords::phrases($user),
             'hideSpoilers' => (bool) $user->pref('hide_spoilers'),
+            'gameThemeOn' => app(ModuleManager::class)->enabled('games'),
             'gameTheme' => ($game = GameTheme::game($user)) !== null ? ['game' => $game->toCard(), 'colors' => GameTheme::colors($user)] : null,
         ]);
     }
@@ -127,7 +129,7 @@ class AppearanceController extends Controller
             $patch['show_visitors'] = (bool) $data['show_visitors'];
         }
         if ($plugins->on('profile_order') && array_key_exists('profile_blocks', $data)) {
-            $patch['profile_blocks'] = ProfileBlocks::normalize($data['profile_blocks']);
+            $patch['profile_blocks'] = ProfileBlocks::merge($request->user()->pref('profile_blocks'), $data['profile_blocks']);
         }
         if ($plugins->on('muted_words') && array_key_exists('mute_words', $data)) {
             $patch['mute_words'] = MutedWords::normalize($data['mute_words']);

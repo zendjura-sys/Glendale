@@ -26,9 +26,11 @@ class StartController extends Controller
             return redirect()->route('start.mode');
         }
 
+        $modules = app(ModuleManager::class);
+
         return Inertia::render('start/index', [
-            'games' => Game::query()->published()->orderByDesc('popularity')->limit(18)->get()->map->toCard()->values(),
-            'servers' => GtaServer::query()->published()->orderByDesc('players_online')->limit(12)->get()->map->toCard()->values(),
+            'games' => $modules->enabled('games') ? Game::query()->published()->orderByDesc('popularity')->limit(18)->get()->map->toCard()->values() : [],
+            'servers' => $modules->enabled('servers') ? GtaServer::query()->published()->orderByDesc('players_online')->limit(12)->get()->map->toCard()->values() : [],
         ]);
     }
 

@@ -33,6 +33,26 @@ class NotifyPrefs
     ];
 
     /**
+     * Розділ (або функція режиму) кожного виду: без нього в режимі людини сповіщення не надходить.
+     *
+     * @var array<string, string>
+     */
+    private const MODE = [
+        'tournament' => 'servers',
+        'giveaway' => 'games',
+        'price_drop' => 'games',
+        'listen_room' => 'music',
+        'clip_of_week' => 'moments',
+        'event_reminder' => 'events',
+        'movie_rating' => 'cinema',
+        'party_join' => 'party',
+        'party_invite' => 'party',
+        'family_' => 'families',
+        'friend_playing' => 'feature:playing',
+        'stream_live' => 'feature:live',
+    ];
+
+    /**
      * @return array<string, bool>
      */
     public static function for(User $user): array
@@ -64,9 +84,26 @@ class NotifyPrefs
 
     public static function allowsKind(User $user, string $kind): bool
     {
+        if (! self::inMode($user, $kind)) {
+            return false;
+        }
         $type = self::KINDS[$kind] ?? null;
 
         return $type === null || self::enabled($user, $type);
+    }
+
+    /** Чи є розділ виду сповіщення в режимі людини (працює й у черзі, без запиту). */
+    public static function inMode(User $user, string $kind): bool
+    {
+        $need = self::MODE[$kind] ?? (str_starts_with($kind, 'family_') ? self::MODE['family_'] : null);
+        if ($need === null) {
+            return true;
+        }
+        $modes = app(NetworkModes::class);
+
+        return str_starts_with($need, 'feature:')
+            ? (bool) ($modes->featuresFor($user)[substr($need, 8)] ?? true)
+            : in_array($need, $modes->modulesFor($user), true);
     }
 
     /**

@@ -33,6 +33,7 @@ use App\Services\Thanks;
 use App\Support\Backgrounds;
 use App\Support\GameTheme;
 use App\Support\Modules\ModuleManager;
+use App\Support\NetworkModes;
 use App\Support\PageSeo;
 use App\Support\Palette;
 use App\Support\Plugins\Plugins;
@@ -152,15 +153,15 @@ class ProfileController extends Controller
                 'joined_at' => $user->created_at?->toIso8601String(),
                 'role' => $user->role,
                 'pin' => $this->pinCard($user),
-                'looking_for_group' => (bool) $user->pref('looking_for_group'),
+                'looking_for_group' => app(Plugins::class)->on('looking_for_group') && (bool) $user->pref('looking_for_group'),
                 'languages' => array_values(array_filter((array) $user->pref('languages', []), 'is_string')),
-                'platforms' => $canSeeContent ? $this->platforms($user) : null,
+                'platforms' => $canSeeContent && $modules->enabled('games') ? $this->platforms($user) : null,
                 'alias' => $mark?->nickname,
                 'note' => $mark?->note,
                 'list' => $mark?->list,
             ],
-            'steamLibrary' => $canSeeContent ? app(SteamPresence::class)->library($user) : [],
-            'together' => $canSeeContent ? app(PlayedTogether::class)->cards($user, owner: $viewer?->id === $user->id) : [],
+            'steamLibrary' => $canSeeContent && $modules->enabled('games') ? app(SteamPresence::class)->library($user) : [],
+            'together' => $canSeeContent && ($modules->enabled('games') || $modules->enabled('servers')) ? app(PlayedTogether::class)->cards($user, owner: $viewer?->id === $user->id) : [],
             'togetherOff' => $viewer?->id === $user->id && (bool) $user->pref('together_off'),
             'relation' => $relation,
             'canSeeContent' => $canSeeContent,
@@ -195,7 +196,7 @@ class ProfileController extends Controller
                     ->values()
                     ->all()
                 : [],
-            'blockOrder' => ProfileBlocks::normalize($user->pref('profile_blocks')),
+            'blockOrder' => ProfileBlocks::visible($user->pref('profile_blocks')),
             'canMessage' => $viewer !== null && $messenger->canMessage($viewer, $user),
             'canPost' => $viewer !== null && in_array($relation, [FriendshipService::SELF, FriendshipService::FRIENDS], true),
             'stats' => [
@@ -221,7 +222,7 @@ class ProfileController extends Controller
                 ? [...app(Backlog::class)->summary($user), 'href' => '/games/backlog/'.$user->username]
                 : null,
             'achievements' => app(Achievements::class)->for($user),
-            'stream' => ($stream = UserStream::query()->where('user_id', $user->id)->first()) ? app(LiveStreams::class)->card($stream, $request->getHost()) : null,
+            'stream' => app(NetworkModes::class)->featuresFor($viewer)['live'] && ($stream = UserStream::query()->where('user_id', $user->id)->first()) ? app(LiveStreams::class)->card($stream, $request->getHost()) : null,
             'characters' => $canSeeContent && $modules->enabled('servers') ? CharacterController::cards(player: $user) : [],
             'photosHref' => $modules->enabled('photos') ? '/photos/u/'.$user->username : null,
             'audio' => $modules->enabled('music') && $canSeeContent ? [

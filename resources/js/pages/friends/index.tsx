@@ -1,4 +1,11 @@
-import { Deferred, Head, InfiniteScroll, Link, router } from '@inertiajs/react';
+import {
+    Deferred,
+    Head,
+    InfiniteScroll,
+    Link,
+    router,
+    usePage,
+} from '@inertiajs/react';
 import {
     Briefcase,
     Clapperboard,
@@ -17,6 +24,7 @@ import { EmptyState, Widget, WidgetSkeleton } from '@/components/gc/widget';
 import { cn } from '@/lib/utils';
 import type { PersonCard as Person, ScrollData } from '@/types';
 import { tr } from '@/lib/i18n';
+import { friendListAllowed } from '@/lib/modes';
 
 type Tab =
     | 'all'
@@ -86,6 +94,7 @@ const empty: Record<Tab, { title: string; text: string }> = {
 
 export default function Friends({ tab, q, users, counts, suggestions }: Props) {
     const [search, setSearch] = useState(q);
+    const { modules } = usePage().props;
 
     useEffect(() => {
         if (search === q) return;
@@ -109,41 +118,46 @@ export default function Friends({ tab, q, users, counts, suggestions }: Props) {
             <div className="space-y-5">
                 <div className="glass flex flex-col gap-3 rounded-2xl p-3 md:flex-row md:items-center">
                     <div className="scrollbar-none flex gap-1 overflow-x-auto">
-                        {tabs.map((item) => (
-                            <Link
-                                key={item.key}
-                                href={
-                                    item.key === 'all'
-                                        ? '/friends'
-                                        : `/friends?tab=${item.key}`
-                                }
-                                className={cn(
-                                    'flex shrink-0 items-center gap-2 rounded-xl px-3.5 py-2.5 text-sm font-semibold transition',
-                                    tab === item.key
-                                        ? 'nav-active text-white'
-                                        : 'text-white/55 hover:bg-white/[0.04] hover:text-white',
-                                )}
-                            >
-                                <item.icon
+                        {tabs
+                            .filter((item) =>
+                                friendListAllowed(item.key, modules),
+                            )
+                            .map((item) => (
+                                <Link
+                                    key={item.key}
+                                    href={
+                                        item.key === 'all'
+                                            ? '/friends'
+                                            : `/friends?tab=${item.key}`
+                                    }
                                     className={cn(
-                                        'size-4',
-                                        tab === item.key && 'text-gc-lilac-400',
-                                    )}
-                                />
-                                {item.label}
-                                <span
-                                    className={cn(
-                                        'rounded-full px-1.5 text-[11px] leading-5 tabular-nums',
-                                        item.key === 'requests' &&
-                                            counts.requests > 0
-                                            ? 'bg-gradient-brand text-white'
-                                            : 'bg-white/[0.07] text-white/60',
+                                        'flex shrink-0 items-center gap-2 rounded-xl px-3.5 py-2.5 text-sm font-semibold transition',
+                                        tab === item.key
+                                            ? 'nav-active text-white'
+                                            : 'text-white/55 hover:bg-white/[0.04] hover:text-white',
                                     )}
                                 >
-                                    {counts[item.key]}
-                                </span>
-                            </Link>
-                        ))}
+                                    <item.icon
+                                        className={cn(
+                                            'size-4',
+                                            tab === item.key &&
+                                                'text-gc-lilac-400',
+                                        )}
+                                    />
+                                    {item.label}
+                                    <span
+                                        className={cn(
+                                            'rounded-full px-1.5 text-[11px] leading-5 tabular-nums',
+                                            item.key === 'requests' &&
+                                                counts.requests > 0
+                                                ? 'bg-gradient-brand text-white'
+                                                : 'bg-white/[0.07] text-white/60',
+                                        )}
+                                    >
+                                        {counts[item.key]}
+                                    </span>
+                                </Link>
+                            ))}
                     </div>
                     <label className="input-glass flex h-10 items-center gap-2 rounded-xl px-3 md:ml-auto md:w-72">
                         <Search className="size-4 text-white/40" />

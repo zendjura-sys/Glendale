@@ -22,6 +22,7 @@ import type { SocialConnection } from '@/types/auth';
 import { StreamSettings } from '@/components/streams/stream';
 import type { StreamInfo } from '@/components/streams/stream';
 import { tr } from '@/lib/i18n';
+import { listWords } from '@/lib/modes';
 import { useFeature } from '@/lib/plugins';
 
 type ProfileForm = {
@@ -61,7 +62,7 @@ export default function Profile({
     countries,
     stream,
 }: Props) {
-    const { auth } = usePage().props;
+    const { auth, modules } = usePage().props;
     const playing = usePlayer().current !== null;
     const playingOn = useFeature('playing');
     const form = useForm<ProfileForm>({
@@ -194,9 +195,15 @@ export default function Profile({
                             onChange={(e) => setData('about', e.target.value)}
                             rows={4}
                             maxLength={2000}
-                            placeholder={tr(
-                                'Розкажіть про свої захоплення, улюблені ігри та фільми',
-                            )}
+                            placeholder={tr('Розкажіть про {what}', {
+                                what: listWords([
+                                    tr('свої захоплення'),
+                                    modules.includes('games') &&
+                                        tr('улюблені ігри'),
+                                    modules.includes('cinema') && tr('фільми'),
+                                    modules.includes('music') && tr('музику'),
+                                ]),
+                            })}
                             className={cn(
                                 fieldClass,
                                 'resize-y py-3 leading-relaxed',

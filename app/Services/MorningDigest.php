@@ -7,7 +7,7 @@ use App\Models\TournamentEntry;
 use App\Models\User;
 use App\Notifications\MorningDigestNotice;
 use App\Services\Quests\DailyQuests;
-use App\Support\Modules\ModuleManager;
+use App\Support\NetworkModes;
 use App\Support\NotifyPrefs;
 use Illuminate\Support\Carbon;
 
@@ -21,7 +21,6 @@ class MorningDigest
     public const TZ = 'Europe/Kyiv';
 
     public function __construct(
-        private readonly ModuleManager $modules,
         private readonly FriendshipService $friendships,
         private readonly EventCalendar $calendar,
     ) {}
@@ -56,9 +55,12 @@ class MorningDigest
     {
         $today = Carbon::now(self::TZ);
         $lines = [];
+        // Лише розділи з режиму людини (дайджест збирається у фоні, без запиту).
+        $modules = app(NetworkModes::class)->modulesFor($user);
+        $has = fn (string $key) => in_array($key, $modules, true);
 
         $events = array_values(array_filter(
-            $this->calendar->upcoming($user),
+            $has('events') ? $this->calendar->upcoming($user) : [],
             fn (array $e) => ($e['status'] ?? null) === 'going' && Carbon::parse($e['starts_at'])->setTimezone(self::TZ)->isSameDay($today),
         ));
         if ($events !== []) {
@@ -68,7 +70,7 @@ class MorningDigest
                 : 'Подій сьогодні: '.count($events).' — перша «'.$first['title'].'» о '.Carbon::parse($first['starts_at'])->setTimezone(self::TZ)->format('H:i');
         }
 
-        if ($this->modules->enabled('servers')) {
+        if ($has('servers')) {
             $tournament = Tournament::query()
                 ->whereIn('id', TournamentEntry::query()->where('user_id', $user->id)->select('tournament_id'))
                 ->where(fn ($q) => $q->where('status', Tournament::RUNNING)
@@ -89,14 +91,14 @@ class MorningDigest
                 .($birthdays->count() > 3 ? ' і ще '.($birthdays->count() - 3) : '');
         }
 
-        if ($this->modules->enabled('quests')) {
+        if ($has('quests')) {
             $open = count(array_filter(app(DailyQuests::class)->board($user), fn (array $q) => ! $q['claimed']));
             if ($open > 0) {
                 $lines[] = 'Завдань дня: '.$open.' — очки до сезонного пропуску';
             }
         }
 
-        $unread = ($this->modules->enabled('messages') ? app(Messenger::class)->unreadConversations($user) : 0);
+        $unread = ($has('messages') ? app(Messenger::class)->unreadConversations($user) : 0);
         $notifications = NotifyPrefs::unreadCount($user);
         if ($unread > 0 || $notifications > 0) {
             $lines[] = 'Непрочитано: '.implode(', ', array_filter([

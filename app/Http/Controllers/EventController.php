@@ -8,6 +8,7 @@ use App\Models\GtaServer;
 use App\Models\ServerEvent;
 use App\Models\User;
 use App\Services\EventCalendar;
+use App\Support\Modules\ModuleManager;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -32,7 +33,8 @@ class EventController extends Controller
         $props = [
             'events' => $this->calendar->upcoming($this->user($request), $data['kind'] ?? null),
             'kind' => $data['kind'] ?? null,
-            'kinds' => self::KINDS,
+            'kinds' => array_filter(self::KINDS, fn (string $key) => app(ModuleManager::class)->enabled(EventCalendar::SOURCES[$key]), ARRAY_FILTER_USE_KEY),
+            'releasesOn' => app(ModuleManager::class)->enabled('games'),
             'reminder_lead' => EventCalendar::leadOf($this->user($request)),
             'reminder_leads' => EventCalendar::REMIND_LEADS,
         ];
@@ -68,6 +70,8 @@ class EventController extends Controller
 
     public function releases(Request $request): Response
     {
+        abort_unless(app(ModuleManager::class)->enabled('games'), 404);
+
         return Inertia::render('releases/index', [
             'events' => $this->calendar->releases($this->user($request)),
         ]);

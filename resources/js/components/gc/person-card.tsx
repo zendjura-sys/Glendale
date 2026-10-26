@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import { Link, router } from '@inertiajs/react';
+import { Link, router, usePage } from '@inertiajs/react';
 import { MapPin } from 'lucide-react';
 import { useState } from 'react';
 import { plural } from '@/lib/format';
@@ -10,6 +10,7 @@ import { UserAvatar } from './user-avatar';
 import { VerifiedBadge } from './verified-badge';
 import { nameDisplayProps, PlusBadge } from './plus';
 import { tr } from '@/lib/i18n';
+import { friendListAllowed } from '@/lib/modes';
 
 const listLabel: Record<FriendList, string> = {
     raid: tr('Рейд'),
@@ -18,6 +19,7 @@ const listLabel: Record<FriendList, string> = {
 };
 
 export function PersonCard({ person }: { person: Person }) {
+    const { modules } = usePage().props;
     return (
         <div className="glass group relative flex flex-col items-center overflow-hidden rounded-2xl p-5 text-center transition hover:-translate-y-0.5 hover:border-white/15">
             <div className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-gc-indigo/20 to-transparent opacity-0 transition group-hover:opacity-100" />
@@ -45,7 +47,7 @@ export function PersonCard({ person }: { person: Person }) {
                     {person.name}
                 </p>
             )}
-            {person.list && (
+            {person.list && friendListAllowed(person.list, modules) && (
                 <span className="relative mt-1 rounded-chip bg-white/10 px-2 py-0.5 text-[11px] text-white/70">
                     {listLabel[person.list]}
                 </span>
@@ -95,6 +97,7 @@ export function PersonCard({ person }: { person: Person }) {
 }
 
 function FriendMarkForm({ person }: { person: Person }) {
+    const { modules } = usePage().props;
     const [open, setOpen] = useState(false);
     const [nickname, setNickname] = useState(person.alias ?? '');
     const [note, setNote] = useState(person.note ?? '');
@@ -146,8 +149,12 @@ function FriendMarkForm({ person }: { person: Person }) {
                 className="input-glass h-8 w-full rounded-lg px-2 text-xs text-white focus:outline-none"
             >
                 <option value="">{tr('Без списку')}</option>
-                <option value="raid">{tr('Рейд')}</option>
-                <option value="cinema">{tr('Кіно')}</option>
+                {friendListAllowed('raid', modules) && (
+                    <option value="raid">{tr('Рейд')}</option>
+                )}
+                {friendListAllowed('cinema', modules) && (
+                    <option value="cinema">{tr('Кіно')}</option>
+                )}
                 <option value="work">{tr('Робота')}</option>
             </select>
             <button
