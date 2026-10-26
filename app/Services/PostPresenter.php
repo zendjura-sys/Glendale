@@ -335,6 +335,38 @@ class PostPresenter
             'can_pin' => $canPin && $comment->parent_id === null,
             'can_thank' => $viewer !== null && $viewer->id !== $comment->user_id && app(Plugins::class)->on('thanks'),
             'thanked' => $viewer !== null && $viewer->id !== $comment->user_id && app(Thanks::class)->has($viewer, 'comment', $comment->id),
+            'badge' => $this->commentBadge($comment),
         ];
+    }
+
+    /** @var array<int, int> id запису → id спільноти (0 — не спільнота) */
+    private array $commentCommunities = [];
+
+    /** @var array<string, array{title: string, color: string|null}|null> */
+    private array $commentBadges = [];
+
+    /**
+     * Звання автора коментаря в спільноті, де стоїть запис (як у записах — колір і назва).
+     *
+     * @return array{title: string, color: string|null}|null
+     */
+    private function commentBadge(Comment $comment): ?array
+    {
+        if ($comment->post_id === null) {
+            return null;
+        }
+        $communityId = $this->commentCommunities[$comment->post_id] ??= (int) (Post::query()->whereKey($comment->post_id)
+            ->where('wall_type', 'community')->value('wall_id') ?? 0);
+        if ($communityId === 0) {
+            return null;
+        }
+        $key = $communityId.':'.$comment->user_id;
+        if (! array_key_exists($key, $this->commentBadges)) {
+            $member = CommunityMember::query()->where('community_id', $communityId)->where('user_id', $comment->user_id)
+                ->whereNotNull('title')->first(['title', 'color']);
+            $this->commentBadges[$key] = $member ? ['title' => (string) $member->title, 'color' => $member->color] : null;
+        }
+
+        return $this->commentBadges[$key];
     }
 }

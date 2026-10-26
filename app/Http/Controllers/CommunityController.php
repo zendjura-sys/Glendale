@@ -212,6 +212,7 @@ class CommunityController extends Controller
                 'post_tags' => implode("\n", $community->post_tags ?? []),
                 'slow_mode' => $community->slow_mode,
                 'premoderation' => $community->premoderation,
+                'weekly_digest' => $community->weekly_digest,
             ],
             'slowModes' => CommunityWall::SLOW_MODES,
             'stats' => Inertia::defer(fn () => $this->wall->stats($community)),
@@ -253,6 +254,7 @@ class CommunityController extends Controller
             'post_tags' => ['nullable', 'string', 'max:1000'],
             'slow_mode' => ['required', 'integer', Rule::in(CommunityWall::SLOW_MODES)],
             'premoderation' => ['required', 'boolean'],
+            'weekly_digest' => ['sometimes', 'boolean'],
         ]);
 
         $trimmed = fn (?string $text) => ($text = trim((string) $text)) === '' ? null : $text;
@@ -267,6 +269,7 @@ class CommunityController extends Controller
             'post_tags' => $tags === [] ? null : $tags,
             'slow_mode' => (int) $data['slow_mode'],
             'premoderation' => (bool) $data['premoderation'],
+            'weekly_digest' => (bool) ($data['weekly_digest'] ?? $community->weekly_digest),
         ]);
 
         if (! $community->premoderation) {

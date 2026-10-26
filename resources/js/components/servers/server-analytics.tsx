@@ -17,11 +17,25 @@ export type ServerAnalyticsData = {
         number
     >;
     previous_views: number;
+    sources?: Record<string, number>;
+};
+
+const SOURCE_LABELS: Record<string, string> = {
+    catalog: tr('Каталог серверів'),
+    search: tr('Пошуковики'),
+    feed: tr('Стрічка й записи'),
+    gamecon: tr('Інші сторінки GameCon'),
+    external: tr('Інші сайти'),
+    direct: tr('Напряму'),
 };
 
 /** Аналітика для власника: перегляди за 30 днів і переходи. */
 export function ServerAnalytics({ data }: { data: ServerAnalyticsData }) {
     const peak = Math.max(1, ...data.days.map((d) => d.views));
+    const sources = Object.entries(data.sources ?? {})
+        .filter(([, value]) => value > 0)
+        .sort((a, b) => b[1] - a[1]);
+    const sourceTotal = sources.reduce((sum, [, value]) => sum + value, 0);
     const delta =
         data.previous_views > 0
             ? Math.round(
@@ -102,6 +116,36 @@ export function ServerAnalytics({ data }: { data: ServerAnalyticsData }) {
                     ))}
                 </div>
             </div>
+            {sourceTotal > 0 && (
+                <div className="mt-4">
+                    <div className="mb-2 text-xs font-medium text-white/45">
+                        {tr('Звідки приходять')}
+                    </div>
+                    <ul className="space-y-1.5">
+                        {sources.map(([key, value]) => (
+                            <li
+                                key={key}
+                                className="flex items-center gap-3 text-sm"
+                            >
+                                <span className="w-40 shrink-0 break-words text-white/70">
+                                    {SOURCE_LABELS[key] ?? key}
+                                </span>
+                                <span className="h-2 min-w-0 flex-1 overflow-hidden rounded-full bg-white/[0.06]">
+                                    <span
+                                        className="block h-full rounded-full bg-gc-indigo/70"
+                                        style={{
+                                            width: `${(value / sourceTotal) * 100}%`,
+                                        }}
+                                    />
+                                </span>
+                                <span className="w-10 text-right text-xs text-white/55 tabular-nums">
+                                    {Math.round((value / sourceTotal) * 100)}%
+                                </span>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            )}
             <p className="mt-3 text-xs text-white/40">
                 {tr(
                     'Бачите лише ви як власник. Один перегляд від людини за годину; свої перегляди не враховуються.',

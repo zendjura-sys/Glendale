@@ -148,6 +148,12 @@ export type ConversationDetails = {
     is_muted: boolean;
     share_receipts?: boolean;
     slow_seconds?: number;
+    automod?: {
+        links: boolean;
+        caps: boolean;
+        flood: boolean;
+        words: string[];
+    } | null;
     pinned?: boolean;
     folder?: string | null;
     my_role: MemberRole;

@@ -12,6 +12,7 @@ import { UserAvatar } from './user-avatar';
 import { VerifiedBadge } from './verified-badge';
 import { nameDisplayProps, PlusBadge } from './plus';
 import { ThanksButton } from './thanks-button';
+import { RoleBadge } from '@/components/communities/role-badge';
 import {
     CosmeticBadge,
     cosmeticNameStyle,
@@ -253,6 +254,12 @@ export function Comments({
                                         >
                                             {comment.user.name}
                                         </span>
+                                        {comment.badge && (
+                                            <RoleBadge
+                                                title={comment.badge.title}
+                                                color={comment.badge.color}
+                                            />
+                                        )}
                                         {comment.user.is_verified && (
                                             <VerifiedBadge className="size-3" />
                                         )}

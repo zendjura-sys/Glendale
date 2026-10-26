@@ -24,6 +24,7 @@ import { tr } from '@/lib/i18n';
 import { usePlugin } from '@/lib/plugins';
 
 const reload = { preserveScroll: true, preserveState: true } as const;
+const RELOAD = reload;
 
 export function GroupInfoDialog({
     open,
@@ -36,6 +37,7 @@ export function GroupInfoDialog({
 }) {
     const { auth } = usePage().props;
     const slowOn = usePlugin('slow_mode');
+    const automodOn = usePlugin('group_automod');
     const rolesOn = usePlugin('chat_roles');
     const [adding, setAdding] = useState(false);
     const [picked, setPicked] = useState<UserCard[]>([]);
@@ -230,6 +232,13 @@ export function GroupInfoDialog({
                         </>
                     ) : (
                         <>
+                            {canManage && automodOn && (
+                                <GroupAutomod
+                                    base={base}
+                                    value={conversation.automod ?? null}
+                                    reload={reload}
+                                />
+                            )}
                             {canManage && slowOn && (
                                 <label className="mb-1 flex items-center justify-between gap-3 rounded-xl p-2 text-sm text-white/70">
                                     <span>{tr('Повільний режим')}</span>
@@ -374,5 +383,75 @@ export function GroupInfoDialog({
                 </div>
             </DialogContent>
         </Dialog>
+    );
+}
+
+/** Автомодерація групи: посилання, капс, флуд і свої заборонені слова (адмінів не стосується). */
+function GroupAutomod({
+    base,
+    value,
+    reload,
+}: {
+    base: string;
+    value: {
+        links: boolean;
+        caps: boolean;
+        flood: boolean;
+        words: string[];
+    } | null;
+    reload: typeof RELOAD;
+}) {
+    const [rules, setRules] = useState({
+        links: value?.links ?? false,
+        caps: value?.caps ?? false,
+        flood: value?.flood ?? false,
+        words: (value?.words ?? []).join(', '),
+    });
+    const save = (next: typeof rules) => {
+        setRules(next);
+        router.post(`${base}/automod`, next, reload);
+    };
+    const toggles: [keyof typeof rules, string][] = [
+        ['links', tr('Посилання лише від адмінів')],
+        ['caps', tr('Без капсу')],
+        ['flood', tr('Не більше 5 повідомлень за 10 с')],
+    ];
+
+    return (
+        <div className="mb-1 rounded-xl p-2 text-sm text-white/70">
+            <p className="mb-1.5 font-medium text-white/85">
+                {tr('Автомодерація')}
+            </p>
+            {toggles.map(([key, label]) => (
+                <label
+                    key={key}
+                    className="flex items-center justify-between gap-3 py-1"
+                >
+                    <span>{label}</span>
+                    <input
+                        type="checkbox"
+                        checked={Boolean(rules[key])}
+                        onChange={(e) =>
+                            save({ ...rules, [key]: e.target.checked })
+                        }
+                        className="size-4 accent-gc-indigo"
+                    />
+                </label>
+            ))}
+            <label className="mt-1 block">
+                <span className="text-xs text-white/50">
+                    {tr('Заборонені слова (через кому)')}
+                </span>
+                <input
+                    value={rules.words}
+                    maxLength={2000}
+                    onChange={(e) =>
+                        setRules({ ...rules, words: e.target.value })
+                    }
+                    onBlur={() => save(rules)}
+                    className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-2 py-1.5 text-sm text-white"
+                />
+            </label>
+        </div>
     );
 }

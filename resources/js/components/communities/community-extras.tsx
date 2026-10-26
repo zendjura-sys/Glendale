@@ -13,6 +13,7 @@ export type CommunityExtras = {
     post_tags: string;
     slow_mode: number;
     premoderation: boolean;
+    weekly_digest?: boolean;
 };
 
 export type CommunityStats = {
@@ -174,6 +175,29 @@ export function RulesForm({
                                 <span className="block text-xs text-white/45">
                                     {tr(
                                         'Записи учасників з’являються після схвалення редактором.',
+                                    )}
+                                </span>
+                            </span>
+                        </label>
+                        <label className="flex items-start gap-3 rounded-2xl border border-white/[0.07] p-3.5 text-sm text-white/80">
+                            <input
+                                type="checkbox"
+                                checked={data.weekly_digest ?? false}
+                                onChange={(event) =>
+                                    setData(
+                                        'weekly_digest',
+                                        event.target.checked,
+                                    )
+                                }
+                                className="mt-0.5 size-4 accent-gc-indigo"
+                            />
+                            <span>
+                                <span className="block font-medium text-white">
+                                    {tr('Тижневий дайджест')}
+                                </span>
+                                <span className="block text-xs text-white/45">
+                                    {tr(
+                                        'Щопонеділка — запис від спільноти з п’ятьма найкращими записами тижня.',
                                     )}
                                 </span>
                             </span>

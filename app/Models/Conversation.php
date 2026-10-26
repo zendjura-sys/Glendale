@@ -21,9 +21,10 @@ use Illuminate\Support\Facades\Storage;
  * @property string|null $direct_key
  * @property int|null $last_message_id
  * @property Carbon|null $last_message_at
+ * @property array<string, mixed>|null $automod
  * @property-read string|null $avatar_url
  */
-#[Fillable(['type', 'title', 'avatar_path', 'owner_id', 'family_id', 'direct_key', 'last_message_id', 'last_message_at', 'slow_seconds'])]
+#[Fillable(['type', 'title', 'avatar_path', 'owner_id', 'family_id', 'direct_key', 'last_message_id', 'last_message_at', 'slow_seconds', 'automod'])]
 class Conversation extends Model
 {
     public const TYPE_DIRECT = 'direct';
@@ -34,7 +35,8 @@ class Conversation extends Model
 
     protected function casts(): array
     {
-        return ['last_message_at' => 'datetime'];
+        return [
+            'automod' => 'array', 'last_message_at' => 'datetime'];
     }
 
     public static function directKey(int $a, int $b): string

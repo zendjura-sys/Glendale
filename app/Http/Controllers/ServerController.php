@@ -180,7 +180,7 @@ class ServerController extends Controller
             ->sortByDesc('score')
             ->values();
 
-        app(ServerAnalytics::class)->view($server, $request->user());
+        app(ServerAnalytics::class)->view($server, $request->user(), $request->headers->get('referer'));
 
         return Inertia::render('servers/show', [
             'server' => [

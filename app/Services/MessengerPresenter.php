@@ -349,6 +349,7 @@ class MessengerPresenter
             'can_write' => $conversation->isGroup() || ($peer !== null && $messenger->canMessage($viewer, $peer)),
             'is_muted' => $me->is_muted,
             'slow_seconds' => (int) $conversation->slow_seconds,
+            'automod' => is_array($conversation->automod) ? $conversation->automod : null,
             'share_receipts' => $me->share_receipts,
             'pinned' => $me->pinned_at !== null,
             'folder' => $me->folder,

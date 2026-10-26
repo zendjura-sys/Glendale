@@ -37,6 +37,7 @@ use Illuminate\Support\Facades\Storage;
  * @property list<string>|null $banned_words
  * @property list<string>|null $post_tags
  * @property int $slow_mode
+ * @property bool $weekly_digest
  * @property bool $premoderation
  * @property Carbon $created_at
  * @property-read string|null $avatar_url
@@ -46,7 +47,7 @@ use Illuminate\Support\Facades\Storage;
  */
 // Банка — лише для сторінок сайту (картка «Підтримати»); у застосунок і API не віддається.
 #[Hidden(['donation_jar', 'donation_note'])]
-#[Fillable(['slug', 'name', 'type', 'privacy', 'wall', 'category', 'status', 'description', 'website', 'city', 'avatar_path', 'cover_path', 'owner_id', 'is_verified', 'rules', 'handbook', 'welcome', 'banned_words', 'post_tags', 'slow_mode', 'premoderation'])]
+#[Fillable(['slug', 'name', 'type', 'privacy', 'wall', 'category', 'status', 'description', 'website', 'city', 'avatar_path', 'cover_path', 'owner_id', 'is_verified', 'rules', 'handbook', 'welcome', 'banned_words', 'post_tags', 'slow_mode', 'premoderation', 'weekly_digest'])]
 class Community extends Model
 {
     use SoftDeletes;
@@ -95,6 +96,7 @@ class Community extends Model
             'banned_words' => 'array',
             'post_tags' => 'array',
             'slow_mode' => 'integer',
+            'weekly_digest' => 'boolean',
             'premoderation' => 'boolean',
         ];
     }

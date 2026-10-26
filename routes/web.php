@@ -283,6 +283,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
             Route::post('{conversation}/pin', [MessengerController::class, 'pin'])->name('pin');
             Route::post('{conversation}/unread', [MessengerController::class, 'markUnread'])->name('unread');
             Route::post('{conversation}/slow', [MessengerController::class, 'slow'])->name('slow');
+            Route::post('{conversation}/automod', [MessengerController::class, 'automod'])->name('automod');
             Route::post('{conversation}/members/{user}/role', [MessengerController::class, 'memberRole'])->name('members.role');
             Route::post('{conversation}/receipts', [MessengerController::class, 'receipts'])->name('receipts');
             Route::put('{conversation}/folder', [MessengerController::class, 'folder'])->name('folder');

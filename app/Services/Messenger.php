@@ -536,6 +536,27 @@ class Messenger
         $conversation->forceFill(['slow_seconds' => $seconds])->save();
     }
 
+    /**
+     * Автомодерація групи (керують власник і адміни): посилання, капс, флуд, свої заборонені слова.
+     *
+     * @param  array{links?: bool, caps?: bool, flood?: bool, words?: list<string>}  $settings
+     */
+    public function setAutomod(Conversation $conversation, User $actor, array $settings): void
+    {
+        $this->ensureGroup($conversation);
+        abort_unless($conversation->participantFor($actor)?->canManage(), 403);
+        $words = array_values(array_unique(array_filter(array_map(
+            fn ($w) => mb_strtolower(trim((string) $w)),
+            array_slice($settings['words'] ?? [], 0, 50),
+        ), fn (string $w) => $w !== '' && mb_strlen($w) <= 40)));
+        $conversation->forceFill(['automod' => [
+            'links' => (bool) ($settings['links'] ?? false),
+            'caps' => (bool) ($settings['caps'] ?? false),
+            'flood' => (bool) ($settings['flood'] ?? false),
+            'words' => $words,
+        ]])->save();
+    }
+
     public function setMemberRole(Conversation $conversation, User $actor, User $target, string $role): void
     {
         $this->ensureGroup($conversation);

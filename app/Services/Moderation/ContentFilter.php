@@ -143,7 +143,47 @@ class ContentFilter
             }
         }
 
+        $this->guardGroupRules($user, $conversation, $body);
+
         return $this->clean($body);
+    }
+
+    /**
+     * Правила конкретної групи (Messenger::setAutomod). Власника й адмінів не обмежують.
+     */
+    private function guardGroupRules(User $user, Conversation $conversation, ?string $body): void
+    {
+        $rules = $conversation->automod;
+        if (! is_array($rules) || ! $conversation->isGroup() || $conversation->participantFor($user)?->canManage()) {
+            return;
+        }
+        if (($rules['flood'] ?? false) === true) {
+            $key = "moderation.group-flood.{$conversation->id}.{$user->id}";
+            $count = (int) Cache::get($key, 0) + 1;
+            Cache::put($key, $count, 10);
+            if ($count > 5) {
+                throw ValidationException::withMessages(['body' => 'У цій групі не можна більше 5 повідомлень за 10 секунд.']);
+            }
+        }
+        if ($body === null || $body === '') {
+            return;
+        }
+        if (($rules['links'] ?? false) === true && preg_match('#(https?://|www\.|t\.me/|discord\.gg/)#iu', $this->withoutOwnLinks($body)) === 1) {
+            throw ValidationException::withMessages(['body' => 'У цій групі посилання надсилають лише адміни.']);
+        }
+        if (($rules['caps'] ?? false) === true) {
+            $letters = (string) preg_replace('/[^\p{L}]/u', '', $body);
+            $upper = (string) preg_replace('/[^\p{Lu}]/u', '', $letters);
+            if (mb_strlen($letters) >= 10 && mb_strlen($upper) / mb_strlen($letters) >= 0.7) {
+                throw ValidationException::withMessages(['body' => 'Будь ласка, без капсу — у цій групі так не можна.']);
+            }
+        }
+        $lower = mb_strtolower($body);
+        foreach ((array) ($rules['words'] ?? []) as $word) {
+            if (is_string($word) && $word !== '' && str_contains($lower, $word)) {
+                throw ValidationException::withMessages(['body' => 'У повідомленні є слово, заборонене правилами групи.']);
+            }
+        }
     }
 
     public function ensureNotFamilyMuted(User $user, int $familyId): void

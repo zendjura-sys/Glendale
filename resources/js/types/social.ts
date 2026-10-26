@@ -68,6 +68,7 @@ export type CommentItem = {
     can_delete: boolean;
     can_thank?: boolean;
     thanked?: boolean;
+    badge?: { title: string; color: string | null } | null;
 };
 
 export type Visibility = 'public' | 'friends' | 'private';

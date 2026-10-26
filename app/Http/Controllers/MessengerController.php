@@ -187,6 +187,23 @@ class MessengerController extends Controller
         return back();
     }
 
+    public function automod(Request $request, Conversation $conversation): RedirectResponse
+    {
+        app(Plugins::class)->ensure('group_automod');
+        $data = $request->validate([
+            'links' => ['required', 'boolean'],
+            'caps' => ['required', 'boolean'],
+            'flood' => ['required', 'boolean'],
+            'words' => ['nullable', 'string', 'max:2000'],
+        ]);
+        $words = preg_split('/[\n,]+/u', (string) ($data['words'] ?? '')) ?: [];
+        $this->messenger->setAutomod($conversation, $request->user(), [
+            'links' => (bool) $data['links'], 'caps' => (bool) $data['caps'], 'flood' => (bool) $data['flood'], 'words' => $words,
+        ]);
+
+        return back();
+    }
+
     public function memberRole(Request $request, Conversation $conversation, User $user): RedirectResponse
     {
         app(Plugins::class)->ensure('chat_roles');
