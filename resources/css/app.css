@@ -4265,8 +4265,10 @@ html:has(.am) body {
 }
 
 /* ---------- 5. Матове скло iOS 27+: шапка, нижня панель, підвал на комп'ютері ---------- */
+/* .ios-glass — той самий рецепт без розмітки: міні-плеєр, вкладки «Музики», бічні меню, шапка адмінки. */
 .ios-glass-bar,
-:root[data-skin='gamecon'] .gc-footer-card {
+.ios-glass,
+:root[data-skin='gamecon'] :is(.gc-footer-card, .glass-matte) {
     background-color: var(--ios-glass-surface) !important;
     background-image: linear-gradient(
         135deg,
@@ -4274,8 +4276,8 @@ html:has(.am) body {
         rgb(255 255 255 / 0.01) 50%,
         rgb(0 210 255 / 0.03) 100%
     ) !important;
-    -webkit-backdrop-filter: blur(32px) saturate(200%);
-    backdrop-filter: blur(32px) saturate(200%);
+    -webkit-backdrop-filter: blur(32px) saturate(200%) !important;
+    backdrop-filter: blur(32px) saturate(200%) !important;
     border: 1px solid var(--ios-glass-border);
     box-shadow: var(--ios-glass-specular), var(--ios-glass-shadow);
 }
@@ -4351,7 +4353,6 @@ html:has(.am) body {
         [data-slot='select-content'],
         [data-slot='dialog-content'],
         [data-slot='popover-content'],
-        .glass-matte,
         .gc-island,
         .glass-strong
     ) {

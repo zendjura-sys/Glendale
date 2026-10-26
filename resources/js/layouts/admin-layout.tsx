@@ -457,15 +457,16 @@ export default function AdminLayout({ children }: PropsWithChildren) {
                 initial={false}
                 animate={{ width: rail ? 76 : 260 }}
                 transition={motionOr(reduce, SNAP)}
-                className="liquid-glass liquid-glass--dense fixed top-3 bottom-3 left-3 z-40 hidden flex-col rounded-2xl p-3 [view-transition-name:gc-sidebar] lg:flex"
+                className="ios-glass fixed top-3 bottom-3 left-3 z-40 hidden flex-col rounded-2xl p-3 [view-transition-name:gc-sidebar] lg:flex"
             >
                 <NavPanel rail={rail} onToggle={toggleRail} layoutKey="side" />
             </m.aside>
 
             {/* Планшет і телефон: шапка-острів. Лого плавно від'їжджає праворуч, звільняючи місце,
                 і тоді з'являється квадратна кнопка меню (як у референсі). */}
-            <header className="sticky top-0 z-30 px-2 pt-[calc(0.5rem+env(safe-area-inset-top))] [view-transition-name:gc-topbar] lg:hidden">
-                <div className="liquid-glass liquid-glass--dense relative flex h-14 items-center rounded-2xl px-2">
+            <header className="sticky top-0 z-30 px-2 pt-[calc(0.5rem+env(safe-area-inset-top))] lg:hidden">
+                {/* Ім'я переходу — на самій капсулі: на обгортці воно ізолює підкладку й ламає розмиття. */}
+                <div className="ios-glass relative flex h-14 items-center rounded-2xl px-2 [view-transition-name:gc-topbar]">
                     <m.button
                         type="button"
                         onClick={() => setDrawer(true)}

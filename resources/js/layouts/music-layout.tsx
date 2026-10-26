@@ -118,6 +118,55 @@ function SideLink({
     );
 }
 
+/** Плитка меню ПК: іконка над підписом, активна — акцентна підкладка з неоновим відблиском. */
+function SideTile({
+    href,
+    icon,
+    label,
+    exact,
+    compact,
+}: {
+    href: string;
+    icon: ReactNode;
+    label: string;
+    exact?: boolean;
+    /** Вузька плитка (ряд із трьох): іконка й підпис по центру. */
+    compact?: boolean;
+}) {
+    const active = useActive()(href, exact);
+
+    return (
+        <Link
+            href={href}
+            aria-current={active ? 'page' : undefined}
+            className={cn(
+                'am-tile flex min-h-[64px] min-w-0 flex-col justify-between gap-1.5 rounded-[14px] border transition',
+                compact
+                    ? 'items-center px-1 py-2 text-center'
+                    : 'items-start p-2.5',
+                active
+                    ? 'border-[color-mix(in_oklab,var(--am-accent)_45%,transparent)] bg-[color-mix(in_oklab,var(--am-accent)_16%,transparent)]'
+                    : 'border-[var(--am-sep)] bg-[var(--am-fill)] hover:bg-[var(--am-fill2)]',
+            )}
+        >
+            <span className="flex size-7 items-center justify-center rounded-[9px] bg-[color-mix(in_oklab,var(--am-accent)_14%,transparent)] text-[var(--am-accent)] [&_svg]:size-4">
+                {icon}
+            </span>
+            <span
+                className={cn(
+                    'am-footnote w-full',
+                    compact
+                        ? 'truncate text-[12px]'
+                        : 'line-clamp-2 leading-tight break-words',
+                    active && 'font-semibold',
+                )}
+            >
+                {label}
+            </span>
+        </Link>
+    );
+}
+
 function Sidebar({ onUpload }: { onUpload: () => void }) {
     const [q, setQ] = useState('');
     const [playlists, setPlaylists] = useState<{ id: number; title: string }[]>(
@@ -134,7 +183,7 @@ function Sidebar({ onUpload }: { onUpload: () => void }) {
     }, []);
 
     return (
-        <aside className="sticky top-0 hidden h-dvh w-[260px] shrink-0 flex-col overflow-y-auto border-r border-[var(--am-sep)] bg-[var(--am-bg2)] px-3 pt-4 pb-4 lg:flex">
+        <aside className="ios-glass sticky top-3 my-3 ml-3 hidden h-[calc(100dvh-24px)] w-[260px] shrink-0 [scrollbar-width:none] flex-col overflow-y-auto overscroll-contain rounded-[22px] px-3 pt-4 pb-3 lg:flex">
             <Link
                 href="/feed"
                 className="am-subhead mb-3 flex items-center gap-1 px-1 text-[var(--am-accent)] hover:opacity-80"
@@ -162,9 +211,10 @@ function Sidebar({ onUpload }: { onUpload: () => void }) {
                     className="am-subhead min-w-0 flex-1 bg-transparent outline-none placeholder:text-[var(--am-label2)]"
                 />
             </form>
-            <nav className="grid gap-0.5">
+            <nav className="grid grid-cols-3 gap-1.5">
                 {TABS.slice(0, 3).map((tab) => (
-                    <SideLink
+                    <SideTile
+                        compact
                         key={tab.href}
                         href={tab.href}
                         label={tab.label()}
@@ -176,44 +226,44 @@ function Sidebar({ onUpload }: { onUpload: () => void }) {
             <p className="am-footnote mt-5 mb-1 px-2.5 font-semibold text-[var(--am-label2)]">
                 {tr('Медіатека')}
             </p>
-            <nav className="grid gap-0.5">
-                <SideLink
+            <nav className="grid grid-cols-2 gap-1.5">
+                <SideTile
                     href="/music/library"
                     exact
                     label={tr('Нещодавно додане')}
                     icon={<Clock3 />}
                 />
-                <SideLink
+                <SideTile
                     href="/music/library/artists"
                     label={tr('Виконавці')}
                     icon={<Mic2 />}
                 />
-                <SideLink
+                <SideTile
                     href="/music/library/albums"
                     label={tr('Альбоми')}
                     icon={<Disc3 />}
                 />
-                <SideLink
+                <SideTile
                     href="/music/library/songs"
                     label={tr('Пісні')}
                     icon={<Music2 />}
                 />
-                <SideLink
+                <SideTile
                     href="/music/library/favorites"
                     label={tr('Улюблені пісні')}
                     icon={<Star />}
                 />
-                <SideLink
+                <SideTile
                     href="/music/library/genres"
                     label={tr('Жанри')}
                     icon={<Tags />}
                 />
-                <SideLink
+                <SideTile
                     href="/music/library/spotify"
                     label="Spotify"
                     icon={<SpotifyLogo className="size-4" />}
                 />
-                <SideLink
+                <SideTile
                     href="/music/rooms"
                     label={tr('Кімнати')}
                     icon={<Headphones />}
@@ -541,7 +591,7 @@ export default function MusicLayout({ children }: PropsWithChildren) {
                 </div>
 
                 {/* ПК: плеєр — плаваюча капсула внизу, над вмістом (поруч із бічним меню). */}
-                <div className="pointer-events-none fixed right-0 bottom-4 left-[260px] z-40 hidden px-6 lg:block">
+                <div className="pointer-events-none fixed right-0 bottom-4 left-[284px] z-40 hidden px-6 lg:block">
                     <PlayerCapsule onOpen={(v) => showNowPlaying(v)} />
                 </div>
 
