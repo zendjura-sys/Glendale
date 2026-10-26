@@ -22,6 +22,7 @@ use App\Http\Controllers\FollowController;
 use App\Http\Controllers\FriendController;
 use App\Http\Controllers\GameController;
 use App\Http\Controllers\GameDealsController;
+use App\Http\Controllers\GameRatingController;
 use App\Http\Controllers\GooglePlayRtdnController;
 use App\Http\Controllers\HelpController;
 use App\Http\Controllers\InviteLinkController;
@@ -237,6 +238,8 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::post('{story}/view', [StoryController::class, 'view'])->whereNumber('story')->middleware('throttle:240,1')->name('view');
         Route::post('{story}/react', [StoryController::class, 'react'])->whereNumber('story')->middleware('throttle:30,1')->name('react');
         Route::post('{story}/reply', [StoryController::class, 'reply'])->whereNumber('story')->middleware('throttle:30,1')->name('reply');
+        Route::post('{story}/vote', [StoryController::class, 'vote'])->whereNumber('story')->middleware('throttle:30,1')->name('vote');
+        Route::get('{story}/poll', [StoryController::class, 'poll'])->whereNumber('story')->middleware('throttle:120,1')->name('poll');
         Route::get('{story}/viewers', [StoryController::class, 'viewers'])->whereNumber('story')->name('viewers');
         Route::delete('{story}', [StoryController::class, 'destroy'])->whereNumber('story')->name('destroy');
     });
@@ -459,6 +462,8 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::get('{game}/prices', [GameDealsController::class, 'prices'])->middleware('throttle:60,1')->name('prices');
         Route::post('{game}/wish', [GameDealsController::class, 'wish'])->middleware('throttle:60,1')->name('wish');
         Route::get('{game}/pc-check', [GameDealsController::class, 'pcCheck'])->middleware('throttle:60,1')->name('pc-check');
+        Route::post('{game}/rating', [GameRatingController::class, 'rate'])->middleware('throttle:30,1')->name('rating');
+        Route::post('{game}/played', [GameRatingController::class, 'played'])->middleware('throttle:30,1')->name('played');
         Route::post('{game}/collections', [GameController::class, 'collections'])->name('collections');
         Route::post('{game}/guides', [GameController::class, 'guide'])->middleware('throttle:20,1')->name('guides.store');
         Route::delete('{game}/guides/{guide}', [GameController::class, 'deleteGuide'])->whereNumber('guide')->name('guides.destroy');

@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Notifications\GameDealNotice;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -32,7 +33,7 @@ class Giveaways
         try {
             $response = Http::timeout(15)->connectTimeout(5)->acceptJson()
                 ->get(self::API, ['platform' => 'epic-games-store.steam.gog', 'type' => 'game']);
-        } catch (ConnectionException) {
+        } catch (ConnectionException|RequestException) {
             return null;
         }
         $rows = $response->successful() ? $response->json() : null;

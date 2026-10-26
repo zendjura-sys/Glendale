@@ -5,6 +5,7 @@ namespace App\Services\I18n;
 use App\Support\I18n\Locales;
 use App\Support\Settings\SiteSettings;
 use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -220,7 +221,7 @@ class AzureTranslator
             try {
                 $response = Http::timeout(60)->connectTimeout(5)->acceptJson()->withHeaders($headers)
                     ->asJson()->post(self::ENDPOINT.'/translate?'.http_build_query($query), array_map(fn (string $t) => ['Text' => $t], $texts));
-            } catch (ConnectionException) {
+            } catch (ConnectionException|RequestException) {
                 $this->lastError = 'не відповів';
 
                 return null;

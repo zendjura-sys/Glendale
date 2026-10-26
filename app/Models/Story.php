@@ -22,13 +22,14 @@ use Illuminate\Support\Facades\Storage;
  * @property int $height
  * @property int $duration
  * @property string|null $caption
+ * @property array<string, mixed>|null $poll
  * @property string $privacy
  * @property int $views_count
  * @property Carbon $expires_at
  * @property Carbon $created_at
  * @property-read string $url
  */
-#[Fillable(['user_id', 'media_type', 'path', 'width', 'height', 'duration', 'caption', 'privacy', 'expires_at'])]
+#[Fillable(['user_id', 'media_type', 'path', 'width', 'height', 'duration', 'caption', 'poll', 'privacy', 'expires_at'])]
 class Story extends Model
 {
     public const TYPE_IMAGE = 'image';
@@ -56,7 +57,8 @@ class Story extends Model
 
     protected function casts(): array
     {
-        return ['expires_at' => 'datetime'];
+        return [
+            'poll' => 'array', 'expires_at' => 'datetime'];
     }
 
     /**

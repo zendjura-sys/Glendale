@@ -62,6 +62,8 @@ return [
     ['key' => 'game_guides', 'group' => 'Ігри', 'name' => 'Гіди', 'description' => 'Короткі гіди на сторінці гри.'],
     ['key' => 'game_giveaways', 'group' => 'Ігри', 'name' => 'Роздачі ігор', 'description' => 'Безкоштовні ігри в Epic, Steam і GOG (GamerPower) і сповіщення про нові роздачі.'],
     ['key' => 'game_deals', 'group' => 'Ігри', 'name' => 'Бажане й знижки', 'description' => 'Ціни в магазинах на сторінці гри, список бажаного й сповіщення про знижку (CheapShark).'],
+    ['key' => 'game_community_rating', 'group' => 'Ігри', 'name' => 'Оцінка гравців GameCon', 'description' => 'Оцінка 1–10 на сторінці гри від тих, хто в неї грав.'],
+    ['key' => 'story_polls', 'group' => 'Стрічка', 'name' => 'Опитування в історіях', 'description' => 'Питання з 2–4 варіантами в історії, результати видно після голосу.'],
     ['key' => 'pc_check', 'group' => 'Ігри', 'name' => 'Чи потягне мій ПК', 'description' => 'Системні вимоги Steam і порівняння зі збіркою людини.'],
 
     ['key' => 'slow_mode', 'group' => 'Чати', 'name' => 'Повільний режим', 'description' => 'Пауза між повідомленнями в групі.'],

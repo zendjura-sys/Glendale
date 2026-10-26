@@ -80,6 +80,14 @@ type Wrapped = {
     games: {
         play_days: number;
         top_games: { name: string; slug: string; cover: string | null }[];
+        games_count?: number;
+        top_list?: {
+            name: string;
+            slug: string;
+            cover: string | null;
+            days: number;
+        }[];
+        teammates?: { user: UserCard; days: number }[];
         top_server: { name: string; icon: string | null; days: number } | null;
         votes: number;
         moments: number;
@@ -599,6 +607,103 @@ function buildSlides(w: Wrapped): Slide[] {
                             )}
                         </div>
                     </Rise>
+                </div>
+            ),
+        });
+    }
+
+    // Ігровий рік: усі ігри за днями й друзі, з якими найчастіше грали в одну гру того самого дня.
+    const topList = g.top_list ?? [];
+    const teammates = g.teammates ?? [];
+    if (topList.length > 1 || teammates.length > 0) {
+        const most = Math.max(1, ...topList.map((x) => x.days));
+        slides.push({
+            key: 'game_year',
+            render: () => (
+                <div className="flex flex-col gap-7">
+                    <Rise>
+                        <Kicker icon={Gamepad2}>{tr('Ігровий рік')}</Kicker>
+                    </Rise>
+                    {(g.games_count ?? 0) > 0 && (
+                        <Rise i={1}>
+                            <Big
+                                value={g.games_count ?? 0}
+                                label={n(g.games_count ?? 0, [
+                                    tr('гра'),
+                                    tr('гри'),
+                                    tr('ігор'),
+                                ])}
+                            />
+                        </Rise>
+                    )}
+                    {topList.length > 0 && (
+                        <Rise i={2}>
+                            <ol className="flex flex-col gap-2.5">
+                                {topList.map((game) => (
+                                    <li
+                                        key={game.slug}
+                                        className="flex items-center gap-3"
+                                    >
+                                        <Cover
+                                            src={game.cover}
+                                            className="size-10 shrink-0 rounded-lg"
+                                        />
+                                        <div className="min-w-0 flex-1">
+                                            <p className="text-sm font-semibold break-words text-white">
+                                                {game.name}
+                                            </p>
+                                            <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-white/10">
+                                                <div
+                                                    className="h-full rounded-full bg-white/80"
+                                                    style={{
+                                                        width: `${(game.days / most) * 100}%`,
+                                                    }}
+                                                />
+                                            </div>
+                                        </div>
+                                        <span className="text-sm text-white/65 tabular-nums">
+                                            {n(game.days, [
+                                                tr('день'),
+                                                tr('дні'),
+                                                tr('днів'),
+                                            ])}
+                                        </span>
+                                    </li>
+                                ))}
+                            </ol>
+                        </Rise>
+                    )}
+                    {teammates.length > 0 && (
+                        <Rise i={3}>
+                            <p className="mb-2 text-sm text-white/65">
+                                {tr('Найчастіше грали разом')}
+                            </p>
+                            <div className="flex flex-wrap gap-3">
+                                {teammates.map((t) => (
+                                    <div
+                                        key={t.user.id}
+                                        className="flex items-center gap-2 rounded-2xl bg-white/[0.08] py-1.5 pr-3 pl-1.5 ring-1 ring-white/15 ring-inset"
+                                    >
+                                        <UserAvatar
+                                            user={t.user}
+                                            size="sm"
+                                            showOnline={false}
+                                        />
+                                        <span className="text-sm text-white">
+                                            {t.user.first_name ?? t.user.name}
+                                        </span>
+                                        <span className="text-xs text-white/55 tabular-nums">
+                                            {n(t.days, [
+                                                tr('день'),
+                                                tr('дні'),
+                                                tr('днів'),
+                                            ])}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        </Rise>
+                    )}
                 </div>
             ),
         });

@@ -22,7 +22,7 @@ import {
     Users,
     X,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
 import { EventList, GameEventForm } from '@/components/events/event-card';
 import type { CalendarEvent } from '@/components/events/event-card';
@@ -39,6 +39,8 @@ import type { MomentCardData } from '@/components/moments/moment-card';
 import { usePlugin } from '@/lib/plugins';
 import { GamePrices } from '@/components/games/game-prices';
 import { PcCheck } from '@/components/games/pc-check';
+import { CommunityRating } from '@/components/games/community-rating';
+import type { CommunityRatingData } from '@/components/games/community-rating';
 
 type Details = {
     summary?: string;
@@ -116,6 +118,7 @@ type Props = {
     following: boolean;
     pinned: boolean;
     steam_friends: UserCard[];
+    community_rating: CommunityRatingData | null;
     can_curate: boolean;
     guides: {
         id: number;
@@ -284,6 +287,7 @@ export default function GameShow({
     pinned,
     guides,
     steam_friends,
+    community_rating,
     can_curate,
     moments = [],
 }: Props) {
@@ -292,6 +296,11 @@ export default function GameShow({
     const dealsOn = usePlugin('game_deals');
     const pcCheckOn = usePlugin('pc_check');
     const onSteam = game.links.some((l) => l.store === 'steam');
+    // Магазин чи Steam не відповіли — блок зникає цілком, без порожньої рамки.
+    const [pricesFailed, setPricesFailed] = useState(false);
+    const [pcFailed, setPcFailed] = useState(false);
+    const hidePrices = useCallback(() => setPricesFailed(true), []);
+    const hidePc = useCallback(() => setPcFailed(true), []);
     const [video, setVideo] = useState<string | null>(null);
     const [shot, setShot] = useState<string | null>(null);
     const mp = d.multiplayer ?? {};
@@ -566,15 +575,15 @@ export default function GameShow({
                 </section>
             )}
 
-            {onSteam && dealsOn && (
+            {onSteam && dealsOn && !pricesFailed && (
                 <Section title={tr('Ціни й знижки')} icon={Tag}>
-                    <GamePrices slug={game.slug} />
+                    <GamePrices slug={game.slug} onFail={hidePrices} />
                 </Section>
             )}
 
-            {onSteam && pcCheckOn && (
+            {onSteam && pcCheckOn && !pcFailed && (
                 <Section title={tr('Чи потягне мій ПК')} icon={MonitorCog}>
-                    <PcCheck slug={game.slug} />
+                    <PcCheck slug={game.slug} onFail={hidePc} />
                 </Section>
             )}
 
@@ -707,6 +716,15 @@ export default function GameShow({
                         </div>
                     </Section>
                 )}
+
+            {community_rating && (
+                <Section title={tr('Оцінка гравців GameCon')} icon={Star}>
+                    <CommunityRating
+                        slug={game.slug}
+                        initial={community_rating}
+                    />
+                </Section>
+            )}
 
             <Section title={tr('Про гру')} icon={Gamepad2}>
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">

@@ -45,7 +45,13 @@ export const usd = (value: number) =>
  * Ціни на сторінці гри: Steam (регіон UA) і найкращі пропозиції інших магазинів (CheapShark),
  * роздача, якщо гру зараз віддають, і кнопка «У бажане» з бажаною ціною.
  */
-export function GamePrices({ slug }: { slug: string }) {
+export function GamePrices({
+    slug,
+    onFail,
+}: {
+    slug: string;
+    onFail?: () => void;
+}) {
     const [data, setData] = useState<Prices | null>(null);
     const [failed, setFailed] = useState(false);
     const [busy, setBusy] = useState(false);
@@ -61,12 +67,16 @@ export function GamePrices({ slug }: { slug: string }) {
                     d.target_price !== null ? String(d.target_price) : '',
                 );
             })
-            .catch(() => alive && setFailed(true));
+            .catch(() => {
+                if (!alive) return;
+                setFailed(true);
+                onFail?.();
+            });
 
         return () => {
             alive = false;
         };
-    }, [slug]);
+    }, [slug, onFail]);
 
     const wish = async (on: boolean) => {
         setBusy(true);

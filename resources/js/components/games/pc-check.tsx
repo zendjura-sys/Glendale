@@ -61,7 +61,13 @@ const SUMMARY: Record<
 };
 
 /** «Чи потягне мій ПК»: системні вимоги Steam і порівняння зі збіркою (орієнтовно). */
-export function PcCheck({ slug }: { slug: string }) {
+export function PcCheck({
+    slug,
+    onFail,
+}: {
+    slug: string;
+    onFail?: () => void;
+}) {
     const [data, setData] = useState<Check | null>(null);
     const [failed, setFailed] = useState(false);
     const [editing, setEditing] = useState(false);
@@ -69,8 +75,11 @@ export function PcCheck({ slug }: { slug: string }) {
     const load = useCallback(() => {
         api<Check>('GET', `/games/${slug}/pc-check`)
             .then(setData)
-            .catch(() => setFailed(true));
-    }, [slug]);
+            .catch(() => {
+                setFailed(true);
+                onFail?.();
+            });
+    }, [slug, onFail]);
 
     useEffect(load, [load]);
 

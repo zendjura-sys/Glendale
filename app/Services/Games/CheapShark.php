@@ -3,6 +3,7 @@
 namespace App\Services\Games;
 
 use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 
@@ -110,7 +111,7 @@ class CheapShark
     {
         try {
             $response = Http::timeout(8)->connectTimeout(4)->acceptJson()->get(self::API.$path, $query);
-        } catch (ConnectionException) {
+        } catch (ConnectionException|RequestException) {
             return null;
         }
 

@@ -10,6 +10,7 @@ use App\Models\PlayedPlace;
 use App\Models\Post;
 use App\Models\Track;
 use App\Models\User;
+use App\Services\FriendshipService;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -48,7 +49,7 @@ class YearInReview
      */
     public function build(User $user, int $year): array
     {
-        return Cache::remember("wrapped:{$year}:{$user->id}", now()->addHours(self::CACHE_HOURS), fn () => $this->compute($user, $year));
+        return Cache::remember("wrapped:v2:{$year}:{$user->id}", now()->addHours(self::CACHE_HOURS), fn () => $this->compute($user, $year));
     }
 
     /**
@@ -266,8 +267,9 @@ class YearInReview
             ->where('day', '>=', $range[0]->toDateString())->where('day', '<', $range[1]->toDateString())
             ->groupBy('subject_id')->selectRaw('subject_id, COUNT(*) as days')->orderByDesc('days');
 
-        $topGames = $days(PlayedPlace::GAME)->limit(3)->get();
-        $games = Game::query()->whereIn('id', $topGames->pluck('subject_id'))->get()->keyBy('id');
+        $topList = $days(PlayedPlace::GAME)->limit(5)->get();
+        $topGames = $topList->take(3);
+        $games = Game::query()->whereIn('id', $topList->pluck('subject_id'))->get()->keyBy('id');
         $topServer = $days(PlayedPlace::SERVER)->first();
 
         $votes = DB::table('server_votes')->where('user_id', $user->id)
@@ -293,6 +295,13 @@ class YearInReview
                 'icon' => $server->icon,
                 'days' => (int) ($topServer->days ?? 0),
             ],
+            // Ігровий рік: скільки різних ігор, топ-5 за днями і з ким найчастіше грали в одну гру того самого дня.
+            'games_count' => DB::table('play_days')->where('user_id', $user->id)->where('kind', PlayedPlace::GAME)
+                ->where('day', '>=', $range[0]->toDateString())->where('day', '<', $range[1]->toDateString())->distinct()->count('subject_id'),
+            'top_list' => $topList->map(fn ($row) => ($game = $games->get($row->subject_id)) === null ? null
+                : ['name' => $game->name, 'slug' => $game->slug, 'cover' => $game->cover, 'days' => (int) $row->days])
+                ->filter()->values()->all(),
+            'teammates' => $this->teammates($user, $range),
             'votes' => (clone $votes)->count(),
             'moments' => (clone $moments)->count(),
             'top_moment' => $topMoment === null ? null : [
@@ -302,6 +311,40 @@ class YearInReview
                 'likes' => (int) $topMoment->likes_count,
             ],
         ];
+    }
+
+    /**
+     * Друзі, які найчастіше грали в ту саму гру того самого дня.
+     *
+     * @param  array{0: CarbonImmutable, 1: CarbonImmutable}  $range
+     * @return list<array{user: array<string, mixed>, days: int}>
+     */
+    private function teammates(User $user, array $range): array
+    {
+        $friends = app(FriendshipService::class)->friendIds($user);
+        if ($friends === []) {
+            return [];
+        }
+        $rows = DB::table('play_days as mine')
+            ->join('play_days as other', function ($join) {
+                $join->on('other.day', '=', 'mine.day')->on('other.kind', '=', 'mine.kind')->on('other.subject_id', '=', 'mine.subject_id');
+            })
+            ->where('mine.user_id', $user->id)->where('mine.kind', PlayedPlace::GAME)
+            ->where('mine.day', '>=', $range[0]->toDateString())->where('mine.day', '<', $range[1]->toDateString())
+            ->whereIn('other.user_id', $friends)
+            ->groupBy('other.user_id')->selectRaw('other.user_id as friend, COUNT(DISTINCT mine.day) as days')
+            ->orderByDesc('days')->limit(3)->get();
+        $users = User::query()->whereIn('id', $rows->pluck('friend'))->get()->keyBy('id');
+
+        $out = [];
+        foreach ($rows as $row) {
+            $friend = $users->get($row->friend);
+            if ($friend !== null) {
+                $out[] = ['user' => $friend->toCard(), 'days' => (int) $row->days];
+            }
+        }
+
+        return $out;
     }
 
     /**
