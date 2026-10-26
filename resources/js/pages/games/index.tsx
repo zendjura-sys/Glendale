@@ -1,6 +1,7 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import {
     Gift,
+    ListChecks,
     Gamepad2,
     Monitor,
     Search,
@@ -116,6 +117,8 @@ export default function GamesIndex({
     const collectionsOn = usePlugin('game_collections');
     const giveawaysOn = usePlugin('game_giveaways');
     const dealsOn = usePlugin('game_deals');
+    const backlogOn = usePlugin('game_backlog');
+    const signedIn = !!usePage().props.auth.user;
 
     const visit = (patch: Partial<Props['filters']>) =>
         router.get(
@@ -152,6 +155,15 @@ export default function GamesIndex({
                         )}
                     </p>
                 </div>
+                {backlogOn && signedIn && (
+                    <Link
+                        href="/games/backlog"
+                        className="inline-flex h-10 items-center gap-2 rounded-xl bg-white/[0.06] px-3.5 text-sm font-semibold text-white/80 transition hover:bg-white/10 hover:text-white"
+                    >
+                        <ListChecks className="size-4 text-sky-300" />
+                        {tr('Мій бэклог')}
+                    </Link>
+                )}
                 {(giveawaysOn || dealsOn) && (
                     <Link
                         href="/games/deals"

@@ -23,6 +23,7 @@ use App\Http\Controllers\CommunityMemberController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\Families;
 use App\Http\Controllers\FollowController;
+use App\Http\Controllers\GameBacklogController;
 use App\Http\Controllers\GameController;
 use App\Http\Controllers\InviteLinkController;
 use App\Http\Controllers\ListenPartyController;
@@ -323,6 +324,12 @@ Route::prefix('v1')->group(function () {
          * шляхами з префіксом /api/v1/site. BridgeSiteAction перетворює редиректи й Inertia-сторінки на JSON.
          */
         Route::prefix('site')->middleware(BridgeSiteAction::class)->group(function () {
+            // Бэклог ігор — ті самі дії, що й на сайті.
+            Route::prefix('games')->middleware('module:games')->controller(GameBacklogController::class)->group(function () {
+                Route::get('backlog', 'mine');
+                Route::get('backlog/{user:username}', 'show');
+                Route::put('{game}/backlog', 'update')->middleware('throttle:60,1');
+            });
             // «Телефон»: свій номер, набирач, дзвінки й повідомлення за номером, подарунки й передача.
             // Купити номер у застосунку можна лише через Google Play Billing (google-play/phone/*).
             Route::prefix('phone')->middleware('module:phone')->controller(PhoneController::class)->group(function () {

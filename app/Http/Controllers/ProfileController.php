@@ -15,6 +15,7 @@ use App\Models\UserStream;
 use App\Services\Achievements;
 use App\Services\FriendshipService;
 use App\Services\GameCard;
+use App\Services\Games\Backlog;
 use App\Services\ImageStorage;
 use App\Services\Messenger;
 use App\Services\Moderation\PeopleModeration;
@@ -212,6 +213,10 @@ class ProfileController extends Controller
                 ->map->toCard()
                 ->all() : [],
             'photos' => $photoItems,
+            // Бэклог ігор: у що грає зараз і скільки ігор у кожному стані.
+            'backlog' => $viewer !== null && $canSeeContent && $modules->enabled('games') && app(Plugins::class)->on('game_backlog')
+                ? [...app(Backlog::class)->summary($user), 'href' => '/games/backlog/'.$user->username]
+                : null,
             'achievements' => app(Achievements::class)->for($user),
             'stream' => ($stream = UserStream::query()->where('user_id', $user->id)->first()) ? app(LiveStreams::class)->card($stream, $request->getHost()) : null,
             'characters' => $canSeeContent && $modules->enabled('servers') ? CharacterController::cards(player: $user) : [],

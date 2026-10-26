@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Services\EventCalendar;
 use App\Services\FollowAlerts;
 use App\Services\FriendshipService;
+use App\Services\Games\Backlog;
 use App\Services\Games\CommunityRatings;
 use App\Services\Games\PosterPalette;
 use App\Services\Presence\PlayingStatus;
@@ -192,6 +193,8 @@ class GameController extends Controller
             'pinned' => is_array($pin = $request->user()?->pref('pin')) && ($pin['kind'] ?? null) === 'game' && (int) ($pin['id'] ?? 0) === $game->id,
             'wallpapers' => $plugins->on('game_wallpapers') && $on['media'] ? GameWallpaperController::list($game) : [],
             'soundtracks' => $plugins->on('game_soundtracks') && app(ModuleManager::class)->enabled('music') ? GameSoundtrackController::forGame($game, $request->user()) : null,
+            'backlog' => $plugins->on('game_backlog') && $request->user() ? app(Backlog::class)->statusOf($request->user(), $game) : null,
+            'backlog_on' => $plugins->on('game_backlog'),
             'community_rating' => $plugins->on('game_community_rating') ? app(CommunityRatings::class)->summary($game, $request->user()) : null,
             'steam_friends' => $plugins->on('steam_friends') ? $this->steamFriends($game, $request->user(), $friendships) : [],
             'can_curate' => $plugins->on('game_collections') && $request->user()?->isStaff() === true,

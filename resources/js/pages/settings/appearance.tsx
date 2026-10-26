@@ -59,6 +59,7 @@ type PaletteOption = { id: string; name: string; colors: string[] };
 const BLOCK_LABELS: Record<string, string> = {
     platforms: 'Платформи',
     steam: 'Бібліотека Steam',
+    games: 'Ігри: граю зараз',
     about: 'Про себе',
     achievements: 'Досягнення',
     characters: 'Персонажі RP',

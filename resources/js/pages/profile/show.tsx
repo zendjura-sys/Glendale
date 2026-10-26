@@ -43,6 +43,8 @@ import type { TogetherPerson } from '@/components/profile/watched-together';
 import { EmptyState, Widget } from '@/components/gc/widget';
 import { NowPlayingCard } from '@/components/music/now-playing';
 import { AchievementsCard } from '@/components/gc/achievements';
+import { BacklogWidget } from '@/components/games/backlog';
+import type { BacklogSummary } from '@/components/games/backlog';
 import { PlayingBadge } from '@/components/gc/playing';
 import type { AchievementsData } from '@/components/gc/achievements';
 import { CharactersWidget } from '@/components/characters/character-card';
@@ -72,6 +74,7 @@ import { setPageBackgroundVideo } from '@/lib/backgrounds';
 const PROFILE_BLOCKS = [
     'platforms',
     'steam',
+    'games',
     'about',
     'achievements',
     'audio',
@@ -160,6 +163,7 @@ type Props = {
     }[];
     photosHref: string | null;
     achievements?: AchievementsData;
+    backlog?: BacklogSummary | null;
     audio: { href: string; tracks: number } | null;
     nowPlaying?: NowPlaying | null;
     posts: ScrollData<PostItem>;
@@ -261,6 +265,7 @@ export default function ProfileShow({
     photos,
     photosHref,
     achievements,
+    backlog = null,
     audio,
     nowPlaying,
     posts,
@@ -864,6 +869,12 @@ export default function ProfileShow({
                                     (isSelf && charactersOn)) && (
                                     <CharactersWidget
                                         characters={characters}
+                                        isSelf={isSelf}
+                                    />
+                                ),
+                                games: backlog && (
+                                    <BacklogWidget
+                                        data={backlog}
                                         isSelf={isSelf}
                                     />
                                 ),

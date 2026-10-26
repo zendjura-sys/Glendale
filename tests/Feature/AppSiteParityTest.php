@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Game;
 use App\Models\GtaServer;
 use App\Models\Movie;
 use App\Models\MovieSource;
@@ -30,6 +31,17 @@ class AppSiteParityTest extends TestCase
     private function app_token(User $user): string
     {
         return app(ApiTokens::class)->issue($user, 'android');
+    }
+
+    public function test_app_reaches_game_backlog(): void
+    {
+        $user = User::factory()->create(['username' => 'neo']);
+        $token = $this->app_token($user);
+        Game::query()->create(['slug' => 'dota', 'name' => 'Dota 2', 'letter' => 'D', 'category' => 'pc', 'is_published' => true]);
+
+        $this->withToken($token)->putJson('/api/v1/site/games/dota/backlog', ['status' => 'playing'])->assertOk()->assertJsonPath('status', 'playing');
+        $this->withToken($token)->getJson('/api/v1/site/games/backlog')->assertOk()->assertJsonStructure(['owner', 'mine', 'board' => ['want', 'playing', 'done', 'dropped'], 'friends']);
+        $this->withToken($token)->getJson('/api/v1/site/games/backlog/neo')->assertOk()->assertJsonPath('board.playing.0.game.slug', 'dota');
     }
 
     public function test_app_player_reaches_episodes_progress_and_streams(): void

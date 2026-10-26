@@ -21,6 +21,7 @@ use App\Http\Controllers\FeedbackController;
 use App\Http\Controllers\FeedController;
 use App\Http\Controllers\FollowController;
 use App\Http\Controllers\FriendController;
+use App\Http\Controllers\GameBacklogController;
 use App\Http\Controllers\GameController;
 use App\Http\Controllers\GameDealsController;
 use App\Http\Controllers\GameRatingController;
@@ -477,12 +478,16 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::get('deals', [GameDealsController::class, 'index'])->name('deals');
         Route::post('deals/subscribe', [GameDealsController::class, 'subscribe'])->name('deals.subscribe');
         Route::get('pc', [GameDealsController::class, 'pcShow'])->name('pc.show');
+        // Бэклог: «хочу — граю — пройшов — кинув».
+        Route::get('backlog', [GameBacklogController::class, 'mine'])->name('backlog');
+        Route::get('backlog/{user:username}', [GameBacklogController::class, 'show'])->name('backlog.user');
         Route::put('pc', [GameDealsController::class, 'pcSave'])->middleware('throttle:30,1')->name('pc.update');
         Route::get('{game}/prices', [GameDealsController::class, 'prices'])->middleware('throttle:60,1')->name('prices');
         Route::post('{game}/wish', [GameDealsController::class, 'wish'])->middleware('throttle:60,1')->name('wish');
         Route::get('{game}/pc-check', [GameDealsController::class, 'pcCheck'])->middleware('throttle:60,1')->name('pc-check');
         Route::post('{game}/rating', [GameRatingController::class, 'rate'])->middleware('throttle:30,1')->name('rating');
         Route::post('{game}/played', [GameRatingController::class, 'played'])->middleware('throttle:30,1')->name('played');
+        Route::put('{game}/backlog', [GameBacklogController::class, 'update'])->middleware('throttle:60,1')->name('backlog.update');
         Route::get('{game}/wallpapers/{index}', [GameWallpaperController::class, 'download'])->whereNumber('index')->middleware('throttle:30,1')->name('wallpapers.download');
         Route::get('{game}/playlists/mine', [GameSoundtrackController::class, 'mine'])->name('playlists.mine');
         Route::post('{game}/playlists', [GameSoundtrackController::class, 'store'])->middleware('throttle:20,1')->name('playlists.store');

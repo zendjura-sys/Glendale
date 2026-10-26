@@ -46,6 +46,8 @@ import { GamePrices } from '@/components/games/game-prices';
 import { PcCheck } from '@/components/games/pc-check';
 import { GameSoundtracks } from '@/components/games/game-soundtracks';
 import type { Soundtrack } from '@/components/games/game-soundtracks';
+import { BacklogPicker } from '@/components/games/backlog';
+import type { BacklogStatus } from '@/components/games/backlog';
 import { CommunityRating } from '@/components/games/community-rating';
 import type { CommunityRatingData } from '@/components/games/community-rating';
 
@@ -126,6 +128,8 @@ type Props = {
     pinned: boolean;
     steam_friends: UserCard[];
     community_rating: CommunityRatingData | null;
+    backlog?: BacklogStatus | null;
+    backlog_on?: boolean;
     wallpapers?: string[];
     soundtracks?: Soundtrack[] | null;
     can_curate: boolean;
@@ -300,6 +304,8 @@ export default function GameShow({
     guides,
     steam_friends,
     community_rating,
+    backlog = null,
+    backlog_on = false,
     wallpapers = [],
     soundtracks = null,
     can_curate,
@@ -493,6 +499,9 @@ export default function GameShow({
                                 className={POSTER_GLASS}
                             />
                         </div>
+                    )}
+                    {!guest && backlog_on && (
+                        <BacklogPicker slug={game.slug} initial={backlog} />
                     )}
                     {(game.modes.length > 0 || game.genres.length > 0) && (
                         <div className="flex flex-wrap gap-1.5">
