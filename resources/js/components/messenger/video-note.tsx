@@ -2,6 +2,7 @@ import { Camera, Loader2, Send, Square, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { toast } from 'sonner';
+import { useDataSaver } from '@/lib/data-saver';
 import { tr } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import type { ChatAttachment } from '@/types';
@@ -15,6 +16,8 @@ export function VideoNotePlayer({
     attachment: ChatAttachment;
 }) {
     const ref = useRef<HTMLVideoElement>(null);
+    // Економія трафіку: кружок не грає сам і не вантажиться наперед.
+    const saver = useDataSaver();
     const [active, setActive] = useState(false);
     const [progress, setProgress] = useState(0);
 
@@ -45,10 +48,10 @@ export function VideoNotePlayer({
                 ref={ref}
                 src={attachment.url}
                 muted
-                autoPlay
+                autoPlay={!saver}
                 loop
                 playsInline
-                preload="metadata"
+                preload={saver ? 'none' : 'metadata'}
                 onTimeUpdate={(e) => {
                     const v = e.currentTarget;
                     if (active && v.duration)

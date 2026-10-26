@@ -320,6 +320,9 @@ export function FeedbackDialog() {
 
 const SHORTCUTS = () => [
     { keys: ['/'], label: tr('Пошук') },
+    { keys: ['J'], label: tr('Наступний запис у стрічці') },
+    { keys: ['K'], label: tr('Попередній запис') },
+    { keys: ['L'], label: tr('Вподобати вибраний запис') },
     { keys: ['G', 'F'], label: tr('Новини') },
     { keys: ['G', 'M'], label: tr('Повідомлення') },
     { keys: ['G', 'P'], label: tr('Моя сторінка') },
@@ -335,6 +338,31 @@ const GO: Record<string, (username: string) => string> = {
     n: () => '/notifications',
     s: () => '/settings/profile',
 };
+
+/** J/K: перейти до наступного чи попереднього запису стрічки й позначити його для L. */
+function stepPost(step: number) {
+    const list = Array.from(
+        document.querySelectorAll<HTMLElement>('article.gc-post'),
+    );
+    if (list.length === 0) return;
+    let index = list.findIndex((el) => el.hasAttribute('data-hotkey-focus'));
+    if (index < 0) {
+        // Ще не ходили клавішами — від запису, що зараз угорі екрана.
+        index =
+            list.findIndex((el) => el.getBoundingClientRect().bottom > 120) -
+            (step > 0 ? 1 : 0);
+    }
+    const next = list[Math.min(list.length - 1, Math.max(0, index + step))];
+    list.forEach((el) => el.removeAttribute('data-hotkey-focus'));
+    next.setAttribute('data-hotkey-focus', '');
+    const reduce = window.matchMedia(
+        '(prefers-reduced-motion: reduce)',
+    ).matches;
+    window.scrollTo({
+        top: next.getBoundingClientRect().top + window.scrollY - 96,
+        behavior: reduce ? 'auto' : 'smooth',
+    });
+}
 
 function typing(target: EventTarget | null): boolean {
     const el = target as HTMLElement | null;
@@ -373,6 +401,19 @@ export function KeyboardShortcuts({ username }: { username: string }) {
                 window.dispatchEvent(
                     new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }),
                 );
+
+                return;
+            }
+            if (key === 'j' || key === 'k') {
+                event.preventDefault();
+                stepPost(key === 'j' ? 1 : -1);
+
+                return;
+            }
+            if (key === 'l') {
+                document
+                    .querySelector('article.gc-post[data-hotkey-focus]')
+                    ?.dispatchEvent(new CustomEvent('gc:like'));
 
                 return;
             }

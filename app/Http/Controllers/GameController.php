@@ -186,6 +186,8 @@ class GameController extends Controller
             'saved' => $request->user() ? app(SavedItems::class)->has($request->user(), 'game', $game->id) : false,
             'following' => $request->user() ? app(FollowAlerts::class)->has($request->user(), 'game', $game->id) : false,
             'pinned' => is_array($pin = $request->user()?->pref('pin')) && ($pin['kind'] ?? null) === 'game' && (int) ($pin['id'] ?? 0) === $game->id,
+            'wallpapers' => $plugins->on('game_wallpapers') && $on['media'] ? GameWallpaperController::list($game) : [],
+            'soundtracks' => $plugins->on('game_soundtracks') && app(ModuleManager::class)->enabled('music') ? GameSoundtrackController::forGame($game, $request->user()) : null,
             'community_rating' => $plugins->on('game_community_rating') ? app(CommunityRatings::class)->summary($game, $request->user()) : null,
             'steam_friends' => $plugins->on('steam_friends') ? $this->steamFriends($game, $request->user(), $friendships) : [],
             'can_curate' => $plugins->on('game_collections') && $request->user()?->isStaff() === true,

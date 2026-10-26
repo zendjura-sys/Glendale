@@ -128,6 +128,8 @@ class HandleInertiaRequests extends Middleware
                     // «Показувати, що я слухаю» (усі джерела музики; Spotify — ще й своїм перемикачем).
                     'show_listening' => $user->showsListening(),
                     'morning_digest' => $user->wantsDigest(),
+                    // Економія трафіку: фото по дотику, відео не грає саме.
+                    'data_saver' => $user->pref('data_saver') === true,
                     // Звук нових повідомлень і сповіщень (Налаштування → Оформлення).
                     'notify_sound' => in_array($sound = $user->pref('notify_sound', 'soft'), GameThemeController::SOUNDS, true) ? $sound : 'soft',
                     // До коли діє GameCon+ (оплата — карткою через monobank, без балансу).

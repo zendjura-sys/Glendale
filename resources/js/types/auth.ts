@@ -36,6 +36,7 @@ export type User = {
     /** «Показувати, що я слухаю»: інші бачать, що грає (усі джерела). */
     show_listening?: boolean;
     morning_digest?: boolean;
+    data_saver?: boolean;
     notify_sound?: 'off' | 'soft' | 'pixel' | 'arcade' | 'drop';
     created_at: string;
     updated_at: string;

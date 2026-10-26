@@ -14,6 +14,7 @@ import { m, useReducedMotion } from 'motion/react';
 import { type FormEvent, useEffect, useRef, useState } from 'react';
 import AppearanceController from '@/actions/App/Http/Controllers/Settings/AppearanceController';
 import { PlusBadge } from '@/components/gc/plus';
+import { DataSaverSwitch } from '@/components/settings/data-saver-switch';
 import { DigestSwitch } from '@/components/settings/digest-switch';
 import { GameThemePicker } from '@/components/settings/game-theme-picker';
 import type { GameThemeValue } from '@/components/settings/game-theme-picker';
@@ -790,8 +791,9 @@ export default function Appearance({
                     </SettingsCard>
                 )}
 
-                <SettingsCard list title={tr('Дайджест')}>
+                <SettingsCard list title={tr('Дайджест і трафік')}>
                     <DigestSwitch />
+                    <DataSaverSwitch />
                 </SettingsCard>
 
                 <SettingsCard

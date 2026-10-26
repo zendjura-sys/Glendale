@@ -1,6 +1,8 @@
-import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ImageDown, X } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useDataSaver } from '@/lib/data-saver';
+import { tr } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import type { Attachment } from '@/types';
 
@@ -94,9 +96,29 @@ export function Lightbox({
  */
 export function MediaGrid({ items }: { items: Attachment[] }) {
     const [open, setOpen] = useState<number | null>(null);
+    const saver = useDataSaver();
+    const [shown, setShown] = useState(false);
 
     if (items.length === 0) {
         return null;
+    }
+
+    // Економія трафіку: фото не вантажимо, доки людина не попросить.
+    if (saver && !shown) {
+        return (
+            <button
+                type="button"
+                onClick={() => setShown(true)}
+                className="flex h-28 w-full items-center justify-center gap-2 rounded-[10px] bg-white/[0.04] text-sm text-white/60 transition hover:bg-white/[0.07] hover:text-white"
+            >
+                <ImageDown className="size-4" />
+                {items.length === 1
+                    ? tr('Фото · натисніть, щоб завантажити')
+                    : tr('{n} фото · натисніть, щоб завантажити', {
+                          n: items.length,
+                      })}
+            </button>
+        );
     }
 
     const visible = items.slice(0, 4);

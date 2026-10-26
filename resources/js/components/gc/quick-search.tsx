@@ -154,7 +154,11 @@ export function QuickSearch({ className }: { className?: string }) {
     };
 
     return (
-        <div ref={boxRef} className={cn('relative min-w-0', className)}>
+        <div
+            ref={boxRef}
+            data-quick-search
+            className={cn('relative min-w-0', className)}
+        >
             <label className="input-glass flex h-10 items-center gap-2.5 rounded-xl px-3.5">
                 <Search className="size-4 text-white/45" />
                 <input

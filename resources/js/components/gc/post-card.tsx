@@ -20,7 +20,7 @@ import {
     Volume2,
     VolumeX,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import {
     DropdownMenu,
@@ -96,6 +96,17 @@ export function PostCard({
     const body = translation.text ?? post.body ?? '';
     const isLong = body.length > LONG_TEXT;
 
+    // Гаряча клавіша L (components/gc/hotkeys.tsx): вподобати вибраний запис.
+    const articleRef = useRef<HTMLElement>(null);
+    const likeRef = useRef<() => void>(() => undefined);
+    useEffect(() => {
+        const el = articleRef.current;
+        const like = () => likeRef.current();
+        el?.addEventListener('gc:like', like);
+
+        return () => el?.removeEventListener('gc:like', like);
+    }, []);
+
     const pickReaction = async (next: string) => {
         const previous = reaction;
         const removing = previous === next;
@@ -116,6 +127,7 @@ export function PostCard({
             setLikes(post.likes_count);
         }
     };
+    likeRef.current = () => void pickReaction(reaction ?? 'like');
 
     const copyLink = async () => {
         await navigator.clipboard?.writeText(
@@ -129,7 +141,10 @@ export function PostCard({
     }
 
     return (
-        <article className="gc-post animate-rise px-1 py-5 sm:px-2">
+        <article
+            ref={articleRef}
+            className="gc-post animate-rise px-1 py-5 data-[hotkey-focus]:rounded-2xl data-[hotkey-focus]:ring-1 data-[hotkey-focus]:ring-primary/40 sm:px-2"
+        >
             <header className="flex items-start gap-3">
                 <Link href={publisherHref} className="shrink-0">
                     {post.publisher ? (

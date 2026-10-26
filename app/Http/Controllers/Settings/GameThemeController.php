@@ -48,6 +48,14 @@ class GameThemeController extends Controller
         return back();
     }
 
+    public function dataSaver(Request $request): RedirectResponse
+    {
+        $data = $request->validate(['data_saver' => ['required', 'boolean']]);
+        $this->user($request)->mergePref(['data_saver' => (bool) $data['data_saver']]);
+
+        return back();
+    }
+
     private function user(Request $request): User
     {
         $user = $request->user();

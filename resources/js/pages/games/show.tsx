@@ -1,6 +1,9 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import {
+    Download,
+    Music2,
     MonitorCog,
+    Wallpaper,
     Tag,
     ArrowLeft,
     BookOpen,
@@ -40,6 +43,8 @@ import type { MomentCardData } from '@/components/moments/moment-card';
 import { usePlugin } from '@/lib/plugins';
 import { GamePrices } from '@/components/games/game-prices';
 import { PcCheck } from '@/components/games/pc-check';
+import { GameSoundtracks } from '@/components/games/game-soundtracks';
+import type { Soundtrack } from '@/components/games/game-soundtracks';
 import { CommunityRating } from '@/components/games/community-rating';
 import type { CommunityRatingData } from '@/components/games/community-rating';
 
@@ -120,6 +125,8 @@ type Props = {
     pinned: boolean;
     steam_friends: UserCard[];
     community_rating: CommunityRatingData | null;
+    wallpapers?: string[];
+    soundtracks?: Soundtrack[] | null;
     can_curate: boolean;
     guides: {
         id: number;
@@ -292,6 +299,8 @@ export default function GameShow({
     guides,
     steam_friends,
     community_rating,
+    wallpapers = [],
+    soundtracks = null,
     can_curate,
     moments = [],
 }: Props) {
@@ -671,6 +680,48 @@ export default function GameShow({
                             </button>
                         ))}
                     </div>
+                </Section>
+            )}
+
+            {soundtracks && (
+                <Section title={tr('Музика гри')} icon={Music2}>
+                    <GameSoundtracks slug={game.slug} initial={soundtracks} />
+                </Section>
+            )}
+
+            {wallpapers.length > 0 && (
+                <Section title={tr('Шпалери')} icon={Wallpaper}>
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                        {wallpapers.map((url, index) => (
+                            <figure
+                                key={url}
+                                className="group relative overflow-hidden rounded-xl bg-white/[0.04]"
+                            >
+                                <img
+                                    src={url.replace(
+                                        '/t_1080p/',
+                                        '/t_screenshot_med/',
+                                    )}
+                                    alt=""
+                                    loading="lazy"
+                                    className="aspect-video w-full object-cover"
+                                />
+                                <a
+                                    href={`/games/${game.slug}/wallpapers/${index}`}
+                                    download
+                                    className="absolute right-2 bottom-2 inline-flex h-8 items-center gap-1.5 rounded-lg bg-black/60 px-2.5 text-xs font-semibold text-white backdrop-blur-md transition hover:bg-black/80"
+                                >
+                                    <Download className="size-3.5" />
+                                    {tr('Завантажити')}
+                                </a>
+                            </figure>
+                        ))}
+                    </div>
+                    <p className="mt-2 text-[11px] text-white/35">
+                        {tr(
+                            '1920×1080 — арти й скриншоти з каталогу IGDB. Лише для особистого використання.',
+                        )}
+                    </p>
                 </Section>
             )}
 

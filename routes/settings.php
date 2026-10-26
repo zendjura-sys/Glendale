@@ -38,6 +38,7 @@ Route::middleware(['auth'])->group(function () {
     Route::patch('settings/digest', [DigestController::class, 'update'])->middleware('throttle:30,1')->name('digest.update');
     Route::put('settings/game-theme', [GameThemeController::class, 'update'])->middleware('throttle:20,1')->name('game-theme.update');
     Route::patch('settings/notify-sound', [GameThemeController::class, 'sound'])->middleware('throttle:30,1')->name('notify-sound.update');
+    Route::patch('settings/data-saver', [GameThemeController::class, 'dataSaver'])->middleware('throttle:30,1')->name('data-saver.update');
     Route::patch('settings/listening', [ListeningController::class, 'update'])->middleware('throttle:30,1')->name('listening.update');
     Route::put('settings/account/profanity', [AccountController::class, 'profanity'])->name('account.profanity');
     Route::get('settings/account/export', [AccountController::class, 'export'])->middleware('throttle:3,60')->name('account.export');
