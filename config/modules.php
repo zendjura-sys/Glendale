@@ -160,6 +160,15 @@ return [
         'default' => true,
         'nav' => ['label' => 'Моменти', 'route' => 'moments.index', 'position' => 109],
     ],
+    'articles' => [
+        'name' => 'Статті',
+        'description' => 'Довгі тексти: огляди, історії й гайди із заголовками, картинками й змістом; окрема стрічка статей.',
+        'icon' => 'newspaper',
+        'core' => false,
+        'available' => true,
+        'default' => true,
+        'nav' => ['label' => 'Статті', 'route' => 'articles.index', 'position' => 111],
+    ],
     'party' => [
         'name' => 'Пошук паті',
         'description' => 'Оголошення «шукаю паті»: гра, сервер, час і ролі, кнопка в голосову кімнату паті.',

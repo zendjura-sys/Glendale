@@ -4025,3 +4025,80 @@ html:has(.am) body {
     height: 0;
     border: 0;
 }
+
+/*
+ * Текст статті (pages/articles/show.tsx): заголовки з якорями, абзаци, списки, цитати, код і картинки.
+ */
+.gc-article {
+    color: color-mix(in oklab, var(--color-white) 85%, transparent);
+    font-size: 1.0625rem;
+    line-height: 1.75;
+    overflow-wrap: anywhere;
+}
+.gc-article > * + * {
+    margin-top: 1.1em;
+}
+.gc-article h2,
+.gc-article h3 {
+    color: var(--color-white);
+    font-family: var(--font-display);
+    font-weight: 700;
+    line-height: 1.25;
+    scroll-margin-top: 6rem;
+}
+.gc-article h2 {
+    font-size: 1.5rem;
+    margin-top: 1.8em;
+}
+.gc-article h3 {
+    font-size: 1.2rem;
+    margin-top: 1.5em;
+}
+.gc-article a {
+    color: var(--color-primary);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+.gc-article ul,
+.gc-article ol {
+    padding-left: 1.4em;
+}
+.gc-article ul {
+    list-style: disc;
+}
+.gc-article ol {
+    list-style: decimal;
+}
+.gc-article li + li {
+    margin-top: 0.35em;
+}
+.gc-article blockquote {
+    border-left: 3px solid var(--color-primary);
+    padding-left: 1em;
+    color: color-mix(in oklab, var(--color-white) 70%, transparent);
+    font-style: italic;
+}
+.gc-article code {
+    background: color-mix(in oklab, var(--color-white) 8%, transparent);
+    border-radius: 6px;
+    padding: 0.1em 0.35em;
+    font-size: 0.9em;
+}
+.gc-article pre {
+    background: color-mix(in oklab, var(--color-black) 35%, transparent);
+    border-radius: 14px;
+    padding: 1em;
+    overflow-x: auto;
+}
+.gc-article pre code {
+    background: none;
+    padding: 0;
+}
+.gc-article img {
+    border-radius: 14px;
+    max-width: 100%;
+    height: auto;
+}
+.gc-article hr {
+    border-color: color-mix(in oklab, var(--color-white) 10%, transparent);
+}

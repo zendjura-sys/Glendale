@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin;
 use App\Http\Controllers\AppLinksController;
+use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\Auth\AppLoginController;
 use App\Http\Controllers\Auth\SocialAuthController;
 use App\Http\Controllers\BillingController;
@@ -454,6 +455,18 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::get('{movie}/comments', [CinemaController::class, 'comments'])->name('comments.index');
         Route::post('{movie}/comments', [CinemaController::class, 'comment'])->middleware('throttle:30,1')->name('comments.store');
         Route::post('{movie}/watch', [WatchPartyController::class, 'store'])->middleware('throttle:10,1')->name('watch.store');
+    });
+
+    // Статті: огляди, історії й гайди.
+    Route::prefix('articles')->name('articles.')->middleware('module:articles')->group(function () {
+        Route::get('/', [ArticleController::class, 'index'])->name('index');
+        Route::get('create', [ArticleController::class, 'create'])->name('create');
+        Route::post('/', [ArticleController::class, 'store'])->middleware('throttle:10,1')->name('store');
+        Route::post('images', [ArticleController::class, 'image'])->middleware('throttle:30,1')->name('images');
+        Route::get('{article}', [ArticleController::class, 'show'])->name('show');
+        Route::get('{article}/edit', [ArticleController::class, 'edit'])->name('edit');
+        Route::post('{article}', [ArticleController::class, 'update'])->middleware('throttle:20,1')->name('update');
+        Route::delete('{article}', [ArticleController::class, 'destroy'])->name('destroy');
     });
 
     // Каталог мультиплеєрних ігор.
