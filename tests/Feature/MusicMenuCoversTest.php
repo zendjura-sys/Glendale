@@ -36,6 +36,7 @@ class MusicMenuCoversTest extends TestCase
         }
         DB::table('music_plays')->insert(['user_id' => $listener->id, 'track_id' => $second->id, 'title' => 'Другий', 'artist' => 'Nightdrive', 'played_at' => now()->subHour()]);
         DB::table('music_plays')->insert(['user_id' => $user->id, 'track_id' => $mine->id, 'title' => 'Моя', 'artist' => 'Nightdrive', 'cover_url' => 'https://cdn.test/last.jpg', 'played_at' => now()]);
+        DB::table('music_plays')->insert(['user_id' => $user->id, 'track_id' => null, 'title' => 'Blinding Lights', 'artist' => 'The Weeknd', 'cover_url' => 'https://i.scdn.co/image/abc', 'played_at' => now()->subMinute()]);
         DB::table('music_library')->insert(['user_id' => $user->id, 'track_id' => $mine->id, 'is_favorite' => true, 'created_at' => now()]);
 
         $json = $this->actingAs($user)->getJson('/music/menu-covers')->assertOk()->json();
@@ -48,6 +49,8 @@ class MusicMenuCoversTest extends TestCase
         $this->assertSame($mine->cover_url, $json['tiles']['favorites']);
         $this->assertSame($mine->cover_url, $json['tiles']['albums']);
         $this->assertNotNull($json['tiles']['rooms']);
+        // Spotify — останнє прослухане поза каталогом.
+        $this->assertSame('https://i.scdn.co/image/abc', $json['tiles']['spotify']);
     }
 
     public function test_empty_library_gives_empty_tiles(): void
@@ -59,5 +62,6 @@ class MusicMenuCoversTest extends TestCase
         $this->assertSame([], $json['top']);
         $this->assertNull($json['tiles']['recent']);
         $this->assertNull($json['tiles']['favorites']);
+        $this->assertNull($json['tiles']['spotify']);
     }
 }

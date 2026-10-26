@@ -135,6 +135,7 @@ function SideTile({
     label,
     exact,
     cover,
+    tint,
     hint,
 }: {
     href: string;
@@ -142,12 +143,15 @@ function SideTile({
     label: string;
     exact?: boolean;
     cover?: string | null;
+    /** Фірмове тло, коли картинки немає (напр. зелений градієнт Spotify). */
+    tint?: string;
     /** Підказка при наведенні (напр. «№1 на GameCon: трек — виконавець»). */
     hint?: string;
 }) {
     const active = useActive()(href, exact);
     const [broken, setBroken] = useState(false);
     const image = cover && !broken ? cover : null;
+    const filled = image !== null || tint !== undefined;
 
     return (
         <Link
@@ -159,7 +163,8 @@ function SideTile({
                 active
                     ? 'border-[color-mix(in_oklab,var(--am-accent)_70%,transparent)] shadow-[0_0_0_1px_color-mix(in_oklab,var(--am-accent)_45%,transparent),0_0_18px_color-mix(in_oklab,var(--am-accent)_35%,transparent)]'
                     : 'border-[var(--am-sep)]',
-                !image &&
+                tint && !image && tint,
+                !filled &&
                     (active
                         ? 'bg-[color-mix(in_oklab,var(--am-accent)_16%,transparent)]'
                         : 'bg-[var(--am-fill)] hover:bg-[var(--am-fill2)]'),
@@ -180,7 +185,7 @@ function SideTile({
             <span
                 className={cn(
                     'flex size-7 items-center justify-center rounded-[9px] [&_svg]:size-4',
-                    image
+                    filled
                         ? 'bg-black/35 text-white ring-1 ring-white/20 backdrop-blur-md'
                         : 'bg-[color-mix(in_oklab,var(--am-accent)_14%,transparent)] text-[var(--am-accent)]',
                 )}
@@ -332,6 +337,8 @@ function Sidebar({ onUpload }: { onUpload: () => void }) {
                     icon={<Tags />}
                 />
                 <SideTile
+                    cover={tile('spotify')}
+                    tint="bg-gradient-to-br from-[#1ed760] via-[#1db954] to-[#0b3d1f]"
                     href="/music/library/spotify"
                     label="Spotify"
                     icon={<SpotifyLogo className="size-4" />}

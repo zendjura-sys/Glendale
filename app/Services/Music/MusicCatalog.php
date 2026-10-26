@@ -659,6 +659,9 @@ class MusicCatalog
                     'songs' => $cover($library()->whereNotNull('tracks.cover_path')->inRandomOrder()->first()),
                     'favorites' => $cover($library()->wherePivot('is_favorite', true)->whereNotNull('tracks.cover_path')->orderByPivot('created_at', 'desc')->first()),
                     'genres' => is_string($topGenre) ? $cover($library()->where('tracks.genre', $topGenre)->whereNotNull('tracks.cover_path')->first()) : null,
+                    // Spotify — обкладинка останнього прослуханого поза каталогом (Spotify), інакше аватар акаунта.
+                    'spotify' => DB::table('music_plays')->where('user_id', $user->id)->whereNull('track_id')->whereNotNull('cover_url')
+                        ->latest('played_at')->value('cover_url') ?? $user->spotifyAccount?->avatar_url,
                     // «Кімнати» — випадкова обкладинка з топу сайту.
                     'rooms' => $cover($rooms instanceof Track ? $rooms : null),
                 ],
