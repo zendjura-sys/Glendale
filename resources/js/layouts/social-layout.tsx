@@ -104,7 +104,7 @@ function Sidebar() {
     const user = auth.user;
 
     return (
-        <aside className="sticky top-[calc(64px+env(safe-area-inset-top))] hidden h-[calc(100dvh-80px)] w-[220px] shrink-0 [scrollbar-width:none] flex-col overflow-y-auto overscroll-contain pb-2 [view-transition-name:gc-sidebar] lg:flex">
+        <aside className="gc-sidebar-glass sticky top-[calc(72px+env(safe-area-inset-top))] hidden h-[calc(100dvh-88px)] w-[220px] shrink-0 [scrollbar-width:none] flex-col overflow-y-auto overscroll-contain p-2 [view-transition-name:gc-sidebar] lg:flex">
             <Link
                 href={`/${user.username}`}
                 className="gc-side-link mb-1 flex items-center gap-2.5 rounded-xl px-2 py-2 transition"
@@ -805,7 +805,7 @@ export default function SocialLayout({ children }: PropsWithChildren) {
                 >
                     <Announcement />
                     <PageTransition>{children}</PageTransition>
-                    <SiteFooter className="glass-matte mb-4" />
+                    <SiteFooter className="glass-matte gc-footer-card mb-4" />
                 </main>
             </div>
             <VoiceBar />

@@ -4104,36 +4104,146 @@ html:has(.am) body {
 }
 
 /*
- * ============================================================================================
- * Шапка й нижня панель — безбарвне матове скло iOS (Achromatic Frosted Glass), обидві теми.
- * Скло нейтральне: під тему підлаштовуються лише яскравість підкладки й відблиск канту.
- * Обгортки прозорі й не ловлять дотики — вміст прокручується під капсулами; розмиття працює,
- * бо в предків капсул немає backdrop-filter, filter чи transform.
- * ============================================================================================
+ * =========================================================================================
+ * GameCon Design System — iOS 27+ Spatial Glass.
+ * Палітра: «Крижана Арктика» (світла) і «Неоновий синій» (темна), стиль html[data-skin='gamecon'].
+ * Токени — лише для стилю «GameCon»; акцент — лише для основної палітри (aurora), щоб
+ * палітри учасника зберігали свій колір. Скло — тільки на конкретних панелях (шапка, нижня
+ * панель, підвал, бічне меню, меню й діалоги), а не на всіх header/footer/aside сайту.
+ * =========================================================================================
  */
-:root,
-[data-theme='light'],
-.light {
-    /* Світла тема: чистий світлий іній iOS */
-    --ios-glass-bg: rgba(255, 255, 255, 0.55);
-    --ios-glass-border: rgba(255, 255, 255, 0.75);
-    --ios-glass-inner-glow:
-        inset 0 1px 0 0 rgba(255, 255, 255, 0.9),
-        inset 0 0 0 1px rgba(0, 0, 0, 0.04);
-    --ios-glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
-    --ios-input-bg: rgba(0, 0, 0, 0.05);
-}
-[data-theme='dark'],
-.dark {
-    /* Темна тема: безбарвне матове скло без глухої заливки */
-    --ios-glass-bg: rgba(255, 255, 255, 0.06);
-    --ios-glass-border: rgba(255, 255, 255, 0.14);
-    --ios-glass-inner-glow: inset 0 1px 0 0 rgba(255, 255, 255, 0.22);
-    --ios-glass-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
-    --ios-input-bg: rgba(255, 255, 255, 0.07);
+
+/* ---------- 1. Темна тема: арктична ніч і неоновий синій ---------- */
+:root[data-skin='gamecon'][data-theme='dark'] {
+    /* Глибока арктична безодня під склом */
+    --background: #030711;
+    --foreground: #f2f7ff;
+    /* Картки вмісту — тонке крижане скло */
+    --card: rgb(215 238 255 / 0.04);
+    --card-foreground: #f2f7ff;
+    /* Меню й діалоги — напівпрозорі, тому завжди з розмиттям (див. розділ 6) */
+    --popover: rgb(6 13 28 / 0.78);
+    --popover-foreground: #f2f7ff;
+    --muted: rgb(200 230 255 / 0.055);
+    --muted-foreground: #8ca2c4;
+    --border: rgb(190 228 255 / 0.11);
+    --input: rgb(200 232 255 / 0.07);
+    --destructive: #ff3b5c;
+    --sidebar: rgb(215 238 255 / 0.035);
+    --sidebar-foreground: #e4effd;
+    /* Поверхні сайту — на тих самих токенах */
+    --glass: var(--card);
+    --gc-section: var(--card);
+    --matte: var(--popover);
+    --matte-solid: #060d1c;
+    --gc-hairline: var(--border);
+    --gc-hover: rgb(200 230 255 / 0.06);
+    /* Оптичне скло iOS 27+ (Dark Arctic) */
+    --ios-glass-surface: rgb(225 242 255 / 0.06);
+    --ios-glass-surface-elevated: rgb(225 242 255 / 0.085);
+    --ios-glass-border: rgb(210 238 255 / 0.16);
+    --ios-glass-specular:
+        inset 0 1px 0 0 rgb(235 248 255 / 0.28),
+        inset 0 -1px 0 0 rgb(0 195 255 / 0.08);
+    --ios-glass-shadow:
+        0 14px 40px rgb(0 4 15 / 0.55), 0 0 24px rgb(15 117 255 / 0.08);
+    --ios-search-pill: rgb(215 238 255 / 0.065);
+    --ios-neon-glow:
+        0 0 18px rgb(15 117 255 / 0.45), 0 0 36px rgb(0 210 255 / 0.2);
+    --ios-aurora-1: rgb(15 117 255 / 0.14);
+    --ios-aurora-2: rgb(0 212 255 / 0.1);
+    --ios-aurora-3: rgb(15 117 255 / 0.08);
 }
 
-/* Зовнішні обгортки — повністю прозорі; z-index задає розмітка (діалоги й меню лишаються вище). */
+/* ---------- 2. Світла тема: денна крижана Арктика ---------- */
+:root[data-skin='gamecon'][data-theme='light'] {
+    --background: #eef4fb;
+    --foreground: #071124;
+    /* Картки — чистий матовий лід */
+    --card: rgb(255 255 255 / 0.68);
+    --card-foreground: #071124;
+    --popover: rgb(255 255 255 / 0.84);
+    --popover-foreground: #071124;
+    --muted: rgb(15 45 90 / 0.045);
+    --muted-foreground: #4c6285;
+    --border: rgb(15 60 130 / 0.09);
+    --input: rgb(15 55 115 / 0.055);
+    --sidebar: rgb(255 255 255 / 0.58);
+    --sidebar-foreground: #0b1930;
+    --glass: var(--card);
+    --gc-section: var(--card);
+    --matte: var(--popover);
+    --matte-solid: #f4f8fd;
+    --gc-hairline: var(--border);
+    /* Оптичне скло iOS 27+ (Light Arctic) */
+    --ios-glass-surface: rgb(255 255 255 / 0.62);
+    --ios-glass-surface-elevated: rgb(255 255 255 / 0.76);
+    --ios-glass-border: rgb(255 255 255 / 0.88);
+    --ios-glass-specular:
+        inset 0 1px 0 0 rgb(255 255 255 / 0.98),
+        inset 0 0 0 1px rgb(0 102 255 / 0.06);
+    --ios-glass-shadow:
+        0 10px 32px rgb(10 35 80 / 0.07), 0 2px 10px rgb(0 98 255 / 0.05);
+    --ios-search-pill: rgb(10 40 90 / 0.05);
+    --ios-neon-glow: 0 4px 16px rgb(0 98 255 / 0.32);
+    --ios-aurora-1: rgb(0 98 255 / 0.09);
+    --ios-aurora-2: rgb(0 180 255 / 0.08);
+    --ios-aurora-3: rgb(0 98 255 / 0.05);
+}
+
+/* Акцент основної палітри: неоновий синій + арктичний ціан (палітри учасника не чіпаємо). */
+:root[data-skin='gamecon'][data-palette='aurora'][data-theme='dark'] {
+    --primary: #0f75ff;
+    --primary-foreground: #ffffff;
+    --ring: #00d2ff;
+    --sidebar-primary: #0f75ff;
+    --color-gc-blue: #0f75ff;
+    --color-gc-indigo: #2563eb;
+    --color-gc-purple: #4f7cff;
+    --color-gc-pink: #38bdf8;
+    --color-gc-cyan: #00e5ff;
+    --color-gc-mint: #00f5d4;
+    --color-gc-lilac-400: #7cc4ff;
+    --color-gc-violet-400: #3b82f6;
+}
+:root[data-skin='gamecon'][data-palette='aurora'][data-theme='light'] {
+    --primary: #0062ff;
+    --primary-foreground: #ffffff;
+    --ring: #00b4ff;
+    --sidebar-primary: #0062ff;
+}
+
+/* ---------- 3. Арктичне світіння фону ---------- */
+:root[data-skin='gamecon'] {
+    background-color: var(--background);
+}
+:root[data-skin='gamecon'] body {
+    background-color: var(--background);
+    background-image:
+        radial-gradient(
+            circle at 15% 0%,
+            var(--ios-aurora-1) 0%,
+            transparent 45%
+        ),
+        radial-gradient(
+            circle at 85% 12%,
+            var(--ios-aurora-2) 0%,
+            transparent 40%
+        ),
+        radial-gradient(
+            circle at 50% 100%,
+            var(--ios-aurora-3) 0%,
+            transparent 50%
+        );
+}
+/* Нерухоме світіння — лише на комп'ютері: на телефоні fixed-фон перемальовується при кожному прокручуванні. */
+@media (hover: hover) and (pointer: fine) {
+    :root[data-skin='gamecon'] body {
+        background-attachment: fixed;
+    }
+}
+
+/* ---------- 4. Обгортки шапки й нижньої панелі — прозорі, дотики проходять крізь них ---------- */
 .app-header-wrapper {
     position: fixed;
     top: 0;
@@ -4154,23 +4264,29 @@ html:has(.am) body {
     pointer-events: none;
 }
 
-/* Сама капсула матового скла (шапка й нижня панель) */
+/* ---------- 5. Матове скло iOS 27+: шапка, нижня панель, підвал на комп'ютері ---------- */
+.ios-glass-bar,
+:root[data-skin='gamecon'] .gc-footer-card {
+    background-color: var(--ios-glass-surface) !important;
+    background-image: linear-gradient(
+        135deg,
+        rgb(255 255 255 / 0.07) 0%,
+        rgb(255 255 255 / 0.01) 50%,
+        rgb(0 210 255 / 0.03) 100%
+    ) !important;
+    -webkit-backdrop-filter: blur(32px) saturate(200%);
+    backdrop-filter: blur(32px) saturate(200%);
+    border: 1px solid var(--ios-glass-border);
+    box-shadow: var(--ios-glass-specular), var(--ios-glass-shadow);
+}
 .ios-glass-bar {
     pointer-events: auto;
     max-width: 768px;
     margin: 0 auto;
-    background: var(--ios-glass-bg) !important;
-    /* Ефект оптичного скла Apple */
-    -webkit-backdrop-filter: blur(28px) saturate(190%);
-    backdrop-filter: blur(28px) saturate(190%);
-    border: 1px solid var(--ios-glass-border);
-    box-shadow: var(--ios-glass-inner-glow), var(--ios-glass-shadow);
     /* Апаратне прискорення, щоб розмиття не блимало на телефонах */
     transform: translateZ(0);
     will-change: backdrop-filter;
 }
-
-/* Шапка */
 .ios-header-pill {
     display: flex;
     align-items: center;
@@ -4180,23 +4296,32 @@ html:has(.am) body {
     padding: 0 10px;
     border-radius: 9999px;
 }
-
-/* Поле пошуку в шапці — напівпрозоре, щоб не вбивати розмиття */
+@media (min-width: 1024px) {
+    /* На комп'ютері шапка тягнеться на ширину макета (бокове меню + стрічка + права колонка). */
+    .ios-header-pill {
+        max-width: 1320px;
+        padding: 0 10px 0 18px;
+    }
+}
+/* Пошук у шапці: крижана пігулка; без власного розмиття — вкладене розмиття подвоює навантаження. */
 .ios-header-search {
     flex: 1;
     height: 38px;
-    background: var(--ios-input-bg) !important;
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    background: var(--ios-search-pill) !important;
+    border: 1px solid var(--border);
     border-radius: 9999px;
     padding: 0 14px;
     display: flex;
     align-items: center;
     gap: 8px;
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
 }
-:root[data-theme='light'] .ios-header-search {
-    border-color: rgba(0, 0, 0, 0.04);
+.ios-header-search:focus-within {
+    border-color: var(--ring);
+    box-shadow: 0 0 0 3px rgb(0 210 255 / 0.18);
 }
-
 /* Нижня панель: згорнута — капсула 64 px з вкладками; розгорнута — те саме скло з меню над вкладками. */
 .ios-footer-pill {
     display: flex;
@@ -4210,47 +4335,48 @@ html:has(.am) body {
 .ios-footer-pill > :last-child {
     justify-content: space-around;
 }
-@media (min-width: 1024px) {
-    /* На комп'ютері шапка тягнеться на ширину макета (бокове меню + стрічка + права колонка). */
-    .ios-header-pill {
-        max-width: 1320px;
-        padding: 0 10px 0 18px;
-    }
+
+/* ---------- 6. Бічне меню, меню й діалоги — крижане скло ---------- */
+:root[data-skin='gamecon'] .gc-sidebar-glass {
+    background: var(--sidebar);
+    -webkit-backdrop-filter: blur(28px) saturate(180%);
+    backdrop-filter: blur(28px) saturate(180%);
+    border: 1px solid var(--border);
+    border-radius: 1.125rem;
+}
+/* Напівпрозорі меню й діалоги без розмиття були б нечитабельні — розмиття обов'язкове. */
+:root[data-skin='gamecon']
+    :is(
+        [data-slot='dropdown-menu-content'],
+        [data-slot='select-content'],
+        [data-slot='dialog-content'],
+        [data-slot='popover-content'],
+        .glass-matte,
+        .gc-island,
+        .glass-strong
+    ) {
+    background: var(--popover);
+    border-color: var(--border);
+    -webkit-backdrop-filter: blur(32px) saturate(200%);
+    backdrop-filter: blur(32px) saturate(200%);
+}
+:root[data-skin='gamecon'] .input-glass {
+    background-color: var(--input);
+    border-color: var(--border);
+}
+:root[data-skin='gamecon'] :is(.input-glass:focus, .input-glass:focus-within) {
+    background-color: var(--input);
+    border-color: var(--ring);
+    box-shadow: 0 0 0 3px rgb(0 210 255 / 0.18);
 }
 
-/*
- * «Неоновий синій» без сірого: поверхні темної теми — глибокий нічний синій, матові й непрозорі,
- * роздільники й наведення — з синім відтінком; білі напівпрозорі підкладки (bg-white/…) теж синіють.
- * Безбарвне скло лишається тільки на шапці й нижній панелі (.ios-glass-bar).
- */
-:root[data-skin='gamecon'][data-theme='dark'] {
-    --background: #040a1c;
-    --sidebar: #050c22;
-    --popover: #0b1838;
-    --glass: #0a1534;
-    --matte: rgb(9 20 48 / 0.97);
-    --matte-solid: #0a1534;
-    --gc-section: #0a1534;
-    --border: rgb(64 132 255 / 0.12);
-    --gc-hairline: rgb(64 132 255 / 0.12);
-    --gc-hover: rgb(47 123 255 / 0.1);
-    --muted-foreground: #8ea7da;
-    --color-white: #e6efff;
-}
-:root[data-skin='gamecon'][data-theme='dark']
-    :is(.glass-matte, .gc-island, .gc-bar, .glass-strong) {
-    background: rgb(9 20 48 / 0.97);
-    border-color: rgb(64 132 255 / 0.14);
+/* ---------- 7. Неоновий акцент на головних кнопках (Опублікувати, Створити…) ---------- */
+:root[data-skin='gamecon'][data-palette='aurora']
+    :is(.btn-glow, button.bg-primary, a.bg-primary):not(.am *):not(:disabled) {
+    background: linear-gradient(135deg, #0f75ff 0%, #00b4ff 100%);
+    border: 1px solid rgb(255 255 255 / 0.28);
     box-shadow:
-        0 20px 40px -15px rgb(0 0 0 / 0.7),
-        inset 0 1px 0 0 rgb(120 170 255 / 0.12);
-}
-:root[data-skin='gamecon'][data-theme='dark'] .input-glass {
-    background-color: #0c1a3d;
-    border-color: rgb(64 132 255 / 0.16);
-}
-:root[data-skin='gamecon'][data-theme='dark']
-    :is(.input-glass:focus, .input-glass:focus-within) {
-    background-color: #0f2048;
-    border-color: rgb(77 155 255 / 0.55);
+        var(--ios-neon-glow),
+        inset 0 1px 0 0 rgb(255 255 255 / 0.35);
+    color: #ffffff;
 }
