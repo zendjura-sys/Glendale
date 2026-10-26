@@ -21,6 +21,10 @@ export type UserCard = {
     is_online: boolean;
     is_verified: boolean;
     status: string | null;
+    /** Емодзі швидкого статусу («🎮»); null — немає. */
+    status_emoji?: string | null;
+    /** До якого часу діє статус (ISO); null — постійний. */
+    status_until?: string | null;
     /** «Граю в…»: сервер GTA або гра (автоматично чи вручну). */
     playing?: PlayingInfo | null;
     /** GameCon+: null — без підписки. */

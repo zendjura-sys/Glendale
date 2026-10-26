@@ -64,6 +64,7 @@ use App\Http\Controllers\ServerController;
 use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\SpotifyController;
 use App\Http\Controllers\StartController;
+use App\Http\Controllers\StatusController;
 use App\Http\Controllers\StoryController;
 use App\Http\Controllers\TeammateController;
 use App\Http\Controllers\ThanksController;
@@ -739,6 +740,9 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     Route::post('notifications/read', [NotificationController::class, 'markAllRead'])->name('notifications.read');
 
     Route::get('me', [ProfileController::class, 'me'])->name('profile.me');
+    // Швидкий статус з емодзі й таймером.
+    Route::put('me/status', [StatusController::class, 'update'])->middleware('throttle:30,1')->name('status.update');
+    Route::delete('me/status', [StatusController::class, 'destroy'])->name('status.destroy');
     // «Граю в…»: ручний статус, автоматичний (Discord, Steam, телефон).
     Route::prefix('me/playing')->name('playing.')->group(function () {
         Route::get('/', [PlayingController::class, 'show'])->name('show');

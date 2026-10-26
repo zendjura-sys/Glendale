@@ -46,6 +46,8 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property string|null $avatar_path
  * @property string|null $cover_path
  * @property string|null $status
+ * @property string|null $status_emoji Емодзі статусу («🎮»)
+ * @property Carbon|null $status_until Після цього часу статус (текст і емодзі) ховається
  * @property string|null $about
  * @property string|null $city
  * @property string|null $country
@@ -133,6 +135,7 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
             'birthday' => 'date',
             'last_seen_at' => 'datetime',
             'playing_until' => 'datetime',
+            'status_until' => 'datetime',
             'playing_auto' => 'boolean',
             'muted_until' => 'datetime',
             'frozen_at' => 'datetime',
@@ -311,11 +314,19 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
             'avatar_url' => $this->avatar_url,
             'is_online' => $this->is_online,
             'is_verified' => $this->is_verified,
-            'status' => $this->status,
+            'status' => $this->statusExpired() ? null : $this->status,
+            'status_emoji' => $this->statusExpired() ? null : $this->status_emoji,
+            'status_until' => $this->statusExpired() ? null : $this->status_until?->toIso8601String(),
             'playing' => $this->playing(),
             'plus' => $this->plusCard(),
             'cosmetics' => SeasonPass::card($this->cosmetics),
         ];
+    }
+
+    /** Статус із таймером, час якого минув, — більше не показується (текст і емодзі). */
+    public function statusExpired(): bool
+    {
+        return $this->status_until !== null && $this->status_until->isPast();
     }
 
     public function isPlus(): bool

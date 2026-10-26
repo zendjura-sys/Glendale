@@ -35,6 +35,7 @@ import { Logo, LogoMark } from '@/components/gc/logo';
 import { ModuleIcon } from '@/components/gc/module-icon';
 import { NotificationsMenu } from '@/components/gc/notifications-menu';
 import { QuickSearch } from '@/components/gc/quick-search';
+import { StatusDialog } from '@/components/gc/status-dialog';
 import { UserAvatar } from '@/components/gc/user-avatar';
 import { VoiceBar } from '@/components/gc/voice-bar';
 import { VerifiedBadge } from '@/components/gc/verified-badge';
@@ -55,6 +56,7 @@ import { useCurrentUrl } from '@/hooks/use-current-url';
 import { useUnreadMessages } from '@/lib/inbox';
 import { usePlayer } from '@/lib/player';
 import { MOBILE_LABEL } from '@/lib/nav';
+import { usePlugin } from '@/lib/plugins';
 import { cn } from '@/lib/utils';
 import { PageTransition } from '@/components/gc/page-transition';
 import { PlayStoreLink } from '@/components/gc/play-store';
@@ -194,115 +196,139 @@ function Sidebar() {
 export function UserMenu() {
     const { auth } = usePage().props;
     const user = auth.user;
+    const statusOn = usePlugin('status_emoji');
+    const [statusOpen, setStatusOpen] = useState(false);
 
     return (
-        <DropdownMenu>
-            <DropdownMenuTrigger
-                aria-label={tr('Меню облікового запису')}
-                className="flex min-h-11 items-center gap-2 rounded-xl py-1 pr-2 pl-1 transition outline-none hover:bg-white/[0.06] data-[state=open]:bg-white/[0.07]"
-            >
-                <UserAvatar user={user} size="sm" showOnline={false} />
-                <span className="hidden text-left leading-tight xl:block">
-                    <span className="block text-[13px] font-semibold text-white">
-                        {user.first_name}
-                    </span>
-                    <span className="block text-xs text-white/45">
-                        {user.is_admin
-                            ? tr('Адміністратор')
-                            : user.role === 'moderator'
-                              ? tr('Модератор')
-                              : tr('Учасник')}
-                    </span>
-                </span>
-                <ChevronDown className="hidden size-4 text-white/40 xl:block" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent
-                align="end"
-                className="glass-strong w-60 rounded-2xl border-white/10 p-1.5 text-white"
-            >
-                <Link
-                    href={`/${user.username}`}
-                    className="flex items-center gap-3 rounded-xl p-2.5 hover:bg-white/5"
+        <>
+            <StatusDialog
+                user={user}
+                open={statusOpen}
+                onOpenChange={setStatusOpen}
+            />
+            <DropdownMenu>
+                <DropdownMenuTrigger
+                    aria-label={tr('Меню облікового запису')}
+                    className="flex min-h-11 items-center gap-2 rounded-xl py-1 pr-2 pl-1 transition outline-none hover:bg-white/[0.06] data-[state=open]:bg-white/[0.07]"
                 >
-                    <UserAvatar user={user} size="md" showOnline={false} />
-                    <span className="min-w-0">
-                        <span className="block truncate text-sm font-semibold">
-                            {user.name}
+                    <UserAvatar user={user} size="sm" showOnline={false} />
+                    <span className="hidden text-left leading-tight xl:block">
+                        <span className="block text-[13px] font-semibold text-white">
+                            {user.first_name}
                         </span>
-                        <span className="block truncate text-xs text-white/45">
-                            {user.email}
+                        <span className="block text-xs text-white/45">
+                            {user.is_admin
+                                ? tr('Адміністратор')
+                                : user.role === 'moderator'
+                                  ? tr('Модератор')
+                                  : tr('Учасник')}
                         </span>
                     </span>
-                </Link>
-                <DropdownMenuSeparator className="bg-white/5" />
-                <DropdownMenuItem
-                    asChild
-                    className="rounded-lg focus:bg-white/[0.06]"
+                    <ChevronDown className="hidden size-4 text-white/40 xl:block" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                    align="end"
+                    className="glass-strong w-60 rounded-2xl border-white/10 p-1.5 text-white"
                 >
-                    <Link href={`/${user.username}`}>
-                        <UserRound /> {tr('Моя сторінка')}
+                    <Link
+                        href={`/${user.username}`}
+                        className="flex items-center gap-3 rounded-xl p-2.5 hover:bg-white/5"
+                    >
+                        <UserAvatar user={user} size="md" showOnline={false} />
+                        <span className="min-w-0">
+                            <span className="block truncate text-sm font-semibold">
+                                {user.name}
+                            </span>
+                            <span className="block truncate text-xs text-white/45">
+                                {user.email}
+                            </span>
+                        </span>
                     </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                    asChild
-                    className="rounded-lg focus:bg-white/[0.06]"
-                >
-                    <Link href="/saved">
-                        <Bookmark /> {tr('Збережене')}
-                    </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                    asChild
-                    className="rounded-lg focus:bg-white/[0.06]"
-                >
-                    <Link href="/settings/profile">
-                        <Settings /> {tr('Налаштування')}
-                    </Link>
-                </DropdownMenuItem>
-                {user.is_admin && (
+                    <DropdownMenuSeparator className="bg-white/5" />
+                    {statusOn && (
+                        <DropdownMenuItem
+                            onSelect={() => setStatusOpen(true)}
+                            className="rounded-lg focus:bg-white/[0.06]"
+                        >
+                            <span className="flex size-4 items-center justify-center text-sm leading-none">
+                                {user.status_emoji ?? '🙂'}
+                            </span>
+                            <span className="min-w-0 flex-1 truncate">
+                                {user.status || user.status_emoji
+                                    ? (user.status ?? tr('Статус'))
+                                    : tr('Встановити статус')}
+                            </span>
+                        </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem
                         asChild
                         className="rounded-lg focus:bg-white/[0.06]"
                     >
-                        <Link href="/admin">
-                            <LayoutDashboard /> {tr('Адмін-панель')}
+                        <Link href={`/${user.username}`}>
+                            <UserRound /> {tr('Моя сторінка')}
                         </Link>
                     </DropdownMenuItem>
-                )}
-                <DropdownMenuItem
-                    className="rounded-lg focus:bg-white/[0.06]"
-                    onSelect={openFeedback}
-                >
-                    <MessageSquareHeart /> {tr('Відгук адмінам')}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                    asChild
-                    className="rounded-lg focus:bg-white/[0.06]"
-                >
-                    <Link href="/help">
-                        <LifeBuoy /> {tr('Довідка')}
-                    </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                    className="hidden rounded-lg focus:bg-white/[0.06] lg:flex"
-                    onSelect={openShortcuts}
-                >
-                    <Keyboard /> {tr('Гарячі клавіші')}
-                </DropdownMenuItem>
-                <ThemeMenuItem />
-                <LanguageMenu />
-                <DropdownMenuSeparator className="bg-white/5" />
-                <DropdownMenuItem
-                    className="rounded-lg text-rose-300 focus:bg-rose-500/10 focus:text-rose-200"
-                    onSelect={() => {
-                        forgetOfflinePages();
-                        router.post('/logout');
-                    }}
-                >
-                    <LogOut className="text-rose-300" /> {tr('Вийти')}
-                </DropdownMenuItem>
-            </DropdownMenuContent>
-        </DropdownMenu>
+                    <DropdownMenuItem
+                        asChild
+                        className="rounded-lg focus:bg-white/[0.06]"
+                    >
+                        <Link href="/saved">
+                            <Bookmark /> {tr('Збережене')}
+                        </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                        asChild
+                        className="rounded-lg focus:bg-white/[0.06]"
+                    >
+                        <Link href="/settings/profile">
+                            <Settings /> {tr('Налаштування')}
+                        </Link>
+                    </DropdownMenuItem>
+                    {user.is_admin && (
+                        <DropdownMenuItem
+                            asChild
+                            className="rounded-lg focus:bg-white/[0.06]"
+                        >
+                            <Link href="/admin">
+                                <LayoutDashboard /> {tr('Адмін-панель')}
+                            </Link>
+                        </DropdownMenuItem>
+                    )}
+                    <DropdownMenuItem
+                        className="rounded-lg focus:bg-white/[0.06]"
+                        onSelect={openFeedback}
+                    >
+                        <MessageSquareHeart /> {tr('Відгук адмінам')}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                        asChild
+                        className="rounded-lg focus:bg-white/[0.06]"
+                    >
+                        <Link href="/help">
+                            <LifeBuoy /> {tr('Довідка')}
+                        </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                        className="hidden rounded-lg focus:bg-white/[0.06] lg:flex"
+                        onSelect={openShortcuts}
+                    >
+                        <Keyboard /> {tr('Гарячі клавіші')}
+                    </DropdownMenuItem>
+                    <ThemeMenuItem />
+                    <LanguageMenu />
+                    <DropdownMenuSeparator className="bg-white/5" />
+                    <DropdownMenuItem
+                        className="rounded-lg text-rose-300 focus:bg-rose-500/10 focus:text-rose-200"
+                        onSelect={() => {
+                            forgetOfflinePages();
+                            router.post('/logout');
+                        }}
+                    >
+                        <LogOut className="text-rose-300" /> {tr('Вийти')}
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
+        </>
     );
 }
 

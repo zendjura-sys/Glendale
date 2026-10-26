@@ -13,6 +13,8 @@ export type User = {
     is_verified: boolean;
     plus?: PlusMark | null;
     status: string | null;
+    status_emoji?: string | null;
+    status_until?: string | null;
     role: 'user' | 'moderator' | 'admin';
     is_admin: boolean;
     email_verified_at: string | null;

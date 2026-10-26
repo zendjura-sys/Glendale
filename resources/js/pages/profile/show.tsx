@@ -24,7 +24,7 @@ import {
     UserPlus,
     UsersRound,
 } from 'lucide-react';
-import { Fragment, useEffect, useRef, type ReactNode } from 'react';
+import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react';
 import { FriendButton } from '@/components/gc/friend-button';
 import { PhoneBadge } from '@/components/phone/phone-badge';
 import { PostCard } from '@/components/gc/post-card';
@@ -43,6 +43,7 @@ import type { TogetherPerson } from '@/components/profile/watched-together';
 import { EmptyState, Widget } from '@/components/gc/widget';
 import { NowPlayingCard } from '@/components/music/now-playing';
 import { AchievementsCard } from '@/components/gc/achievements';
+import { StatusDialog, statusUntilLabel } from '@/components/gc/status-dialog';
 import { BacklogWidget } from '@/components/games/backlog';
 import type { BacklogSummary } from '@/components/games/backlog';
 import { PlayingBadge } from '@/components/gc/playing';
@@ -277,6 +278,8 @@ export default function ProfileShow({
 }: Props) {
     const { modules, auth } = usePage().props;
     const isSelf = relation === 'self';
+    const statusOn = usePlugin('status_emoji');
+    const [statusOpen, setStatusOpen] = useState(false);
     // Профіль відкритий гостям і пошуковикам — замість дій лише запрошення приєднатися.
     const guest = !auth.user;
     // Кольори ефекту шапки: кольори сторінки, інакше колір ніку, інакше акцент сайту.
@@ -448,10 +451,52 @@ export default function ProfileShow({
                                     {profile.note}
                                 </p>
                             )}
-                            {profile.status && (
-                                <p className="mt-1.5 text-[15px] text-white/75">
+                            {(profile.status || profile.status_emoji) && (
+                                <p className="mt-1.5 flex flex-wrap items-center gap-x-1.5 text-[15px] text-white/75">
+                                    {profile.status_emoji && (
+                                        <span className="text-lg leading-none">
+                                            {profile.status_emoji}
+                                        </span>
+                                    )}
                                     {profile.status}
+                                    {profile.status_until && (
+                                        <span className="text-xs text-white/40">
+                                            ·{' '}
+                                            {statusUntilLabel(
+                                                profile.status_until,
+                                            )}
+                                        </span>
+                                    )}
+                                    {isSelf && statusOn && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setStatusOpen(true)}
+                                            className="text-xs font-medium text-gc-lilac-300 hover:text-white"
+                                        >
+                                            {tr('Змінити')}
+                                        </button>
+                                    )}
                                 </p>
+                            )}
+                            {isSelf &&
+                                statusOn &&
+                                !profile.status &&
+                                !profile.status_emoji && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setStatusOpen(true)}
+                                        className="mt-1.5 inline-flex items-center gap-1.5 rounded-chip bg-white/[0.06] px-2.5 py-1 text-xs font-medium text-white/70 transition hover:bg-white/10 hover:text-white"
+                                    >
+                                        <span aria-hidden>🙂</span>
+                                        {tr('Встановити статус')}
+                                    </button>
+                                )}
+                            {isSelf && statusOn && (
+                                <StatusDialog
+                                    user={profile}
+                                    open={statusOpen}
+                                    onOpenChange={setStatusOpen}
+                                />
                             )}
                             {(profile.looking_for_group ||
                                 (profile.languages?.length ?? 0) > 0) && (

@@ -13,6 +13,16 @@ const sizes = {
     hero: 'size-36 text-4xl sm:size-40',
 } as const;
 
+/** Емодзі статусу — кружечок у лівому нижньому куті аватара. */
+const emojiSizes = {
+    xs: null,
+    sm: 'size-4 text-[10px] -bottom-0.5 -left-0.5',
+    md: 'size-5 text-[11px] -bottom-0.5 -left-0.5',
+    lg: 'size-6 text-[13px] -bottom-0.5 -left-0.5',
+    xl: 'size-7 text-[15px] bottom-0 left-0',
+    hero: 'size-11 text-2xl bottom-2 left-2',
+} as const;
+
 const dotSizes = {
     xs: 'size-2 ring-[1.5px]',
     sm: 'size-2.5 ring-2',
@@ -39,6 +49,8 @@ type Props = {
         id?: number;
         plus?: PlusMark | null;
         cosmetics?: Cosmetics | null;
+        status?: string | null;
+        status_emoji?: string | null;
     };
     size?: keyof typeof sizes;
     ring?: boolean;
@@ -107,6 +119,18 @@ export function UserAvatar({
             ) : (
                 <span className="flex size-full overflow-hidden rounded-full bg-white/5 ring-1 ring-white/10">
                     {inner}
+                </span>
+            )}
+            {user.status_emoji && emojiSizes[size] && (
+                <span
+                    className={cn(
+                        'absolute flex items-center justify-center rounded-full bg-background leading-none ring-2 ring-background',
+                        emojiSizes[size],
+                    )}
+                    title={user.status ?? undefined}
+                    aria-label={user.status ?? undefined}
+                >
+                    {user.status_emoji}
                 </span>
             )}
             {showOnline && user.is_online && (

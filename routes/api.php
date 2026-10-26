@@ -57,6 +57,7 @@ use App\Http\Controllers\Settings\NavigationController;
 use App\Http\Controllers\Settings\ProfileController as SettingsProfileController;
 use App\Http\Controllers\Settings\StreamController;
 use App\Http\Controllers\SpotifyController;
+use App\Http\Controllers\StatusController;
 use App\Http\Controllers\StoryController;
 use App\Http\Controllers\TeammateController;
 use App\Http\Controllers\TournamentController;
@@ -385,6 +386,8 @@ Route::prefix('v1')->group(function () {
             // «Стежити» (сповіщення про новини гри, сервера чи фільму) і «Закріпити в профілі».
             Route::post('follows', [FollowController::class, 'toggle'])->middleware('throttle:60,1');
             Route::post('me/pin', [ProfileController::class, 'pin']);
+            Route::put('me/status', [StatusController::class, 'update'])->middleware('throttle:30,1');
+            Route::delete('me/status', [StatusController::class, 'destroy']);
 
             // Запросити друзів (реферальна програма) і вступ за посиланням-запрошенням у клан, сім’ю чи спільноту.
             Route::get('invite', [ReferralController::class, 'index']);
