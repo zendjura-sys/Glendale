@@ -620,6 +620,52 @@ class MusicCatalog
             ->map(fn (Track $row) => $this->genreCard($row))->all());
     }
 
+    /**
+     * Обкладинки плиток бічного меню «Музики» (ПК): перші чотири — топ GameCon за прослуховуваннями,
+     * решта — з медіатеки людини. Кеш — 10 хвилин; порожні значення плитка показує як звичайну.
+     *
+     * @return array{top: list<array{cover_url: string|null, title: string, artist: string}>, tiles: array<string, string|null>}
+     */
+    public function menuCovers(User $user): array
+    {
+        return Cache::remember("music:menu:{$user->id}", now()->addMinutes(10), function () use ($user) {
+            $chart = $this->chart(null, 20);
+            $tracks = Track::query()->whereIn('id', $chart)->get()->keyBy('id');
+            $top = [];
+            foreach (array_slice($chart, 0, 4) as $id) {
+                $track = $tracks->get($id);
+                if ($track instanceof Track) {
+                    $top[] = ['cover_url' => $track->cover_url, 'title' => $track->title, 'artist' => $track->artist];
+                }
+            }
+
+            $library = fn () => $user->library()->where('tracks.processing', false);
+            $lastPlayed = DB::table('music_plays')->where('user_id', $user->id)->whereNotNull('cover_url')->latest('played_at')->value('cover_url');
+            $topArtist = $library()->where('tracks.artist', '!=', '')->groupBy('tracks.artist')
+                ->selectRaw('tracks.artist as artist, COUNT(*) as total')->orderByDesc('total')->value('artist');
+            $topGenre = $library()->whereNotNull('tracks.genre')->where('tracks.genre', '!=', '')->groupBy('tracks.genre')
+                ->selectRaw('tracks.genre as genre, COUNT(*) as total')->orderByDesc('total')->value('genre');
+            $cover = fn (?Track $track) => $track?->cover_url;
+            $rooms = $tracks->filter(fn (Track $t) => $t->cover_url !== null)->shuffle()->first();
+
+            return [
+                'top' => $top,
+                'tiles' => [
+                    // «Нещодавно додане» — обкладинка останнього прослуханого, інакше останнього доданого.
+                    'recent' => is_string($lastPlayed) ? $lastPlayed : $cover($library()->whereNotNull('tracks.cover_path')->orderByPivot('created_at', 'desc')->first()),
+                    'artists' => is_string($topArtist) ? ($this->artistInfo->cachedImage($topArtist)
+                        ?? $cover($library()->where('tracks.artist', $topArtist)->whereNotNull('tracks.cover_path')->first())) : null,
+                    'albums' => $cover($library()->whereNotNull('tracks.album')->whereNotNull('tracks.cover_path')->orderByPivot('created_at', 'desc')->first()),
+                    'songs' => $cover($library()->whereNotNull('tracks.cover_path')->inRandomOrder()->first()),
+                    'favorites' => $cover($library()->wherePivot('is_favorite', true)->whereNotNull('tracks.cover_path')->orderByPivot('created_at', 'desc')->first()),
+                    'genres' => is_string($topGenre) ? $cover($library()->where('tracks.genre', $topGenre)->whereNotNull('tracks.cover_path')->first()) : null,
+                    // «Кімнати» — випадкова обкладинка з топу сайту.
+                    'rooms' => $cover($rooms instanceof Track ? $rooms : null),
+                ],
+            ];
+        });
+    }
+
     // ───────────────────────── Пошук ─────────────────────────
 
     /**

@@ -376,6 +376,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::get('replay/{year?}', [MusicHubController::class, 'replay'])->whereNumber('year')->name('music.replay');
         Route::get('station', [MusicHubController::class, 'station'])->middleware('throttle:120,1')->name('music.station');
         Route::get('playlists/mine', [MusicHubController::class, 'myPlaylists'])->name('music.playlists.mine');
+        Route::get('menu-covers', [MusicHubController::class, 'menuCovers'])->middleware('throttle:60,1')->name('music.menu-covers');
         Route::post('tracks/{track}/favorite', [MusicHubController::class, 'favorite'])->whereNumber('track')->name('tracks.favorite');
         Route::delete('tracks/{track}/favorite', [MusicHubController::class, 'unfavorite'])->whereNumber('track')->name('tracks.unfavorite');
         Route::get('u/{user}', [MusicController::class, 'user'])->name('music.user');

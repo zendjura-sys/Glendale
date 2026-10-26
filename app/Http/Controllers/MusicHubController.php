@@ -215,6 +215,12 @@ class MusicHubController extends Controller
         return response()->json(['tracks' => $this->catalog->station($request->user(), $data['key'], array_values(array_map('intval', $data['exclude'] ?? [])))]);
     }
 
+    /** Обкладинки плиток бічного меню «Музики» на ПК. */
+    public function menuCovers(Request $request): JsonResponse
+    {
+        return response()->json($this->catalog->menuCovers($request->user()));
+    }
+
     /** Плейлисти, куди людина може додати трек (меню «…» → «Додати в плейлист»). */
     public function myPlaylists(Request $request): JsonResponse
     {

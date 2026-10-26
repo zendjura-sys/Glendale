@@ -17,6 +17,7 @@ import {
     Search,
     Star,
     Tags,
+    TrendingUp,
     Upload,
 } from 'lucide-react';
 import { AnimatePresence, m, useReducedMotion } from 'motion/react';
@@ -118,47 +119,80 @@ function SideLink({
     );
 }
 
-/** Плитка меню ПК: іконка над підписом, активна — акцентна підкладка з неоновим відблиском. */
+/** Обкладинки плиток меню (GET /music/menu-covers): перші чотири — топ GameCon, решта — з медіатеки. */
+type MenuCovers = {
+    top: { cover_url: string | null; title: string; artist: string }[];
+    tiles: Partial<Record<string, string | null>>;
+};
+
+/**
+ * Плитка меню ПК: картинка на все тло (обкладинка чи фото виконавця) з темним градієнтом знизу,
+ * над нею — значок і підпис. Без картинки — скляна плитка з акцентним значком.
+ */
 function SideTile({
     href,
     icon,
     label,
     exact,
-    compact,
+    cover,
+    hint,
 }: {
     href: string;
     icon: ReactNode;
     label: string;
     exact?: boolean;
-    /** Вузька плитка (ряд із трьох): іконка й підпис по центру. */
-    compact?: boolean;
+    cover?: string | null;
+    /** Підказка при наведенні (напр. «№1 на GameCon: трек — виконавець»). */
+    hint?: string;
 }) {
     const active = useActive()(href, exact);
+    const [broken, setBroken] = useState(false);
+    const image = cover && !broken ? cover : null;
 
     return (
         <Link
             href={href}
+            title={hint}
             aria-current={active ? 'page' : undefined}
             className={cn(
-                'am-tile flex min-h-[64px] min-w-0 flex-col justify-between gap-1.5 rounded-[14px] border transition',
-                compact
-                    ? 'items-center px-1 py-2 text-center'
-                    : 'items-start p-2.5',
+                'am-tile group relative isolate flex min-h-[74px] min-w-0 flex-col items-start justify-between gap-1.5 overflow-hidden rounded-[14px] border p-2.5 transition',
                 active
-                    ? 'border-[color-mix(in_oklab,var(--am-accent)_45%,transparent)] bg-[color-mix(in_oklab,var(--am-accent)_16%,transparent)]'
-                    : 'border-[var(--am-sep)] bg-[var(--am-fill)] hover:bg-[var(--am-fill2)]',
+                    ? 'border-[color-mix(in_oklab,var(--am-accent)_70%,transparent)] shadow-[0_0_0_1px_color-mix(in_oklab,var(--am-accent)_45%,transparent),0_0_18px_color-mix(in_oklab,var(--am-accent)_35%,transparent)]'
+                    : 'border-[var(--am-sep)]',
+                !image &&
+                    (active
+                        ? 'bg-[color-mix(in_oklab,var(--am-accent)_16%,transparent)]'
+                        : 'bg-[var(--am-fill)] hover:bg-[var(--am-fill2)]'),
             )}
         >
-            <span className="flex size-7 items-center justify-center rounded-[9px] bg-[color-mix(in_oklab,var(--am-accent)_14%,transparent)] text-[var(--am-accent)] [&_svg]:size-4">
+            {image && (
+                <>
+                    <img
+                        src={image}
+                        alt=""
+                        loading="lazy"
+                        onError={() => setBroken(true)}
+                        className="absolute inset-0 -z-10 size-full object-cover transition duration-500 group-hover:scale-105"
+                    />
+                    <span className="absolute inset-0 -z-10 bg-gradient-to-t from-black/85 via-black/35 to-black/5" />
+                </>
+            )}
+            <span
+                className={cn(
+                    'flex size-7 items-center justify-center rounded-[9px] [&_svg]:size-4',
+                    image
+                        ? 'bg-black/35 text-white ring-1 ring-white/20 backdrop-blur-md'
+                        : 'bg-[color-mix(in_oklab,var(--am-accent)_14%,transparent)] text-[var(--am-accent)]',
+                )}
+            >
                 {icon}
             </span>
             <span
                 className={cn(
-                    'am-footnote w-full',
-                    compact
-                        ? 'truncate text-[12px]'
-                        : 'line-clamp-2 leading-tight break-words',
+                    'am-footnote line-clamp-2 w-full leading-tight break-words',
                     active && 'font-semibold',
+                    image &&
+                        'text-white [text-shadow:0_1px_6px_rgb(0_0_0/0.7)]',
                 )}
             >
                 {label}
@@ -181,6 +215,23 @@ function Sidebar({ onUpload }: { onUpload: () => void }) {
             .then((d) => setPlaylists(d.playlists))
             .catch(() => {});
     }, []);
+    const [covers, setCovers] = useState<MenuCovers | null>(null);
+    useEffect(() => {
+        void api<MenuCovers>('GET', '/music/menu-covers')
+            .then(setCovers)
+            .catch(() => {});
+    }, []);
+    const tile = (key: string) => covers?.tiles[key] ?? null;
+    // Перші чотири плитки — топ GameCon за прослуховуваннями (№1…№4).
+    const top = [
+        ...TABS.slice(0, 3),
+        {
+            href: '/music/charts',
+            label: () => tr('Чарти'),
+            icon: TrendingUp,
+            exact: false,
+        },
+    ];
 
     return (
         <aside className="ios-glass sticky top-3 my-3 ml-3 hidden h-[calc(100dvh-24px)] w-[260px] shrink-0 [scrollbar-width:none] flex-col overflow-y-auto overscroll-contain rounded-[22px] px-3 pt-4 pb-3 lg:flex">
@@ -211,49 +262,71 @@ function Sidebar({ onUpload }: { onUpload: () => void }) {
                     className="am-subhead min-w-0 flex-1 bg-transparent outline-none placeholder:text-[var(--am-label2)]"
                 />
             </form>
-            <nav className="grid grid-cols-3 gap-1.5">
-                {TABS.slice(0, 3).map((tab) => (
-                    <SideTile
-                        compact
-                        key={tab.href}
-                        href={tab.href}
-                        label={tab.label()}
-                        icon={<tab.icon />}
-                        exact={tab.exact}
-                    />
-                ))}
+            <nav className="grid grid-cols-2 gap-1.5">
+                {top.map((tab, index) => {
+                    const hit = covers?.top[index];
+
+                    return (
+                        <SideTile
+                            key={tab.href}
+                            href={tab.href}
+                            label={tab.label()}
+                            icon={<tab.icon />}
+                            exact={tab.exact}
+                            cover={hit?.cover_url}
+                            hint={
+                                hit
+                                    ? tr(
+                                          '№{n} на GameCon: {title} — {artist}',
+                                          {
+                                              n: index + 1,
+                                              title: hit.title,
+                                              artist: hit.artist,
+                                          },
+                                      )
+                                    : undefined
+                            }
+                        />
+                    );
+                })}
             </nav>
             <p className="am-footnote mt-5 mb-1 px-2.5 font-semibold text-[var(--am-label2)]">
                 {tr('Медіатека')}
             </p>
             <nav className="grid grid-cols-2 gap-1.5">
                 <SideTile
+                    cover={tile('recent')}
                     href="/music/library"
                     exact
                     label={tr('Нещодавно додане')}
                     icon={<Clock3 />}
                 />
                 <SideTile
+                    cover={tile('artists')}
                     href="/music/library/artists"
                     label={tr('Виконавці')}
                     icon={<Mic2 />}
                 />
                 <SideTile
+                    cover={tile('albums')}
                     href="/music/library/albums"
                     label={tr('Альбоми')}
                     icon={<Disc3 />}
                 />
                 <SideTile
+                    cover={tile('songs')}
                     href="/music/library/songs"
                     label={tr('Пісні')}
                     icon={<Music2 />}
                 />
                 <SideTile
+                    cover={tile('favorites')}
                     href="/music/library/favorites"
                     label={tr('Улюблені пісні')}
                     icon={<Star />}
                 />
                 <SideTile
+                    cover={tile('genres')}
                     href="/music/library/genres"
                     label={tr('Жанри')}
                     icon={<Tags />}
@@ -264,6 +337,7 @@ function Sidebar({ onUpload }: { onUpload: () => void }) {
                     icon={<SpotifyLogo className="size-4" />}
                 />
                 <SideTile
+                    cover={tile('rooms')}
                     href="/music/rooms"
                     label={tr('Кімнати')}
                     icon={<Headphones />}
