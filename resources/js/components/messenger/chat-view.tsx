@@ -566,6 +566,17 @@ export function ChatView({
     const [forwarding, setForwarding] = useState<ChatMessage | null>(null);
     const [folderOpen, setFolderOpen] = useState(false);
     const [folderName, setFolderName] = useState(active.folder ?? '');
+    // Мережа повернулась — повторюємо повідомлення, які не пішли офлайн.
+    useEffect(() => {
+        const retry = () =>
+            messages
+                .filter((m) => m.pending === 'failed' && m.local_id)
+                .forEach((m) => deliver(m.local_id as string));
+        window.addEventListener('online', retry);
+
+        return () => window.removeEventListener('online', retry);
+    });
+
     const actions: BubbleActions = {
         onReply: (message) => {
             setEditing(null);

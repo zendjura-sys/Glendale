@@ -29,6 +29,7 @@ import { motionOr, SNAP } from '@/lib/motion';
 import { SiteBackground } from '@/components/backgrounds/site-background';
 import { Seasonal } from '@/components/gc/seasonal';
 import { IncomingCall } from '@/components/gc/incoming-call';
+import { forgetOfflinePages } from '@/lib/offline';
 import { InboxListener } from '@/components/gc/inbox-listener';
 import { Logo, LogoMark } from '@/components/gc/logo';
 import { ModuleIcon } from '@/components/gc/module-icon';
@@ -293,7 +294,10 @@ export function UserMenu() {
                 <DropdownMenuSeparator className="bg-white/5" />
                 <DropdownMenuItem
                     className="rounded-lg text-rose-300 focus:bg-rose-500/10 focus:text-rose-200"
-                    onSelect={() => router.post('/logout')}
+                    onSelect={() => {
+                        forgetOfflinePages();
+                        router.post('/logout');
+                    }}
                 >
                     <LogOut className="text-rose-300" /> {tr('Вийти')}
                 </DropdownMenuItem>
@@ -722,7 +726,10 @@ function MenuContent({ onClose }: { onClose: () => void }) {
                 />
                 <button
                     type="button"
-                    onClick={() => router.post('/logout')}
+                    onClick={() => {
+                        forgetOfflinePages();
+                        router.post('/logout');
+                    }}
                     className={cn(row, 'text-rose-300 active:bg-rose-500/10')}
                 >
                     <LogOut className="size-[19px]" />

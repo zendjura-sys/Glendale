@@ -1,5 +1,6 @@
 import type { VisitOptions } from '@inertiajs/core';
 import { createInertiaApp } from '@inertiajs/react';
+import { registerOffline } from '@/lib/offline';
 import { SkipLink } from '@/components/gc/skip-link';
 import { CookieConsent } from '@/components/gc/cookie-consent';
 import { ErrorBoundary } from '@/components/gc/error-boundary';
@@ -96,6 +97,8 @@ function shouldViewTransition(options: VisitOptions): boolean {
 
     return !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
+
+registerOffline();
 
 void createInertiaApp({
     title: (title) => (title ? `${title} · ${appName}` : appName),
