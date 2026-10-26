@@ -165,6 +165,10 @@ type Props = {
     photosHref: string | null;
     achievements?: AchievementsData;
     backlog?: BacklogSummary | null;
+    ready?: {
+        game: { name: string; slug: string } | null;
+        until: string;
+    } | null;
     audio: { href: string; tracks: number } | null;
     nowPlaying?: NowPlaying | null;
     posts: ScrollData<PostItem>;
@@ -267,6 +271,7 @@ export default function ProfileShow({
     photosHref,
     achievements,
     backlog = null,
+    ready = null,
     audio,
     nowPlaying,
     posts,
@@ -449,6 +454,16 @@ export default function ProfileShow({
                             {profile.note && (
                                 <p className="mt-1 text-sm text-white/60">
                                     {profile.note}
+                                </p>
+                            )}
+                            {ready && (
+                                <p className="mt-1.5 inline-flex items-center gap-1.5 rounded-chip bg-emerald-400/10 px-2.5 py-1 text-xs font-semibold text-emerald-300 ring-1 ring-emerald-400/30">
+                                    <span className="size-1.5 rounded-full bg-emerald-400" />
+                                    {ready.game
+                                        ? tr('Готовий грати в {game}', {
+                                              game: ready.game.name,
+                                          })
+                                        : tr('Готовий грати зараз')}
                                 </p>
                             )}
                             {(profile.status || profile.status_emoji) && (

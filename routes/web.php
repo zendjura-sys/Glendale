@@ -56,6 +56,7 @@ use App\Http\Controllers\PlusController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\QuestController;
+use App\Http\Controllers\ReadyToPlayController;
 use App\Http\Controllers\ReferralController;
 use App\Http\Controllers\SavedController;
 use App\Http\Controllers\SeasonController;
@@ -741,6 +742,10 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
 
     Route::get('me', [ProfileController::class, 'me'])->name('profile.me');
     // Швидкий статус з емодзі й таймером.
+    // «Готовий грати зараз».
+    Route::get('ready', [ReadyToPlayController::class, 'show'])->name('ready.show');
+    Route::put('ready', [ReadyToPlayController::class, 'update'])->middleware('throttle:30,1')->name('ready.update');
+    Route::delete('ready', [ReadyToPlayController::class, 'destroy'])->name('ready.destroy');
     Route::put('me/status', [StatusController::class, 'update'])->middleware('throttle:30,1')->name('status.update');
     Route::delete('me/status', [StatusController::class, 'destroy'])->name('status.destroy');
     // «Граю в…»: ручний статус, автоматичний (Discord, Steam, телефон).

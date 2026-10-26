@@ -20,6 +20,7 @@ use App\Services\ImageStorage;
 use App\Services\Messenger;
 use App\Services\Moderation\PeopleModeration;
 use App\Services\MusicService;
+use App\Services\Party\ReadyBoard;
 use App\Services\Phones\PhoneNumbers;
 use App\Services\PhotoService;
 use App\Services\PlayedTogether;
@@ -213,6 +214,8 @@ class ProfileController extends Controller
                 ->map->toCard()
                 ->all() : [],
             'photos' => $photoItems,
+            // «Готовий грати зараз» — бачать ті, кому видно профіль.
+            'ready' => $viewer !== null && $canSeeContent && app(Plugins::class)->on('ready_to_play') ? app(ReadyBoard::class)->mine($user)?->toCard() : null,
             // Бэклог ігор: у що грає зараз і скільки ігор у кожному стані.
             'backlog' => $viewer !== null && $canSeeContent && $modules->enabled('games') && app(Plugins::class)->on('game_backlog')
                 ? [...app(Backlog::class)->summary($user), 'href' => '/games/backlog/'.$user->username]

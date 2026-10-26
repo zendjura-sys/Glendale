@@ -27,6 +27,7 @@ import { StoriesBar } from '@/components/gc/stories';
 import { UserAvatar } from '@/components/gc/user-avatar';
 import { WrappedBanner } from '@/components/gc/wrapped-banner';
 import { EmptyState, Widget, WidgetSkeleton } from '@/components/gc/widget';
+import { ReadyToPlayCard } from '@/components/party/ready-to-play';
 import { formatDate } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import type { PersonCard, PostItem, ScrollData, UserCard } from '@/types';
@@ -151,6 +152,7 @@ export default function Feed({
                     {storiesOn && <StoriesBar />}
                     <WrappedBanner />
                     {liveOn && <FriendsLive streams={streaming ?? []} />}
+                    <ReadyToPlayCard className="xl:hidden" />
                     <FeedQuests quests={quests ?? []} />
                     <TomorrowCard events={tomorrow ?? []} />
                     {(picks?.length ?? 0) > 0 && (
@@ -286,6 +288,7 @@ export default function Feed({
                 </div>
 
                 <aside className="sticky top-[76px] hidden h-fit w-[320px] shrink-0 space-y-4 xl:block">
+                    <ReadyToPlayCard />
                     <Widget
                         title={tr('Зараз онлайн')}
                         icon={Radio}

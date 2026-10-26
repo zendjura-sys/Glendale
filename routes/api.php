@@ -46,6 +46,7 @@ use App\Http\Controllers\PlaylistController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\QuestController;
+use App\Http\Controllers\ReadyToPlayController;
 use App\Http\Controllers\ReferralController;
 use App\Http\Controllers\SavedController;
 use App\Http\Controllers\SeasonController;
@@ -386,6 +387,9 @@ Route::prefix('v1')->group(function () {
             // «Стежити» (сповіщення про новини гри, сервера чи фільму) і «Закріпити в профілі».
             Route::post('follows', [FollowController::class, 'toggle'])->middleware('throttle:60,1');
             Route::post('me/pin', [ProfileController::class, 'pin']);
+            Route::get('ready', [ReadyToPlayController::class, 'show']);
+            Route::put('ready', [ReadyToPlayController::class, 'update'])->middleware('throttle:30,1');
+            Route::delete('ready', [ReadyToPlayController::class, 'destroy']);
             Route::put('me/status', [StatusController::class, 'update'])->middleware('throttle:30,1');
             Route::delete('me/status', [StatusController::class, 'destroy']);
 

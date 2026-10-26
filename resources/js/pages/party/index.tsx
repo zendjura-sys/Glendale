@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/dialog';
 import { tr } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
+import { ReadyToPlayCard } from '@/components/party/ready-to-play';
 
 type Option = { slug: string; name: string };
 
@@ -178,6 +179,7 @@ export default function PartyBoard({ parties, filters, options }: Props) {
                         </select>
                     </div>
                 </section>
+                <ReadyToPlayCard />
 
                 {parties.length === 0 ? (
                     <EmptyState
