@@ -15,6 +15,7 @@ use App\Models\Save;
 use App\Models\Track;
 use App\Models\User;
 use App\Models\UserMute;
+use App\Support\Plugins\Plugins;
 use App\Support\Stickers;
 use Illuminate\Database\Eloquent\Collection;
 
@@ -332,6 +333,8 @@ class PostPresenter
             'user' => $comment->user->toCard(),
             'can_delete' => $viewer !== null && ($viewer->id === $comment->user_id || $viewer->isStaff()),
             'can_pin' => $canPin && $comment->parent_id === null,
+            'can_thank' => $viewer !== null && $viewer->id !== $comment->user_id && app(Plugins::class)->on('thanks'),
+            'thanked' => $viewer !== null && $viewer->id !== $comment->user_id && app(Thanks::class)->has($viewer, 'comment', $comment->id),
         ];
     }
 }

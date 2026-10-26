@@ -66,6 +66,8 @@ export type CommentItem = {
     created_at: string;
     user: UserCard;
     can_delete: boolean;
+    can_thank?: boolean;
+    thanked?: boolean;
 };
 
 export type Visibility = 'public' | 'friends' | 'private';

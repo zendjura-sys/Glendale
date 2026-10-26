@@ -27,10 +27,12 @@ use App\Services\PostPresenter;
 use App\Services\Presence\SteamPresence;
 use App\Services\Quests\SeasonPass;
 use App\Services\Streams\LiveStreams;
+use App\Services\Thanks;
 use App\Support\Backgrounds;
 use App\Support\GameTheme;
 use App\Support\Modules\ModuleManager;
 use App\Support\Palette;
+use App\Support\Plugins\Plugins;
 use App\Support\PlusStyle;
 use App\Support\ProfileBlocks;
 use chillerlan\QRCode\Output\QROutputInterface;
@@ -198,6 +200,8 @@ class ProfileController extends Controller
                 'posts' => $user->posts()->where('is_draft', false)->where(fn ($query) => $query->whereNull('publish_at')->orWhere('publish_at', '<=', now()))->count(),
                 'photos' => $photoCount,
                 'mutual' => $viewer && $relation !== FriendshipService::SELF ? $this->friendships->mutualCount($viewer, $user) : 0,
+                // Подяки за гіди й корисні коментарі.
+                'thanks' => app(Plugins::class)->on('thanks') ? app(Thanks::class)->received($user) : 0,
             ],
             'friends' => $canSeeContent ? User::query()
                 ->whereIn('id', $friendIds)

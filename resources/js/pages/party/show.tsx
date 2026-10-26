@@ -1,3 +1,4 @@
+import { InviteLinkButton } from '@/components/gc/invite-link';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import {
     ArrowLeft,
@@ -155,6 +156,12 @@ export default function PartyShow({
                     )}
 
                     <div className="flex flex-wrap gap-2">
+                        {party.joined && party.open && (
+                            <InviteLinkButton
+                                url={`/party/${party.id}/invite-link`}
+                                className="inline-flex h-10 items-center gap-2 rounded-xl bg-white/[0.05] px-4 text-sm font-medium text-white/75 transition hover:bg-white/10"
+                            />
+                        )}
                         {party.joined && !party.mine && (
                             <button
                                 type="button"

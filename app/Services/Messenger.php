@@ -12,6 +12,7 @@ use App\Models\Conversation;
 use App\Models\ConversationParticipant;
 use App\Models\Message;
 use App\Models\MessageAttachment;
+use App\Models\MessageReaction;
 use App\Models\Sticker;
 use App\Models\User;
 use App\Models\UserBlock;
@@ -280,6 +281,39 @@ class Messenger
                 'meta' => ['waveform' => array_map(fn ($v) => max(0, min(100, (int) $v)), array_slice($waveform, 0, 64))],
             ]);
         });
+    }
+
+    /** Відеоповідомлення-кружок (до хвилини, з камери). */
+    public function sendVideoNote(Conversation $conversation, User $sender, UploadedFile $video, int $duration, ?int $replyToId = null): Message
+    {
+        $extension = str_contains((string) $video->getMimeType(), 'mp4') ? 'mp4' : 'webm';
+
+        return $this->deliver($conversation, $sender, ['type' => Message::TYPE_VIDEO_NOTE], $replyToId, function (Message $message) use ($video, $duration, $extension) {
+            $message->attachments()->create([
+                'type' => MessageAttachment::TYPE_VIDEO_NOTE,
+                'path' => $video->storeAs('video-notes/'.now()->format('Y/m'), Str::random(32).'.'.$extension, 'public'),
+                'mime' => Str::limit((string) $video->getMimeType(), 64, ''),
+                'size' => $video->getSize(),
+                'duration' => $duration,
+            ]);
+        });
+    }
+
+    /**
+     * Реакція на повідомлення: одна на людину; та сама ще раз — прибрати. Усім у бесіді — оновлене повідомлення.
+     */
+    public function react(Message $message, User $user, ?string $emoji): Message
+    {
+        $current = MessageReaction::query()->where('message_id', $message->id)->where('user_id', $user->id)->value('emoji');
+        MessageReaction::query()->where('message_id', $message->id)->where('user_id', $user->id)->delete();
+        if ($emoji !== null && $emoji !== $current) {
+            MessageReaction::query()->create(['message_id' => $message->id, 'user_id' => $user->id, 'emoji' => $emoji, 'created_at' => now()]);
+        }
+        $message->unsetRelation('reactions');
+        $payload = $this->presenter->message($this->presenter->load($message));
+        $this->broadcast(new MessageUpdated($message->conversation_id, $payload));
+
+        return $message;
     }
 
     public function sendContact(Conversation $conversation, User $sender, User $contact, ?int $replyToId = null): Message

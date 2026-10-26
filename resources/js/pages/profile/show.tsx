@@ -147,6 +147,7 @@ type Props = {
         posts: number;
         photos: number;
         mutual: number;
+        thanks?: number;
     };
     friends: UserCard[];
     photos: {
@@ -665,6 +666,16 @@ export default function ProfileShow({
                                 label={tr('фото')}
                                 href={photosHref ?? undefined}
                             />
+                            {(stats.thanks ?? 0) > 0 && (
+                                <Counter
+                                    value={stats.thanks ?? 0}
+                                    label={plural(stats.thanks ?? 0, [
+                                        tr('подяка'),
+                                        tr('подяки'),
+                                        tr('подяк'),
+                                    ])}
+                                />
+                            )}
                             {audio && (
                                 <Counter
                                     value={audio.tracks}

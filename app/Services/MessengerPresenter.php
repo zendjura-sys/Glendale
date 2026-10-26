@@ -26,7 +26,7 @@ class MessengerPresenter
 
     public function load(Message $message): Message
     {
-        return $message->loadMissing(['user', 'attachments', 'replyTo.user', 'replyTo.attachments']);
+        return $message->loadMissing(['user', 'attachments', 'reactions', 'replyTo.user', 'replyTo.attachments']);
     }
 
     /**
@@ -76,6 +76,7 @@ class MessengerPresenter
             'expires_at' => $message->expires_at?->isFuture() ? $message->expires_at->toIso8601String() : null,
             'created_at' => $message->created_at->toIso8601String(),
             'starred' => $starred,
+            'reactions' => $this->reactions($message),
             'card' => is_array($meta['card'] ?? null) && is_string($meta['card']['title'] ?? null) && is_string($meta['card']['href'] ?? null) ? [
                 'kind' => (string) ($meta['card']['kind'] ?? ''),
                 'id' => (int) ($meta['card']['id'] ?? 0),
@@ -89,6 +90,28 @@ class MessengerPresenter
                 'username' => is_string($forward['username'] ?? null) ? $forward['username'] : null,
             ] : null,
         ];
+    }
+
+    /**
+     * Реакції під повідомленням: емодзі, скільки й хто (id — щоб клієнт знав свою; до 30 на емодзі).
+     *
+     * @return list<array{emoji: string, count: int, user_ids: list<int>}>
+     */
+    private function reactions(Message $message): array
+    {
+        if (! $message->relationLoaded('reactions')) {
+            return [];
+        }
+        $groups = [];
+        foreach ($message->reactions->sortBy('created_at') as $reaction) {
+            $groups[$reaction->emoji] ??= ['emoji' => $reaction->emoji, 'count' => 0, 'user_ids' => []];
+            $groups[$reaction->emoji]['count']++;
+            if (count($groups[$reaction->emoji]['user_ids']) < 30) {
+                $groups[$reaction->emoji]['user_ids'][] = $reaction->user_id;
+            }
+        }
+
+        return array_values($groups);
     }
 
     /**
@@ -143,6 +166,7 @@ class MessengerPresenter
         return match ($message->type) {
             Message::TYPE_STICKER => trim(($message->meta['sticker']['emoji'] ?? '').' Стікер'),
             Message::TYPE_VOICE => 'Голосове повідомлення',
+            Message::TYPE_VIDEO_NOTE => 'Відеоповідомлення',
             Message::TYPE_CONTACT => 'Контакт: '.(($contact = $this->contact($message)) instanceof User ? $contact->name : 'видалений акаунт'),
             default => $this->textPreview($message),
         };
@@ -211,7 +235,7 @@ class MessengerPresenter
     public function history(Conversation $conversation, ?int $beforeId = null, ?User $viewer = null): array
     {
         $messages = $conversation->messages()
-            ->with(['user', 'attachments', 'replyTo.user', 'replyTo.attachments'])
+            ->with(['user', 'attachments', 'reactions', 'replyTo.user', 'replyTo.attachments'])
             ->where(function ($query) use ($viewer) {
                 $query->where(fn ($visible) => $visible
                     ->where(fn ($q) => $q->whereNull('publish_at')->orWhere('publish_at', '<=', now()))

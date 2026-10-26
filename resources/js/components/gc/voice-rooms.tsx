@@ -1,4 +1,5 @@
 import {
+    Link2,
     Loader2,
     Lock,
     Mic,
@@ -10,7 +11,7 @@ import {
     UserX,
     Volume2,
 } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { UserAvatar } from '@/components/gc/user-avatar';
 import {
@@ -99,6 +100,23 @@ export function VoiceRooms({
         if (voice.status !== 'connecting') void load();
     }, [voice.status, voice.roomId, load]);
 
+    // Посилання-запрошення: ?voice=ID на сторінці групи — одразу заходимо в цю кімнату.
+    const autoJoined = useRef(false);
+    useEffect(() => {
+        if (!data || autoJoined.current) return;
+        const wanted = Number(
+            new URLSearchParams(window.location.search).get('voice'),
+        );
+        const room = data.rooms.find((r) => r.id === wanted);
+        if (!room) return;
+        autoJoined.current = true;
+        const url = new URL(window.location.href);
+        url.searchParams.delete('voice');
+        window.history.replaceState(window.history.state, '', url.toString());
+        if (data.enabled && !room.locked)
+            void joinVoice(room, owner, label, href);
+    }, [data, owner, label, href]);
+
     if (!data) {
         // Помилку показуємо, а не ховаємо панель, — інакше незрозуміло, куди вона поділась.
         return error ? (
@@ -137,6 +155,19 @@ export function VoiceRooms({
     const remove = (room: VoiceRoom) => {
         if (confirm(tr('Видалити кімнату «{name}»?', { name: room.name })))
             void run(() => api('DELETE', `/voice/rooms/${room.id}`));
+    };
+    // Посилання на 14 днів: хто відкриє — одразу опиниться в цій кімнаті (якщо має доступ).
+    const copyInvite = async (room: VoiceRoom) => {
+        try {
+            const { url } = await api<{ url: string }>(
+                'POST',
+                `/voice/rooms/${room.id}/invite-link`,
+            );
+            await navigator.clipboard.writeText(url);
+            toast(tr('Запрошення скопійовано'));
+        } catch (e) {
+            failed(e);
+        }
     };
     const moderate = (
         room: VoiceRoom,
@@ -234,6 +265,19 @@ export function VoiceRooms({
                                         </span>
                                     )}
                                 </button>
+                                {!room.locked && data.enabled && (
+                                    <button
+                                        type="button"
+                                        onClick={() => void copyInvite(room)}
+                                        aria-label={tr(
+                                            'Скопіювати запрошення в кімнату',
+                                        )}
+                                        title={tr('Запрошення в кімнату')}
+                                        className="inline-flex size-7 items-center justify-center rounded-lg text-white/40 opacity-0 transition group-hover:opacity-100 hover:bg-white/10 hover:text-white focus-visible:opacity-100 [@media(hover:none)]:opacity-100"
+                                    >
+                                        <Link2 className="size-4" />
+                                    </button>
+                                )}
                                 {data.can_manage && (
                                     <DropdownMenu>
                                         <DropdownMenuTrigger

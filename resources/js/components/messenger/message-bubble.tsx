@@ -1,6 +1,7 @@
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import {
+    SmilePlus,
     Flag,
     Forward,
     Languages,
@@ -26,9 +27,13 @@ import {
     VoicePlayer,
 } from './message-media';
 import { useContentTranslation } from '@/components/gc/translate';
+import { VideoNotePlayer } from './video-note';
 import { tr } from '@/lib/i18n';
 import { useProfanityMask } from '@/lib/profanity';
 import { usePlugin } from '@/lib/plugins';
+
+/** Ті самі, що MessageReaction::EMOJI на сервері. */
+const REACTIONS = ['👍', '❤️', '🔥', '😂', '😮', '😢', '🎉', '👎'];
 
 export type BubbleActions = {
     onReply: (message: ChatMessage) => void;
@@ -39,6 +44,8 @@ export type BubbleActions = {
     onRetry: (message: ChatMessage) => void;
     onCopy: (message: ChatMessage) => void;
     onForward: (message: ChatMessage) => void;
+    /** Реакція (той самий емодзі ще раз — прибрати). */
+    onReact?: (message: ChatMessage, emoji: string | null) => void;
     onStar: (message: ChatMessage) => void;
     onJump: (id: number) => void;
     onOpenImage: (items: ChatAttachment[], index: number) => void;
@@ -149,13 +156,22 @@ export function MessageBubble({
     actions,
 }: Props) {
     const forwardOn = usePlugin('forward_message');
+    const reactionsOn = usePlugin('message_reactions');
+    const me = usePage().props.auth.user?.id;
+    const [reactOpen, setReactOpen] = useState(false);
+    const reactions = message.reactions ?? [];
+    const mine =
+        reactions.find((r) => me !== undefined && r.user_ids.includes(me))
+            ?.emoji ?? null;
+    const videoNote = message.attachments.find((a) => a.type === 'video_note');
     const favoriteOn = usePlugin('favorite_messages');
     const images = message.attachments.filter(
         (a) => (a.type ?? 'image') === 'image',
     );
     const files = message.attachments.filter((a) => a.type === 'file');
     const voice = message.attachments.find((a) => a.type === 'voice');
-    const isSticker = message.type === 'sticker' && !!message.sticker;
+    const isSticker =
+        (message.type === 'sticker' && !!message.sticker) || !!videoNote;
     const hasImages = images.length > 0;
     const bare = isSticker && !message.reply_to;
     const onlyImages =
@@ -424,6 +440,8 @@ export function MessageBubble({
 
                     {voice && <VoicePlayer attachment={voice} own={own} />}
 
+                    {videoNote && <VideoNotePlayer attachment={videoNote} />}
+
                     {message.type === 'contact' && (
                         <ContactAttachment
                             contact={message.contact}
@@ -478,6 +496,40 @@ export function MessageBubble({
                     )}
                 </div>
 
+                {reactions.length > 0 && (
+                    <div
+                        className={cn(
+                            'mt-1 flex flex-wrap gap-1',
+                            own && 'justify-end',
+                        )}
+                    >
+                        {reactions.map((r) => (
+                            <button
+                                key={r.emoji}
+                                type="button"
+                                disabled={!actions.onReact}
+                                onClick={() =>
+                                    actions.onReact?.(message, r.emoji)
+                                }
+                                aria-pressed={r.emoji === mine}
+                                className={cn(
+                                    'inline-flex h-7 items-center gap-1 rounded-full px-2 text-sm transition',
+                                    r.emoji === mine
+                                        ? 'bg-primary/25 ring-1 ring-primary/60'
+                                        : 'bg-white/[0.07] hover:bg-white/[0.12]',
+                                )}
+                            >
+                                <span>{r.emoji}</span>
+                                {r.count > 1 && (
+                                    <span className="text-xs text-white/75 tabular-nums">
+                                        {r.count}
+                                    </span>
+                                )}
+                            </button>
+                        ))}
+                    </div>
+                )}
+
                 {pending === 'failed' && (
                     <button
                         type="button"
@@ -506,6 +558,52 @@ export function MessageBubble({
                     >
                         <Reply className="size-4" />
                     </button>
+                    {reactionsOn &&
+                        actions.onReact &&
+                        message.type !== 'system' && (
+                            <span className="relative">
+                                <button
+                                    type="button"
+                                    className={toolButton}
+                                    onClick={() => setReactOpen(!reactOpen)}
+                                    title={tr('Реакція')}
+                                    aria-expanded={reactOpen}
+                                >
+                                    <SmilePlus className="size-3.5" />
+                                </button>
+                                {reactOpen && (
+                                    <span
+                                        className={cn(
+                                            'glass-strong absolute bottom-9 z-30 flex gap-0.5 rounded-full p-1 shadow-lg',
+                                            own ? 'right-0' : 'left-0',
+                                        )}
+                                    >
+                                        {REACTIONS.map((emoji) => (
+                                            <button
+                                                key={emoji}
+                                                type="button"
+                                                onClick={() => {
+                                                    setReactOpen(false);
+                                                    actions.onReact?.(
+                                                        message,
+                                                        emoji === mine
+                                                            ? null
+                                                            : emoji,
+                                                    );
+                                                }}
+                                                className={cn(
+                                                    'grid size-8 place-items-center rounded-full text-lg transition hover:scale-110 hover:bg-white/10 motion-reduce:hover:scale-100',
+                                                    emoji === mine &&
+                                                        'bg-primary/25',
+                                                )}
+                                            >
+                                                {emoji}
+                                            </button>
+                                        ))}
+                                    </span>
+                                )}
+                            </span>
+                        )}
                     {message.body && (
                         <button
                             type="button"

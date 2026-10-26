@@ -14,6 +14,7 @@ use App\Services\Games\CommunityRatings;
 use App\Services\Games\PosterPalette;
 use App\Services\Presence\PlayingStatus;
 use App\Services\SavedItems;
+use App\Services\Thanks;
 use App\Support\Modules\ModuleManager;
 use App\Support\Plugins\Plugins;
 use App\Support\Settings\SiteSettings;
@@ -197,6 +198,9 @@ class GameController extends Controller
                         'created_at' => $guide->created_at->toIso8601String(),
                         'user' => $guide->user?->toCard(),
                         'mine' => $request->user()?->id === $guide->user_id || $request->user()?->isStaff() === true,
+                        'thanks' => app(Thanks::class)->count('guide', $guide->id),
+                        'thanked' => $request->user() !== null && app(Thanks::class)->has($request->user(), 'guide', $guide->id),
+                        'can_thank' => $request->user() !== null && $request->user()->id !== $guide->user_id && $plugins->on('thanks'),
                     ])->values()
                 : [],
         ];

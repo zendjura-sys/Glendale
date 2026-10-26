@@ -11,6 +11,7 @@ import { LikeButton } from './like-button';
 import { UserAvatar } from './user-avatar';
 import { VerifiedBadge } from './verified-badge';
 import { nameDisplayProps, PlusBadge } from './plus';
+import { ThanksButton } from './thanks-button';
 import {
     CosmeticBadge,
     cosmeticNameStyle,
@@ -310,6 +311,13 @@ export function Comments({
                                                 ? tr('Відкріпити')
                                                 : tr('Закріпити')}
                                         </button>
+                                    )}
+                                    {comment.can_thank && (
+                                        <ThanksButton
+                                            kind="comment"
+                                            id={comment.id}
+                                            thanked={comment.thanked ?? false}
+                                        />
                                     )}
                                     {comment.can_delete && (
                                         <button

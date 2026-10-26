@@ -4,11 +4,17 @@ import type { UserCard } from './social';
 export type ConversationType = 'direct' | 'group';
 export type MemberRole = 'owner' | 'admin' | 'member';
 
-export type MessageType = 'text' | 'system' | 'sticker' | 'voice' | 'contact';
+export type MessageType =
+    | 'text'
+    | 'system'
+    | 'sticker'
+    | 'voice'
+    | 'contact'
+    | 'video_note';
 
 export type ChatAttachment = {
     id: number;
-    type: 'image' | 'file' | 'voice';
+    type: 'image' | 'file' | 'voice' | 'video_note';
     url: string;
     width: number | null;
     height: number | null;
@@ -57,7 +63,15 @@ export type OutgoingMessage =
       }
     | { kind: 'sticker'; sticker: StickerItem }
     | { kind: 'voice'; blob: Blob; duration: number; waveform: number[] }
+    | { kind: 'video_note'; blob: Blob; duration: number }
     | { kind: 'contact'; contact: ContactCard };
+
+/** Реакції під повідомленням: user_ids — щоб позначити свою. */
+export type MessageReaction = {
+    emoji: string;
+    count: number;
+    user_ids: number[];
+};
 
 export type ChatMessage = {
     id: number;
@@ -82,6 +96,7 @@ export type ChatMessage = {
     expires_at?: string | null;
     created_at: string;
     starred?: boolean;
+    reactions?: MessageReaction[];
     forward?: { name: string; username: string | null } | null;
     card?: {
         kind: string;

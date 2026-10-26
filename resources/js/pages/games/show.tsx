@@ -29,6 +29,7 @@ import type { CalendarEvent } from '@/components/events/event-card';
 import { PlayingNow } from '@/components/gc/playing';
 import { FollowButton } from '@/components/gc/follow-button';
 import { PinButton } from '@/components/gc/pin-button';
+import { ThanksButton } from '@/components/gc/thanks-button';
 import { SaveButton } from '@/components/gc/save-button';
 import { cn } from '@/lib/utils';
 import type { ClanCard, GameCard, UserCard } from '@/types';
@@ -127,6 +128,9 @@ type Props = {
         created_at: string;
         user: UserCard | null;
         mine: boolean;
+        thanks?: number;
+        thanked?: boolean;
+        can_thank?: boolean;
     }[];
     moments?: MomentCardData[];
 };
@@ -948,6 +952,31 @@ export default function GameShow({
                                             <p className="mt-2 text-sm whitespace-pre-line text-white/75">
                                                 {guide.body}
                                             </p>
+                                            {(guide.can_thank ||
+                                                (guide.thanks ?? 0) > 0) && (
+                                                <div className="mt-2 text-xs text-white/50">
+                                                    {guide.can_thank ? (
+                                                        <ThanksButton
+                                                            kind="guide"
+                                                            id={guide.id}
+                                                            thanked={
+                                                                guide.thanked ??
+                                                                false
+                                                            }
+                                                            count={
+                                                                guide.thanks ??
+                                                                0
+                                                            }
+                                                        />
+                                                    ) : (
+                                                        tr('Подяк: {n}', {
+                                                            n:
+                                                                guide.thanks ??
+                                                                0,
+                                                        })
+                                                    )}
+                                                </div>
+                                            )}
                                         </div>
                                         {guide.mine && (
                                             <button

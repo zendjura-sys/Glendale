@@ -32,6 +32,8 @@ class MessageAttachment extends Model
 
     public const TYPE_VOICE = 'voice';
 
+    public const TYPE_VIDEO_NOTE = 'video_note';
+
     /** Документи зберігаються поза публічним диском і віддаються лише учасникам бесіди. */
     public const PRIVATE_DISK = 'local';
 

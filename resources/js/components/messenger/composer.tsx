@@ -1,5 +1,6 @@
 import { usePage } from '@inertiajs/react';
 import {
+    Camera,
     Clock,
     FileUp,
     ImagePlus,
@@ -16,7 +17,7 @@ import {
     UserRound,
     X,
 } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { useVoiceRecorder } from '@/hooks/use-voice-recorder';
 import { api } from '@/lib/api';
@@ -27,6 +28,7 @@ import { cn, dockedAboveNav } from '@/lib/utils';
 import type { ChatMessage, OutgoingMessage } from '@/types';
 import { ContactShareDialog } from './contact-share-dialog';
 import { EmojiPanel } from './emoji-panel';
+import { VideoNoteRecorder } from './video-note';
 import { LOCALE, tr } from '@/lib/i18n';
 import { usePlugin } from '@/lib/plugins';
 
@@ -75,6 +77,7 @@ export function Composer({
     const { site } = usePage().props;
     const vanishOn = usePlugin('disappearing_messages');
     const scheduleOn = usePlugin('scheduled_messages');
+    const videoNotesPlugin = usePlugin('video_notes');
     const [body, setBody] = useState(draft ?? '');
     const [publishAt, setPublishAt] = useState('');
     const [vanish, setVanish] = useState(false);
@@ -206,6 +209,12 @@ export function Composer({
         ? trimmed.length > 0 && trimmed !== editing.body
         : trimmed.length > 0 || hasAttachments || card !== null;
     const showMic = !editing && !canSubmit && voice.supported;
+    const videoNotesOn =
+        videoNotesPlugin &&
+        typeof MediaRecorder !== 'undefined' &&
+        !!navigator.mediaDevices;
+    const [noteOpen, setNoteOpen] = useState(false);
+    const closeNote = useCallback(() => setNoteOpen(false), []);
 
     const reset = () => {
         setBody('');
@@ -726,6 +735,25 @@ export function Composer({
                         </div>
                     </div>
 
+                    {showMic && videoNotesOn && (
+                        <button
+                            type="button"
+                            onClick={() => setNoteOpen(true)}
+                            className="mb-0.5 flex size-11 shrink-0 items-center justify-center rounded-full bg-white/[0.06] text-white/70 transition hover:bg-white/[0.12] hover:text-white"
+                            aria-label={tr('Записати відеокружок')}
+                            title={tr('Відеокружок')}
+                        >
+                            <Camera className="size-5" />
+                        </button>
+                    )}
+                    {noteOpen && (
+                        <VideoNoteRecorder
+                            onClose={closeNote}
+                            onSend={(blob, duration) =>
+                                onSend({ kind: 'video_note', blob, duration })
+                            }
+                        />
+                    )}
                     {showMic ? (
                         <button
                             type="button"

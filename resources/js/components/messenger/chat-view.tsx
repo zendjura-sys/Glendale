@@ -393,6 +393,12 @@ export function ChatView({
                 );
                 break;
             }
+            case 'video_note': {
+                const ext = outgoing.blob.type.includes('mp4') ? 'mp4' : 'webm';
+                form.append('video_note', outgoing.blob, `note.${ext}`);
+                form.append('video_duration', String(outgoing.duration));
+                break;
+            }
             case 'contact':
                 form.append('contact_id', String(outgoing.contact.id));
                 break;
@@ -499,7 +505,13 @@ export function ChatView({
                                 waveform: outgoing.waveform,
                             }),
                         ]
-                      : [],
+                      : outgoing.kind === 'video_note'
+                        ? [
+                              localAttachment(outgoing.blob, 'video_note', {
+                                  duration: outgoing.duration,
+                              }),
+                          ]
+                        : [],
             edited_at: null,
             created_at: new Date().toISOString(),
         };
@@ -587,6 +599,23 @@ export function ChatView({
                 .then(() => toast.success(tr('Скопійовано.')));
         },
         onForward: (message) => setForwarding(message),
+        onReact: (message, emoji) => {
+            void api<{ message: ChatMessage }>(
+                'POST',
+                `/messages/${active.id}/messages/${message.id}/react`,
+                { emoji },
+            )
+                .then(({ message: updated }) =>
+                    setMessages((current) =>
+                        current.map((item) =>
+                            item.id === updated.id
+                                ? { ...updated, starred: item.starred }
+                                : item,
+                        ),
+                    ),
+                )
+                .catch(() => toast.error(tr('Не вдалося поставити реакцію.')));
+        },
         onStar: (message) => {
             void api<{ starred: boolean }>(
                 'POST',

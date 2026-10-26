@@ -62,6 +62,7 @@ use App\Http\Controllers\SpotifyController;
 use App\Http\Controllers\StartController;
 use App\Http\Controllers\StoryController;
 use App\Http\Controllers\TeammateController;
+use App\Http\Controllers\ThanksController;
 use App\Http\Controllers\TournamentController;
 use App\Http\Controllers\TrackController;
 use App\Http\Controllers\TrackImportController;
@@ -203,6 +204,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     Route::post('block/{user}', [ProfileController::class, 'block'])->name('blocks.toggle');
     Route::post('report/{user}', [ProfileController::class, 'report'])->middleware('throttle:10,10')->name('users.report');
     Route::post('feedback', [FeedbackController::class, 'store'])->middleware('throttle:5,10')->name('feedback.store');
+    Route::post('thanks', [ThanksController::class, 'store'])->middleware('throttle:60,1')->name('thanks.store');
     Route::get('oauth/authorize', [OAuth\AuthorizeController::class, 'show'])->name('oauth.authorize');
     Route::post('oauth/authorize', [OAuth\AuthorizeController::class, 'decide'])->middleware('throttle:30,1')->name('oauth.decide');
     Route::get('developers', fn () => Inertia\Inertia::render('developers/oauth', ['scopes' => ServerOAuth::SCOPES, 'base' => url('/')]))->name('developers');
@@ -251,6 +253,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::patch('rooms/{room}', [VoiceController::class, 'update'])->whereNumber('room')->name('update');
         Route::delete('rooms/{room}', [VoiceController::class, 'destroy'])->whereNumber('room')->name('destroy');
         Route::post('rooms/{room}/join', [VoiceController::class, 'join'])->whereNumber('room')->middleware('throttle:30,1')->name('join');
+        Route::post('rooms/{room}/invite-link', [InviteLinkController::class, 'voice'])->whereNumber('room')->middleware('throttle:20,1')->name('invite-link');
         Route::post('rooms/{room}/members/{user:id}', [VoiceController::class, 'moderate'])->whereNumber(['room', 'user'])->withoutScopedBindings()->name('moderate');
     });
 
@@ -290,6 +293,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
             Route::post('{conversation}/messages/{message}/report', [MessageController::class, 'report'])->middleware('throttle:20,1')->name('messages.report');
             Route::post('{conversation}/messages/{message}/forward', [MessageController::class, 'forward'])->middleware('throttle:30,1')->name('messages.forward');
             Route::post('{conversation}/messages/{message}/favorite', [MessageController::class, 'favorite'])->name('messages.favorite');
+            Route::post('{conversation}/messages/{message}/react', [MessageController::class, 'react'])->middleware('throttle:60,1')->name('messages.react');
             // Дзвінки в бесіді (звук — через LiveKit).
             Route::get('{conversation}/call', [CallController::class, 'show'])->name('call.show');
             Route::post('{conversation}/call', [CallController::class, 'start'])->middleware('throttle:20,1')->name('call.start');
@@ -612,6 +616,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::post('{party}/invite', [TeammateController::class, 'invite'])->middleware('throttle:30,1')->name('invite');
         Route::get('{party}', [PartyController::class, 'show'])->name('show');
         Route::post('{party}/join', [PartyController::class, 'join'])->middleware('throttle:20,1')->name('join');
+        Route::post('{party}/invite-link', [InviteLinkController::class, 'party'])->middleware('throttle:20,1')->name('invite-link');
         Route::delete('{party}/join', [PartyController::class, 'leave'])->name('leave');
         Route::post('{party}/bump', [PartyController::class, 'bump'])->middleware('throttle:10,1')->name('bump');
         Route::delete('{party}', [PartyController::class, 'close'])->name('close');

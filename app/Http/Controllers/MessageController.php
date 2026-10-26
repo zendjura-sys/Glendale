@@ -6,6 +6,7 @@ use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\MessageAttachment;
 use App\Models\MessageFavorite;
+use App\Models\MessageReaction;
 use App\Models\MessageReport;
 use App\Models\Sticker;
 use App\Models\StickerPack;
@@ -41,6 +42,10 @@ class MessageController extends Controller
 
     public const MAX_VOICE_SECONDS = 600;
 
+    public const MAX_VIDEO_NOTE_KB = 30720;
+
+    public const MAX_VIDEO_NOTE_SECONDS = 60;
+
     public const VOICE_MIMES = ['audio/webm', 'audio/ogg', 'audio/mp4', 'audio/x-m4a', 'audio/aac', 'audio/mpeg', 'video/webm', 'video/mp4'];
 
     public function __construct(
@@ -74,6 +79,8 @@ class MessageController extends Controller
             'voice' => ['nullable', 'file', 'max:'.self::MAX_VOICE_KB, 'mimetypes:'.implode(',', self::VOICE_MIMES)],
             'voice_duration' => ['required_with:voice', 'integer', 'min:1', 'max:'.self::MAX_VOICE_SECONDS],
             'voice_waveform' => ['nullable', 'string', 'max:1000'],
+            'video_note' => ['nullable', 'file', 'max:'.self::MAX_VIDEO_NOTE_KB, 'mimetypes:video/webm,video/mp4,video/quicktime'],
+            'video_duration' => ['required_with:video_note', 'integer', 'min:1', 'max:'.self::MAX_VIDEO_NOTE_SECONDS],
             'publish_at' => ['nullable', 'date'],
             'disappear' => ['nullable', 'boolean'],
             'card' => ['nullable', 'array'],
@@ -82,6 +89,8 @@ class MessageController extends Controller
         ], [
             'voice.mimetypes' => 'Непідтримуваний формат запису.',
             'voice.max' => 'Голосове повідомлення завелике.',
+            'video_note.max' => 'Відеоповідомлення завелике.',
+            'video_note.mimetypes' => 'Непідтримуваний формат відео.',
             'files.*.max' => 'Файл завеликий.',
         ]);
 
@@ -116,6 +125,7 @@ class MessageController extends Controller
                 $this->waveform($data['voice_waveform'] ?? '[]'),
                 $replyTo,
             ),
+            $request->hasFile('video_note') => $this->sendVideoNote($conversation, $user, $request, (int) $data['video_duration'], $replyTo),
             isset($data['contact_id']) => $this->messenger->sendContact(
                 $conversation,
                 $user,
@@ -305,6 +315,28 @@ class MessageController extends Controller
         $copy = $this->messenger->forward($target, $user, $message);
 
         return response()->json(['message' => $this->presenter->message($this->presenter->load($copy))], 201);
+    }
+
+    private function sendVideoNote(Conversation $conversation, User $user, Request $request, int $duration, ?int $replyTo): Message
+    {
+        app(Plugins::class)->ensure('video_notes');
+        $file = $request->file('video_note');
+        abort_unless($file instanceof UploadedFile, 422);
+
+        return $this->messenger->sendVideoNote($conversation, $user, $file, $duration, $replyTo);
+    }
+
+    /** Реакція на повідомлення (той самий емодзі ще раз — прибрати). */
+    public function react(Request $request, Conversation $conversation, Message $message): JsonResponse
+    {
+        app(Plugins::class)->ensure('message_reactions');
+        $user = $request->user();
+        abort_if($conversation->participantFor($user) === null, 404);
+        abort_unless($message->conversation_id === $conversation->id && ! $message->trashed() && $message->type !== Message::TYPE_SYSTEM, 404);
+        $data = $request->validate(['emoji' => ['nullable', 'string', Rule::in(MessageReaction::EMOJI)]]);
+        $this->messenger->react($message, $user, $data['emoji'] ?? null);
+
+        return response()->json(['message' => $this->presenter->message($this->presenter->load($message))]);
     }
 
     public function favorite(Request $request, Conversation $conversation, Message $message): JsonResponse
