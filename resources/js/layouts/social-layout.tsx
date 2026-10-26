@@ -314,9 +314,9 @@ function Topbar() {
         'gc-icon-button relative hidden size-10 items-center justify-center rounded-xl transition sm:flex';
 
     return (
-        <header className="pointer-events-none fixed inset-x-0 top-0 z-40 px-3 pt-[calc(env(safe-area-inset-top)+8px)] [view-transition-name:gc-topbar] sm:px-5">
-            {/* Шапка — плаваюча капсула з того самого матового скла, що й острів-меню знизу. */}
-            <div className="gc-island pointer-events-auto mx-auto flex h-14 max-w-[1320px] items-center gap-2 rounded-full pr-2 pl-3 sm:gap-4 sm:pl-5">
+        <header className="app-header-wrapper">
+            {/* Шапка — плаваюча капсула з безбарвного матового скла (як острів-меню знизу); обгортка прозора. */}
+            <div className="ios-glass-bar ios-header-pill [view-transition-name:gc-topbar]">
                 <Link href="/feed" className="shrink-0 lg:w-[220px]">
                     <Logo className="hidden sm:inline-flex" />
                     <LogoMark className="sm:hidden" />
@@ -515,7 +515,7 @@ function MobileNav() {
             <nav
                 aria-label={tr('Розділи')}
                 className={cn(
-                    'pointer-events-none fixed inset-x-0 bottom-0 px-3 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] lg:hidden',
+                    'app-footer-wrapper lg:hidden',
                     // Розгорнуте меню — над міні-плеєром; згорнута панель — під ним (плеєр стоїть над панеллю).
                     open ? 'z-[55]' : 'z-40',
                 )}
@@ -530,9 +530,9 @@ function MobileNav() {
                     onDragEnd={onDragEnd}
                     transition={motionOr(reduce, SNAP)}
                     // Згорнутий острів — капсула (радіус = половина висоти), розгорнуте меню — м'які кути.
-                    style={{ borderRadius: open ? 28 : 35 }}
+                    style={{ borderRadius: open ? 28 : 26 }}
                     data-open={open || undefined}
-                    className="gc-island pointer-events-auto mx-auto flex max-w-[560px] flex-col overflow-hidden [view-transition-name:gc-tabbar]"
+                    className="ios-glass-bar ios-footer-pill [view-transition-name:gc-tabbar]"
                 >
                     <button
                         type="button"

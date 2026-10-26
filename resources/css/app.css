@@ -4102,3 +4102,155 @@ html:has(.am) body {
 .gc-article hr {
     border-color: color-mix(in oklab, var(--color-white) 10%, transparent);
 }
+
+/*
+ * ============================================================================================
+ * Шапка й нижня панель — безбарвне матове скло iOS (Achromatic Frosted Glass), обидві теми.
+ * Скло нейтральне: під тему підлаштовуються лише яскравість підкладки й відблиск канту.
+ * Обгортки прозорі й не ловлять дотики — вміст прокручується під капсулами; розмиття працює,
+ * бо в предків капсул немає backdrop-filter, filter чи transform.
+ * ============================================================================================
+ */
+:root,
+[data-theme='light'],
+.light {
+    /* Світла тема: чистий світлий іній iOS */
+    --ios-glass-bg: rgba(255, 255, 255, 0.55);
+    --ios-glass-border: rgba(255, 255, 255, 0.75);
+    --ios-glass-inner-glow:
+        inset 0 1px 0 0 rgba(255, 255, 255, 0.9),
+        inset 0 0 0 1px rgba(0, 0, 0, 0.04);
+    --ios-glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+    --ios-input-bg: rgba(0, 0, 0, 0.05);
+}
+[data-theme='dark'],
+.dark {
+    /* Темна тема: безбарвне матове скло без глухої заливки */
+    --ios-glass-bg: rgba(255, 255, 255, 0.06);
+    --ios-glass-border: rgba(255, 255, 255, 0.14);
+    --ios-glass-inner-glow: inset 0 1px 0 0 rgba(255, 255, 255, 0.22);
+    --ios-glass-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+    --ios-input-bg: rgba(255, 255, 255, 0.07);
+}
+
+/* Зовнішні обгортки — повністю прозорі; z-index задає розмітка (діалоги й меню лишаються вище). */
+.app-header-wrapper {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 40;
+    padding: calc(env(safe-area-inset-top, 0px) + 10px) 12px 10px;
+    background: transparent !important;
+    pointer-events: none;
+}
+.app-footer-wrapper {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 0 12px calc(10px + env(safe-area-inset-bottom, 0px));
+    background: transparent !important;
+    pointer-events: none;
+}
+
+/* Сама капсула матового скла (шапка й нижня панель) */
+.ios-glass-bar {
+    pointer-events: auto;
+    max-width: 768px;
+    margin: 0 auto;
+    background: var(--ios-glass-bg) !important;
+    /* Ефект оптичного скла Apple */
+    -webkit-backdrop-filter: blur(28px) saturate(190%);
+    backdrop-filter: blur(28px) saturate(190%);
+    border: 1px solid var(--ios-glass-border);
+    box-shadow: var(--ios-glass-inner-glow), var(--ios-glass-shadow);
+    /* Апаратне прискорення, щоб розмиття не блимало на телефонах */
+    transform: translateZ(0);
+    will-change: backdrop-filter;
+}
+
+/* Шапка */
+.ios-header-pill {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    height: 54px;
+    padding: 0 10px;
+    border-radius: 9999px;
+}
+
+/* Поле пошуку в шапці — напівпрозоре, щоб не вбивати розмиття */
+.ios-header-search {
+    flex: 1;
+    height: 38px;
+    background: var(--ios-input-bg) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 9999px;
+    padding: 0 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+:root[data-theme='light'] .ios-header-search {
+    border-color: rgba(0, 0, 0, 0.04);
+}
+
+/* Нижня панель: згорнута — капсула 64 px з вкладками; розгорнута — те саме скло з меню над вкладками. */
+.ios-footer-pill {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    min-height: 64px;
+    padding: 0 8px;
+    border-radius: 26px;
+    overflow: hidden;
+}
+.ios-footer-pill > :last-child {
+    justify-content: space-around;
+}
+@media (min-width: 1024px) {
+    /* На комп'ютері шапка тягнеться на ширину макета (бокове меню + стрічка + права колонка). */
+    .ios-header-pill {
+        max-width: 1320px;
+        padding: 0 10px 0 18px;
+    }
+}
+
+/*
+ * «Неоновий синій» без сірого: поверхні темної теми — глибокий нічний синій, матові й непрозорі,
+ * роздільники й наведення — з синім відтінком; білі напівпрозорі підкладки (bg-white/…) теж синіють.
+ * Безбарвне скло лишається тільки на шапці й нижній панелі (.ios-glass-bar).
+ */
+:root[data-skin='gamecon'][data-theme='dark'] {
+    --background: #040a1c;
+    --sidebar: #050c22;
+    --popover: #0b1838;
+    --glass: #0a1534;
+    --matte: rgb(9 20 48 / 0.97);
+    --matte-solid: #0a1534;
+    --gc-section: #0a1534;
+    --border: rgb(64 132 255 / 0.12);
+    --gc-hairline: rgb(64 132 255 / 0.12);
+    --gc-hover: rgb(47 123 255 / 0.1);
+    --muted-foreground: #8ea7da;
+    --color-white: #e6efff;
+}
+:root[data-skin='gamecon'][data-theme='dark']
+    :is(.glass-matte, .gc-island, .gc-bar, .glass-strong) {
+    background: rgb(9 20 48 / 0.97);
+    border-color: rgb(64 132 255 / 0.14);
+    box-shadow:
+        0 20px 40px -15px rgb(0 0 0 / 0.7),
+        inset 0 1px 0 0 rgb(120 170 255 / 0.12);
+}
+:root[data-skin='gamecon'][data-theme='dark'] .input-glass {
+    background-color: #0c1a3d;
+    border-color: rgb(64 132 255 / 0.16);
+}
+:root[data-skin='gamecon'][data-theme='dark']
+    :is(.input-glass:focus, .input-glass:focus-within) {
+    background-color: #0f2048;
+    border-color: rgb(77 155 255 / 0.55);
+}
