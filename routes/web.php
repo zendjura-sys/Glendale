@@ -471,14 +471,12 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
 
     // Каталог мультиплеєрних ігор.
     Route::prefix('games')->name('games.')->middleware('module:games')->group(function () {
-        Route::get('/', [GameController::class, 'index'])->name('index');
         Route::get('search', [GameController::class, 'search'])->middleware('throttle:120,1')->name('search');
         // Роздачі, бажане й знижки, «чи потягне мій ПК».
         Route::get('deals', [GameDealsController::class, 'index'])->name('deals');
         Route::post('deals/subscribe', [GameDealsController::class, 'subscribe'])->name('deals.subscribe');
         Route::get('pc', [GameDealsController::class, 'pcShow'])->name('pc.show');
         Route::put('pc', [GameDealsController::class, 'pcSave'])->middleware('throttle:30,1')->name('pc.update');
-        Route::get('{game}', [GameController::class, 'show'])->name('show');
         Route::get('{game}/prices', [GameDealsController::class, 'prices'])->middleware('throttle:60,1')->name('prices');
         Route::post('{game}/wish', [GameDealsController::class, 'wish'])->middleware('throttle:60,1')->name('wish');
         Route::get('{game}/pc-check', [GameDealsController::class, 'pcCheck'])->middleware('throttle:60,1')->name('pc-check');
@@ -952,6 +950,12 @@ Route::get('music/spotify/callback', [SpotifyController::class, 'callback'])
 Route::get('play/embed', [CinemaController::class, 'embed'])
     ->middleware('throttle:120,1')
     ->name('cinema.embed');
+
+// Каталог і сторінки ігор відкриті гостям і пошуковикам; дії з грою — лише після входу (вище).
+Route::prefix('games')->name('games.')->middleware('module:games')->group(function () {
+    Route::get('/', [GameController::class, 'index'])->name('index');
+    Route::get('{game}', [GameController::class, 'show'])->name('show');
+});
 
 Route::middleware('module:communities')->group(function () {
     Route::get('widget/{community}', [CommunityWidgetController::class, 'show'])->name('communities.widget');

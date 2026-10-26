@@ -13,9 +13,12 @@ export type Soundtrack = PlaylistCard & { author: string; can_remove: boolean };
 export function GameSoundtracks({
     slug,
     initial,
+    readOnly = false,
 }: {
     slug: string;
     initial: Soundtrack[];
+    /** Гість: лише перегляд, без додавання й видалення. */
+    readOnly?: boolean;
 }) {
     const [items, setItems] = useState(initial);
     const [mine, setMine] = useState<
@@ -94,7 +97,7 @@ export function GameSoundtracks({
                 </div>
             )}
 
-            {mine === null ? (
+            {readOnly ? null : mine === null ? (
                 <button
                     type="button"
                     disabled={busy}

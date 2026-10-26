@@ -16,6 +16,7 @@ use App\Services\Presence\PlayingStatus;
 use App\Services\SavedItems;
 use App\Services\Thanks;
 use App\Support\Modules\ModuleManager;
+use App\Support\PageSeo;
 use App\Support\Plugins\Plugins;
 use App\Support\Settings\SiteSettings;
 use Illuminate\Database\Eloquent\Builder;
@@ -121,7 +122,10 @@ class GameController extends Controller
 
         return $request->expectsJson() && ! $request->header('X-Inertia')
             ? response()->json($props)
-            : Inertia::render('games/index', $props);
+            : Inertia::render('games/index', $props)->withViewData([
+                'seoTitle' => 'Каталог ігор',
+                'seoDescription' => 'Каталог мультиплеєрних ігор на GameCon: ПК, консолі й телефони. Тімейти, клани, гайди, оцінки гравців і знижки.',
+            ]);
     }
 
     /**
@@ -218,7 +222,8 @@ class GameController extends Controller
             return response()->json($props);
         }
 
-        return Inertia::render('games/show', $props);
+        return Inertia::render('games/show', $props)
+            ->withViewData(PageSeo::game($game, is_array($props['community_rating']) ? $props['community_rating'] : null));
     }
 
     public function collections(Request $request, Game $game): RedirectResponse

@@ -22,9 +22,7 @@ import {
 import type { LucideIcon, LucideProps } from 'lucide-react';
 import { Fragment } from 'react';
 import type { ReactNode } from 'react';
-import { SiteBackground } from '@/components/backgrounds/site-background';
-import { Logo } from '@/components/gc/logo';
-import { SiteFooter } from '@/components/gc/site-footer';
+import { PublicShell } from '@/layouts/public-layout';
 import { tr } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
@@ -92,42 +90,13 @@ export function HelpBadge({
  * кнопками входу й футер (як на юридичних сторінках).
  */
 export function HelpShell({ children }: { children: ReactNode }) {
-    const { auth, site } = usePage().props;
+    const { auth } = usePage().props;
 
     if (auth.user) {
         return <div className="mx-auto w-full max-w-[860px]">{children}</div>;
     }
 
-    return (
-        <>
-            <SiteBackground />
-            <div className="relative mx-auto min-h-dvh max-w-[860px] px-4 pt-5 pb-4 sm:pt-8">
-                <header className="mb-8 flex items-center gap-3">
-                    <Link href="/" aria-label="GameCon">
-                        <Logo />
-                    </Link>
-                    <nav className="ml-auto flex items-center gap-2">
-                        <Link
-                            href="/login"
-                            className="inline-flex h-9 items-center rounded-lg px-3 text-sm font-medium text-white/70 transition hover:bg-white/[0.06] hover:text-white"
-                        >
-                            {tr('Увійти')}
-                        </Link>
-                        {site.registration_open && (
-                            <Link
-                                href="/register"
-                                className="inline-flex h-9 items-center rounded-lg bg-primary px-3.5 text-sm font-semibold whitespace-nowrap text-primary-foreground transition hover:opacity-90"
-                            >
-                                {tr('Реєстрація')}
-                            </Link>
-                        )}
-                    </nav>
-                </header>
-                <main id="main-content">{children}</main>
-                <SiteFooter />
-            </div>
-        </>
-    );
+    return <PublicShell narrow>{children}</PublicShell>;
 }
 
 /** Хлібні крихти: Довідка › Розділ › … */

@@ -1,3 +1,4 @@
+import { Link } from '@inertiajs/react';
 import { Gamepad2, Star } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -20,9 +21,12 @@ export type CommunityRatingData = {
 export function CommunityRating({
     slug,
     initial,
+    readOnly = false,
 }: {
     slug: string;
     initial: CommunityRatingData;
+    /** Гість бачить розподіл оцінок і запрошення увійти. */
+    readOnly?: boolean;
 }) {
     const [data, setData] = useState(initial);
     const [busy, setBusy] = useState(false);
@@ -80,7 +84,20 @@ export function CommunityRating({
                 ))}
             </div>
             <div className="sm:col-span-2">
-                {data.played ? (
+                {readOnly ? (
+                    <div className="flex flex-wrap items-center gap-2 rounded-2xl bg-white/[0.03] p-3">
+                        <Star className="size-4 shrink-0 text-white/45" />
+                        <p className="min-w-0 flex-1 text-sm text-white/60">
+                            {tr('Увійдіть, щоб оцінити гру.')}
+                        </p>
+                        <Link
+                            href="/login"
+                            className="inline-flex h-9 items-center rounded-xl bg-white/[0.06] px-3 text-sm text-white/80 transition hover:bg-white/10"
+                        >
+                            {tr('Увійти')}
+                        </Link>
+                    </div>
+                ) : data.played ? (
                     <div>
                         <p className="mb-2 text-sm text-white/60">
                             {data.mine

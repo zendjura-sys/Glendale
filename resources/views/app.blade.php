@@ -37,7 +37,9 @@
             $seoDescription = isset($seoDescription) && $seoDescription !== '' ? (string) $seoDescription : $seo->seoDescription();
             $seoPageTitle = isset($seoTitle) && $seoTitle !== '' ? $seoTitle.' · '.$seoName : $seoName;
             $seoUrl = request()->url();
-            $seoImage = url('/og.jpg');
+            // Сторінка може задати свою картинку й тип (seoImage, seoType) — напр. обкладинка гри.
+            $seoImage = isset($seoImage) && is_string($seoImage) && $seoImage !== '' ? $seoImage : url('/og.jpg');
+            $seoType = isset($seoType) && is_string($seoType) && $seoType !== '' ? $seoType : 'website';
         @endphp
 
         <meta name="description" content="{{ $seoDescription }}">
@@ -47,11 +49,13 @@
         <meta property="og:site_name" content="{{ $seoName }}">
         <meta property="og:title" content="{{ $seoPageTitle }}">
         <meta property="og:description" content="{{ $seoDescription }}">
-        <meta property="og:type" content="website">
+        <meta property="og:type" content="{{ $seoType }}">
         <meta property="og:url" content="{{ $seoUrl }}">
         <meta property="og:image" content="{{ $seoImage }}">
-        <meta property="og:image:width" content="1200">
-        <meta property="og:image:height" content="630">
+        @if ($seoImage === url('/og.jpg'))
+            <meta property="og:image:width" content="1200">
+            <meta property="og:image:height" content="630">
+        @endif
         <meta property="og:image:alt" content="{{ $seoDescription }}">
         <meta property="og:locale" content="uk_UA">
 
@@ -92,6 +96,10 @@
                     ]] : null,
                 ]),
             ];
+            // Розмітка самої сторінки (seoEntity): гра, профіль тощо.
+            if (isset($seoEntity) && is_array($seoEntity) && $seoEntity !== []) {
+                $seoGraph[] = $seoEntity;
+            }
         @endphp
         <script type="application/ld+json">
             {!! json_encode([

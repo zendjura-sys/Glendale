@@ -18,11 +18,13 @@ const adminLayout = () => import('@/layouts/admin-layout');
 const authLayout = () => import('@/layouts/auth-layout');
 const settingsLayout = () => import('@/layouts/settings/layout');
 const musicLayout = () => import('@/layouts/music-layout');
+const publicLayout = () => import('@/layouts/public-layout');
 const SocialLayout = lazy(socialLayout);
 const AdminLayout = lazy(adminLayout);
 const AuthLayout = lazy(authLayout);
 const SettingsLayout = lazy(settingsLayout);
 const MusicLayout = lazy(musicLayout);
+const PublicLayout = lazy(publicLayout);
 
 // Макет першої сторінки починаємо качати одразу, паралельно зі сторінкою, — без другого очікування.
 if (typeof document !== 'undefined') {
@@ -100,6 +102,14 @@ function shouldViewTransition(options: VisitOptions): boolean {
 
 registerOffline();
 
+/** Сторінки, які бачать гості (без входу). */
+const PUBLIC_PAGES = new Set([
+    'profile/show',
+    'profile/frozen',
+    'games/index',
+    'games/show',
+]);
+
 void createInertiaApp({
     title: (title) => (title ? `${title} · ${appName}` : appName),
     layout: (name, page) => {
@@ -109,6 +119,11 @@ void createInertiaApp({
                 !(page?.props as { auth?: { user?: unknown } } | undefined)
                     ?.auth?.user:
                 return null;
+            // Профілі й ігри відкриті гостям і пошуковикам — легка оболонка без макета сайту.
+            case PUBLIC_PAGES.has(name) &&
+                !(page?.props as { auth?: { user?: unknown } } | undefined)
+                    ?.auth?.user:
+                return PublicLayout;
             case name === 'welcome':
             case name === 'error':
             case name === 'wrapped':

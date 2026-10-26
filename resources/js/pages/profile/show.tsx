@@ -21,6 +21,7 @@ import {
     Music2,
     PenLine,
     ShieldCheck,
+    UserPlus,
     UsersRound,
 } from 'lucide-react';
 import { Fragment, useEffect, useRef, type ReactNode } from 'react';
@@ -269,8 +270,10 @@ export default function ProfileShow({
     characters = [],
     stream = null,
 }: Props) {
-    const { modules } = usePage().props;
+    const { modules, auth } = usePage().props;
     const isSelf = relation === 'self';
+    // Профіль відкритий гостям і пошуковикам — замість дій лише запрошення приєднатися.
+    const guest = !auth.user;
     // Кольори ефекту шапки: кольори сторінки, інакше колір ніку, інакше акцент сайту.
     const headerColors = profile.accent?.length
         ? profile.accent
@@ -512,7 +515,15 @@ export default function ProfileShow({
                             >
                                 <QrCode className="size-4" /> Game Card
                             </Link>
-                            {isSelf ? (
+                            {guest ? (
+                                <Link
+                                    href="/register"
+                                    className="inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+                                >
+                                    <UserPlus className="size-4" />
+                                    {tr('Приєднатися й додати в друзі')}
+                                </Link>
+                            ) : isSelf ? (
                                 <Link
                                     href="/settings/profile"
                                     className="inline-flex h-10 items-center gap-2 rounded-xl bg-white/[0.07] px-4 text-sm font-semibold text-white transition hover:bg-white/[0.11]"

@@ -2,19 +2,24 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Game;
 use App\Models\User;
 use App\Support\Help\HelpCatalog;
+use App\Support\Modules\ModuleManager;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Cache;
 
 /**
- * Карта сайту для пошуковиків (/sitemap.xml): публічні сторінки й відкриті профілі.
+ * Карта сайту для пошуковиків (/sitemap.xml): публічні сторінки, ігри й відкриті профілі.
  * Розділи за входом сюди не входять — пошуковик їх однаково не побачить. Кеш — година.
  */
 class SitemapController extends Controller
 {
     /** Скільки профілів у карті (обмеження одного файла sitemap — 50 000 адрес). */
-    private const PROFILES = 45000;
+    private const PROFILES = 40000;
+
+    /** Скільки сторінок ігор у карті. */
+    private const GAMES = 5000;
 
     public function __invoke(): Response
     {
@@ -38,6 +43,16 @@ class SitemapController extends Controller
                 foreach ($category['articles'] as $article) {
                     $urls[] = ['loc' => url('/help/'.$category['slug'].'/'.$article['slug']), 'lastmod' => HelpCatalog::UPDATED, 'changefreq' => 'monthly', 'priority' => '0.5'];
                 }
+            }
+
+            // Каталог ігор і сторінки опублікованих ігор (якщо розділ увімкнено).
+            if (app(ModuleManager::class)->enabled('games')) {
+                $urls[] = ['loc' => url('/games'), 'changefreq' => 'daily', 'priority' => '0.8'];
+                Game::query()->published()->orderByDesc('popularity')->limit(self::GAMES)
+                    ->get(['slug', 'updated_at'])
+                    ->each(function (Game $game) use (&$urls) {
+                        $urls[] = ['loc' => url('/games/'.$game->slug), 'lastmod' => $game->updated_at?->toAtomString(), 'changefreq' => 'weekly', 'priority' => '0.7'];
+                    });
             }
 
             // Лише відкриті профілі: не закриті, не заблоковані, не заморожені, з підтвердженою поштою.

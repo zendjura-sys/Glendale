@@ -1,4 +1,4 @@
-import { Head, Link, router, useForm } from '@inertiajs/react';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import {
     Download,
     Music2,
@@ -17,6 +17,7 @@ import {
     Globe,
     Images,
     Languages,
+    LogIn,
     Play,
     Plus,
     ShieldCheck,
@@ -305,6 +306,8 @@ export default function GameShow({
     moments = [],
 }: Props) {
     const d = game.details ?? {};
+    // Гість бачить сторінку гри (відкрита пошуковикам), але без дій — лише запрошення увійти.
+    const guest = !usePage().props.auth.user;
     const guidesOn = usePlugin('game_guides');
     const dealsOn = usePlugin('game_deals');
     const pcCheckOn = usePlugin('pc_check');
@@ -451,26 +454,46 @@ export default function GameShow({
                     </div>
                 </div>
                 <div className="space-y-4 p-4 sm:p-5">
-                    <div className="flex flex-wrap gap-2">
-                        <FollowButton
-                            kind="game"
-                            id={game.id}
-                            following={following}
-                            className={POSTER_GLASS}
-                        />
-                        <PinButton
-                            kind="game"
-                            id={game.id}
-                            pinned={pinned}
-                            className={POSTER_GLASS}
-                        />
-                        <SaveButton
-                            kind="game"
-                            id={game.id}
-                            saved={saved}
-                            className={POSTER_GLASS}
-                        />
-                    </div>
+                    {guest ? (
+                        <div className="flex flex-wrap items-center gap-2">
+                            <Link
+                                href="/register"
+                                className={cn(
+                                    'inline-flex h-9 items-center gap-1.5 rounded-xl px-3 text-sm font-semibold',
+                                    POSTER_GLASS,
+                                )}
+                            >
+                                <LogIn className="size-4" />
+                                {tr('Приєднатися до GameCon')}
+                            </Link>
+                            <span className="text-sm text-white/60">
+                                {tr(
+                                    'Стежте за грою, шукайте тімейтів і дивіться, хто з друзів грає.',
+                                )}
+                            </span>
+                        </div>
+                    ) : (
+                        <div className="flex flex-wrap gap-2">
+                            <FollowButton
+                                kind="game"
+                                id={game.id}
+                                following={following}
+                                className={POSTER_GLASS}
+                            />
+                            <PinButton
+                                kind="game"
+                                id={game.id}
+                                pinned={pinned}
+                                className={POSTER_GLASS}
+                            />
+                            <SaveButton
+                                kind="game"
+                                id={game.id}
+                                saved={saved}
+                                className={POSTER_GLASS}
+                            />
+                        </div>
+                    )}
                     {(game.modes.length > 0 || game.genres.length > 0) && (
                         <div className="flex flex-wrap gap-1.5">
                             {game.modes.map((m) => (
@@ -588,13 +611,13 @@ export default function GameShow({
                 </section>
             )}
 
-            {onSteam && dealsOn && !pricesFailed && (
+            {!guest && onSteam && dealsOn && !pricesFailed && (
                 <Section title={tr('Ціни й знижки')} icon={Tag}>
                     <GamePrices slug={game.slug} onFail={hidePrices} />
                 </Section>
             )}
 
-            {onSteam && pcCheckOn && !pcFailed && (
+            {!guest && onSteam && pcCheckOn && !pcFailed && (
                 <Section title={tr('Чи потягне мій ПК')} icon={MonitorCog}>
                     <PcCheck slug={game.slug} onFail={hidePc} />
                 </Section>
@@ -685,7 +708,11 @@ export default function GameShow({
 
             {soundtracks && (
                 <Section title={tr('Музика гри')} icon={Music2}>
-                    <GameSoundtracks slug={game.slug} initial={soundtracks} />
+                    <GameSoundtracks
+                        slug={game.slug}
+                        initial={soundtracks}
+                        readOnly={guest}
+                    />
                 </Section>
             )}
 
@@ -777,6 +804,7 @@ export default function GameShow({
                     <CommunityRating
                         slug={game.slug}
                         initial={community_rating}
+                        readOnly={guest}
                     />
                 </Section>
             )}
@@ -975,7 +1003,7 @@ export default function GameShow({
 
             {guidesOn && (
                 <Section title={tr('Гіди')} icon={BookOpen}>
-                    <GuideForm slug={game.slug} />
+                    {!guest && <GuideForm slug={game.slug} />}
                     {guides.length === 0 ? (
                         <p className="text-sm text-white/45">
                             {tr('Гідів ще немає. Напишіть перший.')}

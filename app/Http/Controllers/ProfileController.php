@@ -31,6 +31,7 @@ use App\Services\Thanks;
 use App\Support\Backgrounds;
 use App\Support\GameTheme;
 use App\Support\Modules\ModuleManager;
+use App\Support\PageSeo;
 use App\Support\Palette;
 use App\Support\Plugins\Plugins;
 use App\Support\PlusStyle;
@@ -221,7 +222,7 @@ class ProfileController extends Controller
             ] : null,
             'nowPlaying' => $modules->enabled('music') && $canSeeContent ? Inertia::defer(fn () => app(MusicService::class)->currentFor($user, $viewer)) : null,
             'posts' => Inertia::scroll(fn () => $posts->setCollection(collect($items))),
-        ]);
+        ])->withViewData(PageSeo::profile($user, $canSeeContent));
     }
 
     public function card(User $user): Response
