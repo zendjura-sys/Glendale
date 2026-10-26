@@ -62,6 +62,7 @@ const kindIcon: Record<string, { icon: typeof Bell; className: string }> = {
     stream_live: { icon: Radio, className: 'bg-rose-500' },
     listen_room: { icon: Headphones, className: 'bg-gc-indigo' },
     tournament: { icon: Trophy, className: 'bg-amber-500' },
+    clip_of_week: { icon: Trophy, className: 'bg-amber-500' },
     giveaway: { icon: Gift, className: 'bg-emerald-500' },
     price_drop: { icon: BadgePercent, className: 'bg-primary' },
     morning_digest: { icon: Sunrise, className: 'bg-primary' },

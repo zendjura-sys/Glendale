@@ -15,6 +15,7 @@ use App\Models\Story;
 use App\Models\Track;
 use App\Models\User;
 use App\Models\WatchParty;
+use App\Services\Moments\ClipOfWeek;
 use App\Services\Quests\DailyQuests;
 use App\Services\Quests\SeasonPass;
 use App\Services\Servers\ServerVotes;
@@ -69,6 +70,7 @@ class Achievements
         ['key' => 'invite_1', 'stat' => 'referrals', 'target' => 1, 'title' => 'Запросив друга', 'text' => 'Запросити друга, який підтвердив пошту.', 'icon' => 'user-plus'],
         ['key' => 'invite_5', 'stat' => 'referrals', 'target' => 5, 'title' => 'Збирач команди', 'text' => 'Запросити 5 друзів.', 'icon' => 'users-round'],
         ['key' => 'invite_25', 'stat' => 'referrals', 'target' => 25, 'title' => 'Амбасадор GameCon', 'text' => 'Запросити 25 друзів.', 'icon' => 'megaphone'],
+        ['key' => 'clip_of_week', 'stat' => 'clip_wins', 'target' => 1, 'title' => 'Кліп тижня', 'text' => 'Ваш кліп переміг у «Кліпі тижня».', 'icon' => 'trophy'],
         ['key' => 'pioneer', 'stat' => 'pioneer', 'target' => 1, 'title' => 'Перші 100', 'text' => 'Бути серед перших ста користувачів.', 'icon' => 'rocket'],
     ];
 
@@ -168,6 +170,7 @@ class Achievements
             'pass_xp' => app(SeasonPass::class)->bonusXp($user),
             'quests' => app(DailyQuests::class)->completed($user),
             'referrals' => app(Referrals::class)->active($user),
+            'clip_wins' => app(ClipOfWeek::class)->wins($user),
         ];
     }
 }

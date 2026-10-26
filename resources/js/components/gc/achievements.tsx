@@ -17,6 +17,7 @@ import {
     PenLine,
     Rocket,
     Target,
+    Trophy,
     UserPlus,
     Megaphone,
     Vote,
@@ -73,6 +74,7 @@ const ICONS: Record<string, LucideIcon> = {
     target: Target,
     'user-plus': UserPlus,
     megaphone: Megaphone,
+    trophy: Trophy,
 };
 
 /** Рівень (досвід до наступного) і бейджі за активність у профілі. */

@@ -3,6 +3,8 @@ import { Clapperboard, Flame, Plus, Sparkles, UsersRound } from 'lucide-react';
 import { useState } from 'react';
 import { selectClass } from '@/components/gc/admin';
 import { EmptyState } from '@/components/gc/widget';
+import { ClipOfWeekSection } from '@/components/moments/clip-of-week';
+import type { ClipOfWeekData } from '@/components/moments/clip-of-week';
 import { MomentCard } from '@/components/moments/moment-card';
 import type { MomentCardData } from '@/components/moments/moment-card';
 import {
@@ -17,6 +19,7 @@ import { cn } from '@/lib/utils';
 type Option = { slug: string; name: string };
 
 type Props = {
+    clip_of_week?: ClipOfWeekData | null;
     moments: MomentCardData[];
     more: boolean;
     filters: {
@@ -40,6 +43,7 @@ const fieldClass =
     'input-glass w-full rounded-xl px-3.5 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none';
 
 export default function Moments({
+    clip_of_week = null,
     moments,
     more,
     filters,
@@ -146,6 +150,8 @@ export default function Moments({
                         )}
                     </div>
                 </section>
+
+                {clip_of_week && <ClipOfWeekSection data={clip_of_week} />}
 
                 {moments.length === 0 ? (
                     <EmptyState
