@@ -143,7 +143,7 @@ export default function GamesIndex({
         <>
             <Head title={tr('Каталог ігор')} />
             <div className="mb-4 flex flex-wrap items-end gap-3">
-                <div className="min-w-0 flex-1">
+                <div className="min-w-[16rem] flex-1">
                     <h1 className="flex items-center gap-2 font-display text-2xl font-semibold text-white">
                         <Gamepad2 className="size-6 text-gc-lilac-200" />{' '}
                         {tr('Каталог ігор')}

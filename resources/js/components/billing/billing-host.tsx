@@ -1,4 +1,5 @@
 import { router, usePage } from '@inertiajs/react';
+import { Sk, TextSkeleton } from '@/components/gc/skeletons';
 import {
     CheckCircle2,
     CreditCard,
@@ -262,8 +263,12 @@ function PurchaseDialog({
                     </button>
                 </div>
             ) : !quote ? (
-                <div className="flex justify-center py-10">
-                    <Loader2 className="size-6 animate-spin text-white/50" />
+                <div className="space-y-4">
+                    <TextSkeleton
+                        lines={3}
+                        className="rounded-2xl bg-white/[0.04] p-4"
+                    />
+                    <Sk className="h-11 w-full rounded-xl" />
                 </div>
             ) : (
                 <div className="space-y-4">

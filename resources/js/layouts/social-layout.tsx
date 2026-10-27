@@ -58,6 +58,7 @@ import { usePlayer } from '@/lib/player';
 import { MOBILE_LABEL } from '@/lib/nav';
 import { usePlugin } from '@/lib/plugins';
 import { cn } from '@/lib/utils';
+import { NavigationSkeleton } from '@/components/gc/navigation-skeleton';
 import { PageTransition } from '@/components/gc/page-transition';
 import { PlayStoreLink } from '@/components/gc/play-store';
 import {
@@ -827,7 +828,9 @@ export default function SocialLayout({ children }: PropsWithChildren) {
                 <Sidebar />
                 <main id="main-content" className="gc-vt-main min-w-0 flex-1">
                     <Announcement />
-                    <PageTransition>{children}</PageTransition>
+                    <NavigationSkeleton>
+                        <PageTransition>{children}</PageTransition>
+                    </NavigationSkeleton>
                     <SiteFooter className="glass-matte gc-footer-card mb-4" />
                 </main>
             </div>

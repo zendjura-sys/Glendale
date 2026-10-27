@@ -1,4 +1,5 @@
 import { Head, InfiniteScroll, Link, router } from '@inertiajs/react';
+import { ListSkeleton } from '@/components/gc/skeletons';
 import { ArrowDownUp, Plus, Search, Upload } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { AlbumTile, PlaylistTile } from '@/components/am/cards';
@@ -187,7 +188,17 @@ function Songs({
                             onShuffle={() => playQueue(shuffled(songs.data), 0)}
                         />
                     </div>
-                    <InfiniteScroll data="songs" preserveUrl>
+                    <InfiniteScroll
+                        data="songs"
+                        loading={
+                            <ListSkeleton
+                                rows={4}
+                                avatar="square"
+                                card={false}
+                            />
+                        }
+                        preserveUrl
+                    >
                         <SongList
                             tracks={songs.data}
                             extra={(t) => t.album ?? undefined}

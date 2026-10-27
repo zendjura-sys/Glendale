@@ -1,4 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
+import { NavigationSkeleton } from '@/components/gc/navigation-skeleton';
 import type { ReactNode } from 'react';
 import { SiteBackground } from '@/components/backgrounds/site-background';
 import { Logo } from '@/components/gc/logo';
@@ -49,7 +50,9 @@ export function PublicShell({
                         )}
                     </nav>
                 </header>
-                <main id="main-content">{children}</main>
+                <main id="main-content">
+                    <NavigationSkeleton>{children}</NavigationSkeleton>
+                </main>
                 <SiteFooter />
             </div>
         </>

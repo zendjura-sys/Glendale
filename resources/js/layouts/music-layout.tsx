@@ -1,4 +1,5 @@
 import { Link, router, usePage } from '@inertiajs/react';
+import { NavigationSkeleton } from '@/components/gc/navigation-skeleton';
 import {
     ChevronLeft,
     Clock3,
@@ -666,7 +667,7 @@ export default function MusicLayout({ children }: PropsWithChildren) {
                                 player.current ? 'lg:pb-28' : 'lg:pb-16',
                             )}
                         >
-                            {children}
+                            <NavigationSkeleton>{children}</NavigationSkeleton>
                         </main>
                     </div>
                 </div>

@@ -1,4 +1,5 @@
 import { Deferred, Head, InfiniteScroll, Link } from '@inertiajs/react';
+import { ListSkeleton } from '@/components/gc/skeletons';
 import { Headphones } from 'lucide-react';
 import { SongList } from '@/components/am/song-list';
 import {
@@ -116,7 +117,17 @@ export default function MusicUser({
                             }
                         />
                     </div>
-                    <InfiniteScroll data="tracks" preserveUrl>
+                    <InfiniteScroll
+                        data="tracks"
+                        loading={
+                            <ListSkeleton
+                                rows={4}
+                                avatar="square"
+                                card={false}
+                            />
+                        }
+                        preserveUrl
+                    >
                         <SongList
                             tracks={tracks.data}
                             extra={(t) => t.album ?? undefined}

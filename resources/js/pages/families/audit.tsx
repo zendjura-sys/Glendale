@@ -1,4 +1,5 @@
 import { InfiniteScroll, router } from '@inertiajs/react';
+import { ListSkeleton } from '@/components/gc/skeletons';
 import { Lock, ScrollText } from 'lucide-react';
 import { useState } from 'react';
 import { FamilyShell } from '@/components/families/family-shell';
@@ -65,7 +66,13 @@ export default function FamilyAudit(props: Props) {
                 {logs.data.length === 0 ? (
                     <Empty icon={ScrollText} text={tr('Записів немає')} />
                 ) : (
-                    <InfiniteScroll data="logs" preserveUrl>
+                    <InfiniteScroll
+                        data="logs"
+                        loading={
+                            <ListSkeleton rows={3} avatar="none" card={false} />
+                        }
+                        preserveUrl
+                    >
                         <ul className="divide-y divide-white/[0.05]">
                             {logs.data.map((l) => (
                                 <li key={l.id} className="py-2.5">

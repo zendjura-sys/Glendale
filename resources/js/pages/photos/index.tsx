@@ -1,4 +1,5 @@
 import { Head, InfiniteScroll, Link } from '@inertiajs/react';
+import { GridSkeleton } from '@/components/gc/skeletons';
 import { ArrowLeft, Camera, FolderPlus, Images } from 'lucide-react';
 import { useState } from 'react';
 import { CommunityAvatar } from '@/components/gc/community-avatar';
@@ -154,6 +155,12 @@ export default function PhotosIndex({
                                 </h2>
                                 <InfiniteScroll
                                     data="photos"
+                                    loading={
+                                        <GridSkeleton
+                                            shape="square"
+                                            count={4}
+                                        />
+                                    }
                                     preserveUrl
                                     className={photoGridClass}
                                 >

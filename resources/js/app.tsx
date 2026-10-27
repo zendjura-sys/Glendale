@@ -10,6 +10,7 @@ import { installKeyboardGuard } from '@/lib/keyboard';
 import { startSmoothScroll } from '@/lib/smooth-scroll';
 import { LazyMotion } from 'motion/react';
 import { lazy, Suspense } from 'react';
+import { PageSkeleton, skeletonFor } from '@/components/gc/skeletons';
 
 // Швидкий перший кадр: стартовий файл без макетів. Кожен макет (соцмережа, адмінка, вхід, налаштування) —
 // окремим файлом, що вантажиться, коли вперше знадобиться, і далі лишається в кеші.
@@ -102,6 +103,19 @@ function shouldViewTransition(options: VisitOptions): boolean {
 
 registerOffline();
 
+/** Поки вантажиться макет розділу — скелетон сторінки замість порожнього екрана. */
+function BootSkeleton({ name }: { name: string }) {
+    if (/^(auth\/|legal\/|welcome|error|wrapped|start\/)/.test(name)) {
+        return null;
+    }
+
+    return (
+        <div className="mx-auto max-w-[1280px] px-4 pt-24 sm:px-6">
+            <PageSkeleton kind={skeletonFor(window.location.pathname)} />
+        </div>
+    );
+}
+
 /** Сторінки, які бачать гості (без входу). */
 const PUBLIC_PAGES = new Set([
     'profile/show',
@@ -165,7 +179,11 @@ void createInertiaApp({
                     <SkipLink />
                     {/* Збій сторінки — картка з кнопкою оновлення; збій тостів чи банера — лише вони зникають. */}
                     <ErrorBoundary>
-                        <Suspense fallback={null}>{app}</Suspense>
+                        <Suspense
+                            fallback={<BootSkeleton name={page.component} />}
+                        >
+                            {app}
+                        </Suspense>
                     </ErrorBoundary>
                     <ErrorBoundary fallback={null}>
                         <Toaster />

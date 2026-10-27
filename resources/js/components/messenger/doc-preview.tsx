@@ -1,4 +1,5 @@
-import { Download, FileQuestion, Loader2 } from 'lucide-react';
+import { Download, FileQuestion } from 'lucide-react';
+import { TextSkeleton } from '@/components/gc/skeletons';
 import { useEffect, useState } from 'react';
 import {
     Dialog,
@@ -47,9 +48,7 @@ function TextBody({ src }: { src: string }) {
     }
     if (text === null) {
         return (
-            <div className="flex justify-center p-10">
-                <Loader2 className="size-6 animate-spin text-white/50" />
-            </div>
+            <TextSkeleton lines={10} className="rounded-xl bg-black/20 p-4" />
         );
     }
 

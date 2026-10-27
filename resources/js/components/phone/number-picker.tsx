@@ -1,4 +1,5 @@
 import { router } from '@inertiajs/react';
+import { Sk } from '@/components/gc/skeletons';
 import {
     Dices,
     Gift,
@@ -438,7 +439,11 @@ function BuyCard({
                         {hints[tier]}
                     </p>
                     {loadingIdeas ? (
-                        <Loader2 className="size-4 animate-spin text-white/40" />
+                        <div className="flex flex-wrap gap-1.5">
+                            {[0, 1, 2, 3, 4].map((i) => (
+                                <Sk key={i} className="h-8 w-28 rounded-xl" />
+                            ))}
+                        </div>
                     ) : ideas && ideas.length > 0 ? (
                         <div className="flex flex-wrap gap-1.5">
                             {ideas.map((idea) => (

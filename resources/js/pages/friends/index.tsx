@@ -6,6 +6,7 @@ import {
     router,
     usePage,
 } from '@inertiajs/react';
+import { ListSkeleton } from '@/components/gc/skeletons';
 import {
     Briefcase,
     Clapperboard,
@@ -179,6 +180,7 @@ export default function Friends({ tab, q, users, counts, suggestions }: Props) {
                 ) : (
                     <InfiniteScroll
                         data="users"
+                        loading={<ListSkeleton rows={3} card={false} />}
                         preserveUrl
                         className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4"
                     >

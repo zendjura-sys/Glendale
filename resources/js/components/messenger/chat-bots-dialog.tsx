@@ -1,4 +1,5 @@
-import { Bot, CalendarClock, Loader2, Plus, Trash2 } from 'lucide-react';
+import { Bot, CalendarClock, Plus, Trash2 } from 'lucide-react';
+import { ListSkeleton } from '@/components/gc/skeletons';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Toggle } from '@/components/gc/admin';
@@ -171,9 +172,7 @@ export function ChatBotsDialog({
                 </div>
 
                 {data === null ? (
-                    <div className="flex justify-center py-10">
-                        <Loader2 className="size-6 animate-spin text-white/45" />
-                    </div>
+                    <ListSkeleton rows={3} avatar="square" card={false} />
                 ) : (
                     <>
                         <div className="flex rounded-xl bg-white/[0.04] p-1">

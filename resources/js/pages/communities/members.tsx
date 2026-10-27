@@ -1,4 +1,5 @@
 import { Head, InfiniteScroll, Link, router } from '@inertiajs/react';
+import { ListSkeleton } from '@/components/gc/skeletons';
 import {
     ArrowLeft,
     Check,
@@ -223,6 +224,7 @@ export default function CommunityMembers({
                 ) : (
                     <InfiniteScroll
                         data="members"
+                        loading={<ListSkeleton rows={3} card={false} />}
                         preserveUrl
                         className="glass divide-y divide-white/[0.05] overflow-hidden rounded-2xl"
                     >

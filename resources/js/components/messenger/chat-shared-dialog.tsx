@@ -4,9 +4,9 @@ import {
     FileText,
     Image as ImageIcon,
     Link2,
-    Loader2,
     Mic,
 } from 'lucide-react';
+import { ListSkeleton } from '@/components/gc/skeletons';
 import type { LucideIcon } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import {
@@ -285,8 +285,12 @@ export function ChatSharedDialog({
                         )}
 
                         {loading && (
-                            <div className="flex justify-center py-6">
-                                <Loader2 className="size-5 animate-spin text-white/45" />
+                            <div className="pt-3">
+                                <ListSkeleton
+                                    rows={3}
+                                    avatar="square"
+                                    card={false}
+                                />
                             </div>
                         )}
                         {next && !loading && (

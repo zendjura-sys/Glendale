@@ -1,4 +1,5 @@
 import { Head, InfiniteScroll, router } from '@inertiajs/react';
+import { ListSkeleton } from '@/components/gc/skeletons';
 import { MapPin, Radio, Search, SearchX } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { PersonCard } from '@/components/gc/person-card';
@@ -203,6 +204,7 @@ export default function People({ filters, saved, total, users }: Props) {
                 ) : (
                     <InfiniteScroll
                         data="users"
+                        loading={<ListSkeleton rows={3} card={false} />}
                         preserveUrl
                         className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4"
                     >

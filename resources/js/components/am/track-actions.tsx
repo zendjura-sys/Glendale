@@ -1,4 +1,5 @@
 import { router, usePage } from '@inertiajs/react';
+import { Sk } from '@/components/gc/skeletons';
 import {
     Disc3,
     ExternalLink,
@@ -262,9 +263,10 @@ function PlaylistSub({ track }: { track: LocalTrack }) {
                     <DropdownMenuSeparator className="bg-[var(--am-sep)]" />
                 )}
                 {playlists === null && (
-                    <p className="am-footnote px-2.5 py-2 text-[var(--am-label2)]">
-                        {tr('Завантаження…')}
-                    </p>
+                    <div className="space-y-2 px-2.5 py-2">
+                        <Sk className="h-3.5 w-3/4" />
+                        <Sk className="h-3.5 w-1/2" />
+                    </div>
                 )}
                 {playlists?.map((p) => (
                     <DropdownMenuItem

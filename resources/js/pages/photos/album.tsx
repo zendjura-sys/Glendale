@@ -1,4 +1,5 @@
 import { Head, InfiniteScroll, Link, router } from '@inertiajs/react';
+import { GridSkeleton } from '@/components/gc/skeletons';
 import {
     ArrowLeft,
     ImagePlus,
@@ -342,6 +343,7 @@ export default function PhotoAlbum({
                     <section className="glass rounded-2xl p-3 sm:p-4">
                         <InfiniteScroll
                             data="photos"
+                            loading={<GridSkeleton shape="square" count={4} />}
                             preserveUrl
                             className={photoGridClass}
                         >

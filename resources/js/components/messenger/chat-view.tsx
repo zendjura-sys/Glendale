@@ -1,4 +1,5 @@
 import { Link, router, usePage } from '@inertiajs/react';
+import { BubblesSkeleton } from '@/components/gc/skeletons';
 import {
     ArrowDown,
     Bell,
@@ -6,7 +7,6 @@ import {
     ChevronLeft,
     Headphones,
     Info,
-    Loader2,
     Eye,
     EyeOff,
     Folder,
@@ -1209,8 +1209,8 @@ export function ChatView({
                     className="absolute inset-0 overflow-x-hidden overflow-y-auto overscroll-contain py-3"
                 >
                     {loadingOlder && (
-                        <div className="flex justify-center py-2">
-                            <Loader2 className="size-5 animate-spin text-white/40" />
+                        <div className="py-2">
+                            <BubblesSkeleton />
                         </div>
                     )}
 

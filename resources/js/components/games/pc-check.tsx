@@ -2,11 +2,11 @@ import {
     Check,
     CircleHelp,
     Cpu,
-    Loader2,
     MemoryStick,
     MonitorCog,
     X,
 } from 'lucide-react';
+import { TextSkeleton } from '@/components/gc/skeletons';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
@@ -86,9 +86,8 @@ export function PcCheck({
     if (failed) return null;
     if (data === null) {
         return (
-            <div className="flex items-center gap-2 text-sm text-white/45">
-                <Loader2 className="size-4 animate-spin motion-reduce:animate-none" />
-                {tr('Завантажуємо вимоги…')}
+            <div aria-label={tr('Завантажуємо вимоги…')}>
+                <TextSkeleton lines={4} />
             </div>
         );
     }

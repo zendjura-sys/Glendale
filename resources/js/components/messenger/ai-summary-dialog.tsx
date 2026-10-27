@@ -1,4 +1,5 @@
-import { Loader2, RefreshCw, Sparkles } from 'lucide-react';
+import { RefreshCw, Sparkles } from 'lucide-react';
+import { TextSkeleton } from '@/components/gc/skeletons';
 import { useCallback, useEffect, useState } from 'react';
 import {
     Dialog,
@@ -58,9 +59,7 @@ export function AiSummaryDialog({
                     </DialogDescription>
                 </div>
                 {busy ? (
-                    <div className="flex justify-center py-10">
-                        <Loader2 className="size-6 animate-spin text-white/45" />
-                    </div>
+                    <TextSkeleton lines={5} />
                 ) : error ? (
                     <p className="rounded-xl bg-rose-500/10 p-3 text-sm text-rose-200">
                         {error}

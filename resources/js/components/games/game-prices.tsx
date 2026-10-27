@@ -1,11 +1,11 @@
 import { Link } from '@inertiajs/react';
+import { Sk } from '@/components/gc/skeletons';
 import {
     BadgePercent,
     BellRing,
     ExternalLink,
     Gift,
     Heart,
-    Loader2,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
@@ -107,9 +107,9 @@ export function GamePrices({
     if (failed) return null;
     if (data === null) {
         return (
-            <div className="flex items-center gap-2 text-sm text-white/45">
-                <Loader2 className="size-4 animate-spin motion-reduce:animate-none" />
-                {tr('Шукаємо ціни…')}
+            <div className="space-y-2.5" aria-label={tr('Шукаємо ціни…')}>
+                <Sk className="h-10 w-full rounded-xl" />
+                <Sk className="h-10 w-4/5 rounded-xl" />
             </div>
         );
     }

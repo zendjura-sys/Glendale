@@ -1,4 +1,5 @@
 import { Head, InfiniteScroll, Link } from '@inertiajs/react';
+import { GridSkeleton } from '@/components/gc/skeletons';
 import { ArrowLeft, Bookmark, Star } from 'lucide-react';
 import { MovieTile, movieGridClass } from '@/components/cinema/movie-tile';
 import { EmptyState } from '@/components/gc/widget';
@@ -92,7 +93,11 @@ export default function CinemaMy({ status, movies, statuses, counts }: Props) {
                     />
                 ) : (
                     <section className="glass rounded-2xl p-4 sm:p-5">
-                        <InfiniteScroll data="movies" preserveUrl>
+                        <InfiniteScroll
+                            data="movies"
+                            loading={<GridSkeleton count={5} />}
+                            preserveUrl
+                        >
                             <div className={movieGridClass}>
                                 {movies.data.map((movie) => (
                                     <MovieTile

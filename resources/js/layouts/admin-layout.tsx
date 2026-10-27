@@ -1,4 +1,5 @@
 import * as DialogPrimitive from '@radix-ui/react-dialog';
+import { NavigationSkeleton } from '@/components/gc/navigation-skeleton';
 import { Link, router, usePage } from '@inertiajs/react';
 import {
     ArrowLeft,
@@ -584,9 +585,11 @@ export default function AdminLayout({ children }: PropsWithChildren) {
                     current && 'pb-28 lg:pb-28',
                 )}
             >
-                <PageTransition className="gc-vt-main mx-auto max-w-[1280px]">
-                    {children}
-                </PageTransition>
+                <NavigationSkeleton>
+                    <PageTransition className="gc-vt-main mx-auto max-w-[1280px]">
+                        {children}
+                    </PageTransition>
+                </NavigationSkeleton>
             </main>
             {modules.includes('music') && (
                 <>

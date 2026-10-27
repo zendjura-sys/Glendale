@@ -1,13 +1,6 @@
 import { router } from '@inertiajs/react';
-import {
-    Bot,
-    Check,
-    Loader2,
-    Megaphone,
-    Send,
-    Shield,
-    Unplug,
-} from 'lucide-react';
+import { ListSkeleton } from '@/components/gc/skeletons';
+import { Bot, Check, Megaphone, Send, Shield, Unplug } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { selectClass } from '@/components/gc/admin';
 import { api } from '@/lib/api';
@@ -180,14 +173,13 @@ export function BotsCard({
                     <Megaphone className="size-5 text-gc-lilac-300" />
                     {tr('Боти Telegram і Discord')}
                 </h2>
-                <p className="mt-3 flex items-center gap-2 text-sm text-white/50">
-                    {error ?? (
-                        <>
-                            <Loader2 className="size-4 animate-spin" />
-                            {tr('Завантажуємо…')}
-                        </>
-                    )}
-                </p>
+                {error ? (
+                    <p className="mt-3 text-sm text-white/50">{error}</p>
+                ) : (
+                    <div className="mt-4">
+                        <ListSkeleton rows={2} avatar="square" card={false} />
+                    </div>
+                )}
             </section>
         );
     }

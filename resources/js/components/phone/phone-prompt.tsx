@@ -1,5 +1,6 @@
 import { Link, usePage } from '@inertiajs/react';
-import { Loader2, Phone, X } from 'lucide-react';
+import { ListSkeleton } from '@/components/gc/skeletons';
+import { Phone, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { NumberPicker } from '@/components/phone/number-picker';
 import { api } from '@/lib/api';
@@ -73,9 +74,7 @@ export function PhonePrompt() {
                         onPhone={setPhone}
                     />
                 ) : (
-                    <div className="flex h-40 items-center justify-center">
-                        <Loader2 className="size-6 animate-spin text-white/40" />
-                    </div>
+                    <ListSkeleton rows={3} avatar="square" card={false} />
                 )}
                 <footer className="mt-4 flex items-center justify-between gap-3">
                     <Link

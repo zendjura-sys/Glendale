@@ -1,11 +1,11 @@
 import { Head, InfiniteScroll, Link, router } from '@inertiajs/react';
+import { GridSkeleton } from '@/components/gc/skeletons';
 import {
     Bookmark,
     Clapperboard,
     Clock,
     Film,
     Info,
-    Loader2,
     Play,
     Search,
     SlidersHorizontal,
@@ -81,9 +81,13 @@ function TmdbLookup({ query }: { query: string }) {
 
     if (found === null) {
         return (
-            <section className="glass flex items-center gap-3 rounded-2xl p-4 text-sm text-white/65">
-                <Loader2 className="size-4 animate-spin" />
-                {tr('У каталозі немає — шукаємо в TMDB і додаємо знайдене…')}
+            <section className="space-y-3">
+                <p className="text-sm text-white/65">
+                    {tr(
+                        'У каталозі немає — шукаємо в TMDB і додаємо знайдене…',
+                    )}
+                </p>
+                <GridSkeleton count={5} />
             </section>
         );
     }
@@ -554,7 +558,11 @@ export default function CinemaIndex({
                                 {total}
                             </span>
                         </h2>
-                        <InfiniteScroll data="movies" preserveUrl>
+                        <InfiniteScroll
+                            data="movies"
+                            loading={<GridSkeleton count={5} />}
+                            preserveUrl
+                        >
                             <div className={movieGridClass}>
                                 {movies.data.map((movie) => (
                                     <MovieTile key={movie.id} movie={movie} />

@@ -1,4 +1,5 @@
 import { Head, InfiniteScroll, Link, router, usePage } from '@inertiajs/react';
+import { GridSkeleton } from '@/components/gc/skeletons';
 import {
     Compass,
     Crown,
@@ -299,6 +300,7 @@ export default function Communities({
                 ) : (
                     <InfiniteScroll
                         data="communities"
+                        loading={<GridSkeleton shape="wide" count={3} />}
                         preserveUrl
                         className="grid grid-cols-1 gap-x-8 divide-y divide-white/[0.07] lg:grid-cols-2 lg:divide-y-0 lg:[&>*]:border-b lg:[&>*]:border-white/[0.07]"
                     >
