@@ -16,6 +16,7 @@ use App\Services\Achievements;
 use App\Services\FriendshipService;
 use App\Services\GameCard;
 use App\Services\Games\Backlog;
+use App\Services\Games\GamerCompatibility;
 use App\Services\ImageStorage;
 use App\Services\Messenger;
 use App\Services\Moderation\PeopleModeration;
@@ -130,7 +131,12 @@ class ProfileController extends Controller
             && $user->birthday->month === now()->month
             && $user->birthday->day === now()->day;
 
+        $viewer = $request->user();
+        $compatibility = $viewer && $viewer->id !== $user->id && app(Plugins::class)->on('gamer_compatibility')
+            ? app(GamerCompatibility::class)->between($viewer, $user) : null;
+
         return Inertia::render('profile/show', [
+            'compatibility' => $compatibility,
             'profile' => [
                 ...$user->toCard(),
                 'last_name' => $user->last_name,

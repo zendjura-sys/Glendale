@@ -4,6 +4,8 @@ import {
     Music2,
     MonitorCog,
     Newspaper,
+    Trophy,
+    Hash,
     Wallpaper,
     Tag,
     ArrowLeft,
@@ -37,6 +39,8 @@ import { PinButton } from '@/components/gc/pin-button';
 import { ThanksButton } from '@/components/gc/thanks-button';
 import { SaveButton } from '@/components/gc/save-button';
 import { cn } from '@/lib/utils';
+import { UserAvatar } from '@/components/gc/user-avatar';
+import { timeAgo } from '@/lib/format';
 import type { ClanCard, GameCard, UserCard } from '@/types';
 import { GameCover } from './index';
 import { LOCALE, tr } from '@/lib/i18n';
@@ -46,6 +50,8 @@ import { usePlugin } from '@/lib/plugins';
 import { GamePrices } from '@/components/games/game-prices';
 import { PcCheck } from '@/components/games/pc-check';
 import { GameNews } from '@/components/games/game-news';
+import { GameLeaderboard } from '@/components/games/game-leaderboard';
+import type { LeaderboardData } from '@/components/games/game-leaderboard';
 import { GameSoundtracks } from '@/components/games/game-soundtracks';
 import type { Soundtrack } from '@/components/games/game-soundtracks';
 import { BacklogPicker } from '@/components/games/backlog';
@@ -129,6 +135,14 @@ type Props = {
     following: boolean;
     pinned: boolean;
     steam_friends: UserCard[];
+    leaderboard?: LeaderboardData | null;
+    tagged_posts?: {
+        id: number;
+        body: string;
+        author: UserCard;
+        created_at: string;
+        likes_count: number;
+    }[];
     community_rating: CommunityRatingData | null;
     backlog?: BacklogStatus | null;
     backlog_on?: boolean;
@@ -305,6 +319,8 @@ export default function GameShow({
     pinned,
     guides,
     steam_friends,
+    leaderboard = null,
+    tagged_posts = [],
     community_rating,
     backlog = null,
     backlog_on = false,
@@ -623,6 +639,45 @@ export default function GameShow({
                         </form>
                     )}
                 </section>
+            )}
+
+            {leaderboard && leaderboard.top.length > 0 && (
+                <Section title={tr('Лідерборд за 30 днів')} icon={Trophy}>
+                    <GameLeaderboard data={leaderboard} />
+                </Section>
+            )}
+
+            {tagged_posts.length > 0 && (
+                <Section title={tr('Пишуть про гру')} icon={Hash}>
+                    <ul className="divide-y divide-white/[0.06]">
+                        {tagged_posts.map((post) => (
+                            <li
+                                key={post.id}
+                                className="py-3 first:pt-0 last:pb-0"
+                            >
+                                <Link
+                                    href={`/posts/${post.id}`}
+                                    className="group flex gap-3"
+                                >
+                                    <UserAvatar user={post.author} size="sm" />
+                                    <span className="min-w-0 flex-1">
+                                        <span className="flex items-center gap-2 text-sm">
+                                            <span className="font-semibold text-white">
+                                                {post.author.name}
+                                            </span>
+                                            <span className="text-xs text-white/40">
+                                                {timeAgo(post.created_at)}
+                                            </span>
+                                        </span>
+                                        <span className="mt-0.5 line-clamp-2 block text-sm text-white/70 group-hover:text-white">
+                                            {post.body}
+                                        </span>
+                                    </span>
+                                </Link>
+                            </li>
+                        ))}
+                    </ul>
+                </Section>
             )}
 
             {onSteam && newsOn && !newsEmpty && (

@@ -6,6 +6,8 @@ import {
     router,
     usePage,
 } from '@inertiajs/react';
+import { CompatibilityChip } from '@/components/games/compatibility-chip';
+import type { Compatibility } from '@/components/games/compatibility-chip';
 import {
     Ban,
     CalendarDays,
@@ -133,6 +135,7 @@ type Profile = UserCard & {
 };
 
 type Props = {
+    compatibility?: Compatibility | null;
     profile: Profile;
     relation: Relation;
     canSeeContent: boolean;
@@ -251,6 +254,7 @@ function Uploader({
 }
 
 export default function ProfileShow({
+    compatibility = null,
     profile,
     relation,
     canSeeContent,
@@ -571,6 +575,11 @@ export default function ProfileShow({
                                     )
                                 )}
                             </p>
+                            {compatibility && compatibility.score > 0 && (
+                                <div className="mt-2">
+                                    <CompatibilityChip data={compatibility} />
+                                </div>
+                            )}
                         </div>
 
                         <div className="flex flex-wrap items-center gap-2 pb-1">

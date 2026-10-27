@@ -460,9 +460,10 @@ export function PostCard({
                         {isLong && !fullText ? (
                             <MentionText
                                 text={`${body.slice(0, LONG_TEXT).trimEnd()}…`}
+                                games={post.games}
                             />
                         ) : (
-                            <MentionText text={body} />
+                            <MentionText text={body} games={post.games} />
                         )}
                         {isLong && !fullText && (
                             <button

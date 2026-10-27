@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\Games\GameTags;
 use Database\Factories\PostFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -50,6 +51,16 @@ class Post extends Model
 {
     /** @use HasFactory<PostFactory> */
     use HasFactory, SoftDeletes;
+
+    protected static function booted(): void
+    {
+        // #Згадки ігор: запис з’являється на сторінці гри.
+        static::saved(function (Post $post) {
+            if ($post->wasChanged('body') || $post->wasRecentlyCreated) {
+                app(GameTags::class)->sync($post);
+            }
+        });
+    }
 
     public const VISIBILITY_PUBLIC = 'public';
 

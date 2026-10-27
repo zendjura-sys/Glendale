@@ -15,6 +15,7 @@ use App\Models\Save;
 use App\Models\Track;
 use App\Models\User;
 use App\Models\UserMute;
+use App\Services\Games\GameTags;
 use App\Support\Plugins\Plugins;
 use App\Support\Stickers;
 use Illuminate\Database\Eloquent\Collection;
@@ -181,6 +182,8 @@ class PostPresenter
         return [
             'id' => $post->id,
             'body' => $post->body,
+            // #Згадки ігор у тексті → посилання на сторінки ігор.
+            'games' => array_values(app(GameTags::class)->resolve($post->body)),
             'spoiler' => $post->spoiler,
             'sticker' => Stickers::emoji($post->sticker),
             'visibility' => $post->visibility,

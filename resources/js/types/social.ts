@@ -77,9 +77,14 @@ export type CommentItem = {
 
 export type Visibility = 'public' | 'friends' | 'private';
 
+/** #тег гри в тексті запису. */
+export type GameTag = { tag: string; slug: string; name: string };
+
 export type PostItem = {
     id: number;
     body: string | null;
+    /** #Згадки ігор у тексті. */
+    games?: GameTag[];
     spoiler?: boolean;
     sticker?: string | null;
     visibility: Visibility;
