@@ -6,6 +6,7 @@ use App\Models\Conversation;
 use App\Models\ConversationParticipant;
 use App\Models\MessageFavorite;
 use App\Models\User;
+use App\Services\ChatCatchUp;
 use App\Services\FriendshipService;
 use App\Services\ImageStorage;
 use App\Services\Messenger;
@@ -46,10 +47,24 @@ class MessengerController extends Controller
 
         return Inertia::render('messages/index', [
             'conversations' => $this->presenter->inbox($user, $this->messenger, $conversation->id),
-            'active' => [...$this->presenter->details($conversation, $user, $me, $this->messenger), ...$calls->forViewer($conversation, $user)],
+            'active' => [
+                ...$this->presenter->details($conversation, $user, $me, $this->messenger),
+                ...$calls->forViewer($conversation, $user),
+                // «Поки тебе не було» — до того, як бесіду позначено прочитаною.
+                'catch_up' => app(ChatCatchUp::class)->for($conversation, $user, $me->last_read_message_id),
+            ],
             'history' => $this->presenter->history($conversation, viewer: $user),
             'draft' => $draft === '' ? null : mb_substr($draft, 0, 120),
         ]);
+    }
+
+    /** Зведена непрочитаного для застосунку: від свого маркера прочитаного або від ?after=. */
+    public function catchUp(Request $request, Conversation $conversation, ChatCatchUp $catchUp): JsonResponse
+    {
+        $me = $this->participant($conversation, $request->user());
+        $after = $request->integer('after') ?: $me->last_read_message_id;
+
+        return response()->json(['catch_up' => $catchUp->for($conversation, $request->user(), $after)]);
     }
 
     public function history(Request $request, Conversation $conversation): JsonResponse

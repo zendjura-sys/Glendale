@@ -164,6 +164,8 @@ export type ConversationDetails = {
     call?: CallState | null;
     can_call?: boolean;
     calls_enabled?: boolean;
+    /** «Поки тебе не було»: зведена непрочитаного в групі. */
+    catch_up?: CatchUp | null;
 };
 
 export type ChatHistory = {
@@ -176,4 +178,23 @@ export type InboxEvent = {
     message: ChatMessage | null;
     is_muted: boolean;
     unread_total: number;
+};
+
+export type CatchUpItem = {
+    id: number;
+    author: string | null;
+    text: string | null;
+    link: string | null;
+    reactions: number;
+    created_at: string;
+};
+
+export type CatchUp = {
+    count: number;
+    people: number;
+    first_id: number;
+    sections: {
+        key: 'mentions' | 'plans' | 'popular' | 'links';
+        items: CatchUpItem[];
+    }[];
 };

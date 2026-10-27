@@ -400,6 +400,7 @@ Route::prefix('v1')->group(function () {
 
             Route::prefix('messages')->middleware('module:messages')->whereNumber(['conversation', 'message'])->group(function () {
                 Route::get('saved', [MessengerController::class, 'saved']);
+                Route::get('{conversation}/catch-up', [MessengerController::class, 'catchUp'])->middleware('throttle:60,1');
                 Route::post('{conversation}/settings', [MessengerController::class, 'update']);
                 Route::post('{conversation}/members', [MessengerController::class, 'addMembers']);
                 Route::delete('{conversation}/members/{user}', [MessengerController::class, 'removeMember']);

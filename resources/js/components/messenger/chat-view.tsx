@@ -25,6 +25,7 @@ import {
     useState,
 } from 'react';
 import { toast } from 'sonner';
+import { CatchUpCard } from './catch-up';
 import { Lightbox } from '@/components/gc/media-grid';
 import { VerifiedBadge } from '@/components/gc/verified-badge';
 import { PlusBadge } from '@/components/gc/plus';
@@ -951,6 +952,13 @@ export function ChatView({
             )}
 
             <div className="relative min-h-0 flex-1">
+                {active.catch_up && (
+                    <CatchUpCard
+                        data={active.catch_up}
+                        conversationId={active.id}
+                        onJump={actions.onJump}
+                    />
+                )}
                 <div
                     ref={scrollRef}
                     onScroll={onScroll}

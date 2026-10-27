@@ -282,6 +282,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::whereNumber(['conversation', 'message'])->group(function () {
             Route::get('{conversation}', [MessengerController::class, 'show'])->name('show');
             Route::get('{conversation}/history', [MessengerController::class, 'history'])->name('history');
+            Route::get('{conversation}/catch-up', [MessengerController::class, 'catchUp'])->middleware('throttle:60,1')->name('catch-up');
             Route::post('{conversation}', [MessageController::class, 'store'])->middleware('throttle:60,1')->name('store');
             Route::post('{conversation}/settings', [MessengerController::class, 'update'])->name('update');
             Route::post('{conversation}/read', [MessengerController::class, 'read'])->name('read');

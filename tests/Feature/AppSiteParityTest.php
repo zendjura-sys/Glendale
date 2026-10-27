@@ -14,6 +14,7 @@ use App\Models\Track;
 use App\Models\User;
 use App\Services\Auth\ApiTokens;
 use App\Services\FriendshipService;
+use App\Services\Messenger;
 use App\Services\Phones\PhoneNumbers;
 use App\Services\Quests\SeasonPass;
 use App\Support\Net\PublicUrl;
@@ -42,6 +43,17 @@ class AppSiteParityTest extends TestCase
         $this->withToken($token)->putJson('/api/v1/site/games/dota/backlog', ['status' => 'playing'])->assertOk()->assertJsonPath('status', 'playing');
         $this->withToken($token)->getJson('/api/v1/site/games/backlog')->assertOk()->assertJsonStructure(['owner', 'mine', 'board' => ['want', 'playing', 'done', 'dropped'], 'friends']);
         $this->withToken($token)->getJson('/api/v1/site/games/backlog/neo')->assertOk()->assertJsonPath('board.playing.0.game.slug', 'dota');
+    }
+
+    public function test_app_reaches_group_catch_up(): void
+    {
+        $owner = User::factory()->create();
+        $me = User::factory()->create();
+        app(FriendshipService::class)->request($owner, $me);
+        app(FriendshipService::class)->accept($me, $owner);
+        $chat = app(Messenger::class)->createGroup($owner, 'Рейд', [$me->id]);
+
+        $this->withToken($this->app_token($me))->getJson("/api/v1/site/messages/{$chat->id}/catch-up")->assertOk()->assertJsonPath('catch_up', null);
     }
 
     public function test_app_player_reaches_episodes_progress_and_streams(): void
