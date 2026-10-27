@@ -50,6 +50,8 @@ Schedule::command('geoip:update')->weeklyOn(3, '04:10')->timezone('Europe/Kyiv')
 Schedule::command('stories:prune')->hourly()->withoutOverlapping(30);
 // Запити «Увійти через застосунок» старші за 30 днів (до того — для аудиту).
 Schedule::command('model:prune', ['--model' => [AppLoginRequest::class]])->dailyAt('04:20')->timezone('Europe/Kyiv')->withoutOverlapping(30);
+// Рідкість бейджів («є у 2% людей»).
+Schedule::command('achievements:rarity')->dailyAt('05:10')->timezone('Europe/Kyiv')->withoutOverlapping(60)->runInBackground();
 Schedule::command('games:sync')->dailyAt('04:40')->timezone('Europe/Kyiv')->withoutOverlapping(120)->runInBackground();
 
 // Ролі Discord за складом груп, де підключено бота GameCon.

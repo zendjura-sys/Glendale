@@ -1,8 +1,9 @@
 import { Link, router, usePage } from '@inertiajs/react';
-import { CalendarClock, Languages } from 'lucide-react';
+import { CalendarClock, Clock, Languages } from 'lucide-react';
 import { localTime } from '@/lib/event-time';
 import { languageName } from '@/lib/format';
 import { tr } from '@/lib/i18n';
+import { cn } from '@/lib/utils';
 
 export type TomorrowEvent = {
     key: string;
@@ -58,6 +59,49 @@ export function TomorrowCard({ events }: { events: TomorrowEvent[] }) {
                 ))}
             </ul>
         </section>
+    );
+}
+
+/**
+ * Вкладка «Друзі» — строго за часом, без алгоритму. Перемикач «Лише друзі» прибирає записи спільнот
+ * (вибір запам’ятовується на сервері).
+ */
+export function ChronoSwitch({ onlyFriends }: { onlyFriends: boolean }) {
+    const options = [
+        { key: 'all', label: tr('Друзі й спільноти'), on: !onlyFriends },
+        { key: 'friends', label: tr('Лише друзі'), on: onlyFriends },
+    ];
+
+    return (
+        <div className="flex flex-wrap items-center gap-2 px-1 text-xs text-white/50">
+            <Clock className="size-4" />
+            <span>{tr('Строго за часом, без алгоритму')}</span>
+            <div className="ml-auto flex gap-0.5 rounded-lg bg-white/[0.05] p-0.5">
+                {options.map((option) => (
+                    <button
+                        key={option.key}
+                        type="button"
+                        aria-pressed={option.on}
+                        onClick={() =>
+                            !option.on &&
+                            router.get(
+                                '/feed',
+                                { only: option.key },
+                                { preserveScroll: false },
+                            )
+                        }
+                        className={cn(
+                            'h-7 rounded-md px-2.5 transition',
+                            option.on
+                                ? 'bg-white/[0.12] text-white'
+                                : 'text-white/55 hover:text-white',
+                        )}
+                    >
+                        {option.label}
+                    </button>
+                ))}
+            </div>
+        </div>
     );
 }
 

@@ -59,10 +59,15 @@ class FeedController extends Controller
             ->visibleTo($user, $friendIds)
             ->whereHas('author', fn (Builder $q) => $q->whereNull('banned_at')->whereNull('frozen_at'));
 
+        // «Друзі» — строго за часом, без алгоритму; за бажанням — лише друзі, без спільнот (запам’ятовується).
+        if (in_array($request->query('only'), ['friends', 'all'], true)) {
+            $user->mergePref(['feed_only_friends' => $request->query('only') === 'friends']);
+        }
+        $onlyFriends = (bool) $user->pref('feed_only_friends');
         if ($tab === 'friends') {
             $query->where(fn (Builder $q) => $q
                 ->where(fn (Builder $w) => $w->where('wall_type', '!=', 'community')->whereIn('author_id', [...$friendIds, $user->id]))
-                ->orWhere(fn (Builder $w) => $w->where('wall_type', 'community')->whereIn('wall_id', $communityIds ?: [0])));
+                ->when(! $onlyFriends, fn (Builder $q) => $q->orWhere(fn (Builder $w) => $w->where('wall_type', 'community')->whereIn('wall_id', $communityIds ?: [0]))));
         } elseif ($tab === 'country' && is_string($user->country) && $user->country !== '') {
             $query->where('visibility', Post::VISIBILITY_PUBLIC)
                 ->whereHas('author', fn (Builder $q) => $q->where('country', $user->country));
@@ -88,6 +93,7 @@ class FeedController extends Controller
 
         return Inertia::render('feed/index', [
             'tab' => $tab,
+            'onlyFriends' => $onlyFriends,
             'lang' => $lang,
             'languages' => LanguageGuess::LANGS,
             'country' => $user->country,

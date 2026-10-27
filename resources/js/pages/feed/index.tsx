@@ -16,7 +16,11 @@ import {
     UserPlus,
     UsersRound,
 } from 'lucide-react';
-import { LanguageFilter, TomorrowCard } from '@/components/gc/feed-extras';
+import {
+    ChronoSwitch,
+    LanguageFilter,
+    TomorrowCard,
+} from '@/components/gc/feed-extras';
 import type { TomorrowEvent } from '@/components/gc/feed-extras';
 import { FriendButton } from '@/components/gc/friend-button';
 import { PersonRow } from '@/components/gc/person-card';
@@ -40,6 +44,7 @@ import { useFeature } from '@/lib/plugins';
 
 type Props = {
     tab: 'friends' | 'discover' | 'country';
+    onlyFriends?: boolean;
     lang: string | null;
     languages: string[];
     tomorrow?: TomorrowEvent[];
@@ -125,6 +130,7 @@ function FeedTabs({
 export default function Feed({
     tab,
     lang,
+    onlyFriends,
     languages,
     tomorrow,
     streaming,
@@ -212,6 +218,9 @@ export default function Feed({
                     )}
                     <PostComposer />
                     <FeedTabs tab={tab} hasFriends={hasFriends} />
+                    {tab === 'friends' && (
+                        <ChronoSwitch onlyFriends={onlyFriends ?? false} />
+                    )}
                     <LanguageFilter
                         tab={tab}
                         lang={lang}

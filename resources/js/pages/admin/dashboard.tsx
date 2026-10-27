@@ -1,8 +1,11 @@
 import { Deferred, Head, Link } from '@inertiajs/react';
+import { ActivityHeatmap } from '@/components/admin/activity-heatmap';
+import type { HeatmapData } from '@/components/admin/activity-heatmap';
 import {
     Activity,
     Ban,
     Blocks,
+    CalendarClock,
     FileText,
     Heart,
     MessageSquare,
@@ -38,6 +41,7 @@ type ChartPoint = { date: string; users: number; posts: number };
 type Props = {
     stats: Stats;
     chart?: ChartPoint[];
+    heatmap?: HeatmapData;
     latestUsers: (UserCard & { created_at: string })[];
     latestPosts: {
         id: number;
@@ -247,6 +251,7 @@ function ActivityChart({ data }: { data: ChartPoint[] }) {
 export default function AdminDashboard({
     stats,
     chart,
+    heatmap,
     latestUsers,
     latestPosts,
     system,
@@ -325,6 +330,23 @@ export default function AdminDashboard({
                         }
                     >
                         <ActivityChart data={chart ?? []} />
+                    </Deferred>
+                    <div className="mt-6 mb-3 flex items-center gap-2">
+                        <CalendarClock className="size-4 text-gc-lilac-400" />
+                        <h2 className="font-display text-sm font-semibold text-white/90">
+                            {tr('Коли люди активні')}
+                        </h2>
+                        <span className="text-xs text-white/40">
+                            {tr('4 тижні, час київський')}
+                        </span>
+                    </div>
+                    <Deferred
+                        data="heatmap"
+                        fallback={
+                            <div className="skeleton h-[170px] rounded-2xl" />
+                        }
+                    >
+                        {heatmap ? <ActivityHeatmap data={heatmap} /> : <></>}
                     </Deferred>
                 </section>
 

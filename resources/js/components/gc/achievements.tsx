@@ -38,7 +38,18 @@ export type Badge = {
     earned: boolean;
     progress: number;
     target: number;
+    /** У скількох відсотків активних людей є бейдж (null — ще не пораховано). */
+    rarity?: number | null;
 };
+
+/** Бейдж вважаємо рідкісним, якщо він є менш ніж у 10% людей. */
+const RARE = 10;
+
+function rarityLabel(rarity: number): string {
+    return tr('є у {p}% людей', {
+        p: rarity < 1 ? '<1' : String(Math.round(rarity)),
+    });
+}
 
 export type AchievementsData = {
     level: number;
@@ -153,7 +164,7 @@ export function AchievementsCard({
                         return (
                             <div
                                 key={b.key}
-                                title={`${b.title} — ${b.text}${b.earned ? '' : ` (${b.progress}/${b.target})`}`}
+                                title={`${b.title} — ${b.text}${b.earned ? '' : ` (${b.progress}/${b.target})`}${b.rarity != null ? ` · ${rarityLabel(b.rarity)}` : ''}`}
                                 className="flex flex-col items-center gap-1 text-center"
                             >
                                 <span
@@ -179,6 +190,13 @@ export function AchievementsCard({
                                 >
                                     {b.title}
                                 </span>
+                                {b.earned &&
+                                    b.rarity != null &&
+                                    b.rarity < RARE && (
+                                        <span className="text-[9.5px] leading-none text-amber-200/80 tabular-nums">
+                                            {rarityLabel(b.rarity)}
+                                        </span>
+                                    )}
                             </div>
                         );
                     })}

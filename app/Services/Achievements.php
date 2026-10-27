@@ -20,7 +20,9 @@ use App\Services\Quests\DailyQuests;
 use App\Services\Quests\SeasonPass;
 use App\Services\Servers\ServerVotes;
 use App\Support\Modules\ModuleManager;
+use App\Support\Plugins\Plugins;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Досягнення й рівні. Рахуються з реальної активності (без окремої таблиці), тож бейджі
@@ -88,6 +90,8 @@ class Achievements
         $data = Cache::remember("achievements.{$user->id}", now()->addMinutes(10), fn () => $this->compute($user));
         $modules = app(ModuleManager::class);
         $data['badges'] = array_values(array_filter($data['badges'], fn (array $badge) => ! is_string($badge['module'] ?? null) || $modules->enabled($badge['module'])));
+        $rarity = $this->rarity();
+        $data['badges'] = array_map(fn (array $badge) => [...$badge, 'rarity' => $rarity[$badge['key']] ?? null], $data['badges']);
         $data['earned'] = count(array_filter($data['badges'], fn (array $badge) => (bool) ($badge['earned'] ?? false)));
         $data['total'] = count($data['badges']);
 
@@ -137,6 +141,53 @@ class Achievements
             'total' => count($badges),
             'badges' => $badges,
         ];
+    }
+
+    /** Менше скількох активних людей — рідкість не показуємо (замало даних). */
+    public const RARITY_MIN_USERS = 20;
+
+    /**
+     * Частка активних людей (у відсотках) з кожним бейджем.
+     *
+     * @return array<string, float>
+     */
+    public function rarity(): array
+    {
+        if (! app(Plugins::class)->on('badge_rarity')) {
+            return [];
+        }
+
+        /** @var array<string, float> */
+        return Cache::remember('achievements.rarity', now()->addHour(), fn () => DB::table('achievement_rarity')
+            ->where('total', '>=', self::RARITY_MIN_USERS)->get()
+            ->mapWithKeys(fn ($row) => [(string) $row->badge => round($row->holders / max(1, $row->total) * 100, 1)])
+            ->all());
+    }
+
+    /** Перерахувати рідкість за людьми, що заходили за 90 днів. Повертає, скількох порахували. */
+    public function recountRarity(): int
+    {
+        $holders = array_fill_keys(array_column(self::BADGES, 'key'), 0);
+        $total = 0;
+        User::query()->whereNull('banned_at')->where('last_seen_at', '>=', now()->subDays(90))
+            ->orderBy('id')->chunkById(200, function ($users) use (&$holders, &$total) {
+                foreach ($users as $user) {
+                    $total++;
+                    foreach ($this->compute($user)['badges'] as $badge) {
+                        if ($badge['earned']) {
+                            $holders[$badge['key']]++;
+                        }
+                    }
+                }
+            });
+        $now = now();
+        DB::table('achievement_rarity')->upsert(
+            array_map(fn (string $key) => ['badge' => $key, 'holders' => $holders[$key], 'total' => $total, 'updated_at' => $now], array_keys($holders)),
+            ['badge'], ['holders', 'total', 'updated_at'],
+        );
+        Cache::forget('achievements.rarity');
+
+        return $total;
     }
 
     /** Досвід, потрібний для рівня: 50·(n−1)² — перші рівні швидкі, далі повільніше. */
