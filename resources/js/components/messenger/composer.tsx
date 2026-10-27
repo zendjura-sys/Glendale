@@ -724,7 +724,11 @@ export function Composer({
                                     onEditLast();
                                 }
                             }}
-                            placeholder={tr('Напишіть повідомлення…')}
+                            placeholder={
+                                hasAttachments
+                                    ? tr('Додайте підпис…')
+                                    : tr('Напишіть повідомлення…')
+                            }
                             className="[field-sizing:content] max-h-[180px] min-h-11 min-w-0 flex-1 resize-none bg-transparent py-[11px] pl-4 text-[14.5px] leading-[1.45] text-white placeholder:text-white/35 focus:outline-none"
                         />
                         <div ref={emojiRef} className="relative mb-1">

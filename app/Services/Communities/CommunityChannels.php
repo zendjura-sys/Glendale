@@ -37,8 +37,12 @@ class CommunityChannels
         return $user !== null && ((bool) $community->membershipFor($user)?->isManager() || $user->isStaff());
     }
 
-    /** Бачить канал: учасник спільноти; приватний — лише вибрані й адміністратори. */
-    public function canView(CommunityChannel $channel, ?User $user, ?CommunityMember $membership = null): bool
+    /**
+     * Бачить канал: учасник спільноти; приватний — лише вибрані й адміністратори.
+     *
+     * @param  list<int>|null  $bannedConversations  Бесіди, з яких людину виключено на час (якщо вже відомо).
+     */
+    public function canView(CommunityChannel $channel, ?User $user, ?CommunityMember $membership = null, ?array $bannedConversations = null): bool
     {
         if ($user === null) {
             return false;
@@ -46,6 +50,15 @@ class CommunityChannels
         $membership ??= $channel->community->membershipFor($user);
         if (! $membership?->isActive() && ! $user->isStaff()) {
             return false;
+        }
+        // Виключений із каналу на час не бачить його до строку.
+        if ($channel->conversation_id !== null && ! $user->isStaff()) {
+            $banned = $bannedConversations !== null
+                ? in_array($channel->conversation_id, $bannedConversations, true)
+                : ConversationParticipant::query()->where('conversation_id', $channel->conversation_id)->where('user_id', $user->id)->where('banned_until', '>', now())->exists();
+            if ($banned) {
+                return false;
+            }
         }
         if (! $channel->is_private || $membership?->isManager() || $user->isStaff()) {
             return true;
@@ -239,6 +252,9 @@ class CommunityChannels
         }
         $role = $this->canManage($channel->community, $user) ? ConversationParticipant::ROLE_ADMIN : ConversationParticipant::ROLE_MEMBER;
         $row = ConversationParticipant::query()->firstOrNew(['conversation_id' => $conversation->id, 'user_id' => $user->id]);
+        if ($row->banned()) {
+            return null;
+        }
         if (! $row->exists || $row->left_at !== null || $row->role !== $role) {
             $row->fill([
                 'role' => $role,
@@ -283,8 +299,9 @@ class CommunityChannels
     {
         $this->bootstrap($community);
         $membership = $community->membershipFor($viewer);
+        $banned = array_values(array_map('intval', ConversationParticipant::query()->where('user_id', $viewer->id)->where('banned_until', '>', now())->pluck('conversation_id')->all()));
         $channels = $community->channels()->with(['community', 'voiceRoom.participants.user'])->orderBy('position')->orderBy('id')->get()
-            ->filter(fn (CommunityChannel $c) => $this->canView($c, $viewer, $membership));
+            ->filter(fn (CommunityChannel $c) => $this->canView($c, $viewer, $membership, $banned));
         $unread = $this->unread($channels, $viewer);
         $card = fn (CommunityChannel $c) => $this->card($c, $unread[$c->conversation_id ?? 0] ?? 0);
         $byCategory = $channels->groupBy(fn (CommunityChannel $c) => (int) $c->category_id);

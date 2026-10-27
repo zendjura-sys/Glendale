@@ -126,6 +126,12 @@ class Messenger
 
         $alreadyIn = $conversation->activeParticipants()->pluck('user_id')->all();
         $ids = array_values(array_diff($this->invitableFriends($actor, $userIds), $alreadyIn));
+        // Виключених на час не можна повернути, доки строк не мине.
+        $banned = $conversation->participants()->whereIn('user_id', $ids)->where('banned_until', '>', now())->pluck('user_id')->all();
+        if ($banned !== [] && count($banned) === count($ids)) {
+            throw ValidationException::withMessages(['user_ids' => 'Цю людину виключено з бесіди на час — додати її можна буде пізніше.']);
+        }
+        $ids = array_values(array_diff($ids, $banned));
 
         if (count($alreadyIn) + count($ids) > Conversation::MAX_MEMBERS) {
             throw ValidationException::withMessages(['user_ids' => 'У бесіді може бути не більше '.Conversation::MAX_MEMBERS.' учасників.']);
@@ -598,6 +604,11 @@ class Messenger
             $channel = CommunityChannel::query()->with('community')->find($conversation->community_channel_id);
             abort_unless($channel !== null && app(CommunityChannels::class)->canPost($channel, $user), 403, 'У цьому каналі пишуть лише адміністратори.');
         }
+        // Тайм-аут від адміністраторів: читати можна, писати — ні до вказаного часу.
+        $me = $conversation->participantFor($user);
+        if ($me?->timedOut() && $me->timeout_until !== null) {
+            abort(403, 'Вам тимчасово заборонено писати тут — до '.$me->timeout_until->timezone('Europe/Kyiv')->format('d.m H:i').'.');
+        }
         $seconds = (int) $conversation->slow_seconds;
         if ($seconds <= 0 || ! $conversation->isGroup()) {
             return;
@@ -678,6 +689,20 @@ class Messenger
         DB::afterCommit(fn () => $this->broadcastNew($conversation, $message));
 
         return $message;
+    }
+
+    /** Службовий рядок у бесіді від імені людини («… обмежив …») і оновлення бесіди в усіх. */
+    public function noticeBy(Conversation $conversation, User $actor, string $text): Message
+    {
+        $message = DB::transaction(fn () => $this->system($conversation, $actor, $text));
+        $this->broadcastUpdated($conversation);
+
+        return $message;
+    }
+
+    public function genderVerb(User $user, string $male, string $female): string
+    {
+        return $this->verb($user, $male, $female);
     }
 
     private function system(Conversation $conversation, User $actor, string $text): Message

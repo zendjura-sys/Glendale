@@ -3,6 +3,7 @@ import { useState } from 'react';
 import {
     SmilePlus,
     Flag,
+    Gavel,
     Forward,
     Languages,
     Star,
@@ -50,6 +51,10 @@ export type BubbleActions = {
     onJump: (id: number) => void;
     onOpenImage: (items: ChatAttachment[], index: number) => void;
     onMediaLoad: () => void;
+    /** Переглянути документ на сайті. */
+    onPreview?: (attachment: ChatAttachment) => void;
+    /** Тайм-аут чи виключення автора (адміністраторам групи чи каналу). */
+    onRestrict?: (message: ChatMessage) => void;
 };
 
 type Props = {
@@ -449,6 +454,7 @@ export function MessageBubble({
                                     key={file.id}
                                     attachment={file}
                                     own={own}
+                                    onPreview={actions.onPreview}
                                 />
                             ))}
                         </div>
@@ -701,6 +707,16 @@ export function MessageBubble({
                             }
                         >
                             <Languages className="size-3.5" />
+                        </button>
+                    )}
+                    {!own && message.user && actions.onRestrict && (
+                        <button
+                            type="button"
+                            className={cn(toolButton, 'hover:text-rose-300')}
+                            onClick={() => actions.onRestrict?.(message)}
+                            title={tr('Тайм-аут або виключення')}
+                        >
+                            <Gavel className="size-3.5" />
                         </button>
                     )}
                     {!own && actions.onReport && (

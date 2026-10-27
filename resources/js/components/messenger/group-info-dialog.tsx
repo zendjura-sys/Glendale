@@ -1,6 +1,7 @@
 import { Link, router, usePage } from '@inertiajs/react';
 import {
     Camera,
+    Clock3,
     Crown,
     LogOut,
     Pencil,
@@ -315,6 +316,35 @@ export function GroupInfoDialog({
                                                 </span>
                                             </span>
                                         </Link>
+                                        {member.timeout_until && (
+                                            <button
+                                                type="button"
+                                                disabled={!canManage}
+                                                onClick={() =>
+                                                    router.delete(
+                                                        `/messages/${conversation.id}/members/${member.username}/restrict`,
+                                                        {
+                                                            preserveScroll: true,
+                                                            preserveState: true,
+                                                        },
+                                                    )
+                                                }
+                                                title={
+                                                    canManage
+                                                        ? tr('Зняти тайм-аут')
+                                                        : undefined
+                                                }
+                                                className="group/timeout flex items-center gap-1 rounded-chip bg-amber-400/10 px-2 py-0.5 text-xs font-medium text-amber-200 enabled:hover:bg-rose-500/15 enabled:hover:text-rose-200"
+                                            >
+                                                <Clock3 className="size-3" />
+                                                <span className="group-enabled/timeout:group-hover/timeout:hidden">
+                                                    {tr('Тайм-аут')}
+                                                </span>
+                                                <span className="hidden group-enabled/timeout:group-hover/timeout:inline">
+                                                    {tr('Зняти')}
+                                                </span>
+                                            </button>
+                                        )}
                                         {member.role === 'owner' ? (
                                             <span className="flex items-center gap-1 rounded-chip bg-gc-gold/10 px-2 py-0.5 text-xs font-medium text-gc-gold">
                                                 <Crown className="size-3" />

@@ -90,6 +90,21 @@ class AppSiteParityTest extends TestCase
         $this->assertNotNull($community->join_password);
     }
 
+    public function test_app_uses_chat_tools(): void
+    {
+        $owner = User::factory()->create();
+        $member = User::factory()->create();
+        app(FriendshipService::class)->request($owner, $member);
+        app(FriendshipService::class)->accept($member, $owner);
+        $chat = app(Messenger::class)->createGroup($owner, 'Рейд', [$member->id]);
+        $token = $this->app_token($owner);
+
+        $this->withToken($token)->getJson("/api/v1/site/messages/{$chat->id}/shared?kind=links")->assertOk()->assertJsonStructure(['items', 'counts']);
+        $this->withToken($token)->postJson("/api/v1/site/messages/{$chat->id}/members/{$member->username}/restrict", ['kind' => 'timeout', 'minutes' => 5])->assertSuccessful();
+        $this->assertNotNull($chat->participants()->where('user_id', $member->id)->value('timeout_until'));
+        $this->withToken($token)->postJson("/api/v1/site/messages/{$chat->id}/background", ['preset' => 'dots'])->assertSuccessful();
+    }
+
     public function test_app_reaches_group_catch_up(): void
     {
         $owner = User::factory()->create();

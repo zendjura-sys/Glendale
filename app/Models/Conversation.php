@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Storage;
  * @property int $id
  * @property string $type
  * @property string|null $title
+ * @property string|null $background Спільний фон чату (ставлять адміністратори)
  * @property string|null $avatar_path
  * @property int|null $owner_id
  * @property int|null $family_id
@@ -25,7 +26,7 @@ use Illuminate\Support\Facades\Storage;
  * @property int|null $community_channel_id бесіда текстового каналу спільноти
  * @property-read string|null $avatar_url
  */
-#[Fillable(['type', 'title', 'avatar_path', 'owner_id', 'family_id', 'direct_key', 'last_message_id', 'last_message_at', 'slow_seconds', 'automod', 'community_channel_id'])]
+#[Fillable(['type', 'title', 'avatar_path', 'owner_id', 'family_id', 'direct_key', 'last_message_id', 'last_message_at', 'slow_seconds', 'automod', 'community_channel_id', 'background'])]
 class Conversation extends Model
 {
     public const TYPE_DIRECT = 'direct';

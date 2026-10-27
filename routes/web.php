@@ -9,6 +9,7 @@ use App\Http\Controllers\BillingController;
 use App\Http\Controllers\Bots;
 use App\Http\Controllers\CallController;
 use App\Http\Controllers\CharacterController;
+use App\Http\Controllers\ChatToolsController;
 use App\Http\Controllers\CinemaController;
 use App\Http\Controllers\ClanController;
 use App\Http\Controllers\CommentController;
@@ -278,6 +279,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::get('saved', [MessengerController::class, 'saved'])->name('saved');
         Route::get('cards', [MessageController::class, 'cards'])->middleware('throttle:60,1')->name('cards');
         Route::get('attachments/{attachment}', [MessageController::class, 'download'])->whereNumber('attachment')->name('attachments.download');
+        Route::get('attachments/{attachment}/preview', [ChatToolsController::class, 'preview'])->whereNumber('attachment')->middleware('throttle:120,1')->name('attachments.preview');
         Route::get('with/{user}', [MessengerController::class, 'direct'])->name('direct');
         Route::post('groups', [MessengerController::class, 'storeGroup'])->middleware('throttle:10,1')->name('groups.store');
 
@@ -294,6 +296,10 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
             Route::post('{conversation}/slow', [MessengerController::class, 'slow'])->name('slow');
             Route::post('{conversation}/automod', [MessengerController::class, 'automod'])->name('automod');
             Route::post('{conversation}/members/{user}/role', [MessengerController::class, 'memberRole'])->name('members.role');
+            Route::get('{conversation}/shared', [ChatToolsController::class, 'shared'])->middleware('throttle:120,1')->name('shared');
+            Route::post('{conversation}/members/{user}/restrict', [ChatToolsController::class, 'restrict'])->name('members.restrict');
+            Route::delete('{conversation}/members/{user}/restrict', [ChatToolsController::class, 'lift'])->name('members.lift');
+            Route::post('{conversation}/background', [ChatToolsController::class, 'background'])->middleware('throttle:30,1')->name('background');
             Route::post('{conversation}/receipts', [MessengerController::class, 'receipts'])->name('receipts');
             Route::put('{conversation}/folder', [MessengerController::class, 'folder'])->name('folder');
             Route::post('{conversation}/members', [MessengerController::class, 'addMembers'])->name('members.store');

@@ -8,6 +8,7 @@ import {
     FileSpreadsheet,
     FileText,
     FileVideo,
+    Eye,
     MessageCircle,
     Pause,
     Play,
@@ -225,14 +226,15 @@ function fileVisual(name: string | null | undefined, mime?: string | null) {
 export function FileAttachment({
     attachment,
     own,
+    onPreview,
 }: {
     attachment: ChatAttachment;
     own: boolean;
+    onPreview?: (attachment: ChatAttachment) => void;
 }) {
     const { icon: Icon, tone } = fileVisual(attachment.name, attachment.mime);
     const ext = attachment.name?.split('.').pop()?.toUpperCase();
-
-    return (
+    const card = (
         <a
             href={attachment.url}
             download={attachment.name ?? true}
@@ -265,6 +267,32 @@ export function FileAttachment({
                 </span>
             </span>
         </a>
+    );
+
+    if (!attachment.preview || !onPreview) return card;
+
+    // Документ, який можна відкрити тут: кнопка «Переглянути» поруч із карткою.
+    return (
+        <div className="flex items-center gap-1">
+            {card}
+            <button
+                type="button"
+                onClick={(event) => {
+                    event.stopPropagation();
+                    onPreview(attachment);
+                }}
+                aria-label={tr('Переглянути')}
+                title={tr('Переглянути')}
+                className={cn(
+                    'flex size-9 shrink-0 items-center justify-center rounded-xl transition',
+                    own
+                        ? 'text-white/80 hover:bg-white/15'
+                        : 'text-white/55 hover:bg-white/[0.07] hover:text-white',
+                )}
+            >
+                <Eye className="size-4" />
+            </button>
+        </div>
     );
 }
 

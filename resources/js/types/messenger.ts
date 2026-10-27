@@ -23,6 +23,8 @@ export type ChatAttachment = {
     size?: number | null;
     duration?: number | null;
     waveform?: number[] | null;
+    /** Документ можна переглянути на сайті (PDF, текст, аудіо, відео). */
+    preview?: 'pdf' | 'text' | 'image' | 'audio' | 'video' | null;
 };
 
 export type StickerItem = {
@@ -136,7 +138,10 @@ export type ConversationSummary = {
     } | null;
 };
 
-export type ConversationMember = UserCard & { role: MemberRole };
+export type ConversationMember = UserCard & {
+    role: MemberRole;
+    timeout_until?: string | null;
+};
 
 export type ConversationDetails = {
     id: number;
@@ -170,6 +175,12 @@ export type ConversationDetails = {
     locked_text?: string | null;
     /** «Поки тебе не було»: зведена непрочитаного в групі. */
     catch_up?: CatchUp | null;
+    /** Тайм-аут від адміністраторів: до коли не можна писати. */
+    timeout_until?: string | null;
+    /** Фон чату (особистий або спільний) і що вибрано. */
+    background?: { preset: string | null; image: string | null } | null;
+    my_background?: string | null;
+    shared_background?: string | null;
 };
 
 export type ChatHistory = {

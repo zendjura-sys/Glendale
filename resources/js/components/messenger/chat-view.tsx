@@ -16,6 +16,9 @@ import {
     Pin,
     Sparkles,
     Settings,
+    FolderOpen,
+    MoreHorizontal,
+    Wallpaper,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import {
@@ -52,6 +55,17 @@ import { Composer } from './composer';
 import { ConversationAvatar } from './conversation-avatar';
 import { MessageBubble, SystemMessage } from './message-bubble';
 import { ReportDialog } from './report-dialog';
+import { ChatBackdrop, ChatBackgroundDialog } from './chat-background';
+import { ChatSharedDialog } from './chat-shared-dialog';
+import { DocPreviewDialog } from './doc-preview';
+import type { PreviewFile } from './doc-preview';
+import { RestrictDialog } from './restrict-dialog';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import type { BubbleActions } from './message-bubble';
 import { tr } from '@/lib/i18n';
 import { usePlugin } from '@/lib/plugins';
@@ -574,6 +588,27 @@ export function ChatView({
         Date.now() - new Date(message.created_at).getTime() < EDIT_WINDOW_MS;
 
     const [reportUrl, setReportUrl] = useState<string | null>(null);
+    const mediaPanelOn = usePlugin('chat_media_panel');
+    const docPreviewOn = usePlugin('chat_doc_preview');
+    const restrictionsOn = usePlugin('chat_restrictions');
+    const backgroundsOn = usePlugin('chat_backgrounds');
+    const [sharedOpen, setSharedOpen] = useState(false);
+    const [backgroundOpen, setBackgroundOpen] = useState(false);
+    const [restricting, setRestricting] = useState<ChatMessage['user']>(null);
+    const [previewing, setPreviewing] = useState<PreviewFile | null>(null);
+    const canModerate =
+        isGroup && (active.my_role === 'owner' || active.my_role === 'admin');
+    // Тайм-аут: поле вводу замінює пояснення, до коли не можна писати.
+    const timeoutText = active.timeout_until
+        ? tr('Адміністратори заборонили вам писати тут до {time}.', {
+              time: (() => {
+                  const d = new Date(active.timeout_until);
+                  const two = (n: number) => String(n).padStart(2, '0');
+
+                  return `${two(d.getDate())}.${two(d.getMonth() + 1)} ${two(d.getHours())}:${two(d.getMinutes())}`;
+              })(),
+          })
+        : null;
     const [forwarding, setForwarding] = useState<ChatMessage | null>(null);
     const [folderOpen, setFolderOpen] = useState(false);
     const [folderName, setFolderName] = useState(active.folder ?? '');
@@ -673,6 +708,13 @@ export function ChatView({
         onMediaLoad: () => {
             if (stickRef.current) scrollToBottom();
         },
+        onPreview: docPreviewOn
+            ? (attachment) => setPreviewing(attachment)
+            : undefined,
+        onRestrict:
+            restrictionsOn && canModerate
+                ? (message) => setRestricting(message.user)
+                : undefined,
     };
 
     const onTyping = () => {
@@ -765,7 +807,7 @@ export function ChatView({
                         onClick={() =>
                             router.post(`/messages/${active.id}/unread`)
                         }
-                        className="flex size-9 items-center justify-center rounded-xl text-white/60 transition hover:bg-white/[0.07] hover:text-white"
+                        className="flex size-9 items-center justify-center rounded-xl text-white/60 transition hover:bg-white/[0.07] hover:text-white max-sm:hidden"
                         aria-label={tr('Непрочитане')}
                         title={tr('Позначити непрочитаним')}
                     >
@@ -787,7 +829,7 @@ export function ChatView({
                             )
                         }
                         className={cn(
-                            'flex size-9 items-center justify-center rounded-xl transition',
+                            'flex size-9 items-center justify-center rounded-xl transition max-sm:hidden',
                             active.share_receipts === false
                                 ? 'bg-white/10 text-white'
                                 : 'text-white/60 hover:bg-white/[0.07] hover:text-white',
@@ -821,7 +863,7 @@ export function ChatView({
                             )
                         }
                         className={cn(
-                            'flex size-9 items-center justify-center rounded-xl transition',
+                            'flex size-9 items-center justify-center rounded-xl transition max-sm:hidden',
                             active.pinned
                                 ? 'bg-white/10 text-white'
                                 : 'text-white/60 hover:bg-white/[0.07] hover:text-white',
@@ -845,7 +887,7 @@ export function ChatView({
                     <button
                         type="button"
                         onClick={() => setFolderOpen((open) => !open)}
-                        className="flex size-9 items-center justify-center rounded-xl text-white/60 transition hover:bg-white/[0.07] hover:text-white"
+                        className="flex size-9 items-center justify-center rounded-xl text-white/60 transition hover:bg-white/[0.07] hover:text-white max-sm:hidden"
                         aria-label={tr('Папка')}
                         title={active.folder ? active.folder : tr('Папка')}
                     >
@@ -940,12 +982,132 @@ export function ChatView({
                                         : null,
                             })
                         }
-                        className="flex size-9 items-center justify-center rounded-xl text-white/60 transition hover:bg-white/[0.07] hover:text-white"
+                        className="flex size-9 items-center justify-center rounded-xl text-white/60 transition hover:bg-white/[0.07] hover:text-white max-sm:hidden"
                         aria-label={tr('Слухати музику разом')}
                         title={tr('Слухати музику разом')}
                     >
                         <Headphones className="size-[18px]" />
                     </button>
+                )}
+                {(mediaPanelOn || backgroundsOn || !channel) && (
+                    <DropdownMenu>
+                        <DropdownMenuTrigger
+                            className="flex size-9 items-center justify-center rounded-xl text-white/60 transition outline-none hover:bg-white/[0.07] hover:text-white"
+                            aria-label={tr('Ще')}
+                            title={tr('Ще')}
+                        >
+                            <MoreHorizontal className="size-[18px]" />
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-56">
+                            {mediaPanelOn && (
+                                <DropdownMenuItem
+                                    onSelect={() => setSharedOpen(true)}
+                                >
+                                    <FolderOpen className="size-4" />
+                                    {tr('Матеріали чату')}
+                                </DropdownMenuItem>
+                            )}
+                            {backgroundsOn && (
+                                <DropdownMenuItem
+                                    onSelect={() => setBackgroundOpen(true)}
+                                >
+                                    <Wallpaper className="size-4" />
+                                    {tr('Фон чату')}
+                                </DropdownMenuItem>
+                            )}
+                            {/* На телефоні в шапці мало місця — другорядні дії тут. */}
+                            {!channel && (
+                                <DropdownMenuItem
+                                    className="sm:hidden"
+                                    onSelect={() =>
+                                        router.post(
+                                            `/messages/${active.id}/pin`,
+                                            {},
+                                            {
+                                                preserveScroll: true,
+                                                preserveState: true,
+                                                only: [
+                                                    'active',
+                                                    'conversations',
+                                                ],
+                                            },
+                                        )
+                                    }
+                                >
+                                    <Pin className="size-4" />
+                                    {active.pinned
+                                        ? tr('Відкріпити')
+                                        : tr('Закріпити')}
+                                </DropdownMenuItem>
+                            )}
+                            {foldersOn && !channel && (
+                                <DropdownMenuItem
+                                    className="sm:hidden"
+                                    onSelect={() => setFolderOpen(true)}
+                                >
+                                    <Folder className="size-4" />
+                                    {tr('Папка')}
+                                </DropdownMenuItem>
+                            )}
+                            {receiptsOn && !channel && (
+                                <DropdownMenuItem
+                                    className="sm:hidden"
+                                    onSelect={() =>
+                                        router.post(
+                                            `/messages/${active.id}/receipts`,
+                                            {},
+                                            {
+                                                preserveScroll: true,
+                                                preserveState: true,
+                                                only: ['active'],
+                                            },
+                                        )
+                                    }
+                                >
+                                    {active.share_receipts === false ? (
+                                        <EyeOff className="size-4" />
+                                    ) : (
+                                        <Eye className="size-4" />
+                                    )}
+                                    {active.share_receipts === false
+                                        ? tr('Увімкнути звіти про прочитання')
+                                        : tr('Вимкнути звіти про прочитання')}
+                                </DropdownMenuItem>
+                            )}
+                            {unreadOn && !channel && (
+                                <DropdownMenuItem
+                                    className="sm:hidden"
+                                    onSelect={() =>
+                                        router.post(
+                                            `/messages/${active.id}/unread`,
+                                        )
+                                    }
+                                >
+                                    <Mail className="size-4" />
+                                    {tr('Позначити непрочитаним')}
+                                </DropdownMenuItem>
+                            )}
+                            {modules.includes('music') && !channel && (
+                                <DropdownMenuItem
+                                    className="sm:hidden"
+                                    onSelect={() =>
+                                        router.post('/music/together', {
+                                            conversation_id: active.id,
+                                            track_id:
+                                                getPlayerState().current
+                                                    ?.source === 'local'
+                                                    ? getPlayerState().current
+                                                          ?.id
+                                                    : null,
+                                        })
+                                    }
+                                >
+                                    <Headphones className="size-4" />
+                                    {tr('Слухати музику разом')}
+                                </DropdownMenuItem>
+                            )}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                 )}
                 {channel?.onSettings && (
                     <button
@@ -998,6 +1160,9 @@ export function ChatView({
             )}
 
             <div className="relative min-h-0 flex-1">
+                {backgroundsOn && (
+                    <ChatBackdrop background={active.background} />
+                )}
                 {active.catch_up && (
                     <CatchUpCard
                         data={active.catch_up}
@@ -1249,8 +1414,8 @@ export function ChatView({
             )}
 
             <Composer
-                canWrite={active.can_write}
-                lockedText={active.locked_text ?? null}
+                canWrite={active.can_write && timeoutText === null}
+                lockedText={timeoutText ?? active.locked_text ?? null}
                 draft={draft}
                 replyTo={replyTo}
                 editing={editing}
@@ -1272,6 +1437,33 @@ export function ChatView({
                 />
             )}
             <ReportDialog url={reportUrl} onClose={() => setReportUrl(null)} />
+            {mediaPanelOn && (
+                <ChatSharedDialog
+                    conversationId={active.id}
+                    open={sharedOpen}
+                    onOpenChange={setSharedOpen}
+                    onJump={actions.onJump}
+                />
+            )}
+            {backgroundsOn && (
+                <ChatBackgroundDialog
+                    conversationId={active.id}
+                    open={backgroundOpen}
+                    onOpenChange={setBackgroundOpen}
+                    current={active.my_background ?? null}
+                    shared={active.shared_background ?? null}
+                    canShare={canModerate}
+                />
+            )}
+            <RestrictDialog
+                conversationId={active.id}
+                user={restricting}
+                onClose={() => setRestricting(null)}
+            />
+            <DocPreviewDialog
+                file={previewing}
+                onClose={() => setPreviewing(null)}
+            />
         </section>
     );
 }

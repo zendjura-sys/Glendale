@@ -16,8 +16,11 @@ use Illuminate\Support\Carbon;
  * @property bool $is_muted
  * @property Carbon|null $joined_at
  * @property Carbon|null $left_at
+ * @property Carbon|null $timeout_until Тайм-аут: читати можна, писати ні
+ * @property Carbon|null $banned_until Виключено на час: повернутися не можна до цієї дати
+ * @property string|null $background Особистий фон чату
  */
-#[Fillable(['conversation_id', 'user_id', 'role', 'last_read_message_id', 'is_muted', 'pinned_at', 'folder', 'marked_unread', 'share_receipts', 'joined_at', 'left_at'])]
+#[Fillable(['conversation_id', 'user_id', 'role', 'last_read_message_id', 'is_muted', 'pinned_at', 'folder', 'marked_unread', 'share_receipts', 'joined_at', 'left_at', 'timeout_until', 'banned_until', 'background'])]
 class ConversationParticipant extends Model
 {
     public const ROLE_OWNER = 'owner';
@@ -35,7 +38,19 @@ class ConversationParticipant extends Model
             'pinned_at' => 'datetime',
             'joined_at' => 'datetime',
             'left_at' => 'datetime',
+            'timeout_until' => 'datetime',
+            'banned_until' => 'datetime',
         ];
+    }
+
+    public function timedOut(): bool
+    {
+        return $this->timeout_until !== null && $this->timeout_until->isFuture();
+    }
+
+    public function banned(): bool
+    {
+        return $this->banned_until !== null && $this->banned_until->isFuture();
     }
 
     public function canManage(): bool

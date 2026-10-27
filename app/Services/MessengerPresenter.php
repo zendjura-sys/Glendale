@@ -10,6 +10,7 @@ use App\Models\Message;
 use App\Models\MessageAttachment;
 use App\Models\MessageFavorite;
 use App\Models\User;
+use App\Services\Chat\ChatBackgrounds;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -65,6 +66,7 @@ class MessengerPresenter
                 'size' => $a->size,
                 'duration' => $a->duration,
                 'waveform' => $a->meta['waveform'] ?? null,
+                'preview' => $a->type === MessageAttachment::TYPE_FILE ? MessageAttachment::previewKind($a->mime, $a->name) : null,
             ])->all(),
             'sticker' => $message->type === Message::TYPE_STICKER && isset($message->meta['sticker']['path']) ? [
                 'id' => $message->meta['sticker']['id'] ?? null,
@@ -357,11 +359,20 @@ class MessengerPresenter
             'pinned' => $me->pinned_at !== null,
             'folder' => $me->folder,
             'my_role' => $me->role,
+            // Тайм-аут: до коли не можна писати; фон чату — особистий, інакше спільний від адміністраторів.
+            'timeout_until' => $me->timedOut() ? $me->timeout_until?->toIso8601String() : null,
+            'background' => app(ChatBackgrounds::class)->resolve($me->background ?? $conversation->background),
+            'my_background' => $me->background,
+            'shared_background' => $conversation->background,
             'read_up_to' => (int) $others->filter(fn (ConversationParticipant $participant) => $participant->share_receipts)->max('last_read_message_id'),
             'members' => $conversation->isGroup()
                 ? $participants
                     ->sortBy(fn (ConversationParticipant $p) => [$p->role === ConversationParticipant::ROLE_OWNER ? 0 : ($p->role === ConversationParticipant::ROLE_ADMIN ? 1 : 2), $p->user->name])
-                    ->map(fn (ConversationParticipant $p) => [...($this->author($conversation->id, $p->user) ?? []), 'role' => $p->role])
+                    ->map(fn (ConversationParticipant $p) => [
+                        ...($this->author($conversation->id, $p->user) ?? []),
+                        'role' => $p->role,
+                        'timeout_until' => $p->timedOut() ? $p->timeout_until?->toIso8601String() : null,
+                    ])
                     ->values()
                     ->all()
                 : [],
