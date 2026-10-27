@@ -5,8 +5,10 @@ namespace App\Services\Party;
 use App\Models\PartyMember;
 use App\Models\PartyPost;
 use App\Models\User;
+use App\Notifications\PartyAssembled;
 use App\Notifications\PartyJoined;
 use App\Services\Plus\Plus;
+use App\Services\Voice\VoiceRooms;
 use App\Support\Plugins\Plugins;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
@@ -54,6 +56,37 @@ class PartyBoard
 
         PartyMember::query()->create(['party_post_id' => $party->id, 'user_id' => $user->id, 'role' => $role]);
         $party->user->notify(new PartyJoined($user, $party, $role));
+        $party->unsetRelation('members');
+        $this->assembleIfFull($party);
+    }
+
+    /**
+     * Останнє місце зайняте: готуємо голосову кімнату паті й кличемо в неї всіх (один раз на паті).
+     */
+    public function assembleIfFull(PartyPost $party): void
+    {
+        $party->loadMissing(['user', 'members.user']);
+        if ($party->members->count() + 1 < $party->slots || ! app(Plugins::class)->on('party_auto_voice')
+            || ! Cache::add('party.assembled.'.$party->id, true, now()->addDay())) {
+            return;
+        }
+        $room = $this->voiceRoom($party)['id'];
+        $party->user->notify(new PartyAssembled($party, $room));
+        foreach ($party->members as $member) {
+            $member->user->notify(new PartyAssembled($party, $room));
+        }
+    }
+
+    /**
+     * Перша голосова кімната паті («Загальна» з’являється сама, якщо її ще немає).
+     *
+     * @return array{id: int, name: string}
+     */
+    public function voiceRoom(PartyPost $party): array
+    {
+        $room = app(VoiceRooms::class)->list($party)[0];
+
+        return ['id' => (int) $room['id'], 'name' => (string) $room['name']];
     }
 
     /** GameCon+: раз на добу підняти своє оголошення нагору на годину. */
@@ -103,6 +136,10 @@ class PartyBoard
             'taken_roles' => $taken,
             'slots' => $party->slots,
             'count' => $party->members->count() + 1,
+            // Паті зібрана: учасникам — кнопка «Зайти в голосову» в першу кімнату.
+            'full' => $party->members->count() + 1 >= $party->slots,
+            'voice_room' => $party->members->count() + 1 >= $party->slots && $party->isOpen() && $party->hasMember($viewer) && app(Plugins::class)->on('party_auto_voice')
+                ? $this->voiceRoom($party) : null,
             'starts_at' => $party->starts_at?->toIso8601String(),
             'expires_at' => $party->expires_at->toIso8601String(),
             'open' => $party->isOpen(),

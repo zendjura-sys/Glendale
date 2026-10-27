@@ -48,6 +48,8 @@ class NotifyPrefs
         'party_join' => 'party',
         'party_invite' => 'party',
         'party_time' => 'party',
+        'party_full' => 'party',
+        'game_patch' => 'games',
         'family_' => 'families',
         'friend_playing' => 'feature:playing',
         'stream_live' => 'feature:live',

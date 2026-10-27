@@ -18,6 +18,8 @@ export type PartyCardData = {
     taken_roles: string[];
     slots: number;
     count: number;
+    full?: boolean;
+    voice_room?: { id: number; name: string } | null;
     starts_at: string | null;
     expires_at: string;
     open: boolean;

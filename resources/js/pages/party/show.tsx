@@ -6,6 +6,7 @@ import {
     Clock3,
     Crown,
     Gamepad2,
+    Headphones,
     LogOut,
     Server,
     XCircle,
@@ -13,6 +14,7 @@ import {
 import { useState } from 'react';
 import { UserAvatar } from '@/components/gc/user-avatar';
 import { VoiceRooms } from '@/components/gc/voice-rooms';
+import { joinVoice } from '@/lib/voice';
 import { PARTY_PLATFORMS, partyWhen } from '@/components/party/party-card';
 import type { PartyCardData } from '@/components/party/party-card';
 import { MatchRow } from '@/components/party/teammates';
@@ -256,7 +258,40 @@ export default function PartyShow({
                     </ul>
                 </section>
 
-                {suggestions.length > 0 && (
+                {party.voice_room && (
+                    <section className="glass flex flex-wrap items-center gap-4 rounded-2xl p-5 sm:p-6">
+                        <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-300">
+                            <Headphones className="size-5" />
+                        </span>
+                        <div className="min-w-[12rem] flex-1">
+                            <h2 className="font-display text-lg font-semibold text-white">
+                                {tr('Паті зібрана')}
+                            </h2>
+                            <p className="text-sm text-white/55">
+                                {tr(
+                                    'Усі місця зайняті — голосова кімната вже чекає.',
+                                )}
+                            </p>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() =>
+                                void joinVoice(
+                                    party.voice_room!,
+                                    { type: 'party', id: party.id },
+                                    party.title,
+                                    party.href,
+                                )
+                            }
+                            className="btn-glow inline-flex h-11 items-center gap-2 rounded-xl px-5 text-sm font-semibold"
+                        >
+                            <Headphones className="size-4" />
+                            {tr('Зайти в голосову')}
+                        </button>
+                    </section>
+                )}
+
+                {suggestions.length > 0 && !party.full && (
                     <section className="glass rounded-2xl p-5 sm:p-6">
                         <div className="flex items-center justify-between gap-3">
                             <h2 className="font-display text-lg font-semibold text-white">

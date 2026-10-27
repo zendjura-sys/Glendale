@@ -11,6 +11,7 @@ import {
     UserX,
     Volume2,
 } from 'lucide-react';
+import { ListSkeleton, Sk } from '@/components/gc/skeletons';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { UserAvatar } from '@/components/gc/user-avatar';
@@ -126,7 +127,12 @@ export function VoiceRooms({
                     {error}
                 </div>
             </section>
-        ) : null;
+        ) : (
+            <section className={cn('glass rounded-2xl p-4', className)}>
+                <Sk className="mb-4 h-4 w-40" />
+                <ListSkeleton rows={2} avatar="square" card={false} />
+            </section>
+        );
     }
 
     const run = async (fn: () => Promise<VoiceState>) => {

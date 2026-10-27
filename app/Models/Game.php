@@ -30,9 +30,10 @@ use Illuminate\Support\Carbon;
  * @property int|null $rawg_id
  * @property int|null $igdb_id
  * @property Carbon|null $links_checked_at
+ * @property Carbon|null $news_checked_at
  * @property bool $is_published
  */
-#[Fillable(['slug', 'name', 'letter', 'category', 'platforms', 'genres', 'modes', 'aliases', 'details', 'links', 'cover', 'released', 'rating', 'popularity', 'rawg_id', 'igdb_id', 'links_checked_at', 'is_published'])]
+#[Fillable(['slug', 'name', 'letter', 'category', 'platforms', 'genres', 'modes', 'aliases', 'details', 'links', 'cover', 'released', 'rating', 'popularity', 'rawg_id', 'igdb_id', 'links_checked_at', 'news_checked_at', 'is_published'])]
 class Game extends Model
 {
     /** Розділи каталогу — від ПК до мобільних. */
@@ -137,6 +138,7 @@ class Game extends Model
             'released' => 'date',
             'rating' => 'float',
             'links_checked_at' => 'datetime',
+            'news_checked_at' => 'datetime',
             'is_published' => 'boolean',
         ];
     }

@@ -32,6 +32,7 @@ Schedule::command('tournaments:tick')->everyFiveMinutes()->withoutOverlapping(10
 // Роздачі ігор (GamerPower) — щогодини; знижки на бажане (CheapShark) — кожні 6 год.
 Schedule::command('communities:weekly-digest')->weeklyOn(1, '10:05')->timezone('Europe/Kyiv')->withoutOverlapping(60);
 Schedule::command('games:giveaways')->hourlyAt(17)->withoutOverlapping(30)->runInBackground();
+Schedule::command('games:steam-news')->cron('25 * * * *')->withoutOverlapping(50)->runInBackground();
 Schedule::command('games:wishlist-alerts')->cron('40 */6 * * *')->withoutOverlapping(120)->runInBackground();
 Schedule::command('digest:morning')->dailyAt('09:00')->timezone('Europe/Kyiv')->withoutOverlapping(60)->runInBackground();
 

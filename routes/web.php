@@ -29,6 +29,7 @@ use App\Http\Controllers\FriendController;
 use App\Http\Controllers\GameBacklogController;
 use App\Http\Controllers\GameController;
 use App\Http\Controllers\GameDealsController;
+use App\Http\Controllers\GameNewsController;
 use App\Http\Controllers\GameRatingController;
 use App\Http\Controllers\GameSoundtrackController;
 use App\Http\Controllers\GameWallpaperController;
@@ -1014,6 +1015,7 @@ Route::get('play/embed', [CinemaController::class, 'embed'])
 Route::prefix('games')->name('games.')->middleware('module:games')->group(function () {
     Route::get('/', [GameController::class, 'index'])->name('index');
     Route::get('{game}', [GameController::class, 'show'])->name('show');
+    Route::get('{game}/news', [GameNewsController::class, 'index'])->middleware('throttle:60,1')->name('news');
 });
 
 Route::middleware('module:communities')->group(function () {

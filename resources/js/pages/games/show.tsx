@@ -3,6 +3,7 @@ import {
     Download,
     Music2,
     MonitorCog,
+    Newspaper,
     Wallpaper,
     Tag,
     ArrowLeft,
@@ -44,6 +45,7 @@ import type { MomentCardData } from '@/components/moments/moment-card';
 import { usePlugin } from '@/lib/plugins';
 import { GamePrices } from '@/components/games/game-prices';
 import { PcCheck } from '@/components/games/pc-check';
+import { GameNews } from '@/components/games/game-news';
 import { GameSoundtracks } from '@/components/games/game-soundtracks';
 import type { Soundtrack } from '@/components/games/game-soundtracks';
 import { BacklogPicker } from '@/components/games/backlog';
@@ -320,6 +322,9 @@ export default function GameShow({
     const onSteam = game.links.some((l) => l.store === 'steam');
     // Магазин чи Steam не відповіли — блок зникає цілком, без порожньої рамки.
     const [pricesFailed, setPricesFailed] = useState(false);
+    const newsOn = usePlugin('steam_patch_news');
+    const [newsEmpty, setNewsEmpty] = useState(false);
+    const hideNews = useCallback(() => setNewsEmpty(true), []);
     const [pcFailed, setPcFailed] = useState(false);
     const hidePrices = useCallback(() => setPricesFailed(true), []);
     const hidePc = useCallback(() => setPcFailed(true), []);
@@ -618,6 +623,14 @@ export default function GameShow({
                         </form>
                     )}
                 </section>
+            )}
+
+            {onSteam && newsOn && !newsEmpty && (
+                <div id="news" className="scroll-mt-24">
+                    <Section title={tr('Новини й патчі')} icon={Newspaper}>
+                        <GameNews slug={game.slug} onEmpty={hideNews} />
+                    </Section>
+                </div>
             )}
 
             {!guest && onSteam && dealsOn && !pricesFailed && (

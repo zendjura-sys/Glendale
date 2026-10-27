@@ -64,7 +64,7 @@ class PartyController extends Controller
         return Inertia::render('party/show', [
             'party' => $this->board->card($party, $user),
             // Автору відкритого паті — хто з підбору тиммейтів підходить (спершу ті, хто шукає зараз).
-            'suggestions' => $party->user_id === $user->id && $party->isOpen() ? app(Teammates::class)->forParty($party, $user) : [],
+            'suggestions' => $party->user_id === $user->id && $party->isOpen() && $party->members()->count() + 1 < $party->slots ? app(Teammates::class)->forParty($party, $user) : [],
         ]);
     }
 
