@@ -306,6 +306,7 @@ class MessageController extends Controller
         $data = $request->validate(['conversation_id' => ['required', 'integer']]);
         $target = Conversation::query()->findOrFail((int) $data['conversation_id']);
         abort_if($target->participantFor($user) === null, 404);
+        $this->messenger->assertCanSend($target, $user);
 
         if (! $target->isGroup()) {
             $peer = $target->activeParticipants()->where('user_id', '!=', $user->id)->with('user')->first()?->user;

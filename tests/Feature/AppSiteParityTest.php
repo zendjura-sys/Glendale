@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Community;
 use App\Models\Game;
 use App\Models\GtaServer;
 use App\Models\Movie;
@@ -15,6 +16,7 @@ use App\Models\Tournament;
 use App\Models\Track;
 use App\Models\User;
 use App\Services\Auth\ApiTokens;
+use App\Services\CommunityService;
 use App\Services\FriendshipService;
 use App\Services\Messenger;
 use App\Services\Phones\PhoneNumbers;
@@ -55,6 +57,20 @@ class AppSiteParityTest extends TestCase
 
         $this->withToken($this->app_token($user))->postJson("/api/v1/site/party/{$party->id}/time", ['slots' => [$slot->id]])->assertSuccessful();
         $this->assertDatabaseHas('party_time_votes', ['party_time_slot_id' => $slot->id, 'user_id' => $user->id]);
+    }
+
+    public function test_app_opens_community_channels(): void
+    {
+        $user = User::factory()->create();
+        $community = app(CommunityService::class)->create($user, [
+            'name' => 'Клан', 'type' => Community::TYPE_GROUP, 'privacy' => Community::PRIVACY_OPEN,
+            'wall' => Community::WALL_OPEN, 'category' => 'esports',
+        ]);
+        $token = $this->app_token($user);
+
+        $this->withToken($token)->postJson("/api/v1/site/c/{$community->slug}/channels", ['name' => 'стратегії', 'type' => 'text'])->assertSuccessful();
+        $channel = $community->channels()->where('name', 'стратегії')->firstOrFail();
+        $this->withToken($token)->getJson("/api/v1/site/c/{$community->slug}/channels/{$channel->id}")->assertOk();
     }
 
     public function test_app_reaches_group_catch_up(): void

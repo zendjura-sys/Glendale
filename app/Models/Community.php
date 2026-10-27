@@ -131,6 +131,24 @@ class Community extends Model
     }
 
     /**
+     * Канали спільноти (текстові, «Оголошення», голосові).
+     *
+     * @return HasMany<CommunityChannel, $this>
+     */
+    public function channels(): HasMany
+    {
+        return $this->hasMany(CommunityChannel::class);
+    }
+
+    /**
+     * @return HasMany<CommunityChannelCategory, $this>
+     */
+    public function channelCategories(): HasMany
+    {
+        return $this->hasMany(CommunityChannelCategory::class);
+    }
+
+    /**
      * @return MorphMany<Post, $this>
      */
     public function posts(): MorphMany

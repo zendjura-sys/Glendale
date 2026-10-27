@@ -8,6 +8,7 @@ use App\Events\Messenger\InboxUpdated;
 use App\Events\Messenger\MessageDeleted;
 use App\Events\Messenger\MessageSent;
 use App\Events\Messenger\MessageUpdated;
+use App\Models\CommunityChannel;
 use App\Models\Conversation;
 use App\Models\ConversationParticipant;
 use App\Models\Message;
@@ -16,6 +17,7 @@ use App\Models\MessageReaction;
 use App\Models\Sticker;
 use App\Models\User;
 use App\Models\UserBlock;
+use App\Services\Communities\CommunityChannels;
 use App\Services\Push\PushNotifier;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
@@ -569,6 +571,11 @@ class Messenger
 
     public function assertCanSend(Conversation $conversation, User $user): void
     {
+        // Канал спільноти: «Оголошення» — лише адміністратори, приватний — лише ті, хто має доступ.
+        if ($conversation->community_channel_id !== null) {
+            $channel = CommunityChannel::query()->with('community')->find($conversation->community_channel_id);
+            abort_unless($channel !== null && app(CommunityChannels::class)->canPost($channel, $user), 403, 'У цьому каналі пишуть лише адміністратори.');
+        }
         $seconds = (int) $conversation->slow_seconds;
         if ($seconds <= 0 || ! $conversation->isGroup()) {
             return;
@@ -591,6 +598,7 @@ class Messenger
             ->where('user_id', $user->id)
             ->whereNull('left_at')
             ->where('is_muted', false)
+            ->whereIn('conversation_id', Conversation::query()->whereNull('community_channel_id')->select('id'))
             ->where(fn ($query) => $query
                 ->where('marked_unread', true)
                 ->orWhereExists(fn ($q) => $this->unreadMessages($q, $user->id, 'conversation_participants')))

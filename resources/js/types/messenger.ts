@@ -164,6 +164,8 @@ export type ConversationDetails = {
     call?: CallState | null;
     can_call?: boolean;
     calls_enabled?: boolean;
+    /** Чому не можна писати (канал «Оголошення» тощо). */
+    locked_text?: string | null;
     /** «Поки тебе не було»: зведена непрочитаного в групі. */
     catch_up?: CatchUp | null;
 };

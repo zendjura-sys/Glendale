@@ -37,6 +37,8 @@ const MAX_LENGTH = 4096;
 
 type Props = {
     canWrite: boolean;
+    /** Чому писати не можна (за замовчуванням — обмеження в особистих). */
+    lockedText?: string | null;
     replyTo: ChatMessage | null;
     editing: ChatMessage | null;
     onCancel: () => void;
@@ -65,6 +67,7 @@ function useOutsideClose(
 
 export function Composer({
     canWrite,
+    lockedText = null,
     replyTo,
     editing,
     onCancel,
@@ -307,9 +310,10 @@ export function Composer({
             >
                 <p className="flex items-center justify-center gap-2 text-center text-sm text-white/45">
                     <Lock className="size-4" />
-                    {tr(
-                        'Користувач обмежив коло осіб, які можуть надсилати йому повідомлення.',
-                    )}
+                    {lockedText ??
+                        tr(
+                            'Користувач обмежив коло осіб, які можуть надсилати йому повідомлення.',
+                        )}
                 </p>
             </div>
         );

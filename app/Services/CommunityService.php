@@ -6,6 +6,7 @@ use App\Models\Community;
 use App\Models\CommunityMember;
 use App\Models\User;
 use App\Notifications\CommunityActivity;
+use App\Services\Communities\CommunityChannels;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
@@ -111,6 +112,7 @@ class CommunityService
         }
 
         $membership->delete();
+        app(CommunityChannels::class)->forget($community, $user);
         $this->recount($community);
     }
 
@@ -143,6 +145,7 @@ class CommunityService
         );
 
         $targetRow->delete();
+        app(CommunityChannels::class)->forget($community, $target);
         $this->recount($community);
     }
 

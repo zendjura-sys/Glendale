@@ -50,6 +50,7 @@ import type {
     UserCard,
 } from '@/types';
 import { tr } from '@/lib/i18n';
+import { usePlugin } from '@/lib/plugins';
 
 type Props = {
     community: CommunityDetails;
@@ -154,6 +155,7 @@ export default function CommunityShow({
     rules,
     donation,
 }: Props) {
+    const channelsOn = usePlugin('community_channels');
     const isPublic = community.type === 'public';
     const moderate = (postId: number, approve: boolean) => {
         const url = `/c/${community.slug}/queue/${postId}`;
@@ -257,6 +259,15 @@ export default function CommunityShow({
                                 status={membership?.status ?? null}
                                 role={membership?.role}
                             />
+                            {channelsOn && membership?.status === 'active' && (
+                                <Link
+                                    href={`/c/${community.slug}/channels`}
+                                    className="inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-white transition hover:brightness-110"
+                                >
+                                    <Hash className="size-4" />
+                                    {tr('Канали')}
+                                </Link>
+                            )}
                             {can.manage && (
                                 <>
                                     <InviteLinkButton

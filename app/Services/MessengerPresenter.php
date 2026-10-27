@@ -282,6 +282,8 @@ class MessengerPresenter
             ->withCount('activeParticipants as members_count')
             ->with(['lastMessage' => fn ($q) => $q->with(['user', 'attachments'])])
             ->where(fn ($q) => $q->whereNotNull('conversations.last_message_id')->when($includeId, fn ($q, int $id) => $q->orWhere('conversations.id', $id)))
+            // Канали спільнот живуть на сторінці спільноти, не в «Повідомленнях».
+            ->whereNull('conversations.community_channel_id')
             ->orderByRaw('case when me.pinned_at is null then 1 else 0 end')
             ->orderByDesc('me.pinned_at')
             ->orderByDesc('conversations.last_message_at')

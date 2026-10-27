@@ -15,7 +15,9 @@ import {
     PhoneOff,
     Pin,
     Sparkles,
+    Settings,
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import {
     useCallback,
     useEffect,
@@ -66,6 +68,13 @@ type Props = {
     onRead: (conversationId: number) => void;
     onOpenInfo: () => void;
     onTypingChange: (name: string | null) => void;
+    /** Бесіда — канал спільноти: свій значок, тема замість кількості учасників, без дій вхідних. */
+    channel?: {
+        icon: LucideIcon;
+        topic: string | null;
+        onBack: () => void;
+        onSettings?: () => void;
+    };
 };
 
 type Pending = { message: OutgoingMessage; replyTo: number | null };
@@ -92,6 +101,7 @@ export function ChatView({
     onRead,
     onOpenInfo,
     onTypingChange,
+    channel,
 }: Props) {
     const { auth, modules } = usePage().props;
     const unreadOn = usePlugin('mark_unread');
@@ -684,6 +694,8 @@ export function ChatView({
                 : tr('друкує')}{' '}
             <TypingDots />
         </span>
+    ) : channel?.topic ? (
+        channel.topic
     ) : isGroup ? (
         `${active.members_count} ${plural(active.members_count, ['учасник', 'учасники', 'учасників'])}`
     ) : active.peer?.is_online ? (
@@ -695,24 +707,43 @@ export function ChatView({
     return (
         <section className="flex min-h-0 min-w-0 flex-1 flex-col">
             <header className="flex items-center gap-3 border-b border-white/[0.06] px-3 py-2.5 sm:px-4">
-                <Link
-                    href="/messages"
-                    className="flex size-9 items-center justify-center rounded-xl text-white/70 hover:bg-white/[0.07] md:hidden"
-                    aria-label={tr('Назад')}
-                >
-                    <ChevronLeft className="size-5" />
-                </Link>
+                {channel ? (
+                    <button
+                        type="button"
+                        onClick={channel.onBack}
+                        className="flex size-9 items-center justify-center rounded-xl text-white/70 hover:bg-white/[0.07] md:hidden"
+                        aria-label={tr('Канали')}
+                    >
+                        <ChevronLeft className="size-5" />
+                    </button>
+                ) : (
+                    <Link
+                        href="/messages"
+                        className="flex size-9 items-center justify-center rounded-xl text-white/70 hover:bg-white/[0.07] md:hidden"
+                        aria-label={tr('Назад')}
+                    >
+                        <ChevronLeft className="size-5" />
+                    </Link>
+                )}
                 <button
                     type="button"
                     onClick={() =>
-                        isGroup
-                            ? onOpenInfo()
-                            : active.peer &&
-                              router.visit(`/${active.peer.username}`)
+                        channel
+                            ? channel.onSettings?.()
+                            : isGroup
+                              ? onOpenInfo()
+                              : active.peer &&
+                                router.visit(`/${active.peer.username}`)
                     }
                     className="flex min-w-0 flex-1 items-center gap-3 text-left"
                 >
-                    <ConversationAvatar conversation={active} size="sm" />
+                    {channel ? (
+                        <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-gc-lilac-300">
+                            <channel.icon className="size-[18px]" />
+                        </span>
+                    ) : (
+                        <ConversationAvatar conversation={active} size="sm" />
+                    )}
                     <span className="min-w-0">
                         <span className="flex items-center gap-1.5 truncate text-[15px] font-semibold text-white">
                             <span className="truncate">{active.title}</span>
@@ -728,7 +759,7 @@ export function ChatView({
                         </span>
                     </span>
                 </button>
-                {unreadOn && (
+                {unreadOn && !channel && (
                     <button
                         type="button"
                         onClick={() =>
@@ -741,7 +772,7 @@ export function ChatView({
                         <Mail className="size-[18px]" />
                     </button>
                 )}
-                {receiptsOn && (
+                {receiptsOn && !channel && (
                     <button
                         type="button"
                         onClick={() =>
@@ -775,38 +806,42 @@ export function ChatView({
                         )}
                     </button>
                 )}
-                <button
-                    type="button"
-                    onClick={() =>
-                        router.post(
-                            `/messages/${active.id}/pin`,
-                            {},
-                            {
-                                preserveScroll: true,
-                                preserveState: true,
-                                only: ['active', 'conversations'],
-                            },
-                        )
-                    }
-                    className={cn(
-                        'flex size-9 items-center justify-center rounded-xl transition',
-                        active.pinned
-                            ? 'bg-white/10 text-white'
-                            : 'text-white/60 hover:bg-white/[0.07] hover:text-white',
-                    )}
-                    aria-label={
-                        active.pinned ? tr('Відкріпити') : tr('Закріпити')
-                    }
-                    title={active.pinned ? tr('Відкріпити') : tr('Закріпити')}
-                >
-                    <Pin
+                {!channel && (
+                    <button
+                        type="button"
+                        onClick={() =>
+                            router.post(
+                                `/messages/${active.id}/pin`,
+                                {},
+                                {
+                                    preserveScroll: true,
+                                    preserveState: true,
+                                    only: ['active', 'conversations'],
+                                },
+                            )
+                        }
                         className={cn(
-                            'size-[18px]',
-                            active.pinned && 'fill-current',
+                            'flex size-9 items-center justify-center rounded-xl transition',
+                            active.pinned
+                                ? 'bg-white/10 text-white'
+                                : 'text-white/60 hover:bg-white/[0.07] hover:text-white',
                         )}
-                    />
-                </button>
-                {foldersOn && (
+                        aria-label={
+                            active.pinned ? tr('Відкріпити') : tr('Закріпити')
+                        }
+                        title={
+                            active.pinned ? tr('Відкріпити') : tr('Закріпити')
+                        }
+                    >
+                        <Pin
+                            className={cn(
+                                'size-[18px]',
+                                active.pinned && 'fill-current',
+                            )}
+                        />
+                    </button>
+                )}
+                {foldersOn && !channel && (
                     <button
                         type="button"
                         onClick={() => setFolderOpen((open) => !open)}
@@ -854,7 +889,7 @@ export function ChatView({
                         <Bell className="size-[18px]" />
                     )}
                 </button>
-                {(canCall || inThisCall) && (
+                {(canCall || inThisCall) && !channel && (
                     <button
                         type="button"
                         onClick={() =>
@@ -893,7 +928,7 @@ export function ChatView({
                         )}
                     </button>
                 )}
-                {modules.includes('music') && (
+                {modules.includes('music') && !channel && (
                     <button
                         type="button"
                         onClick={() =>
@@ -912,7 +947,18 @@ export function ChatView({
                         <Headphones className="size-[18px]" />
                     </button>
                 )}
-                {isGroup && (
+                {channel?.onSettings && (
+                    <button
+                        type="button"
+                        onClick={channel.onSettings}
+                        className="flex size-9 items-center justify-center rounded-xl text-white/60 transition hover:bg-white/[0.07] hover:text-white"
+                        aria-label={tr('Налаштування каналу')}
+                        title={tr('Налаштування каналу')}
+                    >
+                        <Settings className="size-[18px]" />
+                    </button>
+                )}
+                {isGroup && !channel && (
                     <button
                         type="button"
                         onClick={onOpenInfo}
@@ -1202,6 +1248,7 @@ export function ChatView({
 
             <Composer
                 canWrite={active.can_write}
+                lockedText={active.locked_text ?? null}
                 draft={draft}
                 replyTo={replyTo}
                 editing={editing}

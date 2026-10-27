@@ -5,6 +5,7 @@ namespace App\Services\Voice;
 use App\Events\VoiceRoomsChanged;
 use App\Models\Clan;
 use App\Models\Community;
+use App\Models\CommunityChannel;
 use App\Models\Family;
 use App\Models\FamilyMember;
 use App\Models\GtaServer;
@@ -14,6 +15,7 @@ use App\Models\VoiceParticipant;
 use App\Models\VoiceRoom;
 use App\Models\VoiceRoomTemplate;
 use App\Services\Clans\ClanService;
+use App\Services\Communities\CommunityChannels;
 use App\Services\Families\FamilyGate;
 use App\Services\Plus\Plus;
 use Illuminate\Support\Facades\DB;
@@ -71,6 +73,12 @@ class VoiceRooms
         $owner ??= $this->ownerOf($room);
         if (! $this->canJoin($user, $owner)) {
             return false;
+        }
+        // Голосовий канал спільноти: приватний — лише для вибраних учасників і адміністраторів.
+        if ($owner instanceof Community) {
+            $channel = CommunityChannel::query()->with('community')->where('voice_room_id', $room->id)->first();
+
+            return $channel === null || app(CommunityChannels::class)->canView($channel, $user);
         }
         if (! $owner instanceof Family) {
             return true;

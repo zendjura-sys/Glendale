@@ -227,7 +227,7 @@ export function MessageBubble({
             id={`message-${message.id}`}
             onClick={toggleTools}
             className={cn(
-                'group/msg flex items-end gap-2 px-3 sm:px-5',
+                'group/msg relative flex items-end gap-2 px-3 sm:px-5',
                 own ? 'flex-row-reverse' : 'flex-row',
                 groupStart ? 'mt-2.5' : 'mt-0.5',
             )}
@@ -548,6 +548,10 @@ export function MessageBubble({
                         'pointer-events-none mb-1 flex shrink-0 items-center gap-0.5 rounded-xl border border-white/[0.06] bg-[#0d1222]/90 p-0.5 opacity-0 shadow-lg backdrop-blur transition group-hover/msg:pointer-events-auto group-hover/msg:opacity-100 focus-within:pointer-events-auto focus-within:opacity-100',
                         own && 'flex-row-reverse',
                         toolsOpen && 'pointer-events-auto opacity-100',
+                        // На телефоні панель не займає місця в рядку, а з’являється над повідомленням по тапу.
+                        'max-sm:absolute max-sm:bottom-full max-sm:z-20',
+                        own ? 'max-sm:right-3' : 'max-sm:left-12',
+                        !toolsOpen && 'max-sm:hidden',
                     )}
                 >
                     <button

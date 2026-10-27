@@ -18,6 +18,7 @@ use App\Http\Controllers\CharacterController;
 use App\Http\Controllers\CinemaController;
 use App\Http\Controllers\ClanController;
 use App\Http\Controllers\CommentController;
+use App\Http\Controllers\CommunityChannelController;
 use App\Http\Controllers\CommunityController;
 use App\Http\Controllers\CommunityMemberController;
 use App\Http\Controllers\EventController;
@@ -462,6 +463,16 @@ Route::prefix('v1')->group(function () {
 
             Route::middleware('module:communities')->prefix('c/{community}')->group(function () {
                 Route::get('/', [CommunityController::class, 'show']);
+                Route::get('channels', [CommunityChannelController::class, 'index']);
+                Route::post('channels', [CommunityChannelController::class, 'store'])->middleware('throttle:30,1');
+                Route::put('channels/order', [CommunityChannelController::class, 'reorder']);
+                Route::get('channels/members', [CommunityChannelController::class, 'members'])->middleware('throttle:60,1');
+                Route::get('channels/{channel}', [CommunityChannelController::class, 'show'])->whereNumber('channel');
+                Route::patch('channels/{channel}', [CommunityChannelController::class, 'update'])->whereNumber('channel');
+                Route::delete('channels/{channel}', [CommunityChannelController::class, 'destroy'])->whereNumber('channel');
+                Route::post('channel-categories', [CommunityChannelController::class, 'storeCategory'])->middleware('throttle:30,1');
+                Route::patch('channel-categories/{category}', [CommunityChannelController::class, 'updateCategory'])->whereNumber('category');
+                Route::delete('channel-categories/{category}', [CommunityChannelController::class, 'destroyCategory'])->whereNumber('category');
                 Route::post('join', [CommunityController::class, 'join'])->middleware('throttle:60,1');
                 Route::delete('join', [CommunityController::class, 'leave']);
                 Route::get('photos', [PhotoController::class, 'community'])->middleware('module:photos');

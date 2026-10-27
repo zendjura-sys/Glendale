@@ -12,6 +12,7 @@ use App\Http\Controllers\CharacterController;
 use App\Http\Controllers\CinemaController;
 use App\Http\Controllers\ClanController;
 use App\Http\Controllers\CommentController;
+use App\Http\Controllers\CommunityChannelController;
 use App\Http\Controllers\CommunityController;
 use App\Http\Controllers\CommunityMemberController;
 use App\Http\Controllers\CommunityWidgetController;
@@ -315,6 +316,17 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::prefix('c/{community}')->name('communities.')->group(function () {
             Route::get('/', [CommunityController::class, 'show'])->name('show');
             Route::delete('/', [CommunityController::class, 'destroy'])->name('destroy');
+            // Канали спільноти (текстові, «Оголошення», голосові) — як у Discord.
+            Route::get('channels', [CommunityChannelController::class, 'index'])->name('channels.index');
+            Route::post('channels', [CommunityChannelController::class, 'store'])->middleware('throttle:30,1')->name('channels.store');
+            Route::put('channels/order', [CommunityChannelController::class, 'reorder'])->name('channels.order');
+            Route::get('channels/members', [CommunityChannelController::class, 'members'])->middleware('throttle:60,1')->name('channels.members');
+            Route::get('channels/{channel}', [CommunityChannelController::class, 'show'])->whereNumber('channel')->name('channels.show');
+            Route::patch('channels/{channel}', [CommunityChannelController::class, 'update'])->whereNumber('channel')->name('channels.update');
+            Route::delete('channels/{channel}', [CommunityChannelController::class, 'destroy'])->whereNumber('channel')->name('channels.destroy');
+            Route::post('channel-categories', [CommunityChannelController::class, 'storeCategory'])->middleware('throttle:30,1')->name('channels.categories.store');
+            Route::patch('channel-categories/{category}', [CommunityChannelController::class, 'updateCategory'])->whereNumber('category')->name('channels.categories.update');
+            Route::delete('channel-categories/{category}', [CommunityChannelController::class, 'destroyCategory'])->whereNumber('category')->name('channels.categories.destroy');
             Route::get('settings', [CommunityController::class, 'edit'])->name('edit');
             Route::patch('settings', [CommunityController::class, 'update'])->name('update');
             Route::patch('settings/rules', [CommunityController::class, 'updateRules'])->name('rules.update');
