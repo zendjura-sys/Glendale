@@ -84,6 +84,8 @@ export type ChatMessage = {
     user: UserCard | null;
     /** Повідомлення гостя без акаунта (гостьовий чат спільноти). */
     guest?: { name: string } | null;
+    /** Повідомлення бота бесіди (привітання, автопост). */
+    bot?: { name: string } | null;
     sticker?: StickerItem | null;
     contact?: ContactCard | null;
     reply_to: {

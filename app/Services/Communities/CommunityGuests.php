@@ -80,6 +80,7 @@ class CommunityGuests
                 'created_at' => $m->created_at->toIso8601String(),
                 'author' => $m->user ? ['name' => $m->user->name, 'username' => $m->user->username, 'avatar_url' => $m->user->avatar_url] : null,
                 'guest' => is_array($m->meta['guest'] ?? null) ? (string) ($m->meta['guest']['name'] ?? 'Гість') : null,
+                'bot' => is_array($m->meta['bot'] ?? null) ? (string) ($m->meta['bot']['name'] ?? 'Бот') : null,
                 'images' => array_values($m->attachments->where('type', MessageAttachment::TYPE_IMAGE)->map(fn (MessageAttachment $a) => $a->url)->all()),
             ])->all());
     }

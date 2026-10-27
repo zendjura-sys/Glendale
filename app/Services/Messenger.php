@@ -17,6 +17,7 @@ use App\Models\MessageReaction;
 use App\Models\Sticker;
 use App\Models\User;
 use App\Models\UserBlock;
+use App\Services\Chat\ChatBots;
 use App\Services\Communities\CommunityChannels;
 use App\Services\Push\PushNotifier;
 use Carbon\CarbonInterface;
@@ -154,6 +155,7 @@ class Messenger
         });
 
         $this->broadcastUpdated($conversation);
+        app(ChatBots::class)->greet($conversation, User::query()->whereIn('id', $ids)->get());
 
         return count($ids);
     }
@@ -271,6 +273,25 @@ class Messenger
                 'body' => trim($body),
                 'user_id' => null,
                 'meta' => ['guest' => ['name' => $name, 'ip' => $ipHash]],
+            ]);
+            $this->touch($conversation, $message);
+
+            return $message;
+        });
+        $this->broadcastNew($conversation, $message);
+
+        return $message;
+    }
+
+    /** Повідомлення від бота бесіди (привітання, автопост): без автора-людини, з іменем бота в meta. */
+    public function sendAsBot(Conversation $conversation, string $botName, string $body): Message
+    {
+        $message = DB::transaction(function () use ($conversation, $botName, $body) {
+            $message = $conversation->messages()->create([
+                'type' => Message::TYPE_TEXT,
+                'body' => trim($body),
+                'user_id' => null,
+                'meta' => ['bot' => ['name' => $botName]],
             ]);
             $this->touch($conversation, $message);
 

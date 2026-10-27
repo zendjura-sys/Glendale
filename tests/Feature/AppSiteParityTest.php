@@ -103,6 +103,8 @@ class AppSiteParityTest extends TestCase
         $this->withToken($token)->postJson("/api/v1/site/messages/{$chat->id}/members/{$member->username}/restrict", ['kind' => 'timeout', 'minutes' => 5])->assertSuccessful();
         $this->assertNotNull($chat->participants()->where('user_id', $member->id)->value('timeout_until'));
         $this->withToken($token)->postJson("/api/v1/site/messages/{$chat->id}/background", ['preset' => 'dots'])->assertSuccessful();
+        $this->withToken($token)->putJson("/api/v1/site/messages/{$chat->id}/bots/welcome", ['enabled' => true, 'body' => 'Привіт, {name}!'])->assertOk();
+        $this->withToken($token)->getJson("/api/v1/site/messages/{$chat->id}/bots")->assertOk()->assertJsonPath('welcome.body', 'Привіт, {name}!');
     }
 
     public function test_app_reaches_group_catch_up(): void

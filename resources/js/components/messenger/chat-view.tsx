@@ -16,6 +16,7 @@ import {
     Pin,
     Sparkles,
     Settings,
+    Bot,
     FolderOpen,
     MoreHorizontal,
     Wallpaper,
@@ -56,6 +57,7 @@ import { ConversationAvatar } from './conversation-avatar';
 import { MessageBubble, SystemMessage } from './message-bubble';
 import { ReportDialog } from './report-dialog';
 import { ChatBackdrop, ChatBackgroundDialog } from './chat-background';
+import { ChatBotsDialog } from './chat-bots-dialog';
 import { ChatSharedDialog } from './chat-shared-dialog';
 import { DocPreviewDialog } from './doc-preview';
 import type { PreviewFile } from './doc-preview';
@@ -592,6 +594,9 @@ export function ChatView({
     const docPreviewOn = usePlugin('chat_doc_preview');
     const restrictionsOn = usePlugin('chat_restrictions');
     const backgroundsOn = usePlugin('chat_backgrounds');
+    const welcomeBotOn = usePlugin('chat_welcome_bot');
+    const autoposterOn = usePlugin('chat_autoposter');
+    const [botsOpen, setBotsOpen] = useState(false);
     const [sharedOpen, setSharedOpen] = useState(false);
     const [backgroundOpen, setBackgroundOpen] = useState(false);
     const [restricting, setRestricting] = useState<ChatMessage['user']>(null);
@@ -1015,6 +1020,14 @@ export function ChatView({
                                     {tr('Фон чату')}
                                 </DropdownMenuItem>
                             )}
+                            {canModerate && (welcomeBotOn || autoposterOn) && (
+                                <DropdownMenuItem
+                                    onSelect={() => setBotsOpen(true)}
+                                >
+                                    <Bot className="size-4" />
+                                    {tr('Боти бесіди')}
+                                </DropdownMenuItem>
+                            )}
                             {/* На телефоні в шапці мало місця — другорядні дії тут. */}
                             {!channel && (
                                 <DropdownMenuItem
@@ -1261,6 +1274,7 @@ export function ChatView({
                             prev?.type !== 'system' &&
                             prev?.user?.id === message.user?.id &&
                             prev?.guest?.name === message.guest?.name &&
+                            prev?.bot?.name === message.bot?.name &&
                             new Date(message.created_at).getTime() -
                                 new Date(prev.created_at).getTime() <
                                 GROUP_GAP_MS;
@@ -1273,6 +1287,7 @@ export function ChatView({
                             next?.type !== 'system' &&
                             next?.user?.id === message.user?.id &&
                             next?.guest?.name === message.guest?.name &&
+                            next?.bot?.name === message.bot?.name &&
                             new Date(next.created_at).getTime() -
                                 new Date(message.created_at).getTime() <
                                 GROUP_GAP_MS;
@@ -1453,6 +1468,13 @@ export function ChatView({
                     current={active.my_background ?? null}
                     shared={active.shared_background ?? null}
                     canShare={canModerate}
+                />
+            )}
+            {canModerate && (welcomeBotOn || autoposterOn) && (
+                <ChatBotsDialog
+                    conversationId={active.id}
+                    open={botsOpen}
+                    onOpenChange={setBotsOpen}
                 />
             )}
             <RestrictDialog

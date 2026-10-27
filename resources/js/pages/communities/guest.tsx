@@ -36,6 +36,7 @@ type GuestMessage = {
         avatar_url: string | null;
     } | null;
     guest: string | null;
+    bot: string | null;
     images: string[];
 };
 
@@ -359,11 +360,14 @@ function GuestLine({ message }: { message: GuestMessage }) {
                             message.author ? 'text-[#9fb0ff]' : 'text-white/70',
                         )}
                     >
-                        {message.author?.name ?? message.guest ?? tr('Гість')}
+                        {message.author?.name ??
+                            message.bot ??
+                            message.guest ??
+                            tr('Гість')}
                     </span>
                     {!message.author && (
                         <span className="rounded-full bg-white/10 px-1.5 text-[10px] leading-4 text-white/55">
-                            {tr('гість')}
+                            {message.bot ? tr('бот') : tr('гість')}
                         </span>
                     )}
                     <span className="text-[11px] text-white/35">{time}</span>

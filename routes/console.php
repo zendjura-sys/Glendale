@@ -25,6 +25,8 @@ Schedule::command('moments:clip-of-week')->weeklyOn(1, '10:10')->timezone('Europ
 Schedule::command('calls:expire')->everyMinute()->withoutOverlapping(5);
 // «Слухати разом»: кімнати без слухачів 10 хвилин завершуються.
 Schedule::command('listen:sweep')->everyMinute()->withoutOverlapping(5);
+// Автопости ботів у групах і каналах (розклад за Києвом).
+Schedule::command('chat:autopost')->everyMinute()->withoutOverlapping(5);
 Schedule::command('tournaments:tick')->everyFiveMinutes()->withoutOverlapping(10);
 // Роздачі ігор (GamerPower) — щогодини; знижки на бажане (CheapShark) — кожні 6 год.
 Schedule::command('communities:weekly-digest')->weeklyOn(1, '10:05')->timezone('Europe/Kyiv')->withoutOverlapping(60);

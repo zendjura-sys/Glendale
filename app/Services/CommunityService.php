@@ -6,6 +6,7 @@ use App\Models\Community;
 use App\Models\CommunityMember;
 use App\Models\User;
 use App\Notifications\CommunityActivity;
+use App\Services\Chat\ChatBots;
 use App\Services\Communities\CommunityChannels;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -83,6 +84,7 @@ class CommunityService
                 $existing->update(['status' => CommunityMember::STATUS_ACTIVE]);
                 $this->recount($community);
                 app(CommunityWall::class)->welcome($community, $user);
+                app(ChatBots::class)->greetCommunity($community, $user);
             }
 
             return $existing->fresh()->status;
@@ -100,6 +102,7 @@ class CommunityService
             Notification::send($this->admins($community), new CommunityActivity(CommunityActivity::REQUEST, $user, $community));
         } else {
             app(CommunityWall::class)->welcome($community, $user);
+            app(ChatBots::class)->greetCommunity($community, $user);
         }
 
         $this->recount($community);
@@ -159,6 +162,7 @@ class CommunityService
             $user->notify(new CommunityActivity(CommunityActivity::APPROVED, null, $community));
             $this->recount($community);
             app(CommunityWall::class)->welcome($community, $user);
+            app(ChatBots::class)->greetCommunity($community, $user);
         }
     }
 

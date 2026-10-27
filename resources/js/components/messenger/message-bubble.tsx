@@ -2,6 +2,7 @@ import { Link, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import {
     SmilePlus,
+    Bot,
     Flag,
     Gavel,
     Forward,
@@ -249,6 +250,11 @@ export function MessageBubble({
                             />
                         </Link>
                     )}
+                    {showAvatar && message.bot && (
+                        <span className="flex size-8 items-center justify-center rounded-full bg-primary/20 text-gc-lilac-300">
+                            <Bot className="size-4" />
+                        </span>
+                    )}
                     {showAvatar && message.guest && (
                         <span className="flex size-8 items-center justify-center rounded-full bg-white/10 text-xs font-semibold text-white/70">
                             {message.guest.name.slice(0, 1).toUpperCase()}
@@ -317,6 +323,16 @@ export function MessageBubble({
                         </div>
                     )}
 
+                    {showAuthor && message.bot && (
+                        <div className="mb-0.5 flex min-w-0 items-center gap-1.5">
+                            <span className="truncate text-[13px] font-semibold text-gc-lilac-300">
+                                {message.bot.name}
+                            </span>
+                            <span className="rounded-full bg-primary/20 px-1.5 text-[10px] leading-4 text-gc-lilac-200">
+                                {tr('бот')}
+                            </span>
+                        </div>
+                    )}
                     {showAuthor && message.guest && (
                         <div className="mb-0.5 flex min-w-0 items-center gap-1.5">
                             <span className="truncate text-[13px] font-semibold text-white/70">
