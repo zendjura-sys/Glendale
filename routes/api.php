@@ -64,6 +64,7 @@ use App\Http\Controllers\Settings\ListeningController;
 use App\Http\Controllers\Settings\NavigationController;
 use App\Http\Controllers\Settings\ProfileController as SettingsProfileController;
 use App\Http\Controllers\Settings\StreamController;
+use App\Http\Controllers\SetupController;
 use App\Http\Controllers\SpotifyController;
 use App\Http\Controllers\StatusController;
 use App\Http\Controllers\StoryController;
@@ -341,6 +342,9 @@ Route::prefix('v1')->group(function () {
             });
             Route::get('games/{game}/news', [GameNewsController::class, 'index'])->middleware(['module:games', 'throttle:60,1']);
             Route::post('newcomer/hide', [NewcomerController::class, 'hide']);
+            Route::put('settings/setup', [SetupController::class, 'update'])->middleware('throttle:30,1');
+            Route::get('games/{game}/achievements', [SetupController::class, 'game'])->middleware(['module:games', 'throttle:30,1']);
+            Route::get('u/{user:username}/achievements', [SetupController::class, 'achievements'])->middleware('throttle:30,1');
             // «Телефон»: свій номер, набирач, дзвінки й повідомлення за номером, подарунки й передача.
             // Купити номер у застосунку можна лише через Google Play Billing (google-play/phone/*).
             Route::prefix('phone')->middleware('module:phone')->controller(PhoneController::class)->group(function () {

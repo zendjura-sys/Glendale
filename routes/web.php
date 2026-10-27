@@ -71,6 +71,7 @@ use App\Http\Controllers\SavedController;
 use App\Http\Controllers\SeasonController;
 use App\Http\Controllers\ServerAppController;
 use App\Http\Controllers\ServerController;
+use App\Http\Controllers\SetupController;
 use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\SpotifyController;
 use App\Http\Controllers\StartController;
@@ -197,6 +198,10 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     Route::post('posts', [PostController::class, 'store'])->middleware('throttle:30,1')->name('posts.store');
     Route::get('posts/drafts', [PostController::class, 'drafts'])->name('posts.drafts');
     Route::post('newcomer/hide', [NewcomerController::class, 'hide'])->name('newcomer.hide');
+    Route::put('settings/setup', [SetupController::class, 'update'])->middleware('throttle:30,1')->name('setup.update');
+    Route::get('memes/new', [SetupController::class, 'meme'])->name('memes.create');
+    Route::get('games/{game}/achievements', [SetupController::class, 'game'])->middleware(['module:games', 'throttle:30,1'])->name('games.achievements');
+    Route::get('u/{user:username}/achievements', [SetupController::class, 'achievements'])->middleware('throttle:30,1')->name('profile.achievements');
     Route::get('posts/{post}', [PostController::class, 'show'])->name('posts.show');
     Route::patch('posts/{post}', [PostController::class, 'update'])->name('posts.update');
     Route::post('posts/{post}/publish', [PostController::class, 'release'])->name('posts.publish');
@@ -587,6 +592,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::get('/', [EventController::class, 'index'])->name('index');
         Route::get('releases', [EventController::class, 'releases'])->name('releases');
         Route::put('reminder', [EventController::class, 'reminder'])->name('reminder');
+        Route::post('feed/reset', [EventController::class, 'resetFeed'])->name('feed.reset');
         Route::get('{kind}/{id}.ics', [EventController::class, 'calendarFile'])->whereIn('kind', ['family', 'clan', 'server', 'game'])->whereNumber('id')->name('ics');
         Route::post('server/{server}', [EventController::class, 'storeServer'])->middleware('throttle:20,1')->name('server.store');
         Route::post('server/{event}/rsvp', [EventController::class, 'rsvpServer'])->whereNumber('event')->name('server.rsvp');
@@ -1033,6 +1039,8 @@ Route::middleware('module:communities')->group(function () {
     Route::get('widget/{community}', [CommunityWidgetController::class, 'show'])->name('communities.widget');
     Route::get('widget/{community}/card.js', [CommunityWidgetController::class, 'script'])->name('communities.widget.script');
 });
+
+Route::get('calendar/{token}.ics', [EventController::class, 'feed'])->middleware('throttle:30,1')->name('calendar.feed');
 
 Route::get('{user}/card', [ProfileController::class, 'card'])
     ->where('user', '[A-Za-z][A-Za-z0-9_.]{1,30}[A-Za-z0-9]')

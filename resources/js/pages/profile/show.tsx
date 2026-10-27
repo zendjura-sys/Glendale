@@ -6,6 +6,9 @@ import {
     router,
     usePage,
 } from '@inertiajs/react';
+import { MySetup } from '@/components/profile/my-setup';
+import type { SetupData } from '@/components/profile/my-setup';
+import { SteamAchievements } from '@/components/profile/steam-achievements';
 import { EmbedButton } from '@/components/gc/embed-button';
 import { CompatibilityChip } from '@/components/games/compatibility-chip';
 import type { Compatibility } from '@/components/games/compatibility-chip';
@@ -78,6 +81,8 @@ import { setPageBackgroundVideo } from '@/lib/backgrounds';
 const PROFILE_BLOCKS = [
     'platforms',
     'steam',
+    'steam_achievements',
+    'setup',
     'games',
     'about',
     'achievements',
@@ -137,6 +142,8 @@ type Profile = UserCard & {
 
 type Props = {
     compatibility?: Compatibility | null;
+    setup?: SetupData | null;
+    steamAchievements?: boolean;
     profile: Profile;
     relation: Relation;
     canSeeContent: boolean;
@@ -256,6 +263,8 @@ function Uploader({
 
 export default function ProfileShow({
     compatibility = null,
+    setup = null,
+    steamAchievements = false,
     profile,
     relation,
     canSeeContent,
@@ -933,6 +942,15 @@ export default function ProfileShow({
                                             </div>
                                         </Widget>
                                     ),
+                                steam_achievements: steamAchievements &&
+                                    canSeeContent && (
+                                        <SteamAchievements
+                                            username={profile.username}
+                                        />
+                                    ),
+                                setup: setup && (
+                                    <MySetup data={setup} isSelf={isSelf} />
+                                ),
                                 about: profile.about && (
                                     <Widget title={tr('Про себе')}>
                                         <p className="px-1 text-sm leading-relaxed whitespace-pre-line text-white/75">

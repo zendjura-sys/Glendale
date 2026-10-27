@@ -1,5 +1,6 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { Bell, CalendarDays } from 'lucide-react';
+import { Bell, CalendarDays, CalendarPlus, Copy } from 'lucide-react';
+import { toast } from 'sonner';
 import { EventList } from '@/components/events/event-card';
 import type { CalendarEvent } from '@/components/events/event-card';
 import { EmptyState } from '@/components/gc/widget';
@@ -13,6 +14,7 @@ type Props = {
     kinds: Record<string, string>;
     reminder_lead: number;
     reminder_leads: number[];
+    feed_url?: string | null;
     releasesOn?: boolean;
 };
 
@@ -30,6 +32,7 @@ export default function EventsIndex({
     kinds,
     reminder_lead,
     reminder_leads,
+    feed_url = null,
     releasesOn = true,
 }: Props) {
     const { modules } = usePage().props;
@@ -92,6 +95,46 @@ export default function EventsIndex({
                 </select>
                 {tr('до початку')}
             </label>
+            {feed_url && (
+                <div className="mb-4 flex flex-wrap items-center gap-2 text-sm text-white/60">
+                    <CalendarPlus className="size-4 text-gc-lilac-200" />
+                    {tr('Мій календар у Google, Apple чи Outlook:')}
+                    <button
+                        type="button"
+                        onClick={() => {
+                            void navigator.clipboard.writeText(feed_url);
+                            toast.success(
+                                tr(
+                                    'Посилання скопійовано. Додайте його в календар як «Підписку за URL».',
+                                ),
+                            );
+                        }}
+                        className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-white/[0.07] px-3 text-sm font-medium text-white transition hover:bg-white/[0.11]"
+                    >
+                        <Copy className="size-3.5" />
+                        {tr('Копіювати посилання')}
+                    </button>
+                    <a
+                        href={feed_url.replace(/^https?:/, 'webcal:')}
+                        className="inline-flex h-8 items-center rounded-lg px-2 text-sm text-gc-lilac-200 hover:text-white"
+                    >
+                        {tr('Відкрити в календарі')}
+                    </a>
+                    <button
+                        type="button"
+                        onClick={() =>
+                            router.post(
+                                '/events/feed/reset',
+                                {},
+                                { preserveScroll: true },
+                            )
+                        }
+                        className="text-xs text-white/40 hover:text-white/70"
+                    >
+                        {tr('Нове посилання')}
+                    </button>
+                </div>
+            )}
             <div className="-mx-1 mb-4 flex [scrollbar-width:none] gap-1 overflow-x-auto px-1">
                 {tabs.map(([key, label]) => (
                     <button

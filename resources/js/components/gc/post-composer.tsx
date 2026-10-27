@@ -1,4 +1,4 @@
-import { useForm, usePage } from '@inertiajs/react';
+import { Link, useForm, usePage } from '@inertiajs/react';
 import {
     BarChart3,
     Earth,
@@ -7,6 +7,7 @@ import {
     Lock,
     Megaphone,
     Music2,
+    Laugh,
     Smile,
     Sparkles,
     UsersRound,
@@ -57,6 +58,7 @@ export function PostComposer({
 }: Props) {
     const { auth, site, modules } = usePage().props;
     const scheduleOn = usePlugin('scheduled_posts');
+    const memesOn = usePlugin('meme_maker');
     const [focused, setFocused] = useState(false);
     const [picking, setPicking] = useState(false);
     const [track, setTrack] = useState<TrackCard | null>(null);
@@ -501,6 +503,16 @@ export function PostComposer({
                         <Smile className="size-[18px] text-[#ffd27a]" />
                         <span className="sr-only">{tr('Стікер')}</span>
                     </button>
+                    {memesOn && !community && (
+                        <Link
+                            href="/memes/new"
+                            title={tr('Мем')}
+                            className="inline-flex size-9 items-center justify-center rounded-xl text-white/65 transition hover:bg-white/[0.06] hover:text-white"
+                        >
+                            <Laugh className="size-[18px] text-[#ff9d7a]" />
+                            <span className="sr-only">{tr('Мем')}</span>
+                        </Link>
+                    )}
                     <button
                         type="button"
                         title={tr('Спойлер')}

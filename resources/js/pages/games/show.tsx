@@ -51,6 +51,7 @@ import { GamePrices } from '@/components/games/game-prices';
 import { PcCheck } from '@/components/games/pc-check';
 import { GameNews } from '@/components/games/game-news';
 import { GameLeaderboard } from '@/components/games/game-leaderboard';
+import { MyGameAchievements } from '@/components/games/my-achievements';
 import type { LeaderboardData } from '@/components/games/game-leaderboard';
 import { GameSoundtracks } from '@/components/games/game-soundtracks';
 import type { Soundtrack } from '@/components/games/game-soundtracks';
@@ -339,6 +340,7 @@ export default function GameShow({
     // Магазин чи Steam не відповіли — блок зникає цілком, без порожньої рамки.
     const [pricesFailed, setPricesFailed] = useState(false);
     const newsOn = usePlugin('steam_patch_news');
+    const achievementsOn = usePlugin('steam_achievements');
     const [newsEmpty, setNewsEmpty] = useState(false);
     const hideNews = useCallback(() => setNewsEmpty(true), []);
     const [pcFailed, setPcFailed] = useState(false);
@@ -639,6 +641,10 @@ export default function GameShow({
                         </form>
                     )}
                 </section>
+            )}
+
+            {!guest && onSteam && achievementsOn && (
+                <MyGameAchievements slug={game.slug} />
             )}
 
             {leaderboard && leaderboard.top.length > 0 && (
