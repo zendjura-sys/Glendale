@@ -5,8 +5,11 @@ namespace App\Http\Controllers;
 use App\Models\Game;
 use App\Models\GtaServer;
 use App\Models\PartyPost;
+use App\Models\PartyTimeSlot;
 use App\Services\Party\PartyBoard;
+use App\Services\Party\PartyTimeVote;
 use App\Services\Party\Teammates;
+use App\Support\Plugins\Plugins;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -77,7 +80,18 @@ class PartyController extends Controller
             'roles.*' => ['string', 'max:40'],
             'slots' => ['required', 'integer', 'min:2', 'max:20'],
             'starts_at' => ['nullable', 'date', 'after:-10 minutes', 'before:+7 days'],
+            // Голосування за час: 2–4 варіанти замість одного часу.
+            'time_options' => ['nullable', 'array', 'min:'.PartyTimeVote::MIN, 'max:'.PartyTimeVote::MAX],
+            'time_options.*' => ['date', 'after:now', 'before:+7 days', 'distinct'],
         ]);
+        /** @var list<Carbon> $options */
+        $options = [];
+        if (app(Plugins::class)->on('party_time_vote')) {
+            foreach ((array) ($data['time_options'] ?? []) as $time) {
+                $options[] = Carbon::parse((string) $time);
+            }
+            usort($options, fn (Carbon $a, Carbon $b) => $a <=> $b);
+        }
         $game = ($data['game'] ?? null) ? Game::query()->where('slug', $data['game'])->first() : null;
         $server = ($data['server'] ?? null) ? GtaServer::query()->published()->where('slug', $data['server'])->first() : null;
         $roles = array_values(array_unique(array_filter(array_map(fn ($role) => trim((string) $role), $data['roles'] ?? []))));
@@ -88,13 +102,36 @@ class PartyController extends Controller
             'platform' => $data['platform'] ?? null,
             'roles' => $roles,
             'slots' => (int) $data['slots'],
-            'starts_at' => ($data['starts_at'] ?? null) ? Carbon::parse($data['starts_at']) : null,
+            'starts_at' => $options === [] && ($data['starts_at'] ?? null) ? Carbon::parse($data['starts_at']) : null,
             'game_id' => $game?->id,
             'gta_server_id' => $server?->id,
-        ]);
+        ], $options === [] ? null : $options[count($options) - 1]);
+        if ($options !== []) {
+            app(PartyTimeVote::class)->open($party, $options);
+        }
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Оголошення опубліковано.']);
 
         return redirect('/party/'.$party->id);
+    }
+
+    /** «Мені підходить»: свій вибір варіантів часу (можна кілька або жодного). */
+    public function voteTime(Request $request, PartyPost $party, PartyTimeVote $votes): RedirectResponse
+    {
+        app(Plugins::class)->ensure('party_time_vote');
+        $data = $request->validate(['slots' => ['present', 'array', 'max:'.PartyTimeVote::MAX], 'slots.*' => ['integer']]);
+        $votes->vote($party, $request->user(), $data['slots']);
+
+        return back();
+    }
+
+    /** Автор закріплює час: він стає часом старту, учасникам — сповіщення. */
+    public function pickTime(Request $request, PartyPost $party, PartyTimeSlot $slot, PartyTimeVote $votes): RedirectResponse
+    {
+        app(Plugins::class)->ensure('party_time_vote');
+        $votes->pick($party, $request->user(), $slot);
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Час закріплено. Учасники отримали сповіщення.']);
+
+        return back();
     }
 
     public function join(Request $request, PartyPost $party): RedirectResponse

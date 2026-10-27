@@ -6,6 +6,8 @@ use App\Models\Game;
 use App\Models\GtaServer;
 use App\Models\Movie;
 use App\Models\MovieSource;
+use App\Models\PartyPost;
+use App\Models\PartyTimeSlot;
 use App\Models\Post;
 use App\Models\QuestClaim;
 use App\Models\Season;
@@ -43,6 +45,16 @@ class AppSiteParityTest extends TestCase
         $this->withToken($token)->putJson('/api/v1/site/games/dota/backlog', ['status' => 'playing'])->assertOk()->assertJsonPath('status', 'playing');
         $this->withToken($token)->getJson('/api/v1/site/games/backlog')->assertOk()->assertJsonStructure(['owner', 'mine', 'board' => ['want', 'playing', 'done', 'dropped'], 'friends']);
         $this->withToken($token)->getJson('/api/v1/site/games/backlog/neo')->assertOk()->assertJsonPath('board.playing.0.game.slug', 'dota');
+    }
+
+    public function test_app_votes_for_party_time(): void
+    {
+        $user = User::factory()->create();
+        $party = PartyPost::query()->create(['user_id' => $user->id, 'title' => 'Рейд', 'slots' => 4, 'expires_at' => now()->addDays(2)]);
+        $slot = PartyTimeSlot::query()->create(['party_post_id' => $party->id, 'starts_at' => now()->addDay()]);
+
+        $this->withToken($this->app_token($user))->postJson("/api/v1/site/party/{$party->id}/time", ['slots' => [$slot->id]])->assertSuccessful();
+        $this->assertDatabaseHas('party_time_votes', ['party_time_slot_id' => $slot->id, 'user_id' => $user->id]);
     }
 
     public function test_app_reaches_group_catch_up(): void

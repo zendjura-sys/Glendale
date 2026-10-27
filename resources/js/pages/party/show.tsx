@@ -16,6 +16,7 @@ import { VoiceRooms } from '@/components/gc/voice-rooms';
 import { PARTY_PLATFORMS, partyWhen } from '@/components/party/party-card';
 import type { PartyCardData } from '@/components/party/party-card';
 import { MatchRow } from '@/components/party/teammates';
+import { TimePoll } from '@/components/party/time-poll';
 import type { TeammateMatch } from '@/components/party/teammates';
 import { tr } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
@@ -34,6 +35,7 @@ export default function PartyShow({
     const [role, setRole] = useState<string | null>(free[0] ?? null);
     const full = party.count >= party.slots;
     const canJoin = party.open && !party.joined && !full;
+    const voting = Boolean(party.time_poll && !party.time_poll.decided);
 
     return (
         <>
@@ -64,10 +66,12 @@ export default function PartyShow({
                     </div>
 
                     <div className="flex flex-wrap gap-2 text-sm">
-                        <span className="inline-flex items-center gap-1.5 rounded-xl bg-gc-indigo/15 px-3 py-1.5 text-[#c4b5fd]">
-                            <Clock3 className="size-4" />
-                            {partyWhen(party.starts_at)}
-                        </span>
+                        {!voting && (
+                            <span className="inline-flex items-center gap-1.5 rounded-xl bg-gc-indigo/15 px-3 py-1.5 text-[#c4b5fd]">
+                                <Clock3 className="size-4" />
+                                {partyWhen(party.starts_at)}
+                            </span>
+                        )}
                         {party.game && (
                             <Link
                                 href={`/games/${party.game.slug}`}
@@ -102,6 +106,15 @@ export default function PartyShow({
                         <p className="text-sm leading-relaxed whitespace-pre-line text-white/75">
                             {party.note}
                         </p>
+                    )}
+
+                    {party.time_poll && (
+                        <TimePoll
+                            partyId={party.id}
+                            poll={party.time_poll}
+                            canPick={party.mine}
+                            open={party.open}
+                        />
                     )}
 
                     {!party.open && (

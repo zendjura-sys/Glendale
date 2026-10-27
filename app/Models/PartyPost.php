@@ -31,6 +31,7 @@ use Illuminate\Support\Carbon;
  * @property-read Game|null $game
  * @property-read GtaServer|null $server
  * @property-read Collection<int, PartyMember> $members
+ * @property-read Collection<int, PartyTimeSlot> $timeSlots
  */
 #[Fillable(['user_id', 'game_id', 'gta_server_id', 'title', 'note', 'platform', 'roles', 'slots', 'starts_at', 'expires_at', 'closed_at', 'bumped_until'])]
 class PartyPost extends Model
@@ -85,6 +86,16 @@ class PartyPost extends Model
     public function members(): HasMany
     {
         return $this->hasMany(PartyMember::class);
+    }
+
+    /**
+     * Варіанти часу для голосування (порожньо — час задав автор одразу).
+     *
+     * @return HasMany<PartyTimeSlot, $this>
+     */
+    public function timeSlots(): HasMany
+    {
+        return $this->hasMany(PartyTimeSlot::class)->orderBy('starts_at');
     }
 
     /** Учасник паті — автор або той, хто приєднався. */

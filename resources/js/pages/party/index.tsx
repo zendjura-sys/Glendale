@@ -12,6 +12,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { tr } from '@/lib/i18n';
+import { usePlugin } from '@/lib/plugins';
 import { cn } from '@/lib/utils';
 import { ReadyToPlayCard } from '@/components/party/ready-to-play';
 
@@ -44,7 +45,10 @@ function localInput(date: Date): string {
 export default function PartyBoard({ parties, filters, options }: Props) {
     const [creating, setCreating] = useState(false);
     const [role, setRole] = useState('');
-    const [later, setLater] = useState(false);
+    // Коли: зараз, пізніше (один час) або голосуванням (2–4 варіанти).
+    const [when, setWhen] = useState<'now' | 'later' | 'vote'>('now');
+    const later = when === 'later';
+    const voteOn = usePlugin('party_time_vote');
     const form = useForm({
         title: '',
         note: '',
@@ -54,6 +58,7 @@ export default function PartyBoard({ parties, filters, options }: Props) {
         roles: [] as string[],
         slots: 4,
         starts_at: '',
+        time_options: [] as string[],
     });
 
     const visit = (patch: Partial<Props['filters']>) => {
@@ -92,6 +97,12 @@ export default function PartyBoard({ parties, filters, options }: Props) {
                 later && data.starts_at
                     ? new Date(data.starts_at).toISOString()
                     : null,
+            time_options:
+                when === 'vote'
+                    ? data.time_options
+                          .filter(Boolean)
+                          .map((time) => new Date(time).toISOString())
+                    : [],
         }));
         form.post('/party', { onSuccess: () => setCreating(false) });
     };
@@ -317,38 +328,133 @@ export default function PartyBoard({ parties, filters, options }: Props) {
                             </label>
                         </div>
                         <div className="flex gap-1 rounded-xl bg-white/[0.04] p-1">
-                            {[
-                                [false, tr('Зараз')],
-                                [true, tr('Пізніше')],
-                            ].map(([value, label]) => (
+                            {(
+                                [
+                                    ['now', tr('Зараз')],
+                                    ['later', tr('Пізніше')],
+                                    ...(voteOn
+                                        ? [['vote', tr('Голосуванням')]]
+                                        : []),
+                                ] as [typeof when, string][]
+                            ).map(([value, label]) => (
                                 <button
-                                    key={String(value)}
+                                    key={value}
                                     type="button"
-                                    aria-pressed={later === value}
+                                    aria-pressed={when === value}
                                     onClick={() => {
-                                        setLater(value as boolean);
-                                        if (value && !form.data.starts_at) {
-                                            form.setData(
-                                                'starts_at',
-                                                localInput(
-                                                    new Date(
-                                                        Date.now() + 3600_000,
-                                                    ),
+                                        setWhen(value);
+                                        const hour = (n: number) =>
+                                            localInput(
+                                                new Date(
+                                                    Date.now() + n * 3600_000,
                                                 ),
                                             );
+                                        if (
+                                            value === 'later' &&
+                                            !form.data.starts_at
+                                        ) {
+                                            form.setData('starts_at', hour(1));
+                                        }
+                                        if (
+                                            value === 'vote' &&
+                                            form.data.time_options.length === 0
+                                        ) {
+                                            form.setData('time_options', [
+                                                hour(2),
+                                                hour(4),
+                                            ]);
                                         }
                                     }}
                                     className={cn(
                                         'h-9 flex-1 rounded-lg text-sm font-medium transition',
-                                        later === value
+                                        when === value
                                             ? 'bg-white/10 text-white'
                                             : 'text-white/55 hover:text-white',
                                     )}
                                 >
-                                    {label as string}
+                                    {label}
                                 </button>
                             ))}
                         </div>
+                        {when === 'vote' && (
+                            <div className="space-y-2">
+                                <p className="text-xs text-white/50">
+                                    {tr(
+                                        'Запропонуйте 2–4 варіанти — люди позначать зручні, а ви закріпите час.',
+                                    )}
+                                </p>
+                                {form.data.time_options.map((time, index) => (
+                                    <div key={index} className="flex gap-2">
+                                        <input
+                                            type="datetime-local"
+                                            value={time}
+                                            min={localInput(new Date())}
+                                            onChange={(e) =>
+                                                form.setData(
+                                                    'time_options',
+                                                    form.data.time_options.map(
+                                                        (item, i) =>
+                                                            i === index
+                                                                ? e.target.value
+                                                                : item,
+                                                    ),
+                                                )
+                                            }
+                                            className={cn(
+                                                fieldClass,
+                                                'flex-1 [color-scheme:dark]',
+                                            )}
+                                        />
+                                        {form.data.time_options.length > 2 && (
+                                            <button
+                                                type="button"
+                                                aria-label={tr('Прибрати')}
+                                                onClick={() =>
+                                                    form.setData(
+                                                        'time_options',
+                                                        form.data.time_options.filter(
+                                                            (_, i) =>
+                                                                i !== index,
+                                                        ),
+                                                    )
+                                                }
+                                                className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-white/[0.04] text-white/55 hover:text-white"
+                                            >
+                                                <X className="size-4" />
+                                            </button>
+                                        )}
+                                    </div>
+                                ))}
+                                {form.data.time_options.length < 4 && (
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            form.setData('time_options', [
+                                                ...form.data.time_options,
+                                                '',
+                                            ])
+                                        }
+                                        className="inline-flex items-center gap-1.5 text-xs font-medium text-gc-lilac-200 hover:text-white"
+                                    >
+                                        <Plus className="size-3.5" />
+                                        {tr('Ще варіант')}
+                                    </button>
+                                )}
+                                {Object.entries(form.errors)
+                                    .filter(([key]) =>
+                                        key.startsWith('time_options'),
+                                    )
+                                    .slice(0, 1)
+                                    .map(([key, message]) => (
+                                        <p
+                                            key={key}
+                                            className="text-xs text-rose-300"
+                                        >
+                                            {message}
+                                        </p>
+                                    ))}
+                            </div>
+                        )}
                         {later && (
                             <input
                                 type="datetime-local"

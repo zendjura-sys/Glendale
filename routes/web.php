@@ -643,6 +643,8 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::post('{party}/invite', [TeammateController::class, 'invite'])->middleware('throttle:30,1')->name('invite');
         Route::get('{party}', [PartyController::class, 'show'])->name('show');
         Route::post('{party}/join', [PartyController::class, 'join'])->middleware('throttle:20,1')->name('join');
+        Route::post('{party}/time', [PartyController::class, 'voteTime'])->middleware('throttle:30,1')->name('time.vote');
+        Route::post('{party}/time/{slot}', [PartyController::class, 'pickTime'])->whereNumber('slot')->middleware('throttle:10,1')->name('time.pick');
         Route::post('{party}/invite-link', [InviteLinkController::class, 'party'])->middleware('throttle:20,1')->name('invite-link');
         Route::delete('{party}/join', [PartyController::class, 'leave'])->name('leave');
         Route::post('{party}/bump', [PartyController::class, 'bump'])->middleware('throttle:10,1')->name('bump');

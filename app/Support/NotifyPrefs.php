@@ -47,6 +47,7 @@ class NotifyPrefs
         'movie_rating' => 'cinema',
         'party_join' => 'party',
         'party_invite' => 'party',
+        'party_time' => 'party',
         'family_' => 'families',
         'friend_playing' => 'feature:playing',
         'stream_live' => 'feature:live',

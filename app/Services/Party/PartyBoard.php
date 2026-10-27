@@ -7,6 +7,7 @@ use App\Models\PartyPost;
 use App\Models\User;
 use App\Notifications\PartyJoined;
 use App\Services\Plus\Plus;
+use App\Support\Plugins\Plugins;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 
@@ -20,15 +21,16 @@ class PartyBoard
 
     /**
      * @param  array{title: string, note?: string|null, platform?: string|null, roles?: list<string>, slots: int, starts_at?: Carbon|null, game_id?: int|null, gta_server_id?: int|null}  $data
+     * @param  Carbon|null  $lastOption  останній варіант часу в голосуванні: до нього (+3 год) оголошення не зникає
      */
-    public function create(User $user, array $data): PartyPost
+    public function create(User $user, array $data, ?Carbon $lastOption = null): PartyPost
     {
         abort_if(
             PartyPost::query()->open()->where('user_id', $user->id)->count() >= (int) app(Plus::class)->limit($user, 'party_open'),
             422,
             $user->isPlus() ? 'Можна мати до п’яти відкритих оголошень.' : 'Можна мати до трьох відкритих оголошень. З GameCon+ — до п’яти.',
         );
-        $start = $data['starts_at'] ?? null;
+        $start = $data['starts_at'] ?? $lastOption;
 
         return PartyPost::query()->create([
             ...$data,
@@ -111,6 +113,8 @@ class PartyBoard
             'game' => $party->game ? ['slug' => $party->game->slug, 'name' => $party->game->name, 'cover' => $party->game->cover] : null,
             'server' => $party->server ? ['slug' => $party->server->slug, 'name' => $party->server->name, 'icon' => $party->server->icon] : null,
             'members' => array_values($party->members->map(fn (PartyMember $member) => [...$member->user->toCard(), 'role' => $member->role])->all()),
+            // Голосування за час (2–4 варіанти від автора) — поки автор не закріпить один.
+            'time_poll' => app(Plugins::class)->on('party_time_vote') ? app(PartyTimeVote::class)->card($party, $viewer) : null,
         ];
     }
 }
