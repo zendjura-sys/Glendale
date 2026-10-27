@@ -40,7 +40,7 @@ export function CatchUpCard({
                     initial={reduce ? false : { opacity: 0, y: -8 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={reduce ? { opacity: 0 } : { opacity: 0, y: -8 }}
-                    className="absolute inset-x-3 top-2 z-10 max-h-[60%] overflow-y-auto rounded-2xl border border-white/10 bg-[rgb(12_16_32/0.9)] p-3 shadow-[0_18px_40px_-20px_rgb(0_0_0/0.8)] backdrop-blur-xl"
+                    className="ios-glass absolute inset-x-3 top-2 z-10 max-h-[60%] overflow-y-auto rounded-[22px] p-3"
                 >
                     <div className="flex items-start gap-2">
                         <div className="min-w-0 flex-1">
