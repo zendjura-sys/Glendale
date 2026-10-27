@@ -80,6 +80,8 @@ export type ChatMessage = {
     body: string | null;
     preview?: string;
     user: UserCard | null;
+    /** Повідомлення гостя без акаунта (гостьовий чат спільноти). */
+    guest?: { name: string } | null;
     sticker?: StickerItem | null;
     contact?: ContactCard | null;
     reply_to: {

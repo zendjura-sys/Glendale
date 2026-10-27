@@ -1,6 +1,8 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import { toast } from 'sonner';
 import { ArrowLeft, Globe2, Lock, Megaphone, UsersRound } from 'lucide-react';
+import { AccessCard } from '@/components/communities/access-card';
+import type { CommunityAccess } from '@/components/communities/access-card';
 import { DonationJarForm } from '@/components/gc/donation-jar';
 import type { FormEvent } from 'react';
 import { selectClass } from '@/components/gc/admin';
@@ -28,6 +30,7 @@ type Props = {
     slowModes: number[];
     stats?: CommunityStats;
     jar: { url: string | null; note: string | null };
+    access: CommunityAccess | null;
 };
 
 const field =
@@ -93,6 +96,7 @@ export default function CommunitySettings({
     slowModes,
     stats,
     jar,
+    access,
 }: Props) {
     const form = useForm({
         name: community.name,
@@ -383,6 +387,14 @@ export default function CommunitySettings({
                         </button>
                     </div>
                 </form>
+
+                {access && (
+                    <AccessCard
+                        slug={community.slug}
+                        access={access}
+                        closed={community.privacy === 'closed'}
+                    />
+                )}
 
                 <RulesForm
                     slug={community.slug}

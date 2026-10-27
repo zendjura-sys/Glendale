@@ -1095,6 +1095,7 @@ export function ChatView({
                             !newDay &&
                             prev?.type !== 'system' &&
                             prev?.user?.id === message.user?.id &&
+                            prev?.guest?.name === message.guest?.name &&
                             new Date(message.created_at).getTime() -
                                 new Date(prev.created_at).getTime() <
                                 GROUP_GAP_MS;
@@ -1106,6 +1107,7 @@ export function ChatView({
                             !nextNewDay &&
                             next?.type !== 'system' &&
                             next?.user?.id === message.user?.id &&
+                            next?.guest?.name === message.guest?.name &&
                             new Date(next.created_at).getTime() -
                                 new Date(message.created_at).getTime() <
                                 GROUP_GAP_MS;

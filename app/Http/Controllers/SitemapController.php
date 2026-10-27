@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Community;
 use App\Models\Game;
 use App\Models\User;
 use App\Support\Help\HelpCatalog;
 use App\Support\Modules\ModuleManager;
+use App\Support\Plugins\Plugins;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Cache;
 
@@ -53,6 +55,18 @@ class SitemapController extends Controller
                     ->each(function (Game $game) use (&$urls) {
                         $urls[] = ['loc' => url('/games/'.$game->slug), 'lastmod' => $game->updated_at?->toAtomString(), 'changefreq' => 'weekly', 'priority' => '0.7'];
                     });
+            }
+
+            // Каталог спільнот і сторінки тих, що дозволили перегляд гостям (відкриті й показані в каталозі).
+            if (app(ModuleManager::class)->enabled('communities')) {
+                $urls[] = ['loc' => url('/communities'), 'changefreq' => 'daily', 'priority' => '0.7'];
+                if (app(Plugins::class)->on('community_access')) {
+                    Community::query()->where('guest_view', true)->where('is_listed', true)->where('privacy', Community::PRIVACY_OPEN)
+                        ->orderByDesc('members_count')->limit(self::GAMES)->get(['slug', 'updated_at'])
+                        ->each(function (Community $community) use (&$urls) {
+                            $urls[] = ['loc' => url('/c/'.$community->slug.'/guest'), 'lastmod' => $community->updated_at?->toAtomString(), 'changefreq' => 'daily', 'priority' => '0.6'];
+                        });
+                }
             }
 
             // Лише відкриті профілі: не закриті, не заблоковані, не заморожені, з підтвердженою поштою.

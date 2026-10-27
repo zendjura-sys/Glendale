@@ -256,6 +256,7 @@
 - [ ] «Поки тебе не було» в групах — `components/messenger/catch-up.tsx`; міст готовий (`site/messages/{id}/catch-up`), картки в чаті приложения нет
 - [ ] Голосування за час гри в «Пошуку паті» — `components/party/time-poll.tsx`, третій варіант часу у формі; міст готовий (`site/party/{id}/time`, `site/party/{id}/time/{slot}`, `time_poll` у картці паті), екрана в приложении нет
 - [ ] Канали спільнот — `pages/communities/channels.tsx`, `components/communities/channel-*.tsx`, `voice-channel.tsx`; міст готовий (`site/c/{slug}/channels…`, `site/c/{slug}/channel-categories…`; текстові канали — звичайні бесіди `site/messages/{id}`), екрана в приложении нет
+- [ ] Доступ до спільноти й каталог — `components/communities/access-card.tsx`, пароль у `join-button.tsx`, добірки й сортування в `pages/communities/index.tsx`; міст готовий (`site/c/{slug}/settings/access`, `password` у `POST /api/v1/communities/{slug}/join` і `site/c/{slug}/join`, `sort` і `sections` у `site/communities`), у приложении нет окна пароля и подборок
 - [ ] Рідкість бейджів («є у 2% людей») — поле `rarity` у бейджах уже приходить у приложение, не показується
 - [~] Режими скрізь: сервер уже ховає за режимом плагіни, бейджі, блоки профілю, картки в постах і чатах, події, сповіщення, дайджест і Wrapped (мост віддає те саме); приложению осталось спрятать свои тексты-упоминания и пункти (списки друзів «Рейд»/«Кіно», «Картка» в чаті) по `user.modules`
 

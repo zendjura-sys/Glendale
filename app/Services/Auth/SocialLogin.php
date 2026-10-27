@@ -3,6 +3,7 @@
 namespace App\Services\Auth;
 
 use App\Models\User;
+use App\Services\CommunityService;
 use App\Services\ImageStorage;
 use App\Support\Settings\SiteSettings;
 use Illuminate\Http\UploadedFile;
@@ -119,6 +120,7 @@ class SocialLogin
             $this->link($user, $profile);
             // Як і при реєстрації поштою: спершу вибір режиму й знайомство з сайтом.
             $user->mergePref(['onboarded' => false]);
+            app(CommunityService::class)->autoJoin($user);
 
             return $user;
         });

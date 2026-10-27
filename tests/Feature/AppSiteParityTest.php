@@ -73,6 +73,23 @@ class AppSiteParityTest extends TestCase
         $this->withToken($token)->getJson("/api/v1/site/c/{$community->slug}/channels/{$channel->id}")->assertOk();
     }
 
+    public function test_app_changes_community_access(): void
+    {
+        $user = User::factory()->create();
+        $community = app(CommunityService::class)->create($user, [
+            'name' => 'Клан', 'type' => Community::TYPE_GROUP, 'privacy' => Community::PRIVACY_OPEN,
+            'wall' => Community::WALL_OPEN, 'category' => 'esports',
+        ]);
+
+        $this->withToken($this->app_token($user))->putJson("/api/v1/site/c/{$community->slug}/settings/access", [
+            'is_listed' => false, 'guest_view' => true, 'password' => 'clan-2026',
+        ])->assertSuccessful();
+        $community->refresh();
+        $this->assertFalse($community->is_listed);
+        $this->assertTrue($community->guest_view);
+        $this->assertNotNull($community->join_password);
+    }
+
     public function test_app_reaches_group_catch_up(): void
     {
         $owner = User::factory()->create();

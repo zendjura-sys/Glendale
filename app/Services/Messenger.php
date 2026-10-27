@@ -253,6 +253,28 @@ class Messenger
         });
     }
 
+    /**
+     * Повідомлення гостя без акаунта (гостьовий чат каналу спільноти): без автора, з іменем у meta.
+     * Відбиток IP — лише хеш, щоб адміністрація могла відсікти спамера.
+     */
+    public function sendAsGuest(Conversation $conversation, string $name, string $body, string $ipHash): Message
+    {
+        $message = DB::transaction(function () use ($conversation, $name, $body, $ipHash) {
+            $message = $conversation->messages()->create([
+                'type' => Message::TYPE_TEXT,
+                'body' => trim($body),
+                'user_id' => null,
+                'meta' => ['guest' => ['name' => $name, 'ip' => $ipHash]],
+            ]);
+            $this->touch($conversation, $message);
+
+            return $message;
+        });
+        $this->broadcastNew($conversation, $message);
+
+        return $message;
+    }
+
     public function sendSticker(Conversation $conversation, User $sender, Sticker $sticker, ?int $replyToId = null): Message
     {
         return $this->deliver($conversation, $sender, [

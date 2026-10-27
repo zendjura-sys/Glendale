@@ -5,6 +5,7 @@ namespace App\Actions\Fortify;
 use App\Concerns\PasswordValidationRules;
 use App\Concerns\ProfileValidationRules;
 use App\Models\User;
+use App\Services\CommunityService;
 use App\Support\Settings\SiteSettings;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Validator;
@@ -63,6 +64,7 @@ class CreateNewUser implements CreatesNewUsers
         }
 
         $user->mergePref(['onboarded' => false]);
+        app(CommunityService::class)->autoJoin($user);
         RateLimiter::hit($key, 3600);
 
         return $user;

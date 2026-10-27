@@ -244,6 +244,11 @@ export function MessageBubble({
                             />
                         </Link>
                     )}
+                    {showAvatar && message.guest && (
+                        <span className="flex size-8 items-center justify-center rounded-full bg-white/10 text-xs font-semibold text-white/70">
+                            {message.guest.name.slice(0, 1).toUpperCase()}
+                        </span>
+                    )}
                 </span>
             )}
 
@@ -304,6 +309,17 @@ export function MessageBubble({
                                     className="px-1.5 py-0 text-xs"
                                 />
                             )}
+                        </div>
+                    )}
+
+                    {showAuthor && message.guest && (
+                        <div className="mb-0.5 flex min-w-0 items-center gap-1.5">
+                            <span className="truncate text-[13px] font-semibold text-white/70">
+                                {message.guest.name}
+                            </span>
+                            <span className="rounded-full bg-white/10 px-1.5 text-[10px] leading-4 text-white/55">
+                                {tr('гість')}
+                            </span>
                         </div>
                     )}
 

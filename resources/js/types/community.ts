@@ -18,11 +18,16 @@ export type CommunityCard = {
     cover_url: string | null;
     members_count: number;
     is_verified: boolean;
+    has_password?: boolean;
 };
 
 export type CommunityListItem = CommunityCard & {
     membership: MembershipStatus | null;
     managed: boolean;
+    /** Повідомлень у каналах за добу, людей у голосових зараз, нових учасників за тиждень. */
+    active_today?: number;
+    voice_now?: number;
+    growth_week?: number;
 };
 
 export type CommunityDetails = CommunityCard & {

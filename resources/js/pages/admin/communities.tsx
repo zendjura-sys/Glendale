@@ -29,6 +29,7 @@ import { tr } from '@/lib/i18n';
 type AdminCommunity = CommunityCard & {
     owner: UserCard | null;
     posts_count: number;
+    auto_join: boolean;
     created_at: string;
     deleted_at: string | null;
 };
@@ -79,6 +80,13 @@ export default function AdminCommunities({
         router.patch(
             `/admin/communities/${c.id}`,
             { is_verified: value },
+            { preserveScroll: true },
+        );
+
+    const autoJoin = (c: AdminCommunity, value: boolean) =>
+        router.patch(
+            `/admin/communities/${c.id}`,
+            { auto_join: value },
             { preserveScroll: true },
         );
 
@@ -244,6 +252,21 @@ export default function AdminCommunities({
                                     checked={c.is_verified}
                                     onChange={(v) => verify(c, v)}
                                     label={tr('Верифікація')}
+                                />
+                            </label>
+                        )}
+                        {!c.deleted_at && (
+                            <label
+                                className="hidden items-center gap-2 text-xs text-white/50 sm:flex"
+                                title={tr(
+                                    'Нові люди одразу після реєстрації вступають у цю спільноту',
+                                )}
+                            >
+                                {tr('Автовступ')}
+                                <Toggle
+                                    checked={c.auto_join}
+                                    onChange={(v) => autoJoin(c, v)}
+                                    label={tr('Автовступ')}
                                 />
                             </label>
                         )}

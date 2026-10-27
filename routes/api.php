@@ -479,6 +479,7 @@ Route::prefix('v1')->group(function () {
                 Route::delete('/', [CommunityController::class, 'destroy']);
                 Route::get('settings', [CommunityController::class, 'edit']);
                 Route::patch('settings', [CommunityController::class, 'update']);
+                Route::put('settings/access', [CommunityController::class, 'updateAccess']);
                 Route::post('images/{field}', [CommunityController::class, 'updateImage'])->whereIn('field', ['avatar', 'cover']);
                 Route::get('members', [CommunityMemberController::class, 'index']);
                 Route::post('members/{user}/approve', [CommunityMemberController::class, 'approve']);

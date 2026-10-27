@@ -1,5 +1,12 @@
 import { Link } from '@inertiajs/react';
-import { Lock, Megaphone, UsersRound } from 'lucide-react';
+import {
+    KeyRound,
+    Lock,
+    Megaphone,
+    MessagesSquare,
+    UsersRound,
+    Volume2,
+} from 'lucide-react';
 import { CommunityAvatar } from '@/components/gc/community-avatar';
 import { VerifiedBadge } from '@/components/gc/verified-badge';
 import { compactNumber, plural } from '@/lib/format';
@@ -49,6 +56,31 @@ export function CommunityTile({ community }: { community: CommunityListItem }) {
                     {community.privacy === 'closed' && (
                         <span className="inline-flex items-center gap-1">
                             <Lock className="size-3.5" /> {tr('Закрита')}
+                        </span>
+                    )}
+                    {community.has_password && (
+                        <span className="inline-flex items-center gap-1">
+                            <KeyRound className="size-3.5" /> {tr('З паролем')}
+                        </span>
+                    )}
+                    {!!community.voice_now && (
+                        <span className="inline-flex items-center gap-1 text-emerald-300">
+                            <Volume2 className="size-3.5" />
+                            {tr('{n} у голосових', {
+                                n: community.voice_now,
+                            })}
+                        </span>
+                    )}
+                    {!!community.active_today && (
+                        <span className="inline-flex items-center gap-1">
+                            <MessagesSquare className="size-3.5" />
+                            {compactNumber(community.active_today)}{' '}
+                            {plural(community.active_today, [
+                                'повідомлення',
+                                'повідомлення',
+                                'повідомлень',
+                            ])}{' '}
+                            {tr('за добу')}
                         </span>
                     )}
                 </div>

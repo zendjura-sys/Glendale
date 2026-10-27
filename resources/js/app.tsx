@@ -108,6 +108,8 @@ const PUBLIC_PAGES = new Set([
     'profile/frozen',
     'games/index',
     'games/show',
+    'communities/index',
+    'communities/guest',
 ]);
 
 void createInertiaApp({

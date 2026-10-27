@@ -8,6 +8,8 @@ use App\Http\Middleware\EnsureUserIsAdmin;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\SetLocale;
 use App\Http\Middleware\TrackUserActivity;
+use App\Models\Community;
+use App\Services\Communities\CommunityGuests;
 use App\Services\Geo\CountryRestrictions;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -42,6 +44,18 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // «Відписатися одним натисканням» з Gmail надсилає POST без CSRF-токена; посилання підписане.
         $middleware->validateCsrfTokens(except: ['mail/unsubscribe/*', 'billing/monobank/webhook', 'billing/google-play/rtdn']);
+
+        // Гість відкрив сторінку спільноти, яку дозволено переглядати без акаунта, — гостьова сторінка замість входу.
+        $middleware->redirectGuestsTo(function (Request $request) {
+            if ($request->isMethod('GET') && preg_match('~^c/([a-z][a-z0-9_]*)(/channels(/\d+)?)?$~', $request->path(), $m) === 1) {
+                $community = Community::query()->where('slug', $m[1])->first();
+                if ($community !== null && app(CommunityGuests::class)->canView($community)) {
+                    return "/c/{$community->slug}/guest";
+                }
+            }
+
+            return route('login');
+        });
 
         $middleware->alias([
             'module' => EnsureModuleEnabled::class,

@@ -9,7 +9,9 @@ use App\Notifications\CommunityActivity;
 use App\Services\Communities\CommunityChannels;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -66,9 +68,15 @@ class CommunityService
     /**
      * Вступ або заявка. Повертає статус участі.
      */
-    public function join(Community $community, User $user, bool $invited = false): string
+    public function join(Community $community, User $user, bool $invited = false, ?string $password = null): string
     {
         $existing = $community->membershipFor($user);
+        // Спільнота з паролем: правильний пароль одразу робить учасником (без заявки), запрошення — без пароля.
+        $byPassword = false;
+        if (! $existing && ! $invited && $community->join_password !== null && ! $user->isStaff()) {
+            $this->checkPassword($community, $user, $password);
+            $byPassword = true;
+        }
 
         if ($existing) {
             if ($invited && $existing->status === CommunityMember::STATUS_PENDING) {
@@ -80,7 +88,7 @@ class CommunityService
             return $existing->fresh()->status;
         }
 
-        $status = $invited || ! $community->isClosed() ? CommunityMember::STATUS_ACTIVE : CommunityMember::STATUS_PENDING;
+        $status = $invited || $byPassword || ! $community->isClosed() ? CommunityMember::STATUS_ACTIVE : CommunityMember::STATUS_PENDING;
 
         $community->memberships()->create([
             'user_id' => $user->id,
@@ -97,6 +105,30 @@ class CommunityService
         $this->recount($community);
 
         return $status;
+    }
+
+    /** Пароль для вступу: 5 помилок за 10 хвилин — пауза, щоб не перебирали. */
+    private function checkPassword(Community $community, User $user, ?string $password): void
+    {
+        $key = 'community-password:'.$community->id.':'.$user->id;
+        if (RateLimiter::tooManyAttempts($key, 5)) {
+            throw ValidationException::withMessages(['password' => 'Забагато спроб. Спробуйте за '.ceil(RateLimiter::availableIn($key) / 60).' хв.']);
+        }
+        if ($password === null || $password === '') {
+            throw ValidationException::withMessages(['password' => 'Щоб вступити, введіть пароль спільноти.']);
+        }
+        if (! Hash::check($password, (string) $community->join_password)) {
+            RateLimiter::hit($key, 600);
+            throw ValidationException::withMessages(['password' => 'Неправильний пароль.']);
+        }
+        RateLimiter::clear($key);
+    }
+
+    /** Новий акаунт: вступ у спільноти, які адмін сайту позначив «для всіх новачків». */
+    public function autoJoin(User $user): void
+    {
+        Community::query()->where('auto_join', true)->get()
+            ->each(fn (Community $community) => $this->join($community, $user, invited: true));
     }
 
     public function leave(Community $community, User $user): void

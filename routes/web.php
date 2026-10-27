@@ -14,6 +14,7 @@ use App\Http\Controllers\ClanController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\CommunityChannelController;
 use App\Http\Controllers\CommunityController;
+use App\Http\Controllers\CommunityGuestController;
 use App\Http\Controllers\CommunityMemberController;
 use App\Http\Controllers\CommunityWidgetController;
 use App\Http\Controllers\EventController;
@@ -310,7 +311,6 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     });
 
     Route::middleware('module:communities')->group(function () {
-        Route::get('communities', [CommunityController::class, 'index'])->name('communities.index');
         Route::post('communities', [CommunityController::class, 'store'])->middleware('throttle:10,1')->name('communities.store');
 
         Route::prefix('c/{community}')->name('communities.')->group(function () {
@@ -331,6 +331,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
             Route::patch('settings', [CommunityController::class, 'update'])->name('update');
             Route::patch('settings/rules', [CommunityController::class, 'updateRules'])->name('rules.update');
             Route::put('settings/jar', [CommunityController::class, 'updateJar'])->name('jar.update');
+            Route::put('settings/access', [CommunityController::class, 'updateAccess'])->name('access.update');
             Route::get('rules', [CommunityController::class, 'page'])->defaults('page', 'rules')->name('rules');
             Route::get('handbook', [CommunityController::class, 'page'])->defaults('page', 'handbook')->name('handbook');
             Route::post('queue/{post}', [CommunityController::class, 'approvePost'])->whereNumber('post')->name('queue.approve');
@@ -988,6 +989,10 @@ Route::prefix('games')->name('games.')->middleware('module:games')->group(functi
 });
 
 Route::middleware('module:communities')->group(function () {
+    // Каталог спільнот відкритий і гостям; гостьова сторінка й гостьовий чат — для відвідувачів без акаунта.
+    Route::get('communities', [CommunityController::class, 'index'])->name('communities.index');
+    Route::get('c/{community}/guest', [CommunityGuestController::class, 'show'])->name('communities.guest');
+    Route::post('c/{community}/guest/{channel}', [CommunityGuestController::class, 'store'])->whereNumber('channel')->middleware('throttle:6,1')->name('communities.guest.store');
     Route::get('widget/{community}', [CommunityWidgetController::class, 'show'])->name('communities.widget');
     Route::get('widget/{community}/card.js', [CommunityWidgetController::class, 'script'])->name('communities.widget.script');
 });

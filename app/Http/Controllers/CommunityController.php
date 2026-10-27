@@ -7,6 +7,8 @@ use App\Models\CommunityMember;
 use App\Models\Photo;
 use App\Models\Post;
 use App\Models\User;
+use App\Services\Communities\CommunityExplore;
+use App\Services\Communities\CommunityGuests;
 use App\Services\CommunityService;
 use App\Services\CommunityWall;
 use App\Services\Donations\MonobankJar;
@@ -15,6 +17,7 @@ use App\Services\ImageStorage;
 use App\Services\PhotoService;
 use App\Services\PostPresenter;
 use App\Support\Modules\ModuleManager;
+use App\Support\Plugins\Plugins;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
@@ -36,40 +39,53 @@ class CommunityController extends Controller
         private readonly CommunityWall $wall,
     ) {}
 
-    public function index(Request $request): Response
+    /**
+     * Мої спільноти, ті, якими керую, і каталог «Огляд». Каталог відкритий і гостям (без входу) —
+     * з добірками й сортуванням; спільноти, приховані власником, у ньому не показуються.
+     */
+    public function index(Request $request, CommunityExplore $explore): Response
     {
         $user = $request->user();
-        $joined = $this->communities->joinedIds($user);
-        $managed = $this->communities->managedIds($user);
-        $tab = in_array($request->query('tab'), ['mine', 'managed', 'discover'], true)
+        $exploreOn = app(Plugins::class)->on('community_explore');
+        $joined = $user ? $this->communities->joinedIds($user) : [];
+        $managed = $user ? $this->communities->managedIds($user) : [];
+        $tab = $user && in_array($request->query('tab'), ['mine', 'managed', 'discover'], true)
             ? $request->query('tab')
             : ($joined === [] ? 'discover' : 'mine');
         $term = trim((string) $request->query('q', ''));
         $rawCategory = $request->query('category');
         $category = is_string($rawCategory) && array_key_exists($rawCategory, Community::CATEGORIES) ? $rawCategory : null;
+        $rawSort = $request->query('sort');
+        $sort = $exploreOn && is_string($rawSort) && in_array($rawSort, CommunityExplore::SORTS, true) ? $rawSort : 'popular';
 
         $query = Community::query()
             ->when($tab === 'mine', fn (Builder $q) => $q->whereIn('id', $joined))
             ->when($tab === 'managed', fn (Builder $q) => $q->whereIn('id', $managed))
+            ->when($tab === 'discover', fn (Builder $q) => $q->where('is_listed', true))
             ->when($term !== '', fn (Builder $q) => $q->search($term))
-            ->when($category, $this->restrictCategory(...))
-            ->orderByDesc('is_verified')
-            ->orderByDesc('members_count')
-            ->orderByDesc('id');
+            ->when($category, $this->restrictCategory(...));
+        $query = $explore->sort($exploreOn ? $explore->withStats($query) : $query, $tab === 'discover' ? $sort : 'popular');
 
-        $statuses = CommunityMember::query()->where('user_id', $user->id)->pluck('status', 'community_id');
-        $page = $query->paginate(self::PER_PAGE)->withQueryString();
-        $page->setCollection($page->getCollection()->map(fn (Community $c) => [
+        $statuses = $user ? CommunityMember::query()->where('user_id', $user->id)->pluck('status', 'community_id') : collect();
+        $card = fn (Community $c) => [
             ...$c->toCard(),
+            ...($exploreOn ? $explore->stats($c) : []),
             'membership' => $statuses[$c->id] ?? null,
             'managed' => in_array($c->id, $managed),
-        ]));
+        ];
+        $page = $query->paginate(self::PER_PAGE)->withQueryString();
+        $page->setCollection($page->getCollection()->map($card));
+        $showSections = $exploreOn && $tab === 'discover' && $term === '' && $category === null && $sort === 'popular';
 
         return Inertia::render('communities/index', [
             'tab' => $tab,
-            'filters' => ['q' => $term, 'category' => $category],
+            'filters' => ['q' => $term, 'category' => $category, 'sort' => $sort],
             'categories' => Community::CATEGORIES,
             'counts' => ['mine' => count($joined), 'managed' => count($managed)],
+            'sections' => $showSections ? array_map(fn (array $section) => [
+                ...$section,
+                'items' => array_map($card, $section['items']),
+            ], $explore->sections()) : [],
             'communities' => Inertia::scroll(fn () => $page),
         ]);
     }
@@ -217,7 +233,58 @@ class CommunityController extends Controller
             'slowModes' => CommunityWall::SLOW_MODES,
             'stats' => Inertia::defer(fn () => $this->wall->stats($community)),
             'jar' => ['url' => $community->donation_jar, 'note' => $community->donation_note],
+            'access' => app(Plugins::class)->on('community_access') ? [
+                'is_listed' => $community->is_listed,
+                'guest_view' => $community->guest_view,
+                'guest_chat_channel_id' => $community->guest_chat_channel_id,
+                'has_password' => $community->join_password !== null,
+                'guest_chat_on' => app(Plugins::class)->on('community_guest_chat'),
+                'guest_url' => url("/c/{$community->slug}/guest"),
+                'channels' => array_values($community->channels()->where('type', 'text')->where('is_private', false)->orderBy('position')->get(['id', 'name'])->map(fn ($c) => ['id' => $c->id, 'name' => $c->name])->all()),
+            ] : null,
         ]);
+    }
+
+    /**
+     * Доступ: показ у каталозі, пароль для вступу, перегляд гостями й гостьовий чат.
+     * Порожній пароль лишає поточний; «прибрати пароль» — clear_password.
+     */
+    public function updateAccess(Request $request, Community $community, CommunityGuests $guests): RedirectResponse
+    {
+        $this->authorizeAdmin($request, $community);
+        app(Plugins::class)->ensure('community_access');
+        $data = $request->validate([
+            'is_listed' => ['required', 'boolean'],
+            'guest_view' => ['required', 'boolean'],
+            'guest_chat_channel_id' => ['nullable', 'integer'],
+            'password' => ['nullable', 'string', 'min:4', 'max:64'],
+            'clear_password' => ['boolean'],
+        ]);
+        $chatId = $data['guest_view'] ? ($data['guest_chat_channel_id'] ?? null) : null;
+        if ($chatId !== null) {
+            $channel = $community->channels()->whereKey($chatId)->first();
+            if ($channel === null || ! $guests->isChatCapable($channel)) {
+                throw ValidationException::withMessages(['guest_chat_channel_id' => 'Для гостьового чату підходить лише відкритий текстовий канал.']);
+            }
+        }
+        if ($data['guest_view'] && $community->isClosed()) {
+            throw ValidationException::withMessages(['guest_view' => 'Закриту спільноту гості не бачать. Спершу зробіть її відкритою.']);
+        }
+
+        $community->fill([
+            'is_listed' => $data['is_listed'],
+            'guest_view' => $data['guest_view'],
+            'guest_chat_channel_id' => $chatId,
+        ]);
+        if ($request->boolean('clear_password')) {
+            $community->join_password = null;
+        } elseif (filled($data['password'] ?? null)) {
+            $community->join_password = $data['password'];
+        }
+        $community->save();
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Доступ збережено.']);
+
+        return back();
     }
 
     /** Банка Monobank для донатів спільноті (картка «Підтримати» на сторінці; лише сайт). */
@@ -404,7 +471,8 @@ class CommunityController extends Controller
 
     public function join(Request $request, Community $community): RedirectResponse
     {
-        $status = $this->communities->join($community, $request->user());
+        $data = $request->validate(['password' => ['nullable', 'string', 'max:64']]);
+        $status = $this->communities->join($community, $request->user(), password: $data['password'] ?? null);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => $status === CommunityMember::STATUS_PENDING
             ? 'Заявку надіслано. Чекайте на схвалення адміністратора.'

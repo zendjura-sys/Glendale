@@ -1,13 +1,21 @@
-import { router } from '@inertiajs/react';
+import { Link, router, usePage } from '@inertiajs/react';
 import {
     Check,
     ChevronDown,
     Clock3,
+    KeyRound,
+    LogIn,
     LogOut,
     Plus,
     UserPlus,
 } from 'lucide-react';
 import { useState } from 'react';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -19,7 +27,9 @@ import type { CommunityCard, CommunityRole, MembershipStatus } from '@/types';
 import { tr } from '@/lib/i18n';
 
 type Props = {
-    community: Pick<CommunityCard, 'slug' | 'type' | 'privacy'>;
+    community: Pick<CommunityCard, 'slug' | 'type' | 'privacy'> & {
+        has_password?: boolean;
+    };
     status: MembershipStatus | null;
     role?: CommunityRole | null;
     size?: 'sm' | 'md';
@@ -34,6 +44,8 @@ export function JoinButton({
     className,
 }: Props) {
     const [busy, setBusy] = useState(false);
+    const [asking, setAsking] = useState(false);
+    const signedIn = Boolean(usePage().props.auth.user);
     const isPublic = community.type === 'public';
     const height =
         size === 'sm' ? 'h-9 px-3.5 text-[13px]' : 'h-10 px-4 text-sm';
@@ -43,6 +55,47 @@ export function JoinButton({
         onStart: () => setBusy(true),
         onFinish: () => setBusy(false),
     };
+
+    // Гість (без акаунта) — спершу вхід.
+    if (!signedIn) {
+        return (
+            <Link
+                href="/login"
+                className={cn(
+                    'btn-glow inline-flex items-center justify-center gap-2 rounded-xl font-semibold',
+                    height,
+                    className,
+                )}
+            >
+                <LogIn className="size-4" />
+                {tr('Увійти, щоб вступити')}
+            </Link>
+        );
+    }
+
+    if (status === null && community.has_password) {
+        return (
+            <>
+                <button
+                    type="button"
+                    onClick={() => setAsking(true)}
+                    className={cn(
+                        'btn-glow inline-flex items-center justify-center gap-2 rounded-xl font-semibold',
+                        height,
+                        className,
+                    )}
+                >
+                    <KeyRound className="size-4" />
+                    {tr('Вступити')}
+                </button>
+                <PasswordDialog
+                    open={asking}
+                    onOpenChange={setAsking}
+                    url={url}
+                />
+            </>
+        );
+    }
 
     if (status === null) {
         const label = isPublic
@@ -133,5 +186,73 @@ export function JoinButton({
                 )}
             </DropdownMenuContent>
         </DropdownMenu>
+    );
+}
+
+/** Вступ у спільноту з паролем: пароль дає адміністрація спільноти. */
+function PasswordDialog({
+    open,
+    onOpenChange,
+    url,
+}: {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    url: string;
+}) {
+    const [password, setPassword] = useState('');
+    const [error, setError] = useState<string | null>(null);
+    const [busy, setBusy] = useState(false);
+    const submit = (event: React.FormEvent) => {
+        event.preventDefault();
+        router.post(
+            url,
+            { password },
+            {
+                preserveScroll: true,
+                onStart: () => setBusy(true),
+                onFinish: () => setBusy(false),
+                onError: (errors) => setError(errors.password ?? null),
+                onSuccess: () => onOpenChange(false),
+            },
+        );
+    };
+
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="gap-4 sm:max-w-sm">
+                <div>
+                    <DialogTitle className="font-display text-lg font-semibold text-white">
+                        {tr('Спільнота з паролем')}
+                    </DialogTitle>
+                    <DialogDescription className="mt-1 text-sm text-white/50">
+                        {tr(
+                            'Введіть пароль, який дала адміністрація, — і одразу станете учасником.',
+                        )}
+                    </DialogDescription>
+                </div>
+                <form onSubmit={submit} className="space-y-3">
+                    <input
+                        type="password"
+                        autoFocus
+                        value={password}
+                        onChange={(event) => {
+                            setPassword(event.target.value);
+                            setError(null);
+                        }}
+                        placeholder={tr('Пароль')}
+                        className="input-glass h-11 w-full rounded-xl px-3.5 text-sm text-white placeholder:text-white/35 focus:outline-none"
+                    />
+                    {error && <p className="text-xs text-rose-300">{error}</p>}
+                    <button
+                        type="submit"
+                        disabled={busy || password === ''}
+                        className="btn-glow inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl text-sm font-semibold disabled:opacity-60"
+                    >
+                        <KeyRound className="size-4" />
+                        {tr('Вступити')}
+                    </button>
+                </form>
+            </DialogContent>
+        </Dialog>
     );
 }

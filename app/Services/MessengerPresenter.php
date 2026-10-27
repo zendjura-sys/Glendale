@@ -44,6 +44,7 @@ class MessengerPresenter
             'type' => $message->type,
             'body' => $message->body,
             'user' => $this->author($message->conversation_id, $message->user),
+            'guest' => is_array($meta['guest'] ?? null) ? ['name' => (string) ($meta['guest']['name'] ?? 'Гість')] : null,
             'reply_to' => $reply ? [
                 'id' => $reply->id,
                 'body' => $reply->trashed() ? null : Str::limit((string) $reply->body, 120),
