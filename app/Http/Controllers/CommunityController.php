@@ -229,6 +229,7 @@ class CommunityController extends Controller
                 'slow_mode' => $community->slow_mode,
                 'premoderation' => $community->premoderation,
                 'weekly_digest' => $community->weekly_digest,
+                'join_questions' => implode("\n", $community->join_questions ?? []),
             ],
             'slowModes' => CommunityWall::SLOW_MODES,
             'stats' => Inertia::defer(fn () => $this->wall->stats($community)),
@@ -322,11 +323,13 @@ class CommunityController extends Controller
             'slow_mode' => ['required', 'integer', Rule::in(CommunityWall::SLOW_MODES)],
             'premoderation' => ['required', 'boolean'],
             'weekly_digest' => ['sometimes', 'boolean'],
+            'join_questions' => ['nullable', 'string', 'max:1500'],
         ]);
 
         $trimmed = fn (?string $text) => ($text = trim((string) $text)) === '' ? null : $text;
         $words = CommunityWall::lines($data['banned_words'] ?? null, CommunityWall::MAX_WORDS, 40);
         $tags = CommunityWall::lines($data['post_tags'] ?? null, CommunityWall::MAX_TAGS, 24);
+        $questions = CommunityWall::lines($data['join_questions'] ?? null, CommunityService::MAX_QUESTIONS, 200);
 
         $community->update([
             'rules' => $trimmed($data['rules'] ?? null),
@@ -337,6 +340,7 @@ class CommunityController extends Controller
             'slow_mode' => (int) $data['slow_mode'],
             'premoderation' => (bool) $data['premoderation'],
             'weekly_digest' => (bool) ($data['weekly_digest'] ?? $community->weekly_digest),
+            'join_questions' => $questions === [] ? null : $questions,
         ]);
 
         if (! $community->premoderation) {
@@ -471,8 +475,8 @@ class CommunityController extends Controller
 
     public function join(Request $request, Community $community): RedirectResponse
     {
-        $data = $request->validate(['password' => ['nullable', 'string', 'max:64']]);
-        $status = $this->communities->join($community, $request->user(), password: $data['password'] ?? null);
+        $data = $request->validate(['password' => ['nullable', 'string', 'max:64'], 'answers' => ['nullable', 'array', 'max:5'], 'answers.*' => ['nullable', 'string', 'max:1000']]);
+        $status = $this->communities->join($community, $request->user(), password: $data['password'] ?? null, answers: $data['answers'] ?? []);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => $status === CommunityMember::STATUS_PENDING
             ? 'Заявку надіслано. Чекайте на схвалення адміністратора.'

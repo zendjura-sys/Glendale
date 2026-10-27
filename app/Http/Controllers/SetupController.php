@@ -6,6 +6,7 @@ use App\Models\Game;
 use App\Models\User;
 use App\Services\Games\SteamAchievements;
 use App\Services\Profile\MySetup;
+use App\Services\Profile\StreamSchedule;
 use App\Support\Plugins\Plugins;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -25,6 +26,22 @@ class SetupController extends Controller
         }
         $setup->save($request->user(), $request->validate($rules));
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Сетап збережено.']);
+
+        return back();
+    }
+
+    /** Розклад стрімів: до 7 щотижневих слотів. */
+    public function schedule(Request $request, StreamSchedule $schedule): RedirectResponse
+    {
+        app(Plugins::class)->ensure('stream_schedule');
+        $data = $request->validate([
+            'slots' => ['present', 'array', 'max:'.StreamSchedule::MAX],
+            'slots.*.day' => ['required', 'integer', 'between:1,7'],
+            'slots.*.time' => ['required', 'date_format:H:i'],
+            'slots.*.title' => ['nullable', 'string', 'max:60'],
+        ]);
+        $schedule->save($request->user(), $data['slots']);
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Розклад збережено.']);
 
         return back();
     }

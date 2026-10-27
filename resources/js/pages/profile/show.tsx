@@ -6,8 +6,11 @@ import {
     router,
     usePage,
 } from '@inertiajs/react';
+import { CrosspostButton } from '@/components/gc/crosspost-button';
 import { MySetup } from '@/components/profile/my-setup';
 import type { SetupData } from '@/components/profile/my-setup';
+import { StreamSchedule } from '@/components/profile/stream-schedule';
+import type { StreamSlot } from '@/components/profile/stream-schedule';
 import { SteamAchievements } from '@/components/profile/steam-achievements';
 import { EmbedButton } from '@/components/gc/embed-button';
 import { CompatibilityChip } from '@/components/games/compatibility-chip';
@@ -83,6 +86,7 @@ const PROFILE_BLOCKS = [
     'steam',
     'steam_achievements',
     'setup',
+    'stream_schedule',
     'games',
     'about',
     'achievements',
@@ -143,6 +147,7 @@ type Profile = UserCard & {
 type Props = {
     compatibility?: Compatibility | null;
     setup?: SetupData | null;
+    streamSchedule?: StreamSlot[] | null;
     steamAchievements?: boolean;
     profile: Profile;
     relation: Relation;
@@ -264,6 +269,7 @@ function Uploader({
 export default function ProfileShow({
     compatibility = null,
     setup = null,
+    streamSchedule = null,
     steamAchievements = false,
     profile,
     relation,
@@ -602,6 +608,11 @@ export default function ProfileShow({
                             {isSelf && !profile.is_private && (
                                 <EmbedButton
                                     path={`/widget/u/${profile.username}`}
+                                />
+                            )}
+                            {isSelf && (
+                                <CrosspostButton
+                                    owner={{ type: 'user', id: profile.id }}
                                 />
                             )}
                             {guest ? (
@@ -950,6 +961,12 @@ export default function ProfileShow({
                                     ),
                                 setup: setup && (
                                     <MySetup data={setup} isSelf={isSelf} />
+                                ),
+                                stream_schedule: streamSchedule && (
+                                    <StreamSchedule
+                                        slots={streamSchedule}
+                                        isSelf={isSelf}
+                                    />
                                 ),
                                 about: profile.about && (
                                     <Widget title={tr('Про себе')}>

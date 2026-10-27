@@ -61,6 +61,7 @@ const BLOCK_LABELS: Record<string, string> = {
     steam: 'Бібліотека Steam',
     steam_achievements: 'Досягнення Steam',
     setup: 'Мій сетап',
+    stream_schedule: 'Розклад стрімів',
     games: 'Ігри: граю зараз',
     about: 'Про себе',
     achievements: 'Досягнення',

@@ -24,6 +24,7 @@ use App\Http\Controllers\CommentController;
 use App\Http\Controllers\CommunityChannelController;
 use App\Http\Controllers\CommunityController;
 use App\Http\Controllers\CommunityMemberController;
+use App\Http\Controllers\CrosspostController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\Families;
 use App\Http\Controllers\FollowController;
@@ -159,6 +160,7 @@ Route::prefix('v1')->group(function () {
             Route::patch('rooms/{room}', [VoiceController::class, 'update'])->whereNumber('room');
             Route::delete('rooms/{room}', [VoiceController::class, 'destroy'])->whereNumber('room');
             Route::post('rooms/{room}/join', [VoiceController::class, 'join'])->whereNumber('room')->middleware('throttle:30,1');
+            Route::post('rooms/{room}/hand', [VoiceController::class, 'hand'])->whereNumber('room')->middleware('throttle:30,1');
             Route::post('rooms/{room}/members/{user:id}', [VoiceController::class, 'moderate'])->whereNumber(['room', 'user'])->withoutScopedBindings();
         });
 
@@ -343,6 +345,13 @@ Route::prefix('v1')->group(function () {
             Route::get('games/{game}/news', [GameNewsController::class, 'index'])->middleware(['module:games', 'throttle:60,1']);
             Route::post('newcomer/hide', [NewcomerController::class, 'hide']);
             Route::put('settings/setup', [SetupController::class, 'update'])->middleware('throttle:30,1');
+            Route::put('settings/stream-schedule', [SetupController::class, 'schedule'])->middleware('throttle:30,1');
+            Route::prefix('crosspost/{type}/{id}')->whereIn('type', ['user', 'server'])->whereNumber('id')->group(function () {
+                Route::get('/', [CrosspostController::class, 'index']);
+                Route::post('/', [CrosspostController::class, 'store'])->middleware('throttle:10,1');
+                Route::patch('{target}', [CrosspostController::class, 'update'])->whereNumber('target');
+                Route::delete('{target}', [CrosspostController::class, 'destroy'])->whereNumber('target');
+            });
             Route::get('games/{game}/achievements', [SetupController::class, 'game'])->middleware(['module:games', 'throttle:30,1']);
             Route::get('u/{user:username}/achievements', [SetupController::class, 'achievements'])->middleware('throttle:30,1');
             // «Телефон»: свій номер, набирач, дзвінки й повідомлення за номером, подарунки й передача.

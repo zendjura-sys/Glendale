@@ -20,6 +20,7 @@ use App\Models\Tournament;
 use App\Models\User;
 use App\Notifications\GroupInvite;
 use App\Services\Billing\Shop;
+use App\Services\Crosspost\Crossposting;
 use App\Services\EventCalendar;
 use App\Services\Events\DiscordEventSync;
 use App\Services\Families\FamilyRating;
@@ -329,6 +330,13 @@ class ServerController extends Controller
             'gta_server_id' => $server->id,
             'user_id' => $request->user()->id,
             'body' => trim($data['body']),
+        ]);
+        // Новину — і в Discord / Telegram сервера (автопостинг власника).
+        app(Crossposting::class)->dispatch('server', $server->id, 'news', [
+            'title' => 'Новина сервера '.$server->name,
+            'text' => Str::limit(trim($data['body']), 900),
+            'url' => url('/servers/'.$server->slug),
+            'image' => $server->icon,
         ]);
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Новину опубліковано.']);
 

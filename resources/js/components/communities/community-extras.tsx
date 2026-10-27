@@ -3,6 +3,7 @@ import type { FormEvent } from 'react';
 import { SettingsCard } from '@/layouts/settings/layout';
 import { formatDate } from '@/lib/format';
 import { tr } from '@/lib/i18n';
+import { usePlugin } from '@/lib/plugins';
 import { cn } from '@/lib/utils';
 
 export type CommunityExtras = {
@@ -11,6 +12,7 @@ export type CommunityExtras = {
     welcome: string;
     banned_words: string;
     post_tags: string;
+    join_questions?: string;
     slow_mode: number;
     premoderation: boolean;
     weekly_digest?: boolean;
@@ -47,13 +49,20 @@ export function RulesForm({
     slowModes: number[];
 }) {
     const form = useForm(extras);
+    const joinForms = usePlugin('join_forms');
     const { data, setData, errors } = form;
     const submit = (event: FormEvent) => {
         event.preventDefault();
         form.patch(`/c/${slug}/settings/rules`, { preserveScroll: true });
     };
     const area = (
-        name: 'rules' | 'handbook' | 'welcome' | 'banned_words' | 'post_tags',
+        name:
+            | 'rules'
+            | 'handbook'
+            | 'welcome'
+            | 'banned_words'
+            | 'post_tags'
+            | 'join_questions',
         label: string,
         hint: string,
         rows: number,
@@ -65,7 +74,7 @@ export function RulesForm({
                 {hint}
             </span>
             <textarea
-                value={data[name]}
+                value={data[name] ?? ''}
                 onChange={(event) => setData(name, event.target.value)}
                 rows={rows}
                 maxLength={max}
@@ -111,6 +120,16 @@ export function RulesForm({
                         3,
                         1000,
                     )}
+                    {joinForms &&
+                        area(
+                            'join_questions',
+                            tr('Анкета вступу'),
+                            tr(
+                                'Для закритої спільноти: до 5 питань, по одному в рядку. Відповіді — у заявці.',
+                            ),
+                            3,
+                            1500,
+                        )}
                     <div className="grid gap-4 sm:grid-cols-2">
                         {area(
                             'banned_words',

@@ -7,6 +7,7 @@ use App\Models\Community;
 use App\Models\Post;
 use App\Models\User;
 use App\Notifications\PostInteraction;
+use App\Services\Crosspost\Crossposting;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -56,6 +57,15 @@ class ScheduledPosts
 
         if ($post->author) {
             app(Mentions::class)->notify($post->author, $post->body, route('posts.show', $post, absolute: false));
+        }
+
+        // Свій публічний запис на своїй стіні — в Discord / Telegram людини (автопостинг).
+        if ($wall instanceof User && $post->author && $wall->is($post->author) && $post->visibility === Post::VISIBILITY_PUBLIC && ! $post->spoiler) {
+            app(Crossposting::class)->dispatch('user', $wall->id, 'posts', [
+                'title' => $wall->name.' на GameCon',
+                'text' => Str::limit((string) $post->body, 900),
+                'url' => route('posts.show', $post),
+            ]);
         }
 
         // Пост спільноти — і в її чати Telegram / Discord, якщо керівники це ввімкнули.

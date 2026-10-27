@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Notifications\CommunityActivity;
 use App\Services\Chat\ChatBots;
 use App\Services\Communities\CommunityChannels;
+use App\Support\Plugins\Plugins;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -19,6 +20,9 @@ use Illuminate\Validation\ValidationException;
 class CommunityService
 {
     public const MAX_OWNED = 20;
+
+    /** Скільки питань може бути в анкеті вступу. */
+    public const MAX_QUESTIONS = 5;
 
     /** Слаги, що конфліктують з маршрутами або вводять в оману. */
     public const RESERVED_SLUGS = ['admin', 'create', 'new', 'settings', 'members', 'api', 'gamecon', 'support', 'help'];
@@ -69,7 +73,10 @@ class CommunityService
     /**
      * Вступ або заявка. Повертає статус участі.
      */
-    public function join(Community $community, User $user, bool $invited = false, ?string $password = null): string
+    /**
+     * @param  array<int|string, string|null>  $answers  Відповіді на анкету (за номером питання)
+     */
+    public function join(Community $community, User $user, bool $invited = false, ?string $password = null, array $answers = []): string
     {
         $existing = $community->membershipFor($user);
         // Спільнота з паролем: правильний пароль одразу робить учасником (без заявки), запрошення — без пароля.
@@ -96,6 +103,7 @@ class CommunityService
             'user_id' => $user->id,
             'role' => CommunityMember::ROLE_MEMBER,
             'status' => $status,
+            'answers' => $status === CommunityMember::STATUS_PENDING ? $this->answers($community, $answers) : null,
         ]);
 
         if ($status === CommunityMember::STATUS_PENDING) {
@@ -283,5 +291,30 @@ class CommunityService
         return User::query()
             ->whereIn('id', $community->activeMembers()->whereIn('role', [CommunityMember::ROLE_OWNER, CommunityMember::ROLE_ADMIN])->select('user_id'))
             ->get();
+    }
+
+    /**
+     * Анкета вступу: на кожне питання — відповідь (обовʼязкова, якщо плагін увімкнено).
+     *
+     * @param  array<int|string, string|null>  $answers
+     * @return list<array{q: string, a: string}>|null
+     */
+    private function answers(Community $community, array $answers): ?array
+    {
+        $questions = $community->join_questions ?? [];
+        if ($questions === [] || ! app(Plugins::class)->on('join_forms')) {
+            return null;
+        }
+
+        $result = [];
+        foreach ($questions as $i => $question) {
+            $answer = trim((string) ($answers[$i] ?? ''));
+            if ($answer === '') {
+                throw ValidationException::withMessages(['answers' => 'Дайте відповідь на всі питання анкети.']);
+            }
+            $result[] = ['q' => $question, 'a' => mb_substr($answer, 0, 1000)];
+        }
+
+        return $result;
     }
 }

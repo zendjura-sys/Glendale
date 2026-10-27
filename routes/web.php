@@ -20,6 +20,7 @@ use App\Http\Controllers\CommunityController;
 use App\Http\Controllers\CommunityGuestController;
 use App\Http\Controllers\CommunityMemberController;
 use App\Http\Controllers\CommunityWidgetController;
+use App\Http\Controllers\CrosspostController;
 use App\Http\Controllers\EmbedWidgetController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\Families;
@@ -199,6 +200,13 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     Route::get('posts/drafts', [PostController::class, 'drafts'])->name('posts.drafts');
     Route::post('newcomer/hide', [NewcomerController::class, 'hide'])->name('newcomer.hide');
     Route::put('settings/setup', [SetupController::class, 'update'])->middleware('throttle:30,1')->name('setup.update');
+    Route::put('settings/stream-schedule', [SetupController::class, 'schedule'])->middleware('throttle:30,1')->name('stream-schedule.update');
+    Route::prefix('crosspost/{type}/{id}')->whereIn('type', ['user', 'server'])->whereNumber('id')->name('crosspost.')->group(function () {
+        Route::get('/', [CrosspostController::class, 'index'])->name('index');
+        Route::post('/', [CrosspostController::class, 'store'])->middleware('throttle:10,1')->name('store');
+        Route::patch('{target}', [CrosspostController::class, 'update'])->whereNumber('target')->name('update');
+        Route::delete('{target}', [CrosspostController::class, 'destroy'])->whereNumber('target')->name('destroy');
+    });
     Route::get('memes/new', [SetupController::class, 'meme'])->name('memes.create');
     Route::get('games/{game}/achievements', [SetupController::class, 'game'])->middleware(['module:games', 'throttle:30,1'])->name('games.achievements');
     Route::get('u/{user:username}/achievements', [SetupController::class, 'achievements'])->middleware('throttle:30,1')->name('profile.achievements');
@@ -274,6 +282,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::patch('rooms/{room}', [VoiceController::class, 'update'])->whereNumber('room')->name('update');
         Route::delete('rooms/{room}', [VoiceController::class, 'destroy'])->whereNumber('room')->name('destroy');
         Route::post('rooms/{room}/join', [VoiceController::class, 'join'])->whereNumber('room')->middleware('throttle:30,1')->name('join');
+        Route::post('rooms/{room}/hand', [VoiceController::class, 'hand'])->whereNumber('room')->middleware('throttle:30,1')->name('hand');
         Route::post('rooms/{room}/invite-link', [InviteLinkController::class, 'voice'])->whereNumber('room')->middleware('throttle:20,1')->name('invite-link');
         Route::post('rooms/{room}/members/{user:id}', [VoiceController::class, 'moderate'])->whereNumber(['room', 'user'])->withoutScopedBindings()->name('moderate');
     });

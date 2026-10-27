@@ -29,6 +29,7 @@ use App\Services\PostCards;
 use App\Services\PostPresenter;
 use App\Services\Presence\SteamPresence;
 use App\Services\Profile\MySetup;
+use App\Services\Profile\StreamSchedule;
 use App\Services\Quests\SeasonPass;
 use App\Services\Streams\LiveStreams;
 use App\Services\Thanks;
@@ -139,6 +140,7 @@ class ProfileController extends Controller
         return Inertia::render('profile/show', [
             'compatibility' => $compatibility,
             'setup' => app(Plugins::class)->on('my_setup') ? app(MySetup::class)->visibleFor($user, $viewer) : null,
+            'streamSchedule' => app(Plugins::class)->on('stream_schedule') && $canSeeContent ? app(StreamSchedule::class)->of($user) : null,
             'steamAchievements' => app(Plugins::class)->on('steam_achievements') && $user->steam_id !== null && ! $user->is_private,
             'profile' => [
                 ...$user->toCard(),

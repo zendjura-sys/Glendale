@@ -19,6 +19,7 @@ export type CommunityCard = {
     members_count: number;
     is_verified: boolean;
     has_password?: boolean;
+    join_questions?: string[];
 };
 
 export type CommunityListItem = CommunityCard & {
@@ -45,4 +46,5 @@ export type CommunityMemberItem = UserCard & {
     status: MembershipStatus;
     joined_at: string | null;
     is_friend: boolean;
+    answers?: { q: string; a: string }[];
 };

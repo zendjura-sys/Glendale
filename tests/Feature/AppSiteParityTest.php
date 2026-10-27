@@ -417,4 +417,12 @@ class AppSiteParityTest extends TestCase
         $this->withToken($token)->getJson('/api/v1/site/music/rooms/community/999')->assertNotFound();
         $this->withToken($token)->putJson('/api/v1/site/music/rooms/community/999/policy', ['who' => 'off'])->assertNotFound();
     }
+
+    public function test_app_sets_stream_schedule_and_crossposting_through_bridge(): void
+    {
+        $user = User::factory()->create();
+        $token = $this->app_token($user);
+        $this->withToken($token)->putJson('/api/v1/site/settings/stream-schedule', ['slots' => [['day' => 5, 'time' => '20:00', 'title' => 'CS2']]])->assertSuccessful();
+        $this->withToken($token)->getJson("/api/v1/site/crosspost/user/{$user->id}")->assertOk()->assertJsonStructure(['targets', 'events']);
+    }
 }

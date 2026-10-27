@@ -45,7 +45,7 @@ class ProfileVisitorsOrderBirthdayTest extends TestCase
         $owner->refresh();
         $this->assertTrue($owner->pref('show_visitors'));
         $this->assertSame(
-            ['photos', 'friends', 'platforms', 'steam', 'steam_achievements', 'setup', 'games', 'about', 'achievements', 'audio', 'characters'],
+            ['photos', 'friends', 'platforms', 'steam', 'steam_achievements', 'setup', 'stream_schedule', 'games', 'about', 'achievements', 'audio', 'characters'],
             $owner->pref('profile_blocks'),
         );
 

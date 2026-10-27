@@ -270,6 +270,23 @@ export default function CommunityMembers({
                                             </span>
                                         )}
                                     </p>
+                                    {member.answers &&
+                                        member.answers.length > 0 && (
+                                            <dl className="mt-2 space-y-1.5 rounded-xl bg-white/[0.04] p-2.5 text-xs">
+                                                {member.answers.map(
+                                                    (item, i) => (
+                                                        <div key={i}>
+                                                            <dt className="text-white/45">
+                                                                {item.q}
+                                                            </dt>
+                                                            <dd className="whitespace-pre-line text-white/85">
+                                                                {item.a}
+                                                            </dd>
+                                                        </div>
+                                                    ),
+                                                )}
+                                            </dl>
+                                        )}
                                 </div>
 
                                 {member.role !== 'member' && (

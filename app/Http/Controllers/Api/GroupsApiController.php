@@ -128,8 +128,8 @@ class GroupsApiController extends ApiController
 
     public function joinCommunity(Request $request, Community $community): JsonResponse
     {
-        $data = $request->validate(['password' => ['nullable', 'string', 'max:64']]);
-        $status = $this->communities->join($community, $this->user($request), password: $data['password'] ?? null);
+        $data = $request->validate(['password' => ['nullable', 'string', 'max:64'], 'answers' => ['nullable', 'array', 'max:5'], 'answers.*' => ['nullable', 'string', 'max:1000']]);
+        $status = $this->communities->join($community, $this->user($request), password: $data['password'] ?? null, answers: $data['answers'] ?? []);
 
         return response()->json(['membership' => $status]);
     }

@@ -1,4 +1,5 @@
 import { Head, Link, router } from '@inertiajs/react';
+import { CrosspostButton } from '@/components/gc/crosspost-button';
 import { EmbedButton } from '@/components/gc/embed-button';
 import {
     ArrowLeft,
@@ -760,10 +761,14 @@ export default function ServerShow({
                             ))
                         )}
                         {ownership.is_owner && (
-                            <EmbedButton
-                                path={`/widget/s/${server.slug}`}
-                                className="self-start"
-                            />
+                            <div className="flex flex-wrap gap-2">
+                                <EmbedButton
+                                    path={`/widget/s/${server.slug}`}
+                                />
+                                <CrosspostButton
+                                    owner={{ type: 'server', id: server.id }}
+                                />
+                            </div>
                         )}
                         {newsOn && ownership.is_owner && (
                             <form
