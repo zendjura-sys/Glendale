@@ -567,7 +567,7 @@ export function MessageBubble({
             {!pending && (
                 <div
                     className={cn(
-                        'pointer-events-none mb-1 flex shrink-0 items-center gap-0.5 rounded-xl border border-white/[0.06] bg-[#0d1222]/90 p-0.5 opacity-0 shadow-lg backdrop-blur transition group-hover/msg:pointer-events-auto group-hover/msg:opacity-100 focus-within:pointer-events-auto focus-within:opacity-100',
+                        'gc-float-menu pointer-events-none mb-1 flex shrink-0 items-center gap-0.5 rounded-xl border border-white/[0.06] bg-[#0d1222]/90 p-0.5 opacity-0 shadow-lg backdrop-blur transition group-hover/msg:pointer-events-auto group-hover/msg:opacity-100 focus-within:pointer-events-auto focus-within:opacity-100',
                         own && 'flex-row-reverse',
                         toolsOpen && 'pointer-events-auto opacity-100',
                         // На телефоні панель не займає місця в рядку, а з’являється над повідомленням по тапу.

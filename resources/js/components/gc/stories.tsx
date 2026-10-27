@@ -720,7 +720,7 @@ function StoryViewer({
                 </div>
 
                 {viewers && (
-                    <div className="absolute inset-x-0 bottom-0 z-30 max-h-[60%] overflow-y-auto rounded-t-2xl bg-[#0d1222] p-4">
+                    <div className="gc-float-menu absolute inset-x-0 bottom-0 z-30 max-h-[60%] overflow-y-auto rounded-t-2xl bg-[#0d1222] p-4">
                         <div className="mb-2 flex items-center">
                             <h3 className="flex-1 text-sm font-semibold text-white">
                                 {tr('Переглянули (')}

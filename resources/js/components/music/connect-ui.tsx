@@ -246,7 +246,7 @@ export function DevicesButton({
                         role="dialog"
                         aria-label={tr('Пристрої')}
                         className={cn(
-                            'absolute bottom-full z-10 mb-2 w-80 overflow-hidden rounded-2xl bg-[rgb(28_28_30/0.94)] text-white shadow-2xl ring-1 ring-white/10 backdrop-blur-2xl [&>div]:border-b-0',
+                            'gc-float-menu absolute bottom-full z-10 mb-2 w-80 overflow-hidden rounded-2xl bg-[rgb(28_28_30/0.94)] text-white shadow-2xl ring-1 ring-white/10 backdrop-blur-2xl [&>div]:border-b-0',
                             sheetClassName,
                         )}
                     >

@@ -4630,7 +4630,8 @@ html:has(.am) body {
         [data-slot='dialog-content'],
         .gc-island,
         .glass-strong,
-        .ios-popover
+        .ios-popover,
+        .gc-float-menu
     ):not(.am, .am *, [class*='bg-black'], [class*='bg-transparent']) {
     /* Те саме пласке матове скло, що й картки: щільна крижана заливка, розмиття, без обводки й тіней. */
     background:

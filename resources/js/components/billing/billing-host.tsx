@@ -71,12 +71,15 @@ function Modal({
             role="dialog"
             aria-modal="true"
             aria-label={title}
-            className="fixed inset-0 z-[80] flex items-end justify-center bg-black/60 backdrop-blur-sm sm:items-center sm:p-4"
-            onClick={(event) =>
-                event.target === event.currentTarget && onClose()
-            }
+            className="fixed inset-0 z-[80] flex items-end justify-center sm:items-center sm:p-4"
         >
-            <div className="glass-strong flex max-h-[92dvh] w-full max-w-md animate-rise flex-col overflow-hidden rounded-t-2xl sm:rounded-2xl">
+            {/* Затемнення — окремим шаром, щоб скло картки розмивало сторінку під собою. */}
+            <div
+                aria-hidden
+                className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                onClick={onClose}
+            />
+            <div className="glass-strong relative flex max-h-[92dvh] w-full max-w-md animate-rise flex-col overflow-hidden rounded-t-2xl sm:rounded-2xl">
                 <header className="flex items-center gap-3 border-b border-white/[0.06] px-5 py-4">
                     <PlusBadge className="size-7 rounded-lg [&_svg]:size-5" />
                     <span className="min-w-0 flex-1">
