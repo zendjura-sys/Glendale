@@ -113,6 +113,10 @@ class AppSiteParityTest extends TestCase
         $this->withToken($token)->postJson('/api/v1/site/ai/rewrite', ['text' => 'гаразд', 'mode' => 'fix'])->assertOk()->assertJsonPath('text', 'Гаразд');
         $this->withToken($token)->postJson("/api/v1/site/messages/{$chat->id}/ai/summary")->assertOk();
         $this->withToken($token)->putJson("/api/v1/site/messages/{$chat->id}/bots/ai", ['enabled' => true, 'bot_name' => 'ШІ'])->assertOk()->assertJsonPath('ai.enabled', true);
+
+        // Бан гостя доступний і з застосунку (у звичайній групі гостей немає — 422).
+        $plain = app(Messenger::class)->send($chat, $member, 'Привіт');
+        $this->withToken($token)->postJson("/api/v1/site/messages/{$chat->id}/messages/{$plain->id}/ban-guest", ['days' => 1])->assertUnprocessable();
     }
 
     public function test_app_reaches_group_catch_up(): void

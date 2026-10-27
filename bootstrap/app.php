@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\AuthenticateApiToken;
+use App\Http\Middleware\BlockBannedIps;
 use App\Http\Middleware\BlockCountries;
 use App\Http\Middleware\EnsureEmailVerifiedWhenRequired;
 use App\Http\Middleware\EnsureModuleEnabled;
@@ -33,12 +34,13 @@ return Application::configure(basePath: dirname(__DIR__))
             'throttle:web-global',
             SetLocale::class,
             BlockCountries::class,
+            BlockBannedIps::class,
             TrackUserActivity::class,
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
         ]);
 
-        $middleware->api(append: ['throttle:api-global', SetLocale::class, BlockCountries::class]);
+        $middleware->api(append: ['throttle:api-global', SetLocale::class, BlockCountries::class, BlockBannedIps::class]);
         // Мова з cookie читається до розшифрування — вона не секретна.
         $middleware->encryptCookies(except: ['locale']);
 

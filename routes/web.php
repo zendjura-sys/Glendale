@@ -33,6 +33,7 @@ use App\Http\Controllers\GameRatingController;
 use App\Http\Controllers\GameSoundtrackController;
 use App\Http\Controllers\GameWallpaperController;
 use App\Http\Controllers\GooglePlayRtdnController;
+use App\Http\Controllers\GuestBanController;
 use App\Http\Controllers\HelpController;
 use App\Http\Controllers\InviteLinkController;
 use App\Http\Controllers\LegalController;
@@ -319,6 +320,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
             Route::patch('{conversation}/messages/{message}', [MessageController::class, 'update'])->name('messages.update');
             Route::delete('{conversation}/messages/{message}', [MessageController::class, 'destroy'])->name('messages.destroy');
             Route::post('{conversation}/messages/{message}/report', [MessageController::class, 'report'])->middleware('throttle:20,1')->name('messages.report');
+            Route::post('{conversation}/messages/{message}/ban-guest', [GuestBanController::class, 'store'])->middleware('throttle:20,1')->name('messages.ban-guest');
             Route::post('{conversation}/messages/{message}/forward', [MessageController::class, 'forward'])->middleware('throttle:30,1')->name('messages.forward');
             Route::post('{conversation}/messages/{message}/favorite', [MessageController::class, 'favorite'])->name('messages.favorite');
             Route::post('{conversation}/messages/{message}/react', [MessageController::class, 'react'])->middleware('throttle:60,1')->name('messages.react');
@@ -961,6 +963,13 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
                 Route::put('{code}/strings', [Admin\LanguageController::class, 'updateString'])->name('strings.update');
             });
         });
+        Route::prefix('antispam')->name('antispam.')->group(function () {
+            Route::get('/', [Admin\AntispamController::class, 'index'])->name('index');
+            Route::put('links', [Admin\AntispamController::class, 'links'])->name('links');
+            Route::post('bans', [Admin\AntispamController::class, 'ban'])->name('bans.store');
+            Route::delete('bans/{ban}', [Admin\AntispamController::class, 'lift'])->whereNumber('ban')->name('bans.destroy');
+        });
+        Route::get('chats', [Admin\ChatStatsController::class, 'index'])->name('chats.index');
         Route::prefix('moderation')->name('moderation.')->group(function () {
             Route::get('/', [Admin\ModerationController::class, 'index'])->name('index');
             Route::put('settings', [Admin\ModerationController::class, 'settings'])->name('settings');

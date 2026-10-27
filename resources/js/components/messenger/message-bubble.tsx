@@ -4,6 +4,7 @@ import {
     SmilePlus,
     Bot,
     Flag,
+    Ban,
     Gavel,
     Forward,
     Languages,
@@ -56,6 +57,8 @@ export type BubbleActions = {
     onPreview?: (attachment: ChatAttachment) => void;
     /** Тайм-аут чи виключення автора (адміністраторам групи чи каналу). */
     onRestrict?: (message: ChatMessage) => void;
+    /** Бан гостя гостьового чату (адміністраторам каналу). */
+    onBanGuest?: (message: ChatMessage) => void;
 };
 
 type Props = {
@@ -733,6 +736,16 @@ export function MessageBubble({
                             title={tr('Тайм-аут або виключення')}
                         >
                             <Gavel className="size-3.5" />
+                        </button>
+                    )}
+                    {message.guest && actions.onBanGuest && (
+                        <button
+                            type="button"
+                            className={cn(toolButton, 'hover:text-rose-300')}
+                            onClick={() => actions.onBanGuest?.(message)}
+                            title={tr('Заблокувати гостя')}
+                        >
+                            <Ban className="size-3.5" />
                         </button>
                     )}
                     {!own && actions.onReport && (

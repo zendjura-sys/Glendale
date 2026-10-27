@@ -59,6 +59,7 @@ import { ReportDialog } from './report-dialog';
 import { ChatBackdrop, ChatBackgroundDialog } from './chat-background';
 import { AiSummaryDialog } from './ai-summary-dialog';
 import { ChatBotsDialog } from './chat-bots-dialog';
+import { GuestBanDialog } from './guest-ban-dialog';
 import { ChatSharedDialog } from './chat-shared-dialog';
 import { DocPreviewDialog } from './doc-preview';
 import type { PreviewFile } from './doc-preview';
@@ -605,6 +606,8 @@ export function ChatView({
     const [sharedOpen, setSharedOpen] = useState(false);
     const [backgroundOpen, setBackgroundOpen] = useState(false);
     const [restricting, setRestricting] = useState<ChatMessage['user']>(null);
+    const ipBansOn = usePlugin('ip_bans');
+    const [banningGuest, setBanningGuest] = useState<ChatMessage | null>(null);
     const [previewing, setPreviewing] = useState<PreviewFile | null>(null);
     const canModerate =
         isGroup && (active.my_role === 'owner' || active.my_role === 'admin');
@@ -724,6 +727,10 @@ export function ChatView({
         onRestrict:
             restrictionsOn && canModerate
                 ? (message) => setRestricting(message.user)
+                : undefined,
+        onBanGuest:
+            ipBansOn && (canModerate || me.is_admin)
+                ? (message) => setBanningGuest(message)
                 : undefined,
     };
 
@@ -1497,6 +1504,17 @@ export function ChatView({
                     onOpenChange={setBotsOpen}
                 />
             )}
+            <GuestBanDialog
+                conversationId={active.id}
+                message={banningGuest}
+                canBanEverywhere={me.is_admin}
+                onClose={() => setBanningGuest(null)}
+                onBanned={(banned) =>
+                    setMessages((current) =>
+                        current.filter((m) => m.id !== banned.id),
+                    )
+                }
+            />
             <RestrictDialog
                 conversationId={active.id}
                 user={restricting}

@@ -29,6 +29,7 @@ use App\Http\Controllers\Families;
 use App\Http\Controllers\FollowController;
 use App\Http\Controllers\GameBacklogController;
 use App\Http\Controllers\GameController;
+use App\Http\Controllers\GuestBanController;
 use App\Http\Controllers\InviteLinkController;
 use App\Http\Controllers\ListenPartyController;
 use App\Http\Controllers\ListenRoomController;
@@ -425,6 +426,7 @@ Route::prefix('v1')->group(function () {
                 Route::patch('{conversation}/messages/{message}', [MessageController::class, 'update']);
                 Route::delete('{conversation}/messages/{message}', [MessageController::class, 'destroy']);
                 Route::post('{conversation}/messages/{message}/report', [MessageController::class, 'report'])->middleware('throttle:20,1');
+                Route::post('{conversation}/messages/{message}/ban-guest', [GuestBanController::class, 'store'])->middleware('throttle:20,1');
             });
 
             Route::prefix('me/playing')->group(function () {

@@ -6,8 +6,10 @@ use App\Models\Community;
 use App\Models\CommunityChannel;
 use App\Models\Message;
 use App\Models\MessageAttachment;
+use App\Services\Antispam\IpBans;
 use App\Services\CommunityWall;
 use App\Services\Messenger;
+use App\Services\Moderation\ContentFilter;
 use App\Support\Plugins\Plugins;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
@@ -89,6 +91,9 @@ class CommunityGuests
     {
         $chat = $this->chatChannel($community);
         abort_unless($chat !== null && $chat->id === $channel->id, 403, 'Гості не можуть писати в цьому каналі.');
+        if (app(Plugins::class)->on('ip_bans') && app(IpBans::class)->banned($ip, $community->id) !== null) {
+            app(ContentFilter::class)->deny('guest_ban', 'Адміністрація заборонила вам писати в гостьовий чат.', null, $channel->conversation);
+        }
         if (preg_match('~https?://|www\.|\b[\p{L}\p{N}-]+\.(com|net|org|ru|ua|io|gg|me|xyz|top|ly|link|site|online)\b~iu', $body) === 1) {
             throw ValidationException::withMessages(['body' => 'Гості не можуть надсилати посилання. Увійдіть, щоб ділитися посиланнями.']);
         }
@@ -96,6 +101,6 @@ class CommunityGuests
             throw ValidationException::withMessages(['body' => 'Повідомлення містить заборонені в спільноті слова.']);
         }
 
-        return $this->messenger->sendAsGuest($channel->conversation, $name, $body, hash('sha256', $ip.'|'.config('app.key')));
+        return $this->messenger->sendAsGuest($channel->conversation, $name, $body, IpBans::hash($ip));
     }
 }
