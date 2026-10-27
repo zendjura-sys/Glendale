@@ -16,10 +16,22 @@ import { usePlayer } from '@/lib/player';
 import { cn, dockedAboveNav } from '@/lib/utils';
 import type { ConversationSummary } from '@/types';
 import { ConversationAvatar } from './conversation-avatar';
+import { useStoredDraft } from '@/lib/drafts';
 import { tr } from '@/lib/i18n';
 
 function Preview({ conversation }: { conversation: ConversationSummary }) {
     const last = conversation.last_message;
+    const draft = useStoredDraft(`chat:${conversation.id}`);
+
+    // Незакінчене повідомлення — як у Telegram: «Чернетка: …».
+    if (draft.trim()) {
+        return (
+            <span>
+                <span className="text-rose-300">{tr('Чернетка:')}</span>{' '}
+                {draft.split('\n')[0]}
+            </span>
+        );
+    }
 
     if (!last) {
         return <span className="text-white/35">{tr('Немає повідомлень')}</span>;

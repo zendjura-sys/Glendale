@@ -20,6 +20,7 @@ use App\Http\Controllers\CommunityController;
 use App\Http\Controllers\CommunityGuestController;
 use App\Http\Controllers\CommunityMemberController;
 use App\Http\Controllers\CommunityWidgetController;
+use App\Http\Controllers\EmbedWidgetController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\Families;
 use App\Http\Controllers\FeedbackController;
@@ -49,6 +50,7 @@ use App\Http\Controllers\MonobankWebhookController;
 use App\Http\Controllers\MusicConnectController;
 use App\Http\Controllers\MusicController;
 use App\Http\Controllers\MusicHubController;
+use App\Http\Controllers\NewcomerController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\NowPlayingController;
 use App\Http\Controllers\OAuth;
@@ -194,6 +196,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
 
     Route::post('posts', [PostController::class, 'store'])->middleware('throttle:30,1')->name('posts.store');
     Route::get('posts/drafts', [PostController::class, 'drafts'])->name('posts.drafts');
+    Route::post('newcomer/hide', [NewcomerController::class, 'hide'])->name('newcomer.hide');
     Route::get('posts/{post}', [PostController::class, 'show'])->name('posts.show');
     Route::patch('posts/{post}', [PostController::class, 'update'])->name('posts.update');
     Route::post('posts/{post}/publish', [PostController::class, 'release'])->name('posts.publish');
@@ -1023,6 +1026,10 @@ Route::middleware('module:communities')->group(function () {
     Route::get('communities', [CommunityController::class, 'index'])->name('communities.index');
     Route::get('c/{community}/guest', [CommunityGuestController::class, 'show'])->name('communities.guest');
     Route::post('c/{community}/guest/{channel}', [CommunityGuestController::class, 'store'])->whereNumber('channel')->middleware('throttle:6,1')->name('communities.guest.store');
+    Route::get('widget/u/{user:username}', [EmbedWidgetController::class, 'user'])->middleware('throttle:120,1')->name('widget.user');
+    Route::get('widget/u/{user:username}/card.js', [EmbedWidgetController::class, 'userScript'])->name('widget.user.script');
+    Route::get('widget/s/{server:slug}', [EmbedWidgetController::class, 'server'])->middleware('throttle:120,1')->name('widget.server');
+    Route::get('widget/s/{server:slug}/card.js', [EmbedWidgetController::class, 'serverScript'])->name('widget.server.script');
     Route::get('widget/{community}', [CommunityWidgetController::class, 'show'])->name('communities.widget');
     Route::get('widget/{community}/card.js', [CommunityWidgetController::class, 'script'])->name('communities.widget.script');
 });

@@ -1,4 +1,6 @@
 import { Link, usePage } from '@inertiajs/react';
+import { usePlugin } from '@/lib/plugins';
+import { useDraft, writeDraft } from '@/lib/drafts';
 import { CornerDownRight, Pin, SendHorizontal, Trash2 } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { toast } from 'sonner';
@@ -51,6 +53,9 @@ export function Comments({
     const [comments, setComments] = useState(initial);
     const [loadedAll, setLoadedAll] = useState(initial.length >= total);
     const [body, setBody] = useState('');
+    const draftsOn = usePlugin('local_drafts');
+    // Чернетка коментаря — окремо для кожного запису чи фото.
+    useDraft(draftsOn ? `comment:${endpoint}` : null, body, setBody);
     const [spoiler, setSpoiler] = useState(false);
     const [replyTo, setReplyTo] = useState<CommentItem | null>(null);
     const [sending, setSending] = useState(false);
@@ -90,6 +95,7 @@ export function Comments({
             setComments((list) => [...list, response.comment]);
             onCountChange(response.comments_count);
             setBody('');
+            writeDraft(`comment:${endpoint}`, '');
             setSpoiler(false);
             setSticker(null);
             setPickingSticker(false);

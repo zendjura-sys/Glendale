@@ -30,6 +30,7 @@ import { ContactShareDialog } from './contact-share-dialog';
 import { AiWriter } from './ai-writer';
 import { EmojiPanel } from './emoji-panel';
 import { VideoNoteRecorder } from './video-note';
+import { useDraft, writeDraft } from '@/lib/drafts';
 import { LOCALE, tr } from '@/lib/i18n';
 import { usePlugin } from '@/lib/plugins';
 
@@ -48,6 +49,8 @@ type Props = {
     onTyping: () => void;
     onEditLast: () => void;
     draft?: string | null;
+    /** Ключ чернетки незакінченого повідомлення (на цьому пристрої). */
+    draftKey?: string | null;
 };
 
 function useOutsideClose(
@@ -77,6 +80,7 @@ export function Composer({
     onTyping,
     onEditLast,
     draft = null,
+    draftKey = null,
 }: Props) {
     const { site, modules } = usePage().props;
     // Картки — лише розділів режиму (гра, фільм, сервер); без жодного пункт ховається.
@@ -90,6 +94,8 @@ export function Composer({
     const scheduleOn = usePlugin('scheduled_messages');
     const videoNotesPlugin = usePlugin('video_notes');
     const [body, setBody] = useState(draft ?? '');
+    const draftsOn = usePlugin('local_drafts');
+    useDraft(draftsOn && !editing ? draftKey : null, body, setBody);
     const aiWriterOn = usePlugin('ai_writer');
     const [publishAt, setPublishAt] = useState('');
     const [vanish, setVanish] = useState(false);
@@ -230,6 +236,7 @@ export function Composer({
 
     const reset = () => {
         setBody('');
+        if (draftKey) writeDraft(draftKey, '');
         setImages([]);
         setDocs([]);
         setPublishAt('');

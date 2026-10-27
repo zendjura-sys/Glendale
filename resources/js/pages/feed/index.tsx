@@ -5,6 +5,8 @@ import {
     Link,
     usePage,
 } from '@inertiajs/react';
+import { NewcomerWeek } from '@/components/onboarding/newcomer-week';
+import type { NewcomerData } from '@/components/onboarding/newcomer-week';
 import {
     Cake,
     Globe,
@@ -43,6 +45,7 @@ import { tr } from '@/lib/i18n';
 import { useFeature } from '@/lib/plugins';
 
 type Props = {
+    newcomer?: NewcomerData | null;
     tab: 'friends' | 'discover' | 'country';
     onlyFriends?: boolean;
     lang: string | null;
@@ -128,6 +131,7 @@ function FeedTabs({
 }
 
 export default function Feed({
+    newcomer = null,
     tab,
     lang,
     onlyFriends,
@@ -216,6 +220,7 @@ export default function Feed({
                             ))}
                         </div>
                     )}
+                    {newcomer && <NewcomerWeek data={newcomer} />}
                     <PostComposer />
                     <FeedTabs tab={tab} hasFriends={hasFriends} />
                     {tab === 'friends' && (

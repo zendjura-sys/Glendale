@@ -1452,6 +1452,7 @@ export function ChatView({
                 canWrite={active.can_write && timeoutText === null}
                 lockedText={timeoutText ?? active.locked_text ?? null}
                 draft={draft}
+                draftKey={`chat:${active.id}`}
                 replyTo={replyTo}
                 editing={editing}
                 onCancel={() => {

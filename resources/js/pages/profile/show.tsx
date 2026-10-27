@@ -6,6 +6,7 @@ import {
     router,
     usePage,
 } from '@inertiajs/react';
+import { EmbedButton } from '@/components/gc/embed-button';
 import { CompatibilityChip } from '@/components/games/compatibility-chip';
 import type { Compatibility } from '@/components/games/compatibility-chip';
 import {
@@ -589,6 +590,11 @@ export default function ProfileShow({
                             >
                                 <QrCode className="size-4" /> Game Card
                             </Link>
+                            {isSelf && !profile.is_private && (
+                                <EmbedButton
+                                    path={`/widget/u/${profile.username}`}
+                                />
+                            )}
                             {guest ? (
                                 <Link
                                     href="/register"

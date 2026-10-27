@@ -13,6 +13,7 @@ use App\Services\Families\ReportService;
 use App\Services\FeedSignals;
 use App\Services\FollowAlerts;
 use App\Services\FriendshipService;
+use App\Services\Onboarding\NewcomerWeek;
 use App\Services\PostPresenter;
 use App\Services\Quests\DailyQuests;
 use App\Services\Streams\LiveStreams;
@@ -92,6 +93,7 @@ class FeedController extends Controller
         $items = $this->presenter->many(new Collection($posts->items()), $user);
 
         return Inertia::render('feed/index', [
+            'newcomer' => app(NewcomerWeek::class)->forUser($user),
             'tab' => $tab,
             'onlyFriends' => $onlyFriends,
             'lang' => $lang,

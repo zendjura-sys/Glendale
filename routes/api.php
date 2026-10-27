@@ -41,6 +41,7 @@ use App\Http\Controllers\MomentController;
 use App\Http\Controllers\MusicConnectController;
 use App\Http\Controllers\MusicController;
 use App\Http\Controllers\MusicHubController;
+use App\Http\Controllers\NewcomerController;
 use App\Http\Controllers\NowPlayingController;
 use App\Http\Controllers\OAuth\TokenController as OAuthTokenController;
 use App\Http\Controllers\PartyController;
@@ -339,6 +340,7 @@ Route::prefix('v1')->group(function () {
                 Route::put('{game}/backlog', 'update')->middleware('throttle:60,1');
             });
             Route::get('games/{game}/news', [GameNewsController::class, 'index'])->middleware(['module:games', 'throttle:60,1']);
+            Route::post('newcomer/hide', [NewcomerController::class, 'hide']);
             // «Телефон»: свій номер, набирач, дзвінки й повідомлення за номером, подарунки й передача.
             // Купити номер у застосунку можна лише через Google Play Billing (google-play/phone/*).
             Route::prefix('phone')->middleware('module:phone')->controller(PhoneController::class)->group(function () {

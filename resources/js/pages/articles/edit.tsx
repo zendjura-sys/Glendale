@@ -12,11 +12,13 @@ import {
     PenLine,
     Quote,
 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import type { ArticleCard } from '@/components/articles/article-card';
 import { api } from '@/lib/api';
+import { useDraft, writeDraft } from '@/lib/drafts';
 import { tr } from '@/lib/i18n';
+import { usePlugin } from '@/lib/plugins';
 import { cn } from '@/lib/utils';
 import type { GameCard } from '@/types';
 
@@ -63,6 +65,15 @@ export default function ArticleEdit({ article }: Props) {
         cover: null as File | null,
         publish: article?.is_published ?? false,
     });
+    const draftsOn = usePlugin('local_drafts');
+    // Чернетка тексту нової статті на цьому пристрої: закрили вкладку — текст не губиться.
+    const draftKey = draftsOn && !article ? 'article:new' : null;
+    const setBody = useCallback(
+        (text: string) => form.setData('body', text),
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [],
+    );
+    const restored = useDraft(draftKey, form.data.body, setBody);
     const area = useRef<HTMLTextAreaElement>(null);
     const imageInput = useRef<HTMLInputElement>(null);
     const [tab, setTab] = useState<'write' | 'preview'>('write');
@@ -142,6 +153,9 @@ export default function ArticleEdit({ article }: Props) {
         form.transform((data) => ({ ...data, publish }));
         form.post(article ? `/articles/${article.slug}` : '/articles', {
             forceFormData: true,
+            onSuccess: () => {
+                if (draftKey) writeDraft(draftKey, '');
+            },
         });
     };
 
@@ -319,6 +333,11 @@ export default function ArticleEdit({ article }: Props) {
                         </span>
                     )}
                 </div>
+                {restored && (
+                    <p className="px-1 pb-1 text-xs text-white/45">
+                        {tr('Відновили незбережену чернетку з цього пристрою.')}
+                    </p>
+                )}
                 {tab === 'write' ? (
                     <textarea
                         ref={area}

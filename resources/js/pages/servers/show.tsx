@@ -1,4 +1,5 @@
 import { Head, Link, router } from '@inertiajs/react';
+import { EmbedButton } from '@/components/gc/embed-button';
 import {
     ArrowLeft,
     CalendarDays,
@@ -757,6 +758,12 @@ export default function ServerShow({
                                     </p>
                                 </article>
                             ))
+                        )}
+                        {ownership.is_owner && (
+                            <EmbedButton
+                                path={`/widget/s/${server.slug}`}
+                                className="self-start"
+                            />
                         )}
                         {newsOn && ownership.is_owner && (
                             <form
