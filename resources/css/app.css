@@ -4632,12 +4632,14 @@ html:has(.am) body {
         .glass-strong,
         .ios-popover
     ):not(.am, .am *, [class*='bg-black'], [class*='bg-transparent']) {
-    background: var(--ios-popover-bg) !important;
-    border: 1px solid var(--ios-popover-border) !important;
-    box-shadow:
-        var(--ios-popover-specular), var(--ios-popover-shadow) !important;
-    -webkit-backdrop-filter: blur(40px) saturate(210%) !important;
-    backdrop-filter: blur(40px) saturate(210%) !important;
+    /* Те саме пласке матове скло, що й картки: щільна крижана заливка, розмиття, без обводки й тіней. */
+    background:
+        var(--arctic-card-bg),
+        color-mix(in oklab, var(--background) 72%, transparent) !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    -webkit-backdrop-filter: blur(40px) saturate(200%) !important;
+    backdrop-filter: blur(40px) saturate(200%) !important;
 }
 :root[data-skin='gamecon']
     :is([data-slot='dialog-content'], .ios-popover):not(.am, .am *) {
@@ -4677,7 +4679,7 @@ html:has(.am) body {
 :root[data-skin='gamecon'] .ios-float {
     background:
         var(--arctic-card-bg),
-        color-mix(in oklab, var(--background) 45%, transparent) !important;
+        color-mix(in oklab, var(--background) 72%, transparent) !important;
     border: 0 !important;
     box-shadow: none !important;
     -webkit-backdrop-filter: blur(32px) saturate(190%);
