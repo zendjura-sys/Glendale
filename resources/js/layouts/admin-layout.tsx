@@ -572,7 +572,7 @@ export default function AdminLayout({ children }: PropsWithChildren) {
                     current && 'pb-28 lg:pb-28',
                 )}
             >
-                <PageTransition className="mx-auto max-w-[1280px] [view-transition-name:gc-main]">
+                <PageTransition className="gc-vt-main mx-auto max-w-[1280px]">
                     {children}
                 </PageTransition>
             </main>

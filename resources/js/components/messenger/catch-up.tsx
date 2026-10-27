@@ -40,7 +40,7 @@ export function CatchUpCard({
                     initial={reduce ? false : { opacity: 0, y: -8 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={reduce ? { opacity: 0 } : { opacity: 0, y: -8 }}
-                    className="ios-glass absolute inset-x-3 top-2 z-10 max-h-[60%] overflow-y-auto rounded-[22px] p-3"
+                    className="ios-float absolute inset-x-3 top-2 z-10 max-h-[60%] overflow-y-auto rounded-[22px] p-3"
                 >
                     <div className="flex items-start gap-2">
                         <div className="min-w-0 flex-1">
@@ -113,7 +113,7 @@ export function CatchUpCard({
                             setOpen(false);
                             onJump(data.first_id);
                         }}
-                        className="mt-2.5 h-8 w-full rounded-lg bg-white/[0.08] text-xs font-medium text-white transition hover:bg-white/[0.12]"
+                        className="ios-popover-btn mt-2.5 h-9 w-full rounded-xl text-xs"
                     >
                         {tr('До першого непрочитаного')}
                     </button>

@@ -263,8 +263,8 @@ export function MessageBubble({
                               : cn(
                                     'rounded-[14px] px-3.5 py-2',
                                     own
-                                        ? 'bg-primary text-white'
-                                        : 'border border-white/[0.07] bg-white/[0.06] text-white/90 backdrop-blur-xl',
+                                        ? 'gc-bubble-out bg-primary text-white'
+                                        : 'gc-bubble-in border border-white/[0.07] bg-white/[0.06] text-white/90 backdrop-blur-xl',
                                     own
                                         ? groupEnd
                                             ? 'rounded-br-md'

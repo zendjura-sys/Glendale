@@ -825,10 +825,7 @@ export default function SocialLayout({ children }: PropsWithChildren) {
                 )}
             >
                 <Sidebar />
-                <main
-                    id="main-content"
-                    className="min-w-0 flex-1 [view-transition-name:gc-main]"
-                >
+                <main id="main-content" className="gc-vt-main min-w-0 flex-1">
                     <Announcement />
                     <PageTransition>{children}</PageTransition>
                     <SiteFooter className="glass-matte gc-footer-card mb-4" />
