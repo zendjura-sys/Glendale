@@ -3,6 +3,7 @@
 namespace App\Support\Plugins;
 
 use App\Models\User;
+use App\Services\Ai\AiClient;
 use App\Services\Geo\CountryRestrictions;
 use App\Support\Modules\ModuleManager;
 use App\Support\NetworkModes;
@@ -37,6 +38,10 @@ class Plugins
     {
         $item = $this->find($key);
         if ($item === null) {
+            return false;
+        }
+        // Функції ШІ (ключі ai_*) працюють лише тоді, коли адміністрація додала ключ провайдера.
+        if (str_starts_with($key, 'ai_') && ! app(AiClient::class)->configured()) {
             return false;
         }
 

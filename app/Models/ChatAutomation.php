@@ -32,6 +32,9 @@ class ChatAutomation extends Model
 
     public const POST = 'post';
 
+    /** ШІ-бот: відповідає, коли його згадали (@ім’я) або повідомлення почали з /ші. */
+    public const AI = 'ai';
+
     public const ONCE = 'once';
 
     public const DAILY = 'daily';

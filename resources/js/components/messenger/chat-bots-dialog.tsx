@@ -16,7 +16,7 @@ type Repeat = 'once' | 'daily' | 'weekly';
 
 type Automation = {
     id: number;
-    kind: 'welcome' | 'post';
+    kind: 'welcome' | 'post' | 'ai';
     bot_name: string;
     body: string;
     enabled: boolean;
@@ -28,10 +28,12 @@ type Automation = {
 };
 
 type Overview = {
+    ai?: Automation | null;
     welcome: Automation | null;
     posts: Automation[];
     welcome_on?: boolean;
     posts_on?: boolean;
+    ai_on?: boolean;
 };
 
 const field =
@@ -63,12 +65,17 @@ export function ChatBotsDialog({
     onOpenChange: (open: boolean) => void;
 }) {
     const [data, setData] = useState<Overview | null>(null);
-    const [tab, setTab] = useState<'welcome' | 'posts'>('welcome');
+    const [tab, setTab] = useState<'welcome' | 'posts' | 'ai'>('welcome');
     const [busy, setBusy] = useState(false);
     const [welcome, setWelcome] = useState({
         enabled: true,
         bot_name: 'Бот',
         body: 'Вітаємо, {name}! Розкажіть, у що граєте 🎮',
+    });
+    const [ai, setAi] = useState({
+        enabled: true,
+        bot_name: 'ШІ',
+        body: '',
     });
     const [post, setPost] = useState({
         body: '',
@@ -97,12 +104,20 @@ export function ChatBotsDialog({
                 body: overview.welcome.body,
             });
         }
+        if (overview.ai) {
+            setAi({
+                enabled: overview.ai.enabled,
+                bot_name: overview.ai.bot_name,
+                body: overview.ai.body,
+            });
+        }
     };
     const load = useCallback(() => {
         void api<Overview>('GET', `/messages/${conversationId}/bots`).then(
             (overview) => {
                 apply(overview);
-                if (overview.welcome_on === false) setTab('posts');
+                if (overview.welcome_on === false)
+                    setTab(overview.posts_on === false ? 'ai' : 'posts');
             },
         );
     }, [conversationId]);
@@ -174,6 +189,7 @@ export function ChatBotsDialog({
                                         tr('Автопости'),
                                         data.posts_on !== false,
                                     ],
+                                    ['ai', tr('ШІ-бот'), data.ai_on === true],
                                 ] as const
                             )
                                 .filter(([, , on]) => on)
@@ -255,6 +271,72 @@ export function ChatBotsDialog({
                                                 `/messages/${conversationId}/bots/welcome`,
                                                 welcome,
                                                 tr('Привітання збережено.'),
+                                            )
+                                        }
+                                        className="btn-glow h-10 rounded-xl px-5 text-sm font-semibold disabled:opacity-50"
+                                    >
+                                        {tr('Зберегти')}
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {tab === 'ai' && (
+                            <div className="space-y-3">
+                                <div className="flex items-center justify-between gap-3">
+                                    <p className="text-sm text-white/70">
+                                        {tr('Відповідає, коли його кличуть')}
+                                    </p>
+                                    <Toggle
+                                        checked={ai.enabled}
+                                        onChange={(enabled) =>
+                                            setAi({ ...ai, enabled })
+                                        }
+                                        label={tr('ШІ-бот')}
+                                    />
+                                </div>
+                                <input
+                                    value={ai.bot_name}
+                                    maxLength={40}
+                                    onChange={(e) =>
+                                        setAi({
+                                            ...ai,
+                                            bot_name: e.target.value,
+                                        })
+                                    }
+                                    placeholder={tr('Ім’я бота')}
+                                    className={cn(field, 'h-11')}
+                                />
+                                <textarea
+                                    value={ai.body}
+                                    maxLength={1000}
+                                    rows={4}
+                                    onChange={(e) =>
+                                        setAi({ ...ai, body: e.target.value })
+                                    }
+                                    placeholder={tr(
+                                        'Характер і правила: «Ти — тренер з CS2, відповідай коротко й з гумором»',
+                                    )}
+                                    className={cn(field, 'resize-none py-2.5')}
+                                />
+                                <p className="text-xs text-white/45">
+                                    {tr(
+                                        'Згадайте @{name} або почніть повідомлення з /ші. Бот бачить останні повідомлення бесіди.',
+                                        { name: ai.bot_name || 'ШІ' },
+                                    )}
+                                </p>
+                                <div className="flex justify-end">
+                                    <button
+                                        type="button"
+                                        disabled={
+                                            busy || ai.bot_name.trim() === ''
+                                        }
+                                        onClick={() =>
+                                            run(
+                                                'PUT',
+                                                `/messages/${conversationId}/bots/ai`,
+                                                ai,
+                                                tr('ШІ-бота збережено.'),
                                             )
                                         }
                                         className="btn-glow h-10 rounded-xl px-5 text-sm font-semibold disabled:opacity-50"

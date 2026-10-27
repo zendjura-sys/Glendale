@@ -2,14 +2,17 @@
 
 namespace App\Services\Chat;
 
+use App\Jobs\AiBotReply;
 use App\Models\ChatAutomation;
 use App\Models\Community;
 use App\Models\Conversation;
+use App\Models\Message;
 use App\Models\User;
 use App\Services\Messenger;
 use App\Support\Plugins\Plugins;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -35,14 +38,17 @@ class ChatBots
     }
 
     /**
-     * @return array{welcome: array<string, mixed>|null, posts: list<array<string, mixed>>}
+     * @return array{ai: array<string, mixed>|null, welcome: array<string, mixed>|null, posts: list<array<string, mixed>>}
      */
     public function overview(Conversation $conversation): array
     {
         $all = ChatAutomation::query()->where('conversation_id', $conversation->id)->orderBy('id')->get();
         $welcome = $all->firstWhere('kind', ChatAutomation::WELCOME);
 
+        $ai = $all->firstWhere('kind', ChatAutomation::AI);
+
         return [
+            'ai' => $ai ? $this->card($ai) : null,
             'welcome' => $welcome ? $this->card($welcome) : null,
             'posts' => array_values($all->where('kind', ChatAutomation::POST)->map(fn (ChatAutomation $a) => $this->card($a))->all()),
         ];
@@ -62,6 +68,46 @@ class ChatBots
                 'created_by' => $user->id,
             ],
         );
+    }
+
+    /**
+     * ШІ-бот бесіди: ім’я, характер (що він знає й як говорить).
+     *
+     * @param  array{enabled: bool, body?: string|null, bot_name?: string|null}  $data
+     */
+    public function saveAi(Conversation $conversation, User $user, array $data): ChatAutomation
+    {
+        return ChatAutomation::query()->updateOrCreate(
+            ['conversation_id' => $conversation->id, 'kind' => ChatAutomation::AI],
+            [
+                'enabled' => $data['enabled'],
+                'body' => trim((string) ($data['body'] ?? '')),
+                'bot_name' => $this->botName($data['bot_name'] ?? 'ШІ'),
+                'created_by' => $user->id,
+            ],
+        );
+    }
+
+    /**
+     * Нове повідомлення людини: якщо в бесіді є ШІ-бот і його згадали — відповісти (у черзі, після відповіді сервера).
+     * Не частіше 20 відповідей на годину в бесіді.
+     */
+    public function maybeAiReply(Conversation $conversation, Message $message): void
+    {
+        $body = trim((string) $message->body);
+        if ($message->user_id === null || $message->publish_at !== null || $body === '' || ! $conversation->isGroup() || ! app(Plugins::class)->on('ai_chat_bot')) {
+            return;
+        }
+        $bot = ChatAutomation::query()->where('conversation_id', $conversation->id)->where('kind', ChatAutomation::AI)->where('enabled', true)->first();
+        if ($bot === null) {
+            return;
+        }
+        $called = preg_match('~^/(ші|ai)(?=\s|$)~iu', $body) === 1 || mb_stripos($body, '@'.$bot->bot_name) !== false;
+        if (! $called || RateLimiter::tooManyAttempts('ai-bot:'.$conversation->id, 20)) {
+            return;
+        }
+        RateLimiter::hit('ai-bot:'.$conversation->id, 3600);
+        AiBotReply::dispatch($bot->id, $message->id)->afterResponse();
     }
 
     /**

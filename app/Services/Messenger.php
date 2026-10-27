@@ -236,7 +236,7 @@ class Messenger
             $attributes['expires_at'] = $expiresAt;
         }
 
-        return $this->deliver($conversation, $sender, $attributes, $replyToId, function (Message $message) use ($images, $documents) {
+        $message = $this->deliver($conversation, $sender, $attributes, $replyToId, function (Message $message) use ($images, $documents) {
             $position = 0;
 
             foreach ($images as $file) {
@@ -259,6 +259,9 @@ class Messenger
                 ]);
             }
         });
+        app(ChatBots::class)->maybeAiReply($conversation, $message);
+
+        return $message;
     }
 
     /**

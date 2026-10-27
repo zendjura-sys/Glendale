@@ -27,6 +27,7 @@ import { fitTextarea } from '@/lib/textarea';
 import { cn, dockedAboveNav } from '@/lib/utils';
 import type { ChatMessage, OutgoingMessage } from '@/types';
 import { ContactShareDialog } from './contact-share-dialog';
+import { AiWriter } from './ai-writer';
 import { EmojiPanel } from './emoji-panel';
 import { VideoNoteRecorder } from './video-note';
 import { LOCALE, tr } from '@/lib/i18n';
@@ -89,6 +90,7 @@ export function Composer({
     const scheduleOn = usePlugin('scheduled_messages');
     const videoNotesPlugin = usePlugin('video_notes');
     const [body, setBody] = useState(draft ?? '');
+    const aiWriterOn = usePlugin('ai_writer');
     const [publishAt, setPublishAt] = useState('');
     const [vanish, setVanish] = useState(false);
     const [card, setCard] = useState<{
@@ -731,6 +733,9 @@ export function Composer({
                             }
                             className="[field-sizing:content] max-h-[180px] min-h-11 min-w-0 flex-1 resize-none bg-transparent py-[11px] pl-4 text-[14.5px] leading-[1.45] text-white placeholder:text-white/35 focus:outline-none"
                         />
+                        {aiWriterOn && !editing && (
+                            <AiWriter text={body} onResult={setBody} />
+                        )}
                         <div ref={emojiRef} className="relative mb-1">
                             <button
                                 type="button"

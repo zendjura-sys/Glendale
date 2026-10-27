@@ -5,6 +5,7 @@ import {
     Flag,
     Gavel,
     MessageSquareWarning,
+    Sparkles,
     Trash2,
     UserX,
     VolumeX,
@@ -35,6 +36,7 @@ type Report = {
     reasons: string[];
     comments: string[];
     reporters: string[];
+    ai: { severity: 'low' | 'medium' | 'high'; reason: string } | null;
     created_at: string;
     message: {
         id: number;
@@ -224,6 +226,30 @@ export default function AdminModeration({
                                             </p>
                                         </div>
                                     </div>
+                                )}
+                                {r.ai && (
+                                    <p className="mt-2 flex items-start gap-2 text-xs text-white/60">
+                                        <span
+                                            className={cn(
+                                                'inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 font-semibold',
+                                                r.ai.severity === 'high'
+                                                    ? 'bg-rose-500/15 text-rose-200'
+                                                    : r.ai.severity === 'medium'
+                                                      ? 'bg-amber-500/15 text-amber-200'
+                                                      : 'bg-white/[0.06] text-white/60',
+                                            )}
+                                        >
+                                            <Sparkles className="size-3" />
+                                            {r.ai.severity === 'high'
+                                                ? tr('ШІ: терміново')
+                                                : r.ai.severity === 'medium'
+                                                  ? tr('ШІ: варто глянути')
+                                                  : tr('ШІ: порушень не видно')}
+                                        </span>
+                                        <span className="pt-0.5">
+                                            {r.ai.reason}
+                                        </span>
+                                    </p>
                                 )}
                                 {r.comments.length > 0 && (
                                     <p className="mt-2 text-xs text-white/50">

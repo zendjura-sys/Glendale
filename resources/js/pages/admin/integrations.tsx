@@ -355,6 +355,13 @@ export default function AdminIntegrations({ spotify, cinema }: Props) {
                         ),
                     ],
                     [
+                        'ai',
+                        tr('Штучний інтелект'),
+                        tr(
+                            'Власний ключ Claude чи OpenAI-сумісного сервісу: ШІ-редактор, підсумок чату, опис спільноти, ШІ-модерація й ШІ-бот у чатах.',
+                        ),
+                    ],
+                    [
                         'translate',
                         tr('Переклад і орфографія'),
                         tr(

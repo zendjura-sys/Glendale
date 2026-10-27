@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AiController;
 use App\Http\Controllers\Api\AccountApiController;
 use App\Http\Controllers\Api\AppLoginApiController;
 use App\Http\Controllers\Api\AuthController;
@@ -401,6 +402,8 @@ Route::prefix('v1')->group(function () {
             Route::get('join/{token}', [InviteLinkController::class, 'show']);
             Route::post('join/{token}', [InviteLinkController::class, 'accept'])->middleware('throttle:20,1');
 
+            Route::post('ai/rewrite', [AiController::class, 'rewrite'])->middleware('throttle:30,1');
+
             Route::prefix('messages')->middleware('module:messages')->whereNumber(['conversation', 'message'])->group(function () {
                 Route::get('saved', [MessengerController::class, 'saved']);
                 Route::get('{conversation}/catch-up', [MessengerController::class, 'catchUp'])->middleware('throttle:60,1');
@@ -412,6 +415,8 @@ Route::prefix('v1')->group(function () {
                 Route::delete('{conversation}/members/{user}/restrict', [ChatToolsController::class, 'lift']);
                 Route::post('{conversation}/background', [ChatToolsController::class, 'background'])->middleware('throttle:30,1');
                 Route::get('{conversation}/bots', [ChatBotController::class, 'index']);
+                Route::put('{conversation}/bots/ai', [ChatBotController::class, 'ai'])->middleware('throttle:30,1');
+                Route::post('{conversation}/ai/summary', [AiController::class, 'summary'])->middleware('throttle:20,1');
                 Route::put('{conversation}/bots/welcome', [ChatBotController::class, 'welcome'])->middleware('throttle:30,1');
                 Route::post('{conversation}/bots/posts', [ChatBotController::class, 'store'])->middleware('throttle:30,1');
                 Route::patch('{conversation}/bots/posts/{automation}', [ChatBotController::class, 'update'])->whereNumber('automation');
@@ -492,6 +497,7 @@ Route::prefix('v1')->group(function () {
                 Route::get('settings', [CommunityController::class, 'edit']);
                 Route::patch('settings', [CommunityController::class, 'update']);
                 Route::put('settings/access', [CommunityController::class, 'updateAccess']);
+                Route::post('ai/description', [AiController::class, 'description'])->middleware('throttle:10,1');
                 Route::post('images/{field}', [CommunityController::class, 'updateImage'])->whereIn('field', ['avatar', 'cover']);
                 Route::get('members', [CommunityMemberController::class, 'index']);
                 Route::post('members/{user}/approve', [CommunityMemberController::class, 'approve']);

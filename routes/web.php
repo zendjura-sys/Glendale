@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin;
+use App\Http\Controllers\AiController;
 use App\Http\Controllers\AppLinksController;
 use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\Auth\AppLoginController;
@@ -273,6 +274,9 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::post('leave', [CallController::class, 'leave'])->name('leave');
     });
 
+    // ШІ-редактор повідомлень (кнопка ✨ у полі вводу).
+    Route::post('ai/rewrite', [AiController::class, 'rewrite'])->middleware('throttle:30,1')->name('ai.rewrite');
+
     Route::prefix('messages')->name('messages.')->middleware('module:messages')->group(function () {
         Route::get('/', [MessengerController::class, 'index'])->name('index');
         Route::get('contacts', [MessengerController::class, 'contacts'])->name('contacts');
@@ -302,6 +306,8 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
             Route::delete('{conversation}/members/{user}/restrict', [ChatToolsController::class, 'lift'])->name('members.lift');
             Route::post('{conversation}/background', [ChatToolsController::class, 'background'])->middleware('throttle:30,1')->name('background');
             Route::get('{conversation}/bots', [ChatBotController::class, 'index'])->name('bots.index');
+            Route::put('{conversation}/bots/ai', [ChatBotController::class, 'ai'])->middleware('throttle:30,1')->name('bots.ai');
+            Route::post('{conversation}/ai/summary', [AiController::class, 'summary'])->middleware('throttle:20,1')->name('ai.summary');
             Route::put('{conversation}/bots/welcome', [ChatBotController::class, 'welcome'])->middleware('throttle:30,1')->name('bots.welcome');
             Route::post('{conversation}/bots/posts', [ChatBotController::class, 'store'])->middleware('throttle:30,1')->name('bots.store');
             Route::patch('{conversation}/bots/posts/{automation}', [ChatBotController::class, 'update'])->whereNumber('automation')->name('bots.update');
@@ -344,6 +350,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
             Route::patch('settings/rules', [CommunityController::class, 'updateRules'])->name('rules.update');
             Route::put('settings/jar', [CommunityController::class, 'updateJar'])->name('jar.update');
             Route::put('settings/access', [CommunityController::class, 'updateAccess'])->name('access.update');
+            Route::post('ai/description', [AiController::class, 'description'])->middleware('throttle:10,1')->name('ai.description');
             Route::get('rules', [CommunityController::class, 'page'])->defaults('page', 'rules')->name('rules');
             Route::get('handbook', [CommunityController::class, 'page'])->defaults('page', 'handbook')->name('handbook');
             Route::post('queue/{post}', [CommunityController::class, 'approvePost'])->whereNumber('post')->name('queue.approve');

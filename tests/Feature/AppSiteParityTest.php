@@ -22,6 +22,7 @@ use App\Services\Messenger;
 use App\Services\Phones\PhoneNumbers;
 use App\Services\Quests\SeasonPass;
 use App\Support\Net\PublicUrl;
+use App\Support\Settings\SiteSettings;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
@@ -105,6 +106,13 @@ class AppSiteParityTest extends TestCase
         $this->withToken($token)->postJson("/api/v1/site/messages/{$chat->id}/background", ['preset' => 'dots'])->assertSuccessful();
         $this->withToken($token)->putJson("/api/v1/site/messages/{$chat->id}/bots/welcome", ['enabled' => true, 'body' => 'Привіт, {name}!'])->assertOk();
         $this->withToken($token)->getJson("/api/v1/site/messages/{$chat->id}/bots")->assertOk()->assertJsonPath('welcome.body', 'Привіт, {name}!');
+
+        // ШІ з ключем сайту: переписати, підсумок, ШІ-бот.
+        app(SiteSettings::class)->putSecret('ai_key', 'sk-ant-test-key');
+        Http::fake(['api.anthropic.com/*' => Http::response(['content' => [['type' => 'text', 'text' => 'Гаразд']], 'stop_reason' => 'end_turn'])]);
+        $this->withToken($token)->postJson('/api/v1/site/ai/rewrite', ['text' => 'гаразд', 'mode' => 'fix'])->assertOk()->assertJsonPath('text', 'Гаразд');
+        $this->withToken($token)->postJson("/api/v1/site/messages/{$chat->id}/ai/summary")->assertOk();
+        $this->withToken($token)->putJson("/api/v1/site/messages/{$chat->id}/bots/ai", ['enabled' => true, 'bot_name' => 'ШІ'])->assertOk()->assertJsonPath('ai.enabled', true);
     }
 
     public function test_app_reaches_group_catch_up(): void

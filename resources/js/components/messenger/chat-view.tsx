@@ -57,6 +57,7 @@ import { ConversationAvatar } from './conversation-avatar';
 import { MessageBubble, SystemMessage } from './message-bubble';
 import { ReportDialog } from './report-dialog';
 import { ChatBackdrop, ChatBackgroundDialog } from './chat-background';
+import { AiSummaryDialog } from './ai-summary-dialog';
 import { ChatBotsDialog } from './chat-bots-dialog';
 import { ChatSharedDialog } from './chat-shared-dialog';
 import { DocPreviewDialog } from './doc-preview';
@@ -596,7 +597,11 @@ export function ChatView({
     const backgroundsOn = usePlugin('chat_backgrounds');
     const welcomeBotOn = usePlugin('chat_welcome_bot');
     const autoposterOn = usePlugin('chat_autoposter');
+    const aiBotOn = usePlugin('ai_chat_bot');
+    const aiSummaryOn = usePlugin('ai_summary') && isGroup;
+    const botsOn = welcomeBotOn || autoposterOn || aiBotOn;
     const [botsOpen, setBotsOpen] = useState(false);
+    const [summaryOpen, setSummaryOpen] = useState(false);
     const [sharedOpen, setSharedOpen] = useState(false);
     const [backgroundOpen, setBackgroundOpen] = useState(false);
     const [restricting, setRestricting] = useState<ChatMessage['user']>(null);
@@ -1020,7 +1025,15 @@ export function ChatView({
                                     {tr('Фон чату')}
                                 </DropdownMenuItem>
                             )}
-                            {canModerate && (welcomeBotOn || autoposterOn) && (
+                            {aiSummaryOn && (
+                                <DropdownMenuItem
+                                    onSelect={() => setSummaryOpen(true)}
+                                >
+                                    <Sparkles className="size-4" />
+                                    {tr('Підсумок від ШІ')}
+                                </DropdownMenuItem>
+                            )}
+                            {canModerate && botsOn && (
                                 <DropdownMenuItem
                                     onSelect={() => setBotsOpen(true)}
                                 >
@@ -1470,7 +1483,14 @@ export function ChatView({
                     canShare={canModerate}
                 />
             )}
-            {canModerate && (welcomeBotOn || autoposterOn) && (
+            {aiSummaryOn && (
+                <AiSummaryDialog
+                    conversationId={active.id}
+                    open={summaryOpen}
+                    onOpenChange={setSummaryOpen}
+                />
+            )}
+            {canModerate && botsOn && (
                 <ChatBotsDialog
                     conversationId={active.id}
                     open={botsOpen}

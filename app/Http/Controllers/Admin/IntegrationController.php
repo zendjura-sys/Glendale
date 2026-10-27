@@ -16,6 +16,7 @@ use App\Models\User;
 use App\Models\UserStream;
 use App\Models\VoiceParticipant;
 use App\Models\VoiceRoom;
+use App\Services\Ai\AiClient;
 use App\Services\Auth\DiscordOAuth;
 use App\Services\Auth\FirebaseAuth;
 use App\Services\Billing\GooglePlay;
@@ -692,6 +693,32 @@ class IntegrationController extends Controller
                 'fields' => [
                     ['name' => 'key', 'setting' => 'deepl_key', 'type' => 'secret', 'label' => 'Authentication Key', 'env' => config('services.deepl.key'),
                         'rules' => ['nullable', 'string', 'regex:/^[A-Za-z0-9\-]{30,48}(:fx)?$/'], 'message' => 'Ключ DeepL має вигляд xxxxxxxx-xxxx-…:fx'],
+                ],
+            ],
+            'ai' => [
+                'label' => 'ШІ (Claude або OpenAI-сумісний)',
+                'group' => 'ai',
+                'description' => 'Власний ключ ШІ для сайту: ШІ-редактор повідомлень, підсумок чату, опис спільноти, оцінка скарг, перевірка фото й ШІ-бот у чатах. Кожну функцію можна вимкнути в «Плагінах».',
+                'docs' => 'https://platform.claude.com/docs/en/get-started',
+                'steps' => [
+                    'Claude: увійдіть на platform.claude.com → API Keys → Create Key, скопіюйте ключ сюди. Модель за замовчуванням — claude-opus-5-5 (можна вказати claude-sonnet-5-5 чи claude-haiku-5-5).',
+                    'OpenAI-сумісний (OpenAI, OpenRouter, Groq, локальна модель): виберіть провайдера «OpenAI-сумісний», вкажіть адресу API (напр. https://openrouter.ai/api/v1), ключ і назву моделі.',
+                    'Натисніть «Перевірити». Ключ зберігається зашифрованим і на сторінку не повертається.',
+                ],
+                'configured' => app(AiClient::class)->configured(),
+                'stat' => app(AiClient::class)->configured() ? 'Сьогодні запитів: '.app(AiClient::class)->today().' · модель '.app(AiClient::class)->model() : null,
+                'test' => fn () => app(AiClient::class)->test(),
+                'fields' => [
+                    ['name' => 'provider', 'setting' => 'ai_provider', 'type' => 'select', 'label' => 'Провайдер',
+                        'options' => [['value' => AiClient::ANTHROPIC, 'label' => 'Claude (Anthropic)'], ['value' => AiClient::OPENAI, 'label' => 'OpenAI-сумісний']],
+                        'rules' => ['required', Rule::in([AiClient::ANTHROPIC, AiClient::OPENAI])]],
+                    ['name' => 'key', 'setting' => 'ai_key', 'type' => 'secret', 'label' => 'API-ключ',
+                        'rules' => ['nullable', 'string', 'max:400', 'regex:/^[A-Za-z0-9_\-.:]+$/'], 'message' => 'Ключ містить недопустимі символи.'],
+                    ['name' => 'model', 'setting' => 'ai_model', 'type' => 'text', 'label' => 'Модель', 'placeholder' => AiClient::DEFAULT_CLAUDE,
+                        'help' => 'Порожньо — claude-opus-5-5 для Claude або gpt-4o-mini для OpenAI.',
+                        'rules' => ['nullable', 'string', 'max:120', 'regex:/^[A-Za-z0-9_\-.:\/@]+$/'], 'message' => 'Назва моделі — латиниця, цифри, «-», «.», «/».'],
+                    ['name' => 'base_url', 'setting' => 'ai_base_url', 'type' => 'url', 'label' => 'Адреса API (лише OpenAI-сумісний)', 'placeholder' => 'https://api.openai.com/v1',
+                        'rules' => ['nullable', 'url:https', 'max:255']],
                 ],
             ],
             'azure_translator' => [

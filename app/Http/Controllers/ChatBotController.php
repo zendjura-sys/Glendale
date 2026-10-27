@@ -23,6 +23,7 @@ class ChatBotController extends Controller
             ...$this->bots->overview($conversation),
             'welcome_on' => app(Plugins::class)->on('chat_welcome_bot'),
             'posts_on' => app(Plugins::class)->on('chat_autoposter'),
+            'ai_on' => app(Plugins::class)->on('ai_chat_bot'),
         ]);
     }
 
@@ -36,6 +37,20 @@ class ChatBotController extends Controller
             'bot_name' => ['nullable', 'string', 'max:40'],
         ]);
         $this->bots->saveWelcome($conversation, $request->user(), $data);
+
+        return response()->json($this->bots->overview($conversation));
+    }
+
+    public function ai(Request $request, Conversation $conversation): JsonResponse
+    {
+        app(Plugins::class)->ensure('ai_chat_bot');
+        $this->bots->authorize($conversation, $request->user());
+        $data = $request->validate([
+            'enabled' => ['required', 'boolean'],
+            'body' => ['nullable', 'string', 'max:1000'],
+            'bot_name' => ['nullable', 'string', 'max:40', 'regex:/^[\p{L}\p{N} _.\-]+$/u'],
+        ], ['bot_name.regex' => 'Ім’я бота — літери, цифри, пробіл, «_», «.» і «-».']);
+        $this->bots->saveAi($conversation, $request->user(), $data);
 
         return response()->json($this->bots->overview($conversation));
     }

@@ -3,6 +3,7 @@ import {
     CheckCircle2,
     Clapperboard,
     Database,
+    Sparkles,
     ExternalLink,
     Eye,
     EyeOff,
@@ -32,7 +33,7 @@ export type IntegrationField = {
 export type CinemaIntegration = {
     key: string;
     label: string;
-    group: 'auth' | 'push' | 'voice' | 'players' | 'metadata';
+    group: 'auth' | 'push' | 'voice' | 'players' | 'metadata' | 'ai';
     description: string;
     docs: string | null;
     steps: string[];
@@ -69,7 +70,12 @@ export function IntegrationCard({
 }) {
     const form = useForm(initialValues(integration.fields));
     const [reveal, setReveal] = useState<Record<string, boolean>>({});
-    const Icon = integration.group === 'players' ? Clapperboard : Database;
+    const Icon =
+        integration.group === 'players'
+            ? Clapperboard
+            : integration.group === 'ai'
+              ? Sparkles
+              : Database;
     const fromEnv = integration.fields.some((f) => f.from_env);
 
     const save = () =>

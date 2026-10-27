@@ -54,6 +54,8 @@ class ModerationController extends Controller
                     'reasons' => $group->pluck('reason')->unique()->map(fn (string $r) => MessageReport::REASONS[$r] ?? $r)->values(),
                     // Безпека дітей — завжди вгорі черги.
                     'urgent' => $group->contains('reason', 'child_safety'),
+                    // Оцінка ШІ (плагін «ai_moderation»): high піднімає скаргу вище.
+                    'ai' => $group->pluck('ai_verdict')->filter()->first(),
                     'comments' => $group->pluck('comment')->filter()->values(),
                     'reporters' => $group->map(fn (MessageReport $r) => $r->reporter?->name)->filter()->values(),
                     'created_at' => $first->created_at->toIso8601String(),
@@ -67,7 +69,7 @@ class ModerationController extends Controller
                         'chat' => $message->conversation->title ?? ($message->conversation->family_id ? 'Чат сім’ї' : 'Особисте листування'),
                     ] : null,
                 ];
-            })->sortByDesc('urgent')->values();
+            })->sortByDesc(fn (array $row) => ($row['urgent'] ? 10 : 0) + (['high' => 3, 'medium' => 2, 'low' => 1][$row['ai']['severity'] ?? ''] ?? 0))->values();
 
         $people = UserReport::query()->where('status', UserReport::PENDING)
             ->with(['user', 'reporter'])
@@ -83,6 +85,8 @@ class ModerationController extends Controller
                     'count' => $group->count(),
                     'reasons' => $group->pluck('reason')->unique()->map(fn (string $r) => UserReport::REASONS[$r] ?? $r)->values(),
                     'urgent' => $group->contains('reason', 'child_safety'),
+                    // Оцінка ШІ (плагін «ai_moderation»): high піднімає скаргу вище.
+                    'ai' => $group->pluck('ai_verdict')->filter()->first(),
                     'comments' => $group->pluck('comment')->filter()->values(),
                     'reporters' => $group->map(fn (UserReport $r) => $r->reporter?->name)->filter()->values(),
                     'created_at' => $first->created_at->toIso8601String(),
