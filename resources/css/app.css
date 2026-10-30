@@ -1059,6 +1059,16 @@ label:has(
 .legal-doc strong {
     color: #fff;
 }
+/* Світла тема: темний текст на світлому склі — оферта мусить читатися за будь-якої теми. */
+:root[data-theme='light'] .legal-doc {
+    color: rgb(13 27 46 / 0.82);
+}
+:root[data-theme='light'] :is(.legal-doc h2, .legal-doc h3, .legal-doc strong) {
+    color: #0d1b2e;
+}
+:root[data-theme='light'] .legal-doc a {
+    color: #0055ff;
+}
 
 /* GameCon+: анімований нік і ефекти шапки профілю — плоскі (лише зсув градієнта). */
 .plus-name-flow {
