@@ -4,7 +4,7 @@ import type { CSSProperties, ReactNode } from 'react';
 
 /**
  * Сезонні прикраси сайту (сезон приходить із сервера — App\Support\Seasons):
- *  newyear      — сніг і гірлянда під шапкою (Новий рік і Різдво);
+ *  newyear      — сніг, хвойна гірлянда й вогники під шапкою, ялинкові кути, шапка Санти на аватарах;
  *  valentine    — серця, що повільно спливають;
  *  easter       — писанки в кутах і пелюстки;
  *  independence — синьо-жовта стрічка під шапкою;
@@ -64,43 +64,6 @@ function Particles({
                 </span>
             ))}
         </>
-    );
-}
-
-function Garland() {
-    const bulbs = 18;
-    const colors = ['#ff5a5a', '#ffd166', '#4cc9f0', '#80ed99', '#c77dff'];
-
-    return (
-        <svg
-            className="season-garland"
-            viewBox="0 0 1000 40"
-            preserveAspectRatio="none"
-        >
-            <path
-                d="M0 4 Q 55 30 111 4 T 222 4 T 333 4 T 444 4 T 555 4 T 666 4 T 777 4 T 888 4 T 1000 4"
-                fill="none"
-                stroke="rgb(255 255 255 / 0.25)"
-                strokeWidth="1.5"
-            />
-            {Array.from({ length: bulbs }, (_, i) => {
-                const x = (i + 0.5) * (1000 / bulbs);
-                const phase = ((x % 111) / 111) * Math.PI;
-                const y = 6 + Math.sin(phase) * 15;
-
-                return (
-                    <circle
-                        key={i}
-                        cx={x}
-                        cy={y + 6}
-                        r="4.5"
-                        fill={colors[i % colors.length]}
-                        className="season-bulb"
-                        style={{ animationDelay: `${(i % 4) * 0.45}s` }}
-                    />
-                );
-            })}
-        </svg>
     );
 }
 
@@ -172,10 +135,33 @@ export function Seasonal() {
         <>
             {/* Святковий відтінок фону: лягає на будь-яку сцену, фірмову картинку чи відео. */}
             <div aria-hidden className={`season-bg season-bg--${season}`} />
+            {/* Задній план: ялинкові кути видно в полях і крізь скляні картки, текст вони не закривають. */}
+            {season === 'newyear' && (
+                <div aria-hidden className="season-lights" />
+            )}
+            {season === 'newyear' && (
+                <div aria-hidden className="season-back">
+                    <img
+                        src="/images/seasons/newyear/corner-bottom.webp"
+                        alt=""
+                        className="season-ny-corner season-ny-corner--bottom"
+                    />
+                    <img
+                        src="/images/seasons/newyear/corner-top.webp"
+                        alt=""
+                        className="season-ny-corner season-ny-corner--top"
+                    />
+                </div>
+            )}
             <div aria-hidden className={`season season--${season}`}>
                 {season === 'newyear' && (
                     <>
-                        <Garland />
+                        <div className="season-pine" />
+                        <img
+                            src="/images/seasons/newyear/branch-baubles.webp"
+                            alt=""
+                            className="season-ny-branch"
+                        />
                         <Particles
                             count={36}
                             seed={7}

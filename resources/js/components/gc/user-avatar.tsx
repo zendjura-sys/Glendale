@@ -1,3 +1,4 @@
+import { usePage } from '@inertiajs/react';
 import { initials } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { tr } from '@/lib/i18n';
@@ -66,6 +67,8 @@ export function UserAvatar({
     className,
 }: Props) {
     const palette = palettes[(user.id ?? user.name.length) % palettes.length];
+    // Новий рік: шапка Санти на аватарах (крім найменших — там її не розгледіти).
+    const santa = usePage().props.season === 'newyear' && size !== 'xs';
     // Рамка GameCon+, інакше — вдягнута з сезонного пропуску.
     const frame = user.plus?.frame?.length
         ? user.plus
@@ -141,6 +144,15 @@ export function UserAvatar({
                         size !== 'xs' && 'animate-pulse-ring',
                     )}
                     title={tr('Онлайн')}
+                />
+            )}
+            {santa && (
+                <img
+                    src="/images/seasons/newyear/santa-hat.webp"
+                    alt=""
+                    aria-hidden
+                    loading="lazy"
+                    className="santa-hat"
                 />
             )}
         </span>
