@@ -1,3 +1,4 @@
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import {
     Deferred,
     Head,
@@ -39,6 +40,7 @@ import {
     Swords,
     Video,
     X,
+    Settings,
 } from 'lucide-react';
 import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react';
 import { FriendButton } from '@/components/gc/friend-button';
@@ -367,6 +369,8 @@ export default function ProfileShow({
     const videoCoverOn = usePlugin('plus_video_cover');
     const dataSaver = useDataSaver();
     const [statusOpen, setStatusOpen] = useState(false);
+    const [toolsOpen, setToolsOpen] = useState(false);
+    const reduce = useReducedMotion();
     // Профіль відкритий гостям і пошуковикам — замість дій лише запрошення приєднатися.
     const guest = !auth.user;
     // Кольори ефекту шапки: кольори сторінки, інакше колір ніку, інакше акцент сайту.
@@ -421,7 +425,8 @@ export default function ProfileShow({
                         }}
                     />
                 )}
-                <div className="relative isolate h-52 overflow-hidden sm:h-72">
+                {/* Обкладинка — на всю картку; ім’я, кнопки й лічильники лежать поверх неї. */}
+                <div className="absolute inset-0 z-0 overflow-hidden">
                     {profile.cover_video_url && !dataSaver ? (
                         <video
                             src={profile.cover_video_url}
@@ -438,7 +443,7 @@ export default function ProfileShow({
                             fetchPriority="high"
                             src={profile.cover_url}
                             alt=""
-                            className="size-full object-cover"
+                            className="size-full object-cover object-[center_30%]"
                         />
                     ) : profile.accent ? (
                         <div
@@ -459,8 +464,16 @@ export default function ProfileShow({
                             }}
                         />
                     )}
-                    <div className="scrim absolute inset-0" />
-                    <div className="grid-lines absolute inset-0 opacity-40" />
+                    {/* Плавне затемнення донизу: текст поверх фото завжди читається. */}
+                    <div
+                        aria-hidden
+                        className="absolute inset-0"
+                        style={{
+                            backgroundImage:
+                                'linear-gradient(to bottom, rgb(4 7 16 / 0.05) 0%, rgb(4 7 16 / 0.12) 26%, rgb(4 7 16 / 0.58) 46%, rgb(4 7 16 / 0.86) 68%, rgb(4 7 16 / 0.94) 100%)',
+                        }}
+                    />
+                    <div className="grid-lines absolute inset-0 opacity-30" />
                     {profile.accent && profile.cover_url && (
                         <div
                             aria-hidden
@@ -470,6 +483,9 @@ export default function ProfileShow({
                             }}
                         />
                     )}
+                </div>
+
+                <div className="absolute inset-x-0 top-0 z-20">
                     {isSelf &&
                         videoCoverOn &&
                         new Date(auth.user?.plus_until ?? 0).getTime() >
@@ -490,8 +506,8 @@ export default function ProfileShow({
                     )}
                 </div>
 
-                <div className="relative px-5 pb-5 sm:px-8">
-                    <div className="-mt-20 flex flex-col gap-5 sm:-mt-24 sm:flex-row sm:flex-wrap sm:items-end">
+                <div className="relative z-10 px-5 pt-36 pb-5 sm:px-8 sm:pt-52">
+                    <div className="flex flex-col gap-5 sm:flex-row sm:flex-wrap sm:items-end">
                         {/* Світний обідок аватара (стиль Dune); з рамкою GameCon+ — лише рамка. */}
                         <div
                             className={cn(
@@ -689,25 +705,27 @@ export default function ProfileShow({
                             >
                                 <QrCode className="size-4" /> Game Card
                             </Link>
-                            {isSelf && !profile.is_private && (
-                                <EmbedButton
-                                    path={`/widget/u/${profile.username}`}
-                                />
-                            )}
                             {isSelf && (
-                                <CrosspostButton
-                                    owner={{ type: 'user', id: profile.id }}
-                                />
-                            )}
-                            {isSelf && <AuthorStatsButton />}
-                            {isSelf && pixelOn && (
-                                <Link
-                                    href="/settings/pixel-avatar"
-                                    className="inline-flex h-10 items-center gap-2 rounded-xl bg-white/[0.07] px-4 text-sm font-semibold text-white transition hover:bg-white/[0.11]"
+                                <button
+                                    type="button"
+                                    onClick={() => setToolsOpen((v) => !v)}
+                                    aria-expanded={toolsOpen}
+                                    aria-label={tr('Інструменти сторінки')}
+                                    title={tr('Інструменти сторінки')}
+                                    className={cn(
+                                        'inline-flex size-10 items-center justify-center rounded-xl text-white transition',
+                                        toolsOpen
+                                            ? 'bg-white/[0.16]'
+                                            : 'bg-white/[0.07] hover:bg-white/[0.11]',
+                                    )}
                                 >
-                                    <Grid3x3 className="size-4" />
-                                    {tr('Піксель-аватар')}
-                                </Link>
+                                    <Settings
+                                        className={cn(
+                                            'size-4 transition-transform duration-300',
+                                            toolsOpen && 'rotate-90',
+                                        )}
+                                    />
+                                </button>
                             )}
                             {guest ? (
                                 <Link
@@ -790,6 +808,56 @@ export default function ProfileShow({
                             )}
                         </div>
                     </div>
+
+                    {/* Шестерня: віджет, автопостинг, статистика, піксель-аватар — не захаращують шапку. */}
+                    <AnimatePresence initial={false}>
+                        {isSelf && toolsOpen && (
+                            <motion.div
+                                initial={
+                                    reduce
+                                        ? { opacity: 0 }
+                                        : { opacity: 0, height: 0 }
+                                }
+                                animate={
+                                    reduce
+                                        ? { opacity: 1 }
+                                        : { opacity: 1, height: 'auto' }
+                                }
+                                exit={
+                                    reduce
+                                        ? { opacity: 0 }
+                                        : { opacity: 0, height: 0 }
+                                }
+                                className="overflow-hidden"
+                            >
+                                <div className="mt-4 flex flex-wrap justify-end gap-2">
+                                    {isSelf && !profile.is_private && (
+                                        <EmbedButton
+                                            path={`/widget/u/${profile.username}`}
+                                        />
+                                    )}
+                                    {isSelf && (
+                                        <CrosspostButton
+                                            owner={{
+                                                type: 'user',
+                                                id: profile.id,
+                                            }}
+                                        />
+                                    )}
+                                    {isSelf && <AuthorStatsButton />}
+                                    {isSelf && pixelOn && (
+                                        <Link
+                                            href="/settings/pixel-avatar"
+                                            className="inline-flex h-10 items-center gap-2 rounded-xl bg-white/[0.07] px-4 text-sm font-semibold text-white transition hover:bg-white/[0.11]"
+                                        >
+                                            <Grid3x3 className="size-4" />
+                                            {tr('Піксель-аватар')}
+                                        </Link>
+                                    )}
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
 
                     <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-white/[0.06] pt-4">
                         <div className="flex flex-wrap gap-x-5 gap-y-2 text-[13px] text-white/55">
