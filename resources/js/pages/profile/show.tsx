@@ -491,7 +491,7 @@ export default function ProfileShow({
                 </div>
 
                 <div className="relative px-5 pb-5 sm:px-8">
-                    <div className="-mt-20 flex flex-col gap-5 sm:-mt-24 sm:flex-row sm:items-end">
+                    <div className="-mt-20 flex flex-col gap-5 sm:-mt-24 sm:flex-row sm:flex-wrap sm:items-end">
                         {/* Світний обідок аватара (стиль Dune); з рамкою GameCon+ — лише рамка. */}
                         <div
                             className={cn(
@@ -515,7 +515,7 @@ export default function ProfileShow({
                             )}
                         </div>
 
-                        <div className="min-w-0 flex-1 pb-1">
+                        <div className="min-w-0 flex-1 pb-1 sm:min-w-[18rem]">
                             <div className="flex flex-wrap items-center gap-2">
                                 <h1
                                     className={cn(
@@ -681,7 +681,8 @@ export default function ProfileShow({
                             )}
                         </div>
 
-                        <div className="flex flex-wrap items-center gap-2 pb-1">
+                        {/* Кнопок багато — коли поруч з іменем тісно, вони переходять на свій рядок. */}
+                        <div className="flex flex-wrap items-center gap-2 pb-1 sm:ml-auto sm:justify-end">
                             <Link
                                 href={`/${profile.username}/card`}
                                 className="inline-flex h-10 items-center gap-2 rounded-xl bg-white/[0.07] px-4 text-sm font-semibold text-white transition hover:bg-white/[0.11]"
