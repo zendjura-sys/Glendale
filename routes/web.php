@@ -36,6 +36,7 @@ use App\Http\Controllers\GameBacklogController;
 use App\Http\Controllers\GameController;
 use App\Http\Controllers\GameDealsController;
 use App\Http\Controllers\GameNewsController;
+use App\Http\Controllers\GamePlayController;
 use App\Http\Controllers\GameQaController;
 use App\Http\Controllers\GameRatingController;
 use App\Http\Controllers\GameSoundtrackController;
@@ -226,6 +227,9 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::delete('{tierList}', [TierListController::class, 'destroy'])->whereNumber('tierList')->name('destroy');
     });
     Route::get('tools/nicknames', [NicknameController::class, 'index'])->name('tools.nicknames');
+    Route::get('duels', [GamePlayController::class, 'duels'])->name('duels.index');
+    Route::post('duels', [GamePlayController::class, 'challenge'])->middleware('throttle:20,1')->name('duels.store');
+    Route::post('duels/{duel}', [GamePlayController::class, 'act'])->whereNumber('duel')->middleware('throttle:60,1')->name('duels.act');
     Route::post('tools/nicknames/check', [NicknameController::class, 'check'])->middleware('throttle:30,1')->name('tools.nicknames.check');
     Route::prefix('games/{game}')->name('games.')->middleware('module:games')->withoutScopedBindings()->group(function () {
         Route::post('questions', [GameQaController::class, 'ask'])->middleware('throttle:5,1')->name('questions.store');
@@ -234,6 +238,11 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::post('questions/{question}/solve', [GameQaController::class, 'solve'])->whereNumber('question')->name('questions.solve');
         Route::post('answers/{answer}/vote', [GameQaController::class, 'vote'])->whereNumber('answer')->middleware('throttle:60,1')->name('answers.vote');
         Route::post('mentors', [GameQaController::class, 'becomeMentor'])->middleware('throttle:10,1')->name('mentors.store');
+        Route::get('goals', [GamePlayController::class, 'goals'])->name('goals');
+        Route::post('goals', [GamePlayController::class, 'storeGoal'])->middleware('throttle:30,1')->name('goals.store');
+        Route::patch('goals/{goal}', [GamePlayController::class, 'updateGoal'])->whereNumber('goal')->name('goals.update');
+        Route::delete('goals/{goal}', [GamePlayController::class, 'destroyGoal'])->whereNumber('goal')->name('goals.destroy');
+        Route::post('fps', [GamePlayController::class, 'storeFps'])->middleware('throttle:10,1')->name('fps.store');
         Route::delete('mentors', [GameQaController::class, 'leaveMentors'])->name('mentors.destroy');
     });
     Route::post('ideas', [IdeaController::class, 'store'])->middleware('throttle:5,1')->name('ideas.store');
@@ -1103,6 +1112,7 @@ Route::prefix('games')->name('games.')->middleware('module:games')->group(functi
     Route::get('{game}', [GameController::class, 'show'])->name('show');
     Route::get('{game}/news', [GameNewsController::class, 'index'])->middleware('throttle:60,1')->name('news');
     Route::get('{game}/questions', [GameQaController::class, 'questions'])->middleware('throttle:60,1')->name('questions');
+    Route::get('{game}/fps', [GamePlayController::class, 'fps'])->middleware('throttle:60,1')->name('fps');
     Route::get('{game}/mentors', [GameQaController::class, 'mentors'])->middleware('throttle:60,1')->name('mentors');
 });
 

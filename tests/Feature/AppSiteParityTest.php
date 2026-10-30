@@ -469,4 +469,13 @@ class AppSiteParityTest extends TestCase
         $this->withToken($token)->getJson("/api/v1/site/c/{$community->slug}/calendar")->assertOk();
         $this->withToken($token)->getJson("/api/v1/site/c/{$community->slug}/wiki")->assertOk();
     }
+
+    public function test_app_reaches_goals_fps_and_duels_through_bridge(): void
+    {
+        Game::query()->create(['slug' => 'dota-2', 'name' => 'Dota 2', 'letter' => 'D', 'category' => 'pc', 'is_published' => true]);
+        $token = $this->app_token(User::factory()->create());
+        $this->withToken($token)->getJson('/api/v1/site/games/dota-2/goals')->assertOk()->assertJsonStructure(['goals']);
+        $this->withToken($token)->getJson('/api/v1/site/games/dota-2/fps')->assertOk()->assertJsonStructure(['rows', 'presets']);
+        $this->withToken($token)->getJson('/api/v1/site/duels')->assertOk();
+    }
 }

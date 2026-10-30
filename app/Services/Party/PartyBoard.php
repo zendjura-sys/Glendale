@@ -48,6 +48,8 @@ class PartyBoard
         abort_unless($party->isOpen(), 422, 'Оголошення вже закрите.');
         abort_if($party->hasMember($user), 422, 'Ви вже в цій паті.');
         abort_if($party->members->count() + 1 >= $party->slots, 422, 'Місць більше немає.');
+        // Вікове обмеження: якщо дату народження вказано й людина молодша — не пускаємо.
+        abort_if($party->age_min !== null && $user->birthday !== null && $user->birthday->age < $party->age_min, 422, "Ця паті — для гравців від {$party->age_min} років.");
         if ($party->roles) {
             abort_unless($role === null || in_array($role, $party->roles, true), 422, 'Оберіть роль зі списку.');
         } else {
@@ -133,6 +135,12 @@ class PartyBoard
             'platform' => $party->platform,
             'platform_label' => $party->platform ? (PartyPost::PLATFORMS[$party->platform] ?? $party->platform) : null,
             'roles' => $party->roles ?? [],
+            'mic' => $party->mic_required,
+            'language' => $party->language,
+            'language_label' => $party->language ? (PartyPost::LANGUAGES[$party->language] ?? $party->language) : null,
+            'age_min' => $party->age_min,
+            'style' => $party->style,
+            'style_label' => $party->style ? (PartyPost::STYLES[$party->style] ?? null) : null,
             'taken_roles' => $taken,
             'slots' => $party->slots,
             'count' => $party->members->count() + 1,

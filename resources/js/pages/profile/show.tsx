@@ -36,6 +36,7 @@ import {
     UserPlus,
     UsersRound,
     Grid3x3,
+    Swords,
 } from 'lucide-react';
 import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react';
 import { FriendButton } from '@/components/gc/friend-button';
@@ -311,6 +312,7 @@ export default function ProfileShow({
     const isSelf = relation === 'self';
     const statusOn = usePlugin('status_emoji');
     const pixelOn = usePlugin('pixel_avatar');
+    const duelsOn = usePlugin('duels');
     const [statusOpen, setStatusOpen] = useState(false);
     // Профіль відкритий гостям і пошуковикам — замість дій лише запрошення приєднатися.
     const guest = !auth.user;
@@ -667,6 +669,18 @@ export default function ProfileShow({
                                                 {tr('Написати')}
                                             </Link>
                                         )}
+                                    {duelsOn && (
+                                        <Link
+                                            href={`/duels?to=${profile.username}`}
+                                            aria-label={tr(
+                                                'Викликати на дуель',
+                                            )}
+                                            title={tr('Викликати на дуель')}
+                                            className="inline-flex size-10 items-center justify-center rounded-xl bg-white/[0.07] text-white transition hover:bg-white/[0.11]"
+                                        >
+                                            <Swords className="size-4" />
+                                        </Link>
+                                    )}
                                     {modules.includes('messages') &&
                                         canMessage &&
                                         relation === 'friends' &&

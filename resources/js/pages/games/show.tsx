@@ -29,6 +29,8 @@ import {
     Users,
     X,
     GraduationCap,
+    Gauge,
+    Target,
     LayoutList,
     MessageCircleQuestion,
 } from 'lucide-react';
@@ -55,6 +57,8 @@ import { PcCheck } from '@/components/games/pc-check';
 import { GameNews } from '@/components/games/game-news';
 import { GameLeaderboard } from '@/components/games/game-leaderboard';
 import { GameMentors } from '@/components/games/game-mentors';
+import { GameGoals } from '@/components/games/game-goals';
+import { FpsReports } from '@/components/games/fps-reports';
 import { GameQa } from '@/components/games/game-qa';
 import { MyGameAchievements } from '@/components/games/my-achievements';
 import type { LeaderboardData } from '@/components/games/game-leaderboard';
@@ -348,6 +352,8 @@ export default function GameShow({
     const qaOn = usePlugin('game_qa');
     const mentorsOn = usePlugin('game_mentors');
     const tierOn = usePlugin('tier_lists');
+    const goalsOn = usePlugin('game_goals');
+    const fpsOn = usePlugin('fps_reports');
     const achievementsOn = usePlugin('steam_achievements');
     const [newsEmpty, setNewsEmpty] = useState(false);
     const hideNews = useCallback(() => setNewsEmpty(true), []);
@@ -691,6 +697,18 @@ export default function GameShow({
                             </li>
                         ))}
                     </ul>
+                </Section>
+            )}
+
+            {goalsOn && !guest && (
+                <Section title={tr('Мої цілі')} icon={Target}>
+                    <GameGoals slug={game.slug} />
+                </Section>
+            )}
+
+            {fpsOn && (
+                <Section title={tr('FPS у гравців')} icon={Gauge}>
+                    <FpsReports slug={game.slug} />
                 </Section>
             )}
 

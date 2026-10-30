@@ -1,5 +1,5 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
-import { Plus, Radar, UserRoundSearch, X } from 'lucide-react';
+import { Plus, Radar, UserRoundSearch, X, Mic } from 'lucide-react';
 import { useState } from 'react';
 import { selectClass } from '@/components/gc/admin';
 import { EmptyState } from '@/components/gc/widget';
@@ -24,9 +24,15 @@ type Props = {
         game: string | null;
         server: string | null;
         platform: string | null;
+        mic?: boolean;
+        language?: string | null;
+        style?: string | null;
     };
     options: {
         platforms: Record<string, string>;
+        languages?: Record<string, string>;
+        styles?: Record<string, string>;
+        ages?: number[];
         games: Option[];
         servers: Option[];
     };
@@ -59,7 +65,12 @@ export default function PartyBoard({ parties, filters, options }: Props) {
         slots: 4,
         starts_at: '',
         time_options: [] as string[],
+        mic: false,
+        language: '',
+        age_min: '',
+        style: '',
     });
+    const lfgOn = usePlugin('lfg_filters');
 
     const visit = (patch: Partial<Props['filters']>) => {
         const next = { ...filters, ...patch };
@@ -69,6 +80,9 @@ export default function PartyBoard({ parties, filters, options }: Props) {
                 game: next.game || undefined,
                 server: next.server || undefined,
                 platform: next.platform || undefined,
+                mic: next.mic ? 1 : undefined,
+                language: next.language || undefined,
+                style: next.style || undefined,
             },
             { preserveState: true, preserveScroll: true, replace: true },
         );
@@ -93,6 +107,9 @@ export default function PartyBoard({ parties, filters, options }: Props) {
             game: data.game || null,
             server: data.server || null,
             platform: data.platform || null,
+            language: data.language || null,
+            style: data.style || null,
+            age_min: data.age_min ? Number(data.age_min) : null,
             starts_at:
                 later && data.starts_at
                     ? new Date(data.starts_at).toISOString()
@@ -189,6 +206,60 @@ export default function PartyBoard({ parties, filters, options }: Props) {
                             )}
                         </select>
                     </div>
+                    {lfgOn && (
+                        <div className="mt-2 flex flex-wrap gap-2">
+                            <button
+                                type="button"
+                                onClick={() => visit({ mic: !filters.mic })}
+                                aria-pressed={Boolean(filters.mic)}
+                                className={cn(
+                                    'inline-flex h-9 items-center gap-1.5 rounded-xl px-3 text-sm transition',
+                                    filters.mic
+                                        ? 'bg-gc-indigo text-white'
+                                        : 'bg-white/[0.06] text-white/70 hover:text-white',
+                                )}
+                            >
+                                <Mic className="size-4" />
+                                {tr('З мікрофоном')}
+                            </button>
+                            <select
+                                value={filters.language ?? ''}
+                                onChange={(e) =>
+                                    visit({ language: e.target.value || null })
+                                }
+                                className={cn(selectClass, 'h-9')}
+                                aria-label={tr('Мова')}
+                            >
+                                <option value="">{tr('Будь-яка мова')}</option>
+                                {Object.entries(options.languages ?? {}).map(
+                                    ([value, label]) => (
+                                        <option key={value} value={value}>
+                                            {label}
+                                        </option>
+                                    ),
+                                )}
+                            </select>
+                            <select
+                                value={filters.style ?? ''}
+                                onChange={(e) =>
+                                    visit({ style: e.target.value || null })
+                                }
+                                className={cn(selectClass, 'h-9')}
+                                aria-label={tr('Стиль гри')}
+                            >
+                                <option value="">
+                                    {tr('Будь-який стиль')}
+                                </option>
+                                {Object.entries(options.styles ?? {}).map(
+                                    ([value, label]) => (
+                                        <option key={value} value={value}>
+                                            {tr(label)}
+                                        </option>
+                                    ),
+                                )}
+                            </select>
+                        </div>
+                    )}
                 </section>
                 <ReadyToPlayCard />
 
@@ -327,6 +398,79 @@ export default function PartyBoard({ parties, filters, options }: Props) {
                                 />
                             </label>
                         </div>
+                        {lfgOn && (
+                            <div className="grid gap-2 sm:grid-cols-4">
+                                <label className="flex h-11 items-center gap-2 rounded-xl bg-white/[0.04] px-3.5 text-sm text-white/75">
+                                    <input
+                                        type="checkbox"
+                                        checked={form.data.mic}
+                                        onChange={(e) =>
+                                            form.setData(
+                                                'mic',
+                                                e.target.checked,
+                                            )
+                                        }
+                                        className="size-4 accent-gc-indigo"
+                                    />
+                                    {tr('Потрібен мікрофон')}
+                                </label>
+                                <select
+                                    value={form.data.language}
+                                    onChange={(e) =>
+                                        form.setData('language', e.target.value)
+                                    }
+                                    className={cn(selectClass, 'h-11')}
+                                    aria-label={tr('Мова')}
+                                >
+                                    <option value="">
+                                        {tr('Будь-яка мова')}
+                                    </option>
+                                    {Object.entries(
+                                        options.languages ?? {},
+                                    ).map(([value, label]) => (
+                                        <option key={value} value={value}>
+                                            {label}
+                                        </option>
+                                    ))}
+                                </select>
+                                <select
+                                    value={form.data.age_min}
+                                    onChange={(e) =>
+                                        form.setData('age_min', e.target.value)
+                                    }
+                                    className={cn(selectClass, 'h-11')}
+                                    aria-label={tr('Вік')}
+                                >
+                                    <option value="">
+                                        {tr('Будь-який вік')}
+                                    </option>
+                                    {(options.ages ?? []).map((age) => (
+                                        <option key={age} value={age}>
+                                            {age}+
+                                        </option>
+                                    ))}
+                                </select>
+                                <select
+                                    value={form.data.style}
+                                    onChange={(e) =>
+                                        form.setData('style', e.target.value)
+                                    }
+                                    className={cn(selectClass, 'h-11')}
+                                    aria-label={tr('Стиль гри')}
+                                >
+                                    <option value="">
+                                        {tr('Будь-який стиль')}
+                                    </option>
+                                    {Object.entries(options.styles ?? {}).map(
+                                        ([value, label]) => (
+                                            <option key={value} value={value}>
+                                                {tr(label)}
+                                            </option>
+                                        ),
+                                    )}
+                                </select>
+                            </div>
+                        )}
                         <div className="flex gap-1 rounded-xl bg-white/[0.04] p-1">
                             {(
                                 [

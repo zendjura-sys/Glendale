@@ -26,6 +26,10 @@ use Illuminate\Support\Carbon;
  * @property Carbon $expires_at
  * @property Carbon|null $closed_at
  * @property Carbon|null $bumped_until GameCon+: оголошення підняте нагору до цього часу
+ * @property bool $mic_required
+ * @property string|null $language Мова спілкування (uk, en…)
+ * @property int|null $age_min 16 чи 18+
+ * @property string|null $style chill | tryhard
  * @property Carbon $created_at
  * @property-read User $user
  * @property-read Game|null $game
@@ -33,14 +37,20 @@ use Illuminate\Support\Carbon;
  * @property-read Collection<int, PartyMember> $members
  * @property-read Collection<int, PartyTimeSlot> $timeSlots
  */
-#[Fillable(['user_id', 'game_id', 'gta_server_id', 'title', 'note', 'platform', 'roles', 'slots', 'starts_at', 'expires_at', 'closed_at', 'bumped_until'])]
+#[Fillable(['user_id', 'game_id', 'gta_server_id', 'title', 'note', 'platform', 'roles', 'slots', 'starts_at', 'expires_at', 'closed_at', 'bumped_until', 'mic_required', 'language', 'age_min', 'style'])]
 class PartyPost extends Model
 {
+    public const STYLES = ['chill' => 'Для фану', 'tryhard' => 'На результат'];
+
+    public const LANGUAGES = ['uk' => 'Українська', 'en' => 'English', 'pl' => 'Polski', 'de' => 'Deutsch'];
+
+    public const AGES = [16, 18];
+
     public const PLATFORMS = ['pc' => 'ПК', 'playstation' => 'PlayStation', 'xbox' => 'Xbox', 'switch' => 'Switch', 'mobile' => 'Мобільні'];
 
     protected function casts(): array
     {
-        return ['roles' => 'array', 'starts_at' => 'datetime', 'expires_at' => 'datetime', 'closed_at' => 'datetime', 'bumped_until' => 'datetime', 'slots' => 'integer'];
+        return ['roles' => 'array', 'starts_at' => 'datetime', 'expires_at' => 'datetime', 'closed_at' => 'datetime', 'bumped_until' => 'datetime', 'slots' => 'integer', 'mic_required' => 'boolean', 'age_min' => 'integer'];
     }
 
     /**

@@ -1,5 +1,13 @@
 import { Link } from '@inertiajs/react';
-import { ArrowUp, Clock3, Gamepad2, Server, Users, Vote } from 'lucide-react';
+import {
+    ArrowUp,
+    Clock3,
+    Gamepad2,
+    Mic,
+    Server,
+    Users,
+    Vote,
+} from 'lucide-react';
 import { UserAvatar } from '@/components/gc/user-avatar';
 import { clockTime, dayLabel } from '@/lib/format';
 import { tr } from '@/lib/i18n';
@@ -16,6 +24,10 @@ export type PartyCardData = {
     platform_label: string | null;
     roles: string[];
     taken_roles: string[];
+    mic?: boolean;
+    language_label?: string | null;
+    age_min?: number | null;
+    style_label?: string | null;
     slots: number;
     count: number;
     full?: boolean;
@@ -124,6 +136,27 @@ export function PartyCard({ party }: { party: PartyCardData }) {
                 {party.platform && (
                     <span className="rounded-chip bg-white/[0.06] px-2 py-0.5 text-white/70">
                         {PARTY_PLATFORMS()[party.platform] ?? party.platform}
+                    </span>
+                )}
+                {party.mic && (
+                    <span className="inline-flex items-center gap-1 rounded-chip bg-white/[0.06] px-2 py-0.5 text-white/70">
+                        <Mic className="size-3" />
+                        {tr('Мікрофон')}
+                    </span>
+                )}
+                {party.language_label && (
+                    <span className="rounded-chip bg-white/[0.06] px-2 py-0.5 text-white/70">
+                        {party.language_label}
+                    </span>
+                )}
+                {party.age_min && (
+                    <span className="rounded-chip bg-white/[0.06] px-2 py-0.5 text-white/70">
+                        {party.age_min}+
+                    </span>
+                )}
+                {party.style_label && (
+                    <span className="rounded-chip bg-white/[0.06] px-2 py-0.5 text-white/70">
+                        {tr(party.style_label)}
                     </span>
                 )}
             </div>

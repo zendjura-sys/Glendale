@@ -28,13 +28,23 @@ class PartyController extends Controller
             'game' => ['nullable', 'string', 'max:120'],
             'server' => ['nullable', 'string', 'max:80'],
             'platform' => ['nullable', Rule::in(array_keys(PartyPost::PLATFORMS))],
+            'mic' => ['nullable', 'boolean'],
+            'language' => ['nullable', Rule::in(array_keys(PartyPost::LANGUAGES))],
+            'style' => ['nullable', Rule::in(array_keys(PartyPost::STYLES))],
         ]);
         $user = $request->user();
+        $lfg = app(Plugins::class)->on('lfg_filters');
+        $age = $user->birthday?->age;
         $parties = PartyPost::query()->open()
             ->with(['user', 'game', 'server', 'members.user'])
             ->when($filters['game'] ?? null, fn (Builder $q, string $slug) => $q->whereHas('game', fn (Builder $g) => $g->where('slug', $slug)))
             ->when($filters['server'] ?? null, fn (Builder $q, string $slug) => $q->whereHas('server', fn (Builder $s) => $s->where('slug', $slug)))
             ->when($filters['platform'] ?? null, fn (Builder $q, string $platform) => $q->where('platform', $platform))
+            ->when($lfg && ($filters['mic'] ?? false), fn (Builder $q) => $q->where('mic_required', true))
+            ->when($lfg ? ($filters['language'] ?? null) : null, fn (Builder $q, string $lang) => $q->where('language', $lang))
+            ->when($lfg ? ($filters['style'] ?? null) : null, fn (Builder $q, string $style) => $q->where('style', $style))
+            // Паті з віковим обмеженням не показуємо тим, хто молодший (якщо вік відомий).
+            ->when($lfg && $age !== null, fn (Builder $q) => $q->where(fn (Builder $w) => $w->whereNull('age_min')->orWhere('age_min', '<=', $age)))
             ->orderByRaw('case when bumped_until > ? then 0 else 1 end', [now()])
             ->orderByRaw('coalesce(starts_at, created_at)')
             ->limit(60)
@@ -46,9 +56,15 @@ class PartyController extends Controller
                 'game' => $filters['game'] ?? null,
                 'server' => $filters['server'] ?? null,
                 'platform' => $filters['platform'] ?? null,
+                'mic' => (bool) ($filters['mic'] ?? false),
+                'language' => $filters['language'] ?? null,
+                'style' => $filters['style'] ?? null,
             ],
             'options' => [
                 'platforms' => PartyPost::PLATFORMS,
+                'languages' => PartyPost::LANGUAGES,
+                'styles' => PartyPost::STYLES,
+                'ages' => PartyPost::AGES,
                 'games' => array_values(Game::query()->where('is_published', true)->orderByDesc('popularity')->limit(80)->get(['slug', 'name'])
                     ->map(fn (Game $game) => ['slug' => $game->slug, 'name' => $game->name])->all()),
                 'servers' => array_values(GtaServer::query()->published()->orderBy('name')->limit(300)->get(['slug', 'name'])
@@ -83,6 +99,10 @@ class PartyController extends Controller
             // Голосування за час: 2–4 варіанти замість одного часу.
             'time_options' => ['nullable', 'array', 'min:'.PartyTimeVote::MIN, 'max:'.PartyTimeVote::MAX],
             'time_options.*' => ['date', 'after:now', 'before:+7 days', 'distinct'],
+            'mic' => ['nullable', 'boolean'],
+            'language' => ['nullable', Rule::in(array_keys(PartyPost::LANGUAGES))],
+            'age_min' => ['nullable', Rule::in(PartyPost::AGES)],
+            'style' => ['nullable', Rule::in(array_keys(PartyPost::STYLES))],
         ]);
         /** @var list<Carbon> $options */
         $options = [];
@@ -105,6 +125,10 @@ class PartyController extends Controller
             'starts_at' => $options === [] && ($data['starts_at'] ?? null) ? Carbon::parse($data['starts_at']) : null,
             'game_id' => $game?->id,
             'gta_server_id' => $server?->id,
+            'mic_required' => (bool) ($data['mic'] ?? false),
+            'language' => $data['language'] ?? null,
+            'age_min' => isset($data['age_min']) ? (int) $data['age_min'] : null,
+            'style' => $data['style'] ?? null,
         ], $options === [] ? null : $options[count($options) - 1]);
         if ($options !== []) {
             app(PartyTimeVote::class)->open($party, $options);

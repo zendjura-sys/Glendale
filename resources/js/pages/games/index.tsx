@@ -9,6 +9,7 @@ import {
     Smartphone,
     Tv,
     LayoutList,
+    Swords,
     WandSparkles,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -122,6 +123,7 @@ export default function GamesIndex({
     const backlogOn = usePlugin('game_backlog');
     const tierOn = usePlugin('tier_lists');
     const nickOn = usePlugin('nick_generator');
+    const duelsOn = usePlugin('duels');
     const signedIn = !!usePage().props.auth.user;
 
     const visit = (patch: Partial<Props['filters']>) =>
@@ -175,6 +177,15 @@ export default function GamesIndex({
                     >
                         <LayoutList className="size-4 text-rose-300" />
                         {tr('Тір-листи')}
+                    </Link>
+                )}
+                {duelsOn && signedIn && (
+                    <Link
+                        href="/duels"
+                        className="inline-flex h-10 items-center gap-2 rounded-xl bg-white/[0.06] px-3.5 text-sm font-semibold text-white/80 transition hover:bg-white/10 hover:text-white"
+                    >
+                        <Swords className="size-4 text-violet-300" />
+                        {tr('Дуелі')}
                     </Link>
                 )}
                 {nickOn && signedIn && (
