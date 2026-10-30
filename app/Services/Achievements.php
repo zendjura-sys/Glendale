@@ -50,7 +50,7 @@ class Achievements
      *
      * Бейдж із 'module' показується, лише якщо розділ є в режимі глядача (у «Класиці» — без сімей і кланів).
      *
-     * @var list<array{key: string, stat: string, target: int, title: string, text: string, icon: string, module?: string}>
+     * @var list<array{key: string, stat: string, target: int, title: string, text: string, icon: string, module?: string, secret?: bool}>
      */
     private const BADGES = [
         ['key' => 'first_post', 'stat' => 'posts', 'target' => 1, 'title' => 'Перший пост', 'text' => 'Опублікувати перший запис.', 'icon' => 'pen-line'],
@@ -77,6 +77,9 @@ class Achievements
         ['key' => 'invite_25', 'stat' => 'referrals', 'target' => 25, 'title' => 'Амбасадор GameCon', 'text' => 'Запросити 25 друзів.', 'icon' => 'megaphone'],
         ['key' => 'clip_of_week', 'stat' => 'clip_wins', 'target' => 1, 'title' => 'Кліп тижня', 'text' => 'Ваш кліп переміг у «Кліпі тижня».', 'icon' => 'trophy', 'module' => 'moments'],
         ['key' => 'pioneer', 'stat' => 'pioneer', 'target' => 1, 'title' => 'Перші 100', 'text' => 'Бути серед перших ста користувачів.', 'icon' => 'rocket'],
+        ['key' => 'konami', 'stat' => 'secret_konami', 'target' => 1, 'title' => 'Старий код', 'text' => '↑↑↓↓←→←→BA — ви знаєте, що робите.', 'icon' => 'gamepad-2', 'secret' => true],
+        ['key' => 'night_owl', 'stat' => 'secret_night_owl', 'target' => 1, 'title' => 'Нічна сова', 'text' => 'Опублікувати запис між третьою й п’ятою ранку.', 'icon' => 'moon', 'secret' => true],
+        ['key' => 'pumpkin', 'stat' => 'secret_pumpkin', 'target' => 1, 'title' => 'Гарбуз', 'text' => 'Опублікувати запис на Хелловін.', 'icon' => 'ghost', 'secret' => true],
     ];
 
     /**
@@ -113,6 +116,15 @@ class Achievements
         $badges = [];
         foreach (self::BADGES as $badge) {
             $current = $stats[$badge['stat']] ?? 0;
+            // Секретне без відкриття: ні назви, ні умови — лише замок.
+            if (($badge['secret'] ?? false) && $current < $badge['target']) {
+                if (! app(Plugins::class)->on('secret_achievements')) {
+                    continue;
+                }
+                $badges[] = ['key' => $badge['key'], 'title' => 'Секретне досягнення', 'text' => 'Умову не розкриваємо — його можна лише знайти.', 'icon' => 'lock', 'earned' => false, 'progress' => 0, 'target' => 1, 'module' => null, 'secret' => true];
+
+                continue;
+            }
             $badges[] = [
                 'key' => $badge['key'],
                 'title' => $badge['title'],
@@ -122,6 +134,7 @@ class Achievements
                 'progress' => min($current, $badge['target']),
                 'target' => $badge['target'],
                 'module' => $badge['module'] ?? null,
+                'secret' => $badge['secret'] ?? false,
             ];
         }
         $title = 'Новачок';
@@ -232,6 +245,7 @@ class Achievements
             'quests' => app(DailyQuests::class)->completed($user),
             'referrals' => app(Referrals::class)->active($user),
             'clip_wins' => app(ClipOfWeek::class)->wins($user),
+            ...collect(app(SecretAchievements::class)->of($user))->mapWithKeys(fn (string $key) => ["secret_{$key}" => 1])->all(),
         ];
     }
 }

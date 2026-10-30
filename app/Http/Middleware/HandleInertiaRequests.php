@@ -130,6 +130,8 @@ class HandleInertiaRequests extends Middleware
                     'morning_digest' => $user->wantsDigest(),
                     // Економія трафіку: фото по дотику, відео не грає саме.
                     'data_saver' => $user->pref('data_saver') === true,
+                    // Режим стримера: особисте на екрані розмите.
+                    'streamer_mode' => app(Plugins::class)->on('streamer_mode') && $user->pref('streamer_mode') === true,
                     // Звук нових повідомлень і сповіщень (Налаштування → Оформлення).
                     'notify_sound' => in_array($sound = $user->pref('notify_sound', 'soft'), GameThemeController::SOUNDS, true) ? $sound : 'soft',
                     // До коли діє GameCon+ (оплата — карткою через monobank, без балансу).

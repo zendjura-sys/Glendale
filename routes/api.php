@@ -24,6 +24,7 @@ use App\Http\Controllers\CommentController;
 use App\Http\Controllers\CommunityChannelController;
 use App\Http\Controllers\CommunityController;
 use App\Http\Controllers\CommunityMemberController;
+use App\Http\Controllers\CreatorController;
 use App\Http\Controllers\CrosspostController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\Families;
@@ -32,6 +33,7 @@ use App\Http\Controllers\GameBacklogController;
 use App\Http\Controllers\GameController;
 use App\Http\Controllers\GameNewsController;
 use App\Http\Controllers\GuestBanController;
+use App\Http\Controllers\IdeaController;
 use App\Http\Controllers\InviteLinkController;
 use App\Http\Controllers\ListenPartyController;
 use App\Http\Controllers\ListenRoomController;
@@ -345,6 +347,10 @@ Route::prefix('v1')->group(function () {
             Route::get('games/{game}/news', [GameNewsController::class, 'index'])->middleware(['module:games', 'throttle:60,1']);
             Route::post('newcomer/hide', [NewcomerController::class, 'hide']);
             Route::put('settings/setup', [SetupController::class, 'update'])->middleware('throttle:30,1');
+            Route::get('ideas', [IdeaController::class, 'index']);
+            Route::post('ideas', [IdeaController::class, 'store'])->middleware('throttle:5,1');
+            Route::post('ideas/{idea}/vote', [IdeaController::class, 'toggleVote'])->middleware('throttle:60,1');
+            Route::get('me/author-stats', [CreatorController::class, 'stats'])->middleware('throttle:30,1');
             Route::put('settings/stream-schedule', [SetupController::class, 'schedule'])->middleware('throttle:30,1');
             Route::prefix('crosspost/{type}/{id}')->whereIn('type', ['user', 'server'])->whereNumber('id')->group(function () {
                 Route::get('/', [CrosspostController::class, 'index']);

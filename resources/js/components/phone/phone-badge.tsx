@@ -39,7 +39,9 @@ export function PhoneBadge({
                     size === 'lg' ? 'size-6' : 'size-4',
                 )}
             />
-            <span className="phone-badge__number">{phone.number}</span>
+            <span data-private className="phone-badge__number">
+                {phone.number}
+            </span>
             {showLabel && phone.tier !== 'regular' && (
                 <span className="phone-badge__label rounded-chip px-2 py-0.5 text-[11px] font-semibold">
                     {label}

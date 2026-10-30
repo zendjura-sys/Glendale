@@ -347,6 +347,7 @@ export default function Profile({
                         <div className="grid w-full gap-1">
                             <Input
                                 id="email"
+                                data-private
                                 type="email"
                                 value={data.email}
                                 onChange={(e) =>

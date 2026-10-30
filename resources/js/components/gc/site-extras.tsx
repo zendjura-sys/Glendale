@@ -1,5 +1,10 @@
-import { router, useForm } from '@inertiajs/react';
-import { Keyboard, MessageSquareHeart, Sparkles } from 'lucide-react';
+import { Link, router, useForm } from '@inertiajs/react';
+import {
+    Keyboard,
+    Lightbulb,
+    MessageSquareHeart,
+    Sparkles,
+} from 'lucide-react';
 import { useEffect, useState } from 'react';
 import {
     Dialog,
@@ -13,6 +18,22 @@ import { cn } from '@/lib/utils';
 
 /** Останні оновлення сайту: нова версія — нова позначка в шапці. */
 const CHANGELOG = () => [
+    {
+        version: '2026.10.27',
+        date: '2026-10-27',
+        items: [
+            tr(
+                'Голосові кімнати-«сцени»: слухачі піднімають руку, ведучий запрошує говорити.',
+            ),
+            tr(
+                'Автопостинг у Discord і Telegram, розклад стрімів на сторінці й анкета вступу до закритих спільнот.',
+            ),
+            tr(
+                'Статистика автора, піксельний аватар, режим стримера й секретні досягнення — шукайте!',
+            ),
+            tr('Дошка ідей: пропонуйте, що додати, і голосуйте за чужі ідеї.'),
+        ],
+    },
     {
         version: '2026.10.16',
         date: '2026-10-16',
@@ -204,6 +225,14 @@ export function WhatsNewButton() {
                             </li>
                         ))}
                     </ul>
+                    <Link
+                        href="/ideas"
+                        onClick={() => setOpen(false)}
+                        className="inline-flex items-center gap-2 text-sm font-medium text-gc-lilac-300 hover:text-white"
+                    >
+                        <Lightbulb className="size-4" />
+                        {tr('Дошка ідей')}
+                    </Link>
                     <button
                         type="button"
                         onClick={() => {

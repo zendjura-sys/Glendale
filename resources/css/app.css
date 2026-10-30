@@ -4853,3 +4853,10 @@ html:has(.am) body {
         opacity: 0;
     }
 }
+
+/* Режим стримера: особисте на екрані розмите (пошта, номер, тексти листування й сповіщень). */
+.gc-streamer [data-private],
+.gc-streamer [data-sonner-toast] [data-description] {
+    filter: blur(6px);
+    user-select: none;
+}

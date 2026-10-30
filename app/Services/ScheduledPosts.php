@@ -56,6 +56,7 @@ class ScheduledPosts
         }
 
         if ($post->author) {
+            app(SecretAchievements::class)->afterPost($post->author);
             app(Mentions::class)->notify($post->author, $post->body, route('posts.show', $post, absolute: false));
         }
 

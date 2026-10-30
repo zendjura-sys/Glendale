@@ -39,6 +39,7 @@ export type User = {
     show_listening?: boolean;
     morning_digest?: boolean;
     data_saver?: boolean;
+    streamer_mode?: boolean;
     notify_sound?: 'off' | 'soft' | 'pixel' | 'arcade' | 'drop';
     created_at: string;
     updated_at: string;

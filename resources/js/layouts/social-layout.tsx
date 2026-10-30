@@ -28,6 +28,8 @@ import type { PanInfo } from 'motion/react';
 import { motionOr, SNAP } from '@/lib/motion';
 import { SiteBackground } from '@/components/backgrounds/site-background';
 import { Seasonal } from '@/components/gc/seasonal';
+import { Konami } from '@/components/gc/konami';
+import { useStreamerMode } from '@/components/settings/streamer-mode-switch';
 import { IncomingCall } from '@/components/gc/incoming-call';
 import { forgetOfflinePages } from '@/lib/offline';
 import { InboxListener } from '@/components/gc/inbox-listener';
@@ -794,6 +796,7 @@ export default function SocialLayout({ children }: PropsWithChildren) {
     const { auth, modules } = usePage().props;
     const { url } = usePage();
     const { current } = usePlayer();
+    useStreamerMode();
 
     useEffect(() => {
         if (url.startsWith('/music')) {
@@ -818,6 +821,7 @@ export default function SocialLayout({ children }: PropsWithChildren) {
             )}
             <SiteBackground />
             <Seasonal />
+            <Konami />
             <Topbar />
             <div
                 className={cn(

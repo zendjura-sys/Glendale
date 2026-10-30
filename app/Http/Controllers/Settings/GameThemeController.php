@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Game;
 use App\Models\User;
 use App\Support\GameTheme;
+use App\Support\Plugins\Plugins;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -52,6 +53,16 @@ class GameThemeController extends Controller
     {
         $data = $request->validate(['data_saver' => ['required', 'boolean']]);
         $this->user($request)->mergePref(['data_saver' => (bool) $data['data_saver']]);
+
+        return back();
+    }
+
+    /** Режим стримера: на екрані розмито пошту, номер, тексти листування й сповіщень. */
+    public function streamerMode(Request $request): RedirectResponse
+    {
+        app(Plugins::class)->ensure('streamer_mode');
+        $data = $request->validate(['streamer_mode' => ['required', 'boolean']]);
+        $this->user($request)->mergePref(['streamer_mode' => (bool) $data['streamer_mode']]);
 
         return back();
     }

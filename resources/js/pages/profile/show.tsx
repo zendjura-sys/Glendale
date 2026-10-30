@@ -7,6 +7,7 @@ import {
     usePage,
 } from '@inertiajs/react';
 import { CrosspostButton } from '@/components/gc/crosspost-button';
+import { AuthorStatsButton } from '@/components/profile/author-stats';
 import { MySetup } from '@/components/profile/my-setup';
 import type { SetupData } from '@/components/profile/my-setup';
 import { StreamSchedule } from '@/components/profile/stream-schedule';
@@ -32,6 +33,7 @@ import {
     ShieldCheck,
     UserPlus,
     UsersRound,
+    Grid3x3,
 } from 'lucide-react';
 import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react';
 import { FriendButton } from '@/components/gc/friend-button';
@@ -304,6 +306,7 @@ export default function ProfileShow({
     const { modules, auth } = usePage().props;
     const isSelf = relation === 'self';
     const statusOn = usePlugin('status_emoji');
+    const pixelOn = usePlugin('pixel_avatar');
     const [statusOpen, setStatusOpen] = useState(false);
     // Профіль відкритий гостям і пошуковикам — замість дій лише запрошення приєднатися.
     const guest = !auth.user;
@@ -614,6 +617,16 @@ export default function ProfileShow({
                                 <CrosspostButton
                                     owner={{ type: 'user', id: profile.id }}
                                 />
+                            )}
+                            {isSelf && <AuthorStatsButton />}
+                            {isSelf && pixelOn && (
+                                <Link
+                                    href="/settings/pixel-avatar"
+                                    className="inline-flex h-10 items-center gap-2 rounded-xl bg-white/[0.07] px-4 text-sm font-semibold text-white transition hover:bg-white/[0.11]"
+                                >
+                                    <Grid3x3 className="size-4" />
+                                    {tr('Піксель-аватар')}
+                                </Link>
                             )}
                             {guest ? (
                                 <Link

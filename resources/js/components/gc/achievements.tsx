@@ -8,6 +8,8 @@ import {
     CirclePlay,
     Clapperboard,
     Crown,
+    Gamepad2,
+    Ghost,
     Heart,
     House,
     Lock,
@@ -20,6 +22,7 @@ import {
     Trophy,
     UserPlus,
     Megaphone,
+    Moon,
     Vote,
     Star,
     Swords,
@@ -40,6 +43,8 @@ export type Badge = {
     target: number;
     /** У скількох відсотків активних людей є бейдж (null — ще не пораховано). */
     rarity?: number | null;
+    /** Секретне: умову видно лише після відкриття. */
+    secret?: boolean;
 };
 
 /** Бейдж вважаємо рідкісним, якщо він є менш ніж у 10% людей. */
@@ -86,6 +91,10 @@ const ICONS: Record<string, LucideIcon> = {
     'user-plus': UserPlus,
     megaphone: Megaphone,
     trophy: Trophy,
+    'gamepad-2': Gamepad2,
+    moon: Moon,
+    ghost: Ghost,
+    lock: Lock,
 };
 
 /** Рівень (досвід до наступного) і бейджі за активність у профілі. */
@@ -164,7 +173,7 @@ export function AchievementsCard({
                         return (
                             <div
                                 key={b.key}
-                                title={`${b.title} — ${b.text}${b.earned ? '' : ` (${b.progress}/${b.target})`}${b.rarity != null ? ` · ${rarityLabel(b.rarity)}` : ''}`}
+                                title={`${b.title} — ${b.text}${b.earned || b.secret ? '' : ` (${b.progress}/${b.target})`}${b.rarity != null ? ` · ${rarityLabel(b.rarity)}` : ''}`}
                                 className="flex flex-col items-center gap-1 text-center"
                             >
                                 <span
