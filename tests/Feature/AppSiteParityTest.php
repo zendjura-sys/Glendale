@@ -504,4 +504,13 @@ class AppSiteParityTest extends TestCase
         $this->withToken($token)->getJson("/api/v1/site/support/{$id}")->assertOk()->assertJsonCount(1, 'messages');
         $this->withToken($token)->postJson("/api/v1/site/support/{$id}/reply", ['body' => 'Ще деталі'])->assertOk()->assertJsonCount(2, 'messages');
     }
+
+    public function test_app_reads_help_center_as_json(): void
+    {
+        // Довідка відкрита й без входу, і через міст.
+        $this->getJson('/api/v1/help')->assertOk()->assertJsonStructure(['categories', 'popular']);
+        $this->getJson('/api/v1/help/support/tickets')->assertOk()->assertJsonPath('article.slug', 'tickets')->assertJsonStructure(['article' => ['blocks'], 'related']);
+        $token = $this->app_token(User::factory()->create());
+        $this->withToken($token)->getJson('/api/v1/site/help/feed')->assertOk()->assertJsonPath('category.slug', 'feed');
+    }
 }

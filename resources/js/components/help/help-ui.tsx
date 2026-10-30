@@ -18,6 +18,7 @@ import {
     Sparkles,
     Target,
     TriangleAlert,
+    PenLine,
 } from 'lucide-react';
 import type { LucideIcon, LucideProps } from 'lucide-react';
 import { Fragment } from 'react';
@@ -57,6 +58,7 @@ const icons: Record<string, LucideIcon> = {
     'shield-check': ShieldCheck,
     scale: Scale,
     'life-buoy': LifeBuoy,
+    'pen-line': PenLine,
 };
 
 export function HelpIcon({ name, ...props }: { name: string } & LucideProps) {

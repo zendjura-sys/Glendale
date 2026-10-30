@@ -38,6 +38,7 @@ use App\Http\Controllers\GamePlayController;
 use App\Http\Controllers\GameQaController;
 use App\Http\Controllers\GifController;
 use App\Http\Controllers\GuestBanController;
+use App\Http\Controllers\HelpController;
 use App\Http\Controllers\IdeaController;
 use App\Http\Controllers\InviteLinkController;
 use App\Http\Controllers\ListenPartyController;
@@ -112,6 +113,12 @@ Route::prefix('oauth')->group(function () {
 Route::prefix('v1')->group(function () {
     // Мова застосунку: словник його рядків (мова — з X-Locale або Accept-Language).
     Route::get('i18n', [LocaleController::class, 'app'])->middleware('throttle:60,1');
+    // Довідка відкрита й без входу — застосунок показує її на екрані «Довідка».
+    Route::prefix('help')->controller(HelpController::class)->middleware('throttle:60,1')->where(['category' => '[a-z0-9-]+', 'article' => '[a-z0-9-]+'])->group(function () {
+        Route::get('/', 'index');
+        Route::get('{category}', 'category');
+        Route::get('{category}/{article}', 'article');
+    });
     Route::prefix('auth')->middleware('throttle:20,1')->group(function () {
         Route::post('login', [AuthController::class, 'login']);
         Route::post('register', [AuthController::class, 'register']);
@@ -465,6 +472,9 @@ Route::prefix('v1')->group(function () {
             // Збережене: пости, фільми, ігри й сервери.
             Route::get('saved', [SavedController::class, 'index']);
             Route::get('later', [ReadingController::class, 'later']);
+            Route::get('help', [HelpController::class, 'index']);
+            Route::get('help/{category}', [HelpController::class, 'category'])->where('category', '[a-z0-9-]+');
+            Route::get('help/{category}/{article}', [HelpController::class, 'article'])->where(['category' => '[a-z0-9-]+', 'article' => '[a-z0-9-]+']);
             Route::get('support', [SupportController::class, 'index']);
             Route::post('support', [SupportController::class, 'store'])->middleware('throttle:6,10');
             Route::get('support/{ticket}', [SupportController::class, 'show'])->whereNumber('ticket');

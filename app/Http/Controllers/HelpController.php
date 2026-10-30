@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\HelpVote;
 use App\Support\Help\HelpCatalog;
 use App\Support\I18n\Translations;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -19,7 +20,7 @@ class HelpController extends Controller
     /** Статті «Популярне» на головній довідки. */
     private const POPULAR = [
         'start/registration', 'start/app-login', 'start/two-factor', 'music/upload',
-        'cinema/watch', 'music/connect', 'safety/sessions', 'support/contact',
+        'cinema/watch', 'feed/composer', 'safety/sessions', 'support/tickets',
     ];
 
     /** Ключ сесії: статті, на які відвідувач уже відповів (щоб не накручувати лічильник). */
@@ -27,7 +28,7 @@ class HelpController extends Controller
 
     public function __construct(private readonly HelpCatalog $help) {}
 
-    public function index(): Response
+    public function index(): Response|JsonResponse
     {
         $categories = array_map(fn (array $c) => [
             ...$this->brief($c),
@@ -40,7 +41,7 @@ class HelpController extends Controller
         ], 'Довідка', 'Відповіді на питання про GameCon: реєстрація, профіль, друзі й чати, спільноти, кіно, музика, GameCon+ і безпека.');
     }
 
-    public function category(string $category): Response
+    public function category(string $category): Response|JsonResponse
     {
         $found = $this->help->category($category);
         abort_if($found === null, 404);
@@ -54,7 +55,7 @@ class HelpController extends Controller
         ], $found['title'], $found['summary']);
     }
 
-    public function article(Request $request, string $category, string $article): Response
+    public function article(Request $request, string $category, string $article): Response|JsonResponse
     {
         $found = $this->help->article($category, $article);
         abort_if($found === null, 404);
@@ -65,7 +66,8 @@ class HelpController extends Controller
         $sibling = fn (int $i) => isset($section['articles'][$i])
             ? ['slug' => $section['articles'][$i]['slug'], 'title' => $section['articles'][$i]['title']]
             : null;
-        $voted = (array) $request->session()->get(self::VOTED, []);
+        // У застосунку (API) сесії немає — голос там не зберігається.
+        $voted = $request->hasSession() ? (array) $request->session()->get(self::VOTED, []) : [];
 
         return $this->page('help/article', [
             'category' => $this->brief($section),
@@ -120,9 +122,13 @@ class HelpController extends Controller
      *
      * @param  array<string, mixed>  $props
      */
-    private function page(string $component, array $props, string $title, string $description): Response
+    private function page(string $component, array $props, string $title, string $description): Response|JsonResponse
     {
         $t = app(Translations::class);
+        // Застосунок читає ту саму довідку як JSON (переклад робить SetLocale).
+        if (request()->expectsJson()) {
+            return response()->json([...$props, 'title' => $title, 'description' => $description]);
+        }
 
         return Inertia::render($component, $props)->withViewData([
             'seoTitle' => $t->line($title),
