@@ -3,6 +3,7 @@ import {
     ArrowLeft,
     Bell,
     BellOff,
+    FileAudio,
     Headphones,
     Trash2,
     Upload,
@@ -160,17 +161,25 @@ export default function PodcastShow({
                             maxLength={5000}
                             className={cn(field, 'h-auto resize-y py-2.5')}
                         />
-                        <input
-                            type="file"
-                            accept="audio/*"
-                            onChange={(e) =>
-                                form.setData(
-                                    'audio',
-                                    e.target.files?.[0] ?? null,
-                                )
-                            }
-                            className="block text-sm text-white/70"
-                        />
+                        <label className="flex h-11 cursor-pointer items-center gap-2 rounded-xl bg-white/[0.06] px-4 text-sm text-white/70 transition hover:bg-white/[0.1] hover:text-white">
+                            <FileAudio className="size-4 shrink-0" />
+                            <span className="truncate">
+                                {form.data.audio
+                                    ? form.data.audio.name
+                                    : tr('Обрати аудіо (MP3, M4A, OGG, WAV)')}
+                            </span>
+                            <input
+                                type="file"
+                                accept="audio/*"
+                                onChange={(e) =>
+                                    form.setData(
+                                        'audio',
+                                        e.target.files?.[0] ?? null,
+                                    )
+                                }
+                                className="sr-only"
+                            />
+                        </label>
                         {form.progress && (
                             <div className="h-1 overflow-hidden rounded-full bg-white/5">
                                 <div
