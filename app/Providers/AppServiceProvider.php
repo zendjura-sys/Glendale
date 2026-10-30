@@ -20,6 +20,7 @@ use App\Models\PostAttachment;
 use App\Models\User;
 use App\Services\Accounts\AccountSwitcher;
 use App\Services\Auth\AccountSecurity;
+use App\Services\Communities\CommunityPoints;
 use App\Services\CommunityService;
 use App\Services\Families\FamilyGate;
 use App\Services\FriendshipService;
@@ -156,6 +157,15 @@ class AppServiceProvider extends ServiceProvider
         Model::preventLazyLoading(! app()->isProduction());
 
         AccountMail::register();
+
+        // Бали учасника спільноти: запис (одразу чи після перевірки) і коментар.
+        Post::created(fn (Post $post) => app(CommunityPoints::class)->forPost($post));
+        Post::updated(function (Post $post) {
+            if ($post->wasChanged('is_pending') && ! $post->is_pending) {
+                app(CommunityPoints::class)->forPost($post);
+            }
+        });
+        Comment::created(fn (Comment $comment) => app(CommunityPoints::class)->forComment($comment));
 
         // Журнал входів і список відкритих сесій.
         Event::listen(Login::class, function (Login $event) {

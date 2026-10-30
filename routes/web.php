@@ -20,6 +20,7 @@ use App\Http\Controllers\CommentController;
 use App\Http\Controllers\CommunityChannelController;
 use App\Http\Controllers\CommunityController;
 use App\Http\Controllers\CommunityGuestController;
+use App\Http\Controllers\CommunityHubController;
 use App\Http\Controllers\CommunityMemberController;
 use App\Http\Controllers\CommunityWidgetController;
 use App\Http\Controllers\CreatorController;
@@ -394,6 +395,19 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
 
         Route::prefix('c/{community}')->name('communities.')->group(function () {
             Route::get('/', [CommunityController::class, 'show'])->name('show');
+            Route::get('hub', [CommunityHubController::class, 'hub'])->name('hub');
+            Route::get('calendar', [CommunityHubController::class, 'calendar'])->name('calendar');
+            Route::post('events', [CommunityHubController::class, 'storeEvent'])->middleware('throttle:20,1')->name('events.store');
+            Route::delete('events/{event}', [CommunityHubController::class, 'destroyEvent'])->whereNumber('event')->withoutScopedBindings()->name('events.destroy');
+            Route::post('events/{event}/rsvp', [CommunityHubController::class, 'rsvp'])->whereNumber('event')->withoutScopedBindings()->name('events.rsvp');
+            Route::get('events/{event}/stories', [CommunityHubController::class, 'eventStories'])->whereNumber('event')->withoutScopedBindings()->name('events.stories');
+            Route::post('events/{event}/stories', [CommunityHubController::class, 'storeEventStory'])->whereNumber('event')->withoutScopedBindings()->middleware('throttle:20,1')->name('events.stories.store');
+            Route::get('wiki', [CommunityHubController::class, 'wikiIndex'])->name('wiki.index');
+            Route::post('wiki', [CommunityHubController::class, 'wikiSave'])->middleware('throttle:30,1')->name('wiki.save');
+            Route::get('wiki/{slug}', [CommunityHubController::class, 'wikiShow'])->name('wiki.show');
+            Route::delete('wiki/{slug}', [CommunityHubController::class, 'wikiDestroy'])->name('wiki.destroy');
+            Route::post('wiki/{slug}/revert/{revision}', [CommunityHubController::class, 'wikiRevert'])->whereNumber('revision')->name('wiki.revert');
+            Route::post('points/{user:id}', [CommunityHubController::class, 'grantPoints'])->whereNumber('user')->withoutScopedBindings()->name('points.grant');
             Route::delete('/', [CommunityController::class, 'destroy'])->name('destroy');
             // Канали спільноти (текстові, «Оголошення», голосові) — як у Discord.
             Route::get('channels', [CommunityChannelController::class, 'index'])->name('channels.index');

@@ -459,4 +459,14 @@ class AppSiteParityTest extends TestCase
         $this->withToken($token)->putJson('/api/v1/site/settings/links', ['links' => [['title' => 'Twitch', 'url' => 'https://twitch.tv/me']]])->assertSuccessful();
         $this->withToken($token)->getJson('/api/v1/site/settings/links')->assertOk();
     }
+
+    public function test_app_opens_community_calendar_wiki_and_points_through_bridge(): void
+    {
+        $owner = User::factory()->create();
+        $community = app(CommunityService::class)->create($owner, ['name' => 'Хаб', 'type' => Community::TYPE_GROUP, 'privacy' => Community::PRIVACY_OPEN, 'wall' => Community::WALL_OPEN, 'category' => 'esports']);
+        $token = $this->app_token($owner);
+        $this->withToken($token)->getJson("/api/v1/site/c/{$community->slug}/hub")->assertOk()->assertJsonStructure(['events', 'wiki', 'top']);
+        $this->withToken($token)->getJson("/api/v1/site/c/{$community->slug}/calendar")->assertOk();
+        $this->withToken($token)->getJson("/api/v1/site/c/{$community->slug}/wiki")->assertOk();
+    }
 }

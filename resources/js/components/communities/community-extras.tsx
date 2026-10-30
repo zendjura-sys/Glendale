@@ -13,6 +13,7 @@ export type CommunityExtras = {
     banned_words: string;
     post_tags: string;
     join_questions?: string;
+    wiki_open?: boolean;
     slow_mode: number;
     premoderation: boolean;
     weekly_digest?: boolean;
@@ -50,6 +51,7 @@ export function RulesForm({
 }) {
     const form = useForm(extras);
     const joinForms = usePlugin('join_forms');
+    const wikiOn = usePlugin('community_wiki');
     const { data, setData, errors } = form;
     const submit = (event: FormEvent) => {
         event.preventDefault();
@@ -198,6 +200,31 @@ export function RulesForm({
                                 </span>
                             </span>
                         </label>
+                        {wikiOn && (
+                            <label className="flex items-start gap-3 rounded-2xl border border-white/[0.07] p-3.5 text-sm text-white/80">
+                                <input
+                                    type="checkbox"
+                                    checked={data.wiki_open ?? false}
+                                    onChange={(event) =>
+                                        setData(
+                                            'wiki_open',
+                                            event.target.checked,
+                                        )
+                                    }
+                                    className="mt-0.5 size-4 accent-gc-indigo"
+                                />
+                                <span>
+                                    <span className="block font-medium text-white">
+                                        {tr('Вікі редагують усі')}
+                                    </span>
+                                    <span className="block text-xs text-white/45">
+                                        {tr(
+                                            'Інакше — лише керівники. Кожна правка зберігається в історії.',
+                                        )}
+                                    </span>
+                                </span>
+                            </label>
+                        )}
                         <label className="flex items-start gap-3 rounded-2xl border border-white/[0.07] p-3.5 text-sm text-white/80">
                             <input
                                 type="checkbox"

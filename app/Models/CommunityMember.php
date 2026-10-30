@@ -15,6 +15,7 @@ use Illuminate\Support\Carbon;
  * @property string $status
  * @property string|null $title
  * @property string|null $color
+ * @property int $points Бали за активність у спільноті
  * @property list<array{q: string, a: string}>|null $answers Відповіді на анкету вступу
  * @property Carbon|null $created_at
  */

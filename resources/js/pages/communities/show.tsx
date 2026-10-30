@@ -28,6 +28,7 @@ import type { DonationJar } from '@/components/gc/donation-jar';
 import { useRef } from 'react';
 import { membersLabel } from '@/components/communities/community-card';
 import { JoinButton } from '@/components/communities/join-button';
+import { CommunityHub } from '@/components/communities/community-hub';
 import { roleLabels } from '@/components/communities/roles';
 import { CommunityAvatar } from '@/components/gc/community-avatar';
 import { InviteLinkButton } from '@/components/gc/invite-link';
@@ -409,6 +410,7 @@ export default function CommunityShow({
                             jar={donation}
                             title={tr('Підтримати спільноту')}
                         />
+                        {can.view && <CommunityHub slug={community.slug} />}
                         {(community.description ||
                             rules.rules ||
                             rules.handbook) && (

@@ -230,6 +230,7 @@ class CommunityController extends Controller
                 'premoderation' => $community->premoderation,
                 'weekly_digest' => $community->weekly_digest,
                 'join_questions' => implode("\n", $community->join_questions ?? []),
+                'wiki_open' => $community->wiki_open,
             ],
             'slowModes' => CommunityWall::SLOW_MODES,
             'stats' => Inertia::defer(fn () => $this->wall->stats($community)),
@@ -324,6 +325,7 @@ class CommunityController extends Controller
             'premoderation' => ['required', 'boolean'],
             'weekly_digest' => ['sometimes', 'boolean'],
             'join_questions' => ['nullable', 'string', 'max:1500'],
+            'wiki_open' => ['sometimes', 'boolean'],
         ]);
 
         $trimmed = fn (?string $text) => ($text = trim((string) $text)) === '' ? null : $text;
@@ -341,6 +343,7 @@ class CommunityController extends Controller
             'premoderation' => (bool) $data['premoderation'],
             'weekly_digest' => (bool) ($data['weekly_digest'] ?? $community->weekly_digest),
             'join_questions' => $questions === [] ? null : $questions,
+            'wiki_open' => (bool) ($data['wiki_open'] ?? $community->wiki_open),
         ]);
 
         if (! $community->premoderation) {

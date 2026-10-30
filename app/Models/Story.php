@@ -25,6 +25,7 @@ use Illuminate\Support\Facades\Storage;
  * @property array<string, mixed>|null $poll
  * @property string $privacy
  * @property int $views_count
+ * @property int|null $community_event_id Спільна історія події спільноти
  * @property Carbon $expires_at
  * @property Carbon $created_at
  * @property-read string $url

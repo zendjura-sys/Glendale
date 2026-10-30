@@ -40,6 +40,7 @@ import type {
     ScrollData,
 } from '@/types';
 import { tr } from '@/lib/i18n';
+import { usePlugin } from '@/lib/plugins';
 
 type Tab = 'all' | 'managers' | 'friends' | 'requests';
 
@@ -71,6 +72,7 @@ export default function CommunityMembers({
 }: Props) {
     const [query, setQuery] = useState(q);
     const base = `/c/${community.slug}/members`;
+    const pointsOn = usePlugin('community_points');
     const isOwner = my?.role === 'owner';
     const options = { preserveScroll: true, preserveState: true } as const;
 
@@ -264,6 +266,43 @@ export default function CommunityMembers({
                                                 {tr('Ваш друг')}
                                             </span>
                                         )}
+                                        {pointsOn &&
+                                            (member.points ?? 0) !== 0 && (
+                                                <span className="text-gc-lilac-300">
+                                                    {tr('{count} балів', {
+                                                        count:
+                                                            member.points ?? 0,
+                                                    })}
+                                                </span>
+                                            )}
+                                        {isAdmin &&
+                                            pointsOn &&
+                                            tab !== 'requests' && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        const value = Number(
+                                                            window.prompt(
+                                                                tr(
+                                                                    'Скільки балів додати (мінус — зняти)?',
+                                                                ),
+                                                                '10',
+                                                            ),
+                                                        );
+                                                        if (value)
+                                                            router.post(
+                                                                `/c/${community.slug}/points/${member.id}`,
+                                                                {
+                                                                    points: value,
+                                                                },
+                                                                options,
+                                                            );
+                                                    }}
+                                                    className="text-gc-lilac-300 hover:text-white"
+                                                >
+                                                    {tr('± бали')}
+                                                </button>
+                                            )}
                                         {member.joined_at && (
                                             <span>
                                                 {tab === 'requests'

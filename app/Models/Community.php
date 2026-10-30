@@ -49,11 +49,12 @@ use Illuminate\Support\Facades\Storage;
  * @property bool $guest_view Гості без акаунта бачать сторінку й відкриті канали
  * @property bool $auto_join Нові люди вступають самі (вмикає адмін сайту)
  * @property int|null $guest_chat_channel_id Канал, де можуть писати гості
+ * @property bool $wiki_open Вікі редагують усі учасники (інакше — лише керівники)
  * @property list<string>|null $join_questions Анкета вступу до закритої спільноти
  */
 // Банка — лише для сторінок сайту (картка «Підтримати»); у застосунок і API не віддається.
 #[Hidden(['donation_jar', 'donation_note', 'join_password'])]
-#[Fillable(['slug', 'name', 'type', 'privacy', 'wall', 'category', 'status', 'description', 'website', 'city', 'avatar_path', 'cover_path', 'owner_id', 'is_verified', 'rules', 'handbook', 'welcome', 'banned_words', 'post_tags', 'slow_mode', 'premoderation', 'weekly_digest', 'is_listed', 'guest_view', 'guest_chat_channel_id', 'join_questions'])]
+#[Fillable(['slug', 'name', 'type', 'privacy', 'wall', 'category', 'status', 'description', 'website', 'city', 'avatar_path', 'cover_path', 'owner_id', 'is_verified', 'rules', 'handbook', 'welcome', 'banned_words', 'post_tags', 'slow_mode', 'premoderation', 'weekly_digest', 'is_listed', 'guest_view', 'guest_chat_channel_id', 'join_questions', 'wiki_open'])]
 class Community extends Model
 {
     use SoftDeletes;
@@ -102,6 +103,7 @@ class Community extends Model
             'banned_words' => 'array',
             'post_tags' => 'array',
             'join_questions' => 'array',
+            'wiki_open' => 'boolean',
             'slow_mode' => 'integer',
             'weekly_digest' => 'boolean',
             'premoderation' => 'boolean',

@@ -24,6 +24,7 @@ use App\Http\Controllers\ClanController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\CommunityChannelController;
 use App\Http\Controllers\CommunityController;
+use App\Http\Controllers\CommunityHubController;
 use App\Http\Controllers\CommunityMemberController;
 use App\Http\Controllers\CreatorController;
 use App\Http\Controllers\CrosspostController;
@@ -538,6 +539,15 @@ Route::prefix('v1')->group(function () {
 
             Route::middleware('module:communities')->prefix('c/{community}')->group(function () {
                 Route::get('/', [CommunityController::class, 'show']);
+                Route::get('hub', [CommunityHubController::class, 'hub']);
+                Route::get('calendar', [CommunityHubController::class, 'calendar']);
+                Route::post('events', [CommunityHubController::class, 'storeEvent'])->middleware('throttle:20,1');
+                Route::post('events/{event}/rsvp', [CommunityHubController::class, 'rsvp'])->whereNumber('event')->withoutScopedBindings();
+                Route::get('events/{event}/stories', [CommunityHubController::class, 'eventStories'])->whereNumber('event')->withoutScopedBindings();
+                Route::post('events/{event}/stories', [CommunityHubController::class, 'storeEventStory'])->whereNumber('event')->withoutScopedBindings()->middleware('throttle:20,1');
+                Route::get('wiki', [CommunityHubController::class, 'wikiIndex']);
+                Route::post('wiki', [CommunityHubController::class, 'wikiSave'])->middleware('throttle:30,1');
+                Route::get('wiki/{slug}', [CommunityHubController::class, 'wikiShow']);
                 Route::get('channels', [CommunityChannelController::class, 'index']);
                 Route::post('channels', [CommunityChannelController::class, 'store'])->middleware('throttle:30,1');
                 Route::put('channels/order', [CommunityChannelController::class, 'reorder']);

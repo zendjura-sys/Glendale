@@ -47,4 +47,5 @@ export type CommunityMemberItem = UserCard & {
     joined_at: string | null;
     is_friend: boolean;
     answers?: { q: string; a: string }[];
+    points?: number;
 };

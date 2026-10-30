@@ -54,6 +54,7 @@ class CommunityMemberController extends Controller
             'status' => $m->status,
             'joined_at' => $m->created_at?->toIso8601String(),
             'answers' => $tab === 'requests' ? ($m->answers ?? []) : [],
+            'points' => $m->points,
             'is_friend' => in_array($m->user_id, $friendIds),
         ]));
 
