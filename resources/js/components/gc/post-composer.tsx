@@ -239,9 +239,9 @@ export function PostComposer({
     };
 
     const toolTile =
-        'flex flex-col items-center gap-1 rounded-xl px-1 py-2 text-center text-[11px] leading-tight text-white/75 focus:bg-white/[0.08] focus:text-white';
+        'arctic-tile flex flex-col items-center gap-1.5 rounded-2xl px-0.5 py-1.5 text-center text-[11px] leading-tight font-medium';
     const toolIcon =
-        'flex size-10 items-center justify-center rounded-xl bg-white/[0.06]';
+        'arctic-bubble flex size-12 items-center justify-center rounded-full';
     const tools: {
         key: string;
         label: string;
@@ -813,7 +813,7 @@ export function PostComposer({
                     <DropdownMenuContent
                         align="start"
                         sideOffset={8}
-                        className="grid w-[17.5rem] grid-cols-4 gap-1 rounded-2xl p-2"
+                        className="arctic-menu grid w-[19rem] grid-cols-4 gap-x-1 gap-y-2 p-3"
                     >
                         {tools.map((tool) =>
                             tool.href ? (
@@ -840,10 +840,8 @@ export function PostComposer({
                                     key={tool.key}
                                     disabled={tool.disabled}
                                     onSelect={tool.onSelect}
-                                    className={cn(
-                                        toolTile,
-                                        tool.active && 'bg-white/[0.08]',
-                                    )}
+                                    data-on={tool.active || undefined}
+                                    className={toolTile}
                                 >
                                     <span
                                         className={toolIcon}
@@ -880,7 +878,7 @@ export function PostComposer({
                             <DropdownMenuContent
                                 align="end"
                                 sideOffset={8}
-                                className="w-48 rounded-2xl p-1.5"
+                                className="arctic-menu w-52 p-2"
                             >
                                 {visibilityOptions.map((option) => (
                                     <DropdownMenuItem
@@ -891,7 +889,7 @@ export function PostComposer({
                                                 option.value,
                                             )
                                         }
-                                        className="h-10 gap-2.5 rounded-xl px-3"
+                                        className="arctic-row h-11 gap-3 rounded-2xl px-3.5 text-sm"
                                     >
                                         <option.icon className="size-4" />
                                         <span className="flex-1">
