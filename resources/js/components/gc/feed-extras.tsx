@@ -1,5 +1,5 @@
 import { Link, router, usePage } from '@inertiajs/react';
-import { CalendarClock, Clock, Languages } from 'lucide-react';
+import { CalendarClock, Languages } from 'lucide-react';
 import { localTime } from '@/lib/event-time';
 import { languageName } from '@/lib/format';
 import { tr } from '@/lib/i18n';
@@ -73,34 +73,33 @@ export function ChronoSwitch({ onlyFriends }: { onlyFriends: boolean }) {
     ];
 
     return (
-        <div className="flex flex-wrap items-center gap-2 px-1 text-xs text-white/50">
-            <Clock className="size-4" />
-            <span>{tr('Строго за часом, без алгоритму')}</span>
-            <div className="ml-auto flex gap-0.5 rounded-lg bg-white/[0.05] p-0.5">
-                {options.map((option) => (
-                    <button
-                        key={option.key}
-                        type="button"
-                        aria-pressed={option.on}
-                        onClick={() =>
-                            !option.on &&
-                            router.get(
-                                '/feed',
-                                { only: option.key },
-                                { preserveScroll: false },
-                            )
-                        }
-                        className={cn(
-                            'h-7 rounded-md px-2.5 transition',
-                            option.on
-                                ? 'bg-white/[0.12] text-white'
-                                : 'text-white/55 hover:text-white',
-                        )}
-                    >
-                        {option.label}
-                    </button>
-                ))}
-            </div>
+        <div
+            title={tr('Строго за часом, без алгоритму')}
+            className="flex min-w-0 shrink-0 gap-0.5 rounded-xl bg-white/[0.05] p-0.5 text-xs"
+        >
+            {options.map((option) => (
+                <button
+                    key={option.key}
+                    type="button"
+                    aria-pressed={option.on}
+                    onClick={() =>
+                        !option.on &&
+                        router.get(
+                            '/feed',
+                            { only: option.key },
+                            { preserveScroll: false },
+                        )
+                    }
+                    className={cn(
+                        'h-8 rounded-[10px] px-2.5 whitespace-nowrap transition',
+                        option.on
+                            ? 'bg-white/[0.12] text-white'
+                            : 'text-white/55 hover:text-white',
+                    )}
+                >
+                    {option.label}
+                </button>
+            ))}
         </div>
     );
 }
@@ -118,9 +117,9 @@ export function LanguageFilter({
     const { locale } = usePage().props;
 
     return (
-        <label className="flex items-center gap-2 px-1 text-xs text-white/50">
-            <Languages className="size-4" />
-            {tr('Мова записів')}
+        <label className="relative flex min-w-0 items-center">
+            <Languages className="pointer-events-none absolute left-2.5 size-4 text-white/50" />
+            <span className="sr-only">{tr('Мова записів')}</span>
             <select
                 value={lang ?? ''}
                 onChange={(event) => {
@@ -134,7 +133,7 @@ export function LanguageFilter({
                         { preserveScroll: false },
                     );
                 }}
-                className="h-8 rounded-lg bg-white/[0.05] px-2 text-xs text-white/80"
+                className="h-9 max-w-36 min-w-0 rounded-xl bg-white/[0.05] pr-2 pl-8 text-xs text-white/80"
             >
                 <option value="">{tr('Усі мови')}</option>
                 {languages.map((code) => (

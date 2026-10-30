@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import {
     Deferred,
     Head,
@@ -80,6 +81,17 @@ function FeedTabs({
     hasFriends: boolean;
 }) {
     const topicsOn = usePlugin('topic_follows');
+    const scroller = useRef<HTMLDivElement>(null);
+    // Активна вкладка завжди в полі зору, навіть якщо вона за краєм на телефоні.
+    useEffect(() => {
+        const active =
+            scroller.current?.querySelector<HTMLElement>('[data-active]');
+        active?.scrollIntoView({
+            block: 'nearest',
+            inline: 'center',
+            behavior: 'instant',
+        });
+    }, [tab]);
     const tabs = [
         {
             key: 'friends',
@@ -116,31 +128,37 @@ function FeedTabs({
     ];
 
     return (
-        <div className="glass flex gap-1 rounded-2xl p-1">
-            {tabs.map((item) => (
-                <Link
-                    key={item.key}
-                    href={item.href}
-                    preserveScroll={false}
-                    aria-current={tab === item.key ? 'page' : undefined}
-                    className={cn(
-                        'flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold transition',
-                        tab === item.key
-                            ? 'nav-active text-white'
-                            : 'text-white/55 hover:bg-white/[0.04] hover:text-white',
-                        item.disabled && 'pointer-events-none opacity-40',
-                    )}
-                >
-                    <item.icon
-                        aria-hidden
+        <div className="glass relative rounded-2xl p-1">
+            <div
+                ref={scroller}
+                className="scrollbar-none flex snap-x gap-1 overflow-x-auto scroll-smooth [mask-image:linear-gradient(90deg,transparent,#000_12px,#000_calc(100%-24px),transparent)]"
+            >
+                {tabs.map((item) => (
+                    <Link
+                        key={item.key}
+                        href={item.href}
+                        preserveScroll={false}
+                        aria-current={tab === item.key ? 'page' : undefined}
+                        data-active={tab === item.key || undefined}
                         className={cn(
-                            'size-4',
-                            tab === item.key && 'text-gc-lilac-400',
+                            'flex min-h-11 shrink-0 snap-start items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold whitespace-nowrap transition sm:flex-1',
+                            tab === item.key
+                                ? 'nav-active text-white'
+                                : 'text-white/55 hover:bg-white/[0.04] hover:text-white',
+                            item.disabled && 'pointer-events-none opacity-40',
                         )}
-                    />
-                    {item.label}
-                </Link>
-            ))}
+                    >
+                        <item.icon
+                            aria-hidden
+                            className={cn(
+                                'size-4',
+                                tab === item.key && 'text-gc-lilac-400',
+                            )}
+                        />
+                        {item.label}
+                    </Link>
+                ))}
+            </div>
         </div>
     );
 }
@@ -239,14 +257,16 @@ export default function Feed({
                     {newcomer && <NewcomerWeek data={newcomer} />}
                     <PostComposer />
                     <FeedTabs tab={tab} hasFriends={hasFriends} />
-                    {tab === 'friends' && (
-                        <ChronoSwitch onlyFriends={onlyFriends ?? false} />
-                    )}
-                    <LanguageFilter
-                        tab={tab}
-                        lang={lang}
-                        languages={languages}
-                    />
+                    <div className="flex items-center gap-2">
+                        <LanguageFilter
+                            tab={tab}
+                            lang={lang}
+                            languages={languages}
+                        />
+                        {tab === 'friends' && (
+                            <ChronoSwitch onlyFriends={onlyFriends ?? false} />
+                        )}
+                    </div>
 
                     {tab === 'discover' && !hasFriends && (
                         <div className="gradient-border glass flex items-center gap-4 rounded-2xl p-5">
