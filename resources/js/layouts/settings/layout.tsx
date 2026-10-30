@@ -57,13 +57,13 @@ const items = [
     },
     {
         title: tr('Підписки'),
-        description: tr('Платна підписка на вас і ваші підписки'),
+        description: tr('Платні рівні й ваші підписки'),
         href: '/settings/subscriptions',
         icon: HeartHandshake,
     },
     {
         title: tr('Слова'),
-        description: tr('Сповіщення про записи з вашими словами'),
+        description: tr('Сповіщення за словами'),
         href: '/settings/keyword-alerts',
         icon: BellRing,
     },
