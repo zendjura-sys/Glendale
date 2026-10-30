@@ -33,6 +33,7 @@ use App\Http\Controllers\GameBacklogController;
 use App\Http\Controllers\GameController;
 use App\Http\Controllers\GameDealsController;
 use App\Http\Controllers\GameNewsController;
+use App\Http\Controllers\GameQaController;
 use App\Http\Controllers\GameRatingController;
 use App\Http\Controllers\GameSoundtrackController;
 use App\Http\Controllers\GameWallpaperController;
@@ -54,6 +55,7 @@ use App\Http\Controllers\MusicConnectController;
 use App\Http\Controllers\MusicController;
 use App\Http\Controllers\MusicHubController;
 use App\Http\Controllers\NewcomerController;
+use App\Http\Controllers\NicknameController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\NowPlayingController;
 use App\Http\Controllers\OAuth;
@@ -82,6 +84,7 @@ use App\Http\Controllers\StatusController;
 use App\Http\Controllers\StoryController;
 use App\Http\Controllers\TeammateController;
 use App\Http\Controllers\ThanksController;
+use App\Http\Controllers\TierListController;
 use App\Http\Controllers\TournamentController;
 use App\Http\Controllers\TrackController;
 use App\Http\Controllers\TrackImportController;
@@ -203,6 +206,26 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     Route::post('newcomer/hide', [NewcomerController::class, 'hide'])->name('newcomer.hide');
     Route::put('settings/setup', [SetupController::class, 'update'])->middleware('throttle:30,1')->name('setup.update');
     Route::get('ideas', [IdeaController::class, 'index'])->name('ideas.index');
+    Route::prefix('tierlists')->name('tierlists.')->group(function () {
+        Route::get('/', [TierListController::class, 'index'])->name('index');
+        Route::get('new', [TierListController::class, 'create'])->name('create');
+        Route::post('/', [TierListController::class, 'store'])->middleware('throttle:10,1')->name('store');
+        Route::get('{tierList}', [TierListController::class, 'show'])->whereNumber('tierList')->name('show');
+        Route::get('{tierList}/edit', [TierListController::class, 'edit'])->whereNumber('tierList')->name('edit');
+        Route::put('{tierList}', [TierListController::class, 'update'])->whereNumber('tierList')->name('update');
+        Route::delete('{tierList}', [TierListController::class, 'destroy'])->whereNumber('tierList')->name('destroy');
+    });
+    Route::get('tools/nicknames', [NicknameController::class, 'index'])->name('tools.nicknames');
+    Route::post('tools/nicknames/check', [NicknameController::class, 'check'])->middleware('throttle:30,1')->name('tools.nicknames.check');
+    Route::prefix('games/{game}')->name('games.')->middleware('module:games')->withoutScopedBindings()->group(function () {
+        Route::post('questions', [GameQaController::class, 'ask'])->middleware('throttle:5,1')->name('questions.store');
+        Route::delete('questions/{question}', [GameQaController::class, 'destroyQuestion'])->whereNumber('question')->name('questions.destroy');
+        Route::post('questions/{question}/answers', [GameQaController::class, 'answer'])->whereNumber('question')->middleware('throttle:20,1')->name('questions.answer');
+        Route::post('questions/{question}/solve', [GameQaController::class, 'solve'])->whereNumber('question')->name('questions.solve');
+        Route::post('answers/{answer}/vote', [GameQaController::class, 'vote'])->whereNumber('answer')->middleware('throttle:60,1')->name('answers.vote');
+        Route::post('mentors', [GameQaController::class, 'becomeMentor'])->middleware('throttle:10,1')->name('mentors.store');
+        Route::delete('mentors', [GameQaController::class, 'leaveMentors'])->name('mentors.destroy');
+    });
     Route::post('ideas', [IdeaController::class, 'store'])->middleware('throttle:5,1')->name('ideas.store');
     Route::post('ideas/{idea}/vote', [IdeaController::class, 'toggleVote'])->middleware('throttle:60,1')->name('ideas.vote');
     Route::patch('ideas/{idea}', [IdeaController::class, 'status'])->name('ideas.status');
@@ -1049,6 +1072,8 @@ Route::prefix('games')->name('games.')->middleware('module:games')->group(functi
     Route::get('/', [GameController::class, 'index'])->name('index');
     Route::get('{game}', [GameController::class, 'show'])->name('show');
     Route::get('{game}/news', [GameNewsController::class, 'index'])->middleware('throttle:60,1')->name('news');
+    Route::get('{game}/questions', [GameQaController::class, 'questions'])->middleware('throttle:60,1')->name('questions');
+    Route::get('{game}/mentors', [GameQaController::class, 'mentors'])->middleware('throttle:60,1')->name('mentors');
 });
 
 Route::middleware('module:communities')->group(function () {

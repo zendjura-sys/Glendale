@@ -8,6 +8,8 @@ import {
     SearchX,
     Smartphone,
     Tv,
+    LayoutList,
+    WandSparkles,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
@@ -118,6 +120,8 @@ export default function GamesIndex({
     const giveawaysOn = usePlugin('game_giveaways');
     const dealsOn = usePlugin('game_deals');
     const backlogOn = usePlugin('game_backlog');
+    const tierOn = usePlugin('tier_lists');
+    const nickOn = usePlugin('nick_generator');
     const signedIn = !!usePage().props.auth.user;
 
     const visit = (patch: Partial<Props['filters']>) =>
@@ -162,6 +166,24 @@ export default function GamesIndex({
                     >
                         <ListChecks className="size-4 text-sky-300" />
                         {tr('Мій бэклог')}
+                    </Link>
+                )}
+                {tierOn && signedIn && (
+                    <Link
+                        href="/tierlists"
+                        className="inline-flex h-10 items-center gap-2 rounded-xl bg-white/[0.06] px-3.5 text-sm font-semibold text-white/80 transition hover:bg-white/10 hover:text-white"
+                    >
+                        <LayoutList className="size-4 text-rose-300" />
+                        {tr('Тір-листи')}
+                    </Link>
+                )}
+                {nickOn && signedIn && (
+                    <Link
+                        href="/tools/nicknames"
+                        className="inline-flex h-10 items-center gap-2 rounded-xl bg-white/[0.06] px-3.5 text-sm font-semibold text-white/80 transition hover:bg-white/10 hover:text-white"
+                    >
+                        <WandSparkles className="size-4 text-amber-300" />
+                        {tr('Генератор ніків')}
                     </Link>
                 )}
                 {(giveawaysOn || dealsOn) && (

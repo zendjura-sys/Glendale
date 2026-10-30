@@ -440,4 +440,14 @@ class AppSiteParityTest extends TestCase
         $this->withToken($token)->putJson('/api/v1/site/settings/account-type', ['type' => 'streamer', 'details' => ['twitch' => 'https://twitch.tv/neo']])->assertSuccessful();
         $this->withToken($token)->getJson('/api/v1/site/settings/account-type')->assertOk();
     }
+
+    public function test_app_reaches_tier_lists_game_questions_and_mentors_through_bridge(): void
+    {
+        Game::query()->create(['slug' => 'cs2', 'name' => 'CS2', 'letter' => 'C', 'category' => 'pc', 'is_published' => true]);
+        $token = $this->app_token(User::factory()->create());
+        $this->withToken($token)->getJson('/api/v1/site/tierlists')->assertOk();
+        $this->withToken($token)->getJson('/api/v1/site/games/cs2/questions')->assertOk()->assertJsonStructure(['questions']);
+        $this->withToken($token)->getJson('/api/v1/site/games/cs2/mentors')->assertOk()->assertJsonStructure(['mentors', 'me']);
+        $this->withToken($token)->postJson('/api/v1/site/tools/nicknames/check', ['names' => ['ghostbyte']])->assertOk();
+    }
 }

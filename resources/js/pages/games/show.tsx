@@ -28,6 +28,9 @@ import {
     Swords,
     Users,
     X,
+    GraduationCap,
+    LayoutList,
+    MessageCircleQuestion,
 } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
@@ -51,6 +54,8 @@ import { GamePrices } from '@/components/games/game-prices';
 import { PcCheck } from '@/components/games/pc-check';
 import { GameNews } from '@/components/games/game-news';
 import { GameLeaderboard } from '@/components/games/game-leaderboard';
+import { GameMentors } from '@/components/games/game-mentors';
+import { GameQa } from '@/components/games/game-qa';
 import { MyGameAchievements } from '@/components/games/my-achievements';
 import type { LeaderboardData } from '@/components/games/game-leaderboard';
 import { GameSoundtracks } from '@/components/games/game-soundtracks';
@@ -340,6 +345,9 @@ export default function GameShow({
     // Магазин чи Steam не відповіли — блок зникає цілком, без порожньої рамки.
     const [pricesFailed, setPricesFailed] = useState(false);
     const newsOn = usePlugin('steam_patch_news');
+    const qaOn = usePlugin('game_qa');
+    const mentorsOn = usePlugin('game_mentors');
+    const tierOn = usePlugin('tier_lists');
     const achievementsOn = usePlugin('steam_achievements');
     const [newsEmpty, setNewsEmpty] = useState(false);
     const hideNews = useCallback(() => setNewsEmpty(true), []);
@@ -684,6 +692,38 @@ export default function GameShow({
                         ))}
                     </ul>
                 </Section>
+            )}
+
+            {qaOn && (
+                <div id="questions" className="scroll-mt-24">
+                    <Section
+                        title={tr('Питання гравців')}
+                        icon={MessageCircleQuestion}
+                    >
+                        <GameQa slug={game.slug} />
+                    </Section>
+                </div>
+            )}
+
+            {mentorsOn && (
+                <Section title={tr('Наставники')} icon={GraduationCap}>
+                    <GameMentors slug={game.slug} gameName={game.name} />
+                </Section>
+            )}
+
+            {tierOn && !guest && (
+                <Link
+                    href={`/tierlists?game=${game.slug}`}
+                    className="glass mt-4 flex items-center gap-3 rounded-2xl p-4 transition hover:bg-white/[0.06]"
+                >
+                    <LayoutList className="size-5 text-gc-lilac-300" />
+                    <span className="flex-1 text-sm font-medium text-white">
+                        {tr('Тір-листи гри')}
+                    </span>
+                    <span className="text-xs text-white/45">
+                        {tr('Подивитися чи зробити свій')}
+                    </span>
+                </Link>
             )}
 
             {onSteam && newsOn && !newsEmpty && (

@@ -268,6 +268,7 @@
 - [ ] «Сцена» голосової кімнати (`stage` у кімнатах, `rooms/{id}/hand`, дії `speaker`/`listener`), автопостинг (`site/crosspost/{type}/{id}`), розклад стрімів (`streamSchedule` у профілі, `site/settings/stream-schedule`), анкета вступу (`join_questions` у спільноті, `answers` при вступі й у заявках) — у застосунку ще немає
 - [ ] Статистика автора (`site/me/author-stats`), дошка ідей (`site/ideas`, голос `site/ideas/{id}/vote`), режим стримера (`streamer_mode` у користувачі), секретні досягнення (`secret` у бейджах), піксельний аватар (сторінка `settings/pixel-avatar`) — у застосунку ще немає
 - [ ] Тип акаунта й верифікація 2.0 (`site/settings/account-type`, `site/settings/verification`, склад `site/settings/account-type/roster`, `account` у профілі, `verified_kind` і `account_type` у картці людини) — у застосунку ще немає
+- [ ] Тір-листи (`site/tierlists`), питання про гру (`site/games/{slug}/questions`, відповіді, голоси, `solve`), наставники (`site/games/{slug}/mentors`), генератор ніків (`site/tools/nicknames/check`) — у застосунку ще немає
 - [ ] Рідкість бейджів («є у 2% людей») — поле `rarity` у бейджах уже приходить у приложение, не показується
 - [~] Режими скрізь: сервер уже ховає за режимом плагіни, бейджі, блоки профілю, картки в постах і чатах, події, сповіщення, дайджест і Wrapped (мост віддає те саме); приложению осталось спрятать свои тексты-упоминания и пункти (списки друзів «Рейд»/«Кіно», «Картка» в чаті) по `user.modules`
 
