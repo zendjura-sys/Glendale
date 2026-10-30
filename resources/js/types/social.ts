@@ -132,6 +132,8 @@ export type PostItem = {
         image: string | null;
     } | null;
     saved?: boolean;
+    subscribers_only?: boolean;
+    locked?: boolean;
     poll?: {
         id: number;
         question: string;

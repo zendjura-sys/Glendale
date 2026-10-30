@@ -93,6 +93,7 @@ export function PostComposer({
     const gifOn = usePlugin('gif_search');
     const photoEditorOn = usePlugin('photo_editor');
     const openPollsOn = usePlugin('open_polls');
+    const authorSubsOn = usePlugin('author_subscriptions');
     const [editing, setEditing] = useState<number | null>(null);
     const [gif, setGif] = useState<GifItem | null>(null);
     const [pickingGif, setPickingGif] = useState(false);
@@ -112,12 +113,14 @@ export function PostComposer({
             anonymous?: boolean;
         } | null;
         spoiler: boolean;
+        subscribers_only: boolean;
         sticker: string | null;
         tag: string;
     }>({
         tag: '',
         body: '',
         spoiler: false,
+        subscribers_only: false,
         sticker: null,
         visibility: 'public',
         wall: wall?.username ?? null,
@@ -230,6 +233,7 @@ export function PostComposer({
                     'images',
                     'poll',
                     'spoiler',
+                    'subscribers_only',
                     'sticker',
                     'tag',
                 );
@@ -332,6 +336,22 @@ export function PostComposer({
             active: form.data.spoiler,
             onSelect: () => form.setData('spoiler', !form.data.spoiler),
         },
+        ...(authorSubsOn && !wall && !community
+            ? [
+                  {
+                      key: 'subscribers',
+                      label: tr('Підписникам'),
+                      icon: Lock,
+                      color: '#9db8ff',
+                      active: form.data.subscribers_only,
+                      onSelect: () =>
+                          form.setData(
+                              'subscribers_only',
+                              !form.data.subscribers_only,
+                          ),
+                  },
+              ]
+            : []),
         ...(scheduleOn
             ? [
                   {
@@ -700,7 +720,9 @@ export function PostComposer({
                 </div>
             )}
 
-            {(form.data.spoiler || scheduling) && (
+            {(form.data.spoiler ||
+                scheduling ||
+                form.data.subscribers_only) && (
                 <div
                     className={cn(
                         'relative mt-3 flex flex-wrap items-center gap-1.5',
@@ -714,6 +736,22 @@ export function PostComposer({
                             <button
                                 type="button"
                                 onClick={() => form.setData('spoiler', false)}
+                                aria-label={tr('Прибрати')}
+                                className="flex size-6 items-center justify-center rounded-full text-white/50 hover:bg-white/10 hover:text-white"
+                            >
+                                <X className="size-3.5" />
+                            </button>
+                        </span>
+                    )}
+                    {form.data.subscribers_only && (
+                        <span className="inline-flex h-8 items-center gap-1.5 rounded-full bg-gc-indigo/20 pr-1 pl-3 text-xs text-white/85">
+                            <Lock className="size-3.5 text-gc-lilac-300" />
+                            {tr('Лише для платних підписників')}
+                            <button
+                                type="button"
+                                onClick={() =>
+                                    form.setData('subscribers_only', false)
+                                }
                                 aria-label={tr('Прибрати')}
                                 className="flex size-6 items-center justify-center rounded-full text-white/50 hover:bg-white/10 hover:text-white"
                             >

@@ -11,6 +11,7 @@ import {
     Shield,
     Sparkles,
     TrendingUp,
+    Megaphone,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -48,6 +49,7 @@ type Props = {
     counts: { mine: number; managed: number };
     sections: Section[];
     communities: ScrollData<CommunityListItem>;
+    promoted?: CommunityListItem[];
 };
 
 export default function Communities({
@@ -57,6 +59,7 @@ export default function Communities({
     counts,
     sections,
     communities,
+    promoted = [],
 }: Props) {
     const signedIn = Boolean(usePage().props.auth.user);
     const [q, setQ] = useState(filters.q);
@@ -255,6 +258,41 @@ export default function Communities({
                         })}
                     </div>
                 </section>
+
+                {promoted.length > 0 && (
+                    <section className="glass rounded-2xl p-4 sm:p-5">
+                        <h2 className="flex items-center gap-2 font-display text-base font-semibold text-white">
+                            <Megaphone className="size-4 text-gc-lilac-300" />
+                            {tr('Просуваються')}
+                            <span className="ml-auto text-xs font-normal text-white/40">
+                                {tr('Реклама')}
+                            </span>
+                        </h2>
+                        <div className="-mx-1 mt-3 grid grid-cols-2 gap-2 px-1 sm:grid-cols-4">
+                            {promoted.map((community) => (
+                                <Link
+                                    key={community.id}
+                                    href={`/c/${community.slug}`}
+                                    className="flex flex-col items-center gap-2 rounded-xl px-3 py-3.5 text-center transition hover:bg-white/[0.06]"
+                                >
+                                    <CommunityAvatar
+                                        community={community}
+                                        size="lg"
+                                    />
+                                    <span className="max-w-full truncate text-sm font-semibold text-white">
+                                        {community.name}
+                                    </span>
+                                    <span className="text-xs text-white/50">
+                                        {membersLabel(
+                                            community.members_count,
+                                            community.type === 'public',
+                                        )}
+                                    </span>
+                                </Link>
+                            ))}
+                        </div>
+                    </section>
+                )}
 
                 {sections.map((section) => (
                     <ExploreSection key={section.key} section={section} />

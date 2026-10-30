@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Community;
+use App\Services\Billing\CommunityPromotion;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -37,6 +38,7 @@ class CommunityController extends Controller
                 'owner' => $c->owner?->toCard(),
                 'posts_count' => $c->posts_count,
                 'auto_join' => $c->auto_join,
+                'promoted' => (bool) $c->promoted_until?->isFuture(),
                 'created_at' => $c->created_at->toIso8601String(),
                 'deleted_at' => $c->deleted_at?->toIso8601String(),
             ]);
@@ -70,6 +72,17 @@ class CommunityController extends Controller
             ? ($data['auto_join'] ? 'Нові люди вступатимуть сюди автоматично.' : 'Автовступ вимкнено.')
             : ($data['is_verified'] ? 'Спільноту верифіковано.' : 'Верифікацію знято.');
         Inertia::flash('toast', ['type' => 'success', 'message' => $message]);
+
+        return back();
+    }
+
+    /** Просування від адміністрації (без оплати): N днів або зупинити. */
+    public function promote(Request $request, Community $community, CommunityPromotion $promotion): RedirectResponse
+    {
+        $data = $request->validate(['days' => ['required', 'integer', 'min:0', 'max:90']]);
+        $data['days'] > 0 ? $promotion->extend($community, (int) $data['days']) : $promotion->stop($community);
+        Log::info('admin: community promotion', ['community' => $community->id, 'days' => $data['days'], 'by' => $request->user()?->id]);
+        Inertia::flash('toast', ['type' => 'success', 'message' => $data['days'] > 0 ? 'Спільноту просуваємо.' : 'Просування зупинено.']);
 
         return back();
     }

@@ -46,6 +46,7 @@ use Illuminate\Support\Facades\Storage;
  * @property string|null $donation_note
  * @property bool $is_listed Показувати в каталозі й пошуку; інакше — лише за посиланням
  * @property string|null $join_password Хеш пароля для вступу
+ * @property Carbon|null $promoted_until Просування в каталозі до
  * @property bool $guest_view Гості без акаунта бачать сторінку й відкриті канали
  * @property bool $auto_join Нові люди вступають самі (вмикає адмін сайту)
  * @property int|null $guest_chat_channel_id Канал, де можуть писати гості
@@ -104,6 +105,7 @@ class Community extends Model
             'post_tags' => 'array',
             'join_questions' => 'array',
             'wiki_open' => 'boolean',
+            'promoted_until' => 'datetime',
             'slow_mode' => 'integer',
             'weekly_digest' => 'boolean',
             'premoderation' => 'boolean',

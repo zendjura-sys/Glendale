@@ -424,6 +424,33 @@ export function PostCard({
                 </form>
             )}
 
+            {post.locked && (
+                <Link
+                    href={`/${post.author.username}`}
+                    className="mt-3 flex items-center gap-3.5 rounded-2xl bg-white/[0.05] p-4 transition hover:bg-white/[0.08]"
+                >
+                    <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-gc-indigo/20">
+                        <Lock className="size-5 text-gc-lilac-300" />
+                    </span>
+                    <span className="min-w-0">
+                        <span className="block text-sm font-semibold text-white">
+                            {tr('Запис для підписників')}
+                        </span>
+                        <span className="block text-sm text-white/55">
+                            {tr('Підтримайте {name}, щоб відкрити', {
+                                name: post.author.name,
+                            })}
+                        </span>
+                    </span>
+                </Link>
+            )}
+            {post.subscribers_only && !post.locked && (
+                <span className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-gc-indigo/15 px-2.5 py-0.5 text-xs text-gc-lilac-200">
+                    <Lock className="size-3" />
+                    {tr('Для підписників')}
+                </span>
+            )}
+
             {editing ? (
                 <form
                     className="mt-3 space-y-2"

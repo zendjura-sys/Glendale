@@ -15,6 +15,7 @@ use App\Models\Save;
 use App\Models\Track;
 use App\Models\User;
 use App\Models\UserMute;
+use App\Services\Billing\AuthorSubscriptions;
 use App\Services\Games\GameTags;
 use App\Support\Plugins\Plugins;
 use App\Support\Stickers;
@@ -39,6 +40,9 @@ class PostPresenter
     /** @var array<int, list<array<string, mixed>>> */
     private array $voters = [];
 
+    /** @var array<int, true> Автори, на яких глядач має платну підписку */
+    private array $subscribedTo = [];
+
     /** @var array<int, bool> */
     private array $muted = [];
 
@@ -59,6 +63,9 @@ class PostPresenter
 
         $posts->loadMissing(['author', 'wall', 'attachments', 'sharedPost.author', 'sharedPost.wall', 'quotedPost.author']);
         $ids = $posts->modelKeys();
+        $this->subscribedTo = $viewer && $posts->contains(fn (Post $p) => $p->subscribers_only)
+            ? array_fill_keys(app(AuthorSubscriptions::class)->authorsFor($viewer), true)
+            : [];
 
         $previewComments = Comment::query()
             ->with('user')
@@ -192,7 +199,7 @@ class PostPresenter
             default => null,
         };
 
-        return [
+        $card = [
             'id' => $post->id,
             'body' => $post->body,
             // #Згадки ігор у тексті → посилання на сторінки ігор.
@@ -243,7 +250,15 @@ class PostPresenter
                 'share' => $shareable,
                 'quote' => $viewer !== null && ! $post->is_draft && ! $post->publish_at?->isFuture(),
             ],
+            'subscribers_only' => $post->subscribers_only,
+            'locked' => false,
         ];
+        // Запис «лише для підписників»: решта бачить тільки автора й заклик підписатися.
+        if ($post->subscribers_only && ! ($viewer && ($viewer->id === $post->author_id || $viewer->isStaff() || isset($this->subscribedTo[$post->author_id])))) {
+            $card = [...$card, 'locked' => true, 'body' => '', 'games' => [], 'attachments' => [], 'music' => null, 'movie' => null, 'link' => null, 'card' => null, 'poll' => null, 'shared' => null, 'quoted' => null, 'comments' => [], 'can' => [...$card['can'], 'comment' => false, 'share' => false, 'quote' => false]];
+        }
+
+        return $card;
     }
 
     /**

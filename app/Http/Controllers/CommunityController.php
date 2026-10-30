@@ -7,6 +7,8 @@ use App\Models\CommunityMember;
 use App\Models\Photo;
 use App\Models\Post;
 use App\Models\User;
+use App\Services\Billing\CommunityPromotion;
+use App\Services\Billing\Wallet;
 use App\Services\Communities\CommunityExplore;
 use App\Services\Communities\CommunityGuests;
 use App\Services\CommunityService;
@@ -87,6 +89,10 @@ class CommunityController extends Controller
                 'items' => array_map($card, $section['items']),
             ], $explore->sections()) : [],
             'communities' => Inertia::scroll(fn () => $page),
+            // Оплачене просування: угорі «Огляду» з позначкою.
+            'promoted' => $tab === 'discover' && $term === '' && app(Plugins::class)->on('community_promotion')
+                ? Community::query()->where('is_listed', true)->where('promoted_until', '>', now())->inRandomOrder()->limit(4)->get()->map($card)->values()->all()
+                : [],
         ]);
     }
 
@@ -192,6 +198,9 @@ class CommunityController extends Controller
             ],
             'membership' => $membership ? ['status' => $membership->status, 'role' => $membership->role] : null,
             'welcome_card' => $this->welcomeCard($community, $membership),
+            'promotion' => app(Plugins::class)->on('community_promotion') && ((bool) $membership?->isAdmin() || $viewer->isStaff())
+                ? ['until' => $community->promoted_until?->isFuture() ? $community->promoted_until->toIso8601String() : null, 'price' => Wallet::uah(app(CommunityPromotion::class)->price()), 'days' => CommunityPromotion::DAYS, 'listed' => $community->is_listed]
+                : null,
             'can' => [
                 'view' => $canView,
                 'post' => $this->communities->canPost($community, $membership),

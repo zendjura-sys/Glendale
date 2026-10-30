@@ -9,6 +9,7 @@ import {
     BadgeCheck,
     Link2,
     BellRing,
+    HeartHandshake,
 } from 'lucide-react';
 import { m, useReducedMotion } from 'motion/react';
 import type { PropsWithChildren, ReactNode } from 'react';
@@ -55,6 +56,12 @@ const items = [
         icon: Link2,
     },
     {
+        title: tr('Підписки'),
+        description: tr('Платна підписка на вас і ваші підписки'),
+        href: '/settings/subscriptions',
+        icon: HeartHandshake,
+    },
+    {
         title: tr('Слова'),
         description: tr('Сповіщення про записи з вашими словами'),
         href: '/settings/keyword-alerts',
@@ -82,6 +89,7 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
     const accountTypesOn = typesPlugin || verifyPlugin;
     const linksOn = usePlugin('bio_links');
     const alertsOn = usePlugin('keyword_alerts');
+    const authorSubsOn = usePlugin('author_subscriptions');
 
     return (
         <div className="mx-auto max-w-[980px]">
@@ -116,7 +124,9 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
                                     (item.href !== '/settings/links' ||
                                         linksOn) &&
                                     (item.href !== '/settings/keyword-alerts' ||
-                                        alertsOn),
+                                        alertsOn) &&
+                                    (item.href !== '/settings/subscriptions' ||
+                                        authorSubsOn),
                             )
                             .map(({ title, description, href, icon: Icon }) => {
                                 const active = isCurrentOrParentUrl(href);

@@ -1,3 +1,5 @@
+import { CommunityPromoteCard } from '@/components/communities/promote-card';
+import type { Promotion } from '@/components/communities/promote-card';
 import { CommunityWelcomeCard } from '@/components/communities/welcome-card';
 import type { WelcomeCard } from '@/components/communities/welcome-card';
 import { Head, InfiniteScroll, Link, router } from '@inertiajs/react';
@@ -61,6 +63,7 @@ type Props = {
     donation?: DonationJar | null;
     membership: { status: MembershipStatus; role: CommunityRole } | null;
     welcome_card?: WelcomeCard | null;
+    promotion?: Promotion | null;
     can: {
         view: boolean;
         post: boolean;
@@ -147,6 +150,7 @@ export default function CommunityShow({
     community,
     membership,
     welcome_card,
+    promotion,
     can,
     stats,
     members,
@@ -613,6 +617,13 @@ export default function CommunityShow({
                                     </div>
                                 ))}
                             </section>
+                        )}
+
+                        {promotion && (
+                            <CommunityPromoteCard
+                                slug={community.slug}
+                                promotion={promotion}
+                            />
                         )}
 
                         {welcome_card && (

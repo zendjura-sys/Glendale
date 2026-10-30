@@ -50,6 +50,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -150,6 +151,8 @@ class ProfileController extends Controller
                 'last_name' => $user->last_name,
                 'cover_url' => $user->cover_url,
                 // GameCon+: коротке відео замість обкладинки.
+                // Є платні рівні підписки — на сторінці кнопка «Підтримати».
+                'has_tiers' => app(Plugins::class)->on('author_subscriptions') && DB::table('author_tiers')->where('user_id', $user->id)->exists(),
                 'cover_video_url' => $user->cover_video_path && $user->isPlus() && app(Plugins::class)->on('plus_video_cover') ? Storage::disk('public')->url($user->cover_video_path) : null,
                 // GameCon+: власні кольори сторінки (з палітр сайту); інакше — кольори улюбленої гри.
                 'accent' => ($user->isPlus() ? Palette::colors((string) ($user->plus_style['accent'] ?? '')) : null) ?? GameTheme::colors($user),

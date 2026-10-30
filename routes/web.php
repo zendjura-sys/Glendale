@@ -7,6 +7,7 @@ use App\Http\Controllers\AppLinksController;
 use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\Auth\AppLoginController;
 use App\Http\Controllers\Auth\SocialAuthController;
+use App\Http\Controllers\AuthorSubscriptionController;
 use App\Http\Controllers\BillingController;
 use App\Http\Controllers\BioLinksController;
 use App\Http\Controllers\Bots;
@@ -287,6 +288,12 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     Route::post('posts/{post}/poll', [PostController::class, 'vote'])->middleware('throttle:60,1')->name('posts.poll');
     Route::get('saved', [SavedController::class, 'index'])->name('saved.index');
     Route::get('later', [ReadingController::class, 'later'])->name('later.index');
+    Route::get('settings/subscriptions', [AuthorSubscriptionController::class, 'settings'])->name('author-subscriptions.settings');
+    Route::put('settings/subscriptions/tiers', [AuthorSubscriptionController::class, 'saveTiers'])->middleware('throttle:20,1')->name('author-subscriptions.tiers');
+    Route::get('u/{user:username}/tiers', [AuthorSubscriptionController::class, 'tiers'])->name('author-subscriptions.show');
+    Route::post('author-subscriptions', [AuthorSubscriptionController::class, 'subscribe'])->middleware('throttle:10,1')->name('author-subscriptions.subscribe');
+    Route::patch('author-subscriptions/{user}', [AuthorSubscriptionController::class, 'autoRenew'])->name('author-subscriptions.renew');
+    Route::post('c/{community}/promote', [AuthorSubscriptionController::class, 'promote'])->middleware('throttle:10,1')->name('communities.promote');
     Route::post('posts/{post}/later', [ReadingController::class, 'toggleLater'])->middleware('throttle:60,1')->name('later.toggle');
     Route::get('settings/keyword-alerts', [ReadingController::class, 'alerts'])->name('keyword-alerts.index');
     Route::post('settings/keyword-alerts', [ReadingController::class, 'addAlert'])->middleware('throttle:30,1')->name('keyword-alerts.store');
@@ -912,7 +919,9 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     Route::prefix('admin')->name('admin.')->middleware('admin')->group(function () {
         Route::get('/', Admin\DashboardController::class)->name('dashboard');
         Route::get('users', [Admin\UserController::class, 'index'])->name('users.index');
+        Route::post('users/bulk', [Admin\UserController::class, 'bulk'])->name('users.bulk');
         Route::patch('users/{user}', [Admin\UserController::class, 'update'])->name('users.update');
+        Route::get('revenue', Admin\RevenueController::class)->name('revenue');
         Route::delete('users/{user}', [Admin\UserController::class, 'destroy'])->name('users.destroy');
         Route::get('posts', [Admin\PostController::class, 'index'])->name('posts.index');
         Route::delete('posts/{post}', [Admin\PostController::class, 'destroy'])->name('posts.destroy');
@@ -1024,6 +1033,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::get('communities', [Admin\CommunityController::class, 'index'])->name('communities.index');
         Route::patch('communities/{community:id}', [Admin\CommunityController::class, 'update'])->name('communities.update');
         Route::delete('communities/{community}', [Admin\CommunityController::class, 'destroy'])->whereNumber('community')->name('communities.destroy');
+        Route::post('communities/{community:id}/promote', [Admin\CommunityController::class, 'promote'])->name('communities.promote');
         Route::post('communities/{community}/restore', [Admin\CommunityController::class, 'restore'])->whereNumber('community')->name('communities.restore');
         Route::prefix('servers')->name('servers.')->group(function () {
             Route::get('/', [Admin\ServerController::class, 'index'])->name('index');

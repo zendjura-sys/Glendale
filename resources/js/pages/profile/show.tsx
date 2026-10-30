@@ -1,3 +1,4 @@
+import { SupportAuthorButton } from '@/components/billing/support-author';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import {
     Deferred,
@@ -123,6 +124,7 @@ type Profile = UserCard & {
     last_name: string;
     cover_url: string | null;
     cover_video_url?: string | null;
+    has_tiers?: boolean;
     /** GameCon+: кольори сторінки. */
     accent?: string[] | null;
     /** GameCon+: ефект шапки — сяйво внизу обкладинки або жива рамка. */
@@ -745,6 +747,12 @@ export default function ProfileShow({
                                 </Link>
                             ) : (
                                 <>
+                                    {profile.has_tiers && (
+                                        <SupportAuthorButton
+                                            username={profile.username}
+                                            name={profile.name}
+                                        />
+                                    )}
                                     <FriendButton
                                         username={profile.username}
                                         relation={relation}

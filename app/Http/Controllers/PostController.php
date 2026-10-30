@@ -144,6 +144,7 @@ class PostController extends Controller
             'poll.options' => ['required_with:poll', 'array', 'min:2', 'max:4'],
             'poll.options.*' => ['required', 'string', 'max:80'],
             'poll.anonymous' => ['nullable', 'boolean'],
+            'subscribers_only' => ['nullable', 'boolean'],
             'visibility' => ['required', Rule::in(Post::VISIBILITIES)],
             'spoiler' => ['sometimes', 'boolean'],
             'draft' => ['sometimes', 'boolean'],
@@ -233,6 +234,9 @@ class PostController extends Controller
                 'is_pending' => $pending,
                 'tag' => $tag,
                 'lang' => LanguageGuess::guess($data['body'] ?? null),
+                // Лише для платних підписників: тільки на власній стіні й коли в автора є рівні підписки.
+                'subscribers_only' => $request->boolean('subscribers_only') && $wallOwner instanceof User && $wallOwner->id === $user->id
+                    && app(Plugins::class)->on('author_subscriptions') && DB::table('author_tiers')->where('user_id', $user->id)->exists(),
             ]);
 
             if (isset($data['poll'])) {

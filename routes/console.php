@@ -2,6 +2,7 @@
 
 use App\Models\AppLoginRequest;
 use App\Models\SpamBlock;
+use App\Services\Billing\AuthorSubscriptions;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -64,3 +65,5 @@ Schedule::command('bots:roles')->hourly()->withoutOverlapping(30)->runInBackgrou
 
 // «Зараз у стрімі»: Twitch пакетами, YouTube по черзі.
 Schedule::command('streams:check')->everyThreeMinutes()->withoutOverlapping(10)->runInBackground();
+// Платні підписки на авторів: продовження з рахунку за добу до кінця строку.
+Schedule::call(fn () => app(AuthorSubscriptions::class)->renewDue())->name('author-subscriptions:renew')->dailyAt('06:10')->withoutOverlapping();

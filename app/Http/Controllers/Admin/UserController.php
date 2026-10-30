@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -97,6 +98,33 @@ class UserController extends Controller
         $user->save();
 
         Inertia::flash('toast', ['type' => 'success', 'message' => "Користувача {$user->name} оновлено."]);
+
+        return back();
+    }
+
+    /** Масові дії над вибраними людьми (до 100 за раз); кожна дія — у журнал адмінки. */
+    public function bulk(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'ids' => ['required', 'array', 'min:1', 'max:100'],
+            'ids.*' => ['integer'],
+            'action' => ['required', Rule::in(['ban', 'unban', 'verify', 'unverify'])],
+            'reason' => ['nullable', 'string', 'max:255'],
+        ]);
+        $actor = $request->user();
+        // Себе й персонал масово не чіпаємо — лише поштучно.
+        $users = User::query()->whereIn('id', $data['ids'])->whereKeyNot($actor->id)->get()->reject(fn (User $u) => $u->isStaff());
+        foreach ($users as $user) {
+            match ($data['action']) {
+                'ban' => $user->forceFill(['banned_at' => Carbon::now(), 'ban_reason' => $data['reason'] ?? null]),
+                'unban' => $user->forceFill(['banned_at' => null, 'ban_reason' => null]),
+                'verify' => $user->forceFill(['is_verified' => true]),
+                default => $user->forceFill(['is_verified' => false]),
+            };
+            $user->save();
+        }
+        Log::info('admin: users bulk action', ['action' => $data['action'], 'users' => $users->pluck('id')->values()->all(), 'reason' => $data['reason'] ?? null, 'by' => $actor->id]);
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Готово: '.$users->count().' '.($users->count() === 1 ? 'людина' : 'людей').'.']);
 
         return back();
     }

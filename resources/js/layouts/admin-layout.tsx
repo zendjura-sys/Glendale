@@ -38,6 +38,7 @@ import {
     UsersRound,
     Wallet,
     BadgeCheck,
+    TrendingUp,
 } from 'lucide-react';
 import { AnimatePresence, m, useReducedMotion } from 'motion/react';
 import { useEffect, useState } from 'react';
@@ -156,6 +157,11 @@ function groups(): { title: string; items: Item[] }[] {
             items: [
                 { label: 'GameCon+', href: '/admin/plus', icon: Sparkles },
                 { label: tr('Білінг'), href: '/admin/billing', icon: Wallet },
+                {
+                    label: tr('Доходи'),
+                    href: '/admin/revenue',
+                    icon: TrendingUp,
+                },
                 { label: tr('Номери'), href: '/admin/phones', icon: Phone },
             ],
         },
