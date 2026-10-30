@@ -4887,7 +4887,8 @@ iframe {
     color: #ffffff;
     transform-origin: var(--radix-dropdown-menu-content-transform-origin);
 }
-:root:root[data-theme='light'] .arctic-menu.arctic-menu[data-slot='dropdown-menu-content'] {
+:root:root[data-theme='light']
+    .arctic-menu.arctic-menu[data-slot='dropdown-menu-content'] {
     background: rgb(255 255 255 / 0.5) !important;
     color: #0d1b2e;
 }
