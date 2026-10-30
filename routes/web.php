@@ -1055,6 +1055,9 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
             Route::put('settings', [Admin\ModerationController::class, 'settings'])->name('settings');
             Route::post('reports/{report}', [Admin\ModerationController::class, 'resolve'])->whereNumber('report')->name('resolve');
             Route::post('users/{user:id}/unmute', [Admin\ModerationController::class, 'unmute'])->whereNumber('user')->name('unmute');
+            Route::post('users/{user:id}/trust', [Admin\ModerationController::class, 'trust'])->whereNumber('user')->name('trust');
+            Route::post('users/{user:id}/reviewed', [Admin\ModerationController::class, 'reviewed'])->whereNumber('user')->name('reviewed');
+            Route::delete('strikes/{strike}', [Admin\ModerationController::class, 'revokeStrike'])->whereNumber('strike')->name('strikes.revoke');
             Route::post('people/{user:id}', [Admin\ModerationController::class, 'resolvePerson'])->whereNumber('user')->name('people.resolve');
             Route::post('appeals/{appeal}', [Admin\ModerationController::class, 'answerAppeal'])->whereNumber('appeal')->name('appeals.answer');
             Route::post('feedback/{feedback}', [Admin\ModerationController::class, 'readFeedback'])->whereNumber('feedback')->name('feedback.read');

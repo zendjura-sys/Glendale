@@ -16,7 +16,9 @@ use App\Models\UserSession;
 use App\Services\Auth\AccountSecurity;
 use App\Services\Bots\TelegramApi;
 use App\Services\FriendshipService;
+use App\Services\Moderation\Strikes;
 use App\Services\Servers\ServerOAuth;
+use App\Support\Plugins\Plugins;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -78,7 +80,9 @@ class AccountController extends Controller
                     'status' => $a->status,
                     'reply' => $a->reply,
                     'created_at' => $a->created_at->toIso8601String(),
+                    'due_at' => $a->created_at->addHours(Appeal::SLA_HOURS)->toIso8601String(),
                 ])->all()),
+            'strikes' => app(Plugins::class)->on('strikes') ? app(Strikes::class)->history($user) : [],
             'appealKinds' => Appeal::KINDS,
             'mute' => $user->isMuted() ? ['until' => $user->muted_until?->toIso8601String(), 'reason' => $user->mute_reason] : null,
             'hideProfanity' => (bool) $user->pref('hide_profanity', false),

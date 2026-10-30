@@ -70,6 +70,10 @@ class MessageReports
             ])->save();
         }
 
+        if (in_array($action, ['delete', 'mute'], true) && $author instanceof User) {
+            app(Strikes::class)->add($author, $moderator, $reason ?? (MessageReport::REASONS[$report->reason] ?? null), 'message_report');
+        }
+
         MessageReport::query()->where('message_id', $report->message_id)->where('status', MessageReport::PENDING)->update([
             'status' => $action === 'dismiss' ? MessageReport::DISMISSED : MessageReport::RESOLVED,
             'resolved_by' => $moderator->id,

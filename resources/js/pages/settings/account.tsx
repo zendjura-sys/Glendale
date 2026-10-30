@@ -52,6 +52,14 @@ type Props = {
         status: 'pending' | 'accepted' | 'rejected';
         reply: string | null;
         created_at: string;
+        due_at?: string;
+    }[];
+    strikes?: {
+        id: number;
+        reason: string;
+        active: boolean;
+        expires_at: string;
+        created_at: string;
     }[];
     appealKinds: Record<string, string>;
     mute: { until: string | null; reason: string | null } | null;
@@ -94,6 +102,7 @@ export default function Account({
     appealKinds,
     mute,
     hideProfanity,
+    strikes = [],
 }: Props) {
     const appeal = useForm({
         kind: mute ? 'mute' : 'content',
@@ -384,6 +393,47 @@ export default function Account({
                             {mute.reason && ` ${mute.reason}`}
                         </p>
                     )}
+                    {strikes.length > 0 && (
+                        <div className="mb-4 rounded-xl bg-white/[0.03] p-3.5">
+                            <p className="text-sm font-medium text-white">
+                                {tr('Страйки: активних {count} з 5', {
+                                    count: strikes.filter((s) => s.active)
+                                        .length,
+                                })}
+                            </p>
+                            <p className="mt-0.5 text-xs text-white/45">
+                                {tr(
+                                    'Страйк діє 90 днів. 3 активні — заборона писати на добу, 5 — на тиждень. Вважаєте помилкою — оскаржте нижче.',
+                                )}
+                            </p>
+                            <ul className="mt-2 space-y-1 text-sm">
+                                {strikes.map((s) => (
+                                    <li
+                                        key={s.id}
+                                        className={cn(
+                                            'flex gap-2',
+                                            s.active
+                                                ? 'text-white/80'
+                                                : 'text-white/35 line-through',
+                                        )}
+                                    >
+                                        <span className="min-w-0 flex-1">
+                                            {s.reason}
+                                        </span>
+                                        <span className="shrink-0 text-xs text-white/45">
+                                            {s.active
+                                                ? tr('до {date}', {
+                                                      date: formatDate(
+                                                          s.expires_at,
+                                                      ),
+                                                  })
+                                                : formatDate(s.created_at)}
+                                        </span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
                     <form
                         onSubmit={(event) => {
                             event.preventDefault();
@@ -453,6 +503,17 @@ export default function Account({
                                         </span>
                                         <span>·</span>
                                         <span>{timeAgo(item.created_at)}</span>
+                                        {item.status === 'pending' &&
+                                            item.due_at && (
+                                                <span>
+                                                    ·{' '}
+                                                    {tr('відповімо до {date}', {
+                                                        date: formatDate(
+                                                            item.due_at,
+                                                        ),
+                                                    })}
+                                                </span>
+                                            )}
                                         <span
                                             className={cn(
                                                 'rounded-chip px-2 py-0.5 font-medium',

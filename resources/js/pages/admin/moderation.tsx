@@ -14,12 +14,16 @@ import { useState } from 'react';
 import {
     Appeals,
     FeedbackList,
+    Newcomers,
     PeopleReports,
+    Reporters,
 } from '@/components/admin/people-moderation';
 import type {
     AppealItem,
     FeedbackItem,
+    NewcomerItem,
     PersonReport,
+    ReporterItem,
 } from '@/components/admin/people-moderation';
 import { ImageFlags } from '@/components/admin/image-flags';
 import type { ImageFlagItem } from '@/components/admin/image-flags';
@@ -36,6 +40,7 @@ type Report = {
     reasons: string[];
     comments: string[];
     reporters: string[];
+    trusted?: boolean;
     ai: { severity: 'low' | 'medium' | 'high'; reason: string } | null;
     created_at: string;
     message: {
@@ -67,12 +72,15 @@ type Props = {
         resolved_week: number;
         people: number;
         appeals: number;
+        appeals_overdue?: number;
         feedback: number;
     };
     people: PersonReport[];
     appeals: AppealItem[];
     feedback: FeedbackItem[];
     images?: ImageFlagItem[];
+    newcomers?: NewcomerItem[];
+    reporters?: ReporterItem[];
 };
 
 const PROFANITY = {
@@ -108,6 +116,8 @@ export default function AdminModeration({
     appeals,
     feedback,
     images = [],
+    newcomers = [],
+    reporters = [],
 }: Props) {
     const form = useForm({
         ...settings,
@@ -154,7 +164,13 @@ export default function AdminModeration({
                     delay={100}
                 />
                 <StatCard
-                    label={tr('Оскаржень')}
+                    label={
+                        stats.appeals_overdue
+                            ? tr('Оскаржень · прострочено {count}', {
+                                  count: stats.appeals_overdue,
+                              })
+                            : tr('Оскаржень')
+                    }
                     value={stats.appeals}
                     icon={Gavel}
                     delay={150}
@@ -183,6 +199,11 @@ export default function AdminModeration({
                                             ? tr('скарга')
                                             : tr('скарг')}
                                     </span>
+                                    {r.trusted && (
+                                        <span className="rounded-md bg-emerald-500/15 px-2 py-0.5 text-emerald-200">
+                                            {tr('Довірений скаржник')}
+                                        </span>
+                                    )}
                                     {r.reasons.map((reason) => (
                                         <span
                                             key={reason}
@@ -325,6 +346,10 @@ export default function AdminModeration({
             <ImageFlags flags={images} />
 
             <Appeals appeals={appeals} />
+
+            <Newcomers items={newcomers} />
+
+            <Reporters items={reporters} />
 
             <FeedbackList feedback={feedback} />
 
