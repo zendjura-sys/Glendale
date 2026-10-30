@@ -419,9 +419,14 @@ html[data-palette='copper'] {
         scrollbar-color: rgb(255 255 255 / 0.14) transparent;
         touch-action: manipulation;
         scroll-behavior: smooth;
+        /* Будь-що ширше за екран (довге посилання, широка таблиця) не має розсувати сторінку:
+           інакше мобільний браузер зменшує масштаб, і стрічка стає вужчою за шапку. clip, а не hidden, —
+           щоб не ламати sticky. */
+        overflow-x: clip;
     }
 
     body {
+        overflow-x: clip;
         @apply text-foreground;
         font-feature-settings: 'ss01', 'cv11';
     }
@@ -4859,4 +4864,13 @@ html:has(.am) body {
 .gc-streamer [data-sonner-toast] [data-description] {
     filter: blur(6px);
     user-select: none;
+}
+
+/* Довгі посилання й слова без пробілів у записах і коментарях переносяться навіть у flex-рядках
+   (break-word не зменшує мінімальну ширину, anywhere — так). */
+.break-words {
+    overflow-wrap: anywhere;
+}
+iframe {
+    max-width: 100%;
 }
