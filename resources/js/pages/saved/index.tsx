@@ -4,6 +4,7 @@ import { PostCard } from '@/components/gc/post-card';
 import { EmptyState } from '@/components/gc/widget';
 import type { PostItem } from '@/types';
 import { tr } from '@/lib/i18n';
+import { usePlugin } from '@/lib/plugins';
 import { listWords } from '@/lib/modes';
 
 type Card = {
@@ -18,13 +19,24 @@ type Item = { kind: 'post'; post: PostItem } | Card;
 
 export default function Saved({ items }: { items: Item[] }) {
     const { modules } = usePage().props;
+    const laterOn = usePlugin('read_later');
     return (
         <>
             <Head title={tr('Збережене')} />
             <div className="mx-auto max-w-[640px] space-y-4">
-                <h1 className="font-display text-2xl font-semibold text-white">
-                    {tr('Збережене')}
-                </h1>
+                <div className="flex items-end justify-between gap-3">
+                    <h1 className="font-display text-2xl font-semibold text-white">
+                        {tr('Збережене')}
+                    </h1>
+                    {laterOn && (
+                        <Link
+                            href="/later"
+                            className="shrink-0 text-sm text-white/55 hover:text-white"
+                        >
+                            {tr('Прочитати пізніше')}
+                        </Link>
+                    )}
+                </div>
                 {items.length === 0 ? (
                     <EmptyState
                         icon={Bookmark}

@@ -219,12 +219,8 @@ export function Seasonal() {
                         />
                         <Pumpkin className="season-corner season-corner--left" />
                         <Pumpkin className="season-corner season-corner--right" />
-                        <Particles count={4} seed={43} className="season-bat">
-                            {() => (
-                                <svg viewBox="0 0 64 28">
-                                    <path d="M32 10c-3-6-7-8-10-6 2 2 2 5 0 7-4-4-10-6-15-3 4 1 6 4 6 8 4-3 9-3 12 0 2-3 5-4 7-3 2-1 5 0 7 3 3-3 8-3 12 0 0-4 2-7 6-8-5-3-11-1-15 3-2-2-2-5 0-7-3-2-7 0-10 6z" />
-                                </svg>
-                            )}
+                        <Particles count={5} seed={43} className="season-bat">
+                            {() => <span className="season-bat-wings" />}
                         </Particles>
                     </>
                 )}

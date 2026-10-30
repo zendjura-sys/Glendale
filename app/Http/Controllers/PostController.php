@@ -143,6 +143,7 @@ class PostController extends Controller
             'poll.question' => ['required_with:poll', 'string', 'max:200'],
             'poll.options' => ['required_with:poll', 'array', 'min:2', 'max:4'],
             'poll.options.*' => ['required', 'string', 'max:80'],
+            'poll.anonymous' => ['nullable', 'boolean'],
             'visibility' => ['required', Rule::in(Post::VISIBILITIES)],
             'spoiler' => ['sometimes', 'boolean'],
             'draft' => ['sometimes', 'boolean'],
@@ -238,6 +239,8 @@ class PostController extends Controller
                 $poll = Poll::query()->create([
                     'post_id' => $post->id,
                     'question' => trim($data['poll']['question']),
+                    // Відкрите опитування (видно, хто як голосував) — лише якщо плагін увімкнено.
+                    'is_anonymous' => ! (app(Plugins::class)->on('open_polls') && array_key_exists('anonymous', $data['poll']) && ! filter_var($data['poll']['anonymous'], FILTER_VALIDATE_BOOLEAN)),
                 ]);
                 foreach (array_values($data['poll']['options']) as $position => $label) {
                     $poll->options()->create([

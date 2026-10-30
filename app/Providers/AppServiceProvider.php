@@ -23,6 +23,7 @@ use App\Services\Auth\AccountSecurity;
 use App\Services\Communities\CommunityPoints;
 use App\Services\CommunityService;
 use App\Services\Families\FamilyGate;
+use App\Services\Feed\KeywordAlerts;
 use App\Services\FriendshipService;
 use App\Services\Geo\CountryRestrictions;
 use App\Services\Moderation\NsfwCheck;
@@ -37,6 +38,7 @@ use App\Support\Mail\MailCategory;
 use App\Support\Mail\SocialMailer;
 use App\Support\Modules\ModuleManager;
 use App\Support\NotifyPrefs;
+use App\Support\Plugins\Plugins;
 use App\Support\Settings\SiteSettings;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Events\Failed;
@@ -160,6 +162,12 @@ class AppServiceProvider extends ServiceProvider
 
         // Бали учасника спільноти: запис (одразу чи після перевірки) і коментар.
         Post::created(fn (Post $post) => app(CommunityPoints::class)->forPost($post));
+        // Сповіщення за ключовими словами — після відповіді, щоб не гальмувати публікацію.
+        Post::created(function (Post $post) {
+            if (app(Plugins::class)->on('keyword_alerts')) {
+                dispatch(fn () => app(KeywordAlerts::class)->match($post))->afterResponse();
+            }
+        });
         Post::updated(function (Post $post) {
             if ($post->wasChanged('is_pending') && ! $post->is_pending) {
                 app(CommunityPoints::class)->forPost($post);

@@ -485,4 +485,14 @@ class AppSiteParityTest extends TestCase
         $this->withToken($token)->getJson('/api/v1/site/podcasts')->assertOk();
         $this->withToken($token)->getJson('/api/v1/site/gifs')->assertOk()->assertJsonStructure(['configured', 'gifs']);
     }
+
+    public function test_app_reaches_read_later_and_keyword_alerts_through_bridge(): void
+    {
+        $token = $this->app_token(User::factory()->create());
+        $post = Post::factory()->create(['visibility' => 'public']);
+        $this->withToken($token)->postJson("/api/v1/site/posts/{$post->id}/later")->assertOk()->assertJsonPath('later', true);
+        $this->withToken($token)->getJson('/api/v1/site/later')->assertOk()->assertJsonCount(1, 'posts');
+        $this->withToken($token)->postJson('/api/v1/site/settings/keyword-alerts', ['keyword' => 'патч'])->assertOk();
+        $this->withToken($token)->getJson('/api/v1/site/settings/keyword-alerts')->assertOk()->assertJsonPath('keywords', ['патч']);
+    }
 }

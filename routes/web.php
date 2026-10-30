@@ -76,6 +76,7 @@ use App\Http\Controllers\PodcastController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\QuestController;
+use App\Http\Controllers\ReadingController;
 use App\Http\Controllers\ReadyToPlayController;
 use App\Http\Controllers\ReferralController;
 use App\Http\Controllers\SavedController;
@@ -285,6 +286,12 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     Route::post('posts/{post}/like', [PostController::class, 'like'])->middleware('throttle:120,1')->name('posts.like');
     Route::post('posts/{post}/poll', [PostController::class, 'vote'])->middleware('throttle:60,1')->name('posts.poll');
     Route::get('saved', [SavedController::class, 'index'])->name('saved.index');
+    Route::get('later', [ReadingController::class, 'later'])->name('later.index');
+    Route::post('posts/{post}/later', [ReadingController::class, 'toggleLater'])->middleware('throttle:60,1')->name('later.toggle');
+    Route::get('settings/keyword-alerts', [ReadingController::class, 'alerts'])->name('keyword-alerts.index');
+    Route::post('settings/keyword-alerts', [ReadingController::class, 'addAlert'])->middleware('throttle:30,1')->name('keyword-alerts.store');
+    Route::delete('settings/keyword-alerts', [ReadingController::class, 'removeAlert'])->name('keyword-alerts.destroy');
+    Route::post('c/{community}/welcome-seen', [ReadingController::class, 'welcomeSeen'])->name('communities.welcome-seen');
     Route::post('saved', [SavedController::class, 'toggle'])->middleware('throttle:60,1')->name('saved.toggle');
 
     Route::get('posts/{post}/comments', [CommentController::class, 'index'])->name('comments.index');

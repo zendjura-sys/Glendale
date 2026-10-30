@@ -191,6 +191,7 @@ class CommunityController extends Controller
                 'slow_mode' => $community->slow_mode,
             ],
             'membership' => $membership ? ['status' => $membership->status, 'role' => $membership->role] : null,
+            'welcome_card' => $this->welcomeCard($community, $membership),
             'can' => [
                 'view' => $canView,
                 'post' => $this->communities->canPost($community, $membership),
@@ -530,5 +531,30 @@ class CommunityController extends Controller
     {
         $user = $request->user();
         abort_unless($community->membershipFor($user)?->isAdmin() || $user->isStaff(), 403);
+    }
+
+    /**
+     * Картка привітання: новачку (тиждень після вступу, поки не закрив) — текст привітання й правила;
+     * адміну — скільки людей прийшло за тиждень і перші з них, щоб привітати.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function welcomeCard(Community $community, ?CommunityMember $membership): ?array
+    {
+        if (! app(Plugins::class)->on('community_welcome_card') || $membership === null || $membership->status !== CommunityMember::STATUS_ACTIVE) {
+            return null;
+        }
+        if ($membership->isAdmin()) {
+            $fresh = $community->activeMembers()->where('community_members.created_at', '>=', now()->subWeek())->where('user_id', '!=', $membership->user_id)->latest('community_members.created_at')->with('user')->limit(6)->get();
+            $count = $community->activeMembers()->where('community_members.created_at', '>=', now()->subWeek())->where('user_id', '!=', $membership->user_id)->count();
+
+            return $count > 0 ? ['kind' => 'admin', 'count' => $count, 'people' => $fresh->map(fn (CommunityMember $m) => $m->user?->toCard())->filter()->values()->all()] : null;
+        }
+        $text = trim((string) $community->welcome);
+        if ($membership->welcome_seen_at !== null || $membership->created_at === null || $membership->created_at->lt(now()->subWeek())) {
+            return null;
+        }
+
+        return ['kind' => 'member', 'text' => $text !== '' ? $text : null, 'has_rules' => trim((string) $community->rules) !== ''];
     }
 }

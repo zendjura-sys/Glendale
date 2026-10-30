@@ -8,6 +8,7 @@ import {
     UserRound,
     BadgeCheck,
     Link2,
+    BellRing,
 } from 'lucide-react';
 import { m, useReducedMotion } from 'motion/react';
 import type { PropsWithChildren, ReactNode } from 'react';
@@ -54,6 +55,12 @@ const items = [
         icon: Link2,
     },
     {
+        title: tr('Слова'),
+        description: tr('Сповіщення про записи з вашими словами'),
+        href: '/settings/keyword-alerts',
+        icon: BellRing,
+    },
+    {
         title: tr('Тип акаунта'),
         description: tr('Спецакаунт, склад, верифікація'),
         href: '/settings/account-type',
@@ -74,6 +81,7 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
     const verifyPlugin = usePlugin('verification_v2');
     const accountTypesOn = typesPlugin || verifyPlugin;
     const linksOn = usePlugin('bio_links');
+    const alertsOn = usePlugin('keyword_alerts');
 
     return (
         <div className="mx-auto max-w-[980px]">
@@ -106,7 +114,9 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
                                     (item.href !== '/settings/account-type' ||
                                         accountTypesOn) &&
                                     (item.href !== '/settings/links' ||
-                                        linksOn),
+                                        linksOn) &&
+                                    (item.href !== '/settings/keyword-alerts' ||
+                                        alertsOn),
                             )
                             .map(({ title, description, href, icon: Icon }) => {
                                 const active = isCurrentOrParentUrl(href);

@@ -1,3 +1,5 @@
+import { CommunityWelcomeCard } from '@/components/communities/welcome-card';
+import type { WelcomeCard } from '@/components/communities/welcome-card';
 import { Head, InfiniteScroll, Link, router } from '@inertiajs/react';
 import {
     BookOpen,
@@ -58,6 +60,7 @@ type Props = {
     /** Банка Monobank спільноти (відкладений проп). */
     donation?: DonationJar | null;
     membership: { status: MembershipStatus; role: CommunityRole } | null;
+    welcome_card?: WelcomeCard | null;
     can: {
         view: boolean;
         post: boolean;
@@ -143,6 +146,7 @@ function ImageUpload({
 export default function CommunityShow({
     community,
     membership,
+    welcome_card,
     can,
     stats,
     members,
@@ -609,6 +613,14 @@ export default function CommunityShow({
                                     </div>
                                 ))}
                             </section>
+                        )}
+
+                        {welcome_card && (
+                            <CommunityWelcomeCard
+                                card={welcome_card}
+                                slug={community.slug}
+                                name={community.name}
+                            />
                         )}
 
                         {can.post && (

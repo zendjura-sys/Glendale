@@ -36,6 +36,9 @@ class PostPresenter
     /** @var array<int, int> */
     private array $votes = [];
 
+    /** @var array<int, list<array<string, mixed>>> */
+    private array $voters = [];
+
     /** @var array<int, bool> */
     private array $muted = [];
 
@@ -104,6 +107,16 @@ class PostPresenter
             ? Save::query()->where('user_id', $viewer->id)->where('kind', Save::POST)->whereIn('subject_id', $ids)->pluck('subject_id')->mapWithKeys(fn ($id) => [(int) $id => true])->all()
             : [];
         $pollIds = $posts->map(fn (Post $post) => $post->poll?->id)->filter()->values();
+        // Відкриті опитування: перші троє тих, хто обрав кожен варіант.
+        $openIds = $posts->map(fn (Post $post) => $post->poll && ! $post->poll->is_anonymous ? $post->poll->id : null)->filter()->values();
+        $this->voters = [];
+        if ($openIds->isNotEmpty()) {
+            $votes = PollVote::query()->whereIn('poll_id', $openIds)->latest('id')->limit(500)->get(['option_id', 'user_id']);
+            $people = User::query()->whereIn('id', $votes->pluck('user_id')->unique())->get()->keyBy('id');
+            foreach ($votes->groupBy('option_id') as $optionId => $rows) {
+                $this->voters[(int) $optionId] = array_values($rows->take(3)->map(fn ($vote) => $people->get($vote->user_id)?->toCard())->filter()->all());
+            }
+        }
         $this->votes = $viewer && $pollIds->isNotEmpty()
             ? PollVote::query()->where('user_id', $viewer->id)->whereIn('poll_id', $pollIds)->pluck('option_id', 'poll_id')->map(fn ($id) => (int) $id)->all()
             : [];
@@ -280,7 +293,7 @@ class PostPresenter
     }
 
     /**
-     * @return array{id: int, question: string, total: int, voted: int|null, options: list<array{id: int, label: string, votes: int}>}|null
+     * @return array{id: int, question: string, total: int, voted: int|null, anonymous: bool, options: list<array{id: int, label: string, votes: int, voters: list<array<string, mixed>>}>}|null
      */
     private function pollCard(Post $post): ?array
     {
@@ -294,10 +307,12 @@ class PostPresenter
             'question' => $poll->question,
             'total' => (int) $poll->options->sum('votes_count'),
             'voted' => isset($this->votes[$poll->id]) ? (int) $this->votes[$poll->id] : null,
+            'anonymous' => $poll->is_anonymous,
             'options' => array_values($poll->options->map(fn (PollOption $option) => [
                 'id' => $option->id,
                 'label' => $option->label,
                 'votes' => $option->votes_count,
+                'voters' => $poll->is_anonymous ? [] : ($this->voters[$option->id] ?? []),
             ])->all()),
         ];
     }

@@ -1,5 +1,6 @@
 import { Link, router, usePage } from '@inertiajs/react';
 import {
+    BookmarkPlus,
     ChevronRight,
     Clock,
     Earth,
@@ -43,6 +44,7 @@ import { CommunityAvatar } from './community-avatar';
 import { ReactionBar } from './reaction-bar';
 import { MediaGrid } from './media-grid';
 import { UserAvatar } from './user-avatar';
+import { usePlugin } from '@/lib/plugins';
 import { nameDisplayProps, PlusBadge } from './plus';
 import {
     CosmeticBadge,
@@ -82,6 +84,7 @@ export function PostCard({
     const [fullText, setFullText] = useState(expanded);
     const [deleted, setDeleted] = useState(false);
     const [poll, setPoll] = useState(post.poll ?? null);
+    const laterOn = usePlugin('read_later');
     const [spoilerOpen, setSpoilerOpen] = useState(false);
     const hideSpoilers = usePage().props.auth.user?.hide_spoilers === true;
     const [editing, setEditing] = useState(false);
@@ -254,6 +257,27 @@ export function PostCard({
                         >
                             <Link2 /> {tr('Копіювати посилання')}
                         </DropdownMenuItem>
+                        {laterOn && (
+                            <DropdownMenuItem
+                                className="rounded-lg focus:bg-white/[0.06]"
+                                onSelect={async () => {
+                                    const result = await api<{
+                                        later: boolean;
+                                    }>('POST', `/posts/${post.id}/later`);
+                                    toast.success(
+                                        result.later
+                                            ? tr(
+                                                  'Додано до «Прочитати пізніше»',
+                                              )
+                                            : tr(
+                                                  'Прибрано зі списку «Прочитати пізніше»',
+                                              ),
+                                    );
+                                }}
+                            >
+                                <BookmarkPlus /> {tr('Прочитати пізніше')}
+                            </DropdownMenuItem>
+                        )}
                         {post.can.edit && (
                             <DropdownMenuItem
                                 className="rounded-lg focus:bg-white/[0.06]"
@@ -631,17 +655,36 @@ export function PostCard({
                                 />
                                 <span className="relative flex items-center justify-between gap-3">
                                     <span>{option.label}</span>
-                                    {poll.voted !== null && (
-                                        <span className="text-xs text-white/50 tabular-nums">
-                                            {share}%
-                                        </span>
-                                    )}
+                                    <span className="flex items-center gap-2">
+                                        {(option.voters?.length ?? 0) > 0 && (
+                                            <span className="flex -space-x-1.5">
+                                                {option.voters?.map((voter) => (
+                                                    <UserAvatar
+                                                        key={voter.id}
+                                                        user={voter}
+                                                        size="xs"
+                                                        showOnline={false}
+                                                        className="size-5 ring-2 ring-black/30"
+                                                    />
+                                                ))}
+                                            </span>
+                                        )}
+                                        {poll.voted !== null && (
+                                            <span className="text-xs text-white/50 tabular-nums">
+                                                {share}%
+                                            </span>
+                                        )}
+                                    </span>
                                 </span>
                             </button>
                         );
                     })}
                     <p className="text-xs text-white/40">
                         {tr('{total} голосів', { total: poll.total })}
+                        {' · '}
+                        {poll.anonymous === false
+                            ? tr('відкрите опитування')
+                            : tr('анонімне')}
                     </p>
                 </div>
             )}

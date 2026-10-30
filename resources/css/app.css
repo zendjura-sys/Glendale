@@ -2416,17 +2416,34 @@ html[data-text='xl'] {
     animation-name: season-rise;
 }
 .season-heart svg,
-.season-bat svg {
-    width: 100%;
-    height: 100%;
-}
 .season-bat {
     top: 22%;
     width: calc(var(--size) * 64px);
     height: calc(var(--size) * 28px);
-    fill: rgb(24 20 32 / 0.85);
     filter: drop-shadow(0 0 6px rgb(249 115 22 / 0.35));
     animation-name: season-fly;
+}
+/* Силует кажана (PNG як маска — колір задаємо тут), крила змахують. */
+.season-bat-wings {
+    display: block;
+    width: 100%;
+    height: 100%;
+    background: rgb(18 14 26 / 0.88);
+    -webkit-mask: url('/images/seasons/halloween/bat.png') center / contain
+        no-repeat;
+    mask: url('/images/seasons/halloween/bat.png') center / contain no-repeat;
+    animation: season-flap 0.32s ease-in-out infinite alternate;
+    transform-origin: 50% 40%;
+}
+@keyframes season-flap {
+    to {
+        transform: scaleY(0.55) scaleX(0.92);
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .season-bat-wings {
+        animation: none;
+    }
 }
 @keyframes season-fall {
     from {

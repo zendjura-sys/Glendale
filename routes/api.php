@@ -63,6 +63,7 @@ use App\Http\Controllers\PodcastController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\QuestController;
+use App\Http\Controllers\ReadingController;
 use App\Http\Controllers\ReadyToPlayController;
 use App\Http\Controllers\ReferralController;
 use App\Http\Controllers\SavedController;
@@ -462,6 +463,12 @@ Route::prefix('v1')->group(function () {
 
             // Збережене: пости, фільми, ігри й сервери.
             Route::get('saved', [SavedController::class, 'index']);
+            Route::get('later', [ReadingController::class, 'later']);
+            Route::post('posts/{post}/later', [ReadingController::class, 'toggleLater'])->middleware('throttle:60,1');
+            Route::get('settings/keyword-alerts', [ReadingController::class, 'alerts']);
+            Route::post('settings/keyword-alerts', [ReadingController::class, 'addAlert'])->middleware('throttle:30,1');
+            Route::delete('settings/keyword-alerts', [ReadingController::class, 'removeAlert']);
+            Route::post('c/{community}/welcome-seen', [ReadingController::class, 'welcomeSeen']);
             Route::post('saved', [SavedController::class, 'toggle'])->middleware('throttle:60,1');
             // «Стежити» (сповіщення про новини гри, сервера чи фільму) і «Закріпити в профілі».
             Route::post('follows', [FollowController::class, 'toggle'])->middleware('throttle:60,1');

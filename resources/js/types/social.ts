@@ -137,7 +137,18 @@ export type PostItem = {
         question: string;
         total: number;
         voted: number | null;
-        options: { id: number; label: string; votes: number }[];
+        anonymous?: boolean;
+        options: {
+            id: number;
+            label: string;
+            votes: number;
+            voters?: {
+                id: number;
+                name: string;
+                username: string;
+                avatar_url: string | null;
+            }[];
+        }[];
     } | null;
     reaction?: string | null;
     liked: boolean;

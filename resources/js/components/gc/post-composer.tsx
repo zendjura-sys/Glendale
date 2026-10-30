@@ -92,6 +92,7 @@ export function PostComposer({
     const [pickingSticker, setPickingSticker] = useState(false);
     const gifOn = usePlugin('gif_search');
     const photoEditorOn = usePlugin('photo_editor');
+    const openPollsOn = usePlugin('open_polls');
     const [editing, setEditing] = useState<number | null>(null);
     const [gif, setGif] = useState<GifItem | null>(null);
     const [pickingGif, setPickingGif] = useState(false);
@@ -105,7 +106,11 @@ export function PostComposer({
         community: string | null;
         as_community: boolean;
         images: File[];
-        poll: { question: string; options: string[] } | null;
+        poll: {
+            question: string;
+            options: string[];
+            anonymous?: boolean;
+        } | null;
         spoiler: boolean;
         sticker: string | null;
         tag: string;
@@ -204,7 +209,11 @@ export function PostComposer({
                     data.poll &&
                     data.poll.question.trim() &&
                     options.length >= 2
-                        ? { question: data.poll.question.trim(), options }
+                        ? {
+                              question: data.poll.question.trim(),
+                              options,
+                              anonymous: data.poll.anonymous === false ? 0 : 1,
+                          }
                         : undefined,
                 ...(track ? { music: musicPayload(track) } : {}),
                 ...(card ? { card: { kind: card.kind, id: card.id } } : {}),
@@ -600,6 +609,28 @@ export function PostComposer({
                         >
                             {tr('Ще варіант')}
                         </button>
+                    )}
+                    {openPollsOn && (
+                        <label className="flex cursor-pointer items-center justify-between gap-3 pt-1 text-xs text-white/60">
+                            <span>
+                                {form.data.poll.anonymous === false
+                                    ? tr('Відкрите: видно, хто як голосував')
+                                    : tr('Анонімне: голоси ніхто не бачить')}
+                            </span>
+                            <input
+                                type="checkbox"
+                                role="switch"
+                                checked={form.data.poll.anonymous !== false}
+                                onChange={(event) =>
+                                    form.setData('poll', {
+                                        ...form.data.poll!,
+                                        anonymous: event.target.checked,
+                                    })
+                                }
+                                className="size-4 accent-gc-indigo"
+                                aria-label={tr('Анонімне опитування')}
+                            />
+                        </label>
                     )}
                 </div>
             )}

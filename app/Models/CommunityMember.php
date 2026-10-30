@@ -18,6 +18,7 @@ use Illuminate\Support\Carbon;
  * @property int $points Бали за активність у спільноті
  * @property list<array{q: string, a: string}>|null $answers Відповіді на анкету вступу
  * @property Carbon|null $created_at
+ * @property Carbon|null $welcome_seen_at Новачок закрив картку привітання
  */
 #[Fillable(['community_id', 'user_id', 'role', 'status', 'title', 'color', 'answers'])]
 class CommunityMember extends Model
@@ -41,7 +42,7 @@ class CommunityMember extends Model
 
     protected function casts(): array
     {
-        return ['answers' => 'array'];
+        return ['answers' => 'array', 'welcome_seen_at' => 'datetime'];
     }
 
     /**

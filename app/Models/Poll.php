@@ -11,10 +11,13 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int $id
  * @property int $post_id
  * @property string $question
+ * @property bool $is_anonymous
  */
-#[Fillable(['post_id', 'question'])]
+#[Fillable(['post_id', 'question', 'is_anonymous'])]
 class Poll extends Model
 {
+    protected $casts = ['is_anonymous' => 'boolean'];
+
     /**
      * @return BelongsTo<Post, $this>
      */
