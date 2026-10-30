@@ -14,6 +14,7 @@ import 'state.dart';
 import 'theme.dart';
 import 'widgets.dart';
 import 'i18n.dart';
+import 'skeletons.dart';
 
 List<(String, String)> _serverSorts(bool votes) => [
       ('online', tr('За онлайном')),
@@ -77,7 +78,7 @@ class _ServersScreenState extends State<ServersScreen> {
   @override
   Widget build(BuildContext context) {
     final data = page;
-    if (data == null) return const Center(child: CircularProgressIndicator(strokeWidth: 2.4));
+    if (data == null) return const ScreenSkeleton();
     final stats = mapOf(data['stats']);
     final servers = maps(data['servers']);
     final mine = maps(data['my_suggestions']);

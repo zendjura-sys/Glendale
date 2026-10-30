@@ -102,6 +102,7 @@ class _PostCardState extends State<PostCard> {
               label: post['saved'] == true ? tr('Прибрати зі збереженого') : tr('Зберегти'),
               onTap: () => Navigator.pop(sheet, 'save'),
             ),
+            _SheetAction(icon: LucideIcons.clock, label: tr('Прочитати пізніше'), onTap: () => Navigator.pop(sheet, 'later')),
             if (can['edit'] == true) _SheetAction(icon: LucideIcons.pencil, label: tr('Редагувати'), onTap: () => Navigator.pop(sheet, 'edit')),
             if (can['share'] == true) _SheetAction(icon: LucideIcons.share2, label: tr('Поділитися на стіні'), onTap: () => Navigator.pop(sheet, 'share')),
             if (can['quote'] == true) _SheetAction(icon: LucideIcons.quote, label: tr('Цитувати'), onTap: () => Navigator.pop(sheet, 'quote')),
@@ -131,6 +132,15 @@ class _PostCardState extends State<PostCard> {
         if (!mounted) return;
         setState(() => post['saved'] = result['saved'] == true);
         toast(context, post['saved'] == true ? tr('Збережено.') : tr('Прибрано зі збереженого.'));
+      } catch (e) {
+        if (mounted) toast(context, e);
+      }
+      return;
+    }
+    if (choice == 'later') {
+      try {
+        final result = await api.post(Api.site('/posts/${post['id']}/later'));
+        if (mounted) toast(context, result['later'] == true ? tr('Додано до «Прочитати пізніше»') : tr('Прибрано зі списку «Прочитати пізніше»'));
       } catch (e) {
         if (mounted) toast(context, e);
       }
@@ -310,6 +320,11 @@ class _PostCardState extends State<PostCard> {
             if (images.isNotEmpty) Padding(padding: EdgeInsets.only(top: 12), child: MediaGrid(items: images)),
             if (music != null) Padding(padding: EdgeInsets.only(top: 12), child: MusicAttachment(track: music)),
             if (movie != null) Padding(padding: EdgeInsets.only(top: 12), child: MovieAttachment(movie: movie)),
+            if (post['card'] is Map) Padding(padding: EdgeInsets.only(top: 12), child: _PostCardLink(card: mapOf(post['card']))),
+            if (post['poll'] is Map) Padding(padding: EdgeInsets.only(top: 12), child: _PollBox(postId: intOf(post['id']), poll: mapOf(post['poll']))),
+            if (post['locked'] == true) Padding(padding: EdgeInsets.only(top: 12), child: _LockedNotice(author: text(author['name']) ?? '')),
+            if (post['subscribers_only'] == true && post['locked'] != true)
+              Padding(padding: EdgeInsets.only(top: 10), child: Pill(label: tr('Для підписників'), icon: LucideIcons.lock)),
             SizedBox(height: 14),
             Row(
               children: [
@@ -1486,3 +1501,124 @@ class _SharedCard extends StatelessWidget {
   }
 }
 
+
+
+/// Картка в записі (гра, фільм, сервер…); GIF показується як зображення.
+class _PostCardLink extends StatelessWidget {
+  const _PostCardLink({required this.card});
+  final Map<String, dynamic> card;
+
+  @override
+  Widget build(BuildContext context) {
+    final image = text(card['image']);
+    if (card['kind'] == 'gif' && image != null) {
+      return ClipRRect(borderRadius: BorderRadius.circular(16), child: Image.network(image, fit: BoxFit.cover, width: double.infinity, gaplessPlayback: true));
+    }
+    return Glass(
+      padding: const EdgeInsets.all(10),
+      radius: 16,
+      onTap: text(card['href']) == null ? null : () => context.push(appPathFor(text(card['href']))),
+      child: Row(children: [
+        SizedBox(width: 48, height: 48, child: image != null ? NetImage(image, radius: 12) : CoverPlaceholder(seed: card['title'] ?? '', radius: 12, icon: LucideIcons.sparkles)),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(tr(text(card['hint']) ?? ''), style: body(11.5, color: muted)),
+            Text(text(card['title']) ?? '', style: body(14, weight: FontWeight.w600), maxLines: 1, overflow: TextOverflow.ellipsis),
+          ]),
+        ),
+      ]),
+    );
+  }
+}
+
+/// Опитування в записі: голос одним дотиком, відсотки після голосу; у відкритому — хто як голосував.
+class _PollBox extends StatefulWidget {
+  const _PollBox({required this.postId, required this.poll});
+  final int postId;
+  final Map<String, dynamic> poll;
+
+  @override
+  State<_PollBox> createState() => _PollBoxState();
+}
+
+class _PollBoxState extends State<_PollBox> {
+  late Map<String, dynamic> poll = widget.poll;
+  bool busy = false;
+
+  Future<void> _vote(int optionId) async {
+    if (busy) return;
+    setState(() => busy = true);
+    try {
+      final next = await AppScope.read(context).session.api.post(Api.site('/posts/${widget.postId}/poll'), {'option_id': optionId});
+      if (mounted) setState(() => poll = next);
+    } catch (e) {
+      if (mounted) toast(context, e);
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final total = intOf(poll['total']);
+    final voted = poll['voted'];
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(color: card.withValues(alpha: 0.5), borderRadius: BorderRadius.circular(16)),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(text(poll['question']) ?? '', style: body(14.5, weight: FontWeight.w600)),
+        const SizedBox(height: 10),
+        for (final o in maps(poll['options']))
+          Builder(builder: (context) {
+            final share = total > 0 ? (intOf(o['votes']) / total) : 0.0;
+            final chosen = voted == o['id'];
+            final voters = maps(o['voters']);
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(12),
+                onTap: () => _vote(intOf(o['id'])),
+                child: Container(
+                  clipBehavior: Clip.antiAlias,
+                  decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), border: Border.all(color: chosen ? primary : line)),
+                  child: Stack(children: [
+                    if (voted != null) Positioned.fill(child: FractionallySizedBox(alignment: Alignment.centerLeft, widthFactor: share, child: Container(color: primary.withValues(alpha: 0.22)))),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      child: Row(children: [
+                        Expanded(child: Text(text(o['label']) ?? '', style: body(14))),
+                        for (final v in voters.take(3)) Padding(padding: const EdgeInsets.only(left: 2), child: Avatar(url: text(v['avatar_url']), name: text(v['name']) ?? '', size: 20)),
+                        if (voted != null) Padding(padding: const EdgeInsets.only(left: 8), child: Text('${(share * 100).round()}%', style: body(12, color: muted))),
+                      ]),
+                    ),
+                  ]),
+                ),
+              ),
+            );
+          }),
+        Text('${tr('{total} голосів', {'total': '$total'})} · ${poll['anonymous'] == false ? tr('відкрите опитування') : tr('анонімне')}', style: body(12, color: muted)),
+      ]),
+    );
+  }
+}
+
+/// Запис лише для платних підписників автора. Підписки продаються тільки на сайті (правила Google Play),
+/// тому тут — лише пояснення, без посилань на оплату.
+class _LockedNotice extends StatelessWidget {
+  const _LockedNotice({required this.author});
+  final String author;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(color: primary.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(16)),
+      child: Row(children: [
+        Icon(LucideIcons.lock, size: 20, color: accent),
+        const SizedBox(width: 12),
+        Expanded(child: Text(tr('Запис лише для підписників {name}.', {'name': author}), style: body(14))),
+      ]),
+    );
+  }
+}

@@ -19,6 +19,7 @@ import 'theme.dart';
 import 'track_edit.dart';
 import 'widgets.dart';
 import 'i18n.dart';
+import 'skeletons.dart';
 
 /// Грає список треків GameCon і радіостанцій (Spotify-треки відкриваються в Spotify).
 /// [from] — «Грає з…»; без нього — екран, з якого запустили ([playFromHere]).
@@ -162,7 +163,7 @@ class _MusicScreenState extends State<MusicScreen> {
   @override
   Widget build(BuildContext context) {
     final data = page;
-    if (data == null) return Center(child: CircularProgressIndicator(strokeWidth: 2.4));
+    if (data == null) return const ScreenSkeleton();
     if (other) return _otherUser(data);
 
     final stats = mapOf(data['stats']);
@@ -253,7 +254,7 @@ class _MusicScreenState extends State<MusicScreen> {
         ),
         const SizedBox(height: 8),
         if (loading && tracks.isEmpty)
-          const Padding(padding: EdgeInsets.all(30), child: Center(child: CircularProgressIndicator(strokeWidth: 2)))
+          const ListSkeleton(rows: 5)
         else if (tracks.isEmpty)
           QuietEmpty(
             icon: LucideIcons.volumeOff,
@@ -954,7 +955,7 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
     final page = data;
     if (page == null) {
       return error == null
-          ? const Center(child: CircularProgressIndicator(strokeWidth: 2.4))
+          ? const ListSkeleton(rows: 6)
           : Center(child: Padding(padding: const EdgeInsets.all(20), child: EmptyState(icon: LucideIcons.listMusic, title: tr('Плейлист недоступний'), text: '$error')));
     }
     final playlist = mapOf(page['playlist']);

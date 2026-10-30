@@ -783,10 +783,15 @@ class MenuContent extends StatelessWidget {
         Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Divider(height: 1, color: line)),
         row(LucideIcons.userPlus, tr('Запросити друзів'), () => onGo('/invite')),
         row(LucideIcons.bookmark, tr('Збережене'), () => onGo('/saved')),
+        row(LucideIcons.clock, tr('Прочитати пізніше'), () => onGo('/later')),
+        row(LucideIcons.mic, tr('Подкасти'), () => onGo('/podcasts')),
         row(LucideIcons.filePen, tr('Чернетки'), () => onGo('/drafts')),
         row(LucideIcons.star, tr('Обрані повідомлення'), () => onGo('/starred')),
         row(LucideIcons.panelBottom, tr('Налаштувати нижню панель'), () => onGo('/settings?tab=app')),
         row(LucideIcons.settings, tr('Налаштування'), () => onGo('/settings')),
+        row(LucideIcons.bellRing, tr('Сповіщення за словами'), () => onGo('/keyword-alerts')),
+        row(LucideIcons.lifeBuoy, tr('Довідка'), () => onGo('/help')),
+        row(LucideIcons.headset, tr('Підтримка'), () => onGo('/support')),
         if (session.isAdmin)
           row(LucideIcons.shieldCheck, tr('Адмін-панель'), () {
             onClose();

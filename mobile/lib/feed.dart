@@ -14,6 +14,7 @@ import 'theme.dart';
 import 'widgets.dart';
 import 'wrapped.dart';
 import 'i18n.dart';
+import 'skeletons.dart';
 
 /// Сторінки записів з підвантаженням: стрічка, стіна профілю, спільнота.
 class PostPager {
@@ -184,7 +185,7 @@ class _FeedScreenState extends State<FeedScreen> {
           const SizedBox(height: 12),
         ],
         if (!ready)
-          const Padding(padding: EdgeInsets.all(40), child: Center(child: CircularProgressIndicator(strokeWidth: 2.4)))
+          const FeedSkeleton()
         else if (error != null)
           EmptyState(icon: LucideIcons.wifiOff, title: tr('Не вдалося завантажити'), text: '$error', action: tr('Спробувати знову'), onAction: _reload)
         else if (pager.posts.isEmpty)
@@ -364,7 +365,7 @@ class _SearchScreenState extends State<SearchScreen> {
         ),
         const SizedBox(height: 14),
         if (loading && users.isEmpty && communities.isEmpty)
-          const Padding(padding: EdgeInsets.all(30), child: Center(child: CircularProgressIndicator(strokeWidth: 2)))
+          const ListSkeleton(rows: 5)
         else if (q.length < 2)
           QuietEmpty(icon: LucideIcons.search, text: tr('Введіть щонайменше 2 символи'))
         else if (users.isEmpty && communities.isEmpty)

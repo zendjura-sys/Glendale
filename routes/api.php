@@ -447,6 +447,7 @@ Route::prefix('v1')->group(function () {
                 Route::post('posts/{post}/quote', [PostController::class, 'quote'])->whereNumber('post')->middleware('throttle:30,1');
                 Route::post('posts/{post}/hide', [PostController::class, 'hide'])->whereNumber('post');
                 Route::post('posts/{post}/mute', [PostController::class, 'mute'])->whereNumber('post');
+                Route::post('posts/{post}/poll', [PostController::class, 'vote'])->whereNumber('post')->middleware('throttle:60,1');
                 Route::delete('comments/{comment}', [CommentController::class, 'destroy'])->whereNumber('comment');
                 Route::post('comments/{comment}/like', [CommentController::class, 'like'])->whereNumber('comment')->middleware('throttle:120,1');
             });

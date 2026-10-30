@@ -11,6 +11,7 @@ import 'i18n.dart';
 import 'state.dart';
 import 'theme.dart';
 import 'widgets.dart';
+import 'skeletons.dart';
 
 Map<String, String> characterStatuses() => {'active': tr('Грає'), 'retired': tr('На паузі'), 'dead': tr('Загинув')};
 
@@ -319,7 +320,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen> {
   @override
   Widget build(BuildContext context) {
     final data = page;
-    if (data == null) return const Center(child: CircularProgressIndicator(strokeWidth: 2.4));
+    if (data == null) return const ScreenSkeleton();
     final current = mapOf(data['character']);
     final families = maps(data['families']).where((f) => f['server'] == server).toList();
     return ScreenScroll(

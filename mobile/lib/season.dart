@@ -11,6 +11,7 @@ import 'state.dart';
 import 'subscription.dart';
 import 'theme.dart';
 import 'widgets.dart';
+import 'skeletons.dart';
 
 // Сезонний пропуск — як на сайті (/season, App\Services\Quests\SeasonPass): очки сезону з щоденних
 // завдань заповнюють 30 рівнів, за рівні — нагороди безкоштовної доріжки й доріжки GameCon+.
@@ -82,7 +83,7 @@ class _SeasonScreenState extends State<SeasonScreen> {
           EmptyState(icon: LucideIcons.wifiOff, title: tr('Не вдалося завантажити'), text: '$error', action: tr('Спробувати ще'), onAction: load),
         ]);
       }
-      return const Center(child: CircularProgressIndicator(strokeWidth: 2.4));
+      return const ScreenSkeleton();
     }
     return SeasonPassView(
       data: d,

@@ -9,6 +9,7 @@ import 'i18n.dart';
 import 'state.dart';
 import 'theme.dart';
 import 'widgets.dart';
+import 'skeletons.dart';
 
 /// Пояснення, чому Spotify не грає всім разом.
 String spotifyRoomNote() =>
@@ -132,7 +133,7 @@ class _ListenRoomsScreenState extends State<ListenRoomsScreen> {
   @override
   Widget build(BuildContext context) {
     final d = data;
-    if (d == null) return const Center(child: CircularProgressIndicator(strokeWidth: 2.4));
+    if (d == null) return const ScreenSkeleton();
     final rooms = maps(d['rooms']);
     final groups = maps(d['groups']).where((g) => g['can_start'] == true).toList();
     return ScreenScroll(

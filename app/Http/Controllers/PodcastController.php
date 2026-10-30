@@ -26,14 +26,14 @@ class PodcastController extends Controller
 {
     public const MAX_AUDIO_KB = 204800;
 
-    public function index(Request $request): Response
+    public function index(Request $request): Response|JsonResponse
     {
         app(Plugins::class)->ensure('podcasts');
         $user = $request->user();
         $category = array_key_exists((string) $request->query('category'), Podcast::CATEGORIES) ? (string) $request->query('category') : null;
         $subscribed = DB::table('podcast_subscriptions')->where('user_id', $user->id)->pluck('podcast_id')->all();
 
-        return Inertia::render('podcasts/index', [
+        $props = [
             'podcasts' => Podcast::query()->with('user')->withCount('episodes')->has('episodes')
                 ->when($category !== null, fn (Builder $q) => $q->where('category', $category))
                 ->orderByDesc('subscribers_count')->orderByDesc('id')->limit(60)->get()
@@ -41,16 +41,19 @@ class PodcastController extends Controller
             'mine' => Podcast::query()->where('user_id', $user->id)->withCount('episodes')->get()->map(fn (Podcast $p) => $this->card($p, false))->values()->all(),
             'categories' => Podcast::CATEGORIES,
             'category' => $category,
-        ]);
+        ];
+
+        // Застосунок (міст) отримує ті самі дані як JSON.
+        return $request->wantsJson() ? response()->json($props) : Inertia::render('podcasts/index', $props);
     }
 
-    public function show(Request $request, Podcast $podcast): Response
+    public function show(Request $request, Podcast $podcast): Response|JsonResponse
     {
         app(Plugins::class)->ensure('podcasts');
         $user = $request->user();
         $subscribed = DB::table('podcast_subscriptions')->where('podcast_id', $podcast->id)->where('user_id', $user->id)->exists();
 
-        return Inertia::render('podcasts/show', [
+        $props = [
             'podcast' => $this->card($podcast->load('user')->loadCount('episodes'), $subscribed),
             'episodes' => $podcast->episodes()->latest('id')->limit(100)->get()->map(fn (PodcastEpisode $e) => [
                 'id' => $e->id,
@@ -62,7 +65,9 @@ class PodcastController extends Controller
                 'created_at' => $e->created_at->toIso8601String(),
             ])->values()->all(),
             'own' => $podcast->user_id === $user->id,
-        ]);
+        ];
+
+        return $request->wantsJson() ? response()->json($props) : Inertia::render('podcasts/show', $props);
     }
 
     public function store(Request $request, ImageStorage $images): RedirectResponse

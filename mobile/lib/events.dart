@@ -9,6 +9,7 @@ import 'state.dart';
 import 'theme.dart';
 import 'widgets.dart';
 import 'i18n.dart';
+import 'skeletons.dart';
 
 final _kindIcons = {'family': LucideIcons.crown, 'clan': LucideIcons.swords, 'server': LucideIcons.server, 'game': LucideIcons.gamepad2};
 
@@ -54,7 +55,7 @@ class _EventsScreenState extends State<EventsScreen> {
   @override
   Widget build(BuildContext context) {
     final d = data;
-    if (d == null) return const Center(child: CircularProgressIndicator(strokeWidth: 2.4));
+    if (d == null) return const ScreenSkeleton();
     final events = maps(d['events']);
     final kinds = mapOf(d['kinds']);
     final days = <String, List<Map<String, dynamic>>>{};

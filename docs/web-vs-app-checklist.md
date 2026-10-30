@@ -273,11 +273,11 @@
 - [ ] Календар, вікі й бали спільноти (`site/c/{slug}/hub`, `calendar`, `events/{id}/rsvp`, `events/{id}/stories`, `wiki`, `wiki/{slug}`) — у застосунку ще немає
 - [ ] Страйки й строк відповіді на оскарження в «Акаунт» (`strikes`, `appeals[].due_at` у `site/settings/account`) — у застосунку ще немає
 - [ ] Цілі в грі (`site/games/{slug}/goals`), FPS (`site/games/{slug}/fps`), дуелі (`site/duels`), фільтри паті (`mic`, `language`, `age_min`, `style` у `site/party`) — у застосунку ще немає
-- [ ] Подкасти (`site/podcasts`, `site/podcasts/{id}`, підписка, прослуховування), пошук GIF (`site/gifs`, `gif[url]` у записах і повідомленнях) — у застосунку ще немає
-- [ ] «Прочитати пізніше» (`site/later`, `site/posts/{id}/later`), сповіщення за словами (`site/settings/keyword-alerts`), картка привітання (`welcome_card` у `site/c/{slug}`, `site/c/{slug}/welcome-seen`), відкриті опитування (`poll.anonymous`, `options.*.voters`) — у застосунку ще немає
-- [ ] Записи «лише для підписників» (`locked`, `subscribers_only` у записах) — застосунок має показати замок. Самі підписки на авторів і просування спільнот — лише сайт (оплата з рахунку; у застосунку не продаємо, правила Google Play).
-- [ ] Підтримка (`site/support`, `site/support/{id}`, reply, close, rate, files) — у застосунку ще немає екрана звернень
-- [ ] Довідка в застосунку: `GET /api/v1/help`, `/api/v1/help/{розділ}`, `/api/v1/help/{розділ}/{стаття}` (відкрито й без входу, переклад мовою застосунку; також `site/help…`) — екрана «Довідка» в застосунку ще немає
+- [x] Подкасти (`site/podcasts`, `site/podcasts/{id}`, підписка, прослуховування), GIF у записах показуються; пошук GIF у формі запису застосунку (`site/gifs`) — ще немає
+- [x] «Прочитати пізніше» (`site/later`, `site/posts/{id}/later`), сповіщення за словами (`site/settings/keyword-alerts`), картка привітання (`welcome_card` у `site/c/{slug}`, `site/c/{slug}/welcome-seen`), відкриті опитування (`poll.anonymous`, `options.*.voters`)
+- [x] Записи «лише для підписників» (`locked`, `subscribers_only` у записах)
+- [x] Підтримка (`site/support`, `site/support/{id}`, reply, close, rate, files)
+- [x] Довідка в застосунку: `GET /api/v1/help`, `/api/v1/help/{розділ}`, `/api/v1/help/{розділ}/{стаття}` (відкрито й без входу, переклад мовою застосунку; також `site/help…`)
 - [ ] Рідкість бейджів («є у 2% людей») — поле `rarity` у бейджах уже приходить у приложение, не показується
 - [~] Режими скрізь: сервер уже ховає за режимом плагіни, бейджі, блоки профілю, картки в постах і чатах, події, сповіщення, дайджест і Wrapped (мост віддає те саме); приложению осталось спрятать свои тексты-упоминания и пункти (списки друзів «Рейд»/«Кіно», «Картка» в чаті) по `user.modules`
 

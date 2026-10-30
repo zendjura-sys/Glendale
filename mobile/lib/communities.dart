@@ -16,6 +16,7 @@ import 'voice_room.dart';
 import 'listen_rooms.dart';
 import 'widgets.dart';
 import 'i18n.dart';
+import 'skeletons.dart';
 
 final communityRoles = {'owner': tr('Власник'), 'admin': tr('Адміністратор'), 'editor': tr('Редактор'), 'member': tr('Учасник')};
 
@@ -161,7 +162,7 @@ class _CommunitiesScreenState extends State<CommunitiesScreen> {
         ),
         const SizedBox(height: 12),
         if (loading && items.isEmpty)
-          const Padding(padding: EdgeInsets.all(30), child: Center(child: CircularProgressIndicator(strokeWidth: 2.4)))
+          const ListSkeleton(rows: 5)
         else if (items.isEmpty)
           EmptyState(
             icon: LucideIcons.searchX,
@@ -434,7 +435,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
         builder: (sheet, controller) => FutureBuilder<Map<String, dynamic>>(
           future: api.get(Api.site('/c/${widget.slug}/$kind')),
           builder: (sheet, snap) {
-            if (!snap.hasData) return const Center(child: CircularProgressIndicator(strokeWidth: 2.4));
+            if (!snap.hasData) return const ScreenSkeleton();
             final lines = (text(snap.data!['text']) ?? '').split(RegExp(r'\r?\n'));
             return ListView(controller: controller, padding: const EdgeInsets.fromLTRB(20, 20, 20, 32), children: [
               Text(kind == 'rules' ? tr('Правила') : tr('Довідник'), style: display(20)),
@@ -483,7 +484,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
     final data = page;
     if (data == null) {
       return error == null
-          ? const Center(child: CircularProgressIndicator(strokeWidth: 2.4))
+          ? const ListSkeleton(rows: 6)
           : Center(child: Padding(padding: const EdgeInsets.all(20), child: EmptyState(icon: LucideIcons.usersRound, title: tr('Спільнота недоступна'), text: '$error', action: tr('Спробувати знову'), onAction: _load)));
     }
     final c = mapOf(data['community']);
@@ -845,7 +846,7 @@ class _CommunityMembersScreenState extends State<CommunityMembersScreen> {
         ),
         const SizedBox(height: 12),
         if (loading && items.isEmpty)
-          const Padding(padding: EdgeInsets.all(30), child: Center(child: CircularProgressIndicator(strokeWidth: 2.4)))
+          const ListSkeleton(rows: 5)
         else if (items.isEmpty)
           QuietEmpty(icon: LucideIcons.usersRound, text: tab == 'requests' ? tr('Нових заявок немає') : tr('Нікого не знайдено'))
         else
@@ -982,7 +983,7 @@ class _CommunitySettingsScreenState extends State<CommunitySettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final data = page;
-    if (data == null) return const Center(child: CircularProgressIndicator(strokeWidth: 2.4));
+    if (data == null) return const ScreenSkeleton();
     final c = mapOf(data['community']);
     final categories = mapOf(data['categories']);
     return ScreenScroll(

@@ -21,6 +21,7 @@ import 'voice_note.dart';
 import 'voice_room.dart';
 import 'widgets.dart';
 import 'i18n.dart';
+import 'skeletons.dart';
 
 // ───────────────────────── Список бесід ─────────────────────────
 
@@ -91,7 +92,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
               GcField(controller: query, label: tr('Пошук'), icon: LucideIcons.search, dense: true, onChanged: (_) => setState(() {})),
               const SizedBox(height: 8),
               if (loading)
-                const Padding(padding: EdgeInsets.all(30), child: Center(child: CircularProgressIndicator(strokeWidth: 2.4)))
+                const ListSkeleton(rows: 5)
               else if (conversations.isEmpty)
                 EmptyState(
                   boxed: false,
@@ -793,7 +794,7 @@ class _ChatScreenState extends State<ChatScreen> {
     if (chat == null) {
       return error != null
           ? Center(child: Padding(padding: const EdgeInsets.all(20), child: EmptyState(icon: LucideIcons.messageCircle, title: tr('Бесіда недоступна'), text: '$error', action: tr('Назад'), onAction: () => context.go('/messages'))))
-          : const Center(child: CircularProgressIndicator(strokeWidth: 2.4));
+          : const ListSkeleton(rows: 6);
     }
     final group = chat['type'] == 'group';
     final peer = chat['peer'] is Map ? mapOf(chat['peer']) : null;

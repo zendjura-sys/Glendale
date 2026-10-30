@@ -11,6 +11,7 @@ import 'state.dart';
 import 'subscription.dart';
 import 'theme.dart';
 import 'i18n.dart';
+import 'skeletons.dart';
 
 // ───────────────────────── Тло й логотип ─────────────────────────
 
@@ -58,7 +59,7 @@ class _Glow extends StatelessWidget {
   }
 }
 
-/// Логотип GameCon: темний квадрат з градієнтною рамкою й «play».
+/// Знак GameCon — неонова «G» (той самий, що на значку застосунку й на сайті).
 class LogoMark extends StatelessWidget {
   const LogoMark({this.size = 40, super.key});
   final double size;
@@ -70,34 +71,11 @@ class LogoMark extends StatelessWidget {
       height: size,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(size * 0.3),
-        gradient: brand,
-        boxShadow: [BoxShadow(color: indigo.withValues(alpha: 0.45), blurRadius: size * 0.4, offset: Offset(0, size * 0.1))],
+        boxShadow: [BoxShadow(color: const Color(0xFF0096FF).withValues(alpha: 0.3), blurRadius: size * 0.4, offset: Offset(0, size * 0.1))],
       ),
-      padding: EdgeInsets.all(size * 0.05),
-      child: DecoratedBox(
-        decoration: BoxDecoration(color: Color(0xFF0B0F22), borderRadius: BorderRadius.circular(size * 0.26)),
-        child: CustomPaint(painter: _PlayPainter()),
-      ),
+      child: Image.asset('assets/brand/logo-mark.png', width: size, height: size, filterQuality: FilterQuality.medium),
     );
   }
-}
-
-class _PlayPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final path = Path()
-      ..moveTo(size.width * 0.36, size.height * 0.27)
-      ..lineTo(size.width * 0.36, size.height * 0.73)
-      ..lineTo(size.width * 0.74, size.height * 0.5)
-      ..close();
-    final paint = Paint()
-      ..shader = LinearGradient(colors: [Color(0xFF7DA6FF), Color(0xFF8B6BFF), pink]).createShader(Offset.zero & size)
-      ..strokeJoin = StrokeJoin.round;
-    canvas.drawPath(path, paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 class Wordmark extends StatelessWidget {
@@ -1259,7 +1237,7 @@ class _RemoteState extends State<Remote> {
         if (snapshot.connectionState != ConnectionState.done) {
           // Під час перезавантаження показуємо попередні дані, щоб екран не блимав.
           if (_last != null) return widget.builder(_last!, _reload);
-          return const Center(child: Padding(padding: EdgeInsets.all(32), child: CircularProgressIndicator(strokeWidth: 2.4)));
+          return const ScreenSkeleton();
         }
         if (snapshot.hasError) {
           return Center(

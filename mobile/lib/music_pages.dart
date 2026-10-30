@@ -17,6 +17,7 @@ import 'offline_music.dart';
 import 'state.dart';
 import 'theme.dart';
 import 'widgets.dart';
+import 'skeletons.dart';
 
 // Сторінки розділу «Музика», як на сайті (pages/music/*): виконавець, альбом, мікс, жанр, чарти,
 // Replay, розділи медіатеки й пошук. Дані — з мосту /api/v1/site/music/*.
@@ -586,7 +587,7 @@ class _LibrarySectionScreenState extends State<LibrarySectionScreen> {
     final title = widget.section == 'favorites' ? tr('Улюблені пісні') : label;
     if (data == null) {
       return error == null
-          ? const Center(child: CircularProgressIndicator(strokeWidth: 2.4))
+          ? const ListSkeleton(rows: 6)
           : Center(child: Padding(padding: const EdgeInsets.all(20), child: EmptyState(icon: icon, title: tr('Не вдалося завантажити'), text: '$error', action: tr('Спробувати знову'), onAction: () => _load(reset: true))));
     }
     final items = maps(data['items']);
@@ -639,7 +640,7 @@ class _LibrarySectionScreenState extends State<LibrarySectionScreen> {
           PlayShuffle(tracks: songs),
           const SizedBox(height: 6),
           if (loading && songs.isEmpty)
-            const Padding(padding: EdgeInsets.all(30), child: Center(child: CircularProgressIndicator(strokeWidth: 2)))
+            const ListSkeleton(rows: 5)
           else if (songs.isEmpty)
             MusicEmpty(
               icon: widget.section == 'favorites' ? LucideIcons.star : LucideIcons.music,
@@ -779,7 +780,7 @@ class _MusicSearchScreenState extends State<MusicSearchScreen> {
         ),
         if (results != null) _filters(results),
       ],
-      if (loading && data == null) const Padding(padding: EdgeInsets.all(40), child: Center(child: CircularProgressIndicator(strokeWidth: 2))),
+      if (loading && data == null) const ListSkeleton(rows: 6, square: true),
       if (q.isEmpty && categories.isNotEmpty) ...[
         SectionHeader(tr('Перегляд за категоріями')),
         TileGrid(children: [for (var i = 0; i < categories.length; i++) GenreTile(genre: categories[i], index: i)]),

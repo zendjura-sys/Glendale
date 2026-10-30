@@ -482,7 +482,7 @@ class AppSiteParityTest extends TestCase
     public function test_app_reaches_podcasts_and_gifs_through_bridge(): void
     {
         $token = $this->app_token(User::factory()->create());
-        $this->withToken($token)->getJson('/api/v1/site/podcasts')->assertOk();
+        $this->withToken($token)->getJson('/api/v1/site/podcasts')->assertOk()->assertJsonStructure(['podcasts', 'mine', 'categories']);
         $this->withToken($token)->getJson('/api/v1/site/gifs')->assertOk()->assertJsonStructure(['configured', 'gifs']);
     }
 
@@ -512,5 +512,14 @@ class AppSiteParityTest extends TestCase
         $this->getJson('/api/v1/help/support/tickets')->assertOk()->assertJsonPath('article.slug', 'tickets')->assertJsonStructure(['article' => ['blocks'], 'related']);
         $token = $this->app_token(User::factory()->create());
         $this->withToken($token)->getJson('/api/v1/site/help/feed')->assertOk()->assertJsonPath('category.slug', 'feed');
+    }
+
+    public function test_app_votes_in_polls_through_bridge(): void
+    {
+        $author = User::factory()->create();
+        $this->actingAs($author)->post('/posts', ['visibility' => 'public', 'poll' => ['question' => 'Яка гра?', 'options' => ['CS2', 'Dota']]]);
+        $post = Post::query()->with('poll.options')->latest('id')->firstOrFail();
+        $token = $this->app_token(User::factory()->create());
+        $this->withToken($token)->postJson("/api/v1/site/posts/{$post->id}/poll", ['option_id' => $post->poll->options[0]->id])->assertOk()->assertJsonPath('total', 1);
     }
 }

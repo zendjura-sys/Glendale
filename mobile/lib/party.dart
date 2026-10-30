@@ -9,6 +9,7 @@ import 'state.dart';
 import 'theme.dart';
 import 'voice_room.dart';
 import 'widgets.dart';
+import 'skeletons.dart';
 
 Map<String, String> partyPlatforms() => {'pc': tr('ПК'), 'playstation': 'PlayStation', 'xbox': 'Xbox', 'switch': 'Switch', 'mobile': tr('Мобільні')};
 
@@ -68,7 +69,7 @@ class _PartyBoardScreenState extends State<PartyBoardScreen> {
   @override
   Widget build(BuildContext context) {
     final data = page;
-    if (data == null) return const Center(child: CircularProgressIndicator(strokeWidth: 2.4));
+    if (data == null) return const ScreenSkeleton();
     final options = mapOf(data['options']);
     final parties = maps(data['parties']);
     return ScreenScroll(

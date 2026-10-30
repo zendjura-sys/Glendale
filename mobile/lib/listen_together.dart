@@ -11,6 +11,7 @@ import 'state.dart';
 import 'theme.dart';
 import 'widgets.dart';
 import 'i18n.dart';
+import 'skeletons.dart';
 
 /// Почати спільне прослуховування (з треку або з чату) і відкрити кімнату.
 Future<void> startListening(BuildContext context, {int? trackId, int? conversationId}) async {
@@ -226,7 +227,7 @@ class _ListenScreenState extends State<ListenScreen> {
   @override
   Widget build(BuildContext context) {
     final p = party;
-    if (p == null) return const Center(child: CircularProgressIndicator(strokeWidth: 2.4));
+    if (p == null) return const ScreenSkeleton();
     final track = mapOf(state['track']);
     final playing = state['playing'] == true;
     final canControl = p['can_control'] == true && p['ended'] != true;

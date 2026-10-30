@@ -13,6 +13,7 @@ import 'theme.dart';
 import 'voice_room.dart';
 import 'widgets.dart';
 import 'i18n.dart';
+import 'skeletons.dart';
 
 /// Розходження з ведучим, після якого перемотуємо (секунди).
 const _drift = 2.5;
@@ -288,7 +289,7 @@ class _WatchPartyScreenState extends State<WatchPartyScreen> {
     final film = movie;
     if (film == null) {
       return error == null
-          ? const Center(child: CircularProgressIndicator(strokeWidth: 2.4))
+          ? const ListSkeleton(rows: 6)
           : Center(child: Padding(padding: const EdgeInsets.all(20), child: EmptyState(icon: LucideIcons.popcorn, title: tr('Перегляд недоступний'), text: '$error', action: tr('Спробувати знову'), onAction: _load)));
     }
     final ended = party['ended'] == true;

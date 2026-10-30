@@ -22,6 +22,7 @@ import 'theme.dart';
 import 'widgets.dart';
 import 'i18n.dart';
 import 'extras.dart';
+import 'skeletons.dart';
 
 // ───────────────────────── Дружба ─────────────────────────
 
@@ -255,7 +256,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
         ),
         const SizedBox(height: 12),
         if (loading && users.isEmpty)
-          const Padding(padding: EdgeInsets.all(30), child: Center(child: CircularProgressIndicator(strokeWidth: 2.4)))
+          const ListSkeleton(rows: 5)
         else if (users.isEmpty)
           EmptyState(
             icon: empty.$2,
@@ -415,7 +416,7 @@ class _PeopleScreenState extends State<PeopleScreen> {
         ),
         const SizedBox(height: 12),
         if (loading && users.isEmpty)
-          const Padding(padding: EdgeInsets.all(30), child: Center(child: CircularProgressIndicator(strokeWidth: 2.4)))
+          const ListSkeleton(rows: 5)
         else if (users.isEmpty)
           EmptyState(icon: LucideIcons.userRoundSearch, title: tr('Нікого не знайдено'), text: tr('Спробуйте змінити запит або фільтри.'))
         else ...[
@@ -547,7 +548,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       );
     }
     final data = page;
-    if (data == null) return const Center(child: CircularProgressIndicator(strokeWidth: 2.4));
+    if (data == null) return const ScreenSkeleton();
 
     final profile = mapOf(data['profile']);
     final relation = text(data['relation']) ?? 'none';

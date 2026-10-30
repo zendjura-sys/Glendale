@@ -11,6 +11,7 @@ import 'state.dart';
 import 'theme.dart';
 import 'widgets.dart';
 import 'i18n.dart';
+import 'skeletons.dart';
 
 /// Віджет «Моя сім’я» на головному екрані Android.
 ///
@@ -198,7 +199,7 @@ class _FamilyWidgetSettingsState extends State<FamilyWidgetSettings> {
           tr('Додайте віджет GameCon на головний екран телефона (довге натискання на екран → Віджети). Тут оберіть, що на ньому показувати.'),
           style: body(13, color: muted),
         ),
-        if (loading) const Padding(padding: EdgeInsets.all(12), child: Center(child: CircularProgressIndicator(strokeWidth: 2.4))),
+        if (loading) const ListSkeleton(rows: 3),
         if (!loading && families.length > 1) ...[
           const SizedBox(height: 12),
           Text(tr('Сім’я'), style: body(12.5, color: muted, weight: FontWeight.w700)),

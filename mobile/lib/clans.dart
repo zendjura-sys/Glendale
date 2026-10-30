@@ -13,6 +13,7 @@ import 'voice_room.dart';
 import 'listen_rooms.dart';
 import 'widgets.dart';
 import 'i18n.dart';
+import 'skeletons.dart';
 
 String _num(dynamic value) {
   final digits = '${intOf(value).abs()}';
@@ -129,7 +130,7 @@ class _ClansScreenState extends State<ClansScreen> {
   @override
   Widget build(BuildContext context) {
     final d = data;
-    if (d == null) return const Center(child: CircularProgressIndicator(strokeWidth: 2.4));
+    if (d == null) return const ScreenSkeleton();
     final mine = maps(d['mine']);
     final clans = Listing.parse(d['clans']).items;
     final types = mapOf(d['types']);
@@ -283,7 +284,7 @@ class _ClanCreateScreenState extends State<ClanCreateScreen> {
   @override
   Widget build(BuildContext context) {
     final o = options;
-    if (o == null) return const Center(child: CircularProgressIndicator(strokeWidth: 2.4));
+    if (o == null) return const ScreenSkeleton();
     final types = mapOf(o['types']);
     final allFeatures = mapOf(o['features']);
     final joinModes = mapOf(o['join_modes']);
@@ -409,7 +410,7 @@ class _ClanScreenState extends State<ClanScreen> {
   @override
   Widget build(BuildContext context) {
     final d = data;
-    if (d == null) return const Center(child: CircularProgressIndicator(strokeWidth: 2.4));
+    if (d == null) return const ScreenSkeleton();
     final clan = mapOf(d['clan']);
     final me = d['me'] is Map ? mapOf(d['me']) : null;
     final can = mapOf(me?['can']);

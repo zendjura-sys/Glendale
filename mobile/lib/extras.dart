@@ -15,6 +15,7 @@ import 'shell.dart';
 import 'state.dart';
 import 'theme.dart';
 import 'widgets.dart';
+import 'skeletons.dart';
 
 // Розділи сайту, яких бракувало в застосунку: моменти, завдання й сезон, збережене, чернетки, обрані
 // повідомлення, релізи, «Мої десять» і порівняння серверів. Дані й дії — ті самі контролери через /api/v1/site.
@@ -54,7 +55,7 @@ mixin _SitePage<T extends StatefulWidget> on State<T> {
         EmptyState(icon: LucideIcons.wifiOff, title: tr('Не вдалося завантажити'), text: '$error', action: tr('Спробувати ще'), onAction: load),
       ]);
     }
-    return const Center(child: CircularProgressIndicator(strokeWidth: 2.4));
+    return const ScreenSkeleton();
   }
 }
 

@@ -18,6 +18,7 @@ import 'voice_room.dart';
 import 'listen_rooms.dart';
 import 'widgets.dart';
 import 'i18n.dart';
+import 'skeletons.dart';
 
 /// Шлях сторінки сім’ї на мосту сайту: `/api/v1/site/f/{slug}/{section}`.
 String familyPath(String slug, [String section = '']) => Api.site('/f/$slug${section.isEmpty || section == 'overview' ? '' : '/$section'}');
@@ -188,7 +189,7 @@ class _FamiliesScreenState extends State<FamiliesScreen> {
   @override
   Widget build(BuildContext context) {
     final data = page;
-    if (data == null) return const Center(child: CircularProgressIndicator(strokeWidth: 2.4));
+    if (data == null) return const ScreenSkeleton();
     final mine = maps(data['mine']);
     final servers = maps(data['servers']);
     return ScreenScroll(
@@ -235,7 +236,7 @@ class _FamiliesScreenState extends State<FamiliesScreen> {
         ),
         const SizedBox(height: 12),
         if (loading && families.isEmpty)
-          const Padding(padding: EdgeInsets.all(30), child: Center(child: CircularProgressIndicator(strokeWidth: 2)))
+          const ListSkeleton(rows: 5)
         else if (families.isEmpty)
           EmptyState(icon: LucideIcons.crown, title: tr('Сімей не знайдено'), text: tr('Спробуйте інший запит або створіть свою.'))
         else ...[
@@ -592,7 +593,7 @@ class _FamilyScreenState extends State<FamilyScreen> {
     final page = data;
     if (page == null) {
       return error == null
-          ? const Center(child: CircularProgressIndicator(strokeWidth: 2.4))
+          ? const ListSkeleton(rows: 6)
           : Center(child: Padding(padding: const EdgeInsets.all(20), child: EmptyState(icon: LucideIcons.crown, title: tr('Сім’я недоступна'), text: '$error', action: tr('Спробувати знову'), onAction: load)));
     }
     if (page['me'] == null) return FamilyPublic(slug: widget.slug, data: page, onChanged: load);

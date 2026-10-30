@@ -19,6 +19,7 @@ import 'posts.dart';
 import 'state.dart';
 import 'theme.dart';
 import 'widgets.dart';
+import 'skeletons.dart';
 
 // Сторінка тайтлу в застосунку: велика обкладинка, статус, «Дивитися» → озвучка → серія → власна
 // оболонка керування поверх плеєра балансера (Kodik / Videoseed через міст /play/embed).
@@ -530,7 +531,7 @@ class _MovieScreenState extends State<MovieScreen> {
     final page = data;
     if (page == null) {
       return error == null
-          ? const Center(child: CircularProgressIndicator(strokeWidth: 2.4))
+          ? const ListSkeleton(rows: 6)
           : Center(child: Padding(padding: const EdgeInsets.all(20), child: EmptyState(icon: LucideIcons.film, title: tr('Фільм недоступний'), text: '$error')));
     }
     final movie = mapOf(page['movie']);

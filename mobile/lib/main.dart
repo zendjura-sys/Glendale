@@ -50,6 +50,7 @@ import 'phone.dart';
 import 'theme.dart';
 import 'track_edit.dart';
 import 'watch_party.dart';
+import 'support.dart';
 import 'theme_controller.dart';
 import 'widgets.dart';
 import 'wrapped.dart';
@@ -212,6 +213,15 @@ Future<void> main() async {
           GoRoute(path: '/tournaments', builder: (_, _) => const TournamentsScreen()),
           GoRoute(path: '/tournaments/:id', builder: (_, state) => TournamentScreen(id: int.tryParse(state.pathParameters['id']!) ?? 0)),
           GoRoute(path: '/saved', builder: (_, _) => const SavedScreen()),
+          GoRoute(path: '/later', builder: (_, _) => const ReadLaterScreen()),
+          GoRoute(path: '/podcasts', builder: (_, _) => const PodcastsScreen()),
+          GoRoute(path: '/podcasts/:id', builder: (_, state) => PodcastScreen(key: ValueKey(state.pathParameters['id']), id: int.tryParse(state.pathParameters['id']!) ?? 0)),
+          GoRoute(path: '/keyword-alerts', builder: (_, _) => const KeywordAlertsScreen()),
+          GoRoute(path: '/help', builder: (_, _) => const HelpScreen()),
+          GoRoute(path: '/help/:category', builder: (_, state) => HelpCategoryScreen(key: ValueKey(state.pathParameters['category']), slug: state.pathParameters['category']!)),
+          GoRoute(path: '/help/:category/:article', builder: (_, state) => HelpArticleScreen(key: ValueKey(state.uri.path), category: state.pathParameters['category']!, slug: state.pathParameters['article']!)),
+          GoRoute(path: '/support', builder: (_, _) => const SupportScreen()),
+          GoRoute(path: '/support/:id', builder: (_, state) => SupportTicketScreen(key: ValueKey(state.pathParameters['id']), id: int.tryParse(state.pathParameters['id']!) ?? 0)),
           GoRoute(path: '/drafts', builder: (_, _) => const DraftsScreen()),
           GoRoute(path: '/starred', builder: (_, _) => const SavedMessagesScreen()),
           GoRoute(path: '/invite', builder: (_, _) => const InviteScreen()),

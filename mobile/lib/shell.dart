@@ -49,7 +49,14 @@ String appPathFor(String? sitePath) {
     case 'wrapped':
     case 'saved':
     case 'invite':
+    case 'later':
       return '/$head';
+    case 'help':
+      return path;
+    case 'podcasts':
+      return parts.length > 1 ? '/podcasts/${rest(1)}' : '/podcasts';
+    case 'support':
+      return parts.length > 1 ? '/support/${rest(1)}' : '/support';
     case 'join':
       return '/join/${rest(1)}';
     case 'app-login':
@@ -97,7 +104,7 @@ String appPathFor(String? sitePath) {
     case 'feed':
       return '$path$query';
     case 'settings':
-      return '/settings';
+      return rest(1) == 'keyword-alerts' ? '/keyword-alerts' : '/settings';
     case 'id':
       return '/feed';
     default:

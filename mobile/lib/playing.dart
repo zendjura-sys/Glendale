@@ -13,6 +13,7 @@ import 'state.dart';
 import 'theme.dart';
 import 'widgets.dart';
 import 'i18n.dart';
+import 'skeletons.dart';
 
 const _channel = MethodChannel('gamecon/app');
 
@@ -225,7 +226,7 @@ class _PlayingSettingsScreenState extends State<PlayingSettingsScreen> with Widg
   @override
   Widget build(BuildContext context) {
     final d = data;
-    if (d == null) return const Center(child: CircularProgressIndicator(strokeWidth: 2.4));
+    if (d == null) return const ScreenSkeleton();
     final playing = d['playing'] is Map ? mapOf(d['playing']) : null;
     final discord = mapOf(d['discord']);
     final steamInfo = mapOf(d['steam']);

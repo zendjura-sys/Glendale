@@ -12,6 +12,7 @@ import 'state.dart';
 import 'theme.dart';
 import 'widgets.dart';
 import 'i18n.dart';
+import 'skeletons.dart';
 
 final albumPrivacy = {
   'public': (LucideIcons.globe, tr('Усім')),
@@ -80,7 +81,7 @@ class _PhotosScreenState extends State<PhotosScreen> {
     final data = page;
     if (data == null) {
       return error == null
-          ? const Center(child: CircularProgressIndicator(strokeWidth: 2.4))
+          ? const ListSkeleton(rows: 6)
           : Center(child: Padding(padding: const EdgeInsets.all(20), child: EmptyState(icon: LucideIcons.images, title: tr('Фото недоступні'), text: '$error')));
     }
     final owner = mapOf(data['owner']);
@@ -415,7 +416,7 @@ class _AlbumScreenState extends State<AlbumScreen> {
     final data = page;
     if (data == null) {
       return error == null
-          ? const Center(child: CircularProgressIndicator(strokeWidth: 2.4))
+          ? const ListSkeleton(rows: 6)
           : Center(child: Padding(padding: const EdgeInsets.all(20), child: EmptyState(icon: LucideIcons.images, title: tr('Альбом недоступний'), text: '$error')));
     }
     final album = mapOf(data['album']);
@@ -595,7 +596,7 @@ class _PhotoScreenState extends State<PhotoScreen> {
         ],
       ),
       body: data == null
-          ? const Center(child: CircularProgressIndicator(strokeWidth: 2.4))
+          ? const ListSkeleton(rows: 6)
           : Column(children: [
               Expanded(
                 child: GestureDetector(
