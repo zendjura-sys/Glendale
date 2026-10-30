@@ -80,6 +80,7 @@ use App\Http\Controllers\SetupController;
 use App\Http\Controllers\SpotifyController;
 use App\Http\Controllers\StatusController;
 use App\Http\Controllers\StoryController;
+use App\Http\Controllers\SupportController;
 use App\Http\Controllers\TeammateController;
 use App\Http\Controllers\TierListController;
 use App\Http\Controllers\TopicController;
@@ -464,6 +465,13 @@ Route::prefix('v1')->group(function () {
             // Збережене: пости, фільми, ігри й сервери.
             Route::get('saved', [SavedController::class, 'index']);
             Route::get('later', [ReadingController::class, 'later']);
+            Route::get('support', [SupportController::class, 'index']);
+            Route::post('support', [SupportController::class, 'store'])->middleware('throttle:6,10');
+            Route::get('support/{ticket}', [SupportController::class, 'show'])->whereNumber('ticket');
+            Route::post('support/{ticket}/reply', [SupportController::class, 'reply'])->whereNumber('ticket')->middleware('throttle:20,1');
+            Route::post('support/{ticket}/close', [SupportController::class, 'close'])->whereNumber('ticket');
+            Route::post('support/{ticket}/rate', [SupportController::class, 'rate'])->whereNumber('ticket');
+            Route::get('support/{ticket}/files/{message}/{index}', [SupportController::class, 'file'])->whereNumber(['ticket', 'message', 'index'])->withoutScopedBindings();
             Route::post('posts/{post}/later', [ReadingController::class, 'toggleLater'])->middleware('throttle:60,1');
             Route::get('settings/keyword-alerts', [ReadingController::class, 'alerts']);
             Route::post('settings/keyword-alerts', [ReadingController::class, 'addAlert'])->middleware('throttle:30,1');

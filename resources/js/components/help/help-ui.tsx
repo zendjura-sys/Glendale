@@ -320,21 +320,31 @@ export function HelpContact({ onFeedback }: { onFeedback?: () => void }) {
                 <p className="mt-0.5 text-[13px] text-white/50">
                     {user
                         ? tr(
-                              'Напишіть адміністраторам — ідея, помилка чи питання.',
+                              'Не знайшли відповіді? Напишіть у підтримку — відповімо тут і в сповіщеннях.',
                           )
                         : tr(
                               'Напишіть нам — контакти є на сторінці «Контакти».',
                           )}
                 </p>
             </div>
-            {user && onFeedback ? (
-                <button
-                    type="button"
-                    onClick={onFeedback}
-                    className="inline-flex h-10 shrink-0 items-center justify-center rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
-                >
-                    {tr('Відгук адмінам')}
-                </button>
+            {user ? (
+                <div className="flex shrink-0 flex-wrap gap-2">
+                    {onFeedback && (
+                        <button
+                            type="button"
+                            onClick={onFeedback}
+                            className="inline-flex h-10 items-center justify-center rounded-lg bg-white/[0.07] px-4 text-sm font-medium text-white/80 transition hover:text-white"
+                        >
+                            {tr('Відгук адмінам')}
+                        </button>
+                    )}
+                    <Link
+                        href="/support"
+                        className="inline-flex h-10 items-center justify-center rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+                    >
+                        {tr('Написати в підтримку')}
+                    </Link>
+                </div>
             ) : (
                 <Link
                     href="/contacts"

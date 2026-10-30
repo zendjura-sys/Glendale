@@ -495,4 +495,13 @@ class AppSiteParityTest extends TestCase
         $this->withToken($token)->postJson('/api/v1/site/settings/keyword-alerts', ['keyword' => 'патч'])->assertOk();
         $this->withToken($token)->getJson('/api/v1/site/settings/keyword-alerts')->assertOk()->assertJsonPath('keywords', ['патч']);
     }
+
+    public function test_app_reaches_support_tickets_through_bridge(): void
+    {
+        $token = $this->app_token(User::factory()->create());
+        $this->withToken($token)->postJson('/api/v1/site/support', ['category' => 'bug', 'subject' => 'Падає плеєр', 'body' => 'Після перемотування застосунок закривається.'])->assertCreated();
+        $id = $this->withToken($token)->getJson('/api/v1/site/support')->assertOk()->json('tickets.0.id');
+        $this->withToken($token)->getJson("/api/v1/site/support/{$id}")->assertOk()->assertJsonCount(1, 'messages');
+        $this->withToken($token)->postJson("/api/v1/site/support/{$id}/reply", ['body' => 'Ще деталі'])->assertOk()->assertJsonCount(2, 'messages');
+    }
 }

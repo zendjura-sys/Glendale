@@ -15,6 +15,7 @@ import {
     ShieldCheck,
     UserRound,
     UsersRound,
+    Headset,
 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import type { PropsWithChildren, ReactNode } from 'react';
@@ -204,6 +205,7 @@ export function UserMenu() {
     const { auth } = usePage().props;
     const user = auth.user;
     const statusOn = usePlugin('status_emoji');
+    const supportOn = usePlugin('support_tickets');
     const [statusOpen, setStatusOpen] = useState(false);
 
     return (
@@ -315,6 +317,16 @@ export function UserMenu() {
                             <LifeBuoy /> {tr('Довідка')}
                         </Link>
                     </DropdownMenuItem>
+                    {supportOn && (
+                        <DropdownMenuItem
+                            asChild
+                            className="rounded-lg focus:bg-white/[0.06]"
+                        >
+                            <Link href="/support">
+                                <Headset /> {tr('Підтримка')}
+                            </Link>
+                        </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem
                         className="hidden rounded-lg focus:bg-white/[0.06] lg:flex"
                         onSelect={openShortcuts}
@@ -638,6 +650,7 @@ function MenuContent({ onClose }: { onClose: () => void }) {
     const { auth } = usePage().props;
     const user = auth.user;
     const isActive = useIsActive();
+    const supportOn = usePlugin('support_tickets');
     const { rest: items } = useMobileSplit(useNavItems());
 
     const extra = [
@@ -666,6 +679,9 @@ function MenuContent({ onClose }: { onClose: () => void }) {
             label: tr('Довідка'),
             icon: LifeBuoy,
         },
+        ...(supportOn
+            ? [{ href: '/support', label: tr('Підтримка'), icon: Headset }]
+            : []),
         ...(user.is_admin
             ? [{ href: '/admin', label: tr('Адмін-панель'), icon: ShieldCheck }]
             : []),

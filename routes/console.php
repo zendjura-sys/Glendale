@@ -3,6 +3,7 @@
 use App\Models\AppLoginRequest;
 use App\Models\SpamBlock;
 use App\Services\Billing\AuthorSubscriptions;
+use App\Services\Support\SupportDesk;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -67,3 +68,5 @@ Schedule::command('bots:roles')->hourly()->withoutOverlapping(30)->runInBackgrou
 Schedule::command('streams:check')->everyThreeMinutes()->withoutOverlapping(10)->runInBackground();
 // Платні підписки на авторів: продовження з рахунку за добу до кінця строку.
 Schedule::call(fn () => app(AuthorSubscriptions::class)->renewDue())->name('author-subscriptions:renew')->dailyAt('06:10')->withoutOverlapping();
+// Підтримка: звернення без відповіді людини тиждень після нашої — закриваються.
+Schedule::call(fn () => app(SupportDesk::class)->autoClose())->name('support:auto-close')->dailyAt('05:20')->withoutOverlapping();

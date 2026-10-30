@@ -39,6 +39,7 @@ import {
     Wallet,
     BadgeCheck,
     TrendingUp,
+    LifeBuoy,
 } from 'lucide-react';
 import { AnimatePresence, m, useReducedMotion } from 'motion/react';
 import { useEffect, useState } from 'react';
@@ -79,6 +80,11 @@ function groups(): { title: string; items: Item[] }[] {
                     label: tr('Користувачі'),
                     href: '/admin/users',
                     icon: UsersRound,
+                },
+                {
+                    label: tr('Підтримка'),
+                    href: '/admin/support',
+                    icon: LifeBuoy,
                 },
                 { label: tr('Записи'), href: '/admin/posts', icon: FileText },
                 {

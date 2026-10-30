@@ -90,6 +90,7 @@ use App\Http\Controllers\SpotifyController;
 use App\Http\Controllers\StartController;
 use App\Http\Controllers\StatusController;
 use App\Http\Controllers\StoryController;
+use App\Http\Controllers\SupportController;
 use App\Http\Controllers\TeammateController;
 use App\Http\Controllers\ThanksController;
 use App\Http\Controllers\TierListController;
@@ -288,6 +289,22 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     Route::post('posts/{post}/poll', [PostController::class, 'vote'])->middleware('throttle:60,1')->name('posts.poll');
     Route::get('saved', [SavedController::class, 'index'])->name('saved.index');
     Route::get('later', [ReadingController::class, 'later'])->name('later.index');
+    // Підтримка: звернення людини й робоче місце персоналу (адміністратори й модератори — права в контролері).
+    Route::prefix('support')->name('support.')->controller(SupportController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('/', 'store')->middleware('throttle:6,10')->name('store');
+        Route::get('{ticket}', 'show')->whereNumber('ticket')->name('show');
+        Route::post('{ticket}/reply', 'reply')->whereNumber('ticket')->middleware('throttle:20,1')->name('reply');
+        Route::post('{ticket}/close', 'close')->whereNumber('ticket')->name('close');
+        Route::post('{ticket}/rate', 'rate')->whereNumber('ticket')->name('rate');
+        Route::get('{ticket}/files/{message}/{index}', 'file')->whereNumber(['ticket', 'message', 'index'])->withoutScopedBindings()->name('file');
+    });
+    Route::prefix('admin/support')->name('admin.support.')->controller(Admin\SupportController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('{ticket}', 'show')->whereNumber('ticket')->name('show');
+        Route::post('{ticket}/reply', 'reply')->whereNumber('ticket')->middleware('throttle:60,1')->name('reply');
+        Route::patch('{ticket}', 'update')->whereNumber('ticket')->name('update');
+    });
     Route::get('settings/subscriptions', [AuthorSubscriptionController::class, 'settings'])->name('author-subscriptions.settings');
     Route::put('settings/subscriptions/tiers', [AuthorSubscriptionController::class, 'saveTiers'])->middleware('throttle:20,1')->name('author-subscriptions.tiers');
     Route::get('u/{user:username}/tiers', [AuthorSubscriptionController::class, 'tiers'])->name('author-subscriptions.show');

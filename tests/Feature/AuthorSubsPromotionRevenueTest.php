@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Services\Billing\AuthorSubscriptions;
 use App\Services\Billing\Wallet;
 use App\Services\CommunityService;
+use App\Services\PostPresenter;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -44,8 +45,8 @@ class AuthorSubsPromotionRevenueTest extends TestCase
 
         $this->actingAs($fan)->getJson("/posts/{$post->id}")->assertOk();
         $this->actingAs($fan)->get("/{$author->username}")->assertOk();
-        $this->assertSame('Секрет для своїх', app(\App\Services\PostPresenter::class)->one($post->fresh(), $fan->fresh())['body']);
-        $locked = app(\App\Services\PostPresenter::class)->one($post->fresh(), $stranger);
+        $this->assertSame('Секрет для своїх', app(PostPresenter::class)->one($post->fresh(), $fan->fresh())['body']);
+        $locked = app(PostPresenter::class)->one($post->fresh(), $stranger);
         $this->assertTrue($locked['locked']);
         $this->assertSame('', $locked['body']);
     }
