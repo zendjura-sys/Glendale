@@ -396,7 +396,10 @@ export function ChatView({
                 if (outgoing.publishAt)
                     form.append('publish_at', outgoing.publishAt);
                 if (outgoing.vanish) form.append('disappear', '1');
-                if (outgoing.card) {
+                if (outgoing.card?.kind === 'gif') {
+                    form.append('gif[url]', outgoing.card.href);
+                    form.append('gif[title]', outgoing.card.title);
+                } else if (outgoing.card) {
                     form.append('card[kind]', outgoing.card.kind);
                     form.append('card[id]', String(outgoing.card.id));
                 }

@@ -36,6 +36,7 @@ use App\Http\Controllers\GameController;
 use App\Http\Controllers\GameNewsController;
 use App\Http\Controllers\GamePlayController;
 use App\Http\Controllers\GameQaController;
+use App\Http\Controllers\GifController;
 use App\Http\Controllers\GuestBanController;
 use App\Http\Controllers\IdeaController;
 use App\Http\Controllers\InviteLinkController;
@@ -58,6 +59,7 @@ use App\Http\Controllers\PhotoAlbumController;
 use App\Http\Controllers\PhotoController;
 use App\Http\Controllers\PlayingController;
 use App\Http\Controllers\PlaylistController;
+use App\Http\Controllers\PodcastController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\QuestController;
@@ -367,6 +369,11 @@ Route::prefix('v1')->group(function () {
             Route::delete('tierlists/{tierList}', [TierListController::class, 'destroy'])->whereNumber('tierList');
             Route::post('tools/nicknames/check', [NicknameController::class, 'check'])->middleware('throttle:30,1');
             Route::get('duels', [GamePlayController::class, 'duels']);
+            Route::get('podcasts', [PodcastController::class, 'index']);
+            Route::get('podcasts/{podcast}', [PodcastController::class, 'show'])->whereNumber('podcast');
+            Route::post('podcasts/{podcast}/subscribe', [PodcastController::class, 'subscribe'])->whereNumber('podcast')->middleware('throttle:30,1');
+            Route::post('podcasts/{podcast}/episodes/{episode}/play', [PodcastController::class, 'play'])->whereNumber(['podcast', 'episode'])->withoutScopedBindings()->middleware('throttle:60,1');
+            Route::get('gifs', [GifController::class, 'index'])->middleware('throttle:60,1');
             Route::post('duels', [GamePlayController::class, 'challenge'])->middleware('throttle:20,1');
             Route::post('duels/{duel}', [GamePlayController::class, 'act'])->whereNumber('duel')->middleware('throttle:60,1');
             Route::prefix('games/{game}')->middleware('module:games')->withoutScopedBindings()->group(function () {

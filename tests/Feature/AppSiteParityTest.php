@@ -478,4 +478,11 @@ class AppSiteParityTest extends TestCase
         $this->withToken($token)->getJson('/api/v1/site/games/dota-2/fps')->assertOk()->assertJsonStructure(['rows', 'presets']);
         $this->withToken($token)->getJson('/api/v1/site/duels')->assertOk();
     }
+
+    public function test_app_reaches_podcasts_and_gifs_through_bridge(): void
+    {
+        $token = $this->app_token(User::factory()->create());
+        $this->withToken($token)->getJson('/api/v1/site/podcasts')->assertOk();
+        $this->withToken($token)->getJson('/api/v1/site/gifs')->assertOk()->assertJsonStructure(['configured', 'gifs']);
+    }
 }

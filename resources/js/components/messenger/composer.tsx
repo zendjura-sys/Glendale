@@ -1,4 +1,5 @@
 import { usePage } from '@inertiajs/react';
+import { GifPicker } from '@/components/gc/gif-picker';
 import {
     Camera,
     Clock,
@@ -110,6 +111,8 @@ export function Composer({
     const [cardQuery, setCardQuery] = useState('');
     const [cardHits, setCardHits] = useState<NonNullable<typeof card>[]>([]);
     const [pickingCard, setPickingCard] = useState(false);
+    const gifOn = usePlugin('gif_search');
+    const [pickingGif, setPickingGif] = useState(false);
     const [images, setImages] = useState<File[]>([]);
     const [docs, setDocs] = useState<File[]>([]);
     const [emojiOpen, setEmojiOpen] = useState(false);
@@ -344,7 +347,42 @@ export function Composer({
                 addFiles(event.dataTransfer.files);
             }}
         >
-            {!editing && card && (
+            {!editing && pickingGif && (
+                <div className="mb-2">
+                    <GifPicker
+                        onPick={(gif) => {
+                            setCard({
+                                kind: 'gif',
+                                id: 0,
+                                title: gif.title,
+                                hint: 'GIF',
+                                href: gif.url,
+                                image: gif.url,
+                            });
+                            setPickingGif(false);
+                        }}
+                        onClose={() => setPickingGif(false)}
+                    />
+                </div>
+            )}
+            {!editing && card?.kind === 'gif' && (
+                <div className="relative mb-2 w-fit max-w-full">
+                    <img
+                        src={card.href}
+                        alt={card.title}
+                        className="max-h-40 rounded-xl"
+                    />
+                    <button
+                        type="button"
+                        onClick={() => setCard(null)}
+                        aria-label={tr('Прибрати')}
+                        className="absolute top-1 right-1 rounded-full bg-black/60 px-2 py-0.5 text-xs text-white"
+                    >
+                        ×
+                    </button>
+                </div>
+            )}
+            {!editing && card && card.kind !== 'gif' && (
                 <div className="mb-2 flex items-center justify-between gap-2 rounded-xl bg-white/[0.04] px-3 py-2">
                     <span className="min-w-0">
                         <span className="block text-[11px] text-white/40">
@@ -742,6 +780,20 @@ export function Composer({
                         />
                         {aiWriterOn && !editing && (
                             <AiWriter text={body} onResult={setBody} />
+                        )}
+                        {gifOn && !editing && (
+                            <button
+                                type="button"
+                                onClick={() => setPickingGif((v) => !v)}
+                                aria-label="GIF"
+                                title="GIF"
+                                className={cn(
+                                    'mb-1 flex h-9 items-center justify-center rounded-full px-1.5 text-[11px] font-bold text-white/50 transition hover:text-white',
+                                    pickingGif && 'text-[#7ee0b5]',
+                                )}
+                            >
+                                GIF
+                            </button>
                         )}
                         <div ref={emojiRef} className="relative mb-1">
                             <button

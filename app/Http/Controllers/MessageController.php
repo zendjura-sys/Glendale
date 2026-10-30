@@ -11,6 +11,7 @@ use App\Models\MessageReport;
 use App\Models\Sticker;
 use App\Models\StickerPack;
 use App\Models\User;
+use App\Services\Media\GifSearch;
 use App\Services\Messenger;
 use App\Services\MessengerPresenter;
 use App\Services\Moderation\ContentFilter;
@@ -84,6 +85,9 @@ class MessageController extends Controller
             'publish_at' => ['nullable', 'date'],
             'disappear' => ['nullable', 'boolean'],
             'card' => ['nullable', 'array'],
+            'gif' => ['nullable', 'array'],
+            'gif.url' => ['required_with:gif', 'string', 'max:300'],
+            'gif.title' => ['nullable', 'string', 'max:120'],
             'card.kind' => ['required_with:card', Rule::in(['game', 'movie', 'server'])],
             'card.id' => ['required_with:card', 'integer', 'min:1'],
         ], [
@@ -245,6 +249,9 @@ class MessageController extends Controller
      */
     private function card(array $data): ?array
     {
+        if (isset($data['gif']) && is_array($data['gif']) && app(Plugins::class)->on('gif_search')) {
+            return app(GifSearch::class)->card($data['gif']);
+        }
         if (! isset($data['card']) || ! is_array($data['card'])) {
             return null;
         }

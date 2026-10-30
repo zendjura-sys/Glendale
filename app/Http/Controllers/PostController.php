@@ -19,6 +19,7 @@ use App\Services\CommunityService;
 use App\Services\CommunityWall;
 use App\Services\FriendshipService;
 use App\Services\ImageStorage;
+use App\Services\Media\GifSearch;
 use App\Services\Media\LinkPreview;
 use App\Services\Media\YoutubePreview;
 use App\Services\Moderation\ContentFilter;
@@ -130,9 +131,12 @@ class PostController extends Controller
         $maxKb = (int) $this->settings->get('max_upload_mb') * 1024;
 
         $data = $request->validate([
-            'body' => ['nullable', 'string', 'max:'.(int) $this->settings->get('max_post_length'), 'required_without_all:images,music,movie_id,poll,card,sticker'],
+            'body' => ['nullable', 'string', 'max:'.(int) $this->settings->get('max_post_length'), 'required_without_all:images,music,movie_id,poll,card,sticker,gif'],
             'sticker' => ['nullable', 'string', Rule::in(array_keys(Stickers::ITEMS))],
             'card' => ['nullable', 'array'],
+            'gif' => ['nullable', 'array'],
+            'gif.url' => ['required_with:gif', 'string', 'max:300'],
+            'gif.title' => ['nullable', 'string', 'max:120'],
             'card.kind' => ['required_with:card', Rule::in(['game', 'server', 'game_event', 'server_event'])],
             'card.id' => ['required_with:card', 'integer', 'min:1'],
             'poll' => ['nullable', 'array'],
@@ -198,7 +202,9 @@ class PostController extends Controller
         }
 
         $card = null;
-        if (isset($data['card'])) {
+        if (isset($data['gif']) && app(Plugins::class)->on('gif_search')) {
+            $card = app(GifSearch::class)->card($data['gif']);
+        } elseif (isset($data['card'])) {
             $card = app(PostCards::class)->resolve($data['card']['kind'], (int) $data['card']['id']);
             if ($card === null) {
                 throw ValidationException::withMessages(['card' => 'Картку не знайдено.']);

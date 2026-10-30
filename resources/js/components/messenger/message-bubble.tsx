@@ -490,7 +490,15 @@ export function MessageBubble({
                         />
                     )}
 
-                    {message.card && (
+                    {message.card?.kind === 'gif' && (
+                        <img
+                            src={message.card.image ?? message.card.href}
+                            alt={message.card.title}
+                            loading="lazy"
+                            className="mb-1.5 max-h-64 max-w-full rounded-xl"
+                        />
+                    )}
+                    {message.card && message.card.kind !== 'gif' && (
                         <Link
                             href={message.card.href}
                             className={cn(

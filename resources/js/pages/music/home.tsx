@@ -1,3 +1,4 @@
+import { Mic2 } from 'lucide-react';
 import { Head, Link, usePage } from '@inertiajs/react';
 import { Play } from 'lucide-react';
 import {
@@ -17,6 +18,7 @@ import {
 import { UserAvatar } from '@/components/gc/user-avatar';
 import { BackToGameCon } from '@/layouts/music-layout';
 import { tr } from '@/lib/i18n';
+import { usePlugin } from '@/lib/plugins';
 import { playQueue, playStation } from '@/lib/player';
 import type {
     LocalTrack,
@@ -91,6 +93,7 @@ function greeting(name: string): string {
 }
 
 export default function MusicHome({ home }: { home: Home }) {
+    const podcastsOn = usePlugin('podcasts');
     const { auth } = usePage().props;
     const recent = home.recently_played as TrackCard[];
 
@@ -106,6 +109,15 @@ export default function MusicHome({ home }: { home: Home }) {
                 <p className="am-subhead mt-1 text-[var(--am-label2)]">
                     {tr('Твоя музика, мікси й станції — усе в одному місці')}
                 </p>
+                {podcastsOn && (
+                    <Link
+                        href="/podcasts"
+                        className="mt-3 inline-flex h-9 items-center gap-2 rounded-full bg-white/[0.08] px-4 text-sm font-medium text-white transition hover:bg-white/[0.12]"
+                    >
+                        <Mic2 className="size-4" />
+                        {tr('Подкасти')}
+                    </Link>
+                )}
             </header>
 
             <SectionHeader title={tr('Найкраще для тебе')} />

@@ -409,7 +409,7 @@ class CinemaTest extends TestCase
         $this->assertStringNotContainsString('КіноПошук', $response->getContent());
         $response->assertInertia(fn (Assert $page) => $page
             ->component('admin/integrations')
-            ->has('cinema', 27)
+            ->has('cinema', 28)
             ->where('cinema.2.key', 'push')
             ->where('cinema.3.key', 'telegram_bot')
             ->where('cinema.4.key', 'discord_bot')

@@ -37,6 +37,8 @@ import {
     UsersRound,
     Grid3x3,
     Swords,
+    Video,
+    X,
 } from 'lucide-react';
 import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react';
 import { FriendButton } from '@/components/gc/friend-button';
@@ -85,6 +87,7 @@ import { LiveBadge, ProfileStream } from '@/components/streams/stream';
 import type { StreamInfo } from '@/components/streams/stream';
 import { useFeature, usePlugin } from '@/lib/plugins';
 import { setPageBackgroundVideo } from '@/lib/backgrounds';
+import { useDataSaver } from '@/lib/data-saver';
 
 const PROFILE_BLOCKS = [
     'platforms',
@@ -117,6 +120,7 @@ function blockSequence(order: string[]): string[] {
 type Profile = UserCard & {
     last_name: string;
     cover_url: string | null;
+    cover_video_url?: string | null;
     /** GameCon+: кольори сторінки. */
     accent?: string[] | null;
     /** GameCon+: ефект шапки — сяйво внизу обкладинки або жива рамка. */
@@ -231,6 +235,53 @@ function Counter({
     );
 }
 
+/** GameCon+: відеообкладинка (MP4/WebM до 15 МБ) — поставити чи прибрати. */
+function VideoCoverButton({ has }: { has: boolean }) {
+    const input = useRef<HTMLInputElement>(null);
+
+    return (
+        <div className="absolute top-4 left-4 flex gap-1.5">
+            <input
+                ref={input}
+                type="file"
+                accept="video/mp4,video/webm"
+                hidden
+                onChange={(event) => {
+                    const file = event.target.files?.[0];
+                    if (file)
+                        router.post(
+                            '/me/cover-video',
+                            { video: file },
+                            { forceFormData: true, preserveScroll: true },
+                        );
+                }}
+            />
+            <button
+                type="button"
+                onClick={() => input.current?.click()}
+                className="inline-flex items-center gap-2 rounded-xl bg-black/40 px-3 py-2 text-xs font-semibold text-white backdrop-blur-md transition hover:bg-black/60"
+            >
+                <Video className="size-4" />
+                {has ? tr('Інше відео') : tr('Відеообкладинка')}
+            </button>
+            {has && (
+                <button
+                    type="button"
+                    onClick={() =>
+                        router.delete('/me/cover-video', {
+                            preserveScroll: true,
+                        })
+                    }
+                    aria-label={tr('Прибрати відео')}
+                    className="inline-flex items-center rounded-xl bg-black/40 px-2.5 py-2 text-white backdrop-blur-md transition hover:bg-black/60"
+                >
+                    <X className="size-4" />
+                </button>
+            )}
+        </div>
+    );
+}
+
 function Uploader({
     field,
     url,
@@ -313,6 +364,8 @@ export default function ProfileShow({
     const statusOn = usePlugin('status_emoji');
     const pixelOn = usePlugin('pixel_avatar');
     const duelsOn = usePlugin('duels');
+    const videoCoverOn = usePlugin('plus_video_cover');
+    const dataSaver = useDataSaver();
     const [statusOpen, setStatusOpen] = useState(false);
     // Профіль відкритий гостям і пошуковикам — замість дій лише запрошення приєднатися.
     const guest = !auth.user;
@@ -369,7 +422,17 @@ export default function ProfileShow({
                     />
                 )}
                 <div className="relative isolate h-52 overflow-hidden sm:h-72">
-                    {profile.cover_url ? (
+                    {profile.cover_video_url && !dataSaver ? (
+                        <video
+                            src={profile.cover_video_url}
+                            autoPlay
+                            muted
+                            loop
+                            playsInline
+                            poster={profile.cover_url ?? undefined}
+                            className="size-full object-cover"
+                        />
+                    ) : profile.cover_url ? (
                         <img
                             decoding="async"
                             fetchPriority="high"
@@ -407,6 +470,14 @@ export default function ProfileShow({
                             }}
                         />
                     )}
+                    {isSelf &&
+                        videoCoverOn &&
+                        new Date(auth.user?.plus_until ?? 0).getTime() >
+                            Date.now() && (
+                            <VideoCoverButton
+                                has={Boolean(profile.cover_video_url)}
+                            />
+                        )}
                     {isSelf && (
                         <Uploader
                             field="cover"

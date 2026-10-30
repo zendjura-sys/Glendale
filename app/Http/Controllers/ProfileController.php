@@ -50,6 +50,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -148,6 +149,8 @@ class ProfileController extends Controller
                 ...$user->toCard(),
                 'last_name' => $user->last_name,
                 'cover_url' => $user->cover_url,
+                // GameCon+: коротке відео замість обкладинки.
+                'cover_video_url' => $user->cover_video_path && $user->isPlus() && app(Plugins::class)->on('plus_video_cover') ? Storage::disk('public')->url($user->cover_video_path) : null,
                 // GameCon+: власні кольори сторінки (з палітр сайту); інакше — кольори улюбленої гри.
                 'accent' => ($user->isPlus() ? Palette::colors((string) ($user->plus_style['accent'] ?? '')) : null) ?? GameTheme::colors($user),
                 // Ефект шапки: з GameCon+ або вдягнутий із сезонного пропуску.
@@ -407,6 +410,37 @@ class ProfileController extends Controller
         }
 
         return app(PostCards::class)->resolve((string) $pin['kind'], (int) $pin['id']);
+    }
+
+    /** GameCon+: відеообкладинка — MP4/WebM до 15 МБ, без звуку, по колу. */
+    public function updateCoverVideo(Request $request): RedirectResponse
+    {
+        app(Plugins::class)->ensure('plus_video_cover');
+        $user = $request->user();
+        abort_unless($user->isPlus(), 403, 'Відеообкладинка — у GameCon+.');
+        $request->validate(['video' => ['required', 'file', 'mimetypes:video/mp4,video/webm', 'max:15360']], ['video.mimetypes' => 'Додайте відео MP4 або WebM.']);
+        $file = $request->file('video');
+        abort_if($file === null, 422);
+        $path = $file->store('covers/video/'.now()->format('Y/m'), 'public');
+        abort_if($path === false, 500);
+        if ($user->cover_video_path) {
+            Storage::disk('public')->delete($user->cover_video_path);
+        }
+        $user->forceFill(['cover_video_path' => $path])->save();
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Відеообкладинку встановлено.']);
+
+        return back();
+    }
+
+    public function destroyCoverVideo(Request $request): RedirectResponse
+    {
+        $user = $request->user();
+        if ($user->cover_video_path) {
+            Storage::disk('public')->delete($user->cover_video_path);
+        }
+        $user->forceFill(['cover_video_path' => null])->save();
+
+        return back();
     }
 
     public function destroyAvatar(Request $request): RedirectResponse

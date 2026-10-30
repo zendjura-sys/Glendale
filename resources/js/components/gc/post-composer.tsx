@@ -12,6 +12,7 @@ import {
     Sparkles,
     UsersRound,
     X,
+    SlidersHorizontal,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { MusicCard } from '@/components/music/music-card';
@@ -23,6 +24,9 @@ import { cn } from '@/lib/utils';
 import type { PostItem, TrackCard, Visibility } from '@/types';
 import { CommunityAvatar } from './community-avatar';
 import { StickerPicker, stickerEmoji } from './stickers';
+import { GifPicker } from './gif-picker';
+import { PhotoEditor } from './photo-editor';
+import type { GifItem } from './gif-picker';
 import { UserAvatar } from './user-avatar';
 import { tr } from '@/lib/i18n';
 import { usePlugin } from '@/lib/plugins';
@@ -72,6 +76,11 @@ export function PostComposer({
     const [pickingCard, setPickingCard] = useState(false);
     const [publishAt, setPublishAt] = useState('');
     const [pickingSticker, setPickingSticker] = useState(false);
+    const gifOn = usePlugin('gif_search');
+    const photoEditorOn = usePlugin('photo_editor');
+    const [editing, setEditing] = useState<number | null>(null);
+    const [gif, setGif] = useState<GifItem | null>(null);
+    const [pickingGif, setPickingGif] = useState(false);
     const fileRef = useRef<HTMLInputElement>(null);
     const storageKey = `gc-composer:${community?.slug ?? wall?.username ?? 'feed'}`;
     const restored = useRef(false);
@@ -148,6 +157,7 @@ export function PostComposer({
             form.data.images.length > 0 ||
             track !== null ||
             card !== null ||
+            gif !== null ||
             pollReady ||
             form.data.sticker !== null) &&
         !form.processing;
@@ -184,6 +194,7 @@ export function PostComposer({
                         : undefined,
                 ...(track ? { music: musicPayload(track) } : {}),
                 ...(card ? { card: { kind: card.kind, id: card.id } } : {}),
+                ...(gif ? { gif: { url: gif.url, title: gif.title } } : {}),
                 ...(data.sticker ? { sticker: data.sticker } : {}),
             };
         });
@@ -202,6 +213,8 @@ export function PostComposer({
                 setPickingSticker(false);
                 setTrack(null);
                 setCard(null);
+                setGif(null);
+                setPickingGif(false);
                 setPickingCard(false);
                 setFocused(false);
                 setPublishAt('');
@@ -289,6 +302,16 @@ export function PostComposer({
                                 alt=""
                                 className="size-full object-cover"
                             />
+                            {photoEditorOn && (
+                                <button
+                                    type="button"
+                                    onClick={() => setEditing(index)}
+                                    className="absolute top-1.5 left-1.5 rounded-full bg-black/60 p-1 text-white opacity-0 backdrop-blur transition group-hover:opacity-100 [@media(hover:none)]:opacity-100"
+                                    aria-label={tr('Редагувати фото')}
+                                >
+                                    <SlidersHorizontal className="size-3.5" />
+                                </button>
+                            )}
                             <button
                                 type="button"
                                 onClick={() =>
@@ -440,6 +463,48 @@ export function PostComposer({
                 </div>
             )}
 
+            {editing !== null && form.data.images[editing] && (
+                <PhotoEditor
+                    file={form.data.images[editing]}
+                    onClose={() => setEditing(null)}
+                    onDone={(edited) => {
+                        form.setData(
+                            'images',
+                            form.data.images.map((f, i) =>
+                                i === editing ? edited : f,
+                            ),
+                        );
+                        setEditing(null);
+                    }}
+                />
+            )}
+            {pickingGif && (
+                <GifPicker
+                    onPick={(picked) => {
+                        setGif(picked);
+                        setPickingGif(false);
+                    }}
+                    onClose={() => setPickingGif(false)}
+                />
+            )}
+            {gif && (
+                <div className="relative mt-3 w-fit max-w-full">
+                    <img
+                        src={gif.url}
+                        alt={gif.title}
+                        className="max-h-56 rounded-xl"
+                    />
+                    <button
+                        type="button"
+                        onClick={() => setGif(null)}
+                        aria-label={tr('Прибрати GIF')}
+                        className="absolute top-1.5 right-1.5 rounded-full bg-black/60 p-1 text-white backdrop-blur"
+                    >
+                        <X className="size-3.5" />
+                    </button>
+                </div>
+            )}
+
             {pickingSticker && (
                 <div className="mt-3">
                     <StickerPicker
@@ -470,7 +535,7 @@ export function PostComposer({
                 )}
             >
                 {/* Інструменти — лише іконки (назва — у підказці), далі видимість, час і кнопки дії праворуч. */}
-                <div className="flex min-w-0 basis-full items-center gap-0.5 sm:basis-auto">
+                <div className="scrollbar-none flex min-w-0 basis-full items-center gap-0.5 overflow-x-auto sm:basis-auto">
                     <input
                         ref={fileRef}
                         type="file"
@@ -503,6 +568,22 @@ export function PostComposer({
                         <Smile className="size-[18px] text-[#ffd27a]" />
                         <span className="sr-only">{tr('Стікер')}</span>
                     </button>
+                    {gifOn && (
+                        <button
+                            type="button"
+                            title="GIF"
+                            onClick={() => setPickingGif((open) => !open)}
+                            aria-pressed={gif !== null}
+                            className={cn(
+                                'inline-flex h-9 items-center justify-center rounded-xl px-2 text-[11px] font-bold tracking-wide transition hover:bg-white/[0.06] hover:text-white',
+                                gif
+                                    ? 'bg-white/10 text-white'
+                                    : 'text-[#7ee0b5]',
+                            )}
+                        >
+                            GIF
+                        </button>
+                    )}
                     {memesOn && !community && (
                         <Link
                             href="/memes/new"

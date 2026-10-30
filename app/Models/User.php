@@ -45,6 +45,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property string $password
  * @property string $role
  * @property string|null $avatar_path
+ * @property string|null $cover_video_path GameCon+: відео замість обкладинки
  * @property string|null $cover_path
  * @property string|null $status
  * @property string|null $status_emoji Емодзі статусу («🎮»)

@@ -36,6 +36,7 @@ use App\Services\Games\Igdb;
 use App\Services\I18n\AzureTranslator;
 use App\Services\I18n\DeepL;
 use App\Services\I18n\LibreTranslate;
+use App\Services\Media\GifSearch;
 use App\Services\Moderation\NsfwCheck;
 use App\Services\Music\AcoustId;
 use App\Services\Music\AudioProbe;
@@ -693,6 +694,23 @@ class IntegrationController extends Controller
                 'fields' => [
                     ['name' => 'key', 'setting' => 'deepl_key', 'type' => 'secret', 'label' => 'Authentication Key', 'env' => config('services.deepl.key'),
                         'rules' => ['nullable', 'string', 'regex:/^[A-Za-z0-9\-]{30,48}(:fx)?$/'], 'message' => 'Ключ DeepL має вигляд xxxxxxxx-xxxx-…:fx'],
+                ],
+            ],
+            'giphy' => [
+                'label' => 'Giphy',
+                'group' => 'media',
+                'description' => 'Пошук GIF у записах і чатах (кнопка «GIF» у редакторі).',
+                'docs' => 'https://developers.giphy.com/docs/api',
+                'steps' => [
+                    'Увійдіть на developers.giphy.com → Create an App → API.',
+                    'Скопіюйте API Key сюди й натисніть «Перевірити».',
+                ],
+                'configured' => app(GifSearch::class)->configured(),
+                'stat' => null,
+                'test' => fn () => app(GifSearch::class)->test(),
+                'fields' => [
+                    ['name' => 'key', 'setting' => 'giphy_key', 'type' => 'secret', 'label' => 'API Key',
+                        'rules' => ['nullable', 'string', 'regex:/^[A-Za-z0-9]{20,64}$/'], 'message' => 'Ключ Giphy — латинські літери й цифри.'],
                 ],
             ],
             'ai' => [

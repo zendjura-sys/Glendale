@@ -355,6 +355,11 @@ export default function AdminIntegrations({ spotify, cinema }: Props) {
                         ),
                     ],
                     [
+                        'media',
+                        tr('GIF і медіа'),
+                        tr('Пошук GIF у записах і чатах.'),
+                    ],
+                    [
                         'ai',
                         tr('Штучний інтелект'),
                         tr(

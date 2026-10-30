@@ -559,7 +559,15 @@ export function PostCard({
                 <MovieCardEmbed movie={post.movie} className="mt-3.5" />
             )}
 
-            {post.card && (
+            {post.card?.kind === 'gif' && (
+                <img
+                    src={post.card.image ?? post.card.href}
+                    alt={post.card.title}
+                    loading="lazy"
+                    className="mt-3.5 max-h-[420px] max-w-full rounded-2xl"
+                />
+            )}
+            {post.card && post.card.kind !== 'gif' && (
                 <Link
                     href={post.card.href}
                     className="mt-3.5 flex items-center gap-3 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] p-3"
