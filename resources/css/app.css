@@ -2472,7 +2472,7 @@ html[data-text='xl'] {
 /* Шапка Санти на аватарі (Новий рік): сидить на маківці, трохи набік. */
 .santa-hat {
     position: absolute;
-    left: -16%;
+    left: -6%;
     top: -46%;
     width: 96%;
     height: auto;
