@@ -437,7 +437,7 @@ class _TomorrowCard extends StatelessWidget {
                   height: 44,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(color: primary.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(12)),
-                  child: Text(clock(e['starts_at']), style: body(13.5, color: const Color(0xFFB4BFFF), weight: FontWeight.w700)),
+                  child: Text(clock(e['starts_at']), style: body(13.5, color: const Color(0xFF9DD8FF), weight: FontWeight.w700)),
                 ),
                 const SizedBox(width: 12),
                 Expanded(

@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'api.dart';
+import 'core/widgets/arctic_glass/arctic_glass.dart';
 import 'plus.dart';
 import 'state.dart';
 import 'subscription.dart';
@@ -15,48 +16,14 @@ import 'skeletons.dart';
 
 // ───────────────────────── Тло й логотип ─────────────────────────
 
-/// Тло всіх екранів — як `<Aurora />` на сайті: тихе сяйво під поточну тему
-/// (нічне синє у «Неоновому синьому», крижане блакитне у «Крижаній Арктиці»).
+/// Тло всіх екранів — ArcticBackground дизайн-системи «Spatial Glass»: bgBase і два тихі сяйва
+/// (сапфір угорі ліворуч, крижаний ціан унизу праворуч).
 class Stage extends StatelessWidget {
   const Stage({required this.child, super.key});
   final Widget child;
 
   @override
-  Widget build(BuildContext context) {
-    final light = palette.isLight;
-    return DecoratedBox(
-      decoration: BoxDecoration(color: voidColor),
-      child: Stack(
-        children: [
-          Positioned(left: -120, top: -80, child: _Glow(color: light ? Color(0xFF8CC4FF) : neonBlue, size: 380, alpha: light ? 0.38 : 0.22)),
-          Positioned(right: -120, top: -40, child: _Glow(color: light ? Color(0xFFB9E4FF) : indigo, size: 320, alpha: light ? 0.42 : 0.16)),
-          Positioned(left: -60, bottom: 120, child: _Glow(color: light ? Color(0xFFA9D8F5) : cyan, size: 260, alpha: light ? 0.30 : 0.07)),
-          child,
-        ],
-      ),
-    );
-  }
-}
-
-class _Glow extends StatelessWidget {
-  const _Glow({required this.color, required this.size, this.alpha = 0.28});
-  final Color color;
-  final double size;
-  final double alpha;
-
-  @override
-  Widget build(BuildContext context) {
-    return IgnorePointer(
-      child: Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: RadialGradient(colors: [color.withValues(alpha: alpha), color.withValues(alpha: 0)]),
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => ArcticBackground(child: child);
 }
 
 /// Знак GameCon — неонова «G» (той самий, що на значку застосунку й на сайті).
@@ -71,7 +38,7 @@ class LogoMark extends StatelessWidget {
       height: size,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(size * 0.3),
-        boxShadow: [BoxShadow(color: const Color(0xFF0096FF).withValues(alpha: 0.3), blurRadius: size * 0.4, offset: Offset(0, size * 0.1))],
+        boxShadow: [BoxShadow(color: AppColors.accentCyan.withValues(alpha: 0.28), blurRadius: size * 0.4, offset: Offset(0, size * 0.1))],
       ),
       child: Image.asset('assets/brand/logo-mark.png', width: size, height: size, filterQuality: FilterQuality.medium),
     );
@@ -114,9 +81,10 @@ class GradientText extends StatelessWidget {
 
 // ───────────────────────── Поверхні ─────────────────────────
 
-/// Картка `.glass`: матове скло без рамки.
+/// Картка «Spatial Glass»: діагональне скло, рамка-волосинка й верхній блік (ArcticGlassContainer).
+/// Без розмиття — картки живуть у списках, і BackdropFilter там гальмував би прокрутку.
 class Glass extends StatelessWidget {
-  const Glass({required this.child, this.padding = const EdgeInsets.all(16), this.radius = 22, this.onTap, this.gradient, this.border, this.overlay, super.key});
+  const Glass({required this.child, this.padding = const EdgeInsets.all(16), this.radius = AppRadii.card, this.onTap, this.gradient, this.border, this.overlay, super.key});
   final Widget child;
   /// Шар поверх картки на весь її розмір (напр. жива рамка GameCon+).
   final Widget? overlay;
@@ -128,34 +96,14 @@ class Glass extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final shape = BorderRadius.circular(radius);
-    final box = Ink(
-      width: double.infinity,
-      padding: padding,
-      decoration: BoxDecoration(
-        gradient: gradient ?? glassGradient,
-        borderRadius: shape,
-        // Матове скло без рамки, як на сайті: межу картки дає лише м'яка тінь.
-        border: border == null ? null : Border.all(color: border!),
-        boxShadow: [palette.isLight ? BoxShadow(color: Color(0x1F102A50), blurRadius: 28, offset: Offset(0, 10), spreadRadius: -14) : BoxShadow(color: Color(0x99000000), blurRadius: 32, offset: Offset(0, 12), spreadRadius: -18)],
-      ),
-      child: child,
-    );
-    return Material(
-      color: Colors.transparent,
-      borderRadius: shape,
-      child: overlay == null
-          ? (onTap == null ? box : InkWell(onTap: onTap, borderRadius: shape, child: box))
-          : Stack(children: [onTap == null ? box : InkWell(onTap: onTap, borderRadius: shape, child: box), Positioned.fill(child: overlay!)]),
-    );
+    final glass = ArcticGlassContainer(width: double.infinity, padding: padding, radius: radius, fill: gradient, borderColor: border, onTap: onTap, child: child);
+    return overlay == null ? glass : Stack(children: [glass, Positioned.fill(child: overlay!)]);
   }
 }
 
-/// «Глибоке матове скло» в стилі iOS 27 для панелей: нижній острів, вкладки розділу, міні-плеєр.
-/// Нейтральне, без відтінку акценту; темний і світлий варіанти — за яскравістю теми.
-/// Угорі — тонкий внутрішній блік (1px), бо внутрішньої тіні у Flutter немає.
+/// Скло нерухомих панелей (вкладки розділу, міні-плеєр): поверхня доку з розмиттям 24.
 class MatteGlass extends StatelessWidget {
-  const MatteGlass({required this.child, this.borderRadius = 24.0, this.padding, this.width, this.height, super.key});
+  const MatteGlass({required this.child, this.borderRadius = ArcticDock.radius, this.padding, this.width, this.height, super.key});
   final Widget child;
   final double borderRadius;
   final EdgeInsetsGeometry? padding;
@@ -164,56 +112,12 @@ class MatteGlass extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final light = Theme.of(context).brightness == Brightness.light;
-    final radius = BorderRadius.circular(borderRadius);
-    return Container(
+    return SizedBox(
       width: width,
-      height: height,
-      decoration: BoxDecoration(
-        borderRadius: radius,
-        boxShadow: [
-          light
-              ? BoxShadow(color: const Color(0xFF0F172A).withValues(alpha: 0.12), blurRadius: 36, offset: const Offset(0, 16), spreadRadius: -12)
-              : BoxShadow(color: Colors.black.withValues(alpha: 0.55), blurRadius: 32, offset: const Offset(0, 14), spreadRadius: -8),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: radius,
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 45.0, sigmaY: 45.0),
-          child: Stack(
-            fit: StackFit.passthrough,
-            children: [
-              Container(
-                width: width,
-                height: height,
-                padding: padding,
-                decoration: BoxDecoration(
-                  borderRadius: radius,
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: light ? const [Color(0xE6F5F5FA), Color(0xF2E6E8F0)] : const [Color(0xE822242A), Color(0xF215171B)],
-                  ),
-                ),
-                // Рамка поверх, щоб не зсувала вміст: острів і вкладки «Музики» однакової висоти.
-                foregroundDecoration: BoxDecoration(
-                  borderRadius: radius,
-                  border: Border.all(color: Colors.white.withValues(alpha: light ? 0.65 : 0.09), width: 1.0),
-                ),
-                child: child,
-              ),
-              // Внутрішній верхній блік.
-              Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                height: 1,
-                child: IgnorePointer(child: ColoredBox(color: Colors.white.withValues(alpha: light ? 0.9 : 0.16))),
-              ),
-            ],
-          ),
-        ),
+      child: ArcticDockSurface(
+        height: height,
+        radius: borderRadius,
+        child: padding == null ? child : Padding(padding: padding!, child: child),
       ),
     );
   }
@@ -328,7 +232,7 @@ class HeroCard extends StatelessWidget {
 
 // ───────────────────────── Кнопки ─────────────────────────
 
-/// Градієнтна кнопка `.btn-glow`.
+/// Головна кнопка: сапфіровий градієнт (ArcticGlassButton).
 class PrimaryButton extends StatelessWidget {
   const PrimaryButton({required this.label, required this.onPressed, this.icon, this.expand = true, this.compact = false, this.busy = false, super.key});
   final String label;
@@ -339,43 +243,8 @@ class PrimaryButton extends StatelessWidget {
   final bool busy;
 
   @override
-  Widget build(BuildContext context) {
-    final enabled = onPressed != null && !busy;
-    final height = compact ? 40.0 : 50.0;
-    final content = Row(
-      mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        if (busy)
-          SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-        else if (icon != null)
-          Icon(icon, color: Colors.white, size: compact ? 16 : 18),
-        if (busy || icon != null) SizedBox(width: 8),
-        // Довгий підпис чи великий системний шрифт — текст трохи зменшується, а не обрізається «…».
-        Flexible(child: FittedBox(fit: BoxFit.scaleDown, child: Text(label, maxLines: 1, style: body(compact ? 13.5 : 15, color: Colors.white, weight: FontWeight.w600)))),
-      ],
-    );
-    return Opacity(
-      opacity: enabled ? 1 : 0.5,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: enabled ? onPressed : null,
-          borderRadius: BorderRadius.circular(14),
-          child: Ink(
-            height: height,
-            padding: EdgeInsets.symmetric(horizontal: compact ? 12 : 16),
-            decoration: BoxDecoration(
-              gradient: buttonGradient,
-              borderRadius: BorderRadius.circular(14),
-              boxShadow: [BoxShadow(color: indigo.withValues(alpha: 0.55), blurRadius: 24, offset: Offset(0, 10), spreadRadius: -10)],
-            ),
-            child: content,
-          ),
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) =>
+      ArcticGlassButton(label: label, onPressed: onPressed, icon: icon, expand: expand, compact: compact, busy: busy);
 }
 
 /// Скляна другорядна кнопка («Редагувати профіль», «Написати»).
@@ -390,31 +259,16 @@ class GhostButton extends StatelessWidget {
   final Color? iconColor;
 
   @override
-  Widget build(BuildContext context) {
-    return Opacity(
-      opacity: onPressed == null ? 0.5 : 1,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onPressed,
-          borderRadius: BorderRadius.circular(14),
-          child: Ink(
-            height: compact ? 40 : 48,
-            padding: EdgeInsets.symmetric(horizontal: compact ? 10 : 14),
-            decoration: BoxDecoration(color: fg.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(14), border: Border.all(color: lineStrong)),
-            child: Row(
-              mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                if (icon != null) ...[Icon(icon, size: compact ? 16 : 18, color: iconColor ?? color), SizedBox(width: 8)],
-                Flexible(child: FittedBox(fit: BoxFit.scaleDown, child: Text(label, maxLines: 1, style: body(compact ? 13 : 14.5, color: color, weight: FontWeight.w600)))),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => ArcticGlassButton(
+    label: label,
+    onPressed: onPressed,
+    icon: icon,
+    kind: ArcticButtonKind.glass,
+    expand: expand,
+    compact: compact,
+    color: color,
+    iconColor: iconColor,
+  );
 }
 
 class DangerButton extends StatelessWidget {
@@ -425,28 +279,8 @@ class DangerButton extends StatelessWidget {
   final bool expand;
 
   @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onPressed,
-        borderRadius: BorderRadius.circular(14),
-        child: Ink(
-          height: 44,
-          padding: EdgeInsets.symmetric(horizontal: 16),
-          decoration: BoxDecoration(color: danger, borderRadius: BorderRadius.circular(14), boxShadow: [BoxShadow(color: danger.withValues(alpha: 0.4), blurRadius: 20, offset: Offset(0, 8), spreadRadius: -10)]),
-          child: Row(
-            mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              if (icon != null) ...[Icon(icon, size: 16, color: Colors.white), SizedBox(width: 8)],
-              Text(label, style: body(14, color: Colors.white, weight: FontWeight.w600)),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) =>
+      ArcticGlassButton(label: label, onPressed: onPressed, icon: icon, kind: ArcticButtonKind.danger, expand: expand, compact: true);
 }
 
 /// Кругла іконка-кнопка (скріпка, мікрофон, ⋯).
@@ -877,9 +711,9 @@ class Avatar extends StatelessWidget {
   final bool square;
 
   static final _palette = [
-    [Color(0xFF6D5DFC), Color(0xFFA855F7)],
+    [Color(0xFF0A84FF), Color(0xFF00D2FF)],
     [Color(0xFF4F8BFF), Color(0xFF38E1FF)],
-    [Color(0xFFF04FD8), Color(0xFFA855F7)],
+    [Color(0xFF38BDF8), Color(0xFF00D2FF)],
     [Color(0xFF34D399), Color(0xFF4F8BFF)],
     [Color(0xFFF5C451), Color(0xFFF0734A)],
   ];
@@ -1146,9 +980,9 @@ class CoverPlaceholder extends StatelessWidget {
 
   static const _gradients = [
     [Color(0xFF38E1FF), Color(0xFF4F8BFF)],
-    [Color(0xFF6D5DFC), Color(0xFF4F8BFF)],
-    [Color(0xFFF04FD8), Color(0xFFF0734A)],
-    [Color(0xFFA855F7), Color(0xFF6D5DFC)],
+    [Color(0xFF0A84FF), Color(0xFF4F8BFF)],
+    [Color(0xFF38BDF8), Color(0xFFF0734A)],
+    [Color(0xFF00D2FF), Color(0xFF0A84FF)],
     [Color(0xFF34D399), Color(0xFF38E1FF)],
   ];
 
@@ -1262,12 +1096,11 @@ class _RemoteState extends State<Remote> {
 /// Висота прозорої шапки поверх контенту, без системного відступу.
 const siteBarHeight = 58.0;
 
-/// Нижній острів-меню на телефоні разом із відступом знизу, без системного відступу.
-const islandExtent = 76.0;
+/// Нижній острів-меню (плаваючий док) на телефоні разом із відступом знизу, без системного відступу.
+const islandExtent = ArcticDock.height + ArcticDock.bottom;
 
-/// Скругленість нижніх панелей — повна капсула (половина висоти панелі): острів, вкладки «Музики»
-/// й міні-плеєр однакові.
-const barRadius = (islandExtent - 8) / 2;
+/// Скругленість нижніх панелей — капсула доку (32): острів, вкладки «Музики» й міні-плеєр однакові.
+const barRadius = ArcticDock.radius;
 
 /// Іконка й підпис вкладки нижньої панелі: вибрана світиться неоновим синім (без підкладок і рамок),
 /// у темній темі яскравіше, у світлій — стриманіше. Перехід між вкладками ~200 мс.
@@ -1309,7 +1142,7 @@ class NeonTabLabel extends StatelessWidget {
 }
 
 /// Плаваючий плеєр разом із відступом над меню.
-const miniPlayerExtent = 76.0;
+const miniPlayerExtent = ArcticDock.height + 8;
 
 /// З якої ширини екрана (планшет, горизонтальний телефон-«лопата») показуємо бічне меню замість нижнього.
 const tabletWidth = 840.0;
@@ -1656,11 +1489,9 @@ Future<T?> showGcSheet<T>(BuildContext context, {String? title, String? subtitle
     useRootNavigator: true,
     isScrollControlled: true,
     useSafeArea: true,
-    backgroundColor: popover,
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      side: BorderSide(color: lineStrong),
-    ),
+    // Прозора шторка: поверхню малює ArcticGlassSheetSurface (glassTier3, розмиття 28).
+    backgroundColor: Colors.transparent,
+    elevation: 0,
     // Аркуш живе в кореневому навігаторі, вище за AppScope оболонки. Тому вміст будуємо під
     // перенесеним AppScope, і `sheet` у builder — контекст усередині нього: AppScope.read(sheet) працює.
     builder: (route) {
@@ -1669,14 +1500,6 @@ Future<T?> showGcSheet<T>(BuildContext context, {String? title, String? subtitle
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Center(
-            child: Container(
-              margin: EdgeInsets.only(top: 10, bottom: 6),
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(color: fg.withValues(alpha: 0.16), borderRadius: BorderRadius.circular(4)),
-            ),
-          ),
           if (title != null)
             Padding(
               padding: EdgeInsets.fromLTRB(20, 8, 8, 6),
@@ -1699,10 +1522,16 @@ Future<T?> showGcSheet<T>(BuildContext context, {String? title, String? subtitle
           Flexible(child: builder(sheet)),
         ],
       );
+      final keyboard = MediaQuery.viewInsetsOf(sheet).bottom;
       return Padding(
-        // Клавіатура або системна смуга жестів унизу — що більше.
-        padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(sheet).bottom > 0 ? MediaQuery.viewInsetsOf(sheet).bottom : MediaQuery.viewPaddingOf(sheet).bottom),
-        child: height == null ? content : SizedBox(height: height, child: content),
+        padding: EdgeInsets.only(bottom: keyboard),
+        child: ArcticGlassSheetSurface(
+          child: Padding(
+            // Під клавіатурою відступ уже є; інакше — системна смуга жестів.
+            padding: EdgeInsets.only(bottom: keyboard > 0 ? 0 : MediaQuery.viewPaddingOf(sheet).bottom),
+            child: height == null ? content : SizedBox(height: height, child: content),
+          ),
+        ),
       );
       }
 

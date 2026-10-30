@@ -14,6 +14,7 @@ import 'package:webview_flutter_android/webview_flutter_android.dart';
 
 import 'api.dart';
 import 'cinema.dart' show PosterCard;
+import 'core/widgets/arctic_glass/arctic_glass.dart';
 import 'i18n.dart';
 import 'posts.dart';
 import 'state.dart';
@@ -296,11 +297,11 @@ class _MovieScreenState extends State<MovieScreen> {
     var engine = 'native';
     return showModalBottomSheet<String>(
       context: context,
+      backgroundColor: Colors.transparent,
+      elevation: 0,
       useRootNavigator: true,
-      backgroundColor: popover,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
-      builder: (sheet) => StatefulBuilder(
+      builder: (sheet) => ArcticGlassSheetSurface(child: StatefulBuilder(
         builder: (sheet, setSheet) => SafeArea(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(20, 18, 20, 14),
@@ -357,7 +358,7 @@ class _MovieScreenState extends State<MovieScreen> {
             ]),
           ),
         ),
-      ),
+      )),
     );
   }
 
@@ -1125,9 +1126,9 @@ class _VoiceBadge extends StatelessWidget {
   final bool subs;
 
   static const _tones = [
-    [Color(0xFF6D5DFC), Color(0xFFA855F7)],
+    [Color(0xFF0A84FF), Color(0xFF00D2FF)],
     [Color(0xFF4F8BFF), Color(0xFF38E1FF)],
-    [Color(0xFFF04FD8), Color(0xFFA855F7)],
+    [Color(0xFF38BDF8), Color(0xFF00D2FF)],
     [Color(0xFF34D399), Color(0xFF4F8BFF)],
     [Color(0xFFF5C451), Color(0xFFF0734A)],
   ];
@@ -1653,9 +1654,9 @@ class _MoviePlayerScreenState extends State<MoviePlayerScreen> {
     _show(keep: true);
     final picked = await showModalBottomSheet<String>(
       context: context,
-      backgroundColor: popover,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (sheet) => SafeArea(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      builder: (sheet) => ArcticGlassSheetSurface(child: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
           child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -1666,7 +1667,7 @@ class _MoviePlayerScreenState extends State<MoviePlayerScreen> {
             ]),
           ]),
         ),
-      ),
+      )),
     );
     if (picked != null && picked != quality) {
       unawaited(widget.memory.prefs.setString('cinema.quality', picked));
@@ -1871,9 +1872,9 @@ class _MoviePlayerScreenState extends State<MoviePlayerScreen> {
     _show(keep: true);
     final picked = await showModalBottomSheet<double>(
       context: context,
-      backgroundColor: popover,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (sheet) => SafeArea(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      builder: (sheet) => ArcticGlassSheetSurface(child: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
           child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -1884,7 +1885,7 @@ class _MoviePlayerScreenState extends State<MoviePlayerScreen> {
             ]),
           ]),
         ),
-      ),
+      )),
     );
     if (picked != null) _speed(picked);
     _autoHide();
@@ -1894,10 +1895,10 @@ class _MoviePlayerScreenState extends State<MoviePlayerScreen> {
     _show(keep: true);
     final target = await showModalBottomSheet<Pick>(
       context: context,
-      backgroundColor: popover,
+      backgroundColor: Colors.transparent,
+      elevation: 0,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (sheet) => _EpisodeSheet(seasons: widget.seasons, current: pick, memory: widget.memory),
+      builder: (sheet) => ArcticGlassSheetSurface(child: _EpisodeSheet(seasons: widget.seasons, current: pick, memory: widget.memory)),
     );
     if (target != null && target != pick) {
       _goto(target);

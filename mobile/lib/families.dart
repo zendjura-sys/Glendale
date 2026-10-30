@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'api.dart';
+import 'core/widgets/arctic_glass/arctic_glass.dart';
 import 'family_tabs.dart';
 import 'feed.dart';
 import 'posts.dart';
@@ -120,7 +121,8 @@ void openAuthImages(BuildContext context, List<String> paths, int index) {
     fullscreenDialog: true,
     builder: (_) => Scaffold(
       backgroundColor: Colors.black,
-      appBar: AppBar(backgroundColor: Colors.black, foregroundColor: Colors.white),
+      extendBodyBehindAppBar: true,
+      appBar: const ArcticGlassAppBar(),
       body: PageView(
         controller: PageController(initialPage: index),
         children: [for (final p in paths) InteractiveViewer(maxScale: 5, child: Center(child: AuthImage(path: p, fit: BoxFit.contain, radius: 0)))],

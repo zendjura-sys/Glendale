@@ -375,7 +375,7 @@ class GameScreen extends StatelessWidget {
 
         final palette = mapOf(data['palette']);
         final accent = hexColor(palette['accent']) ?? primary;
-        final soft2 = hexColor(palette['soft']) ?? const Color(0xFFB4BFFF);
+        final soft2 = hexColor(palette['soft']) ?? const Color(0xFF9DD8FF);
         final base = hexColor(palette['base']);
 
         return ScreenScroll(

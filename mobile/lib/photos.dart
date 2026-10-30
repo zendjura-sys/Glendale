@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'api.dart';
+import 'core/widgets/arctic_glass/arctic_glass.dart';
 import 'feed.dart';
 import 'posts.dart';
 import 'shell.dart';
@@ -587,10 +588,9 @@ class _PhotoScreenState extends State<PhotoScreen> {
     final next = _neighbour(1);
     return Scaffold(
       backgroundColor: Colors.black,
-      appBar: AppBar(
-        backgroundColor: Colors.black,
-        foregroundColor: Colors.white,
-        title: Text(photo.isEmpty ? '' : tr('{v} з {v2}', {'v': photo['position'], 'v2': album['photos_count']}), style: body(15)),
+      extendBodyBehindAppBar: true,
+      appBar: ArcticGlassAppBar(
+        title: photo.isEmpty ? '' : tr('{v} з {v2}', {'v': photo['position'], 'v2': album['photos_count']}),
         actions: [
           if (can['edit'] == true || can['delete'] == true || can['cover'] == true) IconButton(onPressed: _menu, icon: const Icon(LucideIcons.ellipsisVertical)),
         ],

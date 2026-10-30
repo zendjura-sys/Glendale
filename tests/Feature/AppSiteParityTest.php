@@ -284,6 +284,8 @@ class AppSiteParityTest extends TestCase
         $me = $this->withToken($token)->getJson('/api/v1/me')->assertOk()->json('user');
         $this->assertContains('cinema', $me['modules']);
         $this->assertNotEmpty($me['modes']);
+        // Кнопки ШІ в чаті застосунку показуються за тими самими плагінами, що й на сайті.
+        $this->assertSame(['ai_writer', 'ai_summary'], array_keys($me['ai']));
 
         // «Мінімал» ховає кіно й ігрові розділи — і з меню застосунку теж.
         $this->withToken($token)->putJson('/api/v1/site/settings/mode', ['mode' => 'minimal'])->assertOk()->assertJsonPath('ok', true);

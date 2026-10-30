@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'core/theme/arctic_glass_theme.dart';
 import 'theme.dart';
 
 /// Скелетони «Arctic Glass», як на сайті: заглушки форми справжнього вмісту з крижаним відблиском,
@@ -39,12 +40,9 @@ class _SkeletonShimmerState extends State<SkeletonShimmer>
 
   @override
   Widget build(BuildContext context) {
-    final base = palette.isLight
-        ? const Color(0x140A2A55)
-        : const Color(0x14FFFFFF);
-    final shine = palette.isLight
-        ? const Color(0x33FFFFFF)
-        : const Color(0x29BFE3FF);
+    // Мерехтіння «Spatial Glass»: скло .03 → крижаний ціан .10 → скло .03.
+    final base = palette.isLight ? const Color(0x140A2A55) : AppColors.shimmer[0];
+    final shine = palette.isLight ? const Color(0x33FFFFFF) : AppColors.shimmer[1];
     return Semantics(
       label: 'Завантаження',
       child: AnimatedBuilder(

@@ -251,7 +251,7 @@ class _AppLoginScreenState extends State<AppLoginScreen> {
           width: 64,
           height: 64,
           decoration: BoxDecoration(color: indigo.withValues(alpha: 0.16), shape: BoxShape.circle),
-          child: const Icon(LucideIcons.monitorSmartphone, color: Color(0xFFB4BFFF), size: 30),
+          child: const Icon(LucideIcons.monitorSmartphone, color: Color(0xFF9DD8FF), size: 30),
         ),
       ),
       const SizedBox(height: 16),

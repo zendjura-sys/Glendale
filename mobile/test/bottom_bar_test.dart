@@ -4,6 +4,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:gamecon/core/widgets/arctic_glass/arctic_glass.dart';
 import 'package:gamecon/account.dart';
 import 'package:gamecon/chrome.dart';
 import 'package:gamecon/music_home.dart';
@@ -84,12 +85,12 @@ void main() {
         expect(find.descendant(of: find.byKey(const ValueKey('bottom-bar-music')), matching: find.byType(MatteGlass)), findsOneWidget);
         expect(tester.getRect(find.byType(MiniPlayer)).bottom, lessThanOrEqualTo(tabs.top + 0.5));
 
-        // Обидві панелі й міні-плеєр — повні капсули однакової скругленості (радіус = половина висоти).
-        double radiusOf(Finder of) => tester.widget<MatteGlass>(find.descendant(of: of, matching: find.byType(MatteGlass)).first).borderRadius;
-        final musicGlass = find.descendant(of: find.byKey(const ValueKey('bottom-bar-music')), matching: find.byType(MatteGlass)).first;
+        // Обидві панелі й міні-плеєр — скляний док однакової скругленості (капсула: радіус = половина висоти).
+        double radiusOf(Finder of) => tester.widget<ArcticDockSurface>(find.descendant(of: of, matching: find.byType(ArcticDockSurface)).first).radius;
+        final musicGlass = find.descendant(of: find.byKey(const ValueKey('bottom-bar-music')), matching: find.byType(ArcticDockSurface)).first;
         expect(radiusOf(find.byKey(const ValueKey('bottom-bar-music'))), closeTo(tester.getSize(musicGlass).height / 2, 0.5));
         expect(radiusOf(find.byKey(const ValueKey('bottom-bar-nav'))), radiusOf(find.byKey(const ValueKey('bottom-bar-music'))));
-        expect(radiusOf(find.byType(MiniPlayer)), closeTo(tester.getSize(find.descendant(of: find.byType(MiniPlayer), matching: find.byType(MatteGlass))).height / 2, 0.5));
+        expect(radiusOf(find.byType(MiniPlayer)), closeTo(tester.getSize(find.descendant(of: find.byType(MiniPlayer), matching: find.byType(ArcticDockSurface))).height / 2, 0.5));
 
         // Назад у стрічку — знову острів.
         router.go('/feed');

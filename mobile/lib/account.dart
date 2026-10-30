@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'api.dart';
+import 'core/widgets/arctic_glass/arctic_glass.dart';
 import 'state.dart';
 import 'theme.dart';
 import 'widgets.dart';
@@ -326,8 +327,10 @@ Future<void> showReportSheet(BuildContext context, String username, String name)
   var reason = 'spam';
   final send = await showModalBottomSheet<bool>(
     context: context,
+    backgroundColor: Colors.transparent,
+    elevation: 0,
     isScrollControlled: true,
-    builder: (sheet) => StatefulBuilder(
+    builder: (sheet) => ArcticGlassSheetSurface(child: StatefulBuilder(
       builder: (sheet, setSheet) => Padding(
         padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + MediaQuery.viewInsetsOf(sheet).bottom),
         child: SafeArea(
@@ -351,7 +354,7 @@ Future<void> showReportSheet(BuildContext context, String username, String name)
           ]),
         ),
       ),
-    ),
+    )),
   );
   if (send != true || !context.mounted) return;
   await attempt(
@@ -368,8 +371,10 @@ Future<void> showFeedbackSheet(BuildContext context, {String screen = 'menu'}) a
   var kind = 'idea';
   final send = await showModalBottomSheet<bool>(
     context: context,
+    backgroundColor: Colors.transparent,
+    elevation: 0,
     isScrollControlled: true,
-    builder: (sheet) => StatefulBuilder(
+    builder: (sheet) => ArcticGlassSheetSurface(child: StatefulBuilder(
       builder: (sheet, setSheet) => Padding(
         padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + MediaQuery.viewInsetsOf(sheet).bottom),
         child: SafeArea(
@@ -394,7 +399,7 @@ Future<void> showFeedbackSheet(BuildContext context, {String screen = 'menu'}) a
           ]),
         ),
       ),
-    ),
+    )),
   );
   if (send != true || !context.mounted || bodyCtrl.text.trim().length < 5) return;
   await attempt(
@@ -406,9 +411,12 @@ Future<void> showFeedbackSheet(BuildContext context, {String screen = 'menu'}) a
 
 
 /// Що нового в цій версії застосунку — один раз після оновлення.
-const whatsNewVersion = '1.1.71';
+const whatsNewVersion = '1.1.72';
 
 List<String> _whatsNew() => [
+      tr('Новий вигляд «Spatial Glass»: глибоке тло, напівпрозоре скло з бліком, сапфірові й крижані акценти.'),
+      tr('Нижнє меню — плаваючий скляний док із крижаною крапкою під активною вкладкою.'),
+      tr('ШІ в чатах: кнопка ✨ у полі повідомлення покращує текст, а «Підсумок від ШІ» в меню групи переказує розмову.'),
       tr('Довідка й підтримка прямо в застосунку: статті, звернення зі знімками екрана, відповіді й оцінка.'),
       tr('Подкасти: підписка на шоу й випуски в плеєрі застосунку.'),
       tr('«Прочитати пізніше» й сповіщення за словами — у меню.'),
@@ -463,13 +471,15 @@ Future<void> showWhatsNew(BuildContext context, SharedPreferences prefs) async {
   if (!context.mounted) return;
   await showModalBottomSheet<void>(
     context: context,
+    backgroundColor: Colors.transparent,
+    elevation: 0,
     isScrollControlled: true,
-    builder: (sheet) => SafeArea(
+    builder: (sheet) => ArcticGlassSheetSurface(child: SafeArea(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
         child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           Row(children: [
-            const Icon(LucideIcons.sparkles, color: Color(0xFFB4BFFF)),
+            const Icon(LucideIcons.sparkles, color: Color(0xFF9DD8FF)),
             const SizedBox(width: 8),
             Text(tr('Що нового'), style: display(20)),
             const Spacer(),
@@ -494,6 +504,6 @@ Future<void> showWhatsNew(BuildContext context, SharedPreferences prefs) async {
           ),
         ]),
       ),
-    ),
+    )),
   );
 }

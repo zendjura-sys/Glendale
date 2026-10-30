@@ -7,6 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import 'account.dart';
 import 'api.dart';
+import 'core/widgets/arctic_glass/arctic_glass.dart';
 import 'i18n.dart';
 import 'language_picker.dart';
 import 'nav_items.dart';
@@ -28,7 +29,7 @@ import 'widgets.dart';
 const _snap = Duration(milliseconds: 340);
 const _snapCurve = Curves.easeOutCubic;
 
-const _rose = Color(0xFFF43F5E);
+const _rose = Color(0xFFFF4D6D);
 
 Duration _motion(BuildContext context, Duration value) => MediaQuery.disableAnimationsOf(context) ? Duration.zero : value;
 
@@ -353,10 +354,10 @@ class _UserMenu extends StatelessWidget {
 Future<void> showLanguageSheet(BuildContext context, Session session) {
   return showModalBottomSheet<void>(
     context: context,
-    backgroundColor: popover,
+    backgroundColor: Colors.transparent,
+    elevation: 0,
     useSafeArea: true,
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-    builder: (sheet) => SafeArea(
+    builder: (sheet) => ArcticGlassSheetSurface(child: SafeArea(
       child: Padding(
         padding: EdgeInsets.fromLTRB(16, 18, 16, 16),
         child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -365,7 +366,7 @@ Future<void> showLanguageSheet(BuildContext context, Session session) {
           LanguagePicker(api: session.api),
         ]),
       ),
-    ),
+    )),
   );
 }
 
@@ -535,9 +536,8 @@ class _IslandNavState extends State<IslandNav> {
       duration: _motion(context, dragging ? Duration.zero : _snap),
       curve: _snapCurve,
       transform: Matrix4.translationValues(0, drag * 0.22, 0),
-      // Глибоке матове скло iOS 27 — щільне й нейтральне, тож меню читається і розгорнутим.
-      child: MatteGlass(
-        borderRadius: barRadius,
+      // Плаваючий док «Spatial Glass» (розмиття 24, радіус 32); розгорнутий — меню розділів.
+      child: ArcticDockSurface(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -548,18 +548,22 @@ class _IslandNavState extends State<IslandNav> {
                 behavior: HitTestBehavior.opaque,
                 onTap: () => _set(!open),
                 child: SizedBox(
-                  height: 16,
+                  height: 12,
                   width: double.infinity,
                   // Язичок майже впритул до верхнього краю острова (як на сайті).
                   child: Stack(
                     alignment: Alignment.topCenter,
                     children: [
                       AnimatedContainer(
-                        margin: const EdgeInsets.only(top: 4),
+                        margin: const EdgeInsets.only(top: 5),
                         duration: _motion(context, Duration(milliseconds: 200)),
                         width: 36,
                         height: 4,
-                        decoration: BoxDecoration(color: restActive || open ? primary : fg.withValues(alpha: 0.25), borderRadius: BorderRadius.circular(4)),
+                        decoration: BoxDecoration(
+                          color: restActive || open ? (palette.isLight ? primary : AppColors.accentCyan) : fg.withValues(alpha: 0.24),
+                          borderRadius: BorderRadius.circular(4),
+                          boxShadow: restActive || open ? iceGlow(strength: 0.7) : const [],
+                        ),
                       ),
                       if (restBadge > 0 && !open)
                         Positioned(
@@ -592,7 +596,7 @@ class _IslandNavState extends State<IslandNav> {
               ),
             ),
             Padding(
-              padding: EdgeInsets.fromLTRB(4, 0, 4, 4),
+              padding: EdgeInsets.fromLTRB(4, 0, 4, 0),
               child: Row(
                 children: [
                   for (final path in tabs)
@@ -634,9 +638,9 @@ class _IslandNavState extends State<IslandNav> {
             ),
           ),
           Positioned(
-            left: 12,
-            right: 12,
-            bottom: systemBottom + 8,
+            left: ArcticDock.side,
+            right: ArcticDock.side,
+            bottom: systemBottom + ArcticDock.bottom,
             child: Center(
               child: ConstrainedBox(
                 constraints: BoxConstraints(maxWidth: 560),
@@ -669,7 +673,7 @@ class _IslandNavState extends State<IslandNav> {
   }
 }
 
-/// Вкладка острова: іконка й підпис; вибрана світиться неоновим синім, без підкладок.
+/// Вкладка острова — вкладка доку «Spatial Glass»: ціанова іконка з крижаною крапкою під нею.
 class _Tab extends StatelessWidget {
   const _Tab({required this.item, required this.active, required this.badge, required this.onTap});
   final NavItem item;
@@ -678,21 +682,11 @@ class _Tab extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      selected: active,
-      button: true,
-      child: InkResponse(
-        onTap: onTap,
-        highlightShape: BoxShape.rectangle,
-        borderRadius: BorderRadius.circular(16),
-        child: SizedBox(
-          height: 48,
-          child: NeonTabLabel(icon: active ? item.activeIcon : item.icon, label: item.label, active: active, badge: badge > 0 ? _Badge(badge) : null),
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => ArcticDockTab(
+    item: ArcticDockItem(icon: item.icon, activeIcon: item.activeIcon, label: item.label, badge: badge > 0 ? _Badge(badge) : null),
+    active: active,
+    onTap: onTap,
+  );
 }
 
 /// Вміст розгорнутого острова: профіль, GameCon+, решта розділів і службові посилання — пласко, без плиток.

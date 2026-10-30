@@ -11,6 +11,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import 'ai_tools.dart';
 import 'api.dart';
 import 'listen_together.dart';
 import 'posts.dart';
@@ -843,7 +844,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   icon: Icon(LucideIcons.headphones, color: muted),
                 ),
                 _CallButton(chat: chat, conversation: widget.id),
-                if (group) IconButton(onPressed: _showMembers, icon: Icon(LucideIcons.info, color: muted)),
+                if (group) IconButton(tooltip: tr('Меню бесіди'), onPressed: _chatMenu, icon: Icon(LucideIcons.ellipsisVertical, color: muted)),
               ]),
             ),
             Divider(height: 1, color: line),
@@ -1070,6 +1071,7 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Widget _field() {
+    final aiWriter = AppScope.read(context).session.aiOn('ai_writer');
     return TextField(
       controller: input,
       focusNode: focus,
@@ -1088,9 +1090,33 @@ class _ChatScreenState extends State<ChatScreen> {
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide(color: lineStrong)),
         enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide(color: lineStrong)),
         focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide(color: primary, width: 1.4)),
-        suffixIcon: editing == null ? IconButton(onPressed: _stickers, icon: Icon(LucideIcons.smile, color: muted)) : null,
+        suffixIcon: editing == null || aiWriter
+            ? Row(mainAxisSize: MainAxisSize.min, children: [
+                // ШІ-редактор: іконка з крижаним світінням (плагін ai_writer, як на сайті).
+                if (aiWriter) AiWriterButton(input: input),
+                if (editing == null) IconButton(onPressed: _stickers, icon: Icon(LucideIcons.smile, color: muted)),
+              ])
+            : null,
       ),
     );
+  }
+
+  /// Меню бесіди: «Підсумок від ШІ» (плагін ai_summary, лише для груп — як на сайті) і відомості про бесіду.
+  Future<void> _chatMenu() async {
+    final summary = AppScope.read(context).session.aiOn('ai_summary');
+    final choice = await showGcSheet<String>(
+      context,
+      builder: (sheet) => Padding(
+        padding: const EdgeInsets.fromLTRB(12, 0, 12, 20),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          if (summary) SheetAction(icon: LucideIcons.sparkles, label: tr('Підсумок від ШІ'), color: cyan, onTap: () => Navigator.pop(sheet, 'summary')),
+          SheetAction(icon: LucideIcons.info, label: tr('Учасники й налаштування'), onTap: () => Navigator.pop(sheet, 'members')),
+        ]),
+      ),
+    );
+    if (!mounted || choice == null) return;
+    if (choice == 'summary') await showAiSummary(context, widget.id);
+    if (choice == 'members') await _showMembers();
   }
 
   // ── Учасники групи ──
@@ -1398,7 +1424,7 @@ class _Bubble extends StatelessWidget {
             constraints: BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width * 0.74),
             padding: const EdgeInsets.fromLTRB(12, 8, 12, 6),
             decoration: BoxDecoration(
-              gradient: own ? const LinearGradient(colors: [Color(0xFF6D5DFC), Color(0xFF8B6BFF)]) : null,
+              gradient: own ? const LinearGradient(colors: [Color(0xFF0A84FF), Color(0xFF8B6BFF)]) : null,
               color: own ? null : fg.withValues(alpha: 0.07),
               borderRadius: BorderRadius.only(
                 topLeft: const Radius.circular(18),

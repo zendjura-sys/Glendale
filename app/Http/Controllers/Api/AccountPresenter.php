@@ -47,6 +47,8 @@ class AccountPresenter
             'nav_tabs' => array_values(array_intersect(app(ModuleManager::class)->navTabsFor($user), $modes->modulesFor($user))),
             'modules' => $modes->modulesFor($user),
             'network_mode' => $modes->for($user)['id'],
+            // Кнопки ШІ в чаті застосунку (ШІ-редактор у полі вводу, «Підсумок від ШІ» в меню бесіди).
+            'ai' => array_intersect_key($modes->pluginsFor($user), array_flip(['ai_writer', 'ai_summary'])),
             // Рік «Підсумків року», коли їхній сезон (грудень — січень): банер у стрічці застосунку.
             'wrapped' => app(Plugins::class)->on('wrapped') ? app(YearInReview::class)->season() : null,
             'modes' => array_map(fn (array $mode) => ['id' => $mode['id'], 'name' => $mode['name'], 'description' => $mode['description'], 'icon' => $mode['icon']], $modes->available()),

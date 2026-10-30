@@ -9,6 +9,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'api.dart';
+import 'core/widgets/arctic_glass/arctic_glass.dart';
 import 'player_view.dart';
 import 'plus.dart';
 import 'shell.dart';
@@ -505,11 +506,8 @@ class _PhotoViewerState extends State<PhotoViewer> {
     final caption = widget.captions != null && index < widget.captions!.length ? widget.captions![index] : null;
     return Scaffold(
       backgroundColor: Colors.black,
-      appBar: AppBar(
-        backgroundColor: Colors.black,
-        foregroundColor: Colors.white,
-        title: Text(tr('{v} з {v2}', {'v': index + 1, 'v2': widget.urls.length}), style: body(15)),
-      ),
+      extendBodyBehindAppBar: true,
+      appBar: ArcticGlassAppBar(title: tr('{v} з {v2}', {'v': index + 1, 'v2': widget.urls.length})),
       body: Stack(
         children: [
           PageView.builder(

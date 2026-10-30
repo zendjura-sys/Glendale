@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import 'core/widgets/arctic_glass/arctic_glass.dart';
 import 'full_player.dart';
 import 'state.dart';
 import 'track_edit.dart';
@@ -43,7 +44,7 @@ class MiniPlayer extends StatelessWidget {
     return SizedBox(
       height: miniPlayerExtent,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+        padding: const EdgeInsets.fromLTRB(ArcticDock.side, 0, ArcticDock.side, 8),
         child: GestureDetector(
           onTap: () => showFullPlayer(context, player),
           // Свайп міні-плеєра вбік — інший трек.

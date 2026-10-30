@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'api.dart';
+import 'core/widgets/arctic_glass/arctic_glass.dart';
 import 'downloads.dart';
 import 'i18n.dart';
 import 'music.dart';
@@ -70,9 +71,9 @@ class _MusicHubState extends State<MusicHub> {
         ),
       ),
       Positioned(
-        left: 12,
-        right: 12,
-        bottom: MediaQuery.viewPaddingOf(context).bottom + 8,
+        left: ArcticDock.side,
+        right: ArcticDock.side,
+        bottom: MediaQuery.viewPaddingOf(context).bottom + ArcticDock.bottom,
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 560),
@@ -83,7 +84,7 @@ class _MusicHubState extends State<MusicHub> {
                 borderRadius: barRadius,
                 height: _barHeight,
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(4, 16, 4, 4),
+                  padding: const EdgeInsets.fromLTRB(4, 12, 4, 0),
                   child: Row(children: [
                     for (final key in _tabs)
                       Expanded(
@@ -104,7 +105,7 @@ class _MusicHubState extends State<MusicHub> {
 }
 
 /// Висота панелі вкладок — як в острова застосунку, щоб заміна була непомітною.
-const _barHeight = islandExtent - 8;
+const _barHeight = ArcticDock.height;
 
 /// Поява й зникнення панелі вкладок: виїжджає знизу й проявляється, коли острів ховається,
 /// і так само йде, коли поверх розділу відкривається інша сторінка.

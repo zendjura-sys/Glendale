@@ -8,6 +8,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'api.dart';
+import 'core/widgets/arctic_glass/arctic_glass.dart';
 import 'feed.dart';
 import 'posts.dart';
 import 'state.dart';
@@ -427,8 +428,10 @@ class _CommunityScreenState extends State<CommunityScreen> {
     final api = AppScope.read(context).session.api;
     await showModalBottomSheet<void>(
       context: context,
+      backgroundColor: Colors.transparent,
+      elevation: 0,
       isScrollControlled: true,
-      builder: (sheet) => DraggableScrollableSheet(
+      builder: (sheet) => ArcticGlassSheetSurface(child: DraggableScrollableSheet(
         expand: false,
         initialChildSize: 0.85,
         maxChildSize: 0.95,
@@ -448,7 +451,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
             ]);
           },
         ),
-      ),
+      )),
     );
   }
 

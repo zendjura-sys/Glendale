@@ -350,7 +350,7 @@ class _StoryState extends State<_Story> with SingleTickerProviderStateMixin {
                 if ((text(top['body']) ?? '').isNotEmpty) Text(text(top['body'])!, maxLines: 3, overflow: TextOverflow.ellipsis, style: body(15, color: Colors.white)),
                 const SizedBox(height: 6),
                 Row(children: [
-                  const Icon(LucideIcons.heart, size: 16, color: Color(0xFFF472B6)),
+                  const Icon(LucideIcons.heart, size: 16, color: Color(0xFFFF4D6D)),
                   const SizedBox(width: 6),
                   Text('${intOf(top['likes'])}', style: body(14, color: Colors.white70)),
                 ]),

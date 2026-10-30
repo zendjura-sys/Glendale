@@ -46,7 +46,7 @@ Color tierColor(String? tier) {
     'silver' => light ? Color(0xFF5B6B80) : Color(0xFFCFD8E3),
     'gold' => light ? Color(0xFFA67C00) : Color(0xFFF4C64E),
     'platinum' => light ? Color(0xFF1F7F96) : Color(0xFFA9E4F2),
-    'diamond' => light ? Color(0xFF6D4AE0) : Color(0xFFC4B5FD),
+    'diamond' => light ? Color(0xFF0A8FC0) : Color(0xFF7FE7FF),
     _ => ink.withValues(alpha: 0.85),
   };
 }

@@ -58,6 +58,9 @@ class Session extends ChangeNotifier {
   /// Рік «Підсумків року», якщо зараз їхній сезон (грудень — січень).
   int? get wrappedYear => me?['wrapped'] is int ? me!['wrapped'] as int : null;
 
+  /// Кнопки ШІ в чаті — за плагінами сайту `ai_writer` (ШІ-редактор) і `ai_summary` (підсумок бесіди).
+  bool aiOn(String key) => me?['ai'] is Map && (me!['ai'] as Map)[key] == true;
+
   Set<String>? get modules => me?['modules'] is List ? {for (final key in me!['modules'] as List) '$key'} : null;
 
   List<String> get navTabs {

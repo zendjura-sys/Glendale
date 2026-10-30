@@ -6,6 +6,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'api.dart';
+import 'core/widgets/arctic_glass/arctic_glass.dart';
 import 'full_player.dart' show showAudioOutput;
 import 'i18n.dart';
 import 'player_view.dart' show TrackCover;
@@ -490,7 +491,7 @@ class RemoteMiniPlayer extends StatelessWidget {
     return SizedBox(
       height: miniPlayerExtent,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+        padding: const EdgeInsets.fromLTRB(ArcticDock.side, 0, ArcticDock.side, 8),
         child: GestureDetector(
           onTap: () => showRemotePlayer(context, connect),
           child: MatteGlass(

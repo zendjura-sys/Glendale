@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'core/theme/arctic_glass_theme.dart';
+
 // Палітра та сама, що в resources/css/app.css сайту (стиль «GameCon»): дві теми —
 // темна «Неоновий синій» і світла «Крижана Арктика». Кольори нижче — геттери поточної палітри,
 // тож після перемикання теми застосунок перебудовується й бере нові значення (див. ThemeController).
@@ -39,27 +41,30 @@ class GcPalette {
   bool get isLight => brightness == Brightness.light;
 }
 
-/// «Неоновий синій» — нічне тло, неоново-синій акцент.
+/// Темна тема — «Spatial Glass» (Arctic Ice & Electric Sapphire): глибоке тло, напівпрозоре скло,
+/// сапфірово-ціанові акценти. Значення — з токенів AppColors (core/theme/arctic_glass_theme.dart).
 const neonPalette = GcPalette(
   brightness: Brightness.dark,
-  voidColor: Color(0xFF050913),
-  abyss: Color(0xFF070D1C),
-  deep: Color(0xFF0C1428),
-  popover: Color(0xFF0C1428),
-  ink: Color(0xFFE9F0FF),
-  soft: Color(0xFFC9D5F0),
-  muted: Color(0xFF8C9CC2),
-  faint: Color(0xFF5A6A8F),
-  primary: Color(0xFF2F7BFF),
-  card: Color(0xFF101A32),
-  cardTop: Color(0xFF111C36),
-  raised: Color(0xFF16223F),
-  field: Color(0xFF131D34),
-  bar: Color(0xFF101931),
-  line: Color(0x12FFFFFF),
-  lineStrong: Color(0x1AFFFFFF),
+  voidColor: AppColors.bgBase,
+  abyss: AppColors.bgElevated,
+  deep: Color(0xFF0A1222),
+  // Непрозорий відповідник glassTier3 — діалоги, снекбари, меню без розмиття.
+  popover: Color(0xFF0C1424),
+  ink: AppColors.textPrimary,
+  soft: Color(0xFFCBD5E1),
+  muted: AppColors.textSecondary,
+  faint: AppColors.textMuted,
+  primary: AppColors.accentPrimary,
+  // Скло: tier2 (.07) з бліком угорі (.09).
+  card: AppColors.glassTier2,
+  cardTop: Color.fromRGBO(255, 255, 255, 0.09),
+  raised: Color.fromRGBO(255, 255, 255, 0.10),
+  field: AppColors.glassTier2,
+  bar: Color.fromRGBO(8, 14, 26, 0.72),
+  line: AppColors.borderHairline,
+  lineStrong: Color.fromRGBO(255, 255, 255, 0.12),
   fg: Colors.white,
-  brand: [Color(0xFF2A6CFF), Color(0xFF2F8CFF), Color(0xFF22C4F0)],
+  brand: [AppColors.accentPrimary, Color(0xFF05ABFF), AppColors.accentCyan],
 );
 
 /// «Крижана Арктика» — холодне біле скло, блакитний лід, чорнильний текст.
@@ -73,7 +78,7 @@ const arcticPalette = GcPalette(
   soft: Color(0xFF24364F),
   muted: Color(0xFF5A6D85),
   faint: Color(0xFF8797AB),
-  primary: Color(0xFF1D6FE0),
+  primary: Color(0xFF0A6FE0),
   card: Color(0xFFFBFDFF),
   cardTop: Color(0xFFFBFDFF),
   raised: Color(0xFFFFFFFF),
@@ -82,7 +87,7 @@ const arcticPalette = GcPalette(
   line: Color(0x170D1B2E),
   lineStrong: Color(0x1F0D1B2E),
   fg: Color(0xFF0D1B2E),
-  brand: [Color(0xFF1D6FE0), Color(0xFF1C8FE6), Color(0xFF22B5E3)],
+  brand: [Color(0xFF0A6FE0), Color(0xFF0A8FE6), Color(0xFF00A8E0)],
 );
 
 /// Поточна палітра (ставить ThemeController).
@@ -98,17 +103,18 @@ Color get muted => palette.muted;
 Color get faint => palette.faint;
 
 /// Акцентний текст та іконки (`text-gc-lilac-400` на сайті): у світлій темі темніший, щоб читався на білому.
-Color get accent => palette.isLight ? Color.lerp(palette.primary, palette.ink, 0.12)! : const Color(0xFF8DB4FF);
+Color get accent => palette.isLight ? Color.lerp(palette.primary, palette.ink, 0.12)! : const Color(0xFF7CC8FF);
 Color get primary => palette.primary;
 Color get fg => palette.fg;
 Color get fgSoft => palette.fg.withValues(alpha: 0.7);
 
-// Акценти однакові в обох темах.
-const neonBlue = Color(0xFF2F7BFF);
-const indigo = Color(0xFF3D63FF);
-const violet = Color(0xFFA855F7);
-const pink = Color(0xFFF04FD8);
-const cyan = Color(0xFF22D3EE);
+// Акценти однакові в обох темах. Лише сапфір і крижаний ціан — без фіолетового й рожевого:
+// старі імена (violet, pink) лишилися для сумісності, але ведуть у ту саму холодну гаму.
+const neonBlue = AppColors.accentPrimary;
+const indigo = Color(0xFF1F6BFF);
+const violet = Color(0xFF38BDF8);
+const pink = Color(0xFFFF4D6D);
+const cyan = AppColors.accentCyan;
 const gold = Color(0xFFF5C451);
 const green = Color(0xFF34D399);
 const danger = Color(0xFFFF4D6D);
@@ -126,18 +132,17 @@ Color get lineStrong => palette.lineStrong;
 /// `--gc-gradient` стилю «GameCon»: неоновий синій → блакить.
 LinearGradient get brand => LinearGradient(
   colors: palette.brand,
-  begin: Alignment.centerLeft,
-  end: Alignment.centerRight,
+  begin: Alignment.topLeft,
+  end: Alignment.bottomRight,
 );
 
-/// Кнопки — суцільний акцент, без градієнта й світіння (як .btn-glow у стилі «GameCon»).
-LinearGradient get buttonGradient => LinearGradient(colors: [primary, primary]);
+/// Кнопки — сапфіровий градієнт accentGradient.
+LinearGradient get buttonGradient => palette.isLight ? LinearGradient(colors: [primary, primary]) : AppColors.accentGradient;
 
-LinearGradient get glassGradient => LinearGradient(
-  colors: [cardTop, card],
-  begin: Alignment.topCenter,
-  end: Alignment.bottomCenter,
-);
+/// Скло карток: діагональ білий .09 → .02 (у світлій темі — молочне скло).
+LinearGradient get glassGradient => palette.isLight
+    ? LinearGradient(colors: [cardTop, card], begin: Alignment.topCenter, end: Alignment.bottomCenter)
+    : AppColors.glassFill;
 
 /// Montserrat — той самий шрифт, що й на сайті, вбудований у застосунок.
 TextStyle get onest => TextStyle(fontFamily: 'Montserrat', color: ink);
@@ -152,27 +157,28 @@ ThemeData gameConTheme() {
     useMaterial3: true,
     scaffoldBackgroundColor: Colors.transparent,
     colorScheme: palette.isLight
-        ? ColorScheme.light(primary: primary, onPrimary: Colors.white, secondary: violet, surface: popover, onSurface: ink, error: danger)
-        : ColorScheme.dark(primary: primary, onPrimary: Colors.white, secondary: violet, surface: popover, onSurface: ink, error: danger),
+        ? ColorScheme.light(primary: primary, onPrimary: Colors.white, secondary: cyan, surface: popover, onSurface: ink, error: danger)
+        : ColorScheme.dark(primary: primary, onPrimary: Colors.white, secondary: cyan, surface: popover, onSurface: ink, error: danger),
     fontFamily: 'Montserrat',
   );
   return base.copyWith(
     textTheme: base.textTheme.apply(fontFamily: 'Montserrat', bodyColor: ink, displayColor: ink),
-    splashColor: indigo.withValues(alpha: 0.16),
+    splashColor: cyan.withValues(alpha: 0.10),
     highlightColor: Colors.white.withValues(alpha: 0.03),
     dividerColor: line,
-    textSelectionTheme: TextSelectionThemeData(cursorColor: primary, selectionColor: indigo.withValues(alpha: 0.45), selectionHandleColor: primary),
+    textSelectionTheme: TextSelectionThemeData(cursorColor: primary, selectionColor: primary.withValues(alpha: 0.40), selectionHandleColor: primary),
     snackBarTheme: SnackBarThemeData(
       backgroundColor: popover,
       contentTextStyle: onest.copyWith(color: ink),
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14), side: BorderSide(color: lineStrong)),
     ),
-    bottomSheetTheme: BottomSheetThemeData(backgroundColor: popover, surfaceTintColor: Colors.transparent, showDragHandle: false),
+    bottomSheetTheme: BottomSheetThemeData(backgroundColor: popover, surfaceTintColor: Colors.transparent, showDragHandle: false, elevation: 0),
+    appBarTheme: AppBarTheme(backgroundColor: Colors.transparent, surfaceTintColor: Colors.transparent, elevation: 0, scrolledUnderElevation: 0, foregroundColor: ink),
     dialogTheme: DialogThemeData(
       backgroundColor: popover,
       surfaceTintColor: Colors.transparent,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22), side: BorderSide(color: lineStrong)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadii.dock), side: BorderSide(color: lineStrong)),
       titleTextStyle: display(18),
       contentTextStyle: body(14, color: soft),
     ),
@@ -184,10 +190,10 @@ ThemeData gameConTheme() {
     ),
     switchTheme: SwitchThemeData(
       thumbColor: WidgetStateProperty.resolveWith((s) => Colors.white),
-      trackColor: WidgetStateProperty.resolveWith((s) => s.contains(WidgetState.selected) ? primary : const Color(0xFF2A3050)),
+      trackColor: WidgetStateProperty.resolveWith((s) => s.contains(WidgetState.selected) ? primary : const Color(0x1FFFFFFF)),
       trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
     ),
-    sliderTheme: SliderThemeData(activeTrackColor: primary, thumbColor: Colors.white, inactiveTrackColor: Color(0xFF2A3050), overlayColor: Color(0x226D7DFF)),
+    sliderTheme: SliderThemeData(activeTrackColor: primary, thumbColor: Colors.white, inactiveTrackColor: Color(0x1FFFFFFF), overlayColor: Color(0x2200D2FF)),
     progressIndicatorTheme: ProgressIndicatorThemeData(color: primary),
     pageTransitionsTheme: const PageTransitionsTheme(builders: {
       TargetPlatform.android: _FadeThrough(),
