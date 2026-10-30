@@ -199,7 +199,7 @@ class CommunityController extends Controller
             'membership' => $membership ? ['status' => $membership->status, 'role' => $membership->role] : null,
             'welcome_card' => $this->welcomeCard($community, $membership),
             'promotion' => app(Plugins::class)->on('community_promotion') && ((bool) $membership?->isAdmin() || $viewer->isStaff())
-                ? ['until' => $community->promoted_until?->isFuture() ? $community->promoted_until->toIso8601String() : null, 'price' => Wallet::uah(app(CommunityPromotion::class)->price()), 'days' => CommunityPromotion::DAYS, 'listed' => $community->is_listed]
+                ? ['until' => $community->promoted_until?->isFuture() ? $community->promoted_until->toIso8601String() : null, 'price' => Wallet::units(app(CommunityPromotion::class)->price()), 'days' => CommunityPromotion::DAYS, 'listed' => $community->is_listed]
                 : null,
             'can' => [
                 'view' => $canView,

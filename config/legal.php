@@ -22,7 +22,7 @@ return [
     'email' => env('LEGAL_EMAIL') ?: 'support@gamecon.online',
     'address' => env('LEGAL_ADDRESS'),
     'country' => env('LEGAL_COUNTRY', 'Ukraine'),
-    'updated' => env('LEGAL_UPDATED', '2026-10-16'),
+    'updated' => env('LEGAL_UPDATED', '2026-10-30'),
     'tax_id' => env('LEGAL_TAX_ID'),
     'registry' => env('LEGAL_REGISTRY'),
     'phone' => env('LEGAL_PHONE'),

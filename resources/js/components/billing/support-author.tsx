@@ -9,6 +9,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { api } from '@/lib/api';
+import { units as uah } from '@/lib/billing';
 import { tr } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
@@ -19,8 +20,7 @@ type State = {
     current: { tier_id: number | null; expires_at: string } | null;
 };
 
-export const uah = (kopecks: number) =>
-    `${(kopecks / 100).toLocaleString('uk-UA', { maximumFractionDigits: 2 })} ₴`;
+export { uah };
 
 /** «Підтримати» на сторінці автора: рівні підписки, оплата з рахунку (лише сайт). */
 export function SupportAuthorButton({
@@ -77,7 +77,7 @@ export function SupportAuthorButton({
                         </DialogTitle>
                         <DialogDescription className="text-sm text-white/55">
                             {tr(
-                                'Щомісячна підписка з вашого рахунку GameCon: відкриває записи «лише для підписників». Скасувати автопродовження можна будь-коли.',
+                                'Підписка на 30 днів за одиниці балансу GameCon: відкриває записи «лише для підписників». Автопродовження можна вимкнути будь-коли.',
                             )}
                         </DialogDescription>
                     </div>
@@ -146,7 +146,7 @@ export function SupportAuthorButton({
                             <div className="flex items-center justify-between gap-3 rounded-xl bg-white/[0.04] px-3.5 py-2.5 text-sm">
                                 <span className="inline-flex items-center gap-2 text-white/60">
                                     <Wallet className="size-4" />
-                                    {tr('На рахунку: {sum}', {
+                                    {tr('На балансі: {sum}', {
                                         sum: uah(state.balance),
                                     })}
                                 </span>

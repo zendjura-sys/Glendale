@@ -9,7 +9,7 @@
 </ul>
 <p>We reply to payment and refund requests within 3 business days and to other requests within 14 days. When writing about a payment, include your account e-mail and the payment date so we can find it faster.</p>
 
-<h2>Seller</h2>
+<h2>Service provider</h2>
 @include('legal.partials.seller_en')
 
 <p>Purchase and refund terms: <a href="/terms?lang=en">Public Offer</a>, <a href="/refund-policy?lang=en">Refund Policy</a>.</p>

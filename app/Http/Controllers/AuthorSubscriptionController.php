@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
-/** Платні підписки на авторів і просування спільнот — лише сайт, з особистого рахунку. */
+/** Підписки на авторів і просування спільнот — лише сайт, за одиниці балансу GameCon (не гроші). */
 class AuthorSubscriptionController extends Controller
 {
     public function __construct(private readonly AuthorSubscriptions $subs) {}
@@ -50,7 +50,7 @@ class AuthorSubscriptionController extends Controller
             'tiers.*.name' => ['required', 'string', 'min:2', 'max:40'],
             'tiers.*.price' => ['required', 'integer', 'min:2000', 'max:500000'],
             'tiers.*.perks' => ['nullable', 'string', 'max:300'],
-        ], ['tiers.*.price.min' => 'Мінімальна ціна — 20 ₴ на місяць.']);
+        ], ['tiers.*.price.min' => 'Мінімальна ціна — 20 одиниць за 30 днів.']);
         $this->subs->saveTiers($request->user(), array_values($data['tiers']));
 
         return response()->json(['tiers' => $this->subs->tiers($request->user())]);
@@ -77,7 +77,7 @@ class AuthorSubscriptionController extends Controller
         try {
             $this->subs->subscribe($request->user(), (int) $data['tier_id']);
         } catch (InsufficientFunds) {
-            return response()->json(['message' => 'Недостатньо коштів на рахунку — поповніть його в GameCon+.'], 422);
+            return response()->json(['message' => 'Недостатньо одиниць на балансі — поповніть баланс у GameCon+ → Оплата.'], 422);
         }
 
         return response()->json(['ok' => true, 'balance' => (int) $request->user()->fresh()?->balance]);
@@ -101,9 +101,9 @@ class AuthorSubscriptionController extends Controller
         try {
             $promotion->buy($user, $community);
         } catch (InsufficientFunds) {
-            return response()->json(['message' => 'Недостатньо коштів на рахунку — поповніть його в GameCon+.'], 422);
+            return response()->json(['message' => 'Недостатньо одиниць на балансі — поповніть баланс у GameCon+ → Оплата.'], 422);
         }
 
-        return response()->json(['promoted_until' => $community->fresh()?->promoted_until?->toIso8601String(), 'price' => Wallet::uah($promotion->price())]);
+        return response()->json(['promoted_until' => $community->fresh()?->promoted_until?->toIso8601String(), 'price' => Wallet::units($promotion->price())]);
     }
 }

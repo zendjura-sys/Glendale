@@ -8,7 +8,7 @@ use App\Support\Settings\SiteSettings;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
-/** Просування спільноти в каталозі: 7 днів угорі «Огляду» з позначкою «Просувається». */
+/** Просування спільноти в каталозі за одиниці балансу GameCon: 7 днів угорі «Огляду» з позначкою «Просувається». */
 class CommunityPromotion
 {
     public const DAYS = 7;

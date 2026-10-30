@@ -26,6 +26,11 @@ return [
         'promo_highlight_30' => ['kind' => 'promo', 'promo' => 'highlight', 'name' => 'Виділена картка · 30 днів', 'price' => 590, 'days' => 30, 'recurring' => false],
         'promo_banner_30' => ['kind' => 'promo', 'promo' => 'banner', 'name' => 'Банер над каталогом серверів · 30 днів', 'price' => 2490, 'days' => 30, 'recurring' => false],
         // Внутрішні номери +777 (App\Services\Phones): ціна за рівнем номера, з GameCon+ — знижка (Адмінка → Номери).
+        // Поповнення балансу GameCon: передоплата електронних послуг порталу (1 ₴ = 1 розрахункова одиниця).
+        'balance_100' => ['kind' => 'balance', 'name' => 'Баланс GameCon · 100 одиниць', 'price' => 100, 'days' => 0, 'recurring' => false],
+        'balance_250' => ['kind' => 'balance', 'name' => 'Баланс GameCon · 250 одиниць', 'price' => 250, 'days' => 0, 'recurring' => false],
+        'balance_500' => ['kind' => 'balance', 'name' => 'Баланс GameCon · 500 одиниць', 'price' => 500, 'days' => 0, 'recurring' => false],
+        'balance_1000' => ['kind' => 'balance', 'name' => 'Баланс GameCon · 1000 одиниць', 'price' => 1000, 'days' => 0, 'recurring' => false],
         'phone_regular' => ['kind' => 'phone', 'name' => 'Номер +777 · звичайний', 'price' => 19, 'days' => 0, 'recurring' => false],
         'phone_bronze' => ['kind' => 'phone', 'name' => 'Номер +777 · бронзовий', 'price' => 49, 'days' => 0, 'recurring' => false],
         'phone_silver' => ['kind' => 'phone', 'name' => 'Номер +777 · срібний', 'price' => 99, 'days' => 0, 'recurring' => false],

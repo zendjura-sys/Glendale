@@ -13,7 +13,7 @@ use App\Support\Settings\SiteSettings;
  */
 class Catalog
 {
-    public const KINDS = ['plus', 'family', 'gift', 'promo', 'phone'];
+    public const KINDS = ['plus', 'family', 'gift', 'promo', 'phone', 'balance'];
 
     public const PROMOS = ['top', 'highlight', 'banner'];
 

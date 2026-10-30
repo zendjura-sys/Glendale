@@ -1,6 +1,6 @@
 import { Head, Link } from '@inertiajs/react';
 import { motion, useReducedMotion } from 'motion/react';
-import { uah } from '@/components/billing/support-author';
+import { money as uah, units } from '@/lib/billing';
 import { PageHeader } from '@/components/gc/admin';
 import { tr } from '@/lib/i18n';
 
@@ -45,7 +45,7 @@ export default function AdminRevenue({
             <PageHeader
                 title={tr('Доходи')}
                 description={tr(
-                    'GameCon+ і покупки, комісія з підписок на авторів, просування спільнот — за 12 місяців.',
+                    'Гроші — оплати карткою за 12 місяців. Підписки й просування за одиниці балансу — окремо: це використання вже оплачених послуг.',
                 )}
             />
             <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -76,18 +76,27 @@ export default function AdminRevenue({
             </div>
 
             <section className="glass mb-4 rounded-2xl p-4 sm:p-5">
-                <div className="flex flex-wrap items-center gap-4 text-xs text-white/55">
-                    <span className="inline-flex items-center gap-1.5">
-                        <span className="size-2.5 rounded-sm bg-gc-indigo" />
-                        {tr('Платежі')}
+                <div className="flex flex-wrap items-baseline justify-between gap-3 text-xs text-white/55">
+                    <span>
+                        {tr(
+                            'Оплати карткою за місяцями (зокрема поповнення балансу)',
+                        )}
                     </span>
-                    <span className="inline-flex items-center gap-1.5">
-                        <span className="size-2.5 rounded-sm bg-sky-400" />
-                        {tr('Комісія з підписок')}
-                    </span>
-                    <span className="inline-flex items-center gap-1.5">
-                        <span className="size-2.5 rounded-sm bg-white/50" />
-                        {tr('Просування')}
+                    <span>
+                        {tr(
+                            'Використано одиниць балансу: частка платформи з підписок {fee}, просування спільнот {promo}',
+                            {
+                                fee: units(
+                                    months.reduce(
+                                        (sum, m) => sum + m.author_fee,
+                                        0,
+                                    ),
+                                ),
+                                promo: units(
+                                    months.reduce((sum, m) => sum + m.promo, 0),
+                                ),
+                            },
+                        )}
                     </span>
                 </div>
                 <div className="mt-4 flex h-48 items-end gap-1.5 sm:gap-2.5">
@@ -103,26 +112,8 @@ export default function AdminRevenue({
                                     height: `${(m.total / max) * 100}%`,
                                 }}
                                 transition={{ delay: i * 0.03, duration: 0.5 }}
-                                className="flex w-full flex-col-reverse overflow-hidden rounded-md"
-                            >
-                                {(
-                                    [
-                                        [m.payments, 'bg-gc-indigo'],
-                                        [m.author_fee, 'bg-sky-400'],
-                                        [m.promo, 'bg-white/50'],
-                                    ] as const
-                                ).map(([v, color]) =>
-                                    v > 0 ? (
-                                        <div
-                                            key={color}
-                                            className={color}
-                                            style={{
-                                                height: `${(v / Math.max(1, m.total)) * 100}%`,
-                                            }}
-                                        />
-                                    ) : null,
-                                )}
-                            </motion.div>
+                                className="w-full rounded-md bg-gc-indigo"
+                            />
                             <span className="text-[10px] text-white/40">
                                 {monthLabel(m.month)}
                             </span>
@@ -162,7 +153,7 @@ export default function AdminRevenue({
                 </section>
                 <section className="glass rounded-2xl p-4 sm:p-5">
                     <h2 className="font-display text-base font-semibold text-white">
-                        {tr('Автори з найбільшим доходом')}
+                        {tr('Автори з найбільшим нарахуванням одиниць')}
                     </h2>
                     <ul className="mt-3 divide-y divide-white/[0.06] text-sm">
                         {authors.length === 0 && (

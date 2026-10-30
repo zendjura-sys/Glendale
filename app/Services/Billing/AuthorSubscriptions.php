@@ -10,8 +10,9 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 /**
- * Платна підписка на автора (лише сайт, з особистого рахунку): до трьох рівнів, 30 днів,
- * автопродовження з рахунку. Автор отримує ціну мінус комісію сайту (author_fee_percent).
+ * Підписка на автора (лише сайт) за розрахункові одиниці балансу GameCon: до трьох рівнів, 30 днів,
+ * автопродовження з балансу. Автору нараховуються одиниці мінус частка платформи (author_fee_percent);
+ * вони витрачаються лише на послуги сайту й не виводяться (Публічна оферта, розділи 8–9).
  * Записи «лише для підписників» бачать підписники, автор і персонал.
  */
 class AuthorSubscriptions
@@ -125,7 +126,7 @@ class AuthorSubscriptions
                 });
                 $renewed++;
             } catch (InsufficientFunds) {
-                $fan->notify(new AccountNotice('author_sub', $author, 'Підписку на '.$author->name.' не продовжено — поповніть рахунок', '', '/'.$author->username));
+                $fan->notify(new AccountNotice('author_sub', $author, 'Підписку на '.$author->name.' не продовжено — поповніть баланс GameCon', '', '/'.$author->username));
             }
         }
 

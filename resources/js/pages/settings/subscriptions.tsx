@@ -88,7 +88,7 @@ export default function SubscriptionsSettings({
                 <SettingsCard
                     title={tr('Платна підписка на вас')}
                     description={tr(
-                        'До трьох рівнів на місяць. Підписники бачать ваші записи «лише для підписників». Комісія сайту — {fee}%.',
+                        'До трьох рівнів на 30 днів. Підписники бачать ваші записи «лише для підписників». Вам нараховуються одиниці балансу (мінус частка платформи {fee}%) — їх можна витратити лише на сайті: GameCon+, просування, підписки. Одиниці не виводяться й не обмінюються на гроші.',
                         { fee: earnings.fee },
                     )}
                 >
@@ -143,7 +143,7 @@ export default function SubscriptionsSettings({
                                             aria-label={tr('Ціна на місяць')}
                                         />
                                         <span className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-xs text-white/40">
-                                            {tr('₴/міс')}
+                                            {tr('од./міс')}
                                         </span>
                                     </label>
                                     <button
@@ -206,7 +206,7 @@ export default function SubscriptionsSettings({
                 <SettingsCard
                     title={tr('Мої підписки')}
                     description={tr(
-                        'На рахунку: {sum}. Продовження списується за добу до кінця місяця.',
+                        'На балансі: {sum}. Продовження списується з балансу за добу до кінця періоду.',
                         { sum: uah(balance) },
                     )}
                 >

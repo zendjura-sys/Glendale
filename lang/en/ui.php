@@ -4,7 +4,7 @@
 
 return [
     'all_rights_reserved' => 'All rights reserved.',
-    'terms' => 'Public Offer & Terms of Use',
+    'terms' => 'Public Offer (Contract for Electronic Services)',
     'privacy' => 'Privacy Policy',
     'refund' => 'Refund & Cancellation Policy',
     'pricing' => 'Pricing',

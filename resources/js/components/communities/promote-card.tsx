@@ -12,7 +12,7 @@ export type Promotion = {
     listed: boolean;
 };
 
-/** Для керівників: просування спільноти в каталозі з рахунку GameCon. */
+/** Для керівників: просування спільноти в каталозі за одиниці балансу GameCon. */
 export function CommunityPromoteCard({
     slug,
     promotion,
@@ -56,7 +56,7 @@ export function CommunityPromoteCard({
                 <p className="text-xs text-white/50">
                     {promotion.listed
                         ? tr(
-                              '{days} днів угорі «Огляду» за {price} з рахунку.',
+                              '{days} днів угорі «Огляду» за {price} з балансу GameCon.',
                               {
                                   days: promotion.days,
                                   price: promotion.price,
