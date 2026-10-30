@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Models\UserBlock;
 use App\Models\UserReport;
 use App\Models\UserStream;
+use App\Services\Accounts\AccountTypes;
 use App\Services\Achievements;
 use App\Services\FriendshipService;
 use App\Services\GameCard;
@@ -140,6 +141,7 @@ class ProfileController extends Controller
         return Inertia::render('profile/show', [
             'compatibility' => $compatibility,
             'setup' => app(Plugins::class)->on('my_setup') ? app(MySetup::class)->visibleFor($user, $viewer) : null,
+            'account' => app(Plugins::class)->on('account_types') ? $this->accountCard($user) : null,
             'streamSchedule' => app(Plugins::class)->on('stream_schedule') && $canSeeContent ? app(StreamSchedule::class)->of($user) : null,
             'steamAchievements' => app(Plugins::class)->on('steam_achievements') && $user->steam_id !== null && ! $user->is_private,
             'profile' => [
@@ -419,4 +421,16 @@ class ProfileController extends Controller
     /**
      * @return array{number: string, tier: string, kind: string, can_call: bool}|null
      */
+
+    /**
+     * Спеціальний акаунт на сторінці: тип і поля, склад, де людина сама в складі.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function accountCard(User $user): ?array
+    {
+        $card = app(AccountTypes::class)->card($user);
+
+        return $card['type'] === 'personal' && $card['member_of'] === [] ? null : $card;
+    }
 }

@@ -998,6 +998,12 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
             Route::delete('bans/{ban}', [Admin\AntispamController::class, 'lift'])->whereNumber('ban')->name('bans.destroy');
         });
         Route::get('chats', [Admin\ChatStatsController::class, 'index'])->name('chats.index');
+        Route::prefix('verification')->name('verification.')->group(function () {
+            Route::get('/', [Admin\VerificationController::class, 'index'])->name('index');
+            Route::post('{verificationRequest}', [Admin\VerificationController::class, 'decide'])->whereNumber('verificationRequest')->name('decide');
+            Route::get('{verificationRequest}/document', [Admin\VerificationController::class, 'document'])->whereNumber('verificationRequest')->name('document');
+            Route::post('users/{user:id}/revoke', [Admin\VerificationController::class, 'revoke'])->whereNumber('user')->name('revoke');
+        });
         Route::prefix('moderation')->name('moderation.')->group(function () {
             Route::get('/', [Admin\ModerationController::class, 'index'])->name('index');
             Route::put('settings', [Admin\ModerationController::class, 'settings'])->name('settings');

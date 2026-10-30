@@ -6,6 +6,7 @@ import {
     PanelBottom,
     ShieldCheck,
     UserRound,
+    BadgeCheck,
 } from 'lucide-react';
 import { m, useReducedMotion } from 'motion/react';
 import type { PropsWithChildren, ReactNode } from 'react';
@@ -18,6 +19,7 @@ import { edit as editSecurity } from '@/routes/security';
 import { PageTransition } from '@/components/gc/page-transition';
 import { tr } from '@/lib/i18n';
 import { motionOr, SNAP } from '@/lib/motion';
+import { usePlugin } from '@/lib/plugins';
 
 const items = [
     {
@@ -45,6 +47,12 @@ const items = [
         icon: MonitorSmartphone,
     },
     {
+        title: tr('Тип акаунта'),
+        description: tr('Спецакаунт, склад, верифікація'),
+        href: '/settings/account-type',
+        icon: BadgeCheck,
+    },
+    {
         title: tr('Панель'),
         description: tr('Розділи панелі на телефоні'),
         href: editNavigation(),
@@ -55,6 +63,9 @@ const items = [
 export default function SettingsLayout({ children }: PropsWithChildren) {
     const { isCurrentOrParentUrl } = useCurrentUrl();
     const reduce = useReducedMotion();
+    const typesPlugin = usePlugin('account_types');
+    const verifyPlugin = usePlugin('verification_v2');
+    const accountTypesOn = typesPlugin || verifyPlugin;
 
     return (
         <div className="mx-auto max-w-[980px]">
@@ -81,8 +92,13 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
                         className="gc-group scrollbar-none flex gap-1 overflow-x-auto p-1.5 md:sticky md:top-[76px] md:flex-col md:overflow-visible"
                         aria-label={tr('Налаштування')}
                     >
-                        {items.map(
-                            ({ title, description, href, icon: Icon }) => {
+                        {items
+                            .filter(
+                                (item) =>
+                                    item.href !== '/settings/account-type' ||
+                                    accountTypesOn,
+                            )
+                            .map(({ title, description, href, icon: Icon }) => {
                                 const active = isCurrentOrParentUrl(href);
 
                                 return (
@@ -130,8 +146,7 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
                                         </span>
                                     </Link>
                                 );
-                            },
-                        )}
+                            })}
                     </nav>
                 </aside>
 

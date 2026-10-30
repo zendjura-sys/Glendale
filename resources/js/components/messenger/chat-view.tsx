@@ -807,7 +807,10 @@ export function ChatView({
                         <span className="flex items-center gap-1.5 truncate text-[15px] font-semibold text-white">
                             <span className="truncate">{active.title}</span>
                             {active.peer?.is_verified && (
-                                <VerifiedBadge className="size-3.5 shrink-0" />
+                                <VerifiedBadge
+                                    kind={active.peer?.verified_kind}
+                                    className="size-3.5 shrink-0"
+                                />
                             )}
                             {active.peer?.plus && (
                                 <PlusBadge className="size-3.5" />

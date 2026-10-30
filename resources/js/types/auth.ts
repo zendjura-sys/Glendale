@@ -11,6 +11,8 @@ export type User = {
     cover_url: string | null;
     is_online: boolean;
     is_verified: boolean;
+    verified_kind?: string | null;
+    account_type?: string | null;
     plus?: PlusMark | null;
     status: string | null;
     status_emoji?: string | null;

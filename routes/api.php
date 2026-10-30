@@ -61,6 +61,7 @@ use App\Http\Controllers\ReferralController;
 use App\Http\Controllers\SavedController;
 use App\Http\Controllers\SeasonController;
 use App\Http\Controllers\ServerController;
+use App\Http\Controllers\Settings\AccountTypeController;
 use App\Http\Controllers\Settings\AppearanceController;
 use App\Http\Controllers\Settings\DigestController;
 use App\Http\Controllers\Settings\ListeningController;
@@ -350,6 +351,12 @@ Route::prefix('v1')->group(function () {
             Route::get('ideas', [IdeaController::class, 'index']);
             Route::post('ideas', [IdeaController::class, 'store'])->middleware('throttle:5,1');
             Route::post('ideas/{idea}/vote', [IdeaController::class, 'toggleVote'])->middleware('throttle:60,1');
+            Route::get('settings/account-type', [AccountTypeController::class, 'edit']);
+            Route::put('settings/account-type', [AccountTypeController::class, 'update'])->middleware('throttle:20,1');
+            Route::post('settings/account-type/roster', [AccountTypeController::class, 'invite'])->middleware('throttle:30,1');
+            Route::post('settings/account-type/links/{link}', [AccountTypeController::class, 'answer'])->whereNumber('link');
+            Route::delete('settings/account-type/links/{link}', [AccountTypeController::class, 'remove'])->whereNumber('link');
+            Route::post('settings/verification', [AccountTypeController::class, 'verify'])->middleware('throttle:5,1');
             Route::get('me/author-stats', [CreatorController::class, 'stats'])->middleware('throttle:30,1');
             Route::put('settings/stream-schedule', [SetupController::class, 'schedule'])->middleware('throttle:30,1');
             Route::prefix('crosspost/{type}/{id}')->whereIn('type', ['user', 'server'])->whereNumber('id')->group(function () {

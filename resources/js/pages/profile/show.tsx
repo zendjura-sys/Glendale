@@ -8,6 +8,8 @@ import {
 } from '@inertiajs/react';
 import { CrosspostButton } from '@/components/gc/crosspost-button';
 import { AuthorStatsButton } from '@/components/profile/author-stats';
+import { AccountCard } from '@/components/profile/account-card';
+import type { AccountCardData } from '@/components/profile/account-card';
 import { MySetup } from '@/components/profile/my-setup';
 import type { SetupData } from '@/components/profile/my-setup';
 import { StreamSchedule } from '@/components/profile/stream-schedule';
@@ -150,6 +152,7 @@ type Props = {
     compatibility?: Compatibility | null;
     setup?: SetupData | null;
     streamSchedule?: StreamSlot[] | null;
+    account?: AccountCardData | null;
     steamAchievements?: boolean;
     profile: Profile;
     relation: Relation;
@@ -272,6 +275,7 @@ export default function ProfileShow({
     compatibility = null,
     setup = null,
     streamSchedule = null,
+    account = null,
     steamAchievements = false,
     profile,
     relation,
@@ -451,7 +455,10 @@ export default function ProfileShow({
                                 </h1>
                                 {liveOn && stream?.live && <LiveBadge />}
                                 {profile.is_verified && (
-                                    <VerifiedBadge className="size-6" />
+                                    <VerifiedBadge
+                                        kind={profile.verified_kind}
+                                        className="size-6"
+                                    />
                                 )}
                                 {profile.plus && (
                                     <Link href="/plus" title="GameCon+">
@@ -870,6 +877,7 @@ export default function ProfileShow({
                             </Widget>
                         )}
                         {liveOn && stream && <ProfileStream stream={stream} />}
+                        {account && <AccountCard data={account} />}
                         {blockSequence(blockOrder).map((key) => {
                             const widgets: Record<string, ReactNode> = {
                                 // Ігрові блоки — лише в режимах, де є «Граю в…» (не в «Класиці», «Кіномані»…).

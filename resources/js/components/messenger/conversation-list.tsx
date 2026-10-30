@@ -167,7 +167,13 @@ export function ConversationList({
                                             {conversation.title}
                                         </span>
                                         {conversation.peer?.is_verified && (
-                                            <VerifiedBadge className="size-3.5 shrink-0" />
+                                            <VerifiedBadge
+                                                kind={
+                                                    conversation.peer
+                                                        ?.verified_kind
+                                                }
+                                                className="size-3.5 shrink-0"
+                                            />
                                         )}
                                         {conversation.peer?.plus && (
                                             <PlusBadge className="size-3.5" />

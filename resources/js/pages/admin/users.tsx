@@ -219,7 +219,12 @@ export default function AdminUsers({ users, filters, roles }: Props) {
                                                     <span className="flex items-center gap-1 font-medium text-white">
                                                         {u.name}
                                                         {u.is_verified && (
-                                                            <VerifiedBadge className="size-3.5" />
+                                                            <VerifiedBadge
+                                                                kind={
+                                                                    u.verified_kind
+                                                                }
+                                                                className="size-3.5"
+                                                            />
                                                         )}
                                                     </span>
                                                     <span className="block truncate text-xs text-white/40">

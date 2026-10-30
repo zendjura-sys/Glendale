@@ -321,7 +321,9 @@ export function ContactAttachment({
                 <span className="min-w-0 flex-1">
                     <span className="flex items-center gap-1 truncate text-[14.5px] font-semibold">
                         {contact.name}
-                        {contact.is_verified && <VerifiedBadge />}
+                        {contact.is_verified && (
+                            <VerifiedBadge kind={contact.verified_kind} />
+                        )}
                     </span>
                     <span
                         className={cn(

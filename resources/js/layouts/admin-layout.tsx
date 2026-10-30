@@ -37,6 +37,7 @@ import {
     Trophy,
     UsersRound,
     Wallet,
+    BadgeCheck,
 } from 'lucide-react';
 import { AnimatePresence, m, useReducedMotion } from 'motion/react';
 import { useEffect, useState } from 'react';
@@ -83,6 +84,11 @@ function groups(): { title: string; items: Item[] }[] {
                     label: tr('Модерація'),
                     href: '/admin/moderation',
                     icon: ShieldAlert,
+                },
+                {
+                    label: tr('Верифікація'),
+                    href: '/admin/verification',
+                    icon: BadgeCheck,
                 },
                 {
                     label: tr('Антиспам'),

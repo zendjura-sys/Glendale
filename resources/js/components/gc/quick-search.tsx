@@ -303,7 +303,16 @@ export function QuickSearch({ className }: { className?: string }) {
                                             : result.item.name}
                                         {result.kind !== 'hit' &&
                                             result.item.is_verified && (
-                                                <VerifiedBadge className="size-3.5" />
+                                                <VerifiedBadge
+                                                    kind={
+                                                        'verified_kind' in
+                                                        result.item
+                                                            ? result.item
+                                                                  .verified_kind
+                                                            : null
+                                                    }
+                                                    className="size-3.5"
+                                                />
                                             )}
                                     </span>
                                     <span className="block truncate text-xs text-white/45">

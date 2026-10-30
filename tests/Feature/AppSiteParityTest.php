@@ -433,4 +433,11 @@ class AppSiteParityTest extends TestCase
         $this->withToken($token)->postJson('/api/v1/site/ideas', ['title' => 'Ідея із застосунку'])->assertSuccessful();
         $this->withToken($token)->getJson('/api/v1/site/ideas')->assertOk();
     }
+
+    public function test_app_changes_account_type_and_sees_verification_through_bridge(): void
+    {
+        $token = $this->app_token(User::factory()->create());
+        $this->withToken($token)->putJson('/api/v1/site/settings/account-type', ['type' => 'streamer', 'details' => ['twitch' => 'https://twitch.tv/neo']])->assertSuccessful();
+        $this->withToken($token)->getJson('/api/v1/site/settings/account-type')->assertOk();
+    }
 }

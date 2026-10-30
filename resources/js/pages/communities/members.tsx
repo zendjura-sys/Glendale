@@ -245,7 +245,10 @@ export default function CommunityMembers({
                                             {member.name}
                                         </span>
                                         {member.is_verified && (
-                                            <VerifiedBadge className="size-3.5 shrink-0" />
+                                            <VerifiedBadge
+                                                kind={member.verified_kind}
+                                                className="size-3.5 shrink-0"
+                                            />
                                         )}
                                         {member.title && (
                                             <RoleBadge

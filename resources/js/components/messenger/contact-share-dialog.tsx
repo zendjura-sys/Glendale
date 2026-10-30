@@ -103,7 +103,11 @@ export function ContactShareDialog({
                                 <span className="min-w-0 flex-1">
                                     <span className="flex items-center gap-1 truncate text-sm font-medium text-white">
                                         {user.name}
-                                        {user.is_verified && <VerifiedBadge />}
+                                        {user.is_verified && (
+                                            <VerifiedBadge
+                                                kind={user.verified_kind}
+                                            />
+                                        )}
                                     </span>
                                     <span className="block truncate text-xs text-white/40">
                                         @{user.username}

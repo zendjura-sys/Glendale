@@ -267,7 +267,12 @@ export function Comments({
                                             />
                                         )}
                                         {comment.user.is_verified && (
-                                            <VerifiedBadge className="size-3" />
+                                            <VerifiedBadge
+                                                kind={
+                                                    comment.user.verified_kind
+                                                }
+                                                className="size-3"
+                                            />
                                         )}
                                         {comment.user.plus && (
                                             <PlusBadge className="size-3.5" />

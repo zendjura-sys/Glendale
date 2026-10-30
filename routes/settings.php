@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AppealController;
 use App\Http\Controllers\Settings\AccountController;
+use App\Http\Controllers\Settings\AccountTypeController;
 use App\Http\Controllers\Settings\AppearanceController;
 use App\Http\Controllers\Settings\DigestController;
 use App\Http\Controllers\Settings\GameThemeController;
@@ -38,6 +39,12 @@ Route::middleware(['auth'])->group(function () {
     Route::patch('settings/digest', [DigestController::class, 'update'])->middleware('throttle:30,1')->name('digest.update');
     Route::put('settings/game-theme', [GameThemeController::class, 'update'])->middleware('throttle:20,1')->name('game-theme.update');
     Route::patch('settings/notify-sound', [GameThemeController::class, 'sound'])->middleware('throttle:30,1')->name('notify-sound.update');
+    Route::get('settings/account-type', [AccountTypeController::class, 'edit'])->name('account-type.edit');
+    Route::put('settings/account-type', [AccountTypeController::class, 'update'])->middleware('throttle:20,1')->name('account-type.update');
+    Route::post('settings/account-type/roster', [AccountTypeController::class, 'invite'])->middleware('throttle:30,1')->name('account-type.invite');
+    Route::post('settings/account-type/links/{link}', [AccountTypeController::class, 'answer'])->whereNumber('link')->name('account-type.answer');
+    Route::delete('settings/account-type/links/{link}', [AccountTypeController::class, 'remove'])->whereNumber('link')->name('account-type.remove');
+    Route::post('settings/verification', [AccountTypeController::class, 'verify'])->middleware('throttle:5,1')->name('verification.apply');
     Route::patch('settings/streamer-mode', [GameThemeController::class, 'streamerMode'])->middleware('throttle:30,1')->name('streamer-mode.update');
     Route::patch('settings/data-saver', [GameThemeController::class, 'dataSaver'])->middleware('throttle:30,1')->name('data-saver.update');
     Route::patch('settings/listening', [ListeningController::class, 'update'])->middleware('throttle:30,1')->name('listening.update');

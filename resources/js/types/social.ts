@@ -20,6 +20,10 @@ export type UserCard = {
     avatar_url: string | null;
     is_online: boolean;
     is_verified: boolean;
+    /** Вид позначки (верифікація 2.0): identity, creator, business, organization. */
+    verified_kind?: string | null;
+    /** Спеціальний акаунт (стрімер, бізнес…); null — особистий. */
+    account_type?: string | null;
     status: string | null;
     /** Емодзі швидкого статусу («🎮»); null — немає. */
     status_emoji?: string | null;

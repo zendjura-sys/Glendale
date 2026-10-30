@@ -39,7 +39,9 @@ export function PersonCard({ person }: { person: Person }) {
                 >
                     {person.alias || person.name}
                 </span>
-                {person.is_verified && <VerifiedBadge />}
+                {person.is_verified && (
+                    <VerifiedBadge kind={person.verified_kind} />
+                )}
                 {person.plus && <PlusBadge />}
             </Link>
             {person.alias && (
@@ -195,7 +197,10 @@ export function PersonRow({
                         {person.name}
                     </span>
                     {person.is_verified && (
-                        <VerifiedBadge className="size-3.5" />
+                        <VerifiedBadge
+                            kind={person.verified_kind}
+                            className="size-3.5"
+                        />
                     )}
                     {person.plus && <PlusBadge className="size-3.5" />}
                 </Link>

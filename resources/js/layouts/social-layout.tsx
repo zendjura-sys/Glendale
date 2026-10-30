@@ -121,7 +121,10 @@ function Sidebar() {
                             {user.first_name}
                         </span>
                         {user.is_verified && (
-                            <VerifiedBadge className="size-3.5" />
+                            <VerifiedBadge
+                                kind={user.verified_kind}
+                                className="size-3.5"
+                            />
                         )}
                         {user.plus && <PlusBadge className="size-3.5" />}
                     </span>
@@ -679,7 +682,10 @@ function MenuContent({ onClose }: { onClose: () => void }) {
                     <span className="flex items-center gap-1 truncate text-[15px] font-semibold text-white">
                         <span {...plusNameProps(user.plus)}>{user.name}</span>
                         {user.is_verified && (
-                            <VerifiedBadge className="size-3.5" />
+                            <VerifiedBadge
+                                kind={user.verified_kind}
+                                className="size-3.5"
+                            />
                         )}
                         {user.plus && <PlusBadge className="size-3.5" />}
                     </span>
