@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AccountSwitchController;
 use App\Http\Controllers\Admin;
 use App\Http\Controllers\AiController;
 use App\Http\Controllers\AppLinksController;
@@ -7,6 +8,7 @@ use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\Auth\AppLoginController;
 use App\Http\Controllers\Auth\SocialAuthController;
 use App\Http\Controllers\BillingController;
+use App\Http\Controllers\BioLinksController;
 use App\Http\Controllers\Bots;
 use App\Http\Controllers\CallController;
 use App\Http\Controllers\CharacterController;
@@ -85,6 +87,7 @@ use App\Http\Controllers\StoryController;
 use App\Http\Controllers\TeammateController;
 use App\Http\Controllers\ThanksController;
 use App\Http\Controllers\TierListController;
+use App\Http\Controllers\TopicController;
 use App\Http\Controllers\TournamentController;
 use App\Http\Controllers\TrackController;
 use App\Http\Controllers\TrackImportController;
@@ -206,6 +209,12 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     Route::post('newcomer/hide', [NewcomerController::class, 'hide'])->name('newcomer.hide');
     Route::put('settings/setup', [SetupController::class, 'update'])->middleware('throttle:30,1')->name('setup.update');
     Route::get('ideas', [IdeaController::class, 'index'])->name('ideas.index');
+    Route::get('t/{tag}', [TopicController::class, 'show'])->name('topics.show');
+    Route::post('t/{tag}/follow', [TopicController::class, 'toggle'])->middleware('throttle:60,1')->name('topics.follow');
+    Route::get('account/switcher', [AccountSwitchController::class, 'index'])->name('account-switcher.index');
+    Route::post('account/switcher/add', [AccountSwitchController::class, 'add'])->name('account-switcher.add');
+    Route::post('account/switcher/{user}', [AccountSwitchController::class, 'switch'])->whereNumber('user')->middleware('throttle:20,1')->name('account-switcher.switch');
+    Route::delete('account/switcher/{user}', [AccountSwitchController::class, 'forget'])->whereNumber('user')->name('account-switcher.forget');
     Route::prefix('tierlists')->name('tierlists.')->group(function () {
         Route::get('/', [TierListController::class, 'index'])->name('index');
         Route::get('new', [TierListController::class, 'create'])->name('create');
@@ -1055,6 +1064,10 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
 require __DIR__.'/settings.php';
 
 // Колбек Spotify поза сесією браузера: застосунок передає користувача в state.
+// Сторінка посилань відкрита всім (як «link in bio»).
+Route::get('l/{user:username}', [BioLinksController::class, 'show'])->middleware('throttle:120,1')->name('bio.show');
+Route::get('l/{user:username}/go/{index}', [BioLinksController::class, 'go'])->whereNumber('index')->middleware('throttle:60,1')->name('bio.go');
+
 Route::match(['get', 'post'], 'mail/unsubscribe/{user:id}', UnsubscribeController::class)
     ->whereNumber('user')->middleware(['signed', 'throttle:20,1'])->name('mail.unsubscribe');
 

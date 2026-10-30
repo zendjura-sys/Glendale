@@ -18,6 +18,7 @@ use App\Models\Photo;
 use App\Models\Post;
 use App\Models\PostAttachment;
 use App\Models\User;
+use App\Services\Accounts\AccountSwitcher;
 use App\Services\Auth\AccountSecurity;
 use App\Services\CommunityService;
 use App\Services\Families\FamilyGate;
@@ -160,6 +161,12 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(Login::class, function (Login $event) {
             if ($event->guard === 'web' && $event->user instanceof User) {
                 app(AccountSecurity::class)->logLogin($event->user, AccountSecurity::methodFromRoute(request()->route()?->getName()), true);
+                // Перемикач акаунтів: якщо на пристрої вже є збережені акаунти чи людина додає ще один — запамʼятати й цей.
+                $request = request();
+                $switcher = app(AccountSwitcher::class);
+                if (($request->hasSession() && $request->session()->pull(AccountSwitcher::ADDING)) || $switcher->stored($request) !== []) {
+                    $switcher->remember($request, $event->user);
+                }
             }
         });
         Event::listen(Failed::class, function (Failed $event) {

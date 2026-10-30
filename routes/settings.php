@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AppealController;
+use App\Http\Controllers\BioLinksController;
 use App\Http\Controllers\Settings\AccountController;
 use App\Http\Controllers\Settings\AccountTypeController;
 use App\Http\Controllers\Settings\AppearanceController;
@@ -39,6 +40,8 @@ Route::middleware(['auth'])->group(function () {
     Route::patch('settings/digest', [DigestController::class, 'update'])->middleware('throttle:30,1')->name('digest.update');
     Route::put('settings/game-theme', [GameThemeController::class, 'update'])->middleware('throttle:20,1')->name('game-theme.update');
     Route::patch('settings/notify-sound', [GameThemeController::class, 'sound'])->middleware('throttle:30,1')->name('notify-sound.update');
+    Route::get('settings/links', [BioLinksController::class, 'edit'])->name('bio.edit');
+    Route::put('settings/links', [BioLinksController::class, 'update'])->middleware('throttle:20,1')->name('bio.update');
     Route::get('settings/account-type', [AccountTypeController::class, 'edit'])->name('account-type.edit');
     Route::put('settings/account-type', [AccountTypeController::class, 'update'])->middleware('throttle:20,1')->name('account-type.update');
     Route::post('settings/account-type/roster', [AccountTypeController::class, 'invite'])->middleware('throttle:30,1')->name('account-type.invite');

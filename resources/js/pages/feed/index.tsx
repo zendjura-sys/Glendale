@@ -17,6 +17,7 @@ import {
     Sparkles,
     UserPlus,
     UsersRound,
+    Hash,
 } from 'lucide-react';
 import {
     ChronoSwitch,
@@ -42,11 +43,13 @@ import type { StreamInfo } from '@/components/streams/stream';
 import { FeedQuests } from '@/components/quests/quest-list';
 import type { Quest } from '@/components/quests/quest-list';
 import { tr } from '@/lib/i18n';
+import { usePlugin } from '@/lib/plugins';
 import { useFeature } from '@/lib/plugins';
 
 type Props = {
     newcomer?: NewcomerData | null;
-    tab: 'friends' | 'discover' | 'country';
+    tab: 'friends' | 'discover' | 'country' | 'topics';
+    topics?: string[] | null;
     onlyFriends?: boolean;
     lang: string | null;
     languages: string[];
@@ -76,6 +79,7 @@ function FeedTabs({
     tab: Props['tab'];
     hasFriends: boolean;
 }) {
+    const topicsOn = usePlugin('topic_follows');
     const tabs = [
         {
             key: 'friends',
@@ -98,6 +102,17 @@ function FeedTabs({
             href: '/feed?tab=country',
             disabled: false,
         },
+        ...(topicsOn
+            ? [
+                  {
+                      key: 'topics',
+                      label: tr('Теми'),
+                      icon: Hash,
+                      href: '/feed?tab=topics',
+                      disabled: false,
+                  },
+              ]
+            : []),
     ];
 
     return (
@@ -133,6 +148,7 @@ function FeedTabs({
 export default function Feed({
     newcomer = null,
     tab,
+    topics = null,
     lang,
     onlyFriends,
     languages,
@@ -261,20 +277,28 @@ export default function Feed({
                                       : Compass
                             }
                             title={
-                                tab === 'country'
-                                    ? tr('Стрічка країни порожня')
-                                    : tab === 'friends'
-                                      ? tr('Стрічка поки порожня')
-                                      : tr('Тут ще нічого немає')
+                                tab === 'topics'
+                                    ? topics?.length
+                                        ? tr('За вашими темами поки тихо')
+                                        : tr('Ви ще не стежите за темами')
+                                    : tab === 'country'
+                                      ? tr('Стрічка країни порожня')
+                                      : tab === 'friends'
+                                        ? tr('Стрічка поки порожня')
+                                        : tr('Тут ще нічого немає')
                             }
                             text={
-                                tab === 'country' && !country
+                                tab === 'topics'
                                     ? tr(
-                                          'Вкажіть країну в налаштуваннях профілю — і тут з’являться записи людей звідти.',
+                                          'Торкніться #хештегу в записі й натисніть «Стежити» — такі записи збиратимуться тут.',
                                       )
-                                    : tr(
-                                          'Напишіть перший запис або знайдіть друзів — і стрічка оживе.',
-                                      )
+                                    : tab === 'country' && !country
+                                      ? tr(
+                                            'Вкажіть країну в налаштуваннях профілю — і тут з’являться записи людей звідти.',
+                                        )
+                                      : tr(
+                                            'Напишіть перший запис або знайдіть друзів — і стрічка оживе.',
+                                        )
                             }
                             action={
                                 <Link

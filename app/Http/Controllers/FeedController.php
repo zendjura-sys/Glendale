@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Services\CommunityService;
 use App\Services\EventCalendar;
 use App\Services\Families\ReportService;
+use App\Services\Feed\Topics;
 use App\Services\FeedSignals;
 use App\Services\FollowAlerts;
 use App\Services\FriendshipService;
@@ -21,6 +22,7 @@ use App\Support\I18n\LanguageGuess;
 use App\Support\Modules\ModuleManager;
 use App\Support\MutedWords;
 use App\Support\NetworkModes;
+use App\Support\Plugins\Plugins;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
@@ -52,6 +54,7 @@ class FeedController extends Controller
         $requested = $request->query('tab');
         $tab = match (true) {
             $requested === 'country' => 'country',
+            $requested === 'topics' && app(Plugins::class)->on('topic_follows') => 'topics',
             $requested === 'discover' || ! $hasSources => 'discover',
             default => 'friends',
         };
@@ -74,6 +77,9 @@ class FeedController extends Controller
                 ->whereHas('author', fn (Builder $q) => $q->where('country', $user->country));
         } elseif ($tab === 'country') {
             $query->whereRaw('1 = 0');
+        } elseif ($tab === 'topics') {
+            $query->where('visibility', Post::VISIBILITY_PUBLIC);
+            app(Topics::class)->apply($query, app(Topics::class)->of($user));
         } else {
             $query->where('visibility', Post::VISIBILITY_PUBLIC)
                 ->where('created_at', '>=', now()->subDays(30))
@@ -95,6 +101,7 @@ class FeedController extends Controller
         return Inertia::render('feed/index', [
             'newcomer' => app(NewcomerWeek::class)->forUser($user),
             'tab' => $tab,
+            'topics' => app(Plugins::class)->on('topic_follows') ? app(Topics::class)->of($user) : null,
             'onlyFriends' => $onlyFriends,
             'lang' => $lang,
             'languages' => LanguageGuess::LANGS,

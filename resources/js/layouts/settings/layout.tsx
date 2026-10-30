@@ -7,6 +7,7 @@ import {
     ShieldCheck,
     UserRound,
     BadgeCheck,
+    Link2,
 } from 'lucide-react';
 import { m, useReducedMotion } from 'motion/react';
 import type { PropsWithChildren, ReactNode } from 'react';
@@ -47,6 +48,12 @@ const items = [
         icon: MonitorSmartphone,
     },
     {
+        title: tr('Посилання'),
+        description: tr('Своя сторінка /l/нік'),
+        href: '/settings/links',
+        icon: Link2,
+    },
+    {
         title: tr('Тип акаунта'),
         description: tr('Спецакаунт, склад, верифікація'),
         href: '/settings/account-type',
@@ -66,6 +73,7 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
     const typesPlugin = usePlugin('account_types');
     const verifyPlugin = usePlugin('verification_v2');
     const accountTypesOn = typesPlugin || verifyPlugin;
+    const linksOn = usePlugin('bio_links');
 
     return (
         <div className="mx-auto max-w-[980px]">
@@ -95,8 +103,10 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
                         {items
                             .filter(
                                 (item) =>
-                                    item.href !== '/settings/account-type' ||
-                                    accountTypesOn,
+                                    (item.href !== '/settings/account-type' ||
+                                        accountTypesOn) &&
+                                    (item.href !== '/settings/links' ||
+                                        linksOn),
                             )
                             .map(({ title, description, href, icon: Icon }) => {
                                 const active = isCurrentOrParentUrl(href);

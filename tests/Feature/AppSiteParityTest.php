@@ -450,4 +450,13 @@ class AppSiteParityTest extends TestCase
         $this->withToken($token)->getJson('/api/v1/site/games/cs2/mentors')->assertOk()->assertJsonStructure(['mentors', 'me']);
         $this->withToken($token)->postJson('/api/v1/site/tools/nicknames/check', ['names' => ['ghostbyte']])->assertOk();
     }
+
+    public function test_app_reaches_topics_and_bio_links_through_bridge(): void
+    {
+        $token = $this->app_token(User::factory()->create());
+        $this->withToken($token)->postJson('/api/v1/site/t/speedrun/follow')->assertOk()->assertJsonPath('following', true);
+        $this->withToken($token)->getJson('/api/v1/site/t/speedrun')->assertOk();
+        $this->withToken($token)->putJson('/api/v1/site/settings/links', ['links' => [['title' => 'Twitch', 'url' => 'https://twitch.tv/me']]])->assertSuccessful();
+        $this->withToken($token)->getJson('/api/v1/site/settings/links')->assertOk();
+    }
 }

@@ -29,6 +29,7 @@ import { motionOr, SNAP } from '@/lib/motion';
 import { SiteBackground } from '@/components/backgrounds/site-background';
 import { Seasonal } from '@/components/gc/seasonal';
 import { Konami } from '@/components/gc/konami';
+import { AccountSwitcher } from '@/components/gc/account-switcher';
 import { useStreamerMode } from '@/components/settings/streamer-mode-switch';
 import { IncomingCall } from '@/components/gc/incoming-call';
 import { forgetOfflinePages } from '@/lib/offline';
@@ -323,6 +324,7 @@ export function UserMenu() {
                     <ThemeMenuItem />
                     <LanguageMenu />
                     <DropdownMenuSeparator className="bg-white/5" />
+                    <AccountSwitcher variant="menu" />
                     <DropdownMenuItem
                         className="rounded-lg text-rose-300 focus:bg-rose-500/10 focus:text-rose-200"
                         onSelect={() => {
@@ -759,6 +761,7 @@ function MenuContent({ onClose }: { onClose: () => void }) {
                     compact
                     className="mx-2 my-1.5 justify-self-start"
                 />
+                <AccountSwitcher variant="row" rowClass={row} />
                 <button
                     type="button"
                     onClick={() => {
