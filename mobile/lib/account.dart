@@ -411,7 +411,7 @@ Future<void> showFeedbackSheet(BuildContext context, {String screen = 'menu'}) a
 
 
 /// Що нового в цій версії застосунку — один раз після оновлення.
-const whatsNewVersion = '1.1.73';
+const whatsNewVersion = '1.1.74';
 
 List<String> _whatsNew() => [
       tr('Матове скло, як на сайті: без тіней і обводок, у темній і світлій темі; вибрана вкладка світиться неоном.'),
