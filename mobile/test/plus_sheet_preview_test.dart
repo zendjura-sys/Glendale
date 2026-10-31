@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gamecon/account.dart';
+import 'package:gamecon/play_billing.dart';
 import 'package:gamecon/shell.dart';
 import 'package:gamecon/state.dart';
 import 'package:gamecon/subscription.dart';
@@ -20,10 +21,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'support/fonts.dart';
 
 final _saved = <Map<String, dynamic>>[];
+var _pro = true;
 
 Map<String, dynamic> _respond(http.Request request) {
   final p = request.url.path;
+  if (p.endsWith('/google-play')) return {'enabled': true, 'products': ['gamecon_plus']};
   if (p.endsWith('/user/subscription-status')) {
+    if (!_pro) return {'is_pro': false};
     return {'is_pro': true, 'expires_at': '2026-11-09T12:00:00Z', 'plan_name': 'GameCon+', 'style': {'name': ['#38bdf8', '#818cf8']}};
   }
   if (p.endsWith('/api/v1/me')) {
@@ -126,4 +130,52 @@ void main() {
       }, () => MockClient((request) async => http.Response(jsonEncode(_respond(request)), 200, headers: {'content-type': 'application/json; charset=utf-8'})));
     });
   }
+
+  // Без GameCon+, застосунок не з Google Play: замість тарифів — коротке пояснення, без посилань на сайт.
+  testWidgets('шторка GameCon+ без підписки пояснює, чому немає тарифів', (tester) async {
+    await http.runWithClient(() async {
+      _pro = false;
+      PlayBilling.debugSupported = true;
+      addTearDown(() {
+        _pro = true;
+        PlayBilling.debugSupported = null;
+      });
+      SharedPreferences.setMockInitialValues({'whats_new': whatsNewVersion});
+      final session = Session(await SharedPreferences.getInstance())..me = {'id': 1, 'name': 'Тоні Старк', 'first_name': 'Тоні', 'username': 'tonny', 'role': 'user'};
+      tester.view.physicalSize = const Size(1170, 2532);
+      tester.view.devicePixelRatio = 3;
+      tester.view.padding = const FakeViewPadding(top: 120, bottom: 60);
+      addTearDown(tester.view.reset);
+      final router = GoRouter(initialLocation: '/x', routes: [
+        ShellRoute(
+          builder: (_, _, child) => AppShell(session: session, player: TrackPlayer()..session = session, child: child),
+          routes: [GoRoute(path: '/x', builder: (_, _) => Builder(builder: (context) => Center(child: TextButton(onPressed: () => showProFeatures(context), child: const Text('open')))))],
+        ),
+      ]);
+      final key = GlobalKey();
+      await tester.pumpWidget(RepaintBoundary(key: key, child: MaterialApp.router(debugShowCheckedModeBanner: false, theme: gameConTheme(), routerConfig: router)));
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.tap(find.text('open'));
+      for (var i = 0; i < 10; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      // Google Play у тесті не відповідає — блок покупки чекає тайм-аут і пояснює причину.
+      await tester.pump(const Duration(seconds: 9));
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.text('Покупка доступна у версії застосунку з Google Play.'), findsOneWidget);
+      expect(find.text('Оформлення'), findsNothing);
+      final sheet = tester.state<ScrollableState>(find.ancestor(of: find.text('Що дає GameCon+'), matching: find.byType(Scrollable)).first);
+      sheet.position.jumpTo(sheet.position.maxScrollExtent);
+      await tester.pump(const Duration(milliseconds: 300));
+      if (out != null) {
+        await tester.runAsync(() async {
+          final boundary = key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
+          final image = await boundary.toImage(pixelRatio: 1);
+          final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
+          File('$out/plus-sheet-free.png').writeAsBytesSync(bytes!.buffer.asUint8List());
+        });
+      }
+      await tester.pumpWidget(const SizedBox());
+    }, () => MockClient((request) async => http.Response(jsonEncode(_respond(request)), 200, headers: {'content-type': 'application/json; charset=utf-8'})));
+  });
 }

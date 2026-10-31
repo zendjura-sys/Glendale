@@ -64,6 +64,10 @@ class PlayBilling extends ChangeNotifier {
 
   /// Продаж у застосунку ввімкнено на сервері й Google Play доступний на пристрої.
   bool available = false;
+
+  /// Чому тарифів немає: 'disabled' — продаж вимкнено на сервері; 'store' — Google Play не дав
+  /// тарифів (застосунок встановлено не з Google Play чи підписку не активовано в Play Console).
+  String? unavailable;
   bool loading = false;
 
   /// Йде покупка або перевірка на сервері.
@@ -80,7 +84,11 @@ class PlayBilling extends ChangeNotifier {
   String? phoneMessage;
 
   /// Справжня платформа пристрою (не defaultTargetPlatform, який тести підміняють на Android).
-  static bool get supported => !kIsWeb && Platform.isAndroid;
+  static bool get supported => debugSupported ?? (!kIsWeb && Platform.isAndroid);
+
+  /// Лише для тестів: вдавати Android (щоб показати блок покупки в знімках).
+  @visibleForTesting
+  static bool? debugSupported;
 
   /// Слухати покупки з першого запуску: Google Play може завершити відкладену покупку пізніше.
   void listen() {
@@ -105,16 +113,26 @@ class PlayBilling extends ChangeNotifier {
       final config = await _api.get('/api/v1/google-play');
       final ids = (config['products'] is List ? config['products'] as List : const []).map((e) => '$e').toSet();
       _accountId = config['account_id'] is String ? config['account_id'] as String : null;
-      if (config['enabled'] != true || ids.isEmpty || !await InAppPurchase.instance.isAvailable()) {
+      if (config['enabled'] != true || ids.isEmpty) {
         available = false;
+        unavailable = 'disabled';
         plans = const [];
         return;
       }
-      final response = await InAppPurchase.instance.queryProductDetails(ids);
+      // Сервіси Google Play можуть не відповісти — не крутимо індикатор вічно.
+      if (!await InAppPurchase.instance.isAvailable().timeout(const Duration(seconds: 8), onTimeout: () => false)) {
+        available = false;
+        unavailable = 'store';
+        plans = const [];
+        return;
+      }
+      final response = await InAppPurchase.instance.queryProductDetails(ids).timeout(const Duration(seconds: 15));
       plans = _plans(response.productDetails);
       available = plans.isNotEmpty;
+      unavailable = available ? null : 'store';
     } catch (_) {
       available = false;
+      unavailable = 'store';
     } finally {
       loading = false;
       notifyListeners();

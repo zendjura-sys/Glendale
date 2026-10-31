@@ -530,7 +530,25 @@ class _StoreSection extends StatelessWidget {
     if (billing.loading) {
       return const Padding(padding: EdgeInsets.only(top: 18), child: Center(child: CircularProgressIndicator(strokeWidth: 2)));
     }
-    if (!billing.available) return const SizedBox.shrink();
+    if (!billing.available) {
+      // Тарифів немає — коротко чому (без посилань на інші способи оплати: правила Google Play).
+      final why = switch (billing.unavailable) {
+        'disabled' => tr('Оформлення GameCon+ у застосунку тимчасово недоступне.'),
+        'store' => tr('Покупка доступна у версії застосунку з Google Play.'),
+        _ => null,
+      };
+      if (why == null) return const SizedBox.shrink();
+      return Container(
+        margin: const EdgeInsets.only(top: 14),
+        padding: const EdgeInsets.all(14),
+        decoration: _plate(),
+        child: Row(children: [
+          Icon(LucideIcons.info, size: 18, color: muted),
+          const SizedBox(width: 10),
+          Expanded(child: Text(why, style: body(13, color: soft).copyWith(height: 1.4))),
+        ]),
+      );
+    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
