@@ -8,8 +8,10 @@ use App\Models\VoiceRoom;
 use App\Services\Voice\Calls;
 use App\Services\Voice\LiveKit;
 use App\Services\Voice\VoiceRooms;
+use App\Support\Plugins\Plugins;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 
 /**
@@ -45,9 +47,16 @@ class VoiceController extends Controller
     {
         $owner = $this->voice->ownerOf($room);
         abort_unless($this->voice->canManage($request->user(), $owner), 403, 'Недостатньо прав, щоб керувати голосовими кімнатами.');
-        $data = $request->validate(['name' => ['required', 'string', 'max:60']]);
+        $data = $request->validate(['name' => ['nullable', 'string', 'max:60'], 'stage' => ['nullable', 'boolean']]);
 
-        $this->voice->rename($room, trim($data['name']));
+        if (isset($data['name']) && trim($data['name']) !== '') {
+            $this->voice->rename($room, trim($data['name']));
+        }
+        if (array_key_exists('stage', $data) && $data['stage'] !== null) {
+            app(Plugins::class)->ensure('voice_stage');
+            $this->voice->setStage($room, (bool) $data['stage']);
+            Log::info('voice: stage', ['room' => $room->id, 'stage' => (bool) $data['stage'], 'by' => $request->user()->id]);
+        }
 
         return response()->json($this->voice->state($owner, $request->user()));
     }
@@ -76,15 +85,27 @@ class VoiceController extends Controller
     {
         $owner = $this->voice->ownerOf($room);
         abort_unless($this->voice->canManage($request->user(), $owner), 403, 'Недостатньо прав, щоб керувати голосовими кімнатами.');
-        $data = $request->validate(['action' => ['required', Rule::in(['mute', 'unmute', 'kick'])]]);
+        $data = $request->validate(['action' => ['required', Rule::in(['mute', 'unmute', 'kick', 'speaker', 'listener'])]]);
 
         match ((string) $data['action']) {
             'mute' => $this->voice->mute($room, $user, true),
             'unmute' => $this->voice->mute($room, $user, false),
+            'speaker' => $this->voice->speaker($room, $user, true),
+            'listener' => $this->voice->speaker($room, $user, false),
             default => $this->voice->kick($room, $user),
         };
 
         return response()->json($this->voice->state($owner, $request->user()));
+    }
+
+    /** Слухач на «сцені» піднімає чи опускає руку. */
+    public function hand(Request $request, VoiceRoom $room): JsonResponse
+    {
+        app(Plugins::class)->ensure('voice_stage');
+        $data = $request->validate(['raised' => ['required', 'boolean']]);
+        $this->voice->hand($room, $request->user(), (bool) $data['raised']);
+
+        return response()->json($this->voice->state($this->voice->ownerOf($room), $request->user()));
     }
 
     /** Вебхук LiveKit: хто зайшов і вийшов. Без сесії — справжність перевіряє підпис. */

@@ -4,11 +4,17 @@ import type { UserCard } from './social';
 export type ConversationType = 'direct' | 'group';
 export type MemberRole = 'owner' | 'admin' | 'member';
 
-export type MessageType = 'text' | 'system' | 'sticker' | 'voice' | 'contact';
+export type MessageType =
+    | 'text'
+    | 'system'
+    | 'sticker'
+    | 'voice'
+    | 'contact'
+    | 'video_note';
 
 export type ChatAttachment = {
     id: number;
-    type: 'image' | 'file' | 'voice';
+    type: 'image' | 'file' | 'voice' | 'video_note';
     url: string;
     width: number | null;
     height: number | null;
@@ -17,6 +23,8 @@ export type ChatAttachment = {
     size?: number | null;
     duration?: number | null;
     waveform?: number[] | null;
+    /** Документ можна переглянути на сайті (PDF, текст, аудіо, відео). */
+    preview?: 'pdf' | 'text' | 'image' | 'audio' | 'video' | null;
 };
 
 export type StickerItem = {
@@ -57,7 +65,15 @@ export type OutgoingMessage =
       }
     | { kind: 'sticker'; sticker: StickerItem }
     | { kind: 'voice'; blob: Blob; duration: number; waveform: number[] }
+    | { kind: 'video_note'; blob: Blob; duration: number }
     | { kind: 'contact'; contact: ContactCard };
+
+/** Реакції під повідомленням: user_ids — щоб позначити свою. */
+export type MessageReaction = {
+    emoji: string;
+    count: number;
+    user_ids: number[];
+};
 
 export type ChatMessage = {
     id: number;
@@ -66,6 +82,10 @@ export type ChatMessage = {
     body: string | null;
     preview?: string;
     user: UserCard | null;
+    /** Повідомлення гостя без акаунта (гостьовий чат спільноти). */
+    guest?: { name: string } | null;
+    /** Повідомлення бота бесіди (привітання, автопост). */
+    bot?: { name: string } | null;
     sticker?: StickerItem | null;
     contact?: ContactCard | null;
     reply_to: {
@@ -82,6 +102,7 @@ export type ChatMessage = {
     expires_at?: string | null;
     created_at: string;
     starred?: boolean;
+    reactions?: MessageReaction[];
     forward?: { name: string; username: string | null } | null;
     card?: {
         kind: string;
@@ -119,7 +140,10 @@ export type ConversationSummary = {
     } | null;
 };
 
-export type ConversationMember = UserCard & { role: MemberRole };
+export type ConversationMember = UserCard & {
+    role: MemberRole;
+    timeout_until?: string | null;
+};
 
 export type ConversationDetails = {
     id: number;
@@ -133,6 +157,12 @@ export type ConversationDetails = {
     is_muted: boolean;
     share_receipts?: boolean;
     slow_seconds?: number;
+    automod?: {
+        links: boolean;
+        caps: boolean;
+        flood: boolean;
+        words: string[];
+    } | null;
     pinned?: boolean;
     folder?: string | null;
     my_role: MemberRole;
@@ -143,6 +173,16 @@ export type ConversationDetails = {
     call?: CallState | null;
     can_call?: boolean;
     calls_enabled?: boolean;
+    /** Чому не можна писати (канал «Оголошення» тощо). */
+    locked_text?: string | null;
+    /** «Поки тебе не було»: зведена непрочитаного в групі. */
+    catch_up?: CatchUp | null;
+    /** Тайм-аут від адміністраторів: до коли не можна писати. */
+    timeout_until?: string | null;
+    /** Фон чату (особистий або спільний) і що вибрано. */
+    background?: { preset: string | null; image: string | null } | null;
+    my_background?: string | null;
+    shared_background?: string | null;
 };
 
 export type ChatHistory = {
@@ -155,4 +195,23 @@ export type InboxEvent = {
     message: ChatMessage | null;
     is_muted: boolean;
     unread_total: number;
+};
+
+export type CatchUpItem = {
+    id: number;
+    author: string | null;
+    text: string | null;
+    link: string | null;
+    reactions: number;
+    created_at: string;
+};
+
+export type CatchUp = {
+    count: number;
+    people: number;
+    first_id: number;
+    sections: {
+        key: 'mentions' | 'plans' | 'popular' | 'links';
+        items: CatchUpItem[];
+    }[];
 };

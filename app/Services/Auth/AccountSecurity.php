@@ -101,15 +101,18 @@ class AccountSecurity
         return $sessions->count() + $tokens;
     }
 
-    public function logLogin(User $user, string $method, bool $success, ?Request $request = null): void
+    /**
+     * @param  string|null  $ip  IP і браузер іншого пристрою (напр. браузера, чий вхід відхилили в застосунку)
+     */
+    public function logLogin(User $user, string $method, bool $success, ?Request $request = null, ?string $ip = null, ?string $agent = null): void
     {
         $request ??= request();
         LoginEvent::query()->create([
             'user_id' => $user->id,
             'method' => $method,
             'success' => $success,
-            'ip' => $request->ip(),
-            'user_agent' => Str::limit((string) $request->userAgent(), 250, ''),
+            'ip' => $ip ?? $request->ip(),
+            'user_agent' => Str::limit($agent ?? (string) $request->userAgent(), 250, ''),
             'created_at' => now(),
         ]);
         if ($success && $user->frozen_at !== null) {
@@ -139,7 +142,7 @@ class AccountSecurity
             str_contains($agent, 'GameConApp') || str_contains($agent, 'Dart/') => 'Застосунок GameCon',
             str_contains($agent, 'Edg/') => 'Edge',
             str_contains($agent, 'OPR/') || str_contains($agent, 'Opera') => 'Opera',
-            str_contains($agent, 'YaBrowser') => 'Yandex',
+            str_contains($agent, 'YaBrowser') => 'Chromium',
             str_contains($agent, 'Firefox/') => 'Firefox',
             str_contains($agent, 'Chrome/') => 'Chrome',
             str_contains($agent, 'Safari/') => 'Safari',
@@ -169,6 +172,7 @@ class AccountSecurity
             str_contains($route, 'google') || str_contains($route, 'firebase') => 'google',
             str_contains($route, 'register') => 'register',
             str_contains($route, 'discord') => 'discord',
+            str_starts_with($route, 'login.app.') => 'app',
             default => 'password',
         };
     }

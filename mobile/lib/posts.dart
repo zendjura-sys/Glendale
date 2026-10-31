@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -9,6 +10,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'api.dart';
+import 'core/widgets/arctic_glass/arctic_glass.dart';
 import 'player_view.dart';
 import 'plus.dart';
 import 'shell.dart';
@@ -18,6 +20,7 @@ import 'track_edit.dart';
 import 'widgets.dart';
 import 'i18n.dart';
 import 'language_picker.dart';
+import 'skeletons.dart';
 
 final _visibility = {
   'public': (LucideIcons.globe, tr('Усім')),
@@ -45,6 +48,8 @@ class _PostCardState extends State<PostCard> {
   late int comments = intOf(widget.post['comments_count']);
   late bool showComments = widget.expanded || maps(widget.post['comments']).isNotEmpty;
   bool fullText = false;
+  // Спойлер прихований, доки людина не торкнеться.
+  bool revealed = false;
   bool deleted = false;
 
   Map<String, dynamic> get post => widget.post;
@@ -92,7 +97,7 @@ class _PostCardState extends State<PostCard> {
     final choice = await showGcSheet<String>(
       context,
       builder: (sheet) => Padding(
-        padding: const EdgeInsets.fromLTRB(12, 0, 12, 20),
+        padding: EdgeInsets.fromLTRB(12, 0, 12, 20),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -102,6 +107,7 @@ class _PostCardState extends State<PostCard> {
               label: post['saved'] == true ? tr('Прибрати зі збереженого') : tr('Зберегти'),
               onTap: () => Navigator.pop(sheet, 'save'),
             ),
+            _SheetAction(icon: LucideIcons.clock, label: tr('Прочитати пізніше'), onTap: () => Navigator.pop(sheet, 'later')),
             if (can['edit'] == true) _SheetAction(icon: LucideIcons.pencil, label: tr('Редагувати'), onTap: () => Navigator.pop(sheet, 'edit')),
             if (can['share'] == true) _SheetAction(icon: LucideIcons.share2, label: tr('Поділитися на стіні'), onTap: () => Navigator.pop(sheet, 'share')),
             if (can['quote'] == true) _SheetAction(icon: LucideIcons.quote, label: tr('Цитувати'), onTap: () => Navigator.pop(sheet, 'quote')),
@@ -131,6 +137,15 @@ class _PostCardState extends State<PostCard> {
         if (!mounted) return;
         setState(() => post['saved'] = result['saved'] == true);
         toast(context, post['saved'] == true ? tr('Збережено.') : tr('Прибрано зі збереженого.'));
+      } catch (e) {
+        if (mounted) toast(context, e);
+      }
+      return;
+    }
+    if (choice == 'later') {
+      try {
+        final result = await api.post(Api.site('/posts/${post['id']}/later'));
+        if (mounted) toast(context, result['later'] == true ? tr('Додано до «Прочитати пізніше»') : tr('Прибрано зі списку «Прочитати пізніше»'));
       } catch (e) {
         if (mounted) toast(context, e);
       }
@@ -189,7 +204,7 @@ class _PostCardState extends State<PostCard> {
 
   @override
   Widget build(BuildContext context) {
-    if (deleted) return const SizedBox.shrink();
+    if (deleted) return SizedBox.shrink();
     final author = mapOf(post['author']);
     final publisher = post['publisher'] is Map ? mapOf(post['publisher']) : null;
     final wall = post['wall'] is Map ? mapOf(post['wall']) : null;
@@ -218,9 +233,9 @@ class _PostCardState extends State<PostCard> {
     }
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: EdgeInsets.only(bottom: 12),
       child: Glass(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
+        padding: EdgeInsets.fromLTRB(16, 16, 16, 14),
         radius: 24,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -230,9 +245,9 @@ class _PostCardState extends State<PostCard> {
               children: [
                 GestureDetector(
                   onTap: openWho,
-                  child: Avatar(url: text(who['avatar_url']), name: name, size: 44, online: publisher == null && author['is_online'] == true, square: publisher != null, frame: publisher == null ? PlusMark.of(author)?.frame : null),
+                  child: Avatar(url: text(who['avatar_url']), name: name, size: 44, online: publisher == null && author['is_online'] == true, square: publisher != null, frame: publisher == null ? avatarFrameOf(author) : null),
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -241,12 +256,13 @@ class _PostCardState extends State<PostCard> {
                         crossAxisAlignment: WrapCrossAlignment.center,
                         spacing: 4,
                         children: [
-                          GestureDetector(onTap: openWho, child: PlusName(name, plus: publisher == null ? PlusMark.of(author) : null, style: body(15, weight: FontWeight.w700), maxLines: null)),
-                          if (who['is_verified'] == true) const Icon(LucideIcons.badgeCheck, size: 15, color: primary),
-                          if (publisher == null && PlusMark.of(author) != null) const PlusBadge(size: 15),
+                          GestureDetector(onTap: openWho, child: PlusName(name, plus: publisher == null ? nameMarkOf(author) : null, style: body(15, weight: FontWeight.w700), maxLines: null)),
+                          if (who['is_verified'] == true) Icon(LucideIcons.badgeCheck, size: 15, color: primary),
+                          if (publisher == null && PlusMark.of(author) != null) PlusBadge(size: 15),
+                          if (publisher == null) SeasonBadge(user: author),
                           if (badge != null) RoleBadge(title: text(badge['title']) ?? '', color: text(badge['color'])),
                           if (wall != null) ...[
-                            const Icon(LucideIcons.chevronRight, size: 16, color: faint),
+                            Icon(LucideIcons.chevronRight, size: 16, color: faint),
                             GestureDetector(
                               onTap: () => context.push(appPathFor(text(wall['href']))),
                               child: Text(text(wall['name']) ?? '', style: body(15, color: soft, weight: FontWeight.w600)),
@@ -254,7 +270,7 @@ class _PostCardState extends State<PostCard> {
                           ],
                         ],
                       ),
-                      const SizedBox(height: 4),
+                      SizedBox(height: 4),
                       Wrap(
                         crossAxisAlignment: WrapCrossAlignment.center,
                         spacing: 6,
@@ -270,24 +286,42 @@ class _PostCardState extends State<PostCard> {
                               onTap: () => context.push(appPathFor(text(tag['href']))),
                               child: Pill(label: '#${tag['name']}', color: soft),
                             ),
-                          if (post['pending'] == true) Pill(label: tr('На перевірці'), icon: LucideIcons.clock, color: const Color(0xFFF5B342)),
-                          if (post['is_pinned'] == true) Pill(label: tr('Закріплено'), icon: LucideIcons.pin, color: const Color(0xFF9FB6FF)),
+                          if (post['pending'] == true) Pill(label: tr('На перевірці'), icon: LucideIcons.clock, color: Color(0xFFF5B342)),
+                          if (post['is_pinned'] == true) Pill(label: tr('Закріплено'), icon: LucideIcons.pin, color: Color(0xFF9FB6FF)),
                         ],
                       ),
                     ],
                   ),
                 ),
-                IconButton(onPressed: _menu, icon: const Icon(LucideIcons.ellipsis, color: muted), visualDensity: VisualDensity.compact),
+                IconButton(onPressed: _menu, icon: Icon(LucideIcons.ellipsis, color: muted), visualDensity: VisualDensity.compact),
               ],
             ),
             if (bodyText.isNotEmpty && lang != null && lang != I18n.locale.split('-').first)
               Padding(
-                padding: const EdgeInsets.only(top: 10),
+                padding: EdgeInsets.only(top: 10),
                 child: Text(tr('Оригінал: {language}', {'language': languageName(lang)}), style: body(11.5, color: faint)),
               ),
+            if (post['spoiler'] == true && !revealed)
+              Padding(
+                padding: EdgeInsets.only(top: 12),
+                child: ArcticPressable(
+                  onTap: () => setState(() => revealed = true),
+                  child: Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.symmetric(vertical: 22, horizontal: 14),
+                    decoration: BoxDecoration(color: fg.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(16)),
+                    child: Column(children: [
+                      Icon(LucideIcons.eyeOff, color: muted),
+                      SizedBox(height: 6),
+                      Text(tr('Спойлер — торкніться, щоб показати'), textAlign: TextAlign.center, style: body(13.5, color: soft, weight: FontWeight.w600)),
+                    ]),
+                  ),
+                ),
+              ),
+            if (post['spoiler'] != true || revealed) ...[
             if (bodyText.isNotEmpty)
               Padding(
-                padding: const EdgeInsets.only(top: 12),
+                padding: EdgeInsets.only(top: 12),
                 child: Translatable(
                   api: AppScope.read(context).session.api,
                   type: 'post',
@@ -297,8 +331,8 @@ class _PostCardState extends State<PostCard> {
                     onTap: long ? () => setState(() => fullText = true) : null,
                     child: Text.rich(
                       TextSpan(children: [
-                        TextSpan(text: long && shownText.length > 420 ? '${shownText.substring(0, 420).trimRight()}… ' : shownText),
-                        if (long) TextSpan(text: tr('Показати повністю'), style: body(15, color: const Color(0xFF9AA8FF), weight: FontWeight.w600)),
+                        ..._hashtags(context, long && shownText.length > 420 ? '${shownText.substring(0, 420).trimRight()}… ' : shownText),
+                        if (long) TextSpan(text: tr('Показати повністю'), style: body(15, color: Color(0xFF9AA8FF), weight: FontWeight.w600)),
                       ]),
                       style: body(15, color: ink.withValues(alpha: 0.92)).copyWith(height: 1.5),
                     ),
@@ -306,32 +340,39 @@ class _PostCardState extends State<PostCard> {
                 ),
               ),
             if (post['shared'] is Map) _SharedCard(shared: mapOf(post['shared']), ownText: bodyText),
-            if (images.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 12), child: MediaGrid(items: images)),
-            if (music != null) Padding(padding: const EdgeInsets.only(top: 12), child: MusicAttachment(track: music)),
-            if (movie != null) Padding(padding: const EdgeInsets.only(top: 12), child: MovieAttachment(movie: movie)),
-            const SizedBox(height: 14),
+            if (images.isNotEmpty) Padding(padding: EdgeInsets.only(top: 12), child: MediaGrid(items: images)),
+            if (music != null) Padding(padding: EdgeInsets.only(top: 12), child: MusicAttachment(track: music)),
+            if (movie != null) Padding(padding: EdgeInsets.only(top: 12), child: MovieAttachment(movie: movie)),
+            if (post['card'] is Map) Padding(padding: EdgeInsets.only(top: 12), child: _PostCardLink(card: mapOf(post['card']))),
+            if (post['poll'] is Map) Padding(padding: EdgeInsets.only(top: 12), child: _PollBox(postId: intOf(post['id']), poll: mapOf(post['poll']))),
+            if (text(post['sticker']) case final emoji?) Padding(padding: EdgeInsets.only(top: 10), child: Text(emoji, style: TextStyle(fontSize: 64))),
+            ],
+            if (post['locked'] == true) Padding(padding: EdgeInsets.only(top: 12), child: _LockedNotice(author: text(author['name']) ?? '')),
+            if (post['subscribers_only'] == true && post['locked'] != true)
+              Padding(padding: EdgeInsets.only(top: 10), child: Pill(label: tr('Для підписників'), icon: LucideIcons.lock)),
+            SizedBox(height: 14),
             Row(
               children: [
                 ReactionButton(reaction: reaction, count: likes, onPick: _react),
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 _ActionPill(
                   icon: LucideIcons.messageCircle,
                   label: comments > 0 ? compact(comments) : null,
                   onTap: commentsEnabled ? () => setState(() => showComments = true) : null,
                 ),
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 _ActionPill(icon: LucideIcons.link, onTap: _copyLink),
-                const Spacer(),
+                Spacer(),
                 if (views > 0) ...[
-                  const Icon(LucideIcons.eye, size: 16, color: faint),
-                  const SizedBox(width: 4),
+                  Icon(LucideIcons.eye, size: 16, color: faint),
+                  SizedBox(width: 4),
                   Text(compact(views), style: body(12, color: faint)),
                 ],
               ],
             ),
             if (showComments)
               Padding(
-                padding: const EdgeInsets.only(top: 12),
+                padding: EdgeInsets.only(top: 12),
                 child: CommentsThread(
                   endpoint: '/api/v1/posts/${post['id']}/comments',
                   initial: maps(post['comments']),
@@ -358,18 +399,18 @@ class _ActionPill extends StatelessWidget {
     return Opacity(
       opacity: onTap == null ? 0.4 : 1,
       child: Material(
-        color: Colors.white.withValues(alpha: 0.045),
+        color: fg.withValues(alpha: 0.045),
         borderRadius: BorderRadius.circular(20),
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(20),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            padding: EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(icon, size: 18, color: soft.withValues(alpha: 0.7)),
-                if (label != null) ...[const SizedBox(width: 6), Text(label!, style: body(13.5, color: soft.withValues(alpha: 0.75), weight: FontWeight.w600))],
+                if (label != null) ...[SizedBox(width: 6), Text(label!, style: body(13.5, color: soft.withValues(alpha: 0.75), weight: FontWeight.w600))],
               ],
             ),
           ),
@@ -380,7 +421,7 @@ class _ActionPill extends StatelessWidget {
 }
 
 class _SheetAction extends StatelessWidget {
-  const _SheetAction({required this.icon, required this.label, required this.onTap, this.color = ink});
+  _SheetAction({required this.icon, required this.label, required this.onTap, Color? color}) : color = color ?? ink;
   final IconData icon;
   final String label;
   final VoidCallback onTap;
@@ -400,7 +441,7 @@ class _SheetAction extends StatelessWidget {
 /// Пункт у шторці дій (використовується різними екранами).
 class SheetAction extends _SheetAction {
   // ignore: use_key_in_widget_constructors
-  const SheetAction({required super.icon, required super.label, required super.onTap, super.color});
+  SheetAction({required super.icon, required super.label, required super.onTap, super.color});
 }
 
 // ───────────────────────── Вкладення ─────────────────────────
@@ -489,11 +530,8 @@ class _PhotoViewerState extends State<PhotoViewer> {
     final caption = widget.captions != null && index < widget.captions!.length ? widget.captions![index] : null;
     return Scaffold(
       backgroundColor: Colors.black,
-      appBar: AppBar(
-        backgroundColor: Colors.black,
-        foregroundColor: Colors.white,
-        title: Text(tr('{v} з {v2}', {'v': index + 1, 'v2': widget.urls.length}), style: body(15)),
-      ),
+      extendBodyBehindAppBar: true,
+      appBar: ArcticGlassAppBar(title: tr('{v} з {v2}', {'v': index + 1, 'v2': widget.urls.length})),
       body: Stack(
         children: [
           PageView.builder(
@@ -550,7 +588,7 @@ class MusicAttachment extends StatelessWidget {
         return Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: current ? primary.withValues(alpha: 0.1) : Colors.white.withValues(alpha: 0.04),
+            color: current ? primary.withValues(alpha: 0.1) : fg.withValues(alpha: 0.04),
             borderRadius: BorderRadius.circular(18),
             border: Border.all(color: current ? primary.withValues(alpha: 0.35) : line),
           ),
@@ -583,7 +621,7 @@ class MusicAttachment extends StatelessWidget {
               ),
               if (spotify) const Padding(padding: EdgeInsets.only(right: 6), child: SpotifyMark(size: 18)),
               if (!spotify && intOf(track['duration']) > 0) Text(duration(track['duration']), style: body(12, color: muted)),
-              if (onRemove != null) IconButton(onPressed: onRemove, icon: const Icon(LucideIcons.x, color: muted, size: 20)),
+              if (onRemove != null) IconButton(onPressed: onRemove, icon: Icon(LucideIcons.x, color: muted, size: 20)),
             ],
           ),
         );
@@ -634,7 +672,7 @@ class MovieAttachment extends StatelessWidget {
               ],
             ),
           ),
-          const Icon(LucideIcons.circlePlay, color: primary, size: 30),
+          Icon(LucideIcons.circlePlay, color: primary, size: 30),
         ],
       ),
     );
@@ -770,10 +808,10 @@ class _CommentsThreadState extends State<CommentsThread> {
             Padding(
               padding: const EdgeInsets.only(left: 44, bottom: 4),
               child: Row(children: [
-                const Icon(LucideIcons.cornerDownRight, size: 14, color: muted),
+                Icon(LucideIcons.cornerDownRight, size: 14, color: muted),
                 const SizedBox(width: 4),
                 Expanded(child: Text(tr('Відповідь {v}', {'v': text(mapOf(replyTo!['user'])['first_name']) ?? ''}), style: body(12, color: muted))),
-                GestureDetector(onTap: () => setState(() => replyTo = null), child: const Icon(LucideIcons.x, size: 16, color: muted)),
+                GestureDetector(onTap: () => setState(() => replyTo = null), child: Icon(LucideIcons.x, size: 16, color: muted)),
               ]),
             ),
           Row(
@@ -795,9 +833,9 @@ class _CommentsThreadState extends State<CommentsThread> {
                     fillColor: field,
                     isDense: true,
                     contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: const BorderSide(color: lineStrong)),
-                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: const BorderSide(color: lineStrong)),
-                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: const BorderSide(color: primary, width: 1.4)),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: BorderSide.none),
+                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: BorderSide.none),
+                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: BorderSide(color: primary, width: 1.4)),
                   ),
                 ),
               ),
@@ -827,7 +865,7 @@ class _CommentsThreadState extends State<CommentsThread> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.045),
+                    color: fg.withValues(alpha: 0.045),
                     borderRadius: const BorderRadius.only(topLeft: Radius.circular(6), topRight: Radius.circular(18), bottomLeft: Radius.circular(18), bottomRight: Radius.circular(18)),
                   ),
                   child: Column(
@@ -868,7 +906,7 @@ class _CommentsThreadState extends State<CommentsThread> {
                       ],
                       if (comment['can_delete'] == true) ...[
                         const SizedBox(width: 12),
-                        GestureDetector(onTap: () => _remove(comment), child: const Icon(LucideIcons.trash2, size: 15, color: faint)),
+                        GestureDetector(onTap: () => _remove(comment), child: Icon(LucideIcons.trash2, size: 15, color: faint)),
                       ],
                       const Spacer(),
                       GestureDetector(
@@ -915,18 +953,44 @@ class _ComposerState extends State<Composer> {
   final input = TextEditingController();
   final images = <XFile>[];
   Map<String, dynamic>? track;
+  Map<String, dynamic>? gif;
+  Map<String, dynamic>? card;
+  String? sticker;
+  // Опитування: питання, 2–4 варіанти, анонімне чи відкрите.
+  TextEditingController? pollQuestion;
+  final pollOptions = <TextEditingController>[];
+  bool pollAnonymous = true;
+  bool spoiler = false;
+  bool subscribersOnly = false;
+  DateTime? publishAt;
   String visibility = 'public';
   late bool asCommunity = widget.canPostAsCommunity;
   bool busy = false;
   bool focused = false;
+  bool tools = false;
 
   @override
   void dispose() {
     input.dispose();
+    _clearPoll();
     super.dispose();
   }
 
-  bool get ready => input.text.trim().isNotEmpty || images.isNotEmpty || track != null;
+  bool get _hasPoll => pollQuestion != null && pollQuestion!.text.trim().isNotEmpty && pollOptions.where((o) => o.text.trim().isNotEmpty).length >= 2;
+
+  bool get ready => input.text.trim().isNotEmpty || images.isNotEmpty || track != null || gif != null || card != null || sticker != null || _hasPoll;
+
+  /// Скільки додатків увімкнено — лічильник на кнопці «+», як на сайті.
+  int get _extras => [sticker, gif, pollQuestion, track, card, if (spoiler) true].whereType<Object>().length;
+
+  void _clearPoll() {
+    pollQuestion?.dispose();
+    pollQuestion = null;
+    for (final o in pollOptions) {
+      o.dispose();
+    }
+    pollOptions.clear();
+  }
 
   Future<void> _pickImages() async {
     final picked = await ImagePicker().pickMultiImage(imageQuality: 88);
@@ -938,11 +1002,69 @@ class _ComposerState extends State<Composer> {
     if (picked != null) setState(() => track = picked);
   }
 
-  Future<void> _publish() async {
+  Future<void> _pickGif() async {
+    final picked = await showGifPicker(context);
+    if (picked != null) setState(() => gif = picked);
+  }
+
+  Future<void> _pickSticker() async {
+    final picked = await showGcSheet<String>(
+      context,
+      title: tr('Стікер'),
+      builder: (sheet) => Padding(
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
+        child: GridView.count(
+          crossAxisCount: 4,
+          shrinkWrap: true,
+          mainAxisSpacing: 10,
+          crossAxisSpacing: 10,
+          children: [
+            for (final entry in postStickers.entries)
+              ArcticPressable(
+                onTap: () => Navigator.pop(sheet, entry.key),
+                child: Container(alignment: Alignment.center, decoration: BoxDecoration(color: fg.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(18)), child: Text(entry.value, style: const TextStyle(fontSize: 34))),
+              ),
+          ],
+        ),
+      ),
+    );
+    if (picked != null) setState(() => sticker = picked);
+  }
+
+  Future<void> _pickCard() async {
+    final picked = await showGcSheet<Map<String, dynamic>>(context, title: tr('Картка'), height: MediaQuery.sizeOf(context).height * 0.6, builder: (sheet) => const _CardPicker());
+    if (picked != null) setState(() => card = picked);
+  }
+
+  void _togglePoll() => setState(() {
+    if (pollQuestion != null) {
+      _clearPoll();
+    } else {
+      pollQuestion = TextEditingController();
+      pollOptions.addAll([TextEditingController(), TextEditingController()]);
+    }
+  });
+
+  Future<void> _schedule() async {
+    final now = DateTime.now();
+    final day = await showDatePicker(context: context, firstDate: now, lastDate: now.add(const Duration(days: 60)), initialDate: publishAt ?? now);
+    if (day == null || !mounted) return;
+    final time = await showTimePicker(context: context, initialTime: TimeOfDay.fromDateTime(publishAt ?? now.add(const Duration(hours: 1))));
+    if (time == null || !mounted) return;
+    final at = DateTime(day.year, day.month, day.day, time.hour, time.minute);
+    if (!at.isAfter(now)) {
+      toast(context, tr('Оберіть час у майбутньому.'));
+      return;
+    }
+    setState(() => publishAt = at);
+  }
+
+  Future<void> _publish({bool draft = false}) async {
     if (!ready || busy) return;
     final api = AppScope.read(context).session.api;
     setState(() => busy = true);
     try {
+      final options = [for (final o in pollOptions) if (o.text.trim().isNotEmpty) o.text.trim()];
       final fields = <String, String>{
         'body': input.text.trim(),
         'visibility': visibility,
@@ -950,12 +1072,40 @@ class _ComposerState extends State<Composer> {
         if (widget.community != null) 'community': widget.community!,
         if (widget.community != null) 'as_community': asCommunity ? '1' : '0',
         ...musicFields(track),
+        if (gif != null) 'gif[url]': text(gif!['url']) ?? '',
+        if (gif != null) 'gif[title]': text(gif!['title']) ?? 'GIF',
+        if (card != null) 'card[kind]': '${card!['kind']}',
+        if (card != null) 'card[id]': '${card!['id']}',
+        'sticker': ?sticker,
+        if (_hasPoll) 'poll[question]': pollQuestion!.text.trim(),
+        if (_hasPoll) for (final (i, o) in options.indexed) 'poll[options][$i]': o,
+        if (_hasPoll) 'poll[anonymous]': pollAnonymous ? '1' : '0',
+        if (spoiler) 'spoiler': '1',
+        if (subscribersOnly) 'subscribers_only': '1',
+        if (draft) 'draft': '1',
+        if (!draft && publishAt != null) 'publish_at': publishAt!.toUtc().toIso8601String(),
       };
       final files = [for (final image in images) await http.MultipartFile.fromPath('images[]', image.path, filename: image.name)];
       await api.upload('/api/v1/posts', fields, files);
+      if (!mounted) return;
+      if (draft) {
+        toast(context, tr('Збережено в чернетках.'));
+      } else if (publishAt != null) {
+        toast(context, tr('Запис опублікується в запланований час.'));
+      }
       input.clear();
       images.clear();
-      track = null;
+      setState(() {
+        track = null;
+        gif = null;
+        card = null;
+        sticker = null;
+        _clearPoll();
+        spoiler = false;
+        subscribersOnly = false;
+        publishAt = null;
+        tools = false;
+      });
       FocusManager.instance.primaryFocus?.unfocus();
       widget.onPosted();
     } catch (e) {
@@ -965,9 +1115,29 @@ class _ComposerState extends State<Composer> {
     }
   }
 
+  /// Плитки інструментів під «+» — ті самі, що в редакторі сайту (плагіни перевіряє сервер).
+  List<_Tool> _tools(Session session) => [
+    _Tool(LucideIcons.smile, tr('Стікер'), const Color(0xFFFFD27A), active: sticker != null, onTap: _pickSticker),
+    if (session.pluginOn('gif_search')) _Tool(LucideIcons.imagePlay, 'GIF', const Color(0xFF7EE0B5), active: gif != null, onTap: _pickGif),
+    _Tool(LucideIcons.chartColumn, tr('Опитування'), const Color(0xFF7DFFB3), active: pollQuestion != null, onTap: _togglePoll),
+    if (session.modules?.contains('music') ?? true) _Tool(LucideIcons.music2, tr('Музика'), const Color(0xFF7CC8FF), active: track != null, onTap: _pickMusic),
+    _Tool(LucideIcons.sparkles, tr('Картка'), const Color(0xFFFFD27A), active: card != null, onTap: _pickCard),
+    if (session.pluginOn('meme_maker') && widget.community == null)
+      _Tool(LucideIcons.laugh, tr('Мем'), const Color(0xFFFF9D7A), onTap: () async {
+        if (await context.push<bool>('/memes/new') == true) widget.onPosted();
+      }),
+    _Tool(LucideIcons.eyeOff, tr('Спойлер'), const Color(0xFFC9D2E3), active: spoiler, onTap: () => setState(() => spoiler = !spoiler)),
+    if (session.pluginOn('author_subscriptions') && widget.wall == null && widget.community == null)
+      _Tool(LucideIcons.lock, tr('Підписникам'), const Color(0xFF9DB8FF), active: subscribersOnly, onTap: () => setState(() => subscribersOnly = !subscribersOnly)),
+    if (session.pluginOn('scheduled_posts')) _Tool(LucideIcons.calendarClock, tr('Розклад'), const Color(0xFF8FB4FF), active: publishAt != null, onTap: _schedule),
+    _Tool(LucideIcons.filePen, tr('Чернетка'), const Color(0xFFA8B3C7), onTap: ready ? () => _publish(draft: true) : null),
+    _Tool(LucideIcons.files, tr('Мої чернетки'), const Color(0xFFA8B3C7), onTap: () => context.push('/drafts')),
+  ];
+
   @override
   Widget build(BuildContext context) {
-    final me = AppScope.of(context).session.me ?? {};
+    final session = AppScope.of(context).session;
+    final me = session.me ?? {};
     final first = text(me['first_name']) ?? text(me['name']) ?? '';
     final placeholder = widget.community != null
         ? (asCommunity ? tr('Новина від імені «{v}»…', {'v': widget.communityName ?? ''}) : tr('Напишіть у спільноту…'))
@@ -975,6 +1145,19 @@ class _ComposerState extends State<Composer> {
             ? tr('Напишіть щось {v}…', {'v': widget.wallName ?? ''})
             : (first.isEmpty ? tr('Що нового?') : tr('Що нового, {first}?', {'first': first}));
     final expanded = focused || ready;
+    final still = MediaQuery.disableAnimationsOf(context);
+    final vis = _visibility[visibility] ?? _visibility['public']!;
+    Widget removable(Widget child, VoidCallback onRemove) => Stack(children: [
+      child,
+      Positioned(
+        right: 6,
+        top: 6,
+        child: GestureDetector(
+          onTap: onRemove,
+          child: Container(padding: const EdgeInsets.all(4), decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle), child: const Icon(LucideIcons.x, size: 14, color: Colors.white)),
+        ),
+      ),
+    ]);
     return Glass(
       padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
       radius: 24,
@@ -1004,9 +1187,9 @@ class _ComposerState extends State<Composer> {
                       fillColor: field,
                       isDense: true,
                       contentPadding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: lineStrong)),
-                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: lineStrong)),
-                      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: primary, width: 1.4)),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+                      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: primary, width: 1.4)),
                     ),
                   ),
                 ),
@@ -1021,64 +1204,303 @@ class _ComposerState extends State<Composer> {
                 padding: const EdgeInsets.only(top: 8),
                 itemCount: images.length,
                 separatorBuilder: (_, _) => const SizedBox(width: 8),
-                itemBuilder: (_, i) => Stack(
-                  children: [
-                    ClipRRect(borderRadius: BorderRadius.circular(12), child: Image(image: XFileImage(images[i]), width: 76, height: 76, fit: BoxFit.cover)),
-                    Positioned(
-                      right: 2,
-                      top: 2,
-                      child: GestureDetector(
-                        onTap: () => setState(() => images.removeAt(i)),
-                        child: Container(decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle), child: const Icon(LucideIcons.x, size: 16)),
-                      ),
-                    ),
-                  ],
+                itemBuilder: (_, i) => removable(
+                  ClipRRect(borderRadius: BorderRadius.circular(12), child: Image(image: XFileImage(images[i]), width: 76, height: 76, fit: BoxFit.cover)),
+                  () => setState(() => images.removeAt(i)),
                 ),
               ),
             ),
           if (track != null) Padding(padding: const EdgeInsets.only(top: 10), child: MusicAttachment(track: track!, onRemove: () => setState(() => track = null))),
+          if (gif != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 10),
+              child: removable(
+                ClipRRect(borderRadius: BorderRadius.circular(14), child: ConstrainedBox(constraints: const BoxConstraints(maxHeight: 220), child: NetImage(text(gif!['url']), fit: BoxFit.cover))),
+                () => setState(() => gif = null),
+              ),
+            ),
+          if (sticker != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 10),
+              child: removable(
+                Container(width: 88, height: 88, alignment: Alignment.center, decoration: BoxDecoration(color: fg.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(20)), child: Text(postStickers[sticker] ?? '', style: const TextStyle(fontSize: 46))),
+                () => setState(() => sticker = null),
+              ),
+            ),
+          if (card != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 10),
+              child: removable(
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.fromLTRB(12, 10, 36, 10),
+                  decoration: BoxDecoration(color: fg.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(14)),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text(tr(text(card!['hint']) ?? ''), style: body(11.5, color: faint)),
+                    Text(text(card!['title']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14.5, weight: FontWeight.w600)),
+                  ]),
+                ),
+                () => setState(() => card = null),
+              ),
+            ),
+          if (pollQuestion != null)
+            Container(
+              margin: const EdgeInsets.only(top: 10),
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(color: fg.withValues(alpha: 0.04), borderRadius: BorderRadius.circular(16)),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                GcField(controller: pollQuestion!, label: tr('Питання опитування'), dense: true),
+                for (final (i, option) in pollOptions.indexed)
+                  Padding(padding: const EdgeInsets.only(top: 8), child: GcField(controller: option, label: tr('Варіант {n}', {'n': '${i + 1}'}), dense: true)),
+                Row(children: [
+                  if (pollOptions.length < 4)
+                    TextButton.icon(onPressed: () => setState(() => pollOptions.add(TextEditingController())), icon: const Icon(LucideIcons.plus, size: 16), label: Text(tr('Варіант'))),
+                  const Spacer(),
+                  if (session.pluginOn('open_polls')) ...[
+                    Text(tr('Анонімне'), style: body(13, color: muted)),
+                    GcSwitch(value: pollAnonymous, onChanged: (v) => setState(() => pollAnonymous = v)),
+                  ],
+                ]),
+              ]),
+            ),
+          if (spoiler || subscribersOnly || publishAt != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 10),
+              child: Wrap(spacing: 8, runSpacing: 6, children: [
+                if (spoiler) Pill(label: tr('Спойлер'), icon: LucideIcons.eyeOff, color: soft),
+                if (subscribersOnly) Pill(label: tr('Для підписників'), icon: LucideIcons.lock, color: accent),
+                if (publishAt != null)
+                  GestureDetector(
+                    onTap: () => setState(() => publishAt = null),
+                    child: Pill(label: tr('Опублікується {at} ✕', {'at': '${publishAt!.day.toString().padLeft(2, '0')}.${publishAt!.month.toString().padLeft(2, '0')} ${publishAt!.hour.toString().padLeft(2, '0')}:${publishAt!.minute.toString().padLeft(2, '0')}'}), icon: LucideIcons.calendarClock, color: accent),
+                  ),
+              ]),
+            ),
           const SizedBox(height: 10),
+          // Компактна панель, як на сайті: фото, «+» з рештою інструментів, видимість поруч із «Пост».
           Row(
             children: [
-              _ToolIcon(icon: LucideIcons.image, onTap: _pickImages, tooltip: tr('Фото')),
-              _ToolIcon(icon: LucideIcons.music, onTap: _pickMusic, tooltip: tr('Музика')),
-              if (widget.wall == null && widget.community == null) ...[
-                const SizedBox(width: 6),
-                Container(
-                  padding: const EdgeInsets.all(3),
-                  decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.04), borderRadius: BorderRadius.circular(14), border: Border.all(color: line)),
-                  child: Row(
-                    children: [
-                      for (final entry in _visibility.entries)
-                        Tooltip(
-                          message: entry.value.$2,
-                          child: GestureDetector(
-                            onTap: () => setState(() => visibility = entry.key),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
-                              decoration: BoxDecoration(color: visibility == entry.key ? Colors.white.withValues(alpha: 0.1) : Colors.transparent, borderRadius: BorderRadius.circular(10)),
-                              child: Icon(entry.value.$1, size: 16, color: visibility == entry.key ? ink : muted),
-                            ),
-                          ),
+              _ToolIcon(icon: LucideIcons.imagePlus, onTap: _pickImages, tooltip: tr('Фото')),
+              const SizedBox(width: 6),
+              ArcticPressable(
+                onTap: () => setState(() => tools = !tools),
+                scale: 0.92,
+                child: Container(
+                  width: 40,
+                  height: 36,
+                  decoration: BoxDecoration(color: tools ? primary.withValues(alpha: 0.22) : fg.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(12)),
+                  child: Stack(alignment: Alignment.center, clipBehavior: Clip.none, children: [
+                    AnimatedRotation(
+                      turns: tools ? 0.125 : 0,
+                      duration: still ? Duration.zero : const Duration(milliseconds: 220),
+                      curve: Curves.easeOutBack,
+                      child: Icon(LucideIcons.plus, size: 20, color: ink),
+                    ),
+                    if (_extras > 0 && !tools)
+                      Positioned(
+                        right: -4,
+                        top: -4,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                          decoration: BoxDecoration(color: primary, borderRadius: BorderRadius.circular(8)),
+                          child: Text('$_extras', style: body(10, color: Colors.white, weight: FontWeight.w700)),
                         ),
-                    ],
-                  ),
+                      ),
+                  ]),
                 ),
-              ],
+              ),
               if (widget.community != null && widget.canPostAsCommunity)
                 GestureDetector(
                   onTap: () => setState(() => asCommunity = !asCommunity),
-                  child: Padding(
-                    padding: const EdgeInsets.only(left: 6),
-                    child: Pill(label: asCommunity ? tr('Від спільноти') : tr('Від себе'), icon: LucideIcons.arrowLeftRight, color: const Color(0xFF9AA6FF)),
-                  ),
+                  child: Padding(padding: const EdgeInsets.only(left: 6), child: Pill(label: asCommunity ? tr('Від спільноти') : tr('Від себе'), icon: LucideIcons.arrowLeftRight, color: accent)),
                 ),
               const Spacer(),
-              PrimaryButton(label: tr('Пост'), icon: LucideIcons.sparkles, onPressed: ready ? _publish : null, busy: busy, expand: false, compact: true),
+              if (widget.wall == null && widget.community == null)
+                PopupMenuButton<String>(
+                  tooltip: tr('Хто бачить запис'),
+                  elevation: 0,
+                  color: popover.withValues(alpha: 0.96),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                  initialValue: visibility,
+                  onSelected: (v) => setState(() => visibility = v),
+                  position: PopupMenuPosition.under,
+                  itemBuilder: (_) => [
+                    for (final entry in _visibility.entries)
+                      PopupMenuItem(
+                        value: entry.key,
+                        child: Row(children: [
+                          Icon(entry.value.$1, size: 18, color: muted),
+                          const SizedBox(width: 12),
+                          Expanded(child: Text(entry.value.$2, style: body(14.5))),
+                          if (entry.key == visibility) Icon(LucideIcons.check, size: 18, color: accent),
+                        ]),
+                      ),
+                  ],
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+                    child: Row(mainAxisSize: MainAxisSize.min, children: [
+                      Icon(vis.$1, size: 19, color: soft),
+                      const SizedBox(width: 2),
+                      Icon(LucideIcons.chevronDown, size: 15, color: muted),
+                    ]),
+                  ),
+                ),
+              const SizedBox(width: 6),
+              PrimaryButton(label: publishAt != null ? tr('Запланувати') : tr('Пост'), icon: LucideIcons.sparkles, onPressed: ready ? _publish : null, busy: busy, expand: false, compact: true),
             ],
+          ),
+          // Сітка інструментів під «+»: плавно розкривається, плитки з'являються каскадом.
+          AnimatedSize(
+            duration: still ? Duration.zero : const Duration(milliseconds: 260),
+            curve: Curves.easeOutCubic,
+            alignment: Alignment.topCenter,
+            child: !tools
+                ? const SizedBox(width: double.infinity)
+                : Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: GridView.count(
+                      crossAxisCount: 4,
+                      shrinkWrap: true,
+                      padding: EdgeInsets.zero,
+                      physics: const NeverScrollableScrollPhysics(),
+                      mainAxisSpacing: 6,
+                      childAspectRatio: 0.92,
+                      children: [for (final tool in _tools(session)) ArcticCascade(child: _ToolTile(tool: tool, onDone: () => setState(() => tools = false)))],
+                    ),
+                  ),
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Текст запису з #тегами, що ведуть на сторінку теми (/t/тег), як на сайті.
+List<InlineSpan> _hashtags(BuildContext context, String value) {
+  final spans = <InlineSpan>[];
+  var at = 0;
+  for (final m in RegExp(r'(?<![\w#])#([\p{L}\p{N}_]{2,30})', unicode: true).allMatches(value)) {
+    if (m.start > at) spans.add(TextSpan(text: value.substring(at, m.start)));
+    final tag = m.group(1)!;
+    spans.add(TextSpan(text: m.group(0), style: TextStyle(color: accent, fontWeight: FontWeight.w600), recognizer: TapGestureRecognizer()..onTap = () => context.push('/t/${Uri.encodeComponent(tag.toLowerCase())}')));
+    at = m.end;
+  }
+  if (at < value.length) spans.add(TextSpan(text: value.substring(at)));
+  return spans;
+}
+
+/// Стікери записів — ті самі, що на сайті (App\Support\Stickers::ITEMS).
+const postStickers = {'gg': '🏆', 'fire': '🔥', 'heart': '💙', 'laugh': '😂', 'clap': '👏', 'game': '🎮', 'star': '⭐', 'cool': '😎'};
+
+class _Tool {
+  const _Tool(this.icon, this.label, this.color, {required this.onTap, this.active = false});
+  final IconData icon;
+  final String label;
+  final Color color;
+  final bool active;
+  final VoidCallback? onTap;
+}
+
+/// Кругла плитка інструмента (як .arctic-tile на сайті): вибрана — підсвічена.
+class _ToolTile extends StatelessWidget {
+  const _ToolTile({required this.tool, required this.onDone});
+  final _Tool tool;
+  final VoidCallback onDone;
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = tool.onTap != null;
+    return ArcticPressable(
+      onTap: enabled
+          ? () {
+              onDone();
+              tool.onTap!();
+            }
+          : null,
+      child: Column(children: [
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(shape: BoxShape.circle, color: tool.active ? tool.color.withValues(alpha: 0.22) : fg.withValues(alpha: 0.07)),
+          child: Icon(tool.icon, size: 22, color: tool.color.withValues(alpha: enabled ? 1 : 0.4)),
+        ),
+        const SizedBox(height: 6),
+        // Одне довге слово («Підписникам») трохи зменшується, а не рветься по складах.
+        Builder(builder: (context) {
+          final label = Text(tool.label, textAlign: TextAlign.center, maxLines: 2, style: body(11, color: enabled ? soft : faint, weight: FontWeight.w500).copyWith(height: 1.15));
+          return tool.label.contains(' ') ? label : FittedBox(fit: BoxFit.scaleDown, child: label);
+        }),
+      ]),
+    );
+  }
+}
+
+/// Пошук картки гри, сервера чи події для запису (`/site/cards/search`).
+class _CardPicker extends StatefulWidget {
+  const _CardPicker();
+
+  @override
+  State<_CardPicker> createState() => _CardPickerState();
+}
+
+class _CardPickerState extends State<_CardPicker> {
+  final query = TextEditingController();
+  Timer? debounce;
+  String last = '';
+  List<Map<String, dynamic>> hits = [];
+
+  @override
+  void initState() {
+    super.initState();
+    query.addListener(() {
+      final q = query.text.trim();
+      if (q == last) return;
+      last = q;
+      debounce?.cancel();
+      debounce = Timer(const Duration(milliseconds: 250), () => _search(q));
+    });
+  }
+
+  @override
+  void dispose() {
+    debounce?.cancel();
+    query.dispose();
+    super.dispose();
+  }
+
+  Future<void> _search(String q) async {
+    if (q.length < 2) {
+      setState(() => hits = []);
+      return;
+    }
+    try {
+      final data = await AppScope.read(context).session.api.get(Api.site('/cards/search?q=${Uri.encodeQueryComponent(q)}'));
+      if (mounted && q == query.text.trim()) setState(() => hits = maps(data['cards']));
+    } catch (_) {}
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      child: Column(children: [
+        SearchField(controller: query, hint: tr('Гра, сервер або подія'), onSearch: _search),
+        const SizedBox(height: 8),
+        Expanded(
+          child: hits.isEmpty
+              ? QuietEmpty(icon: LucideIcons.sparkles, text: tr('Почніть вводити назву гри, сервера чи події.'))
+              : ListView(children: [
+                  for (final hit in hits)
+                    ListTile(
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 6),
+                      title: Text(text(hit['title']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14.5, weight: FontWeight.w600)),
+                      subtitle: Text(tr(text(hit['hint']) ?? ''), style: body(12, color: faint)),
+                      onTap: () => Navigator.pop(context, hit),
+                    ),
+                ]),
+        ),
+      ]),
     );
   }
 }
@@ -1091,11 +1513,13 @@ class _ToolIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Компактні кнопки: фото, музика й GIF уміщуються поруч із видимістю навіть на вузькому телефоні.
     return IconButton(
       tooltip: tooltip,
       onPressed: onTap,
-      visualDensity: VisualDensity.compact,
-      icon: Icon(icon, color: const Color(0xFF9AA6FF), size: 21),
+      padding: EdgeInsets.zero,
+      constraints: const BoxConstraints(minWidth: 34, minHeight: 36),
+      icon: Icon(icon, color: accent, size: 21),
     );
   }
 }
@@ -1300,7 +1724,7 @@ class TrackRow extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(text(track['title']) ?? tr('Без назви'), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14.5, color: playing ? const Color(0xFF9AA6FF) : ink, weight: FontWeight.w600)),
+                  Text(text(track['title']) ?? tr('Без назви'), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14.5, color: playing ? accent : ink, weight: FontWeight.w600)),
                   Text(artistOf(track['artist'], '—'), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12.5, color: muted)),
                 ],
               ),
@@ -1353,7 +1777,7 @@ class ReactionButton extends StatelessWidget {
             child: Material(
               color: popover,
               elevation: 8,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30), side: const BorderSide(color: lineStrong)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
               child: Padding(
                 padding: const EdgeInsets.all(6),
                 child: Row(mainAxisSize: MainAxisSize.min, children: [
@@ -1368,7 +1792,7 @@ class ReactionButton extends StatelessWidget {
                           height: 44,
                           alignment: Alignment.center,
                           decoration: BoxDecoration(
-                            color: reaction == id ? Colors.white.withValues(alpha: 0.12) : null,
+                            color: reaction == id ? fg.withValues(alpha: 0.12) : null,
                             shape: BoxShape.circle,
                           ),
                           child: Text(glyph, style: const TextStyle(fontSize: 24)),
@@ -1393,7 +1817,7 @@ class ReactionButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final current = reactionGlyphs.where((r) => r.$1 == reaction).firstOrNull;
     return Material(
-      color: current != null ? Colors.white.withValues(alpha: 0.1) : Colors.white.withValues(alpha: 0.045),
+      color: current != null ? fg.withValues(alpha: 0.1) : fg.withValues(alpha: 0.045),
       borderRadius: BorderRadius.circular(20),
       child: InkWell(
         onTap: () => onPick(reaction ?? 'like'),
@@ -1460,10 +1884,10 @@ class _SharedCard extends StatelessWidget {
         child: Container(
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.04), borderRadius: BorderRadius.circular(16), border: Border.all(color: line)),
+          decoration: BoxDecoration(color: fg.withValues(alpha: 0.04), borderRadius: BorderRadius.circular(16)),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [
-              if (community != null) ...[const Icon(LucideIcons.usersRound, size: 13, color: muted), const SizedBox(width: 4)],
+              if (community != null) ...[Icon(LucideIcons.usersRound, size: 13, color: muted), const SizedBox(width: 4)],
               Flexible(
                 child: Text(
                   community != null ? tr('Із спільноти «{name}»', {'name': community['name']}) : tr('Запис'),
@@ -1485,3 +1909,220 @@ class _SharedCard extends StatelessWidget {
   }
 }
 
+
+
+/// Картка в записі (гра, фільм, сервер…); GIF показується як зображення.
+class _PostCardLink extends StatelessWidget {
+  const _PostCardLink({required this.card});
+  final Map<String, dynamic> card;
+
+  @override
+  Widget build(BuildContext context) {
+    final image = text(card['image']);
+    if (card['kind'] == 'gif' && image != null) {
+      return ClipRRect(borderRadius: BorderRadius.circular(16), child: Image.network(image, fit: BoxFit.cover, width: double.infinity, gaplessPlayback: true));
+    }
+    return Glass(
+      padding: const EdgeInsets.all(10),
+      radius: 16,
+      onTap: text(card['href']) == null ? null : () => context.push(appPathFor(text(card['href']))),
+      child: Row(children: [
+        SizedBox(width: 48, height: 48, child: image != null ? NetImage(image, radius: 12) : CoverPlaceholder(seed: card['title'] ?? '', radius: 12, icon: LucideIcons.sparkles)),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(tr(text(card['hint']) ?? ''), style: body(11.5, color: muted)),
+            Text(text(card['title']) ?? '', style: body(14, weight: FontWeight.w600), maxLines: 1, overflow: TextOverflow.ellipsis),
+          ]),
+        ),
+      ]),
+    );
+  }
+}
+
+/// Опитування в записі: голос одним дотиком, відсотки після голосу; у відкритому — хто як голосував.
+class _PollBox extends StatefulWidget {
+  const _PollBox({required this.postId, required this.poll});
+  final int postId;
+  final Map<String, dynamic> poll;
+
+  @override
+  State<_PollBox> createState() => _PollBoxState();
+}
+
+class _PollBoxState extends State<_PollBox> {
+  late Map<String, dynamic> poll = widget.poll;
+  bool busy = false;
+
+  Future<void> _vote(int optionId) async {
+    if (busy) return;
+    setState(() => busy = true);
+    try {
+      final next = await AppScope.read(context).session.api.post(Api.site('/posts/${widget.postId}/poll'), {'option_id': optionId});
+      if (mounted) setState(() => poll = next);
+    } catch (e) {
+      if (mounted) toast(context, e);
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final total = intOf(poll['total']);
+    final voted = poll['voted'];
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(color: card.withValues(alpha: card.a * 0.5), borderRadius: BorderRadius.circular(16)),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(text(poll['question']) ?? '', style: body(14.5, weight: FontWeight.w600)),
+        const SizedBox(height: 10),
+        for (final o in maps(poll['options']))
+          Builder(builder: (context) {
+            final share = total > 0 ? (intOf(o['votes']) / total) : 0.0;
+            final chosen = voted == o['id'];
+            final voters = maps(o['voters']);
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(12),
+                onTap: () => _vote(intOf(o['id'])),
+                child: Container(
+                  clipBehavior: Clip.antiAlias,
+                  decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), border: Border.all(color: chosen ? primary : line)),
+                  child: Stack(children: [
+                    if (voted != null) Positioned.fill(child: FractionallySizedBox(alignment: Alignment.centerLeft, widthFactor: share, child: Container(color: primary.withValues(alpha: 0.22)))),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      child: Row(children: [
+                        Expanded(child: Text(text(o['label']) ?? '', style: body(14))),
+                        for (final v in voters.take(3)) Padding(padding: const EdgeInsets.only(left: 2), child: Avatar(url: text(v['avatar_url']), name: text(v['name']) ?? '', size: 20)),
+                        if (voted != null) Padding(padding: const EdgeInsets.only(left: 8), child: Text('${(share * 100).round()}%', style: body(12, color: muted))),
+                      ]),
+                    ),
+                  ]),
+                ),
+              ),
+            );
+          }),
+        Text('${tr('{total} голосів', {'total': '$total'})} · ${poll['anonymous'] == false ? tr('відкрите опитування') : tr('анонімне')}', style: body(12, color: muted)),
+      ]),
+    );
+  }
+}
+
+/// Запис лише для платних підписників автора. Підписки продаються тільки на сайті (правила Google Play),
+/// тому тут — лише пояснення, без посилань на оплату.
+class _LockedNotice extends StatelessWidget {
+  const _LockedNotice({required this.author});
+  final String author;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(color: primary.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(16)),
+      child: Row(children: [
+        Icon(LucideIcons.lock, size: 20, color: accent),
+        const SizedBox(width: 12),
+        Expanded(child: Text(tr('Запис лише для підписників {name}.', {'name': author}), style: body(14))),
+      ]),
+    );
+  }
+}
+
+// ───────────────────────── Пошук GIF ─────────────────────────
+
+/// Шторка пошуку GIF (Giphy через міст сайту `/site/gifs`): популярні одразу, пошук під час набору.
+/// Повертає `{url, title}` вибраного GIF.
+Future<Map<String, dynamic>?> showGifPicker(BuildContext context) {
+  return showGcSheet<Map<String, dynamic>>(
+    context,
+    title: tr('GIF'),
+    height: MediaQuery.sizeOf(context).height * 0.75,
+    builder: (sheet) => const _GifPicker(),
+  );
+}
+
+class _GifPicker extends StatefulWidget {
+  const _GifPicker();
+
+  @override
+  State<_GifPicker> createState() => _GifPickerState();
+}
+
+class _GifPickerState extends State<_GifPicker> {
+  final query = TextEditingController();
+  Timer? debounce;
+  String last = '';
+  List<Map<String, dynamic>>? gifs;
+  bool configured = true;
+  Object? error;
+
+  @override
+  void initState() {
+    super.initState();
+    // Пошук під час набору — з невеликою паузою, щоб не смикати сервер на кожну літеру.
+    query.addListener(() {
+      if (query.text.trim() == last) return;
+      last = query.text.trim();
+      debounce?.cancel();
+      debounce = Timer(const Duration(milliseconds: 350), _load);
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) => _load());
+  }
+
+  @override
+  void dispose() {
+    debounce?.cancel();
+    query.dispose();
+    super.dispose();
+  }
+
+  Future<void> _load() async {
+    final q = query.text.trim();
+    try {
+      final data = await AppScope.read(context).session.api.get(Api.site('/gifs${q.isEmpty ? '' : '?q=${Uri.encodeQueryComponent(q)}'}'));
+      if (!mounted || q != query.text.trim()) return;
+      setState(() {
+        configured = data['configured'] != false;
+        gifs = maps(data['gifs']);
+        error = null;
+      });
+    } catch (e) {
+      if (mounted) setState(() => error = e);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final list = gifs;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      child: Column(children: [
+        SearchField(controller: query, hint: tr('Пошук GIF'), onSearch: (_) => _load()),
+        const SizedBox(height: 12),
+        Expanded(
+          child: error != null
+              ? QuietEmpty(icon: LucideIcons.wifiOff, text: tr('Не вдалося завантажити GIF.'))
+              : list == null
+                  ? const GridSkeleton(aspect: 1)
+                  : !configured
+                      ? QuietEmpty(icon: LucideIcons.sticker, text: tr('Пошук GIF ще не налаштовано.'))
+                      : list.isEmpty
+                          ? QuietEmpty(icon: LucideIcons.searchX, text: tr('Нічого не знайшли.'))
+                          : GridView.builder(
+                              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 3, mainAxisSpacing: 6, crossAxisSpacing: 6),
+                              itemCount: list.length,
+                              itemBuilder: (_, i) => ArcticPressable(
+                                onTap: () => Navigator.pop(context, {'url': list[i]['url'], 'title': list[i]['title']}),
+                                child: ClipRRect(borderRadius: BorderRadius.circular(12), child: NetImage(text(list[i]['preview']) ?? text(list[i]['url']), fit: BoxFit.cover)),
+                              ),
+                            ),
+        ),
+        const SizedBox(height: 6),
+        Text(tr('GIF від GIPHY'), style: body(11, color: faint)),
+      ]),
+    );
+  }
+}

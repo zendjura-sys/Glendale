@@ -3,6 +3,7 @@
 namespace App\Services\Spotify;
 
 use App\Models\SpotifyAccount;
+use App\Services\Music\MetaMatch;
 use App\Support\Settings\SiteSettings;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
@@ -138,6 +139,69 @@ class SpotifyClient
         $response = $this->get($account, '/search', $params);
 
         return $this->mapTracks($response['tracks']['items'] ?? null);
+    }
+
+    /**
+     * Трек за виконавцем і назвою (токен застосунку) для метаданих: альбом, рік, номер, обкладинка
+     * (найбільша до 1000 px), ID виконавця. Лише точний збіг назви й виконавця; null — не знайдено.
+     *
+     * @return array{id: string, title: string, artist: string, artist_id: ?string, album: ?string, album_type: ?string, year: ?int, track_no: ?int, duration: int, cover: ?string, cover_width: ?int}|null
+     */
+    public function findTrack(string $artist, string $title): ?array
+    {
+        $response = $this->get(null, '/search', ['q' => 'track:'.$title.' artist:'.$artist, 'type' => 'track', 'limit' => 10]);
+        foreach ($response['tracks']['items'] ?? [] as $item) {
+            if (! is_array($item) || ! MetaMatch::sameTitle((string) ($item['name'] ?? ''), $title)
+                || ! MetaMatch::sameArtist(self::artistNames($item['artists'] ?? null), $artist)) {
+                continue;
+            }
+            $images = collect((array) ($item['album']['images'] ?? []))->filter(fn ($i) => is_array($i) && filled($i['url'] ?? null))
+                ->sortByDesc(fn ($i) => (int) ($i['width'] ?? 0) <= 1000 ? (int) ($i['width'] ?? 0) : 0);
+            $image = $images->first();
+            preg_match('/^(\d{4})/', (string) ($item['album']['release_date'] ?? ''), $m);
+
+            return [
+                'id' => (string) ($item['id'] ?? ''),
+                'title' => (string) $item['name'],
+                'artist' => self::artistNames($item['artists'] ?? null),
+                'artist_id' => $item['artists'][0]['id'] ?? null,
+                'album' => $item['album']['name'] ?? null,
+                'album_type' => $item['album']['album_type'] ?? null,
+                'year' => isset($m[1]) ? (int) $m[1] : null,
+                'track_no' => isset($item['track_number']) ? (int) $item['track_number'] : null,
+                'duration' => (int) round(((int) ($item['duration_ms'] ?? 0)) / 1000),
+                'cover' => is_array($image) ? (string) $image['url'] : null,
+                'cover_width' => is_array($image) ? ((int) ($image['width'] ?? 0) ?: null) : null,
+            ];
+        }
+
+        return null;
+    }
+
+    /**
+     * Виконавець за ім’ям (токен застосунку): фото, жанри, підписники. Null — не знайдено.
+     *
+     * @return array{id: ?string, name: string, image: ?string, genres: list<string>, followers: int, url: ?string}|null
+     */
+    public function artist(string $name): ?array
+    {
+        $response = $this->get(null, '/search', ['q' => 'artist:'.$name, 'type' => 'artist', 'limit' => 5]);
+        foreach ($response['artists']['items'] ?? [] as $item) {
+            if (mb_strtolower((string) ($item['name'] ?? '')) !== mb_strtolower($name)) {
+                continue;
+            }
+
+            return [
+                'id' => isset($item['id']) ? (string) $item['id'] : null,
+                'name' => (string) $item['name'],
+                'image' => $item['images'][0]['url'] ?? null,
+                'genres' => array_values(array_map('strval', $item['genres'] ?? [])),
+                'followers' => (int) ($item['followers']['total'] ?? 0),
+                'url' => $item['external_urls']['spotify'] ?? null,
+            ];
+        }
+
+        return null;
     }
 
     /**

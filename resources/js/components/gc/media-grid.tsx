@@ -1,6 +1,8 @@
-import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ImageDown, X } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useDataSaver } from '@/lib/data-saver';
+import { tr } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import type { Attachment } from '@/types';
 
@@ -79,7 +81,7 @@ export function Lightbox({
                     >
                         <ChevronRight className="size-6" />
                     </button>
-                    <div className="absolute bottom-6 rounded-full bg-white/10 px-3 py-1 text-sm text-white/80">
+                    <div className="absolute bottom-6 rounded-chip bg-white/10 px-3 py-1 text-sm text-white/80">
                         {current + 1} / {items.length}
                     </div>
                 </>
@@ -90,13 +92,33 @@ export function Lightbox({
 }
 
 /**
- * Сітка фото у стилі ВК: 1 — велике, 2 — пополам, 3 — велике + 2, 4+ — 2×2 з «+N».
+ * Сітка фото як у класичних соцмережах: 1 — велике, 2 — пополам, 3 — велике + 2, 4+ — 2×2 з «+N».
  */
 export function MediaGrid({ items }: { items: Attachment[] }) {
     const [open, setOpen] = useState<number | null>(null);
+    const saver = useDataSaver();
+    const [shown, setShown] = useState(false);
 
     if (items.length === 0) {
         return null;
+    }
+
+    // Економія трафіку: фото не вантажимо, доки людина не попросить.
+    if (saver && !shown) {
+        return (
+            <button
+                type="button"
+                onClick={() => setShown(true)}
+                className="flex h-28 w-full items-center justify-center gap-2 rounded-[10px] bg-white/[0.04] text-sm text-white/60 transition hover:bg-white/[0.07] hover:text-white"
+            >
+                <ImageDown className="size-4" />
+                {items.length === 1
+                    ? tr('Фото · натисніть, щоб завантажити')
+                    : tr('{n} фото · натисніть, щоб завантажити', {
+                          n: items.length,
+                      })}
+            </button>
+        );
     }
 
     const visible = items.slice(0, 4);
@@ -114,7 +136,7 @@ export function MediaGrid({ items }: { items: Attachment[] }) {
         <>
             <div
                 className={cn(
-                    'grid gap-1 overflow-hidden rounded-2xl',
+                    'grid gap-1 overflow-hidden rounded-[10px]',
                     layout,
                     items.length > 1 && 'aspect-[4/3]',
                 )}

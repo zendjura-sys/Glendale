@@ -9,11 +9,14 @@ use App\Models\FamilyEvent;
 use App\Models\FamilyEventAttendance;
 use App\Models\FamilyMember;
 use App\Models\GtaServer;
+use App\Models\MusicStatus;
 use App\Models\User;
+use App\Services\Bots\BotHub;
 use App\Services\Families\FamilyService;
 use App\Support\Settings\SiteSettings;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request as ClientRequest;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
@@ -170,5 +173,26 @@ class BotsTest extends TestCase
         $this->artisan('bots:roles')->assertSuccessful();
         $this->assertSame(1, DiscordRoleGrant::query()->count());
         Http::assertSent(fn (ClientRequest $r) => $r->method() === 'DELETE' && str_contains($r->url(), '/members/100000000000000002/roles/555555555555555555'));
+    }
+
+    public function test_bot_shows_who_listens_and_announces_listen_rooms(): void
+    {
+        [$family, $leader, $player] = $this->family();
+        $this->telegram();
+        BotLink::query()->create(['platform' => BotLink::TELEGRAM, 'owner_type' => 'family', 'owner_id' => $family->id, 'chat_id' => '-100500', 'title' => 'Чат сім’ї', 'linked_by' => $leader->id]);
+        MusicStatus::query()->create(['user_id' => $player->id, 'source' => 'spotify', 'payload' => ['title' => 'Thunderstruck', 'artist' => 'AC/DC'], 'expires_at' => now()->addMinutes(5)]);
+
+        $card = app(BotHub::class)->press('telegram', "mu:f:{$family->id}", null)['card'];
+        $this->assertStringContainsString('Thunderstruck', implode("\n", $card['lines']));
+
+        // Хто приховав «Зараз слухаю» — не потрапляє в картку.
+        $player->forceFill(['preferences' => [...(array) $player->preferences, 'show_listening' => false]])->save();
+        Cache::flush();
+        $card = app(BotHub::class)->press('telegram', "mu:f:{$family->id}", null)['card'];
+        $this->assertSame(['Зараз ніхто не слухає музику.'], $card['lines']);
+
+        // Відкрили кімнату групи — бот пише в чат.
+        $this->actingAs($leader)->post('/music/rooms', ['group_type' => 'family', 'group_id' => $family->id, 'title' => 'Вечір року'])->assertRedirect();
+        Http::assertSent(fn (ClientRequest $r) => str_contains($r->url(), 'sendMessage') && str_contains((string) json_encode($r->data(), JSON_UNESCAPED_UNICODE), 'Вечір року'));
     }
 }

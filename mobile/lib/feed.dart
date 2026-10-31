@@ -12,7 +12,9 @@ import 'state.dart';
 import 'stories.dart';
 import 'theme.dart';
 import 'widgets.dart';
+import 'wrapped.dart';
 import 'i18n.dart';
+import 'skeletons.dart';
 
 /// Сторінки записів з підвантаженням: стрічка, стіна профілю, спільнота.
 class PostPager {
@@ -121,6 +123,7 @@ class _FeedScreenState extends State<FeedScreen> {
       onRefresh: _reload,
       children: [
         StoriesStrip(key: stories),
+        if (AppScope.of(context).session.wrappedYear case final year?) ...[WrappedBanner(year: year), const SizedBox(height: 12)],
         if (tomorrow.isNotEmpty) ...[_TomorrowCard(events: tomorrow), const SizedBox(height: 12)],
         Composer(onPosted: _reload),
         SizedBox(height: 12),
@@ -138,7 +141,7 @@ class _FeedScreenState extends State<FeedScreen> {
         if (languages.isNotEmpty) ...[
           const SizedBox(height: 10),
           Row(children: [
-            const Icon(LucideIcons.languages, size: 16, color: muted),
+            Icon(LucideIcons.languages, size: 16, color: muted),
             const SizedBox(width: 8),
             Text(tr('Мова записів'), style: body(12.5, color: muted)),
             const SizedBox(width: 10),
@@ -182,7 +185,7 @@ class _FeedScreenState extends State<FeedScreen> {
           const SizedBox(height: 12),
         ],
         if (!ready)
-          const Padding(padding: EdgeInsets.all(40), child: Center(child: CircularProgressIndicator(strokeWidth: 2.4)))
+          const FeedSkeleton()
         else if (error != null)
           EmptyState(icon: LucideIcons.wifiOff, title: tr('Не вдалося завантажити'), text: '$error', action: tr('Спробувати знову'), onAction: _reload)
         else if (pager.posts.isEmpty)
@@ -362,7 +365,7 @@ class _SearchScreenState extends State<SearchScreen> {
         ),
         const SizedBox(height: 14),
         if (loading && users.isEmpty && communities.isEmpty)
-          const Padding(padding: EdgeInsets.all(30), child: Center(child: CircularProgressIndicator(strokeWidth: 2)))
+          const ListSkeleton(rows: 5)
         else if (q.length < 2)
           QuietEmpty(icon: LucideIcons.search, text: tr('Введіть щонайменше 2 символи'))
         else if (users.isEmpty && communities.isEmpty)
@@ -434,7 +437,7 @@ class _TomorrowCard extends StatelessWidget {
                   height: 44,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(color: primary.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(12)),
-                  child: Text(clock(e['starts_at']), style: body(13.5, color: const Color(0xFFB4BFFF), weight: FontWeight.w700)),
+                  child: Text(clock(e['starts_at']), style: body(13.5, color: const Color(0xFF9DD8FF), weight: FontWeight.w700)),
                 ),
                 const SizedBox(width: 12),
                 Expanded(

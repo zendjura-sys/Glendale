@@ -20,7 +20,7 @@ class LegalPagesTest extends TestCase
 
     public function test_documents_are_public_and_rendered_in_every_base_language(): void
     {
-        foreach (['/terms' => 'terms', '/privacy' => 'privacy', '/refund-policy' => 'refund', '/contacts' => 'contacts'] as $url => $doc) {
+        foreach (['/terms' => 'terms', '/privacy' => 'privacy', '/refund-policy' => 'refund', '/contacts' => 'contacts', '/child-safety' => 'child-safety'] as $url => $doc) {
             foreach ((array) config('legal.languages') as $lang) {
                 $this->get("{$url}?lang={$lang}")->assertOk()->assertInertia(fn (Assert $page) => $page
                     ->component('legal/show')
@@ -32,6 +32,24 @@ class LegalPagesTest extends TestCase
                 );
             }
         }
+    }
+
+    public function test_child_safety_standards_meet_google_play_requirements(): void
+    {
+        // Google Play: публічна HTML-сторінка, явна заборона CSAE, назва застосунку й розробника, контакт.
+        foreach (['uk', 'en'] as $lang) {
+            $this->get("/child-safety?lang={$lang}")->assertOk()->assertInertia(fn (Assert $page) => $page
+                ->where('html', fn (string $html) => str_contains($html, 'CSAE') && str_contains($html, 'GameCon')
+                    && str_contains($html, (string) config('legal.developer')) && str_contains($html, 'mailto:'.config('legal.email')))
+            );
+        }
+        $this->get('/terms')->assertInertia(fn (Assert $page) => $page->where('html', fn (string $html) => str_contains($html, '/child-safety')));
+        $this->get('/sitemap.xml')->assertOk()->assertSee('/child-safety');
+
+        // Скарга з причиною «Загроза дитині» приймається й іде першою в черзі модерації.
+        [$reporter, $target] = User::factory()->count(2)->create();
+        $this->actingAs($reporter)->post("/report/{$target->username}", ['reason' => 'child_safety'])->assertRedirect();
+        $this->assertDatabaseHas('user_reports', ['user_id' => $target->id, 'reason' => 'child_safety']);
     }
 
     public function test_missing_translation_falls_back_to_the_ukrainian_master(): void

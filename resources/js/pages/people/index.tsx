@@ -1,4 +1,5 @@
 import { Head, InfiniteScroll, router } from '@inertiajs/react';
+import { ListSkeleton } from '@/components/gc/skeletons';
 import { MapPin, Radio, Search, SearchX } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { PersonCard } from '@/components/gc/person-card';
@@ -53,7 +54,7 @@ export default function People({ filters, saved, total, users }: Props) {
         <>
             <Head title={tr('Пошук людей')} />
             <div className="space-y-5">
-                <section className="glass relative overflow-hidden rounded-3xl p-5 sm:p-6">
+                <section className="glass relative overflow-hidden rounded-2xl p-5 sm:p-6">
                     <div className="pointer-events-none absolute -top-24 right-0 size-72 rounded-full bg-gc-blue/20 blur-3xl" />
                     <h1 className="relative font-display text-2xl font-bold text-white">
                         {tr('Знайдіть')}{' '}
@@ -203,6 +204,7 @@ export default function People({ filters, saved, total, users }: Props) {
                 ) : (
                     <InfiniteScroll
                         data="users"
+                        loading={<ListSkeleton rows={3} card={false} />}
                         preserveUrl
                         className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4"
                     >

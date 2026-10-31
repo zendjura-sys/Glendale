@@ -10,6 +10,7 @@ import 'state.dart';
 import 'theme.dart';
 import 'widgets.dart';
 import 'i18n.dart';
+import 'skeletons.dart';
 
 final _sorts = [('new', tr('Нові на сайті')), ('popular', tr('Популярні')), ('rating', tr('За рейтингом')), ('year', tr('За роком'))];
 
@@ -89,7 +90,7 @@ class _CinemaScreenState extends State<CinemaScreen> {
   @override
   Widget build(BuildContext context) {
     final data = page;
-    if (data == null) return const Center(child: CircularProgressIndicator(strokeWidth: 2.4));
+    if (data == null) return const ScreenSkeleton();
     final featured = maps(data['featured']);
     final rows = maps(data['rows']).where((row) => maps(row['movies']).isNotEmpty).toList();
     final types = maps(data['types']);
@@ -192,7 +193,7 @@ class _CinemaScreenState extends State<CinemaScreen> {
                 Padding(
                   padding: const EdgeInsets.only(right: 14),
                   child: Row(children: [
-                    if (row['key'] == 'continue') const Padding(padding: EdgeInsets.only(right: 6), child: Icon(LucideIcons.play, color: Color(0xFF9AA6FF))),
+                    if (row['key'] == 'continue') Padding(padding: EdgeInsets.only(right: 6), child: Icon(LucideIcons.play, color: accent)),
                     Expanded(child: Text('${row['title']}', style: display(17))),
                     if (row['key'] == 'continue') GestureDetector(onTap: () => context.push('/cinema/my?status=watching'), child: Text(tr('Усі'), style: body(13, color: primary, weight: FontWeight.w600))),
                   ]),
@@ -215,7 +216,7 @@ class _CinemaScreenState extends State<CinemaScreen> {
         if (filtered || rows.isEmpty) ...[
           if (filtered) const SizedBox.shrink() else SectionLabel(tr('Каталог')),
           if (loading && movies.isEmpty)
-            const Padding(padding: EdgeInsets.all(30), child: Center(child: CircularProgressIndicator(strokeWidth: 2)))
+            const ListSkeleton(rows: 5)
           else if (movies.isEmpty)
             EmptyState(icon: LucideIcons.clapperboard, title: tr('Нічого не знайдено'), text: tr('Спробуйте змінити фільтри або запит.'))
           else ...[
@@ -316,7 +317,7 @@ class _FeaturedState extends State<_Featured> {
                   margin: const EdgeInsets.only(left: 4),
                   width: i == index ? 18 : 6,
                   height: 6,
-                  decoration: BoxDecoration(color: i == index ? Colors.white : Colors.white38, borderRadius: BorderRadius.circular(4)),
+                  decoration: BoxDecoration(color: i == index ? Colors.white : fg.withValues(alpha: 0.38), borderRadius: BorderRadius.circular(4)),
                 ),
             ]),
           ),
@@ -482,7 +483,7 @@ class _MyCinemaScreenState extends State<MyCinemaScreen> {
         ),
         const SizedBox(height: 12),
         if (loading && movies.isEmpty)
-          const Padding(padding: EdgeInsets.all(30), child: Center(child: CircularProgressIndicator(strokeWidth: 2)))
+          const ListSkeleton(rows: 5)
         else if (movies.isEmpty)
           EmptyState(icon: LucideIcons.bookmark, title: tr('Список порожній'), text: tr('Позначайте фільми статусами «Буду дивитися», «Дивлюся» тощо — вони з’являться тут.'), action: tr('До каталогу'), onAction: () => context.go('/cinema'))
         else ...[

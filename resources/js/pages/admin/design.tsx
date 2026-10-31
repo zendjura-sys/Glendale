@@ -187,7 +187,7 @@ export default function AdminDesign({
                     <button
                         type="button"
                         onClick={() => fileRef.current?.click()}
-                        className="flex w-full items-center gap-3 rounded-xl border border-dashed border-white/15 px-4 py-3 text-left text-sm text-white/60 transition hover:border-[#8b7dff]/60 hover:text-white"
+                        className="flex w-full items-center gap-3 rounded-xl border border-dashed border-white/15 px-4 py-3 text-left text-sm text-white/60 transition hover:border-gc-lilac-400/60 hover:text-white"
                     >
                         <FileCode2 className="size-5 shrink-0" />
                         <span className="min-w-0 flex-1 truncate">
@@ -253,7 +253,7 @@ export default function AdminDesign({
                     />
                 ))}
                 {themes.length === 0 && (
-                    <div className="glass rounded-3xl px-6 py-10 text-center text-sm text-white/40">
+                    <div className="glass rounded-2xl px-6 py-10 text-center text-sm text-white/40">
                         {tr(
                             'Завантажених стилів ще немає. Скачайте шаблон, змініть кольори й завантажте файл.',
                         )}

@@ -48,7 +48,7 @@ export function PlusMenuCard({
                 </span>
                 <span
                     className={cn(
-                        'ml-auto rounded-full px-2.5 py-0.5 text-[11px] font-semibold',
+                        'ml-auto rounded-chip px-2.5 py-0.5 text-[11px] font-semibold',
                         active
                             ? 'bg-emerald-400/15 text-emerald-200'
                             : 'bg-white/[0.07] text-white/60',
@@ -69,7 +69,7 @@ export function PlusMenuCard({
                     </p>
                     <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/[0.08]">
                         <div
-                            className="h-full rounded-full bg-[var(--btn-primary,#6366f1)] transition-[width] duration-700 ease-out"
+                            className="h-full rounded-full bg-primary transition-[width] duration-700 ease-out"
                             style={{ width: `${Math.max(4, progress * 100)}%` }}
                         />
                     </div>
@@ -80,7 +80,7 @@ export function PlusMenuCard({
                         {PERKS().map((perk) => (
                             <li
                                 key={perk}
-                                className="rounded-full bg-white/[0.06] px-2.5 py-1 text-[11px] font-medium text-white/75"
+                                className="rounded-chip bg-white/[0.06] px-2.5 py-1 text-[11px] font-medium text-white/75"
                             >
                                 {perk}
                             </li>
@@ -97,7 +97,7 @@ export function PlusMenuCard({
             <div className="relative mt-4 flex gap-2">
                 <Link
                     href="/plus"
-                    className="inline-flex h-10 flex-1 items-center justify-center gap-1 rounded-xl bg-[var(--btn-primary,#6366f1)] px-3 text-sm font-semibold text-white transition hover:opacity-90 active:opacity-80"
+                    className="inline-flex h-10 flex-1 items-center justify-center gap-1 rounded-xl bg-primary px-3 text-sm font-semibold text-white transition hover:opacity-90 active:opacity-80"
                 >
                     {active ? tr('Продовжити') : tr('Оформити')}
                     <ChevronRight className="size-4" />

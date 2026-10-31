@@ -6,14 +6,20 @@ use App\Models\Clan;
 use App\Models\Game;
 use App\Models\GameEvent;
 use App\Models\GameGuide;
+use App\Models\Post;
 use App\Models\User;
 use App\Services\EventCalendar;
 use App\Services\FollowAlerts;
 use App\Services\FriendshipService;
+use App\Services\Games\Backlog;
+use App\Services\Games\CommunityRatings;
+use App\Services\Games\GameLeaderboard;
 use App\Services\Games\PosterPalette;
 use App\Services\Presence\PlayingStatus;
 use App\Services\SavedItems;
+use App\Services\Thanks;
 use App\Support\Modules\ModuleManager;
+use App\Support\PageSeo;
 use App\Support\Plugins\Plugins;
 use App\Support\Settings\SiteSettings;
 use Illuminate\Database\Eloquent\Builder;
@@ -22,6 +28,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -119,7 +126,10 @@ class GameController extends Controller
 
         return $request->expectsJson() && ! $request->header('X-Inertia')
             ? response()->json($props)
-            : Inertia::render('games/index', $props);
+            : Inertia::render('games/index', $props)->withViewData([
+                'seoTitle' => 'Каталог ігор',
+                'seoDescription' => 'Каталог мультиплеєрних ігор на GameCon: ПК, консолі й телефони. Тімейти, клани, гайди, оцінки гравців і знижки.',
+            ]);
     }
 
     /**
@@ -184,7 +194,16 @@ class GameController extends Controller
             'saved' => $request->user() ? app(SavedItems::class)->has($request->user(), 'game', $game->id) : false,
             'following' => $request->user() ? app(FollowAlerts::class)->has($request->user(), 'game', $game->id) : false,
             'pinned' => is_array($pin = $request->user()?->pref('pin')) && ($pin['kind'] ?? null) === 'game' && (int) ($pin['id'] ?? 0) === $game->id,
+            'wallpapers' => $plugins->on('game_wallpapers') && $on['media'] ? GameWallpaperController::list($game) : [],
+            'soundtracks' => $plugins->on('game_soundtracks') && app(ModuleManager::class)->enabled('music') ? GameSoundtrackController::forGame($game, $request->user()) : null,
+            'backlog' => $plugins->on('game_backlog') && $request->user() ? app(Backlog::class)->statusOf($request->user(), $game) : null,
+            'backlog_on' => $plugins->on('game_backlog'),
+            'community_rating' => $plugins->on('game_community_rating') ? app(CommunityRatings::class)->summary($game, $request->user()) : null,
             'steam_friends' => $plugins->on('steam_friends') ? $this->steamFriends($game, $request->user(), $friendships) : [],
+            'leaderboard' => $plugins->on('game_leaderboards') && $request->user()
+                ? app(GameLeaderboard::class)->board($game, $request->user(), $friendships->friendIds($request->user())) : null,
+            // Записи з #згадкою гри (публічні).
+            'tagged_posts' => $plugins->on('game_tags') ? $this->taggedPosts($game) : [],
             'can_curate' => $plugins->on('game_collections') && $request->user()?->isStaff() === true,
             'guides' => $plugins->on('game_guides')
                 ? GameGuide::query()->with('user')->where('game_id', $game->id)->latest('id')->limit(20)->get()
@@ -195,6 +214,9 @@ class GameController extends Controller
                         'created_at' => $guide->created_at->toIso8601String(),
                         'user' => $guide->user?->toCard(),
                         'mine' => $request->user()?->id === $guide->user_id || $request->user()?->isStaff() === true,
+                        'thanks' => app(Thanks::class)->count('guide', $guide->id),
+                        'thanked' => $request->user() !== null && app(Thanks::class)->has($request->user(), 'guide', $guide->id),
+                        'can_thank' => $request->user() !== null && $request->user()->id !== $guide->user_id && $plugins->on('thanks'),
                     ])->values()
                 : [],
         ];
@@ -210,7 +232,8 @@ class GameController extends Controller
             return response()->json($props);
         }
 
-        return Inertia::render('games/show', $props);
+        return Inertia::render('games/show', $props)
+            ->withViewData(PageSeo::game($game, is_array($props['community_rating']) ? $props['community_rating'] : null));
     }
 
     public function collections(Request $request, Game $game): RedirectResponse
@@ -332,5 +355,23 @@ class GameController extends Controller
             ->when($filters['platform'] ?? null, fn (Builder $query, string $p) => $query->whereJsonContains('platforms', $p))
             ->when($filters['letter'] ?? null, fn (Builder $query, string $l) => $query->where('letter', $l))
             ->when($filters['collection'] ?? null, fn (Builder $query, string $collection) => $query->whereJsonContains('collections', $collection));
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function taggedPosts(Game $game): array
+    {
+        return array_values(Post::query()->whereIn('id', DB::table('post_game')->where('game_id', $game->id)->select('post_id'))
+            ->where('visibility', Post::VISIBILITY_PUBLIC)->where('is_draft', false)->where('is_pending', false)
+            ->where(fn ($q) => $q->whereNull('publish_at')->orWhere('publish_at', '<=', now()))
+            ->with('author')->latest('id')->limit(4)->get()
+            ->map(fn (Post $post) => [
+                'id' => $post->id,
+                'body' => Str::limit((string) $post->body, 220),
+                'author' => $post->author->toCard(),
+                'created_at' => $post->created_at->toIso8601String(),
+                'likes_count' => $post->likes_count,
+            ])->all());
     }
 }

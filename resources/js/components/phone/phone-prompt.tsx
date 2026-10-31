@@ -1,5 +1,6 @@
 import { Link, usePage } from '@inertiajs/react';
-import { Loader2, Phone, X } from 'lucide-react';
+import { ListSkeleton } from '@/components/gc/skeletons';
+import { Phone, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { NumberPicker } from '@/components/phone/number-picker';
 import { api } from '@/lib/api';
@@ -36,9 +37,14 @@ export function PhonePrompt() {
             role="dialog"
             aria-modal="true"
             aria-label={tr('Отримайте свій номер')}
-            className="fixed inset-0 z-[70] flex items-end justify-center bg-black/60 backdrop-blur-sm sm:items-center sm:p-4"
+            className="fixed inset-0 z-[70] flex items-end justify-center sm:items-center sm:p-4"
         >
-            <div className="max-h-[92dvh] w-full max-w-4xl overflow-y-auto rounded-t-3xl bg-[var(--matte-solid,#1c1c1f)] p-4 sm:rounded-3xl sm:p-6">
+            {/* Затемнення — окремим шаром: якби воно було предком картки, скло картки не розмивало б сторінку. */}
+            <div
+                aria-hidden
+                className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            />
+            <div className="glass-strong relative max-h-[92dvh] w-full max-w-4xl overflow-y-auto rounded-t-2xl p-4 sm:rounded-2xl sm:p-6">
                 <header className="mb-4 flex items-start gap-3">
                     <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-primary/15 text-primary">
                         <Phone className="size-5" />
@@ -68,9 +74,7 @@ export function PhonePrompt() {
                         onPhone={setPhone}
                     />
                 ) : (
-                    <div className="flex h-40 items-center justify-center">
-                        <Loader2 className="size-6 animate-spin text-white/40" />
-                    </div>
+                    <ListSkeleton rows={3} avatar="square" card={false} />
                 )}
                 <footer className="mt-4 flex items-center justify-between gap-3">
                     <Link

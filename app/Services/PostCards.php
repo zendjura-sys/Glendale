@@ -7,17 +7,27 @@ use App\Models\GameEvent;
 use App\Models\GtaServer;
 use App\Models\Movie;
 use App\Models\ServerEvent;
+use App\Support\Modules\ModuleManager;
 
 /**
  * Картка гри, сервера або події всередині поста.
  */
 class PostCards
 {
+    /** Розділ кожного виду картки. */
+    public const MODULES = ['movie' => 'cinema', 'game' => 'games', 'game_event' => 'games', 'server' => 'servers', 'server_event' => 'servers'];
+
     /**
      * @return array{kind: string, id: int, title: string, hint: string, href: string, image: string|null}|null
      */
     public function resolve(string $kind, int $id): ?array
     {
+        // Картки розділів, яких немає в режимі глядача, не показуються й не шукаються.
+        $module = self::MODULES[$kind] ?? null;
+        if ($module !== null && ! app(ModuleManager::class)->enabled($module)) {
+            return null;
+        }
+
         return match ($kind) {
             'movie' => ($movie = Movie::query()->published()->find($id)) ? [
                 'kind' => 'movie',
@@ -110,13 +120,14 @@ class PostCards
     {
         $like = '%'.str_replace(['%', '_'], ['\%', '\_'], $q).'%';
         $hits = [];
-        $groups = [
-            'game' => Game::query()->published()->where('name', 'like', $like)->orderByDesc('popularity')->limit(4)->get(),
-            'movie' => Movie::query()->published()->where('title', 'like', $like)->limit(4)->get(),
-            'server' => GtaServer::query()->published()->where('name', 'like', $like)->limit(4)->get(),
-        ];
-        foreach ($groups as $kind => $models) {
-            foreach ($models as $model) {
+        $modules = app(ModuleManager::class);
+        $groups = array_filter([
+            'game' => fn () => Game::query()->published()->where('name', 'like', $like)->orderByDesc('popularity')->limit(4)->get(),
+            'movie' => fn () => Movie::query()->published()->where('title', 'like', $like)->limit(4)->get(),
+            'server' => fn () => GtaServer::query()->published()->where('name', 'like', $like)->limit(4)->get(),
+        ], fn (string $kind) => $modules->enabled(self::MODULES[$kind]), ARRAY_FILTER_USE_KEY);
+        foreach ($groups as $kind => $query) {
+            foreach ($query() as $model) {
                 $card = $this->resolve($kind, $model->id);
                 if ($card) {
                     $hits[] = $card;

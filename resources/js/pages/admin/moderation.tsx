@@ -5,6 +5,7 @@ import {
     Flag,
     Gavel,
     MessageSquareWarning,
+    Sparkles,
     Trash2,
     UserX,
     VolumeX,
@@ -13,12 +14,16 @@ import { useState } from 'react';
 import {
     Appeals,
     FeedbackList,
+    Newcomers,
     PeopleReports,
+    Reporters,
 } from '@/components/admin/people-moderation';
 import type {
     AppealItem,
     FeedbackItem,
+    NewcomerItem,
     PersonReport,
+    ReporterItem,
 } from '@/components/admin/people-moderation';
 import { ImageFlags } from '@/components/admin/image-flags';
 import type { ImageFlagItem } from '@/components/admin/image-flags';
@@ -35,6 +40,8 @@ type Report = {
     reasons: string[];
     comments: string[];
     reporters: string[];
+    trusted?: boolean;
+    ai: { severity: 'low' | 'medium' | 'high'; reason: string } | null;
     created_at: string;
     message: {
         id: number;
@@ -65,12 +72,15 @@ type Props = {
         resolved_week: number;
         people: number;
         appeals: number;
+        appeals_overdue?: number;
         feedback: number;
     };
     people: PersonReport[];
     appeals: AppealItem[];
     feedback: FeedbackItem[];
     images?: ImageFlagItem[];
+    newcomers?: NewcomerItem[];
+    reporters?: ReporterItem[];
 };
 
 const PROFANITY = {
@@ -106,6 +116,8 @@ export default function AdminModeration({
     appeals,
     feedback,
     images = [],
+    newcomers = [],
+    reporters = [],
 }: Props) {
     const form = useForm({
         ...settings,
@@ -152,14 +164,20 @@ export default function AdminModeration({
                     delay={100}
                 />
                 <StatCard
-                    label={tr('Оскаржень')}
+                    label={
+                        stats.appeals_overdue
+                            ? tr('Оскаржень · прострочено {count}', {
+                                  count: stats.appeals_overdue,
+                              })
+                            : tr('Оскаржень')
+                    }
                     value={stats.appeals}
                     icon={Gavel}
                     delay={150}
                 />
             </div>
 
-            <section className="glass mb-6 rounded-3xl p-4 sm:p-5">
+            <section className="glass mb-6 rounded-2xl p-4 sm:p-5">
                 <h2 className="mb-3 font-display text-lg font-semibold text-white">
                     {tr('Скарги')}
                 </h2>
@@ -181,6 +199,11 @@ export default function AdminModeration({
                                             ? tr('скарга')
                                             : tr('скарг')}
                                     </span>
+                                    {r.trusted && (
+                                        <span className="rounded-md bg-emerald-500/15 px-2 py-0.5 text-emerald-200">
+                                            {tr('Довірений скаржник')}
+                                        </span>
+                                    )}
                                     {r.reasons.map((reason) => (
                                         <span
                                             key={reason}
@@ -224,6 +247,30 @@ export default function AdminModeration({
                                             </p>
                                         </div>
                                     </div>
+                                )}
+                                {r.ai && (
+                                    <p className="mt-2 flex items-start gap-2 text-xs text-white/60">
+                                        <span
+                                            className={cn(
+                                                'inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 font-semibold',
+                                                r.ai.severity === 'high'
+                                                    ? 'bg-rose-500/15 text-rose-200'
+                                                    : r.ai.severity === 'medium'
+                                                      ? 'bg-amber-500/15 text-amber-200'
+                                                      : 'bg-white/[0.06] text-white/60',
+                                            )}
+                                        >
+                                            <Sparkles className="size-3" />
+                                            {r.ai.severity === 'high'
+                                                ? tr('ШІ: терміново')
+                                                : r.ai.severity === 'medium'
+                                                  ? tr('ШІ: варто глянути')
+                                                  : tr('ШІ: порушень не видно')}
+                                        </span>
+                                        <span className="pt-0.5">
+                                            {r.ai.reason}
+                                        </span>
+                                    </p>
                                 )}
                                 {r.comments.length > 0 && (
                                     <p className="mt-2 text-xs text-white/50">
@@ -300,10 +347,14 @@ export default function AdminModeration({
 
             <Appeals appeals={appeals} />
 
+            <Newcomers items={newcomers} />
+
+            <Reporters items={reporters} />
+
             <FeedbackList feedback={feedback} />
 
             {muted.length > 0 && (
-                <section className="glass mb-6 rounded-3xl p-4 sm:p-5">
+                <section className="glass mb-6 rounded-2xl p-4 sm:p-5">
                     <h2 className="mb-3 font-display text-lg font-semibold text-white">
                         {tr('Заглушені')}
                     </h2>
@@ -342,7 +393,7 @@ export default function AdminModeration({
                 </section>
             )}
 
-            <section className="glass rounded-3xl p-4 sm:p-5">
+            <section className="glass rounded-2xl p-4 sm:p-5">
                 <h2 className="mb-1 flex items-center gap-2 font-display text-lg font-semibold text-white">
                     <MessageSquareWarning className="size-5 text-gc-lilac-200" />
                     {tr('Автомодерація')}

@@ -15,7 +15,14 @@ import { PlusTabs } from '@/components/billing/plus-tabs';
 import { Toggle } from '@/components/gc/admin';
 import { PlusBadge } from '@/components/gc/plus';
 import { api } from '@/lib/api';
-import { money, ORDER_STATUS, useProducts } from '@/lib/billing';
+import {
+    money,
+    openPurchase,
+    ORDER_STATUS,
+    units,
+    useKind,
+    useProducts,
+} from '@/lib/billing';
 import { formatDate } from '@/lib/format';
 import { tr } from '@/lib/i18n';
 import { PRODUCT_LABELS } from '@/lib/plus';
@@ -37,7 +44,7 @@ type Props = {
     orders: PaymentOrderCard[];
     cards: SavedCard[];
     renewals: Renewal[];
-    /** Залишок старого балансу (до переходу на оплату карткою), копійки. */
+    /** Баланс GameCon — розрахункові одиниці в сотих частках. */
     credit: number;
     available: boolean;
     open: number | null;
@@ -86,7 +93,7 @@ export default function BillingPage({
 
                 {opened && <OrderResult order={opened} />}
 
-                <section className="glass rounded-3xl p-5 sm:p-7">
+                <section className="glass rounded-2xl p-5 sm:p-7">
                     <p className="flex items-center gap-2 text-sm text-white/55">
                         <CreditCard className="size-4 text-indigo-300" />
                         {tr('Оплата карткою через monobank')}
@@ -101,14 +108,7 @@ export default function BillingPage({
                               )}
                     </p>
                     <PaymentBadges className="mt-4" />
-                    {credit > 0 && (
-                        <p className="mt-4 rounded-2xl bg-emerald-400/10 p-3 text-sm text-emerald-100">
-                            {tr(
-                                'У вас лишився залишок старого балансу {sum} — він автоматично зарахується в ціну наступної покупки.',
-                                { sum: money(credit) },
-                            )}
-                        </p>
-                    )}
+                    <BalanceTopUp balance={credit} enabled={available} />
                     <div className="mt-5 flex flex-wrap gap-2">
                         <Link href="/plus" className={secondary}>
                             <PlusBadge className="size-4 rounded [&_svg]:size-3" />
@@ -117,7 +117,7 @@ export default function BillingPage({
                     </div>
                 </section>
 
-                <section className="glass rounded-3xl p-5">
+                <section className="glass rounded-2xl p-5">
                     <h2 className="flex items-center gap-2 font-display text-lg font-bold text-white">
                         <RefreshCw className="size-4 text-indigo-300" />
                         {tr('Автопродовження')}
@@ -138,7 +138,7 @@ export default function BillingPage({
                     </ul>
                 </section>
 
-                <section className="glass rounded-3xl p-5">
+                <section className="glass rounded-2xl p-5">
                     <h2 className="flex items-center gap-2 font-display text-lg font-bold text-white">
                         <CreditCard className="size-4 text-indigo-300" />
                         {tr('Збережені картки')}
@@ -158,7 +158,7 @@ export default function BillingPage({
                     )}
                 </section>
 
-                <section className="glass rounded-3xl p-5">
+                <section className="glass rounded-2xl p-5">
                     <h2 className="font-display text-lg font-bold text-white">
                         {tr('Історія оплат')}
                     </h2>
@@ -198,7 +198,7 @@ function OrderResult({ order }: { order: PaymentOrderCard }) {
     return (
         <section
             className={cn(
-                'flex items-start gap-3 rounded-3xl border p-4',
+                'flex items-start gap-3 rounded-2xl border p-4',
                 tone,
             )}
         >
@@ -432,5 +432,61 @@ function RenewalRow({
                 label={tr('Автопродовження')}
             />
         </li>
+    );
+}
+
+/**
+ * Баланс GameCon: передоплата електронних послуг порталу (1 ₴ = 1 одиниця). Одиниці витрачаються лише
+ * всередині сайту й не виводяться — див. розділи 8–9 Публічної оферти.
+ */
+function BalanceTopUp({
+    balance,
+    enabled,
+}: {
+    balance: number;
+    enabled: boolean;
+}) {
+    const packs = useKind('balance');
+
+    return (
+        <div className="mt-5 rounded-2xl bg-white/[0.04] p-4">
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <p className="text-sm font-semibold text-white">
+                    {tr('Баланс GameCon')}
+                </p>
+                <p className="font-display text-xl font-semibold text-white tabular-nums">
+                    {units(balance)}
+                </p>
+            </div>
+            <p className="mt-1 text-xs leading-relaxed text-white/50">
+                {tr(
+                    'Одиниці балансу — передоплата послуг сайту: підписки на авторів, просування спільнот, GameCon+. Вони враховуються в оплату автоматично, не є грошима й не виводяться.',
+                )}{' '}
+                <Link
+                    href="/terms"
+                    className="text-gc-lilac-300 hover:underline"
+                >
+                    {tr('Оферта')}
+                </Link>
+            </p>
+            {packs.length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                    {packs.map(([key, product]) => (
+                        <button
+                            key={key}
+                            type="button"
+                            disabled={!enabled}
+                            onClick={() => openPurchase({ product: key })}
+                            className={cn(secondary, 'h-9 px-3.5')}
+                        >
+                            {tr('+{n} од. · {price} ₴', {
+                                n: product.price,
+                                price: product.price,
+                            })}
+                        </button>
+                    ))}
+                </div>
+            )}
+        </div>
     );
 }

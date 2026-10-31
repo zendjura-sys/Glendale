@@ -1,3 +1,7 @@
+import { CommunityPromoteCard } from '@/components/communities/promote-card';
+import type { Promotion } from '@/components/communities/promote-card';
+import { CommunityWelcomeCard } from '@/components/communities/welcome-card';
+import type { WelcomeCard } from '@/components/communities/welcome-card';
 import { Head, InfiniteScroll, Link, router } from '@inertiajs/react';
 import {
     BookOpen,
@@ -28,6 +32,7 @@ import type { DonationJar } from '@/components/gc/donation-jar';
 import { useRef } from 'react';
 import { membersLabel } from '@/components/communities/community-card';
 import { JoinButton } from '@/components/communities/join-button';
+import { CommunityHub } from '@/components/communities/community-hub';
 import { roleLabels } from '@/components/communities/roles';
 import { CommunityAvatar } from '@/components/gc/community-avatar';
 import { InviteLinkButton } from '@/components/gc/invite-link';
@@ -35,6 +40,7 @@ import { PostCard } from '@/components/gc/post-card';
 import { PostComposer } from '@/components/gc/post-composer';
 import { PostSkeleton } from '@/components/gc/post-skeleton';
 import { VoiceRooms } from '@/components/gc/voice-rooms';
+import { ListenRoomButton } from '@/components/music/listen-room-button';
 import { UserAvatar } from '@/components/gc/user-avatar';
 import { VerifiedBadge } from '@/components/gc/verified-badge';
 import { EmptyState, Widget } from '@/components/gc/widget';
@@ -49,12 +55,15 @@ import type {
     UserCard,
 } from '@/types';
 import { tr } from '@/lib/i18n';
+import { usePlugin } from '@/lib/plugins';
 
 type Props = {
     community: CommunityDetails;
     /** Банка Monobank спільноти (відкладений проп). */
     donation?: DonationJar | null;
     membership: { status: MembershipStatus; role: CommunityRole } | null;
+    welcome_card?: WelcomeCard | null;
+    promotion?: Promotion | null;
     can: {
         view: boolean;
         post: boolean;
@@ -140,6 +149,8 @@ function ImageUpload({
 export default function CommunityShow({
     community,
     membership,
+    welcome_card,
+    promotion,
     can,
     stats,
     members,
@@ -153,6 +164,7 @@ export default function CommunityShow({
     rules,
     donation,
 }: Props) {
+    const channelsOn = usePlugin('community_channels');
     const isPublic = community.type === 'public';
     const moderate = (postId: number, approve: boolean) => {
         const url = `/c/${community.slug}/queue/${postId}`;
@@ -168,8 +180,8 @@ export default function CommunityShow({
         <>
             <Head title={community.name} />
 
-            <section className="glass relative overflow-hidden rounded-[28px]">
-                <div className="relative h-48 overflow-hidden sm:h-64">
+            <section className="glass relative overflow-hidden rounded-2xl">
+                <div className="relative isolate h-48 overflow-hidden sm:h-64">
                     {community.cover_url ? (
                         <img
                             decoding="async"
@@ -179,7 +191,7 @@ export default function CommunityShow({
                             className="size-full object-cover"
                         />
                     ) : (
-                        <div className="size-full bg-[radial-gradient(circle_at_15%_30%,#4f8bff_0%,transparent_45%),radial-gradient(circle_at_70%_20%,#a855f7_0%,transparent_45%),radial-gradient(circle_at_95%_100%,#38e1ff_0%,transparent_45%)] opacity-80" />
+                        <div className="size-full bg-[radial-gradient(circle_at_15%_30%,#4f8bff_0%,transparent_45%),radial-gradient(circle_at_70%_20%,#22d3ee_0%,transparent_45%),radial-gradient(circle_at_95%_100%,#38e1ff_0%,transparent_45%)] opacity-80" />
                     )}
                     <div className="scrim absolute inset-0" />
                     <div className="grid-lines absolute inset-0 opacity-40" />
@@ -207,7 +219,7 @@ export default function CommunityShow({
                                 <ImageUpload
                                     slug={community.slug}
                                     field="avatar"
-                                    className="absolute inset-[3px] flex items-center justify-center rounded-[35px] bg-black/55 text-white opacity-0 backdrop-blur-sm transition group-hover:opacity-100"
+                                    className="absolute inset-[3px] flex items-center justify-center rounded-[17px] bg-black/55 text-white opacity-0 backdrop-blur-sm transition group-hover:opacity-100"
                                 >
                                     <Camera className="size-7" />
                                 </ImageUpload>
@@ -256,6 +268,15 @@ export default function CommunityShow({
                                 status={membership?.status ?? null}
                                 role={membership?.role}
                             />
+                            {channelsOn && membership?.status === 'active' && (
+                                <Link
+                                    href={`/c/${community.slug}/channels`}
+                                    className="inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-white transition hover:brightness-110"
+                                >
+                                    <Hash className="size-4" />
+                                    {tr('Канали')}
+                                </Link>
+                            )}
                             {can.manage && (
                                 <>
                                     <InviteLinkButton
@@ -387,10 +408,17 @@ export default function CommunityShow({
                                 href={`/c/${community.slug}`}
                             />
                         )}
+                        {membership?.status === 'active' && (
+                            <ListenRoomButton
+                                group="community"
+                                id={community.id}
+                            />
+                        )}
                         <DonationJarCard
                             jar={donation}
                             title={tr('Підтримати спільноту')}
                         />
+                        {can.view && <CommunityHub slug={community.slug} />}
                         {(community.description ||
                             rules.rules ||
                             rules.handbook) && (
@@ -552,12 +580,12 @@ export default function CommunityShow({
                         {can.moderate && queue.length > 0 && (
                             <section
                                 id="queue"
-                                className="glass space-y-3 rounded-3xl p-4 sm:p-5"
+                                className="glass space-y-3 rounded-2xl p-4 sm:p-5"
                             >
                                 <h2 className="flex items-center gap-2 text-sm font-semibold text-white">
                                     <ClipboardCheck className="size-4 text-gc-amber" />
                                     {tr('Черга на перевірку')}
-                                    <span className="rounded-full bg-gc-amber/15 px-2 text-xs leading-5 text-gc-amber">
+                                    <span className="rounded-chip bg-gc-amber/15 px-2 text-xs leading-5 text-gc-amber">
                                         {queue.length}
                                     </span>
                                 </h2>
@@ -589,6 +617,21 @@ export default function CommunityShow({
                                     </div>
                                 ))}
                             </section>
+                        )}
+
+                        {promotion && (
+                            <CommunityPromoteCard
+                                slug={community.slug}
+                                promotion={promotion}
+                            />
+                        )}
+
+                        {welcome_card && (
+                            <CommunityWelcomeCard
+                                card={welcome_card}
+                                slug={community.slug}
+                                name={community.name}
+                            />
                         )}
 
                         {can.post && (
@@ -656,7 +699,7 @@ export default function CommunityShow({
                                         href={`/c/${community.slug}${item ? `?tag=${encodeURIComponent(item)}` : ''}`}
                                         preserveScroll
                                         className={cn(
-                                            'inline-flex h-8 shrink-0 items-center gap-1 rounded-full px-3 text-xs font-medium transition',
+                                            'inline-flex h-8 shrink-0 items-center gap-1 rounded-control px-3 text-xs font-medium transition',
                                             tag === item
                                                 ? 'bg-gc-indigo text-white'
                                                 : 'bg-white/[0.05] text-white/65 hover:text-white',

@@ -87,7 +87,7 @@ function Invite({ mode }: { mode: Mode }) {
                 {content.href && (
                     <Link
                         href={content.href}
-                        className="inline-flex h-10 shrink-0 items-center rounded-full border border-white/20 px-5 text-sm font-semibold text-white transition-colors hover:border-white/40 hover:bg-white/[0.06] focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none lg:mt-7 lg:h-11 lg:px-6"
+                        className="inline-flex h-10 shrink-0 items-center rounded-control border border-white/20 px-5 text-sm font-semibold text-white transition-colors hover:border-white/40 hover:bg-white/[0.06] focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none lg:mt-7 lg:h-11 lg:px-6"
                     >
                         {content.action}
                     </Link>
@@ -145,7 +145,7 @@ export default function AuthLayout({
                     transition={{ duration: 0.6, ease: EASE_OUT }}
                     ref={card}
                     onPointerMove={glare}
-                    className="auth-card liquid-glass overflow-hidden rounded-[30px]"
+                    className="auth-card liquid-glass overflow-hidden rounded-dialog"
                 >
                     <span aria-hidden className="liquid-glass__glare" />
                     <LayoutGroup>
@@ -207,8 +207,14 @@ export default function AuthLayout({
                     </LayoutGroup>
                 </m.div>
 
-                <div className="mt-5 flex justify-center">
+                <div className="mt-5 flex items-center justify-center gap-4">
                     <LanguageSelect />
+                    <Link
+                        href="/help/start"
+                        className="text-sm text-white/55 transition hover:text-white"
+                    >
+                        {tr('Довідка')}
+                    </Link>
                 </div>
                 <SiteFooter className="mt-4 border-t-0 px-0" />
             </main>

@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
@@ -27,15 +29,80 @@ class PlusMark {
   final List<Color>? name;
   final List<Color>? frame;
 
-  /// Анімація ніку: flow — перелив кольорів, shine — відблиск.
+  /// Анімація ніку: flow — перелив кольорів, shine — відблиск, neon — неонове сяйво, rainbow — веселка.
   final String? fx;
+
+  static const effects = ['flow', 'shine', 'neon', 'rainbow'];
 
   static PlusMark? of(dynamic user) => user is Map ? from(user['plus']) : null;
 
   static PlusMark? from(dynamic plus) {
     if (plus is! Map) return null;
     final fx = text(plus['fx']);
-    return PlusMark(name: _colors(plus['name']), frame: _colors(plus['frame']), fx: fx == 'flow' || fx == 'shine' ? fx : null);
+    return PlusMark(name: _colors(plus['name']), frame: _colors(plus['frame']), fx: effects.contains(fx) ? fx : null);
+  }
+}
+
+/// Косметика сезонного пропуску з картки (`user['cosmetics']`): рамка, колір ніку, значок.
+/// Отримується за очки сезону (season.dart); кольори й іконки — лише з сервера.
+class SeasonCosmetics {
+  const SeasonCosmetics({this.frame, this.name, this.badgeIcon, this.badgeColor, this.badgeName});
+  final List<Color>? frame;
+  final List<Color>? name;
+  final String? badgeIcon;
+  final Color? badgeColor;
+  final String? badgeName;
+
+  static SeasonCosmetics? of(dynamic user) {
+    if (user is! Map || user['cosmetics'] is! Map) return null;
+    final c = user['cosmetics'] as Map;
+    final badge = c['badge'] is Map ? c['badge'] as Map : null;
+    return SeasonCosmetics(
+      frame: _colors(c['frame']),
+      name: _colors(c['name']),
+      badgeIcon: text(badge?['icon']),
+      badgeColor: _hex(badge?['color']),
+      badgeName: text(badge?['name']),
+    );
+  }
+}
+
+/// Рамка аватара: GameCon+, інакше вдягнута із сезонного пропуску.
+List<Color>? avatarFrameOf(dynamic user) => PlusMark.of(user)?.frame ?? SeasonCosmetics.of(user)?.frame;
+
+/// Колір ніку: GameCon+, інакше з пропуску (без позначки GameCon+).
+PlusMark? nameMarkOf(dynamic user) {
+  final plus = PlusMark.of(user);
+  if (plus != null) return plus;
+  final name = SeasonCosmetics.of(user)?.name;
+  return name == null ? null : PlusMark(name: name);
+}
+
+/// Іконки значків пропуску (ключі — з config/season_pass.php).
+const seasonBadgeIcons = {
+  'star': LucideIcons.star,
+  'flame': LucideIcons.flame,
+  'zap': LucideIcons.zap,
+  'shield': LucideIcons.shield,
+  'crown': LucideIcons.crown,
+  'gem': LucideIcons.gem,
+};
+
+/// Значок сезону біля імені.
+class SeasonBadge extends StatelessWidget {
+  const SeasonBadge({required this.user, this.size = 15, super.key});
+  final dynamic user;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = SeasonCosmetics.of(user);
+    final icon = seasonBadgeIcons[c?.badgeIcon];
+    if (c == null || icon == null) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(left: 5),
+      child: Tooltip(message: c.badgeName ?? '', child: Icon(icon, size: size, color: c.badgeColor ?? primary)),
+    );
   }
 }
 
@@ -44,8 +111,8 @@ List<Color> plusHeaderColors(Map<String, dynamic> profile) {
   final accent = _colors(profile['accent']);
   if (accent != null) return accent;
   final name = PlusMark.of(profile)?.name;
-  if (name != null) return [...name, const Color(0xFFA855F7)];
-  return const [Color(0xFF6366F1), Color(0xFFA855F7), Color(0xFF22D3EE)];
+  if (name != null) return [...name, const Color(0xFF00D2FF)];
+  return const [Color(0xFF0A84FF), Color(0xFF00D2FF), Color(0xFF22D3EE)];
 }
 
 /// Позначка GameCon+ біля імені: плоский квадрат з плюсом в акцентному кольорі.
@@ -61,7 +128,7 @@ class PlusBadge extends StatelessWidget {
         width: size,
         height: size,
         alignment: Alignment.center,
-        decoration: BoxDecoration(color: const Color(0xFF6366F1), borderRadius: BorderRadius.circular(size * 0.31)),
+        decoration: BoxDecoration(color: const Color(0xFF0A84FF), borderRadius: BorderRadius.circular(size * 0.31)),
         child: Icon(LucideIcons.plus, size: size * 0.75, color: Colors.white),
       ),
     );
@@ -82,7 +149,7 @@ class PlusName extends StatefulWidget {
   State<PlusName> createState() => _PlusNameState();
 }
 
-class _PlusNameState extends State<PlusName> with SingleTickerProviderStateMixin {
+class _PlusNameState extends State<PlusName> with TickerProviderStateMixin {
   AnimationController? _motion;
 
   String? get _fx => widget.animate ? widget.plus?.fx : null;
@@ -106,7 +173,8 @@ class _PlusNameState extends State<PlusName> with SingleTickerProviderStateMixin
       _motion = null;
       return;
     }
-    final period = Duration(milliseconds: _fx == 'flow' ? 6000 : 4500);
+    // Періоди — як анімації сайту (plus-name-flow/-shine/-neon/-rainbow).
+    final period = Duration(milliseconds: switch (_fx) { 'flow' => 6000, 'neon' => 2800, 'rainbow' => 9000, _ => 4500 });
     if (_motion?.duration == period) return;
     _motion?.dispose();
     _motion = AnimationController(vsync: this, duration: period)..repeat();
@@ -133,6 +201,18 @@ class _PlusNameState extends State<PlusName> with SingleTickerProviderStateMixin
     final first = tones.first;
     final last = tones.last;
     final motion = _motion;
+    if (fx == 'neon' || fx == 'rainbow') {
+      // Нік у своїх кольорах; неон — пульсуюче сяйво, веселка — плавний поворот відтінку.
+      Widget painted(double t) {
+        final glow = fx == 'neon' ? [Shadow(color: first, blurRadius: 1 + 5 * (0.5 - 0.5 * math.cos(t * 2 * math.pi)))] : null;
+        final text = Text(widget.name, maxLines: widget.maxLines, overflow: TextOverflow.ellipsis, style: widget.style.copyWith(color: tones.length == 1 ? first : Colors.white, shadows: glow));
+        final colored = tones.length == 1 ? text : ShaderMask(blendMode: BlendMode.srcIn, shaderCallback: (rect) => LinearGradient(colors: tones).createShader(rect), child: text);
+        return fx == 'rainbow' ? ColorFiltered(colorFilter: ColorFilter.matrix(_hueRotate(t * 360)), child: colored) : colored;
+      }
+
+      if (motion == null) return painted(0);
+      return AnimatedBuilder(animation: motion, builder: (context, _) => painted(motion.value));
+    }
     Shader shader(Rect rect, double t) {
       if (fx == 'flow') {
         // Як background-size: 200% і зсув 0 → 200%: градієнт повторюється без шва.
@@ -158,6 +238,19 @@ class _PlusNameState extends State<PlusName> with SingleTickerProviderStateMixin
   }
 }
 
+/// Матриця hue-rotate (як CSS filter: hue-rotate) на [degrees] градусів.
+List<double> _hueRotate(double degrees) {
+  final r = degrees * math.pi / 180;
+  final c = math.cos(r);
+  final s = math.sin(r);
+  return [
+    0.213 + c * 0.787 - s * 0.213, 0.715 - c * 0.715 - s * 0.715, 0.072 - c * 0.072 + s * 0.928, 0, 0, //
+    0.213 - c * 0.213 + s * 0.143, 0.715 + c * 0.285 + s * 0.140, 0.072 - c * 0.072 - s * 0.283, 0, 0, //
+    0.213 - c * 0.213 - s * 0.787, 0.715 - c * 0.715 + s * 0.715, 0.072 + c * 0.928 + s * 0.072, 0, 0, //
+    0, 0, 0, 1, 0,
+  ];
+}
+
 /// Ім’я з кольором GameCon+, позначкою та (за наявності) позначкою верифікації.
 class PlusNameRow extends StatelessWidget {
   const PlusNameRow({required this.user, required this.style, this.animate = false, this.verifiedSize = 15, this.badgeSize = 15, super.key});
@@ -173,9 +266,10 @@ class PlusNameRow extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Flexible(child: PlusName(text(user['name']) ?? 'GameCon', plus: plus, style: style, animate: animate)),
+        Flexible(child: PlusName(text(user['name']) ?? 'GameCon', plus: nameMarkOf(user), style: style, animate: animate)),
         if (user['is_verified'] == true) ...[const SizedBox(width: 4), Icon(LucideIcons.badgeCheck, size: verifiedSize, color: primary)],
         if (plus != null) ...[const SizedBox(width: 5), PlusBadge(size: badgeSize)],
+        SeasonBadge(user: user, size: badgeSize),
       ],
     );
   }

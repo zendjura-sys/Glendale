@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Notifications\BillingNotice;
 use App\Services\Billing\Catalog;
 use App\Services\FriendshipService;
+use App\Support\Modules\ModuleManager;
 use App\Support\Settings\SiteSettings;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Carbon;
@@ -334,6 +335,22 @@ class PhoneNumbers
     public function visibleOnProfile(User $owner): bool
     {
         return $owner->pref('phone_visible', true) !== false;
+    }
+
+    /**
+     * Номер у профілі (сайт і застосунок): лише коли модуль увімкнено й власник показує номер;
+     * can_call — чи може глядач дзвонити й писати за ним.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function profileCard(?User $viewer, User $owner): ?array
+    {
+        if (! app(ModuleManager::class)->enabled('phone') || ! $this->visibleOnProfile($owner)) {
+            return null;
+        }
+        $number = $this->current($owner);
+
+        return $number === null ? null : [...$number->toCard(), 'can_call' => $viewer !== null && $this->reachable($viewer, $owner)];
     }
 
     /**

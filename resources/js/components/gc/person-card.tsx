@@ -1,4 +1,5 @@
-import { Link, router } from '@inertiajs/react';
+import { cn } from '@/lib/utils';
+import { Link, router, usePage } from '@inertiajs/react';
 import { MapPin } from 'lucide-react';
 import { useState } from 'react';
 import { plural } from '@/lib/format';
@@ -7,8 +8,9 @@ import { FriendButton } from './friend-button';
 import { PlayingBadge } from './playing';
 import { UserAvatar } from './user-avatar';
 import { VerifiedBadge } from './verified-badge';
-import { PlusBadge, plusNameStyle } from './plus';
+import { nameDisplayProps, PlusBadge } from './plus';
 import { tr } from '@/lib/i18n';
+import { friendListAllowed } from '@/lib/modes';
 
 const listLabel: Record<FriendList, string> = {
     raid: tr('Рейд'),
@@ -17,29 +19,38 @@ const listLabel: Record<FriendList, string> = {
 };
 
 export function PersonCard({ person }: { person: Person }) {
+    const { modules } = usePage().props;
     return (
-        <div className="glass group relative flex flex-col items-center overflow-hidden rounded-3xl p-5 text-center transition hover:-translate-y-0.5 hover:border-white/15">
+        <div className="glass group relative flex flex-col items-center overflow-hidden rounded-2xl p-5 text-center transition hover:-translate-y-0.5 hover:border-white/15">
             <div className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-gc-indigo/20 to-transparent opacity-0 transition group-hover:opacity-100" />
             <Link href={`/${person.username}`} className="relative">
                 <UserAvatar user={person} size="xl" />
             </Link>
             <Link
                 href={`/${person.username}`}
-                className="relative mt-3 flex max-w-full items-center gap-1 truncate text-[15px] font-semibold text-white hover:underline"
+                className="relative mt-3 flex max-w-full flex-wrap items-center justify-center gap-1 text-[15px] font-semibold break-words text-white hover:underline"
             >
-                <span className="truncate" style={plusNameStyle(person.plus)}>
+                <span
+                    {...nameDisplayProps(person.plus)}
+                    className={cn(
+                        'break-words',
+                        nameDisplayProps(person.plus).className,
+                    )}
+                >
                     {person.alias || person.name}
                 </span>
-                {person.is_verified && <VerifiedBadge />}
+                {person.is_verified && (
+                    <VerifiedBadge kind={person.verified_kind} />
+                )}
                 {person.plus && <PlusBadge />}
             </Link>
             {person.alias && (
-                <p className="relative mt-0.5 truncate text-xs text-white/40">
+                <p className="relative mt-0.5 text-xs break-words text-white/40">
                     {person.name}
                 </p>
             )}
-            {person.list && (
-                <span className="relative mt-1 rounded-full bg-white/10 px-2 py-0.5 text-[11px] text-white/70">
+            {person.list && friendListAllowed(person.list, modules) && (
+                <span className="relative mt-1 rounded-chip bg-white/10 px-2 py-0.5 text-[11px] text-white/70">
                     {listLabel[person.list]}
                 </span>
             )}
@@ -88,6 +99,7 @@ export function PersonCard({ person }: { person: Person }) {
 }
 
 function FriendMarkForm({ person }: { person: Person }) {
+    const { modules } = usePage().props;
     const [open, setOpen] = useState(false);
     const [nickname, setNickname] = useState(person.alias ?? '');
     const [note, setNote] = useState(person.note ?? '');
@@ -139,8 +151,12 @@ function FriendMarkForm({ person }: { person: Person }) {
                 className="input-glass h-8 w-full rounded-lg px-2 text-xs text-white focus:outline-none"
             >
                 <option value="">{tr('Без списку')}</option>
-                <option value="raid">{tr('Рейд')}</option>
-                <option value="cinema">{tr('Кіно')}</option>
+                {friendListAllowed('raid', modules) && (
+                    <option value="raid">{tr('Рейд')}</option>
+                )}
+                {friendListAllowed('cinema', modules) && (
+                    <option value="cinema">{tr('Кіно')}</option>
+                )}
                 <option value="work">{tr('Робота')}</option>
             </select>
             <button
@@ -161,23 +177,30 @@ export function PersonRow({
     action?: React.ReactNode;
 }) {
     return (
-        <div className="flex items-center gap-3 rounded-2xl px-2 py-2 transition hover:bg-white/[0.035]">
-            <Link href={`/${person.username}`}>
+        // Кнопка дії переноситься під ім'я, коли колонка вузька, — ім'я й підпис лишаються в один рядок.
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-2xl px-2 py-2 transition hover:bg-white/[0.035]">
+            <Link href={`/${person.username}`} className="shrink-0">
                 <UserAvatar user={person} size="md" />
             </Link>
-            <div className="min-w-0 flex-1">
+            <div className="min-w-[9rem] flex-1">
                 <Link
                     href={`/${person.username}`}
-                    className="flex items-center gap-1 truncate text-sm font-semibold text-white hover:underline"
+                    className="flex flex-wrap items-center gap-1 text-sm font-semibold break-words text-white hover:underline"
                 >
                     <span
-                        className="truncate"
-                        style={plusNameStyle(person.plus)}
+                        {...nameDisplayProps(person.plus)}
+                        className={cn(
+                            'break-words',
+                            nameDisplayProps(person.plus).className,
+                        )}
                     >
                         {person.name}
                     </span>
                     {person.is_verified && (
-                        <VerifiedBadge className="size-3.5" />
+                        <VerifiedBadge
+                            kind={person.verified_kind}
+                            className="size-3.5"
+                        />
                     )}
                     {person.plus && <PlusBadge className="size-3.5" />}
                 </Link>
@@ -187,7 +210,7 @@ export function PersonRow({
                         className="mt-0.5 py-0.5"
                     />
                 ) : (
-                    <div className="truncate text-xs text-white/45">
+                    <div className="text-xs break-words text-white/45">
                         {person.mutual
                             ? `${person.mutual} ${plural(person.mutual, ['спільний друг', 'спільні друзі', 'спільних друзів'])}`
                             : person.status ||
@@ -196,7 +219,7 @@ export function PersonRow({
                     </div>
                 )}
             </div>
-            {action}
+            {action && <div className="ml-auto shrink-0">{action}</div>}
         </div>
     );
 }

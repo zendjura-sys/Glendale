@@ -13,6 +13,7 @@ import 'theme.dart';
 import 'voice_room.dart';
 import 'widgets.dart';
 import 'i18n.dart';
+import 'skeletons.dart';
 
 /// Розходження з ведучим, після якого перемотуємо (секунди).
 const _drift = 2.5;
@@ -288,7 +289,7 @@ class _WatchPartyScreenState extends State<WatchPartyScreen> {
     final film = movie;
     if (film == null) {
       return error == null
-          ? const Center(child: CircularProgressIndicator(strokeWidth: 2.4))
+          ? const ListSkeleton(rows: 6)
           : Center(child: Padding(padding: const EdgeInsets.all(20), child: EmptyState(icon: LucideIcons.popcorn, title: tr('Перегляд недоступний'), text: '$error', action: tr('Спробувати знову'), onAction: _load)));
     }
     final ended = party['ended'] == true;
@@ -301,21 +302,21 @@ class _WatchPartyScreenState extends State<WatchPartyScreen> {
       onRefresh: _poll,
       children: [
         Row(children: [
-          IconButton(onPressed: () => context.canPop() ? context.pop() : context.go('/cinema'), icon: const Icon(LucideIcons.arrowLeft, color: soft)),
+          IconButton(onPressed: () => context.canPop() ? context.pop() : context.go('/cinema'), icon: Icon(LucideIcons.arrowLeft, color: soft)),
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(16, weight: FontWeight.w700)),
               Text(tr('Разом · ведучий {v}', {'v': text(mapOf(party['host'])['name']) ?? '—'}), style: body(12, color: muted)),
             ]),
           ),
-          if (!ended) IconButton(tooltip: tr('Запросити'), onPressed: _invite, icon: const Icon(LucideIcons.userPlus, color: primary)),
+          if (!ended) IconButton(tooltip: tr('Запросити'), onPressed: _invite, icon: Icon(LucideIcons.userPlus, color: primary)),
           IconButton(
             tooltip: tr('Скопіювати посилання'),
             onPressed: () {
               Clipboard.setData(ClipboardData(text: text(party['url']) ?? ''));
               toast(context, tr('Посилання скопійовано'));
             },
-            icon: const Icon(LucideIcons.copy, color: muted),
+            icon: Icon(LucideIcons.copy, color: muted),
           ),
         ]),
         const SizedBox(height: 8),
@@ -399,7 +400,7 @@ class _WatchPartyScreenState extends State<WatchPartyScreen> {
         Glass(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [
-              const Icon(LucideIcons.users, size: 18, color: primary),
+              Icon(LucideIcons.users, size: 18, color: primary),
               const SizedBox(width: 8),
               Expanded(child: Text(tr('Дивляться ({v})', {'v': members.length}), style: body(14.5, weight: FontWeight.w700))),
               if (party['voice_enabled'] == true && !ended)
@@ -435,7 +436,7 @@ class _WatchPartyScreenState extends State<WatchPartyScreen> {
         Glass(
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             Row(children: [
-              const Icon(LucideIcons.messageCircle, size: 18, color: primary),
+              Icon(LucideIcons.messageCircle, size: 18, color: primary),
               const SizedBox(width: 8),
               Text(tr('Чат перегляду'), style: body(14.5, weight: FontWeight.w700)),
             ]),
@@ -463,7 +464,7 @@ class _WatchPartyScreenState extends State<WatchPartyScreen> {
                     decoration: InputDecoration(hintText: tr('Повідомлення'), counterText: '', isDense: true),
                   ),
                 ),
-                IconButton(onPressed: _say, icon: const Icon(LucideIcons.send, color: primary)),
+                IconButton(onPressed: _say, icon: Icon(LucideIcons.send, color: primary)),
               ]),
             ],
           ]),

@@ -2,6 +2,8 @@
 
 namespace App\Http\Middleware;
 
+use App\Http\Controllers\Settings\GameThemeController;
+use App\Models\Track;
 use App\Models\User;
 use App\Services\Auth\DiscordOAuth;
 use App\Services\Auth\FirebaseAuth;
@@ -15,6 +17,7 @@ use App\Services\Messenger;
 use App\Services\Moderation\ContentFilter;
 use App\Services\Phones\PhoneNumbers;
 use App\Services\Spotify\SpotifyClient;
+use App\Services\Wrapped\YearInReview;
 use App\Support\Backgrounds;
 use App\Support\I18n\Locales;
 use App\Support\Modules\ModuleManager;
@@ -78,6 +81,7 @@ class HandleInertiaRequests extends Middleware
                 'refund' => __('ui.refund'),
                 'pricing' => __('ui.pricing'),
                 'contacts' => __('ui.contacts'),
+                'child_safety' => __('ui.child_safety'),
                 'rights' => __('ui.all_rights_reserved'),
             ],
             'site' => [
@@ -90,6 +94,12 @@ class HandleInertiaRequests extends Middleware
                 'max_attachments' => (int) $this->settings->get('max_attachments'),
                 'max_message_file_mb' => (int) $this->settings->get('max_message_file_mb'),
                 'announcement' => $this->settings->get('maintenance_message'),
+                // Google Analytics 4 (G-…): завантажується лише після згоди на аналітичні cookie.
+                'analytics' => $this->settings->analyticsId(),
+                // Завантаження музики: ліміт і формати (кнопка «Завантажити» в розділі «Музика»).
+                'music_upload' => ['max_mb' => (int) $this->settings->get('music_max_track_mb'), 'formats' => Track::uploadFormats()],
+                // «Підсумки року» відкриті (грудень — січень): банер у стрічці й пункт меню.
+                'wrapped' => app(Plugins::class)->on('wrapped') ? app(YearInReview::class)->season() : null,
                 'social' => [
                     'discord' => app(DiscordOAuth::class)->configured(),
                     'google' => app(FirebaseAuth::class)->clientConfig(),
@@ -110,10 +120,20 @@ class HandleInertiaRequests extends Middleware
                     'palette' => $user->palette(),
                     'background' => Backgrounds::for($user),
                     'skin' => Skins::for($user),
+                    'theme' => Skins::theme($user),
                     // Внутрішній номер GameCon (+555 / +777) або null.
                     'phone' => $this->modules->enabled('phone') ? app(PhoneNumbers::class)->current($user)?->toCard() : null,
                     'hide_spoilers' => app(Plugins::class)->on('spoiler_switch') && (bool) $user->pref('hide_spoilers'),
                     'profanity_mask' => $user->pref('hide_profanity') ? app(ContentFilter::class)->clientPattern() : null,
+                    // «Показувати, що я слухаю» (усі джерела музики; Spotify — ще й своїм перемикачем).
+                    'show_listening' => $user->showsListening(),
+                    'morning_digest' => $user->wantsDigest(),
+                    // Економія трафіку: фото по дотику, відео не грає саме.
+                    'data_saver' => $user->pref('data_saver') === true,
+                    // Режим стримера: особисте на екрані розмите.
+                    'streamer_mode' => app(Plugins::class)->on('streamer_mode') && $user->pref('streamer_mode') === true,
+                    // Звук нових повідомлень і сповіщень (Налаштування → Оформлення).
+                    'notify_sound' => in_array($sound = $user->pref('notify_sound', 'soft'), GameThemeController::SOUNDS, true) ? $sound : 'soft',
                     // До коли діє GameCon+ (оплата — карткою через monobank, без балансу).
                     'plus_until' => $user->plus_until?->toIso8601String(),
                     'created_at' => $user->created_at,

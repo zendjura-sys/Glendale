@@ -8,13 +8,17 @@ use App\Events\Messenger\InboxUpdated;
 use App\Events\Messenger\MessageDeleted;
 use App\Events\Messenger\MessageSent;
 use App\Events\Messenger\MessageUpdated;
+use App\Models\CommunityChannel;
 use App\Models\Conversation;
 use App\Models\ConversationParticipant;
 use App\Models\Message;
 use App\Models\MessageAttachment;
+use App\Models\MessageReaction;
 use App\Models\Sticker;
 use App\Models\User;
 use App\Models\UserBlock;
+use App\Services\Chat\ChatBots;
+use App\Services\Communities\CommunityChannels;
 use App\Services\Push\PushNotifier;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
@@ -123,6 +127,12 @@ class Messenger
 
         $alreadyIn = $conversation->activeParticipants()->pluck('user_id')->all();
         $ids = array_values(array_diff($this->invitableFriends($actor, $userIds), $alreadyIn));
+        // Виключених на час не можна повернути, доки строк не мине.
+        $banned = $conversation->participants()->whereIn('user_id', $ids)->where('banned_until', '>', now())->pluck('user_id')->all();
+        if ($banned !== [] && count($banned) === count($ids)) {
+            throw ValidationException::withMessages(['user_ids' => 'Цю людину виключено з бесіди на час — додати її можна буде пізніше.']);
+        }
+        $ids = array_values(array_diff($ids, $banned));
 
         if (count($alreadyIn) + count($ids) > Conversation::MAX_MEMBERS) {
             throw ValidationException::withMessages(['user_ids' => 'У бесіді може бути не більше '.Conversation::MAX_MEMBERS.' учасників.']);
@@ -145,6 +155,7 @@ class Messenger
         });
 
         $this->broadcastUpdated($conversation);
+        app(ChatBots::class)->greet($conversation, User::query()->whereIn('id', $ids)->get());
 
         return count($ids);
     }
@@ -225,7 +236,7 @@ class Messenger
             $attributes['expires_at'] = $expiresAt;
         }
 
-        return $this->deliver($conversation, $sender, $attributes, $replyToId, function (Message $message) use ($images, $documents) {
+        $message = $this->deliver($conversation, $sender, $attributes, $replyToId, function (Message $message) use ($images, $documents) {
             $position = 0;
 
             foreach ($images as $file) {
@@ -248,6 +259,50 @@ class Messenger
                 ]);
             }
         });
+        app(ChatBots::class)->maybeAiReply($conversation, $message);
+
+        return $message;
+    }
+
+    /**
+     * Повідомлення гостя без акаунта (гостьовий чат каналу спільноти): без автора, з іменем у meta.
+     * Відбиток IP — лише хеш, щоб адміністрація могла відсікти спамера.
+     */
+    public function sendAsGuest(Conversation $conversation, string $name, string $body, string $ipHash): Message
+    {
+        $message = DB::transaction(function () use ($conversation, $name, $body, $ipHash) {
+            $message = $conversation->messages()->create([
+                'type' => Message::TYPE_TEXT,
+                'body' => trim($body),
+                'user_id' => null,
+                'meta' => ['guest' => ['name' => $name, 'ip' => $ipHash]],
+            ]);
+            $this->touch($conversation, $message);
+
+            return $message;
+        });
+        $this->broadcastNew($conversation, $message);
+
+        return $message;
+    }
+
+    /** Повідомлення від бота бесіди (привітання, автопост): без автора-людини, з іменем бота в meta. */
+    public function sendAsBot(Conversation $conversation, string $botName, string $body): Message
+    {
+        $message = DB::transaction(function () use ($conversation, $botName, $body) {
+            $message = $conversation->messages()->create([
+                'type' => Message::TYPE_TEXT,
+                'body' => trim($body),
+                'user_id' => null,
+                'meta' => ['bot' => ['name' => $botName]],
+            ]);
+            $this->touch($conversation, $message);
+
+            return $message;
+        });
+        $this->broadcastNew($conversation, $message);
+
+        return $message;
     }
 
     public function sendSticker(Conversation $conversation, User $sender, Sticker $sticker, ?int $replyToId = null): Message
@@ -280,6 +335,39 @@ class Messenger
                 'meta' => ['waveform' => array_map(fn ($v) => max(0, min(100, (int) $v)), array_slice($waveform, 0, 64))],
             ]);
         });
+    }
+
+    /** Відеоповідомлення-кружок (до хвилини, з камери). */
+    public function sendVideoNote(Conversation $conversation, User $sender, UploadedFile $video, int $duration, ?int $replyToId = null): Message
+    {
+        $extension = str_contains((string) $video->getMimeType(), 'mp4') ? 'mp4' : 'webm';
+
+        return $this->deliver($conversation, $sender, ['type' => Message::TYPE_VIDEO_NOTE], $replyToId, function (Message $message) use ($video, $duration, $extension) {
+            $message->attachments()->create([
+                'type' => MessageAttachment::TYPE_VIDEO_NOTE,
+                'path' => $video->storeAs('video-notes/'.now()->format('Y/m'), Str::random(32).'.'.$extension, 'public'),
+                'mime' => Str::limit((string) $video->getMimeType(), 64, ''),
+                'size' => $video->getSize(),
+                'duration' => $duration,
+            ]);
+        });
+    }
+
+    /**
+     * Реакція на повідомлення: одна на людину; та сама ще раз — прибрати. Усім у бесіді — оновлене повідомлення.
+     */
+    public function react(Message $message, User $user, ?string $emoji): Message
+    {
+        $current = MessageReaction::query()->where('message_id', $message->id)->where('user_id', $user->id)->value('emoji');
+        MessageReaction::query()->where('message_id', $message->id)->where('user_id', $user->id)->delete();
+        if ($emoji !== null && $emoji !== $current) {
+            MessageReaction::query()->create(['message_id' => $message->id, 'user_id' => $user->id, 'emoji' => $emoji, 'created_at' => now()]);
+        }
+        $message->unsetRelation('reactions');
+        $payload = $this->presenter->message($this->presenter->load($message));
+        $this->broadcast(new MessageUpdated($message->conversation_id, $payload));
+
+        return $message;
     }
 
     public function sendContact(Conversation $conversation, User $sender, User $contact, ?int $replyToId = null): Message
@@ -502,6 +590,27 @@ class Messenger
         $conversation->forceFill(['slow_seconds' => $seconds])->save();
     }
 
+    /**
+     * Автомодерація групи (керують власник і адміни): посилання, капс, флуд, свої заборонені слова.
+     *
+     * @param  array{links?: bool, caps?: bool, flood?: bool, words?: list<string>}  $settings
+     */
+    public function setAutomod(Conversation $conversation, User $actor, array $settings): void
+    {
+        $this->ensureGroup($conversation);
+        abort_unless($conversation->participantFor($actor)?->canManage(), 403);
+        $words = array_values(array_unique(array_filter(array_map(
+            fn ($w) => mb_strtolower(trim((string) $w)),
+            array_slice($settings['words'] ?? [], 0, 50),
+        ), fn (string $w) => $w !== '' && mb_strlen($w) <= 40)));
+        $conversation->forceFill(['automod' => [
+            'links' => (bool) ($settings['links'] ?? false),
+            'caps' => (bool) ($settings['caps'] ?? false),
+            'flood' => (bool) ($settings['flood'] ?? false),
+            'words' => $words,
+        ]])->save();
+    }
+
     public function setMemberRole(Conversation $conversation, User $actor, User $target, string $role): void
     {
         $this->ensureGroup($conversation);
@@ -514,6 +623,16 @@ class Messenger
 
     public function assertCanSend(Conversation $conversation, User $user): void
     {
+        // Канал спільноти: «Оголошення» — лише адміністратори, приватний — лише ті, хто має доступ.
+        if ($conversation->community_channel_id !== null) {
+            $channel = CommunityChannel::query()->with('community')->find($conversation->community_channel_id);
+            abort_unless($channel !== null && app(CommunityChannels::class)->canPost($channel, $user), 403, 'У цьому каналі пишуть лише адміністратори.');
+        }
+        // Тайм-аут від адміністраторів: читати можна, писати — ні до вказаного часу.
+        $me = $conversation->participantFor($user);
+        if ($me?->timedOut() && $me->timeout_until !== null) {
+            abort(403, 'Вам тимчасово заборонено писати тут — до '.$me->timeout_until->timezone('Europe/Kyiv')->format('d.m H:i').'.');
+        }
         $seconds = (int) $conversation->slow_seconds;
         if ($seconds <= 0 || ! $conversation->isGroup()) {
             return;
@@ -536,6 +655,7 @@ class Messenger
             ->where('user_id', $user->id)
             ->whereNull('left_at')
             ->where('is_muted', false)
+            ->whereIn('conversation_id', Conversation::query()->whereNull('community_channel_id')->select('id'))
             ->where(fn ($query) => $query
                 ->where('marked_unread', true)
                 ->orWhereExists(fn ($q) => $this->unreadMessages($q, $user->id, 'conversation_participants')))
@@ -593,6 +713,20 @@ class Messenger
         DB::afterCommit(fn () => $this->broadcastNew($conversation, $message));
 
         return $message;
+    }
+
+    /** Службовий рядок у бесіді від імені людини («… обмежив …») і оновлення бесіди в усіх. */
+    public function noticeBy(Conversation $conversation, User $actor, string $text): Message
+    {
+        $message = DB::transaction(fn () => $this->system($conversation, $actor, $text));
+        $this->broadcastUpdated($conversation);
+
+        return $message;
+    }
+
+    public function genderVerb(User $user, string $male, string $female): string
+    {
+        return $this->verb($user, $male, $female);
     }
 
     private function system(Conversation $conversation, User $actor, string $text): Message

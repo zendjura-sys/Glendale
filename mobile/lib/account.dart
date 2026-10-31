@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'api.dart';
+import 'core/widgets/arctic_glass/arctic_glass.dart';
 import 'state.dart';
 import 'theme.dart';
 import 'widgets.dart';
@@ -19,14 +20,14 @@ class AccountSettings extends StatelessWidget {
       load: () => session.api.get('/api/v1/me/security'),
       builder: (data, reload) => Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         _Devices(data: data, reload: reload),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         _Logins(logins: maps(data['logins'])),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         _Profanity(initial: data['hide_profanity'] == true),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         _Appeals(data: data, reload: reload),
-        const SizedBox(height: 12),
-        const _Freeze(),
+        SizedBox(height: 12),
+        _Freeze(),
       ]),
     );
   }
@@ -51,7 +52,7 @@ String _method(String? method) => switch (method) {
     };
 
 class _Row extends StatelessWidget {
-  const _Row({required this.icon, required this.title, required this.subtitle, this.trailing, this.iconColor = muted});
+  _Row({required this.icon, required this.title, required this.subtitle, this.trailing, Color? iconColor}) : iconColor = iconColor ?? muted;
   final IconData icon;
   final String title;
   final String subtitle;
@@ -63,7 +64,7 @@ class _Row extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.03), borderRadius: BorderRadius.circular(16)),
+      decoration: BoxDecoration(color: fg.withValues(alpha: 0.03), borderRadius: BorderRadius.circular(16)),
       child: Row(children: [
         Icon(icon, size: 20, color: iconColor),
         const SizedBox(width: 12),
@@ -108,14 +109,14 @@ class _Devices extends StatelessWidget {
             subtitle: t['current'] == true ? tr('цей пристрій') : ago(t['last_used_at']),
             trailing: t['current'] == true
                 ? Pill(label: tr('Зараз'), color: green)
-                : IconButton(tooltip: tr('Вийти'), icon: const Icon(LucideIcons.logOut, size: 18, color: soft), onPressed: () => run('/api/v1/me/tokens/${t['id']}')),
+                : IconButton(tooltip: tr('Вийти'), icon: Icon(LucideIcons.logOut, size: 18, color: soft), onPressed: () => run('/api/v1/me/tokens/${t['id']}')),
           ),
         for (final s in sessions)
           _Row(
             icon: LucideIcons.monitor,
             title: text(s['device']) ?? tr('Браузер'),
             subtitle: '${text(s['ip']) ?? '—'} · ${ago(s['last_active_at'])}',
-            trailing: IconButton(tooltip: tr('Завершити'), icon: const Icon(LucideIcons.logOut, size: 18, color: soft), onPressed: () => run('/api/v1/me/sessions/${s['id']}')),
+            trailing: IconButton(tooltip: tr('Завершити'), icon: Icon(LucideIcons.logOut, size: 18, color: soft), onPressed: () => run('/api/v1/me/sessions/${s['id']}')),
           ),
         if (others > 0) ...[
           const SizedBox(height: 4),
@@ -251,7 +252,7 @@ class _AppealsState extends State<_Appeals> {
           const SizedBox(height: 10),
           Container(
             padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.03), borderRadius: BorderRadius.circular(16)),
+            decoration: BoxDecoration(color: fg.withValues(alpha: 0.03), borderRadius: BorderRadius.circular(16)),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text('${tr('${kinds[a['kind']] ?? a['kind']}')} · ${ago(a['created_at'])} · ${_status(text(a['status']))}', style: body(12, color: muted)),
               const SizedBox(height: 4),
@@ -320,13 +321,16 @@ Future<void> showReportSheet(BuildContext context, String username, String name)
     ('fake', 'Фейкова сторінка'),
     ('scam', 'Шахрайство'),
     ('cheat', 'Читерство'),
+    ('child_safety', 'Загроза дитині, сексуальна експлуатація'),
     ('other', 'Інше'),
   ];
   var reason = 'spam';
   final send = await showModalBottomSheet<bool>(
     context: context,
+    backgroundColor: Colors.transparent,
+    elevation: 0,
     isScrollControlled: true,
-    builder: (sheet) => StatefulBuilder(
+    builder: (sheet) => ArcticGlassSheetSurface(child: StatefulBuilder(
       builder: (sheet, setSheet) => Padding(
         padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + MediaQuery.viewInsetsOf(sheet).bottom),
         child: SafeArea(
@@ -350,7 +354,7 @@ Future<void> showReportSheet(BuildContext context, String username, String name)
           ]),
         ),
       ),
-    ),
+    )),
   );
   if (send != true || !context.mounted) return;
   await attempt(
@@ -367,8 +371,10 @@ Future<void> showFeedbackSheet(BuildContext context, {String screen = 'menu'}) a
   var kind = 'idea';
   final send = await showModalBottomSheet<bool>(
     context: context,
+    backgroundColor: Colors.transparent,
+    elevation: 0,
     isScrollControlled: true,
-    builder: (sheet) => StatefulBuilder(
+    builder: (sheet) => ArcticGlassSheetSurface(child: StatefulBuilder(
       builder: (sheet, setSheet) => Padding(
         padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + MediaQuery.viewInsetsOf(sheet).bottom),
         child: SafeArea(
@@ -393,7 +399,7 @@ Future<void> showFeedbackSheet(BuildContext context, {String screen = 'menu'}) a
           ]),
         ),
       ),
-    ),
+    )),
   );
   if (send != true || !context.mounted || bodyCtrl.text.trim().length < 5) return;
   await attempt(
@@ -405,14 +411,80 @@ Future<void> showFeedbackSheet(BuildContext context, {String screen = 'menu'}) a
 
 
 /// Що нового в цій версії застосунку — один раз після оновлення.
-const whatsNewVersion = '1.1.42';
+const whatsNewVersion = '1.1.80';
 
 List<String> _whatsNew() => [
-      tr('Нові розділи, як на сайті: Моменти, Завдання й сезон, Збережене, Чернетки, Обрані повідомлення, Релізи, «Мої десять» і порівняння серверів.'),
-      tr('Меню запису: зберегти, редагувати, поділитися, цитувати, «не цікаво» й заглушити автора.'),
-      tr('Фільми, ігри й сервери можна зберігати, стежити за ними й закріплювати в профілі.'),
-      tr('Свій канал Twitch або YouTube з позначкою LIVE у профілі, запрошення друзів і вступ за посиланням.'),
-      tr('Плеєр: виправлено серії, озвучки й збереження місця перегляду.'),
+      tr('GameCon+: якщо тарифи Google Play зараз недоступні, шторка пояснює чому, а не крутить індикатор.'),
+      tr('GameCon+ — картками: переваги, статус і оформлення профілю прямо в застосунку: колір і анімація ніку, рамка аватара, кольори сторінки, ефект шапки.'),
+      tr('Нові анімації ніку з GameCon+: «Неон» і «Веселка», як на сайті.'),
+      tr('Шторки більше не ховають нижні кнопки під смугою жестів.'),
+      tr('Меню розділів упорядковано за категоріями: «Моє», «Для гравців», «Спільнота», «Налаштування й допомога» — компактно, без повторів.'),
+      tr('Музика більше не обривається у фоні й на заблокованому екрані: плеєр тримає Wi-Fi і сам перепідключається, якщо пропала мережа.'),
+      tr('Плеєр у шторці й на заблокованому екрані: обкладинка на всю картку, повзунок перемотки; натискання відкриває «Зараз грає».'),
+      tr('Навушники: одне натискання — пауза, два — наступний трек, три — попередній; дзвінок ставить музику на паузу, від’єднані навушники — теж.'),
+      tr('Картки без обводки й тіней — лише матове скло.'),
+      tr('Справжнє матове скло, як на iPhone, без тіней: картки, кнопки, поля, шапка й док розмивають тло й прикраси під собою.'),
+      tr('Шапка й нижнє меню ближче до країв і підлаштовуються під розмір екрана.'),
+      tr('Сніг і листя тепер під картками — м’яко розмиваються склом.'),
+      tr('Генератор ніків правильно показує вільні адреси — раніше всі ніки помилково були «зайняті».'),
+      tr('Святкові прикраси, як на сайті: Хелловін, Новий рік із шапками Санти, День закоханих, Великдень, День Незалежності.'),
+      tr('Новий запис — як на сайті: «+» з інструментами — стікер, GIF, опитування, картка, мем, спойлер, розклад і чернетки.'),
+      tr('Нові розділи: статті, знижки й роздачі, беклог ігор, тір-листи, дуелі, дошка ідей, генератор ніків.'),
+      tr('У спільнотах — канали, календар подій і вікі; у налаштуваннях — посилання в профілі, тип акаунта й піксельна аватарка.'),
+      tr('#теги в записах відкривають сторінку теми; новий значок у сповіщеннях.'),
+      tr('Сторінка гри — як на сайті: беклог, оцінка гравців, лідерборд, ціни, «чи потягне ПК», новини, цілі, FPS, питання, наставники й досягнення.'),
+      tr('Перші кроки для новачків: номер, режим соцмережі, ігри й сервери.'),
+      tr('Налаштування сповіщень: категорії, звук, тихі години, близькі друзі, заглушені слова, спойлери, режим стрімера й економія трафіку.'),
+      tr('«Зв’язки й дані»: Telegram і Discord, сервери з входом через GameCon, вивантаження своїх даних. «Вигляд профілю»: тема за грою й порядок блоків.'),
+      tr('Новий вигляд «Spatial Glass»: глибоке тло, напівпрозоре скло з бліком, сапфірові й крижані акценти.'),
+      tr('Нижнє меню — плаваючий скляний док із крижаною крапкою під активною вкладкою.'),
+      tr('ШІ в чатах: кнопка ✨ у полі повідомлення покращує текст, а «Підсумок від ШІ» в меню групи переказує розмову.'),
+      tr('Довідка й підтримка прямо в застосунку: статті, звернення зі знімками екрана, відповіді й оцінка.'),
+      tr('Подкасти: підписка на шоу й випуски в плеєрі застосунку.'),
+      tr('«Прочитати пізніше» й сповіщення за словами — у меню.'),
+      tr('У стрічці: опитування (анонімні й відкриті), GIF і записи для підписників.'),
+      tr('Новий логотип GameCon — неонова «G» на значку застосунку, у сповіщеннях і всередині.'),
+      tr('Замість кружечка завантаження — скляні заготовки екрана з крижаним відблиском, як на сайті.'),
+      tr('Шапка тепер плаваюча капсула — як нижнє меню.'),
+      tr('Game Card у профілі: рівень, ігри, сервери, сім’я й клан, сезон — поділіться картинкою в один дотик.'),
+      tr('Ранковий дайджест о 9:00: події, турніри, дні народження друзів і непрочитане — вимикається в налаштуваннях.'),
+      tr('«Запросити друзів»: смужка до наступної нагороди й перші кроки кожного запрошеного.'),
+      tr('Станції твоїх груп у «Радіо»: нескінченний потік того, що слухають у твоїх сім’ях, кланах і спільнотах.'),
+      tr('Новий віджет «Пульс GameCon» на головному екрані: непрочитані чати й сповіщення, друзі онлайн і в що грають, завдання дня й рівень сезону.'),
+      tr('Підбір тиммейтів: анкета гравця, «Шукаю зараз», сумісність у відсотках із поясненням і запрошення у своє паті.'),
+      tr('Безпека дітей: нова причина скарги «Загроза дитині» й посилання на стандарти в налаштуваннях приватності.'),
+      tr('Турніри й челенджі серверів: реєстрація, сітка на вибування, таблиця результатів і надсилання результату зі скриншотом.'),
+      tr('Офлайн-музика: завантажуйте пісні, альбоми й плейлисти на телефон через «⋯» → «Завантажити на пристрій» і слухайте без інтернету.'),
+      tr('«Слухати разом» для сім’ї, клану й спільноти: кімнати з діджеєм, пропозиціями треків, реакціями й чатом.'),
+      tr('Сезонний пропуск: 30 рівнів за завдання, нагороди — рамки, кольори імені, значки й стікери.'),
+      tr('Налаштування «Показувати, що я слухаю» — одне для сайту й застосунку, для всієї музики.'),
+      tr('Вхід на сайт через застосунок: підтвердіть вхід одним дотиком — без пароля.'),
+      tr('GameCon Connect: бачте, що грає на сайті чи іншому пристрої, керуйте ним і перемикайте музику між телефоном і комп’ютером.'),
+      tr('«Музика»: «Назад» ліворуч, привітання замість «Головна», обкладинки станцій без синього відтінку.'),
+      tr('Активна вкладка внизу тепер світиться неоновим синім замість рамки.'),
+      tr('У «Музиці» зверху — аватар із меню розділів, сповіщення й кнопка «Назад».'),
+      tr('Нове матове скло: панелі, меню розділів і міні-плеєр — щільніші й чистіші, як в iOS.'),
+      tr('Музику можна завантажити за посиланням: «Завантажити трек» → «За посиланням». Підходять прямі посилання на файл і посилання Google Диска, Dropbox чи OneDrive — статус і прогрес видно одразу, а коли трек готовий — «Слухати».'),
+      tr('Плеєри в Кіно тепер називаються «Плеєр 1», «Плеєр 2», «Плеєр 3».'),
+      tr('«Заповнити автоматично» в редагуванні треку тепер шукає всюди: розпізнавання за звуком (AcoustID), MusicBrainz, Discogs, Spotify і Last.fm — назву, виконавця, альбом, жанр і обкладинку.'),
+      tr('«Зараз грає»: «Грає з…» над чергою, плавні переходи між треками, вирівнювання гучності й таймер сну — у розділі «Звук» під чергою.'),
+      tr('Текст пісні з перекладом під кожним рядком і «Поділитися рядками» — гарною карткою з обкладинкою.'),
+      tr('«Відомості про пісню»: альбом, рік, жанр і формат файлу — з меню «⋯» або дотиком до значка якості.'),
+      tr('Утримуйте ⏪/⏩, щоб перемотувати, а міні-плеєр гортайте вбік, щоб змінити трек.'),
+      tr('Нова «Музика», як на сайті: вкладки Головна, Нове, Радіо й Медіатека, мікси для тебе, чарти, Replay і пошук навіть за рядком із тексту пісні.'),
+      tr('Сторінки виконавців і альбомів: фото, топ-пісні, альбоми, схожі виконавці й «Про виконавця».'),
+      tr('Радіо: твоя нескінченна станція, станції жанрів і живі інтернет-радіостанції. Коли черга закінчується, ∞ підбирає схожі треки.'),
+      tr('Новий екран «Зараз грає»: обкладинка на весь екран, зірочка «Улюблене», якість «Без втрат», гучність, текст пісні, вивід звуку й черга з історією.'),
+      tr('«Підсумки року» з 1 грудня: твої пости, друзі, музика, кіно й ігри за рік — картками, як в історіях.'),
+      tr('Новий вигляд, як на сайті: темна тема «Неоновий синій» і світла «Крижана Арктика» — у Налаштуваннях → Вигляд.'),
+      tr('Нижнє меню-острів: потягніть його вгору або торкніться язичка — відкриються всі розділи.'),
+      tr('На планшеті — шапка й список розділів ліворуч, як на сайті на комп’ютері.'),
+      tr('Плеєр «Зараз грає»: колір обкладинки, вініл, хвиля прогресу й текст пісні в такт.'),
+      tr('GameCon+ можна оформити прямо в застосунку через Google Play.'),
+      tr('Нові сповіщення вгорі екрана: колір за типом, хрестик і смужка часу.'),
+      tr('«Телефон», як на сайті: свій номер, набирач, дзвінки й повідомлення за номером, подарунки номерів друзям.'),
+      tr('Режими «Геймер», «Класика», «Мінімал» та інші — у Налаштуваннях → Вигляд.'),
+      tr('Гарний номер можна купити прямо в застосунку через Google Play — собі або в подарунок другові.'),
     ];
 
 Future<void> showWhatsNew(BuildContext context, SharedPreferences prefs) async {
@@ -421,13 +493,15 @@ Future<void> showWhatsNew(BuildContext context, SharedPreferences prefs) async {
   if (!context.mounted) return;
   await showModalBottomSheet<void>(
     context: context,
+    backgroundColor: Colors.transparent,
+    elevation: 0,
     isScrollControlled: true,
-    builder: (sheet) => SafeArea(
+    builder: (sheet) => ArcticGlassSheetSurface(child: SafeArea(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
         child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           Row(children: [
-            const Icon(LucideIcons.sparkles, color: Color(0xFFB4BFFF)),
+            const Icon(LucideIcons.sparkles, color: Color(0xFF9DD8FF)),
             const SizedBox(width: 8),
             Text(tr('Що нового'), style: display(20)),
             const Spacer(),
@@ -438,7 +512,7 @@ Future<void> showWhatsNew(BuildContext context, SharedPreferences prefs) async {
             Container(
               margin: const EdgeInsets.only(bottom: 8),
               padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.04), borderRadius: BorderRadius.circular(14)),
+              decoration: BoxDecoration(color: fg.withValues(alpha: 0.04), borderRadius: BorderRadius.circular(14)),
               child: Text(item, style: body(14, color: soft).copyWith(height: 1.4)),
             ),
           const SizedBox(height: 6),
@@ -452,6 +526,6 @@ Future<void> showWhatsNew(BuildContext context, SharedPreferences prefs) async {
           ),
         ]),
       ),
-    ),
+    )),
   );
 }

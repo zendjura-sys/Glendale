@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\Games\GameTags;
 use Database\Factories\PostFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -30,6 +31,7 @@ use Illuminate\Support\Carbon;
  * @property bool $is_pinned
  * @property bool $is_draft
  * @property bool $spoiler
+ * @property bool $subscribers_only Лише для платних підписників автора
  * @property Carbon|null $edited_at
  * @property Carbon|null $publish_at
  * @property bool $is_pending
@@ -45,11 +47,21 @@ use Illuminate\Support\Carbon;
  * @property Carbon $created_at
  * @property Carbon $updated_at
  */
-#[Fillable(['author_id', 'wall_type', 'wall_id', 'as_community', 'body', 'music', 'movie_id', 'link', 'card', 'visibility', 'is_pinned', 'is_draft', 'comments_enabled', 'spoiler', 'edited_at', 'publish_at', 'shared_post_id', 'quoted_post_id', 'sticker', 'is_pending', 'tag', 'lang'])]
+#[Fillable(['author_id', 'wall_type', 'wall_id', 'as_community', 'body', 'music', 'movie_id', 'link', 'card', 'visibility', 'is_pinned', 'is_draft', 'comments_enabled', 'spoiler', 'edited_at', 'publish_at', 'shared_post_id', 'quoted_post_id', 'sticker', 'is_pending', 'tag', 'lang', 'subscribers_only'])]
 class Post extends Model
 {
     /** @use HasFactory<PostFactory> */
     use HasFactory, SoftDeletes;
+
+    protected static function booted(): void
+    {
+        // #Згадки ігор: запис з’являється на сторінці гри.
+        static::saved(function (Post $post) {
+            if ($post->wasChanged('body') || $post->wasRecentlyCreated) {
+                app(GameTags::class)->sync($post);
+            }
+        });
+    }
 
     public const VISIBILITY_PUBLIC = 'public';
 
@@ -70,6 +82,7 @@ class Post extends Model
             'is_pending' => 'boolean',
             'comments_enabled' => 'boolean',
             'spoiler' => 'boolean',
+            'subscribers_only' => 'boolean',
             'as_community' => 'boolean',
             'music' => 'array',
             'link' => 'array',

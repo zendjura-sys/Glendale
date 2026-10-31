@@ -19,7 +19,7 @@ export function PageHeader({
         <div className="mb-6 flex flex-wrap items-end gap-x-4 gap-y-3">
             {/* На телефоні заголовок займає весь рядок, а кнопки переносяться під нього. */}
             <div className="min-w-[min(100%,18rem)] flex-1">
-                <h1 className="font-display text-[26px] leading-tight font-bold text-white">
+                <h1 className="font-display text-[28px] leading-tight font-bold text-white sm:text-[32px]">
                     {title}
                 </h1>
                 {description && (
@@ -40,38 +40,27 @@ export function StatCard({
     value,
     hint,
     icon: Icon,
-    tone = 'from-gc-blue to-gc-indigo',
     delay = 0,
 }: {
     label: string;
     value: ReactNode;
     hint?: ReactNode;
     icon: LucideIcon;
+    /** Колишній колір плитки; лишено для сумісності — плитки тепер в одному акценті. */
     tone?: string;
     delay?: number;
 }) {
     return (
         <div
-            className="glass group relative animate-rise overflow-hidden rounded-3xl p-4 sm:p-5"
+            className="glass group relative animate-rise overflow-hidden rounded-2xl p-4 sm:p-5"
             style={{ animationDelay: `${delay}ms` }}
         >
-            <div
-                className={cn(
-                    'absolute -top-10 -right-10 size-32 rounded-full bg-gradient-to-br opacity-25 blur-2xl transition duration-500 group-hover:opacity-50',
-                    tone,
-                )}
-            />
             <div className="relative flex items-start justify-between gap-2">
                 <span className="min-w-0 text-[13px] font-medium text-white/50">
                     {label}
                 </span>
-                <span
-                    className={cn(
-                        'flex size-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br shadow-[0_8px_24px_-8px_rgb(109_93_252/0.8)] sm:size-9',
-                        tone,
-                    )}
-                >
-                    <Icon className="size-[18px] text-white" />
+                <span className="flex size-8 shrink-0 items-center justify-center rounded-[10px] bg-primary/12 text-gc-lilac-300 sm:size-9">
+                    <Icon className="size-[18px]" />
                 </span>
             </div>
             <div className="relative mt-3 font-display text-2xl leading-none font-bold text-white sm:text-[30px]">
@@ -143,7 +132,7 @@ export function Pill({
     return (
         <span
             className={cn(
-                'inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium whitespace-nowrap',
+                'inline-flex items-center gap-1 rounded-chip border px-2 py-0.5 text-xs font-medium whitespace-nowrap',
                 pillTones[tone],
                 className,
             )}

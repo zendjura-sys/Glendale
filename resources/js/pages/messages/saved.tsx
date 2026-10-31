@@ -33,7 +33,7 @@ export default function SavedMessages({ items }: { items: Item[] }) {
                             <Link
                                 key={item.id}
                                 href={item.href}
-                                className="glass block rounded-3xl p-4 transition hover:border-white/15"
+                                className="glass block rounded-2xl p-4 transition hover:border-white/15"
                             >
                                 <span className="block text-xs text-white/40">
                                     {item.author ?? tr('Повідомлення')} ·{' '}

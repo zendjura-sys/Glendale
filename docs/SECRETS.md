@@ -8,11 +8,11 @@
 
 ## 1. Три места, где живут секреты
 
-| Где                                                         | Что там                                                                                                                         | Кто меняет                        |
-| ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- | --------------------------------- |
-| **Админка → Інтеграції** (таблица настроек, `SiteSettings`) | ключи внешних сервисов: Kodik, Videoseed, FlixCDN, TMDB, Spotify, Discord, Telegram, Steam, DeepL, Sightengine, FCM, LiveKit, … | администратор сайта через админку |
-| **`.env` на сервере** (`/var/www/gamecon/.env`)             | `APP_KEY`, пароли БД и Redis, почта, Reverb, запасные значения ключей интеграций                                                | только владелец сервера           |
-| **GitHub → Settings → Secrets and variables → Actions**     | ключ подписи Android‑приложения и пароли к нему                                                                                 | только владелец репозитория       |
+| Где                                                         | Что там                                                                                                                                           | Кто меняет                        |
+| ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------- |
+| **Админка → Інтеграції** (таблица настроек, `SiteSettings`) | ключи внешних сервисов: видеоплееры 1–3, TMDB, Spotify, AcoustID, Last.fm, Discogs, Discord, Telegram, Steam, DeepL, Sightengine, FCM, LiveKit, … | администратор сайта через админку |
+| **`.env` на сервере** (`/var/www/gamecon/.env`)             | `APP_KEY`, пароли БД и Redis, почта, Reverb, запасные значения ключей интеграций                                                                  | только владелец сервера           |
+| **GitHub → Settings → Secrets and variables → Actions**     | ключ подписи Android‑приложения и пароли к нему                                                                                                   | только владелец репозитория       |
 
 Шаблоны без значений: `.env.example` (локально), `deploy/.env.production.example` (сервер).
 
@@ -29,7 +29,18 @@
   к Google Play Developer API; пусто — используется `fcm_service_account`), `google_play_rtdn_token` (секрет в адресе
   Pub/Sub push, создаётся сам), `monobank_acquiring_token` (X-Token эквайринга monobank;
   запасной вариант — `MONOBANK_ACQUIRING_TOKEN` в `.env`). `donatello_token` остался в списке только для
-  старых данных — Donatello больше не используется.
+  старых данных — Donatello больше не используется. Метаданные музыки (`Services/Music/*`, все три необязательны):
+  `acoustid_key` (ключ приложения AcoustID — распознавание трека по отпечатку `fpcalc`; получить:
+  https://acoustid.org/new-application; запасной вариант — `ACOUSTID_KEY`), `lastfm_key` (API key Last.fm —
+  теги, биографии, похожие исполнители; https://www.last.fm/api/account/create; `LASTFM_KEY`), `discogs_token`
+  (Personal access token Discogs — релизы, обложки, фото исполнителей; https://www.discogs.com/settings/developers;
+  `DISCOGS_TOKEN`). MusicBrainz, Cover Art Archive и LRCLIB ключей не требуют.
+  Перевод и орфография (необязательны): `libretranslate_key` (ключ своего LibreTranslate — обычно не нужен:
+  сервер слушает только `127.0.0.1`; адрес — обычная настройка `libretranslate_url`, запасной вариант —
+  `LIBRETRANSLATE_URL` / `LIBRETRANSLATE_KEY`), `languagetool_key` (API key LanguageTool Premium вместе с
+  логином `languagetool_username`; свой сервер LanguageTool ключа не требует; `LANGUAGETOOL_KEY`).
+  LibreTranslate ставится на сервер по желанию: `INSTALL_LIBRETRANSLATE=1` при деплое (~2–4 ГБ RAM,
+  несколько ГБ диска), см. ARCHITECTURE.md § 8.
 - Хранятся **зашифрованными** (`Crypt::encryptString`, ключ шифрования — `APP_KEY` из `.env`).
 - **Только запись:** админка никогда не показывает значение (маска), пустое поле = «оставить как есть»,
   явная очистка = удалить. `SiteSettings::public()` их не отдаёт; на клиент они не попадают.
@@ -89,6 +100,11 @@ app(SiteSettings::class)->putSecret('kodik_token', $value); // null или '' �
   Защита — ограничения ключа в Google Cloud Console (пакет `online.gamecon.app` + SHA‑1 подписей).
 - `VITE_*` переменные — попадают в JS сайта, поэтому туда кладут только публичные значения.
 - `googleWebClientId` в `mobile/lib/auth_screen.dart` — публичный OAuth client id.
+- SHA‑256 отпечатки подписи приложения (`app_link_fingerprints`, Админка → Интеграции → Google Play,
+  поле «SHA-256 відбитки підпису застосунку»): Play Console → Цілісність застосунку → Підпис застосунку → SHA-256
+  (ключ подписи Play и, для сборок из Actions, ключ загрузки), по одному в строке. Сайт отдаёт их в
+  `/.well-known/assetlinks.json` (пакет — «Пакет застосунку» того же блока, по умолчанию `online.gamecon.app`)
+  для Android App Links; пусто — 404, App Links выключены. Это не секрет, изменение пишется в журнал админки.
 
 ---
 

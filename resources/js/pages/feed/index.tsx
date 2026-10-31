@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import {
     Deferred,
     Head,
@@ -5,6 +6,8 @@ import {
     Link,
     usePage,
 } from '@inertiajs/react';
+import { NewcomerWeek } from '@/components/onboarding/newcomer-week';
+import type { NewcomerData } from '@/components/onboarding/newcomer-week';
 import {
     Cake,
     Globe,
@@ -15,8 +18,13 @@ import {
     Sparkles,
     UserPlus,
     UsersRound,
+    Hash,
 } from 'lucide-react';
-import { LanguageFilter, TomorrowCard } from '@/components/gc/feed-extras';
+import {
+    ChronoSwitch,
+    LanguageFilter,
+    TomorrowCard,
+} from '@/components/gc/feed-extras';
 import type { TomorrowEvent } from '@/components/gc/feed-extras';
 import { FriendButton } from '@/components/gc/friend-button';
 import { PersonRow } from '@/components/gc/person-card';
@@ -25,7 +33,9 @@ import { PostComposer } from '@/components/gc/post-composer';
 import { PostSkeleton } from '@/components/gc/post-skeleton';
 import { StoriesBar } from '@/components/gc/stories';
 import { UserAvatar } from '@/components/gc/user-avatar';
+import { WrappedBanner } from '@/components/gc/wrapped-banner';
 import { EmptyState, Widget, WidgetSkeleton } from '@/components/gc/widget';
+import { ReadyToPlayCard } from '@/components/party/ready-to-play';
 import { formatDate } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import type { PersonCard, PostItem, ScrollData, UserCard } from '@/types';
@@ -34,10 +44,14 @@ import type { StreamInfo } from '@/components/streams/stream';
 import { FeedQuests } from '@/components/quests/quest-list';
 import type { Quest } from '@/components/quests/quest-list';
 import { tr } from '@/lib/i18n';
+import { usePlugin } from '@/lib/plugins';
 import { useFeature } from '@/lib/plugins';
 
 type Props = {
-    tab: 'friends' | 'discover' | 'country';
+    newcomer?: NewcomerData | null;
+    tab: 'friends' | 'discover' | 'country' | 'topics';
+    topics?: string[] | null;
+    onlyFriends?: boolean;
     lang: string | null;
     languages: string[];
     tomorrow?: TomorrowEvent[];
@@ -66,6 +80,18 @@ function FeedTabs({
     tab: Props['tab'];
     hasFriends: boolean;
 }) {
+    const topicsOn = usePlugin('topic_follows');
+    const scroller = useRef<HTMLDivElement>(null);
+    // Активна вкладка завжди в полі зору, навіть якщо вона за краєм на телефоні.
+    useEffect(() => {
+        const active =
+            scroller.current?.querySelector<HTMLElement>('[data-active]');
+        active?.scrollIntoView({
+            block: 'nearest',
+            inline: 'center',
+            behavior: 'instant',
+        });
+    }, [tab]);
     const tabs = [
         {
             key: 'friends',
@@ -88,41 +114,61 @@ function FeedTabs({
             href: '/feed?tab=country',
             disabled: false,
         },
+        ...(topicsOn
+            ? [
+                  {
+                      key: 'topics',
+                      label: tr('Теми'),
+                      icon: Hash,
+                      href: '/feed?tab=topics',
+                      disabled: false,
+                  },
+              ]
+            : []),
     ];
 
     return (
-        <div className="glass flex gap-1 rounded-2xl p-1">
-            {tabs.map((item) => (
-                <Link
-                    key={item.key}
-                    href={item.href}
-                    preserveScroll={false}
-                    aria-current={tab === item.key ? 'page' : undefined}
-                    className={cn(
-                        'flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold transition',
-                        tab === item.key
-                            ? 'nav-active text-white'
-                            : 'text-white/55 hover:bg-white/[0.04] hover:text-white',
-                        item.disabled && 'pointer-events-none opacity-40',
-                    )}
-                >
-                    <item.icon
-                        aria-hidden
+        <div className="glass relative rounded-2xl p-1">
+            <div
+                ref={scroller}
+                className="scrollbar-none flex snap-x gap-1 overflow-x-auto scroll-smooth [mask-image:linear-gradient(90deg,transparent,#000_12px,#000_calc(100%-24px),transparent)]"
+            >
+                {tabs.map((item) => (
+                    <Link
+                        key={item.key}
+                        href={item.href}
+                        preserveScroll={false}
+                        aria-current={tab === item.key ? 'page' : undefined}
+                        data-active={tab === item.key || undefined}
                         className={cn(
-                            'size-4',
-                            tab === item.key && 'text-gc-lilac-400',
+                            'flex min-h-11 shrink-0 snap-start items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold whitespace-nowrap transition sm:flex-1',
+                            tab === item.key
+                                ? 'nav-active text-white'
+                                : 'text-white/55 hover:bg-white/[0.04] hover:text-white',
+                            item.disabled && 'pointer-events-none opacity-40',
                         )}
-                    />
-                    {item.label}
-                </Link>
-            ))}
+                    >
+                        <item.icon
+                            aria-hidden
+                            className={cn(
+                                'size-4',
+                                tab === item.key && 'text-gc-lilac-400',
+                            )}
+                        />
+                        {item.label}
+                    </Link>
+                ))}
+            </div>
         </div>
     );
 }
 
 export default function Feed({
+    newcomer = null,
     tab,
+    topics = null,
     lang,
+    onlyFriends,
     languages,
     tomorrow,
     streaming,
@@ -148,7 +194,9 @@ export default function Feed({
             <div className="flex gap-5">
                 <div className="min-w-0 flex-1 space-y-4 xl:max-w-[640px]">
                     {storiesOn && <StoriesBar />}
+                    <WrappedBanner />
                     {liveOn && <FriendsLive streams={streaming ?? []} />}
+                    <ReadyToPlayCard className="xl:hidden" />
                     <FeedQuests quests={quests ?? []} />
                     <TomorrowCard events={tomorrow ?? []} />
                     {(picks?.length ?? 0) > 0 && (
@@ -206,16 +254,22 @@ export default function Feed({
                             ))}
                         </div>
                     )}
+                    {newcomer && <NewcomerWeek data={newcomer} />}
                     <PostComposer />
                     <FeedTabs tab={tab} hasFriends={hasFriends} />
-                    <LanguageFilter
-                        tab={tab}
-                        lang={lang}
-                        languages={languages}
-                    />
+                    <div className="flex items-center gap-2">
+                        <LanguageFilter
+                            tab={tab}
+                            lang={lang}
+                            languages={languages}
+                        />
+                        {tab === 'friends' && (
+                            <ChronoSwitch onlyFriends={onlyFriends ?? false} />
+                        )}
+                    </div>
 
                     {tab === 'discover' && !hasFriends && (
-                        <div className="gradient-border glass flex items-center gap-4 rounded-3xl p-5">
+                        <div className="gradient-border glass flex items-center gap-4 rounded-2xl p-5">
                             <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-brand shadow-[0_10px_30px_-8px_rgb(109_93_252/0.9)]">
                                 <Sparkles className="size-6 text-white" />
                             </span>
@@ -243,20 +297,28 @@ export default function Feed({
                                       : Compass
                             }
                             title={
-                                tab === 'country'
-                                    ? tr('Стрічка країни порожня')
-                                    : tab === 'friends'
-                                      ? tr('Стрічка поки порожня')
-                                      : tr('Тут ще нічого немає')
+                                tab === 'topics'
+                                    ? topics?.length
+                                        ? tr('За вашими темами поки тихо')
+                                        : tr('Ви ще не стежите за темами')
+                                    : tab === 'country'
+                                      ? tr('Стрічка країни порожня')
+                                      : tab === 'friends'
+                                        ? tr('Стрічка поки порожня')
+                                        : tr('Тут ще нічого немає')
                             }
                             text={
-                                tab === 'country' && !country
+                                tab === 'topics'
                                     ? tr(
-                                          'Вкажіть країну в налаштуваннях профілю — і тут з’являться записи людей звідти.',
+                                          'Торкніться #хештегу в записі й натисніть «Стежити» — такі записи збиратимуться тут.',
                                       )
-                                    : tr(
-                                          'Напишіть перший запис або знайдіть друзів — і стрічка оживе.',
-                                      )
+                                    : tab === 'country' && !country
+                                      ? tr(
+                                            'Вкажіть країну в налаштуваннях профілю — і тут з’являться записи людей звідти.',
+                                        )
+                                      : tr(
+                                            'Напишіть перший запис або знайдіть друзів — і стрічка оживе.',
+                                        )
                             }
                             action={
                                 <Link
@@ -284,6 +346,7 @@ export default function Feed({
                 </div>
 
                 <aside className="sticky top-[76px] hidden h-fit w-[320px] shrink-0 space-y-4 xl:block">
+                    <ReadyToPlayCard />
                     <Widget
                         title={tr('Зараз онлайн')}
                         icon={Radio}

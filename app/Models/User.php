@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\Quests\SeasonPass;
 use App\Support\Palette;
 use App\Support\Plugins\Plugins;
 use App\Support\PlusStyle;
@@ -19,6 +20,7 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Fortify\Contracts\PasskeyUser;
 use Laravel\Fortify\PasskeyAuthenticatable;
@@ -43,8 +45,11 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property string $password
  * @property string $role
  * @property string|null $avatar_path
+ * @property string|null $cover_video_path GameCon+: відео замість обкладинки
  * @property string|null $cover_path
  * @property string|null $status
+ * @property string|null $status_emoji Емодзі статусу («🎮»)
+ * @property Carbon|null $status_until Після цього часу статус (текст і емодзі) ховається
  * @property string|null $about
  * @property string|null $city
  * @property string|null $country
@@ -52,6 +57,10 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property string|null $gender
  * @property string|null $website
  * @property bool $is_verified
+ * @property string $account_type Тип акаунта: personal, streamer, business, agency…
+ * @property array<string, string>|null $account_details Публічні поля спеціального акаунта
+ * @property string|null $verification_kind Вид позначки верифікації 2.0 (identity, creator, business, organization)
+ * @property Carbon|null $verified_at
  * @property bool $is_private
  * @property string $message_privacy
  * @property Carbon|null $last_seen_at
@@ -80,6 +89,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property Carbon|null $plus_until GameCon+ активний до (кеш plus_grants)
  * @property int $balance Особистий рахунок, копійок (журнал — wallet_transactions)
  * @property array<string, string>|null $plus_style Колір ніку, рамка, акцент профілю
+ * @property array<string, string>|null $cosmetics Вдягнута косметика сезонного пропуску (тип → ключ)
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
@@ -115,10 +125,22 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
 
     protected $appends = ['avatar_url', 'cover_url', 'is_online'];
 
+    /** @var array<string, mixed> */
+    protected $attributes = ['account_type' => 'personal'];
+
     protected static function booted(): void
     {
         static::saving(function (User $user) {
             $user->name = trim($user->first_name.' '.$user->last_name);
+        });
+        // Верифікація 2.0 підтверджує саме це імʼя й адресу: змінили — позначку знято, подайте заново.
+        static::updating(function (User $user) {
+            if ($user->is_verified && $user->verification_kind !== null && ! $user->isDirty('is_verified') && $user->isDirty(['first_name', 'last_name', 'username'])) {
+                $user->is_verified = false;
+                $user->verification_kind = null;
+                $user->verified_at = null;
+                Log::info('verification: revoked after rename', ['user' => $user->id]);
+            }
         });
     }
 
@@ -131,17 +153,21 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
             'birthday' => 'date',
             'last_seen_at' => 'datetime',
             'playing_until' => 'datetime',
+            'status_until' => 'datetime',
             'playing_auto' => 'boolean',
             'muted_until' => 'datetime',
             'frozen_at' => 'datetime',
             'banned_at' => 'datetime',
             'is_verified' => 'boolean',
+            'account_details' => 'array',
+            'verified_at' => 'datetime',
             'is_private' => 'boolean',
             'email_social' => 'boolean',
             'nav_tabs' => 'array',
             'preferences' => 'array',
             'plus_until' => 'datetime',
             'plus_style' => 'array',
+            'cosmetics' => 'array',
             'balance' => 'integer',
         ];
     }
@@ -197,6 +223,16 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
     public function posts(): HasMany
     {
         return $this->hasMany(Post::class, 'author_id');
+    }
+
+    /**
+     * «Граю в…»: ігри й сервери, які людина позначила.
+     *
+     * @return HasMany<PlayedPlace, $this>
+     */
+    public function playedPlaces(): HasMany
+    {
+        return $this->hasMany(PlayedPlace::class);
     }
 
     /**
@@ -298,10 +334,21 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
             'avatar_url' => $this->avatar_url,
             'is_online' => $this->is_online,
             'is_verified' => $this->is_verified,
-            'status' => $this->status,
+            'verified_kind' => $this->is_verified ? $this->verification_kind : null,
+            'account_type' => $this->account_type !== 'personal' ? $this->account_type : null,
+            'status' => $this->statusExpired() ? null : $this->status,
+            'status_emoji' => $this->statusExpired() ? null : $this->status_emoji,
+            'status_until' => $this->statusExpired() ? null : $this->status_until?->toIso8601String(),
             'playing' => $this->playing(),
             'plus' => $this->plusCard(),
+            'cosmetics' => SeasonPass::card($this->cosmetics),
         ];
+    }
+
+    /** Статус із таймером, час якого минув, — більше не показується (текст і емодзі). */
+    public function statusExpired(): bool
+    {
+        return $this->status_until !== null && $this->status_until->isPast();
     }
 
     public function isPlus(): bool
@@ -386,6 +433,21 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
     {
         $this->preferences = array_merge($this->preferences ?? [], $patch);
         $this->save();
+    }
+
+    /**
+     * «Показувати, що я слухаю»: чи бачать інші, що грає в людини (треки GameCon, радіо, Spotify).
+     * Типово ввімкнено; Spotify додатково вимикається своїм перемикачем show_now_playing.
+     */
+    public function showsListening(): bool
+    {
+        return $this->pref('show_listening', true) !== false;
+    }
+
+    /** Ранковий дайджест (одне сповіщення о 9:00): увімкнено, доки людина не вимкне. */
+    public function wantsDigest(): bool
+    {
+        return $this->pref('morning_digest', true) !== false;
     }
 
     public function palette(): string

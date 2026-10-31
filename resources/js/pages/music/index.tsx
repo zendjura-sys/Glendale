@@ -1,4 +1,5 @@
 import { Head, InfiniteScroll, Link, router, usePage } from '@inertiajs/react';
+import { ListSkeleton } from '@/components/gc/skeletons';
 import {
     Compass,
     Disc3,
@@ -274,7 +275,17 @@ export default function MusicIndex({
                                     {tr('Перемішати')}
                                 </button>
                             </div>
-                            <InfiniteScroll data="tracks" preserveUrl>
+                            <InfiniteScroll
+                                data="tracks"
+                                loading={
+                                    <ListSkeleton
+                                        rows={4}
+                                        avatar="square"
+                                        card={false}
+                                    />
+                                }
+                                preserveUrl
+                            >
                                 <TrackList
                                     tracks={tracks.data}
                                     playlists={playlists}

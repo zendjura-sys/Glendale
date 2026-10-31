@@ -1,4 +1,6 @@
 import { Link, usePage } from '@inertiajs/react';
+import { usePlugin } from '@/lib/plugins';
+import { useDraft, writeDraft } from '@/lib/drafts';
 import { CornerDownRight, Pin, SendHorizontal, Trash2 } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { toast } from 'sonner';
@@ -10,7 +12,13 @@ import type { CommentItem } from '@/types';
 import { LikeButton } from './like-button';
 import { UserAvatar } from './user-avatar';
 import { VerifiedBadge } from './verified-badge';
-import { PlusBadge, plusNameStyle } from './plus';
+import { nameDisplayProps, PlusBadge } from './plus';
+import { ThanksButton } from './thanks-button';
+import { RoleBadge } from '@/components/communities/role-badge';
+import {
+    CosmeticBadge,
+    cosmeticNameStyle,
+} from '@/components/season/cosmetics';
 import {
     TranslateToggle,
     useContentTranslation,
@@ -45,6 +53,9 @@ export function Comments({
     const [comments, setComments] = useState(initial);
     const [loadedAll, setLoadedAll] = useState(initial.length >= total);
     const [body, setBody] = useState('');
+    const draftsOn = usePlugin('local_drafts');
+    // Чернетка коментаря — окремо для кожного запису чи фото.
+    useDraft(draftsOn ? `comment:${endpoint}` : null, body, setBody);
     const [spoiler, setSpoiler] = useState(false);
     const [replyTo, setReplyTo] = useState<CommentItem | null>(null);
     const [sending, setSending] = useState(false);
@@ -84,6 +95,7 @@ export function Comments({
             setComments((list) => [...list, response.comment]);
             onCountChange(response.comments_count);
             setBody('');
+            writeDraft(`comment:${endpoint}`, '');
             setSpoiler(false);
             setSticker(null);
             setPickingSticker(false);
@@ -188,7 +200,7 @@ export function Comments({
                             type="button"
                             onClick={() => chooseSort(key)}
                             className={cn(
-                                'rounded-full px-2.5 py-1 font-medium',
+                                'rounded-chip px-2.5 py-1 font-medium',
                                 sort === key
                                     ? 'bg-white/10 text-white'
                                     : 'text-white/45 hover:text-white',
@@ -239,18 +251,36 @@ export function Comments({
                                         className="flex items-center gap-1 text-[13px] font-semibold text-white hover:underline"
                                     >
                                         <span
-                                            style={plusNameStyle(
+                                            {...nameDisplayProps(
                                                 comment.user.plus,
+                                                cosmeticNameStyle(
+                                                    comment.user.cosmetics,
+                                                ),
                                             )}
                                         >
                                             {comment.user.name}
                                         </span>
+                                        {comment.badge && (
+                                            <RoleBadge
+                                                title={comment.badge.title}
+                                                color={comment.badge.color}
+                                            />
+                                        )}
                                         {comment.user.is_verified && (
-                                            <VerifiedBadge className="size-3" />
+                                            <VerifiedBadge
+                                                kind={
+                                                    comment.user.verified_kind
+                                                }
+                                                className="size-3"
+                                            />
                                         )}
                                         {comment.user.plus && (
                                             <PlusBadge className="size-3.5" />
                                         )}
+                                        <CosmeticBadge
+                                            cosmetics={comment.user.cosmetics}
+                                            className="size-3.5"
+                                        />
                                     </Link>
                                     <p className="text-[14px] leading-snug break-words whitespace-pre-line text-white/85">
                                         {parent && (
@@ -299,6 +329,13 @@ export function Comments({
                                                 ? tr('Відкріпити')
                                                 : tr('Закріпити')}
                                         </button>
+                                    )}
+                                    {comment.can_thank && (
+                                        <ThanksButton
+                                            kind="comment"
+                                            id={comment.id}
+                                            thanked={comment.thanked ?? false}
+                                        />
                                     )}
                                     {comment.can_delete && (
                                         <button

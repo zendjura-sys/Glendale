@@ -96,7 +96,7 @@ type Props = {
 };
 
 const button =
-    'inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[var(--btn-primary,#6366f1)] px-4 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-40';
+    'inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-40';
 const ghost =
     'inline-flex h-9 items-center justify-center gap-1.5 rounded-xl bg-white/[0.06] px-3 text-xs font-semibold text-white/80 transition hover:bg-white/10 disabled:opacity-40';
 const field =
@@ -117,6 +117,7 @@ const PROMO_LABELS = (): Record<string, string> => ({
 });
 
 const BADGE_LABELS: Record<PaymentBadge, string> = {
+    plata: 'plata by mono',
     visa: 'Visa',
     mastercard: 'Mastercard',
     maestro: 'Maestro',
@@ -226,7 +227,7 @@ function OrdersList({ orders }: { orders: Props['orders'] }) {
     };
 
     return (
-        <section className="glass mb-5 rounded-3xl p-5">
+        <section className="glass mb-5 rounded-2xl p-5">
             <h2 className="font-display text-lg font-bold text-white">
                 {tr('Оплати')}
             </h2>
@@ -385,7 +386,7 @@ function ProductsForm({ products }: { products: Product[] }) {
     };
 
     return (
-        <form onSubmit={save} className="glass rounded-3xl p-5">
+        <form onSubmit={save} className="glass rounded-2xl p-5">
             <div className="flex flex-wrap items-center gap-3">
                 <h2 className="flex-1 font-display text-lg font-bold text-white">
                     {tr('Тарифи')}
@@ -662,7 +663,7 @@ function RulesForm({ rules }: { rules: Rules }) {
                 event.preventDefault();
                 form.put('/admin/billing/rules', { preserveScroll: true });
             }}
-            className="glass space-y-3 rounded-3xl p-5"
+            className="glass space-y-3 rounded-2xl p-5"
         >
             <h2 className="font-display text-lg font-bold text-white">
                 {tr('Правила підписок')}
@@ -771,7 +772,7 @@ function GooglePayForm({
                 event.preventDefault();
                 form.put('/admin/billing/google-pay', { preserveScroll: true });
             }}
-            className="glass space-y-3 rounded-3xl p-5"
+            className="glass space-y-3 rounded-2xl p-5"
         >
             <div className="flex items-center gap-3">
                 <h2 className="flex-1 font-display text-lg font-bold text-white">
@@ -868,7 +869,7 @@ function LegacySection({
     transactions: Props['transactions'];
 }) {
     return (
-        <section className="glass rounded-3xl p-5">
+        <section className="glass rounded-2xl p-5">
             <h2 className="font-display text-lg font-bold text-white">
                 {tr('Старий баланс')}
             </h2>

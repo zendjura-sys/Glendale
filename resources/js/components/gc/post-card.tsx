@@ -1,5 +1,6 @@
 import { Link, router, usePage } from '@inertiajs/react';
 import {
+    BookmarkPlus,
     ChevronRight,
     Clock,
     Earth,
@@ -20,7 +21,7 @@ import {
     Volume2,
     VolumeX,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import {
     DropdownMenu,
@@ -43,7 +44,12 @@ import { CommunityAvatar } from './community-avatar';
 import { ReactionBar } from './reaction-bar';
 import { MediaGrid } from './media-grid';
 import { UserAvatar } from './user-avatar';
-import { PlusBadge, plusNameStyle } from './plus';
+import { usePlugin } from '@/lib/plugins';
+import { nameDisplayProps, PlusBadge } from './plus';
+import {
+    CosmeticBadge,
+    cosmeticNameStyle,
+} from '@/components/season/cosmetics';
 import { VerifiedBadge } from './verified-badge';
 import {
     TranslateToggle,
@@ -78,6 +84,7 @@ export function PostCard({
     const [fullText, setFullText] = useState(expanded);
     const [deleted, setDeleted] = useState(false);
     const [poll, setPoll] = useState(post.poll ?? null);
+    const laterOn = usePlugin('read_later');
     const [spoilerOpen, setSpoilerOpen] = useState(false);
     const hideSpoilers = usePage().props.auth.user?.hide_spoilers === true;
     const [editing, setEditing] = useState(false);
@@ -91,6 +98,17 @@ export function PostCard({
     const { locale } = usePage().props;
     const body = translation.text ?? post.body ?? '';
     const isLong = body.length > LONG_TEXT;
+
+    // Гаряча клавіша L (components/gc/hotkeys.tsx): вподобати вибраний запис.
+    const articleRef = useRef<HTMLElement>(null);
+    const likeRef = useRef<() => void>(() => undefined);
+    useEffect(() => {
+        const el = articleRef.current;
+        const like = () => likeRef.current();
+        el?.addEventListener('gc:like', like);
+
+        return () => el?.removeEventListener('gc:like', like);
+    }, []);
 
     const pickReaction = async (next: string) => {
         const previous = reaction;
@@ -112,6 +130,7 @@ export function PostCard({
             setLikes(post.likes_count);
         }
     };
+    likeRef.current = () => void pickReaction(reaction ?? 'like');
 
     const copyLink = async () => {
         await navigator.clipboard?.writeText(
@@ -125,7 +144,10 @@ export function PostCard({
     }
 
     return (
-        <article className="glass animate-rise rounded-3xl p-4 sm:p-5">
+        <article
+            ref={articleRef}
+            className="gc-post animate-rise px-1 py-5 data-[hotkey-focus]:rounded-2xl data-[hotkey-focus]:ring-1 data-[hotkey-focus]:ring-primary/40 sm:px-2"
+        >
             <header className="flex items-start gap-3">
                 <Link href={publisherHref} className="shrink-0">
                     {post.publisher ? (
@@ -143,7 +165,14 @@ export function PostCard({
                             {post.publisher ? (
                                 post.publisher.name
                             ) : (
-                                <span style={plusNameStyle(post.author.plus)}>
+                                <span
+                                    {...nameDisplayProps(
+                                        post.author.plus,
+                                        cosmeticNameStyle(
+                                            post.author.cosmetics,
+                                        ),
+                                    )}
+                                >
                                     {post.author.name}
                                 </span>
                             )}
@@ -152,6 +181,12 @@ export function PostCard({
                             )}
                             {!post.publisher && post.author.plus && (
                                 <PlusBadge />
+                            )}
+                            {!post.publisher && (
+                                <CosmeticBadge
+                                    cosmetics={post.author.cosmetics}
+                                    className="size-4"
+                                />
                             )}
                         </Link>
                         {post.badge && (
@@ -188,20 +223,20 @@ export function PostCard({
                         {post.tag && (
                             <Link
                                 href={post.tag.href}
-                                className="ml-1 inline-flex items-center gap-1 rounded-full bg-white/[0.06] px-2 py-0.5 text-xs font-medium text-white/70 hover:text-white"
+                                className="ml-1 inline-flex items-center gap-1 rounded-control bg-white/[0.06] px-2 py-0.5 text-xs font-medium text-white/70 hover:text-white"
                             >
                                 <Hash className="size-3" />
                                 {post.tag.name}
                             </Link>
                         )}
                         {post.pending && (
-                            <span className="ml-1 inline-flex items-center gap-1 rounded-full bg-gc-amber/15 px-2 py-0.5 text-xs font-medium text-gc-amber">
+                            <span className="ml-1 inline-flex items-center gap-1 rounded-chip bg-gc-amber/15 px-2 py-0.5 text-xs font-medium text-gc-amber">
                                 <Clock className="size-3" />{' '}
                                 {tr('На перевірці')}
                             </span>
                         )}
                         {post.is_pinned && (
-                            <span className="ml-1 inline-flex items-center gap-1 rounded-full bg-gc-blue/15 px-2 py-0.5 text-xs font-medium text-[#9fb6ff]">
+                            <span className="ml-1 inline-flex items-center gap-1 rounded-chip bg-gc-blue/15 px-2 py-0.5 text-xs font-medium text-[#9fb6ff]">
                                 <Pin className="size-3" /> {tr('Закріплено')}
                             </span>
                         )}
@@ -222,6 +257,27 @@ export function PostCard({
                         >
                             <Link2 /> {tr('Копіювати посилання')}
                         </DropdownMenuItem>
+                        {laterOn && (
+                            <DropdownMenuItem
+                                className="rounded-lg focus:bg-white/[0.06]"
+                                onSelect={async () => {
+                                    const result = await api<{
+                                        later: boolean;
+                                    }>('POST', `/posts/${post.id}/later`);
+                                    toast.success(
+                                        result.later
+                                            ? tr(
+                                                  'Додано до «Прочитати пізніше»',
+                                              )
+                                            : tr(
+                                                  'Прибрано зі списку «Прочитати пізніше»',
+                                              ),
+                                    );
+                                }}
+                            >
+                                <BookmarkPlus /> {tr('Прочитати пізніше')}
+                            </DropdownMenuItem>
+                        )}
                         {post.can.edit && (
                             <DropdownMenuItem
                                 className="rounded-lg focus:bg-white/[0.06]"
@@ -368,6 +424,33 @@ export function PostCard({
                 </form>
             )}
 
+            {post.locked && (
+                <Link
+                    href={`/${post.author.username}`}
+                    className="mt-3 flex items-center gap-3.5 rounded-2xl bg-white/[0.05] p-4 transition hover:bg-white/[0.08]"
+                >
+                    <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-gc-indigo/20">
+                        <Lock className="size-5 text-gc-lilac-300" />
+                    </span>
+                    <span className="min-w-0">
+                        <span className="block text-sm font-semibold text-white">
+                            {tr('Запис для підписників')}
+                        </span>
+                        <span className="block text-sm text-white/55">
+                            {tr('Підтримайте {name}, щоб відкрити', {
+                                name: post.author.name,
+                            })}
+                        </span>
+                    </span>
+                </Link>
+            )}
+            {post.subscribers_only && !post.locked && (
+                <span className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-gc-indigo/15 px-2.5 py-0.5 text-xs text-gc-lilac-200">
+                    <Lock className="size-3" />
+                    {tr('Для підписників')}
+                </span>
+            )}
+
             {editing ? (
                 <form
                     className="mt-3 space-y-2"
@@ -428,9 +511,10 @@ export function PostCard({
                         {isLong && !fullText ? (
                             <MentionText
                                 text={`${body.slice(0, LONG_TEXT).trimEnd()}…`}
+                                games={post.games}
                             />
                         ) : (
-                            <MentionText text={body} />
+                            <MentionText text={body} games={post.games} />
                         )}
                         {isLong && !fullText && (
                             <button
@@ -526,7 +610,15 @@ export function PostCard({
                 <MovieCardEmbed movie={post.movie} className="mt-3.5" />
             )}
 
-            {post.card && (
+            {post.card?.kind === 'gif' && (
+                <img
+                    src={post.card.image ?? post.card.href}
+                    alt={post.card.title}
+                    loading="lazy"
+                    className="mt-3.5 max-h-[420px] max-w-full rounded-2xl"
+                />
+            )}
+            {post.card && post.card.kind !== 'gif' && (
                 <Link
                     href={post.card.href}
                     className="mt-3.5 flex items-center gap-3 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] p-3"
@@ -590,17 +682,36 @@ export function PostCard({
                                 />
                                 <span className="relative flex items-center justify-between gap-3">
                                     <span>{option.label}</span>
-                                    {poll.voted !== null && (
-                                        <span className="text-xs text-white/50 tabular-nums">
-                                            {share}%
-                                        </span>
-                                    )}
+                                    <span className="flex items-center gap-2">
+                                        {(option.voters?.length ?? 0) > 0 && (
+                                            <span className="flex -space-x-1.5">
+                                                {option.voters?.map((voter) => (
+                                                    <UserAvatar
+                                                        key={voter.id}
+                                                        user={voter}
+                                                        size="xs"
+                                                        showOnline={false}
+                                                        className="size-5 ring-2 ring-black/30"
+                                                    />
+                                                ))}
+                                            </span>
+                                        )}
+                                        {poll.voted !== null && (
+                                            <span className="text-xs text-white/50 tabular-nums">
+                                                {share}%
+                                            </span>
+                                        )}
+                                    </span>
                                 </span>
                             </button>
                         );
                     })}
                     <p className="text-xs text-white/40">
                         {tr('{total} голосів', { total: poll.total })}
+                        {' · '}
+                        {poll.anonymous === false
+                            ? tr('відкрите опитування')
+                            : tr('анонімне')}
                     </p>
                 </div>
             )}
@@ -649,7 +760,7 @@ export function PostCard({
                         setFocusComment(true);
                     }}
                     className={cn(
-                        'inline-flex h-9 items-center gap-1.5 rounded-full bg-white/[0.045] px-3.5 text-sm font-medium text-white/65 transition hover:bg-white/[0.08] hover:text-white',
+                        'inline-flex h-9 items-center gap-1.5 rounded-control bg-white/[0.045] px-3.5 text-sm font-medium text-white/65 transition hover:bg-white/[0.08] hover:text-white',
                         !post.comments_enabled &&
                             'pointer-events-none opacity-40',
                     )}
@@ -671,7 +782,7 @@ export function PostCard({
                 <button
                     type="button"
                     onClick={copyLink}
-                    className="inline-flex h-9 items-center gap-1.5 rounded-full bg-white/[0.045] px-3.5 text-sm font-medium text-white/65 transition hover:bg-white/[0.08] hover:text-white"
+                    className="inline-flex h-9 items-center gap-1.5 rounded-control bg-white/[0.045] px-3.5 text-sm font-medium text-white/65 transition hover:bg-white/[0.08] hover:text-white"
                     aria-label={tr('Поділитися')}
                 >
                     <Link2 className="size-[18px]" />

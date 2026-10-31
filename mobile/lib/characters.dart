@@ -11,6 +11,7 @@ import 'i18n.dart';
 import 'state.dart';
 import 'theme.dart';
 import 'widgets.dart';
+import 'skeletons.dart';
 
 Map<String, String> characterStatuses() => {'active': tr('Грає'), 'retired': tr('На паузі'), 'dead': tr('Загинув')};
 
@@ -319,7 +320,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen> {
   @override
   Widget build(BuildContext context) {
     final data = page;
-    if (data == null) return const Center(child: CircularProgressIndicator(strokeWidth: 2.4));
+    if (data == null) return const ScreenSkeleton();
     final current = mapOf(data['character']);
     final families = maps(data['families']).where((f) => f['server'] == server).toList();
     return ScreenScroll(
@@ -343,13 +344,13 @@ class _CharacterEditScreenState extends State<CharacterEditScreen> {
                   child: Container(
                     width: 140,
                     height: 175,
-                    color: Colors.white.withValues(alpha: 0.05),
+                    color: fg.withValues(alpha: 0.05),
                     child: portrait != null
                         ? Image.file(File(portrait!.path), fit: BoxFit.cover)
                         : text(current['portrait_url']) != null
                             ? Image.network(text(current['portrait_url'])!, fit: BoxFit.cover)
                             : Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                                const Icon(LucideIcons.imagePlus, color: muted),
+                                Icon(LucideIcons.imagePlus, color: muted),
                                 const SizedBox(height: 6),
                                 Text(tr('Портрет персонажа'), textAlign: TextAlign.center, style: body(12, color: muted)),
                               ]),

@@ -18,21 +18,29 @@ use Illuminate\Support\Carbon;
  * @property string $status
  * @property int|null $resolved_by
  * @property string|null $resolution
+ * @property array{severity: string, reason: string}|null $ai_verdict Оцінка ШІ для модераторів
  * @property Carbon $created_at
  * @property-read Message|null $message
  * @property-read User|null $reporter
  */
-#[Fillable(['message_id', 'reporter_id', 'reason', 'comment', 'status', 'resolved_by', 'resolution'])]
+#[Fillable(['message_id', 'reporter_id', 'reason', 'comment', 'status', 'resolved_by', 'resolution', 'ai_verdict'])]
 class MessageReport extends Model
 {
     public const REASONS = [
         'spam' => 'Спам або реклама',
         'abuse' => 'Образи, мат, цькування',
         'scam' => 'Шахрайство',
+        // Сексуальне насильство над дітьми чи їх експлуатація (CSAE) — першочергово, див. /child-safety.
+        'child_safety' => 'Загроза дитині, сексуальна експлуатація',
         'other' => 'Інше',
     ];
 
     public const PENDING = 'pending';
+
+    protected function casts(): array
+    {
+        return ['ai_verdict' => 'array'];
+    }
 
     public const RESOLVED = 'resolved';
 

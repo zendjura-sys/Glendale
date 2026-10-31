@@ -10,8 +10,10 @@ import 'shell.dart';
 import 'state.dart';
 import 'theme.dart';
 import 'voice_room.dart';
+import 'listen_rooms.dart';
 import 'widgets.dart';
 import 'i18n.dart';
+import 'skeletons.dart';
 
 String _num(dynamic value) {
   final digits = '${intOf(value).abs()}';
@@ -65,7 +67,7 @@ class ClanTile extends StatelessWidget {
             Text(text(game['name']) ?? '—', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: muted)),
             const SizedBox(height: 2),
             Row(children: [
-              const Icon(LucideIcons.usersRound, size: 13, color: faint),
+              Icon(LucideIcons.usersRound, size: 13, color: faint),
               const SizedBox(width: 4),
               Text(compact(clan['members_count']), style: body(12, color: faint)),
               const SizedBox(width: 10),
@@ -128,7 +130,7 @@ class _ClansScreenState extends State<ClansScreen> {
   @override
   Widget build(BuildContext context) {
     final d = data;
-    if (d == null) return const Center(child: CircularProgressIndicator(strokeWidth: 2.4));
+    if (d == null) return const ScreenSkeleton();
     final mine = maps(d['mine']);
     final clans = Listing.parse(d['clans']).items;
     final types = mapOf(d['types']);
@@ -282,7 +284,7 @@ class _ClanCreateScreenState extends State<ClanCreateScreen> {
   @override
   Widget build(BuildContext context) {
     final o = options;
-    if (o == null) return const Center(child: CircularProgressIndicator(strokeWidth: 2.4));
+    if (o == null) return const ScreenSkeleton();
     final types = mapOf(o['types']);
     final allFeatures = mapOf(o['features']);
     final joinModes = mapOf(o['join_modes']);
@@ -322,7 +324,7 @@ class _ClanCreateScreenState extends State<ClanCreateScreen> {
                   GameCover(g, size: 38),
                   const SizedBox(width: 10),
                   Expanded(child: Text(text(g['name']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14))),
-                  if (game?['id'] == g['id']) const Icon(LucideIcons.check, color: primary, size: 18),
+                  if (game?['id'] == g['id']) Icon(LucideIcons.check, color: primary, size: 18),
                 ]),
               ),
             ),
@@ -408,7 +410,7 @@ class _ClanScreenState extends State<ClanScreen> {
   @override
   Widget build(BuildContext context) {
     final d = data;
-    if (d == null) return const Center(child: CircularProgressIndicator(strokeWidth: 2.4));
+    if (d == null) return const ScreenSkeleton();
     final clan = mapOf(d['clan']);
     final me = d['me'] is Map ? mapOf(d['me']) : null;
     final can = mapOf(me?['can']);
@@ -511,6 +513,7 @@ class _ClanScreenState extends State<ClanScreen> {
         const SizedBox(height: 12),
         VoiceRoomsPanel(key: ValueKey('voice-clan-${clan['id']}'), type: 'clan', id: intOf(clan['id']), label: text(clan['display_name']) ?? '', route: base),
       ],
+      if (me != null) ListenRoomPanel(key: ValueKey('listen-clan-${clan['id']}'), type: 'clan', id: intOf(clan['id'])),
       if (news.isNotEmpty) ...[
         const SizedBox(height: 12),
         Glass(
@@ -549,7 +552,7 @@ class _ClanScreenState extends State<ClanScreen> {
                 Expanded(child: Text(text(n['title']) ?? '', style: body(15, weight: FontWeight.w600))),
                 if (n['mine'] == true || canPost)
                   IconButton(
-                    icon: const Icon(LucideIcons.trash2, size: 17, color: faint),
+                    icon: Icon(LucideIcons.trash2, size: 17, color: faint),
                     onPressed: () async {
                       if (await confirm(context, tr('Видалити новину?'), danger: true, action: tr('Видалити'))) _delete('/news/${n['id']}');
                     },
@@ -610,7 +613,7 @@ class _ClanScreenState extends State<ClanScreen> {
                   GhostButton(label: tr('Піду'), expand: false, compact: true, onPressed: () => _act('/events/${e['id']}/rsvp')),
                 if (manage)
                   IconButton(
-                    icon: const Icon(LucideIcons.trash2, size: 17, color: faint),
+                    icon: Icon(LucideIcons.trash2, size: 17, color: faint),
                     onPressed: () async {
                       if (await confirm(context, tr('Видалити захід?'), danger: true, action: tr('Видалити'))) _delete('/events/${e['id']}');
                     },
@@ -789,7 +792,7 @@ class _ClanScreenState extends State<ClanScreen> {
             person(m, [
               if ((manage && m['is_owner'] != true && m['id'] != me['id'] && (iAmOwner || myRank > intOf(m['rank']))) || (iAmOwner && m['is_owner'] != true))
                 PopupMenuButton<String>(
-                  icon: const Icon(LucideIcons.ellipsisVertical, size: 18, color: muted),
+                  icon: Icon(LucideIcons.ellipsisVertical, size: 18, color: muted),
                   color: popover,
                   onSelected: (value) async {
                     final name = text(mapOf(m['user'])['name']) ?? '';

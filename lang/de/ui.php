@@ -9,6 +9,7 @@ return [
     'refund' => 'Rückerstattungs- und Kündigungsrichtlinie',
     'pricing' => 'Preise',
     'contacts' => 'Kontakt',
+    'child_safety' => 'Kinderschutzstandards',
     'view_original' => 'Original anzeigen (Ukrainisch)',
     'prevail' => 'Im Falle von Widersprüchen, Abweichungen oder Unstimmigkeiten zwischen der ukrainischen Fassung und einer übersetzten Fassung ist die ukrainische Fassung maßgeblich.',
     'last_updated' => 'Zuletzt aktualisiert',

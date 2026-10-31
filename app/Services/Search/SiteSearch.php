@@ -40,7 +40,7 @@ class SiteSearch
             });
 
         if ($this->modules->enabled('communities')) {
-            Community::query()->where('name', 'like', $like)->orderByDesc('members_count')->limit(3)->get()
+            Community::query()->where('is_listed', true)->where('name', 'like', $like)->orderByDesc('members_count')->limit(3)->get()
                 ->each(function (Community $community) use (&$hits) {
                     $hits[] = ['kind' => 'community', 'title' => $community->name, 'hint' => 'Спільнота', 'href' => '/c/'.$community->slug];
                 });

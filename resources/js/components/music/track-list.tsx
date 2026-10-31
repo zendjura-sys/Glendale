@@ -1,6 +1,5 @@
 import {
     Check,
-    Download,
     ExternalLink,
     FileText,
     Headphones,
@@ -365,18 +364,7 @@ export function TrackList({
                                                 <FileText /> {tr('Текст пісні')}
                                             </DropdownMenuItem>
                                         )}
-                                    {track.source === 'local' ? (
-                                        <DropdownMenuItem
-                                            className={itemClass}
-                                            asChild
-                                        >
-                                            <a
-                                                href={`/music/tracks/${track.id}/download`}
-                                            >
-                                                <Download /> {tr('Завантажити')}
-                                            </a>
-                                        </DropdownMenuItem>
-                                    ) : (
+                                    {track.source !== 'local' && (
                                         <DropdownMenuItem
                                             className={itemClass}
                                             asChild

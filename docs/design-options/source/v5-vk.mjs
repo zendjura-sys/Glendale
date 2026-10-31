@@ -1,6 +1,6 @@
 import { ic, avatar, who, me, people, posts, thread, quests, communities, chats, page } from './common.mjs';
 
-// Варіант 5 — класична соцмережа (патерн VK / Facebook): світла тема, вузьке меню зліва текстом,
+// Варіант 5 — класична соцмережа (патерн Facebook): світла тема, вузьке меню зліва текстом,
 // стрічка карток по центру, віджети справа. Знайомий більшості аудиторії, найменше навчання.
 const css = `
 .v{--bg:#edeef0;--card:#fff;--line:#dce1e6;--tx:#000;--mut:#818c99;--acc:#4f46e5;--acc2:#eef0ff;--head:#fff;background:var(--bg);color:var(--tx);font-size:13px;line-height:1.4}
@@ -95,7 +95,7 @@ const mobileChat = `<div class="v col" style="height:100%;background:#fff">
   <div class="row" style="gap:10px;padding:8px 10px 16px;border-top:1px solid var(--line)">${ic('paperclip', 24, 'color:var(--mut)')}<div class="row grow" style="height:38px;border-radius:19px;border:1px solid var(--line);padding:0 12px;color:var(--mut);justify-content:space-between;font-size:15px">Повідомлення${ic('smile', 22)}</div>${ic('mic', 24, 'color:var(--acc)')}</div>
 </div>`;
 
-export default page('Варіант 5 — VK / Facebook', css, [
+export default page('Варіант 5 — Facebook', css, [
     ['desktop-feed', 'desktop', desktop],
     ['mobile-feed', 'mobile', mobileFeed],
     ['mobile-chat', 'mobile', mobileChat],

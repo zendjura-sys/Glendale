@@ -3,6 +3,7 @@ import {
     CheckCircle2,
     Clapperboard,
     Database,
+    Sparkles,
     ExternalLink,
     Eye,
     EyeOff,
@@ -20,7 +21,7 @@ import { tr } from '@/lib/i18n';
 export type IntegrationField = {
     name: string;
     label: string;
-    type: 'secret' | 'url' | 'text' | 'select' | 'bool';
+    type: 'secret' | 'url' | 'text' | 'select' | 'bool' | 'textarea';
     placeholder: string | null;
     help: string | null;
     options: { value: string; label: string }[] | null;
@@ -32,9 +33,9 @@ export type IntegrationField = {
 export type CinemaIntegration = {
     key: string;
     label: string;
-    group: 'auth' | 'push' | 'voice' | 'players' | 'metadata';
+    group: 'auth' | 'push' | 'voice' | 'players' | 'metadata' | 'ai' | 'media';
     description: string;
-    docs: string;
+    docs: string | null;
     steps: string[];
     configured: boolean;
     stat: string | null;
@@ -69,7 +70,12 @@ export function IntegrationCard({
 }) {
     const form = useForm(initialValues(integration.fields));
     const [reveal, setReveal] = useState<Record<string, boolean>>({});
-    const Icon = integration.group === 'players' ? Clapperboard : Database;
+    const Icon =
+        integration.group === 'players'
+            ? Clapperboard
+            : integration.group === 'ai'
+              ? Sparkles
+              : Database;
     const fromEnv = integration.fields.some((f) => f.from_env);
 
     const save = () =>
@@ -82,7 +88,7 @@ export function IntegrationCard({
         });
 
     return (
-        <section className="glass relative flex flex-col overflow-hidden rounded-3xl p-5">
+        <section className="glass relative flex flex-col overflow-hidden rounded-2xl p-5">
             <div
                 className={cn(
                     'pointer-events-none absolute -top-20 -right-16 size-56 rounded-full bg-gradient-to-br opacity-15 blur-3xl',
@@ -115,15 +121,17 @@ export function IntegrationCard({
                         {integration.description}
                     </p>
                 </div>
-                <a
-                    href={integration.docs}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="shrink-0 rounded-lg p-1.5 text-white/40 transition hover:bg-white/10 hover:text-white"
-                    title={tr('Відкрити сайт сервісу')}
-                >
-                    <ExternalLink className="size-4" />
-                </a>
+                {integration.docs && (
+                    <a
+                        href={integration.docs}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="shrink-0 rounded-lg p-1.5 text-white/40 transition hover:bg-white/10 hover:text-white"
+                        title={tr('Відкрити сайт сервісу')}
+                    >
+                        <ExternalLink className="size-4" />
+                    </a>
+                )}
             </header>
 
             <div className="relative grid flex-1 content-start gap-3">
@@ -167,6 +175,18 @@ export function IntegrationCard({
                                         </option>
                                     ))}
                                 </select>
+                            ) : f.type === 'textarea' ? (
+                                <textarea
+                                    id={id}
+                                    value={String(form.data[f.name])}
+                                    onChange={(e) =>
+                                        form.setData(f.name, e.target.value)
+                                    }
+                                    placeholder={f.placeholder ?? ''}
+                                    rows={4}
+                                    spellCheck={false}
+                                    className="input-glass w-full resize-y rounded-xl px-3.5 py-2.5 text-[13px] leading-relaxed text-white outline-none placeholder:text-white/35"
+                                />
                             ) : f.type === 'url' ? (
                                 <textarea
                                     id={id}

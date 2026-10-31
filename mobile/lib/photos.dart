@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'api.dart';
+import 'core/widgets/arctic_glass/arctic_glass.dart';
 import 'feed.dart';
 import 'posts.dart';
 import 'shell.dart';
@@ -12,6 +13,7 @@ import 'state.dart';
 import 'theme.dart';
 import 'widgets.dart';
 import 'i18n.dart';
+import 'skeletons.dart';
 
 final albumPrivacy = {
   'public': (LucideIcons.globe, tr('Усім')),
@@ -80,7 +82,7 @@ class _PhotosScreenState extends State<PhotosScreen> {
     final data = page;
     if (data == null) {
       return error == null
-          ? const Center(child: CircularProgressIndicator(strokeWidth: 2.4))
+          ? const ListSkeleton(rows: 6)
           : Center(child: Padding(padding: const EdgeInsets.all(20), child: EmptyState(icon: LucideIcons.images, title: tr('Фото недоступні'), text: '$error')));
     }
     final owner = mapOf(data['owner']);
@@ -98,7 +100,7 @@ class _PhotosScreenState extends State<PhotosScreen> {
             GestureDetector(
               onTap: () => context.push(appPathFor(text(owner['href']))),
               child: Row(mainAxisSize: MainAxisSize.min, children: [
-                const Icon(LucideIcons.arrowLeft, size: 14, color: muted),
+                Icon(LucideIcons.arrowLeft, size: 14, color: muted),
                 const SizedBox(width: 4),
                 Text(owner['type'] == 'community' ? tr('До спільноти') : tr('До профілю'), style: body(12, color: muted)),
               ]),
@@ -415,7 +417,7 @@ class _AlbumScreenState extends State<AlbumScreen> {
     final data = page;
     if (data == null) {
       return error == null
-          ? const Center(child: CircularProgressIndicator(strokeWidth: 2.4))
+          ? const ListSkeleton(rows: 6)
           : Center(child: Padding(padding: const EdgeInsets.all(20), child: EmptyState(icon: LucideIcons.images, title: tr('Альбом недоступний'), text: '$error')));
     }
     final album = mapOf(data['album']);
@@ -434,7 +436,7 @@ class _AlbumScreenState extends State<AlbumScreen> {
               Avatar(url: text(owner['avatar_url']), name: text(owner['name']) ?? '?', size: 28, square: owner['type'] == 'community'),
               const SizedBox(width: 8),
               Expanded(child: Text(text(owner['name']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(13, color: muted))),
-              if (can['manage'] == true) IconButton(onPressed: _menu, icon: const Icon(LucideIcons.ellipsis, color: muted)),
+              if (can['manage'] == true) IconButton(onPressed: _menu, icon: Icon(LucideIcons.ellipsis, color: muted)),
             ]),
             const SizedBox(height: 10),
             Text(text(album['title']) ?? '', style: display(20)),
@@ -586,16 +588,15 @@ class _PhotoScreenState extends State<PhotoScreen> {
     final next = _neighbour(1);
     return Scaffold(
       backgroundColor: Colors.black,
-      appBar: AppBar(
-        backgroundColor: Colors.black,
-        foregroundColor: Colors.white,
-        title: Text(photo.isEmpty ? '' : tr('{v} з {v2}', {'v': photo['position'], 'v2': album['photos_count']}), style: body(15)),
+      extendBodyBehindAppBar: true,
+      appBar: ArcticGlassAppBar(
+        title: photo.isEmpty ? '' : tr('{v} з {v2}', {'v': photo['position'], 'v2': album['photos_count']}),
         actions: [
           if (can['edit'] == true || can['delete'] == true || can['cover'] == true) IconButton(onPressed: _menu, icon: const Icon(LucideIcons.ellipsisVertical)),
         ],
       ),
       body: data == null
-          ? const Center(child: CircularProgressIndicator(strokeWidth: 2.4))
+          ? const ListSkeleton(rows: 6)
           : Column(children: [
               Expanded(
                 child: GestureDetector(
@@ -607,15 +608,15 @@ class _PhotoScreenState extends State<PhotoScreen> {
                   },
                   child: Stack(children: [
                     Positioned.fill(child: InteractiveViewer(maxScale: 4, child: Center(child: NetImage(text(photo['url']), fit: BoxFit.contain)))),
-                    if (prev != null) Positioned(left: 4, top: 0, bottom: 0, child: Center(child: IconButton(onPressed: () => _go(prev), icon: const Icon(LucideIcons.chevronLeft, size: 34, color: Colors.white70)))),
-                    if (next != null) Positioned(right: 4, top: 0, bottom: 0, child: Center(child: IconButton(onPressed: () => _go(next), icon: const Icon(LucideIcons.chevronRight, size: 34, color: Colors.white70)))),
+                    if (prev != null) Positioned(left: 4, top: 0, bottom: 0, child: Center(child: IconButton(onPressed: () => _go(prev), icon: Icon(LucideIcons.chevronLeft, size: 34, color: fgSoft)))),
+                    if (next != null) Positioned(right: 4, top: 0, bottom: 0, child: Center(child: IconButton(onPressed: () => _go(next), icon: Icon(LucideIcons.chevronRight, size: 34, color: fgSoft)))),
                   ]),
                 ),
               ),
               if (showInfo)
                 Container(
                   constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * 0.45),
-                  decoration: const BoxDecoration(color: popover, border: Border(top: BorderSide(color: lineStrong))),
+                  decoration: BoxDecoration(color: popover, border: Border(top: BorderSide(color: lineStrong))),
                   child: ListView(
                     shrinkWrap: true,
                     padding: const EdgeInsets.fromLTRB(14, 12, 14, 16),
@@ -637,7 +638,7 @@ class _PhotoScreenState extends State<PhotoScreen> {
                         ),
                         Text(compact(photo['likes_count']), style: body(13, color: soft)),
                         const SizedBox(width: 10),
-                        const Icon(LucideIcons.eye, size: 16, color: faint),
+                        Icon(LucideIcons.eye, size: 16, color: faint),
                         const SizedBox(width: 4),
                         Text(compact(photo['views_count']), style: body(12, color: faint)),
                       ]),

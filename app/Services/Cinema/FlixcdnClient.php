@@ -67,7 +67,7 @@ class FlixcdnClient
     {
         $template = $this->searchTemplate();
         if (! $template) {
-            throw new CinemaException('Адресу пошуку FlixCDN не налаштовано.', 503);
+            throw new CinemaException('Адресу пошуку Плеєра 3 не налаштовано.', 503);
         }
 
         $values = [
@@ -95,7 +95,7 @@ class FlixcdnClient
     {
         $template = $this->updatesTemplate();
         if (! $template) {
-            throw new CinemaException('Адресу оновлень FlixCDN не налаштовано.', 503);
+            throw new CinemaException('Адресу оновлень Плеєра 3 не налаштовано.', 503);
         }
 
         $items = $this->request(str_replace('{page}', (string) max($page, 1), $template));
@@ -271,21 +271,21 @@ class FlixcdnClient
         try {
             $response = Http::acceptJson()->timeout(20)->get($url);
         } catch (ConnectionException) {
-            throw new CinemaException('FlixCDN не відповідає. Спробуйте пізніше.');
+            throw new CinemaException('Плеєр 3 не відповідає. Спробуйте пізніше.');
         }
 
         $json = $response->json();
         if (in_array($response->status(), [401, 403], true)) {
-            throw new CinemaException('FlixCDN відхилив токен. Перевірте налаштування інтеграції.', 401);
+            throw new CinemaException('Плеєр 3 відхилив токен. Перевірте налаштування інтеграції.', 401);
         }
         if ($response->status() === 404) {
             return [];
         }
         if (! $response->successful() || ! is_array($json)) {
-            throw new CinemaException('FlixCDN тимчасово недоступний.');
+            throw new CinemaException('Плеєр 3 тимчасово недоступний.');
         }
         if (isset($json['error']) && is_string($json['error'])) {
-            throw new CinemaException('FlixCDN: '.Str::limit($json['error'], 120));
+            throw new CinemaException('Плеєр 3: '.Str::limit($json['error'], 120));
         }
 
         return self::extractList($json);

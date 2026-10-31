@@ -185,6 +185,26 @@ class BillingTest extends TestCase
         $this->assertSame(0, $user->fresh()->balance);
     }
 
+    public function test_balance_top_up_is_paid_by_card_and_refund_takes_back_unused_units(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $user = User::factory()->create();
+        app(Wallet::class)->credit($user, 3000, 'topup', 'Залишок');
+        // Поповнення — лише карткою: наявний баланс у нього не зараховується.
+        $order = $this->buy($user, ['product' => 'balance_250']);
+        $this->assertSame(0, $order->credit_used);
+        $this->assertSame(25000, $order->amount);
+
+        $this->webhook(['invoiceId' => $order->invoice_id, 'status' => 'success', 'modifiedDate' => '2026-10-16T10:00:00Z'])->assertOk();
+        $this->assertSame(28000, $user->fresh()->balance);
+        $this->assertFalse($user->fresh()->isPlus());
+
+        app(Wallet::class)->debit($user->fresh(), 10000, 'author_sub', 'Підписка');
+        $this->actingAs($admin)->post("/admin/billing/orders/{$order->id}/refund")->assertSessionHasNoErrors();
+        // Повертаються гроші за поповнення, а з балансу списуються невикористані одиниці (не більше суми поповнення).
+        $this->assertSame(0, $user->fresh()->balance);
+    }
+
     public function test_refund_returns_only_the_balance_that_was_really_debited(): void
     {
         $admin = User::factory()->admin()->create();

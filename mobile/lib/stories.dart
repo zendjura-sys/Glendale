@@ -22,8 +22,8 @@ class _Ring extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(2.5),
-      decoration: BoxDecoration(shape: BoxShape.circle, gradient: seen ? null : brand, color: seen ? Colors.white24 : null),
-      child: Container(padding: const EdgeInsets.all(2), decoration: const BoxDecoration(shape: BoxShape.circle, color: abyss), child: child),
+      decoration: BoxDecoration(shape: BoxShape.circle, gradient: seen ? null : brand, color: seen ? fg.withValues(alpha: 0.24) : null),
+      child: Container(padding: const EdgeInsets.all(2), decoration: BoxDecoration(shape: BoxShape.circle, color: abyss), child: child),
     );
   }
 }
@@ -163,9 +163,9 @@ Future<bool?> showStoryComposer(BuildContext context, Api api) async {
     context,
     title: tr('Нова історія'),
     builder: (sheet) => Column(mainAxisSize: MainAxisSize.min, children: [
-      ListTile(leading: const Icon(LucideIcons.image, color: primary), title: Text(tr('Фото'), style: body(15)), onTap: () => Navigator.pop(sheet, 'image')),
-      ListTile(leading: const Icon(LucideIcons.video, color: primary), title: Text(tr('Відео до 60 с'), style: body(15)), onTap: () => Navigator.pop(sheet, 'video')),
-      ListTile(leading: const Icon(LucideIcons.camera, color: primary), title: Text(tr('Зняти фото'), style: body(15)), onTap: () => Navigator.pop(sheet, 'camera')),
+      ListTile(leading: Icon(LucideIcons.image, color: primary), title: Text(tr('Фото'), style: body(15)), onTap: () => Navigator.pop(sheet, 'image')),
+      ListTile(leading: Icon(LucideIcons.video, color: primary), title: Text(tr('Відео до 60 с'), style: body(15)), onTap: () => Navigator.pop(sheet, 'video')),
+      ListTile(leading: Icon(LucideIcons.camera, color: primary), title: Text(tr('Зняти фото'), style: body(15)), onTap: () => Navigator.pop(sheet, 'camera')),
     ]),
   );
   if (kind == null) return false;
@@ -452,7 +452,7 @@ class _StoryViewerPageState extends State<StoryViewerPage> with SingleTickerProv
                               minHeight: 3,
                               value: n < i ? 1 : (n == i ? timer.value : 0),
                               color: Colors.white,
-                              backgroundColor: Colors.white24,
+                              backgroundColor: fg.withValues(alpha: 0.24),
                             ),
                           ),
                         ),
@@ -470,7 +470,7 @@ class _StoryViewerPageState extends State<StoryViewerPage> with SingleTickerProv
                   Expanded(
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       Text(text(user['name']) ?? '', style: body(14, color: Colors.white, weight: FontWeight.w700)),
-                      Text(ago(current['created_at']), style: body(12, color: Colors.white70)),
+                      Text(ago(current['created_at']), style: body(12, color: fgSoft)),
                     ]),
                   ),
                   if (own) IconButton(onPressed: _delete, icon: const Icon(LucideIcons.trash2, color: Colors.white)),
@@ -500,8 +500,8 @@ class _StoryViewerPageState extends State<StoryViewerPage> with SingleTickerProv
                     alignment: Alignment.centerLeft,
                     child: TextButton.icon(
                       onPressed: _viewers,
-                      icon: const Icon(LucideIcons.eye, color: Colors.white70, size: 18),
-                      label: Text(tr('{v} переглядів', {'v': intOf(current['views_count'])}), style: body(13.5, color: Colors.white70)),
+                      icon: Icon(LucideIcons.eye, color: fgSoft, size: 18),
+                      label: Text(tr('{v} переглядів', {'v': intOf(current['views_count'])}), style: body(13.5, color: fgSoft)),
                     ),
                   )
                 : Column(mainAxisSize: MainAxisSize.min, children: [
@@ -523,9 +523,9 @@ class _StoryViewerPageState extends State<StoryViewerPage> with SingleTickerProv
                             hintText: tr('Відповісти {v}', {'v': text(user['first_name']) ?? ''}),
                             counterText: '',
                             isDense: true,
-                            hintStyle: body(14, color: Colors.white54),
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(24), borderSide: const BorderSide(color: Colors.white38)),
-                            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(24), borderSide: const BorderSide(color: Colors.white38)),
+                            hintStyle: body(14, color: fg.withValues(alpha: 0.54)),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(24), borderSide: BorderSide(color: fg.withValues(alpha: 0.38))),
+                            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(24), borderSide: BorderSide(color: fg.withValues(alpha: 0.38))),
                           ),
                         ),
                       ),

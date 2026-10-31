@@ -74,7 +74,7 @@ export function NewChatDialog({
 
     return (
         <Dialog open={open} onOpenChange={close}>
-            <DialogContent className="glass-strong gap-0 rounded-3xl border-white/10 p-5 text-white sm:max-w-md">
+            <DialogContent className="glass-strong gap-0 rounded-dialog border-white/10 p-5 text-white sm:max-w-md">
                 <DialogTitle className="font-display text-lg">
                     {mode === 'direct'
                         ? tr('Нове повідомлення')

@@ -1,5 +1,13 @@
-import { Head, Link, router, useForm } from '@inertiajs/react';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import {
+    Download,
+    Music2,
+    MonitorCog,
+    Newspaper,
+    Trophy,
+    Hash,
+    Wallpaper,
+    Tag,
     ArrowLeft,
     BookOpen,
     Clapperboard,
@@ -12,6 +20,7 @@ import {
     Globe,
     Images,
     Languages,
+    LogIn,
     Play,
     Plus,
     ShieldCheck,
@@ -19,22 +28,46 @@ import {
     Swords,
     Users,
     X,
+    GraduationCap,
+    Gauge,
+    Target,
+    LayoutList,
+    MessageCircleQuestion,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
 import { EventList, GameEventForm } from '@/components/events/event-card';
 import type { CalendarEvent } from '@/components/events/event-card';
 import { PlayingNow } from '@/components/gc/playing';
 import { FollowButton } from '@/components/gc/follow-button';
 import { PinButton } from '@/components/gc/pin-button';
+import { ThanksButton } from '@/components/gc/thanks-button';
 import { SaveButton } from '@/components/gc/save-button';
 import { cn } from '@/lib/utils';
+import { UserAvatar } from '@/components/gc/user-avatar';
+import { timeAgo } from '@/lib/format';
 import type { ClanCard, GameCard, UserCard } from '@/types';
 import { GameCover } from './index';
 import { LOCALE, tr } from '@/lib/i18n';
 import { MomentCard } from '@/components/moments/moment-card';
 import type { MomentCardData } from '@/components/moments/moment-card';
 import { usePlugin } from '@/lib/plugins';
+import { GamePrices } from '@/components/games/game-prices';
+import { PcCheck } from '@/components/games/pc-check';
+import { GameNews } from '@/components/games/game-news';
+import { GameLeaderboard } from '@/components/games/game-leaderboard';
+import { GameMentors } from '@/components/games/game-mentors';
+import { GameGoals } from '@/components/games/game-goals';
+import { FpsReports } from '@/components/games/fps-reports';
+import { GameQa } from '@/components/games/game-qa';
+import { MyGameAchievements } from '@/components/games/my-achievements';
+import type { LeaderboardData } from '@/components/games/game-leaderboard';
+import { GameSoundtracks } from '@/components/games/game-soundtracks';
+import type { Soundtrack } from '@/components/games/game-soundtracks';
+import { BacklogPicker } from '@/components/games/backlog';
+import type { BacklogStatus } from '@/components/games/backlog';
+import { CommunityRating } from '@/components/games/community-rating';
+import type { CommunityRatingData } from '@/components/games/community-rating';
 
 type Details = {
     summary?: string;
@@ -112,6 +145,19 @@ type Props = {
     following: boolean;
     pinned: boolean;
     steam_friends: UserCard[];
+    leaderboard?: LeaderboardData | null;
+    tagged_posts?: {
+        id: number;
+        body: string;
+        author: UserCard;
+        created_at: string;
+        likes_count: number;
+    }[];
+    community_rating: CommunityRatingData | null;
+    backlog?: BacklogStatus | null;
+    backlog_on?: boolean;
+    wallpapers?: string[];
+    soundtracks?: Soundtrack[] | null;
     can_curate: boolean;
     guides: {
         id: number;
@@ -120,6 +166,9 @@ type Props = {
         created_at: string;
         user: UserCard | null;
         mine: boolean;
+        thanks?: number;
+        thanked?: boolean;
+        can_thank?: boolean;
     }[];
     moments?: MomentCardData[];
 };
@@ -144,7 +193,7 @@ function Section({
     children: ReactNode;
 }) {
     return (
-        <section className="glass mt-4 rounded-3xl p-4 sm:p-5">
+        <section className="glass mt-4 rounded-2xl p-4 sm:p-5">
             <div className="mb-3 flex items-center gap-2">
                 <Icon className="size-4 text-gc-lilac-200" />
                 <h2 className="font-display text-base font-semibold text-white">
@@ -280,11 +329,37 @@ export default function GameShow({
     pinned,
     guides,
     steam_friends,
+    leaderboard = null,
+    tagged_posts = [],
+    community_rating,
+    backlog = null,
+    backlog_on = false,
+    wallpapers = [],
+    soundtracks = null,
     can_curate,
     moments = [],
 }: Props) {
     const d = game.details ?? {};
+    // Гість бачить сторінку гри (відкрита пошуковикам), але без дій — лише запрошення увійти.
+    const guest = !usePage().props.auth.user;
     const guidesOn = usePlugin('game_guides');
+    const dealsOn = usePlugin('game_deals');
+    const pcCheckOn = usePlugin('pc_check');
+    const onSteam = game.links.some((l) => l.store === 'steam');
+    // Магазин чи Steam не відповіли — блок зникає цілком, без порожньої рамки.
+    const [pricesFailed, setPricesFailed] = useState(false);
+    const newsOn = usePlugin('steam_patch_news');
+    const qaOn = usePlugin('game_qa');
+    const mentorsOn = usePlugin('game_mentors');
+    const tierOn = usePlugin('tier_lists');
+    const goalsOn = usePlugin('game_goals');
+    const fpsOn = usePlugin('fps_reports');
+    const achievementsOn = usePlugin('steam_achievements');
+    const [newsEmpty, setNewsEmpty] = useState(false);
+    const hideNews = useCallback(() => setNewsEmpty(true), []);
+    const [pcFailed, setPcFailed] = useState(false);
+    const hidePrices = useCallback(() => setPricesFailed(true), []);
+    const hidePc = useCallback(() => setPcFailed(true), []);
     const [video, setVideo] = useState<string | null>(null);
     const [shot, setShot] = useState<string | null>(null);
     const mp = d.multiplayer ?? {};
@@ -358,7 +433,7 @@ export default function GameShow({
                 <ArrowLeft className="size-4" /> {tr('Каталог ігор')}
             </Link>
             <div
-                className="glass overflow-hidden rounded-3xl"
+                className="glass overflow-hidden rounded-2xl"
                 style={
                     palette
                         ? {
@@ -422,26 +497,49 @@ export default function GameShow({
                     </div>
                 </div>
                 <div className="space-y-4 p-4 sm:p-5">
-                    <div className="flex flex-wrap gap-2">
-                        <FollowButton
-                            kind="game"
-                            id={game.id}
-                            following={following}
-                            className={POSTER_GLASS}
-                        />
-                        <PinButton
-                            kind="game"
-                            id={game.id}
-                            pinned={pinned}
-                            className={POSTER_GLASS}
-                        />
-                        <SaveButton
-                            kind="game"
-                            id={game.id}
-                            saved={saved}
-                            className={POSTER_GLASS}
-                        />
-                    </div>
+                    {guest ? (
+                        <div className="flex flex-wrap items-center gap-2">
+                            <Link
+                                href="/register"
+                                className={cn(
+                                    'inline-flex h-9 items-center gap-1.5 rounded-xl px-3 text-sm font-semibold',
+                                    POSTER_GLASS,
+                                )}
+                            >
+                                <LogIn className="size-4" />
+                                {tr('Приєднатися до GameCon')}
+                            </Link>
+                            <span className="text-sm text-white/60">
+                                {tr(
+                                    'Стежте за грою, шукайте тімейтів і дивіться, хто з друзів грає.',
+                                )}
+                            </span>
+                        </div>
+                    ) : (
+                        <div className="flex flex-wrap gap-2">
+                            <FollowButton
+                                kind="game"
+                                id={game.id}
+                                following={following}
+                                className={POSTER_GLASS}
+                            />
+                            <PinButton
+                                kind="game"
+                                id={game.id}
+                                pinned={pinned}
+                                className={POSTER_GLASS}
+                            />
+                            <SaveButton
+                                kind="game"
+                                id={game.id}
+                                saved={saved}
+                                className={POSTER_GLASS}
+                            />
+                        </div>
+                    )}
+                    {!guest && backlog_on && (
+                        <BacklogPicker slug={game.slug} initial={backlog} />
+                    )}
                     {(game.modes.length > 0 || game.genres.length > 0) && (
                         <div className="flex flex-wrap gap-1.5">
                             {game.modes.map((m) => (
@@ -503,7 +601,7 @@ export default function GameShow({
             </div>
 
             {(steam_friends.length > 0 || can_curate) && (
-                <section className="glass mt-4 space-y-3 rounded-3xl p-4 sm:p-5">
+                <section className="glass mt-4 space-y-3 rounded-2xl p-4 sm:p-5">
                     {steam_friends.length > 0 && (
                         <div>
                             <h2 className="font-display text-base font-semibold text-white">
@@ -559,8 +657,115 @@ export default function GameShow({
                 </section>
             )}
 
+            {!guest && onSteam && achievementsOn && (
+                <MyGameAchievements slug={game.slug} />
+            )}
+
+            {leaderboard && leaderboard.top.length > 0 && (
+                <Section title={tr('Лідерборд за 30 днів')} icon={Trophy}>
+                    <GameLeaderboard data={leaderboard} />
+                </Section>
+            )}
+
+            {tagged_posts.length > 0 && (
+                <Section title={tr('Пишуть про гру')} icon={Hash}>
+                    <ul className="divide-y divide-white/[0.06]">
+                        {tagged_posts.map((post) => (
+                            <li
+                                key={post.id}
+                                className="py-3 first:pt-0 last:pb-0"
+                            >
+                                <Link
+                                    href={`/posts/${post.id}`}
+                                    className="group flex gap-3"
+                                >
+                                    <UserAvatar user={post.author} size="sm" />
+                                    <span className="min-w-0 flex-1">
+                                        <span className="flex items-center gap-2 text-sm">
+                                            <span className="font-semibold text-white">
+                                                {post.author.name}
+                                            </span>
+                                            <span className="text-xs text-white/40">
+                                                {timeAgo(post.created_at)}
+                                            </span>
+                                        </span>
+                                        <span className="mt-0.5 line-clamp-2 block text-sm text-white/70 group-hover:text-white">
+                                            {post.body}
+                                        </span>
+                                    </span>
+                                </Link>
+                            </li>
+                        ))}
+                    </ul>
+                </Section>
+            )}
+
+            {goalsOn && !guest && (
+                <Section title={tr('Мої цілі')} icon={Target}>
+                    <GameGoals slug={game.slug} />
+                </Section>
+            )}
+
+            {fpsOn && (
+                <Section title={tr('FPS у гравців')} icon={Gauge}>
+                    <FpsReports slug={game.slug} />
+                </Section>
+            )}
+
+            {qaOn && (
+                <div id="questions" className="scroll-mt-24">
+                    <Section
+                        title={tr('Питання гравців')}
+                        icon={MessageCircleQuestion}
+                    >
+                        <GameQa slug={game.slug} />
+                    </Section>
+                </div>
+            )}
+
+            {mentorsOn && (
+                <Section title={tr('Наставники')} icon={GraduationCap}>
+                    <GameMentors slug={game.slug} gameName={game.name} />
+                </Section>
+            )}
+
+            {tierOn && !guest && (
+                <Link
+                    href={`/tierlists?game=${game.slug}`}
+                    className="glass mt-4 flex items-center gap-3 rounded-2xl p-4 transition hover:bg-white/[0.06]"
+                >
+                    <LayoutList className="size-5 text-gc-lilac-300" />
+                    <span className="flex-1 text-sm font-medium text-white">
+                        {tr('Тір-листи гри')}
+                    </span>
+                    <span className="text-xs text-white/45">
+                        {tr('Подивитися чи зробити свій')}
+                    </span>
+                </Link>
+            )}
+
+            {onSteam && newsOn && !newsEmpty && (
+                <div id="news" className="scroll-mt-24">
+                    <Section title={tr('Новини й патчі')} icon={Newspaper}>
+                        <GameNews slug={game.slug} onEmpty={hideNews} />
+                    </Section>
+                </div>
+            )}
+
+            {!guest && onSteam && dealsOn && !pricesFailed && (
+                <Section title={tr('Ціни й знижки')} icon={Tag}>
+                    <GamePrices slug={game.slug} onFail={hidePrices} />
+                </Section>
+            )}
+
+            {!guest && onSteam && pcCheckOn && !pcFailed && (
+                <Section title={tr('Чи потягне мій ПК')} icon={MonitorCog}>
+                    <PcCheck slug={game.slug} onFail={hidePc} />
+                </Section>
+            )}
+
             {(events.length > 0 || can_add_event) && (
-                <section className="glass mt-4 rounded-3xl p-4 sm:p-5">
+                <section className="glass mt-4 rounded-2xl p-4 sm:p-5">
                     <div className="mb-3 flex items-center gap-2">
                         <CalendarDays className="size-4 text-gc-lilac-200" />
                         <h2 className="flex-1 font-display text-base font-semibold text-white">
@@ -642,6 +847,52 @@ export default function GameShow({
                 </Section>
             )}
 
+            {soundtracks && (
+                <Section title={tr('Музика гри')} icon={Music2}>
+                    <GameSoundtracks
+                        slug={game.slug}
+                        initial={soundtracks}
+                        readOnly={guest}
+                    />
+                </Section>
+            )}
+
+            {wallpapers.length > 0 && (
+                <Section title={tr('Шпалери')} icon={Wallpaper}>
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                        {wallpapers.map((url, index) => (
+                            <figure
+                                key={url}
+                                className="group relative overflow-hidden rounded-xl bg-white/[0.04]"
+                            >
+                                <img
+                                    src={url.replace(
+                                        '/t_1080p/',
+                                        '/t_screenshot_med/',
+                                    )}
+                                    alt=""
+                                    loading="lazy"
+                                    className="aspect-video w-full object-cover"
+                                />
+                                <a
+                                    href={`/games/${game.slug}/wallpapers/${index}`}
+                                    download
+                                    className="absolute right-2 bottom-2 inline-flex h-8 items-center gap-1.5 rounded-lg bg-black/60 px-2.5 text-xs font-semibold text-white backdrop-blur-md transition hover:bg-black/80"
+                                >
+                                    <Download className="size-3.5" />
+                                    {tr('Завантажити')}
+                                </a>
+                            </figure>
+                        ))}
+                    </div>
+                    <p className="mt-2 text-[11px] text-white/35">
+                        {tr(
+                            '1920×1080 — арти й скриншоти з каталогу IGDB. Лише для особистого використання.',
+                        )}
+                    </p>
+                </Section>
+            )}
+
             {(mpFacts.length > 0 || mpFlags.length > 0) && (
                 <Section title={tr('Мультиплеєр')} icon={Users}>
                     {mpFacts.length > 0 && (
@@ -688,6 +939,16 @@ export default function GameShow({
                         </div>
                     </Section>
                 )}
+
+            {community_rating && (
+                <Section title={tr('Оцінка гравців GameCon')} icon={Star}>
+                    <CommunityRating
+                        slug={game.slug}
+                        initial={community_rating}
+                        readOnly={guest}
+                    />
+                </Section>
+            )}
 
             <Section title={tr('Про гру')} icon={Gamepad2}>
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
@@ -883,7 +1144,7 @@ export default function GameShow({
 
             {guidesOn && (
                 <Section title={tr('Гіди')} icon={BookOpen}>
-                    <GuideForm slug={game.slug} />
+                    {!guest && <GuideForm slug={game.slug} />}
                     {guides.length === 0 ? (
                         <p className="text-sm text-white/45">
                             {tr('Гідів ще немає. Напишіть перший.')}
@@ -911,6 +1172,31 @@ export default function GameShow({
                                             <p className="mt-2 text-sm whitespace-pre-line text-white/75">
                                                 {guide.body}
                                             </p>
+                                            {(guide.can_thank ||
+                                                (guide.thanks ?? 0) > 0) && (
+                                                <div className="mt-2 text-xs text-white/50">
+                                                    {guide.can_thank ? (
+                                                        <ThanksButton
+                                                            kind="guide"
+                                                            id={guide.id}
+                                                            thanked={
+                                                                guide.thanked ??
+                                                                false
+                                                            }
+                                                            count={
+                                                                guide.thanks ??
+                                                                0
+                                                            }
+                                                        />
+                                                    ) : (
+                                                        tr('Подяк: {n}', {
+                                                            n:
+                                                                guide.thanks ??
+                                                                0,
+                                                        })
+                                                    )}
+                                                </div>
+                                            )}
                                         </div>
                                         {guide.mine && (
                                             <button
@@ -964,7 +1250,7 @@ export default function GameShow({
             )}
 
             {features.clans !== false && (
-                <section className="glass mt-4 rounded-3xl p-4 sm:p-5">
+                <section className="glass mt-4 rounded-2xl p-4 sm:p-5">
                     <div className="mb-3 flex items-center gap-2">
                         <Swords className="size-4 text-gc-lilac-200" />
                         <h2 className="flex-1 font-display text-base font-semibold text-white">

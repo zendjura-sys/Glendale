@@ -1,11 +1,16 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import {
+    Gift,
+    ListChecks,
     Gamepad2,
     Monitor,
     Search,
     SearchX,
     Smartphone,
     Tv,
+    LayoutList,
+    Swords,
+    WandSparkles,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
@@ -113,6 +118,13 @@ export default function GamesIndex({
 }: Props) {
     const [q, setQ] = useState(filters.q);
     const collectionsOn = usePlugin('game_collections');
+    const giveawaysOn = usePlugin('game_giveaways');
+    const dealsOn = usePlugin('game_deals');
+    const backlogOn = usePlugin('game_backlog');
+    const tierOn = usePlugin('tier_lists');
+    const nickOn = usePlugin('nick_generator');
+    const duelsOn = usePlugin('duels');
+    const signedIn = !!usePage().props.auth.user;
 
     const visit = (patch: Partial<Props['filters']>) =>
         router.get(
@@ -137,7 +149,7 @@ export default function GamesIndex({
         <>
             <Head title={tr('Каталог ігор')} />
             <div className="mb-4 flex flex-wrap items-end gap-3">
-                <div className="min-w-0 flex-1">
+                <div className="min-w-[16rem] flex-1">
                     <h1 className="flex items-center gap-2 font-display text-2xl font-semibold text-white">
                         <Gamepad2 className="size-6 text-gc-lilac-200" />{' '}
                         {tr('Каталог ігор')}
@@ -149,6 +161,51 @@ export default function GamesIndex({
                         )}
                     </p>
                 </div>
+                {backlogOn && signedIn && (
+                    <Link
+                        href="/games/backlog"
+                        className="inline-flex h-10 items-center gap-2 rounded-xl bg-white/[0.06] px-3.5 text-sm font-semibold text-white/80 transition hover:bg-white/10 hover:text-white"
+                    >
+                        <ListChecks className="size-4 text-sky-300" />
+                        {tr('Мій беклог')}
+                    </Link>
+                )}
+                {tierOn && signedIn && (
+                    <Link
+                        href="/tierlists"
+                        className="inline-flex h-10 items-center gap-2 rounded-xl bg-white/[0.06] px-3.5 text-sm font-semibold text-white/80 transition hover:bg-white/10 hover:text-white"
+                    >
+                        <LayoutList className="size-4 text-rose-300" />
+                        {tr('Тір-листи')}
+                    </Link>
+                )}
+                {duelsOn && signedIn && (
+                    <Link
+                        href="/duels"
+                        className="inline-flex h-10 items-center gap-2 rounded-xl bg-white/[0.06] px-3.5 text-sm font-semibold text-white/80 transition hover:bg-white/10 hover:text-white"
+                    >
+                        <Swords className="size-4 text-violet-300" />
+                        {tr('Дуелі')}
+                    </Link>
+                )}
+                {nickOn && signedIn && (
+                    <Link
+                        href="/tools/nicknames"
+                        className="inline-flex h-10 items-center gap-2 rounded-xl bg-white/[0.06] px-3.5 text-sm font-semibold text-white/80 transition hover:bg-white/10 hover:text-white"
+                    >
+                        <WandSparkles className="size-4 text-amber-300" />
+                        {tr('Генератор ніків')}
+                    </Link>
+                )}
+                {(giveawaysOn || dealsOn) && (
+                    <Link
+                        href="/games/deals"
+                        className="inline-flex h-10 items-center gap-2 rounded-xl bg-white/[0.06] px-3.5 text-sm font-semibold text-white/80 transition hover:bg-white/10 hover:text-white"
+                    >
+                        <Gift className="size-4 text-emerald-300" />
+                        {tr('Роздачі й знижки')}
+                    </Link>
+                )}
             </div>
 
             <div className="glass mb-4 space-y-3 rounded-2xl p-3">
@@ -349,9 +406,9 @@ export default function GamesIndex({
                                     <p className="line-clamp-2 text-[13px] leading-tight font-semibold text-white sm:text-sm">
                                         {g.name}
                                     </p>
-                                    <p className="mt-1 flex items-center gap-1.5 text-[11px] text-white/70">
+                                    <p className="mt-1 flex items-start gap-1.5 text-[11px] text-white/70">
                                         <Icon className="size-3.5 shrink-0" />
-                                        <span className="truncate">
+                                        <span className="break-words">
                                             {g.platforms
                                                 .map((p) => p.label)
                                                 .slice(0, 3)

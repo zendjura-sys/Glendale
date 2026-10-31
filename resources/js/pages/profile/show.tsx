@@ -1,3 +1,5 @@
+import { SupportAuthorButton } from '@/components/billing/support-author';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import {
     Deferred,
     Head,
@@ -6,6 +8,18 @@ import {
     router,
     usePage,
 } from '@inertiajs/react';
+import { CrosspostButton } from '@/components/gc/crosspost-button';
+import { AuthorStatsButton } from '@/components/profile/author-stats';
+import { AccountCard } from '@/components/profile/account-card';
+import type { AccountCardData } from '@/components/profile/account-card';
+import { MySetup } from '@/components/profile/my-setup';
+import type { SetupData } from '@/components/profile/my-setup';
+import { StreamSchedule } from '@/components/profile/stream-schedule';
+import type { StreamSlot } from '@/components/profile/stream-schedule';
+import { SteamAchievements } from '@/components/profile/steam-achievements';
+import { EmbedButton } from '@/components/gc/embed-button';
+import { CompatibilityChip } from '@/components/games/compatibility-chip';
+import type { Compatibility } from '@/components/games/compatibility-chip';
 import {
     Ban,
     CalendarDays,
@@ -21,9 +35,15 @@ import {
     Music2,
     PenLine,
     ShieldCheck,
+    UserPlus,
     UsersRound,
+    Grid3x3,
+    Swords,
+    Video,
+    X,
+    Settings,
 } from 'lucide-react';
-import { Fragment, useEffect, useRef, type ReactNode } from 'react';
+import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react';
 import { FriendButton } from '@/components/gc/friend-button';
 import { PhoneBadge } from '@/components/phone/phone-badge';
 import { PostCard } from '@/components/gc/post-card';
@@ -33,16 +53,29 @@ import { ReportPersonButton } from '@/components/gc/report-person';
 import { UserAvatar } from '@/components/gc/user-avatar';
 import { VerifiedBadge } from '@/components/gc/verified-badge';
 import { PlusBadge, plusNameProps } from '@/components/gc/plus';
+import {
+    CosmeticBadge,
+    cosmeticNameStyle,
+} from '@/components/season/cosmetics';
 import { WatchedTogether } from '@/components/profile/watched-together';
 import type { TogetherPerson } from '@/components/profile/watched-together';
 import { EmptyState, Widget } from '@/components/gc/widget';
 import { NowPlayingCard } from '@/components/music/now-playing';
 import { AchievementsCard } from '@/components/gc/achievements';
+import { StatusDialog, statusUntilLabel } from '@/components/gc/status-dialog';
+import { BacklogWidget } from '@/components/games/backlog';
+import type { BacklogSummary } from '@/components/games/backlog';
 import { PlayingBadge } from '@/components/gc/playing';
 import type { AchievementsData } from '@/components/gc/achievements';
 import { CharactersWidget } from '@/components/characters/character-card';
 import type { CharacterCardData } from '@/components/characters/character-card';
-import { compactNumber, formatDate, lastSeen, plural } from '@/lib/format';
+import {
+    compactNumber,
+    formatDate,
+    languageName,
+    lastSeen,
+    plural,
+} from '@/lib/format';
 import { cn } from '@/lib/utils';
 import type {
     NowPlaying,
@@ -52,15 +85,20 @@ import type {
     ScrollData,
     UserCard,
 } from '@/types';
-import { tr } from '@/lib/i18n';
+import { LOCALE, tr } from '@/lib/i18n';
 import { LiveBadge, ProfileStream } from '@/components/streams/stream';
 import type { StreamInfo } from '@/components/streams/stream';
 import { useFeature, usePlugin } from '@/lib/plugins';
 import { setPageBackgroundVideo } from '@/lib/backgrounds';
+import { useDataSaver } from '@/lib/data-saver';
 
 const PROFILE_BLOCKS = [
     'platforms',
     'steam',
+    'steam_achievements',
+    'setup',
+    'stream_schedule',
+    'games',
     'about',
     'achievements',
     'audio',
@@ -85,6 +123,8 @@ function blockSequence(order: string[]): string[] {
 type Profile = UserCard & {
     last_name: string;
     cover_url: string | null;
+    cover_video_url?: string | null;
+    has_tiers?: boolean;
     /** GameCon+: кольори сторінки. */
     accent?: string[] | null;
     /** GameCon+: ефект шапки — сяйво внизу обкладинки або жива рамка. */
@@ -118,6 +158,11 @@ type Profile = UserCard & {
 };
 
 type Props = {
+    compatibility?: Compatibility | null;
+    setup?: SetupData | null;
+    streamSchedule?: StreamSlot[] | null;
+    account?: AccountCardData | null;
+    steamAchievements?: boolean;
     profile: Profile;
     relation: Relation;
     canSeeContent: boolean;
@@ -137,6 +182,7 @@ type Props = {
         posts: number;
         photos: number;
         mutual: number;
+        thanks?: number;
     };
     friends: UserCard[];
     photos: {
@@ -148,6 +194,11 @@ type Props = {
     }[];
     photosHref: string | null;
     achievements?: AchievementsData;
+    backlog?: BacklogSummary | null;
+    ready?: {
+        game: { name: string; slug: string } | null;
+        until: string;
+    } | null;
     audio: { href: string; tracks: number } | null;
     nowPlaying?: NowPlaying | null;
     posts: ScrollData<PostItem>;
@@ -185,6 +236,53 @@ function Counter({
         </Link>
     ) : (
         <div className="flex flex-col items-center px-4 py-2">{content}</div>
+    );
+}
+
+/** GameCon+: відеообкладинка (MP4/WebM до 15 МБ) — поставити чи прибрати. */
+function VideoCoverButton({ has }: { has: boolean }) {
+    const input = useRef<HTMLInputElement>(null);
+
+    return (
+        <div className="absolute top-4 left-4 flex gap-1.5">
+            <input
+                ref={input}
+                type="file"
+                accept="video/mp4,video/webm"
+                hidden
+                onChange={(event) => {
+                    const file = event.target.files?.[0];
+                    if (file)
+                        router.post(
+                            '/me/cover-video',
+                            { video: file },
+                            { forceFormData: true, preserveScroll: true },
+                        );
+                }}
+            />
+            <button
+                type="button"
+                onClick={() => input.current?.click()}
+                className="inline-flex items-center gap-2 rounded-xl bg-black/40 px-3 py-2 text-xs font-semibold text-white backdrop-blur-md transition hover:bg-black/60"
+            >
+                <Video className="size-4" />
+                {has ? tr('Інше відео') : tr('Відеообкладинка')}
+            </button>
+            {has && (
+                <button
+                    type="button"
+                    onClick={() =>
+                        router.delete('/me/cover-video', {
+                            preserveScroll: true,
+                        })
+                    }
+                    aria-label={tr('Прибрати відео')}
+                    className="inline-flex items-center rounded-xl bg-black/40 px-2.5 py-2 text-white backdrop-blur-md transition hover:bg-black/60"
+                >
+                    <X className="size-4" />
+                </button>
+            )}
+        </div>
     );
 }
 
@@ -230,6 +328,11 @@ function Uploader({
 }
 
 export default function ProfileShow({
+    compatibility = null,
+    setup = null,
+    streamSchedule = null,
+    account = null,
+    steamAchievements = false,
     profile,
     relation,
     canSeeContent,
@@ -249,6 +352,8 @@ export default function ProfileShow({
     photos,
     photosHref,
     achievements,
+    backlog = null,
+    ready = null,
     audio,
     nowPlaying,
     posts,
@@ -258,15 +363,30 @@ export default function ProfileShow({
     characters = [],
     stream = null,
 }: Props) {
-    const { modules } = usePage().props;
+    const { modules, auth } = usePage().props;
     const isSelf = relation === 'self';
+    const statusOn = usePlugin('status_emoji');
+    const pixelOn = usePlugin('pixel_avatar');
+    const duelsOn = usePlugin('duels');
+    const videoCoverOn = usePlugin('plus_video_cover');
+    const dataSaver = useDataSaver();
+    const [statusOpen, setStatusOpen] = useState(false);
+    const [toolsOpen, setToolsOpen] = useState(false);
+    const reduce = useReducedMotion();
+    // Профіль відкритий гостям і пошуковикам — замість дій лише запрошення приєднатися.
+    const guest = !auth.user;
     // Кольори ефекту шапки: кольори сторінки, інакше колір ніку, інакше акцент сайту.
     const headerColors = profile.accent?.length
         ? profile.accent
         : profile.plus?.name?.length
           ? [...profile.plus.name, '#a855f7']
           : ['#6366f1', '#a855f7', '#22d3ee'];
-    const nameProps = plusNameProps(profile.plus);
+    const nameProps = profile.plus
+        ? plusNameProps(profile.plus)
+        : {
+              style: cosmeticNameStyle(profile.cosmetics),
+              className: undefined,
+          };
     // Відеофон учасника GameCon+ замінює фон сайту, поки відкрита його сторінка.
     useEffect(() => {
         setPageBackgroundVideo(profile.background_video ?? null);
@@ -287,7 +407,17 @@ export default function ProfileShow({
         <>
             <Head title={profile.name} />
 
-            <section className="glass relative overflow-hidden rounded-[28px]">
+            <section className="glass relative isolate overflow-hidden rounded-2xl">
+                {profile.accent && (
+                    // Кольори сторінки (GameCon+ або улюблена гра): м’який відсвіт під шапкою.
+                    <div
+                        aria-hidden
+                        className="pointer-events-none absolute inset-x-0 top-40 -z-10 h-72 opacity-25 blur-3xl sm:top-56"
+                        style={{
+                            backgroundImage: `radial-gradient(circle at 20% 30%, ${profile.accent[0]} 0%, transparent 55%), radial-gradient(circle at 80% 40%, ${profile.accent[1]} 0%, transparent 55%), radial-gradient(circle at 50% 90%, ${profile.accent[2]} 0%, transparent 60%)`,
+                        }}
+                    />
+                )}
                 {profile.header_fx === 'rim' && (
                     <div
                         aria-hidden
@@ -297,14 +427,25 @@ export default function ProfileShow({
                         }}
                     />
                 )}
-                <div className="relative h-52 overflow-hidden sm:h-72">
-                    {profile.cover_url ? (
+                {/* Обкладинка — на всю картку; ім’я, кнопки й лічильники лежать поверх неї. */}
+                <div className="absolute inset-0 z-0 overflow-hidden">
+                    {profile.cover_video_url && !dataSaver ? (
+                        <video
+                            src={profile.cover_video_url}
+                            autoPlay
+                            muted
+                            loop
+                            playsInline
+                            poster={profile.cover_url ?? undefined}
+                            className="size-full object-cover"
+                        />
+                    ) : profile.cover_url ? (
                         <img
                             decoding="async"
                             fetchPriority="high"
                             src={profile.cover_url}
                             alt=""
-                            className="size-full object-cover"
+                            className="size-full object-cover object-[center_30%]"
                         />
                     ) : profile.accent ? (
                         <div
@@ -314,7 +455,7 @@ export default function ProfileShow({
                             }}
                         />
                     ) : (
-                        <div className="size-full bg-[radial-gradient(circle_at_20%_20%,#4f8bff_0%,transparent_45%),radial-gradient(circle_at_80%_30%,#a855f7_0%,transparent_45%),radial-gradient(circle_at_50%_100%,#f04fd8_0%,transparent_50%)] opacity-80" />
+                        <div className="size-full bg-[radial-gradient(circle_at_20%_20%,#4f8bff_0%,transparent_45%),radial-gradient(circle_at_80%_30%,#22d3ee_0%,transparent_45%),radial-gradient(circle_at_50%_100%,#0ea5e9_0%,transparent_50%)] opacity-80" />
                     )}
                     {profile.header_fx === 'aurora' && (
                         <div
@@ -325,8 +466,36 @@ export default function ProfileShow({
                             }}
                         />
                     )}
-                    <div className="scrim absolute inset-0" />
-                    <div className="grid-lines absolute inset-0 opacity-40" />
+                    {/* Плавне затемнення донизу: текст поверх фото завжди читається. */}
+                    <div
+                        aria-hidden
+                        className="absolute inset-0"
+                        style={{
+                            backgroundImage:
+                                'linear-gradient(to bottom, rgb(4 7 16 / 0.05) 0%, rgb(4 7 16 / 0.12) 26%, rgb(4 7 16 / 0.58) 46%, rgb(4 7 16 / 0.86) 68%, rgb(4 7 16 / 0.94) 100%)',
+                        }}
+                    />
+                    <div className="grid-lines absolute inset-0 opacity-30" />
+                    {profile.accent && profile.cover_url && (
+                        <div
+                            aria-hidden
+                            className="absolute inset-x-0 bottom-0 z-10 h-1"
+                            style={{
+                                backgroundImage: `linear-gradient(90deg, ${profile.accent.join(', ')})`,
+                            }}
+                        />
+                    )}
+                </div>
+
+                <div className="absolute inset-x-0 top-0 z-20">
+                    {isSelf &&
+                        videoCoverOn &&
+                        new Date(auth.user?.plus_until ?? 0).getTime() >
+                            Date.now() && (
+                            <VideoCoverButton
+                                has={Boolean(profile.cover_video_url)}
+                            />
+                        )}
                     {isSelf && (
                         <Uploader
                             field="cover"
@@ -339,8 +508,8 @@ export default function ProfileShow({
                     )}
                 </div>
 
-                <div className="relative px-5 pb-5 sm:px-8">
-                    <div className="-mt-20 flex flex-col gap-5 sm:-mt-24 sm:flex-row sm:items-end">
+                <div className="relative z-10 px-5 pt-36 pb-5 sm:px-8 sm:pt-52">
+                    <div className="flex flex-col gap-5 sm:flex-row sm:flex-wrap sm:items-end">
                         {/* Світний обідок аватара (стиль Dune); з рамкою GameCon+ — лише рамка. */}
                         <div
                             className={cn(
@@ -364,7 +533,7 @@ export default function ProfileShow({
                             )}
                         </div>
 
-                        <div className="min-w-0 flex-1 pb-1">
+                        <div className="min-w-0 flex-1 pb-1 sm:min-w-[18rem]">
                             <div className="flex flex-wrap items-center gap-2">
                                 <h1
                                     className={cn(
@@ -377,15 +546,22 @@ export default function ProfileShow({
                                 </h1>
                                 {liveOn && stream?.live && <LiveBadge />}
                                 {profile.is_verified && (
-                                    <VerifiedBadge className="size-6" />
+                                    <VerifiedBadge
+                                        kind={profile.verified_kind}
+                                        className="size-6"
+                                    />
                                 )}
                                 {profile.plus && (
                                     <Link href="/plus" title="GameCon+">
                                         <PlusBadge className="size-6 rounded-lg [&_svg]:size-4" />
                                     </Link>
                                 )}
+                                <CosmeticBadge
+                                    cosmetics={profile.cosmetics}
+                                    className="size-6"
+                                />
                                 {roleBadge && (
-                                    <span className="inline-flex items-center gap-1 rounded-full border border-gold/30 bg-gold/10 px-2.5 py-0.5 text-xs font-semibold text-gold">
+                                    <span className="inline-flex items-center gap-1 rounded-chip border border-gold/30 bg-gold/10 px-2.5 py-0.5 text-xs font-semibold text-gold">
                                         <ShieldCheck className="size-3" />{' '}
                                         {roleBadge}
                                     </span>
@@ -401,25 +577,77 @@ export default function ProfileShow({
                                     {profile.note}
                                 </p>
                             )}
-                            {profile.status && (
-                                <p className="mt-1.5 text-[15px] text-white/75">
-                                    {profile.status}
+                            {ready && (
+                                <p className="mt-1.5 inline-flex items-center gap-1.5 rounded-chip bg-emerald-400/10 px-2.5 py-1 text-xs font-semibold text-emerald-300 ring-1 ring-emerald-400/30">
+                                    <span className="size-1.5 rounded-full bg-emerald-400" />
+                                    {ready.game
+                                        ? tr('Готовий грати в {game}', {
+                                              game: ready.game.name,
+                                          })
+                                        : tr('Готовий грати зараз')}
                                 </p>
+                            )}
+                            {(profile.status || profile.status_emoji) && (
+                                <p className="mt-1.5 flex flex-wrap items-center gap-x-1.5 text-[15px] text-white/75">
+                                    {profile.status_emoji && (
+                                        <span className="text-lg leading-none">
+                                            {profile.status_emoji}
+                                        </span>
+                                    )}
+                                    {profile.status}
+                                    {profile.status_until && (
+                                        <span className="text-xs text-white/40">
+                                            ·{' '}
+                                            {statusUntilLabel(
+                                                profile.status_until,
+                                            )}
+                                        </span>
+                                    )}
+                                    {isSelf && statusOn && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setStatusOpen(true)}
+                                            className="text-xs font-medium text-gc-lilac-300 hover:text-white"
+                                        >
+                                            {tr('Змінити')}
+                                        </button>
+                                    )}
+                                </p>
+                            )}
+                            {isSelf &&
+                                statusOn &&
+                                !profile.status &&
+                                !profile.status_emoji && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setStatusOpen(true)}
+                                        className="mt-1.5 inline-flex items-center gap-1.5 rounded-chip bg-white/[0.06] px-2.5 py-1 text-xs font-medium text-white/70 transition hover:bg-white/10 hover:text-white"
+                                    >
+                                        <span aria-hidden>🙂</span>
+                                        {tr('Встановити статус')}
+                                    </button>
+                                )}
+                            {isSelf && statusOn && (
+                                <StatusDialog
+                                    user={profile}
+                                    open={statusOpen}
+                                    onOpenChange={setStatusOpen}
+                                />
                             )}
                             {(profile.looking_for_group ||
                                 (profile.languages?.length ?? 0) > 0) && (
                                 <div className="mt-2 flex flex-wrap gap-1.5">
                                     {profile.looking_for_group && (
-                                        <span className="rounded-full bg-white/[0.08] px-2.5 py-1 text-xs font-medium text-white">
+                                        <span className="rounded-chip bg-white/[0.08] px-2.5 py-1 text-xs font-medium text-white">
                                             {tr('Шукаю групу')}
                                         </span>
                                     )}
                                     {profile.languages?.map((code) => (
                                         <span
                                             key={code}
-                                            className="rounded-full bg-white/[0.05] px-2.5 py-1 text-xs text-white/70"
+                                            className="rounded-chip bg-white/[0.05] px-2.5 py-1 text-xs text-white/70"
                                         >
-                                            {code}
+                                            {languageName(code, LOCALE)}
                                         </span>
                                     ))}
                                 </div>
@@ -428,7 +656,7 @@ export default function ProfileShow({
                             {profile.pin && (
                                 <Link
                                     href={profile.pin.href}
-                                    className="mt-2 inline-flex items-center gap-2 rounded-full bg-white/[0.06] px-3 py-1 text-xs text-white/80"
+                                    className="mt-2 inline-flex items-center gap-2 rounded-chip bg-white/[0.06] px-3 py-1 text-xs text-white/80"
                                 >
                                     <span className="text-white/40">
                                         {tr(profile.pin.hint)}
@@ -464,16 +692,52 @@ export default function ProfileShow({
                                     )
                                 )}
                             </p>
+                            {compatibility && compatibility.score > 0 && (
+                                <div className="mt-2">
+                                    <CompatibilityChip data={compatibility} />
+                                </div>
+                            )}
                         </div>
 
-                        <div className="flex flex-wrap items-center gap-2 pb-1">
+                        {/* Кнопок багато — коли поруч з іменем тісно, вони переходять на свій рядок. */}
+                        <div className="flex flex-wrap items-center gap-2 pb-1 sm:ml-auto sm:justify-end">
                             <Link
                                 href={`/${profile.username}/card`}
                                 className="inline-flex h-10 items-center gap-2 rounded-xl bg-white/[0.07] px-4 text-sm font-semibold text-white transition hover:bg-white/[0.11]"
                             >
-                                <QrCode className="size-4" /> {tr('Картка')}
+                                <QrCode className="size-4" /> Game Card
                             </Link>
-                            {isSelf ? (
+                            {isSelf && (
+                                <button
+                                    type="button"
+                                    onClick={() => setToolsOpen((v) => !v)}
+                                    aria-expanded={toolsOpen}
+                                    aria-label={tr('Інструменти сторінки')}
+                                    title={tr('Інструменти сторінки')}
+                                    className={cn(
+                                        'inline-flex size-10 items-center justify-center rounded-xl text-white transition',
+                                        toolsOpen
+                                            ? 'bg-white/[0.16]'
+                                            : 'bg-white/[0.07] hover:bg-white/[0.11]',
+                                    )}
+                                >
+                                    <Settings
+                                        className={cn(
+                                            'size-4 transition-transform duration-300',
+                                            toolsOpen && 'rotate-90',
+                                        )}
+                                    />
+                                </button>
+                            )}
+                            {guest ? (
+                                <Link
+                                    href="/register"
+                                    className="inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+                                >
+                                    <UserPlus className="size-4" />
+                                    {tr('Приєднатися й додати в друзі')}
+                                </Link>
+                            ) : isSelf ? (
                                 <Link
                                     href="/settings/profile"
                                     className="inline-flex h-10 items-center gap-2 rounded-xl bg-white/[0.07] px-4 text-sm font-semibold text-white transition hover:bg-white/[0.11]"
@@ -483,6 +747,12 @@ export default function ProfileShow({
                                 </Link>
                             ) : (
                                 <>
+                                    {profile.has_tiers && (
+                                        <SupportAuthorButton
+                                            username={profile.username}
+                                            name={profile.name}
+                                        />
+                                    )}
                                     <FriendButton
                                         username={profile.username}
                                         relation={relation}
@@ -497,6 +767,18 @@ export default function ProfileShow({
                                                 {tr('Написати')}
                                             </Link>
                                         )}
+                                    {duelsOn && (
+                                        <Link
+                                            href={`/duels?to=${profile.username}`}
+                                            aria-label={tr(
+                                                'Викликати на дуель',
+                                            )}
+                                            title={tr('Викликати на дуель')}
+                                            className="inline-flex size-10 items-center justify-center rounded-xl bg-white/[0.07] text-white transition hover:bg-white/[0.11]"
+                                        >
+                                            <Swords className="size-4" />
+                                        </Link>
+                                    )}
                                     {modules.includes('messages') &&
                                         canMessage &&
                                         relation === 'friends' &&
@@ -534,6 +816,56 @@ export default function ProfileShow({
                             )}
                         </div>
                     </div>
+
+                    {/* Шестерня: віджет, автопостинг, статистика, піксель-аватар — не захаращують шапку. */}
+                    <AnimatePresence initial={false}>
+                        {isSelf && toolsOpen && (
+                            <motion.div
+                                initial={
+                                    reduce
+                                        ? { opacity: 0 }
+                                        : { opacity: 0, height: 0 }
+                                }
+                                animate={
+                                    reduce
+                                        ? { opacity: 1 }
+                                        : { opacity: 1, height: 'auto' }
+                                }
+                                exit={
+                                    reduce
+                                        ? { opacity: 0 }
+                                        : { opacity: 0, height: 0 }
+                                }
+                                className="overflow-hidden"
+                            >
+                                <div className="mt-4 flex flex-wrap justify-end gap-2">
+                                    {isSelf && !profile.is_private && (
+                                        <EmbedButton
+                                            path={`/widget/u/${profile.username}`}
+                                        />
+                                    )}
+                                    {isSelf && (
+                                        <CrosspostButton
+                                            owner={{
+                                                type: 'user',
+                                                id: profile.id,
+                                            }}
+                                        />
+                                    )}
+                                    {isSelf && <AuthorStatsButton />}
+                                    {isSelf && pixelOn && (
+                                        <Link
+                                            href="/settings/pixel-avatar"
+                                            className="inline-flex h-10 items-center gap-2 rounded-xl bg-white/[0.07] px-4 text-sm font-semibold text-white transition hover:bg-white/[0.11]"
+                                        >
+                                            <Grid3x3 className="size-4" />
+                                            {tr('Піксель-аватар')}
+                                        </Link>
+                                    )}
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
 
                     <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-white/[0.06] pt-4">
                         <div className="flex flex-wrap gap-x-5 gap-y-2 text-[13px] text-white/55">
@@ -627,6 +959,16 @@ export default function ProfileShow({
                                 label={tr('фото')}
                                 href={photosHref ?? undefined}
                             />
+                            {(stats.thanks ?? 0) > 0 && (
+                                <Counter
+                                    value={stats.thanks ?? 0}
+                                    label={plural(stats.thanks ?? 0, [
+                                        tr('подяка'),
+                                        tr('подяки'),
+                                        tr('подяк'),
+                                    ])}
+                                />
+                            )}
                             {audio && (
                                 <Counter
                                     value={audio.tracks}
@@ -697,6 +1039,7 @@ export default function ProfileShow({
                             </Widget>
                         )}
                         {liveOn && stream && <ProfileStream stream={stream} />}
+                        {account && <AccountCard data={account} />}
                         {blockSequence(blockOrder).map((key) => {
                             const widgets: Record<string, ReactNode> = {
                                 // Ігрові блоки — лише в режимах, де є «Граю в…» (не в «Класиці», «Кіномані»…).
@@ -713,7 +1056,7 @@ export default function ProfileShow({
                                                             profile.platforms
                                                                 .steam
                                                         }
-                                                        className="rounded-full bg-white/10 px-3 py-1 text-xs text-white"
+                                                        className="rounded-chip bg-white/10 px-3 py-1 text-xs text-white"
                                                         target="_blank"
                                                         rel="noreferrer"
                                                     >
@@ -726,7 +1069,7 @@ export default function ProfileShow({
                                                             profile.platforms
                                                                 .xbox
                                                         }
-                                                        className="rounded-full bg-white/10 px-3 py-1 text-xs text-white"
+                                                        className="rounded-chip bg-white/10 px-3 py-1 text-xs text-white"
                                                         target="_blank"
                                                         rel="noreferrer"
                                                     >
@@ -744,7 +1087,7 @@ export default function ProfileShow({
                                                             profile.platforms
                                                                 .playstation
                                                         }
-                                                        className="rounded-full bg-white/10 px-3 py-1 text-xs text-white"
+                                                        className="rounded-chip bg-white/10 px-3 py-1 text-xs text-white"
                                                         target="_blank"
                                                         rel="noreferrer"
                                                     >
@@ -793,6 +1136,21 @@ export default function ProfileShow({
                                             </div>
                                         </Widget>
                                     ),
+                                steam_achievements: steamAchievements &&
+                                    canSeeContent && (
+                                        <SteamAchievements
+                                            username={profile.username}
+                                        />
+                                    ),
+                                setup: setup && (
+                                    <MySetup data={setup} isSelf={isSelf} />
+                                ),
+                                stream_schedule: streamSchedule && (
+                                    <StreamSchedule
+                                        slots={streamSchedule}
+                                        isSelf={isSelf}
+                                    />
+                                ),
                                 about: profile.about && (
                                     <Widget title={tr('Про себе')}>
                                         <p className="px-1 text-sm leading-relaxed whitespace-pre-line text-white/75">
@@ -804,6 +1162,12 @@ export default function ProfileShow({
                                     (isSelf && charactersOn)) && (
                                     <CharactersWidget
                                         characters={characters}
+                                        isSelf={isSelf}
+                                    />
+                                ),
+                                games: backlog && (
+                                    <BacklogWidget
+                                        data={backlog}
                                         isSelf={isSelf}
                                     />
                                 ),
@@ -828,7 +1192,7 @@ export default function ProfileShow({
                                         {audio.tracks > 0 && (
                                             <Link
                                                 href={audio.href}
-                                                className="glass group flex items-center gap-3 rounded-3xl p-4 transition hover:border-white/15"
+                                                className="glass group flex items-center gap-3 rounded-2xl p-4 transition hover:border-white/15"
                                             >
                                                 <span className="flex size-11 items-center justify-center rounded-2xl bg-gradient-to-br from-gc-purple to-gc-blue shadow-[0_10px_30px_-10px_rgb(168_85_247/0.9)]">
                                                     <Music2 className="size-5 text-white" />

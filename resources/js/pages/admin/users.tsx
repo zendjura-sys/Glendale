@@ -42,6 +42,7 @@ import { Input } from '@/components/ui/input';
 import { formatDate, timeAgo } from '@/lib/format';
 import type { Paginated, UserCard } from '@/types';
 import { tr } from '@/lib/i18n';
+import { SpellcheckHints, useSpellcheck } from '@/components/gc/spellcheck';
 
 type AdminUser = UserCard & {
     email: string;
@@ -89,7 +90,28 @@ export default function AdminUsers({ users, filters, roles }: Props) {
     const [q, setQ] = useState(filters.q);
     const [banTarget, setBanTarget] = useState<AdminUser | null>(null);
     const [banReason, setBanReason] = useState('');
+    const banSpell = useSpellcheck(banReason);
     const [deleteTarget, setDeleteTarget] = useState<AdminUser | null>(null);
+    // Масові дії: вибрані люди на цій сторінці (себе вибрати не можна).
+    const [picked, setPicked] = useState<number[]>([]);
+    const selectable = users.data.filter((u) => u.id !== auth.user.id);
+    const allPicked =
+        selectable.length > 0 && selectable.every((u) => picked.includes(u.id));
+    const bulk = (action: 'ban' | 'unban' | 'verify' | 'unverify') => {
+        if (
+            action === 'ban' &&
+            !window.confirm(
+                tr('Заблокувати вибраних ({n})?', { n: picked.length }),
+            )
+        ) {
+            return;
+        }
+        router.post(
+            '/admin/users/bulk',
+            { ids: picked, action },
+            { preserveScroll: true, onSuccess: () => setPicked([]) },
+        );
+    };
 
     const apply = (patch: Partial<Props['filters']>) => {
         router.get(
@@ -169,12 +191,74 @@ export default function AdminUsers({ users, filters, roles }: Props) {
                 </select>
             </div>
 
-            <div className="glass overflow-hidden rounded-3xl">
+            {picked.length > 0 && (
+                <div className="glass sticky top-20 z-20 mb-3 flex flex-wrap items-center gap-2 rounded-2xl p-2.5">
+                    <span className="px-2 text-sm text-white/70">
+                        {tr('Вибрано: {n}', { n: picked.length })}
+                    </span>
+                    <button
+                        type="button"
+                        onClick={() => bulk('verify')}
+                        className="h-9 rounded-xl bg-white/[0.07] px-3 text-sm text-white hover:bg-white/[0.11]"
+                    >
+                        {tr('Верифікувати')}
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => bulk('unverify')}
+                        className="h-9 rounded-xl bg-white/[0.07] px-3 text-sm text-white hover:bg-white/[0.11]"
+                    >
+                        {tr('Зняти верифікацію')}
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => bulk('unban')}
+                        className="h-9 rounded-xl bg-white/[0.07] px-3 text-sm text-white hover:bg-white/[0.11]"
+                    >
+                        {tr('Розблокувати')}
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => bulk('ban')}
+                        className="h-9 rounded-xl bg-red-500/15 px-3 text-sm text-red-200 hover:bg-red-500/25"
+                    >
+                        {tr('Заблокувати')}
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setPicked([])}
+                        className="ml-auto h-9 rounded-xl px-3 text-sm text-white/55 hover:text-white"
+                    >
+                        {tr('Скасувати')}
+                    </button>
+                </div>
+            )}
+
+            <div className="glass overflow-hidden rounded-2xl">
                 <div className="overflow-x-auto">
                     <table className="w-full min-w-[860px] text-sm">
                         <thead>
                             <tr className="border-b border-white/[0.06] text-left text-xs text-white/35">
-                                <th className="px-5 py-3 font-medium">
+                                <th className="w-10 py-3 pl-5">
+                                    <input
+                                        type="checkbox"
+                                        checked={allPicked}
+                                        onChange={() =>
+                                            setPicked(
+                                                allPicked
+                                                    ? []
+                                                    : selectable.map(
+                                                          (u) => u.id,
+                                                      ),
+                                            )
+                                        }
+                                        aria-label={tr(
+                                            'Вибрати всіх на сторінці',
+                                        )}
+                                        className="size-4 accent-gc-indigo"
+                                    />
+                                </th>
+                                <th className="px-3 py-3 font-medium">
                                     {tr('Користувач')}
                                 </th>
                                 <th className="px-3 py-3 font-medium">
@@ -204,7 +288,33 @@ export default function AdminUsers({ users, filters, roles }: Props) {
                                         key={u.id}
                                         className="transition hover:bg-white/[0.02]"
                                     >
-                                        <td className="px-5 py-3">
+                                        <td className="py-3 pl-5">
+                                            {!self && (
+                                                <input
+                                                    type="checkbox"
+                                                    checked={picked.includes(
+                                                        u.id,
+                                                    )}
+                                                    onChange={() =>
+                                                        setPicked((list) =>
+                                                            list.includes(u.id)
+                                                                ? list.filter(
+                                                                      (id) =>
+                                                                          id !==
+                                                                          u.id,
+                                                                  )
+                                                                : [
+                                                                      ...list,
+                                                                      u.id,
+                                                                  ],
+                                                        )
+                                                    }
+                                                    aria-label={tr('Вибрати')}
+                                                    className="size-4 accent-gc-indigo"
+                                                />
+                                            )}
+                                        </td>
+                                        <td className="px-3 py-3">
                                             <Link
                                                 href={`/${u.username}`}
                                                 className="flex items-center gap-3"
@@ -217,7 +327,12 @@ export default function AdminUsers({ users, filters, roles }: Props) {
                                                     <span className="flex items-center gap-1 font-medium text-white">
                                                         {u.name}
                                                         {u.is_verified && (
-                                                            <VerifiedBadge className="size-3.5" />
+                                                            <VerifiedBadge
+                                                                kind={
+                                                                    u.verified_kind
+                                                                }
+                                                                className="size-3.5"
+                                                            />
                                                         )}
                                                     </span>
                                                     <span className="block truncate text-xs text-white/40">
@@ -385,7 +500,7 @@ export default function AdminUsers({ users, filters, roles }: Props) {
                 open={!!banTarget}
                 onOpenChange={(open) => !open && setBanTarget(null)}
             >
-                <DialogContent className="glass-strong rounded-3xl border-white/10 text-white">
+                <DialogContent className="glass-strong rounded-dialog border-white/10 text-white">
                     <DialogTitle>
                         {tr('Заблокувати')} {banTarget?.name}?
                     </DialogTitle>
@@ -399,6 +514,11 @@ export default function AdminUsers({ users, filters, roles }: Props) {
                         onChange={(e) => setBanReason(e.target.value)}
                         placeholder={tr("Причина (необов'язково)")}
                         maxLength={255}
+                    />
+                    <SpellcheckHints
+                        spell={banSpell}
+                        onApply={setBanReason}
+                        className="mt-0"
                     />
                     <DialogFooter className="gap-2">
                         <DialogClose asChild>
@@ -429,7 +549,7 @@ export default function AdminUsers({ users, filters, roles }: Props) {
                 open={!!deleteTarget}
                 onOpenChange={(open) => !open && setDeleteTarget(null)}
             >
-                <DialogContent className="glass-strong rounded-3xl border-white/10 text-white">
+                <DialogContent className="glass-strong rounded-dialog border-white/10 text-white">
                     <DialogTitle>
                         {tr('Видалити')} {deleteTarget?.name}?
                     </DialogTitle>

@@ -19,6 +19,7 @@ use App\Services\CommunityService;
 use App\Services\CommunityWall;
 use App\Services\FriendshipService;
 use App\Services\ImageStorage;
+use App\Services\Media\GifSearch;
 use App\Services\Media\LinkPreview;
 use App\Services\Media\YoutubePreview;
 use App\Services\Moderation\ContentFilter;
@@ -130,15 +131,20 @@ class PostController extends Controller
         $maxKb = (int) $this->settings->get('max_upload_mb') * 1024;
 
         $data = $request->validate([
-            'body' => ['nullable', 'string', 'max:'.(int) $this->settings->get('max_post_length'), 'required_without_all:images,music,movie_id,poll,card,sticker'],
+            'body' => ['nullable', 'string', 'max:'.(int) $this->settings->get('max_post_length'), 'required_without_all:images,music,movie_id,poll,card,sticker,gif'],
             'sticker' => ['nullable', 'string', Rule::in(array_keys(Stickers::ITEMS))],
             'card' => ['nullable', 'array'],
+            'gif' => ['nullable', 'array'],
+            'gif.url' => ['required_with:gif', 'string', 'max:300'],
+            'gif.title' => ['nullable', 'string', 'max:120'],
             'card.kind' => ['required_with:card', Rule::in(['game', 'server', 'game_event', 'server_event'])],
             'card.id' => ['required_with:card', 'integer', 'min:1'],
             'poll' => ['nullable', 'array'],
             'poll.question' => ['required_with:poll', 'string', 'max:200'],
             'poll.options' => ['required_with:poll', 'array', 'min:2', 'max:4'],
             'poll.options.*' => ['required', 'string', 'max:80'],
+            'poll.anonymous' => ['nullable', 'boolean'],
+            'subscribers_only' => ['nullable', 'boolean'],
             'visibility' => ['required', Rule::in(Post::VISIBILITIES)],
             'spoiler' => ['sometimes', 'boolean'],
             'draft' => ['sometimes', 'boolean'],
@@ -198,7 +204,9 @@ class PostController extends Controller
         }
 
         $card = null;
-        if (isset($data['card'])) {
+        if (isset($data['gif']) && app(Plugins::class)->on('gif_search')) {
+            $card = app(GifSearch::class)->card($data['gif']);
+        } elseif (isset($data['card'])) {
             $card = app(PostCards::class)->resolve($data['card']['kind'], (int) $data['card']['id']);
             if ($card === null) {
                 throw ValidationException::withMessages(['card' => 'Картку не знайдено.']);
@@ -226,12 +234,17 @@ class PostController extends Controller
                 'is_pending' => $pending,
                 'tag' => $tag,
                 'lang' => LanguageGuess::guess($data['body'] ?? null),
+                // Лише для платних підписників: тільки на власній стіні й коли в автора є рівні підписки.
+                'subscribers_only' => $request->boolean('subscribers_only') && $wallOwner instanceof User && $wallOwner->id === $user->id
+                    && app(Plugins::class)->on('author_subscriptions') && DB::table('author_tiers')->where('user_id', $user->id)->exists(),
             ]);
 
             if (isset($data['poll'])) {
                 $poll = Poll::query()->create([
                     'post_id' => $post->id,
                     'question' => trim($data['poll']['question']),
+                    // Відкрите опитування (видно, хто як голосував) — лише якщо плагін увімкнено.
+                    'is_anonymous' => ! (app(Plugins::class)->on('open_polls') && array_key_exists('anonymous', $data['poll']) && ! filter_var($data['poll']['anonymous'], FILTER_VALIDATE_BOOLEAN)),
                 ]);
                 foreach (array_values($data['poll']['options']) as $position => $label) {
                     $poll->options()->create([

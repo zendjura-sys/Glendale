@@ -199,10 +199,10 @@ class KodikClient
         try {
             $response = Http::acceptJson()->timeout(15)->get((string) config('services.kodik.links_url'), ['p' => $key, 'link' => $link, 'd' => $domain]);
         } catch (ConnectionException) {
-            throw new CinemaException('Kodik не відповідає. Спробуйте пізніше.');
+            throw new CinemaException('Плеєр 1 не відповідає. Спробуйте пізніше.');
         }
         if (! $response->successful()) {
-            throw new CinemaException('Kodik не віддав посилання на відео.', $response->status() >= 400 ? $response->status() : 502);
+            throw new CinemaException('Плеєр 1 не віддав посилання на відео.', $response->status() >= 400 ? $response->status() : 502);
         }
         $json = $response->json();
         $links = is_array($json) && is_array($json['links'] ?? null) ? $json['links'] : (is_array($json) ? $json : []);
@@ -356,7 +356,7 @@ class KodikClient
     private function request(string $path, array $params): array
     {
         if (! $this->configured()) {
-            throw new CinemaException('Kodik не налаштовано адміністратором.', 503);
+            throw new CinemaException('Плеєр 1 не налаштовано адміністратором.', 503);
         }
 
         $url = preg_match('#^https?://#', $path) ? $path : rtrim((string) config('services.kodik.api_url'), '/').$path;
@@ -372,7 +372,7 @@ class KodikClient
         try {
             $response = Http::acceptJson()->timeout(20)->get($url);
         } catch (ConnectionException) {
-            throw new CinemaException('Kodik не відповідає. Спробуйте пізніше.');
+            throw new CinemaException('Плеєр 1 не відповідає. Спробуйте пізніше.');
         }
 
         $json = $response->json();
@@ -380,8 +380,8 @@ class KodikClient
             $error = is_array($json) ? (string) ($json['error'] ?? '') : '';
             throw new CinemaException(
                 str_contains(mb_strtolower($error), 'токен') || in_array($response->status(), [401, 403], true)
-                    ? 'Kodik відхилив токен. Перевірте його в налаштуваннях інтеграції.'
-                    : 'Kodik тимчасово недоступний.',
+                    ? 'Плеєр 1 відхилив токен. Перевірте його в налаштуваннях інтеграції.'
+                    : 'Плеєр 1 тимчасово недоступний.',
                 $response->status() >= 400 ? $response->status() : 502,
             );
         }

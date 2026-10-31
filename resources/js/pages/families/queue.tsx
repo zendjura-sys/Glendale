@@ -690,7 +690,7 @@ function RejectDialog({
                         key={p}
                         type="button"
                         onClick={() => setComment(p)}
-                        className="rounded-full bg-white/[0.05] px-2.5 py-1 text-xs text-white/65 hover:text-white"
+                        className="rounded-control bg-white/[0.05] px-2.5 py-1 text-xs text-white/65 hover:text-white"
                     >
                         {p}
                     </button>
@@ -733,7 +733,7 @@ function PayDialog({
             description={
                 cashout
                     ? tr(
-                          'Підтвердіть, що передали гроші {display} у грі. Суму буде списано зі скарбниці.',
+                          'Підтвердьте, що передали гроші {display} у грі. Суму буде списано зі скарбниці.',
                           { display: cashout.member.display },
                       )
                     : undefined

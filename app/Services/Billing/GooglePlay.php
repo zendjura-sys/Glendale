@@ -2,9 +2,13 @@
 
 namespace App\Services\Billing;
 
+use App\Models\PhoneNumber;
 use App\Models\PlusGrant;
+use App\Models\PlusPayment;
 use App\Models\PlusSubscription;
 use App\Models\User;
+use App\Services\Phones\PhoneNumbers;
+use App\Services\Phones\PhoneTiers;
 use App\Services\Plus\Plus;
 use App\Services\Push\FcmClient;
 use App\Support\Settings\SiteSettings;
@@ -118,6 +122,111 @@ class GooglePlay
     }
 
     /**
+     * Номери телефону в застосунку — разові товари Google Play phone_<рівень> (як на сайті, PhoneNumbers::product).
+     * Ціну кожного рівня задають у Play Console; знижка GameCon+ діє лише на сайті.
+     */
+    public function phonesEnabled(): bool
+    {
+        return (bool) $this->settings->get('google_play_phones_enabled') && $this->credentials() !== null;
+    }
+
+    /** @return list<string> */
+    public function phoneProducts(): array
+    {
+        return array_map(fn (string $tier) => PhoneNumbers::product($tier), PhoneTiers::ALL);
+    }
+
+    /** Бронь номера для BillingFlowParams.setObfuscatedProfileId: «n{id}.{підпис}». */
+    public function holdId(PhoneNumber $number): string
+    {
+        return 'n'.$number->id.'.'.substr(hash_hmac('sha256', 'google-play-phone:'.$number->id, (string) config('app.key')), 0, 24);
+    }
+
+    private function holdFromId(?string $profileId): ?PhoneNumber
+    {
+        if (! is_string($profileId) || ! preg_match('/^n(\d{1,20})\.([a-f0-9]{24})$/', $profileId, $m)) {
+            return null;
+        }
+        $number = PhoneNumber::query()->find((int) $m[1]);
+
+        return $number !== null && hash_equals($this->holdId($number), $profileId) ? $number : null;
+    }
+
+    /**
+     * Застосунок купив номер у Google Play: перевіряємо покупку в Developer API (purchases.products),
+     * вмикаємо заброньований номер і списуємо покупку (consume). Повтор того самого токена нічого не дублює.
+     * Якщо бронь зникла, покупку не підтверджуємо — Google сам поверне гроші за 3 дні.
+     *
+     * @throws GooglePlayException
+     */
+    public function purchasePhone(string $token, string $product, User $user, int $amountMicros = 0, string $currency = ''): PhoneNumber
+    {
+        if (! in_array($product, $this->phoneProducts(), true)) {
+            throw new GooglePlayException('Це не товар номера.', 422);
+        }
+        $hash = PlusSubscription::hashToken($token);
+        $paid = PlusPayment::query()->where('provider', PlusSubscription::GOOGLE_PLAY)->where('provider_id', $hash)->first();
+        if ($paid !== null) {
+            $number = PhoneNumber::query()->where('payment_id', $paid->id)->first();
+            if ($paid->user_id !== $user->id || $number === null) {
+                throw new GooglePlayException('Цю покупку вже використано.', 409);
+            }
+            $this->consume($product, $token);
+
+            return $number;
+        }
+
+        $response = $this->request('get', '/purchases/products/'.rawurlencode($product).'/tokens/'.rawurlencode($token));
+        if (in_array($response['status'], [400, 404, 410], true)) {
+            throw new GooglePlayException('Google Play не знає такої покупки.', 422);
+        }
+        if ($response['status'] !== 200 || ! is_array($response['json'])) {
+            throw new GooglePlayException('Google Play тимчасово недоступний. Спробуйте ще раз за хвилину.', 503);
+        }
+        $data = $response['json'];
+        if ((int) ($data['purchaseState'] ?? 1) !== 0) {
+            throw new GooglePlayException((int) ($data['purchaseState'] ?? 1) === 2 ? 'Оплата ще не завершена.' : 'Покупку скасовано.', 422);
+        }
+        $owner = $this->userFromAccountId(is_string($data['obfuscatedExternalAccountId'] ?? null) ? $data['obfuscatedExternalAccountId'] : null);
+        if ($owner === null || $owner->id !== $user->id) {
+            throw new GooglePlayException('Цю покупку оформлено в іншому акаунті GameCon.', 403);
+        }
+        $number = $this->holdFromId(is_string($data['obfuscatedExternalProfileId'] ?? null) ? $data['obfuscatedExternalProfileId'] : null);
+        if ($number === null || $number->user_id !== $user->id || $number->status !== PhoneNumber::PENDING || PhoneNumbers::product($number->tier) !== $product) {
+            Log::warning('google play: phone hold missing', ['user' => $user->id, 'product' => $product, 'order' => $data['orderId'] ?? null]);
+            throw new GooglePlayException('Бронь номера минула. Покупку не завершено — Google поверне кошти автоматично.', 409);
+        }
+
+        DB::transaction(function () use ($user, $hash, $product, $number, $amountMicros, $currency) {
+            $payment = PlusPayment::query()->create([
+                'provider' => PlusSubscription::GOOGLE_PLAY,
+                'provider_id' => $hash,
+                'user_id' => $user->id,
+                'product' => $product,
+                'target_type' => 'phone',
+                'target_id' => $number->id,
+                // Сума — як показав Google Play у застосунку (лише для звітів; доступ від неї не залежить).
+                'amount' => max(0, intdiv($amountMicros, 10_000)),
+                'currency' => preg_match('/^[A-Z]{3}$/', $currency) === 1 ? $currency : 'XXX',
+                'status' => PlusPayment::PAID,
+            ]);
+            app(PhoneNumbers::class)->activate($number, $payment->id);
+        });
+        $this->consume($product, $token);
+
+        return $number->refresh();
+    }
+
+    /** Списати разову покупку (consume = ще й підтвердження), щоб номер можна було купити знову. */
+    private function consume(string $product, string $token): void
+    {
+        $response = $this->request('post', '/purchases/products/'.rawurlencode($product).'/tokens/'.rawurlencode($token).':consume');
+        if ($response['status'] >= 300) {
+            Log::warning('google play: consume failed', ['product' => $product, 'status' => $response['status']]);
+        }
+    }
+
+    /**
      * Перевірити токен покупки в Google Play і оновити підписку й доступ.
      * $expected — людина, від імені якої застосунок надіслав токен (null — сповіщення RTDN чи щоденна перевірка).
      *
@@ -202,9 +311,16 @@ class GooglePlay
         return $subscription;
     }
 
-    /** Покупку повернуто чи анульовано (voided): доступ знімається одразу. */
+    /** Покупку повернуто чи анульовано (voided): доступ знімається одразу, куплений номер звільняється. */
     public function revoke(string $token): void
     {
+        $payment = PlusPayment::query()->where('provider', PlusSubscription::GOOGLE_PLAY)->where('provider_id', PlusSubscription::hashToken($token))->first();
+        if ($payment !== null) {
+            $payment->update(['status' => PlusPayment::REFUNDED]);
+            app(PhoneNumbers::class)->revoke($payment->id);
+
+            return;
+        }
         $subscription = PlusSubscription::query()->where('provider', PlusSubscription::GOOGLE_PLAY)->where('provider_id', PlusSubscription::hashToken($token))->first();
         if ($subscription === null) {
             return;

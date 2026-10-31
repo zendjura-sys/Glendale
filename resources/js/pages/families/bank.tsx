@@ -1,4 +1,5 @@
 import { InfiniteScroll, router, useForm } from '@inertiajs/react';
+import { ListSkeleton } from '@/components/gc/skeletons';
 import {
     ArrowDownToLine,
     Banknote,
@@ -197,7 +198,17 @@ export default function FamilyBank(props: Props) {
                     <Empty icon={ReceiptText} text={tr('Операцій ще немає')} />
                 ) : (
                     <div className="overflow-x-auto">
-                        <InfiniteScroll data="ledger" preserveUrl>
+                        <InfiniteScroll
+                            data="ledger"
+                            loading={
+                                <ListSkeleton
+                                    rows={3}
+                                    avatar="none"
+                                    card={false}
+                                />
+                            }
+                            preserveUrl
+                        >
                             <table className="w-full min-w-[560px] text-sm">
                                 <thead className="text-left text-xs text-white/35">
                                     <tr>
@@ -372,7 +383,7 @@ function CashoutPanel({
                             )}
                             <span
                                 className={cn(
-                                    'rounded-full px-2 py-0.5 text-xs font-medium',
+                                    'rounded-chip px-2 py-0.5 text-xs font-medium',
                                     cashoutStatus[c.status][1],
                                 )}
                             >
@@ -542,7 +553,7 @@ function DepositPanel({
                             </div>
                             <span
                                 className={cn(
-                                    'rounded-full px-2 py-0.5 text-xs font-medium',
+                                    'rounded-chip px-2 py-0.5 text-xs font-medium',
                                     depositStatus[d.status][1],
                                 )}
                             >

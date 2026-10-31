@@ -46,7 +46,7 @@ const FEATURES = [
         text: tr(
             'Заявки, спільні друзі, рекомендації — як ти звик, тільки красивіше.',
         ),
-        tone: 'from-gc-indigo to-gc-purple',
+        tone: 'from-gc-indigo to-gc-blue',
     },
     {
         icon: MessageCircle,
@@ -58,13 +58,13 @@ const FEATURES = [
         icon: Gamepad2,
         title: tr('Ігри та клани'),
         text: tr('Збирай команду, турніри, рейтинги та ігрові профілі.'),
-        tone: 'from-gc-purple to-gc-pink',
+        tone: 'from-gc-blue to-gc-cyan',
     },
     {
         icon: Clapperboard,
         title: tr('Кінопортал'),
         text: tr('Тисячі фільмів і серіалів — дивись і обговорюй з друзями.'),
-        tone: 'from-gc-pink to-gc-coral',
+        tone: 'from-gc-cyan to-gc-indigo',
     },
     {
         icon: ShieldCheck,
@@ -76,7 +76,7 @@ const FEATURES = [
 
 function MockPost() {
     return (
-        <div className="glass-strong w-[340px] animate-float rounded-3xl p-4 shadow-[0_30px_80px_-30px_rgb(79_70_229/0.7)]">
+        <div className="glass-strong w-[340px] animate-float rounded-2xl p-4 shadow-[0_30px_80px_-30px_rgb(79_70_229/0.7)]">
             <div className="flex items-center gap-3">
                 {/* Макет без сторонніх картинок: перша сторінка не ходить на чужі сервери. */}
                 <span
@@ -120,7 +120,7 @@ function MockPost() {
 
 function MockChat() {
     return (
-        <div className="glass-strong w-[260px] animate-float rounded-3xl p-4 [animation-delay:-2.5s]">
+        <div className="glass-strong w-[260px] animate-float rounded-2xl p-4 [animation-delay:-2.5s]">
             <div className="mb-3 flex items-center gap-2 text-xs font-semibold text-white/80">
                 <span className="size-2 rounded-full bg-emerald-400 shadow-[0_0_10px] shadow-emerald-400" />{' '}
                 {tr('Команда «Нова Хвиля»')}
@@ -188,21 +188,21 @@ export default function Welcome({
             <Seasonal />
 
             <header className="fixed inset-x-0 top-0 z-40 pt-[env(safe-area-inset-top)]">
-                <div className="liquid-glass liquid-glass--dense mx-2 mt-2 flex h-14 items-center gap-3 rounded-[22px] px-3 sm:mx-3 sm:px-4 xl:mx-auto xl:max-w-[1240px]">
+                <div className="liquid-glass liquid-glass--dense mx-2 mt-2 flex h-14 items-center gap-3 rounded-2xl px-3 sm:mx-3 sm:px-4 xl:mx-auto xl:max-w-[1240px]">
                     {/* На вузьких екранах (чи з великим системним шрифтом) — лише знак, щоб кнопки не вилазили за край. */}
                     <Logo compact className="min-[400px]:hidden" />
                     <Logo className="max-[399px]:hidden" />
                     <nav className="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2">
                         <Link
                             href={login()}
-                            className="rounded-xl px-3 py-2 text-sm font-medium whitespace-nowrap text-white/75 transition hover:bg-white/[0.06] hover:text-white sm:px-4"
+                            className="inline-flex min-h-11 items-center rounded-xl px-3 text-sm font-medium whitespace-nowrap text-white/75 transition hover:bg-white/[0.06] hover:text-white sm:px-4"
                         >
                             {tr('Увійти')}
                         </Link>
                         {canRegister && (
                             <Link
                                 href={register()}
-                                className="btn-glow rounded-xl px-3.5 py-2 text-sm font-semibold whitespace-nowrap sm:px-4"
+                                className="btn-glow inline-flex min-h-11 items-center rounded-xl px-3.5 text-sm font-semibold whitespace-nowrap sm:px-4"
                             >
                                 {tr('Реєстрація')}
                             </Link>
@@ -214,7 +214,7 @@ export default function Welcome({
             <main id="main-content" className="relative">
                 <section className="mx-auto grid max-w-[1240px] grid-cols-1 items-center gap-14 px-5 pt-32 pb-20 lg:grid-cols-[1.05fr_1fr] lg:pt-40">
                     <div className="animate-rise">
-                        <span className="glass inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-medium text-white/75">
+                        <span className="glass inline-flex items-center gap-2 rounded-chip px-3.5 py-1.5 text-xs font-medium text-white/75">
                             <Sparkles className="size-3.5 text-gc-violet-300" />
                             {tagline || tr('Соціальна мережа нового покоління')}
                         </span>
@@ -295,7 +295,7 @@ export default function Welcome({
                 </section>
 
                 <section className="mx-auto max-w-[1240px] px-5 pb-10">
-                    <div className="glass grid grid-cols-3 divide-x divide-white/[0.06] rounded-3xl py-6">
+                    <div className="glass grid grid-cols-3 divide-x divide-white/[0.06] rounded-2xl py-6">
                         {[
                             {
                                 value: compactNumber(stats.users),
@@ -341,7 +341,7 @@ export default function Welcome({
                         {FEATURES.map(({ icon: Icon, title, text, tone }) => (
                             <div
                                 key={title}
-                                className="glass group relative overflow-hidden rounded-3xl p-6 transition duration-300 hover:-translate-y-1 hover:border-white/15"
+                                className="glass group relative overflow-hidden rounded-2xl p-6 transition duration-300 hover:-translate-y-1 hover:border-white/15"
                             >
                                 <div
                                     className={`absolute -top-16 -right-16 size-40 rounded-full bg-gradient-to-br ${tone} opacity-0 blur-3xl transition duration-500 group-hover:opacity-40`}
@@ -373,7 +373,7 @@ export default function Welcome({
                         ].map(({ icon: Icon, label }) => (
                             <span
                                 key={label}
-                                className="glass inline-flex items-center gap-1.5 rounded-full px-3 py-1.5"
+                                className="glass inline-flex items-center gap-1.5 rounded-chip px-3 py-1.5"
                             >
                                 <Icon className="size-3.5" /> {label}
                             </span>
@@ -382,7 +382,7 @@ export default function Welcome({
                 </section>
 
                 <section className="mx-auto max-w-[1240px] px-5 pb-24">
-                    <div className="gradient-border glass-strong relative overflow-hidden rounded-[32px] px-8 py-14 text-center sm:px-16">
+                    <div className="gradient-border glass-strong relative overflow-hidden rounded-2xl px-8 py-14 text-center sm:px-16">
                         <div className="absolute inset-0 bg-gradient-brand opacity-[0.12]" />
                         <h2 className="relative font-display text-[clamp(1.8rem,3.4vw,2.6rem)] font-bold text-white">
                             {tr('Твоя команда вже тут')}

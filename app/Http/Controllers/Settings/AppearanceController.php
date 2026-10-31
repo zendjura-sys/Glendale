@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Settings;
 use App\Http\Controllers\Controller;
 use App\Services\FriendshipService;
 use App\Support\Backgrounds;
+use App\Support\GameTheme;
 use App\Support\I18n\Locales;
+use App\Support\Modules\ModuleManager;
 use App\Support\MutedWords;
 use App\Support\NetworkModes;
 use App\Support\NotifyPrefs;
@@ -35,6 +37,7 @@ class AppearanceController extends Controller
             ],
             'backgrounds' => Backgrounds::presets(),
             'skin' => Skins::for($user),
+            'theme' => Skins::theme($user),
             'seasonal' => $user->pref('seasonal') !== false,
             'modes' => app(NetworkModes::class)->available(),
             'networkMode' => app(NetworkModes::class)->for($user)['id'],
@@ -48,13 +51,15 @@ class AppearanceController extends Controller
             'languages' => array_values(array_filter((array) $user->pref('languages', []), 'is_string')),
             'looking_for_group' => (bool) $user->pref('looking_for_group'),
             'show_visitors' => (bool) $user->pref('show_visitors'),
-            'profile_blocks' => ProfileBlocks::normalize($user->pref('profile_blocks')),
+            'profile_blocks' => ProfileBlocks::visible($user->pref('profile_blocks')),
             'languageOptions' => app(Locales::class)->options(),
             'friends' => app(FriendshipService::class)->friendsQuery($user)->limit(40)->get()->map->toCard()->values(),
             'closeFriends' => array_map('intval', (array) $user->pref('close_friends', [])),
             'notify' => NotifyPrefs::for($user),
             'muteWords' => MutedWords::phrases($user),
             'hideSpoilers' => (bool) $user->pref('hide_spoilers'),
+            'gameThemeOn' => app(ModuleManager::class)->enabled('games'),
+            'gameTheme' => ($game = GameTheme::game($user)) !== null ? ['game' => $game->toCard(), 'colors' => GameTheme::colors($user)] : null,
         ]);
     }
 
@@ -89,6 +94,7 @@ class AppearanceController extends Controller
             'background_motion' => ['sometimes', 'boolean'],
             'background_video' => ['sometimes', 'nullable', 'string', 'max:200'],
             'skin' => ['sometimes', 'string', 'in:'.implode(',', Skins::ALL)],
+            'theme' => ['sometimes', 'string', 'in:'.implode(',', Skins::THEMES)],
             'seasonal' => ['sometimes', 'boolean'],
             'network_mode' => ['sometimes', 'string', 'in:'.implode(',', array_column(app(NetworkModes::class)->available(), 'id'))],
         ]);
@@ -123,7 +129,7 @@ class AppearanceController extends Controller
             $patch['show_visitors'] = (bool) $data['show_visitors'];
         }
         if ($plugins->on('profile_order') && array_key_exists('profile_blocks', $data)) {
-            $patch['profile_blocks'] = ProfileBlocks::normalize($data['profile_blocks']);
+            $patch['profile_blocks'] = ProfileBlocks::merge($request->user()->pref('profile_blocks'), $data['profile_blocks']);
         }
         if ($plugins->on('muted_words') && array_key_exists('mute_words', $data)) {
             $patch['mute_words'] = MutedWords::normalize($data['mute_words']);
@@ -146,6 +152,9 @@ class AppearanceController extends Controller
         }
         if (array_key_exists('skin', $data)) {
             $patch['skin'] = $data['skin'];
+        }
+        if (array_key_exists('theme', $data)) {
+            $patch['theme'] = $data['theme'];
         }
         if (array_key_exists('network_mode', $data)) {
             $patch['network_mode'] = $data['network_mode'];
@@ -172,5 +181,25 @@ class AppearanceController extends Controller
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Вигляд збережено.']);
 
         return to_route('appearance.edit');
+    }
+
+    /** Швидкий перемикач теми (меню облікового запису): лише тема, без решти налаштувань. */
+    public function theme(Request $request): RedirectResponse
+    {
+        $data = $request->validate(['theme' => ['required', 'string', 'in:'.implode(',', Skins::THEMES)]]);
+        $request->user()->mergePref(['theme' => $data['theme']]);
+
+        return back();
+    }
+
+    /** Швидка зміна режиму соцмережі (застосунок: Налаштування → Вигляд). */
+    public function mode(Request $request): RedirectResponse
+    {
+        $modes = app(NetworkModes::class);
+        $data = $request->validate(['mode' => ['required', 'string', 'in:'.implode(',', array_column($modes->available(), 'id'))]]);
+        $request->user()->mergePref(['network_mode' => $data['mode']]);
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Режим змінено.']);
+
+        return back();
     }
 }

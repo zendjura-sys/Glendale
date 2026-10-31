@@ -18,8 +18,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property list<int>|null $ranks
  * @property int|null $template_id
  * @property int|null $created_by
+ * @property bool $is_stage «сцена»: говорять лише спікери
  */
-#[Fillable(['owner_type', 'owner_id', 'name', 'position', 'ranks', 'template_id', 'created_by'])]
+#[Fillable(['owner_type', 'owner_id', 'name', 'position', 'ranks', 'template_id', 'created_by', 'is_stage'])]
 class VoiceRoom extends Model
 {
     public const OWNER_FAMILY = 'family';
@@ -41,7 +42,7 @@ class VoiceRoom extends Model
 
     protected function casts(): array
     {
-        return ['ranks' => 'array'];
+        return ['ranks' => 'array', 'is_stage' => 'boolean'];
     }
 
     /**

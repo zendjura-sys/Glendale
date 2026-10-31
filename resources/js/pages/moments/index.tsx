@@ -3,6 +3,8 @@ import { Clapperboard, Flame, Plus, Sparkles, UsersRound } from 'lucide-react';
 import { useState } from 'react';
 import { selectClass } from '@/components/gc/admin';
 import { EmptyState } from '@/components/gc/widget';
+import { ClipOfWeekSection } from '@/components/moments/clip-of-week';
+import type { ClipOfWeekData } from '@/components/moments/clip-of-week';
 import { MomentCard } from '@/components/moments/moment-card';
 import type { MomentCardData } from '@/components/moments/moment-card';
 import {
@@ -17,6 +19,7 @@ import { cn } from '@/lib/utils';
 type Option = { slug: string; name: string };
 
 type Props = {
+    clip_of_week?: ClipOfWeekData | null;
     moments: MomentCardData[];
     more: boolean;
     filters: {
@@ -40,6 +43,7 @@ const fieldClass =
     'input-glass w-full rounded-xl px-3.5 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none';
 
 export default function Moments({
+    clip_of_week = null,
     moments,
     more,
     filters,
@@ -82,7 +86,7 @@ export default function Moments({
                 }
             />
             <div className="space-y-5">
-                <section className="glass rounded-3xl p-5 sm:p-6">
+                <section className="glass rounded-2xl p-5 sm:p-6">
                     <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
                         <div className="min-w-0 flex-1">
                             <h1 className="flex items-center gap-2 font-display text-2xl font-bold text-white">
@@ -147,6 +151,8 @@ export default function Moments({
                     </div>
                 </section>
 
+                {clip_of_week && <ClipOfWeekSection data={clip_of_week} />}
+
                 {moments.length === 0 ? (
                     <EmptyState
                         icon={Clapperboard}
@@ -205,7 +211,7 @@ export default function Moments({
             </div>
 
             <Dialog open={adding} onOpenChange={setAdding}>
-                <DialogContent className="glass-strong max-h-[92dvh] overflow-y-auto rounded-3xl border-white/10 p-6 text-white sm:max-w-lg">
+                <DialogContent className="glass-strong max-h-[92dvh] overflow-y-auto rounded-dialog border-white/10 p-6 text-white sm:max-w-lg">
                     <DialogTitle className="font-display text-xl">
                         {tr('Додати момент')}
                     </DialogTitle>

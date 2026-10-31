@@ -1,12 +1,16 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart' show ValueNotifier;
 import 'package:http/http.dart' as http;
 
 import 'i18n.dart';
 
 class ApiException implements Exception {
-  ApiException(this.message);
+  ApiException(this.message, [this.status]);
   final String message;
+
+  /// HTTP-статус відповіді сервера (null — немає зв’язку чи помилка до запиту).
+  final int? status;
   @override
   String toString() => message;
 }
@@ -96,6 +100,9 @@ class Api {
 
   static const root = 'https://gamecon.online';
 
+  /// Чи дійшов останній запит до GameCon: false — немає інтернету (музика переходить на завантажене).
+  static final online = ValueNotifier<bool>(true);
+
   Future<Map<String, dynamic>> get(String path) => _send('GET', path);
   Future<Map<String, dynamic>> post(String path, [Map<String, dynamic>? body]) => _send('POST', path, body);
   Future<Map<String, dynamic>> put(String path, Map<String, dynamic> body) => _send('PUT', path, body);
@@ -161,10 +168,12 @@ class Api {
       }.timeout(const Duration(seconds: 40));
     } catch (e) {
       if (e is ApiException) rethrow;
+      online.value = false;
       throw ApiException(tr('Немає зв’язку з GameCon.'));
     }
+    online.value = true;
     if (response.statusCode >= 400) {
-      throw ApiException(_explain(response.body));
+      throw ApiException(_explain(response.body), response.statusCode);
     }
     if (response.body.isEmpty) return {};
     final decoded = jsonDecode(response.body);

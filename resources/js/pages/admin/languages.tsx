@@ -1,8 +1,10 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import {
+    Cloud,
     Languages,
     Loader2,
     PencilLine,
+    PlugZap,
     Plus,
     RefreshCw,
     Sparkles,
@@ -10,6 +12,7 @@ import {
 } from 'lucide-react';
 import { useEffect } from 'react';
 import { PageHeader, StatCard } from '@/components/gc/admin';
+import { formatDate } from '@/lib/format';
 import { tr } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
@@ -29,13 +32,31 @@ type Language = {
     };
 };
 
+type Engine = 'deepl' | 'azure' | 'libretranslate';
+
 type Props = {
     languages: Language[];
     default_locale: string;
     suggested: { code: string; native: string }[];
+    active: Engine | null;
+    enabled: Record<Engine, boolean>;
     deepl: {
         configured: boolean;
         usage: { used: number; limit: number } | null;
+        exhausted: boolean;
+        exhausted_at: string | null;
+    };
+    azure: {
+        configured: boolean;
+        region: string | null;
+        exhausted: boolean;
+        usage: { used: number; limit: number; resets_at: string };
+    };
+    libretranslate: {
+        configured: boolean;
+        url: string | null;
+        up: boolean;
+        languages: string[];
     };
     catalog: number;
     content_translation: boolean;
@@ -49,7 +70,11 @@ export default function AdminLanguages({
     languages,
     default_locale,
     suggested,
+    active,
+    enabled,
     deepl,
+    azure,
+    libretranslate,
     catalog,
     content_translation,
 }: Props) {
@@ -91,7 +116,7 @@ export default function AdminLanguages({
                 )}
             />
 
-            <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
                 <StatCard
                     label={tr('Рядків інтерфейсу')}
                     value={catalog}
@@ -106,9 +131,11 @@ export default function AdminLanguages({
                 <StatCard
                     label={tr('DeepL за місяць')}
                     value={
-                        deepl.usage
-                            ? `${pct(deepl.usage.used, deepl.usage.limit)}%`
-                            : '—'
+                        deepl.exhausted
+                            ? tr('Вичерпано')
+                            : deepl.usage
+                              ? `${pct(deepl.usage.used, deepl.usage.limit)}%`
+                              : '—'
                     }
                     hint={
                         deepl.usage
@@ -120,12 +147,37 @@ export default function AdminLanguages({
                     icon={RefreshCw}
                     delay={100}
                 />
+                <StatCard
+                    label={tr('Azure за місяць')}
+                    value={
+                        !azure.configured
+                            ? '—'
+                            : azure.exhausted
+                              ? tr('Вичерпано')
+                              : `${pct(azure.usage.used, azure.usage.limit)}%`
+                    }
+                    hint={
+                        azure.configured
+                            ? `${azure.usage.used.toLocaleString()} / ${azure.usage.limit.toLocaleString()}`
+                            : tr('ключ не додано')
+                    }
+                    icon={Cloud}
+                    delay={150}
+                />
             </div>
 
-            {!deepl.configured && (
+            <EnginesCard
+                active={active}
+                enabled={enabled}
+                deepl={deepl}
+                azure={azure}
+                libretranslate={libretranslate}
+            />
+
+            {!active && (
                 <p className="mb-6 rounded-2xl bg-amber-500/10 p-4 text-sm text-amber-100">
                     {tr(
-                        'Щоб перекладати автоматично, додайте ключ DeepL в Інтеграціях. Без нього переклади можна вписати вручну.',
+                        'Щоб перекладати автоматично, додайте ключ DeepL чи Azure або підключіть LibreTranslate в Інтеграціях і увімкніть їх тут. Без них переклади можна вписати вручну.',
                     )}{' '}
                     <Link
                         href="/admin/integrations"
@@ -304,7 +356,7 @@ export default function AdminLanguages({
                                             )
                                         )}
                                         {!l.deepl &&
-                                            ` · ${tr('DeepL не підтримує — лише вручну')}`}
+                                            ` · ${tr('Перекладач не знає цієї мови — лише вручну')}`}
                                         {l.progress.error &&
                                             !l.progress.running &&
                                             ` · ${l.progress.error}`}
@@ -335,8 +387,7 @@ export default function AdminLanguages({
                                         <button
                                             type="button"
                                             disabled={
-                                                l.progress.running ||
-                                                !deepl.configured
+                                                l.progress.running || !active
                                             }
                                             onClick={() =>
                                                 router.post(
@@ -384,5 +435,247 @@ export default function AdminLanguages({
                 </div>
             </section>
         </>
+    );
+}
+
+/**
+ * Перекладачі по черзі: DeepL (лічильник символів за місяць — рахуються й пробіли та розділові знаки;
+ * Free — 500 000), Azure Translator (F0 — 2 млн) і останнім — LibreTranslate на сервері.
+ */
+function EnginesCard({
+    active,
+    enabled,
+    deepl,
+    azure,
+    libretranslate,
+}: Pick<Props, 'active' | 'enabled' | 'deepl' | 'azure' | 'libretranslate'>) {
+    const azureUsed = azure.exhausted
+        ? 100
+        : pct(azure.usage.used, azure.usage.limit);
+    const used = deepl.usage
+        ? pct(deepl.usage.used, deepl.usage.limit)
+        : deepl.exhausted
+          ? 100
+          : 0;
+
+    return (
+        <section className="glass mb-6 grid gap-4 rounded-3xl p-4 sm:grid-cols-2 sm:p-5 lg:grid-cols-3">
+            <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="font-display text-base font-semibold text-white">
+                        DeepL
+                    </h2>
+                    <EngineSwitch engine="deepl" on={enabled.deepl} />
+                    {active === 'deepl' && (
+                        <span className="rounded-md bg-emerald-500/15 px-2 py-0.5 text-xs text-emerald-200">
+                            {tr('Перекладає зараз')}
+                        </span>
+                    )}
+                    {deepl.configured && (
+                        <button
+                            type="button"
+                            onClick={() =>
+                                router.post(
+                                    '/admin/languages/deepl/refresh',
+                                    {},
+                                    { preserveScroll: true },
+                                )
+                            }
+                            className="ml-auto rounded-lg p-1.5 text-white/40 transition hover:bg-white/10 hover:text-white"
+                            title={tr('Оновити лічильник')}
+                            aria-label={tr('Оновити лічильник')}
+                        >
+                            <RefreshCw className="size-3.5" />
+                        </button>
+                    )}
+                </div>
+                <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
+                    <div
+                        className={cn(
+                            'h-full rounded-full transition-all',
+                            deepl.exhausted || used >= 90
+                                ? 'bg-amber-400'
+                                : 'bg-gc-blue',
+                        )}
+                        style={{ width: `${used}%` }}
+                    />
+                </div>
+                <p className="mt-1.5 text-xs text-white/50">
+                    {!deepl.configured
+                        ? tr('Ключ не додано')
+                        : deepl.exhausted
+                          ? enabled.azure &&
+                            azure.configured &&
+                            !azure.exhausted
+                              ? tr('Вичерпано — працює Azure Translator')
+                              : enabled.libretranslate && libretranslate.up
+                                ? tr('Вичерпано — працює LibreTranslate')
+                                : tr(
+                                      'Вичерпано до нового місяця, LibreTranslate недоступний',
+                                  )
+                          : deepl.usage
+                            ? tr('{used} з {limit} символів цього місяця', {
+                                  used: deepl.usage.used.toLocaleString(),
+                                  limit: deepl.usage.limit.toLocaleString(),
+                              })
+                            : tr('немає даних')}
+                </p>
+            </div>
+            <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="font-display text-base font-semibold text-white">
+                        Azure Translator
+                    </h2>
+                    <EngineSwitch engine="azure" on={enabled.azure} />
+                    {active === 'azure' && (
+                        <span className="rounded-md bg-emerald-500/15 px-2 py-0.5 text-xs text-emerald-200">
+                            {tr('Перекладає зараз')}
+                        </span>
+                    )}
+                </div>
+                {azure.configured && (
+                    <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
+                        <div
+                            className={cn(
+                                'h-full rounded-full transition-all',
+                                azure.exhausted || azureUsed >= 90
+                                    ? 'bg-amber-400'
+                                    : 'bg-gc-blue',
+                            )}
+                            style={{ width: `${azureUsed}%` }}
+                        />
+                    </div>
+                )}
+                <p className="mt-2 flex items-center gap-1.5 text-xs text-white/50">
+                    <span
+                        className={cn(
+                            'size-2 rounded-full',
+                            !azure.configured
+                                ? 'bg-white/25'
+                                : azure.exhausted
+                                  ? 'bg-amber-400'
+                                  : 'bg-emerald-400',
+                        )}
+                    />
+                    {!azure.configured
+                        ? tr('Ключ не додано — Адмінка → Інтеграції')
+                        : azure.exhausted
+                          ? tr('Ліміт цього місяця вичерпано')
+                          : tr('Готовий · регіон {region}', {
+                                region: azure.region ?? 'global',
+                            })}
+                </p>
+                {azure.configured && (
+                    <p className="mt-1 text-xs text-white/50">
+                        {tr('{used} з {limit} символів цього місяця', {
+                            used: azure.usage.used.toLocaleString(),
+                            limit: azure.usage.limit.toLocaleString(),
+                        })}
+                        {' · '}
+                        {tr('обнулиться {date}', {
+                            date: formatDate(azure.usage.resets_at, false),
+                        })}
+                    </p>
+                )}
+                <p className="mt-1 text-xs text-white/35">
+                    {tr(
+                        'Хмара Microsoft, сервер не навантажує. Безкоштовно до 2 млн символів на місяць. Витрату рахує сайт — Azure її за ключем не показує.',
+                    )}
+                </p>
+            </div>
+            <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="font-display text-base font-semibold text-white">
+                        LibreTranslate
+                    </h2>
+                    <EngineSwitch
+                        engine="libretranslate"
+                        on={enabled.libretranslate}
+                    />
+                    {active === 'libretranslate' && (
+                        <span className="rounded-md bg-emerald-500/15 px-2 py-0.5 text-xs text-emerald-200">
+                            {tr('Перекладає зараз')}
+                        </span>
+                    )}
+                    <button
+                        type="button"
+                        onClick={() =>
+                            router.post(
+                                '/admin/languages/libretranslate/test',
+                                {},
+                                { preserveScroll: true },
+                            )
+                        }
+                        disabled={!libretranslate.configured}
+                        className="ml-auto inline-flex h-8 items-center gap-1.5 rounded-xl bg-white/[0.06] px-3 text-xs text-white/75 transition hover:bg-white/10 disabled:opacity-40"
+                    >
+                        <PlugZap className="size-3.5" /> {tr('Перевірити')}
+                    </button>
+                </div>
+                <p className="mt-2 flex items-center gap-1.5 text-xs text-white/50">
+                    <span
+                        className={cn(
+                            'size-2 rounded-full',
+                            libretranslate.up
+                                ? 'bg-emerald-400'
+                                : 'bg-white/25',
+                        )}
+                    />
+                    {!libretranslate.configured
+                        ? tr('Вимкнено — адресу не вказано')
+                        : libretranslate.up
+                          ? tr('Працює · мови: {list}', {
+                                list: libretranslate.languages.join(', '),
+                            })
+                          : tr('Не відповідає ({url})', {
+                                url: libretranslate.url ?? '',
+                            })}
+                </p>
+                <p className="mt-1 text-xs text-white/35">
+                    {tr(
+                        'Безкоштовно й без ліміту, на вашому сервері. Вмикається сам, коли вичерпано ліміти DeepL і Azure.',
+                    )}
+                </p>
+            </div>
+        </section>
+    );
+}
+
+const SWITCH_SETTING: Record<Engine, string> = {
+    deepl: 'translate_deepl',
+    azure: 'translate_azure',
+    libretranslate: 'translate_libre',
+};
+
+/** Ручний вимикач перекладача. Вичерпаний ліміт і так вимикає перекладач сам — до нового місяця. */
+function EngineSwitch({ engine, on }: { engine: Engine; on: boolean }) {
+    return (
+        <button
+            type="button"
+            role="switch"
+            aria-checked={on}
+            aria-label={
+                on ? tr('Вимкнути перекладач') : tr('Увімкнути перекладач')
+            }
+            title={on ? tr('Вимкнути перекладач') : tr('Увімкнути перекладач')}
+            onClick={() =>
+                router.put(
+                    '/admin/languages/settings',
+                    { [SWITCH_SETTING[engine]]: !on },
+                    { preserveScroll: true },
+                )
+            }
+            className={cn(
+                'relative inline-flex h-6 w-10 shrink-0 items-center rounded-full transition-colors',
+                on ? 'bg-primary' : 'bg-white/15',
+            )}
+        >
+            <span
+                className={cn(
+                    'inline-block size-5 rounded-full bg-white shadow transition-transform motion-reduce:transition-none',
+                    on ? 'translate-x-[18px]' : 'translate-x-0.5',
+                )}
+            />
+        </button>
     );
 }

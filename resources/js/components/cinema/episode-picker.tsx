@@ -162,7 +162,7 @@ export function EpisodePicker({
             {!supported && (
                 <p className="text-xs text-white/40">
                     {tr(
-                        'Цей плеєр показує серії всередині — оберіть Kodik або Videoseed, щоб відкривати серію окремо.',
+                        'Цей плеєр показує серії всередині — оберіть Плеєр 1 або Плеєр 2, щоб відкривати серію окремо.',
                     )}
                 </p>
             )}
@@ -187,7 +187,7 @@ export function EpisodePicker({
                             className={cn(
                                 'h-9 rounded-lg text-sm tabular-nums transition disabled:opacity-40',
                                 active
-                                    ? 'bg-[var(--btn-primary,#6366f1)] font-semibold text-white'
+                                    ? 'bg-primary font-semibold text-white'
                                     : seen
                                       ? 'bg-white/[0.04] text-white/40 hover:bg-white/10'
                                       : 'bg-white/[0.06] text-white/80 hover:bg-white/10',

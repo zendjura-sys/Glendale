@@ -74,7 +74,7 @@ export default function AdminModules({ modules }: { modules: ModuleItem[] }) {
                                 <div
                                     key={m.key}
                                     className={cn(
-                                        'glass group relative animate-rise overflow-hidden rounded-3xl p-5 transition',
+                                        'glass group relative animate-rise overflow-hidden rounded-2xl p-5 transition',
                                         m.enabled && 'border-gc-indigo/25',
                                         !m.available && 'opacity-65',
                                     )}

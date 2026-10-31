@@ -95,7 +95,7 @@ class CinemaService
 
     /**
      * Озвучки тайтлу в кожного налаштованого провайдера (без запису).
-     * null — провайдер не зміг шукати (немає потрібного ID); помилки API пробрасываются.
+     * null — провайдер не зміг шукати (немає потрібного ID); помилки API прокидаються далі.
      *
      * @param  list<string>|null  $only  лише ці провайдери
      * @return array<string, list<array<string, mixed>>|null>
@@ -106,7 +106,7 @@ class CinemaService
         $result = [];
         if ($want('kodik') && $this->kodik->configured()) {
             // Шукаємо за кожним ID окремо й об’єднуємо: в аніме частина озвучок у Kodik прив’язана лише
-            // до Shikimori (без Кінопошуку). ID, яких у тайтлу немає, беремо з відповідей самого Kodik
+            // до Shikimori (без ID каталогу). ID, яких у тайтлу немає, беремо з відповідей самого Kodik
             // (запис однієї озвучки знає Shikimori/IMDb) і шукаємо ще раз — так знаходяться всі озвучки.
             $queue = array_filter([
                 'kinopoisk_id' => $movie->kinopoisk_id,
@@ -186,7 +186,7 @@ class CinemaService
     }
 
     /**
-     * Проставка плеєрів: нові озвучки додаються завжди; наявні — оновлюються лише з $replace.
+     * Призначення плеєрів: нові озвучки додаються завжди; наявні — оновлюються лише з $replace.
      * Озвучки, яких провайдер цього разу не віддав, не видаляються одразу: їх прибирає лише
      * тривала відсутність (MovieSource::RETIRE_DAYS), і тільки коли провайдер щось повернув.
      *
@@ -280,7 +280,7 @@ class CinemaService
     {
         $sources = $this->fetchPlayers($movie, ['kodik'])['kodik'] ?? null;
         if ($sources === null) {
-            throw new CinemaException('У фільму немає зовнішнього ID (IMDb, Shikimori) — Kodik не знайде його.', 422);
+            throw new CinemaException('У фільму немає зовнішнього ID (IMDb, Shikimori) — Плеєр 1 не знайде його.', 422);
         }
         $this->syncSources($movie, 'kodik', $sources, true);
 
@@ -406,7 +406,7 @@ class CinemaService
                 'key' => 'flixcdn',
                 'id' => null,
                 'provider' => 'flixcdn',
-                'provider_label' => 'FlixCDN',
+                'provider_label' => MovieSource::PROVIDERS['flixcdn'],
                 'translation' => null,
                 'translation_type' => null,
                 'quality' => null,

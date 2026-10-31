@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Support\Backgrounds;
 use App\Support\Seasons;
 use App\Support\Settings\SiteSettings;
+use App\Support\Skins;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -33,7 +34,7 @@ class SkinsAndSeasonsTest extends TestCase
     public function test_skin_is_saved_shared_and_validated(): void
     {
         $user = User::factory()->create();
-        $this->actingAs($user)->get('/feed')->assertInertia(fn (Assert $page) => $page->where('auth.user.skin', 'flat'));
+        $this->actingAs($user)->get('/feed')->assertInertia(fn (Assert $page) => $page->where('auth.user.skin', 'gamecon'));
 
         $this->actingAs($user)->put('/settings/appearance', $this->appearance(['skin' => 'material']))->assertSessionHasNoErrors();
         $this->assertSame('material', $user->refresh()->pref('skin'));
@@ -43,6 +44,34 @@ class SkinsAndSeasonsTest extends TestCase
 
         $this->actingAs($user)->put('/settings/appearance', $this->appearance(['skin' => '3d']))->assertSessionHasErrors('skin');
         $this->assertSame('material', $user->refresh()->pref('skin'));
+    }
+
+    public function test_theme_is_saved_shared_and_set_on_the_page(): void
+    {
+        $user = User::factory()->create();
+        // Типово — як на пристрої: сервер ставить темну, скрипт у <head> уточнює до першого кадру.
+        $this->actingAs($user)->get('/feed')
+            ->assertSee('data-theme="dark"', false)
+            ->assertSee('data-theme-pref="system"', false)
+            ->assertInertia(fn (Assert $page) => $page->where('auth.user.theme', 'system'));
+
+        $this->actingAs($user)->put('/settings/appearance', $this->appearance(['theme' => 'light']))->assertSessionHasNoErrors();
+        $this->assertSame('light', $user->refresh()->pref('theme'));
+        $this->actingAs($user)->get('/feed')
+            ->assertSee('data-theme="light"', false)
+            ->assertSee('class="light"', false)
+            ->assertInertia(fn (Assert $page) => $page->where('auth.user.theme', 'light'));
+
+        // Швидкий перемикач у меню змінює лише тему.
+        $this->actingAs($user)->put('/settings/theme', ['theme' => 'dark'])->assertRedirect();
+        $this->assertSame('dark', $user->refresh()->pref('theme'));
+        $this->assertSame('ocean', $user->pref('palette'));
+        $this->actingAs($user)->put('/settings/theme', ['theme' => 'sepia'])->assertSessionHasErrors('theme');
+
+        // Стилі без світлої теми лишаються темними навіть із вибором «світла».
+        $user->mergePref(['theme' => 'light', 'skin' => 'material']);
+        $this->actingAs($user)->get('/feed')->assertSee('data-theme="dark"', false);
+        $this->assertSame('dark', Skins::initialTheme($user->refresh()));
     }
 
     public function test_seasons_follow_the_calendar(): void
@@ -120,6 +149,6 @@ class SkinsAndSeasonsTest extends TestCase
         $this->actingAs($admin)->delete('/admin/design/background/desktop')->assertRedirect();
         $this->actingAs($admin)->delete('/admin/design/background/mobile')->assertRedirect();
         $this->assertNull(Backgrounds::image());
-        $this->actingAs($member)->get('/feed')->assertInertia(fn (Assert $page) => $page->where('auth.user.background.preset', 'dune')->where('siteBackground', null));
+        $this->actingAs($member)->get('/feed')->assertInertia(fn (Assert $page) => $page->where('auth.user.background.preset', Backgrounds::DEFAULT)->where('siteBackground', null));
     }
 }

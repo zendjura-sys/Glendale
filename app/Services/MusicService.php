@@ -2,10 +2,12 @@
 
 namespace App\Services;
 
+use App\Jobs\ProcessTrackAudio;
 use App\Models\MusicStatus;
 use App\Models\Playlist;
 use App\Models\Track;
 use App\Models\User;
+use App\Services\Music\AudioProbe;
 use App\Services\Spotify\SpotifyClient;
 use App\Services\Spotify\SpotifyException;
 use Illuminate\Database\Eloquent\Builder;
@@ -27,12 +29,14 @@ class MusicService
 
     /**
      * @param  array{title: string, artist: string, album?: string|null, genre?: string|null, duration?: int|null, cover_url?: string|null}  $meta
+     * @param  array<string, array{source: string, score: int|float}>  $auto  поля, заповнені автоматикою (теги, ім’я файлу) —
+     *                                                                        їх збагачення метаданих може покращити
      */
-    public function upload(User $user, UploadedFile $audio, array $meta, ?UploadedFile $cover = null): Track
+    public function upload(User $user, UploadedFile $audio, array $meta, ?UploadedFile $cover = null, array $auto = []): Track
     {
         $extension = strtolower($audio->getClientOriginalExtension() ?: $audio->extension() ?: 'mp3');
         $path = $audio->storeAs('music/'.now()->format('Y/m'), Str::random(32).'.'.$extension, 'public');
-        $coverPath = $cover ? $this->images->store($cover, 'music/covers', cover: [600, 600])['path']
+        $coverPath = $cover ? $this->storeCover($cover)
             : (filled($meta['cover_url'] ?? null) ? $this->coverFromUrl((string) $meta['cover_url']) : null);
 
         $track = Track::query()->create([
@@ -46,32 +50,71 @@ class MusicService
             'cover_path' => $coverPath,
             'mime' => $audio->getMimeType(),
             'size' => (int) $audio->getSize(),
+            // Формат, який браузер не відтворить (AIFF, WMA, APE…), ховаємо до появи копії AAC.
+            'processing' => app(AudioProbe::class)->available() && ! in_array($extension, AudioProbe::PLAYABLE_EXTENSIONS, true),
         ]);
 
-        $this->add($user, $track);
+        // Що вказав сам користувач, автоматика (MetadataEnricher) не перезапише ніколи.
+        $track->markUserFields(array_keys(array_diff_key(array_filter([
+            'title' => true,
+            'artist' => true,
+            'album' => filled($track->album),
+            'genre' => filled($track->genre),
+            'cover' => $coverPath !== null,
+        ]), $auto)));
+        if ($auto !== []) {
+            $track->metadata_meta = [...($track->metadata_meta ?? []), ...array_intersect_key($auto, array_flip(Track::META_FIELDS))];
+        }
+        $track->saveQuietly();
 
-        return $track;
+        $this->add($user, $track);
+        // Кодек, якість, теги й обкладинка з файлу (через чергу — завантаження не чекає ffmpeg).
+        ProcessTrackAudio::dispatch($track->id);
+
+        return $track->refresh();
+    }
+
+    /** Обкладинка треку з файлу (завантаження чи редагування): квадрат 600×600. Повертає шлях на диску public. */
+    public function storeCover(UploadedFile $cover): string
+    {
+        return $this->images->store($cover, 'music/covers', cover: [600, 600])['path'];
     }
 
     /** Хости, звідки сервер сам завантажує обкладинки за посиланням (каталог iTunes). */
     public const COVER_HOSTS = ['mzstatic.com'];
 
+    /** Хости обкладинок для автоматичних метаданих: Cover Art Archive (з переадресацією на archive.org), Spotify, Discogs. */
+    public const METADATA_COVER_HOSTS = ['coverartarchive.org', 'archive.org', 'scdn.co', 'spotifycdn.com', 'discogs.com'];
+
     /**
-     * Обкладинка за посиланням із каталогу (автозаповнення в застосунку): лише https і лише з COVER_HOSTS,
-     * щоб сервер не ходив куди завгодно. Повертає шлях збереженої обкладинки або null.
+     * Обкладинка за посиланням із каталогу (автозаповнення в застосунку): лише https і лише з дозволених хостів
+     * (типово COVER_HOSTS), щоб сервер не ходив куди завгодно; переадресації — лише на ті самі хости.
+     * Повертає шлях збереженої обкладинки або null.
+     *
+     * @param  list<string>|null  $hosts
+     * @param  array<string, string>  $headers
      */
-    public function coverFromUrl(string $url): ?string
+    public function coverFromUrl(string $url, ?array $hosts = null, array $headers = []): ?string
     {
-        $parts = parse_url($url);
-        $host = strtolower((string) ($parts['host'] ?? ''));
-        $allowed = collect(self::COVER_HOSTS)->contains(fn (string $h) => $host === $h || str_ends_with($host, '.'.$h));
-        if (($parts['scheme'] ?? '') !== 'https' || ! $allowed) {
+        $hosts ??= self::COVER_HOSTS;
+        $allowed = function (string $url) use ($hosts): bool {
+            $parts = parse_url($url);
+            $host = strtolower((string) ($parts['host'] ?? ''));
+
+            return ($parts['scheme'] ?? '') === 'https' && collect($hosts)->contains(fn (string $h) => $host === $h || str_ends_with($host, '.'.$h));
+        };
+        if (! $allowed($url)) {
             return null;
         }
+        $redirects = $hosts === self::COVER_HOSTS ? false : ['max' => 3, 'protocols' => ['https'], 'on_redirect' => function ($request, $response, $uri) use ($allowed) {
+            if (! $allowed((string) $uri)) {
+                throw new \RuntimeException('Переадресація обкладинки на сторонній хост.');
+            }
+        }];
 
         try {
-            $response = Http::timeout(10)->withOptions(['allow_redirects' => false])->get($url);
-        } catch (ConnectionException) {
+            $response = Http::timeout(10)->withHeaders($headers)->withOptions(['allow_redirects' => $redirects])->get($url);
+        } catch (Throwable) {
             return null;
         }
 
@@ -92,7 +135,7 @@ class MusicService
                 return null;
             }
 
-            return $this->images->store($file, 'music/covers', cover: [600, 600])['path'];
+            return $this->storeCover($file);
         } catch (Throwable) {
             return null;
         } finally {
@@ -125,7 +168,7 @@ class MusicService
 
     /**
      * @param  iterable<int>  $trackIds
-     * @return array<int, true>
+     * @return array<int, bool>
      */
     public function libraryIds(User $user, iterable $trackIds): array
     {
@@ -138,11 +181,10 @@ class MusicService
             return [];
         }
 
+        // Ключ — трек у медіатеці; значення — чи позначений «Улюбленим» (зірочка).
         $owned = [];
-        foreach (DB::table('music_library')->where('user_id', $user->id)->whereIn('track_id', $ids)->pluck('track_id') as $id) {
-            if (is_numeric($id)) {
-                $owned[(int) $id] = true;
-            }
+        foreach (DB::table('music_library')->where('user_id', $user->id)->whereIn('track_id', $ids)->get(['track_id', 'is_favorite']) as $row) {
+            $owned[(int) $row->track_id] = (bool) $row->is_favorite;
         }
 
         return $owned;
@@ -163,7 +205,7 @@ class MusicService
         }
         $owned = $this->libraryIds($viewer, $trackIds);
 
-        return array_values($tracks->map(fn (Track $t) => $t->toCard(isset($owned[$t->id])))->all());
+        return array_values($tracks->map(fn (Track $t) => [...$t->toCard(isset($owned[$t->id])), 'favorite' => $owned[$t->id] ?? false])->all());
     }
 
     public function canManageTrack(Track $track, User $user): bool
@@ -268,8 +310,37 @@ class MusicService
         if ($track) {
             $track->increment('plays_count');
         }
+        $this->logPlay($user, $track, $spotifyTrack);
 
         Cache::forget($this->statusCacheKey($user));
+    }
+
+    /**
+     * Історія прослушувань для «Підсумків року». Той самий трек підряд (пауза, перемотка, повторний
+     * виклик плеєра) протягом 10 хвилин рахується один раз.
+     *
+     * @param  array<string, mixed>|null  $spotifyTrack
+     */
+    private function logPlay(User $user, ?Track $track, ?array $spotifyTrack): void
+    {
+        $title = $track ? $track->title : (string) ($spotifyTrack['title'] ?? '');
+        if ($title === '') {
+            return;
+        }
+        $artist = $track ? (string) $track->artist : (string) ($spotifyTrack['artist'] ?? '');
+        $last = DB::table('music_plays')->where('user_id', $user->id)->latest('played_at')->first(['track_id', 'title', 'artist', 'played_at']);
+        if ($last !== null && $last->title === $title && $last->artist === $artist
+            && now()->diffInMinutes($last->played_at, true) < 10) {
+            return;
+        }
+        DB::table('music_plays')->insert([
+            'user_id' => $user->id,
+            'track_id' => $track?->id,
+            'title' => Str::limit($title, 197, '…'),
+            'artist' => Str::limit($artist, 197, '…'),
+            'cover_url' => $track ? null : ($spotifyTrack['cover_url'] ?? null),
+            'played_at' => now(),
+        ]);
     }
 
     public function stop(User $user): void
@@ -280,12 +351,17 @@ class MusicService
 
     /**
      * Що зараз слухає користувач: трек із плеєра GameCon або з Spotify.
+     * Іншим — лише якщо ввімкнено «Показувати, що я слухаю» (для Spotify ще й show_now_playing).
      * Позначка «вже у моїх аудіозаписах» рахується для [$viewer] поза кешем, бо кеш спільний для всіх глядачів.
      *
      * @return array<string, mixed>|null
      */
     public function currentFor(User $user, ?User $viewer = null): ?array
     {
+        // «Показувати, що я слухаю» вимкнено — статус бачить лише сам власник.
+        if (($viewer === null || $viewer->isNot($user)) && ! $user->showsListening()) {
+            return null;
+        }
         $now = $this->cachedCurrent($user);
         if ($now !== null && ($now['source'] ?? null) === 'local' && isset($now['id'])) {
             $now['in_library'] = $viewer !== null && $viewer->library()->whereKey($now['id'])->exists();

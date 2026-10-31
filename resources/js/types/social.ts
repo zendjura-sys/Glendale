@@ -20,11 +20,21 @@ export type UserCard = {
     avatar_url: string | null;
     is_online: boolean;
     is_verified: boolean;
+    /** Вид позначки (верифікація 2.0): identity, creator, business, organization. */
+    verified_kind?: string | null;
+    /** Спеціальний акаунт (стрімер, бізнес…); null — особистий. */
+    account_type?: string | null;
     status: string | null;
+    /** Емодзі швидкого статусу («🎮»); null — немає. */
+    status_emoji?: string | null;
+    /** До якого часу діє статус (ISO); null — постійний. */
+    status_until?: string | null;
     /** «Граю в…»: сервер GTA або гра (автоматично чи вручну). */
     playing?: PlayingInfo | null;
     /** GameCon+: null — без підписки. */
     plus?: PlusMark | null;
+    /** Вдягнута косметика сезонного пропуску: null — нічого. */
+    cosmetics?: Cosmetics | null;
     /** Лише в чаті сім’ї. */
     family_rank?: { rank: number; title: string | null; tag: string };
 };
@@ -64,13 +74,21 @@ export type CommentItem = {
     created_at: string;
     user: UserCard;
     can_delete: boolean;
+    can_thank?: boolean;
+    thanked?: boolean;
+    badge?: { title: string; color: string | null } | null;
 };
 
 export type Visibility = 'public' | 'friends' | 'private';
 
+/** #тег гри в тексті запису. */
+export type GameTag = { tag: string; slug: string; name: string };
+
 export type PostItem = {
     id: number;
     body: string | null;
+    /** #Згадки ігор у тексті. */
+    games?: GameTag[];
     spoiler?: boolean;
     sticker?: string | null;
     visibility: Visibility;
@@ -114,12 +132,25 @@ export type PostItem = {
         image: string | null;
     } | null;
     saved?: boolean;
+    subscribers_only?: boolean;
+    locked?: boolean;
     poll?: {
         id: number;
         question: string;
         total: number;
         voted: number | null;
-        options: { id: number; label: string; votes: number }[];
+        anonymous?: boolean;
+        options: {
+            id: number;
+            label: string;
+            votes: number;
+            voters?: {
+                id: number;
+                name: string;
+                username: string;
+                avatar_url: string | null;
+            }[];
+        }[];
     } | null;
     reaction?: string | null;
     liked: boolean;
@@ -213,9 +244,16 @@ export type ClanCard = {
 };
 
 /** Оформлення GameCon+ у картці: готові кольори ніку й рамки (null — стандартні). */
+/** Косметика сезонного пропуску на картці користувача (значення лише з сервера). */
+export type Cosmetics = {
+    frame: string[] | null;
+    name: string[] | null;
+    badge: { icon: string; color: string; name: string } | null;
+};
+
 export type PlusMark = {
     name: string[] | null;
     frame: string[] | null;
     /** Анімація ніку: flow — перелив, shine — відблиск. */
-    fx?: 'flow' | 'shine' | null;
+    fx?: 'flow' | 'shine' | 'neon' | 'rainbow' | null;
 };

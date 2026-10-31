@@ -19,6 +19,7 @@ use App\Models\ServerEventRsvp;
 use App\Models\User;
 use App\Notifications\EventReminder;
 use App\Services\Families\FamilyGate;
+use App\Support\NetworkModes;
 use App\Support\Settings\SiteSettings;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
@@ -35,6 +36,9 @@ use Illuminate\Support\Facades\Storage;
  */
 class EventCalendar
 {
+    /** Розділ кожного джерела подій. */
+    public const SOURCES = ['family' => 'families', 'clan' => 'clans', 'server' => 'servers', 'game' => 'games'];
+
     /** За скільки хвилин до початку нагадуємо. */
     public const REMIND_MINUTES = 30;
 
@@ -56,8 +60,11 @@ class EventCalendar
         $from = now()->subHours(3);
         $to = now()->addDays(self::DAYS);
         $items = collect();
+        // Лише джерела з розділів режиму людини (у «Класиці» без серверів та ігор).
+        $modules = app(NetworkModes::class)->modulesFor($user);
+        $has = fn (string $source) => in_array(self::SOURCES[$source], $modules, true);
 
-        if ($kind === null || $kind === 'family') {
+        if (($kind === null || $kind === 'family') && $has('family')) {
             $members = FamilyMember::query()->with('family')->where('user_id', $user->id)->where('status', FamilyMember::STATUS_ACTIVE)->get()->keyBy('family_id');
             FamilyEvent::query()->with('attendance')
                 ->whereIn('family_id', $members->keys()->all() ?: [0])
@@ -85,7 +92,7 @@ class EventCalendar
                 });
         }
 
-        if ($kind === null || $kind === 'clan') {
+        if (($kind === null || $kind === 'clan') && $has('clan')) {
             $clans = Clan::query()->whereIn('id', ClanMember::query()->where('user_id', $user->id)->where('status', ClanMember::STATUS_ACTIVE)->select('clan_id'))->get()
                 ->filter(fn (Clan $c) => $c->hasFeature('events'))->keyBy('id');
             ClanEvent::query()->withCount('going')
@@ -105,7 +112,7 @@ class EventCalendar
                 });
         }
 
-        if ($kind === null || $kind === 'server') {
+        if (($kind === null || $kind === 'server') && $has('server')) {
             $servers = $this->serversOf($user);
             ServerEvent::query()->with(['server', 'family'])
                 ->withCount(['rsvps as going_count' => fn ($q) => $q->where('status', ServerEventRsvp::GOING)])
@@ -116,7 +123,7 @@ class EventCalendar
                 ->each(fn (ServerEvent $e) => $items->push($this->serverItem($e, $user)));
         }
 
-        if ($kind === null || $kind === 'game') {
+        if (($kind === null || $kind === 'game') && $has('game')) {
             $query = $this->gameEvents($user)->whereBetween('starts_at', [$from, $to]);
             if ($kind === null) {
                 // У загальній стрічці — великі шоукейси й події моїх ігор (клани, «Граю в…», записався).
@@ -520,31 +527,45 @@ class EventCalendar
      */
     public static function ics(array $entry): string
     {
+        return self::icsMany([$entry]);
+    }
+
+    /**
+     * Кілька подій в одному файлі — для підписки «Мій календар» у Google чи Apple Календарі.
+     *
+     * @param  list<array{uid: string, title: string, description: string|null, starts_at: CarbonInterface, ends_at: CarbonInterface|null, all_day: bool, url: string}>  $entries
+     */
+    public static function icsMany(array $entries, ?string $name = null): string
+    {
         $escape = fn (string $text): string => str_replace(['\\', ';', ',', "\r\n", "\n"], ['\\\\', '\\;', '\\,', '\\n', '\\n'], $text);
-        $start = $entry['starts_at']->copy()->utc();
-        $end = $entry['ends_at']?->copy()->utc() ?? $start->copy()->addHours(2);
         $lines = [
             'BEGIN:VCALENDAR',
             'VERSION:2.0',
             'PRODID:-//GameCon//Events//UK',
             'CALSCALE:GREGORIAN',
-            'BEGIN:VEVENT',
-            'UID:'.$entry['uid'].'@gamecon.online',
-            'DTSTAMP:'.now()->utc()->format('Ymd\THis\Z'),
-            $entry['all_day'] ? 'DTSTART;VALUE=DATE:'.$entry['starts_at']->copy()->setTimezone('Europe/Kyiv')->format('Ymd') : 'DTSTART:'.$start->format('Ymd\THis\Z'),
-            $entry['all_day'] ? 'DTEND;VALUE=DATE:'.$entry['starts_at']->copy()->setTimezone('Europe/Kyiv')->addDay()->format('Ymd') : 'DTEND:'.$end->format('Ymd\THis\Z'),
-            'SUMMARY:'.$escape($entry['title']),
-            'URL:'.$entry['url'],
         ];
-        if ($entry['description'] !== null && $entry['description'] !== '') {
-            $lines[] = 'DESCRIPTION:'.$escape($entry['description']);
+        if ($name !== null) {
+            $lines[] = 'X-WR-CALNAME:'.$escape($name);
+            $lines[] = 'X-WR-TIMEZONE:Europe/Kyiv';
+            $lines[] = 'REFRESH-INTERVAL;VALUE=DURATION:PT3H';
         }
-        $lines[] = 'BEGIN:VALARM';
-        $lines[] = 'TRIGGER:-PT30M';
-        $lines[] = 'ACTION:DISPLAY';
-        $lines[] = 'DESCRIPTION:'.$escape($entry['title']);
-        $lines[] = 'END:VALARM';
-        $lines[] = 'END:VEVENT';
+        foreach ($entries as $entry) {
+            $start = $entry['starts_at']->copy()->utc();
+            $end = $entry['ends_at']?->copy()->utc() ?? $start->copy()->addHours(2);
+            array_push($lines,
+                'BEGIN:VEVENT',
+                'UID:'.$entry['uid'].'@gamecon.online',
+                'DTSTAMP:'.now()->utc()->format('Ymd\THis\Z'),
+                $entry['all_day'] ? 'DTSTART;VALUE=DATE:'.$entry['starts_at']->copy()->setTimezone('Europe/Kyiv')->format('Ymd') : 'DTSTART:'.$start->format('Ymd\THis\Z'),
+                $entry['all_day'] ? 'DTEND;VALUE=DATE:'.$entry['starts_at']->copy()->setTimezone('Europe/Kyiv')->addDay()->format('Ymd') : 'DTEND:'.$end->format('Ymd\THis\Z'),
+                'SUMMARY:'.$escape($entry['title']),
+                'URL:'.$entry['url'],
+            );
+            if ($entry['description'] !== null && $entry['description'] !== '') {
+                $lines[] = 'DESCRIPTION:'.$escape($entry['description']);
+            }
+            array_push($lines, 'BEGIN:VALARM', 'TRIGGER:-PT30M', 'ACTION:DISPLAY', 'DESCRIPTION:'.$escape($entry['title']), 'END:VALARM', 'END:VEVENT');
+        }
         $lines[] = 'END:VCALENDAR';
 
         // Рядки довші за 75 байтів переносимо з пробілом на початку (складання рядків RFC 5545).

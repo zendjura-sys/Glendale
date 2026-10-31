@@ -1,4 +1,5 @@
 import { router } from '@inertiajs/react';
+import { Sk } from '@/components/gc/skeletons';
 import {
     Dices,
     Gift,
@@ -125,7 +126,7 @@ function RandomCard({
     };
 
     return (
-        <section className="glass flex min-w-0 flex-col rounded-3xl p-4 sm:p-5">
+        <section className="glass flex min-w-0 flex-col rounded-2xl p-4 sm:p-5">
             <header className="flex items-start gap-3">
                 <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-white/[0.06] text-white">
                     <Dices className="size-5" />
@@ -315,7 +316,7 @@ function BuyCard({
     );
 
     return (
-        <section className="glass flex min-w-0 flex-col rounded-3xl p-4 sm:p-5">
+        <section className="glass flex min-w-0 flex-col rounded-2xl p-4 sm:p-5">
             <header className="flex items-start gap-3">
                 <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-white/[0.06] text-white">
                     <ShoppingBag className="size-5" />
@@ -438,7 +439,11 @@ function BuyCard({
                         {hints[tier]}
                     </p>
                     {loadingIdeas ? (
-                        <Loader2 className="size-4 animate-spin text-white/40" />
+                        <div className="flex flex-wrap gap-1.5">
+                            {[0, 1, 2, 3, 4].map((i) => (
+                                <Sk key={i} className="h-8 w-28 rounded-xl" />
+                            ))}
+                        </div>
                     ) : ideas && ideas.length > 0 ? (
                         <div className="flex flex-wrap gap-1.5">
                             {ideas.map((idea) => (
@@ -500,7 +505,7 @@ function BuyCard({
                     type="button"
                     onClick={buy}
                     disabled={!check?.available || (gift && !giftTo)}
-                    className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[var(--btn-primary,#6366f1)] text-[15px] font-semibold text-white transition hover:opacity-90 disabled:opacity-40"
+                    className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-primary text-[15px] font-semibold text-white transition hover:opacity-90 disabled:opacity-40"
                 >
                     {gift ? (
                         <Gift className="size-4" />

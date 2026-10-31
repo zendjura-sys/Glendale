@@ -1,4 +1,5 @@
 import { Head, InfiniteScroll, Link, router } from '@inertiajs/react';
+import { ListSkeleton } from '@/components/gc/skeletons';
 import {
     ArrowLeft,
     Check,
@@ -39,6 +40,7 @@ import type {
     ScrollData,
 } from '@/types';
 import { tr } from '@/lib/i18n';
+import { usePlugin } from '@/lib/plugins';
 
 type Tab = 'all' | 'managers' | 'friends' | 'requests';
 
@@ -70,6 +72,7 @@ export default function CommunityMembers({
 }: Props) {
     const [query, setQuery] = useState(q);
     const base = `/c/${community.slug}/members`;
+    const pointsOn = usePlugin('community_points');
     const isOwner = my?.role === 'owner';
     const options = { preserveScroll: true, preserveState: true } as const;
 
@@ -144,7 +147,7 @@ export default function CommunityMembers({
         <>
             <Head title={tr('Учасники — {name}', { name: community.name })} />
             <div className="space-y-5">
-                <section className="glass relative overflow-hidden rounded-3xl p-5 sm:p-6">
+                <section className="glass relative overflow-hidden rounded-2xl p-5 sm:p-6">
                     <div className="pointer-events-none absolute -top-24 right-0 size-72 rounded-full bg-gc-indigo/20 blur-3xl" />
                     <div className="relative flex items-center gap-4">
                         <Link
@@ -223,8 +226,9 @@ export default function CommunityMembers({
                 ) : (
                     <InfiniteScroll
                         data="members"
+                        loading={<ListSkeleton rows={3} card={false} />}
                         preserveUrl
-                        className="glass divide-y divide-white/[0.05] overflow-hidden rounded-3xl"
+                        className="glass divide-y divide-white/[0.05] overflow-hidden rounded-2xl"
                     >
                         {members.data.map((member) => (
                             <div
@@ -243,7 +247,10 @@ export default function CommunityMembers({
                                             {member.name}
                                         </span>
                                         {member.is_verified && (
-                                            <VerifiedBadge className="size-3.5 shrink-0" />
+                                            <VerifiedBadge
+                                                kind={member.verified_kind}
+                                                className="size-3.5 shrink-0"
+                                            />
                                         )}
                                         {member.title && (
                                             <RoleBadge
@@ -259,6 +266,43 @@ export default function CommunityMembers({
                                                 {tr('Ваш друг')}
                                             </span>
                                         )}
+                                        {pointsOn &&
+                                            (member.points ?? 0) !== 0 && (
+                                                <span className="text-gc-lilac-300">
+                                                    {tr('{count} балів', {
+                                                        count:
+                                                            member.points ?? 0,
+                                                    })}
+                                                </span>
+                                            )}
+                                        {isAdmin &&
+                                            pointsOn &&
+                                            tab !== 'requests' && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        const value = Number(
+                                                            window.prompt(
+                                                                tr(
+                                                                    'Скільки балів додати (мінус — зняти)?',
+                                                                ),
+                                                                '10',
+                                                            ),
+                                                        );
+                                                        if (value)
+                                                            router.post(
+                                                                `/c/${community.slug}/points/${member.id}`,
+                                                                {
+                                                                    points: value,
+                                                                },
+                                                                options,
+                                                            );
+                                                    }}
+                                                    className="text-gc-lilac-300 hover:text-white"
+                                                >
+                                                    {tr('± бали')}
+                                                </button>
+                                            )}
                                         {member.joined_at && (
                                             <span>
                                                 {tab === 'requests'
@@ -268,12 +312,29 @@ export default function CommunityMembers({
                                             </span>
                                         )}
                                     </p>
+                                    {member.answers &&
+                                        member.answers.length > 0 && (
+                                            <dl className="mt-2 space-y-1.5 rounded-xl bg-white/[0.04] p-2.5 text-xs">
+                                                {member.answers.map(
+                                                    (item, i) => (
+                                                        <div key={i}>
+                                                            <dt className="text-white/45">
+                                                                {item.q}
+                                                            </dt>
+                                                            <dd className="whitespace-pre-line text-white/85">
+                                                                {item.a}
+                                                            </dd>
+                                                        </div>
+                                                    ),
+                                                )}
+                                            </dl>
+                                        )}
                                 </div>
 
                                 {member.role !== 'member' && (
                                     <span
                                         className={cn(
-                                            'hidden items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium sm:inline-flex',
+                                            'hidden items-center gap-1 rounded-chip px-2.5 py-1 text-xs font-medium sm:inline-flex',
                                             roleStyle[member.role],
                                         )}
                                     >

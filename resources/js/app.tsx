@@ -1,12 +1,16 @@
 import type { VisitOptions } from '@inertiajs/core';
 import { createInertiaApp } from '@inertiajs/react';
+import { registerOffline } from '@/lib/offline';
 import { SkipLink } from '@/components/gc/skip-link';
+import { CookieConsent } from '@/components/gc/cookie-consent';
+import { ErrorBoundary } from '@/components/gc/error-boundary';
 import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { installKeyboardGuard } from '@/lib/keyboard';
 import { startSmoothScroll } from '@/lib/smooth-scroll';
 import { LazyMotion } from 'motion/react';
 import { lazy, Suspense } from 'react';
+import { PageSkeleton, skeletonFor } from '@/components/gc/skeletons';
 
 // Швидкий перший кадр: стартовий файл без макетів. Кожен макет (соцмережа, адмінка, вхід, налаштування) —
 // окремим файлом, що вантажиться, коли вперше знадобиться, і далі лишається в кеші.
@@ -14,10 +18,14 @@ const socialLayout = () => import('@/layouts/social-layout');
 const adminLayout = () => import('@/layouts/admin-layout');
 const authLayout = () => import('@/layouts/auth-layout');
 const settingsLayout = () => import('@/layouts/settings/layout');
+const musicLayout = () => import('@/layouts/music-layout');
+const publicLayout = () => import('@/layouts/public-layout');
 const SocialLayout = lazy(socialLayout);
 const AdminLayout = lazy(adminLayout);
 const AuthLayout = lazy(authLayout);
 const SettingsLayout = lazy(settingsLayout);
+const MusicLayout = lazy(musicLayout);
+const PublicLayout = lazy(publicLayout);
 
 // Макет першої сторінки починаємо качати одразу, паралельно зі сторінкою, — без другого очікування.
 if (typeof document !== 'undefined') {
@@ -27,6 +35,8 @@ if (typeof document !== 'undefined') {
         : '';
     if (name.startsWith('auth/')) void authLayout();
     else if (name.startsWith('admin/')) void adminLayout();
+    else if (name.startsWith('music/') && name !== 'music/together')
+        void musicLayout();
     else if (
         name &&
         name !== 'welcome' &&
@@ -91,11 +101,49 @@ function shouldViewTransition(options: VisitOptions): boolean {
     return !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 
+registerOffline();
+
+/** Поки вантажиться макет розділу — скелетон сторінки замість порожнього екрана. */
+function BootSkeleton({ name }: { name: string }) {
+    if (/^(auth\/|legal\/|welcome|error|wrapped|start\/)/.test(name)) {
+        return null;
+    }
+
+    return (
+        <div className="mx-auto max-w-[1280px] px-4 pt-24 sm:px-6">
+            <PageSkeleton kind={skeletonFor(window.location.pathname)} />
+        </div>
+    );
+}
+
+/** Сторінки, які бачать гості (без входу). */
+const PUBLIC_PAGES = new Set([
+    'profile/show',
+    'profile/frozen',
+    'games/index',
+    'games/show',
+    'communities/index',
+    'communities/guest',
+]);
+
 void createInertiaApp({
     title: (title) => (title ? `${title} · ${appName}` : appName),
-    layout: (name) => {
+    layout: (name, page) => {
         switch (true) {
+            // Довідка відкрита гостям: без входу — власна легка оболонка (components/help/help-shell).
+            case name.startsWith('help/') &&
+                !(page?.props as { auth?: { user?: unknown } } | undefined)
+                    ?.auth?.user:
+                return null;
+            // Профілі й ігри відкриті гостям і пошуковикам — легка оболонка без макета сайту.
+            case PUBLIC_PAGES.has(name) &&
+                !(page?.props as { auth?: { user?: unknown } } | undefined)
+                    ?.auth?.user:
+                return PublicLayout;
             case name === 'welcome':
+            case name === 'error':
+            case name === 'wrapped':
+            case name === 'links/show':
             case name === 'start/mode':
             case name === 'start/phone':
             case name.startsWith('legal/'):
@@ -104,6 +152,11 @@ void createInertiaApp({
                 return AuthLayout;
             case name.startsWith('admin/'):
                 return AdminLayout;
+            // «Музика» — власний розділ у стилі Apple Music; кімната «Слухати разом» лишається в макеті сайту.
+            case name.startsWith('music/') &&
+                name !== 'music/together' &&
+                name !== 'music/index':
+                return MusicLayout;
             case name.startsWith('settings/'):
                 return [SocialLayout, SettingsLayout];
             default:
@@ -116,13 +169,27 @@ void createInertiaApp({
             viewTransition: shouldViewTransition(options),
         }),
     },
-    withApp(app) {
+    withApp(app, { page }) {
+        const analytics =
+            (page.props as { site?: { analytics?: string | null } }).site
+                ?.analytics ?? null;
+
         return (
             <LazyMotion features={motionFeatures} strict>
                 <TooltipProvider delayDuration={0}>
                     <SkipLink />
-                    <Suspense fallback={null}>{app}</Suspense>
-                    <Toaster />
+                    {/* Збій сторінки — картка з кнопкою оновлення; збій тостів чи банера — лише вони зникають. */}
+                    <ErrorBoundary>
+                        <Suspense
+                            fallback={<BootSkeleton name={page.component} />}
+                        >
+                            {app}
+                        </Suspense>
+                    </ErrorBoundary>
+                    <ErrorBoundary fallback={null}>
+                        <Toaster />
+                        <CookieConsent analytics={analytics} />
+                    </ErrorBoundary>
                 </TooltipProvider>
             </LazyMotion>
         );

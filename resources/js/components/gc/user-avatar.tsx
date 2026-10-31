@@ -1,7 +1,8 @@
+import { usePage } from '@inertiajs/react';
 import { initials } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { tr } from '@/lib/i18n';
-import type { PlusMark } from '@/types';
+import type { Cosmetics, PlusMark } from '@/types';
 import { plusFrameStyle } from './plus';
 
 const sizes = {
@@ -11,6 +12,16 @@ const sizes = {
     lg: 'size-14 text-base',
     xl: 'size-20 text-xl',
     hero: 'size-36 text-4xl sm:size-40',
+} as const;
+
+/** Емодзі статусу — кружечок у лівому нижньому куті аватара. */
+const emojiSizes = {
+    xs: null,
+    sm: 'size-4 text-[10px] -bottom-0.5 -left-0.5',
+    md: 'size-5 text-[11px] -bottom-0.5 -left-0.5',
+    lg: 'size-6 text-[13px] -bottom-0.5 -left-0.5',
+    xl: 'size-7 text-[15px] bottom-0 left-0',
+    hero: 'size-11 text-2xl bottom-2 left-2',
 } as const;
 
 const dotSizes = {
@@ -27,8 +38,8 @@ const palettes = [
     'from-gc-indigo to-gc-purple',
     'from-gc-purple to-gc-pink',
     'from-gc-cyan to-gc-blue',
-    'from-gc-pink to-gc-coral',
-    'from-gc-mint to-gc-cyan',
+    'from-[#1e40af] to-gc-blue',
+    'from-[#0e7490] to-gc-cyan',
 ];
 
 type Props = {
@@ -38,6 +49,9 @@ type Props = {
         is_online?: boolean;
         id?: number;
         plus?: PlusMark | null;
+        cosmetics?: Cosmetics | null;
+        status?: string | null;
+        status_emoji?: string | null;
     };
     size?: keyof typeof sizes;
     ring?: boolean;
@@ -53,6 +67,14 @@ export function UserAvatar({
     className,
 }: Props) {
     const palette = palettes[(user.id ?? user.name.length) % palettes.length];
+    // Новий рік: шапка Санти на аватарах (крім найменших — там її не розгледіти).
+    const santa = usePage().props.season === 'newyear' && size !== 'xs';
+    // Рамка GameCon+, інакше — вдягнута з сезонного пропуску.
+    const frame = user.plus?.frame?.length
+        ? user.plus
+        : user.cosmetics?.frame?.length
+          ? { name: null, frame: user.cosmetics.frame }
+          : null;
 
     const inner = user.avatar_url ? (
         <img
@@ -80,10 +102,10 @@ export function UserAvatar({
                 className,
             )}
         >
-            {!ring && user.plus?.frame ? (
+            {!ring && frame ? (
                 <span
                     className="flex size-full rounded-full p-[2px]"
-                    style={plusFrameStyle(user.plus)}
+                    style={plusFrameStyle(frame)}
                 >
                     <span className="flex size-full overflow-hidden rounded-full bg-void p-[1.5px]">
                         <span className="flex size-full overflow-hidden rounded-full">
@@ -92,7 +114,7 @@ export function UserAvatar({
                     </span>
                 </span>
             ) : ring ? (
-                <span className="ring-gradient flex size-full rounded-full p-[3px] shadow-[0_0_40px_-6px_rgb(124_92_255/0.8)]">
+                <span className="ring-gradient flex size-full rounded-full p-[3px]">
                     <span className="flex size-full rounded-full bg-void p-[3px]">
                         {inner}
                     </span>
@@ -100,6 +122,18 @@ export function UserAvatar({
             ) : (
                 <span className="flex size-full overflow-hidden rounded-full bg-white/5 ring-1 ring-white/10">
                     {inner}
+                </span>
+            )}
+            {user.status_emoji && emojiSizes[size] && (
+                <span
+                    className={cn(
+                        'absolute flex items-center justify-center rounded-full bg-background leading-none ring-2 ring-background',
+                        emojiSizes[size],
+                    )}
+                    title={user.status ?? undefined}
+                    aria-label={user.status ?? undefined}
+                >
+                    {user.status_emoji}
                 </span>
             )}
             {showOnline && user.is_online && (
@@ -110,6 +144,15 @@ export function UserAvatar({
                         size !== 'xs' && 'animate-pulse-ring',
                     )}
                     title={tr('Онлайн')}
+                />
+            )}
+            {santa && (
+                <img
+                    src="/images/seasons/newyear/santa-hat.webp"
+                    alt=""
+                    aria-hidden
+                    loading="lazy"
+                    className="santa-hat"
                 />
             )}
         </span>

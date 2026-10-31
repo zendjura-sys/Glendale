@@ -12,13 +12,19 @@ use App\Models\Photo;
 use App\Models\PostAttachment;
 use App\Models\User;
 use App\Models\UserReport;
+use App\Models\UserStrike;
 use App\Services\Moderation\ContentFilter;
 use App\Services\Moderation\MessageReports;
+use App\Services\Moderation\NewcomerReview;
 use App\Services\Moderation\PeopleModeration;
+use App\Services\Moderation\ReporterTrust;
+use App\Services\Moderation\Strikes;
 use App\Services\PhotoService;
+use App\Support\Plugins\Plugins;
 use App\Support\Settings\SiteSettings;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -39,11 +45,15 @@ class ModerationController extends Controller
 
     public function index(): Response
     {
+        $trust = app(ReporterTrust::class)->for(array_values(array_merge(
+            MessageReport::query()->where('status', MessageReport::PENDING)->pluck('reporter_id')->all(),
+            UserReport::query()->where('status', UserReport::PENDING)->pluck('reporter_id')->all(),
+        )));
         $pending = MessageReport::query()->where('status', MessageReport::PENDING)
             ->with(['reporter', 'message' => fn ($q) => $q->withTrashed()->with(['user', 'conversation'])])
             ->latest('id')->limit(200)->get()
             ->groupBy('message_id')
-            ->map(function ($group) {
+            ->map(function ($group) use ($trust) {
                 /** @var MessageReport $first */
                 $first = $group->first();
                 $message = $first->message;
@@ -52,8 +62,14 @@ class ModerationController extends Controller
                     'id' => $first->id,
                     'count' => $group->count(),
                     'reasons' => $group->pluck('reason')->unique()->map(fn (string $r) => MessageReport::REASONS[$r] ?? $r)->values(),
+                    // Безпека дітей — завжди вгорі черги.
+                    'urgent' => $group->contains('reason', 'child_safety'),
+                    // Оцінка ШІ (плагін «ai_moderation»): high піднімає скаргу вище.
+                    'ai' => $group->pluck('ai_verdict')->filter()->first(),
                     'comments' => $group->pluck('comment')->filter()->values(),
                     'reporters' => $group->map(fn (MessageReport $r) => $r->reporter?->name)->filter()->values(),
+                    // Довірений скаржник (часто скаржиться по ділу) піднімає скаргу вище.
+                    'trusted' => $group->contains(fn (MessageReport $r) => $trust[$r->reporter_id]['trusted'] ?? false),
                     'created_at' => $first->created_at->toIso8601String(),
                     'message' => $message instanceof Message ? [
                         'id' => $message->id,
@@ -65,13 +81,13 @@ class ModerationController extends Controller
                         'chat' => $message->conversation->title ?? ($message->conversation->family_id ? 'Чат сім’ї' : 'Особисте листування'),
                     ] : null,
                 ];
-            })->values();
+            })->sortByDesc(fn (array $row) => ($row['urgent'] ? 10 : 0) + ($row['trusted'] ? 4 : 0) + (['high' => 3, 'medium' => 2, 'low' => 1][$row['ai']['severity'] ?? ''] ?? 0))->values();
 
         $people = UserReport::query()->where('status', UserReport::PENDING)
             ->with(['user', 'reporter'])
             ->latest('id')->limit(200)->get()
             ->groupBy('user_id')
-            ->map(function ($group) {
+            ->map(function ($group) use ($trust) {
                 /** @var UserReport $first */
                 $first = $group->first();
 
@@ -80,11 +96,16 @@ class ModerationController extends Controller
                     'user' => $first->user?->toCard(),
                     'count' => $group->count(),
                     'reasons' => $group->pluck('reason')->unique()->map(fn (string $r) => UserReport::REASONS[$r] ?? $r)->values(),
+                    'urgent' => $group->contains('reason', 'child_safety'),
+                    // Оцінка ШІ (плагін «ai_moderation»): high піднімає скаргу вище.
+                    'ai' => $group->pluck('ai_verdict')->filter()->first(),
                     'comments' => $group->pluck('comment')->filter()->values(),
                     'reporters' => $group->map(fn (UserReport $r) => $r->reporter?->name)->filter()->values(),
+                    'trusted' => $group->contains(fn (UserReport $r) => $trust[$r->reporter_id]['trusted'] ?? false),
+                    'strikes' => $first->user ? app(Strikes::class)->activeCount($first->user) : 0,
                     'created_at' => $first->created_at->toIso8601String(),
                 ];
-            })->filter(fn (array $row) => $row['user'] !== null)->values();
+            })->filter(fn (array $row) => $row['user'] !== null)->sortByDesc(fn (array $row) => ($row['urgent'] ? 10 : 0) + ($row['trusted'] ? 4 : 0))->values();
 
         $appeals = Appeal::query()->where('status', Appeal::PENDING)->with('user')->oldest('id')->limit(100)->get()
             ->map(fn (Appeal $a) => [
@@ -95,7 +116,11 @@ class ModerationController extends Controller
                 'banned' => (bool) $a->user?->isBanned(),
                 'ban_reason' => $a->user?->ban_reason,
                 'muted_until' => $a->user?->muted_until?->toIso8601String(),
+                'strikes' => $a->user ? app(Strikes::class)->activeCount($a->user) : 0,
                 'created_at' => $a->created_at->toIso8601String(),
+                // Строк відповіді (SLA): прострочені — першими.
+                'due_at' => $a->created_at->addHours(Appeal::SLA_HOURS)->toIso8601String(),
+                'overdue' => $a->created_at->addHours(Appeal::SLA_HOURS)->isPast(),
             ])->values();
 
         $feedback = Feedback::query()->where('status', Feedback::NEW)->with('user')->latest('id')->limit(100)->get()
@@ -120,6 +145,8 @@ class ModerationController extends Controller
             ])->values();
 
         return Inertia::render('admin/moderation', [
+            'newcomers' => app(Plugins::class)->on('newcomer_review') ? app(NewcomerReview::class)->queue() : [],
+            'reporters' => app(Plugins::class)->on('trusted_reporters') ? app(ReporterTrust::class)->leaders() : [],
             'images' => $images,
             'reports' => $pending,
             'feedback' => $feedback,
@@ -133,6 +160,7 @@ class ModerationController extends Controller
                 'pending' => MessageReport::query()->where('status', MessageReport::PENDING)->distinct('message_id')->count('message_id'),
                 'people' => $people->count(),
                 'appeals' => $appeals->count(),
+                'appeals_overdue' => $appeals->where('overdue', true)->count(),
                 'feedback' => $feedback->count(),
                 'resolved_week' => MessageReport::query()->where('status', '!=', MessageReport::PENDING)->where('updated_at', '>=', now()->subWeek())->count(),
             ],
@@ -161,7 +189,7 @@ class ModerationController extends Controller
     public function resolvePerson(Request $request, User $user, PeopleModeration $moderation): RedirectResponse
     {
         $data = $request->validate([
-            'action' => ['required', Rule::in(['ban', 'mute', 'dismiss'])],
+            'action' => ['required', Rule::in(['ban', 'mute', 'strike', 'dismiss'])],
             'hours' => ['nullable', 'required_if:action,mute', 'integer', Rule::in(self::MUTE_HOURS)],
             'reason' => ['nullable', 'string', 'max:200'],
         ]);
@@ -171,6 +199,7 @@ class ModerationController extends Controller
         Inertia::flash('toast', ['type' => 'success', 'message' => match ($data['action']) {
             'ban' => "{$user->name} заблоковано.",
             'mute' => "{$user->name} не зможе писати до кінця терміну.",
+            'strike' => "{$user->name} отримує страйк.",
             default => 'Скарги відхилено.',
         }]);
 
@@ -242,6 +271,34 @@ class ModerationController extends Controller
             'new_account_link_hours' => (int) $data['new_account_link_hours'],
         ]]);
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Налаштування автомодерації збережено.']);
+
+        return back();
+    }
+
+    /** Довіра до скаржника: true/false — вручну, null — автоматично за точністю скарг. */
+    public function trust(Request $request, User $user): RedirectResponse
+    {
+        $data = $request->validate(['trusted' => ['nullable', 'boolean']]);
+        $user->mergePref(['trusted_reporter' => $data['trusted'] ?? null]);
+        Log::info('admin: reporter trust', ['user' => $user->id, 'trusted' => $data['trusted'] ?? null, 'by' => $request->user()?->id]);
+
+        return back();
+    }
+
+    public function revokeStrike(Request $request, UserStrike $strike): RedirectResponse
+    {
+        $moderator = $request->user();
+        abort_unless($moderator instanceof User, 401);
+        app(Strikes::class)->revoke($strike, $moderator);
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Страйк знято.']);
+
+        return back();
+    }
+
+    /** Новачка переглянуто — з черги прибираємо. */
+    public function reviewed(Request $request, User $user): RedirectResponse
+    {
+        app(NewcomerReview::class)->markReviewed($user, $request->user());
 
         return back();
     }

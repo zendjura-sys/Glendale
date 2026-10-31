@@ -92,7 +92,7 @@ class PeopleController extends Controller
         return response()->json([
             'users' => $this->search(['q' => $q])->limit(8)->get()->map->toCard()->values(),
             'communities' => app(ModuleManager::class)->enabled('communities')
-                ? Community::query()->search($q)->orderByDesc('members_count')->limit(4)->get()->map->toCard()->values()
+                ? Community::query()->where('is_listed', true)->search($q)->orderByDesc('members_count')->limit(4)->get()->map->toCard()->values()
                 : [],
             'hits' => app(SiteSearch::class)->hits($q),
             'recent' => $recent,

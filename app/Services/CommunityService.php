@@ -6,15 +6,23 @@ use App\Models\Community;
 use App\Models\CommunityMember;
 use App\Models\User;
 use App\Notifications\CommunityActivity;
+use App\Services\Chat\ChatBots;
+use App\Services\Communities\CommunityChannels;
+use App\Support\Plugins\Plugins;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class CommunityService
 {
     public const MAX_OWNED = 20;
+
+    /** Скільки питань може бути в анкеті вступу. */
+    public const MAX_QUESTIONS = 5;
 
     /** Слаги, що конфліктують з маршрутами або вводять в оману. */
     public const RESERVED_SLUGS = ['admin', 'create', 'new', 'settings', 'members', 'api', 'gamecon', 'support', 'help'];
@@ -65,37 +73,73 @@ class CommunityService
     /**
      * Вступ або заявка. Повертає статус участі.
      */
-    public function join(Community $community, User $user, bool $invited = false): string
+    /**
+     * @param  array<int|string, string|null>  $answers  Відповіді на анкету (за номером питання)
+     */
+    public function join(Community $community, User $user, bool $invited = false, ?string $password = null, array $answers = []): string
     {
         $existing = $community->membershipFor($user);
+        // Спільнота з паролем: правильний пароль одразу робить учасником (без заявки), запрошення — без пароля.
+        $byPassword = false;
+        if (! $existing && ! $invited && $community->join_password !== null && ! $user->isStaff()) {
+            $this->checkPassword($community, $user, $password);
+            $byPassword = true;
+        }
 
         if ($existing) {
             if ($invited && $existing->status === CommunityMember::STATUS_PENDING) {
                 $existing->update(['status' => CommunityMember::STATUS_ACTIVE]);
                 $this->recount($community);
                 app(CommunityWall::class)->welcome($community, $user);
+                app(ChatBots::class)->greetCommunity($community, $user);
             }
 
             return $existing->fresh()->status;
         }
 
-        $status = $invited || ! $community->isClosed() ? CommunityMember::STATUS_ACTIVE : CommunityMember::STATUS_PENDING;
+        $status = $invited || $byPassword || ! $community->isClosed() ? CommunityMember::STATUS_ACTIVE : CommunityMember::STATUS_PENDING;
 
         $community->memberships()->create([
             'user_id' => $user->id,
             'role' => CommunityMember::ROLE_MEMBER,
             'status' => $status,
+            'answers' => $status === CommunityMember::STATUS_PENDING ? $this->answers($community, $answers) : null,
         ]);
 
         if ($status === CommunityMember::STATUS_PENDING) {
             Notification::send($this->admins($community), new CommunityActivity(CommunityActivity::REQUEST, $user, $community));
         } else {
             app(CommunityWall::class)->welcome($community, $user);
+            app(ChatBots::class)->greetCommunity($community, $user);
         }
 
         $this->recount($community);
 
         return $status;
+    }
+
+    /** Пароль для вступу: 5 помилок за 10 хвилин — пауза, щоб не перебирали. */
+    private function checkPassword(Community $community, User $user, ?string $password): void
+    {
+        $key = 'community-password:'.$community->id.':'.$user->id;
+        if (RateLimiter::tooManyAttempts($key, 5)) {
+            throw ValidationException::withMessages(['password' => 'Забагато спроб. Спробуйте за '.ceil(RateLimiter::availableIn($key) / 60).' хв.']);
+        }
+        if ($password === null || $password === '') {
+            throw ValidationException::withMessages(['password' => 'Щоб вступити, введіть пароль спільноти.']);
+        }
+        if (! Hash::check($password, (string) $community->join_password)) {
+            RateLimiter::hit($key, 600);
+            throw ValidationException::withMessages(['password' => 'Неправильний пароль.']);
+        }
+        RateLimiter::clear($key);
+    }
+
+    /** Новий акаунт: вступ у спільноти, які адмін сайту позначив «для всіх новачків». */
+    public function autoJoin(User $user): void
+    {
+        Community::query()->where('auto_join', true)->get()
+            ->each(fn (Community $community) => $this->join($community, $user, invited: true));
     }
 
     public function leave(Community $community, User $user): void
@@ -111,6 +155,7 @@ class CommunityService
         }
 
         $membership->delete();
+        app(CommunityChannels::class)->forget($community, $user);
         $this->recount($community);
     }
 
@@ -125,6 +170,7 @@ class CommunityService
             $user->notify(new CommunityActivity(CommunityActivity::APPROVED, null, $community));
             $this->recount($community);
             app(CommunityWall::class)->welcome($community, $user);
+            app(ChatBots::class)->greetCommunity($community, $user);
         }
     }
 
@@ -143,6 +189,7 @@ class CommunityService
         );
 
         $targetRow->delete();
+        app(CommunityChannels::class)->forget($community, $target);
         $this->recount($community);
     }
 
@@ -244,5 +291,30 @@ class CommunityService
         return User::query()
             ->whereIn('id', $community->activeMembers()->whereIn('role', [CommunityMember::ROLE_OWNER, CommunityMember::ROLE_ADMIN])->select('user_id'))
             ->get();
+    }
+
+    /**
+     * Анкета вступу: на кожне питання — відповідь (обовʼязкова, якщо плагін увімкнено).
+     *
+     * @param  array<int|string, string|null>  $answers
+     * @return list<array{q: string, a: string}>|null
+     */
+    private function answers(Community $community, array $answers): ?array
+    {
+        $questions = $community->join_questions ?? [];
+        if ($questions === [] || ! app(Plugins::class)->on('join_forms')) {
+            return null;
+        }
+
+        $result = [];
+        foreach ($questions as $i => $question) {
+            $answer = trim((string) ($answers[$i] ?? ''));
+            if ($answer === '') {
+                throw ValidationException::withMessages(['answers' => 'Дайте відповідь на всі питання анкети.']);
+            }
+            $result[] = ['q' => $question, 'a' => mb_substr($answer, 0, 1000)];
+        }
+
+        return $result;
     }
 }

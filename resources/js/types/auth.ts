@@ -11,8 +11,12 @@ export type User = {
     cover_url: string | null;
     is_online: boolean;
     is_verified: boolean;
+    verified_kind?: string | null;
+    account_type?: string | null;
     plus?: PlusMark | null;
     status: string | null;
+    status_emoji?: string | null;
+    status_until?: string | null;
     role: 'user' | 'moderator' | 'admin';
     is_admin: boolean;
     email_verified_at: string | null;
@@ -24,6 +28,7 @@ export type User = {
     network_mode?: string;
     /** Стиль інтерфейсу: flat (основний), hero, material, flex. */
     skin?: string;
+    theme?: 'system' | 'dark' | 'light';
     /** Фон сайту: сцена, чи рухається вона, і відео YouTube (лише з GameCon+). */
     background?: SiteBackgroundPrefs;
     /** Внутрішній номер GameCon (+555 випадковий / +777 куплений). */
@@ -32,6 +37,12 @@ export type User = {
     /** GameCon+ активний до (ISO), null — немає. */
     plus_until?: string | null;
     profanity_mask?: string | null;
+    /** «Показувати, що я слухаю»: інші бачать, що грає (усі джерела). */
+    show_listening?: boolean;
+    morning_digest?: boolean;
+    data_saver?: boolean;
+    streamer_mode?: boolean;
+    notify_sound?: 'off' | 'soft' | 'pixel' | 'arcade' | 'drop';
     created_at: string;
     updated_at: string;
     /** Сумісність зі стартовими компонентами Laravel. */

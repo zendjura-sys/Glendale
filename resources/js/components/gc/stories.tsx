@@ -1,5 +1,6 @@
 import { usePage } from '@inertiajs/react';
 import {
+    BarChart3,
     ChevronLeft,
     ChevronRight,
     Eye,
@@ -12,7 +13,9 @@ import {
     Users,
     X,
 } from 'lucide-react';
+import { usePlugin } from '@/lib/plugins';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { toast } from 'sonner';
 import { UserAvatar } from '@/components/gc/user-avatar';
 import { api, ApiError } from '@/lib/api';
@@ -31,6 +34,14 @@ export type StoryItem = {
     created_at: string;
     seen: boolean;
     views_count: number | null;
+    poll?: StoryPoll | null;
+};
+
+export type StoryPoll = {
+    question: string;
+    options: { text: string; votes: number | null; percent: number | null }[];
+    voted: number | null;
+    total: number | null;
 };
 
 export type StoryGroup = {
@@ -85,6 +96,10 @@ function Composer({
         'friends',
     );
     const [busy, setBusy] = useState(false);
+    const [pollOn, setPollOn] = useState(false);
+    const [question, setQuestion] = useState('');
+    const [options, setOptions] = useState(['', '']);
+    const pollsOn = usePlugin('story_polls');
     const input = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
@@ -104,6 +119,11 @@ function Composer({
         form.append('media', file);
         if (caption.trim()) form.append('caption', caption.trim());
         form.append('privacy', privacy);
+        const filled = options.map((o) => o.trim()).filter(Boolean);
+        if (pollOn && question.trim() && filled.length >= 2) {
+            form.append('poll_question', question.trim());
+            filled.forEach((o) => form.append('poll_options[]', o));
+        }
         if (video && duration)
             form.append(
                 'duration',
@@ -121,13 +141,13 @@ function Composer({
         }
     };
 
-    return (
+    return createPortal(
         <div
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
             onClick={onClose}
         >
             <div
-                className="glass-strong w-full max-w-sm rounded-3xl p-4"
+                className="glass-strong w-full max-w-sm rounded-2xl p-4"
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="mb-3 flex items-center">
@@ -196,6 +216,65 @@ function Composer({
                     placeholder={tr('Підпис (необов’язково)')}
                     className="input-glass mt-3 h-10 w-full rounded-xl px-3 text-sm text-white placeholder:text-white/30 focus:outline-none"
                 />
+                {pollsOn && (
+                    <div className="mt-3 rounded-xl bg-white/[0.04] p-2">
+                        <button
+                            type="button"
+                            onClick={() => setPollOn(!pollOn)}
+                            aria-expanded={pollOn}
+                            className="inline-flex w-full items-center gap-2 rounded-lg px-1.5 py-1 text-sm text-white/75 hover:text-white"
+                        >
+                            <BarChart3 className="size-4" />
+                            {pollOn
+                                ? tr('Прибрати опитування')
+                                : tr('Додати опитування')}
+                        </button>
+                        {pollOn && (
+                            <div className="mt-2 grid gap-2">
+                                <input
+                                    value={question}
+                                    maxLength={80}
+                                    onChange={(e) =>
+                                        setQuestion(e.target.value)
+                                    }
+                                    placeholder={tr('Питання')}
+                                    className="input-glass h-10 w-full rounded-xl px-3 text-sm text-white placeholder:text-white/30 focus:outline-none"
+                                />
+                                {options.map((option, idx) => (
+                                    <input
+                                        key={idx}
+                                        value={option}
+                                        maxLength={40}
+                                        onChange={(e) =>
+                                            setOptions(
+                                                options.map((o, j) =>
+                                                    j === idx
+                                                        ? e.target.value
+                                                        : o,
+                                                ),
+                                            )
+                                        }
+                                        placeholder={tr('Варіант {n}', {
+                                            n: idx + 1,
+                                        })}
+                                        className="input-glass h-9 w-full rounded-xl px-3 text-sm text-white placeholder:text-white/30 focus:outline-none"
+                                    />
+                                ))}
+                                {options.length < 4 && (
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            setOptions([...options, ''])
+                                        }
+                                        className="text-left text-xs text-white/55 hover:text-white"
+                                    >
+                                        {tr('+ ще варіант')}
+                                    </button>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                )}
                 <div className="mt-3 flex rounded-xl bg-white/[0.04] p-1 text-sm">
                     {(
                         [
@@ -229,6 +308,112 @@ function Composer({
                     {tr('Опублікувати')}
                 </button>
             </div>
+        </div>,
+        document.body,
+    );
+}
+
+/**
+ * Опитування в історії: до голосу — кнопки варіантів, після (і автору) — результати,
+ * що оновлюються наживо, поки історія відкрита.
+ */
+function StoryPollCard({
+    storyId,
+    own,
+    initial,
+    onChange,
+}: {
+    storyId: number;
+    own: boolean;
+    initial: StoryPoll;
+    onChange: (poll: StoryPoll) => void;
+}) {
+    const [poll, setPoll] = useState(initial);
+    const [busy, setBusy] = useState(false);
+    const reveal = own || poll.voted !== null;
+
+    useEffect(() => {
+        if (!reveal) return;
+        const timer = window.setInterval(() => {
+            void api<{ poll: StoryPoll | null }>(
+                'GET',
+                `/stories/${storyId}/poll`,
+            )
+                .then((r) => r.poll && setPoll(r.poll))
+                .catch(() => undefined);
+        }, 4000);
+
+        return () => window.clearInterval(timer);
+    }, [reveal, storyId]);
+
+    useEffect(() => {
+        onChange(poll);
+    }, [poll, onChange]);
+
+    const vote = async (option: number) => {
+        setBusy(true);
+        try {
+            const r = await api<{ poll: StoryPoll }>(
+                'POST',
+                `/stories/${storyId}/vote`,
+                { option },
+            );
+            setPoll(r.poll);
+        } catch (e) {
+            failed(e, tr('Не вдалося проголосувати'));
+        } finally {
+            setBusy(false);
+        }
+    };
+
+    return (
+        <div className="absolute inset-x-6 top-1/2 z-10 -translate-y-1/2 rounded-2xl bg-black/55 p-3 backdrop-blur-md">
+            <p className="mb-2.5 text-center text-sm font-semibold break-words text-white">
+                {poll.question}
+            </p>
+            <div className="grid gap-1.5">
+                {poll.options.map((option, idx) =>
+                    reveal ? (
+                        <div
+                            key={idx}
+                            className="relative overflow-hidden rounded-xl bg-white/10 px-3 py-2"
+                        >
+                            <div
+                                className={cn(
+                                    'absolute inset-y-0 left-0 transition-all duration-500 motion-reduce:transition-none',
+                                    poll.voted === idx
+                                        ? 'bg-primary/60'
+                                        : 'bg-white/20',
+                                )}
+                                style={{ width: `${option.percent ?? 0}%` }}
+                            />
+                            <div className="relative flex items-center gap-2 text-sm text-white">
+                                <span className="min-w-0 flex-1 break-words">
+                                    {option.text}
+                                </span>
+                                <span className="font-semibold tabular-nums">
+                                    {option.percent ?? 0}%
+                                </span>
+                            </div>
+                        </div>
+                    ) : (
+                        <button
+                            key={idx}
+                            type="button"
+                            disabled={busy}
+                            onClick={() => void vote(idx)}
+                            className="rounded-xl bg-white/90 px-3 py-2 text-sm font-semibold break-words text-gc-ink transition hover:bg-white disabled:opacity-60"
+                        >
+                            {option.text}
+                        </button>
+                    ),
+                )}
+            </div>
+            {reveal && (
+                <p className="mt-2 text-center text-[11px] text-white/60">
+                    {tr('Голосів: {n}', { n: poll.total ?? 0 })}
+                </p>
+            )}
         </div>
     );
 }
@@ -365,7 +550,7 @@ function StoryViewer({
         }
     };
 
-    return (
+    return createPortal(
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/95">
             <div className="relative flex h-full max-h-[100dvh] w-full max-w-[min(100vw,calc(100dvh*9/16))] flex-col overflow-hidden bg-black sm:rounded-2xl">
                 {/* Прогрес */}
@@ -468,6 +653,15 @@ function StoryViewer({
                             {story.caption}
                         </p>
                     )}
+                    {story.poll && (
+                        <StoryPollCard
+                            key={story.id}
+                            storyId={story.id}
+                            own={group.own}
+                            initial={story.poll}
+                            onChange={(poll) => (story.poll = poll)}
+                        />
+                    )}
                 </div>
 
                 {/* Низ: автор бачить перегляди, інші — відповідь і реакції */}
@@ -526,7 +720,7 @@ function StoryViewer({
                 </div>
 
                 {viewers && (
-                    <div className="absolute inset-x-0 bottom-0 z-30 max-h-[60%] overflow-y-auto rounded-t-3xl bg-[#0d1222] p-4">
+                    <div className="gc-float-menu absolute inset-x-0 bottom-0 z-30 max-h-[60%] overflow-y-auto rounded-t-2xl bg-[#0d1222] p-4">
                         <div className="mb-2 flex items-center">
                             <h3 className="flex-1 text-sm font-semibold text-white">
                                 {tr('Переглянули (')}
@@ -582,7 +776,8 @@ function StoryViewer({
                     <ChevronRight className="size-6" />
                 </button>
             </div>
-        </div>
+        </div>,
+        document.body,
     );
 }
 
@@ -613,7 +808,7 @@ export function StoriesBar() {
 
     return (
         <>
-            <div className="glass flex [scrollbar-width:none] gap-3 overflow-x-auto rounded-3xl p-3">
+            <div className="glass flex [scrollbar-width:none] gap-3 overflow-x-auto rounded-2xl p-3">
                 <button
                     type="button"
                     onClick={() =>
@@ -652,7 +847,7 @@ export function StoriesBar() {
                             <Plus className="size-3" />
                         </span>
                     </span>
-                    <span className="w-full truncate text-center text-xs text-white/70">
+                    <span className="w-full text-center text-xs leading-tight break-words text-white/70">
                         {tr('Ваша історія')}
                     </span>
                 </button>
@@ -671,7 +866,7 @@ export function StoriesBar() {
                                     showOnline={false}
                                 />
                             </Ring>
-                            <span className="w-full truncate text-center text-xs text-white/70">
+                            <span className="w-full text-center text-xs leading-tight break-words text-white/70">
                                 {group.user.first_name}
                             </span>
                         </button>

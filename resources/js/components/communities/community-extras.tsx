@@ -3,6 +3,7 @@ import type { FormEvent } from 'react';
 import { SettingsCard } from '@/layouts/settings/layout';
 import { formatDate } from '@/lib/format';
 import { tr } from '@/lib/i18n';
+import { usePlugin } from '@/lib/plugins';
 import { cn } from '@/lib/utils';
 
 export type CommunityExtras = {
@@ -11,8 +12,11 @@ export type CommunityExtras = {
     welcome: string;
     banned_words: string;
     post_tags: string;
+    join_questions?: string;
+    wiki_open?: boolean;
     slow_mode: number;
     premoderation: boolean;
+    weekly_digest?: boolean;
 };
 
 export type CommunityStats = {
@@ -46,13 +50,21 @@ export function RulesForm({
     slowModes: number[];
 }) {
     const form = useForm(extras);
+    const joinForms = usePlugin('join_forms');
+    const wikiOn = usePlugin('community_wiki');
     const { data, setData, errors } = form;
     const submit = (event: FormEvent) => {
         event.preventDefault();
         form.patch(`/c/${slug}/settings/rules`, { preserveScroll: true });
     };
     const area = (
-        name: 'rules' | 'handbook' | 'welcome' | 'banned_words' | 'post_tags',
+        name:
+            | 'rules'
+            | 'handbook'
+            | 'welcome'
+            | 'banned_words'
+            | 'post_tags'
+            | 'join_questions',
         label: string,
         hint: string,
         rows: number,
@@ -64,7 +76,7 @@ export function RulesForm({
                 {hint}
             </span>
             <textarea
-                value={data[name]}
+                value={data[name] ?? ''}
                 onChange={(event) => setData(name, event.target.value)}
                 rows={rows}
                 maxLength={max}
@@ -110,6 +122,16 @@ export function RulesForm({
                         3,
                         1000,
                     )}
+                    {joinForms &&
+                        area(
+                            'join_questions',
+                            tr('Анкета вступу'),
+                            tr(
+                                'Для закритої спільноти: до 5 питань, по одному в рядку. Відповіді — у заявці.',
+                            ),
+                            3,
+                            1500,
+                        )}
                     <div className="grid gap-4 sm:grid-cols-2">
                         {area(
                             'banned_words',
@@ -174,6 +196,54 @@ export function RulesForm({
                                 <span className="block text-xs text-white/45">
                                     {tr(
                                         'Записи учасників з’являються після схвалення редактором.',
+                                    )}
+                                </span>
+                            </span>
+                        </label>
+                        {wikiOn && (
+                            <label className="flex items-start gap-3 rounded-2xl border border-white/[0.07] p-3.5 text-sm text-white/80">
+                                <input
+                                    type="checkbox"
+                                    checked={data.wiki_open ?? false}
+                                    onChange={(event) =>
+                                        setData(
+                                            'wiki_open',
+                                            event.target.checked,
+                                        )
+                                    }
+                                    className="mt-0.5 size-4 accent-gc-indigo"
+                                />
+                                <span>
+                                    <span className="block font-medium text-white">
+                                        {tr('Вікі редагують усі')}
+                                    </span>
+                                    <span className="block text-xs text-white/45">
+                                        {tr(
+                                            'Інакше — лише керівники. Кожна правка зберігається в історії.',
+                                        )}
+                                    </span>
+                                </span>
+                            </label>
+                        )}
+                        <label className="flex items-start gap-3 rounded-2xl border border-white/[0.07] p-3.5 text-sm text-white/80">
+                            <input
+                                type="checkbox"
+                                checked={data.weekly_digest ?? false}
+                                onChange={(event) =>
+                                    setData(
+                                        'weekly_digest',
+                                        event.target.checked,
+                                    )
+                                }
+                                className="mt-0.5 size-4 accent-gc-indigo"
+                            />
+                            <span>
+                                <span className="block font-medium text-white">
+                                    {tr('Тижневий дайджест')}
+                                </span>
+                                <span className="block text-xs text-white/45">
+                                    {tr(
+                                        'Щопонеділка — запис від спільноти з п’ятьма найкращими записами тижня.',
                                     )}
                                 </span>
                             </span>

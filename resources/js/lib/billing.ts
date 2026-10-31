@@ -22,6 +22,18 @@ export function openPurchase(request: PurchaseRequest): void {
     );
 }
 
+/**
+ * Розрахункові одиниці балансу GameCon (зберігаються в сотих частках): «250 од.».
+ * Це не гроші — лише обсяг передплачених послуг порталу (див. Публічну оферту).
+ */
+export function units(hundredths: number): string {
+    return tr('{n} од.', {
+        n: (hundredths / 100).toLocaleString('uk-UA', {
+            maximumFractionDigits: 2,
+        }),
+    });
+}
+
 /** Тарифи з адмінки (ціни в гривнях). */
 export function useProducts(): Record<string, BillingProduct> {
     return usePage().props.billing?.products ?? {};

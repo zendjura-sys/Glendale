@@ -16,10 +16,22 @@ import { usePlayer } from '@/lib/player';
 import { cn, dockedAboveNav } from '@/lib/utils';
 import type { ConversationSummary } from '@/types';
 import { ConversationAvatar } from './conversation-avatar';
+import { useStoredDraft } from '@/lib/drafts';
 import { tr } from '@/lib/i18n';
 
 function Preview({ conversation }: { conversation: ConversationSummary }) {
     const last = conversation.last_message;
+    const draft = useStoredDraft(`chat:${conversation.id}`);
+
+    // Незакінчене повідомлення — як у Telegram: «Чернетка: …».
+    if (draft.trim()) {
+        return (
+            <span>
+                <span className="text-rose-300">{tr('Чернетка:')}</span>{' '}
+                {draft.split('\n')[0]}
+            </span>
+        );
+    }
 
     if (!last) {
         return <span className="text-white/35">{tr('Немає повідомлень')}</span>;
@@ -155,7 +167,13 @@ export function ConversationList({
                                             {conversation.title}
                                         </span>
                                         {conversation.peer?.is_verified && (
-                                            <VerifiedBadge className="size-3.5 shrink-0" />
+                                            <VerifiedBadge
+                                                kind={
+                                                    conversation.peer
+                                                        ?.verified_kind
+                                                }
+                                                className="size-3.5 shrink-0"
+                                            />
                                         )}
                                         {conversation.peer?.plus && (
                                             <PlusBadge className="size-3.5" />
@@ -176,7 +194,10 @@ export function ConversationList({
                                         )}
                                     </span>
                                     <span className="mt-0.5 flex items-center gap-2">
-                                        <span className="min-w-0 flex-1 truncate text-[13px] text-white/50">
+                                        <span
+                                            data-private
+                                            className="min-w-0 flex-1 truncate text-[13px] text-white/50"
+                                        >
                                             {conversation.folder && (
                                                 <span className="text-white/35">
                                                     {conversation.folder} ·{' '}

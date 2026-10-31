@@ -1,11 +1,11 @@
 import { Head, InfiniteScroll, Link, router } from '@inertiajs/react';
+import { GridSkeleton } from '@/components/gc/skeletons';
 import {
     Bookmark,
     Clapperboard,
     Clock,
     Film,
     Info,
-    Loader2,
     Play,
     Search,
     SlidersHorizontal,
@@ -81,16 +81,20 @@ function TmdbLookup({ query }: { query: string }) {
 
     if (found === null) {
         return (
-            <section className="glass flex items-center gap-3 rounded-3xl p-4 text-sm text-white/65">
-                <Loader2 className="size-4 animate-spin" />
-                {tr('У каталозі немає — шукаємо в TMDB і додаємо знайдене…')}
+            <section className="space-y-3">
+                <p className="text-sm text-white/65">
+                    {tr(
+                        'У каталозі немає — шукаємо в TMDB і додаємо знайдене…',
+                    )}
+                </p>
+                <GridSkeleton count={5} />
             </section>
         );
     }
     if (found.length === 0) return null;
 
     return (
-        <section className="glass rounded-3xl p-4 sm:p-5">
+        <section className="glass rounded-2xl p-4 sm:p-5">
             <h2 className="font-display text-lg font-semibold text-white">
                 {tr('Знайдено в TMDB')}
                 <span className="ml-2 text-sm font-normal text-white/40">
@@ -145,7 +149,7 @@ function Hero({ items }: { items: MovieFeatured[] }) {
 
     return (
         <section
-            className="relative isolate overflow-hidden rounded-3xl border border-white/[0.08] bg-gc-ink"
+            className="relative isolate overflow-hidden rounded-2xl border border-white/[0.08] bg-gc-ink"
             onMouseEnter={() => setPaused(true)}
             onMouseLeave={() => setPaused(false)}
         >
@@ -169,7 +173,7 @@ function Hero({ items }: { items: MovieFeatured[] }) {
                             )}
                         />
                     ) : (
-                        <div className="size-full bg-[radial-gradient(80%_80%_at_70%_20%,#6d5dfc55,transparent),radial-gradient(60%_60%_at_10%_90%,#f04fd833,transparent)]" />
+                        <div className="size-full bg-[radial-gradient(80%_80%_at_70%_20%,#2f7bff55,transparent),radial-gradient(60%_60%_at_10%_90%,#0ea5e933,transparent)]" />
                     )}
                 </div>
             ))}
@@ -181,7 +185,7 @@ function Hero({ items }: { items: MovieFeatured[] }) {
                     key={movie.id}
                     className="max-w-xl min-w-0 flex-1 animate-rise"
                 >
-                    <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/[0.07] px-2.5 py-1 text-xs font-semibold text-white/70 backdrop-blur">
+                    <span className="inline-flex items-center gap-1.5 rounded-chip border border-white/15 bg-white/[0.07] px-2.5 py-1 text-xs font-semibold text-white/70 backdrop-blur">
                         <Sparkles className="size-3.5 text-gc-amber" />
                         {tr('Рекомендуємо')}
                     </span>
@@ -333,11 +337,11 @@ export default function CinemaIndex({
                 {!filtered && featured.length > 0 ? (
                     <Hero items={featured} />
                 ) : (
-                    <section className="glass relative overflow-hidden rounded-3xl p-5 sm:p-7">
+                    <section className="glass relative overflow-hidden rounded-2xl p-5 sm:p-7">
                         <div className="pointer-events-none absolute -top-24 -right-16 size-80 rounded-full bg-gc-indigo/25 blur-3xl" />
                         <div className="pointer-events-none absolute -bottom-36 left-10 size-80 rounded-full bg-gc-pink/15 blur-3xl" />
                         <div className="relative">
-                            <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.05] px-2.5 py-1 text-xs font-semibold text-white/60">
+                            <span className="inline-flex items-center gap-1.5 rounded-chip border border-white/10 bg-white/[0.05] px-2.5 py-1 text-xs font-semibold text-white/60">
                                 <Clapperboard className="size-3.5 text-gc-lilac-400" />
                                 {tr('Кіно GameCon')}
                             </span>
@@ -367,7 +371,7 @@ export default function CinemaIndex({
                     </section>
                 )}
 
-                <div className="glass space-y-3 rounded-3xl p-3">
+                <div className="glass space-y-3 rounded-2xl p-3">
                     <div className="flex flex-col gap-3 md:flex-row md:items-center">
                         <label className="input-glass flex h-11 min-h-11 flex-1 items-center gap-2 rounded-xl px-3.5">
                             <Search className="size-4 text-white/40" />
@@ -547,14 +551,18 @@ export default function CinemaIndex({
                         }
                     />
                 ) : (
-                    <section className="glass rounded-3xl p-4 sm:p-5">
+                    <section className="glass rounded-2xl p-4 sm:p-5">
                         <h2 className="mb-4 font-display text-lg font-semibold text-white">
                             {filtered ? tr('Результати') : tr('Каталог')}
                             <span className="ml-2 text-sm font-normal text-white/40">
                                 {total}
                             </span>
                         </h2>
-                        <InfiniteScroll data="movies" preserveUrl>
+                        <InfiniteScroll
+                            data="movies"
+                            loading={<GridSkeleton count={5} />}
+                            preserveUrl
+                        >
                             <div className={movieGridClass}>
                                 {movies.data.map((movie) => (
                                     <MovieTile key={movie.id} movie={movie} />
@@ -565,7 +573,7 @@ export default function CinemaIndex({
                 )}
                 {requestOn && (
                     <form
-                        className="glass flex flex-wrap items-end gap-2 rounded-3xl p-4"
+                        className="glass flex flex-wrap items-end gap-2 rounded-2xl p-4"
                         onSubmit={(event) => {
                             event.preventDefault();
                             const data = new FormData(event.currentTarget);

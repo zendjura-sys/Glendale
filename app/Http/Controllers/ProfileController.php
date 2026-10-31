@@ -12,22 +12,35 @@ use App\Models\User;
 use App\Models\UserBlock;
 use App\Models\UserReport;
 use App\Models\UserStream;
+use App\Services\Accounts\AccountTypes;
 use App\Services\Achievements;
 use App\Services\FriendshipService;
+use App\Services\GameCard;
+use App\Services\Games\Backlog;
+use App\Services\Games\GamerCompatibility;
 use App\Services\ImageStorage;
 use App\Services\Messenger;
 use App\Services\Moderation\PeopleModeration;
 use App\Services\MusicService;
+use App\Services\Party\ReadyBoard;
 use App\Services\Phones\PhoneNumbers;
 use App\Services\PhotoService;
 use App\Services\PlayedTogether;
 use App\Services\PostCards;
 use App\Services\PostPresenter;
 use App\Services\Presence\SteamPresence;
+use App\Services\Profile\MySetup;
+use App\Services\Profile\StreamSchedule;
+use App\Services\Quests\SeasonPass;
 use App\Services\Streams\LiveStreams;
+use App\Services\Thanks;
 use App\Support\Backgrounds;
+use App\Support\GameTheme;
 use App\Support\Modules\ModuleManager;
+use App\Support\NetworkModes;
+use App\Support\PageSeo;
 use App\Support\Palette;
+use App\Support\Plugins\Plugins;
 use App\Support\PlusStyle;
 use App\Support\ProfileBlocks;
 use chillerlan\QRCode\Output\QROutputInterface;
@@ -37,6 +50,8 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -121,18 +136,32 @@ class ProfileController extends Controller
             && $user->birthday->month === now()->month
             && $user->birthday->day === now()->day;
 
+        $viewer = $request->user();
+        $compatibility = $viewer && $viewer->id !== $user->id && app(Plugins::class)->on('gamer_compatibility')
+            ? app(GamerCompatibility::class)->between($viewer, $user) : null;
+
         return Inertia::render('profile/show', [
+            'compatibility' => $compatibility,
+            'setup' => app(Plugins::class)->on('my_setup') ? app(MySetup::class)->visibleFor($user, $viewer) : null,
+            'account' => app(Plugins::class)->on('account_types') ? $this->accountCard($user) : null,
+            'streamSchedule' => app(Plugins::class)->on('stream_schedule') && $canSeeContent ? app(StreamSchedule::class)->of($user) : null,
+            'steamAchievements' => app(Plugins::class)->on('steam_achievements') && $user->steam_id !== null && ! $user->is_private,
             'profile' => [
                 ...$user->toCard(),
                 'last_name' => $user->last_name,
                 'cover_url' => $user->cover_url,
-                // GameCon+: власні кольори сторінки (з палітр сайту).
-                'accent' => $user->isPlus() ? Palette::colors((string) ($user->plus_style['accent'] ?? '')) : null,
-                'header_fx' => $user->isPlus() ? PlusStyle::header($user->plus_style) : null,
+                // GameCon+: коротке відео замість обкладинки.
+                // Є платні рівні підписки — на сторінці кнопка «Підтримати».
+                'has_tiers' => app(Plugins::class)->on('author_subscriptions') && DB::table('author_tiers')->where('user_id', $user->id)->exists(),
+                'cover_video_url' => $user->cover_video_path && $user->isPlus() && app(Plugins::class)->on('plus_video_cover') ? Storage::disk('public')->url($user->cover_video_path) : null,
+                // GameCon+: власні кольори сторінки (з палітр сайту); інакше — кольори улюбленої гри.
+                'accent' => ($user->isPlus() ? Palette::colors((string) ($user->plus_style['accent'] ?? '')) : null) ?? GameTheme::colors($user),
+                // Ефект шапки: з GameCon+ або вдягнутий із сезонного пропуску.
+                'header_fx' => ($user->isPlus() ? PlusStyle::header($user->plus_style) : null) ?? SeasonPass::header($user->cosmetics),
                 // GameCon+: власний відеофон власника видно й гостям його сторінки.
                 'background_video' => $canSeeContent ? Backgrounds::for($user)['video'] : null,
                 // Внутрішній номер (якщо власник не сховав його з профілю); can_call — чи можна набрати.
-                'phone' => $this->phoneCard($request->user(), $user),
+                'phone' => app(PhoneNumbers::class)->profileCard($request->user(), $user),
                 'about' => $canSeeContent ? $user->about : null,
                 'city' => $user->city,
                 'birthday' => $canSeeContent ? $user->birthday?->toDateString() : null,
@@ -143,15 +172,15 @@ class ProfileController extends Controller
                 'joined_at' => $user->created_at?->toIso8601String(),
                 'role' => $user->role,
                 'pin' => $this->pinCard($user),
-                'looking_for_group' => (bool) $user->pref('looking_for_group'),
+                'looking_for_group' => app(Plugins::class)->on('looking_for_group') && (bool) $user->pref('looking_for_group'),
                 'languages' => array_values(array_filter((array) $user->pref('languages', []), 'is_string')),
-                'platforms' => $canSeeContent ? $this->platforms($user) : null,
+                'platforms' => $canSeeContent && $modules->enabled('games') ? $this->platforms($user) : null,
                 'alias' => $mark?->nickname,
                 'note' => $mark?->note,
                 'list' => $mark?->list,
             ],
-            'steamLibrary' => $canSeeContent ? app(SteamPresence::class)->library($user) : [],
-            'together' => $canSeeContent ? app(PlayedTogether::class)->cards($user, owner: $viewer?->id === $user->id) : [],
+            'steamLibrary' => $canSeeContent && $modules->enabled('games') ? app(SteamPresence::class)->library($user) : [],
+            'together' => $canSeeContent && ($modules->enabled('games') || $modules->enabled('servers')) ? app(PlayedTogether::class)->cards($user, owner: $viewer?->id === $user->id) : [],
             'togetherOff' => $viewer?->id === $user->id && (bool) $user->pref('together_off'),
             'relation' => $relation,
             'canSeeContent' => $canSeeContent,
@@ -186,7 +215,7 @@ class ProfileController extends Controller
                     ->values()
                     ->all()
                 : [],
-            'blockOrder' => ProfileBlocks::normalize($user->pref('profile_blocks')),
+            'blockOrder' => ProfileBlocks::visible($user->pref('profile_blocks')),
             'canMessage' => $viewer !== null && $messenger->canMessage($viewer, $user),
             'canPost' => $viewer !== null && in_array($relation, [FriendshipService::SELF, FriendshipService::FRIENDS], true),
             'stats' => [
@@ -194,6 +223,8 @@ class ProfileController extends Controller
                 'posts' => $user->posts()->where('is_draft', false)->where(fn ($query) => $query->whereNull('publish_at')->orWhere('publish_at', '<=', now()))->count(),
                 'photos' => $photoCount,
                 'mutual' => $viewer && $relation !== FriendshipService::SELF ? $this->friendships->mutualCount($viewer, $user) : 0,
+                // Подяки за гіди й корисні коментарі.
+                'thanks' => app(Plugins::class)->on('thanks') ? app(Thanks::class)->received($user) : 0,
             ],
             'friends' => $canSeeContent ? User::query()
                 ->whereIn('id', $friendIds)
@@ -203,8 +234,14 @@ class ProfileController extends Controller
                 ->map->toCard()
                 ->all() : [],
             'photos' => $photoItems,
+            // «Готовий грати зараз» — бачать ті, кому видно профіль.
+            'ready' => $viewer !== null && $canSeeContent && app(Plugins::class)->on('ready_to_play') ? app(ReadyBoard::class)->mine($user)?->toCard() : null,
+            // Беклог ігор: у що грає зараз і скільки ігор у кожному стані.
+            'backlog' => $viewer !== null && $canSeeContent && $modules->enabled('games') && app(Plugins::class)->on('game_backlog')
+                ? [...app(Backlog::class)->summary($user), 'href' => '/games/backlog/'.$user->username]
+                : null,
             'achievements' => app(Achievements::class)->for($user),
-            'stream' => ($stream = UserStream::query()->where('user_id', $user->id)->first()) ? app(LiveStreams::class)->card($stream, $request->getHost()) : null,
+            'stream' => app(NetworkModes::class)->featuresFor($viewer)['live'] && ($stream = UserStream::query()->where('user_id', $user->id)->first()) ? app(LiveStreams::class)->card($stream, $request->getHost()) : null,
             'characters' => $canSeeContent && $modules->enabled('servers') ? CharacterController::cards(player: $user) : [],
             'photosHref' => $modules->enabled('photos') ? '/photos/u/'.$user->username : null,
             'audio' => $modules->enabled('music') && $canSeeContent ? [
@@ -213,7 +250,7 @@ class ProfileController extends Controller
             ] : null,
             'nowPlaying' => $modules->enabled('music') && $canSeeContent ? Inertia::defer(fn () => app(MusicService::class)->currentFor($user, $viewer)) : null,
             'posts' => Inertia::scroll(fn () => $posts->setCollection(collect($items))),
-        ]);
+        ])->withViewData(PageSeo::profile($user, $canSeeContent));
     }
 
     public function card(User $user): Response
@@ -228,8 +265,14 @@ class ProfileController extends Controller
             'scale' => 6,
         ])))->render($url);
 
+        // Game Card: закритий профіль стороннім показує лише публічне (рівень, сім’ю, клан).
+        $viewer = request()->user();
+        $full = ! $user->is_private || ($viewer !== null && ($viewer->id === $user->id || $viewer->isStaff()
+            || $this->friendships->status($viewer, $user) === FriendshipService::FRIENDS));
+
         return Inertia::render('profile/card', [
             'profile' => $user->toCard(),
+            'game' => app(GameCard::class)->for($user, $full),
             'url' => $url,
             'qr' => preg_replace('/^<\?xml[^>]*>\s*/', '', $svg) ?: $svg,
         ]);
@@ -372,6 +415,37 @@ class ProfileController extends Controller
         return app(PostCards::class)->resolve((string) $pin['kind'], (int) $pin['id']);
     }
 
+    /** GameCon+: відеообкладинка — MP4/WebM до 15 МБ, без звуку, по колу. */
+    public function updateCoverVideo(Request $request): RedirectResponse
+    {
+        app(Plugins::class)->ensure('plus_video_cover');
+        $user = $request->user();
+        abort_unless($user->isPlus(), 403, 'Відеообкладинка — у GameCon+.');
+        $request->validate(['video' => ['required', 'file', 'mimetypes:video/mp4,video/webm', 'max:15360']], ['video.mimetypes' => 'Додайте відео MP4 або WebM.']);
+        $file = $request->file('video');
+        abort_if($file === null, 422);
+        $path = $file->store('covers/video/'.now()->format('Y/m'), 'public');
+        abort_if($path === false, 500);
+        if ($user->cover_video_path) {
+            Storage::disk('public')->delete($user->cover_video_path);
+        }
+        $user->forceFill(['cover_video_path' => $path])->save();
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Відеообкладинку встановлено.']);
+
+        return back();
+    }
+
+    public function destroyCoverVideo(Request $request): RedirectResponse
+    {
+        $user = $request->user();
+        if ($user->cover_video_path) {
+            Storage::disk('public')->delete($user->cover_video_path);
+        }
+        $user->forceFill(['cover_video_path' => null])->save();
+
+        return back();
+    }
+
     public function destroyAvatar(Request $request): RedirectResponse
     {
         $user = $request->user();
@@ -384,14 +458,16 @@ class ProfileController extends Controller
     /**
      * @return array{number: string, tier: string, kind: string, can_call: bool}|null
      */
-    private function phoneCard(?User $viewer, User $owner): ?array
-    {
-        $phones = app(PhoneNumbers::class);
-        if (! app(ModuleManager::class)->enabled('phone') || ! $phones->visibleOnProfile($owner)) {
-            return null;
-        }
-        $number = $phones->current($owner);
 
-        return $number === null ? null : [...$number->toCard(), 'can_call' => $viewer !== null && $phones->reachable($viewer, $owner)];
+    /**
+     * Спеціальний акаунт на сторінці: тип і поля, склад, де людина сама в складі.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function accountCard(User $user): ?array
+    {
+        $card = app(AccountTypes::class)->card($user);
+
+        return $card['type'] === 'personal' && $card['member_of'] === [] ? null : $card;
     }
 }

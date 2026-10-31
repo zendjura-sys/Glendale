@@ -16,9 +16,11 @@ use App\Models\ServerNews;
 use App\Models\ServerPlayer;
 use App\Models\ServerPromotion;
 use App\Models\ServerReview;
+use App\Models\Tournament;
 use App\Models\User;
 use App\Notifications\GroupInvite;
 use App\Services\Billing\Shop;
+use App\Services\Crosspost\Crossposting;
 use App\Services\EventCalendar;
 use App\Services\Events\DiscordEventSync;
 use App\Services\Families\FamilyRating;
@@ -32,6 +34,7 @@ use App\Services\Servers\ServerAnalytics;
 use App\Services\Servers\ServerDirectory;
 use App\Services\Servers\ServerIconFetcher;
 use App\Services\Servers\ServerVotes;
+use App\Services\Servers\Tournaments;
 use App\Support\I18n\Locales;
 use App\Support\Plugins\Plugins;
 use Illuminate\Database\Eloquent\Builder;
@@ -178,7 +181,7 @@ class ServerController extends Controller
             ->sortByDesc('score')
             ->values();
 
-        app(ServerAnalytics::class)->view($server, $request->user());
+        app(ServerAnalytics::class)->view($server, $request->user(), $request->headers->get('referer'));
 
         return Inertia::render('servers/show', [
             'server' => [
@@ -208,6 +211,14 @@ class ServerController extends Controller
             'similar' => $this->similarServers($server),
             'votes' => app(Plugins::class)->on('server_votes') ? app(ServerVotes::class)->forServer($server, $request->user()) : null,
             'characters' => CharacterController::cards(server: $server),
+            'tournaments' => app(Plugins::class)->on('server_tournaments') ? [
+                'list' => array_values(Tournament::query()->with('server')->withCount('entries')->where('gta_server_id', $server->id)
+                    ->whereIn('status', [Tournament::OPEN, Tournament::RUNNING, Tournament::FINISHED])
+                    ->orderByRaw("CASE status WHEN 'running' THEN 0 WHEN 'open' THEN 1 ELSE 2 END")->latest('starts_at')->limit(6)->get()
+                    ->map(fn (Tournament $t) => app(Tournaments::class)->card($t))->all()),
+                'can_host' => app(Tournaments::class)->canHost($server, $request->user()),
+                'sizes' => Tournament::SIZES,
+            ] : null,
             'apps' => $server->owner_id === $request->user()->id || $request->user()->isAdmin() ? $this->apps($server) : null,
             'analytics' => $server->owner_id === $request->user()->id || $request->user()->isStaff() ? Inertia::defer(fn () => app(ServerAnalytics::class)->summary($server)) : null,
             'promotion' => $server->owner_id === $request->user()->id ? [
@@ -319,6 +330,13 @@ class ServerController extends Controller
             'gta_server_id' => $server->id,
             'user_id' => $request->user()->id,
             'body' => trim($data['body']),
+        ]);
+        // Новину — і в Discord / Telegram сервера (автопостинг власника).
+        app(Crossposting::class)->dispatch('server', $server->id, 'news', [
+            'title' => 'Новина сервера '.$server->name,
+            'text' => Str::limit(trim($data['body']), 900),
+            'url' => url('/servers/'.$server->slug),
+            'image' => $server->icon,
         ]);
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Новину опубліковано.']);
 

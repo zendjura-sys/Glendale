@@ -52,8 +52,10 @@ class Checkout
         $target = $this->shop->target($payer, $product, $input);
         $recurring = (bool) ($this->catalog->get($product)['recurring'] ?? false);
         $price = $this->catalog->priceFor($payer, $product);
+        // Поповнення балансу оплачується лише карткою: сам баланс у нього не зараховується.
+        $topup = ($this->catalog->get($product)['kind'] ?? null) === 'balance';
         $promo = app(PromoCodes::class)->discountFor($payer, $product, $price);
-        $credit = min(max(0, (int) $payer->balance), $price - $promo['amount']);
+        $credit = $topup ? 0 : min(max(0, (int) $payer->balance), $price - $promo['amount']);
         $renew = $renew && $recurring;
 
         $order = PaymentOrder::query()->create([

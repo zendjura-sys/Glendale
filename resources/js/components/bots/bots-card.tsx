@@ -1,13 +1,6 @@
 import { router } from '@inertiajs/react';
-import {
-    Bot,
-    Check,
-    Loader2,
-    Megaphone,
-    Send,
-    Shield,
-    Unplug,
-} from 'lucide-react';
+import { ListSkeleton } from '@/components/gc/skeletons';
+import { Bot, Check, Megaphone, Send, Shield, Unplug } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { selectClass } from '@/components/gc/admin';
 import { api } from '@/lib/api';
@@ -20,6 +13,7 @@ type Flags = {
     post_events: boolean;
     post_reminders: boolean;
     post_posts: boolean;
+    post_music: boolean;
 };
 
 type BotsState = {
@@ -174,19 +168,18 @@ export function BotsCard({
 
     if (state === null) {
         return (
-            <section className="glass rounded-3xl p-5">
+            <section className="glass rounded-2xl p-5">
                 <h2 className="flex items-center gap-2 font-display text-lg font-semibold text-white">
                     <Megaphone className="size-5 text-gc-lilac-300" />
                     {tr('Боти Telegram і Discord')}
                 </h2>
-                <p className="mt-3 flex items-center gap-2 text-sm text-white/50">
-                    {error ?? (
-                        <>
-                            <Loader2 className="size-4 animate-spin" />
-                            {tr('Завантажуємо…')}
-                        </>
-                    )}
-                </p>
+                {error ? (
+                    <p className="mt-3 text-sm text-white/50">{error}</p>
+                ) : (
+                    <div className="mt-4">
+                        <ListSkeleton rows={2} avatar="square" card={false} />
+                    </div>
+                )}
             </section>
         );
     }
@@ -225,6 +218,13 @@ export function BotsCard({
                     }
                 />
             )}
+            <Toggle
+                label={tr('Кімнати «Слухати разом»: хто відкрив і що грає')}
+                checked={link.post_music}
+                onChange={(v) =>
+                    act('patch', `/bots/links/${linkId}`, { post_music: v })
+                }
+            />
         </div>
     );
     const footer = (linkId: number) => (
@@ -258,7 +258,7 @@ export function BotsCard({
     const dc = state.discord;
 
     return (
-        <section className="glass space-y-4 rounded-3xl p-5">
+        <section className="glass space-y-4 rounded-2xl p-5">
             <div>
                 <h2 className="flex items-center gap-2 font-display text-lg font-semibold text-white">
                     <Megaphone className="size-5 text-gc-lilac-300" />

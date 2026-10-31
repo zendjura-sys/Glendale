@@ -44,7 +44,7 @@ export function RoleBadge({
     return (
         <span
             className={cn(
-                'inline-flex items-center rounded-full px-2 py-0.5 text-[11px] leading-4 font-semibold',
+                'inline-flex items-center rounded-chip px-2 py-0.5 text-[11px] leading-4 font-semibold',
                 tone,
                 className,
             )}
@@ -77,7 +77,7 @@ export function RoleTitleDialog({
 
     return (
         <Dialog open={open} onOpenChange={(value) => !value && onClose()}>
-            <DialogContent className="glass-strong rounded-3xl border-white/10 p-6 text-white sm:max-w-md">
+            <DialogContent className="glass-strong rounded-dialog border-white/10 p-6 text-white sm:max-w-md">
                 <DialogTitle className="font-display text-lg">
                     {tr('Підпис ролі')}
                 </DialogTitle>

@@ -49,12 +49,13 @@ export function ConnectedAccounts({
 
     return (
         <SettingsCard
+            list
             title={tr('Під’єднані акаунти')}
             description={tr(
                 'Входьте в один клік і показуйте Discord у профілі сім’ї',
             )}
         >
-            <div className="grid gap-3">
+            <div>
                 {connections.map((c) => {
                     const Icon = brands[c.provider].icon;
                     const pending = c.provider === 'google' && google.pending;
@@ -62,12 +63,12 @@ export function ConnectedAccounts({
                     return (
                         <div
                             key={c.provider}
-                            className="flex flex-wrap items-center gap-4 rounded-2xl border border-white/[0.07] bg-white/[0.02] p-4"
+                            className="gc-row flex flex-wrap items-center gap-4 py-3"
                             data-test={`connection-${c.provider}`}
                         >
                             <span
                                 className={cn(
-                                    'flex size-10 shrink-0 items-center justify-center rounded-xl',
+                                    'flex size-9 shrink-0 items-center justify-center rounded-lg',
                                     brands[c.provider].tile,
                                 )}
                             >
@@ -80,7 +81,7 @@ export function ConnectedAccounts({
                                         <CheckCircle2 className="size-4 text-emerald-300" />
                                     )}
                                 </span>
-                                <span className="mt-0.5 block truncate text-xs text-white/45">
+                                <span className="mt-0.5 block text-xs break-words text-white/45">
                                     {c.connected
                                         ? (c.account ?? tr('Під’єднано'))
                                         : c.available

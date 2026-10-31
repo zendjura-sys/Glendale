@@ -8,6 +8,7 @@ import {
     Shield,
     Trash2,
     UsersRound,
+    Megaphone,
 } from 'lucide-react';
 import { useState } from 'react';
 import type { FormEvent } from 'react';
@@ -29,6 +30,8 @@ import { tr } from '@/lib/i18n';
 type AdminCommunity = CommunityCard & {
     owner: UserCard | null;
     posts_count: number;
+    auto_join: boolean;
+    promoted?: boolean;
     created_at: string;
     deleted_at: string | null;
 };
@@ -79,6 +82,13 @@ export default function AdminCommunities({
         router.patch(
             `/admin/communities/${c.id}`,
             { is_verified: value },
+            { preserveScroll: true },
+        );
+
+    const autoJoin = (c: AdminCommunity, value: boolean) =>
+        router.patch(
+            `/admin/communities/${c.id}`,
+            { auto_join: value },
             { preserveScroll: true },
         );
 
@@ -247,7 +257,47 @@ export default function AdminCommunities({
                                 />
                             </label>
                         )}
+                        {!c.deleted_at && (
+                            <label
+                                className="hidden items-center gap-2 text-xs text-white/50 sm:flex"
+                                title={tr(
+                                    'Нові люди одразу після реєстрації вступають у цю спільноту',
+                                )}
+                            >
+                                {tr('Автовступ')}
+                                <Toggle
+                                    checked={c.auto_join}
+                                    onChange={(v) => autoJoin(c, v)}
+                                    label={tr('Автовступ')}
+                                />
+                            </label>
+                        )}
                         <div className="flex shrink-0 gap-1.5">
+                            {!c.deleted_at && (
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        router.post(
+                                            `/admin/communities/${c.id}/promote`,
+                                            { days: c.promoted ? 0 : 7 },
+                                            { preserveScroll: true },
+                                        )
+                                    }
+                                    className={cn(
+                                        'flex size-9 items-center justify-center rounded-xl transition hover:bg-white/[0.06]',
+                                        c.promoted
+                                            ? 'text-gc-lilac-300'
+                                            : 'text-white/45',
+                                    )}
+                                    title={
+                                        c.promoted
+                                            ? tr('Зупинити просування')
+                                            : tr('Просувати 7 днів')
+                                    }
+                                >
+                                    <Megaphone className="size-4" />
+                                </button>
+                            )}
                             {c.deleted_at && (
                                 <button
                                     type="button"
@@ -280,7 +330,7 @@ export default function AdminCommunities({
                     </article>
                 ))}
                 {communities.data.length === 0 && (
-                    <div className="glass rounded-3xl px-6 py-14 text-center text-sm text-white/40">
+                    <div className="glass rounded-2xl px-6 py-14 text-center text-sm text-white/40">
                         {tr('Спільнот не знайдено')}
                     </div>
                 )}

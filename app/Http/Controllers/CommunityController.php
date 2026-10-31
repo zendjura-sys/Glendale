@@ -7,6 +7,10 @@ use App\Models\CommunityMember;
 use App\Models\Photo;
 use App\Models\Post;
 use App\Models\User;
+use App\Services\Billing\CommunityPromotion;
+use App\Services\Billing\Wallet;
+use App\Services\Communities\CommunityExplore;
+use App\Services\Communities\CommunityGuests;
 use App\Services\CommunityService;
 use App\Services\CommunityWall;
 use App\Services\Donations\MonobankJar;
@@ -15,6 +19,7 @@ use App\Services\ImageStorage;
 use App\Services\PhotoService;
 use App\Services\PostPresenter;
 use App\Support\Modules\ModuleManager;
+use App\Support\Plugins\Plugins;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
@@ -36,41 +41,58 @@ class CommunityController extends Controller
         private readonly CommunityWall $wall,
     ) {}
 
-    public function index(Request $request): Response
+    /**
+     * Мої спільноти, ті, якими керую, і каталог «Огляд». Каталог відкритий і гостям (без входу) —
+     * з добірками й сортуванням; спільноти, приховані власником, у ньому не показуються.
+     */
+    public function index(Request $request, CommunityExplore $explore): Response
     {
         $user = $request->user();
-        $joined = $this->communities->joinedIds($user);
-        $managed = $this->communities->managedIds($user);
-        $tab = in_array($request->query('tab'), ['mine', 'managed', 'discover'], true)
+        $exploreOn = app(Plugins::class)->on('community_explore');
+        $joined = $user ? $this->communities->joinedIds($user) : [];
+        $managed = $user ? $this->communities->managedIds($user) : [];
+        $tab = $user && in_array($request->query('tab'), ['mine', 'managed', 'discover'], true)
             ? $request->query('tab')
             : ($joined === [] ? 'discover' : 'mine');
         $term = trim((string) $request->query('q', ''));
         $rawCategory = $request->query('category');
         $category = is_string($rawCategory) && array_key_exists($rawCategory, Community::CATEGORIES) ? $rawCategory : null;
+        $rawSort = $request->query('sort');
+        $sort = $exploreOn && is_string($rawSort) && in_array($rawSort, CommunityExplore::SORTS, true) ? $rawSort : 'popular';
 
         $query = Community::query()
             ->when($tab === 'mine', fn (Builder $q) => $q->whereIn('id', $joined))
             ->when($tab === 'managed', fn (Builder $q) => $q->whereIn('id', $managed))
+            ->when($tab === 'discover', fn (Builder $q) => $q->where('is_listed', true))
             ->when($term !== '', fn (Builder $q) => $q->search($term))
-            ->when($category, $this->restrictCategory(...))
-            ->orderByDesc('is_verified')
-            ->orderByDesc('members_count')
-            ->orderByDesc('id');
+            ->when($category, $this->restrictCategory(...));
+        $query = $explore->sort($exploreOn ? $explore->withStats($query) : $query, $tab === 'discover' ? $sort : 'popular');
 
-        $statuses = CommunityMember::query()->where('user_id', $user->id)->pluck('status', 'community_id');
-        $page = $query->paginate(self::PER_PAGE)->withQueryString();
-        $page->setCollection($page->getCollection()->map(fn (Community $c) => [
+        $statuses = $user ? CommunityMember::query()->where('user_id', $user->id)->pluck('status', 'community_id') : collect();
+        $card = fn (Community $c) => [
             ...$c->toCard(),
+            ...($exploreOn ? $explore->stats($c) : []),
             'membership' => $statuses[$c->id] ?? null,
             'managed' => in_array($c->id, $managed),
-        ]));
+        ];
+        $page = $query->paginate(self::PER_PAGE)->withQueryString();
+        $page->setCollection($page->getCollection()->map($card));
+        $showSections = $exploreOn && $tab === 'discover' && $term === '' && $category === null && $sort === 'popular';
 
         return Inertia::render('communities/index', [
             'tab' => $tab,
-            'filters' => ['q' => $term, 'category' => $category],
+            'filters' => ['q' => $term, 'category' => $category, 'sort' => $sort],
             'categories' => Community::CATEGORIES,
             'counts' => ['mine' => count($joined), 'managed' => count($managed)],
+            'sections' => $showSections ? array_map(fn (array $section) => [
+                ...$section,
+                'items' => array_map($card, $section['items']),
+            ], $explore->sections()) : [],
             'communities' => Inertia::scroll(fn () => $page),
+            // Оплачене просування: угорі «Огляду» з позначкою.
+            'promoted' => $tab === 'discover' && $term === '' && app(Plugins::class)->on('community_promotion')
+                ? Community::query()->where('is_listed', true)->where('promoted_until', '>', now())->inRandomOrder()->limit(4)->get()->map($card)->values()->all()
+                : [],
         ]);
     }
 
@@ -175,6 +197,10 @@ class CommunityController extends Controller
                 'slow_mode' => $community->slow_mode,
             ],
             'membership' => $membership ? ['status' => $membership->status, 'role' => $membership->role] : null,
+            'welcome_card' => $this->welcomeCard($community, $membership),
+            'promotion' => app(Plugins::class)->on('community_promotion') && ((bool) $membership?->isAdmin() || $viewer->isStaff())
+                ? ['until' => $community->promoted_until?->isFuture() ? $community->promoted_until->toIso8601String() : null, 'price' => Wallet::units(app(CommunityPromotion::class)->price()), 'days' => CommunityPromotion::DAYS, 'listed' => $community->is_listed]
+                : null,
             'can' => [
                 'view' => $canView,
                 'post' => $this->communities->canPost($community, $membership),
@@ -212,11 +238,65 @@ class CommunityController extends Controller
                 'post_tags' => implode("\n", $community->post_tags ?? []),
                 'slow_mode' => $community->slow_mode,
                 'premoderation' => $community->premoderation,
+                'weekly_digest' => $community->weekly_digest,
+                'join_questions' => implode("\n", $community->join_questions ?? []),
+                'wiki_open' => $community->wiki_open,
             ],
             'slowModes' => CommunityWall::SLOW_MODES,
             'stats' => Inertia::defer(fn () => $this->wall->stats($community)),
             'jar' => ['url' => $community->donation_jar, 'note' => $community->donation_note],
+            'access' => app(Plugins::class)->on('community_access') ? [
+                'is_listed' => $community->is_listed,
+                'guest_view' => $community->guest_view,
+                'guest_chat_channel_id' => $community->guest_chat_channel_id,
+                'has_password' => $community->join_password !== null,
+                'guest_chat_on' => app(Plugins::class)->on('community_guest_chat'),
+                'guest_url' => url("/c/{$community->slug}/guest"),
+                'channels' => array_values($community->channels()->where('type', 'text')->where('is_private', false)->orderBy('position')->get(['id', 'name'])->map(fn ($c) => ['id' => $c->id, 'name' => $c->name])->all()),
+            ] : null,
         ]);
+    }
+
+    /**
+     * Доступ: показ у каталозі, пароль для вступу, перегляд гостями й гостьовий чат.
+     * Порожній пароль лишає поточний; «прибрати пароль» — clear_password.
+     */
+    public function updateAccess(Request $request, Community $community, CommunityGuests $guests): RedirectResponse
+    {
+        $this->authorizeAdmin($request, $community);
+        app(Plugins::class)->ensure('community_access');
+        $data = $request->validate([
+            'is_listed' => ['required', 'boolean'],
+            'guest_view' => ['required', 'boolean'],
+            'guest_chat_channel_id' => ['nullable', 'integer'],
+            'password' => ['nullable', 'string', 'min:4', 'max:64'],
+            'clear_password' => ['boolean'],
+        ]);
+        $chatId = $data['guest_view'] ? ($data['guest_chat_channel_id'] ?? null) : null;
+        if ($chatId !== null) {
+            $channel = $community->channels()->whereKey($chatId)->first();
+            if ($channel === null || ! $guests->isChatCapable($channel)) {
+                throw ValidationException::withMessages(['guest_chat_channel_id' => 'Для гостьового чату підходить лише відкритий текстовий канал.']);
+            }
+        }
+        if ($data['guest_view'] && $community->isClosed()) {
+            throw ValidationException::withMessages(['guest_view' => 'Закриту спільноту гості не бачать. Спершу зробіть її відкритою.']);
+        }
+
+        $community->fill([
+            'is_listed' => $data['is_listed'],
+            'guest_view' => $data['guest_view'],
+            'guest_chat_channel_id' => $chatId,
+        ]);
+        if ($request->boolean('clear_password')) {
+            $community->join_password = null;
+        } elseif (filled($data['password'] ?? null)) {
+            $community->join_password = $data['password'];
+        }
+        $community->save();
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Доступ збережено.']);
+
+        return back();
     }
 
     /** Банка Monobank для донатів спільноті (картка «Підтримати» на сторінці; лише сайт). */
@@ -253,11 +333,15 @@ class CommunityController extends Controller
             'post_tags' => ['nullable', 'string', 'max:1000'],
             'slow_mode' => ['required', 'integer', Rule::in(CommunityWall::SLOW_MODES)],
             'premoderation' => ['required', 'boolean'],
+            'weekly_digest' => ['sometimes', 'boolean'],
+            'join_questions' => ['nullable', 'string', 'max:1500'],
+            'wiki_open' => ['sometimes', 'boolean'],
         ]);
 
         $trimmed = fn (?string $text) => ($text = trim((string) $text)) === '' ? null : $text;
         $words = CommunityWall::lines($data['banned_words'] ?? null, CommunityWall::MAX_WORDS, 40);
         $tags = CommunityWall::lines($data['post_tags'] ?? null, CommunityWall::MAX_TAGS, 24);
+        $questions = CommunityWall::lines($data['join_questions'] ?? null, CommunityService::MAX_QUESTIONS, 200);
 
         $community->update([
             'rules' => $trimmed($data['rules'] ?? null),
@@ -267,6 +351,9 @@ class CommunityController extends Controller
             'post_tags' => $tags === [] ? null : $tags,
             'slow_mode' => (int) $data['slow_mode'],
             'premoderation' => (bool) $data['premoderation'],
+            'weekly_digest' => (bool) ($data['weekly_digest'] ?? $community->weekly_digest),
+            'join_questions' => $questions === [] ? null : $questions,
+            'wiki_open' => (bool) ($data['wiki_open'] ?? $community->wiki_open),
         ]);
 
         if (! $community->premoderation) {
@@ -401,7 +488,8 @@ class CommunityController extends Controller
 
     public function join(Request $request, Community $community): RedirectResponse
     {
-        $status = $this->communities->join($community, $request->user());
+        $data = $request->validate(['password' => ['nullable', 'string', 'max:64'], 'answers' => ['nullable', 'array', 'max:5'], 'answers.*' => ['nullable', 'string', 'max:1000']]);
+        $status = $this->communities->join($community, $request->user(), password: $data['password'] ?? null, answers: $data['answers'] ?? []);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => $status === CommunityMember::STATUS_PENDING
             ? 'Заявку надіслано. Чекайте на схвалення адміністратора.'
@@ -452,5 +540,30 @@ class CommunityController extends Controller
     {
         $user = $request->user();
         abort_unless($community->membershipFor($user)?->isAdmin() || $user->isStaff(), 403);
+    }
+
+    /**
+     * Картка привітання: новачку (тиждень після вступу, поки не закрив) — текст привітання й правила;
+     * адміну — скільки людей прийшло за тиждень і перші з них, щоб привітати.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function welcomeCard(Community $community, ?CommunityMember $membership): ?array
+    {
+        if (! app(Plugins::class)->on('community_welcome_card') || $membership === null || $membership->status !== CommunityMember::STATUS_ACTIVE) {
+            return null;
+        }
+        if ($membership->isAdmin()) {
+            $fresh = $community->activeMembers()->where('community_members.created_at', '>=', now()->subWeek())->where('user_id', '!=', $membership->user_id)->latest('community_members.created_at')->with('user')->limit(6)->get();
+            $count = $community->activeMembers()->where('community_members.created_at', '>=', now()->subWeek())->where('user_id', '!=', $membership->user_id)->count();
+
+            return $count > 0 ? ['kind' => 'admin', 'count' => $count, 'people' => $fresh->map(fn (CommunityMember $m) => $m->user?->toCard())->filter()->values()->all()] : null;
+        }
+        $text = trim((string) $community->welcome);
+        if ($membership->welcome_seen_at !== null || $membership->created_at === null || $membership->created_at->lt(now()->subWeek())) {
+            return null;
+        }
+
+        return ['kind' => 'member', 'text' => $text !== '' ? $text : null, 'has_rules' => trim((string) $community->rules) !== ''];
     }
 }

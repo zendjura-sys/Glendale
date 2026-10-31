@@ -13,7 +13,8 @@
 - **Никаких кнопок и ссылок на внешнюю оплату:** не открывать `/plus/billing`, `/plus`, `/pricing`,
   страницы донат-сервисов (Donatello, Diaka, Donatik, Buy Me a Coffee, Patreon) ни через браузер,
   ни через WebView, и не писать «купите на сайте».
-- Цифровые покупки внутри приложения — только через Google Play Billing.
+- Цифровые покупки внутри приложения — только через Google Play Billing (`mobile/lib/play_billing.dart`):
+  цены и планы из Google Play, покупку проверяет сервер (`POST /api/v1/google-play/verify`).
 - Показывать уже купленное можно: значок GameCon+, оформление профиля, срок действия.
 
 ## Инструкция для Cursor
@@ -210,6 +211,76 @@
 - [ ] Главная страница для гостей — `pages/welcome.tsx` (**только сайт**)
 - [ ] Админ-панель и модерация — `pages/admin/*` (**только сайт**)
 
+## 16. Новое (октябрь 2026)
+
+- [x] Турниры и челленджи серверов: список, сетка, таблица, заявка, результат со скриншотом, управление организатора — `pages/tournaments/*`, `mobile/lib/tournaments.dart` (создание турнира — только сайт)
+- [x] Подбор тиммейтов: анкета, «Шукаю зараз», совместимость, приглашение в пати — `pages/party/match.tsx`, `mobile/lib/teammates.dart`
+- [x] Сезонный пропуск — `pages/season/index.tsx`, `mobile/lib/season.dart` (админка сезонов — только сайт)
+- [x] Комнаты «Слухати разом» для групп — `pages/music/rooms.tsx`, `mobile/lib/listen_rooms.dart` (политика «кто может открывать» — только сайт)
+- [x] Станции групп в «Радіо» — `pages/music/radio.tsx`, `mobile/lib/music_home.dart`
+- [x] GameCon Connect — `lib/connect.ts`, `mobile/lib/connect.dart`
+- [x] Вход на сайт через приложение — `pages/auth/app-login.tsx`, `mobile/lib/app_login.dart`
+- [x] Game Card — `pages/profile/card.tsx`, `mobile/lib/game_card.dart`
+- [x] Прогресс приглашений — `pages/invite/index.tsx`, `mobile/lib/extras.dart` (`InviteScreen`)
+- [x] Ранковий дайджест: переключатель — `components/settings/digest-switch.tsx`, `mobile/lib/settings.dart` (`DigestSwitch`)
+- [x] «Показувати, що я слухаю» — `components/music/listening-switch.tsx`, `mobile/lib/music.dart`
+- [x] Офлайн-музыка — **только приложение** (`mobile/lib/downloads.dart`)
+- [x] Виджеты Android «Моя сім’я» и «Пульс GameCon» — **только приложение**
+- [x] Стандарты безопасности детей `/child-safety` и причина жалобы «Загроза дитині» — сайт и приложение
+- [x] Довідка `/help` — **только сайт** (в приложении ссылки открываются в браузере)
+- [x] Музыка в ботах Discord/Telegram — **только сайт** (настройки ботов группы)
+- [ ] Роздачі ігор (Epic, Steam, GOG) и подписка на них — `pages/games/deals.tsx`; в приложении пока нет (нужен мост `games/deals`)
+- [ ] Бажане и сповіщення про знижку, ціни магазинів на сторінці гри — `components/games/game-prices.tsx`; в приложении пока нет
+- [ ] «Чи потягне мій ПК» (збірка + вимоги Steam) — `components/games/pc-check.tsx`; в приложении пока нет (ПК-функция, низкий приоритет)
+- [ ] Тема профілю за грою — `components/settings/game-theme-picker.tsx`, кольори в `profile.accent`; приложению нужен мост `settings/game-theme` и отрисовка accent
+- [ ] Звук сповіщень — `components/settings/notify-sound-picker.tsx`, `lib/sounds.ts`; в приложении — системные звуки push (свой выбор пока не сделан)
+- [~] Анімації ніку «Неон» и «Веселка» — сайт везде (лента, комментарии, карточки); приложение показывает их как обычный цвет ника
+- [ ] Своя іконка застосунку — **только приложение**, ещё не сделано
+- [ ] Оцінка гравців GameCon на сторінці гри — `components/games/community-rating.tsx`; в приложении нет
+- [ ] Wrapped: слайд «Ігровий рік» — `pages/wrapped.tsx`; в приложении нет нового слайда
+- [ ] Опитування в історіях — `components/gc/stories.tsx`; в приложении нет
+- [ ] Реакції на повідомлення й відеокружки — `components/messenger/*`; в приложении нет
+- [ ] «Дякую» під гідами й коментарями, лічильник у профілі — `components/gc/thanks-button.tsx`; в приложении нет
+- [ ] Запрошення в паті й голосову кімнату за посиланням — `pages/join/show.tsx`; приложению нужна обработка `/join/{token}`
+- [ ] Джерела переходів в аналітиці сервера, тижневий дайджест спільноти, автомодерація груп — только сайт
+- [ ] Шпалери й «Музика гри» на сторінці гри — `pages/games/show.tsx`; в приложении нет
+- [ ] Економія трафіку — сайт; в приложении есть свой режим, не синхронизирован
+- [ ] Статті `/articles` — `pages/articles/*`; в приложении нет (мост `articles`)
+- [x] Офлайн-режим сайту (service worker) — только сайт; гарячі клавіші J/K/L — только сайт
+- [ ] Відкриті гостям сторінки ігор і профілів (SEO, `layouts/public-layout.tsx`) — только сайт
+- [ ] Беклог ігор «хочу — граю — пройшов — кинув» — `pages/games/backlog.tsx`, перемикач на сторінці гри, блок «Ігри» в профілі; мост готовий (`site/games/backlog`, `site/games/{game}/backlog`), екрана в приложении нет
+- [ ] Плитки меню «Музики» з обкладинками на ПК (`/music/menu-covers`) — только сайт ПК
+- [ ] Статус з емодзі й таймером — `components/gc/status-dialog.tsx`, емодзі на аватарі; мост готовий (`site/me/status`), поля `status_emoji`/`status_until` уже в `/me` приложения, экрана выбора нет
+- [ ] «Готовий грати зараз» — `components/party/ready-to-play.tsx` (стрічка, «Пошук паті»), позначка в профілі; мост готовий (`site/ready`), экрана в приложении нет
+- [ ] «Кліп тижня» в «Моментах» (переможець, лідер, архів) — `components/moments/clip-of-week.tsx`; сповіщення `clip_of_week` и бейдж приходят и в приложение, блока на экране «Моменты» нет
+- [ ] «Поки тебе не було» в групах — `components/messenger/catch-up.tsx`; міст готовий (`site/messages/{id}/catch-up`), картки в чаті приложения нет
+- [ ] Голосування за час гри в «Пошуку паті» — `components/party/time-poll.tsx`, третій варіант часу у формі; міст готовий (`site/party/{id}/time`, `site/party/{id}/time/{slot}`, `time_poll` у картці паті), екрана в приложении нет
+- [ ] Канали спільнот — `pages/communities/channels.tsx`, `components/communities/channel-*.tsx`, `voice-channel.tsx`; міст готовий (`site/c/{slug}/channels…`, `site/c/{slug}/channel-categories…`; текстові канали — звичайні бесіди `site/messages/{id}`), екрана в приложении нет
+- [ ] Доступ до спільноти й каталог — `components/communities/access-card.tsx`, пароль у `join-button.tsx`, добірки й сортування в `pages/communities/index.tsx`; міст готовий (`site/c/{slug}/settings/access`, `password` у `POST /api/v1/communities/{slug}/join` і `site/c/{slug}/join`, `sort` і `sections` у `site/communities`), у приложении нет окна пароля и подборок
+- [ ] Інструменти чату — `chat-shared-dialog.tsx`, `doc-preview.tsx`, `restrict-dialog.tsx`, `chat-background.tsx`; міст готовий (`site/messages/{id}/shared`, `…/members/{user}/restrict`, `…/background`, `site/messages/attachments/{id}/preview`; `timeout_until` і `background` у деталях бесіди), у приложении нет панели материалов, фона и меню наказаний
+- [ ] Боти бесіди (привітання, автопости) — `components/messenger/chat-bots-dialog.tsx`, повідомлення бота з позначкою «бот» у `message-bubble.tsx`; міст готовий (`site/messages/{id}/bots…`, поле `bot` у повідомленні), у приложении нет диалога ботов и плашки «бот»
+- [ ] ШІ (Claude або OpenAI-сумісний, ключ в адмінці): ШІ-редактор у полі вводу (`ai-writer.tsx`), «Підсумок від ШІ» (`ai-summary-dialog.tsx`), вкладка «ШІ-бот» у ботах бесіди, «Написати з ШІ» в описі спільноти; міст готовий (`site/ai/rewrite`, `site/messages/{id}/ai/summary`, `site/messages/{id}/bots/ai`, `site/c/{slug}/ai/description`), у застосунку цих кнопок ще немає
+- [ ] Бан гостя гостьового чату — кнопка в `message-bubble.tsx` і `guest-ban-dialog.tsx`; міст готовий (`site/messages/{id}/messages/{msg}/ban-guest`), у застосунку кнопки ще немає
+- [ ] Новини й патчі гри (`components/games/game-news.tsx`, міст `site/games/{slug}/news`) і баннер «Паті зібрана» з кнопкою «Зайти в голосову» (поле `voice_room` у паті) — у застосунку ще немає
+- [ ] #Згадки ігор (поле `games` у записі), лідерборд гри (`leaderboard` на сторінці гри), «Сумісність N%» (`compatibility` у профілі) — у застосунку ще немає
+- [ ] «Тиждень новачка» (`newcomer` у стрічці, міст `site/newcomer/hide`), чернетки повідомлень у чатах — у застосунку ще немає
+- [ ] Досягнення Steam (`site/u/{nick}/achievements`, `site/games/{slug}/achievements`), «Мій сетап» (`setup` у профілі, `site/settings/setup`), мемогенератор (сторінка `memes/create`) — у застосунку ще немає
+- [ ] «Сцена» голосової кімнати (`stage` у кімнатах, `rooms/{id}/hand`, дії `speaker`/`listener`), автопостинг (`site/crosspost/{type}/{id}`), розклад стрімів (`streamSchedule` у профілі, `site/settings/stream-schedule`), анкета вступу (`join_questions` у спільноті, `answers` при вступі й у заявках) — у застосунку ще немає
+- [ ] Статистика автора (`site/me/author-stats`), дошка ідей (`site/ideas`, голос `site/ideas/{id}/vote`), режим стримера (`streamer_mode` у користувачі), секретні досягнення (`secret` у бейджах), піксельний аватар (сторінка `settings/pixel-avatar`) — у застосунку ще немає
+- [ ] Тип акаунта й верифікація 2.0 (`site/settings/account-type`, `site/settings/verification`, склад `site/settings/account-type/roster`, `account` у профілі, `verified_kind` і `account_type` у картці людини) — у застосунку ще немає
+- [ ] Тір-листи (`site/tierlists`), питання про гру (`site/games/{slug}/questions`, відповіді, голоси, `solve`), наставники (`site/games/{slug}/mentors`), генератор ніків (`site/tools/nicknames/check`) — у застосунку ще немає
+- [ ] Теми (`site/t/{tag}`, `site/t/{tag}/follow`, вкладка `topics` у стрічці), сторінка посилань (`site/settings/links`, публічна `/l/нік`), перемикач акаунтів (на сайті — cookie пристрою; у застосунку — свій список токенів) — у застосунку ще немає
+- [ ] Календар, вікі й бали спільноти (`site/c/{slug}/hub`, `calendar`, `events/{id}/rsvp`, `events/{id}/stories`, `wiki`, `wiki/{slug}`) — у застосунку ще немає
+- [ ] Страйки й строк відповіді на оскарження в «Акаунт» (`strikes`, `appeals[].due_at` у `site/settings/account`) — у застосунку ще немає
+- [ ] Цілі в грі (`site/games/{slug}/goals`), FPS (`site/games/{slug}/fps`), дуелі (`site/duels`), фільтри паті (`mic`, `language`, `age_min`, `style` у `site/party`) — у застосунку ще немає
+- [x] Подкасти (`site/podcasts`, `site/podcasts/{id}`, підписка, прослуховування), GIF у записах показуються; пошук GIF у формі запису застосунку (`site/gifs`) — ще немає
+- [x] «Прочитати пізніше» (`site/later`, `site/posts/{id}/later`), сповіщення за словами (`site/settings/keyword-alerts`), картка привітання (`welcome_card` у `site/c/{slug}`, `site/c/{slug}/welcome-seen`), відкриті опитування (`poll.anonymous`, `options.*.voters`)
+- [x] Записи «лише для підписників» (`locked`, `subscribers_only` у записах)
+- [x] Підтримка (`site/support`, `site/support/{id}`, reply, close, rate, files)
+- [x] Довідка в застосунку: `GET /api/v1/help`, `/api/v1/help/{розділ}`, `/api/v1/help/{розділ}/{стаття}` (відкрито й без входу, переклад мовою застосунку; також `site/help…`)
+- [ ] Рідкість бейджів («є у 2% людей») — поле `rarity` у бейджах уже приходить у приложение, не показується
+- [~] Режими скрізь: сервер уже ховає за режимом плагіни, бейджі, блоки профілю, картки в постах і чатах, події, сповіщення, дайджест і Wrapped (мост віддає те саме); приложению осталось спрятать свои тексты-упоминания и пункти (списки друзів «Рейд»/«Кіно», «Картка» в чаті) по `user.modules`
+
 ---
 
 ## Итог (заполняет Cursor)
@@ -217,3 +288,21 @@
 | #   | Функция | Статус (`[ ]` / `[~]`) | Где на сайте | Чего не хватает / куда добавить в приложении |
 | --- | ------- | ---------------------- | ------------ | -------------------------------------------- |
 |     |         |                        |              |                                              |
+
+## Застосунок 1.1.74 — паритет із сайтом
+
+Додано в застосунок (через міст `/api/v1/site/*`, перевірки — `tests/Feature/AppSiteParityTest.php`):
+
+- [x] Сезонні прикраси й тло (`/me.season`), шапка Санти на аватарах
+- [x] Редактор запису: стікер, GIF, опитування, картка, мем, спойлер, «підписникам», розклад, чернетки
+- [x] Теми `#тег` (`/t/{tag}`), статті (читання, написання, редагування)
+- [x] Знижки й роздачі, беклог, тір-листи (з редагуванням), дуелі, дошка ідей, генератор ніків
+- [x] Спільнота: канали (текстові → чат, голосові → кімната), календар, вікі
+- [x] Сторінка гри: беклог, оцінка гравців, лідерборд, музика, ціни й бажане, «чи потягне ПК», новини, цілі, FPS, Q&A, наставники, досягнення Steam
+- [x] Перші кроки новачка (`/me.onboarding`): номер → режим → ігри й сервери
+- [x] Налаштування: сповіщення, звук, тихі години, близькі, заглушені слова, спойлери, прикраси, режим стрімера, економія трафіку, мат
+- [x] Посилання в профілі, тип акаунта й верифікація, піксельна аватарка, вигляд профілю (тема за грою, порядок блоків)
+- [x] Зв’язки й дані: Telegram/Discord, сервери з входом через GameCon, вивантаження даних
+
+Свідомо лише на сайті: ціни й тарифи (GameCon+, підписки на авторів — правило Google Play), кабінет розробника (OAuth),
+відновлення пароля (посилання з листа), оформлення сайту (палітри, фони, розмір тексту — у застосунку свій дизайн).

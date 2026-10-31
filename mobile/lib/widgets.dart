@@ -1,60 +1,34 @@
+import 'dart:math' as math;
+import 'dart:ui' show ImageFilter;
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'api.dart';
+import 'core/widgets/arctic_glass/arctic_glass.dart';
 import 'plus.dart';
+import 'seasonal.dart';
 import 'state.dart';
 import 'subscription.dart';
 import 'theme.dart';
 import 'i18n.dart';
+import 'skeletons.dart';
 
 // ───────────────────────── Тло й логотип ─────────────────────────
 
-/// Тло всіх екранів: глибокий синій з «авророю», як `<Aurora />` на сайті.
+/// Тло всіх екранів — ArcticBackground дизайн-системи «Spatial Glass»: bgBase і два тихі сяйва
+/// (сапфір угорі ліворуч, крижаний ціан унизу праворуч).
 class Stage extends StatelessWidget {
   const Stage({required this.child, super.key});
   final Widget child;
 
   @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: const BoxDecoration(color: voidColor),
-      child: Stack(
-        children: [
-          const Positioned(left: -120, top: -80, child: _Glow(color: indigo, size: 360, alpha: 0.30)),
-          const Positioned(right: -120, top: -40, child: _Glow(color: violet, size: 300, alpha: 0.20)),
-          const Positioned(left: -60, bottom: 120, child: _Glow(color: neonBlue, size: 260, alpha: 0.10)),
-          child,
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) => ArcticBackground(child: child);
 }
 
-class _Glow extends StatelessWidget {
-  const _Glow({required this.color, required this.size, this.alpha = 0.28});
-  final Color color;
-  final double size;
-  final double alpha;
-
-  @override
-  Widget build(BuildContext context) {
-    return IgnorePointer(
-      child: Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: RadialGradient(colors: [color.withValues(alpha: alpha), color.withValues(alpha: 0)]),
-        ),
-      ),
-    );
-  }
-}
-
-/// Логотип GameCon: тёмний квадрат з градієнтною рамкою й «play».
+/// Знак GameCon — неонова «G» (той самий, що на значку застосунку й на сайті).
 class LogoMark extends StatelessWidget {
   const LogoMark({this.size = 40, super.key});
   final double size;
@@ -66,34 +40,10 @@ class LogoMark extends StatelessWidget {
       height: size,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(size * 0.3),
-        gradient: brand,
-        boxShadow: [BoxShadow(color: indigo.withValues(alpha: 0.45), blurRadius: size * 0.4, offset: Offset(0, size * 0.1))],
       ),
-      padding: EdgeInsets.all(size * 0.05),
-      child: DecoratedBox(
-        decoration: BoxDecoration(color: const Color(0xFF0B0F22), borderRadius: BorderRadius.circular(size * 0.26)),
-        child: CustomPaint(painter: _PlayPainter()),
-      ),
+      child: Image.asset('assets/brand/logo-mark.png', width: size, height: size, filterQuality: FilterQuality.medium),
     );
   }
-}
-
-class _PlayPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final path = Path()
-      ..moveTo(size.width * 0.36, size.height * 0.27)
-      ..lineTo(size.width * 0.36, size.height * 0.73)
-      ..lineTo(size.width * 0.74, size.height * 0.5)
-      ..close();
-    final paint = Paint()
-      ..shader = const LinearGradient(colors: [Color(0xFF7DA6FF), Color(0xFF8B6BFF), pink]).createShader(Offset.zero & size)
-      ..strokeJoin = StrokeJoin.round;
-    canvas.drawPath(path, paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 class Wordmark extends StatelessWidget {
@@ -115,7 +65,7 @@ class Wordmark extends StatelessWidget {
 }
 
 class GradientText extends StatelessWidget {
-  const GradientText(this.value, {required this.style, this.gradient = brand, super.key});
+  GradientText(this.value, {required this.style, Gradient? gradient, super.key}) : gradient = gradient ?? brand;
   final String value;
   final TextStyle style;
   final Gradient gradient;
@@ -132,9 +82,10 @@ class GradientText extends StatelessWidget {
 
 // ───────────────────────── Поверхні ─────────────────────────
 
-/// Скляна картка `.glass`.
+/// Картка — матове скло iOS: справжнє розмиття фону з насиченням, матова тонировка, грань,
+/// блік угорі й м'яка тінь назовні (ArcticGlassContainer).
 class Glass extends StatelessWidget {
-  const Glass({required this.child, this.padding = const EdgeInsets.all(16), this.radius = 22, this.onTap, this.gradient, this.border, this.overlay, super.key});
+  const Glass({required this.child, this.padding = const EdgeInsets.all(16), this.radius = AppRadii.card, this.onTap, this.gradient, this.border, this.overlay, super.key});
   final Widget child;
   /// Шар поверх картки на весь її розмір (напр. жива рамка GameCon+).
   final Widget? overlay;
@@ -146,24 +97,29 @@ class Glass extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final shape = BorderRadius.circular(radius);
-    final box = Ink(
-      width: double.infinity,
-      padding: padding,
-      decoration: BoxDecoration(
-        gradient: gradient ?? glassGradient,
-        borderRadius: shape,
-        border: Border.all(color: border ?? line),
-        boxShadow: const [BoxShadow(color: Color(0x66000000), blurRadius: 30, offset: Offset(0, 14), spreadRadius: -16)],
+    final glass = ArcticGlassContainer(width: double.infinity, padding: padding, radius: radius, fill: gradient, borderColor: border, onTap: onTap, child: child);
+    return overlay == null ? glass : Stack(children: [glass, Positioned.fill(child: overlay!)]);
+  }
+}
+
+/// Скло нерухомих панелей (вкладки розділу, міні-плеєр): поверхня доку з розмиттям 24.
+class MatteGlass extends StatelessWidget {
+  const MatteGlass({required this.child, this.borderRadius = ArcticDock.radius, this.padding, this.width, this.height, super.key});
+  final Widget child;
+  final double borderRadius;
+  final EdgeInsetsGeometry? padding;
+  final double? width;
+  final double? height;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: width,
+      child: ArcticDockSurface(
+        height: height,
+        radius: borderRadius,
+        child: padding == null ? child : Padding(padding: padding!, child: child),
       ),
-      child: child,
-    );
-    return Material(
-      color: Colors.transparent,
-      borderRadius: shape,
-      child: overlay == null
-          ? (onTap == null ? box : InkWell(onTap: onTap, borderRadius: shape, child: box))
-          : Stack(children: [onTap == null ? box : InkWell(onTap: onTap, borderRadius: shape, child: box), Positioned.fill(child: overlay!)]),
     );
   }
 }
@@ -180,10 +136,10 @@ class CardTitle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: EdgeInsets.only(bottom: 12),
       child: Row(
         children: [
-          if (icon != null) ...[Icon(icon, size: 16, color: const Color(0xFF9AA6FF)), const SizedBox(width: 8)],
+          if (icon != null) ...[Icon(icon, size: 16, color: accent), SizedBox(width: 8)],
           Expanded(
             child: Text(
               caps ? title.toUpperCase() : title,
@@ -208,7 +164,7 @@ class PageTitle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 14),
+      padding: EdgeInsets.only(bottom: 14),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -217,7 +173,7 @@ class PageTitle extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(title, style: display(24)),
-                if (subtitle != null) Padding(padding: const EdgeInsets.only(top: 6), child: Text(subtitle!, style: body(13.5, color: muted).copyWith(height: 1.35))),
+                if (subtitle != null) Padding(padding: EdgeInsets.only(top: 6), child: Text(subtitle!, style: body(13.5, color: muted).copyWith(height: 1.35))),
               ],
             ),
           ),
@@ -230,7 +186,7 @@ class PageTitle extends StatelessWidget {
 
 /// Героїчна картка розділу: бейдж, заголовок з градієнтним словом, опис, дія.
 class HeroCard extends StatelessWidget {
-  const HeroCard({required this.title, this.accent, this.after, this.badge, this.badgeIcon, this.text, this.children = const [], this.tint = indigo, this.accentGradient = brand, super.key});
+  HeroCard({required this.title, this.accent, this.after, this.badge, this.badgeIcon, this.text, this.children = const [], this.tint = indigo, Gradient? accentGradient, super.key}) : accentGradient = accentGradient ?? brand;
   final String title;
   final String? accent;
   final String? after;
@@ -244,10 +200,10 @@ class HeroCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Glass(
-      padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
+      padding: EdgeInsets.fromLTRB(18, 18, 18, 18),
       gradient: LinearGradient(
-        colors: [tint.withValues(alpha: 0.22), cardTop, const Color(0xFF1A1230)],
-        stops: const [0, 0.55, 1],
+        colors: [tint.withValues(alpha: 0.22), cardTop, Color(0xFF1A1230)],
+        stops: [0, 0.55, 1],
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
       ),
@@ -255,8 +211,8 @@ class HeroCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (badge != null) ...[
-            Pill(label: badge!, icon: badgeIcon, color: tint == gold ? gold : const Color(0xFFC7CCF0)),
-            const SizedBox(height: 12),
+            Pill(label: badge!, icon: badgeIcon, color: tint == gold ? gold : Color(0xFFC7CCF0)),
+            SizedBox(height: 12),
           ],
           Wrap(
             crossAxisAlignment: WrapCrossAlignment.center,
@@ -266,8 +222,8 @@ class HeroCard extends StatelessWidget {
               if (after != null) Text(' $after', style: display(26)),
             ],
           ),
-          if (text != null) Padding(padding: const EdgeInsets.only(top: 10), child: Text(text!, style: body(14, color: soft.withValues(alpha: 0.8)).copyWith(height: 1.45))),
-          if (children.isNotEmpty) const SizedBox(height: 16),
+          if (text != null) Padding(padding: EdgeInsets.only(top: 10), child: Text(text!, style: body(14, color: soft.withValues(alpha: 0.8)).copyWith(height: 1.45))),
+          if (children.isNotEmpty) SizedBox(height: 16),
           ...children,
         ],
       ),
@@ -277,7 +233,7 @@ class HeroCard extends StatelessWidget {
 
 // ───────────────────────── Кнопки ─────────────────────────
 
-/// Градієнтна кнопка `.btn-glow`.
+/// Головна кнопка: сапфіровий градієнт (ArcticGlassButton).
 class PrimaryButton extends StatelessWidget {
   const PrimaryButton({required this.label, required this.onPressed, this.icon, this.expand = true, this.compact = false, this.busy = false, super.key});
   final String label;
@@ -288,48 +244,13 @@ class PrimaryButton extends StatelessWidget {
   final bool busy;
 
   @override
-  Widget build(BuildContext context) {
-    final enabled = onPressed != null && !busy;
-    final height = compact ? 40.0 : 50.0;
-    final content = Row(
-      mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        if (busy)
-          const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-        else if (icon != null)
-          Icon(icon, color: Colors.white, size: compact ? 16 : 18),
-        if (busy || icon != null) const SizedBox(width: 8),
-        // Довгий підпис чи великий системний шрифт — текст трохи зменшується, а не обрізається «…».
-        Flexible(child: FittedBox(fit: BoxFit.scaleDown, child: Text(label, maxLines: 1, style: body(compact ? 13.5 : 15, color: Colors.white, weight: FontWeight.w600)))),
-      ],
-    );
-    return Opacity(
-      opacity: enabled ? 1 : 0.5,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: enabled ? onPressed : null,
-          borderRadius: BorderRadius.circular(14),
-          child: Ink(
-            height: height,
-            padding: EdgeInsets.symmetric(horizontal: compact ? 12 : 16),
-            decoration: BoxDecoration(
-              gradient: buttonGradient,
-              borderRadius: BorderRadius.circular(14),
-              boxShadow: [BoxShadow(color: indigo.withValues(alpha: 0.55), blurRadius: 24, offset: const Offset(0, 10), spreadRadius: -10)],
-            ),
-            child: content,
-          ),
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) =>
+      ArcticGlassButton(label: label, onPressed: onPressed, icon: icon, expand: expand, compact: compact, busy: busy);
 }
 
 /// Скляна другорядна кнопка («Редагувати профіль», «Написати»).
 class GhostButton extends StatelessWidget {
-  const GhostButton({required this.label, required this.onPressed, this.icon, this.expand = true, this.compact = false, this.color = ink, this.iconColor, super.key});
+  GhostButton({required this.label, required this.onPressed, this.icon, this.expand = true, this.compact = false, Color? color, this.iconColor, super.key}) : color = color ?? ink;
   final String label;
   final VoidCallback? onPressed;
   final IconData? icon;
@@ -339,31 +260,16 @@ class GhostButton extends StatelessWidget {
   final Color? iconColor;
 
   @override
-  Widget build(BuildContext context) {
-    return Opacity(
-      opacity: onPressed == null ? 0.5 : 1,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onPressed,
-          borderRadius: BorderRadius.circular(14),
-          child: Ink(
-            height: compact ? 40 : 48,
-            padding: EdgeInsets.symmetric(horizontal: compact ? 10 : 14),
-            decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(14), border: Border.all(color: lineStrong)),
-            child: Row(
-              mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                if (icon != null) ...[Icon(icon, size: compact ? 16 : 18, color: iconColor ?? color), const SizedBox(width: 8)],
-                Flexible(child: FittedBox(fit: BoxFit.scaleDown, child: Text(label, maxLines: 1, style: body(compact ? 13 : 14.5, color: color, weight: FontWeight.w600)))),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => ArcticGlassButton(
+    label: label,
+    onPressed: onPressed,
+    icon: icon,
+    kind: ArcticButtonKind.glass,
+    expand: expand,
+    compact: compact,
+    color: color,
+    iconColor: iconColor,
+  );
 }
 
 class DangerButton extends StatelessWidget {
@@ -374,33 +280,13 @@ class DangerButton extends StatelessWidget {
   final bool expand;
 
   @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onPressed,
-        borderRadius: BorderRadius.circular(14),
-        child: Ink(
-          height: 44,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          decoration: BoxDecoration(color: danger, borderRadius: BorderRadius.circular(14), boxShadow: [BoxShadow(color: danger.withValues(alpha: 0.4), blurRadius: 20, offset: const Offset(0, 8), spreadRadius: -10)]),
-          child: Row(
-            mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              if (icon != null) ...[Icon(icon, size: 16, color: Colors.white), const SizedBox(width: 8)],
-              Text(label, style: body(14, color: Colors.white, weight: FontWeight.w600)),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) =>
+      ArcticGlassButton(label: label, onPressed: onPressed, icon: icon, kind: ArcticButtonKind.danger, expand: expand, compact: true);
 }
 
 /// Кругла іконка-кнопка (скріпка, мікрофон, ⋯).
 class RoundIcon extends StatelessWidget {
-  const RoundIcon({required this.icon, required this.onTap, this.size = 40, this.color = muted, this.filled = false, this.tooltip, super.key});
+  RoundIcon({required this.icon, required this.onTap, this.size = 40, Color? color, this.filled = false, this.tooltip, super.key}) : color = color ?? muted;
   final IconData icon;
   final VoidCallback? onTap;
   final double size;
@@ -412,18 +298,17 @@ class RoundIcon extends StatelessWidget {
   Widget build(BuildContext context) {
     final button = Material(
       color: Colors.transparent,
-      shape: const CircleBorder(),
+      shape: CircleBorder(),
       child: InkWell(
         onTap: onTap,
-        customBorder: const CircleBorder(),
+        customBorder: CircleBorder(),
         child: Ink(
           width: size,
           height: size,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             gradient: filled ? buttonGradient : null,
-            color: filled ? null : Colors.white.withValues(alpha: 0.05),
-            border: filled ? null : Border.all(color: line),
+            color: filled ? null : fg.withValues(alpha: 0.05),
           ),
           child: Icon(icon, size: size * 0.48, color: filled ? Colors.white : color),
         ),
@@ -468,6 +353,14 @@ class GcField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Поле — матове скло: справжнє розмиття фону (16) під напівпрозорою заливкою.
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(14),
+      child: BackdropFilter(filter: arcticGlassFilter(AppBlur.control), child: _field()),
+    );
+  }
+
+  Widget _field() {
     return TextField(
       controller: controller,
       obscureText: obscure,
@@ -487,12 +380,12 @@ class GcField extends StatelessWidget {
         prefixText: prefixText,
         prefixStyle: body(15, color: muted),
         filled: true,
-        fillColor: field.withValues(alpha: enabled ? 1 : 0.5),
+        fillColor: enabled ? field : field.withValues(alpha: field.a * 0.5),
         isDense: true,
         contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: dense ? 11 : 15),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: lineStrong)),
-        disabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: line)),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: primary, width: 1.4)),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+        disabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: primary, width: 1.4)),
       ),
     );
   }
@@ -508,14 +401,14 @@ class LabeledField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 14),
+      padding: EdgeInsets.only(bottom: 14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(label, style: body(13, color: soft, weight: FontWeight.w500)),
-          const SizedBox(height: 7),
+          SizedBox(height: 7),
           child,
-          if (hint != null) Padding(padding: const EdgeInsets.only(top: 6), child: Text(hint!, style: body(11.5, color: faint))),
+          if (hint != null) Padding(padding: EdgeInsets.only(top: 6), child: Text(hint!, style: body(11.5, color: faint))),
         ],
       ),
     );
@@ -555,8 +448,8 @@ class GcSelect<T> extends StatelessWidget {
     return Container(
       height: 46,
       width: expand ? double.infinity : null,
-      padding: const EdgeInsets.only(left: 14, right: 8),
-      decoration: BoxDecoration(color: field, borderRadius: BorderRadius.circular(14), border: Border.all(color: lineStrong)),
+      padding: EdgeInsets.only(left: 14, right: 8),
+      decoration: BoxDecoration(color: field, borderRadius: BorderRadius.circular(14)),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<T>(
           value: value,
@@ -564,7 +457,7 @@ class GcSelect<T> extends StatelessWidget {
           hint: hint == null ? null : Text(hint!, style: body(14.5, color: faint)),
           dropdownColor: popover,
           borderRadius: BorderRadius.circular(14),
-          icon: const Icon(LucideIcons.chevronDown, color: muted),
+          icon: Icon(LucideIcons.chevronDown, color: muted),
           style: body(14.5),
           items: [for (final item in items) DropdownMenuItem<T>(value: item.$1, child: Text(item.$2, overflow: TextOverflow.ellipsis))],
           onChanged: onChanged,
@@ -577,7 +470,7 @@ class GcSelect<T> extends StatelessWidget {
 // ───────────────────────── Перемикачі ─────────────────────────
 
 class SegmentOption {
-  const SegmentOption(this.id, this.label, {this.icon, this.count});
+  SegmentOption(this.id, this.label, {this.icon, this.count});
   final String id;
   final String label;
   final IconData? icon;
@@ -593,7 +486,7 @@ class Segmented extends StatelessWidget {
   final bool scroll;
 
   static const _motion = Duration(milliseconds: 260);
-  static final _pill = BoxDecoration(color: Colors.white.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(14), border: Border.all(color: lineStrong));
+  static BoxDecoration get _pill => BoxDecoration(color: palette.isLight ? card : fg.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(14));
 
   @override
   Widget build(BuildContext context) {
@@ -603,11 +496,11 @@ class Segmented extends StatelessWidget {
         children: [
           if (option.icon != null) ...[
             TweenAnimationBuilder<Color?>(
-              tween: ColorTween(end: on ? const Color(0xFF9AA6FF) : muted),
+              tween: ColorTween(end: on ? accent : muted),
               duration: _motion,
               builder: (_, color, _) => Icon(option.icon, size: 16, color: color),
             ),
-            const SizedBox(width: 7),
+            SizedBox(width: 7),
           ],
           AnimatedDefaultTextStyle(
             duration: _motion,
@@ -615,10 +508,10 @@ class Segmented extends StatelessWidget {
             child: Text(option.label, maxLines: 1, softWrap: false),
           ),
           if (option.count != null) ...[
-            const SizedBox(width: 6),
+            SizedBox(width: 6),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-              decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(10)),
+              padding: EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+              decoration: BoxDecoration(color: fg.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(10)),
               child: Text('${option.count}', maxLines: 1, softWrap: false, style: body(11, color: muted, weight: FontWeight.w600)),
             ),
           ],
@@ -626,13 +519,14 @@ class Segmented extends StatelessWidget {
       );
     }
 
-    final frame = BoxDecoration(color: Colors.white.withValues(alpha: 0.035), borderRadius: BorderRadius.circular(18), border: Border.all(color: line));
+    final frame = BoxDecoration(color: fg.withValues(alpha: palette.isLight ? 0.05 : 0.04), borderRadius: BorderRadius.circular(18));
 
     if (scroll) {
       return Container(
-        padding: const EdgeInsets.all(4),
+        padding: EdgeInsets.all(4),
         decoration: frame,
-        child: SingleChildScrollView(
+        child: EdgeFade(
+          child: SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: Row(children: [
             for (final option in options)
@@ -647,20 +541,21 @@ class Segmented extends StatelessWidget {
                   child: AnimatedContainer(
                     duration: _motion,
                     curve: Curves.easeOutCubic,
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-                    decoration: option.id == selected ? _pill : _pill.copyWith(color: Colors.transparent, border: Border.all(color: Colors.transparent)),
+                    padding: EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                    decoration: option.id == selected ? _pill : _pill.copyWith(color: Colors.transparent),
                     child: content(option, option.id == selected),
                   ),
                 ),
               ),
           ]),
+          ),
         ),
       );
     }
 
     final index = options.indexWhere((o) => o.id == selected);
     return Container(
-      padding: const EdgeInsets.all(4),
+      padding: EdgeInsets.all(4),
       decoration: frame,
       child: LayoutBuilder(builder: (context, constraints) {
         final width = constraints.maxWidth / options.length;
@@ -682,7 +577,7 @@ class Segmented extends StatelessWidget {
                   behavior: HitTestBehavior.opaque,
                   onTap: () => onSelect(option.id),
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 11),
+                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 11),
                     child: Center(child: FittedBox(fit: BoxFit.scaleDown, child: content(option, option.id == selected))),
                   ),
                 ),
@@ -703,13 +598,13 @@ class Swap extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 280),
+      duration: Duration(milliseconds: 280),
       switchInCurve: Curves.easeOutCubic,
       switchOutCurve: Curves.easeInCubic,
       layoutBuilder: (current, previous) => Stack(alignment: Alignment.topCenter, children: [...previous, ?current]),
       transitionBuilder: (child, animation) => FadeTransition(
         opacity: animation,
-        child: SlideTransition(position: Tween(begin: const Offset(0, 0.02), end: Offset.zero).animate(animation), child: child),
+        child: SlideTransition(position: Tween(begin: Offset(0, 0.02), end: Offset.zero).animate(animation), child: child),
       ),
       child: KeyedSubtree(key: ValueKey(id), child: child),
     );
@@ -731,7 +626,7 @@ class ChipRow extends StatelessWidget {
         children: [
           for (final option in options)
             Padding(
-              padding: const EdgeInsets.only(right: 8),
+              padding: EdgeInsets.only(right: 8),
               child: SelectPill(label: option.$2, selected: selected == option.$1, onTap: () => onSelect(option.$1)),
             ),
         ],
@@ -752,18 +647,18 @@ class SelectPill extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        duration: Duration(milliseconds: 180),
+        padding: EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
           gradient: selected ? buttonGradient : null,
-          color: selected ? null : Colors.white.withValues(alpha: 0.04),
+          color: selected ? null : fg.withValues(alpha: 0.04),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: selected ? Colors.transparent : lineStrong),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (icon != null) ...[Icon(icon, size: 14, color: selected ? Colors.white : muted), const SizedBox(width: 6)],
+            if (icon != null) ...[Icon(icon, size: 14, color: selected ? Colors.white : muted), SizedBox(width: 6)],
             Text(label, style: body(13, color: selected ? Colors.white : soft, weight: FontWeight.w600)),
           ],
         ),
@@ -774,7 +669,7 @@ class SelectPill extends StatelessWidget {
 
 /// Маленький бейдж («Адміністратор», «ПК», «RAGE:MP», «Набір відкрито»).
 class Pill extends StatelessWidget {
-  const Pill({required this.label, this.icon, this.color = soft, this.background, this.border, super.key});
+  Pill({required this.label, this.icon, Color? color, this.background, this.border, super.key}) : color = color ?? soft;
   final String label;
   final IconData? icon;
   final Color color;
@@ -784,16 +679,17 @@ class Pill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+      padding: EdgeInsets.symmetric(horizontal: 9, vertical: 4),
       decoration: BoxDecoration(
-        color: background ?? color.withValues(alpha: 0.12),
+        color: background ?? color.withValues(alpha: 0.14),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: border ?? color.withValues(alpha: 0.28)),
+        // Без обводки — лише м'яка заливка кольору (обводка тільки якщо задана явно).
+        border: border == null ? null : Border.all(color: border!),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (icon != null) ...[Icon(icon, size: 12, color: color), const SizedBox(width: 4)],
+          if (icon != null) ...[Icon(icon, size: 12, color: color), SizedBox(width: 4)],
           Text(label, style: body(11, color: color, weight: FontWeight.w700)),
         ],
       ),
@@ -823,10 +719,10 @@ class Avatar extends StatelessWidget {
   final bool ring;
   final bool square;
 
-  static const _palette = [
-    [Color(0xFF6D5DFC), Color(0xFFA855F7)],
+  static final _palette = [
+    [Color(0xFF0A84FF), Color(0xFF00D2FF)],
     [Color(0xFF4F8BFF), Color(0xFF38E1FF)],
-    [Color(0xFFF04FD8), Color(0xFFA855F7)],
+    [Color(0xFF38BDF8), Color(0xFF00D2FF)],
     [Color(0xFF34D399), Color(0xFF4F8BFF)],
     [Color(0xFFF5C451), Color(0xFFF0734A)],
   ];
@@ -902,6 +798,12 @@ class Avatar extends StatelessWidget {
                 decoration: BoxDecoration(color: green, shape: BoxShape.circle, border: Border.all(color: voidColor, width: dot * 0.2)),
               ),
             ),
+          // Новий рік: шапка Санти на аватарах (крім дрібних і квадратних), як на сайті.
+          if (!square && size >= 28)
+            ValueListenableBuilder<String?>(
+              valueListenable: currentSeason,
+              builder: (_, season, _) => season == 'newyear' ? SantaHat(size: size) : const Positioned(left: 0, top: 0, child: SizedBox.shrink()),
+            ),
         ],
       ),
     );
@@ -927,11 +829,11 @@ class UserTile extends StatelessWidget {
             if (username != null) context.push('/u/$username');
           },
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+        padding: EdgeInsets.symmetric(vertical: 8, horizontal: 4),
         child: Row(
           children: [
-            Avatar(url: text(user['avatar_url']), name: name, size: size, online: user['is_online'] == true, frame: PlusMark.of(user)?.frame),
-            const SizedBox(width: 12),
+            Avatar(url: text(user['avatar_url']), name: name, size: size, online: user['is_online'] == true, frame: avatarFrameOf(user)),
+            SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -974,20 +876,20 @@ class EmptyState extends StatelessWidget {
         Container(
           width: 56,
           height: 56,
-          decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(18), border: Border.all(color: line)),
-          child: Icon(icon, color: const Color(0xFF9AA6FF), size: 26),
+          decoration: BoxDecoration(color: fg.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(18)),
+          child: Icon(icon, color: accent, size: 26),
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: 16),
         Text(title, textAlign: TextAlign.center, style: display(17)),
-        if (text != null) Padding(padding: const EdgeInsets.only(top: 8), child: Text(text!, textAlign: TextAlign.center, style: body(13.5, color: muted).copyWith(height: 1.45))),
+        if (text != null) Padding(padding: EdgeInsets.only(top: 8), child: Text(text!, textAlign: TextAlign.center, style: body(13.5, color: muted).copyWith(height: 1.45))),
         if (action != null) ...[
-          const SizedBox(height: 18),
+          SizedBox(height: 18),
           PrimaryButton(label: action!, icon: actionIcon, onPressed: onAction, expand: false, compact: true),
         ],
       ],
     );
-    if (!boxed) return Padding(padding: const EdgeInsets.symmetric(vertical: 22, horizontal: 12), child: content);
-    return Glass(padding: const EdgeInsets.fromLTRB(20, 32, 20, 28), child: content);
+    if (!boxed) return Padding(padding: EdgeInsets.symmetric(vertical: 22, horizontal: 12), child: content);
+    return Glass(padding: EdgeInsets.fromLTRB(20, 32, 20, 28), child: content);
   }
 }
 
@@ -1000,12 +902,12 @@ class QuietEmpty extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 22),
+      padding: EdgeInsets.symmetric(vertical: 22),
       child: Center(
         child: Column(
           children: [
             Icon(icon, color: faint, size: 30),
-            const SizedBox(height: 10),
+            SizedBox(height: 10),
             Text(text, textAlign: TextAlign.center, style: body(13.5, color: muted)),
           ],
         ),
@@ -1028,11 +930,11 @@ class StatColumn extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6),
+          padding: EdgeInsets.symmetric(vertical: 6),
           child: Column(
             children: [
               Text(value, style: display(20)),
-              const SizedBox(height: 4),
+              SizedBox(height: 4),
               Text(label, style: body(12, color: muted)),
             ],
           ),
@@ -1044,7 +946,7 @@ class StatColumn extends StatelessWidget {
 
 /// Плитка-метрика («1457 / Гравців онлайн», «ЗАРОБИВ ЗА ТИЖДЕНЬ / 0 ₴»).
 class MetricTile extends StatelessWidget {
-  const MetricTile({required this.label, required this.value, this.color = ink, this.icon, this.caps = false, this.gradient, super.key});
+  MetricTile({required this.label, required this.value, Color? color, this.icon, this.caps = false, this.gradient, super.key}) : color = color ?? ink;
   final String label;
   final String value;
   final Color color;
@@ -1056,7 +958,7 @@ class MetricTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.04), borderRadius: BorderRadius.circular(18), border: Border.all(color: line)),
+      decoration: BoxDecoration(color: fg.withValues(alpha: 0.04), borderRadius: BorderRadius.circular(18)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1093,9 +995,9 @@ class CoverPlaceholder extends StatelessWidget {
 
   static const _gradients = [
     [Color(0xFF38E1FF), Color(0xFF4F8BFF)],
-    [Color(0xFF6D5DFC), Color(0xFF4F8BFF)],
-    [Color(0xFFF04FD8), Color(0xFFF0734A)],
-    [Color(0xFFA855F7), Color(0xFF6D5DFC)],
+    [Color(0xFF0A84FF), Color(0xFF4F8BFF)],
+    [Color(0xFF38BDF8), Color(0xFFF0734A)],
+    [Color(0xFF00D2FF), Color(0xFF0A84FF)],
     [Color(0xFF34D399), Color(0xFF38E1FF)],
   ];
 
@@ -1128,7 +1030,7 @@ class NetImage extends StatelessWidget {
             width: width,
             height: height,
             placeholder: (_, _) => Container(color: raised),
-            errorWidget: (_, _, _) => Container(color: raised, child: const Icon(LucideIcons.imageOff, color: faint)),
+            errorWidget: (_, _, _) => Container(color: raised, child: Icon(LucideIcons.imageOff, color: faint)),
           );
     return radius == 0 ? image : ClipRRect(borderRadius: BorderRadius.circular(radius), child: image);
   }
@@ -1184,7 +1086,7 @@ class _RemoteState extends State<Remote> {
         if (snapshot.connectionState != ConnectionState.done) {
           // Під час перезавантаження показуємо попередні дані, щоб екран не блимав.
           if (_last != null) return widget.builder(_last!, _reload);
-          return const Center(child: Padding(padding: EdgeInsets.all(32), child: CircularProgressIndicator(strokeWidth: 2.4)));
+          return const ScreenSkeleton();
         }
         if (snapshot.hasError) {
           return Center(
@@ -1206,14 +1108,60 @@ class _RemoteState extends State<Remote> {
   }
 }
 
-/// Висота прозорої шапки поверх контенту, без системного відступу.
-const siteBarHeight = 58.0;
+/// Висота плаваючої капсули шапки і відступ над нею.
+const headerCapsuleHeight = 56.0;
+const headerTopGap = 4.0;
 
-/// Нижнє меню без системного відступу.
-const navBarHeight = 64.0;
+/// Висота прозорої шапки поверх контенту (відступ + капсула), без системного відступу.
+const siteBarHeight = headerTopGap + headerCapsuleHeight;
+
+/// Нижній острів-меню (плаваючий док) на телефоні разом із відступом знизу, без системного відступу.
+const islandExtent = ArcticDock.height + ArcticDock.bottom;
+
+/// Скругленість нижніх панелей — капсула доку (32): острів, вкладки «Музики» й міні-плеєр однакові.
+const barRadius = ArcticDock.radius;
+
+/// Іконка й підпис вкладки нижньої панелі: вибрана світиться неоновим синім (без підкладок і рамок),
+/// у темній темі яскравіше, у світлій — стриманіше. Перехід між вкладками ~200 мс.
+class NeonTabLabel extends StatelessWidget {
+  const NeonTabLabel({required this.icon, required this.label, required this.active, this.badge, this.weight = FontWeight.w500, super.key});
+  final IconData icon;
+  final String label;
+  final bool active;
+  final Widget? badge;
+  final FontWeight weight;
+
+  @override
+  Widget build(BuildContext context) {
+    final idle = palette.isLight ? ink.withValues(alpha: 0.55) : muted;
+    return TweenAnimationBuilder<double>(
+      tween: Tween(end: active ? 1 : 0),
+      duration: MediaQuery.disableAnimationsOf(context) ? Duration.zero : const Duration(milliseconds: 200),
+      curve: Curves.easeOut,
+      builder: (context, t, _) {
+        final color = Color.lerp(idle, neonBlue, t)!;
+        final strength = palette.isLight ? 0.5 : 1.0;
+        List<Shadow> glow(double near, double far) => t == 0
+            ? const []
+            : [
+                Shadow(color: neonBlue.withValues(alpha: 0.8 * strength * t), blurRadius: near),
+                Shadow(color: neonBlue.withValues(alpha: 0.35 * strength * t), blurRadius: far),
+              ];
+        return Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+          Stack(clipBehavior: Clip.none, children: [
+            Icon(icon, size: 22, color: color, shadows: glow(10, 22)),
+            if (badge case final b?) Positioned(right: -10, top: -4, child: b),
+          ]),
+          const SizedBox(height: 2),
+          Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(11, color: color, weight: weight).copyWith(shadows: glow(6, 14))),
+        ]);
+      },
+    );
+  }
+}
 
 /// Плаваючий плеєр разом із відступом над меню.
-const miniPlayerExtent = 76.0;
+const miniPlayerExtent = ArcticDock.height + 8;
 
 /// З якої ширини екрана (планшет, горизонтальний телефон-«лопата») показуємо бічне меню замість нижнього.
 const tabletWidth = 840.0;
@@ -1226,6 +1174,15 @@ const tabletContentWidth = 820.0;
 
 /// Ширина стрічки на вертикальному планшеті (3:4), де лишається нижня панель.
 const tabletPortraitWidth = 680.0;
+
+/// Скільки триває заміна нижньої панелі (острів ↔ вкладки «Музики»).
+const bottomBarSwap = Duration(milliseconds: 250);
+
+/// Сторінки розділу «Музика» з власною панеллю вкладок: там вона стоїть на місці острова.
+bool hasMusicTabs(Uri uri) => uri.queryParameters['user'] == null && RegExp(r'^/music(/(new|radio|library))?/?$').hasMatch(uri.path);
+
+/// Розділ «Музика» (свій, не чужі аудіозаписи `?user=`): там своя шапка з виходом «Назад».
+bool isMusicSection(Uri uri) => uri.queryParameters['user'] == null && RegExp(r'^/music(/|$)').hasMatch(uri.path);
 
 /// Нижній хром оболонки: скільки контент має лишити під скляним меню й плеєром.
 class ShellChrome extends InheritedWidget {
@@ -1242,7 +1199,7 @@ class ShellChrome extends InheritedWidget {
 /// а прокрутка йшла вже під прозорими кнопками.
 double siteHeaderInset(BuildContext context) {
   final top = MediaQuery.viewPaddingOf(context).top;
-  return (top == 0 ? 24.0 : top) + siteBarHeight;
+  return top + siteBarHeight + 12;
 }
 
 /// Прокрутка екрана: контент їде під прозору шапку і під скляне меню.
@@ -1258,12 +1215,13 @@ class ScreenScroll extends StatelessWidget {
     final base = padding ?? const EdgeInsets.fromLTRB(14, 6, 14, 16);
     final list = ListView(
       controller: controller,
-      physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+      physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
       padding: base.copyWith(
         top: base.top + siteHeaderInset(context),
         bottom: base.bottom + ShellChrome.bottomOf(context),
       ),
-      children: children,
+      // Картки з'являються каскадом; показані раніше (за ключем) — без повтору.
+      children: [for (final child in children) ArcticCascade(key: child.key is GlobalKey ? null : child.key, id: child.key, child: child)],
     );
     if (onRefresh == null) return list;
     return RefreshIndicator(color: primary, backgroundColor: popover, onRefresh: onRefresh!, child: list);
@@ -1299,16 +1257,246 @@ class SectionLabel extends StatelessWidget {
 
 // ───────────────────────── Шторки, тости, діалоги ─────────────────────────
 
-void toast(BuildContext context, Object message) {
-  final text = '$message';
+enum ToastKind { success, error, warning, info }
+
+/// Тост, як на сайті (.gc-toast): угорі під шапкою, іконка в кольорі типу, текст, хрестик
+/// і смужка часу. Нові — зверху; змахнути вгору чи вбік — закрити. Помилки (винятки, «Не вдалося…»)
+/// стають червоними, решта — зеленими, якщо тип не вказано.
+void toast(BuildContext context, Object message, {ToastKind? kind}) {
+  final text = '$message'.replaceFirst(RegExp(r'^Exception: '), '');
   // Ліміт GameCon+ від сервера («З GameCon+ — до 25») — лише пояснення, що це, без жодної оплати.
   final plus = isPlusLimit(message);
-  ScaffoldMessenger.maybeOf(context)
-    ?..hideCurrentSnackBar()
-    ..showSnackBar(SnackBar(
-      content: Text(text),
-      action: plus ? SnackBarAction(label: tr('Що таке GameCon+?'), onPressed: () => showProFeatures(context)) : null,
-    ));
+  final lower = text.toLowerCase();
+  final type = kind ??
+      (plus
+          ? ToastKind.info
+          : message is! String || lower.startsWith('не ') || lower.contains('не вдалося') || lower.contains('помилк')
+              ? ToastKind.error
+              : ToastKind.success);
+  final overlay = Overlay.maybeOf(context, rootOverlay: true);
+  if (overlay == null) return;
+  _Toasts.instance.show(
+    overlay,
+    _ToastData(text, type, action: plus ? (tr('Що таке GameCon+?'), () => showProFeatures(context)) : null),
+  );
+}
+
+class _ToastData {
+  _ToastData(this.text, this.kind, {this.action});
+  final String text;
+  final ToastKind kind;
+  final (String, VoidCallback)? action;
+  final key = UniqueKey();
+}
+
+/// Стопка тостів поверх усього застосунку (один шар у кореневому Overlay).
+class _Toasts {
+  _Toasts._();
+  static final instance = _Toasts._();
+  static const duration = Duration(milliseconds: 4500);
+  static const visible = 3;
+
+  final items = ValueNotifier<List<_ToastData>>([]);
+  OverlayEntry? _entry;
+
+  void show(OverlayState overlay, _ToastData data) {
+    final list = [data, ...items.value];
+    items.value = list.length > visible ? list.sublist(0, visible) : list;
+    // Один шар на всі тости (mounted ще false до першого кадру, тож перевіряємо саму наявність).
+    if (_entry == null) {
+      _entry = OverlayEntry(builder: (_) => _ToastStack(items: items, onDismiss: dismiss));
+      overlay.insert(_entry!);
+    }
+  }
+
+  void dismiss(_ToastData data) {
+    items.value = [for (final item in items.value) if (item != data) item];
+    if (items.value.isEmpty) {
+      _entry?.remove();
+      _entry = null;
+    }
+  }
+}
+
+class _ToastStack extends StatelessWidget {
+  const _ToastStack({required this.items, required this.onDismiss});
+  final ValueNotifier<List<_ToastData>> items;
+  final ValueChanged<_ToastData> onDismiss;
+
+  @override
+  Widget build(BuildContext context) {
+    final media = MediaQuery.of(context);
+    final wide = media.size.width >= tabletWidth;
+    return Positioned(
+      top: media.viewPadding.top + siteBarHeight + 8,
+      left: wide ? null : 12,
+      right: wide ? 16 : 12,
+      child: SafeArea(
+        top: false,
+        bottom: false,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: wide ? 380 : 560),
+          child: ValueListenableBuilder(
+            valueListenable: items,
+            builder: (context, list, _) => Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (final item in list)
+                  Padding(
+                    key: item.key,
+                    padding: EdgeInsets.only(bottom: 10),
+                    child: _ToastCard(data: item, onDismiss: () => onDismiss(item)),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ToastCard extends StatefulWidget {
+  const _ToastCard({required this.data, required this.onDismiss});
+  final _ToastData data;
+  final VoidCallback onDismiss;
+
+  @override
+  State<_ToastCard> createState() => _ToastCardState();
+}
+
+class _ToastCardState extends State<_ToastCard> with TickerProviderStateMixin {
+  late final appear = AnimationController(vsync: this, duration: Duration(milliseconds: 320));
+  late final timer = AnimationController(vsync: this, duration: _Toasts.duration);
+  bool leaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    appear.forward();
+    timer.addStatusListener((status) {
+      if (status == AnimationStatus.completed) _close();
+    });
+    timer.forward();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (MediaQuery.disableAnimationsOf(context)) appear.value = 1;
+  }
+
+  @override
+  void dispose() {
+    appear.dispose();
+    timer.dispose();
+    super.dispose();
+  }
+
+  Future<void> _close() async {
+    if (leaving || !mounted) return;
+    leaving = true;
+    timer.stop();
+    await appear.reverse();
+    widget.onDismiss();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // «!» та «i» — самим знаком у кружку (іконки Lucide для них уже мають власне коло).
+    final (color, Widget mark) = switch (widget.data.kind) {
+      ToastKind.success => (Color(0xFF22C55E), Icon(LucideIcons.check, size: 18, color: Colors.white)),
+      ToastKind.error => (Color(0xFFF43F5E), Icon(LucideIcons.x, size: 18, color: Colors.white)),
+      ToastKind.warning => (Color(0xFFF59E0B), Text('!', style: body(17, color: Colors.white, weight: FontWeight.w800).copyWith(height: 1))),
+      ToastKind.info => (primary, Text('i', style: body(17, color: Colors.white, weight: FontWeight.w800).copyWith(height: 1))),
+    };
+    final action = widget.data.action;
+    final curve = CurvedAnimation(parent: appear, curve: Curves.easeOutCubic, reverseCurve: Curves.easeInCubic);
+    return FadeTransition(
+      opacity: curve,
+      child: SlideTransition(
+        position: Tween(begin: Offset(0, -0.4), end: Offset.zero).animate(curve),
+        child: Dismissible(
+          key: widget.data.key,
+          direction: DismissDirection.up,
+          onDismissed: (_) => widget.onDismiss(),
+          child: Semantics(
+            liveRegion: true,
+            child: Material(
+              color: Colors.transparent,
+              child: GestureDetector(
+                // Утримання — пауза таймера, як наведення курсора на сайті.
+                onTapDown: (_) => timer.stop(),
+                onTapUp: (_) => timer.forward(),
+                onTapCancel: () => timer.forward(),
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(18),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+                      child: Container(
+                        color: popover.withValues(alpha: 0.96),
+                        child: Stack(children: [
+                          Padding(
+                            padding: EdgeInsets.fromLTRB(14, 14, 8, 16),
+                            child: Row(children: [
+                              Container(
+                                width: 32,
+                                height: 32,
+                                alignment: Alignment.center,
+                                decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+                                child: mark,
+                              ),
+                              SizedBox(width: 12),
+                              Expanded(child: Text(widget.data.text, style: body(14, weight: FontWeight.w600).copyWith(height: 1.35))),
+                              if (action != null)
+                                TextButton(
+                                  onPressed: () {
+                                    _close();
+                                    action.$2();
+                                  },
+                                  child: Text(action.$1, style: body(13, color: primary, weight: FontWeight.w600)),
+                                ),
+                              IconButton(
+                                tooltip: tr('Закрити'),
+                                visualDensity: VisualDensity.compact,
+                                onPressed: _close,
+                                icon: Icon(LucideIcons.x, size: 16, color: ink.withValues(alpha: 0.5)),
+                              ),
+                            ]),
+                          ),
+                          // Смужка часу: зменшується, поки тост на екрані.
+                          if (!MediaQuery.disableAnimationsOf(context))
+                            Positioned(
+                              left: 0,
+                              right: 0,
+                              bottom: 0,
+                              height: 3,
+                              child: AnimatedBuilder(
+                                animation: timer,
+                                builder: (_, _) => FractionallySizedBox(
+                                  alignment: Alignment.centerLeft,
+                                  widthFactor: 1 - timer.value,
+                                  child: ColoredBox(color: color),
+                                ),
+                              ),
+                            ),
+                        ]),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 /// Шторка знизу зі скляним фоном, ручкою й заголовком.
@@ -1320,11 +1508,9 @@ Future<T?> showGcSheet<T>(BuildContext context, {String? title, String? subtitle
     useRootNavigator: true,
     isScrollControlled: true,
     useSafeArea: true,
-    backgroundColor: popover,
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      side: BorderSide(color: lineStrong),
-    ),
+    // Прозора шторка: поверхню малює ArcticGlassSheetSurface (glassTier3, розмиття 28).
+    backgroundColor: Colors.transparent,
+    elevation: 0,
     // Аркуш живе в кореневому навігаторі, вище за AppScope оболонки. Тому вміст будуємо під
     // перенесеним AppScope, і `sheet` у builder — контекст усередині нього: AppScope.read(sheet) працює.
     builder: (route) {
@@ -1333,14 +1519,6 @@ Future<T?> showGcSheet<T>(BuildContext context, {String? title, String? subtitle
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Center(
-            child: Container(
-              margin: EdgeInsets.only(top: 10, bottom: 6),
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.16), borderRadius: BorderRadius.circular(4)),
-            ),
-          ),
           if (title != null)
             Padding(
               padding: EdgeInsets.fromLTRB(20, 8, 8, 6),
@@ -1363,10 +1541,17 @@ Future<T?> showGcSheet<T>(BuildContext context, {String? title, String? subtitle
           Flexible(child: builder(sheet)),
         ],
       );
+      final keyboard = MediaQuery.viewInsetsOf(sheet).bottom;
       return Padding(
-        // Клавіатура або системна смуга жестів унизу — що більше.
-        padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(sheet).bottom > 0 ? MediaQuery.viewInsetsOf(sheet).bottom : MediaQuery.viewPaddingOf(sheet).bottom),
-        child: height == null ? content : SizedBox(height: height, child: content),
+        padding: EdgeInsets.only(bottom: keyboard),
+        child: ArcticGlassSheetSurface(
+          child: Padding(
+            // Під клавіатурою відступ уже є; інакше — системна смуга жестів (+12, щоб нижня кнопка
+            // не прилипала до неї). Смугу беремо з самого екрана: усередині шторки MediaQuery її обнуляє.
+            padding: EdgeInsets.only(bottom: keyboard > 0 ? 0 : math.max(MediaQuery.viewPaddingOf(sheet).bottom, MediaQueryData.fromView(View.of(sheet)).viewPadding.bottom) + 12),
+            child: height == null ? content : SizedBox(height: height, child: content),
+          ),
+        ),
       );
       }
 
@@ -1552,3 +1737,178 @@ String languageName(String code) => switch (code) {
       'ja' => '日本語',
       _ => code,
     };
+
+/// Панель незбережених змін, як на сайті (settings/pending-bar.tsx): «3 зміни · Скасувати · Зберегти».
+/// Зміни видно одразу як попередній перегляд, але записуються лише після «Зберегти».
+/// Стоїть над нижнім островом і міні-плеєром; з'являється знизу (RISE).
+class PendingBar extends StatelessWidget {
+  const PendingBar({required this.count, required this.busy, required this.onDiscard, required this.onSave, super.key});
+  final int count;
+  final bool busy;
+  final VoidCallback onDiscard;
+  final VoidCallback onSave;
+
+  @override
+  Widget build(BuildContext context) {
+    final reduce = MediaQuery.disableAnimationsOf(context);
+    final shown = count > 0;
+    return IgnorePointer(
+      ignoring: !shown,
+      child: AnimatedSlide(
+        offset: shown || reduce ? Offset.zero : const Offset(0, 0.4),
+        duration: reduce ? Duration.zero : const Duration(milliseconds: 380),
+        curve: shown ? Curves.easeOutBack : Curves.easeInCubic,
+        child: AnimatedScale(
+          scale: shown || reduce ? 1 : 0.98,
+          duration: reduce ? Duration.zero : const Duration(milliseconds: 380),
+          child: AnimatedOpacity(
+            opacity: shown ? 1 : 0,
+            duration: reduce ? Duration.zero : const Duration(milliseconds: 220),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 560),
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(18),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
+                      child: Container(
+                        color: bar.withValues(alpha: 0.95),
+                        padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
+                        child: Row(children: [
+                          _PulseDot(animate: !reduce),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: AnimatedSwitcher(
+                              duration: reduce ? Duration.zero : const Duration(milliseconds: 200),
+                              transitionBuilder: (child, animation) => FadeTransition(
+                                opacity: animation,
+                                child: SlideTransition(position: Tween(begin: const Offset(0, -0.3), end: Offset.zero).animate(animation), child: child),
+                              ),
+                              layoutBuilder: (current, previous) => Stack(alignment: Alignment.centerLeft, children: [...previous, ?current]),
+                              child: Text(
+                                '$count ${plural(count, tr('зміна'), tr('зміни'), tr('змін'))}',
+                                key: ValueKey(count),
+                                maxLines: 1,
+                                style: body(14, color: ink.withValues(alpha: 0.8)).copyWith(fontFeatures: const [FontFeature.tabularFigures()]),
+                              ),
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: busy ? null : onDiscard,
+                            style: TextButton.styleFrom(foregroundColor: ink.withValues(alpha: 0.6), minimumSize: const Size(0, 38), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                            child: Text(tr('Скасувати'), style: body(14, weight: FontWeight.w500)),
+                          ),
+                          const SizedBox(width: 4),
+                          FilledButton(
+                            onPressed: busy ? null : onSave,
+                            style: FilledButton.styleFrom(backgroundColor: primary, foregroundColor: Colors.white, minimumSize: const Size(0, 38), padding: const EdgeInsets.symmetric(horizontal: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                            child: Text(busy ? tr('Зберігаємо…') : tr('Зберегти'), style: body(14, color: Colors.white, weight: FontWeight.w600)),
+                          ),
+                        ]),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PulseDot extends StatefulWidget {
+  const _PulseDot({required this.animate});
+  final bool animate;
+
+  @override
+  State<_PulseDot> createState() => _PulseDotState();
+}
+
+class _PulseDotState extends State<_PulseDot> with SingleTickerProviderStateMixin {
+  late final pulse = AnimationController(vsync: this, duration: const Duration(seconds: 1));
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.animate) pulse.repeat();
+  }
+
+  @override
+  void dispose() {
+    pulse.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox.square(
+      dimension: 8,
+      child: AnimatedBuilder(
+        animation: pulse,
+        builder: (_, _) => Stack(clipBehavior: Clip.none, alignment: Alignment.center, children: [
+          Transform.scale(
+            scale: 1 + pulse.value * 1.5,
+            child: Container(decoration: BoxDecoration(shape: BoxShape.circle, color: primary.withValues(alpha: 0.6 * (1 - pulse.value)))),
+          ),
+          Container(decoration: BoxDecoration(shape: BoxShape.circle, color: primary)),
+        ]),
+      ),
+    );
+  }
+}
+
+/// М'яке затухання країв горизонтальної прокрутки: видно, що далі є ще вкладки.
+/// Край, до якого вже докрутили, не затухає.
+class EdgeFade extends StatefulWidget {
+  const EdgeFade({required this.child, this.size = 28, super.key});
+  final Widget child;
+  final double size;
+
+  @override
+  State<EdgeFade> createState() => _EdgeFadeState();
+}
+
+class _EdgeFadeState extends State<EdgeFade> {
+  bool start = false;
+  bool end = false;
+
+  bool _update(ScrollMetrics m) {
+    if (m.axis != Axis.horizontal) return false;
+    final s = m.pixels > m.minScrollExtent + 1;
+    final e = m.pixels < m.maxScrollExtent - 1;
+    if (s != start || e != end) {
+      setState(() {
+        start = s;
+        end = e;
+      });
+    }
+    return false;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return NotificationListener<ScrollMetricsNotification>(
+      onNotification: (n) => _update(n.metrics),
+      child: NotificationListener<ScrollNotification>(
+        onNotification: (n) => _update(n.metrics),
+        child: ShaderMask(
+          blendMode: BlendMode.dstIn,
+          shaderCallback: (rect) {
+            final f = (widget.size / rect.width).clamp(0.0, 0.5);
+            return LinearGradient(
+              colors: [start ? const Color(0x00000000) : const Color(0xFF000000), const Color(0xFF000000), const Color(0xFF000000), end ? const Color(0x00000000) : const Color(0xFF000000)],
+              stops: [0, f, 1 - f, 1],
+            ).createShader(rect);
+          },
+          child: widget.child,
+        ),
+      ),
+    );
+  }
+}

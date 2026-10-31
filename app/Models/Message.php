@@ -37,6 +37,9 @@ class Message extends Model
 
     public const TYPE_CONTACT = 'contact';
 
+    /** Відеоповідомлення-кружок (до хвилини). */
+    public const TYPE_VIDEO_NOTE = 'video_note';
+
     public const EDIT_WINDOW_HOURS = 24;
 
     protected function casts(): array
@@ -79,6 +82,14 @@ class Message extends Model
     public function attachments(): HasMany
     {
         return $this->hasMany(MessageAttachment::class)->orderBy('position');
+    }
+
+    /**
+     * @return HasMany<MessageReaction, $this>
+     */
+    public function reactions(): HasMany
+    {
+        return $this->hasMany(MessageReaction::class);
     }
 
     public function isEditableBy(User $user): bool
