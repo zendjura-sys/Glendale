@@ -14,6 +14,7 @@ use App\Http\Controllers\Bots;
 use App\Http\Controllers\CallController;
 use App\Http\Controllers\CharacterController;
 use App\Http\Controllers\ChatBotController;
+use App\Http\Controllers\ChatExtrasController;
 use App\Http\Controllers\ChatToolsController;
 use App\Http\Controllers\CinemaController;
 use App\Http\Controllers\ClanController;
@@ -23,6 +24,7 @@ use App\Http\Controllers\CommunityController;
 use App\Http\Controllers\CommunityGuestController;
 use App\Http\Controllers\CommunityHubController;
 use App\Http\Controllers\CommunityMemberController;
+use App\Http\Controllers\CommunityStickerController;
 use App\Http\Controllers\CommunityWidgetController;
 use App\Http\Controllers\CreatorController;
 use App\Http\Controllers\CrosspostController;
@@ -436,6 +438,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::get('saved', [MessengerController::class, 'saved'])->name('saved');
         Route::get('cards', [MessageController::class, 'cards'])->middleware('throttle:60,1')->name('cards');
         Route::get('attachments/{attachment}', [MessageController::class, 'download'])->whereNumber('attachment')->name('attachments.download');
+        Route::get('attachments/{attachment}/once', [ChatExtrasController::class, 'once'])->whereNumber('attachment')->middleware('throttle:30,1')->name('attachments.once');
         Route::get('attachments/{attachment}/preview', [ChatToolsController::class, 'preview'])->whereNumber('attachment')->middleware('throttle:120,1')->name('attachments.preview');
         Route::get('with/{user}', [MessengerController::class, 'direct'])->name('direct');
         Route::post('groups', [MessengerController::class, 'storeGroup'])->middleware('throttle:10,1')->name('groups.store');
@@ -475,6 +478,11 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
             Route::post('{conversation}/messages/{message}/forward', [MessageController::class, 'forward'])->middleware('throttle:30,1')->name('messages.forward');
             Route::post('{conversation}/messages/{message}/favorite', [MessageController::class, 'favorite'])->name('messages.favorite');
             Route::post('{conversation}/messages/{message}/react', [MessageController::class, 'react'])->middleware('throttle:60,1')->name('messages.react');
+            // Гілки в групах, закріплені повідомлення, особиста нотатка до бесіди.
+            Route::get('{conversation}/messages/{message}/thread', [ChatExtrasController::class, 'thread'])->name('thread');
+            Route::post('{conversation}/messages/{message}/thread', [ChatExtrasController::class, 'reply'])->middleware('throttle:60,1')->name('thread.reply');
+            Route::post('{conversation}/messages/{message}/pin', [ChatExtrasController::class, 'pin'])->middleware('throttle:30,1')->name('messages.pin');
+            Route::put('{conversation}/note', [ChatExtrasController::class, 'note'])->middleware('throttle:30,1')->name('note');
             // Дзвінки в бесіді (звук — через LiveKit).
             Route::get('{conversation}/call', [CallController::class, 'show'])->name('call.show');
             Route::post('{conversation}/call', [CallController::class, 'start'])->middleware('throttle:20,1')->name('call.start');
@@ -493,6 +501,9 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
             Route::post('events/{event}/rsvp', [CommunityHubController::class, 'rsvp'])->whereNumber('event')->withoutScopedBindings()->name('events.rsvp');
             Route::get('events/{event}/stories', [CommunityHubController::class, 'eventStories'])->whereNumber('event')->withoutScopedBindings()->name('events.stories');
             Route::post('events/{event}/stories', [CommunityHubController::class, 'storeEventStory'])->whereNumber('event')->withoutScopedBindings()->middleware('throttle:20,1')->name('events.stories.store');
+            Route::get('stickers', [CommunityStickerController::class, 'show'])->name('stickers');
+            Route::post('stickers', [CommunityStickerController::class, 'upload'])->middleware('throttle:10,1')->name('stickers.upload');
+            Route::delete('stickers/{sticker}', [CommunityStickerController::class, 'destroy'])->whereNumber('sticker')->withoutScopedBindings()->name('stickers.destroy');
             Route::get('wiki', [CommunityHubController::class, 'wikiIndex'])->name('wiki.index');
             Route::post('wiki', [CommunityHubController::class, 'wikiSave'])->middleware('throttle:30,1')->name('wiki.save');
             Route::get('wiki/{slug}', [CommunityHubController::class, 'wikiShow'])->name('wiki.show');

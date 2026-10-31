@@ -1,6 +1,8 @@
 import { Link, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import {
+    MessagesSquare,
+    Pin,
     SmilePlus,
     Bot,
     Flag,
@@ -31,6 +33,7 @@ import {
 } from './message-media';
 import { useContentTranslation } from '@/components/gc/translate';
 import { VideoNotePlayer } from './video-note';
+import { ViewOnceAttachment } from './view-once';
 import { tr } from '@/lib/i18n';
 import { useProfanityMask } from '@/lib/profanity';
 import { usePlugin } from '@/lib/plugins';
@@ -59,6 +62,11 @@ export type BubbleActions = {
     onRestrict?: (message: ChatMessage) => void;
     /** Бан гостя гостьового чату (адміністраторам каналу). */
     onBanGuest?: (message: ChatMessage) => void;
+    /** Закріпити / відкріпити (кілька закріплених у бесіді). */
+    onPin?: (message: ChatMessage) => void;
+    isPinned?: (message: ChatMessage) => boolean;
+    /** Відкрити гілку під повідомленням (групи). */
+    onThread?: (message: ChatMessage) => void;
 };
 
 type Props = {
@@ -175,8 +183,9 @@ export function MessageBubble({
     const videoNote = message.attachments.find((a) => a.type === 'video_note');
     const favoriteOn = usePlugin('favorite_messages');
     const images = message.attachments.filter(
-        (a) => (a.type ?? 'image') === 'image',
+        (a) => (a.type ?? 'image') === 'image' && !a.view_once,
     );
+    const viewOnce = message.attachments.find((a) => a.view_once);
     const files = message.attachments.filter((a) => a.type === 'file');
     const voice = message.attachments.find((a) => a.type === 'voice');
     const isSticker =
@@ -545,6 +554,27 @@ export function MessageBubble({
                     )}
                 </div>
 
+                {viewOnce && (
+                    <div className={cn('mt-1 flex', own && 'justify-end')}>
+                        <ViewOnceAttachment attachment={viewOnce} own={own} />
+                    </div>
+                )}
+
+                {message.thread && message.thread.count > 0 && (
+                    <div className={cn('mt-1 flex', own && 'justify-end')}>
+                        <button
+                            type="button"
+                            onClick={() => actions.onThread?.(message)}
+                            className="inline-flex items-center gap-1.5 rounded-full bg-white/[0.07] px-3 py-1 text-xs font-medium text-sky-300 hover:bg-white/[0.12]"
+                        >
+                            <MessagesSquare className="size-3.5" />
+                            {tr('{count} відп. у гілці', {
+                                count: message.thread.count,
+                            })}
+                        </button>
+                    </div>
+                )}
+
                 {reactions.length > 0 && (
                     <div
                         className={cn(
@@ -675,6 +705,35 @@ export function MessageBubble({
                             title={tr('Редагувати')}
                         >
                             <Pencil className="size-3.5" />
+                        </button>
+                    )}
+                    {actions.onThread &&
+                        message.type !== 'system' &&
+                        !message.thread_root_id && (
+                            <button
+                                type="button"
+                                className={toolButton}
+                                onClick={() => actions.onThread?.(message)}
+                                title={tr('Відповісти в гілці')}
+                            >
+                                <MessagesSquare className="size-3.5" />
+                            </button>
+                        )}
+                    {actions.onPin && message.type !== 'system' && (
+                        <button
+                            type="button"
+                            className={cn(
+                                toolButton,
+                                actions.isPinned?.(message) && 'text-sky-300',
+                            )}
+                            onClick={() => actions.onPin?.(message)}
+                            title={
+                                actions.isPinned?.(message)
+                                    ? tr('Відкріпити')
+                                    : tr('Закріпити')
+                            }
+                        >
+                            <Pin className="size-3.5" />
                         </button>
                     )}
                     {forwardOn && message.type !== 'system' && (

@@ -25,6 +25,9 @@ export type ChatAttachment = {
     waveform?: number[] | null;
     /** Документ можна переглянути на сайті (PDF, текст, аудіо, відео). */
     preview?: 'pdf' | 'text' | 'image' | 'audio' | 'video' | null;
+    /** Фото «на один перегляд»: посилання немає, відкривається через /once. */
+    view_once?: boolean;
+    viewed_by?: number[];
 };
 
 export type StickerItem = {
@@ -54,6 +57,8 @@ export type OutgoingMessage =
           files: File[];
           publishAt?: string | null;
           vanish?: boolean;
+          /** Одне фото «на один перегляд». */
+          once?: boolean;
           card?: {
               kind: string;
               id: number;
@@ -97,6 +102,9 @@ export type ChatMessage = {
         deleted: boolean;
     } | null;
     attachments: ChatAttachment[];
+    /** Відповідь у гілці (id кореня) і лічильник гілки в кореня. */
+    thread_root_id?: number | null;
+    thread?: { count: number; last_at: string | null } | null;
     edited_at: string | null;
     publish_at?: string | null;
     expires_at?: string | null;
@@ -183,7 +191,13 @@ export type ConversationDetails = {
     background?: { preset: string | null; image: string | null } | null;
     my_background?: string | null;
     shared_background?: string | null;
+    /** Особиста нотатка до бесіди й закріплені повідомлення. */
+    note?: string | null;
+    pins?: ChatPin[];
+    can_pin?: boolean;
 };
+
+export type ChatPin = { id: number; preview: string; author: string | null };
 
 export type ChatHistory = {
     messages: ChatMessage[];

@@ -215,7 +215,7 @@ class Messenger
      * @param  list<UploadedFile>  $documents
      * @param  array{kind: string, id: int, title: string, hint: string, href: string, image: string|null}|null  $card
      */
-    public function send(Conversation $conversation, User $sender, ?string $body, array $images = [], ?int $replyToId = null, array $documents = [], ?CarbonInterface $publishAt = null, ?CarbonInterface $expiresAt = null, ?array $card = null): Message
+    public function send(Conversation $conversation, User $sender, ?string $body, array $images = [], ?int $replyToId = null, array $documents = [], ?CarbonInterface $publishAt = null, ?CarbonInterface $expiresAt = null, ?array $card = null, bool $viewOnce = false): Message
     {
         $body = $body !== null ? trim($body) : null;
 
@@ -237,8 +237,28 @@ class Messenger
             $attributes['expires_at'] = $expiresAt;
         }
 
-        $message = $this->deliver($conversation, $sender, $attributes, $replyToId, function (Message $message) use ($images, $documents) {
+        $message = $this->deliver($conversation, $sender, $attributes, $replyToId, function (Message $message) use ($images, $documents, $viewOnce) {
             $position = 0;
+
+            // Фото «на один перегляд»: оригінал у приватному сховищі, віддається лише через одноразове відкриття.
+            if ($viewOnce) {
+                foreach ($images as $file) {
+                    [$width, $height] = @getimagesize($file->getRealPath()) ?: [null, null];
+                    $message->attachments()->create([
+                        'type' => MessageAttachment::TYPE_IMAGE,
+                        'disk' => MessageAttachment::PRIVATE_DISK,
+                        'path' => $file->store('message-once/'.now()->format('Y/m'), MessageAttachment::PRIVATE_DISK),
+                        'mime' => Str::limit((string) $file->getMimeType(), 64, ''),
+                        'size' => $file->getSize(),
+                        'width' => $width,
+                        'height' => $height,
+                        'meta' => ['view_once' => true],
+                        'position' => $position++,
+                    ]);
+                }
+
+                return;
+            }
 
             foreach ($images as $file) {
                 $message->attachments()->create([
@@ -352,6 +372,24 @@ class Messenger
                 'duration' => $duration,
             ]);
         });
+    }
+
+    /**
+     * Відповідь у гілці під повідомленням групи: окремо від основної стрічки, лічильник — у кореня.
+     */
+    public function sendInThread(Conversation $conversation, User $sender, Message $root, string $body): Message
+    {
+        $body = trim($body);
+        if ($body === '') {
+            throw ValidationException::withMessages(['body' => 'Повідомлення порожнє.']);
+        }
+        abort_unless($conversation->isGroup() && $root->conversation_id === $conversation->id && $root->thread_root_id === null && ! $root->trashed() && $root->type !== Message::TYPE_SYSTEM, 404);
+
+        $reply = $this->deliver($conversation, $sender, ['type' => Message::TYPE_TEXT, 'body' => $body, 'thread_root_id' => $root->id], null);
+        $root->forceFill(['thread_count' => $root->thread_count + 1, 'thread_last_at' => $reply->created_at])->save();
+        $this->broadcast(new MessageUpdated($conversation->id, $this->presenter->message($this->presenter->load($root))));
+
+        return $reply;
     }
 
     /**

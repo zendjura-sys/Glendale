@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\CommunityMember;
 use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\MessageAttachment;
@@ -84,6 +85,7 @@ class MessageController extends Controller
             'video_duration' => ['required_with:video_note', 'integer', 'min:1', 'max:'.self::MAX_VIDEO_NOTE_SECONDS],
             'publish_at' => ['nullable', 'date'],
             'disappear' => ['nullable', 'boolean'],
+            'view_once' => ['nullable', 'boolean'],
             'card' => ['nullable', 'array'],
             'gif' => ['nullable', 'array'],
             'gif.url' => ['required_with:gif', 'string', 'max:300'],
@@ -105,6 +107,12 @@ class MessageController extends Controller
         if ($request->boolean('disappear')) {
             $plugins->ensure('disappearing_messages');
         }
+        if ($request->boolean('view_once')) {
+            $plugins->ensure('view_once');
+            if (count($request->file('images', [])) !== 1 || $request->hasFile('files') || $request->filled('publish_at')) {
+                throw ValidationException::withMessages(['images' => 'На один перегляд можна надіслати одне фото без файлів і без відкладення.']);
+            }
+        }
         $replyTo = isset($data['reply_to_id']) ? (int) $data['reply_to_id'] : null;
         $card = $this->card($data);
         $publishAt = $this->publishAt($request);
@@ -116,9 +124,12 @@ class MessageController extends Controller
             isset($data['sticker_id']) => $this->messenger->sendSticker(
                 $conversation,
                 $user,
-                Sticker::query()->whereKey($data['sticker_id'])->whereHas('pack', fn ($q) => $q->active()->when(! $user->isPlus(), fn ($q) => $q->where(fn ($q) => $q->where('is_plus', false)->orWhereIn('slug', app(SeasonPass::class)->stickerPacks($user)))))->firstOr(
-                    fn () => throw ValidationException::withMessages(['sticker_id' => 'Стікер недоступний.'])
-                ),
+                Sticker::query()->whereKey($data['sticker_id'])->whereHas('pack', fn ($q) => $q->active()->where(fn ($q) => $q
+                    // Набір спільноти — лише її учасникам.
+                    ->where(fn ($q) => $q->whereNotNull('community_id')->whereIn('community_id', $this->memberCommunities($user)))
+                    ->orWhere(fn ($q) => $q->whereNull('community_id')->when(! $user->isPlus(), fn ($q) => $q->where(fn ($q) => $q->where('is_plus', false)->orWhereIn('slug', app(SeasonPass::class)->stickerPacks($user)))))))->firstOr(
+                        fn () => throw ValidationException::withMessages(['sticker_id' => 'Стікер недоступний.'])
+                    ),
                 $replyTo,
             ),
             $request->hasFile('voice') => $this->messenger->sendVoice(
@@ -170,7 +181,35 @@ class MessageController extends Controller
         // Набори, відкриті нагородою сезонного пропуску, доступні й без підписки.
         $owned = request()->user() ? app(SeasonPass::class)->stickerPacks(request()->user()) : [];
 
-        return response()->json(['packs' => array_map(fn (array $pack) => [...$pack, 'locked' => $pack['is_plus'] && ! $plus && ! in_array($pack['slug'], $owned, true)], StickerPack::catalog())]);
+        $packs = array_map(fn (array $pack) => [...$pack, 'locked' => $pack['is_plus'] && ! $plus && ! in_array($pack['slug'], $owned, true)], StickerPack::catalog());
+        // Набори спільнот, у яких людина є учасником.
+        $user = request()->user();
+        if ($user !== null && app(Plugins::class)->on('community_stickers')) {
+            $community = StickerPack::query()->active()->whereIn('community_id', $this->memberCommunities($user))->whereHas('stickers')
+                ->with(['stickers', 'community'])->orderBy('id')->get()
+                ->map(fn (StickerPack $pack) => [
+                    'id' => $pack->id,
+                    'slug' => $pack->slug,
+                    'name' => $pack->name,
+                    'is_plus' => false,
+                    'community' => $pack->community?->name,
+                    'stickers' => array_values($pack->stickers->map->toCard()->all()),
+                    'locked' => false,
+                ])->all();
+            $packs = [...$community, ...$packs];
+        }
+
+        return response()->json(['packs' => $packs]);
+    }
+
+    /**
+     * Спільноти, де людина — учасник (для їхніх наборів стікерів).
+     *
+     * @return list<int>
+     */
+    private function memberCommunities(User $user): array
+    {
+        return array_values(array_map('intval', CommunityMember::query()->where('user_id', $user->id)->where('status', CommunityMember::STATUS_ACTIVE)->pluck('community_id')->all()));
     }
 
     public function download(Request $request, MessageAttachment $attachment): StreamedResponse
@@ -205,6 +244,7 @@ class MessageController extends Controller
             $publishAt,
             $expiresAt,
             $card,
+            $request->boolean('view_once'),
         );
     }
 

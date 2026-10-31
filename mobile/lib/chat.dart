@@ -13,6 +13,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'ai_tools.dart';
 import 'api.dart';
+import 'chat_extras.dart';
 import 'listen_together.dart';
 import 'posts.dart';
 import 'push.dart';
@@ -650,6 +651,8 @@ class _ChatScreenState extends State<ChatScreen> {
         padding: const EdgeInsets.fromLTRB(12, 0, 12, 20),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           _AttachOption(icon: LucideIcons.image, color: Color(0xFF38BDF8), title: tr('Фото'), subtitle: 'JPG, PNG, WebP, GIF', onTap: () => Navigator.pop(sheet, 'photo')),
+          if (AppScope.read(context).session.pluginOn('view_once'))
+            _AttachOption(icon: LucideIcons.eye, color: Color(0xFFF59E0B), title: tr('Фото на один перегляд'), subtitle: tr('Відкриється лише раз'), onTap: () => Navigator.pop(sheet, 'once')),
           _AttachOption(icon: LucideIcons.file, color: violet, title: tr('Файл'), subtitle: tr('до 50 МБ'), onTap: () => Navigator.pop(sheet, 'file')),
           _AttachOption(icon: LucideIcons.userRound, color: Color(0xFF2DD4BF), title: tr('Контакт'), subtitle: tr('Пошук на GameCon'), onTap: () => Navigator.pop(sheet, 'contact')),
         ]),
@@ -663,9 +666,25 @@ class _ChatScreenState extends State<ChatScreen> {
       case 'file':
         final result = await FilePicker.platform.pickFiles(allowMultiple: true);
         if (result != null) setState(() => files.addAll(result.files.take(10 - images.length - files.length)));
+      case 'once':
+        final picked = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 88);
+        if (picked != null) await _sendOnce(picked);
       case 'contact':
         final user = await _pickContact();
         if (user != null) await _send(extra: {'contact_id': '${user['id']}'});
+    }
+  }
+
+  /// Одне фото «на один перегляд» — одразу, без підпису.
+  Future<void> _sendOnce(XFile image) async {
+    setState(() => sending = true);
+    try {
+      final data = await api.upload('/api/v1/messages/${widget.id}', {'view_once': '1'}, [await http.MultipartFile.fromPath('images[]', image.path, filename: image.name)]);
+      if (mounted && data['message'] is Map) setState(() => messages.add(mapOf(data['message'])));
+    } catch (e) {
+      if (mounted) toast(context, e);
+    } finally {
+      if (mounted) setState(() => sending = false);
     }
   }
 
@@ -699,12 +718,20 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<void> _messageMenu(Map<String, dynamic> message) async {
     final own = intOf(mapOf(message['user'])['id']) == myId;
     final hasText = (text(message['body']) ?? '').isNotEmpty;
+    final session = AppScope.read(context).session;
+    final chat = conversation ?? const {};
+    final group = chat['type'] == 'group';
+    final threads = group && session.pluginOn('chat_threads');
+    final canPin = session.pluginOn('chat_pins') && (chat['can_pin'] == true || (!group && chat['can_pin'] != false));
+    final pinned = maps(chat['pins']).any((p) => intOf(p['id']) == intOf(message['id']));
     final choice = await showGcSheet<String>(
       context,
       builder: (sheet) => Padding(
         padding: EdgeInsets.fromLTRB(12, 0, 12, 20),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           SheetAction(icon: LucideIcons.reply, label: tr('Відповісти'), onTap: () => Navigator.pop(sheet, 'reply')),
+          if (threads) SheetAction(icon: LucideIcons.messagesSquare, label: tr('Відповісти в гілці'), onTap: () => Navigator.pop(sheet, 'thread')),
+          if (canPin) SheetAction(icon: LucideIcons.pin, label: pinned ? tr('Відкріпити') : tr('Закріпити'), onTap: () => Navigator.pop(sheet, 'pin')),
           if (hasText) SheetAction(icon: LucideIcons.copy, label: tr('Копіювати текст'), onTap: () => Navigator.pop(sheet, 'copy')),
           if (own && hasText && message['type'] == 'text') SheetAction(icon: LucideIcons.pencil, label: tr('Редагувати'), onTap: () => Navigator.pop(sheet, 'edit')),
           if (own) SheetAction(icon: LucideIcons.trash2, label: tr('Видалити'), color: dangerSoft, onTap: () => Navigator.pop(sheet, 'delete')),
@@ -715,6 +742,15 @@ class _ChatScreenState extends State<ChatScreen> {
     );
     if (!mounted || choice == null) return;
     switch (choice) {
+      case 'thread':
+        await _openThread(message);
+      case 'pin':
+        try {
+          final r = await api.post(Api.site('/messages/${widget.id}/messages/${message['id']}/pin'));
+          if (mounted) setState(() => conversation?['pins'] = r['pins']);
+        } catch (e) {
+          if (mounted) toast(context, e);
+        }
       case 'reply':
         _reply(message);
       case 'copy':
@@ -738,6 +774,22 @@ class _ChatScreenState extends State<ChatScreen> {
       case 'translate':
         await _translate(message);
     }
+  }
+
+  /// Гілка під повідомленням групи — у шторці; після закриття оновлюємо лічильник.
+  Future<void> _openThread(Map<String, dynamic> message) async {
+    await showGcSheet<void>(
+      context,
+      title: tr('Гілка'),
+      height: MediaQuery.sizeOf(context).height * 0.8,
+      builder: (sheet) => Padding(padding: const EdgeInsets.fromLTRB(16, 0, 16, 16), child: ThreadSheet(conversationId: widget.id, rootId: intOf(message['id']))),
+    );
+    unawaited(_refresh());
+  }
+
+  Future<void> _editNote() async {
+    final saved = await editChatNote(context, widget.id, text(conversation?['note']));
+    if (saved != null && mounted) setState(() => conversation?['note'] = saved.isEmpty ? null : saved);
   }
 
   /// Переклад повідомлення мовою інтерфейсу (DeepL, кешується на сервері).
@@ -798,6 +850,7 @@ class _ChatScreenState extends State<ChatScreen> {
           : const ListSkeleton(rows: 6);
     }
     final group = chat['type'] == 'group';
+    final session = AppScope.of(context).session;
     final peer = chat['peer'] is Map ? mapOf(chat['peer']) : null;
     final readUpTo = intOf(chat['read_up_to']);
     final reversed = messages.reversed.toList();
@@ -844,10 +897,29 @@ class _ChatScreenState extends State<ChatScreen> {
                   icon: Icon(LucideIcons.headphones, color: muted),
                 ),
                 _CallButton(chat: chat, conversation: widget.id),
+                if (session.pluginOn('chat_notes'))
+                  IconButton(
+                    tooltip: tr('Нотатка до чату'),
+                    onPressed: _editNote,
+                    icon: Icon(LucideIcons.stickyNote, color: text(chat['note']) != null ? const Color(0xFFFCD34D) : muted),
+                  ),
                 if (group) IconButton(tooltip: tr('Меню бесіди'), onPressed: _chatMenu, icon: Icon(LucideIcons.ellipsisVertical, color: muted)),
               ]),
             ),
             Divider(height: 1, color: line),
+            if (session.pluginOn('chat_pins')) PinnedBar(pins: maps(chat['pins']), onJump: _jumpTo),
+            if (session.pluginOn('chat_notes') && text(chat['note']) != null)
+              InkWell(
+                onTap: _editNote,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                  child: Row(children: [
+                    const Icon(LucideIcons.stickyNote, size: 14, color: Color(0xFFFCD34D)),
+                    const SizedBox(width: 8),
+                    Expanded(child: Text(text(chat['note'])!, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12.5, color: muted))),
+                  ]),
+                ),
+              ),
             _CallBanner(chat: chat, conversation: widget.id),
             Expanded(
               child: messages.isEmpty
@@ -871,6 +943,7 @@ class _ChatScreenState extends State<ChatScreen> {
                           onMenu: () => _messageMenu(message),
                           onQuote: _jumpTo,
                           conversationId: widget.id,
+                          onThread: () => _openThread(message),
                         );
                         return Column(key: bubbleKeys.putIfAbsent(id, GlobalKey.new), children: [
                           if (showDay) _DayLabel(iso: message['created_at']),
@@ -1328,7 +1401,7 @@ class _SwipeToReplyState extends State<_SwipeToReply> with SingleTickerProviderS
 
 /// Повідомлення: текст, відповідь, фото, файли, голосове, стікер, контакт, системне.
 class _Bubble extends StatelessWidget {
-  const _Bubble({required this.message, required this.own, required this.group, required this.read, required this.onMenu, required this.onQuote, required this.conversationId});
+  const _Bubble({required this.message, required this.own, required this.group, required this.read, required this.onMenu, required this.onQuote, required this.conversationId, this.onThread});
   final Map<String, dynamic> message;
   final bool own;
   final bool group;
@@ -1336,6 +1409,7 @@ class _Bubble extends StatelessWidget {
   final VoidCallback onMenu;
   final ValueChanged<int> onQuote;
   final int conversationId;
+  final VoidCallback? onThread;
 
   @override
   Widget build(BuildContext context) {
@@ -1349,7 +1423,9 @@ class _Bubble extends StatelessWidget {
     final user = mapOf(message['user']);
     final rank = user['family_rank'] is Map ? mapOf(user['family_rank']) : null;
     final attachments = maps(message['attachments']);
-    final photos = attachments.where((a) => a['type'] == 'image').toList();
+    final photos = attachments.where((a) => a['type'] == 'image' && a['view_once'] != true).toList();
+    final once = attachments.where((a) => a['view_once'] == true).toList();
+    final thread = message['thread'] is Map ? mapOf(message['thread']) : null;
     final docs = attachments.where((a) => a['type'] == 'file').toList();
     final voice = attachments.where((a) => a['type'] == 'voice').toList();
     final sticker = message['sticker'] is Map ? mapOf(message['sticker']) : null;
@@ -1393,6 +1469,19 @@ class _Bubble extends StatelessWidget {
             ),
           ),
         if (photos.isNotEmpty) Padding(padding: const EdgeInsets.only(bottom: 4), child: SizedBox(width: 240, child: MediaGrid(items: photos))),
+        for (final a in once) ViewOnceChip(attachment: a, own: own),
+        if (thread != null && intOf(thread['count']) > 0)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 4),
+            child: GestureDetector(
+              onTap: onThread,
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                Icon(LucideIcons.messagesSquare, size: 14, color: own ? Colors.white : primary),
+                const SizedBox(width: 6),
+                Text(tr('{count} відп. у гілці', {'count': '${intOf(thread['count'])}'}), style: body(12.5, color: own ? Colors.white : primary, weight: FontWeight.w600)),
+              ]),
+            ),
+          ),
         for (final doc in docs) _FileChip(file: doc, own: own),
         for (final clip in voice) _VoiceClip(clip: clip, own: own),
         if (contact != null)

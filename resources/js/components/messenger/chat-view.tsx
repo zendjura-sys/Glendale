@@ -20,6 +20,7 @@ import {
     FolderOpen,
     MoreHorizontal,
     Wallpaper,
+    StickyNote,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import {
@@ -44,6 +45,7 @@ import { cn } from '@/lib/utils';
 import { leaveVoice, startCall, useVoice } from '@/lib/voice';
 import type { CallState } from '@/lib/voice';
 import type {
+    ChatPin,
     Attachment,
     ChatAttachment,
     ChatHistory,
@@ -64,6 +66,7 @@ import { ChatSharedDialog } from './chat-shared-dialog';
 import { DocPreviewDialog } from './doc-preview';
 import type { PreviewFile } from './doc-preview';
 import { RestrictDialog } from './restrict-dialog';
+import { NoteDialog, PinnedBar, ThreadPanel } from './chat-extras';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -276,6 +279,14 @@ export function ChatView({
     const whisper = useRealtime(`conversation.${active.id}`, {
         'message.sent': ({ message }: { message: ChatMessage }) => {
             if (message.user) stopTyping(message.user.id);
+            // Відповідь у гілці — лише у вікні гілки, не в основній стрічці.
+            if (message.thread_root_id) {
+                window.dispatchEvent(
+                    new CustomEvent('gc:thread', { detail: message }),
+                );
+
+                return;
+            }
 
             if (
                 message.user?.id === me.id &&
@@ -396,6 +407,7 @@ export function ChatView({
                 if (outgoing.publishAt)
                     form.append('publish_at', outgoing.publishAt);
                 if (outgoing.vanish) form.append('disappear', '1');
+                if (outgoing.once) form.append('view_once', '1');
                 if (outgoing.card?.kind === 'gif') {
                     form.append('gif[url]', outgoing.card.href);
                     form.append('gif[title]', outgoing.card.title);
@@ -607,6 +619,17 @@ export function ChatView({
     const [botsOpen, setBotsOpen] = useState(false);
     const [summaryOpen, setSummaryOpen] = useState(false);
     const [sharedOpen, setSharedOpen] = useState(false);
+    // Гілки, закріплені й нотатка до бесіди.
+    const threadsOn = usePlugin('chat_threads') && isGroup;
+    const pinsOn = usePlugin('chat_pins');
+    const notesOn = usePlugin('chat_notes');
+    const [pins, setPins] = useState<ChatPin[]>(active.pins ?? []);
+    useEffect(() => setPins(active.pins ?? []), [active.id, active.pins]);
+    const [thread, setThread] = useState<ChatMessage | null>(null);
+    useEffect(() => setThread(null), [active.id]);
+    const [note, setNote] = useState<string | null>(active.note ?? null);
+    useEffect(() => setNote(active.note ?? null), [active.id, active.note]);
+    const [noteOpen, setNoteOpen] = useState(false);
     const [backgroundOpen, setBackgroundOpen] = useState(false);
     const [restricting, setRestricting] = useState<ChatMessage['user']>(null);
     const ipBansOn = usePlugin('ip_bans');
@@ -640,6 +663,18 @@ export function ChatView({
     });
 
     const actions: BubbleActions = {
+        onThread: threadsOn ? (message) => setThread(message) : undefined,
+        onPin:
+            pinsOn && (active.can_pin ?? !isGroup)
+                ? (message) =>
+                      void api<{ pins: ChatPin[] }>(
+                          'POST',
+                          `/messages/${active.id}/messages/${message.id}/pin`,
+                      )
+                          .then((data) => setPins(data.pins))
+                          .catch((e) => toast.error((e as Error).message))
+                : undefined,
+        isPinned: (message) => pins.some((p) => p.id === message.id),
         onReply: (message) => {
             setEditing(null);
             setReplyTo(message);
@@ -1038,6 +1073,16 @@ export function ChatView({
                                     {tr('Фон чату')}
                                 </DropdownMenuItem>
                             )}
+                            {notesOn && (
+                                <DropdownMenuItem
+                                    onSelect={() => setNoteOpen(true)}
+                                >
+                                    <StickyNote className="size-4" />
+                                    {note
+                                        ? tr('Моя нотатка')
+                                        : tr('Додати нотатку')}
+                                </DropdownMenuItem>
+                            )}
                             {aiSummaryOn && (
                                 <DropdownMenuItem
                                     onSelect={() => setSummaryOpen(true)}
@@ -1198,7 +1243,26 @@ export function ChatView({
                 </div>
             )}
 
+            {pinsOn && <PinnedBar pins={pins} onJump={actions.onJump} />}
+            {notesOn && note && (
+                <button
+                    type="button"
+                    onClick={() => setNoteOpen(true)}
+                    className="flex w-full items-center gap-2 border-b border-white/[0.06] px-3 py-1.5 text-left text-xs text-white/55 sm:px-4"
+                >
+                    <StickyNote className="size-3.5 shrink-0 text-amber-300" />
+                    <span className="truncate">{note}</span>
+                </button>
+            )}
+
             <div className="relative min-h-0 flex-1">
+                {thread && (
+                    <ThreadPanel
+                        conversationId={active.id}
+                        root={thread}
+                        onClose={() => setThread(null)}
+                    />
+                )}
                 {backgroundsOn && (
                     <ChatBackdrop background={active.background} />
                 )}
@@ -1531,6 +1595,14 @@ export function ChatView({
                 file={previewing}
                 onClose={() => setPreviewing(null)}
             />
+            {noteOpen && (
+                <NoteDialog
+                    conversationId={active.id}
+                    note={note}
+                    onClose={() => setNoteOpen(false)}
+                    onSaved={setNote}
+                />
+            )}
         </section>
     );
 }

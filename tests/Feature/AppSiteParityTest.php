@@ -46,6 +46,22 @@ class AppSiteParityTest extends TestCase
         return app(ApiTokens::class)->issue($user, 'android');
     }
 
+    public function test_app_reaches_chat_extras(): void
+    {
+        $owner = User::factory()->create();
+        $member = User::factory()->create();
+        Friendship::query()->create(['requester_id' => $owner->id, 'addressee_id' => $member->id, 'status' => Friendship::ACCEPTED, 'accepted_at' => now()]);
+        $chat = app(Messenger::class)->createGroup($owner, 'Рейд', [$member->id]);
+        $root = app(Messenger::class)->send($chat, $owner, 'Хто сьогодні?');
+        $token = $this->app_token($owner);
+        $this->withToken($token)->postJson("/api/v1/site/messages/{$chat->id}/messages/{$root->id}/thread", ['body' => 'Я'])->assertCreated();
+        $this->withToken($token)->getJson("/api/v1/site/messages/{$chat->id}/messages/{$root->id}/thread")->assertOk()->assertJsonCount(1, 'messages');
+        $this->withToken($token)->postJson("/api/v1/site/messages/{$chat->id}/messages/{$root->id}/pin")->assertOk()->assertJsonPath('pinned', true);
+        $this->withToken($token)->putJson("/api/v1/site/messages/{$chat->id}/note", ['note' => 'Рейд у п’ятницю'])->assertOk();
+        $this->withToken($token)->getJson("/api/v1/messages/{$chat->id}")->assertOk()
+            ->assertJsonPath('conversation.note', 'Рейд у п’ятницю')->assertJsonPath('conversation.pins.0.id', $root->id);
+    }
+
     public function test_app_reaches_fun_features(): void
     {
         $user = User::factory()->create();

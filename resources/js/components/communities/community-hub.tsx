@@ -1,10 +1,11 @@
 import { Link } from '@inertiajs/react';
-import { BookOpenText, CalendarDays, Medal } from 'lucide-react';
+import { BookOpenText, CalendarDays, Medal, Sticker } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { UserAvatar } from '@/components/gc/user-avatar';
 import { Widget } from '@/components/gc/widget';
 import { api } from '@/lib/api';
 import { LOCALE, tr } from '@/lib/i18n';
+import { usePlugin } from '@/lib/plugins';
 import type { UserCard } from '@/types';
 
 export type CommunityEventItem = {
@@ -39,6 +40,7 @@ export function eventWhen(iso: string): string {
 /** Бічний блок спільноти: найближчі події, вікі й найактивніші учасники. */
 export function CommunityHub({ slug }: { slug: string }) {
     const [hub, setHub] = useState<Hub | null>(null);
+    const stickersOn = usePlugin('community_stickers');
 
     useEffect(() => {
         void api<Hub>('GET', `/c/${slug}/hub`)
@@ -108,6 +110,17 @@ export function CommunityHub({ slug }: { slug: string }) {
                         {hub.wiki
                             ? tr('{count} стор.', { count: hub.wiki })
                             : tr('Почати')}
+                    </span>
+                </Link>
+            )}
+            {stickersOn && (
+                <Link
+                    href={`/c/${slug}/stickers`}
+                    className="glass flex items-center gap-3 rounded-2xl p-4 transition hover:bg-white/[0.06]"
+                >
+                    <Sticker className="size-5 text-sky-300" />
+                    <span className="flex-1 text-sm font-medium text-white">
+                        {tr('Стікери спільноти')}
                     </span>
                 </Link>
             )}

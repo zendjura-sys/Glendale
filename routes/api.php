@@ -19,6 +19,7 @@ use App\Http\Controllers\Bots;
 use App\Http\Controllers\CallController;
 use App\Http\Controllers\CharacterController;
 use App\Http\Controllers\ChatBotController;
+use App\Http\Controllers\ChatExtrasController;
 use App\Http\Controllers\ChatToolsController;
 use App\Http\Controllers\CinemaController;
 use App\Http\Controllers\ClanController;
@@ -27,6 +28,7 @@ use App\Http\Controllers\CommunityChannelController;
 use App\Http\Controllers\CommunityController;
 use App\Http\Controllers\CommunityHubController;
 use App\Http\Controllers\CommunityMemberController;
+use App\Http\Controllers\CommunityStickerController;
 use App\Http\Controllers\CreatorController;
 use App\Http\Controllers\CrosspostController;
 use App\Http\Controllers\EventController;
@@ -409,6 +411,11 @@ Route::prefix('v1')->group(function () {
             Route::post('configs/{config}/like', [GameConfigController::class, 'like'])->whereNumber('config')->middleware('throttle:60,1');
             Route::post('configs/{config}/copied', [GameConfigController::class, 'copied'])->whereNumber('config')->middleware('throttle:60,1');
             Route::delete('configs/{config}', [GameConfigController::class, 'destroy'])->whereNumber('config');
+            Route::middleware('module:communities')->group(function () {
+                Route::get('c/{community}/stickers', [CommunityStickerController::class, 'show']);
+                Route::post('c/{community}/stickers', [CommunityStickerController::class, 'upload'])->middleware('throttle:10,1');
+                Route::delete('c/{community}/stickers/{sticker}', [CommunityStickerController::class, 'destroy'])->whereNumber('sticker')->withoutScopedBindings();
+            });
             // Рулетка кіно, «Вгадай пісню», вікторина дня й ігровий щоденник — ті самі дії, що й на сайті.
             Route::get('cinema/roulette', [MovieRouletteController::class, 'index'])->middleware('module:cinema');
             Route::get('cinema/roulette/spin', [MovieRouletteController::class, 'spin'])->middleware(['module:cinema', 'throttle:60,1']);
@@ -624,6 +631,12 @@ Route::prefix('v1')->group(function () {
                 Route::patch('{conversation}/bots/posts/{automation}', [ChatBotController::class, 'update'])->whereNumber('automation');
                 Route::delete('{conversation}/bots/posts/{automation}', [ChatBotController::class, 'destroy'])->whereNumber('automation');
                 Route::get('attachments/{attachment}/preview', [ChatToolsController::class, 'preview'])->whereNumber('attachment')->middleware('throttle:120,1');
+                // Гілки, закріплені, нотатка до бесіди, фото на один перегляд.
+                Route::get('{conversation}/messages/{message}/thread', [ChatExtrasController::class, 'thread']);
+                Route::post('{conversation}/messages/{message}/thread', [ChatExtrasController::class, 'reply'])->middleware('throttle:60,1');
+                Route::post('{conversation}/messages/{message}/pin', [ChatExtrasController::class, 'pin'])->middleware('throttle:30,1');
+                Route::put('{conversation}/note', [ChatExtrasController::class, 'note'])->middleware('throttle:30,1');
+                Route::get('attachments/{attachment}/once', [ChatExtrasController::class, 'once'])->whereNumber('attachment')->middleware('throttle:30,1');
                 Route::patch('{conversation}/messages/{message}', [MessageController::class, 'update']);
                 Route::delete('{conversation}/messages/{message}', [MessageController::class, 'destroy']);
                 Route::post('{conversation}/messages/{message}/report', [MessageController::class, 'report'])->middleware('throttle:20,1');

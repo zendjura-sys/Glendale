@@ -20,7 +20,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $banned_until Виключено на час: повернутися не можна до цієї дати
  * @property string|null $background Особистий фон чату
  */
-#[Fillable(['conversation_id', 'user_id', 'role', 'last_read_message_id', 'is_muted', 'pinned_at', 'folder', 'marked_unread', 'share_receipts', 'joined_at', 'left_at', 'timeout_until', 'banned_until', 'background'])]
+#[Fillable(['conversation_id', 'user_id', 'role', 'last_read_message_id', 'is_muted', 'pinned_at', 'folder', 'marked_unread', 'share_receipts', 'joined_at', 'left_at', 'timeout_until', 'banned_until', 'background', 'note'])]
 class ConversationParticipant extends Model
 {
     public const ROLE_OWNER = 'owner';

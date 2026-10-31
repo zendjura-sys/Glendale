@@ -9,9 +9,11 @@ use App\Models\FamilyMember;
 use App\Models\Message;
 use App\Models\MessageAttachment;
 use App\Models\MessageFavorite;
+use App\Models\MessagePin;
 use App\Models\User;
 use App\Services\Chat\ChatBackgrounds;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -56,10 +58,15 @@ class MessengerPresenter
                 'deleted' => $reply->trashed(),
             ] : null,
             'preview' => $this->preview($message),
+            'thread_root_id' => $message->thread_root_id,
+            'thread' => $message->thread_count > 0 ? ['count' => $message->thread_count, 'last_at' => $message->thread_last_at?->toIso8601String()] : null,
             'attachments' => $message->attachments->map(fn (MessageAttachment $a) => [
                 'id' => $a->id,
                 'type' => $a->type,
-                'url' => $a->url,
+                // «На один перегляд»: посилання немає — фото відкривається лише через /once і лише раз.
+                'url' => ($a->meta['view_once'] ?? false) ? null : $a->url,
+                'view_once' => (bool) ($a->meta['view_once'] ?? false),
+                'viewed_by' => ($a->meta['view_once'] ?? false) ? array_map('intval', DB::table('message_attachment_views')->where('message_attachment_id', $a->id)->pluck('user_id')->all()) : [],
                 'width' => $a->width,
                 'height' => $a->height,
                 'name' => $a->name,
@@ -240,6 +247,8 @@ class MessengerPresenter
     {
         $messages = $conversation->messages()
             ->with(['user', 'attachments', 'reactions', 'replyTo.user', 'replyTo.attachments'])
+            // Відповіді в гілках — лише у вікні гілки.
+            ->whereNull('thread_root_id')
             ->where(function ($query) use ($viewer) {
                 $query->where(fn ($visible) => $visible
                     ->where(fn ($q) => $q->whereNull('publish_at')->orWhere('publish_at', '<=', now()))
@@ -360,6 +369,9 @@ class MessengerPresenter
             'pinned' => $me->pinned_at !== null,
             'folder' => $me->folder,
             'my_role' => $me->role,
+            'note' => $me->note,
+            'pins' => $this->pins($conversation),
+            'can_pin' => ! $conversation->isGroup() || $me->canManage(),
             // Тайм-аут: до коли не можна писати; фон чату — особистий, інакше спільний від адміністраторів.
             'timeout_until' => $me->timedOut() ? $me->timeout_until?->toIso8601String() : null,
             'background' => app(ChatBackgrounds::class)->resolve($me->background ?? $conversation->background),
@@ -379,6 +391,23 @@ class MessengerPresenter
                 : [],
             'members_count' => $participants->count(),
         ];
+    }
+
+    /**
+     * Закріплені повідомлення: новіші — першими.
+     *
+     * @return list<array{id: int, preview: string, author: string|null}>
+     */
+    public function pins(Conversation $conversation): array
+    {
+        return array_values(MessagePin::query()->where('conversation_id', $conversation->id)
+            ->with(['message.user', 'message.attachments'])->latest('id')->limit(MessagePin::MAX)->get()
+            ->filter(fn (MessagePin $pin) => $pin->message !== null)
+            ->map(fn (MessagePin $pin) => [
+                'id' => (int) $pin->message_id,
+                'preview' => $this->preview($pin->message),
+                'author' => $pin->message->user?->first_name,
+            ])->all());
     }
 
     /**

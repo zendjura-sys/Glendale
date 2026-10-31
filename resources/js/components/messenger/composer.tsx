@@ -1,6 +1,7 @@
 import { usePage } from '@inertiajs/react';
 import { GifPicker } from '@/components/gc/gif-picker';
 import {
+    Eye,
     Camera,
     Clock,
     FileUp,
@@ -100,6 +101,9 @@ export function Composer({
     const aiWriterOn = usePlugin('ai_writer');
     const [publishAt, setPublishAt] = useState('');
     const [vanish, setVanish] = useState(false);
+    // Одне фото можна надіслати «на один перегляд».
+    const onceOn = usePlugin('view_once');
+    const [once, setOnce] = useState(false);
     const [card, setCard] = useState<{
         kind: string;
         id: number;
@@ -270,8 +274,10 @@ export function Composer({
                 files: docs,
                 publishAt: publishAt || null,
                 vanish,
+                once: once && images.length === 1 && docs.length === 0,
                 card,
             });
+            setOnce(false);
         }
 
         reset();
@@ -440,6 +446,28 @@ export function Composer({
                     </div>
                 </div>
             )}
+            {!editing &&
+                onceOn &&
+                images.length === 1 &&
+                docs.length === 0 &&
+                !publishAt && (
+                    <div className="mb-2 px-1">
+                        <button
+                            type="button"
+                            onClick={() => setOnce(!once)}
+                            aria-pressed={once}
+                            className={cn(
+                                'inline-flex min-h-8 items-center gap-1.5 rounded-chip px-3 text-xs transition',
+                                once
+                                    ? 'bg-primary text-white'
+                                    : 'bg-white/[0.07] text-white/70 hover:text-white',
+                            )}
+                        >
+                            <Eye className="size-3.5" />
+                            {tr('На один перегляд')}
+                        </button>
+                    </div>
+                )}
             {!editing && (vanish || publishAt) && (
                 <div className="mb-2 flex flex-wrap items-center gap-2 px-1 text-xs">
                     {vanish && (
