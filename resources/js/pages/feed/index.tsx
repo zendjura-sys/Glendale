@@ -34,7 +34,7 @@ import { PostSkeleton } from '@/components/gc/post-skeleton';
 import { StoriesBar } from '@/components/gc/stories';
 import { UserAvatar } from '@/components/gc/user-avatar';
 import { WrappedBanner } from '@/components/gc/wrapped-banner';
-import { EngagementCard } from '@/components/gc/engagement';
+import { EngagementCard, HomeWidgetsEditor } from '@/components/gc/engagement';
 import { EmptyState, Widget, WidgetSkeleton } from '@/components/gc/widget';
 import { ReadyToPlayCard } from '@/components/party/ready-to-play';
 import { formatDate } from '@/lib/format';
@@ -187,6 +187,15 @@ export default function Feed({
     const { auth } = usePage().props;
     // Режим соцмережі може ховати історії й трансляції друзів.
     const storiesOn = useFeature('stories');
+    const widgetsOn = usePlugin('home_widgets');
+    const engagement = usePage().props.engagement;
+    const homeWidgets = engagement?.widgets ?? [
+        'streak',
+        'ready',
+        'online',
+        'suggestions',
+        'birthdays',
+    ];
     const liveOn = useFeature('live');
 
     return (
@@ -196,7 +205,9 @@ export default function Feed({
                 <div className="min-w-0 flex-1 space-y-4 xl:max-w-[640px]">
                     {storiesOn && <StoriesBar />}
                     <WrappedBanner />
-                    <EngagementCard />
+                    <div className="xl:hidden">
+                        <EngagementCard />
+                    </div>
                     {liveOn && <FriendsLive streams={streaming ?? []} />}
                     <ReadyToPlayCard className="xl:hidden" />
                     <FeedQuests quests={quests ?? []} />
@@ -347,100 +358,158 @@ export default function Feed({
                     )}
                 </div>
 
-                <aside className="sticky top-[76px] hidden h-fit w-[320px] shrink-0 space-y-4 xl:block">
-                    <ReadyToPlayCard />
-                    <Widget
-                        title={tr('Зараз онлайн')}
-                        icon={Radio}
-                        href="/friends?tab=online"
-                    >
-                        <Deferred
-                            data="onlineFriends"
-                            fallback={<WidgetSkeleton rows={1} />}
-                        >
-                            {onlineFriends && onlineFriends.length > 0 ? (
-                                <div className="flex flex-wrap gap-2 px-1">
-                                    {onlineFriends.map((friend) => (
-                                        <Link
-                                            key={friend.id}
-                                            href={`/${friend.username}`}
-                                            title={friend.name}
-                                            className="transition hover:-translate-y-0.5"
+                <aside className="gc-split-hide sticky top-[76px] hidden h-fit w-[320px] shrink-0 space-y-4 xl:block">
+                    {homeWidgets.map((key) => {
+                        switch (key) {
+                            case 'streak':
+                                return <EngagementCard key={key} />;
+                            case 'ready':
+                                return <ReadyToPlayCard key={key} />;
+                            case 'online':
+                                return (
+                                    <div key={key}>
+                                        <Widget
+                                            title={tr('Зараз онлайн')}
+                                            icon={Radio}
+                                            href="/friends?tab=online"
                                         >
-                                            <UserAvatar
-                                                user={friend}
-                                                size="md"
-                                            />
-                                        </Link>
-                                    ))}
-                                </div>
-                            ) : (
-                                <p className="px-1 text-sm text-white/45">
-                                    {tr('Ніхто з друзів зараз не в мережі.')}
-                                </p>
-                            )}
-                        </Deferred>
-                    </Widget>
-
-                    <Widget
-                        title={tr('Можливо, ви знайомі')}
-                        icon={UserPlus}
-                        href="/friends"
-                    >
-                        <Deferred
-                            data="suggestions"
-                            fallback={<WidgetSkeleton />}
-                        >
-                            <div className="space-y-0.5">
-                                {suggestions?.length === 0 && (
-                                    <p className="px-1 text-sm text-white/45">
-                                        {tr('Ви вже знайомі з усіма.')}{' '}
-                                        <Link
-                                            href="/people"
-                                            className="text-gc-lilac-300 hover:underline"
+                                            <Deferred
+                                                data="onlineFriends"
+                                                fallback={
+                                                    <WidgetSkeleton rows={1} />
+                                                }
+                                            >
+                                                {onlineFriends &&
+                                                onlineFriends.length > 0 ? (
+                                                    <div className="flex flex-wrap gap-2 px-1">
+                                                        {onlineFriends.map(
+                                                            (friend) => (
+                                                                <Link
+                                                                    key={
+                                                                        friend.id
+                                                                    }
+                                                                    href={`/${friend.username}`}
+                                                                    title={
+                                                                        friend.name
+                                                                    }
+                                                                    className="transition hover:-translate-y-0.5"
+                                                                >
+                                                                    <UserAvatar
+                                                                        user={
+                                                                            friend
+                                                                        }
+                                                                        size="md"
+                                                                    />
+                                                                </Link>
+                                                            ),
+                                                        )}
+                                                    </div>
+                                                ) : (
+                                                    <p className="px-1 text-sm text-white/45">
+                                                        {tr(
+                                                            'Ніхто з друзів зараз не в мережі.',
+                                                        )}
+                                                    </p>
+                                                )}
+                                            </Deferred>
+                                        </Widget>
+                                    </div>
+                                );
+                            case 'suggestions':
+                                return (
+                                    <div key={key}>
+                                        <Widget
+                                            title={tr('Можливо, ви знайомі')}
+                                            icon={UserPlus}
+                                            href="/friends"
                                         >
-                                            {tr('Шукати людей')}
-                                        </Link>
-                                    </p>
-                                )}
-                                {(suggestions ?? []).map((person) => (
-                                    <PersonRow
-                                        key={person.id}
-                                        person={person as PersonCard}
-                                        action={
-                                            <FriendButton
-                                                username={person.username}
-                                                relation="none"
-                                                size="sm"
-                                                className="!px-2.5"
-                                            />
-                                        }
-                                    />
-                                ))}
-                            </div>
-                        </Deferred>
-                    </Widget>
-
-                    <Deferred data="birthdays" fallback={<span hidden />}>
-                        {birthdays && birthdays.length > 0 ? (
-                            <Widget title={tr('Дні народження')} icon={Cake}>
-                                <div className="space-y-0.5">
-                                    {birthdays.map((person) => (
-                                        <PersonRow
-                                            key={person.id}
-                                            person={{
-                                                ...person,
-                                                status: formatDate(
-                                                    person.birthday,
-                                                    false,
-                                                ),
-                                            }}
-                                        />
-                                    ))}
-                                </div>
-                            </Widget>
-                        ) : null}
-                    </Deferred>
+                                            <Deferred
+                                                data="suggestions"
+                                                fallback={<WidgetSkeleton />}
+                                            >
+                                                <div className="space-y-0.5">
+                                                    {suggestions?.length ===
+                                                        0 && (
+                                                        <p className="px-1 text-sm text-white/45">
+                                                            {tr(
+                                                                'Ви вже знайомі з усіма.',
+                                                            )}{' '}
+                                                            <Link
+                                                                href="/people"
+                                                                className="text-gc-lilac-300 hover:underline"
+                                                            >
+                                                                {tr(
+                                                                    'Шукати людей',
+                                                                )}
+                                                            </Link>
+                                                        </p>
+                                                    )}
+                                                    {(suggestions ?? []).map(
+                                                        (person) => (
+                                                            <PersonRow
+                                                                key={person.id}
+                                                                person={
+                                                                    person as PersonCard
+                                                                }
+                                                                action={
+                                                                    <FriendButton
+                                                                        username={
+                                                                            person.username
+                                                                        }
+                                                                        relation="none"
+                                                                        size="sm"
+                                                                        className="!px-2.5"
+                                                                    />
+                                                                }
+                                                            />
+                                                        ),
+                                                    )}
+                                                </div>
+                                            </Deferred>
+                                        </Widget>
+                                    </div>
+                                );
+                            case 'birthdays':
+                                return (
+                                    <div key={key}>
+                                        <Deferred
+                                            data="birthdays"
+                                            fallback={<span hidden />}
+                                        >
+                                            {birthdays &&
+                                            birthdays.length > 0 ? (
+                                                <Widget
+                                                    title={tr('Дні народження')}
+                                                    icon={Cake}
+                                                >
+                                                    <div className="space-y-0.5">
+                                                        {birthdays.map(
+                                                            (person) => (
+                                                                <PersonRow
+                                                                    key={
+                                                                        person.id
+                                                                    }
+                                                                    person={{
+                                                                        ...person,
+                                                                        status: formatDate(
+                                                                            person.birthday,
+                                                                            false,
+                                                                        ),
+                                                                    }}
+                                                                />
+                                                            ),
+                                                        )}
+                                                    </div>
+                                                </Widget>
+                                            ) : null}
+                                        </Deferred>
+                                    </div>
+                                );
+                            default:
+                                return null;
+                        }
+                    })}
+                    {widgetsOn && <HomeWidgetsEditor widgets={homeWidgets} />}
                 </aside>
             </div>
         </>

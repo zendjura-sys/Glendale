@@ -93,6 +93,21 @@ class _NotifyPrefsScreenState extends State<NotifyPrefsScreen> {
     await AppScope.read(context).session.refreshMe();
   }
 
+  /// Віджети головної (спільні з сайтом): які показувати над стрічкою.
+  List<String> _widgets() {
+    final saved = AppScope.read(context).session.me?['home_widgets'];
+    return saved is List ? [for (final w in saved) '$w'] : const ['streak', 'ready', 'online', 'suggestions', 'birthdays'];
+  }
+
+  Future<void> _setWidget(String key, bool on) async {
+    final next = [for (final w in _widgets()) if (w != key) w, if (on) key];
+    final session = AppScope.read(context).session;
+    if (await attempt(context, () => api.put(Api.site('/settings/home-widgets'), {'widgets': next}))) {
+      await session.refreshMe();
+      if (mounted) setState(() {});
+    }
+  }
+
   Future<void> _instant(String path, Map<String, dynamic> body) async {
     final session = AppScope.read(context).session;
     final put = path.endsWith('profanity') || path.endsWith('teen-mode');
@@ -169,6 +184,9 @@ class _NotifyPrefsScreenState extends State<NotifyPrefsScreen> {
           toggle(tr('Святкові прикраси'), seasonal, (v) => setState(() => seasonal = v), subtitle: tr('Сніг, кажани, вогники — до свят.')),
           const EventFrameToggle(),
           toggle(tr('Приховувати мат зірочками'), prefs['hide_profanity'] == true, (v) => _instant('/settings/account/profanity', {'hide': v})),
+          if (AppScope.read(context).session.pluginOn('home_widgets'))
+            for (final (key, label) in [('streak', tr('Серія днів і «Цього дня»')), ('online', tr('Зараз онлайн')), ('suggestions', tr('Можливо, ви знайомі'))])
+              toggle(label, _widgets().contains(key), (v) => _setWidget(key, v)),
           const SizedBox(height: 6),
           Text(tr('Заглушені слова — записи з ними не показуються'), style: body(13, color: muted)),
           const SizedBox(height: 6),

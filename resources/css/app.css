@@ -5130,3 +5130,15 @@ iframe {
 :root[data-theme='light'] .arctic-row:is(:hover, :focus, [data-highlighted]) {
     background: rgb(0 0 0 / 0.06) !important;
 }
+
+/* Розділений екран: праворуч панель «поруч» (420px), основна сторінка звужується. */
+@media (min-width: 1280px) {
+    html.gc-split .gc-split-shift {
+        padding-right: 440px;
+        max-width: none;
+    }
+    /* Права колонка сторінки поступається місцем панелі «поруч». */
+    html.gc-split .gc-split-hide {
+        display: none;
+    }
+}

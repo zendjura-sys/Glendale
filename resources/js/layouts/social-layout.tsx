@@ -71,6 +71,8 @@ import {
     LanguageSelect,
 } from '@/components/gc/language-switcher';
 import { tr } from '@/lib/i18n';
+import { CommandPalette } from '@/components/gc/command-palette';
+import { isPanelView, SplitPanel } from '@/components/gc/split-panel';
 import { PaletteSync } from '@/components/gc/palette-sync';
 import {
     ThemeButton,
@@ -853,6 +855,7 @@ export default function SocialLayout({ children }: PropsWithChildren) {
     const { url } = usePage();
     const { current } = usePlayer();
     useStreamerMode();
+    const paletteOn = usePlugin('command_palette');
 
     useEffect(() => {
         if (url.startsWith('/music')) {
@@ -865,6 +868,17 @@ export default function SocialLayout({ children }: PropsWithChildren) {
             // Приватний режим без сховища — «Назад» поведе в стрічку.
         }
     }, [url]);
+
+    // Сторінка в панелі «поруч» (розділений екран) — лише вміст, без шапки, меню й плеєра.
+    if (isPanelView()) {
+        return (
+            <div className="relative min-h-dvh">
+                <PaletteSync />
+                <SiteBackground />
+                <main className="min-w-0 p-3">{children}</main>
+            </div>
+        );
+    }
 
     return (
         <div className="relative min-h-dvh">
@@ -881,7 +895,7 @@ export default function SocialLayout({ children }: PropsWithChildren) {
             <Topbar />
             <div
                 className={cn(
-                    'mx-auto flex max-w-[1320px] gap-5 px-3 pt-[calc(72px+env(safe-area-inset-top))] sm:px-5',
+                    'gc-split-shift mx-auto flex max-w-[1320px] gap-5 px-3 pt-[calc(72px+env(safe-area-inset-top))] sm:px-5',
                     current ? 'pb-44 lg:pb-28' : 'pb-24 lg:pb-10',
                 )}
             >
@@ -907,6 +921,12 @@ export default function SocialLayout({ children }: PropsWithChildren) {
             <MobileNav />
             <FeedbackDialog />
             <KeyboardShortcuts username={auth.user.username} />
+            {paletteOn && (
+                <>
+                    <CommandPalette />
+                    <SplitPanel />
+                </>
+            )}
         </div>
     );
 }

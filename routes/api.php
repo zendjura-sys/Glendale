@@ -421,6 +421,7 @@ Route::prefix('v1')->group(function () {
             Route::get('memories', [MemoriesController::class, 'memories']);
             Route::get('map', [MemoriesController::class, 'map']);
             Route::put('settings/event-frame', [MemoriesController::class, 'eventFrame'])->middleware('throttle:20,1');
+            Route::put('settings/home-widgets', [MemoriesController::class, 'homeWidgets'])->middleware('throttle:30,1');
             // Рулетка кіно, «Вгадай пісню», вікторина дня й ігровий щоденник — ті самі дії, що й на сайті.
             Route::get('cinema/roulette', [MovieRouletteController::class, 'index'])->middleware('module:cinema');
             Route::get('cinema/roulette/spin', [MovieRouletteController::class, 'spin'])->middleware(['module:cinema', 'throttle:60,1']);

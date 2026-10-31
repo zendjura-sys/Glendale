@@ -171,6 +171,7 @@ class HandleInertiaRequests extends Middleware
                 'streak' => app(Streaks::class)->state($user),
                 'memories' => MemoriesController::count($user),
                 'frame' => MemoriesController::frameState($user),
+                'widgets' => MemoriesController::widgets($user),
             ] : null,
             'music' => $user ? fn () => $this->musicProps($user) : null,
             'counters' => $user ? fn () => [

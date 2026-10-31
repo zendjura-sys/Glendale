@@ -243,6 +243,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     Route::get('memories', [MemoriesController::class, 'memories'])->name('memories');
     Route::get('map', [MemoriesController::class, 'map'])->name('players-map');
     Route::put('settings/event-frame', [MemoriesController::class, 'eventFrame'])->middleware('throttle:20,1')->name('event-frame');
+    Route::put('settings/home-widgets', [MemoriesController::class, 'homeWidgets'])->middleware('throttle:30,1')->name('home-widgets');
     // Ігровий щоденник.
     Route::middleware('module:games')->group(function () {
         Route::get('journal', [GameJournalController::class, 'index'])->name('journal.index');

@@ -75,6 +75,7 @@ declare module '@inertiajs/core' {
                 } | null;
                 memories: number;
                 frame: { season: string; on: boolean } | null;
+                widgets: string[];
             } | null;
             /** Активний збій зі сторінки статусу (null — усе працює). */
             incident?: {

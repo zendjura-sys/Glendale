@@ -85,6 +85,7 @@ class AccountPresenter
             'streak' => app(Streaks::class)->state($user),
             'memories' => MemoriesController::count($user),
             'event_frame' => MemoriesController::frameState($user),
+            'home_widgets' => MemoriesController::widgets($user),
             // «Показувати, що я слухаю»: одне налаштування для сайту й застосунку.
             'show_listening' => $user->showsListening(),
             'morning_digest' => $user->wantsDigest(),

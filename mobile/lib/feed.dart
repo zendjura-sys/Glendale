@@ -119,13 +119,16 @@ class _FeedScreenState extends State<FeedScreen> {
   Widget build(BuildContext context) {
     final online = maps(pager.first['online_friends']);
     final suggestions = maps(pager.first['suggestions']);
+    // Віджети головної — ті самі, що людина обрала на сайті (за замовчуванням усі).
+    final widgets = (AppScope.of(context).session.me?['home_widgets'] is List) ? {for (final w in AppScope.of(context).session.me!['home_widgets'] as List) '$w'} : null;
+    bool shows(String key) => widgets == null || widgets.contains(key);
     final tomorrow = maps(pager.first['tomorrow']);
     final languages = (pager.first['languages'] is List ? pager.first['languages'] as List : const []).map((l) => '$l').toList();
     return ScreenScroll(
       onRefresh: _reload,
       children: [
         const IncidentBanner(),
-        const EngagementCard(),
+        if (shows('streak')) const EngagementCard(),
         StoriesStrip(key: stories),
         if (AppScope.of(context).session.wrappedYear case final year?) ...[WrappedBanner(year: year), const SizedBox(height: 12)],
         if (tomorrow.isNotEmpty) ...[_TomorrowCard(events: tomorrow), const SizedBox(height: 12)],
@@ -166,7 +169,7 @@ class _FeedScreenState extends State<FeedScreen> {
           ]),
         ],
         const SizedBox(height: 12),
-        if (online.isNotEmpty) ...[
+        if (online.isNotEmpty && shows('online')) ...[
           Glass(
             padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
             child: Column(
@@ -205,7 +208,7 @@ class _FeedScreenState extends State<FeedScreen> {
           for (final post in pager.posts) PostCard(key: ValueKey('post-${post['id']}'), post: post, onDeleted: () => pager.posts.remove(post)),
           LoadMore(more: pager.more, onMore: _more),
         ],
-        if (suggestions.isNotEmpty && ready) ...[
+        if (suggestions.isNotEmpty && ready && shows('suggestions')) ...[
           const SizedBox(height: 4),
           Glass(
             padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),

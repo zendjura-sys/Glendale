@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -87,6 +88,35 @@ class MemoriesController extends Controller
         $season = app(Seasons::class)->for(null);
 
         return $season === null ? null : ['season' => $season, 'on' => $user->pref('event_frame') === true];
+    }
+
+    /** Віджети головної (права колонка стрічки на сайті й картки в застосунку) — які й у якому порядку. */
+    public const WIDGETS = ['streak', 'ready', 'online', 'suggestions', 'birthdays'];
+
+    /**
+     * @return list<string>
+     */
+    public static function widgets(User $user): array
+    {
+        $saved = $user->pref('home_widgets');
+        if (! is_array($saved)) {
+            return self::WIDGETS;
+        }
+
+        return array_values(array_filter($saved, fn ($key) => is_string($key) && in_array($key, self::WIDGETS, true)));
+    }
+
+    public function homeWidgets(Request $request): JsonResponse
+    {
+        app(Plugins::class)->ensure('home_widgets');
+        $data = $request->validate([
+            'widgets' => ['present', 'array', 'max:'.count(self::WIDGETS)],
+            'widgets.*' => ['string', 'distinct', Rule::in(self::WIDGETS)],
+        ]);
+        $user = $request->user();
+        $user->forceFill(['preferences' => [...($user->preferences ?? []), 'home_widgets' => array_values($data['widgets'])]])->save();
+
+        return response()->json(['ok' => true, 'widgets' => self::widgets($user), 'message' => 'Віджети збережено.']);
     }
 
     /** Карта гравців: скільки людей з кожної країни (лише суми, без імен). */
