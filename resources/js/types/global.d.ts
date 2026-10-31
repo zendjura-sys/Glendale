@@ -66,6 +66,16 @@ declare module '@inertiajs/core' {
                 mobile: string | null;
                 default: boolean;
             } | null;
+            /** Серія днів поспіль, спогади «цього дня», рамка свята. */
+            engagement?: {
+                streak: {
+                    days: number;
+                    best: number;
+                    milestone: number | null;
+                } | null;
+                memories: number;
+                frame: { season: string; on: boolean } | null;
+            } | null;
             /** Активний збій зі сторінки статусу (null — усе працює). */
             incident?: {
                 id: number;

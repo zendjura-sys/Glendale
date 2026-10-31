@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'api.dart';
+import 'engagement.dart';
 import 'i18n.dart';
 import 'state.dart';
 import 'theme.dart';
@@ -166,6 +167,7 @@ class _NotifyPrefsScreenState extends State<NotifyPrefsScreen> {
           CardTitle(tr('Стрічка'), icon: LucideIcons.newspaper),
           toggle(tr('Ховати спойлери'), hideSpoilers, (v) => setState(() => hideSpoilers = v)),
           toggle(tr('Святкові прикраси'), seasonal, (v) => setState(() => seasonal = v), subtitle: tr('Сніг, кажани, вогники — до свят.')),
+          const EventFrameToggle(),
           toggle(tr('Приховувати мат зірочками'), prefs['hide_profanity'] == true, (v) => _instant('/settings/account/profanity', {'hide': v})),
           const SizedBox(height: 6),
           Text(tr('Заглушені слова — записи з ними не показуються'), style: body(13, color: muted)),

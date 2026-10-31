@@ -61,6 +61,10 @@ String appPathFor(String? sitePath) {
       return '/ideas';
     case 'status':
       return '/status';
+    case 'memories':
+      return '/memories';
+    case 'map':
+      return '/map';
     case 'journal':
       return parts.length > 1 ? '/journal/${rest(1)}' : '/journal';
     case 'series':

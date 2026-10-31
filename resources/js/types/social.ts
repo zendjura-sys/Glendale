@@ -35,6 +35,7 @@ export type UserCard = {
     plus?: PlusMark | null;
     /** Вдягнута косметика сезонного пропуску: null — нічого. */
     cosmetics?: Cosmetics | null;
+    event_frame?: string | null;
     /** Лише в чаті сім’ї. */
     family_rank?: { rank: number; title: string | null; tag: string };
 };

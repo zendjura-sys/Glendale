@@ -9,6 +9,7 @@ import 'people.dart';
 import 'posts.dart';
 import 'shell.dart';
 import 'state.dart';
+import 'engagement.dart';
 import 'status.dart';
 import 'stories.dart';
 import 'theme.dart';
@@ -124,6 +125,7 @@ class _FeedScreenState extends State<FeedScreen> {
       onRefresh: _reload,
       children: [
         const IncidentBanner(),
+        const EngagementCard(),
         StoriesStrip(key: stories),
         if (AppScope.of(context).session.wrappedYear case final year?) ...[WrappedBanner(year: year), const SizedBox(height: 12)],
         if (tomorrow.isNotEmpty) ...[_TomorrowCard(events: tomorrow), const SizedBox(height: 12)],

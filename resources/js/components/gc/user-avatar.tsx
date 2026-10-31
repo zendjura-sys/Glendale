@@ -42,6 +42,15 @@ const palettes = [
     'from-[#0e7490] to-gc-cyan',
 ];
 
+/** Кольори рамок свят — ті самі, що в застосунку (eventFrameColors). */
+export const EVENT_FRAMES: Record<string, string[]> = {
+    newyear: ['#ef4444', '#22c55e', '#facc15'],
+    valentine: ['#ef4444', '#f87171'],
+    easter: ['#facc15', '#34d399', '#38bdf8'],
+    independence: ['#0057b7', '#ffd700'],
+    halloween: ['#f97316', '#facc15', '#f97316'],
+};
+
 type Props = {
     user: {
         name: string;
@@ -50,6 +59,8 @@ type Props = {
         id?: number;
         plus?: PlusMark | null;
         cosmetics?: Cosmetics | null;
+        /** Рамка свята, яку людина ввімкнула (newyear, halloween…). */
+        event_frame?: string | null;
         status?: string | null;
         status_emoji?: string | null;
     };
@@ -69,12 +80,15 @@ export function UserAvatar({
     const palette = palettes[(user.id ?? user.name.length) % palettes.length];
     // Новий рік: шапка Санти на аватарах (крім найменших — там її не розгледіти).
     const santa = usePage().props.season === 'newyear' && size !== 'xs';
-    // Рамка GameCon+, інакше — вдягнута з сезонного пропуску.
-    const frame = user.plus?.frame?.length
-        ? user.plus
-        : user.cosmetics?.frame?.length
-          ? { name: null, frame: user.cosmetics.frame }
-          : null;
+    // Рамка свята (ввімкнула сама людина), інакше GameCon+, інакше — вдягнута з сезонного пропуску.
+    const frame =
+        user.event_frame && EVENT_FRAMES[user.event_frame]
+            ? { name: null, frame: EVENT_FRAMES[user.event_frame] }
+            : user.plus?.frame?.length
+              ? user.plus
+              : user.cosmetics?.frame?.length
+                ? { name: null, frame: user.cosmetics.frame }
+                : null;
 
     const inner = user.avatar_url ? (
         <img

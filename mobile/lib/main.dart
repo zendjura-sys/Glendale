@@ -26,6 +26,7 @@ import 'events.dart';
 import 'extras.dart';
 import 'family_widget.dart';
 import 'game_card.dart';
+import 'engagement.dart';
 import 'fun.dart';
 import 'game_tools.dart';
 import 'status.dart';
@@ -238,6 +239,8 @@ Future<void> main() async {
           GoRoute(path: '/configs', builder: (_, s) => ConfigsScreen(game: s.uri.queryParameters['game'])),
           GoRoute(path: '/game-nights', builder: (_, _) => const GameNightsScreen()),
           GoRoute(path: '/journal', builder: (_, _) => const JournalScreen()),
+          GoRoute(path: '/memories', builder: (_, _) => const MemoriesScreen()),
+          GoRoute(path: '/map', builder: (_, _) => const PlayersMapScreen()),
           GoRoute(path: '/journal/:username', builder: (_, s) => JournalScreen(key: ValueKey(s.pathParameters['username']), username: s.pathParameters['username'])),
           GoRoute(path: '/game-nights/:id', builder: (_, s) => GameNightScreen(id: int.tryParse(s.pathParameters['id'] ?? '') ?? 0)),
           GoRoute(path: '/duels', builder: (_, state) => DuelsScreen(to: state.uri.queryParameters['to'])),

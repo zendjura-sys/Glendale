@@ -68,7 +68,17 @@ class SeasonCosmetics {
 }
 
 /// Рамка аватара: GameCon+, інакше вдягнута із сезонного пропуску.
-List<Color>? avatarFrameOf(dynamic user) => PlusMark.of(user)?.frame ?? SeasonCosmetics.of(user)?.frame;
+List<Color>? avatarFrameOf(dynamic user) => eventFrameColors(user is Map ? user['event_frame'] : null) ?? PlusMark.of(user)?.frame ?? SeasonCosmetics.of(user)?.frame;
+
+/// Рамка свята (людина ввімкнула, поки триває свято) — ті самі кольори, що EVENT_FRAMES на сайті.
+List<Color>? eventFrameColors(dynamic season) => switch (season) {
+  'newyear' => const [Color(0xFFEF4444), Color(0xFF22C55E), Color(0xFFFACC15)],
+  'valentine' => const [Color(0xFFEF4444), Color(0xFFF87171)],
+  'easter' => const [Color(0xFFFACC15), Color(0xFF34D399), Color(0xFF38BDF8)],
+  'independence' => const [Color(0xFF0057B7), Color(0xFFFFD700)],
+  'halloween' => const [Color(0xFFF97316), Color(0xFFFACC15), Color(0xFFF97316)],
+  _ => null,
+};
 
 /// Колір ніку: GameCon+, інакше з пропуску (без позначки GameCon+).
 PlusMark? nameMarkOf(dynamic user) {

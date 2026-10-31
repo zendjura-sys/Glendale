@@ -1,6 +1,6 @@
-import { Head, InfiniteScroll, router } from '@inertiajs/react';
+import { Head, InfiniteScroll, Link, router } from '@inertiajs/react';
 import { ListSkeleton } from '@/components/gc/skeletons';
-import { MapPin, Radio, Search, SearchX } from 'lucide-react';
+import { Globe2, MapPin, Radio, Search, SearchX } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { PersonCard } from '@/components/gc/person-card';
 import { EmptyState } from '@/components/gc/widget';
@@ -8,6 +8,7 @@ import { plural } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import type { PersonCard as Person, ScrollData } from '@/types';
 import { tr } from '@/lib/i18n';
+import { usePlugin } from '@/lib/plugins';
 
 type Filters = {
     q: string;
@@ -27,6 +28,7 @@ type Props = {
 };
 
 export default function People({ filters, saved, total, users }: Props) {
+    const mapOn = usePlugin('players_map');
     const [form, setForm] = useState<Filters>(filters);
 
     useEffect(() => {
@@ -65,6 +67,15 @@ export default function People({ filters, saved, total, users }: Props) {
                     <p className="relative mt-1 text-sm text-white/50">
                         {total} {plural(total, ['людина', 'людини', 'людей'])}{' '}
                         {tr('за вашим запитом')}
+                        {mapOn && (
+                            <Link
+                                href="/map"
+                                className="ml-3 inline-flex items-center gap-1 text-sky-300 hover:text-sky-200"
+                            >
+                                <Globe2 className="size-3.5" />
+                                {tr('Карта гравців')}
+                            </Link>
+                        )}
                     </p>
 
                     <div className="relative mt-5 grid grid-cols-1 gap-3 md:grid-cols-[1fr_220px_auto_auto]">

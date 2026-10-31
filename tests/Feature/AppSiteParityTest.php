@@ -46,6 +46,16 @@ class AppSiteParityTest extends TestCase
         return app(ApiTokens::class)->issue($user, 'android');
     }
 
+    public function test_app_reaches_memories_map_and_event_frame(): void
+    {
+        $user = User::factory()->create(['country' => 'UA']);
+        $token = $this->app_token($user);
+        $this->withToken($token)->getJson('/api/v1/site/memories')->assertOk()->assertJsonStructure(['posts', 'date']);
+        $this->withToken($token)->getJson('/api/v1/site/map')->assertOk()->assertJsonPath('countries.0.code', 'UA');
+        $this->withToken($token)->putJson('/api/v1/site/settings/event-frame', ['on' => true])->assertOk()->assertJsonPath('ok', true);
+        $this->withToken($token)->getJson('/api/v1/me')->assertOk()->assertJsonStructure(['user' => ['streak', 'memories', 'event_frame']]);
+    }
+
     public function test_app_reaches_chat_extras(): void
     {
         $owner = User::factory()->create();

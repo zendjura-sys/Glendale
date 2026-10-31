@@ -34,6 +34,7 @@ import { PostSkeleton } from '@/components/gc/post-skeleton';
 import { StoriesBar } from '@/components/gc/stories';
 import { UserAvatar } from '@/components/gc/user-avatar';
 import { WrappedBanner } from '@/components/gc/wrapped-banner';
+import { EngagementCard } from '@/components/gc/engagement';
 import { EmptyState, Widget, WidgetSkeleton } from '@/components/gc/widget';
 import { ReadyToPlayCard } from '@/components/party/ready-to-play';
 import { formatDate } from '@/lib/format';
@@ -195,6 +196,7 @@ export default function Feed({
                 <div className="min-w-0 flex-1 space-y-4 xl:max-w-[640px]">
                     {storiesOn && <StoriesBar />}
                     <WrappedBanner />
+                    <EngagementCard />
                     {liveOn && <FriendsLive streams={streaming ?? []} />}
                     <ReadyToPlayCard className="xl:hidden" />
                     <FeedQuests quests={quests ?? []} />

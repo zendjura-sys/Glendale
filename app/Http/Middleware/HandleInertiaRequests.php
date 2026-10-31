@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Http\Controllers\Fun\MemoriesController;
 use App\Http\Controllers\Settings\GameThemeController;
 use App\Http\Controllers\StatusPageController;
 use App\Models\Track;
@@ -12,6 +13,7 @@ use App\Services\Billing\Catalog;
 use App\Services\Billing\Checkout;
 use App\Services\Billing\GooglePay;
 use App\Services\Billing\Shop;
+use App\Services\Engagement\Streaks;
 use App\Services\FriendshipService;
 use App\Services\I18n\ContentTranslator;
 use App\Services\Messenger;
@@ -164,6 +166,12 @@ class HandleInertiaRequests extends Middleware
             'siteBackground' => fn () => Backgrounds::image(),
             // Активний збій зі сторінки статусу — тонкий банер угорі (null, коли все працює).
             'incident' => fn () => StatusPageController::banner(),
+            // Серія днів поспіль, спогади «цього дня» й рамка свята (для бічної панелі, стрічки й налаштувань).
+            'engagement' => $user ? fn () => [
+                'streak' => app(Streaks::class)->state($user),
+                'memories' => MemoriesController::count($user),
+                'frame' => MemoriesController::frameState($user),
+            ] : null,
             'music' => $user ? fn () => $this->musicProps($user) : null,
             'counters' => $user ? fn () => [
                 'friend_requests' => $this->friendships->incomingCount($user),

@@ -6,6 +6,7 @@ use App\Services\Quests\SeasonPass;
 use App\Support\Palette;
 use App\Support\Plugins\Plugins;
 use App\Support\PlusStyle;
+use App\Support\Seasons;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Contracts\Translation\HasLocalePreference;
@@ -53,6 +54,9 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property string|null $about
  * @property string|null $city
  * @property string|null $country
+ * @property int $streak_days серія днів поспіль
+ * @property int $streak_best
+ * @property Carbon|null $streak_on
  * @property Carbon|null $birthday
  * @property string|null $gender
  * @property string|null $website
@@ -147,6 +151,7 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
     protected function casts(): array
     {
         return [
+            'streak_on' => 'date',
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'two_factor_confirmed_at' => 'datetime',
@@ -342,7 +347,23 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
             'playing' => $this->playing(),
             'plus' => $this->plusCard(),
             'cosmetics' => SeasonPass::card($this->cosmetics),
+            'event_frame' => $this->eventFrame(),
         ];
+    }
+
+    /** Рамка аватара свята (Хелловін, Новий рік…): лише якщо людина її ввімкнула й свято триває. */
+    public function eventFrame(): ?string
+    {
+        if ($this->pref('event_frame') !== true) {
+            return null;
+        }
+        // Свято одне на весь запит — рахуємо раз.
+        if (! app()->bound('event-frame.season')) {
+            app()->instance('event-frame.season', app(Plugins::class)->on('event_frames') ? app(Seasons::class)->for(null) : null);
+        }
+        $season = app('event-frame.season');
+
+        return is_string($season) ? $season : null;
     }
 
     /** Статус із таймером, час якого минув, — більше не показується (текст і емодзі). */

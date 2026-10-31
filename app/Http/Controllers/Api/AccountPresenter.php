@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Fun\MemoriesController;
 use App\Http\Controllers\StatusPageController;
 use App\Models\User;
+use App\Services\Engagement\Streaks;
 use App\Services\Moderation\ContentFilter;
 use App\Services\Wrapped\YearInReview;
 use App\Support\Modules\ModuleManager;
@@ -80,6 +82,9 @@ class AccountPresenter
             'teen_mode' => TeenMode::state($user),
             // Активний збій зі сторінки статусу — застосунок показує банер.
             'incident' => StatusPageController::banner(),
+            'streak' => app(Streaks::class)->state($user),
+            'memories' => MemoriesController::count($user),
+            'event_frame' => MemoriesController::frameState($user),
             // «Показувати, що я слухаю»: одне налаштування для сайту й застосунку.
             'show_listening' => $user->showsListening(),
             'morning_digest' => $user->wantsDigest(),

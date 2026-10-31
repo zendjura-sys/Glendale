@@ -42,6 +42,7 @@ import {
     youtubeId,
 } from '@/lib/backgrounds';
 import { tr } from '@/lib/i18n';
+import { EventFrameSwitch } from '@/components/gc/engagement';
 import type { NetworkMode } from '@/lib/modes';
 import { SKINS, THEMES } from '@/lib/skins';
 import { applyTheme } from '@/lib/theme';
@@ -606,6 +607,7 @@ export default function Appearance({
                             checked={form.data.seasonal}
                             onChange={(on) => form.setData('seasonal', on)}
                         />
+                        <EventFrameSwitch />
                     </SettingsRows>
 
                     <div className="-mx-4 border-t border-[var(--gc-hairline)] px-4 pt-4 sm:-mx-5 sm:px-5">

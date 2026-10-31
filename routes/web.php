@@ -36,6 +36,7 @@ use App\Http\Controllers\FeedController;
 use App\Http\Controllers\FollowController;
 use App\Http\Controllers\FriendController;
 use App\Http\Controllers\Fun\GameJournalController;
+use App\Http\Controllers\Fun\MemoriesController;
 use App\Http\Controllers\Fun\MovieRouletteController;
 use App\Http\Controllers\Fun\QuizController;
 use App\Http\Controllers\GameBacklogController;
@@ -237,6 +238,10 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     Route::post('configs/{config}/like', [GameConfigController::class, 'like'])->whereNumber('config')->middleware('throttle:60,1')->name('configs.like');
     Route::post('configs/{config}/copied', [GameConfigController::class, 'copied'])->whereNumber('config')->middleware('throttle:60,1')->name('configs.copied');
     Route::delete('configs/{config}', [GameConfigController::class, 'destroy'])->whereNumber('config')->name('configs.destroy');
+    // «Цього дня», карта гравців і рамка свята.
+    Route::get('memories', [MemoriesController::class, 'memories'])->name('memories');
+    Route::get('map', [MemoriesController::class, 'map'])->name('players-map');
+    Route::put('settings/event-frame', [MemoriesController::class, 'eventFrame'])->middleware('throttle:20,1')->name('event-frame');
     // Ігровий щоденник.
     Route::middleware('module:games')->group(function () {
         Route::get('journal', [GameJournalController::class, 'index'])->name('journal.index');
