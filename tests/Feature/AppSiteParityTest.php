@@ -535,6 +535,64 @@ class AppSiteParityTest extends TestCase
         }
     }
 
+    public function test_app_game_page_has_all_site_blocks(): void
+    {
+        Game::query()->create(['slug' => 'cs2', 'name' => 'CS2', 'letter' => 'C', 'category' => 'pc', 'is_published' => true]);
+        $token = $this->app_token(User::factory()->create());
+        $this->withToken($token)->getJson('/api/v1/site/games/cs2')->assertOk()->assertJsonStructure(['backlog_on', 'community_rating', 'leaderboard', 'soundtracks']);
+        $this->withToken($token)->postJson('/api/v1/site/games/cs2/played')->assertOk()->assertJsonPath('played', true);
+        $this->withToken($token)->postJson('/api/v1/site/games/cs2/rating', ['score' => 9])->assertOk()->assertJsonPath('mine', 9);
+        $this->withToken($token)->putJson('/api/v1/site/games/pc', ['cpu' => 'Ryzen 5 5600', 'gpu' => 'RTX 3060', 'ram' => 16])->assertSuccessful();
+        $this->withToken($token)->getJson('/api/v1/site/games/cs2/pc-check')->assertOk()->assertJsonPath('configured', true);
+        $this->withToken($token)->getJson('/api/v1/site/games/cs2/prices')->assertOk()->assertJsonStructure(['deals', 'wished']);
+        $this->withToken($token)->getJson('/api/v1/site/games/cs2/playlists/mine')->assertOk()->assertJsonStructure(['playlists']);
+        // «deals», «backlog» і «pc» — не ігри.
+        $this->withToken($token)->getJson('/api/v1/site/games/deals')->assertOk()->assertJsonStructure(['giveaways']);
+    }
+
+    public function test_app_walks_newcomer_through_first_steps_like_the_site(): void
+    {
+        $user = User::factory()->create();
+        $user->mergePref(['onboarded' => false]);
+        $token = $this->app_token($user);
+        $step = $this->withToken($token)->getJson('/api/v1/me')->json('user.onboarding');
+        $this->assertContains($step, ['phone', 'mode']);
+        $this->withToken($token)->postJson('/api/v1/site/start/phone')->assertSuccessful();
+        $this->withToken($token)->putJson('/api/v1/site/settings/mode', ['mode' => 'gamer'])->assertOk();
+        $this->assertSame('interests', $this->withToken($token)->getJson('/api/v1/me')->json('user.onboarding'));
+        $this->withToken($token)->getJson('/api/v1/site/start')->assertOk()->assertJsonStructure(['games', 'servers']);
+        $this->withToken($token)->postJson('/api/v1/site/start', ['games' => [], 'servers' => []])->assertSuccessful();
+        $this->assertNull($this->withToken($token)->getJson('/api/v1/me')->json('user.onboarding'));
+    }
+
+    public function test_app_hides_frozen_profile_like_the_site(): void
+    {
+        $frozen = User::factory()->create(['frozen_at' => now()]);
+        $this->withToken($this->app_token(User::factory()->create()))->getJson("/api/v1/users/{$frozen->username}")->assertNotFound()->assertJsonPath('message', 'Сторінку заморожено.');
+        $this->withToken($this->app_token($frozen))->getJson("/api/v1/users/{$frozen->username}")->assertOk();
+    }
+
+    public function test_app_changes_notification_and_feed_settings_like_the_site(): void
+    {
+        $user = User::factory()->create();
+        $token = $this->app_token($user);
+        $d = $this->withToken($token)->getJson('/api/v1/site/settings/appearance')->assertOk()->assertJsonStructure(['quiet', 'notify', 'muteWords', 'palette'])->json();
+        $this->withToken($token)->putJson('/api/v1/site/settings/appearance', [
+            'palette' => $d['palette'], 'languages' => [], 'looking_for_group' => false,
+            'quiet_enabled' => true, 'quiet_from' => '22:30', 'quiet_to' => '07:00',
+            'notify' => ['likes' => false], 'mute_words' => ['спойлер'], 'hide_spoilers' => true, 'seasonal' => false,
+        ])->assertSuccessful();
+        $this->assertSame(['спойлер'], $user->fresh()->pref('mute_words'));
+        $this->assertFalse($user->fresh()->pref('seasonal'));
+        $this->withToken($token)->patchJson('/api/v1/site/settings/streamer-mode', ['streamer_mode' => true])->assertSuccessful();
+        $this->withToken($token)->patchJson('/api/v1/site/settings/notify-sound', ['notify_sound' => 'pixel'])->assertSuccessful();
+        $this->withToken($token)->putJson('/api/v1/site/settings/account/profanity', ['hide' => true])->assertSuccessful();
+        $prefs = $this->withToken($token)->getJson('/api/v1/me')->json('user.prefs');
+        $this->assertTrue($prefs['streamer_mode']);
+        $this->assertSame('pixel', $prefs['notify_sound']);
+        $this->assertTrue($prefs['hide_profanity']);
+    }
+
     public function test_app_composer_tools_publish_like_the_site(): void
     {
         $token = $this->app_token(User::factory()->create());

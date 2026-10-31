@@ -141,6 +141,8 @@ class SocialApiController extends ApiController
     {
         $viewer = $this->user($request);
         abort_if($user->isBanned() && ! $viewer->isStaff(), 404);
+        // Заморожену власником сторінку не видно й у застосунку — як на сайті (profile/frozen).
+        abort_if($user->isFrozen() && ! $viewer->is($user) && ! $viewer->isStaff(), 404, 'Сторінку заморожено.');
 
         $relation = $this->friendships->status($viewer, $user);
         $open = $viewer->is($user) || ! $user->is_private || $relation === FriendshipService::FRIENDS || $viewer->isStaff();

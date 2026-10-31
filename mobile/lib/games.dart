@@ -6,6 +6,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'api.dart';
+import 'game_extras.dart';
 import 'clans.dart';
 import 'events.dart';
 import 'state.dart';
@@ -493,6 +494,9 @@ class GameScreen extends StatelessWidget {
                   if (text(d['igdb_url']) != null) GhostButton(label: 'IGDB', icon: LucideIcons.externalLink, expand: false, compact: true, onPressed: () => _open(text(d['igdb_url'])!)),
                 ]),
               ]),
+            // Блоки сайту: беклог, оцінка гравців, лідерборд, музика, ціни, «чи потягне ПК», новини, цілі, FPS, Q&A, наставники, досягнення.
+            GameExtras(key: ValueKey('extras-$slug'), slug: slug, name: text(d['name']) ?? slug),
+            const SizedBox(height: 12),
             if (events.isNotEmpty) ...[
               SectionLabel(tr('Події гри'), trailing: tr('Календар'), onTrailing: () => context.push('/events')),
               for (final e in events)

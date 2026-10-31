@@ -6,9 +6,9 @@ use App\Models\Follow;
 use App\Models\Game;
 use App\Models\GtaServer;
 use App\Models\User;
-use App\Services\Phones\PhoneNumbers;
 use App\Support\Modules\ModuleManager;
 use App\Support\NetworkModes;
+use App\Support\Onboarding;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -16,10 +16,10 @@ use Inertia\Response;
 
 class StartController extends Controller
 {
-    public function index(Request $request, PhoneNumbers $phones): Response|RedirectResponse
+    public function index(Request $request): Response|RedirectResponse
     {
         // Онбординг: реєстрація → номер → режим соцмережі → ігри й сервери (лише якщо режим їх показує).
-        if ($this->phoneStepPending($request->user(), $phones)) {
+        if (app(Onboarding::class)->phoneStepPending($request->user())) {
             return redirect()->route('start.phone');
         }
         if ($request->user()->pref('network_mode') === null) {
@@ -91,13 +91,6 @@ class StartController extends Controller
         }
 
         return $this->afterMode($user, $modes);
-    }
-
-    /** Новачок ще не пройшов крок номера (і модуль «Телефон» увімкнено). */
-    private function phoneStepPending(User $user, PhoneNumbers $phones): bool
-    {
-        return $user->pref('onboarded') === false && $user->pref('phone_step') !== 'done'
-            && app(ModuleManager::class)->enabled('phone') && $phones->current($user) === null;
     }
 
     private function afterMode(User $user, NetworkModes $modes): RedirectResponse

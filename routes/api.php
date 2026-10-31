@@ -38,6 +38,8 @@ use App\Http\Controllers\GameDealsController;
 use App\Http\Controllers\GameNewsController;
 use App\Http\Controllers\GamePlayController;
 use App\Http\Controllers\GameQaController;
+use App\Http\Controllers\GameRatingController;
+use App\Http\Controllers\GameSoundtrackController;
 use App\Http\Controllers\GifController;
 use App\Http\Controllers\GuestBanController;
 use App\Http\Controllers\HelpController;
@@ -72,15 +74,18 @@ use App\Http\Controllers\ReferralController;
 use App\Http\Controllers\SavedController;
 use App\Http\Controllers\SeasonController;
 use App\Http\Controllers\ServerController;
+use App\Http\Controllers\Settings\AccountController as SettingsAccountController;
 use App\Http\Controllers\Settings\AccountTypeController;
 use App\Http\Controllers\Settings\AppearanceController;
 use App\Http\Controllers\Settings\DigestController;
+use App\Http\Controllers\Settings\GameThemeController;
 use App\Http\Controllers\Settings\ListeningController;
 use App\Http\Controllers\Settings\NavigationController;
 use App\Http\Controllers\Settings\ProfileController as SettingsProfileController;
 use App\Http\Controllers\Settings\StreamController;
 use App\Http\Controllers\SetupController;
 use App\Http\Controllers\SpotifyController;
+use App\Http\Controllers\StartController;
 use App\Http\Controllers\StatusController;
 use App\Http\Controllers\StoryController;
 use App\Http\Controllers\SupportController;
@@ -421,7 +426,30 @@ Route::prefix('v1')->group(function () {
                 Route::post('fps', [GamePlayController::class, 'storeFps'])->middleware('throttle:10,1');
                 Route::post('mentors', [GameQaController::class, 'becomeMentor'])->middleware('throttle:10,1');
                 Route::delete('mentors', [GameQaController::class, 'leaveMentors']);
+                // Сторінка гри в застосунку: оцінка спільноти, «грав», «чи потягне ПК», саундтреки.
+                Route::post('rating', [GameRatingController::class, 'rate'])->middleware('throttle:30,1');
+                Route::post('played', [GameRatingController::class, 'played'])->middleware('throttle:30,1');
+                Route::get('pc-check', [GameDealsController::class, 'pcCheck'])->middleware('throttle:60,1');
+                Route::get('playlists/mine', [GameSoundtrackController::class, 'mine']);
+                Route::post('playlists', [GameSoundtrackController::class, 'store'])->middleware('throttle:20,1');
+                Route::delete('playlists/{playlist}', [GameSoundtrackController::class, 'destroy'])->whereNumber('playlist');
             });
+            // Сповіщення, тихі години, близькі, заглушені слова, спойлери, прикраси — ті самі, що на сайті.
+            Route::get('settings/appearance', [AppearanceController::class, 'edit']);
+            Route::put('settings/appearance', [AppearanceController::class, 'update']);
+            Route::patch('settings/notify-sound', [GameThemeController::class, 'sound'])->middleware('throttle:30,1');
+            Route::patch('settings/streamer-mode', [GameThemeController::class, 'streamerMode'])->middleware('throttle:30,1');
+            Route::patch('settings/data-saver', [GameThemeController::class, 'dataSaver'])->middleware('throttle:30,1');
+            Route::put('settings/account/profanity', [SettingsAccountController::class, 'profanity']);
+            // Перші кроки новачка: номер → режим → ігри й сервери.
+            Route::get('start', [StartController::class, 'index']);
+            Route::post('start', [StartController::class, 'store']);
+            Route::post('start/skip', [StartController::class, 'skip']);
+            Route::post('start/phone', [StartController::class, 'phoneDone']);
+            // Мій ПК для «чи потягне» і повна сторінка гри (ті самі дані, що й сайт).
+            Route::get('games/pc', [GameDealsController::class, 'pcShow'])->middleware('module:games');
+            Route::put('games/pc', [GameDealsController::class, 'pcSave'])->middleware(['module:games', 'throttle:30,1']);
+            Route::get('games/{game}', [GameController::class, 'show'])->middleware('module:games');
             Route::post('ideas', [IdeaController::class, 'store'])->middleware('throttle:5,1');
             Route::post('ideas/{idea}/vote', [IdeaController::class, 'toggleVote'])->middleware('throttle:60,1');
             Route::get('settings/account-type', [AccountTypeController::class, 'edit']);

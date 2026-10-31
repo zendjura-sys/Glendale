@@ -338,6 +338,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
           LabeledField(label: tr('Вебсайт'), child: GcField(controller: website, label: 'https://', keyboard: TextInputType.url)),
         ]),
       ),
+      const SizedBox(height: 12),
+      Glass(
+        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+        child: ListTile(
+          leading: Icon(LucideIcons.bellRing, color: accent),
+          title: Text(tr('Сповіщення, тихі години й стрічка'), style: body(14.5, weight: FontWeight.w600)),
+          trailing: Icon(LucideIcons.chevronRight, color: faint),
+          onTap: () => context.push('/settings/notifications'),
+        ),
+      ),
       // Розділи профілю, як на сайті (кожен — свій плагін): посилання, тип акаунта, піксельна аватарка.
       if (AppScope.read(context).session case final session when session.pluginOn('bio_links') || session.pluginOn('account_types') || session.pluginOn('pixel_avatar')) ...[
         const SizedBox(height: 12),

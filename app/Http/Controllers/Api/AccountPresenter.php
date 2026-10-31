@@ -7,6 +7,7 @@ use App\Services\Moderation\ContentFilter;
 use App\Services\Wrapped\YearInReview;
 use App\Support\Modules\ModuleManager;
 use App\Support\NetworkModes;
+use App\Support\Onboarding;
 use App\Support\Plugins\Plugins;
 use App\Support\Seasons;
 use App\Support\Skins;
@@ -48,6 +49,15 @@ class AccountPresenter
             'nav_tabs' => array_values(array_intersect(app(ModuleManager::class)->navTabsFor($user), $modes->modulesFor($user))),
             'modules' => $modes->modulesFor($user),
             'network_mode' => $modes->for($user)['id'],
+            // Перемикачі, що діють одразу (сайт і застосунок однаково).
+            'prefs' => [
+                'notify_sound' => (string) $user->pref('notify_sound', 'soft'),
+                'streamer_mode' => (bool) $user->pref('streamer_mode', false),
+                'data_saver' => (bool) $user->pref('data_saver', false),
+                'hide_profanity' => (bool) $user->pref('hide_profanity', false),
+            ],
+            // Перші кроки новачка, як на сайті: 'phone' | 'mode' | 'interests' | null.
+            'onboarding' => app(Onboarding::class)->step($user),
             // Сезонні прикраси (Новий рік, Хелловін…) — той самий сезон, що бачить людина на сайті.
             'season' => app(Seasons::class)->for($user),
             // Функції-плагіни, які застосунок показує так само, як сайт (напр. пошук GIF у новому записі).

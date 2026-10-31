@@ -9,7 +9,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gamecon/account.dart';
+import 'package:gamecon/game_extras.dart';
 import 'package:gamecon/parity.dart';
+import 'package:gamecon/prefs.dart';
+import 'package:gamecon/start.dart';
+import 'package:gamecon/widgets.dart';
 import 'package:gamecon/shell.dart';
 import 'package:gamecon/state.dart';
 import 'package:gamecon/theme.dart';
@@ -26,6 +30,43 @@ const _c = {'slug': 'khab', 'name': 'Кіберхаб'};
 
 Map<String, dynamic> _respond(Uri url) {
   final p = url.path;
+  if (p.endsWith('/site/games/cs2')) {
+    return {
+      'backlog_on': true,
+      'backlog': {'status': 'playing'},
+      'community_rating': {'average': 8.7, 'count': 214, 'distribution': [1, 0, 2, 3, 5, 9, 18, 40, 70, 66], 'mine': 9, 'played': true},
+      'leaderboard': {
+        'top': [
+          {'place': 1, 'days': 212, 'user': _user(2, 'Олег Коваль')},
+          {'place': 2, 'days': 187, 'user': _user(3, 'Ірина Мельник')},
+          {'place': 3, 'days': 160, 'user': _user(1, 'Тоні Старк')},
+        ],
+        'me': {'place': 3, 'days': 160},
+      },
+      'soundtracks': [{'id': 5, 'title': 'Фраги під синтвейв', 'author': 'Олег Коваль'}],
+    };
+  }
+  if (p.endsWith('/site/start')) {
+    return {
+      'games': [for (final (i, n) in ['CS2', 'Dota 2', 'Valorant', 'Minecraft', 'GTA V', 'Fortnite', 'Apex Legends', 'Rust'].indexed) {'id': i + 1, 'name': n}],
+      'servers': [for (final (i, n) in ['Arizona RP', 'Diamond RP', 'Radmir'].indexed) {'id': i + 1, 'name': n}],
+    };
+  }
+  if (p.endsWith('/settings/appearance')) {
+    return {
+      'palette': 'default',
+      'languages': ['uk'],
+      'looking_for_group': true,
+      'quiet': {'enabled': true, 'from': '23:00', 'to': '08:00'},
+      'notify': {'likes': true, 'comments': true, 'mentions': true, 'events': false, 'playing': true, 'push': true, 'email': false},
+      'muteWords': ['спойлер', 'донат'],
+      'hideSpoilers': true,
+      'seasonal': true,
+      'show_visitors': true,
+      'friends': [_user(2, 'Олег Коваль'), _user(3, 'Ірина Мельник'), _user(4, 'Макс Бондар')],
+      'closeFriends': [2],
+    };
+  }
   if (p.endsWith('/articles')) {
     return {
       'articles': {
@@ -132,6 +173,9 @@ void main() {
     ('account-type', '/settings/account-type', 'Тип акаунта'),
     ('meme', '/memes/new', 'Мем'),
     ('pixel', '/settings/pixel-avatar', 'Піксельна аватарка'),
+    ('game', '/game-extras', 'Олег Коваль'),
+    ('start', '/start', 'Ласкаво просимо в GameCon!'),
+    ('notify', '/settings/notifications', 'Сповіщення й стрічка'),
   ];
   for (final (name, location, expected) in screens) {
     for (final light in [false, true]) {
@@ -143,7 +187,7 @@ void main() {
           final prefs = await SharedPreferences.getInstance();
           palette = light ? arcticPalette : neonPalette;
           addTearDown(() => palette = neonPalette);
-          final session = Session(prefs)..me = {'id': 1, 'name': 'Тоні Старк', 'first_name': 'Тоні', 'username': 'tonny', 'role': 'user'};
+          final session = Session(prefs)..me = {'id': 1, 'name': 'Тоні Старк', 'first_name': 'Тоні', 'username': 'tonny', 'role': 'user', if (name == 'start') 'onboarding': 'interests', 'prefs': {'notify_sound': 'soft', 'streamer_mode': false, 'data_saver': true, 'hide_profanity': false}};
           tester.view.physicalSize = const Size(1170, 2532);
           tester.view.devicePixelRatio = 3;
           tester.view.padding = const FakeViewPadding(top: 120, bottom: 60);
@@ -164,6 +208,9 @@ void main() {
                 GoRoute(path: '/settings/account-type', builder: (_, _) => const AccountTypeScreen()),
                 GoRoute(path: '/memes/new', builder: (_, _) => const MemeScreen()),
                 GoRoute(path: '/settings/pixel-avatar', builder: (_, _) => const PixelAvatarScreen()),
+                GoRoute(path: '/game-extras', builder: (_, _) => const ScreenScroll(children: [GameExtras(slug: 'cs2', name: 'CS2')])),
+                GoRoute(path: '/start', builder: (_, _) => const StartScreen()),
+                GoRoute(path: '/settings/notifications', builder: (_, _) => const NotifyPrefsScreen()),
               ],
             ),
           ]);

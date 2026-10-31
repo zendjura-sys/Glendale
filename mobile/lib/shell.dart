@@ -148,7 +148,12 @@ class _AppShellState extends State<AppShell> {
     widget.session.addListener(_onSession);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _onSession();
-      if (mounted && widget.session.me != null) showWhatsNew(context, widget.session.prefs);
+      // Новачок — спершу перші кроки (номер, режим, ігри), як на сайті.
+      if (mounted && text(widget.session.me?['onboarding']) != null) {
+        context.go('/start');
+      } else if (mounted && widget.session.me != null) {
+        showWhatsNew(context, widget.session.prefs);
+      }
     });
   }
 
