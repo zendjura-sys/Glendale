@@ -26,6 +26,7 @@ import 'events.dart';
 import 'extras.dart';
 import 'family_widget.dart';
 import 'game_card.dart';
+import 'game_tools.dart';
 import 'pulse_widget.dart';
 import 'feed.dart';
 import 'characters.dart';
@@ -228,6 +229,9 @@ Future<void> main() async {
           GoRoute(path: '/later', builder: (_, _) => const ReadLaterScreen()),
           GoRoute(path: '/podcasts', builder: (_, _) => const PodcastsScreen()),
           GoRoute(path: '/ideas', builder: (_, _) => const IdeasScreen()),
+          GoRoute(path: '/configs', builder: (_, s) => ConfigsScreen(game: s.uri.queryParameters['game'])),
+          GoRoute(path: '/game-nights', builder: (_, _) => const GameNightsScreen()),
+          GoRoute(path: '/game-nights/:id', builder: (_, s) => GameNightScreen(id: int.tryParse(s.pathParameters['id'] ?? '') ?? 0)),
           GoRoute(path: '/duels', builder: (_, state) => DuelsScreen(to: state.uri.queryParameters['to'])),
           GoRoute(path: '/tierlists', builder: (_, _) => const TierListsScreen()),
           GoRoute(path: '/tierlists/new', builder: (_, _) => const TierListCreateScreen()),

@@ -61,7 +61,7 @@ class AccountPresenter
             // Сезонні прикраси (Новий рік, Хелловін…) — той самий сезон, що бачить людина на сайті.
             'season' => app(Seasons::class)->for($user),
             // Функції-плагіни, які застосунок показує так само, як сайт (напр. пошук GIF у новому записі).
-            'plugins' => array_intersect_key($modes->pluginsFor($user), array_flip(['gif_search', 'ideas_board', 'duels', 'tier_lists', 'scheduled_posts', 'author_subscriptions', 'open_polls', 'bio_links', 'community_calendar', 'community_channels', 'community_wiki', 'game_backlog', 'game_deals', 'game_giveaways', 'meme_maker', 'nick_generator', 'pixel_avatar', 'topic_follows', 'account_types'])),
+            'plugins' => array_intersect_key($modes->pluginsFor($user), array_flip(['gif_search', 'ideas_board', 'duels', 'tier_lists', 'scheduled_posts', 'author_subscriptions', 'open_polls', 'bio_links', 'community_calendar', 'community_channels', 'community_wiki', 'game_backlog', 'game_deals', 'game_giveaways', 'meme_maker', 'nick_generator', 'pixel_avatar', 'topic_follows', 'account_types', 'game_configs', 'game_nights'])),
             // Кнопки ШІ в чаті застосунку (ШІ-редактор у полі вводу, «Підсумок від ШІ» в меню бесіди).
             'ai' => array_intersect_key($modes->pluginsFor($user), array_flip(['ai_writer', 'ai_summary'])),
             // Рік «Підсумків року», коли їхній сезон (грудень — січень): банер у стрічці застосунку.

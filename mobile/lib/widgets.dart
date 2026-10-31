@@ -1072,7 +1072,10 @@ class _RemoteState extends State<Remote> {
 
   Future<void> _reload() async {
     final next = _fetch();
-    setState(() => _future = next);
+    // Блок, а не стрілка: setState не має отримувати Future (assert у debug-збірці).
+    setState(() {
+      _future = next;
+    });
     try {
       await next;
     } catch (_) {}

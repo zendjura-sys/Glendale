@@ -30,6 +30,8 @@ class NotifyPrefs
         'friend_playing' => 'playing',
         'giveaway' => 'deals',
         'price_drop' => 'deals',
+        'game_night_invite' => 'events',
+        'game_night_set' => 'events',
     ];
 
     /**
@@ -50,6 +52,8 @@ class NotifyPrefs
         'party_time' => 'party',
         'party_full' => 'party',
         'game_patch' => 'games',
+        'game_night_invite' => 'games',
+        'game_night_set' => 'games',
         'family_' => 'families',
         'friend_playing' => 'feature:playing',
         'stream_live' => 'feature:live',

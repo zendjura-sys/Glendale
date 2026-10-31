@@ -11,6 +11,8 @@ import {
     LayoutList,
     Swords,
     WandSparkles,
+    CalendarClock,
+    Crosshair,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
@@ -124,6 +126,8 @@ export default function GamesIndex({
     const tierOn = usePlugin('tier_lists');
     const nickOn = usePlugin('nick_generator');
     const duelsOn = usePlugin('duels');
+    const configsOn = usePlugin('game_configs');
+    const nightsOn = usePlugin('game_nights');
     const signedIn = !!usePage().props.auth.user;
 
     const visit = (patch: Partial<Props['filters']>) =>
@@ -186,6 +190,24 @@ export default function GamesIndex({
                     >
                         <Swords className="size-4 text-violet-300" />
                         {tr('Дуелі')}
+                    </Link>
+                )}
+                {configsOn && signedIn && (
+                    <Link
+                        href="/configs"
+                        className="inline-flex h-10 items-center gap-2 rounded-xl bg-white/[0.06] px-3.5 text-sm font-semibold text-white/80 transition hover:bg-white/10 hover:text-white"
+                    >
+                        <Crosshair className="size-4 text-sky-300" />
+                        {tr('Конфіги й приціли')}
+                    </Link>
+                )}
+                {nightsOn && signedIn && (
+                    <Link
+                        href="/game-nights"
+                        className="inline-flex h-10 items-center gap-2 rounded-xl bg-white/[0.06] px-3.5 text-sm font-semibold text-white/80 transition hover:bg-white/10 hover:text-white"
+                    >
+                        <CalendarClock className="size-4 text-cyan-300" />
+                        {tr('Ігровий вечір')}
                     </Link>
                 )}
                 {nickOn && signedIn && (

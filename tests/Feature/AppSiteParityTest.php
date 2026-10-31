@@ -3,7 +3,10 @@
 namespace Tests\Feature;
 
 use App\Models\Community;
+use App\Models\Friendship;
 use App\Models\Game;
+use App\Models\GameConfig;
+use App\Models\GameNightOption;
 use App\Models\GtaServer;
 use App\Models\Movie;
 use App\Models\MovieSource;
@@ -39,6 +42,28 @@ class AppSiteParityTest extends TestCase
     private function app_token(User $user): string
     {
         return app(ApiTokens::class)->issue($user, 'android');
+    }
+
+    public function test_app_reaches_configs_and_game_nights(): void
+    {
+        $user = User::factory()->create();
+        $friend = User::factory()->create();
+        Friendship::query()->create(['requester_id' => $user->id, 'addressee_id' => $friend->id, 'status' => Friendship::ACCEPTED, 'accepted_at' => now()]);
+        $token = $this->app_token($user);
+        $game = Game::query()->create(['slug' => 'cs2', 'name' => 'CS2', 'letter' => 'C', 'category' => 'pc', 'is_published' => true]);
+
+        $this->withToken($token)->postJson('/api/v1/site/configs', ['game_id' => $game->id, 'kind' => 'crosshair', 'title' => 'Мій приціл', 'code' => 'CSGO-xxxxx'])->assertOk()->assertJsonPath('ok', true);
+        $this->withToken($token)->getJson('/api/v1/site/configs?game=cs2')->assertOk()->assertJsonPath('configs.data.0.title', 'Мій приціл');
+        $id = GameConfig::query()->value('id');
+        $this->withToken($token)->postJson("/api/v1/site/configs/{$id}/like")->assertOk()->assertJsonPath('liked', true);
+        $this->withToken($token)->postJson("/api/v1/site/configs/{$id}/copied")->assertOk();
+
+        $this->withToken($token)->postJson('/api/v1/site/game-nights', ['title' => 'Вечір', 'friends' => [$friend->id], 'times' => [now()->addDay()->toIso8601String()]])->assertOk()->assertJsonPath('redirect', '/game-nights/1');
+        $this->withToken($token)->getJson('/api/v1/site/game-nights')->assertOk()->assertJsonCount(1, 'upcoming')->assertJsonCount(1, 'friends');
+        $this->withToken($token)->getJson('/api/v1/site/game-nights/1')->assertOk()->assertJsonPath('night.is_host', true)->assertJsonCount(1, 'night.times');
+        $option = GameNightOption::query()->value('id');
+        $this->withToken($token)->postJson("/api/v1/site/game-nights/1/options/{$option}/vote")->assertOk();
+        $this->withToken($token)->postJson('/api/v1/site/game-nights/1/finalize', ['time' => $option])->assertOk()->assertJsonPath('ok', true);
     }
 
     public function test_app_edits_plus_style(): void
