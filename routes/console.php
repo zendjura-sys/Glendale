@@ -70,3 +70,6 @@ Schedule::command('streams:check')->everyThreeMinutes()->withoutOverlapping(10)-
 Schedule::call(fn () => app(AuthorSubscriptions::class)->renewDue())->name('author-subscriptions:renew')->dailyAt('06:10')->withoutOverlapping();
 // Підтримка: звернення без відповіді людини тиждень після нашої — закриваються.
 Schedule::call(fn () => app(SupportDesk::class)->autoClose())->name('support:auto-close')->dailyAt('05:20')->withoutOverlapping();
+
+// Щоденна резервна копія бази (зберігаються останні 14; стан — Адмінка → Система).
+Schedule::command('gc:backup')->dailyAt('04:10')->timezone('Europe/Kyiv')->withoutOverlapping(120)->runInBackground();

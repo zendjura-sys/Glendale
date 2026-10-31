@@ -40,6 +40,7 @@ export function ImageFlags({ flags }: { flags: ImageFlagItem[] }) {
                 {flags.map((flag) => (
                     <div
                         key={flag.id}
+                        id={`mod-image-${flag.id}`}
                         className="overflow-hidden rounded-2xl bg-white/[0.04]"
                     >
                         <a

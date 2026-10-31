@@ -1005,6 +1005,11 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::post('status/{incident}', [Admin\StatusController::class, 'update'])->whereNumber('incident')->name('status.update');
         Route::delete('status/{incident}', [Admin\StatusController::class, 'destroy'])->whereNumber('incident')->name('status.destroy');
         Route::get('broadcasts', [Admin\BroadcastController::class, 'index'])->name('broadcasts.index');
+        Route::get('system', [Admin\SystemController::class, 'index'])->name('system.index');
+        Route::post('system/backups', [Admin\SystemController::class, 'backup'])->middleware('throttle:3,10')->name('system.backup');
+        Route::get('system/backups/{name}', [Admin\SystemController::class, 'download'])->where('name', 'gamecon-\d{8}-\d{6}\.sql\.gz')->name('system.backups.download');
+        Route::post('system/errors/{error}/resolve', [Admin\SystemController::class, 'resolve'])->whereNumber('error')->name('system.errors.resolve');
+        Route::delete('system/errors', [Admin\SystemController::class, 'clear'])->name('system.errors.clear');
         Route::post('broadcasts', [Admin\BroadcastController::class, 'store'])->middleware('throttle:5,10')->name('broadcasts.store');
         Route::get('users', [Admin\UserController::class, 'index'])->name('users.index');
         Route::post('users/bulk', [Admin\UserController::class, 'bulk'])->name('users.bulk');
@@ -1200,6 +1205,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::patch('plugins/{plugin}', [Admin\PluginController::class, 'update'])->name('plugins.update');
         Route::get('modules', [Admin\ModuleController::class, 'index'])->name('modules.index');
         Route::patch('modules/{module}', [Admin\ModuleController::class, 'update'])->name('modules.update');
+        Route::put('modules/{module}/maintenance', [Admin\ModuleController::class, 'maintenance'])->name('modules.maintenance');
         Route::get('settings', [Admin\SettingsController::class, 'edit'])->name('settings.edit');
         Route::put('settings', [Admin\SettingsController::class, 'update'])->name('settings.update');
         Route::post('settings/mail-test', [Admin\SettingsController::class, 'mailTest'])->middleware('throttle:6,1')->name('settings.mail-test');

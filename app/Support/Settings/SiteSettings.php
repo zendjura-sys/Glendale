@@ -95,6 +95,8 @@ class SiteSettings
         'cinema_auto' => [],
         'cinema_sync_last' => null,
         'maintenance_message' => null,
+        // Техроботи в окремих розділах: [модуль => повідомлення].
+        'maintenance_modules' => [],
         'servers_auto_publish' => false,
         'plugins' => [],
         'discord_client_id' => null,

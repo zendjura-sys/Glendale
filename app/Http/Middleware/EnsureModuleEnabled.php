@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Services\Geo\CountryRestrictions;
+use App\Support\Maintenance;
 use App\Support\Modules\ModuleManager;
 use Closure;
 use Illuminate\Http\Request;
@@ -19,6 +20,11 @@ class EnsureModuleEnabled
             abort(403, CountryRestrictions::MESSAGE);
         }
         abort_unless($this->modules->enabled($module), 404);
+        // Техроботи в розділі: команда (адміністрація й модератори) заходить, решта бачить пояснення.
+        $notice = Maintenance::message($module);
+        if ($notice !== null && ! $request->user()?->isStaff()) {
+            abort(503, $notice);
+        }
 
         return $next($request);
     }

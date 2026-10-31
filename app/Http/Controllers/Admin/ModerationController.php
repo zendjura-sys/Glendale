@@ -145,6 +145,7 @@ class ModerationController extends Controller
             ])->values();
 
         return Inertia::render('admin/moderation', [
+            'queue' => self::queue($pending, $people, $appeals, $images),
             'newcomers' => app(Plugins::class)->on('newcomer_review') ? app(NewcomerReview::class)->queue() : [],
             'reporters' => app(Plugins::class)->on('trusted_reporters') ? app(ReporterTrust::class)->leaders() : [],
             'images' => $images,
@@ -165,6 +166,74 @@ class ModerationController extends Controller
                 'resolved_week' => MessageReport::query()->where('status', '!=', MessageReport::PENDING)->where('updated_at', '>=', now()->subWeek())->count(),
             ],
         ]);
+    }
+
+    /**
+     * Спільна черга з пріоритетом: безпека дітей, ШІ «серйозно», довірені скаржники, кількість скарг,
+     * прострочені апеляції й час очікування. Найважливіше — зверху, щоб модератор брав по порядку.
+     *
+     * @param  iterable<int, array<string, mixed>>  $reports
+     * @param  iterable<int, array<string, mixed>>  $people
+     * @param  iterable<int, array<string, mixed>>  $appeals
+     * @param  iterable<int, array<string, mixed>>  $images
+     * @return list<array{kind: string, id: int, title: string, reason: string, score: int, level: string, created_at: string}>
+     */
+    public static function queue(iterable $reports, iterable $people, iterable $appeals, iterable $images): array
+    {
+        $age = fn (mixed $iso): int => min(24, (int) floor((time() - (int) strtotime((string) $iso)) / 3600));
+        $ai = fn (mixed $verdict): int => ['high' => 30, 'medium' => 15, 'low' => 5][is_array($verdict) ? ($verdict['severity'] ?? '') : ''] ?? 0;
+        $items = [];
+        foreach ($reports as $r) {
+            $items[] = [
+                'kind' => 'report',
+                'id' => (int) $r['id'],
+                'title' => (string) ($r['message']['author']['name'] ?? 'Повідомлення'),
+                'reason' => implode(', ', $r['reasons']->all()),
+                'score' => ($r['urgent'] ? 100 : 0) + $ai($r['ai']) + ($r['trusted'] ? 20 : 0) + min(25, (int) $r['count'] * 5) + $age($r['created_at']),
+                'created_at' => (string) $r['created_at'],
+            ];
+        }
+        foreach ($people as $p) {
+            $items[] = [
+                'kind' => 'person',
+                'id' => (int) $p['user_id'],
+                'title' => (string) ($p['user']['name'] ?? ''),
+                'reason' => implode(', ', $p['reasons']->all()),
+                'score' => ($p['urgent'] ? 100 : 0) + $ai($p['ai']) + ($p['trusted'] ? 20 : 0) + min(25, (int) $p['count'] * 5) + min(15, (int) $p['strikes'] * 5) + $age($p['created_at']),
+                'created_at' => (string) $p['created_at'],
+            ];
+        }
+        foreach ($appeals as $a) {
+            $items[] = [
+                'kind' => 'appeal',
+                'id' => (int) $a['id'],
+                'title' => (string) ($a['user']['name'] ?? ''),
+                'reason' => (string) $a['kind'],
+                'score' => ($a['overdue'] ? 40 : 10) + $age($a['created_at']),
+                'created_at' => (string) $a['created_at'],
+            ];
+        }
+        foreach ($images as $i) {
+            $items[] = [
+                'kind' => 'image',
+                'id' => (int) $i['id'],
+                'title' => (string) ($i['user']['name'] ?? ''),
+                'reason' => 'Зображення',
+                'score' => (int) round(((float) $i['score']) * 40) + $age($i['created_at']),
+                'created_at' => (string) $i['created_at'],
+            ];
+        }
+        usort($items, fn (array $a, array $b) => $b['score'] <=> $a['score']);
+
+        return array_map(fn (array $item) => [
+            ...$item,
+            'level' => match (true) {
+                $item['score'] >= 100 => 'critical',
+                $item['score'] >= 40 => 'high',
+                $item['score'] >= 20 => 'medium',
+                default => 'low',
+            },
+        ], array_slice($items, 0, 40));
     }
 
     public function resolve(Request $request, MessageReport $report): RedirectResponse

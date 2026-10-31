@@ -12,6 +12,7 @@ use App\Http\Middleware\TrackUserActivity;
 use App\Models\Community;
 use App\Services\Communities\CommunityGuests;
 use App\Services\Geo\CountryRestrictions;
+use App\Services\System\ErrorJournal;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -67,6 +68,11 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        // Справжні збої — у журнал помилок адмінки (згруповано за місцем у коді).
+        $exceptions->report(function (Throwable $e) {
+            app(ErrorJournal::class)->record($e);
+        });
+
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
@@ -94,6 +100,10 @@ return Application::configure(basePath: dirname(__DIR__))
                 try {
                     // Розділ закритий для країни відвідувача — нейтральне пояснення замість загального тексту 403.
                     $message = $e instanceof HttpExceptionInterface && $e->getMessage() === CountryRestrictions::MESSAGE ? $e->getMessage() : null;
+                    // Розділ на техроботах — показуємо пояснення адміністрації.
+                    if ($status === 503 && $e instanceof HttpExceptionInterface && $e->getMessage() !== '') {
+                        $message = $e->getMessage();
+                    }
 
                     return Inertia::render('error', ['status' => $status, 'message' => $message])->toResponse($request)->setStatusCode($status);
                 } catch (Throwable) {

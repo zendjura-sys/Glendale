@@ -1,5 +1,5 @@
 import { Head, router } from '@inertiajs/react';
-import { Lock, Sparkles } from 'lucide-react';
+import { Lock, Sparkles, Wrench } from 'lucide-react';
 import { useState } from 'react';
 import { PageHeader, Pill, Toggle } from '@/components/gc/admin';
 import { ModuleIcon } from '@/components/gc/module-icon';
@@ -16,7 +16,13 @@ type ModuleItem = {
     enabled: boolean;
 };
 
-export default function AdminModules({ modules }: { modules: ModuleItem[] }) {
+export default function AdminModules({
+    modules,
+    maintenance = {},
+}: {
+    modules: ModuleItem[];
+    maintenance?: Record<string, string>;
+}) {
     const [pending, setPending] = useState<string | null>(null);
 
     const toggle = (module: ModuleItem, enabled: boolean) => {
@@ -153,6 +159,12 @@ export default function AdminModules({ modules }: { modules: ModuleItem[] }) {
                                             {m.key}
                                         </code>
                                     </div>
+                                    {m.enabled && (
+                                        <MaintenanceRow
+                                            module={m.key}
+                                            message={maintenance[m.key] ?? null}
+                                        />
+                                    )}
                                 </div>
                             ))}
                         </div>
@@ -160,5 +172,72 @@ export default function AdminModules({ modules }: { modules: ModuleItem[] }) {
                 ))}
             </div>
         </>
+    );
+}
+
+/** Техроботи в розділі: команда заходить як завжди, решта бачить повідомлення. */
+function MaintenanceRow({
+    module,
+    message,
+}: {
+    module: string;
+    message: string | null;
+}) {
+    const [text, setText] = useState(message ?? '');
+    const [editing, setEditing] = useState(false);
+    const save = (on: boolean) =>
+        router.put(
+            `/admin/modules/${module}/maintenance`,
+            { on, message: on ? text : '' },
+            {
+                preserveScroll: true,
+                onSuccess: () => setEditing(false),
+            },
+        );
+
+    if (message && !editing) {
+        return (
+            <div className="relative mt-3 flex items-center gap-2 rounded-xl bg-amber-400/10 px-3 py-2 text-xs text-amber-200">
+                <Wrench className="size-3.5 shrink-0" />
+                <span className="min-w-0 flex-1 truncate">{message}</span>
+                <button
+                    type="button"
+                    onClick={() => save(false)}
+                    className="shrink-0 font-semibold text-white hover:underline"
+                >
+                    {tr('Завершити')}
+                </button>
+            </div>
+        );
+    }
+
+    return editing ? (
+        <div className="relative mt-3 flex gap-2">
+            <input
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                placeholder={tr(
+                    'Розділ на технічних роботах — скоро повернемося.',
+                )}
+                maxLength={300}
+                className="input-glass h-9 min-w-0 flex-1 rounded-lg px-2.5 text-xs text-white"
+            />
+            <button
+                type="button"
+                onClick={() => save(true)}
+                className="h-9 shrink-0 rounded-lg bg-amber-500 px-3 text-xs font-semibold text-white"
+            >
+                {tr('Закрити')}
+            </button>
+        </div>
+    ) : (
+        <button
+            type="button"
+            onClick={() => setEditing(true)}
+            className="relative mt-3 inline-flex items-center gap-1.5 text-xs text-white/45 hover:text-white"
+        >
+            <Wrench className="size-3.5" />
+            {tr('Техроботи в розділі')}
+        </button>
     );
 }

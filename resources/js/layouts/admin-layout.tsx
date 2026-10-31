@@ -3,6 +3,7 @@ import { NavigationSkeleton } from '@/components/gc/navigation-skeleton';
 import { Link, router, usePage } from '@inertiajs/react';
 import {
     Activity,
+    DatabaseBackup,
     ArrowLeft,
     Send,
     ChevronLeft,
@@ -118,6 +119,11 @@ function groups(): { title: string; items: Item[] }[] {
                     label: tr('Статус'),
                     href: '/admin/status',
                     icon: Activity,
+                },
+                {
+                    label: tr('Система'),
+                    href: '/admin/system',
+                    icon: DatabaseBackup,
                 },
             ],
         },

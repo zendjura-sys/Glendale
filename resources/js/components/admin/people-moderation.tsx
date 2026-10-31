@@ -95,6 +95,7 @@ export function PeopleReports({
                     {people.map((row) => (
                         <article
                             key={row.user_id}
+                            id={`mod-person-${row.user_id}`}
                             className="rounded-2xl bg-white/[0.03] p-3"
                         >
                             <div className="flex items-start gap-2.5">
@@ -238,6 +239,7 @@ export function Appeals({ appeals }: { appeals: AppealItem[] }) {
                     {appeals.map((item) => (
                         <article
                             key={item.id}
+                            id={`mod-appeal-${item.id}`}
                             className="rounded-2xl bg-white/[0.03] p-3"
                         >
                             <div className="flex flex-wrap items-center gap-2 text-xs text-white/50">

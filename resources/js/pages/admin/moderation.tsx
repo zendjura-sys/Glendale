@@ -33,6 +33,8 @@ import { timeAgo } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import type { UserCard } from '@/types';
 import { LOCALE, tr } from '@/lib/i18n';
+import { ModerationQueue } from '@/components/admin/moderation-queue';
+import type { QueueItem } from '@/components/admin/moderation-queue';
 
 type Report = {
     id: number;
@@ -63,6 +65,7 @@ type Settings = {
 };
 
 type Props = {
+    queue?: QueueItem[];
     reports: Report[];
     muted: (UserCard & { muted_until: string; mute_reason: string | null })[];
     settings: Settings;
@@ -118,6 +121,7 @@ export default function AdminModeration({
     images = [],
     newcomers = [],
     reporters = [],
+    queue = [],
 }: Props) {
     const form = useForm({
         ...settings,
@@ -177,6 +181,8 @@ export default function AdminModeration({
                 />
             </div>
 
+            <ModerationQueue items={queue} />
+
             <section className="glass mb-6 rounded-2xl p-4 sm:p-5">
                 <h2 className="mb-3 font-display text-lg font-semibold text-white">
                     {tr('Скарги')}
@@ -190,6 +196,7 @@ export default function AdminModeration({
                         {reports.map((r) => (
                             <article
                                 key={r.id}
+                                id={`mod-report-${r.id}`}
                                 className="rounded-2xl bg-white/[0.03] p-3"
                             >
                                 <div className="flex flex-wrap items-center gap-2 text-xs text-white/50">
