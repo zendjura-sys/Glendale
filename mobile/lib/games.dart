@@ -6,6 +6,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'api.dart';
+import 'game_reviews.dart';
 import 'game_extras.dart';
 import 'clans.dart';
 import 'events.dart';
@@ -413,6 +414,7 @@ class GameScreen extends StatelessWidget {
                 ],
               ]),
             ),
+            if (AppScope.of(context).session.pluginOn('game_reviews')) GameReviewsSection(slug: slug),
             if (videos.isNotEmpty || shots.isNotEmpty)
               _section(tr('Трейлери й скриншоти'), LucideIcons.images, [
                 SizedBox(

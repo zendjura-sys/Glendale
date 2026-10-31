@@ -28,6 +28,7 @@ import 'family_widget.dart';
 import 'game_card.dart';
 import 'engagement.dart';
 import 'fun.dart';
+import 'game_reviews.dart';
 import 'game_tools.dart';
 import 'status.dart';
 import 'pulse_widget.dart';
@@ -309,6 +310,7 @@ Future<void> main() async {
               // Перед :slug — щоб «deals» і «backlog» не сприймались як гра.
               GoRoute(path: 'deals', builder: (_, _) => const DealsScreen()),
               GoRoute(path: 'trivia', builder: (_, _) => const TriviaScreen()),
+              GoRoute(path: 'trailers', builder: (_, _) => const TrailersScreen()),
               GoRoute(path: 'backlog', builder: (_, _) => const BacklogScreen(), routes: [
                 GoRoute(path: ':username', builder: (_, state) => BacklogScreen(key: ValueKey(state.pathParameters['username']), username: state.pathParameters['username'])),
               ]),

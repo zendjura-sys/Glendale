@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'api.dart';
+import 'game_reviews.dart';
 import 'games.dart';
 import 'shell.dart';
 import 'state.dart';
@@ -772,6 +773,13 @@ class _ClanScreenState extends State<ClanScreen> {
     }
 
     return [
+      if (d['mvp'] is Map)
+        ClanMvpCard(
+          mvp: mapOf(d['mvp']),
+          members: members,
+          myUserId: AppScope.read(context).session.myId,
+          onVote: (userId) => _act('/mvp', {'user_id': userId}),
+        ),
       if (manage && applications.isNotEmpty) ...[
         Glass(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

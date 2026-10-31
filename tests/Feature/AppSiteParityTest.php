@@ -46,6 +46,16 @@ class AppSiteParityTest extends TestCase
         return app(ApiTokens::class)->issue($user, 'android');
     }
 
+    public function test_app_reaches_reviews_trailers_and_clan_mvp(): void
+    {
+        $user = User::factory()->create();
+        $token = $this->app_token($user);
+        $game = Game::query()->create(['slug' => 'cs2', 'name' => 'CS2', 'letter' => 'C', 'category' => 'pc', 'is_published' => true, 'details' => ['videos' => [['id' => 'abc', 'name' => 'Трейлер']]]]);
+        $this->withToken($token)->postJson('/api/v1/site/games/cs2/reviews', ['body' => 'Класичний шутер, грається як вперше.', 'score' => 8, 'recommended' => true])->assertOk();
+        $this->withToken($token)->getJson('/api/v1/site/games/cs2/reviews')->assertOk()->assertJsonPath('summary.count', 1);
+        $this->withToken($token)->getJson('/api/v1/site/games/trailers')->assertOk()->assertJsonPath('games.data.0.slug', 'cs2');
+    }
+
     public function test_app_reaches_memories_map_and_event_frame(): void
     {
         $user = User::factory()->create(['country' => 'UA']);

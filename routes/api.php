@@ -35,6 +35,7 @@ use App\Http\Controllers\EventController;
 use App\Http\Controllers\Families;
 use App\Http\Controllers\FollowController;
 use App\Http\Controllers\Fun\GameJournalController;
+use App\Http\Controllers\Fun\GameReviewController;
 use App\Http\Controllers\Fun\MemoriesController;
 use App\Http\Controllers\Fun\MovieRouletteController;
 use App\Http\Controllers\Fun\QuizController;
@@ -427,6 +428,14 @@ Route::prefix('v1')->group(function () {
             Route::post('music/quiz', [QuizController::class, 'musicStart'])->middleware(['module:music', 'throttle:20,1']);
             Route::post('music/quiz/{round}', [QuizController::class, 'musicAnswer'])->whereUuid('round')->middleware(['module:music', 'throttle:120,1']);
             Route::get('games/trivia', [QuizController::class, 'trivia'])->middleware('module:games');
+            Route::middleware('module:games')->group(function () {
+                Route::get('games/trailers', [GameReviewController::class, 'trailers']);
+                Route::post('games/reviews/{review}/helpful', [GameReviewController::class, 'helpful'])->whereNumber('review')->middleware('throttle:60,1');
+                Route::get('games/{game}/reviews', [GameReviewController::class, 'index'])->middleware('throttle:60,1');
+                Route::post('games/{game}/reviews', [GameReviewController::class, 'store'])->middleware('throttle:10,1');
+                Route::delete('games/{game}/reviews', [GameReviewController::class, 'destroy']);
+            });
+            Route::post('clans/{clan}/mvp', [ClanController::class, 'mvp'])->middleware(['module:clans', 'throttle:20,1']);
             Route::post('games/trivia', [QuizController::class, 'triviaSubmit'])->middleware(['module:games', 'throttle:20,1']);
             Route::middleware('module:games')->group(function () {
                 Route::get('journal', [GameJournalController::class, 'index']);

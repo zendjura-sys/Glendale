@@ -52,6 +52,7 @@ import { LOCALE, tr } from '@/lib/i18n';
 import { MomentCard } from '@/components/moments/moment-card';
 import type { MomentCardData } from '@/components/moments/moment-card';
 import { usePlugin } from '@/lib/plugins';
+import { GameReviews } from '@/components/games/game-reviews';
 import { GamePrices } from '@/components/games/game-prices';
 import { PcCheck } from '@/components/games/pc-check';
 import { GameNews } from '@/components/games/game-news';
@@ -350,6 +351,7 @@ export default function GameShow({
     const [pricesFailed, setPricesFailed] = useState(false);
     const newsOn = usePlugin('steam_patch_news');
     const qaOn = usePlugin('game_qa');
+    const reviewsOn = usePlugin('game_reviews');
     const mentorsOn = usePlugin('game_mentors');
     const tierOn = usePlugin('tier_lists');
     const goalsOn = usePlugin('game_goals');
@@ -710,6 +712,14 @@ export default function GameShow({
                 <Section title={tr('FPS у гравців')} icon={Gauge}>
                     <FpsReports slug={game.slug} />
                 </Section>
+            )}
+
+            {reviewsOn && (
+                <div id="reviews" className="scroll-mt-24">
+                    <Section title={tr('Огляди гравців')} icon={Star}>
+                        <GameReviews slug={game.slug} signedIn={!guest} />
+                    </Section>
+                </div>
             )}
 
             {qaOn && (

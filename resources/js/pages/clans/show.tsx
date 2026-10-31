@@ -49,7 +49,15 @@ type Member = {
     away?: boolean;
 };
 
+type Mvp = {
+    month: string;
+    winner: { user: UserCard; votes: number; month: string } | null;
+    leaders: { user: UserCard; votes: number }[];
+    my_vote: number | null;
+};
+
 type Props = {
+    mvp?: Mvp | null;
     clan: ClanCard & {
         description: string | null;
         rules: string | null;
@@ -166,6 +174,102 @@ function Card({
             </div>
             {children}
         </section>
+    );
+}
+
+/** «Гравець місяця»: переможець минулого місяця, лідери поточного й голос за учасника. */
+function MvpCard({
+    base,
+    mvp,
+    members,
+    myUserId,
+}: {
+    base: string;
+    mvp: Mvp;
+    members: Member[];
+    myUserId: number | null;
+}) {
+    const [pick, setPick] = useState<number | ''>(mvp.my_vote ?? '');
+    const candidates = members.filter((m) => m.user && m.user.id !== myUserId);
+
+    return (
+        <Card title={tr('Гравець місяця')} icon={Trophy}>
+            {mvp.winner ? (
+                <div className="mb-4 flex items-center gap-3 rounded-2xl bg-amber-400/10 p-3">
+                    <UserAvatar user={mvp.winner.user} size="md" />
+                    <div className="min-w-0 flex-1">
+                        <p className="text-xs text-amber-200">
+                            {tr('Гравець місяця · {month}', {
+                                month: new Date(
+                                    `${mvp.winner.month}-01`,
+                                ).toLocaleDateString(LOCALE, {
+                                    month: 'long',
+                                    year: 'numeric',
+                                }),
+                            })}
+                        </p>
+                        <p className="truncate font-semibold text-white">
+                            {mvp.winner.user.name}
+                        </p>
+                    </div>
+                    <span className="text-xs text-white/55">
+                        {tr('{votes} голос.', { votes: mvp.winner.votes })}
+                    </span>
+                </div>
+            ) : (
+                <p className="mb-3 text-sm text-white/50">
+                    {tr(
+                        'Голосуйте за найкращого гравця клану — переможця оголосимо на початку наступного місяця.',
+                    )}
+                </p>
+            )}
+            {mvp.leaders.length > 0 && (
+                <ol className="mb-3 space-y-1.5">
+                    {mvp.leaders.map((l, i) => (
+                        <li
+                            key={l.user.id}
+                            className="flex items-center gap-2.5 text-sm"
+                        >
+                            <span className="w-4 text-xs text-white/40">
+                                {i + 1}
+                            </span>
+                            <UserAvatar user={l.user} size="xs" />
+                            <span className="min-w-0 flex-1 truncate text-white/85">
+                                {l.user.name}
+                            </span>
+                            <span className="text-xs text-white/55 tabular-nums">
+                                {l.votes}
+                            </span>
+                        </li>
+                    ))}
+                </ol>
+            )}
+            <div className="flex gap-2">
+                <select
+                    value={pick}
+                    onChange={(e) =>
+                        setPick(e.target.value ? Number(e.target.value) : '')
+                    }
+                    className="input-glass h-10 min-w-0 flex-1 rounded-xl px-3 text-sm text-white [color-scheme:dark]"
+                    aria-label={tr('Мій голос')}
+                >
+                    <option value="">{tr('Оберіть учасника')}</option>
+                    {candidates.map((m) => (
+                        <option key={m.user!.id} value={m.user!.id}>
+                            {m.nickname || m.user!.name}
+                        </option>
+                    ))}
+                </select>
+                <button
+                    type="button"
+                    disabled={pick === '' || pick === mvp.my_vote}
+                    onClick={() => post(`${base}/mvp`, { user_id: pick })}
+                    className="h-10 rounded-xl bg-primary px-4 text-sm font-semibold text-white disabled:opacity-50"
+                >
+                    {mvp.my_vote ? tr('Змінити голос') : tr('Голосувати')}
+                </button>
+            </div>
+        </Card>
     );
 }
 
@@ -618,6 +722,14 @@ export default function ClanShow(props: Props) {
                     </Card>
                 )}
 
+                {tab === 'members' && props.mvp && (
+                    <MvpCard
+                        base={base}
+                        mvp={props.mvp}
+                        members={members}
+                        myUserId={me?.user?.id ?? null}
+                    />
+                )}
                 {tab === 'members' && (
                     <MembersTab
                         base={base}

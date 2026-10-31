@@ -36,6 +36,7 @@ use App\Http\Controllers\FeedController;
 use App\Http\Controllers\FollowController;
 use App\Http\Controllers\FriendController;
 use App\Http\Controllers\Fun\GameJournalController;
+use App\Http\Controllers\Fun\GameReviewController;
 use App\Http\Controllers\Fun\MemoriesController;
 use App\Http\Controllers\Fun\MovieRouletteController;
 use App\Http\Controllers\Fun\QuizController;
@@ -698,6 +699,12 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     // Каталог мультиплеєрних ігор.
     Route::prefix('games')->name('games.')->middleware('module:games')->group(function () {
         Route::get('search', [GameController::class, 'search'])->middleware('throttle:120,1')->name('search');
+        // Трейлери й огляди гравців.
+        Route::get('trailers', [GameReviewController::class, 'trailers'])->name('trailers');
+        Route::post('reviews/{review}/helpful', [GameReviewController::class, 'helpful'])->whereNumber('review')->middleware('throttle:60,1')->name('reviews.helpful');
+        Route::get('{game}/reviews', [GameReviewController::class, 'index'])->middleware('throttle:60,1')->name('reviews');
+        Route::post('{game}/reviews', [GameReviewController::class, 'store'])->middleware('throttle:10,1')->name('reviews.store');
+        Route::delete('{game}/reviews', [GameReviewController::class, 'destroy'])->name('reviews.destroy');
         // Щоденна вікторина про ігри.
         Route::get('trivia', [QuizController::class, 'trivia'])->name('trivia');
         Route::post('trivia', [QuizController::class, 'triviaSubmit'])->middleware('throttle:20,1')->name('trivia.submit');
@@ -750,6 +757,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
             Route::post('contributions/{contribution}', [ClanController::class, 'review'])->whereNumber('contribution')->name('contributions.review');
             Route::post('spend', [ClanController::class, 'spend'])->middleware('throttle:30,1')->name('spend');
             Route::get('chat', [ClanController::class, 'chat'])->name('chat');
+            Route::post('mvp', [ClanController::class, 'mvp'])->middleware('throttle:20,1')->name('mvp');
         });
     });
 
