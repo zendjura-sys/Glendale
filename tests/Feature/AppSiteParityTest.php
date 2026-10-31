@@ -593,6 +593,23 @@ class AppSiteParityTest extends TestCase
         $this->assertTrue($prefs['hide_profanity']);
     }
 
+    public function test_app_manages_connections_data_and_profile_look(): void
+    {
+        Game::query()->create(['slug' => 'cs2', 'name' => 'CS2', 'letter' => 'C', 'category' => 'pc', 'is_published' => true]);
+        $user = User::factory()->create();
+        $token = $this->app_token($user);
+        $this->withToken($token)->getJson('/api/v1/site/settings/account')->assertOk()->assertJsonStructure(['telegram', 'connections']);
+        $this->assertSame(200, $this->withToken($token)->get('/api/v1/site/settings/account/export')->baseResponse->getStatusCode());
+        $game = Game::query()->where('slug', 'cs2')->value('id');
+        // Кольори теми беруться з обкладинки: без неї сервер чесно відмовляє (як на сайті).
+        $this->withToken($token)->putJson('/api/v1/site/settings/game-theme', ['game_id' => $game])->assertStatus(422);
+        $this->withToken($token)->putJson('/api/v1/site/settings/game-theme', ['game_id' => null])->assertSuccessful();
+        $d = $this->withToken($token)->getJson('/api/v1/site/settings/appearance')->json();
+        $blocks = array_reverse($d['profile_blocks']);
+        $this->withToken($token)->putJson('/api/v1/site/settings/appearance', ['palette' => $d['palette'], 'languages' => [], 'looking_for_group' => false, 'quiet_enabled' => false, 'quiet_from' => '23:00', 'quiet_to' => '08:00', 'profile_blocks' => $blocks])->assertSuccessful();
+        $this->assertSame($blocks, $this->withToken($token)->getJson('/api/v1/site/settings/appearance')->json('profile_blocks'));
+    }
+
     public function test_app_composer_tools_publish_like_the_site(): void
     {
         $token = $this->app_token(User::factory()->create());

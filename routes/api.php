@@ -441,6 +441,14 @@ Route::prefix('v1')->group(function () {
             Route::patch('settings/streamer-mode', [GameThemeController::class, 'streamerMode'])->middleware('throttle:30,1');
             Route::patch('settings/data-saver', [GameThemeController::class, 'dataSaver'])->middleware('throttle:30,1');
             Route::put('settings/account/profanity', [SettingsAccountController::class, 'profanity']);
+            // «Зв’язки й дані»: Telegram/Discord, сервери з входом через GameCon, вивантаження даних.
+            Route::get('settings/account', [SettingsAccountController::class, 'edit']);
+            Route::delete('settings/account/connections/{client}', [SettingsAccountController::class, 'disconnect'])->whereNumber('client');
+            Route::get('settings/account/export', [SettingsAccountController::class, 'export'])->middleware('throttle:3,60');
+            Route::post('bots/telegram/account', [Bots\BotLinkController::class, 'telegramAccount'])->middleware('throttle:10,1');
+            Route::delete('bots/telegram/account', [Bots\BotLinkController::class, 'telegramUnlink']);
+            // «Вигляд профілю»: тема за грою (порядок блоків — у settings/appearance).
+            Route::put('settings/game-theme', [GameThemeController::class, 'update'])->middleware('throttle:20,1');
             // Перші кроки новачка: номер → режим → ігри й сервери.
             Route::get('start', [StartController::class, 'index']);
             Route::post('start', [StartController::class, 'store']);

@@ -348,6 +348,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
           onTap: () => context.push('/settings/notifications'),
         ),
       ),
+      const SizedBox(height: 12),
+      Glass(
+        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+        child: Column(children: [
+          ListTile(
+            leading: Icon(LucideIcons.layoutTemplate, color: accent),
+            title: Text(tr('Вигляд профілю'), style: body(14.5, weight: FontWeight.w600)),
+            subtitle: Text(tr('Тема за грою й порядок блоків'), style: body(12, color: faint)),
+            trailing: Icon(LucideIcons.chevronRight, color: faint),
+            onTap: () => context.push('/settings/profile-look'),
+          ),
+          ListTile(
+            leading: Icon(LucideIcons.link2, color: accent),
+            title: Text(tr('Зв’язки й дані'), style: body(14.5, weight: FontWeight.w600)),
+            subtitle: Text(tr('Telegram, Discord, сервери, мої дані'), style: body(12, color: faint)),
+            trailing: Icon(LucideIcons.chevronRight, color: faint),
+            onTap: () => context.push('/settings/connections'),
+          ),
+        ]),
+      ),
       // Розділи профілю, як на сайті (кожен — свій плагін): посилання, тип акаунта, піксельна аватарка.
       if (AppScope.read(context).session case final session when session.pluginOn('bio_links') || session.pluginOn('account_types') || session.pluginOn('pixel_avatar')) ...[
         const SizedBox(height: 12),

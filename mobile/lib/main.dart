@@ -39,6 +39,7 @@ import 'people.dart';
 import 'photos.dart';
 import 'parity.dart';
 import 'play_extras.dart';
+import 'links_data.dart';
 import 'prefs.dart';
 import 'start.dart';
 import 'playing.dart';
@@ -229,6 +230,8 @@ Future<void> main() async {
           GoRoute(path: '/tierlists', builder: (_, _) => const TierListsScreen()),
           GoRoute(path: '/tierlists/new', builder: (_, _) => const TierListCreateScreen()),
           GoRoute(path: '/tierlists/:id/edit', builder: (_, state) => TierListCreateScreen(key: ValueKey('edit-${state.pathParameters['id']}'), id: int.tryParse(state.pathParameters['id']!))),
+          GoRoute(path: '/settings/connections', builder: (_, _) => const ConnectionsScreen()),
+          GoRoute(path: '/settings/profile-look', builder: (_, _) => const ProfileLookScreen()),
           GoRoute(path: '/settings/notifications', builder: (_, _) => const NotifyPrefsScreen()),
           GoRoute(path: '/start', builder: (_, _) => const StartScreen()),
           GoRoute(path: '/t/:tag', builder: (_, state) => TopicScreen(key: ValueKey(state.pathParameters['tag']), tag: state.pathParameters['tag']!)),
