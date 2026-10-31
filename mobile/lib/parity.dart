@@ -922,7 +922,8 @@ class _NicknamesScreenState extends State<NicknamesScreen> {
     });
     try {
       final r = await AppScope.read(context).session.api.post(Api.site('/tools/nicknames/check'), {'names': next});
-      if (mounted) setState(() => free = {for (final n in (r['free'] as List? ?? const [])) '$n'});
+      // Адреси на GameCon без урахування регістру: сервер відповідає малими літерами.
+      if (mounted) setState(() => free = {for (final n in (r['free'] as List? ?? const [])) '$n'.toLowerCase()});
     } catch (_) {}
   }
 
@@ -954,7 +955,7 @@ class _NicknamesScreenState extends State<NicknamesScreen> {
             ListTile(
               contentPadding: EdgeInsets.zero,
               title: Text(n, style: body(15.5, weight: FontWeight.w600)),
-              subtitle: free == null ? null : Text(free!.contains(n) ? tr('Адреса вільна') : tr('Уже зайнято'), style: body(12, color: free!.contains(n) ? green : dangerSoft)),
+              subtitle: free == null ? null : Text(free!.contains(n.toLowerCase()) ? tr('Адреса вільна') : tr('Уже зайнято'), style: body(12, color: free!.contains(n.toLowerCase()) ? green : dangerSoft)),
               trailing: IconButton(
                 tooltip: tr('Копіювати'),
                 icon: Icon(LucideIcons.copy, color: muted, size: 18),

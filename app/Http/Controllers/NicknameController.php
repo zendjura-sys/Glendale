@@ -23,11 +23,23 @@ class NicknameController extends Controller
     {
         app(Plugins::class)->ensure('nick_generator');
         $data = $request->validate(['names' => ['required', 'array', 'max:30'], 'names.*' => ['required', 'string', 'max:40']]);
-        $names = array_map(fn ($n) => mb_strtolower((string) $n), $data['names']);
+        $originals = array_map(fn ($n) => (string) $n, $data['names']);
+        $names = array_map('mb_strtolower', $originals);
         $taken = User::query()->whereIn('username', $names)->pluck('username')->map(fn ($u) => mb_strtolower((string) $u))->all();
         $reserved = array_map('mb_strtolower', (array) config('reserved.usernames', []));
         $valid = fn (string $n) => (bool) preg_match('/^[a-z][a-z0-9_.]*[a-z0-9]$/', $n) && mb_strlen($n) >= 3 && mb_strlen($n) <= 32;
+        $isFree = fn (string $n) => $valid($n) && ! in_array($n, $taken, true) && ! in_array($n, $reserved, true);
 
-        return response()->json(['free' => array_values(array_filter($names, fn (string $n) => $valid($n) && ! in_array($n, $taken, true) && ! in_array($n, $reserved, true)))]);
+        // Вільні адреси — малими літерами (так їх порівнює сайт) і в написанні запиту:
+        // застосунок 1.1.74 порівнював нік як є, і «SneakyVarenyk» вважав зайнятим.
+        $free = [];
+        foreach ($originals as $original) {
+            if ($isFree(mb_strtolower($original))) {
+                $free[] = mb_strtolower($original);
+                $free[] = $original;
+            }
+        }
+
+        return response()->json(['free' => array_values(array_unique($free))]);
     }
 }

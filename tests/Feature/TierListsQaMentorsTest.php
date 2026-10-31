@@ -84,7 +84,7 @@ class TierListsQaMentorsTest extends TestCase
     {
         User::factory()->create(['username' => 'neorunner']);
         $this->actingAs(User::factory()->create())->postJson('/tools/nicknames/check', ['names' => ['NeoRunner', 'GhostByte', 'x']])
-            ->assertOk()->assertJsonPath('free', ['ghostbyte']);
+            ->assertOk()->assertJsonPath('free', ['ghostbyte', 'GhostByte']);
         $this->actingAs(User::factory()->create())->get('/tools/nicknames')->assertInertia(fn (Assert $page) => $page->component('tools/nicknames'));
     }
 }
