@@ -64,6 +64,7 @@ use App\Http\Controllers\PhotoAlbumController;
 use App\Http\Controllers\PhotoController;
 use App\Http\Controllers\PlayingController;
 use App\Http\Controllers\PlaylistController;
+use App\Http\Controllers\PlusController;
 use App\Http\Controllers\PodcastController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\ProfileController;
@@ -449,6 +450,10 @@ Route::prefix('v1')->group(function () {
             Route::delete('bots/telegram/account', [Bots\BotLinkController::class, 'telegramUnlink']);
             // «Вигляд профілю»: тема за грою (порядок блоків — у settings/appearance).
             Route::put('settings/game-theme', [GameThemeController::class, 'update'])->middleware('throttle:20,1');
+            // GameCon+: оформлення (колір і анімація ніку, рамка, кольори сторінки, ефект шапки).
+            // Купівля в застосунку — лише Google Play (BillingController), ціни сайту тут не показуються.
+            Route::get('plus', [PlusController::class, 'index']);
+            Route::put('plus/style', [PlusController::class, 'style'])->middleware('throttle:30,1');
             // Перші кроки новачка: номер → режим → ігри й сервери.
             Route::get('start', [StartController::class, 'index']);
             Route::post('start', [StartController::class, 'store']);

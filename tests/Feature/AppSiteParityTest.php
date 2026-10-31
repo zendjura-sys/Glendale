@@ -41,6 +41,21 @@ class AppSiteParityTest extends TestCase
         return app(ApiTokens::class)->issue($user, 'android');
     }
 
+    public function test_app_edits_plus_style(): void
+    {
+        $user = User::factory()->create();
+        $token = $this->app_token($user);
+
+        // Без GameCon+ — лише перегляд варіантів, зберегти не можна.
+        $this->withToken($token)->getJson('/api/v1/site/plus')->assertOk()->assertJsonStructure(['state', 'style', 'options' => ['names', 'frames', 'accents', 'effects', 'headers']]);
+        $this->withToken($token)->putJson('/api/v1/site/plus/style', ['fx' => 'neon'])->assertForbidden();
+
+        $user->forceFill(['plus_until' => now()->addMonth()])->save();
+        $name = array_key_first((array) config('plus.name_colors'));
+        $this->withToken($token)->putJson('/api/v1/site/plus/style', ['name' => $name, 'fx' => 'neon', 'header' => 'aurora'])->assertOk()->assertJsonPath('ok', true);
+        $this->assertSame(['name' => $name, 'fx' => 'neon', 'header' => 'aurora'], $user->fresh()->plus_style);
+    }
+
     public function test_app_music_picker_finds_my_and_all_tracks(): void
     {
         $user = User::factory()->create();

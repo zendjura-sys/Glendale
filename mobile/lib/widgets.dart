@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:ui' show ImageFilter;
 
 import 'package:cached_network_image/cached_network_image.dart';
@@ -1545,8 +1546,9 @@ Future<T?> showGcSheet<T>(BuildContext context, {String? title, String? subtitle
         padding: EdgeInsets.only(bottom: keyboard),
         child: ArcticGlassSheetSurface(
           child: Padding(
-            // Під клавіатурою відступ уже є; інакше — системна смуга жестів.
-            padding: EdgeInsets.only(bottom: keyboard > 0 ? 0 : MediaQuery.viewPaddingOf(sheet).bottom),
+            // Під клавіатурою відступ уже є; інакше — системна смуга жестів (+12, щоб нижня кнопка
+            // не прилипала до неї). Смугу беремо з самого екрана: усередині шторки MediaQuery її обнуляє.
+            padding: EdgeInsets.only(bottom: keyboard > 0 ? 0 : math.max(MediaQuery.viewPaddingOf(sheet).bottom, MediaQueryData.fromView(View.of(sheet)).viewPadding.bottom) + 12),
             child: height == null ? content : SizedBox(height: height, child: content),
           ),
         ),

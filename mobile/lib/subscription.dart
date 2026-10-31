@@ -9,6 +9,8 @@ import 'package:url_launcher/url_launcher.dart';
 import 'api.dart';
 import 'i18n.dart';
 import 'play_billing.dart';
+import 'core/widgets/arctic_glass/arctic_glass.dart' show ArcticPressable;
+import 'plus.dart';
 import 'state.dart';
 import 'theme.dart';
 import 'widgets.dart';
@@ -131,22 +133,21 @@ class SubscriptionController extends ChangeNotifier with WidgetsBindingObserver 
   }
 }
 
-/// Перевага GameCon+ — лише опис, без цін.
+/// Перевага GameCon+ — лише опис, без цін (як на сторінці GameCon+ сайту).
 class _Perk {
-  const _Perk(this.icon, this.title);
+  const _Perk(this.icon, this.title, this.text);
   final IconData icon;
   final String title;
+  final String text;
 }
 
 List<_Perk> _perks() => [
-  _Perk(LucideIcons.badgeCheck, tr('Значок GameCon+ і колір ніку')),
-  _Perk(LucideIcons.sparkles, tr('Анімований нік і ефект шапки профілю')),
-  _Perk(LucideIcons.image, tr('GIF-аватар і обкладинка, рамка аватара')),
-  _Perk(LucideIcons.drama, tr('До 25 персонажів RP і 20 фото в кожного')),
-  _Perk(LucideIcons.pin, tr('3 закріплені записи')),
-  _Perk(LucideIcons.users, tr('5 оголошень у «Пошук паті» й підняття раз на добу')),
-  _Perk(LucideIcons.paperclip, tr('Файли в чатах до 200 МБ')),
-  _Perk(LucideIcons.smile, tr('Стікери GameCon+ і додаткові реакції')),
+  _Perk(LucideIcons.badgeCheck, tr('Значок і колір ніку'), tr('Позначка GameCon+ біля імені всюди, 8 кольорів і 3 градієнти ніку.')),
+  _Perk(LucideIcons.wandSparkles, tr('Анімований нік'), tr('Перелив, відблиск, неон чи веселка; сяйво обкладинки або жива рамка шапки.')),
+  _Perk(LucideIcons.image, tr('Анімований профіль'), tr('GIF-аватар і GIF-обкладинка, рамка аватара (сезонна змінюється щомісяця), власні кольори сторінки.')),
+  _Perk(LucideIcons.layers, tr('Більше місця'), tr('До 25 персонажів RP і 20 фото в кожного, 3 закріплені записи, файли в чатах до 200 МБ, 5 оголошень у «Пошук паті».')),
+  _Perk(LucideIcons.users, tr('Увага й зручність'), tr('Раз на добу — підняти своє паті нагору на годину. Набори стікерів GameCon+ і ще 5 реакцій.')),
+  _Perk(LucideIcons.shield, tr('Чесно для всіх'), tr('Бонусне 4-те завдання дня дає досвід у рівень, але не очки сезону — рейтинг лишається чесним.')),
 ];
 
 /// Чи стосується помилка сервера ліміту GameCon+ (тексти на кшталт «З GameCon+ — до 25»).
@@ -187,40 +188,36 @@ class _ProFeaturesState extends State<_ProFeatures> {
       listenable: Listenable.merge([plus, plus.billing]),
       builder: (context, _) {
         final until = plus.proExpiresAt;
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
+        final perks = _perks();
+        // Шторка прокручується: без цього нижні кнопки обрізались і ховались під смугою жестів.
+        return SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _StatusChip(active: plus.isPro, until: until),
-              const SizedBox(height: 16),
-              for (final perk in _perks())
+              _Hero(active: plus.isPro, until: until),
+              const SizedBox(height: 18),
+              Padding(padding: const EdgeInsets.only(left: 4, bottom: 10), child: Text(tr('Що дає GameCon+'), style: body(13, color: faint, weight: FontWeight.w600))),
+              // Переваги — картки у дві колонки однакової висоти в ряду.
+              for (var i = 0; i < perks.length; i += 2)
                 Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 6),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 32,
-                        height: 32,
-                        decoration: BoxDecoration(color: primary.withValues(alpha: 0.14), borderRadius: BorderRadius.circular(10)),
-                        child: Icon(perk.icon, size: 16, color: primary),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(child: Text(perk.title, style: body(14, color: soft))),
-                    ],
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: IntrinsicHeight(
+                    child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                      Expanded(child: _PerkCard(perk: perks[i])),
+                      const SizedBox(width: 10),
+                      Expanded(child: i + 1 < perks.length ? _PerkCard(perk: perks[i + 1]) : const SizedBox()),
+                    ]),
                   ),
                 ),
-              const SizedBox(height: 14),
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(color: fg.withValues(alpha: 0.04), borderRadius: BorderRadius.circular(16)),
-                child: Text(
-                  tr('GameCon+ прив’язаний до вашого акаунта GameCon. Якщо GameCon+ уже активний у вашому акаунті, просто увійдіть у нього в застосунку — усі функції відкриються автоматично.'),
-                  style: body(13, color: muted).copyWith(height: 1.45),
-                ),
-              ),
+              if (plus.isPro) const _StyleEditor(),
               _StoreSection(plus: plus),
-              const SizedBox(height: 18),
+              const SizedBox(height: 14),
+              Text(
+                tr('GameCon+ прив’язаний до вашого акаунта GameCon. Якщо GameCon+ уже активний у вашому акаунті, просто увійдіть у нього в застосунку — усі функції відкриються автоматично.'),
+                style: body(12, color: faint).copyWith(height: 1.45),
+              ),
+              const SizedBox(height: 16),
               PrimaryButton(
                 label: tr('Перевірити статус'),
                 icon: LucideIcons.refreshCw,
@@ -237,6 +234,275 @@ class _ProFeaturesState extends State<_ProFeatures> {
         );
       },
     );
+  }
+}
+
+/// Плашка-картка в шторці: світліша поверхня без обводки (шторка вже скляна).
+BoxDecoration _plate({double radius = 18}) => BoxDecoration(color: fg.withValues(alpha: palette.isLight ? 0.05 : 0.055), borderRadius: BorderRadius.circular(radius));
+
+/// Верхня картка: знак GameCon+, назва й статус.
+class _Hero extends StatelessWidget {
+  const _Hero({required this.active, required this.until});
+  final bool active;
+  final DateTime? until;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(22),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [primary.withValues(alpha: 0.22), const Color(0xFF00D2FF).withValues(alpha: 0.08)],
+        ),
+      ),
+      child: Row(children: [
+        const PlusBadge(size: 44),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(active ? tr('Ваш GameCon+') : tr('Підтримайте GameCon'), style: display(17)),
+            const SizedBox(height: 6),
+            _StatusChip(active: active, until: until),
+          ]),
+        ),
+      ]),
+    );
+  }
+}
+
+class _PerkCard extends StatelessWidget {
+  const _PerkCard({required this.perk});
+  final _Perk perk;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: _plate(),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Container(
+          width: 34,
+          height: 34,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(11),
+            gradient: const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFF0A84FF), Color(0xFF00D2FF)]),
+          ),
+          child: Icon(perk.icon, size: 17, color: Colors.white),
+        ),
+        const SizedBox(height: 10),
+        Text(perk.title, style: body(14, weight: FontWeight.w600)),
+        const SizedBox(height: 4),
+        Text(perk.text, style: body(12, color: muted).copyWith(height: 1.35)),
+      ]),
+    );
+  }
+}
+
+/// Оформлення GameCon+ — як на сайті: колір і анімація ніку, рамка аватара, кольори сторінки,
+/// ефект шапки. Варіанти й поточний вибір — із сервера (/plus), прев’ю — одразу.
+class _StyleEditor extends StatefulWidget {
+  const _StyleEditor();
+
+  @override
+  State<_StyleEditor> createState() => _StyleEditorState();
+}
+
+class _StyleEditorState extends State<_StyleEditor> {
+  Map<String, dynamic>? options;
+  Map<String, String> saved = {};
+  Map<String, String> style = {};
+  String? error;
+  bool busy = false;
+
+  static const _keys = ['name', 'fx', 'frame', 'accent', 'header'];
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_load());
+  }
+
+  Future<void> _load() async {
+    try {
+      final data = await AppScope.read(context).session.api.get(Api.site('/plus'));
+      final current = data['style'] is Map ? data['style'] as Map : const {};
+      if (!mounted) return;
+      setState(() {
+        options = data['options'] is Map ? Map<String, dynamic>.from(data['options'] as Map) : const {};
+        saved = {for (final key in _keys) key: '${current[key] ?? ''}'};
+        style = {...saved};
+      });
+    } catch (e) {
+      if (mounted) setState(() => error = '$e');
+    }
+  }
+
+  Future<void> _save() async {
+    final scope = AppScope.read(context);
+    setState(() => busy = true);
+    try {
+      final r = await scope.session.api.put(Api.site('/plus/style'), {for (final e in style.entries) e.key: e.value.isEmpty ? null : e.value});
+      await scope.session.subscription.refreshSubscriptionStatus();
+      unawaited(scope.session.refreshMe().catchError((_) {}));
+      if (!mounted) return;
+      setState(() => saved = {...style});
+      toast(context, text(r['message']) ?? tr('Оформлення збережено.'));
+    } catch (e) {
+      if (mounted) toast(context, '$e', kind: ToastKind.error);
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
+  Map<String, List<Color>> _palette(String key) {
+    final raw = options?[key];
+    if (raw is! Map) return const {};
+    return {
+      for (final e in raw.entries)
+        if (e.value is List) '${e.key}': [for (final c in e.value as List) ?_hex('$c')],
+    };
+  }
+
+  List<String> _list(String key) => [for (final v in (options?[key] as List? ?? const [])) '$v'];
+
+  @override
+  Widget build(BuildContext context) {
+    if (error != null) return Padding(padding: const EdgeInsets.only(top: 6), child: Text(error!, style: body(12, color: dangerSoft)));
+    if (options == null) return const Padding(padding: EdgeInsets.all(16), child: Center(child: CircularProgressIndicator(strokeWidth: 2)));
+    final names = _palette('names');
+    final frames = _palette('frames');
+    final accents = _palette('accents');
+    final me = AppScope.read(context).session.me ?? const {};
+    final mark = PlusMark(name: names[style['name']], frame: frames[style['frame']], fx: style['fx']!.isEmpty ? null : style['fx']);
+    final changed = _keys.any((k) => style[k] != saved[k]);
+    void pick(String key, String value) => setState(() => style[key] = value);
+
+    return Container(
+      margin: const EdgeInsets.only(top: 8),
+      padding: const EdgeInsets.all(14),
+      decoration: _plate(radius: 20),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Text(tr('Оформлення'), style: display(16)),
+        const SizedBox(height: 12),
+        // Прев’ю: аватар у рамці й нік з анімацією — так його бачитимуть інші.
+        Row(children: [
+          Avatar(url: text(me['avatar_url']), name: text(me['name']) ?? tr('Я'), size: 46, frame: mark.frame),
+          const SizedBox(width: 12),
+          Expanded(child: PlusName(text(me['name']) ?? 'GameCon', plus: mark, style: body(17, weight: FontWeight.w700), animate: true)),
+        ]),
+        _label(tr('Колір ніку')),
+        _Swatches(colors: names, value: style['name']!, none: tr('Стандартний'), onPick: (v) => pick('name', v)),
+        _label(tr('Анімація ніку')),
+        _Chips(options: {for (final key in ['', ..._list('effects')]) key: _fxName(key)}, value: style['fx']!, onPick: (v) => pick('fx', v)),
+        _label(tr('Рамка аватара')),
+        _Swatches(colors: frames, value: style['frame']!, none: tr('Без рамки'), ring: true, labels: {'season': tr('Сезонна')}, onPick: (v) => pick('frame', v)),
+        _label(tr('Кольори сторінки профілю')),
+        _Swatches(colors: accents, value: style['accent']!, none: tr('Стандартні'), onPick: (v) => pick('accent', v)),
+        _label(tr('Ефект шапки профілю')),
+        _Chips(options: {for (final key in ['', ..._list('headers')]) key: _headerName(key)}, value: style['header']!, onPick: (v) => pick('header', v)),
+        const SizedBox(height: 14),
+        PrimaryButton(label: tr('Зберегти оформлення'), icon: LucideIcons.check, busy: busy, onPressed: changed && !busy ? _save : null),
+      ]),
+    );
+  }
+
+  Widget _label(String text) => Padding(padding: const EdgeInsets.only(top: 16, bottom: 8), child: Text(text, style: body(13, color: muted, weight: FontWeight.w500)));
+}
+
+String _fxName(String key) => switch (key) {
+  '' => tr('Без анімації'),
+  'flow' => tr('Перелив'),
+  'shine' => tr('Відблиск'),
+  'neon' => tr('Неон'),
+  'rainbow' => tr('Веселка'),
+  _ => key,
+};
+
+String _headerName(String key) => switch (key) {
+  '' => tr('Без ефекту'),
+  'aurora' => tr('Сяйво обкладинки'),
+  'rim' => tr('Жива рамка'),
+  _ => key,
+};
+
+Color? _hex(String value) {
+  final hex = value.replaceFirst('#', '');
+  final parsed = int.tryParse(hex.length == 6 ? 'FF$hex' : hex, radix: 16);
+  return parsed == null ? null : Color(parsed);
+}
+
+/// Варіанти-«пігулки» з перенесенням рядка — усі видно одразу; вибрана залита акцентом.
+class _Chips extends StatelessWidget {
+  const _Chips({required this.options, required this.value, required this.onPick});
+  final Map<String, String> options;
+  final String value;
+  final ValueChanged<String> onPick;
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(spacing: 8, runSpacing: 8, children: [
+      for (final e in options.entries)
+        Semantics(
+          button: true,
+          selected: value == e.key,
+          child: ArcticPressable(
+            onTap: () => onPick(e.key),
+            scale: 0.94,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+              decoration: BoxDecoration(color: value == e.key ? primary : fg.withValues(alpha: 0.07), borderRadius: BorderRadius.circular(999)),
+              child: Text(e.value, style: body(13, color: value == e.key ? Colors.white : soft, weight: FontWeight.w600)),
+            ),
+          ),
+        ),
+    ]);
+  }
+}
+
+/// Кольорові кружечки варіантів: «без» + варіанти з сервера; вибраний — з галочкою (без обводки).
+class _Swatches extends StatelessWidget {
+  const _Swatches({required this.colors, required this.value, required this.none, required this.onPick, this.ring = false, this.labels = const {}});
+  final Map<String, List<Color>> colors;
+  final String value;
+  final String none;
+  final ValueChanged<String> onPick;
+  final bool ring;
+  final Map<String, String> labels;
+
+  @override
+  Widget build(BuildContext context) {
+    Widget dot(String key, List<Color> tones) {
+      final on = value == key;
+      final fill = tones.isEmpty ? null : (tones.length == 1 ? null : LinearGradient(colors: tones));
+      return Semantics(
+        button: true,
+        selected: on,
+        label: key.isEmpty ? none : (labels[key] ?? key),
+        child: ArcticPressable(
+          onTap: () => onPick(key),
+          scale: 0.9,
+          child: Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(shape: BoxShape.circle, color: tones.isEmpty ? fg.withValues(alpha: 0.08) : (tones.length == 1 ? tones.first : null), gradient: fill),
+            child: Center(
+              child: ring && tones.isNotEmpty
+                  ? Container(width: 26, height: 26, decoration: BoxDecoration(shape: BoxShape.circle, color: palette.isLight ? Colors.white : const Color(0xFF0C1424)), child: on ? Icon(LucideIcons.check, size: 15, color: tones.first) : null)
+                  : (on ? Icon(LucideIcons.check, size: 16, color: tones.isEmpty ? ink : Colors.white) : (tones.isEmpty ? Icon(LucideIcons.ban, size: 15, color: muted) : null)),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Wrap(spacing: 10, runSpacing: 10, children: [
+      dot('', const []),
+      for (final e in colors.entries) dot(e.key, e.value),
+    ]);
   }
 }
 
@@ -348,7 +614,7 @@ class _StatusChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = active ? green : muted;
     final label = active
-        ? (until != null ? tr('GameCon+ активний до {date}', {'date': '${until!.day.toString().padLeft(2, '0')}.${until!.month.toString().padLeft(2, '0')}.${until!.year}'}) : tr('GameCon+ активний'))
+        ? (until != null ? tr('Активний до {date}', {'date': '${until!.day.toString().padLeft(2, '0')}.${until!.month.toString().padLeft(2, '0')}.${until!.year}'}) : tr('Активний'))
         : tr('Безкоштовний план');
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
@@ -358,7 +624,7 @@ class _StatusChip extends StatelessWidget {
         children: [
           Icon(active ? LucideIcons.circleCheck : LucideIcons.circle, size: 14, color: color),
           const SizedBox(width: 6),
-          Text(label, style: body(13, color: color, weight: FontWeight.w600)),
+          Flexible(child: Text(label, style: body(13, color: color, weight: FontWeight.w600))),
         ],
       ),
     );

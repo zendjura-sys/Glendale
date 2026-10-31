@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
@@ -27,15 +29,17 @@ class PlusMark {
   final List<Color>? name;
   final List<Color>? frame;
 
-  /// Анімація ніку: flow — перелив кольорів, shine — відблиск.
+  /// Анімація ніку: flow — перелив кольорів, shine — відблиск, neon — неонове сяйво, rainbow — веселка.
   final String? fx;
+
+  static const effects = ['flow', 'shine', 'neon', 'rainbow'];
 
   static PlusMark? of(dynamic user) => user is Map ? from(user['plus']) : null;
 
   static PlusMark? from(dynamic plus) {
     if (plus is! Map) return null;
     final fx = text(plus['fx']);
-    return PlusMark(name: _colors(plus['name']), frame: _colors(plus['frame']), fx: fx == 'flow' || fx == 'shine' ? fx : null);
+    return PlusMark(name: _colors(plus['name']), frame: _colors(plus['frame']), fx: effects.contains(fx) ? fx : null);
   }
 }
 
@@ -145,7 +149,7 @@ class PlusName extends StatefulWidget {
   State<PlusName> createState() => _PlusNameState();
 }
 
-class _PlusNameState extends State<PlusName> with SingleTickerProviderStateMixin {
+class _PlusNameState extends State<PlusName> with TickerProviderStateMixin {
   AnimationController? _motion;
 
   String? get _fx => widget.animate ? widget.plus?.fx : null;
@@ -169,7 +173,8 @@ class _PlusNameState extends State<PlusName> with SingleTickerProviderStateMixin
       _motion = null;
       return;
     }
-    final period = Duration(milliseconds: _fx == 'flow' ? 6000 : 4500);
+    // Періоди — як анімації сайту (plus-name-flow/-shine/-neon/-rainbow).
+    final period = Duration(milliseconds: switch (_fx) { 'flow' => 6000, 'neon' => 2800, 'rainbow' => 9000, _ => 4500 });
     if (_motion?.duration == period) return;
     _motion?.dispose();
     _motion = AnimationController(vsync: this, duration: period)..repeat();
@@ -196,6 +201,18 @@ class _PlusNameState extends State<PlusName> with SingleTickerProviderStateMixin
     final first = tones.first;
     final last = tones.last;
     final motion = _motion;
+    if (fx == 'neon' || fx == 'rainbow') {
+      // Нік у своїх кольорах; неон — пульсуюче сяйво, веселка — плавний поворот відтінку.
+      Widget painted(double t) {
+        final glow = fx == 'neon' ? [Shadow(color: first, blurRadius: 1 + 5 * (0.5 - 0.5 * math.cos(t * 2 * math.pi)))] : null;
+        final text = Text(widget.name, maxLines: widget.maxLines, overflow: TextOverflow.ellipsis, style: widget.style.copyWith(color: tones.length == 1 ? first : Colors.white, shadows: glow));
+        final colored = tones.length == 1 ? text : ShaderMask(blendMode: BlendMode.srcIn, shaderCallback: (rect) => LinearGradient(colors: tones).createShader(rect), child: text);
+        return fx == 'rainbow' ? ColorFiltered(colorFilter: ColorFilter.matrix(_hueRotate(t * 360)), child: colored) : colored;
+      }
+
+      if (motion == null) return painted(0);
+      return AnimatedBuilder(animation: motion, builder: (context, _) => painted(motion.value));
+    }
     Shader shader(Rect rect, double t) {
       if (fx == 'flow') {
         // Як background-size: 200% і зсув 0 → 200%: градієнт повторюється без шва.
@@ -219,6 +236,19 @@ class _PlusNameState extends State<PlusName> with SingleTickerProviderStateMixin
       child: label,
     );
   }
+}
+
+/// Матриця hue-rotate (як CSS filter: hue-rotate) на [degrees] градусів.
+List<double> _hueRotate(double degrees) {
+  final r = degrees * math.pi / 180;
+  final c = math.cos(r);
+  final s = math.sin(r);
+  return [
+    0.213 + c * 0.787 - s * 0.213, 0.715 - c * 0.715 - s * 0.715, 0.072 - c * 0.072 + s * 0.928, 0, 0, //
+    0.213 - c * 0.213 + s * 0.143, 0.715 + c * 0.285 + s * 0.140, 0.072 - c * 0.072 - s * 0.283, 0, 0, //
+    0.213 - c * 0.213 - s * 0.787, 0.715 - c * 0.715 + s * 0.715, 0.072 + c * 0.928 + s * 0.072, 0, 0, //
+    0, 0, 0, 1, 0,
+  ];
 }
 
 /// Ім’я з кольором GameCon+, позначкою та (за наявності) позначкою верифікації.
