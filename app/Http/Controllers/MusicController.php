@@ -89,7 +89,8 @@ class MusicController extends Controller
     public function search(Request $request): JsonResponse|Response
     {
         // Відкриття сторінкою (вкладка «Пошук») — сторінка розділу; запит із вибору треку — JSON.
-        if ($request->header('X-Inertia') || ! $request->wantsJson()) {
+        // Міст застосунку (/api/v1/site) теж ставить X-Inertia, але йому потрібен саме вибір треку.
+        if (! $request->is('api/*') && ($request->header('X-Inertia') || ! $request->wantsJson())) {
             return app(MusicHubController::class)->search($request);
         }
         $user = $request->user();

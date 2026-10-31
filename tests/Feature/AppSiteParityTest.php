@@ -41,6 +41,19 @@ class AppSiteParityTest extends TestCase
         return app(ApiTokens::class)->issue($user, 'android');
     }
 
+    public function test_app_music_picker_finds_my_and_all_tracks(): void
+    {
+        $user = User::factory()->create();
+        $token = $this->app_token($user);
+        $mine = Track::query()->create(['user_id' => $user->id, 'title' => 'Paparazzi', 'artist' => 'Xzibit', 'duration' => 180, 'path' => 'music/a.mp3', 'mime' => 'audio/mpeg', 'size' => 1]);
+        $user->library()->attach($mine->id);
+        Track::query()->create(['user_id' => null, 'title' => 'X', 'artist' => 'Xzibit', 'duration' => 180, 'path' => 'music/b.mp3', 'mime' => 'audio/mpeg', 'size' => 1]);
+
+        // «Прикріпити музику» в застосунку: вкладки «Мої» й «Усі на GameCon» — списки треків, а не сторінка пошуку.
+        $this->withToken($token)->getJson('/api/v1/site/music/search?q=xzibit&scope=mine')->assertOk()->assertJsonCount(1, 'tracks')->assertJsonPath('tracks.0.title', 'Paparazzi');
+        $this->withToken($token)->getJson('/api/v1/site/music/search?q=xzibit&scope=all')->assertOk()->assertJsonCount(2, 'tracks');
+    }
+
     public function test_app_reaches_game_backlog(): void
     {
         $user = User::factory()->create(['username' => 'neo']);
