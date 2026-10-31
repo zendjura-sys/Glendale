@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Каскадна поява: проявлення + підйом на 16 px + масштаб 0.98 → 1 (easeOutQuart).
+/// Каскадна поява: проявлення + підйом на 14 px + масштаб 0.98 → 1 (easeOutQuart).
 /// Елементи, що з'явилися в одному кадрі, йдуть один за одним з кроком 35 мс; уже показані
 /// (за ключем) при поверненні прокрутки не анімуються вдруге.
 class ArcticCascade extends StatefulWidget {
@@ -11,6 +11,16 @@ class ArcticCascade extends StatefulWidget {
   final Object? id;
 
   static final _seen = <Object>{};
+
+  /// Скляна поверхня всередині каскаду забирає проявлення собі: вона сама проявляє розмиття
+  /// й вміст. Шар прозорості (Opacity) над склом відрізав би BackdropFilter від тла —
+  /// поки картка проявляється, фон під нею лишався б різким.
+  static Animation<double>? claim(BuildContext context) {
+    final scope = context.getInheritedWidgetOfExactType<_CascadeScope>();
+    if (scope == null) return null;
+    scope.claimed.value = true;
+    return scope.animation;
+  }
   static int _burst = 0;
   static Duration? _burstAt;
 
@@ -21,6 +31,7 @@ class ArcticCascade extends StatefulWidget {
 class _ArcticCascadeState extends State<ArcticCascade> with SingleTickerProviderStateMixin {
   AnimationController? _c;
   late Animation<double> _t;
+  final _claimed = ValueNotifier(false);
 
   @override
   void initState() {
@@ -50,6 +61,7 @@ class _ArcticCascadeState extends State<ArcticCascade> with SingleTickerProvider
   @override
   void dispose() {
     _c?.dispose();
+    _claimed.dispose();
     super.dispose();
   }
 
@@ -57,20 +69,34 @@ class _ArcticCascadeState extends State<ArcticCascade> with SingleTickerProvider
   Widget build(BuildContext context) {
     final c = _c;
     if (c == null || MediaQuery.disableAnimationsOf(context)) return widget.child;
-    return AnimatedBuilder(
+    return _CascadeScope(
       animation: _t,
-      child: widget.child,
-      builder: (context, child) {
-        // Та сама структура до й після анимації — стан картки (відео, поле вводу) не скидається.
-        final t = _t.value;
-        return FadeTransition(
-          opacity: _t,
-          child: Transform.translate(
-            offset: Offset(0, 16 * (1 - t)),
-            child: Transform.scale(scale: 0.98 + 0.02 * t, child: child),
-          ),
-        );
-      },
+      claimed: _claimed,
+      child: AnimatedBuilder(
+        animation: _t,
+        child: widget.child,
+        builder: (context, child) {
+          // Та сама структура до й після анимації — стан картки (відео, поле вводу) не скидається.
+          // Повна непрозорість (або скло, що проявляється саме) — без шару прозорості.
+          final t = _t.value;
+          return Opacity(
+            opacity: _claimed.value ? 1 : t,
+            child: Transform.translate(
+              offset: Offset(0, 14 * (1 - t)),
+              child: Transform.scale(scale: 0.98 + 0.02 * t, child: child),
+            ),
+          );
+        },
+      ),
     );
   }
+}
+
+class _CascadeScope extends InheritedWidget {
+  const _CascadeScope({required this.animation, required this.claimed, required super.child});
+  final Animation<double> animation;
+  final ValueNotifier<bool> claimed;
+
+  @override
+  bool updateShouldNotify(_CascadeScope old) => false;
 }

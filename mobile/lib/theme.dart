@@ -60,7 +60,7 @@ const neonPalette = GcPalette(
   cardTop: Color.fromRGBO(255, 255, 255, 0.09),
   raised: Color.fromRGBO(255, 255, 255, 0.10),
   field: AppColors.glassTier2,
-  bar: Color.fromRGBO(8, 14, 26, 0.72),
+  bar: Color.fromRGBO(20, 20, 22, 0.55),
   line: AppColors.borderHairline,
   lineStrong: Color.fromRGBO(255, 255, 255, 0.12),
   fg: Colors.white,
@@ -217,15 +217,15 @@ class _FadeThrough extends PageTransitionsBuilder {
   Widget buildTransitions<T>(PageRoute<T> route, BuildContext context, Animation<double> animation, Animation<double> secondaryAnimation, Widget child) {
     final enter = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic, reverseCurve: Curves.easeInCubic);
     final leave = CurvedAnimation(parent: secondaryAnimation, curve: Curves.easeOutCubic);
-    return FadeTransition(
-      opacity: ReverseAnimation(leave),
-      child: FadeTransition(
-        opacity: enter,
-        child: SlideTransition(
-          position: Tween(begin: const Offset(0, 0.025), end: Offset.zero).animate(enter),
-          child: child,
-        ),
+    // Opacity замість FadeTransition: у спокої (повна видимість) сторінка без шару прозорості,
+    // тож скло на ній розмиває спільне тло й сезонні прикраси під нею.
+    return AnimatedBuilder(
+      animation: Listenable.merge([enter, leave]),
+      child: SlideTransition(
+        position: Tween(begin: const Offset(0, 0.025), end: Offset.zero).animate(enter),
+        child: child,
       ),
+      builder: (context, child) => Opacity(opacity: (enter.value * (1 - leave.value)).clamp(0, 1), child: child),
     );
   }
 }

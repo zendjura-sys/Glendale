@@ -4578,7 +4578,8 @@ html:has(.am) body {
         rgb(0 140 255 / 0.05) 100%
     );
     --arctic-inner-surface: rgb(210 235 255 / 0.045);
-    --arctic-card-blur: blur(26px) saturate(190%);
+    /* Матеріал iOS: розмиття 24px із підсиленням насичення 160% — як скло застосунку. */
+    --arctic-card-blur: blur(24px) saturate(160%);
 }
 :root[data-skin='gamecon'][data-theme='light'] {
     --arctic-card-bg: linear-gradient(
@@ -4592,12 +4593,6 @@ html:has(.am) body {
         rgb(230 244 255 / 0.68) 100%
     );
     --arctic-inner-surface: rgb(0 70 150 / 0.045);
-}
-/* На телефоні розмиття легше — менше навантаження на відеочип при прокрутці. */
-@media (hover: none) and (pointer: coarse) {
-    :root[data-skin='gamecon'] {
-        --arctic-card-blur: blur(18px) saturate(170%);
-    }
 }
 
 :root[data-skin='gamecon']

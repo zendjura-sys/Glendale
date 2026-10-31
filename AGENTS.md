@@ -90,6 +90,12 @@ cd mobile && flutter analyze && flutter test
   `--ios-popover-*`. Свои `bg-[rgb(...)]`, `backdrop-blur`, `shadow`, `border` и `isolation` для карточек
   не придумывать. Не вешать на обёртки страниц постоянный `view-transition-name`, `filter`, `opacity`
   или анимации с `fill-mode: both` — стекло внутри них перестаёт размывать фон.
+- **Стекло в приложении — настоящее размытие везде:** все стеклянные поверхности (карточки, блоки,
+  поля, кнопки, плашки, шапка, док, шторки) — `ArcticGlassContainer` с `BackdropFilter`
+  (`enableBlur` по умолчанию `true`; размытие 22 у карточек, 16 у кнопок и полей, 28 у панелей).
+  Не оборачивать стекло в `AnimatedOpacity`/`FadeTransition`/`Opacity` < 1 надолго: под слоем
+  прозрачности `BackdropFilter` не видит фона. Появление — через `ArcticCascade` (скло проявляется само),
+  плавные скрытия — `TweenAnimationBuilder` + `Opacity`. Фон и сезонные декорации — под контентом.
 - Дизайн: минимализм, один акцентный цвет (индиго), полупрозрачные «стеклянные» карточки,
   иконки только Lucide; в приложении — виджеты из `mobile/lib/widgets.dart`.
 - 3D — только по минимуму и в фоне (пример: «пол» из граней на входе, `components/auth/auth-backdrop.tsx`):

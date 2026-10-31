@@ -71,8 +71,8 @@ class _MusicHubState extends State<MusicHub> {
         ),
       ),
       Positioned(
-        left: ArcticDock.side,
-        right: ArcticDock.side,
+        left: ArcticDock.sidesOf(context).left,
+        right: ArcticDock.sidesOf(context).right,
         bottom: MediaQuery.viewPaddingOf(context).bottom + ArcticDock.bottom,
         child: Center(
           child: ConstrainedBox(
@@ -137,7 +137,7 @@ class _BarSwapState extends State<_BarSwap> {
         duration: duration,
         curve: Curves.easeOutCubic,
         offset: visible ? Offset.zero : const Offset(0, 0.35),
-        child: AnimatedOpacity(key: const ValueKey('bottom-bar-music'), duration: duration, curve: Curves.easeOutCubic, opacity: visible ? 1 : 0, child: widget.child),
+        child: TweenAnimationBuilder<double>(key: const ValueKey('bottom-bar-music'), tween: Tween(end: visible ? 1 : 0), duration: duration, curve: Curves.easeOutCubic, builder: (context, v, child) => Opacity(opacity: v, child: child), child: widget.child),
       ),
     );
   }

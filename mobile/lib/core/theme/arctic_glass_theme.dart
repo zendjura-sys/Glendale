@@ -49,12 +49,15 @@ abstract final class AppRadii {
   static const control = 14.0;
 }
 
-/// Розмиття, як на сайті: картки — 18 (телефонне значення сайту), панелі — 40, шторки — 28.
+/// Розмиття «iOS Frosted Material»: картки й блоки — 22, кнопки й поля — 16,
+/// шапка, док і шторки — 28, розгорнуте меню доку — 32.
 abstract final class AppBlur {
-  static const card = 18.0;
-  static const fixed = 24.0;
-  static const dock = 40.0;
+  static const card = 22.0;
+  static const control = 16.0;
+  static const fixed = 28.0;
+  static const dock = 28.0;
   static const sheet = 28.0;
+  static const menu = 32.0;
 }
 
 /// Пляма світла на тлі: центр (Alignment), радіус градієнта, колір і прозорість.
@@ -100,7 +103,7 @@ class ArcticGlassThemeExtension extends ThemeExtension<ArcticGlassThemeExtension
   /// Картка в картці — легка внутрішня плашка без розмиття.
   final Color innerFill;
 
-  /// Внутрішня грань скла (1px).
+  /// Грань скла (1px).
   final Color border;
 
   /// Зовнішній контур 0.5px — щоб край читався на світлому тлі (у темній темі немає).
@@ -121,21 +124,32 @@ class ArcticGlassThemeExtension extends ThemeExtension<ArcticGlassThemeExtension
     light: false,
     background: [AppColors.bgBase, AppColors.bgBase],
     glows: [
-      ArcticGlow(Alignment(-1, -1), 1.1, AppColors.accentPrimary, 0.16),
-      ArcticGlow(Alignment(1, 0), 0.9, AppColors.accentCyan, 0.11),
-      ArcticGlow(Alignment(0, 1.15), 0.8, AppColors.accentPrimary, 0.14),
+      ArcticGlow(Alignment(-1, -1), 1.1, AppColors.accentPrimary, 0.18),
+      ArcticGlow(Alignment(1, 0), 0.95, AppColors.accentCyan, 0.13),
+      ArcticGlow(Alignment(0, 1.15), 1.0, AppColors.accentPrimary, 0.16),
     ],
-    // Матова крижинка, як --arctic-card-bg на сайті: холодна напівпрозора заливка (165°).
-    glassFill: LinearGradient(begin: Alignment(-0.26, -1), end: Alignment(0.26, 1), colors: [Color.fromRGBO(225, 242, 255, 0.07), Color.fromRGBO(180, 220, 255, 0.025)]),
-    pressedFill: LinearGradient(begin: Alignment(-0.26, -1), end: Alignment(0.26, 1), colors: [Color.fromRGBO(225, 242, 255, 0.10), Color.fromRGBO(0, 140, 255, 0.05)]),
-    innerFill: Color.fromRGBO(210, 235, 255, 0.045),
-    border: AppColors.borderHairline,
+    // Матова тонировка скла: розмите тло під нею лишається видимим.
+    glassFill: LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [Color.fromRGBO(255, 255, 255, 0.11), Color.fromRGBO(10, 132, 255, 0.04), Color.fromRGBO(255, 255, 255, 0.03)],
+    ),
+    pressedFill: LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [Color.fromRGBO(255, 255, 255, 0.16), Color.fromRGBO(10, 132, 255, 0.07), Color.fromRGBO(255, 255, 255, 0.05)],
+    ),
+    innerFill: Color.fromRGBO(255, 255, 255, 0.05),
+    border: Color.fromRGBO(255, 255, 255, 0.14),
     outline: null,
-    specular: AppColors.borderSpecularTop,
-    // Без тіней: глибину дають грань, блік і тло.
-    shadows: [],
-    barFill: LinearGradient(begin: Alignment(-0.6, -1), end: Alignment(0.6, 1), colors: [Color.fromRGBO(24, 30, 42, 0.58), Color.fromRGBO(12, 16, 24, 0.68)]),
-    sheetFill: AppColors.glassTier3,
+    specular: Color.fromRGBO(255, 255, 255, 0.38),
+    shadows: [BoxShadow(color: Color(0x55000000), blurRadius: 24, offset: Offset(0, 10))],
+    barFill: LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [Color.fromRGBO(255, 255, 255, 0.11), Color.fromRGBO(10, 132, 255, 0.04), Color.fromRGBO(255, 255, 255, 0.03)],
+    ),
+    sheetFill: Color.fromRGBO(12, 18, 30, 0.55),
     title: AppColors.textPrimary,
     body: Color(0xFFCBD5E1),
     muted: AppColors.textSecondary,
@@ -143,22 +157,26 @@ class ArcticGlassThemeExtension extends ThemeExtension<ArcticGlassThemeExtension
 
   static const daylight = ArcticGlassThemeExtension(
     light: true,
-    // Прохолодний льодовиковий градієнт: під картками завжди блакитно-крижаний тон.
-    background: [Color(0xFFE2ECF8), Color(0xFFEEF4FC), Color(0xFFDCE8F7)],
+    // Прохолодний льодовиковий градієнт і сфери світла: під білим склом завжди грає крижаний тон.
+    background: [Color(0xFFDFECFA), Color(0xFFEDF4FC), Color(0xFFD6E6F8)],
     glows: [
-      ArcticGlow(Alignment(-1, -0.9), 1.0, AppColors.accentPrimary, 0.10),
-      ArcticGlow(Alignment(1, 0.1), 0.9, AppColors.accentCyan, 0.08),
-      ArcticGlow(Alignment(0, 1.15), 0.8, AppColors.accentPrimary, 0.08),
+      ArcticGlow(Alignment(-1, -0.9), 1.0, AppColors.accentPrimary, 0.12),
+      ArcticGlow(Alignment(1, 0.1), 0.9, AppColors.accentCyan, 0.10),
+      ArcticGlow(Alignment(0, 1.15), 0.8, AppColors.accentPrimary, 0.12),
     ],
-    glassFill: LinearGradient(begin: Alignment(-0.26, -1), end: Alignment(0.26, 1), colors: [Color.fromRGBO(255, 255, 255, 0.74), Color.fromRGBO(240, 248, 255, 0.52)]),
-    pressedFill: LinearGradient(begin: Alignment(-0.26, -1), end: Alignment(0.26, 1), colors: [Color.fromRGBO(255, 255, 255, 0.88), Color.fromRGBO(230, 244, 255, 0.68)]),
-    innerFill: Color.fromRGBO(0, 70, 150, 0.045),
-    border: Color.fromRGBO(255, 255, 255, 0.85),
-    outline: null,
+    glassFill: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color.fromRGBO(255, 255, 255, 0.65), Color.fromRGBO(232, 242, 255, 0.45)]),
+    pressedFill: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color.fromRGBO(255, 255, 255, 0.80), Color.fromRGBO(232, 242, 255, 0.60)]),
+    innerFill: Color.fromRGBO(255, 255, 255, 0.45),
+    border: Color.fromRGBO(255, 255, 255, 0.88),
+    // Найтонший контур 0.5px — край картки читається на світлому тлі.
+    outline: Color.fromRGBO(10, 132, 255, 0.14),
     specular: Color.fromRGBO(255, 255, 255, 0.95),
-    shadows: [],
-    barFill: LinearGradient(begin: Alignment(-0.6, -1), end: Alignment(0.6, 1), colors: [Color.fromRGBO(248, 250, 253, 0.80), Color.fromRGBO(234, 238, 246, 0.86)]),
-    sheetFill: Color.fromRGBO(246, 250, 255, 0.90),
+    shadows: [
+      BoxShadow(color: Color(0x140A3D7A), blurRadius: 20, offset: Offset(0, 8)),
+      BoxShadow(color: Color(0x0A000000), blurRadius: 4, offset: Offset(0, 2)),
+    ],
+    barFill: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color.fromRGBO(255, 255, 255, 0.65), Color.fromRGBO(232, 242, 255, 0.45)]),
+    sheetFill: Color.fromRGBO(246, 250, 255, 0.72),
     title: AppColors.lightTitle,
     body: AppColors.lightBody,
     muted: AppColors.lightMuted,

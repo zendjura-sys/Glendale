@@ -44,7 +44,7 @@ class MiniPlayer extends StatelessWidget {
     return SizedBox(
       height: miniPlayerExtent,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(ArcticDock.side, 0, ArcticDock.side, 8),
+        padding: ArcticDock.sidesOf(context).copyWith(bottom: 8),
         child: GestureDetector(
           onTap: () => showFullPlayer(context, player),
           // Свайп міні-плеєра вбік — інший трек.

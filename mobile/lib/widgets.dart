@@ -81,8 +81,8 @@ class GradientText extends StatelessWidget {
 
 // ───────────────────────── Поверхні ─────────────────────────
 
-/// Картка — матове скло, як на сайті: напівпрозора холодна заливка з розмиттям фону, без обводки й тіней.
-/// Розмиття всіх карток екрана спільне (BackdropGroup), тож прокрутка не гальмує.
+/// Картка — матове скло iOS: справжнє розмиття фону з насиченням, матова тонировка, грань,
+/// блік угорі й м'яка тінь назовні (ArcticGlassContainer).
 class Glass extends StatelessWidget {
   const Glass({required this.child, this.padding = const EdgeInsets.all(16), this.radius = AppRadii.card, this.onTap, this.gradient, this.border, this.overlay, super.key});
   final Widget child;
@@ -96,7 +96,7 @@ class Glass extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final glass = ArcticGlassContainer(width: double.infinity, padding: padding, radius: radius, enableBlur: true, fill: gradient, borderColor: border, onTap: onTap, child: child);
+    final glass = ArcticGlassContainer(width: double.infinity, padding: padding, radius: radius, fill: gradient, borderColor: border, onTap: onTap, child: child);
     return overlay == null ? glass : Stack(children: [glass, Positioned.fill(child: overlay!)]);
   }
 }
@@ -352,6 +352,14 @@ class GcField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Поле — матове скло: справжнє розмиття фону (16) під напівпрозорою заливкою.
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(14),
+      child: BackdropFilter(filter: arcticGlassFilter(AppBlur.control), child: _field()),
+    );
+  }
+
+  Widget _field() {
     return TextField(
       controller: controller,
       obscureText: obscure,
@@ -1101,7 +1109,7 @@ class _RemoteState extends State<Remote> {
 
 /// Висота плаваючої капсули шапки і відступ над нею.
 const headerCapsuleHeight = 56.0;
-const headerTopGap = 8.0;
+const headerTopGap = 4.0;
 
 /// Висота прозорої шапки поверх контенту (відступ + капсула), без системного відступу.
 const siteBarHeight = headerTopGap + headerCapsuleHeight;

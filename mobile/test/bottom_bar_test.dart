@@ -19,10 +19,11 @@ import 'package:http/testing.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Видимі нижні панелі: острів і вкладки «Музики» (схована панель має прозорість 0).
+/// Видимі нижні панелі: острів і вкладки «Музики» (схована панель має прозорість 0;
+/// Opacity, а не AnimatedOpacity — щоб на повній видимості не було шару над склом).
 List<String> _visibleBars(WidgetTester tester) => [
       for (final key in const ['bottom-bar-nav', 'bottom-bar-music'])
-        for (final w in tester.widgetList<AnimatedOpacity>(find.byKey(ValueKey(key))))
+        for (final w in tester.widgetList<Opacity>(find.descendant(of: find.byKey(ValueKey(key)), matching: find.byType(Opacity))).take(1))
           if (w.opacity > 0) key,
     ];
 

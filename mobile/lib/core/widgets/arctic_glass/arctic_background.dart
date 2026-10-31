@@ -46,8 +46,7 @@ class _ArcticBackgroundState extends State<ArcticBackground> with SingleTickerPr
         Positioned.fill(
           child: RepaintBoundary(child: CustomPaint(painter: _GlowPainter(tokens, _breath))),
         ),
-        // Спільне розмиття для всіх скляних карток екрана: фон зчитується один раз.
-        BackdropGroup(child: widget.child),
+        widget.child,
       ],
     );
   }

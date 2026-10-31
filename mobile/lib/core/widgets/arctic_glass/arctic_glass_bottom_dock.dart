@@ -5,12 +5,25 @@ import '../../theme/arctic_glass_theme.dart';
 import 'arctic_glass_container.dart';
 import 'arctic_pressable.dart';
 
-/// Розміри плаваючого доку: відступи 16 з боків і 20 знизу, висота 64, радіус 32.
+/// Розміри плаваючого доку: висота 64, радіус 32, відступ знизу 6 (над системною смугою).
+/// Бічні поля адаптивні ([sideOf]): вузький телефон — 6, звичайний — 8, планшет — 12,
+/// плюс виріз камери чи системні кнопки збоку в горизонтальному положенні.
 abstract final class ArcticDock {
   static const height = 64.0;
-  static const side = 16.0;
-  static const bottom = 20.0;
+  static const bottom = 6.0;
   static const radius = 32.0;
+
+  static double sideOf(BuildContext context) {
+    final width = MediaQuery.sizeOf(context).width;
+    return width < 360 ? 6 : (width < 600 ? 8 : 12);
+  }
+
+  /// Бічні поля шапки й доку з урахуванням вирізу/системних смуг збоку.
+  static EdgeInsets sidesOf(BuildContext context) {
+    final pad = MediaQuery.viewPaddingOf(context);
+    final side = sideOf(context);
+    return EdgeInsets.only(left: side + pad.left, right: side + pad.right);
+  }
 }
 
 /// Поверхня нерухомих панелей (док, шапка, міні-плеєр): щільніше скло з розмиттям 24
@@ -116,7 +129,7 @@ class ArcticFloatingDock extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(ArcticDock.side, 0, ArcticDock.side, ArcticDock.bottom),
+      padding: ArcticDock.sidesOf(context).copyWith(bottom: ArcticDock.bottom),
       child: ArcticDockSurface(
         height: ArcticDock.height,
         child: Padding(

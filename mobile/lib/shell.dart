@@ -236,6 +236,8 @@ class _AppShellState extends State<AppShell> {
                 body: Stack(
                   children: [
                     Positioned.fill(child: SeasonBackdrop(season: season)),
+                    // Сніг, листя, кажани — під вмістом: скло карток м'яко їх розмиває.
+                    Positioned.fill(child: SeasonOverlay(season: season)),
                     if (wide || tabletPortrait)
                       Positioned.fill(
                         left: contentLeft,
@@ -248,8 +250,6 @@ class _AppShellState extends State<AppShell> {
                       )
                     else
                       widget.child,
-                    // Сніг, листя, кажани — над вмістом, під шапкою й доком.
-                    Positioned.fill(child: SeasonOverlay(season: season)),
                     Positioned(
                       top: 0,
                       left: 0,

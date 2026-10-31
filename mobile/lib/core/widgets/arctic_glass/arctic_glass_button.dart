@@ -68,7 +68,7 @@ class ArcticGlassButton extends StatelessWidget {
     );
     final padding = EdgeInsets.symmetric(horizontal: compact ? 12 : 16);
     if (!solid) {
-      return ArcticGlassContainer(radius: AppRadii.control, height: height, padding: padding, onTap: enabled ? onPressed : null, child: content);
+      return ArcticGlassContainer(radius: AppRadii.control, blur: AppBlur.control, height: height, padding: padding, onTap: enabled ? onPressed : null, child: content);
     }
     final gradient = kind == ArcticButtonKind.danger
         ? LinearGradient(

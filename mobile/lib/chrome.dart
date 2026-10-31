@@ -81,8 +81,8 @@ Widget _headerButton(IconData icon, String label, VoidCallback onTap, {int badge
 }
 
 
-/// Плаваюча скляна капсула шапки (відступи 16/8, висота 56, радіус 28): стрічка пропливає
-/// під нею й розмивається (BackdropFilter 24).
+/// Плаваюча скляна капсула шапки (висота 56, радіус 28, розмиття 28): стрічка пропливає
+/// під нею й розмивається. Поля адаптивні — як у доку ([ArcticDock.sidesOf]).
 class HeaderCapsule extends StatelessWidget {
   const HeaderCapsule({required this.topInset, required this.child, super.key});
   final double topInset;
@@ -91,7 +91,7 @@ class HeaderCapsule extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.fromLTRB(16, topInset + headerTopGap, 16, 8),
+      padding: ArcticDock.sidesOf(context).copyWith(top: topInset + headerTopGap, bottom: 4),
       child: ArcticDockSurface(radius: headerCapsuleHeight / 2, height: headerCapsuleHeight, child: child),
     );
   }
@@ -257,6 +257,7 @@ class _SearchFieldState extends State<_SearchField> {
     return ArcticGlassContainer(
       radius: 20,
       height: 40,
+      blur: AppBlur.control,
       glowing: active,
       shadows: const [],
       fill: LinearGradient(colors: light ? const [Color(0xB3FFFFFF), Color(0x8CFFFFFF)] : const [Color(0x14FFFFFF), Color(0x0AFFFFFF)]),
@@ -594,7 +595,7 @@ class _IslandNavState extends State<IslandNav> {
       // Плаваючий док із матового скла (радіус 32); розгорнутий — меню розділів, і розмиття
       // плавно густішає, щоб меню читалося над стрічкою.
       child: TweenAnimationBuilder<double>(
-        tween: Tween(end: open ? AppBlur.dock + 8 : AppBlur.dock),
+        tween: Tween(end: open ? AppBlur.menu : AppBlur.dock),
         duration: _motion(context, _snap),
         curve: _snapCurve,
         builder: (context, blur, child) => ArcticDockSurface(blur: blur, child: child!),
@@ -695,8 +696,8 @@ class _IslandNavState extends State<IslandNav> {
             ),
           ),
           Positioned(
-            left: ArcticDock.side,
-            right: ArcticDock.side,
+            left: ArcticDock.sidesOf(context).left,
+            right: ArcticDock.sidesOf(context).right,
             bottom: systemBottom + ArcticDock.bottom,
             child: Center(
               child: ConstrainedBox(
@@ -708,11 +709,14 @@ class _IslandNavState extends State<IslandNav> {
                     duration: _motion(context, bottomBarSwap),
                     curve: Curves.easeOutCubic,
                     offset: widget.hidden ? Offset(0, 0.35) : Offset.zero,
-                    child: AnimatedOpacity(
+                    // Opacity, а не AnimatedOpacity: на повній видимості без шару прозорості,
+                    // інакше розмиття доку не бачило б стрічки під ним.
+                    child: TweenAnimationBuilder<double>(
                       key: const ValueKey('bottom-bar-nav'),
+                      tween: Tween(end: widget.hidden ? 0 : 1),
                       duration: _motion(context, bottomBarSwap),
                       curve: Curves.easeOutCubic,
-                      opacity: widget.hidden ? 0 : 1,
+                      builder: (context, v, child) => Opacity(opacity: v, child: child),
                       child: GestureDetector(
                         onVerticalDragUpdate: _onDragUpdate,
                         onVerticalDragEnd: _onDragEnd,
