@@ -1,5 +1,7 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import {
+    BookOpen,
+    Trophy,
     Gift,
     ListChecks,
     Gamepad2,
@@ -128,6 +130,8 @@ export default function GamesIndex({
     const duelsOn = usePlugin('duels');
     const configsOn = usePlugin('game_configs');
     const nightsOn = usePlugin('game_nights');
+    const triviaOn = usePlugin('game_trivia');
+    const journalOn = usePlugin('game_journal');
     const signedIn = !!usePage().props.auth.user;
 
     const visit = (patch: Partial<Props['filters']>) =>
@@ -208,6 +212,24 @@ export default function GamesIndex({
                     >
                         <CalendarClock className="size-4 text-cyan-300" />
                         {tr('Ігровий вечір')}
+                    </Link>
+                )}
+                {triviaOn && signedIn && (
+                    <Link
+                        href="/games/trivia"
+                        className="inline-flex h-10 items-center gap-2 rounded-xl bg-white/[0.06] px-3.5 text-sm font-semibold text-white/80 transition hover:bg-white/10 hover:text-white"
+                    >
+                        <Trophy className="size-4 text-amber-300" />
+                        {tr('Вікторина дня')}
+                    </Link>
+                )}
+                {journalOn && signedIn && (
+                    <Link
+                        href="/journal"
+                        className="inline-flex h-10 items-center gap-2 rounded-xl bg-white/[0.06] px-3.5 text-sm font-semibold text-white/80 transition hover:bg-white/10 hover:text-white"
+                    >
+                        <BookOpen className="size-4 text-sky-300" />
+                        {tr('Ігровий щоденник')}
                     </Link>
                 )}
                 {nickOn && signedIn && (

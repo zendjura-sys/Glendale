@@ -61,6 +61,8 @@ String appPathFor(String? sitePath) {
       return '/ideas';
     case 'status':
       return '/status';
+    case 'journal':
+      return parts.length > 1 ? '/journal/${rest(1)}' : '/journal';
     case 'series':
       return parts.length > 1 && RegExp(r'^\d+$').hasMatch(parts[1]) ? '/series/${parts[1]}' : '/feed';
     case 'configs':
@@ -93,7 +95,7 @@ String appPathFor(String? sitePath) {
       if (rest(1) == 'u' && parts.length > 2) return '/music?user=${rest(2)}';
       if (rest(1) == 'playlists' && parts.length > 2) return '/music/playlists/${rest(2)}';
       // Розділ у стилі Apple Music: ті самі шляхи, що на сайті.
-      if (const {'new', 'radio', 'library', 'search', 'artist', 'album', 'mix', 'genre', 'charts', 'replay', 'rooms'}.contains(rest(1)) && parts.length <= 3) return '$path$query';
+      if (const {'new', 'radio', 'library', 'search', 'artist', 'album', 'mix', 'genre', 'charts', 'replay', 'rooms', 'quiz'}.contains(rest(1)) && parts.length <= 3) return '$path$query';
       // Старі вкладки ?tab=… ведуть у нові розділи (як OLD_TABS у MusicHubController).
       return switch (uri?.queryParameters['tab']) {
         'mine' => '/music/library/songs',

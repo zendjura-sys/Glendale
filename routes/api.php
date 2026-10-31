@@ -32,6 +32,9 @@ use App\Http\Controllers\CrosspostController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\Families;
 use App\Http\Controllers\FollowController;
+use App\Http\Controllers\Fun\GameJournalController;
+use App\Http\Controllers\Fun\MovieRouletteController;
+use App\Http\Controllers\Fun\QuizController;
 use App\Http\Controllers\GameBacklogController;
 use App\Http\Controllers\GameConfigController;
 use App\Http\Controllers\GameController;
@@ -406,6 +409,20 @@ Route::prefix('v1')->group(function () {
             Route::post('configs/{config}/like', [GameConfigController::class, 'like'])->whereNumber('config')->middleware('throttle:60,1');
             Route::post('configs/{config}/copied', [GameConfigController::class, 'copied'])->whereNumber('config')->middleware('throttle:60,1');
             Route::delete('configs/{config}', [GameConfigController::class, 'destroy'])->whereNumber('config');
+            // Рулетка кіно, «Вгадай пісню», вікторина дня й ігровий щоденник — ті самі дії, що й на сайті.
+            Route::get('cinema/roulette', [MovieRouletteController::class, 'index'])->middleware('module:cinema');
+            Route::get('cinema/roulette/spin', [MovieRouletteController::class, 'spin'])->middleware(['module:cinema', 'throttle:60,1']);
+            Route::get('music/quiz', [QuizController::class, 'music'])->middleware('module:music');
+            Route::post('music/quiz', [QuizController::class, 'musicStart'])->middleware(['module:music', 'throttle:20,1']);
+            Route::post('music/quiz/{round}', [QuizController::class, 'musicAnswer'])->whereUuid('round')->middleware(['module:music', 'throttle:120,1']);
+            Route::get('games/trivia', [QuizController::class, 'trivia'])->middleware('module:games');
+            Route::post('games/trivia', [QuizController::class, 'triviaSubmit'])->middleware(['module:games', 'throttle:20,1']);
+            Route::middleware('module:games')->group(function () {
+                Route::get('journal', [GameJournalController::class, 'index']);
+                Route::post('journal', [GameJournalController::class, 'store'])->middleware('throttle:30,1');
+                Route::delete('journal/{entry}', [GameJournalController::class, 'destroy'])->whereNumber('entry');
+                Route::get('journal/{user:username}', [GameJournalController::class, 'show']);
+            });
             Route::get('game-nights', [GameNightController::class, 'index']);
             Route::post('game-nights', [GameNightController::class, 'store'])->middleware('throttle:10,1');
             Route::get('game-nights/{night}', [GameNightController::class, 'show'])->whereNumber('night');

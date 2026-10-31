@@ -770,18 +770,23 @@ class _BuyNumberState extends State<_BuyNumber> {
                         Text(available ? (price ?? '') : (text(check!['reason']) ?? ''), style: body(13.5, color: available ? ink : dangerSoft, weight: FontWeight.w600)),
                       ]),
               ),
+              if (check != null && available && price == null && tier != null)
+                Padding(
+                  padding: EdgeInsets.only(top: 6),
+                  child: Text(tr('Рівень «{tier}» зараз не продається в Google Play — оберіть інший номер.', {'tier': labels[tier] ?? tier}), style: body(12, color: dangerSoft)),
+                ),
               SizedBox(height: 14),
               Text(tr('Підібрати'), style: body(12.5, color: muted, weight: FontWeight.w600)),
               SizedBox(height: 6),
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Row(children: [
+                  // Усі рівні видно завжди; якщо товару рівня немає в Google Play, номер підібрати можна, а купити — ні (підпис нижче).
                   for (final t in phoneTiers.skip(1))
-                    if (billing.phonePrices.containsKey(t))
-                      Padding(
-                        padding: EdgeInsets.only(right: 8),
-                        child: SelectPill(label: labels[t]!, selected: ideasTier == t, onTap: () => _suggest(t)),
-                      ),
+                    Padding(
+                      padding: EdgeInsets.only(right: 8),
+                      child: SelectPill(label: labels[t]!, selected: ideasTier == t, onTap: () => _suggest(t)),
+                    ),
                 ]),
               ),
               if (loadingIdeas)

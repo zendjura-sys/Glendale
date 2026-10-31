@@ -46,6 +46,19 @@ class AppSiteParityTest extends TestCase
         return app(ApiTokens::class)->issue($user, 'android');
     }
 
+    public function test_app_reaches_fun_features(): void
+    {
+        $user = User::factory()->create();
+        $token = $this->app_token($user);
+        Movie::query()->create(['slug' => 'matrix', 'type' => 'movie', 'title' => 'Матриця', 'is_published' => true]);
+        $this->withToken($token)->getJson('/api/v1/site/cinema/roulette')->assertOk()->assertJsonStructure(['types', 'genres']);
+        $this->withToken($token)->getJson('/api/v1/site/cinema/roulette/spin')->assertOk()->assertJsonPath('movie.slug', 'matrix');
+        $this->withToken($token)->getJson('/api/v1/site/music/quiz')->assertOk()->assertJsonStructure(['top', 'clip']);
+        $this->withToken($token)->getJson('/api/v1/site/games/trivia')->assertOk()->assertJsonStructure(['questions', 'played', 'top']);
+        $this->withToken($token)->postJson('/api/v1/site/journal', ['body' => 'Пройшов перший акт', 'mood' => 'great'])->assertOk()->assertJsonPath('ok', true);
+        $this->withToken($token)->getJson('/api/v1/site/journal')->assertOk()->assertJsonPath('entries.data.0.body', 'Пройшов перший акт');
+    }
+
     public function test_app_reaches_status_page_and_incident_banner(): void
     {
         $token = $this->app_token(User::factory()->create());

@@ -26,6 +26,7 @@ import 'events.dart';
 import 'extras.dart';
 import 'family_widget.dart';
 import 'game_card.dart';
+import 'fun.dart';
 import 'game_tools.dart';
 import 'status.dart';
 import 'pulse_widget.dart';
@@ -189,6 +190,7 @@ Future<void> main() async {
               ),
               GoRoute(path: 'new', builder: (_, _) => const MusicHub(key: ValueKey('music-new'), tab: 'new')),
               GoRoute(path: 'radio', builder: (_, _) => const MusicHub(key: ValueKey('music-radio'), tab: 'radio')),
+              GoRoute(path: 'quiz', builder: (_, _) => const MusicQuizScreen()),
               GoRoute(
                 path: 'library',
                 builder: (_, _) => const MusicHub(key: ValueKey('music-library'), tab: 'library'),
@@ -216,6 +218,7 @@ Future<void> main() async {
             builder: (_, _) => const CinemaScreen(),
             routes: [
               GoRoute(path: 'my', builder: (_, state) => MyCinemaScreen(status: state.uri.queryParameters['status'] ?? 'all')),
+              GoRoute(path: 'roulette', builder: (_, _) => const RouletteScreen()),
               GoRoute(path: 'ten/:username', builder: (_, state) => TopTenScreen(key: ValueKey(state.pathParameters['username']), username: state.pathParameters['username']!)),
               GoRoute(path: ':slug', builder: (_, state) => MovieScreen(key: ValueKey(state.pathParameters['slug']), slug: state.pathParameters['slug']!)),
             ],
@@ -234,6 +237,8 @@ Future<void> main() async {
           GoRoute(path: '/series/:id', builder: (_, s) => SeriesScreen(id: int.tryParse(s.pathParameters['id'] ?? '') ?? 0)),
           GoRoute(path: '/configs', builder: (_, s) => ConfigsScreen(game: s.uri.queryParameters['game'])),
           GoRoute(path: '/game-nights', builder: (_, _) => const GameNightsScreen()),
+          GoRoute(path: '/journal', builder: (_, _) => const JournalScreen()),
+          GoRoute(path: '/journal/:username', builder: (_, s) => JournalScreen(key: ValueKey(s.pathParameters['username']), username: s.pathParameters['username'])),
           GoRoute(path: '/game-nights/:id', builder: (_, s) => GameNightScreen(id: int.tryParse(s.pathParameters['id'] ?? '') ?? 0)),
           GoRoute(path: '/duels', builder: (_, state) => DuelsScreen(to: state.uri.queryParameters['to'])),
           GoRoute(path: '/tierlists', builder: (_, _) => const TierListsScreen()),
@@ -300,6 +305,7 @@ Future<void> main() async {
             routes: [
               // Перед :slug — щоб «deals» і «backlog» не сприймались як гра.
               GoRoute(path: 'deals', builder: (_, _) => const DealsScreen()),
+              GoRoute(path: 'trivia', builder: (_, _) => const TriviaScreen()),
               GoRoute(path: 'backlog', builder: (_, _) => const BacklogScreen(), routes: [
                 GoRoute(path: ':username', builder: (_, state) => BacklogScreen(key: ValueKey(state.pathParameters['username']), username: state.pathParameters['username'])),
               ]),

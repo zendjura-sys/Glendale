@@ -1,6 +1,7 @@
 import { Link, router, usePage } from '@inertiajs/react';
 import { NavigationSkeleton } from '@/components/gc/navigation-skeleton';
 import {
+    Gamepad2,
     ChevronLeft,
     Clock3,
     Disc3,
@@ -38,6 +39,7 @@ import { UploadTracksDialog } from '@/components/music/upload-dialog';
 import { api } from '@/lib/api';
 import { usePlayback } from '@/lib/connect';
 import { tr } from '@/lib/i18n';
+import { usePlugin } from '@/lib/plugins';
 import { motionOr, SNAP } from '@/lib/motion';
 import {
     getPlayerState,
@@ -228,6 +230,7 @@ function Sidebar({ onUpload }: { onUpload: () => void }) {
             .catch(() => {});
     }, []);
     const tile = (key: string) => covers?.tiles[key] ?? null;
+    const quizOn = usePlugin('music_quiz');
     // Перші чотири плитки — топ GameCon за прослуховуваннями (№1…№4).
     const top = [
         ...TABS.slice(0, 3),
@@ -350,6 +353,13 @@ function Sidebar({ onUpload }: { onUpload: () => void }) {
                     label={tr('Кімнати')}
                     icon={<Headphones />}
                 />
+                {quizOn && (
+                    <SideTile
+                        href="/music/quiz"
+                        label={tr('Вгадай пісню')}
+                        icon={<Gamepad2 />}
+                    />
+                )}
             </nav>
             <p className="am-footnote mt-5 mb-1 px-2.5 font-semibold text-[var(--am-label2)]">
                 {tr('Плейлисти')}

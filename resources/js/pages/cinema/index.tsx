@@ -1,6 +1,7 @@
 import { Head, InfiniteScroll, Link, router } from '@inertiajs/react';
 import { GridSkeleton } from '@/components/gc/skeletons';
 import {
+    Dices,
     Bookmark,
     Clapperboard,
     Clock,
@@ -295,6 +296,7 @@ export default function CinemaIndex({
 }: Props) {
     const [search, setSearch] = useState(filters.q);
     const requestOn = usePlugin('movie_request');
+    const rouletteOn = usePlugin('movie_roulette');
 
     const apply = (patch: Partial<Filters>) => {
         const next = { ...filters, q: search, ...patch };
@@ -394,6 +396,15 @@ export default function CinemaIndex({
                                 </button>
                             )}
                         </label>
+                        {rouletteOn && (
+                            <Link
+                                href="/cinema/roulette"
+                                className="glass inline-flex h-11 items-center gap-2 rounded-xl px-4 text-sm font-semibold text-white/85 transition hover:text-white"
+                            >
+                                <Dices className="size-4 text-sky-300" />
+                                {tr('Що подивитися?')}
+                            </Link>
+                        )}
                         <Link
                             href="/cinema/my"
                             className="glass inline-flex h-11 items-center gap-2 rounded-xl px-4 text-sm font-semibold text-white/85 transition hover:text-white"

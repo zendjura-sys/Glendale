@@ -33,6 +33,9 @@ use App\Http\Controllers\FeedbackController;
 use App\Http\Controllers\FeedController;
 use App\Http\Controllers\FollowController;
 use App\Http\Controllers\FriendController;
+use App\Http\Controllers\Fun\GameJournalController;
+use App\Http\Controllers\Fun\MovieRouletteController;
+use App\Http\Controllers\Fun\QuizController;
 use App\Http\Controllers\GameBacklogController;
 use App\Http\Controllers\GameConfigController;
 use App\Http\Controllers\GameController;
@@ -232,6 +235,13 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     Route::post('configs/{config}/like', [GameConfigController::class, 'like'])->whereNumber('config')->middleware('throttle:60,1')->name('configs.like');
     Route::post('configs/{config}/copied', [GameConfigController::class, 'copied'])->whereNumber('config')->middleware('throttle:60,1')->name('configs.copied');
     Route::delete('configs/{config}', [GameConfigController::class, 'destroy'])->whereNumber('config')->name('configs.destroy');
+    // Ігровий щоденник.
+    Route::middleware('module:games')->group(function () {
+        Route::get('journal', [GameJournalController::class, 'index'])->name('journal.index');
+        Route::post('journal', [GameJournalController::class, 'store'])->middleware('throttle:30,1')->name('journal.store');
+        Route::delete('journal/{entry}', [GameJournalController::class, 'destroy'])->whereNumber('entry')->name('journal.destroy');
+        Route::get('journal/{user:username}', [GameJournalController::class, 'show'])->name('journal.show');
+    });
     Route::get('game-nights', [GameNightController::class, 'index'])->name('game-nights.index');
     Route::post('game-nights', [GameNightController::class, 'store'])->middleware('throttle:10,1')->name('game-nights.store');
     Route::get('game-nights/{night}', [GameNightController::class, 'show'])->whereNumber('night')->name('game-nights.show');
@@ -555,6 +565,10 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         // Розділ у стилі Apple Music: Головна, Нове, Радіо, Медіатека, Пошук.
         Route::get('/', [MusicHubController::class, 'home'])->name('music.index');
         Route::get('new', [MusicHubController::class, 'newest'])->name('music.new');
+        // «Вгадай пісню».
+        Route::get('quiz', [QuizController::class, 'music'])->name('music.quiz');
+        Route::post('quiz', [QuizController::class, 'musicStart'])->middleware('throttle:20,1')->name('music.quiz.start');
+        Route::post('quiz/{round}', [QuizController::class, 'musicAnswer'])->whereUuid('round')->middleware('throttle:120,1')->name('music.quiz.answer');
         Route::get('radio', [MusicHubController::class, 'radio'])->name('music.radio');
         Route::get('library', [MusicHubController::class, 'library'])->name('music.library');
         Route::post('library/sections', [MusicHubController::class, 'sections'])->name('music.library.sections');
@@ -635,6 +649,9 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::put('playback', [CinemaController::class, 'playback'])->name('playback');
         Route::post('requests', [CinemaController::class, 'requestMovie'])->middleware('throttle:10,1')->name('requests.store');
         Route::get('search', [CinemaController::class, 'search'])->middleware('throttle:120,1')->name('search');
+        // «Що подивитися?» — рулетка.
+        Route::get('roulette', [MovieRouletteController::class, 'index'])->name('roulette');
+        Route::get('roulette/spin', [MovieRouletteController::class, 'spin'])->middleware('throttle:60,1')->name('roulette.spin');
         Route::get('lookup', [CinemaController::class, 'lookup'])->middleware('throttle:10,1')->name('lookup');
         Route::get('{movie}', [CinemaController::class, 'show'])->name('show');
         Route::patch('{movie}/status', [CinemaController::class, 'status'])->middleware('throttle:60,1')->name('status');
@@ -665,6 +682,9 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     // Каталог мультиплеєрних ігор.
     Route::prefix('games')->name('games.')->middleware('module:games')->group(function () {
         Route::get('search', [GameController::class, 'search'])->middleware('throttle:120,1')->name('search');
+        // Щоденна вікторина про ігри.
+        Route::get('trivia', [QuizController::class, 'trivia'])->name('trivia');
+        Route::post('trivia', [QuizController::class, 'triviaSubmit'])->middleware('throttle:20,1')->name('trivia.submit');
         // Роздачі, бажане й знижки, «чи потягне мій ПК».
         Route::get('deals', [GameDealsController::class, 'index'])->name('deals');
         Route::post('deals/subscribe', [GameDealsController::class, 'subscribe'])->name('deals.subscribe');
