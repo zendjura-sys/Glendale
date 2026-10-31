@@ -46,7 +46,7 @@ const FEATURES = [
         text: tr(
             'Заявки, спільні друзі, рекомендації — як ти звик, тільки красивіше.',
         ),
-        tone: 'from-gc-indigo to-gc-purple',
+        tone: 'from-gc-indigo to-gc-blue',
     },
     {
         icon: MessageCircle,
@@ -58,13 +58,13 @@ const FEATURES = [
         icon: Gamepad2,
         title: tr('Ігри та клани'),
         text: tr('Збирай команду, турніри, рейтинги та ігрові профілі.'),
-        tone: 'from-gc-purple to-gc-pink',
+        tone: 'from-gc-blue to-gc-cyan',
     },
     {
         icon: Clapperboard,
         title: tr('Кінопортал'),
         text: tr('Тисячі фільмів і серіалів — дивись і обговорюй з друзями.'),
-        tone: 'from-gc-pink to-gc-coral',
+        tone: 'from-gc-cyan to-gc-indigo',
     },
     {
         icon: ShieldCheck,

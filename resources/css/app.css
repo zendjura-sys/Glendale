@@ -2274,10 +2274,12 @@ html[data-text='xl'] {
     position: absolute;
     inset: 0;
 }
-/* ::before — відтінок усього фону; ::after — «земля» чи світло сезону. */
+/* ::after — «земля» чи світло сезону: лише м'які акценти по краях. Суцільний відтінок усього
+   фону (::before, mix-blend-mode) вимкнено: він фарбував екран у фіолетово-малиновий,
+   ламав палітру Arctic Ice і під скляними картками змушував браузер перемальовувати
+   весь екран — на планшетах текст блимав і зникав. */
 .season-bg::before {
-    mix-blend-mode: color;
-    opacity: 0.38;
+    display: none;
 }
 .season-bg--newyear::before {
     background: linear-gradient(180deg, #1e3a8a, #0e7490);
@@ -2358,7 +2360,7 @@ html[data-text='xl'] {
             rgb(234 88 12 / 0.22),
             transparent 70%
         ),
-        linear-gradient(180deg, rgb(20 8 40 / 0.35), transparent 45%);
+        linear-gradient(180deg, rgb(4 7 13 / 0.3), transparent 45%);
 }
 
 /* ── Сезонні прикраси (components/gc/seasonal.tsx). Плаский 2D-рух, лише transform/opacity. ── */
@@ -3337,6 +3339,9 @@ html[data-text='xl'] {
     appearance: none;
     background: transparent;
     cursor: pointer;
+    /* Прогрес оновлюється щосекунди — перемальовуємо лише сам повзунок, не скло плеєра. */
+    contain: layout paint;
+    transform: translateZ(0);
 }
 .gc-capsule-range::-webkit-slider-runnable-track {
     height: 4px;
@@ -4594,6 +4599,13 @@ html:has(.am) body {
     );
     --arctic-inner-surface: rgb(0 70 150 / 0.045);
 }
+/* На телефоні й планшеті розмиття легше: важке (24px) разом із сезонним відтінком
+   перевантажувало відеочип Chrome на Android — текст карток блимав і зникав. */
+@media (hover: none) and (pointer: coarse) {
+    :root[data-skin='gamecon'] {
+        --arctic-card-blur: blur(18px) saturate(150%);
+    }
+}
 
 :root[data-skin='gamecon']
     :is(
@@ -4650,6 +4662,29 @@ html:has(.am) body {
     backdrop-filter: var(--arctic-card-blur);
     pointer-events: none;
     transition: background 0.22s ease;
+    /* Скло — окремий стабільний шар GPU: під час прокрутки й анімацій Chromium на Android
+       не скидає його разом із текстом картки. */
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    transform: translateZ(0);
+}
+/* Сенсорні пристрої: «плаваючі» скляні картки лендингу стоять на місці — рух елемента
+   з backdrop-filter змушує перераховувати розмиття щокадру, і текст на планшетах блимав. */
+@media (hover: none) and (pointer: coarse) {
+    .animate-float {
+        animation: none;
+    }
+}
+/* Довга стрічка: легше розмиття (12px), щоб десятки карток не переповнювали відеопам'ять. */
+:root[data-skin='gamecon'] .gc-post:not(.am *)::before {
+    -webkit-backdrop-filter: blur(12px) saturate(150%);
+    backdrop-filter: blur(12px) saturate(150%);
+}
+/* Панелі з розмиттям із класів Tailwind (шапка, меню, діалоги) — теж на власному шарі GPU. */
+[class*='backdrop-blur'] {
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    transform: translateZ(0);
 }
 /* Радіус крижинки — 20px там, де картка й так велика (rounded-2xl); пігулки й дрібні плашки — як були. */
 :root[data-skin='gamecon']

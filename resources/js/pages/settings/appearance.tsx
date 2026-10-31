@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { m, useReducedMotion } from 'motion/react';
 import { type FormEvent, useEffect, useRef, useState } from 'react';
-import AppearanceController from '@/actions/App/Http/Controllers/Settings/AppearanceController';
+import { update as updateAppearance } from '@/routes/appearance';
 import { PlusBadge } from '@/components/gc/plus';
 import { DataSaverSwitch } from '@/components/settings/data-saver-switch';
 import { StreamerModeSwitch } from '@/components/settings/streamer-mode-switch';
@@ -281,7 +281,8 @@ export default function Appearance({
             setSavedText(textSize);
         }
         if (countChanges(form.data, saved) === 0) return;
-        form.submit(AppearanceController.update(), {
+        // Іменований маршрут сайту: метод update має ще й адресу мосту застосунку (/api/v1/site/…).
+        form.submit(updateAppearance(), {
             preserveScroll: true,
             onSuccess: () => {
                 setSaved(form.data);
