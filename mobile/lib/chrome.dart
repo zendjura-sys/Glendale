@@ -822,46 +822,149 @@ class MenuContent extends StatelessWidget {
               }),
           ],
         ),
-        Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Divider(height: 1, color: line)),
-        row(LucideIcons.userPlus, tr('Запросити друзів'), () => onGo('/invite')),
-        row(LucideIcons.bookmark, tr('Збережене'), () => onGo('/saved')),
-        row(LucideIcons.clock, tr('Прочитати пізніше'), () => onGo('/later')),
-        row(LucideIcons.mic, tr('Подкасти'), () => onGo('/podcasts')),
-        // Розділи-плагіни сайту — лише якщо ввімкнені (як на сайті).
-        if (session.pluginOn('tier_lists')) row(LucideIcons.listOrdered, tr('Тір-листи'), () => onGo('/tierlists')),
-        if (session.pluginOn('duels')) row(LucideIcons.swords, tr('Дуелі'), () => onGo('/duels')),
-        if (session.pluginOn('ideas_board')) row(LucideIcons.lightbulb, tr('Дошка ідей'), () => onGo('/ideas')),
-        if (session.modules?.contains('articles') ?? false) row(LucideIcons.bookOpen, tr('Статті'), () => onGo('/articles')),
-        if (session.pluginOn('game_deals') || session.pluginOn('game_giveaways')) row(LucideIcons.badgePercent, tr('Знижки й роздачі'), () => onGo('/games/deals')),
-        if (session.pluginOn('game_backlog')) row(LucideIcons.listChecks, tr('Мій беклог'), () => onGo('/games/backlog')),
-        if (session.pluginOn('nick_generator')) row(LucideIcons.wandSparkles, tr('Генератор ніків'), () => onGo('/tools/nicknames')),
-        row(LucideIcons.filePen, tr('Чернетки'), () => onGo('/drafts')),
-        row(LucideIcons.star, tr('Обрані повідомлення'), () => onGo('/starred')),
-        row(LucideIcons.panelBottom, tr('Налаштувати нижню панель'), () => onGo('/settings?tab=app')),
-        row(LucideIcons.settings, tr('Налаштування'), () => onGo('/settings')),
-        row(LucideIcons.bellRing, tr('Сповіщення за словами'), () => onGo('/keyword-alerts')),
-        row(LucideIcons.lifeBuoy, tr('Довідка'), () => onGo('/help')),
-        row(LucideIcons.headset, tr('Підтримка'), () => onGo('/support')),
-        if (session.isAdmin)
-          row(LucideIcons.shieldCheck, tr('Адмін-панель'), () {
-            onClose();
-            launchUrl(Uri.parse('${Api.root}/admin'), mode: LaunchMode.externalApplication);
-          }, color: gold),
-        row(
-          palette.isLight ? LucideIcons.moon : LucideIcons.sun,
-          palette.isLight ? tr('Темна тема «Неоновий синій»') : tr('Світла тема «Крижана Арктика»'),
-          () => session.setTheme(ThemeController.instance.isLight ? 'dark' : 'light'),
+        // Решта — категоріями: компактна сітка у дві колонки замість довгого списку.
+        // Розділи, що вже стоять плитками вгорі, тут не повторюються.
+        for (final group in _menuGroups(context, session, rest, onGo, onClose))
+          if (group.items.isNotEmpty) _MenuGroup(title: group.title, items: group.items),
+        Padding(
+          padding: EdgeInsets.fromLTRB(4, 6, 4, 2),
+          child: Column(children: [
+            row(
+              palette.isLight ? LucideIcons.moon : LucideIcons.sun,
+              palette.isLight ? tr('Темна тема «Неоновий синій»') : tr('Світла тема «Крижана Арктика»'),
+              () => session.setTheme(ThemeController.instance.isLight ? 'dark' : 'light'),
+            ),
+            Padding(padding: EdgeInsets.symmetric(horizontal: 8, vertical: 6), child: LanguagePicker(api: session.api)),
+          ]),
         ),
-        Padding(padding: EdgeInsets.symmetric(horizontal: 8, vertical: 6), child: LanguagePicker(api: session.api)),
-        row(LucideIcons.messageSquareHeart, tr('Відгук адмінам'), () {
-          onClose();
-          showFeedbackSheet(context);
-        }),
         row(LucideIcons.logOut, tr('Вийти'), () {
           onClose();
           signOut(session, player);
         }, color: dangerSoft),
       ],
+    );
+  }
+}
+
+typedef _MenuEntry = ({IconData icon, String label, VoidCallback onTap, Color? color});
+
+/// Категорії меню розділів: «Моє», «Для гравців», «Спільнота», «Налаштування й допомога».
+List<({String title, List<_MenuEntry> items})> _menuGroups(BuildContext context, Session session, List<NavItem> rest, ValueChanged<String> onGo, VoidCallback onClose) {
+  final shown = {for (final item in rest) item.path};
+  _MenuEntry go(IconData icon, String label, String path) => (icon: icon, label: label, onTap: () => onGo(path), color: null);
+  bool fresh(String path) => !shown.contains(path);
+  return [
+    (
+      title: tr('Моє'),
+      items: <_MenuEntry>[
+        if (fresh('/saved')) go(LucideIcons.bookmark, tr('Збережене'), '/saved'),
+        if (fresh('/later')) go(LucideIcons.clock, tr('Прочитати пізніше'), '/later'),
+        if (fresh('/drafts')) go(LucideIcons.filePen, tr('Чернетки'), '/drafts'),
+        if (fresh('/starred')) go(LucideIcons.star, tr('Обрані повідомлення'), '/starred'),
+        if (fresh('/keyword-alerts')) go(LucideIcons.bellRing, tr('Сповіщення за словами'), '/keyword-alerts'),
+      ],
+    ),
+    (
+      title: tr('Для гравців'),
+      items: <_MenuEntry>[
+        if (session.pluginOn('game_backlog') && fresh('/games/backlog')) go(LucideIcons.listChecks, tr('Мій беклог'), '/games/backlog'),
+        if ((session.pluginOn('game_deals') || session.pluginOn('game_giveaways')) && fresh('/games/deals')) go(LucideIcons.badgePercent, tr('Знижки й роздачі'), '/games/deals'),
+        if (session.pluginOn('tier_lists') && fresh('/tierlists')) go(LucideIcons.listOrdered, tr('Тір-листи'), '/tierlists'),
+        if (session.pluginOn('duels') && fresh('/duels')) go(LucideIcons.swords, tr('Дуелі'), '/duels'),
+        if (session.pluginOn('nick_generator') && fresh('/tools/nicknames')) go(LucideIcons.wandSparkles, tr('Генератор ніків'), '/tools/nicknames'),
+      ],
+    ),
+    (
+      title: tr('Спільнота'),
+      items: <_MenuEntry>[
+        if ((session.modules?.contains('articles') ?? false) && fresh('/articles')) go(LucideIcons.bookOpen, tr('Статті'), '/articles'),
+        if (fresh('/podcasts')) go(LucideIcons.mic, tr('Подкасти'), '/podcasts'),
+        if (session.pluginOn('ideas_board') && fresh('/ideas')) go(LucideIcons.lightbulb, tr('Дошка ідей'), '/ideas'),
+        if (fresh('/invite')) go(LucideIcons.userPlus, tr('Запросити друзів'), '/invite'),
+      ],
+    ),
+    (
+      title: tr('Налаштування й допомога'),
+      items: <_MenuEntry>[
+        go(LucideIcons.settings, tr('Налаштування'), '/settings'),
+        go(LucideIcons.panelBottom, tr('Нижня панель'), '/settings?tab=app'),
+        go(LucideIcons.lifeBuoy, tr('Довідка'), '/help'),
+        go(LucideIcons.headset, tr('Підтримка'), '/support'),
+        (
+          icon: LucideIcons.messageSquareHeart,
+          label: tr('Відгук адмінам'),
+          onTap: () {
+            onClose();
+            showFeedbackSheet(context);
+          },
+          color: null,
+        ),
+        if (session.isAdmin)
+          (
+            icon: LucideIcons.shieldCheck,
+            label: tr('Адмін-панель'),
+            onTap: () {
+              onClose();
+              launchUrl(Uri.parse('${Api.root}/admin'), mode: LaunchMode.externalApplication);
+            },
+            color: gold,
+          ),
+      ],
+    ),
+  ];
+}
+
+/// Категорія меню: тихий підпис і плашка з плитками у дві колонки.
+class _MenuGroup extends StatelessWidget {
+  const _MenuGroup({required this.title, required this.items});
+  final String title;
+  final List<_MenuEntry> items;
+
+  @override
+  Widget build(BuildContext context) {
+    final rows = <Widget>[];
+    for (var i = 0; i < items.length; i += 2) {
+      rows.add(Row(children: [
+        Expanded(child: _MenuTile(entry: items[i])),
+        Expanded(child: i + 1 < items.length ? _MenuTile(entry: items[i + 1]) : const SizedBox()),
+      ]));
+    }
+    return ArcticCascade(
+      child: Padding(
+        padding: EdgeInsets.only(top: 10),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Padding(padding: EdgeInsets.fromLTRB(10, 0, 10, 6), child: Text(title, style: body(12.5, color: faint, weight: FontWeight.w600))),
+          DecoratedBox(
+            decoration: BoxDecoration(color: ink.withValues(alpha: palette.isLight ? 0.04 : 0.05), borderRadius: BorderRadius.circular(16)),
+            child: Padding(padding: EdgeInsets.all(4), child: Column(children: rows)),
+          ),
+        ]),
+      ),
+    );
+  }
+}
+
+class _MenuTile extends StatelessWidget {
+  const _MenuTile({required this.entry});
+  final _MenuEntry entry;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = entry.color;
+    return ArcticPressable(
+      onTap: entry.onTap,
+      scale: 0.95,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(minHeight: 46),
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          child: Row(children: [
+            Icon(entry.icon, size: 18, color: color ?? accent),
+            SizedBox(width: 10),
+            Expanded(child: Text(entry.label, maxLines: 2, style: body(13.5, color: color ?? ink.withValues(alpha: 0.88), weight: FontWeight.w500).copyWith(height: 1.15))),
+          ]),
+        ),
+      ),
     );
   }
 }

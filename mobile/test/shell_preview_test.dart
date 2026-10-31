@@ -108,7 +108,10 @@ void main() {
           palette = light ? arcticPalette : neonPalette;
           addTearDown(() => palette = neonPalette);
           final session = Session(prefs)
-            ..me = {'id': 1, 'name': 'Тоні Старк', 'first_name': 'Тоні', 'username': 'tonny', 'role': 'admin', 'email': 'tony@example.com'}
+            ..me = {
+              'id': 1, 'name': 'Тоні Старк', 'first_name': 'Тоні', 'username': 'tonny', 'role': 'admin', 'email': 'tony@example.com',
+              'plugins': {for (final key in ['tier_lists', 'duels', 'ideas_board', 'game_deals', 'game_backlog', 'nick_generator']) key: true},
+            }
             ..unreadChats = 3
             ..unreadNotifications = 2;
           tester.view.physicalSize = size;
@@ -128,15 +131,27 @@ void main() {
           if (open) {
             await tester.tap(find.bySemanticsLabel('Меню'));
             await tester.pumpAndSettle(const Duration(milliseconds: 100));
-            expect(find.text('Налаштувати нижню панель'), findsOneWidget);
+            // Меню розділів — категоріями, без повторів плиток угорі.
+            expect(find.text('Нижня панель'), findsOneWidget);
+            expect(find.text('Для гравців'), findsOneWidget);
           }
-          if (out != null) {
+          Future<void> shot(String name) async {
+            if (out == null) return;
             await tester.runAsync(() async {
               final boundary = key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
               final image = await boundary.toImage(pixelRatio: 1);
               final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
-              File('$out/shell-$label.png').writeAsBytesSync(bytes!.buffer.asUint8List());
+              File('$out/shell-$name.png').writeAsBytesSync(bytes!.buffer.asUint8List());
             });
+          }
+
+          await shot(label);
+          if (open) {
+            // Друга половина меню — прокрутка вниз.
+            final menu = tester.state<ScrollableState>(find.ancestor(of: find.text('Для гравців'), matching: find.byType(Scrollable)).first);
+            menu.position.jumpTo(menu.position.maxScrollExtent);
+            await tester.pumpAndSettle(const Duration(milliseconds: 100));
+            await shot('$label-more');
           }
           await tester.pumpWidget(const SizedBox());
         });
