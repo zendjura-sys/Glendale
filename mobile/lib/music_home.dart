@@ -84,16 +84,15 @@ class _MusicHubState extends State<MusicHub> {
                 borderRadius: barRadius,
                 height: _barHeight,
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(4, 12, 4, 0),
-                  child: Row(children: [
-                    for (final key in _tabs)
-                      Expanded(
-                        child: _TabButton(icon: labels[key]!.$2, label: labels[key]!.$1, selected: tab == key, onTap: () => _select(key)),
-                      ),
-                    Expanded(
-                      child: _TabButton(icon: LucideIcons.search, label: tr('Пошук'), selected: false, onTap: () => context.push('/music/search')),
-                    ),
-                  ]),
+                  padding: const EdgeInsets.all(4),
+                  child: ArcticDockTabs(
+                    items: [
+                      for (final key in _tabs) ArcticDockItem(icon: labels[key]!.$2, label: labels[key]!.$1),
+                      ArcticDockItem(icon: LucideIcons.search, label: tr('Пошук')),
+                    ],
+                    current: _tabs.contains(tab) ? _tabs.indexOf(tab) : null,
+                    onTap: (i) => i < _tabs.length ? _select(_tabs[i]) : context.push('/music/search'),
+                  ),
                 ),
               ),
             ),
@@ -139,29 +138,6 @@ class _BarSwapState extends State<_BarSwap> {
         curve: Curves.easeOutCubic,
         offset: visible ? Offset.zero : const Offset(0, 0.35),
         child: AnimatedOpacity(key: const ValueKey('bottom-bar-music'), duration: duration, curve: Curves.easeOutCubic, opacity: visible ? 1 : 0, child: widget.child),
-      ),
-    );
-  }
-}
-
-class _TabButton extends StatelessWidget {
-  const _TabButton({required this.icon, required this.label, required this.selected, required this.onTap});
-  final IconData icon;
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      selected: selected,
-      label: label,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: onTap,
-        // Без підкладки: вибрана вкладка світиться неоновим синім, як в острові.
-        child: NeonTabLabel(icon: icon, label: label, active: selected, weight: FontWeight.w600),
       ),
     );
   }

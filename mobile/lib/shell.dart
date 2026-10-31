@@ -11,6 +11,7 @@ import 'api.dart';
 import 'app_login.dart' show appLoginIdFrom;
 import 'family_widget.dart';
 import 'pulse_widget.dart';
+import 'seasonal.dart';
 import 'player_view.dart';
 import 'state.dart';
 import 'theme.dart';
@@ -35,7 +36,8 @@ String appPathFor(String? sitePath) {
       return '/families/${rest(1)}${tab.isEmpty ? '' : '?tab=$tab'}';
     case 'c':
       final sub = rest(2);
-      return '/communities/${rest(1)}${['members', 'settings', 'photos'].contains(sub) ? '/$sub' : ''}${sub == 'members' ? query : ''}';
+      if (sub == 'wiki') return '/communities/${rest(1)}/wiki${parts.length > 3 ? '/${rest(3)}' : ''}';
+      return '/communities/${rest(1)}${['members', 'settings', 'photos', 'channels', 'calendar'].contains(sub) ? '/$sub' : ''}${sub == 'members' ? query : ''}';
     case 'messages':
       if (rest(1) == 'saved') return '/starred';
       return parts.length > 1 && int.tryParse(rest(1)) != null ? '/messages/${rest(1)}' : '/messages';
@@ -55,6 +57,20 @@ String appPathFor(String? sitePath) {
       return path;
     case 'podcasts':
       return parts.length > 1 ? '/podcasts/${rest(1)}' : '/podcasts';
+    case 'ideas':
+      return '/ideas';
+    case 'duels':
+      return '/duels';
+    case 't':
+      return parts.length > 1 ? '/t/${rest(1)}' : '/feed';
+    case 'articles':
+      return parts.length > 1 ? '/articles/${rest(1)}' : '/articles';
+    case 'tools':
+      return '/tools/nicknames';
+    case 'memes':
+      return '/memes/new';
+    case 'tierlists':
+      return parts.length > 1 && RegExp(r'^\d+$').hasMatch(parts[1]) ? '/tierlists/${parts[1]}' : '/tierlists';
     case 'support':
       return parts.length > 1 ? '/support/${rest(1)}' : '/support';
     case 'join':
@@ -88,6 +104,8 @@ String appPathFor(String? sitePath) {
       return '/listen/${rest(1)}';
     case 'events':
       return rest(1) == 'releases' ? '/events/releases' : '/events';
+    case 'games' when rest(1) == 'backlog' || rest(1) == 'deals':
+      return path;
     case 'games':
     case 'clans':
       return parts.length > 2 && rest(1) != 'create' ? '/$head/${rest(1)}' : '$path$query';
@@ -104,6 +122,7 @@ String appPathFor(String? sitePath) {
     case 'feed':
       return '$path$query';
     case 'settings':
+      if (['links', 'account-type', 'pixel-avatar'].contains(rest(1))) return '/settings/${rest(1)}';
       return rest(1) == 'keyword-alerts' ? '/keyword-alerts' : '/settings';
     case 'id':
       return '/feed';
@@ -201,6 +220,9 @@ class _AppShellState extends State<AppShell> {
             final bottomBar = !hideChrome && (!wide || musicTabs);
             final bottom = hideChrome ? 0.0 : systemBottom + (bottomBar ? islandExtent : 8) + (playing ? miniPlayerExtent : 0) + (inCall ? voiceBarExtent : 0);
             final contentLeft = wide ? sideNavWidth + 28 : 0.0;
+            // Сезон із профілю (App\Support\Seasons): прикраси тла, вмісту, шапки й аватарів.
+            final season = text(widget.session.me?['season']);
+            if (currentSeason.value != season) WidgetsBinding.instance.addPostFrameCallback((_) => currentSeason.value = season);
             return ShellChrome(
               bottom: bottom,
               child: Scaffold(
@@ -208,6 +230,7 @@ class _AppShellState extends State<AppShell> {
                 resizeToAvoidBottomInset: true,
                 body: Stack(
                   children: [
+                    Positioned.fill(child: SeasonBackdrop(season: season)),
                     if (wide || tabletPortrait)
                       Positioned.fill(
                         left: contentLeft,
@@ -220,6 +243,8 @@ class _AppShellState extends State<AppShell> {
                       )
                     else
                       widget.child,
+                    // Сніг, листя, кажани — над вмістом, під шапкою й доком.
+                    Positioned.fill(child: SeasonOverlay(season: season)),
                     Positioned(
                       top: 0,
                       left: 0,
@@ -228,6 +253,8 @@ class _AppShellState extends State<AppShell> {
                           ? MusicTopBar(session: widget.session, player: widget.player, path: path, topInset: topInset)
                           : TopBar(session: widget.session, player: widget.player, wide: wide, topInset: topInset),
                     ),
+                    // Вогники над шапкою, гірлянда й стрічка під нею.
+                    Positioned.fill(child: SeasonHeader(season: season, headerBottom: topInset + siteBarHeight)),
                     if (wide)
                       Positioned(
                         top: topInset + siteBarHeight + 10,

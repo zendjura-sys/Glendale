@@ -12,7 +12,7 @@ import type { GameCard } from '@/types';
 
 export type BacklogStatus = 'want' | 'playing' | 'done' | 'dropped';
 
-/** Стани бэклогу в порядку колонок дошки. */
+/** Стани беклогу в порядку колонок дошки. */
 export const BACKLOG_STATUSES: BacklogStatus[] = [
     'want',
     'playing',
@@ -38,7 +38,7 @@ export const BACKLOG_META: Record<
     },
 };
 
-/** Зберегти стан гри (null — прибрати з бэклогу). */
+/** Зберегти стан гри (null — прибрати з беклогу). */
 export function saveBacklog(slug: string, status: BacklogStatus | null) {
     return api<{ status: BacklogStatus | null }>(
         'PUT',
@@ -70,7 +70,7 @@ export function BacklogPicker({
             .then(() => {
                 if (value) {
                     toast.success(
-                        tr('У бэклозі: {status}', {
+                        tr('У беклозі: {status}', {
                             status: BACKLOG_META[value].label(),
                         }),
                     );
@@ -78,7 +78,7 @@ export function BacklogPicker({
             })
             .catch(() => {
                 setStatus(before);
-                toast.error(tr('Не вдалося оновити бэклог.'));
+                toast.error(tr('Не вдалося оновити беклог.'));
             })
             .finally(() => setBusy(false));
     };
@@ -86,7 +86,7 @@ export function BacklogPicker({
     return (
         <div
             role="group"
-            aria-label={tr('Бэклог')}
+            aria-label={tr('Беклог')}
             className={cn(
                 'inline-flex flex-wrap gap-1 rounded-xl bg-black/25 p-1 backdrop-blur-md',
                 className,

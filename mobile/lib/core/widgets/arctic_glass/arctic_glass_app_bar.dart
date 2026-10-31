@@ -29,7 +29,6 @@ class ArcticGlassAppBar extends StatelessWidget implements PreferredSizeWidget {
       specular: false,
       borderRadius: BorderRadius.zero,
       fill: LinearGradient(colors: [AppColors.bgBase.withValues(alpha: 0.55), AppColors.bgBase.withValues(alpha: 0.35)], begin: Alignment.topCenter, end: Alignment.bottomCenter),
-      borderColor: Colors.transparent,
       child: Container(
         height: top + height,
         padding: EdgeInsets.only(top: top, left: 4, right: 4),

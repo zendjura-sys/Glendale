@@ -13,7 +13,7 @@ use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
-/** Бэклог ігор: стан гри на її сторінці, своя дошка й дошка друга. */
+/** Беклог ігор: стан гри на її сторінці, своя дошка й дошка друга. */
 class GameBacklogController extends Controller
 {
     public function __construct(private readonly Plugins $plugins, private readonly Backlog $backlog) {}
@@ -37,7 +37,7 @@ class GameBacklogController extends Controller
         return $this->render($request, $user, $viewer);
     }
 
-    /** Новий стан гри або null — прибрати з бэклогу. */
+    /** Новий стан гри або null — прибрати з беклогу. */
     public function update(Request $request, Game $game): JsonResponse
     {
         $this->plugins->ensure('game_backlog');

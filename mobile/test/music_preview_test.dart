@@ -6,7 +6,6 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gamecon/account.dart';
 import 'package:gamecon/music_home.dart';
@@ -19,10 +18,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-Future<void> _font(String family, String path) async {
-  final loader = FontLoader(family)..addFont(Future.value(ByteData.sublistView(File(path).readAsBytesSync())));
-  await loader.load();
-}
+import 'support/fonts.dart';
 
 Map<String, dynamic> _track(int id, String title, String artist, {String? album, String? quality}) => {
       'source': 'local',
@@ -124,11 +120,7 @@ void main() {
 
   setUpAll(() async {
     if (out == null) return;
-    for (final w in ['Regular', 'Medium', 'SemiBold', 'Bold', 'ExtraBold']) {
-      await _font('Montserrat', 'fonts/Montserrat-$w.ttf');
-    }
-    final lucide = '${Platform.environment['HOME']}/.pub-cache/hosted/pub.dev/lucide_icons_flutter-3.1.21/assets';
-    await _font('packages/lucide_icons_flutter/Lucide', '$lucide/lucide.ttf');
+    await loadTestFonts();
   });
 
   final screens = <(String, String, String)>[

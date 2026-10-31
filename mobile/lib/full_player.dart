@@ -223,7 +223,7 @@ class _FullPlayerState extends State<FullPlayer> {
                     child: ConstrainedBox(
                       constraints: BoxConstraints(maxWidth: math.min(media.size.height * 0.5, 520)),
                       child: DecoratedBox(
-                        decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), boxShadow: const [BoxShadow(color: Color(0x99000000), blurRadius: 60, offset: Offset(0, 24), spreadRadius: -18)]),
+                        decoration: BoxDecoration(borderRadius: BorderRadius.circular(12)),
                         child: Artwork(url: track.cover, seed: track.key, radius: 12, icon: track.live ? LucideIcons.radio : LucideIcons.music),
                       ),
                     ),
@@ -1137,7 +1137,7 @@ class _LyricsViewState extends State<_LyricsView> {
               child: Container(
                 height: 44,
                 padding: const EdgeInsets.symmetric(horizontal: 20),
-                decoration: BoxDecoration(color: Colors.white.withValues(alpha: picked!.isEmpty ? 0.5 : 1), borderRadius: BorderRadius.circular(22), boxShadow: const [BoxShadow(color: Color(0x66000000), blurRadius: 24, offset: Offset(0, 8))]),
+                decoration: BoxDecoration(color: Colors.white.withValues(alpha: picked!.isEmpty ? 0.5 : 1), borderRadius: BorderRadius.circular(22)),
                 child: Row(mainAxisSize: MainAxisSize.min, children: [
                   const Icon(LucideIcons.share, size: 17, color: Colors.black),
                   const SizedBox(width: 8),

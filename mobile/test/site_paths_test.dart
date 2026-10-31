@@ -6,6 +6,18 @@ void main() {
   test('нові розділи сайту відкриваються в застосунку', () {
     expect(appPathFor('/moments'), '/moments');
     expect(appPathFor('/quests'), '/quests');
+    expect(appPathFor('/ideas'), '/ideas');
+    expect(appPathFor('/duels'), '/duels');
+    expect(appPathFor('/tierlists'), '/tierlists');
+    expect(appPathFor('/tierlists/12'), '/tierlists/12');
+    expect(appPathFor('/t/speedrun'), '/t/speedrun');
+    expect(appPathFor('/articles/gaid-po-cs2'), '/articles/gaid-po-cs2');
+    expect(appPathFor('/games/deals'), '/games/deals');
+    expect(appPathFor('/games/backlog/tonny'), '/games/backlog/tonny');
+    expect(appPathFor('/c/khab/wiki/pravila'), '/communities/khab/wiki/pravila');
+    expect(appPathFor('/c/khab/channels/3'), '/communities/khab/channels');
+    expect(appPathFor('/settings/links'), '/settings/links');
+    expect(appPathFor('/tools/nicknames'), '/tools/nicknames');
     expect(appPathFor('/tonny/card'), '/u/tonny/card');
     expect(appPathFor('/tournaments/7'), '/tournaments/7');
     expect(appPathFor('/party/match'), '/party/match');

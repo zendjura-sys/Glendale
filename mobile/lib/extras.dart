@@ -1152,7 +1152,7 @@ class _InviteScreenState extends State<InviteScreen> with _SitePage {
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-              decoration: BoxDecoration(color: field, borderRadius: BorderRadius.circular(14), border: Border.all(color: line)),
+              decoration: BoxDecoration(color: field, borderRadius: BorderRadius.circular(14)),
               child: SelectableText(link, style: body(13.5, color: soft)),
             ),
             const SizedBox(height: 10),

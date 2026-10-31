@@ -319,7 +319,7 @@ class MusicAlbumScreen extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 48),
           child: DecoratedBox(
-            decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), boxShadow: const [BoxShadow(color: Color(0x66000000), blurRadius: 40, offset: Offset(0, 18), spreadRadius: -16)]),
+            decoration: BoxDecoration(borderRadius: BorderRadius.circular(12)),
             child: Artwork(url: text(album['cover_url']), seed: '$artist|$title', radius: 12, icon: LucideIcons.disc3),
           ),
         ),

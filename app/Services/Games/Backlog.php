@@ -8,7 +8,7 @@ use App\Models\User;
 use App\Services\FriendshipService;
 
 /**
- * Бэклог ігор: «хочу — граю — пройшов — кинув». Граю, пройшов чи кинув — значить, грав:
+ * Беклог ігор: «хочу — граю — пройшов — кинув». Граю, пройшов чи кинув — значить, грав:
  * гра одразу відкриває оцінку гравців. Чужу дошку видно, якщо видно профіль людини.
  */
 class Backlog
@@ -21,7 +21,7 @@ class Backlog
         private readonly FriendshipService $friendships,
     ) {}
 
-    /** Новий стан гри або null — прибрати з бэклогу. */
+    /** Новий стан гри або null — прибрати з беклогу. */
     public function set(User $user, Game $game, ?string $status): void
     {
         if ($status === null) {

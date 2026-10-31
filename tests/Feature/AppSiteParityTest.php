@@ -12,6 +12,7 @@ use App\Models\PartyTimeSlot;
 use App\Models\Post;
 use App\Models\QuestClaim;
 use App\Models\Season;
+use App\Models\TierList;
 use App\Models\Tournament;
 use App\Models\Track;
 use App\Models\User;
@@ -22,6 +23,7 @@ use App\Services\Messenger;
 use App\Services\Phones\PhoneNumbers;
 use App\Services\Quests\SeasonPass;
 use App\Support\Net\PublicUrl;
+use App\Support\Seasons;
 use App\Support\Settings\SiteSettings;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -286,6 +288,16 @@ class AppSiteParityTest extends TestCase
         $this->assertNotEmpty($me['modes']);
         // Кнопки ШІ в чаті застосунку показуються за тими самими плагінами, що й на сайті.
         $this->assertSame(['ai_writer', 'ai_summary'], array_keys($me['ai']));
+        $this->assertArrayHasKey('gif_search', $me['plugins']);
+        // GIF із пошуку в новому записі — тим самим маршрутом застосунку, що й фото.
+        $this->withToken($token)->post('/api/v1/posts', ['visibility' => 'public', 'gif' => ['url' => 'https://media2.giphy.com/media/abc/giphy.gif', 'title' => 'GG']], ['Accept' => 'application/json'])
+            ->assertCreated()->assertJsonPath('post.card.kind', 'gif');
+        $this->withToken($token)->getJson('/api/v1/site/gifs?q=gg')->assertOk()->assertJsonStructure(['configured', 'gifs']);
+        // Сезонні прикраси: застосунок отримує той самий сезон, що й сайт.
+        app(SiteSettings::class)->put([Seasons::SETTING => 'halloween']);
+        $this->assertSame('halloween', $this->withToken($token)->getJson('/api/v1/me')->json('user.season'));
+        app(SiteSettings::class)->put([Seasons::SETTING => 'off']);
+        $this->assertNull($this->withToken($token)->getJson('/api/v1/me')->json('user.season'));
 
         // «Мінімал» ховає кіно й ігрові розділи — і з меню застосунку теж.
         $this->withToken($token)->putJson('/api/v1/site/settings/mode', ['mode' => 'minimal'])->assertOk()->assertJsonPath('ok', true);
@@ -448,6 +460,11 @@ class AppSiteParityTest extends TestCase
         Game::query()->create(['slug' => 'cs2', 'name' => 'CS2', 'letter' => 'C', 'category' => 'pc', 'is_published' => true]);
         $token = $this->app_token(User::factory()->create());
         $this->withToken($token)->getJson('/api/v1/site/tierlists')->assertOk();
+        // Екран «Новий тір-лист» застосунку: рівні S…D, елементи через кому.
+        $tiers = [['label' => 'S', 'color' => 'rose', 'items' => ['CS2']], ['label' => 'A', 'color' => 'amber', 'items' => ['Valorant', 'Apex']]];
+        $this->withToken($token)->postJson('/api/v1/site/tierlists', ['title' => 'Шутери 2026', 'is_public' => true, 'tiers' => $tiers])->assertSuccessful();
+        $id = TierList::query()->latest('id')->value('id');
+        $this->withToken($token)->getJson("/api/v1/site/tierlists/{$id}")->assertOk()->assertJsonPath('list.tiers.1.items.1', 'Apex');
         $this->withToken($token)->getJson('/api/v1/site/games/cs2/questions')->assertOk()->assertJsonStructure(['questions']);
         $this->withToken($token)->getJson('/api/v1/site/games/cs2/mentors')->assertOk()->assertJsonStructure(['mentors', 'me']);
         $this->withToken($token)->postJson('/api/v1/site/tools/nicknames/check', ['names' => ['ghostbyte']])->assertOk();
@@ -479,6 +496,12 @@ class AppSiteParityTest extends TestCase
         $this->withToken($token)->getJson('/api/v1/site/games/dota-2/goals')->assertOk()->assertJsonStructure(['goals']);
         $this->withToken($token)->getJson('/api/v1/site/games/dota-2/fps')->assertOk()->assertJsonStructure(['rows', 'presets']);
         $this->withToken($token)->getJson('/api/v1/site/duels')->assertOk();
+        // Виклик і відповідь суперника — як на екрані «Дуелі» застосунку.
+        $rival = User::factory()->create();
+        $this->withToken($token)->postJson('/api/v1/site/duels', ['username' => $rival->username, 'game' => 'dota-2', 'terms' => '1×1 до двох перемог'])->assertSuccessful();
+        $duel = $this->withToken($this->app_token($rival))->getJson('/api/v1/site/duels')->assertOk()->json('duels.0');
+        $this->assertTrue($duel['incoming']);
+        $this->withToken($this->app_token($rival))->postJson("/api/v1/site/duels/{$duel['id']}", ['action' => 'accept'])->assertSuccessful();
     }
 
     public function test_app_reaches_podcasts_and_gifs_through_bridge(): void
@@ -486,6 +509,42 @@ class AppSiteParityTest extends TestCase
         $token = $this->app_token(User::factory()->create());
         $this->withToken($token)->getJson('/api/v1/site/podcasts')->assertOk()->assertJsonStructure(['podcasts', 'mine', 'categories']);
         $this->withToken($token)->getJson('/api/v1/site/gifs')->assertOk()->assertJsonStructure(['configured', 'gifs']);
+        $this->withToken($token)->getJson('/api/v1/site/cards/search?q=cs')->assertOk()->assertJsonStructure(['cards']);
+    }
+
+    public function test_app_writes_reads_and_edits_articles_through_bridge(): void
+    {
+        $token = $this->app_token(User::factory()->create());
+        $body = str_repeat('Перше речення огляду гри. ', 4)."\n\n## Висновок\n\nВарто **грати**.";
+        $this->withToken($token)->postJson('/api/v1/site/articles', ['title' => 'Огляд CS2', 'body' => $body, 'publish' => true])->assertSuccessful();
+        $slug = $this->withToken($token)->getJson('/api/v1/site/articles')->assertOk()->json('articles.data.0.slug');
+        $this->withToken($token)->getJson("/api/v1/site/articles/{$slug}")->assertOk()->assertJsonPath('article.toc.0.text', 'Висновок');
+        $this->withToken($token)->getJson("/api/v1/site/articles/{$slug}/edit")->assertOk()->assertJsonPath('article.body', $body);
+        $this->withToken($token)->postJson("/api/v1/site/articles/{$slug}", ['title' => 'Огляд CS2 (оновлено)', 'body' => $body, 'publish' => true])->assertSuccessful();
+        $this->withToken($token)->deleteJson("/api/v1/site/articles/{$slug}")->assertSuccessful();
+    }
+
+    public function test_app_opens_deals_and_new_sections_flags(): void
+    {
+        $token = $this->app_token(User::factory()->create());
+        $this->withToken($token)->getJson('/api/v1/site/games/deals')->assertOk()->assertJsonStructure(['giveaways', 'subscribed']);
+        $this->withToken($token)->postJson('/api/v1/site/games/deals/subscribe', ['on' => true])->assertSuccessful();
+        $plugins = $this->withToken($token)->getJson('/api/v1/me')->json('user.plugins');
+        foreach (['community_channels', 'community_wiki', 'community_calendar', 'game_backlog', 'game_deals', 'bio_links', 'account_types', 'pixel_avatar', 'meme_maker', 'nick_generator'] as $key) {
+            $this->assertArrayHasKey($key, $plugins);
+        }
+    }
+
+    public function test_app_composer_tools_publish_like_the_site(): void
+    {
+        $token = $this->app_token(User::factory()->create());
+        $post = fn (array $fields) => $this->withToken($token)->post('/api/v1/posts', ['visibility' => 'public', ...$fields], ['Accept' => 'application/json']);
+        // Стікер, опитування, спойлер, чернетка й відкладений запис — ті самі поля, що шле редактор сайту.
+        $post(['sticker' => 'gg'])->assertCreated();
+        $post(['body' => 'Хто сильніший?', 'poll' => ['question' => 'Хто?', 'options' => ['Я', 'Ти'], 'anonymous' => '0']])->assertCreated()->assertJsonPath('post.poll.question', 'Хто?');
+        $post(['body' => 'Фінал серіалу', 'spoiler' => '1'])->assertCreated();
+        $post(['body' => 'Ще допишу', 'draft' => '1'])->assertCreated();
+        $post(['body' => 'Завтра зранку', 'publish_at' => now()->addDay()->toIso8601String()])->assertCreated();
     }
 
     public function test_app_reaches_read_later_and_keyword_alerts_through_bridge(): void

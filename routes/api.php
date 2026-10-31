@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\PushApiController;
 use App\Http\Controllers\Api\SocialApiController;
 use App\Http\Controllers\Api\SubscriptionStatusController;
 use App\Http\Controllers\Api\WidgetApiController;
+use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\BioLinksController;
 use App\Http\Controllers\Bots;
 use App\Http\Controllers\CallController;
@@ -33,6 +34,7 @@ use App\Http\Controllers\Families;
 use App\Http\Controllers\FollowController;
 use App\Http\Controllers\GameBacklogController;
 use App\Http\Controllers\GameController;
+use App\Http\Controllers\GameDealsController;
 use App\Http\Controllers\GameNewsController;
 use App\Http\Controllers\GamePlayController;
 use App\Http\Controllers\GameQaController;
@@ -357,11 +359,27 @@ Route::prefix('v1')->group(function () {
          * шляхами з префіксом /api/v1/site. BridgeSiteAction перетворює редиректи й Inertia-сторінки на JSON.
          */
         Route::prefix('site')->middleware(BridgeSiteAction::class)->group(function () {
-            // Бэклог ігор — ті самі дії, що й на сайті.
+            // Беклог ігор — ті самі дії, що й на сайті.
             Route::prefix('games')->middleware('module:games')->controller(GameBacklogController::class)->group(function () {
                 Route::get('backlog', 'mine');
                 Route::get('backlog/{user:username}', 'show');
                 Route::put('{game}/backlog', 'update')->middleware('throttle:60,1');
+            });
+            // Роздачі, бажане й знижки — розділ «Знижки» застосунку.
+            Route::prefix('games')->middleware('module:games')->controller(GameDealsController::class)->group(function () {
+                Route::get('deals', 'index');
+                Route::post('deals/subscribe', 'subscribe');
+                Route::post('{game}/wish', 'wish')->middleware('throttle:60,1');
+                Route::get('{game}/prices', 'prices')->middleware('throttle:60,1');
+            });
+            // Статті: огляди, історії й гайди — читання й написання з телефона.
+            Route::prefix('articles')->middleware('module:articles')->controller(ArticleController::class)->group(function () {
+                Route::get('/', 'index');
+                Route::post('/', 'store')->middleware('throttle:10,1');
+                Route::get('{article}/edit', 'edit');
+                Route::get('{article}', 'show');
+                Route::post('{article}', 'update')->middleware('throttle:20,1');
+                Route::delete('{article}', 'destroy');
             });
             Route::get('games/{game}/news', [GameNewsController::class, 'index'])->middleware(['module:games', 'throttle:60,1']);
             Route::post('newcomer/hide', [NewcomerController::class, 'hide']);
@@ -383,6 +401,8 @@ Route::prefix('v1')->group(function () {
             Route::post('podcasts/{podcast}/subscribe', [PodcastController::class, 'subscribe'])->whereNumber('podcast')->middleware('throttle:30,1');
             Route::post('podcasts/{podcast}/episodes/{episode}/play', [PodcastController::class, 'play'])->whereNumber(['podcast', 'episode'])->withoutScopedBindings()->middleware('throttle:60,1');
             Route::get('gifs', [GifController::class, 'index'])->middleware('throttle:60,1');
+            // Картка гри, сервера чи події в новому записі (як «Картка» в редакторі сайту).
+            Route::get('cards/search', [FollowController::class, 'cards'])->middleware('throttle:120,1');
             Route::post('duels', [GamePlayController::class, 'challenge'])->middleware('throttle:20,1');
             Route::post('duels/{duel}', [GamePlayController::class, 'act'])->whereNumber('duel')->middleware('throttle:60,1');
             Route::prefix('games/{game}')->middleware('module:games')->withoutScopedBindings()->group(function () {

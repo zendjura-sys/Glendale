@@ -59,6 +59,9 @@ class Session extends ChangeNotifier {
   int? get wrappedYear => me?['wrapped'] is int ? me!['wrapped'] as int : null;
 
   /// Кнопки ШІ в чаті — за плагінами сайту `ai_writer` (ШІ-редактор) і `ai_summary` (підсумок бесіди).
+  /// Функції-плагіни сайту, які показує й застосунок (напр. `gif_search`).
+  bool pluginOn(String key) => me?['plugins'] is Map && (me!['plugins'] as Map)[key] == true;
+
   bool aiOn(String key) => me?['ai'] is Map && (me!['ai'] as Map)[key] == true;
 
   Set<String>? get modules => me?['modules'] is List ? {for (final key in me!['modules'] as List) '$key'} : null;

@@ -8,6 +8,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'api.dart';
 import 'core/widgets/arctic_glass/arctic_glass.dart';
 import 'plus.dart';
+import 'seasonal.dart';
 import 'state.dart';
 import 'subscription.dart';
 import 'theme.dart';
@@ -38,7 +39,6 @@ class LogoMark extends StatelessWidget {
       height: size,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(size * 0.3),
-        boxShadow: [BoxShadow(color: AppColors.accentCyan.withValues(alpha: 0.28), blurRadius: size * 0.4, offset: Offset(0, size * 0.1))],
       ),
       child: Image.asset('assets/brand/logo-mark.png', width: size, height: size, filterQuality: FilterQuality.medium),
     );
@@ -81,8 +81,8 @@ class GradientText extends StatelessWidget {
 
 // ───────────────────────── Поверхні ─────────────────────────
 
-/// Картка «Spatial Glass»: діагональне скло, рамка-волосинка й верхній блік (ArcticGlassContainer).
-/// Без розмиття — картки живуть у списках, і BackdropFilter там гальмував би прокрутку.
+/// Картка — матове скло, як на сайті: напівпрозора холодна заливка з розмиттям фону, без обводки й тіней.
+/// Розмиття всіх карток екрана спільне (BackdropGroup), тож прокрутка не гальмує.
 class Glass extends StatelessWidget {
   const Glass({required this.child, this.padding = const EdgeInsets.all(16), this.radius = AppRadii.card, this.onTap, this.gradient, this.border, this.overlay, super.key});
   final Widget child;
@@ -96,7 +96,7 @@ class Glass extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final glass = ArcticGlassContainer(width: double.infinity, padding: padding, radius: radius, fill: gradient, borderColor: border, onTap: onTap, child: child);
+    final glass = ArcticGlassContainer(width: double.infinity, padding: padding, radius: radius, enableBlur: true, fill: gradient, borderColor: border, onTap: onTap, child: child);
     return overlay == null ? glass : Stack(children: [glass, Positioned.fill(child: overlay!)]);
   }
 }
@@ -308,7 +308,6 @@ class RoundIcon extends StatelessWidget {
             shape: BoxShape.circle,
             gradient: filled ? buttonGradient : null,
             color: filled ? null : fg.withValues(alpha: 0.05),
-            border: filled ? null : Border.all(color: line),
           ),
           child: Icon(icon, size: size * 0.48, color: filled ? Colors.white : color),
         ),
@@ -372,11 +371,11 @@ class GcField extends StatelessWidget {
         prefixText: prefixText,
         prefixStyle: body(15, color: muted),
         filled: true,
-        fillColor: field.withValues(alpha: enabled ? 1 : 0.5),
+        fillColor: enabled ? field : field.withValues(alpha: field.a * 0.5),
         isDense: true,
         contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: dense ? 11 : 15),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: lineStrong)),
-        disabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: line)),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+        disabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
         focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: primary, width: 1.4)),
       ),
     );
@@ -441,7 +440,7 @@ class GcSelect<T> extends StatelessWidget {
       height: 46,
       width: expand ? double.infinity : null,
       padding: EdgeInsets.only(left: 14, right: 8),
-      decoration: BoxDecoration(color: field, borderRadius: BorderRadius.circular(14), border: Border.all(color: lineStrong)),
+      decoration: BoxDecoration(color: field, borderRadius: BorderRadius.circular(14)),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<T>(
           value: value,
@@ -478,7 +477,7 @@ class Segmented extends StatelessWidget {
   final bool scroll;
 
   static const _motion = Duration(milliseconds: 260);
-  static BoxDecoration get _pill => BoxDecoration(color: palette.isLight ? card : fg.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(14), boxShadow: palette.isLight ? const [BoxShadow(color: Color(0x1A102A50), blurRadius: 8, offset: Offset(0, 2))] : null);
+  static BoxDecoration get _pill => BoxDecoration(color: palette.isLight ? card : fg.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(14));
 
   @override
   Widget build(BuildContext context) {
@@ -534,7 +533,7 @@ class Segmented extends StatelessWidget {
                     duration: _motion,
                     curve: Curves.easeOutCubic,
                     padding: EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-                    decoration: option.id == selected ? _pill : _pill.copyWith(color: Colors.transparent, boxShadow: const []),
+                    decoration: option.id == selected ? _pill : _pill.copyWith(color: Colors.transparent),
                     child: content(option, option.id == selected),
                   ),
                 ),
@@ -673,9 +672,10 @@ class Pill extends StatelessWidget {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 9, vertical: 4),
       decoration: BoxDecoration(
-        color: background ?? color.withValues(alpha: 0.12),
+        color: background ?? color.withValues(alpha: 0.14),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: border ?? color.withValues(alpha: 0.28)),
+        // Без обводки — лише м'яка заливка кольору (обводка тільки якщо задана явно).
+        border: border == null ? null : Border.all(color: border!),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -789,6 +789,12 @@ class Avatar extends StatelessWidget {
                 decoration: BoxDecoration(color: green, shape: BoxShape.circle, border: Border.all(color: voidColor, width: dot * 0.2)),
               ),
             ),
+          // Новий рік: шапка Санти на аватарах (крім дрібних і квадратних), як на сайті.
+          if (!square && size >= 28)
+            ValueListenableBuilder<String?>(
+              valueListenable: currentSeason,
+              builder: (_, season, _) => season == 'newyear' ? SantaHat(size: size) : const Positioned(left: 0, top: 0, child: SizedBox.shrink()),
+            ),
         ],
       ),
     );
@@ -861,7 +867,7 @@ class EmptyState extends StatelessWidget {
         Container(
           width: 56,
           height: 56,
-          decoration: BoxDecoration(color: fg.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(18), border: Border.all(color: line)),
+          decoration: BoxDecoration(color: fg.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(18)),
           child: Icon(icon, color: accent, size: 26),
         ),
         SizedBox(height: 16),
@@ -943,7 +949,7 @@ class MetricTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(color: fg.withValues(alpha: 0.04), borderRadius: BorderRadius.circular(18), border: Border.all(color: line)),
+      decoration: BoxDecoration(color: fg.withValues(alpha: 0.04), borderRadius: BorderRadius.circular(18)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1093,8 +1099,12 @@ class _RemoteState extends State<Remote> {
   }
 }
 
-/// Висота прозорої шапки поверх контенту, без системного відступу.
-const siteBarHeight = 58.0;
+/// Висота плаваючої капсули шапки і відступ над нею.
+const headerCapsuleHeight = 56.0;
+const headerTopGap = 8.0;
+
+/// Висота прозорої шапки поверх контенту (відступ + капсула), без системного відступу.
+const siteBarHeight = headerTopGap + headerCapsuleHeight;
 
 /// Нижній острів-меню (плаваючий док) на телефоні разом із відступом знизу, без системного відступу.
 const islandExtent = ArcticDock.height + ArcticDock.bottom;
@@ -1180,7 +1190,7 @@ class ShellChrome extends InheritedWidget {
 /// а прокрутка йшла вже під прозорими кнопками.
 double siteHeaderInset(BuildContext context) {
   final top = MediaQuery.viewPaddingOf(context).top;
-  return top + siteBarHeight + 6;
+  return top + siteBarHeight + 12;
 }
 
 /// Прокрутка екрана: контент їде під прозору шапку і під скляне меню.
@@ -1196,12 +1206,13 @@ class ScreenScroll extends StatelessWidget {
     final base = padding ?? const EdgeInsets.fromLTRB(14, 6, 14, 16);
     final list = ListView(
       controller: controller,
-      physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+      physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
       padding: base.copyWith(
         top: base.top + siteHeaderInset(context),
         bottom: base.bottom + ShellChrome.bottomOf(context),
       ),
-      children: children,
+      // Картки з'являються каскадом; показані раніше (за ключем) — без повтору.
+      children: [for (final child in children) ArcticCascade(key: child.key is GlobalKey ? null : child.key, id: child.key, child: child)],
     );
     if (onRefresh == null) return list;
     return RefreshIndicator(color: primary, backgroundColor: popover, onRefresh: onRefresh!, child: list);
@@ -1413,7 +1424,6 @@ class _ToastCardState extends State<_ToastCard> with TickerProviderStateMixin {
                 child: DecoratedBox(
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(18),
-                    boxShadow: [palette.isLight ? BoxShadow(color: Color(0x33102A50), blurRadius: 28, offset: Offset(0, 10), spreadRadius: -12) : BoxShadow(color: Color(0xB3000000), blurRadius: 30, offset: Offset(0, 10), spreadRadius: -12)],
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(18),
@@ -1750,7 +1760,6 @@ class PendingBar extends StatelessWidget {
                 child: DecoratedBox(
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(18),
-                    boxShadow: [palette.isLight ? const BoxShadow(color: Color(0x33102A50), blurRadius: 28, offset: Offset(0, 10), spreadRadius: -12) : const BoxShadow(color: Color(0xB3000000), blurRadius: 30, offset: Offset(0, 10), spreadRadius: -12)],
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(18),

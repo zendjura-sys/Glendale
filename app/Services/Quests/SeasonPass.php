@@ -174,7 +174,7 @@ class SeasonPass
     {
         $themes = (array) config('season_pass.themes');
         $theme = array_key_exists($season->theme, $themes) ? $season->theme : (string) array_key_first($themes);
-        $start = Carbon::createFromFormat('Y-m', $season->key, 'Europe/Kyiv')->startOfMonth();
+        $start = Carbon::createFromFormat('!Y-m', $season->key, 'Europe/Kyiv')->startOfMonth();
 
         return [
             'season' => [

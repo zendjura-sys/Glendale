@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../theme.dart' show palette, ink, muted, body;
 import '../../theme/arctic_glass_theme.dart';
 import 'arctic_glass_container.dart';
+import 'arctic_pressable.dart';
 
 /// Розміри плаваючого доку: відступи 16 з боків і 20 знизу, висота 64, радіус 32.
 abstract final class ArcticDock {
@@ -12,33 +13,26 @@ abstract final class ArcticDock {
   static const radius = 32.0;
 }
 
-/// Поверхня плаваючого доку: сильніше розмиття (24) і тінь, що відриває його від стрічки.
-/// Вміст (вкладки, розгорнуте меню) — будь-який.
+/// Поверхня нерухомих панелей (док, шапка, міні-плеєр): щільніше скло з розмиттям 24
+/// без тіні: панель відділяє від стрічки лише розмиття й грань.
 class ArcticDockSurface extends StatelessWidget {
-  const ArcticDockSurface({required this.child, this.height, this.radius = ArcticDock.radius, super.key});
+  const ArcticDockSurface({required this.child, this.height, this.radius = ArcticDock.radius, this.glowing = false, this.blur = AppBlur.dock, super.key});
   final Widget child;
+  final double blur;
   final double? height;
   final double radius;
+  final bool glowing;
 
   @override
   Widget build(BuildContext context) {
-    final light = palette.isLight;
+    final tokens = ArcticGlassThemeExtension.of(context);
     return ArcticGlassContainer(
       enableBlur: true,
-      blur: AppBlur.dock,
+      blur: blur,
       radius: radius,
       height: height,
-      fill: light
-          ? const LinearGradient(colors: [Color.fromRGBO(255, 255, 255, 0.88), Color.fromRGBO(244, 248, 252, 0.78)], begin: Alignment.topLeft, end: Alignment.bottomRight)
-          : const LinearGradient(colors: [Color.fromRGBO(16, 24, 40, 0.72), Color.fromRGBO(8, 14, 26, 0.82)], begin: Alignment.topLeft, end: Alignment.bottomRight),
-      shadows: [
-        BoxShadow(
-          color: Colors.black.withValues(alpha: light ? 0.10 : 0.55),
-          blurRadius: 32,
-          offset: const Offset(0, 14),
-          spreadRadius: -8,
-        ),
-      ],
+      glowing: glowing,
+      fill: tokens.barFill,
       child: child,
     );
   }
@@ -52,7 +46,67 @@ class ArcticDockItem {
   final Widget? badge;
 }
 
-/// Плаваючий док із вкладками: активна — ціанова іконка з крижаною крапкою-світінням під нею.
+/// Ряд вкладок доку з перетічною світловою капсулою під активною вкладкою
+/// (AnimatedAlign, easeOutBack, 280 мс): без обводки — м'яка неонова пляма, а іконка й підпис
+/// активної вкладки світяться неоном. [current] null — без підсвітки.
+class ArcticDockTabs extends StatelessWidget {
+  const ArcticDockTabs({required this.items, required this.current, required this.onTap, this.height = 56, super.key});
+  final List<ArcticDockItem> items;
+  final int? current;
+  final ValueChanged<int> onTap;
+  final double height;
+
+  @override
+  Widget build(BuildContext context) {
+    final still = MediaQuery.disableAnimationsOf(context);
+    final n = items.length;
+    final at = current;
+    final light = palette.isLight;
+    return SizedBox(
+      height: height,
+      child: Stack(
+        children: [
+          if (n > 0)
+            AnimatedAlign(
+              duration: still ? Duration.zero : const Duration(milliseconds: 280),
+              curve: Curves.easeOutBack,
+              alignment: Alignment(n == 1 ? 0 : -1 + 2 * (at ?? 0) / (n - 1), 0),
+              child: FractionallySizedBox(
+                widthFactor: 1 / n,
+                child: AnimatedOpacity(
+                  duration: still ? Duration.zero : const Duration(milliseconds: 200),
+                  opacity: at == null ? 0 : 1,
+                  // Без обводки й заливки: м'яка неонова пляма світла під активною вкладкою.
+                  child: Center(
+                    child: Container(
+                      width: 64,
+                      height: height,
+                      decoration: BoxDecoration(
+                        gradient: RadialGradient(
+                          radius: 0.6,
+                          colors: [(light ? AppColors.accentPrimary : AppColors.accentCyan).withValues(alpha: light ? 0.16 : 0.22), (light ? AppColors.accentPrimary : AppColors.accentCyan).withValues(alpha: 0)],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          Row(
+            children: [
+              for (var i = 0; i < n; i++)
+                Expanded(
+                  child: ArcticDockTab(item: items[i], active: i == at, onTap: () => onTap(i)),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Плаваючий док із вкладками.
 class ArcticFloatingDock extends StatelessWidget {
   const ArcticFloatingDock({required this.items, required this.current, required this.onTap, super.key});
   final List<ArcticDockItem> items;
@@ -65,12 +119,54 @@ class ArcticFloatingDock extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(ArcticDock.side, 0, ArcticDock.side, ArcticDock.bottom),
       child: ArcticDockSurface(
         height: ArcticDock.height,
-        child: Row(
+        child: Padding(
+          padding: const EdgeInsets.all(4),
+          child: ArcticDockTabs(items: items, current: current, onTap: onTap),
+        ),
+      ),
+    );
+  }
+}
+
+/// Вкладка доку: іконка й підпис; активна — крижаний колір поверх світлової капсули.
+class ArcticDockTab extends StatelessWidget {
+  const ArcticDockTab({required this.item, required this.active, required this.onTap, super.key});
+  final ArcticDockItem item;
+  final bool active;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final still = MediaQuery.disableAnimationsOf(context);
+    final idle = palette.isLight ? ink.withValues(alpha: 0.55) : muted;
+    final on = palette.isLight ? AppColors.accentPrimary : AppColors.accentCyan;
+    final color = active ? on : idle;
+    return Semantics(
+      selected: active,
+      button: true,
+      label: item.label,
+      child: ArcticPressable(
+        onTap: onTap,
+        scale: 0.92,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            for (var i = 0; i < items.length; i++)
-              Expanded(
-                child: ArcticDockTab(item: items[i], active: i == current, onTap: () => onTap(i)),
-              ),
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                AnimatedSwitcher(
+                  duration: still ? Duration.zero : const Duration(milliseconds: 200),
+                  child: Icon(active ? (item.activeIcon ?? item.icon) : item.icon, key: ValueKey(active), size: 22, color: color, shadows: active ? _neon(on) : null),
+                ),
+                if (item.badge case final b?) Positioned(right: -10, top: -4, child: b),
+              ],
+            ),
+            const SizedBox(height: 3),
+            AnimatedDefaultTextStyle(
+              duration: still ? Duration.zero : const Duration(milliseconds: 200),
+              style: body(10.5, color: color, weight: active ? FontWeight.w700 : FontWeight.w500).copyWith(shadows: active ? _neon(on, soft: true) : const []),
+              child: Text(item.label, maxLines: 1, overflow: TextOverflow.ellipsis),
+            ),
           ],
         ),
       ),
@@ -78,63 +174,8 @@ class ArcticFloatingDock extends StatelessWidget {
   }
 }
 
-/// Вкладка доку (використовує й острів-меню застосунку).
-class ArcticDockTab extends StatelessWidget {
-  const ArcticDockTab({required this.item, required this.active, required this.onTap, this.height = 52, super.key});
-  final ArcticDockItem item;
-  final bool active;
-  final VoidCallback onTap;
-  final double height;
-
-  @override
-  Widget build(BuildContext context) {
-    final still = MediaQuery.disableAnimationsOf(context);
-    final idle = palette.isLight ? ink.withValues(alpha: 0.55) : muted;
-    final on = palette.isLight ? AppColors.accentPrimary : AppColors.accentCyan;
-    return Semantics(
-      selected: active,
-      button: true,
-      label: item.label,
-      child: InkResponse(
-        onTap: onTap,
-        highlightShape: BoxShape.rectangle,
-        borderRadius: BorderRadius.circular(18),
-        splashColor: AppColors.accentCyan.withValues(alpha: 0.10),
-        child: SizedBox(
-          height: height,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  AnimatedSwitcher(
-                    duration: still ? Duration.zero : const Duration(milliseconds: 180),
-                    child: Icon(active ? (item.activeIcon ?? item.icon) : item.icon, key: ValueKey(active), size: 22, color: active ? on : idle),
-                  ),
-                  if (item.badge case final b?) Positioned(right: -10, top: -4, child: b),
-                ],
-              ),
-              const SizedBox(height: 2),
-              Text(
-                item.label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: body(10.5, color: active ? on : idle, weight: active ? FontWeight.w600 : FontWeight.w500),
-              ),
-              const SizedBox(height: 3),
-              // Крижана крапка під активною вкладкою.
-              AnimatedContainer(
-                duration: still ? Duration.zero : const Duration(milliseconds: 220),
-                curve: Curves.easeOutCubic,
-                width: active ? 4 : 0,
-                height: 4,
-                decoration: BoxDecoration(color: on, shape: BoxShape.circle, boxShadow: active ? iceGlow() : const []),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
+/// Неонове світіння активної вкладки.
+List<Shadow> _neon(Color color, {bool soft = false}) => [
+  Shadow(color: color.withValues(alpha: soft ? 0.6 : 0.85), blurRadius: soft ? 6 : 10),
+  Shadow(color: color.withValues(alpha: soft ? 0.25 : 0.4), blurRadius: soft ? 14 : 22),
+];

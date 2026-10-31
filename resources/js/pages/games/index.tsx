@@ -167,7 +167,7 @@ export default function GamesIndex({
                         className="inline-flex h-10 items-center gap-2 rounded-xl bg-white/[0.06] px-3.5 text-sm font-semibold text-white/80 transition hover:bg-white/10 hover:text-white"
                     >
                         <ListChecks className="size-4 text-sky-300" />
-                        {tr('Мій бэклог')}
+                        {tr('Мій беклог')}
                     </Link>
                 )}
                 {tierOn && signedIn && (

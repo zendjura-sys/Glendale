@@ -350,7 +350,6 @@ class _RewardCell extends StatelessWidget {
           color: premium ? primary.withValues(alpha: 0.07) : fg.withValues(alpha: 0.03),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: claimable ? primary : (premium ? primary.withValues(alpha: 0.2) : fg.withValues(alpha: 0.07))),
-          boxShadow: claimable ? [BoxShadow(color: primary.withValues(alpha: 0.45), blurRadius: 14, spreadRadius: -3)] : null,
         ),
         child: Column(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
           RewardIcon(reward: item, size: 34),

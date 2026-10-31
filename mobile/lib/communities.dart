@@ -615,6 +615,22 @@ class _CommunityScreenState extends State<CommunityScreen> {
               ]),
             ),
           ],
+          // Розділи спільноти, як на сайті: канали, календар, вікі (кожен — свій плагін).
+          if (AppScope.read(context).session case final session when session.pluginOn('community_channels') || session.pluginOn('community_calendar') || session.pluginOn('community_wiki')) ...[
+            const SizedBox(height: 12),
+            Row(children: [
+              if (session.pluginOn('community_channels'))
+                Expanded(child: GhostButton(label: tr('Канали'), icon: LucideIcons.hash, compact: true, onPressed: () => context.push('/communities/${widget.slug}/channels'))),
+              if (session.pluginOn('community_calendar')) ...[
+                const SizedBox(width: 8),
+                Expanded(child: GhostButton(label: tr('Календар'), icon: LucideIcons.calendarDays, compact: true, onPressed: () => context.push('/communities/${widget.slug}/calendar'))),
+              ],
+              if (session.pluginOn('community_wiki')) ...[
+                const SizedBox(width: 8),
+                Expanded(child: GhostButton(label: tr('Вікі'), icon: LucideIcons.bookOpen, compact: true, onPressed: () => context.push('/communities/${widget.slug}/wiki'))),
+              ],
+            ]),
+          ],
           if (members.isNotEmpty) ...[
             const SizedBox(height: 12),
             Glass(

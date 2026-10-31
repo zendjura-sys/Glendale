@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
 
 /**
- * Гра в бэклозі людини: хочу пограти, граю, пройшов, кинув.
+ * Гра в беклозі людини: хочу пограти, граю, пройшов, кинув.
  *
  * @property int $user_id
  * @property int $game_id

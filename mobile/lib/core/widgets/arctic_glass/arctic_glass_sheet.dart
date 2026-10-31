@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../theme.dart' show palette, popover;
+import '../../../theme.dart' show palette;
 import '../../theme/arctic_glass_theme.dart';
 import 'arctic_glass_container.dart';
 
@@ -18,7 +18,8 @@ class ArcticGlassSheetSurface extends StatelessWidget {
       enableBlur: true,
       blur: AppBlur.sheet,
       borderRadius: const BorderRadius.vertical(top: Radius.circular(AppRadii.dock)),
-      color: light ? popover.withValues(alpha: 0.92) : AppColors.glassTier3,
+      color: ArcticGlassThemeExtension.of(context).sheetFill,
+      shadows: const [],
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,

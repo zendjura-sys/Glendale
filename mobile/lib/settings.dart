@@ -338,6 +338,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
           LabeledField(label: tr('Вебсайт'), child: GcField(controller: website, label: 'https://', keyboard: TextInputType.url)),
         ]),
       ),
+      // Розділи профілю, як на сайті (кожен — свій плагін): посилання, тип акаунта, піксельна аватарка.
+      if (AppScope.read(context).session case final session when session.pluginOn('bio_links') || session.pluginOn('account_types') || session.pluginOn('pixel_avatar')) ...[
+        const SizedBox(height: 12),
+        Glass(
+          padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+          child: Column(children: [
+            if (session.pluginOn('bio_links'))
+              ListTile(leading: Icon(LucideIcons.link, color: accent), title: Text(tr('Посилання в профілі'), style: body(14.5, weight: FontWeight.w600)), trailing: Icon(LucideIcons.chevronRight, color: faint), onTap: () => context.push('/settings/links')),
+            if (session.pluginOn('account_types'))
+              ListTile(leading: Icon(LucideIcons.badgeCheck, color: accent), title: Text(tr('Тип акаунта й верифікація'), style: body(14.5, weight: FontWeight.w600)), trailing: Icon(LucideIcons.chevronRight, color: faint), onTap: () => context.push('/settings/account-type')),
+            if (session.pluginOn('pixel_avatar'))
+              ListTile(leading: Icon(LucideIcons.grid3x3, color: accent), title: Text(tr('Піксельна аватарка'), style: body(14.5, weight: FontWeight.w600)), trailing: Icon(LucideIcons.chevronRight, color: faint), onTap: () => context.push('/settings/pixel-avatar')),
+          ]),
+        ),
+      ],
       const SizedBox(height: 12),
       Glass(
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
@@ -509,7 +524,7 @@ class NavEditor extends StatelessWidget {
                   padding: const EdgeInsets.only(bottom: 6),
                   child: Container(
                     padding: const EdgeInsets.fromLTRB(4, 2, 4, 2),
-                    decoration: BoxDecoration(color: fg.withValues(alpha: 0.04), borderRadius: BorderRadius.circular(14), border: Border.all(color: line)),
+                    decoration: BoxDecoration(color: fg.withValues(alpha: 0.04), borderRadius: BorderRadius.circular(14)),
                     child: Row(children: [
                       ReorderableDragStartListener(
                         index: i,
@@ -567,7 +582,7 @@ class _NavPreview extends StatelessWidget {
     final items = [for (final t in tabs) navItem(t)!, navMenu];
     return Container(
       height: 58,
-      decoration: BoxDecoration(color: const Color(0xA60F0A1E), borderRadius: BorderRadius.circular(16), border: Border.all(color: line)),
+      decoration: BoxDecoration(color: const Color(0xA60F0A1E), borderRadius: BorderRadius.circular(16)),
       child: Row(children: [
         for (final item in items)
           Expanded(

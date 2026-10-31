@@ -13,7 +13,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
-/** Бэклог ігор: стани гри, своя й чужа дошка, профіль, друзі, міст застосунку. */
+/** Беклог ігор: стани гри, своя й чужа дошка, профіль, друзі, міст застосунку. */
 class GameBacklogTest extends TestCase
 {
     use RefreshDatabase;

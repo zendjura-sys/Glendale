@@ -164,7 +164,7 @@ class DailyQuests
 
         return [
             'season' => $season,
-            'ends_at' => Carbon::createFromFormat('Y-m', $season, self::TZ)->endOfMonth()->toIso8601String(),
+            'ends_at' => Carbon::createFromFormat('!Y-m', $season, self::TZ)->endOfMonth()->toIso8601String(),
             'top' => $top,
             'me' => ['place' => $place, 'points' => $mine],
         ];

@@ -58,7 +58,7 @@ export default function GameBacklog({ owner, mine, board, friends }: Props) {
         });
         saveBacklog(item.game.slug, to).catch(() => {
             setColumns(before);
-            toast.error(tr('Не вдалося оновити бэклог.'));
+            toast.error(tr('Не вдалося оновити беклог.'));
         });
     };
 
@@ -72,7 +72,7 @@ export default function GameBacklog({ owner, mine, board, friends }: Props) {
             <Head
                 title={
                     mine
-                        ? tr('Мій бэклог')
+                        ? tr('Мій беклог')
                         : tr('Ігри {name}', { name: owner.first_name })
                 }
             />
@@ -90,7 +90,7 @@ export default function GameBacklog({ owner, mine, board, friends }: Props) {
                             <Gamepad2 className="size-6 shrink-0 text-gc-lilac-200" />
                         )}
                         {mine
-                            ? tr('Мій бэклог')
+                            ? tr('Мій беклог')
                             : tr('Ігри {name}', { name: owner.first_name })}
                     </h1>
                     <p className="text-sm text-white/50">
@@ -98,7 +98,7 @@ export default function GameBacklog({ owner, mine, board, friends }: Props) {
                             ? tr(
                                   'Позначайте ігри на їхніх сторінках — тут вони збираються в чотири колонки.',
                               )
-                            : tr('{n} ігор у бэклозі', { n: total })}
+                            : tr('{n} ігор у беклозі', { n: total })}
                     </p>
                 </div>
             </div>
@@ -297,7 +297,7 @@ export default function GameBacklog({ owner, mine, board, friends }: Props) {
                                                     <button
                                                         type="button"
                                                         aria-label={tr(
-                                                            'Прибрати з бэклогу',
+                                                            'Прибрати з беклогу',
                                                         )}
                                                         onClick={() =>
                                                             move(item, s, null)

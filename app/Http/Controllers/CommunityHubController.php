@@ -52,7 +52,8 @@ class CommunityHubController extends Controller
     {
         app(Plugins::class)->ensure('community_calendar');
         $this->authorizeView($request, $community);
-        $month = Carbon::createFromFormat('Y-m', (string) $request->query('month', now('Europe/Kyiv')->format('Y-m')), 'Europe/Kyiv') ?: now('Europe/Kyiv');
+        // Завжди перше число: інакше Carbon бере сьогоднішній день, і 31-го «листопад» стає груднем.
+        $month = Carbon::createFromFormat('!Y-m', (string) $request->query('month', now('Europe/Kyiv')->format('Y-m')), 'Europe/Kyiv') ?: now('Europe/Kyiv')->startOfMonth();
         $from = $month->copy()->startOfMonth()->startOfWeek();
         $to = $month->copy()->endOfMonth()->endOfWeek();
 

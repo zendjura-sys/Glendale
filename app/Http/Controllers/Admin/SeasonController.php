@@ -22,7 +22,7 @@ class SeasonController extends Controller
     public function index(Request $request): Response
     {
         $current = $this->pass->currentKey();
-        $start = Carbon::createFromFormat('Y-m', $current, 'Europe/Kyiv')->startOfMonth();
+        $start = Carbon::createFromFormat('!Y-m', $current, 'Europe/Kyiv')->startOfMonth();
         // Попередній, поточний і три наступні місяці + усі вже налаштовані.
         $keys = collect(range(-1, 3))->map(fn (int $i) => $start->copy()->addMonthsNoOverflow($i)->format('Y-m'))
             ->merge(Season::query()->pluck('key'))->unique()->sortDesc()->values()->all();

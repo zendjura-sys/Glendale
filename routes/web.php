@@ -640,7 +640,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::get('deals', [GameDealsController::class, 'index'])->name('deals');
         Route::post('deals/subscribe', [GameDealsController::class, 'subscribe'])->name('deals.subscribe');
         Route::get('pc', [GameDealsController::class, 'pcShow'])->name('pc.show');
-        // Бэклог: «хочу — граю — пройшов — кинув».
+        // Беклог: «хочу — граю — пройшов — кинув».
         Route::get('backlog', [GameBacklogController::class, 'mine'])->name('backlog');
         Route::get('backlog/{user:username}', [GameBacklogController::class, 'show'])->name('backlog.user');
         Route::put('pc', [GameDealsController::class, 'pcSave'])->middleware('throttle:30,1')->name('pc.update');

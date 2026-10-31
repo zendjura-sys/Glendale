@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -26,8 +27,8 @@ import 'widgets.dart';
 //    розгортається в меню з рештою розділів.
 
 /// Пружина, як SNAP на сайті (lib/motion.ts): stiffness 420, damping 36.
-const _snap = Duration(milliseconds: 340);
-const _snapCurve = Curves.easeOutCubic;
+const _snap = Duration(milliseconds: 380);
+const _snapCurve = Curves.easeOutExpo;
 
 const _rose = Color(0xFFFF4D6D);
 
@@ -45,7 +46,10 @@ class _Badge extends StatelessWidget {
       constraints: BoxConstraints(minWidth: 16, minHeight: 16),
       padding: EdgeInsets.symmetric(horizontal: 4),
       alignment: Alignment.center,
-      decoration: BoxDecoration(color: _rose, borderRadius: BorderRadius.circular(8)),
+      decoration: BoxDecoration(
+        color: _rose,
+        borderRadius: BorderRadius.circular(8),
+      ),
       child: Text(count > 99 ? '99+' : '$count', style: body(10, color: Colors.white, weight: FontWeight.w700).copyWith(height: 1)),
     );
   }
@@ -57,9 +61,9 @@ class _Badge extends StatelessWidget {
 Widget _headerButton(IconData icon, String label, VoidCallback onTap, {int badge = 0}) {
   return Tooltip(
     message: label,
-    child: InkResponse(
+    child: ArcticPressable(
       onTap: onTap,
-      radius: 22,
+      scale: 0.9,
       child: SizedBox(
         width: 42,
         height: 42,
@@ -76,10 +80,9 @@ Widget _headerButton(IconData icon, String label, VoidCallback onTap, {int badge
   );
 }
 
-/// Висота капсули шапки: разом із верхнім відступом займає ту саму смугу, що й колишня шапка.
-const headerCapsuleHeight = siteBarHeight - 4;
 
-/// Плаваюча капсула шапки — за формою як острів-меню знизу: відступи по краях, повне скруглення.
+/// Плаваюча скляна капсула шапки (відступи 16/8, висота 56, радіус 28): стрічка пропливає
+/// під нею й розмивається (BackdropFilter 24).
 class HeaderCapsule extends StatelessWidget {
   const HeaderCapsule({required this.topInset, required this.child, super.key});
   final double topInset;
@@ -88,13 +91,14 @@ class HeaderCapsule extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.fromLTRB(12, topInset + 4, 12, 0),
-      child: MatteGlass(borderRadius: headerCapsuleHeight / 2, child: child),
+      padding: EdgeInsets.fromLTRB(16, topInset + headerTopGap, 16, 8),
+      child: ArcticDockSurface(radius: headerCapsuleHeight / 2, height: headerCapsuleHeight, child: child),
     );
   }
 }
 
-/// Шапка-капсула: матове скло, логотип, пошук і кнопки — як `Topbar` на сайті.
+/// Шапка-капсула: пошук на всю ширину, сповіщення й аватар. На телефоні без логотипа —
+/// він лише забирав місце; на планшеті ліворуч лишається назва GameCon.
 class TopBar extends StatelessWidget {
   const TopBar({required this.session, required this.player, required this.wide, required this.topInset, super.key});
   final Session session;
@@ -113,17 +117,16 @@ class TopBar extends StatelessWidget {
       child: Padding(
         padding: EdgeInsets.fromLTRB(wide ? 18 : 8, 0, wide ? 10 : 6, 0),
         child: SizedBox(
-          height: headerCapsuleHeight,
+          height: headerCapsuleHeight - 2,
           child: Row(
             children: [
-              GestureDetector(
-                onTap: () => context.go('/feed'),
-                child: SizedBox(
-                  width: wide ? sideNavWidth : null,
-                  child: Align(alignment: Alignment.centerLeft, child: wide ? Wordmark(size: 19) : LogoMark(size: 34)),
+              if (wide) ...[
+                GestureDetector(
+                  onTap: () => context.go('/feed'),
+                  child: SizedBox(width: sideNavWidth, child: Align(alignment: Alignment.centerLeft, child: Wordmark(size: 19))),
                 ),
-              ),
-              SizedBox(width: wide ? 12 : 8),
+                SizedBox(width: 12),
+              ],
               Expanded(
                 child: Align(
                   alignment: Alignment.centerLeft,
@@ -168,7 +171,7 @@ class MusicTopBar extends StatelessWidget {
       child: Padding(
         padding: EdgeInsets.fromLTRB(4, 0, 6, 0),
         child: SizedBox(
-          height: headerCapsuleHeight,
+          height: headerCapsuleHeight - 2,
           child: Row(
             children: [
               TextButton.icon(
@@ -183,13 +186,13 @@ class MusicTopBar extends StatelessWidget {
               Semantics(
                 button: true,
                 label: tr('Меню'),
-                child: InkResponse(
+                child: ArcticPressable(
                   key: const ValueKey('music-menu'),
                   onTap: () => showSectionsMenu(context, session, player, path),
-                  radius: 22,
+                  scale: 0.92,
                   child: Padding(
                     padding: EdgeInsets.all(4),
-                    child: Avatar(url: text(me['avatar_url']), name: text(me['name']) ?? tr('Я'), size: 34, frame: PlusMark.from(session.subscription.style)?.frame),
+                    child: IceRingAvatar(child: Avatar(url: text(me['avatar_url']), name: text(me['name']) ?? tr('Я'), size: 34, frame: PlusMark.from(session.subscription.style)?.frame)),
                   ),
                 ),
               ),
@@ -226,27 +229,73 @@ Future<void> showSectionsMenu(BuildContext context, Session session, TrackPlayer
   );
 }
 
-class _SearchField extends StatelessWidget {
+/// Поле пошуку в шапці: скляна капсула; від дотику грань плавно спалахує сапфіровим сяйвом,
+/// лупа стає акцентною — і відкривається пошук. На сторінці пошуку поле лишається «у фокусі».
+class _SearchField extends StatefulWidget {
+  @override
+  State<_SearchField> createState() => _SearchFieldState();
+}
+
+class _SearchFieldState extends State<_SearchField> {
+  bool focused = false;
+
+  Future<void> _open() async {
+    setState(() => focused = true);
+    // Дати сяйву спалахнути, перш ніж екран зміниться.
+    await Future<void>.delayed(const Duration(milliseconds: 140));
+    if (!mounted) return;
+    await context.push('/search');
+    if (mounted) setState(() => focused = false);
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: field,
-      borderRadius: BorderRadius.circular(20),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(20),
-        onTap: () => context.push('/search'),
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          child: Row(
-            children: [
-              Icon(LucideIcons.search, color: muted, size: 17),
-              SizedBox(width: 8),
-              // Коротка підказка — уміщується цілою навіть на вузькому телефоні.
-              Expanded(child: Text(tr('Пошук'), maxLines: 1, style: body(13.5, color: muted))),
-            ],
+    final onSearch = GoRouterState.of(context).uri.path == '/search';
+    final active = focused || onSearch;
+    final light = palette.isLight;
+    final still = MediaQuery.disableAnimationsOf(context);
+    return ArcticGlassContainer(
+      radius: 20,
+      height: 40,
+      glowing: active,
+      shadows: const [],
+      fill: LinearGradient(colors: light ? const [Color(0xB3FFFFFF), Color(0x8CFFFFFF)] : const [Color(0x14FFFFFF), Color(0x0AFFFFFF)]),
+      onTap: _open,
+      padding: EdgeInsets.symmetric(horizontal: 12),
+      child: Row(
+        children: [
+          TweenAnimationBuilder<Color?>(
+            tween: ColorTween(end: active ? (light ? AppColors.accentPrimary : AppColors.accentCyan) : muted),
+            duration: still ? Duration.zero : const Duration(milliseconds: 220),
+            builder: (_, color, _) => Icon(LucideIcons.search, color: color, size: 17),
           ),
+          SizedBox(width: 8),
+          // Коротка підказка — уміщується цілою навіть на вузькому телефоні.
+          Expanded(child: Text(tr('Пошук'), maxLines: 1, style: body(13.5, color: muted))),
+        ],
+      ),
+    );
+  }
+}
+
+/// Аватар у шапці з тонким крижаним кільцем 1.5px.
+class IceRingAvatar extends StatelessWidget {
+  const IceRingAvatar({required this.child, super.key});
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(1.5),
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [AppColors.accentCyan.withValues(alpha: 0.9), AppColors.accentPrimary.withValues(alpha: 0.5)],
         ),
       ),
+      child: child,
     );
   }
 }
@@ -313,7 +362,7 @@ class _UserMenu extends StatelessWidget {
       child: Padding(
         padding: EdgeInsets.symmetric(horizontal: 4, vertical: 4),
         child: Row(mainAxisSize: MainAxisSize.min, children: [
-          Avatar(url: text(me['avatar_url']), name: text(me['name']) ?? tr('Я'), size: 34),
+          IceRingAvatar(child: Avatar(url: text(me['avatar_url']), name: text(me['name']) ?? tr('Я'), size: 34)),
           if (wide) ...[
             SizedBox(width: 8),
             Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
@@ -491,7 +540,10 @@ class _IslandNavState extends State<IslandNav> {
   bool dragging = false;
 
   void _set(bool value) {
-    if (value != open) setState(() => open = value);
+    if (value == open) return;
+    // Тактильний «клац» у момент фіксації меню (відкрили чи згорнули).
+    HapticFeedback.mediumImpact();
+    setState(() => open = value);
   }
 
   @override
@@ -508,9 +560,10 @@ class _IslandNavState extends State<IslandNav> {
 
   void _onDragEnd(DragEndDetails d) {
     final v = d.primaryVelocity ?? 0;
+    final next = !open && (drag < -24 || v < -300) ? true : (open && (drag > 48 || v > 400) ? false : open);
+    if (next != open) HapticFeedback.mediumImpact();
     setState(() {
-      if (!open && (drag < -24 || v < -300)) open = true;
-      if (open && (drag > 48 || v > 400)) open = false;
+      open = next;
       drag = 0;
       dragging = false;
     });
@@ -528,19 +581,27 @@ class _IslandNavState extends State<IslandNav> {
     final rest = [for (final item in visibleNav(session.modules)) if (!tabs.contains(item.path)) item];
     final restActive = rest.any((i) => _isActive(i.path, widget.path, session.username));
     final restBadge = rest.any((i) => i.path == '/messages') ? session.unreadChats : 0;
+    final tabItems = [for (final path in tabs) ?navItem(path)];
+    final activeTab = tabItems.indexWhere((item) => _isActive(item.path, widget.path, session.username));
     final media = MediaQuery.of(context);
     final systemBottom = media.viewPadding.bottom;
-    final maxMenu = media.size.height - media.viewPadding.top - systemBottom - 144;
+    final maxMenu = media.size.height - media.viewPadding.top - systemBottom - 160;
 
     final island = AnimatedContainer(
       duration: _motion(context, dragging ? Duration.zero : _snap),
       curve: _snapCurve,
       transform: Matrix4.translationValues(0, drag * 0.22, 0),
-      // Плаваючий док «Spatial Glass» (розмиття 24, радіус 32); розгорнутий — меню розділів.
-      child: ArcticDockSurface(
+      // Плаваючий док із матового скла (радіус 32); розгорнутий — меню розділів, і розмиття
+      // плавно густішає, щоб меню читалося над стрічкою.
+      child: TweenAnimationBuilder<double>(
+        tween: Tween(end: open ? AppBlur.dock + 8 : AppBlur.dock),
+        duration: _motion(context, _snap),
+        curve: _snapCurve,
+        builder: (context, blur, child) => ArcticDockSurface(blur: blur, child: child!),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            // Язичок свайп-меню: компактна крижана капсула; від початку свайпу — сапфірове сяйво.
             Semantics(
               button: true,
               label: open ? tr('Згорнути меню') : tr('Меню'),
@@ -550,19 +611,19 @@ class _IslandNavState extends State<IslandNav> {
                 child: SizedBox(
                   height: 12,
                   width: double.infinity,
-                  // Язичок майже впритул до верхнього краю острова (як на сайті).
                   child: Stack(
                     alignment: Alignment.topCenter,
                     children: [
                       AnimatedContainer(
-                        margin: const EdgeInsets.only(top: 5),
-                        duration: _motion(context, Duration(milliseconds: 200)),
-                        width: 36,
-                        height: 4,
+                        margin: const EdgeInsets.only(top: 6),
+                        duration: _motion(context, const Duration(milliseconds: 200)),
+                        width: 32,
+                        height: 3.5,
                         decoration: BoxDecoration(
-                          color: restActive || open ? (palette.isLight ? primary : AppColors.accentCyan) : fg.withValues(alpha: 0.24),
-                          borderRadius: BorderRadius.circular(4),
-                          boxShadow: restActive || open ? iceGlow(strength: 0.7) : const [],
+                          color: dragging || open || restActive
+                              ? AppColors.accentCyan.withValues(alpha: palette.isLight ? 0.55 : 0.75)
+                              : (palette.isLight ? const Color.fromRGBO(10, 132, 255, 0.25) : const Color.fromRGBO(255, 255, 255, 0.28)),
+                          borderRadius: BorderRadius.circular(2),
                         ),
                       ),
                       if (restBadge > 0 && !open)
@@ -570,7 +631,7 @@ class _IslandNavState extends State<IslandNav> {
                           top: 4,
                           left: 0,
                           right: 0,
-                          child: Center(child: Transform.translate(offset: Offset(28, 0), child: Container(width: 8, height: 8, decoration: BoxDecoration(color: _rose, shape: BoxShape.circle)))),
+                          child: Center(child: Transform.translate(offset: const Offset(26, 0), child: Container(width: 7, height: 7, decoration: const BoxDecoration(color: _rose, shape: BoxShape.circle)))),
                         ),
                     ],
                   ),
@@ -595,21 +656,17 @@ class _IslandNavState extends State<IslandNav> {
                     : SizedBox(width: double.infinity),
               ),
             ),
+            // Вкладки з перетічною світловою капсулою під активною.
             Padding(
-              padding: EdgeInsets.fromLTRB(4, 0, 4, 0),
-              child: Row(
-                children: [
-                  for (final path in tabs)
-                    if (navItem(path) case final item?)
-                      Expanded(
-                        child: _Tab(
-                          item: item,
-                          active: !open && _isActive(path, widget.path, session.username),
-                          badge: path == '/messages' ? session.unreadChats : 0,
-                          onTap: () => _go(path),
-                        ),
-                      ),
+              padding: EdgeInsets.fromLTRB(4, 0, 4, 4),
+              child: ArcticDockTabs(
+                // Язичок 12 + вкладки 48 + відступ 4 = висота доку 64.
+                height: 48,
+                items: [
+                  for (final item in tabItems) ArcticDockItem(icon: item.icon, activeIcon: item.activeIcon, label: item.label, badge: item.path == '/messages' && session.unreadChats > 0 ? _Badge(session.unreadChats) : null),
                 ],
+                current: open || activeTab < 0 ? null : activeTab,
+                onTap: (i) => _go(tabItems[i].path),
               ),
             ),
           ],
@@ -673,22 +730,6 @@ class _IslandNavState extends State<IslandNav> {
   }
 }
 
-/// Вкладка острова — вкладка доку «Spatial Glass»: ціанова іконка з крижаною крапкою під нею.
-class _Tab extends StatelessWidget {
-  const _Tab({required this.item, required this.active, required this.badge, required this.onTap});
-  final NavItem item;
-  final bool active;
-  final int badge;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) => ArcticDockTab(
-    item: ArcticDockItem(icon: item.icon, activeIcon: item.activeIcon, label: item.label, badge: badge > 0 ? _Badge(badge) : null),
-    active: active,
-    onTap: onTap,
-  );
-}
-
 /// Вміст розгорнутого острова: профіль, GameCon+, решта розділів і службові посилання — пласко, без плиток.
 class MenuContent extends StatelessWidget {
   const MenuContent({required this.session, required this.player, required this.path, required this.rest, required this.onGo, required this.onClose, super.key});
@@ -703,18 +744,20 @@ class MenuContent extends StatelessWidget {
   Widget build(BuildContext context) {
     final me = session.me ?? const {};
     Widget row(IconData icon, String label, VoidCallback onTap, {Color? color}) {
-      return InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: ConstrainedBox(
-          constraints: BoxConstraints(minHeight: 44),
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 8),
-            child: Row(children: [
-              Icon(icon, size: 19, color: color ?? ink.withValues(alpha: 0.5)),
-              SizedBox(width: 12),
-              Expanded(child: Text(label, style: body(15, color: color ?? ink.withValues(alpha: 0.85), weight: FontWeight.w500))),
-            ]),
+      // Рядки меню з'являються каскадом під час розгортання й пружно стискаються від дотику.
+      return ArcticCascade(
+        child: ArcticPressable(
+          onTap: onTap,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: 44),
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 8),
+              child: Row(children: [
+                Icon(icon, size: 19, color: color ?? ink.withValues(alpha: 0.5)),
+                SizedBox(width: 12),
+                Expanded(child: Text(label, style: body(15, color: color ?? ink.withValues(alpha: 0.85), weight: FontWeight.w500))),
+              ]),
+            ),
           ),
         ),
       );
@@ -723,9 +766,8 @@ class MenuContent extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        InkWell(
+        ArcticPressable(
           onTap: () => onGo('/profile'),
-          borderRadius: BorderRadius.circular(12),
           child: Padding(
             padding: EdgeInsets.all(8),
             child: Row(children: [
@@ -756,9 +798,10 @@ class MenuContent extends StatelessWidget {
               Builder(builder: (context) {
                 final active = _isActive(item.path, path, session.username);
                 final badge = item.path == '/messages' ? session.unreadChats : 0;
-                return InkWell(
+                return ArcticCascade(
+                  child: ArcticPressable(
                   onTap: () => onGo(item.path),
-                  borderRadius: BorderRadius.circular(12),
+                  scale: 0.92,
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -770,6 +813,7 @@ class MenuContent extends StatelessWidget {
                       Text(item.label, textAlign: TextAlign.center, maxLines: 2, style: body(12, color: active ? primary : ink.withValues(alpha: 0.8), weight: FontWeight.w500).copyWith(height: 1.15)),
                     ],
                   ),
+                  ),
                 );
               }),
           ],
@@ -779,6 +823,14 @@ class MenuContent extends StatelessWidget {
         row(LucideIcons.bookmark, tr('Збережене'), () => onGo('/saved')),
         row(LucideIcons.clock, tr('Прочитати пізніше'), () => onGo('/later')),
         row(LucideIcons.mic, tr('Подкасти'), () => onGo('/podcasts')),
+        // Розділи-плагіни сайту — лише якщо ввімкнені (як на сайті).
+        if (session.pluginOn('tier_lists')) row(LucideIcons.listOrdered, tr('Тір-листи'), () => onGo('/tierlists')),
+        if (session.pluginOn('duels')) row(LucideIcons.swords, tr('Дуелі'), () => onGo('/duels')),
+        if (session.pluginOn('ideas_board')) row(LucideIcons.lightbulb, tr('Дошка ідей'), () => onGo('/ideas')),
+        if (session.modules?.contains('articles') ?? false) row(LucideIcons.bookOpen, tr('Статті'), () => onGo('/articles')),
+        if (session.pluginOn('game_deals') || session.pluginOn('game_giveaways')) row(LucideIcons.badgePercent, tr('Знижки й роздачі'), () => onGo('/games/deals')),
+        if (session.pluginOn('game_backlog')) row(LucideIcons.listChecks, tr('Мій беклог'), () => onGo('/games/backlog')),
+        if (session.pluginOn('nick_generator')) row(LucideIcons.wandSparkles, tr('Генератор ніків'), () => onGo('/tools/nicknames')),
         row(LucideIcons.filePen, tr('Чернетки'), () => onGo('/drafts')),
         row(LucideIcons.star, tr('Обрані повідомлення'), () => onGo('/starred')),
         row(LucideIcons.panelBottom, tr('Налаштувати нижню панель'), () => onGo('/settings?tab=app')),

@@ -37,6 +37,8 @@ import 'offline_music.dart';
 import 'party.dart';
 import 'people.dart';
 import 'photos.dart';
+import 'parity.dart';
+import 'play_extras.dart';
 import 'playing.dart';
 import 'push.dart';
 import 'season.dart';
@@ -147,6 +149,11 @@ Future<void> main() async {
                   GoRoute(path: 'members', builder: (_, state) => CommunityMembersScreen(slug: state.pathParameters['slug']!, tab: state.uri.queryParameters['tab'] ?? 'all')),
                   GoRoute(path: 'settings', builder: (_, state) => CommunitySettingsScreen(slug: state.pathParameters['slug']!)),
                   GoRoute(path: 'photos', builder: (_, state) => PhotosScreen(community: state.pathParameters['slug'])),
+                  GoRoute(path: 'channels', builder: (_, state) => CommunityChannelsScreen(slug: state.pathParameters['slug']!)),
+                  GoRoute(path: 'calendar', builder: (_, state) => CommunityCalendarScreen(slug: state.pathParameters['slug']!)),
+                  GoRoute(path: 'wiki', builder: (_, state) => CommunityWikiScreen(slug: state.pathParameters['slug']!), routes: [
+                    GoRoute(path: ':page', builder: (_, state) => CommunityWikiScreen(key: ValueKey(state.pathParameters['page']), slug: state.pathParameters['slug']!, page: state.pathParameters['page'])),
+                  ]),
                 ],
               ),
             ],
@@ -215,6 +222,22 @@ Future<void> main() async {
           GoRoute(path: '/saved', builder: (_, _) => const SavedScreen()),
           GoRoute(path: '/later', builder: (_, _) => const ReadLaterScreen()),
           GoRoute(path: '/podcasts', builder: (_, _) => const PodcastsScreen()),
+          GoRoute(path: '/ideas', builder: (_, _) => const IdeasScreen()),
+          GoRoute(path: '/duels', builder: (_, state) => DuelsScreen(to: state.uri.queryParameters['to'])),
+          GoRoute(path: '/tierlists', builder: (_, _) => const TierListsScreen()),
+          GoRoute(path: '/tierlists/new', builder: (_, _) => const TierListCreateScreen()),
+          GoRoute(path: '/tierlists/:id/edit', builder: (_, state) => TierListCreateScreen(key: ValueKey('edit-${state.pathParameters['id']}'), id: int.tryParse(state.pathParameters['id']!))),
+          GoRoute(path: '/t/:tag', builder: (_, state) => TopicScreen(key: ValueKey(state.pathParameters['tag']), tag: state.pathParameters['tag']!)),
+          GoRoute(path: '/articles', builder: (_, _) => const ArticlesScreen()),
+          GoRoute(path: '/articles/new', builder: (_, _) => const ArticleEditScreen()),
+          GoRoute(path: '/articles/:slug', builder: (_, state) => ArticleScreen(key: ValueKey(state.pathParameters['slug']), slug: state.pathParameters['slug']!)),
+          GoRoute(path: '/articles/:slug/edit', builder: (_, state) => ArticleEditScreen(key: ValueKey('edit-${state.pathParameters['slug']}'), slug: state.pathParameters['slug'])),
+          GoRoute(path: '/tools/nicknames', builder: (_, _) => const NicknamesScreen()),
+          GoRoute(path: '/memes/new', builder: (_, _) => const MemeScreen()),
+          GoRoute(path: '/settings/links', builder: (_, _) => const BioLinksScreen()),
+          GoRoute(path: '/settings/account-type', builder: (_, _) => const AccountTypeScreen()),
+          GoRoute(path: '/settings/pixel-avatar', builder: (_, _) => const PixelAvatarScreen()),
+          GoRoute(path: '/tierlists/:id', builder: (_, state) => TierListScreen(key: ValueKey(state.pathParameters['id']), id: int.tryParse(state.pathParameters['id']!) ?? 0)),
           GoRoute(path: '/podcasts/:id', builder: (_, state) => PodcastScreen(key: ValueKey(state.pathParameters['id']), id: int.tryParse(state.pathParameters['id']!) ?? 0)),
           GoRoute(path: '/keyword-alerts', builder: (_, _) => const KeywordAlertsScreen()),
           GoRoute(path: '/help', builder: (_, _) => const HelpScreen()),
@@ -258,6 +281,11 @@ Future<void> main() async {
             path: '/games',
             builder: (_, _) => const GamesScreen(),
             routes: [
+              // Перед :slug — щоб «deals» і «backlog» не сприймались як гра.
+              GoRoute(path: 'deals', builder: (_, _) => const DealsScreen()),
+              GoRoute(path: 'backlog', builder: (_, _) => const BacklogScreen(), routes: [
+                GoRoute(path: ':username', builder: (_, state) => BacklogScreen(key: ValueKey(state.pathParameters['username']), username: state.pathParameters['username'])),
+              ]),
               GoRoute(path: ':slug', builder: (_, state) => GameScreen(key: ValueKey(state.pathParameters['slug']), slug: state.pathParameters['slug']!)),
             ],
           ),
@@ -324,6 +352,7 @@ class GameConApp extends StatelessWidget {
       title: 'GameCon',
       debugShowCheckedModeBanner: false,
       theme: gameConTheme(),
+      scrollBehavior: const ArcticScrollBehavior(),
       routerConfig: router,
     );
   }

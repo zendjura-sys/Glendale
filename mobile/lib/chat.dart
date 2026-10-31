@@ -1012,7 +1012,6 @@ class _ChatScreenState extends State<ChatScreen> {
             decoration: BoxDecoration(
               gradient: buttonGradient,
               shape: BoxShape.circle,
-              boxShadow: recording ? [BoxShadow(color: primary.withValues(alpha: 0.55), blurRadius: 18)] : null,
             ),
             child: const Icon(LucideIcons.mic, color: Colors.white, size: 21),
           ),
@@ -1028,7 +1027,7 @@ class _ChatScreenState extends State<ChatScreen> {
     return Container(
       height: 44,
       padding: const EdgeInsets.symmetric(horizontal: 6),
-      decoration: BoxDecoration(color: field, borderRadius: BorderRadius.circular(22), border: Border.all(color: lineStrong)),
+      decoration: BoxDecoration(color: field, borderRadius: BorderRadius.circular(22)),
       child: Row(children: [
         if (locked)
           IconButton(
@@ -1087,8 +1086,8 @@ class _ChatScreenState extends State<ChatScreen> {
         fillColor: field,
         isDense: true,
         contentPadding: const EdgeInsets.fromLTRB(14, 12, 6, 12),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide(color: lineStrong)),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide(color: lineStrong)),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide.none),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide.none),
         focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide(color: primary, width: 1.4)),
         suffixIcon: editing == null || aiWriter
             ? Row(mainAxisSize: MainAxisSize.min, children: [

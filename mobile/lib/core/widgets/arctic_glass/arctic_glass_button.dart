@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../theme.dart' show palette, ink, body;
 import '../../theme/arctic_glass_theme.dart';
 import 'arctic_glass_container.dart';
+import 'arctic_pressable.dart';
 
 enum ArcticButtonKind { primary, glass, danger }
 
@@ -84,26 +85,20 @@ class ArcticGlassButton extends StatelessWidget {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           );
-    final glow = kind == ArcticButtonKind.danger ? _danger : AppColors.accentPrimary;
     final shape = BorderRadius.circular(AppRadii.control);
-    return Material(
-      type: MaterialType.transparency,
-      child: InkWell(
-        onTap: enabled ? onPressed : null,
-        borderRadius: shape,
-        child: Ink(
-          height: height,
-          padding: padding,
-          decoration: BoxDecoration(
-            gradient: gradient,
-            borderRadius: shape,
-            border: Border(
-              top: BorderSide(color: Colors.white.withValues(alpha: enabled ? 0.28 : 0.1)),
-            ),
-            boxShadow: enabled ? [BoxShadow(color: glow.withValues(alpha: 0.45), blurRadius: 22, offset: const Offset(0, 8), spreadRadius: -10)] : const [],
+    return ArcticPressable(
+      onTap: enabled ? onPressed : null,
+      child: Container(
+        height: height,
+        padding: padding,
+        decoration: BoxDecoration(
+          gradient: gradient,
+          borderRadius: shape,
+          border: Border(
+            top: BorderSide(color: Colors.white.withValues(alpha: enabled ? 0.32 : 0.1)),
           ),
-          child: content,
         ),
+        child: content,
       ),
     );
   }

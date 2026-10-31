@@ -453,7 +453,7 @@ class _CreateFamilyScreenState extends State<CreateFamilyScreen> {
                   height: 76,
                   child: logo == null
                       ? Container(
-                          decoration: BoxDecoration(color: fg.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(18), border: Border.all(color: line)),
+                          decoration: BoxDecoration(color: fg.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(18)),
                           child: Icon(LucideIcons.imagePlus, color: muted),
                         )
                       : ClipRRect(borderRadius: BorderRadius.circular(18), child: Image(image: XFileImage(logo!), fit: BoxFit.cover)),
@@ -688,7 +688,7 @@ class _FamilyScreenState extends State<FamilyScreen> {
         right: 16,
         bottom: 16 + ShellChrome.bottomOf(context),
         child: DecoratedBox(
-          decoration: BoxDecoration(borderRadius: BorderRadius.circular(18), boxShadow: [BoxShadow(color: indigo.withValues(alpha: 0.5), blurRadius: 24, offset: const Offset(0, 10), spreadRadius: -8)]),
+          decoration: BoxDecoration(borderRadius: BorderRadius.circular(18)),
           child: PrimaryButton(label: tr('Звіт'), icon: LucideIcons.filePlus, expand: false, onPressed: _report),
         ),
       ),
@@ -808,7 +808,7 @@ class _FamilyHeader extends StatelessWidget {
                 Expanded(
                   child: Container(
                     padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(color: fg.withValues(alpha: 0.04), borderRadius: BorderRadius.circular(14), border: Border.all(color: line)),
+                    decoration: BoxDecoration(color: fg.withValues(alpha: 0.04), borderRadius: BorderRadius.circular(14)),
                     child: Row(children: [
                       Expanded(
                         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -1186,7 +1186,7 @@ class ReportCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: fg.withValues(alpha: 0.035), borderRadius: BorderRadius.circular(16), border: Border.all(color: line)),
+      decoration: BoxDecoration(color: fg.withValues(alpha: 0.035), borderRadius: BorderRadius.circular(16)),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
           Text('#${report['id']} ', style: body(12, color: faint)),
@@ -1459,7 +1459,7 @@ class _ReportFormState extends State<_ReportForm> {
                 child: Container(
                   width: 72,
                   height: 72,
-                  decoration: BoxDecoration(color: fg.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(12), border: Border.all(color: line)),
+                  decoration: BoxDecoration(color: fg.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(12)),
                   child: Icon(LucideIcons.imagePlus, color: muted),
                 ),
               ),
@@ -1519,7 +1519,7 @@ class _Stepper extends StatelessWidget {
         );
     return Container(
       padding: const EdgeInsets.fromLTRB(12, 10, 8, 10),
-      decoration: BoxDecoration(color: fg.withValues(alpha: 0.04), borderRadius: BorderRadius.circular(14), border: Border.all(color: line)),
+      decoration: BoxDecoration(color: fg.withValues(alpha: 0.04), borderRadius: BorderRadius.circular(14)),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text(label, maxLines: 1, softWrap: false, overflow: TextOverflow.fade, style: body(12.5, color: muted)),
         const SizedBox(height: 4),

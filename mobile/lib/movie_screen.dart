@@ -748,7 +748,6 @@ class _Hero extends StatelessWidget {
               child: Container(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(24),
-                  boxShadow: const [BoxShadow(color: Color(0x99000000), blurRadius: 30, offset: Offset(0, 16), spreadRadius: -8)],
                 ),
                 child: NetImage(cover, radius: 24),
               ),
@@ -1188,7 +1187,7 @@ class _Hint extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
       padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
-      decoration: BoxDecoration(borderRadius: BorderRadius.circular(20), border: Border.all(color: lineStrong), color: fg.withValues(alpha: 0.03)),
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(20), color: fg.withValues(alpha: 0.03)),
       child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Expanded(child: Text(text, style: body(13.5, color: muted).copyWith(height: 1.45))),
         IconButton(onPressed: onClose, icon: Icon(LucideIcons.circleX, color: muted, size: 22)),

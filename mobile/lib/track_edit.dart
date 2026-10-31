@@ -475,7 +475,7 @@ class CoverPreview extends StatelessWidget {
       height: size,
       child: provider == null
           ? Container(
-              decoration: BoxDecoration(color: fg.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(14), border: Border.all(color: line)),
+              decoration: BoxDecoration(color: fg.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(14)),
               child: Icon(LucideIcons.imagePlus, color: muted),
             )
           : ClipRRect(borderRadius: BorderRadius.circular(14), child: Image(image: provider, fit: BoxFit.cover, errorBuilder: (_, _, _) => const SizedBox())),

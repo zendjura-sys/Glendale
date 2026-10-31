@@ -67,26 +67,27 @@ const neonPalette = GcPalette(
   brand: [AppColors.accentPrimary, Color(0xFF05ABFF), AppColors.accentCyan],
 );
 
-/// «Крижана Арктика» — холодне біле скло, блакитний лід, чорнильний текст.
+/// Світла тема — «Alpine Glacier Daylight»: льодовикове блакитне тло, оптичне молочне скло
+/// з білою гранню й сапфіровим контуром, чорнильні заголовки.
 const arcticPalette = GcPalette(
   brightness: Brightness.light,
-  voidColor: Color(0xFFE9F1F8),
-  abyss: Color(0xFFF3F8FC),
-  deep: Color(0xFFF7FBFF),
-  popover: Color(0xFFF7FBFF),
-  ink: Color(0xFF0D1B2E),
-  soft: Color(0xFF24364F),
-  muted: Color(0xFF5A6D85),
-  faint: Color(0xFF8797AB),
+  voidColor: Color(0xFFE2ECF8),
+  abyss: Color(0xFFEEF4FC),
+  deep: Color(0xFFF4F8FD),
+  popover: Color(0xFFF6FAFF),
+  ink: AppColors.lightTitle,
+  soft: AppColors.lightBody,
+  muted: AppColors.lightMuted,
+  faint: Color(0xFF8A9AB0),
   primary: Color(0xFF0A6FE0),
-  card: Color(0xFFFBFDFF),
-  cardTop: Color(0xFFFBFDFF),
+  card: Color.fromRGBO(255, 255, 255, 0.46),
+  cardTop: Color.fromRGBO(255, 255, 255, 0.72),
   raised: Color(0xFFFFFFFF),
-  field: Color(0xFFEDF2F8),
-  bar: Color(0xFFFCFEFF),
-  line: Color(0x170D1B2E),
-  lineStrong: Color(0x1F0D1B2E),
-  fg: Color(0xFF0D1B2E),
+  field: Color.fromRGBO(255, 255, 255, 0.70),
+  bar: Color.fromRGBO(255, 255, 255, 0.78),
+  line: Color(0x170B1528),
+  lineStrong: Color(0x1F0B1528),
+  fg: AppColors.lightTitle,
   brand: [Color(0xFF0A6FE0), Color(0xFF0A8FE6), Color(0xFF00A8E0)],
 );
 
@@ -139,10 +140,8 @@ LinearGradient get brand => LinearGradient(
 /// Кнопки — сапфіровий градієнт accentGradient.
 LinearGradient get buttonGradient => palette.isLight ? LinearGradient(colors: [primary, primary]) : AppColors.accentGradient;
 
-/// Скло карток: діагональ білий .09 → .02 (у світлій темі — молочне скло).
-LinearGradient get glassGradient => palette.isLight
-    ? LinearGradient(colors: [cardTop, card], begin: Alignment.topCenter, end: Alignment.bottomCenter)
-    : AppColors.glassFill;
+/// Скло карток — з токенів теми (ArcticGlassThemeExtension).
+Gradient get glassGradient => (palette.isLight ? ArcticGlassThemeExtension.daylight : ArcticGlassThemeExtension.dark).glassFill;
 
 /// Montserrat — той самий шрифт, що й на сайті, вбудований у застосунок.
 TextStyle get onest => TextStyle(fontFamily: 'Montserrat', color: ink);
@@ -162,6 +161,7 @@ ThemeData gameConTheme() {
     fontFamily: 'Montserrat',
   );
   return base.copyWith(
+    extensions: [palette.isLight ? ArcticGlassThemeExtension.daylight : ArcticGlassThemeExtension.dark],
     textTheme: base.textTheme.apply(fontFamily: 'Montserrat', bodyColor: ink, displayColor: ink),
     splashColor: cyan.withValues(alpha: 0.10),
     highlightColor: Colors.white.withValues(alpha: 0.03),
@@ -171,22 +171,25 @@ ThemeData gameConTheme() {
       backgroundColor: popover,
       contentTextStyle: onest.copyWith(color: ink),
       behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14), side: BorderSide(color: lineStrong)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
     ),
     bottomSheetTheme: BottomSheetThemeData(backgroundColor: popover, surfaceTintColor: Colors.transparent, showDragHandle: false, elevation: 0),
     appBarTheme: AppBarTheme(backgroundColor: Colors.transparent, surfaceTintColor: Colors.transparent, elevation: 0, scrolledUnderElevation: 0, foregroundColor: ink),
     dialogTheme: DialogThemeData(
       backgroundColor: popover,
       surfaceTintColor: Colors.transparent,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadii.dock), side: BorderSide(color: lineStrong)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadii.dock)),
       titleTextStyle: display(18),
       contentTextStyle: body(14, color: soft),
     ),
+    // Меню без тіні й обводки — лише скляна заливка.
     popupMenuTheme: PopupMenuThemeData(
+      elevation: 0,
+      shadowColor: Colors.transparent,
       color: popover,
       surfaceTintColor: Colors.transparent,
       textStyle: body(14),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: lineStrong)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
     ),
     switchTheme: SwitchThemeData(
       thumbColor: WidgetStateProperty.resolveWith((s) => Colors.white),
@@ -202,12 +205,13 @@ ThemeData gameConTheme() {
   );
 }
 
-/// Сторінки прозорі (фон — спільна «аврора»), тож замість зуму — м’який перехресний фейд зі зсувом.
+/// Сторінки прозорі (фон — спільне тло), тож замість зуму — м’який перехресний фейд зі зсувом (220 мс):
+/// і переходи між вкладками доку, і відкриття екранів.
 class _FadeThrough extends PageTransitionsBuilder {
   const _FadeThrough();
 
   @override
-  Duration get transitionDuration => const Duration(milliseconds: 280);
+  Duration get transitionDuration => const Duration(milliseconds: 220);
 
   @override
   Widget buildTransitions<T>(PageRoute<T> route, BuildContext context, Animation<double> animation, Animation<double> secondaryAnimation, Widget child) {
@@ -224,4 +228,12 @@ class _FadeThrough extends PageTransitionsBuilder {
       ),
     );
   }
+}
+
+/// «Яблучна» прокрутка всюди: пружний відскок на краях, і список тягнеться навіть короткий.
+class ArcticScrollBehavior extends MaterialScrollBehavior {
+  const ArcticScrollBehavior();
+
+  @override
+  ScrollPhysics getScrollPhysics(BuildContext context) => const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics());
 }
