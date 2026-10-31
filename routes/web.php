@@ -67,6 +67,7 @@ use App\Http\Controllers\NicknameController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\NowPlayingController;
 use App\Http\Controllers\OAuth;
+use App\Http\Controllers\OgImageController;
 use App\Http\Controllers\PartyController;
 use App\Http\Controllers\PeopleController;
 use App\Http\Controllers\PhoneController;
@@ -92,6 +93,7 @@ use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\SpotifyController;
 use App\Http\Controllers\StartController;
 use App\Http\Controllers\StatusController;
+use App\Http\Controllers\StatusPageController;
 use App\Http\Controllers\StoryController;
 use App\Http\Controllers\SupportController;
 use App\Http\Controllers\TeammateController;
@@ -129,6 +131,11 @@ Route::get('refund-policy', [LegalController::class, 'refund'])->name('legal.ref
 Route::get('pricing', [LegalController::class, 'pricing'])->name('legal.pricing');
 Route::get('sitemap.xml', SitemapController::class)->middleware('throttle:30,1')->name('sitemap');
 Route::get('contacts', [LegalController::class, 'contacts'])->name('legal.contacts');
+
+// Сторінка статусу й картки для прев’ю посилань — відкриті без входу.
+Route::get('status', StatusPageController::class)->middleware('throttle:60,1')->name('status.page');
+Route::get('og/u/{username}.png', [OgImageController::class, 'profile'])->where('username', '[A-Za-z0-9_.]{3,32}')->middleware('throttle:120,1')->name('og.profile');
+Route::get('og/c/{slug}.png', [OgImageController::class, 'community'])->where('slug', '[A-Za-z0-9_-]{2,64}')->middleware('throttle:120,1')->name('og.community');
 Route::get('child-safety', [LegalController::class, 'childSafety'])->name('legal.child-safety');
 
 // Довідка для новачків — відкрита без входу (тексти: App\Support\Help\HelpCatalog).
@@ -957,6 +964,12 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     Route::post('admin/spellcheck/words', [Admin\SpellcheckController::class, 'addWord'])->middleware('throttle:30,1')->name('admin.spellcheck.words');
     Route::prefix('admin')->name('admin.')->middleware('admin')->group(function () {
         Route::get('/', Admin\DashboardController::class)->name('dashboard');
+        Route::get('status', [Admin\StatusController::class, 'index'])->name('status.index');
+        Route::post('status', [Admin\StatusController::class, 'store'])->name('status.store');
+        Route::post('status/{incident}', [Admin\StatusController::class, 'update'])->whereNumber('incident')->name('status.update');
+        Route::delete('status/{incident}', [Admin\StatusController::class, 'destroy'])->whereNumber('incident')->name('status.destroy');
+        Route::get('broadcasts', [Admin\BroadcastController::class, 'index'])->name('broadcasts.index');
+        Route::post('broadcasts', [Admin\BroadcastController::class, 'store'])->middleware('throttle:5,10')->name('broadcasts.store');
         Route::get('users', [Admin\UserController::class, 'index'])->name('users.index');
         Route::post('users/bulk', [Admin\UserController::class, 'bulk'])->name('users.bulk');
         Route::patch('users/{user}', [Admin\UserController::class, 'update'])->name('users.update');

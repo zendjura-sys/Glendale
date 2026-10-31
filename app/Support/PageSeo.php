@@ -2,8 +2,11 @@
 
 namespace App\Support;
 
+use App\Models\Community;
 use App\Models\Game;
 use App\Models\User;
+use App\Services\Seo\OgCards;
+use App\Support\Plugins\Plugins;
 use Illuminate\Support\Str;
 
 /**
@@ -66,7 +69,8 @@ class PageSeo
         return [
             'seoTitle' => $user->name.' (@'.$user->username.')',
             'seoDescription' => $description,
-            'seoImage' => $user->avatar_path ? $user->avatar_url : null,
+            'seoImage' => app(Plugins::class)->on('og_cards') ? app(OgCards::class)->profileUrl($user, $open) : ($user->avatar_path ? $user->avatar_url : null),
+            'seoImageSize' => app(Plugins::class)->on('og_cards'),
             'seoType' => 'profile',
             'seoEntity' => [
                 '@type' => 'ProfilePage',
@@ -80,6 +84,24 @@ class PageSeo
                     'description' => $about !== '' ? $description : null,
                 ], fn ($value) => $value !== null),
             ],
+        ];
+    }
+
+    /**
+     * Гостьова сторінка спільноти: назва, опис і картка для прев’ю посилання.
+     *
+     * @return array<string, mixed>
+     */
+    public static function community(Community $community): array
+    {
+        $about = is_string($community->description) ? trim($community->description) : '';
+        $cards = app(Plugins::class)->on('og_cards');
+
+        return [
+            'seoTitle' => $community->name,
+            'seoDescription' => $about !== '' ? Str::limit(preg_replace('/\s+/u', ' ', $about) ?? $about, 200) : $community->name.' — спільнота в GameCon.',
+            'seoImage' => $cards ? app(OgCards::class)->communityUrl($community) : $community->avatar_url,
+            'seoImageSize' => $cards,
         ];
     }
 }

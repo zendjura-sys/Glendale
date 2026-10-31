@@ -32,6 +32,7 @@ class NotifyPrefs
         'price_drop' => 'deals',
         'game_night_invite' => 'events',
         'game_night_set' => 'events',
+        'broadcast' => 'site',
     ];
 
     /**

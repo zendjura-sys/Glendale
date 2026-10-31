@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Community;
 use App\Models\CommunityChannel;
 use App\Services\Communities\CommunityGuests;
+use App\Support\PageSeo;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -47,7 +48,7 @@ class CommunityGuestController extends Controller
             'messages' => $active ? $this->guests->history($active) : [],
             'can_write' => $active !== null && $chat?->id === $active->id,
             'guest_name' => $request->session()->get('guest_chat_name'),
-        ]);
+        ])->withViewData(PageSeo::community($community));
     }
 
     public function store(Request $request, Community $community, CommunityChannel $channel): RedirectResponse

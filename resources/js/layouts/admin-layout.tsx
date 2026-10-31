@@ -2,7 +2,9 @@ import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { NavigationSkeleton } from '@/components/gc/navigation-skeleton';
 import { Link, router, usePage } from '@inertiajs/react';
 import {
+    Activity,
     ArrowLeft,
+    Send,
     ChevronLeft,
     Menu,
     Search,
@@ -106,6 +108,16 @@ function groups(): { title: string; items: Item[] }[] {
                     label: tr('Статистика чатів'),
                     href: '/admin/chats',
                     icon: MessagesSquare,
+                },
+                {
+                    label: tr('Розсилки'),
+                    href: '/admin/broadcasts',
+                    icon: Send,
+                },
+                {
+                    label: tr('Статус'),
+                    href: '/admin/status',
+                    icon: Activity,
                 },
             ],
         },

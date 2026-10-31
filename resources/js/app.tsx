@@ -124,6 +124,7 @@ const PUBLIC_PAGES = new Set([
     'games/show',
     'communities/index',
     'communities/guest',
+    'status',
 ]);
 
 void createInertiaApp({

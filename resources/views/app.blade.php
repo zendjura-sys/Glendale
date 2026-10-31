@@ -52,7 +52,7 @@
         <meta property="og:type" content="{{ $seoType }}">
         <meta property="og:url" content="{{ $seoUrl }}">
         <meta property="og:image" content="{{ $seoImage }}">
-        @if ($seoImage === url('/og.jpg'))
+        @if ($seoImage === url('/og.jpg') || ! empty($seoImageSize))
             <meta property="og:image:width" content="1200">
             <meta property="og:image:height" content="630">
         @endif

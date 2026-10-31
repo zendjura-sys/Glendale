@@ -91,6 +91,7 @@ use App\Http\Controllers\SetupController;
 use App\Http\Controllers\SpotifyController;
 use App\Http\Controllers\StartController;
 use App\Http\Controllers\StatusController;
+use App\Http\Controllers\StatusPageController;
 use App\Http\Controllers\StoryController;
 use App\Http\Controllers\SupportController;
 use App\Http\Controllers\TeammateController;
@@ -399,6 +400,7 @@ Route::prefix('v1')->group(function () {
             Route::get('series/{series}', [PostSeriesController::class, 'show'])->whereNumber('series');
             Route::delete('series/{series}', [PostSeriesController::class, 'destroy'])->whereNumber('series');
             Route::post('posts/{post}/series', [PostSeriesController::class, 'attach'])->middleware('throttle:30,1');
+            Route::get('status', StatusPageController::class)->middleware('throttle:60,1');
             Route::get('configs', [GameConfigController::class, 'index']);
             Route::post('configs', [GameConfigController::class, 'store'])->middleware('throttle:10,1');
             Route::post('configs/{config}/like', [GameConfigController::class, 'like'])->whereNumber('config')->middleware('throttle:60,1');

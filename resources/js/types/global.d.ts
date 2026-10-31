@@ -66,6 +66,13 @@ declare module '@inertiajs/core' {
                 mobile: string | null;
                 default: boolean;
             } | null;
+            /** Активний збій зі сторінки статусу (null — усе працює). */
+            incident?: {
+                id: number;
+                title: string;
+                severity: 'minor' | 'major';
+                status: string;
+            } | null;
             music: SharedMusic;
             counters: {
                 friend_requests: number;

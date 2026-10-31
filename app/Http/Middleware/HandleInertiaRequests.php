@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Http\Controllers\Settings\GameThemeController;
+use App\Http\Controllers\StatusPageController;
 use App\Models\Track;
 use App\Models\User;
 use App\Services\Auth\DiscordOAuth;
@@ -161,6 +162,8 @@ class HandleInertiaRequests extends Middleware
                 && $user->pref('phone_prompt') !== false && app(PhoneNumbers::class)->current($user) === null,
             // Фірмовий фон з адмінки (картинки для ПК і телефона) або null.
             'siteBackground' => fn () => Backgrounds::image(),
+            // Активний збій зі сторінки статусу — тонкий банер угорі (null, коли все працює).
+            'incident' => fn () => StatusPageController::banner(),
             'music' => $user ? fn () => $this->musicProps($user) : null,
             'counters' => $user ? fn () => [
                 'friend_requests' => $this->friendships->incomingCount($user),

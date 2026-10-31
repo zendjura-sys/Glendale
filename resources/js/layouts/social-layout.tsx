@@ -8,6 +8,7 @@ import {
     LifeBuoy,
     LogOut,
     Megaphone,
+    TriangleAlert,
     PanelBottom,
     MessageCircle,
     MessageSquareHeart,
@@ -814,6 +815,36 @@ function Announcement() {
     );
 }
 
+/** Активний збій зі сторінки статусу: тонкий рядок з посиланням на подробиці. */
+function IncidentBanner() {
+    const { incident } = usePage().props;
+
+    if (!incident) {
+        return null;
+    }
+
+    return (
+        <Link
+            href="/status"
+            className="glass mb-4 flex items-center gap-3 rounded-2xl px-4 py-3 text-sm text-white/80 transition hover:text-white"
+        >
+            <TriangleAlert
+                aria-hidden
+                className={cn(
+                    'size-4 shrink-0',
+                    incident.severity === 'major'
+                        ? 'text-red-400'
+                        : 'text-amber-300',
+                )}
+            />
+            <span className="min-w-0 flex-1 truncate">{incident.title}</span>
+            <span className="shrink-0 text-xs text-white/45">
+                {tr('Подробиці')}
+            </span>
+        </Link>
+    );
+}
+
 /** Остання сторінка сайту поза «Музикою» — куди веде «‹ Назад» у розділі (layouts/music-layout.tsx). */
 export const LAST_PAGE_KEY = 'gc:last-page';
 
@@ -856,6 +887,7 @@ export default function SocialLayout({ children }: PropsWithChildren) {
             >
                 <Sidebar />
                 <main id="main-content" className="gc-vt-main min-w-0 flex-1">
+                    <IncidentBanner />
                     <Announcement />
                     <NavigationSkeleton>
                         <PageTransition>{children}</PageTransition>

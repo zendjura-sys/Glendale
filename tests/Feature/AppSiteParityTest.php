@@ -15,6 +15,7 @@ use App\Models\PartyTimeSlot;
 use App\Models\Post;
 use App\Models\QuestClaim;
 use App\Models\Season;
+use App\Models\StatusIncident;
 use App\Models\TierList;
 use App\Models\Tournament;
 use App\Models\Track;
@@ -29,6 +30,7 @@ use App\Support\Net\PublicUrl;
 use App\Support\Seasons;
 use App\Support\Settings\SiteSettings;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
@@ -42,6 +44,15 @@ class AppSiteParityTest extends TestCase
     private function app_token(User $user): string
     {
         return app(ApiTokens::class)->issue($user, 'android');
+    }
+
+    public function test_app_reaches_status_page_and_incident_banner(): void
+    {
+        $token = $this->app_token(User::factory()->create());
+        $this->withToken($token)->getJson('/api/v1/site/status')->assertOk()->assertJsonPath('overall', 'operational');
+        StatusIncident::query()->create(['title' => 'Затримки сповіщень', 'severity' => 'minor', 'status' => 'investigating', 'updates' => [], 'started_at' => now()]);
+        Cache::forget('status:banner');
+        $this->withToken($token)->getJson('/api/v1/me')->assertOk()->assertJsonPath('user.incident.title', 'Затримки сповіщень');
     }
 
     public function test_app_reaches_series_and_teen_mode(): void

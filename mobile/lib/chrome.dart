@@ -892,6 +892,7 @@ List<({String title, List<_MenuEntry> items})> _menuGroups(BuildContext context,
         go(LucideIcons.panelBottom, tr('Нижня панель'), '/settings?tab=app'),
         go(LucideIcons.lifeBuoy, tr('Довідка'), '/help'),
         go(LucideIcons.headset, tr('Підтримка'), '/support'),
+        if (session.pluginOn('status_page')) go(LucideIcons.activity, tr('Статус GameCon'), '/status'),
         (
           icon: LucideIcons.messageSquareHeart,
           label: tr('Відгук адмінам'),
