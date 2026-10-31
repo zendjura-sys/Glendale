@@ -27,6 +27,7 @@ use App\Support\Plugins\Plugins;
 use App\Support\Seasons;
 use App\Support\Settings\SiteSettings;
 use App\Support\Skins;
+use App\Support\TeenMode;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -124,7 +125,7 @@ class HandleInertiaRequests extends Middleware
                     // Внутрішній номер GameCon (+555 / +777) або null.
                     'phone' => $this->modules->enabled('phone') ? app(PhoneNumbers::class)->current($user)?->toCard() : null,
                     'hide_spoilers' => app(Plugins::class)->on('spoiler_switch') && (bool) $user->pref('hide_spoilers'),
-                    'profanity_mask' => $user->pref('hide_profanity') ? app(ContentFilter::class)->clientPattern() : null,
+                    'profanity_mask' => TeenMode::hidesProfanity($user) ? app(ContentFilter::class)->clientPattern() : null,
                     // «Показувати, що я слухаю» (усі джерела музики; Spotify — ще й своїм перемикачем).
                     'show_listening' => $user->showsListening(),
                     'morning_digest' => $user->wantsDigest(),

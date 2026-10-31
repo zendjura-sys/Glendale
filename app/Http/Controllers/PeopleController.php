@@ -11,6 +11,7 @@ use App\Services\Search\SiteSearch;
 use App\Support\Modules\ModuleManager;
 use App\Support\Plugins\Plugins;
 use App\Support\RecentSearches;
+use App\Support\TeenMode;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -139,7 +140,7 @@ class PeopleController extends Controller
      */
     private function search(array $filters): Builder
     {
-        return User::query()
+        return TeenMode::hideFrom(User::query(), request()->user())
             ->whereNull('banned_at')->whereNull('frozen_at')
             ->when($filters['q'] ?? null, function (Builder $query, string $q) {
                 $words = preg_split('/\s+/', trim($q));

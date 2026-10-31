@@ -10,6 +10,7 @@ use App\Services\Party\PartyBoard;
 use App\Services\Party\PartyTimeVote;
 use App\Services\Party\Teammates;
 use App\Support\Plugins\Plugins;
+use App\Support\TeenMode;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -35,6 +36,9 @@ class PartyController extends Controller
         $user = $request->user();
         $lfg = app(Plugins::class)->on('lfg_filters');
         $age = $user->birthday?->age;
+        if (TeenMode::on($user)) {
+            $age = min($age ?? TeenMode::AGE - 1, TeenMode::AGE - 1);
+        }
         $parties = PartyPost::query()->open()
             ->with(['user', 'game', 'server', 'members.user'])
             ->when($filters['game'] ?? null, fn (Builder $q, string $slug) => $q->whereHas('game', fn (Builder $g) => $g->where('slug', $slug)))

@@ -44,6 +44,21 @@ class AppSiteParityTest extends TestCase
         return app(ApiTokens::class)->issue($user, 'android');
     }
 
+    public function test_app_reaches_series_and_teen_mode(): void
+    {
+        $user = User::factory()->create(['birthday' => now()->subYears(30)]);
+        $token = $this->app_token($user);
+        $post = Post::factory()->create(['author_id' => $user->id, 'wall_id' => $user->id]);
+
+        $id = $this->withToken($token)->postJson('/api/v1/site/series', ['title' => 'Гайд'])->assertOk()->json('series.id');
+        $this->withToken($token)->postJson("/api/v1/site/posts/{$post->id}/series", ['series_id' => $id])->assertOk()->assertJsonPath('ok', true);
+        $this->withToken($token)->getJson('/api/v1/site/series/mine')->assertOk()->assertJsonPath('series.0.count', 1);
+        $this->withToken($token)->getJson("/api/v1/site/series/{$id}")->assertOk()->assertJsonPath('posts.0.series.position', 1);
+
+        $this->withToken($token)->putJson('/api/v1/site/settings/account/teen-mode', ['on' => true])->assertOk()->assertJsonPath('ok', true);
+        $this->withToken($token)->getJson('/api/v1/me')->assertOk()->assertJsonPath('user.teen_mode', ['on' => true, 'locked' => false]);
+    }
+
     public function test_app_reaches_configs_and_game_nights(): void
     {
         $user = User::factory()->create();

@@ -43,6 +43,7 @@ import 'photos.dart';
 import 'parity.dart';
 import 'play_extras.dart';
 import 'links_data.dart';
+import 'posts.dart' show SeriesScreen;
 import 'prefs.dart';
 import 'start.dart';
 import 'playing.dart';
@@ -229,6 +230,7 @@ Future<void> main() async {
           GoRoute(path: '/later', builder: (_, _) => const ReadLaterScreen()),
           GoRoute(path: '/podcasts', builder: (_, _) => const PodcastsScreen()),
           GoRoute(path: '/ideas', builder: (_, _) => const IdeasScreen()),
+          GoRoute(path: '/series/:id', builder: (_, s) => SeriesScreen(id: int.tryParse(s.pathParameters['id'] ?? '') ?? 0)),
           GoRoute(path: '/configs', builder: (_, s) => ConfigsScreen(game: s.uri.queryParameters['game'])),
           GoRoute(path: '/game-nights', builder: (_, _) => const GameNightsScreen()),
           GoRoute(path: '/game-nights/:id', builder: (_, s) => GameNightScreen(id: int.tryParse(s.pathParameters['id'] ?? '') ?? 0)),

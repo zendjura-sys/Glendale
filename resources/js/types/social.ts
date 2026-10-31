@@ -170,6 +170,12 @@ export type PostItem = {
         body: string;
     } | null;
     muted?: boolean;
+    series?: {
+        id: number;
+        title: string;
+        count: number;
+        position: number;
+    } | null;
     comments: CommentItem[];
     can: {
         delete: boolean;
@@ -180,6 +186,7 @@ export type PostItem = {
         mute?: boolean;
         share?: boolean;
         quote?: boolean;
+        series?: boolean;
     };
 };
 

@@ -86,6 +86,51 @@ class _PostCardState extends State<PostCard> {
     }
   }
 
+  /// Шторка вибору серії: серії автора, «Нова серія», «Прибрати із серії». 0 — прибрати, null — скасовано.
+  Future<int?> _pickSeries() async {
+    final api = AppScope.read(context).session.api;
+    final current = post['series'] is Map ? intOf(mapOf(post['series'])['id']) : null;
+    final title = TextEditingController();
+    final result = await showGcSheet<int>(
+      context,
+      title: tr('Серія записів'),
+      subtitle: tr('Записи серії йдуть по порядку — читачі гортають частини.'),
+      builder: (sheet) => Remote(
+        load: () => api.get(Api.site('/series/mine')),
+        builder: (d, _) => SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            for (final s in maps(d['series']))
+              _SheetAction(
+                icon: intOf(s['id']) == current ? LucideIcons.circleCheck : LucideIcons.listOrdered,
+                label: '${text(s['title']) ?? ''} · ${s['count']}',
+                onTap: () => Navigator.pop(sheet, intOf(s['id'])),
+              ),
+            if (current != null) _SheetAction(icon: LucideIcons.x, label: tr('Прибрати із серії'), color: dangerSoft, onTap: () => Navigator.pop(sheet, 0)),
+            const SizedBox(height: 8),
+            GcField(controller: title, label: tr('Нова серія, напр. «Гайд по CS2»')),
+            const SizedBox(height: 10),
+            PrimaryButton(
+              label: tr('Створити й додати'),
+              icon: LucideIcons.plus,
+              onPressed: () async {
+                if (title.text.trim().length < 3) return toast(sheet, tr('Назва — щонайменше 3 символи.'));
+                try {
+                  final r = await api.post(Api.site('/series'), {'title': title.text.trim()});
+                  if (sheet.mounted) Navigator.pop(sheet, intOf(mapOf(r['series'])['id']));
+                } catch (e) {
+                  if (sheet.mounted) toast(sheet, e);
+                }
+              },
+            ),
+          ]),
+        ),
+      ),
+    );
+    title.dispose();
+    return result;
+  }
+
   void _copyLink() {
     Clipboard.setData(ClipboardData(text: '${Api.root}/posts/${post['id']}'));
     toast(context, tr('Посилання скопійовано.'));
@@ -118,6 +163,8 @@ class _PostCardState extends State<PostCard> {
                 label: post['muted'] == true ? tr('Зняти заглушку') : tr('Заглушити'),
                 onTap: () => Navigator.pop(sheet, 'mute'),
               ),
+            if (can['series'] == true)
+              _SheetAction(icon: LucideIcons.listOrdered, label: post['series'] is Map ? tr('Змінити серію') : tr('Додати в серію'), onTap: () => Navigator.pop(sheet, 'series')),
             if (can['pin'] == true)
               _SheetAction(
                 icon: post['is_pinned'] == true ? LucideIcons.pinOff : LucideIcons.pin,
@@ -181,6 +228,15 @@ class _PostCardState extends State<PostCard> {
       final wasMuted = post['muted'] == true;
       if (await attempt(context, () => api.post(Api.site('/posts/${post['id']}/mute')), success: wasMuted ? tr('Заглушку знято.') : tr('Записи автора більше не з’являтимуться в стрічці.'))) {
         setState(() => post['muted'] = !wasMuted);
+        widget.onChanged?.call();
+      }
+      return;
+    }
+    if (choice == 'series') {
+      final picked = await _pickSeries();
+      if (picked == null || !mounted) return;
+      final seriesId = picked == 0 ? null : picked;
+      if (await attempt(context, () => api.post(Api.site('/posts/${post['id']}/series'), {'series_id': seriesId}), success: seriesId == null ? tr('Запис прибрано із серії.') : tr('Запис додано в серію.'))) {
         widget.onChanged?.call();
       }
       return;
@@ -288,6 +344,19 @@ class _PostCardState extends State<PostCard> {
                             ),
                           if (post['pending'] == true) Pill(label: tr('На перевірці'), icon: LucideIcons.clock, color: Color(0xFFF5B342)),
                           if (post['is_pinned'] == true) Pill(label: tr('Закріплено'), icon: LucideIcons.pin, color: Color(0xFF9FB6FF)),
+                          if (post['series'] is Map)
+                            GestureDetector(
+                              onTap: () => context.push('/series/${mapOf(post['series'])['id']}'),
+                              child: Pill(
+                                label: tr('{title} · частина {position} з {count}', {
+                                  'title': text(mapOf(post['series'])['title']) ?? '',
+                                  'position': '${mapOf(post['series'])['position']}',
+                                  'count': '${mapOf(post['series'])['count']}',
+                                }),
+                                icon: LucideIcons.listOrdered,
+                                color: AppColors.accentCyan,
+                              ),
+                            ),
                         ],
                       ),
                     ],
@@ -2123,6 +2192,58 @@ class _GifPickerState extends State<_GifPicker> {
         const SizedBox(height: 6),
         Text(tr('GIF від GIPHY'), style: body(11, color: faint)),
       ]),
+    );
+  }
+}
+
+/// Серія записів: назва, автор і записи по порядку частин; автор може видалити серію (записи лишаються).
+class SeriesScreen extends StatelessWidget {
+  const SeriesScreen({required this.id, super.key});
+  final int id;
+
+  @override
+  Widget build(BuildContext context) {
+    final api = AppScope.read(context).session.api;
+    return Remote(
+      load: () => api.get(Api.site('/series/$id')),
+      builder: (d, reload) {
+        final series = mapOf(d['series']);
+        final posts = maps(d['posts']);
+        return ScreenScroll(
+          onRefresh: reload,
+          children: [
+            Glass(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Row(children: [
+                  Icon(LucideIcons.listOrdered, size: 16, color: AppColors.accentCyan),
+                  const SizedBox(width: 6),
+                  Text(tr('Серія записів · {count}', {'count': '${posts.length}'}), style: body(12.5, color: AppColors.accentCyan, weight: FontWeight.w600)),
+                ]),
+                const SizedBox(height: 8),
+                Text(text(series['title']) ?? '', style: display(22)),
+                if (text(series['description']) != null) Padding(padding: const EdgeInsets.only(top: 6), child: Text(text(series['description'])!, style: body(14, color: soft))),
+                const SizedBox(height: 8),
+                Row(children: [
+                  Expanded(child: Text(text(mapOf(series['author'])['name']) ?? '', style: body(13, color: muted))),
+                  if (series['mine'] == true)
+                    TextButton.icon(
+                      onPressed: () async {
+                        if (!await confirm(context, tr('Видалити серію? Самі записи залишаться.'), danger: true)) return;
+                        if (!context.mounted) return;
+                        if (await attempt(context, () => api.delete(Api.site('/series/$id'))) && context.mounted) context.pop();
+                      },
+                      icon: Icon(LucideIcons.trash2, size: 16, color: dangerSoft),
+                      label: Text(tr('Видалити серію'), style: body(13, color: dangerSoft)),
+                    ),
+                ]),
+              ]),
+            ),
+            const SizedBox(height: 12),
+            if (posts.isEmpty) EmptyState(icon: LucideIcons.listOrdered, title: tr('У серії поки немає записів'), text: tr('Автор додає записи в серію з меню «…» на записі.')),
+            for (final post in posts) Padding(padding: const EdgeInsets.only(bottom: 12), child: PostCard(post: post, onChanged: () => reload())),
+          ],
+        );
+      },
     );
   }
 }

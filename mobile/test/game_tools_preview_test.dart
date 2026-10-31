@@ -9,6 +9,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gamecon/account.dart';
 import 'package:gamecon/game_tools.dart';
+import 'package:gamecon/posts.dart' show SeriesScreen;
 import 'package:gamecon/shell.dart';
 import 'package:gamecon/state.dart';
 import 'package:gamecon/theme.dart';
@@ -48,6 +49,19 @@ Map<String, dynamic> _respond(http.Request request) {
       ],
       'past': [],
       'friends': [_user(2, 'Олег Коваль'), _user(3, 'Ірина Мельник')],
+    };
+  }
+  if (p.endsWith('/site/series/3')) {
+    final author = _user(1, 'Тоні Старк');
+    Map<String, dynamic> post(int id, int position, String body) => {
+      'id': id, 'body': body, 'games': [], 'spoiler': false, 'sticker': null, 'visibility': 'public', 'is_pinned': false, 'comments_enabled': true,
+      'likes_count': 12, 'comments_count': 3, 'views_count': 140, 'created_at': '2026-10-2${position}T10:00:00Z', 'edited_at': null, 'author': author,
+      'attachments': [], 'liked': false, 'comments': [], 'series': {'id': 3, 'title': 'Гайд по CS2', 'count': 2, 'position': position},
+      'can': {'delete': true, 'edit': false, 'pin': false, 'comment': true, 'series': true},
+    };
+    return {
+      'series': {'id': 3, 'title': 'Гайд по CS2', 'description': 'Від налаштувань до тактики на Mirage.', 'author': author, 'mine': true},
+      'posts': [post(21, 1, 'Частина 1: налаштування й приціл.'), post(22, 2, 'Частина 2: розкидки гранат на Mirage.')],
     };
   }
   if (p.endsWith('/site/game-nights/7')) {
@@ -92,6 +106,7 @@ void main() {
     ('configs', '/configs', 'Маленький зелений'),
     ('game-nights', '/game-nights', 'П’ятниця в CS'),
     ('game-night', '/game-nights/7', 'Призначити вечір'),
+    ('series', '/series/3', 'Гайд по CS2'),
   ];
   for (final (name, location, expected) in screens) {
     for (final light in [false, true]) {
@@ -114,6 +129,7 @@ void main() {
               builder: (_, _, child) => AppShell(session: session, player: TrackPlayer()..session = session, child: child),
               routes: [
                 GoRoute(path: '/configs', builder: (_, _) => const ConfigsScreen()),
+                GoRoute(path: '/series/:id', builder: (_, s) => SeriesScreen(id: int.parse(s.pathParameters['id']!))),
                 GoRoute(path: '/game-nights', builder: (_, _) => const GameNightsScreen()),
                 GoRoute(path: '/game-nights/:id', builder: (_, s) => GameNightScreen(id: int.parse(s.pathParameters['id']!))),
               ],

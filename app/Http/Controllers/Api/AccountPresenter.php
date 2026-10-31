@@ -11,6 +11,7 @@ use App\Support\Onboarding;
 use App\Support\Plugins\Plugins;
 use App\Support\Seasons;
 use App\Support\Skins;
+use App\Support\TeenMode;
 
 class AccountPresenter
 {
@@ -74,7 +75,8 @@ class AccountPresenter
             'discord_username' => $user->discord_username,
             'google' => filled($user->google_id),
             // Застосунок ховає мат зірочками сам, якщо людина це ввімкнула.
-            'profanity_mask' => $user->pref('hide_profanity') ? app(ContentFilter::class)->clientPattern() : null,
+            'profanity_mask' => TeenMode::hidesProfanity($user) ? app(ContentFilter::class)->clientPattern() : null,
+            'teen_mode' => TeenMode::state($user),
             // «Показувати, що я слухаю»: одне налаштування для сайту й застосунку.
             'show_listening' => $user->showsListening(),
             'morning_digest' => $user->wantsDigest(),

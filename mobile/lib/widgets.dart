@@ -690,7 +690,8 @@ class Pill extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           if (icon != null) ...[Icon(icon, size: 12, color: color), SizedBox(width: 4)],
-          Text(label, style: body(11, color: color, weight: FontWeight.w700)),
+          // Довгий підпис (назва серії тощо) скорочується «…», а не вилазить за край.
+          Flexible(child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(11, color: color, weight: FontWeight.w700))),
         ],
       ),
     );

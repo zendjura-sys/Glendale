@@ -69,6 +69,7 @@ use App\Http\Controllers\PlaylistController;
 use App\Http\Controllers\PlusController;
 use App\Http\Controllers\PodcastController;
 use App\Http\Controllers\PostController;
+use App\Http\Controllers\PostSeriesController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\QuestController;
 use App\Http\Controllers\ReadingController;
@@ -393,6 +394,11 @@ Route::prefix('v1')->group(function () {
             Route::post('newcomer/hide', [NewcomerController::class, 'hide']);
             Route::put('settings/setup', [SetupController::class, 'update'])->middleware('throttle:30,1');
             Route::get('ideas', [IdeaController::class, 'index']);
+            Route::get('series/mine', [PostSeriesController::class, 'mine']);
+            Route::post('series', [PostSeriesController::class, 'store'])->middleware('throttle:10,1');
+            Route::get('series/{series}', [PostSeriesController::class, 'show'])->whereNumber('series');
+            Route::delete('series/{series}', [PostSeriesController::class, 'destroy'])->whereNumber('series');
+            Route::post('posts/{post}/series', [PostSeriesController::class, 'attach'])->middleware('throttle:30,1');
             Route::get('configs', [GameConfigController::class, 'index']);
             Route::post('configs', [GameConfigController::class, 'store'])->middleware('throttle:10,1');
             Route::post('configs/{config}/like', [GameConfigController::class, 'like'])->whereNumber('config')->middleware('throttle:60,1');
@@ -456,6 +462,7 @@ Route::prefix('v1')->group(function () {
             Route::patch('settings/streamer-mode', [GameThemeController::class, 'streamerMode'])->middleware('throttle:30,1');
             Route::patch('settings/data-saver', [GameThemeController::class, 'dataSaver'])->middleware('throttle:30,1');
             Route::put('settings/account/profanity', [SettingsAccountController::class, 'profanity']);
+            Route::put('settings/account/teen-mode', [SettingsAccountController::class, 'teenMode']);
             // «Зв’язки й дані»: Telegram/Discord, сервери з входом через GameCon, вивантаження даних.
             Route::get('settings/account', [SettingsAccountController::class, 'edit']);
             Route::delete('settings/account/connections/{client}', [SettingsAccountController::class, 'disconnect'])->whereNumber('client');

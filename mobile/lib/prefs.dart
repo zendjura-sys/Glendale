@@ -94,7 +94,8 @@ class _NotifyPrefsScreenState extends State<NotifyPrefsScreen> {
 
   Future<void> _instant(String path, Map<String, dynamic> body) async {
     final session = AppScope.read(context).session;
-    if (await attempt(context, () => path.endsWith('profanity') ? api.put(Api.site(path), body) : api.patch(Api.site(path), body))) await session.refreshMe();
+    final put = path.endsWith('profanity') || path.endsWith('teen-mode');
+    if (await attempt(context, () => put ? api.put(Api.site(path), body) : api.patch(Api.site(path), body))) await session.refreshMe();
   }
 
   Future<void> _pickTime(bool from) async {
@@ -185,6 +186,29 @@ class _NotifyPrefsScreenState extends State<NotifyPrefsScreen> {
           Wrap(spacing: 6, runSpacing: 6, children: [for (final w in words) InputChip(label: Text(w, style: body(13)), onDeleted: () => setState(() => words.remove(w)))]),
         ]),
       ),
+      const SizedBox(height: 12),
+      // Підлітковий режим: до 18 років за датою народження — увімкнений завжди.
+      Builder(builder: (context) {
+        final teen = mapOf(session.me?['teen_mode']);
+        final locked = teen['locked'] == true;
+        return Glass(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            CardTitle(tr('Підлітковий режим'), icon: LucideIcons.shieldCheck),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              value: teen['on'] == true,
+              title: Text(tr('Підлітковий режим'), style: body(14.5, weight: FontWeight.w600)),
+              subtitle: Text(
+                locked
+                    ? tr('Увімкнено за датою народження й діє до 18 років.')
+                    : tr('Писати в особисті зможуть лише друзі, незнайомі дорослі не бачитимуть вас у пошуку, образливі слова й паті 18+ буде приховано.'),
+                style: body(12.5, color: muted),
+              ),
+              onChanged: locked ? null : (v) => _instant('/settings/account/teen-mode', {'on': v}),
+            ),
+          ]),
+        );
+      }),
       if (friends.isNotEmpty) ...[
         const SizedBox(height: 12),
         Glass(

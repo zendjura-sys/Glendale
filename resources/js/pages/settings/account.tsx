@@ -64,6 +64,7 @@ type Props = {
     appealKinds: Record<string, string>;
     mute: { until: string | null; reason: string | null } | null;
     hideProfanity: boolean;
+    teenMode: { on: boolean; locked: boolean };
 };
 
 const field =
@@ -102,6 +103,7 @@ export default function Account({
     appealKinds,
     mute,
     hideProfanity,
+    teenMode,
     strikes = [],
 }: Props) {
     const appeal = useForm({
@@ -373,6 +375,33 @@ export default function Account({
                             router.put(
                                 '/settings/account/profanity',
                                 { hide },
+                                options,
+                            )
+                        }
+                    />
+                </SettingsCard>
+
+                <SettingsCard
+                    list
+                    title={tr('Підлітковий режим')}
+                    description={
+                        teenMode.locked
+                            ? tr(
+                                  'Увімкнено за датою народження й діє до 18 років: писати в особисті можуть лише друзі, незнайомі дорослі не бачать вас у пошуку, образливі слова приховано.',
+                              )
+                            : tr(
+                                  'Писати в особисті зможуть лише друзі, незнайомі дорослі не бачитимуть вас у пошуку, образливі слова й оголошення паті 18+ буде приховано.',
+                              )
+                    }
+                >
+                    <SettingsSwitch
+                        label={tr('Підлітковий режим')}
+                        checked={teenMode.on}
+                        disabled={teenMode.locked}
+                        onChange={(on) =>
+                            router.put(
+                                '/settings/account/teen-mode',
+                                { on },
                                 options,
                             )
                         }

@@ -20,6 +20,7 @@ use App\Models\UserBlock;
 use App\Services\Chat\ChatBots;
 use App\Services\Communities\CommunityChannels;
 use App\Services\Push\PushNotifier;
+use App\Support\TeenMode;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Query\Builder as QueryBuilder;
@@ -43,7 +44,7 @@ class Messenger
             return false;
         }
 
-        if ($to->message_privacy === User::MESSAGES_FRIENDS) {
+        if ($to->message_privacy === User::MESSAGES_FRIENDS || TeenMode::on($to)) {
             return $this->friendships->status($from, $to) === FriendshipService::FRIENDS;
         }
 

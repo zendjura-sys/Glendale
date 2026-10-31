@@ -11,6 +11,7 @@ use App\Models\PollOption;
 use App\Models\PollVote;
 use App\Models\Post;
 use App\Models\PostAttachment;
+use App\Models\PostSeries;
 use App\Models\Save;
 use App\Models\Track;
 use App\Models\User;
@@ -33,6 +34,9 @@ class PostPresenter
 
     /** @var array<int, bool> */
     private array $saved = [];
+
+    /** @var array<int, array{id: int, title: string, count: int}> серії записів */
+    private array $series = [];
 
     /** @var array<int, int> */
     private array $votes = [];
@@ -107,6 +111,12 @@ class PostPresenter
                 'description' => $m->description,
                 'available' => $m->is_published,
             ]])->all()
+            : [];
+
+        $seriesIds = $posts->pluck('series_id')->filter()->unique();
+        $this->series = $seriesIds->isNotEmpty()
+            ? PostSeries::query()->whereIn('id', $seriesIds)->withCount(['posts' => fn ($q) => $q->where('is_draft', false)])->get()
+                ->mapWithKeys(fn (PostSeries $s) => [$s->id => ['id' => $s->id, 'title' => $s->title, 'count' => (int) $s->posts_count]])->all()
             : [];
 
         $posts->loadMissing('poll.options');
@@ -236,6 +246,10 @@ class PostPresenter
             'poll' => $this->pollCard($post),
             'shared' => $this->sharedCard($post),
             'quoted' => $this->quotedCard($post),
+            // Серія: «Назва · частина 2 з 5» — посилання на сторінку серії.
+            'series' => $post->series_id && isset($this->series[$post->series_id])
+                ? [...$this->series[$post->series_id], 'position' => (int) $post->series_position]
+                : null,
             'muted' => isset($this->muted[$post->author_id]),
             'reaction' => $reaction,
             'liked' => $reaction !== null,
@@ -249,6 +263,7 @@ class PostPresenter
                 'mute' => $viewer !== null && $post->author_id !== $viewer->id && ! $post->is_draft && ! $post->publish_at?->isFuture(),
                 'share' => $shareable,
                 'quote' => $viewer !== null && ! $post->is_draft && ! $post->publish_at?->isFuture(),
+                'series' => $viewer !== null && $post->author_id === $viewer->id && ! $post->as_community,
             ],
             'subscribers_only' => $post->subscribers_only,
             'locked' => false,

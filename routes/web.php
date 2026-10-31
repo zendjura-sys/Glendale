@@ -77,6 +77,7 @@ use App\Http\Controllers\PlaylistController;
 use App\Http\Controllers\PlusController;
 use App\Http\Controllers\PodcastController;
 use App\Http\Controllers\PostController;
+use App\Http\Controllers\PostSeriesController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\QuestController;
 use App\Http\Controllers\ReadingController;
@@ -292,6 +293,12 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     Route::get('games/{game}/achievements', [SetupController::class, 'game'])->middleware(['module:games', 'throttle:30,1'])->name('games.achievements');
     Route::get('u/{user:username}/achievements', [SetupController::class, 'achievements'])->middleware('throttle:30,1')->name('profile.achievements');
     Route::get('posts/{post}', [PostController::class, 'show'])->name('posts.show');
+    // Серії записів.
+    Route::get('series/mine', [PostSeriesController::class, 'mine'])->name('series.mine');
+    Route::post('series', [PostSeriesController::class, 'store'])->middleware('throttle:10,1')->name('series.store');
+    Route::get('series/{series}', [PostSeriesController::class, 'show'])->whereNumber('series')->name('series.show');
+    Route::delete('series/{series}', [PostSeriesController::class, 'destroy'])->whereNumber('series')->name('series.destroy');
+    Route::post('posts/{post}/series', [PostSeriesController::class, 'attach'])->middleware('throttle:30,1')->name('posts.series');
     Route::patch('posts/{post}', [PostController::class, 'update'])->name('posts.update');
     Route::post('posts/{post}/publish', [PostController::class, 'release'])->name('posts.publish');
     Route::delete('posts/{post}', [PostController::class, 'destroy'])->name('posts.destroy');

@@ -28,6 +28,8 @@ use Illuminate\Support\Carbon;
  * @property array{url: string, title: string, thumbnail: string|null, author: string|null, site?: string}|null $link
  * @property array{kind: string, id: int, title: string, hint: string, href: string, image: string|null}|null $card
  * @property string $visibility
+ * @property int|null $series_id
+ * @property int|null $series_position
  * @property bool $is_pinned
  * @property bool $is_draft
  * @property bool $spoiler
@@ -47,7 +49,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon $created_at
  * @property Carbon $updated_at
  */
-#[Fillable(['author_id', 'wall_type', 'wall_id', 'as_community', 'body', 'music', 'movie_id', 'link', 'card', 'visibility', 'is_pinned', 'is_draft', 'comments_enabled', 'spoiler', 'edited_at', 'publish_at', 'shared_post_id', 'quoted_post_id', 'sticker', 'is_pending', 'tag', 'lang', 'subscribers_only'])]
+#[Fillable(['author_id', 'wall_type', 'wall_id', 'as_community', 'body', 'music', 'movie_id', 'link', 'card', 'visibility', 'is_pinned', 'is_draft', 'comments_enabled', 'spoiler', 'edited_at', 'publish_at', 'shared_post_id', 'quoted_post_id', 'sticker', 'is_pending', 'tag', 'lang', 'subscribers_only', 'series_id', 'series_position'])]
 class Post extends Model
 {
     /** @use HasFactory<PostFactory> */
@@ -98,6 +100,14 @@ class Post extends Model
     public function author(): BelongsTo
     {
         return $this->belongsTo(User::class, 'author_id');
+    }
+
+    /**
+     * @return BelongsTo<PostSeries, $this>
+     */
+    public function series(): BelongsTo
+    {
+        return $this->belongsTo(PostSeries::class, 'series_id');
     }
 
     /**

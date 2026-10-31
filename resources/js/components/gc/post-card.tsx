@@ -20,6 +20,7 @@ import {
     UsersRound,
     Volume2,
     VolumeX,
+    ListOrdered,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
@@ -38,6 +39,7 @@ import { cn } from '@/lib/utils';
 import type { PostItem } from '@/types';
 import { MentionText } from './mention-text';
 import { SaveButton } from './save-button';
+import { SeriesPicker } from './series-picker';
 import { Comments } from './comments';
 import { RoleBadge } from '@/components/communities/role-badge';
 import { CommunityAvatar } from './community-avatar';
@@ -90,6 +92,7 @@ export function PostCard({
     const [editing, setEditing] = useState(false);
     const [editBody, setEditBody] = useState(post.body ?? '');
     const [quoting, setQuoting] = useState(false);
+    const [seriesOpen, setSeriesOpen] = useState(false);
     const [quoteBody, setQuoteBody] = useState('');
 
     const Visibility = visibilityMeta[post.visibility].icon;
@@ -240,6 +243,26 @@ export function PostCard({
                                 <Pin className="size-3" /> {tr('Закріплено')}
                             </span>
                         )}
+                        {post.series && (
+                            <Link
+                                href={`/series/${post.series.id}`}
+                                className="ml-1 inline-flex max-w-full items-center gap-1 rounded-chip bg-sky-500/15 px-2 py-0.5 text-xs font-medium text-sky-200 hover:text-white"
+                            >
+                                <ListOrdered className="size-3 shrink-0" />
+                                <span className="truncate">
+                                    {tr(
+                                        '{title} · частина {position} з {count}',
+                                        {
+                                            title: post.series.title,
+                                            position: String(
+                                                post.series.position,
+                                            ),
+                                            count: String(post.series.count),
+                                        },
+                                    )}
+                                </span>
+                            </Link>
+                        )}
                     </div>
                 </div>
 
@@ -339,6 +362,17 @@ export function PostCard({
                                     : tr('Заглушити')}
                             </DropdownMenuItem>
                         )}
+                        {post.can.series && (
+                            <DropdownMenuItem
+                                className="rounded-lg focus:bg-white/[0.06]"
+                                onSelect={() => setSeriesOpen(true)}
+                            >
+                                <ListOrdered />{' '}
+                                {post.series
+                                    ? tr('Змінити серію')
+                                    : tr('Додати в серію')}
+                            </DropdownMenuItem>
+                        )}
                         {post.can.pin && (
                             <DropdownMenuItem
                                 className="rounded-lg focus:bg-white/[0.06]"
@@ -376,6 +410,14 @@ export function PostCard({
                     </DropdownMenuContent>
                 </DropdownMenu>
             </header>
+
+            {seriesOpen && (
+                <SeriesPicker
+                    postId={post.id}
+                    current={post.series?.id ?? null}
+                    onDone={() => setSeriesOpen(false)}
+                />
+            )}
 
             {quoting && (
                 <form
