@@ -143,7 +143,8 @@ class ArcticGlassThemeExtension extends ThemeExtension<ArcticGlassThemeExtension
     border: Color.fromRGBO(255, 255, 255, 0.14),
     outline: null,
     specular: Color.fromRGBO(255, 255, 255, 0.38),
-    shadows: [BoxShadow(color: Color(0x55000000), blurRadius: 24, offset: Offset(0, 10))],
+    // Без тіней: глибину дають розмиття, грань і блік.
+    shadows: [],
     barFill: LinearGradient(
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
@@ -171,10 +172,7 @@ class ArcticGlassThemeExtension extends ThemeExtension<ArcticGlassThemeExtension
     // Найтонший контур 0.5px — край картки читається на світлому тлі.
     outline: Color.fromRGBO(10, 132, 255, 0.14),
     specular: Color.fromRGBO(255, 255, 255, 0.95),
-    shadows: [
-      BoxShadow(color: Color(0x140A3D7A), blurRadius: 20, offset: Offset(0, 8)),
-      BoxShadow(color: Color(0x0A000000), blurRadius: 4, offset: Offset(0, 2)),
-    ],
+    shadows: [],
     barFill: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color.fromRGBO(255, 255, 255, 0.65), Color.fromRGBO(232, 242, 255, 0.45)]),
     sheetFill: Color.fromRGBO(246, 250, 255, 0.72),
     title: AppColors.lightTitle,
