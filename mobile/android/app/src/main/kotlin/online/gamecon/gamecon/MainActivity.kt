@@ -41,6 +41,11 @@ class MainActivity : AudioServiceActivity() {
                 }
                 // «Вивід звуку» в плеєрі: системний перемикач навушників, колонок і Cast.
                 "audioOutput" -> result.success(showOutputSwitcher())
+                // Музика у фоні: Wi-Fi не засинає, поки грає потік (див. GcAudioHandler).
+                "wifiLock" -> {
+                    setWifiLock(call.argument<Boolean>("held") == true)
+                    result.success(true)
+                }
                 "bluetoothSettings" -> {
                     startActivity(android.content.Intent(android.provider.Settings.ACTION_BLUETOOTH_SETTINGS))
                     result.success(true)
@@ -48,6 +53,23 @@ class MainActivity : AudioServiceActivity() {
                 else -> result.notImplemented()
             }
         }
+    }
+
+    @Suppress("DEPRECATION")
+    private fun setWifiLock(held: Boolean) {
+        val lock = wifiLock ?: (applicationContext.getSystemService(WIFI_SERVICE) as android.net.wifi.WifiManager)
+            .createWifiLock(android.net.wifi.WifiManager.WIFI_MODE_FULL_HIGH_PERF, "gamecon:music")
+            .also {
+                it.setReferenceCounted(false)
+                wifiLock = it
+            }
+        if (held && !lock.isHeld) lock.acquire()
+        if (!held && lock.isHeld) lock.release()
+    }
+
+    companion object {
+        // Один замок на процес: живе довше за Activity, поки музику тримає медіасервіс.
+        private var wifiLock: android.net.wifi.WifiManager.WifiLock? = null
     }
 
     /** Системний перемикач виводу звуку: Android 14+ — MediaRouter2, Android 11–13 — діалог SystemUI. */

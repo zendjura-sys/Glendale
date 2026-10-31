@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:app_links/app_links.dart';
+import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -10,6 +11,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'api.dart';
 import 'app_login.dart';
 import 'audio.dart';
+import 'full_player.dart' show showFullPlayer, fullPlayerOpen;
 import 'auth_screen.dart';
 import 'chat.dart';
 import 'cinema.dart';
@@ -312,6 +314,12 @@ Future<void> main() async {
   );
 
   unawaited(refreshLanguage(session.api));
+  // Натиснули картку плеєра в шторці чи на заблокованому екрані — розгортаємо «Зараз грає».
+  AudioService.notificationClicked.listen((clicked) {
+    final context = router.routerDelegate.navigatorKey.currentContext;
+    if (!clicked || context == null || player.current == null || fullPlayerOpen) return;
+    unawaited(showFullPlayer(context, player, session: session));
+  });
   // Зміна мови перебудовує весь застосунок.
   runApp(ValueListenableBuilder<int>(
     valueListenable: I18n.revision,

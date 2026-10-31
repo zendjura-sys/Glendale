@@ -426,6 +426,32 @@ class TrackPlayer extends ChangeNotifier {
       duration = value ?? Duration.zero;
       notifyListeners();
     });
+    // Обрив потоку (мережа заснула з вимкненим екраном, зміна Wi-Fi ↔ мобільний) — перепідключаємось.
+    _player.playbackEventStream.listen((_) {}, onError: (Object _, StackTrace _) => unawaited(_recover()));
+  }
+
+  int _retries = 0;
+
+  /// Перепідключення до поточного треку з того самого місця (ефір — наживо): до 5 спроб із паузою.
+  Future<void> _recover() async {
+    final track = current;
+    if (track == null) return;
+    if (_retries >= 5) {
+      // Не вийшло — пауза (сервіс відпускає WakeLock), а не нескінченна «буферизація».
+      await _player.pause().catchError((_) {});
+      return;
+    }
+    _retries++;
+    final at = track.live ? Duration.zero : position;
+    await Future<void>.delayed(Duration(seconds: 2 * _retries));
+    if (!identical(current, track)) return;
+    try {
+      await _player.setUrl(sourceFor(track), initialPosition: at);
+      unawaited(_player.play());
+      _retries = 0;
+    } catch (_) {
+      unawaited(_recover());
+    }
   }
 
   /// «Вирівнювання гучності»: LoudnessEnhancer Android (підсилення з обмежувачем піків) у ланцюжку just_audio.
@@ -604,13 +630,17 @@ class TrackPlayer extends ChangeNotifier {
     onStart?.call(track);
     // Черга добігає кінця — заздалегідь дописуємо наступну порцію станції чи ∞.
     if (queue.length - i <= 3) unawaited(_extend());
+    _retries = 0;
     try {
       await _player.setUrl(sourceFor(track));
       unawaited(_player.play());
       if (track.local) {
         unawaited(session?.api.post('/api/v1/music/now-playing', {'track_id': track.id}).catchError((_) => <String, dynamic>{}));
       }
-    } catch (_) {}
+    } catch (_) {
+      // Трек не відкрився (мережа) — пробуємо ще, а не обриваємо сесію у фоні.
+      if (identical(current, track)) unawaited(_recover());
+    }
   }
 
   /// Дописати в чергу наступну порцію: зі станції або «схожі на останній трек» (∞).

@@ -7,8 +7,8 @@ import 'arctic_cascade.dart';
 import 'arctic_pressable.dart';
 
 /// Базова поверхня «Spatial Glass» — матеріал iOS (UIVisualEffectView): справжнє розмиття
-/// фону з підсиленням насичення, матова тонировка, грань 1px, дзеркальний блік угорі
-/// й м'яка тінь лише назовні. Розмиття є в КОЖНОЇ поверхні (картки 22, кнопки й поля 16,
+/// фону з підсиленням насичення, матова тонировка й дзеркальний блік угорі — без обводки
+/// й тіней. Розмиття є в КОЖНОЇ поверхні (картки 22, кнопки й поля 16,
 /// панелі 28); картка в картці — світліша плашка з власним розмиттям, без тіні.
 /// З [onTap] картка пружно стискається від дотику (ArcticPressable), а лід і блік світлішають.
 class ArcticGlassContainer extends StatefulWidget {
@@ -51,7 +51,7 @@ class ArcticGlassContainer extends StatefulWidget {
   final Gradient? fill;
   final Color? color;
 
-  /// Своя грань замість грані теми.
+  /// Обводка — лише якщо задана явно (за замовчуванням її немає).
   final Color? borderColor;
 
   /// Дзеркальний блік по верхній грані.
@@ -118,7 +118,8 @@ class _ArcticGlassContainerState extends State<ArcticGlassContainer> {
 
     final Gradient? gradient = w.color != null || inner ? null : (w.fill ?? (pressed ? tokens.pressedFill : tokens.glassFill));
     final Color? color = inner ? (pressed ? tokens.innerFill.withValues(alpha: (tokens.innerFill.a * 1.6).clamp(0, 1)) : tokens.innerFill) : w.color;
-    final edge = w.glowing ? AppColors.accentCyan.withValues(alpha: 0.55) : (w.borderColor ?? (inner ? tokens.border.withValues(alpha: tokens.border.a * 0.6) : tokens.border));
+    // Без обводки: грань лише явно задана ([borderColor]) або сяйво фокусу.
+    final edge = w.glowing ? AppColors.accentCyan.withValues(alpha: 0.55) : w.borderColor;
 
     Widget body = AnimatedContainer(
       duration: still ? Duration.zero : const Duration(milliseconds: 180),
@@ -132,7 +133,7 @@ class _ArcticGlassContainerState extends State<ArcticGlassContainer> {
         gradient: gradient,
       ),
       // Грань поверх (foregroundDecoration): не додає внутрішнього відступу й не змінює розмірів.
-      foregroundDecoration: BoxDecoration(borderRadius: shape, border: Border.all(color: edge, width: w.glowing ? 1.2 : 1)),
+      foregroundDecoration: edge == null ? null : BoxDecoration(borderRadius: shape, border: Border.all(color: edge, width: w.glowing ? 1.2 : 1)),
       child: _InsideGlass(child: w.child),
     );
     if (w.specular || tokens.outline != null) {

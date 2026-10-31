@@ -28,9 +28,15 @@ import 'widgets.dart';
 const _ease = Cubic(0.22, 1, 0.36, 1);
 const _channel = MethodChannel('gamecon/app');
 
-Future<void> showFullPlayer(BuildContext context, TrackPlayer player) {
-  final scope = context.getInheritedWidgetOfExactType<AppScope>();
+/// Повноекранний плеєр уже відкрито (щоб натискання в шторці не відкривало другий).
+bool fullPlayerOpen = false;
+
+/// [session] — коли контекст вище AppScope (напр. натиснули картку плеєра в шторці Android).
+Future<void> showFullPlayer(BuildContext context, TrackPlayer player, {Session? session}) {
+  final found = context.getInheritedWidgetOfExactType<AppScope>();
+  final scope = found ?? (session == null ? null : AppScope(session: session, player: player, child: const SizedBox()));
   final reduce = MediaQuery.disableAnimationsOf(context);
+  fullPlayerOpen = true;
   return Navigator.of(context, rootNavigator: true).push(PageRouteBuilder<void>(
     opaque: false,
     barrierColor: Colors.transparent,
@@ -45,7 +51,7 @@ Future<void> showFullPlayer(BuildContext context, TrackPlayer player) {
       final t = CurvedAnimation(parent: animation, curve: _ease, reverseCurve: Curves.easeIn);
       return SlideTransition(position: Tween(begin: const Offset(0, 1), end: Offset.zero).animate(t), child: child);
     },
-  ));
+  )).whenComplete(() => fullPlayerOpen = false);
 }
 
 // ───────────────────────── Колір обкладинки ─────────────────────────

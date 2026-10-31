@@ -169,8 +169,7 @@ class ArcticGlassThemeExtension extends ThemeExtension<ArcticGlassThemeExtension
     pressedFill: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color.fromRGBO(255, 255, 255, 0.80), Color.fromRGBO(232, 242, 255, 0.60)]),
     innerFill: Color.fromRGBO(255, 255, 255, 0.45),
     border: Color.fromRGBO(255, 255, 255, 0.88),
-    // Найтонший контур 0.5px — край картки читається на світлому тлі.
-    outline: Color.fromRGBO(10, 132, 255, 0.14),
+    outline: null,
     specular: Color.fromRGBO(255, 255, 255, 0.95),
     shadows: [],
     barFill: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color.fromRGBO(255, 255, 255, 0.65), Color.fromRGBO(232, 242, 255, 0.45)]),
