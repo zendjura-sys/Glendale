@@ -1,5 +1,6 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import {
+    Eye,
     BadgeCheck,
     Ban,
     Check,
@@ -422,6 +423,21 @@ export default function AdminUsers({ users, filters, roles }: Props) {
                                                         </DropdownMenuItem>
                                                     ))}
                                                     <DropdownMenuSeparator className="bg-white/5" />
+                                                    {u.role !== 'admin' && (
+                                                        <DropdownMenuItem
+                                                            onSelect={() =>
+                                                                router.post(
+                                                                    `/admin/view-as/${u.username}`,
+                                                                )
+                                                            }
+                                                            className="rounded-lg focus:bg-white/[0.06]"
+                                                        >
+                                                            <Eye className="text-sky-300" />{' '}
+                                                            {tr(
+                                                                'Подивитися очима',
+                                                            )}
+                                                        </DropdownMenuItem>
+                                                    )}
                                                     <DropdownMenuItem
                                                         onSelect={() =>
                                                             update(u, {

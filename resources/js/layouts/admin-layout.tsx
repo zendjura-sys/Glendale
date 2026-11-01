@@ -3,6 +3,7 @@ import { NavigationSkeleton } from '@/components/gc/navigation-skeleton';
 import { Link, router, usePage } from '@inertiajs/react';
 import {
     Activity,
+    Filter,
     DatabaseBackup,
     ArrowLeft,
     Send,
@@ -124,6 +125,16 @@ function groups(): { title: string; items: Item[] }[] {
                     label: tr('Система'),
                     href: '/admin/system',
                     icon: DatabaseBackup,
+                },
+                {
+                    label: tr('Команда'),
+                    href: '/admin/team',
+                    icon: ShieldCheck,
+                },
+                {
+                    label: tr('Воронка реєстрації'),
+                    href: '/admin/funnel',
+                    icon: Filter,
                 },
             ],
         },
@@ -264,16 +275,21 @@ function NavPanel({
     onNavigate?: () => void;
     layoutKey: string;
 }) {
-    const { auth } = usePage().props;
+    const { auth, staffSections } = usePage().props;
     const isActive = useActive();
     const reduce = useReducedMotion();
     const [query, setQuery] = useState('');
     const q = query.trim().toLowerCase();
+    // Модератор бачить лише доручені розділи (ролі команди).
+    const allowed = (href: string) =>
+        auth.user?.is_admin ||
+        (staffSections ?? []).includes(href.split('/')[2] ?? '');
     const list = groups()
         .map((group) => ({
             ...group,
-            items: group.items.filter((item) =>
-                item.label.toLowerCase().includes(q),
+            items: group.items.filter(
+                (item) =>
+                    allowed(item.href) && item.label.toLowerCase().includes(q),
             ),
         }))
         .filter((group) => group.items.length > 0);

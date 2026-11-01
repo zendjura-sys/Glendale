@@ -9,6 +9,7 @@ import {
     LogOut,
     Megaphone,
     TriangleAlert,
+    Eye,
     PanelBottom,
     MessageCircle,
     MessageSquareHeart,
@@ -818,6 +819,34 @@ function Announcement() {
 }
 
 /** Активний збій зі сторінки статусу: тонкий рядок з посиланням на подробиці. */
+/** Адміністратор дивиться сайт очима людини — нагадування й вихід. */
+function ViewAsBanner() {
+    const { viewAs } = usePage().props;
+
+    if (!viewAs) return null;
+
+    return (
+        <div className="mb-4 flex items-center gap-3 rounded-2xl bg-amber-400/15 px-4 py-3 text-sm text-amber-100">
+            <Eye className="size-4 shrink-0" />
+            <span className="min-w-0 flex-1">
+                {tr(
+                    'Ви бачите сайт очима {name} (@{username}). Лише перегляд.',
+                    {
+                        name: viewAs.name,
+                        username: viewAs.username,
+                    },
+                )}
+            </span>
+            <a
+                href="/view-as/stop"
+                className="shrink-0 font-semibold text-white hover:underline"
+            >
+                {tr('Вийти')}
+            </a>
+        </div>
+    );
+}
+
 function IncidentBanner() {
     const { incident } = usePage().props;
 
@@ -901,6 +930,7 @@ export default function SocialLayout({ children }: PropsWithChildren) {
             >
                 <Sidebar />
                 <main id="main-content" className="gc-vt-main min-w-0 flex-1">
+                    <ViewAsBanner />
                     <IncidentBanner />
                     <Announcement />
                     <NavigationSkeleton>

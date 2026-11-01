@@ -9,6 +9,7 @@ use App\Http\Middleware\EnsureUserIsAdmin;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\SetLocale;
 use App\Http\Middleware\TrackUserActivity;
+use App\Http\Middleware\ViewAsUser;
 use App\Models\Community;
 use App\Services\Communities\CommunityGuests;
 use App\Services\Geo\CountryRestrictions;
@@ -37,6 +38,7 @@ return Application::configure(basePath: dirname(__DIR__))
             BlockCountries::class,
             BlockBannedIps::class,
             TrackUserActivity::class,
+            ViewAsUser::class,
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
         ]);

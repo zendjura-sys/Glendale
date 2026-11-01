@@ -30,6 +30,7 @@ use App\Support\Plugins\Plugins;
 use App\Support\Seasons;
 use App\Support\Settings\SiteSettings;
 use App\Support\Skins;
+use App\Support\Staff\StaffRoles;
 use App\Support\TeenMode;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -164,6 +165,10 @@ class HandleInertiaRequests extends Middleware
                 && $user->pref('phone_prompt') !== false && app(PhoneNumbers::class)->current($user) === null,
             // Фірмовий фон з адмінки (картинки для ПК і телефона) або null.
             'siteBackground' => fn () => Backgrounds::image(),
+            // Режим «очима людини»: банер з кнопкою виходу.
+            'viewAs' => $request->attributes->get('view_as_admin') !== null && $user ? ['name' => $user->name, 'username' => $user->username] : null,
+            // Ролі команди: які розділи адмінки бачить модератор.
+            'staffSections' => $user?->isStaff() ? fn () => StaffRoles::sections($user) : null,
             // Активний збій зі сторінки статусу — тонкий банер угорі (null, коли все працює).
             'incident' => fn () => StatusPageController::banner(),
             // Серія днів поспіль, спогади «цього дня» й рамка свята (для бічної панелі, стрічки й налаштувань).

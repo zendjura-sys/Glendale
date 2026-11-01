@@ -239,6 +239,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     Route::post('configs/{config}/like', [GameConfigController::class, 'like'])->whereNumber('config')->middleware('throttle:60,1')->name('configs.like');
     Route::post('configs/{config}/copied', [GameConfigController::class, 'copied'])->whereNumber('config')->middleware('throttle:60,1')->name('configs.copied');
     Route::delete('configs/{config}', [GameConfigController::class, 'destroy'])->whereNumber('config')->name('configs.destroy');
+    Route::get('view-as/stop', [Admin\TeamController::class, 'stopViewAs'])->name('view-as.stop');
     // «Цього дня», карта гравців і рамка свята.
     Route::get('memories', [MemoriesController::class, 'memories'])->name('memories');
     Route::get('map', [MemoriesController::class, 'map'])->name('players-map');
@@ -1015,6 +1016,11 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::delete('status/{incident}', [Admin\StatusController::class, 'destroy'])->whereNumber('incident')->name('status.destroy');
         Route::get('broadcasts', [Admin\BroadcastController::class, 'index'])->name('broadcasts.index');
         Route::get('system', [Admin\SystemController::class, 'index'])->name('system.index');
+        Route::get('team', [Admin\TeamController::class, 'index'])->name('team.index');
+        Route::post('team', [Admin\TeamController::class, 'add'])->name('team.add');
+        Route::put('team/{user}', [Admin\TeamController::class, 'update'])->name('team.update');
+        Route::get('funnel', [Admin\TeamController::class, 'funnel'])->name('funnel');
+        Route::post('view-as/{user}', [Admin\TeamController::class, 'viewAs'])->name('view-as');
         Route::post('system/backups', [Admin\SystemController::class, 'backup'])->middleware('throttle:3,10')->name('system.backup');
         Route::get('system/backups/{name}', [Admin\SystemController::class, 'download'])->where('name', 'gamecon-\d{8}-\d{6}\.sql\.gz')->name('system.backups.download');
         Route::post('system/errors/{error}/resolve', [Admin\SystemController::class, 'resolve'])->whereNumber('error')->name('system.errors.resolve');

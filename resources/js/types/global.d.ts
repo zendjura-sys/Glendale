@@ -77,6 +77,10 @@ declare module '@inertiajs/core' {
                 frame: { season: string; on: boolean } | null;
                 widgets: string[];
             } | null;
+            /** Режим «очима людини» (адміністратор переглядає сайт як ця людина). */
+            viewAs?: { name: string; username: string } | null;
+            /** Розділи адмінки, доручені модератору. */
+            staffSections?: string[] | null;
             /** Активний збій зі сторінки статусу (null — усе працює). */
             incident?: {
                 id: number;

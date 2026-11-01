@@ -54,6 +54,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property string|null $about
  * @property string|null $city
  * @property string|null $country
+ * @property list<string>|null $staff_sections розділи адмінки, доручені модератору
  * @property int $streak_days серія днів поспіль
  * @property int $streak_best
  * @property Carbon|null $streak_on
@@ -151,6 +152,7 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
     protected function casts(): array
     {
         return [
+            'staff_sections' => 'array',
             'streak_on' => 'date',
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
