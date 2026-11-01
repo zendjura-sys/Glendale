@@ -66,7 +66,7 @@ export default function Lists({
                     <InfiniteScroll
                         data="lists"
                         loading={<ListSkeleton rows={2} />}
-                        className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3"
+                        className="grid gap-3 min-[1920px]:grid-cols-4 min-[2400px]:grid-cols-5 sm:grid-cols-2 xl:grid-cols-3"
                     >
                         {lists.data.map((list) => (
                             <ListCard key={list.id} list={list} />

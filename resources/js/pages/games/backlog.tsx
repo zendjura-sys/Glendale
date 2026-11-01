@@ -172,7 +172,7 @@ export default function GameBacklog({ owner, mine, board, friends }: Props) {
                 })}
             </div>
 
-            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            <div className="grid gap-3 min-[1920px]:grid-cols-5 min-[2400px]:grid-cols-6 md:grid-cols-2 xl:grid-cols-4">
                 {BACKLOG_STATUSES.map((s) => {
                     const meta = BACKLOG_META[s];
 

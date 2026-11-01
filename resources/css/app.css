@@ -1159,64 +1159,46 @@ label:has(
 
 /*
  * Вхід і реєстрація (layouts/auth-layout.tsx). Поза шарами — щоб перекрити утиліти Input:
- * поля тут «лінійні» (лише нижня лінія), а половина-запрошення має скошений край на ПК.
+ * матова панель форми й прозорі поля лише з нижньою лінією (біла при фокусі).
  */
-.auth-invite {
-    isolation: isolate;
-}
-.auth-invite::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    background:
-        linear-gradient(
-            165deg,
-            color-mix(in oklab, var(--primary) 14%, transparent),
-            transparent 70%
-        ),
-        rgb(255 255 255 / 0.025);
-    border-top: 1px solid rgb(255 255 255 / 0.06);
-    transition: clip-path 0.6s cubic-bezier(0.22, 1, 0.36, 1);
-}
-@media (min-width: 1024px) {
-    .auth-invite::before {
-        border: 0;
-    }
-    .auth-invite--right::before {
-        clip-path: polygon(16% 0, 100% 0, 100% 100%, 0 100%);
-    }
-    .auth-invite--left::before {
-        clip-path: polygon(0 0, 100% 0, 84% 100%, 0 100%);
-    }
-    .auth-invite--right {
-        padding-left: 4.5rem;
-    }
-    .auth-invite--left {
-        padding-right: 4.5rem;
-    }
+.auth-panel {
+    background: rgba(15, 20, 28, 0.45);
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
 }
 .auth-form [data-slot='input'] {
     height: 2.75rem;
     padding-left: 0;
+    color: #fff;
     border: 0;
-    border-bottom: 1px solid rgb(255 255 255 / 0.14);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.35);
     border-radius: 0;
-    background: transparent;
+    background: transparent !important;
     box-shadow: none;
-    transition:
-        border-color 0.25s,
-        box-shadow 0.25s;
+    transition: border-color 0.25s;
+}
+.auth-form [data-slot='input']::placeholder {
+    color: rgba(255, 255, 255, 0.6);
 }
 .auth-form [data-slot='input']:focus,
 .auth-form [data-slot='input']:focus-visible {
     outline: none;
-    background: transparent;
-    border-bottom-color: var(--primary);
-    box-shadow: 0 1px 0 0 var(--primary);
+    border-width: 0 0 1px;
+    border-bottom-color: #fff;
+    box-shadow: none !important;
 }
 .auth-form [data-slot='input'][aria-invalid='true'] {
     border-bottom-color: var(--destructive);
+}
+/* Автозаповнення браузера не має фарбувати поле в жовтий/білий прямокутник. */
+.auth-form [data-slot='input']:-webkit-autofill {
+    -webkit-text-fill-color: #fff;
+    transition: background-color 9999s;
+}
+/* Кнопка-«око» пароля — така ж монохромна іконка праворуч, як в інших полях. */
+.auth-form [data-slot='input'] + button {
+    padding-right: 0.25rem;
+    color: rgba(255, 255, 255, 0.6);
 }
 
 /*
@@ -2379,11 +2361,28 @@ html[data-text='xl'] {
     pointer-events: none;
     overflow: hidden;
 }
+/*
+ * Ширина макета за екраном: телефон — одна колонка; планшет (768+) — меню + вміст;
+ * 1280+ — три колонки; FHD (1920+) — ширше; 2K і більше (2400+) — чотири колонки.
+ */
+:root {
+    --gc-shell-max: 1320px;
+}
+@media (min-width: 1920px) {
+    :root {
+        --gc-shell-max: 1600px;
+    }
+}
+@media (min-width: 2400px) {
+    :root {
+        --gc-shell-max: 2000px;
+    }
+}
 .season-pine {
     position: absolute;
     top: calc(env(safe-area-inset-top) + 3.55rem);
     left: 50%;
-    width: min(1320px, calc(100% - 1rem));
+    width: min(var(--gc-shell-max), calc(100% - 1rem));
     height: 40px;
     transform: translateX(-50%);
     background: url('/images/seasons/newyear/pine-garland.webp') left center /
@@ -2612,7 +2611,7 @@ html[data-text='xl'] {
     position: absolute;
     top: calc(env(safe-area-inset-top) + 4.1rem);
     left: 50%;
-    width: min(1320px, calc(100% - 1rem));
+    width: min(var(--gc-shell-max), calc(100% - 1rem));
     height: 4px;
     transform: translateX(-50%);
     border-radius: 999px;
@@ -4481,10 +4480,10 @@ html:has(.am) body {
     padding: 0 10px;
     border-radius: 9999px;
 }
-@media (min-width: 1024px) {
-    /* На комп'ютері шапка тягнеться на ширину макета (бокове меню + стрічка + права колонка). */
+@media (min-width: 768px) {
+    /* Планшет і комп'ютер: шапка тягнеться на ширину макета (бокове меню + стрічка + колонки). */
     .ios-header-pill {
-        max-width: 1320px;
+        max-width: var(--gc-shell-max);
         padding: 0 10px 0 18px;
     }
 }

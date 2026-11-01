@@ -456,7 +456,7 @@ function ensureEmbedHost(): HTMLDivElement {
     embedHost = document.createElement('div');
     embedHost.id = EMBED_HOST_ID;
     embedHost.className =
-        'fixed right-3 bottom-[148px] z-40 hidden w-[min(360px,calc(100vw-1.5rem))] overflow-hidden rounded-2xl shadow-[0_20px_60px_-15px_rgb(30_215_96/0.45)] ring-1 ring-white/10 lg:bottom-[92px]';
+        'fixed right-3 bottom-[148px] z-40 hidden w-[min(360px,calc(100vw-1.5rem))] overflow-hidden rounded-2xl shadow-[0_20px_60px_-15px_rgb(30_215_96/0.45)] ring-1 ring-white/10 md:bottom-[92px]';
     const target = document.createElement('div');
     embedHost.appendChild(target);
     document.body.appendChild(embedHost);

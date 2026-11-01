@@ -6,7 +6,7 @@ import { tr } from '@/lib/i18n';
 
 /** Скільки тост лишається на екрані (стільки ж іде смужка внизу тосту). */
 const DURATION = 4500;
-const WIDE = '(min-width: 1024px)';
+const WIDE = '(min-width: 768px)';
 
 function useWide(): boolean {
     const [wide, setWide] = useState(

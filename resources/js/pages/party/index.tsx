@@ -281,7 +281,7 @@ export default function PartyBoard({ parties, filters, options }: Props) {
                         }
                     />
                 ) : (
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                    <div className="grid grid-cols-1 gap-4 min-[1920px]:grid-cols-4 min-[2400px]:grid-cols-5 sm:grid-cols-2 xl:grid-cols-3">
                         {parties.map((party) => (
                             <PartyCard key={party.id} party={party} />
                         ))}

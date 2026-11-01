@@ -69,7 +69,7 @@ export default function ArticlesIndex({ articles, drafts, game }: Props) {
                     {tr('Статей ще немає — напишіть першу.')}
                 </p>
             ) : (
-                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                <div className="grid gap-4 min-[1920px]:grid-cols-4 min-[2400px]:grid-cols-5 sm:grid-cols-2 xl:grid-cols-3">
                     {articles.data.map((article) => (
                         <ArticleCardView key={article.id} article={article} />
                     ))}

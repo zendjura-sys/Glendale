@@ -16,6 +16,7 @@ import 'player_view.dart';
 import 'state.dart';
 import 'theme.dart';
 import 'voice_room.dart';
+import 'rail.dart';
 import 'widgets.dart';
 import 'i18n.dart';
 
@@ -239,6 +240,9 @@ class _AppShellState extends State<AppShell> {
             final bottomBar = !hideChrome && (!wide || musicTabs);
             final bottom = hideChrome ? 0.0 : systemBottom + (bottomBar ? islandExtent : 8) + (playing ? miniPlayerExtent : 0) + (inCall ? voiceBarExtent : 0);
             final contentLeft = wide ? sideNavWidth + 28 : 0.0;
+            // Великий планшет (1280+ dp): третя колонка праворуч — друзі онлайн і бесіди.
+            final rail = wide && screen.width >= railScreenWidth && !inMusic && !hideChrome;
+            final contentRight = rail ? railWidth + 28 : (wide ? 16.0 : 0.0);
             // Сезон із профілю (App\Support\Seasons): прикраси тла, вмісту, шапки й аватарів.
             final season = text(widget.session.me?['season']);
             if (currentSeason.value != season) WidgetsBinding.instance.addPostFrameCallback((_) => currentSeason.value = season);
@@ -255,7 +259,7 @@ class _AppShellState extends State<AppShell> {
                     if (wide || tabletPortrait)
                       Positioned.fill(
                         left: contentLeft,
-                        right: wide ? 16 : 0,
+                        right: contentRight,
                         child: LayoutBuilder(
                           builder: (context, box) => Center(
                             child: SizedBox(width: math.min(box.maxWidth, contentWidth), height: box.maxHeight, child: widget.child),
@@ -274,6 +278,14 @@ class _AppShellState extends State<AppShell> {
                     ),
                     // Вогники над шапкою, гірлянда й стрічка під нею.
                     Positioned.fill(child: SeasonHeader(season: season, headerBottom: topInset + siteBarHeight)),
+                    if (rail)
+                      Positioned(
+                        top: topInset + siteBarHeight + 10,
+                        right: 12,
+                        bottom: systemBottom + 8 + (playing ? miniPlayerExtent : 0),
+                        width: railWidth,
+                        child: RailPanel(session: widget.session),
+                      ),
                     if (wide)
                       Positioned(
                         top: topInset + siteBarHeight + 10,
@@ -285,7 +297,7 @@ class _AppShellState extends State<AppShell> {
                     if (!hideChrome)
                       Positioned(
                         left: contentLeft,
-                        right: wide ? 16 : 0,
+                        right: contentRight,
                         bottom: bottomBar ? systemBottom + islandExtent : 0,
                         child: Column(
                           mainAxisSize: MainAxisSize.min,

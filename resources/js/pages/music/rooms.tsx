@@ -57,7 +57,7 @@ export default function MusicRooms({ rooms, groups }: Props) {
                         {tr('Живих кімнат поки немає — відкрийте свою.')}
                     </p>
                 )}
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                <div className="grid grid-cols-1 gap-3 min-[1920px]:grid-cols-4 min-[2400px]:grid-cols-5 sm:grid-cols-2 xl:grid-cols-3">
                     {rooms.map((room, i) => (
                         <m.div
                             key={room.code}

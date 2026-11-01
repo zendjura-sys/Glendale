@@ -1,9 +1,13 @@
 import { Form, Head } from '@inertiajs/react';
+import { Mail, User } from 'lucide-react';
+import {
+    AuthField,
+    AuthSubmit,
+    AuthSwitch,
+} from '@/components/auth/auth-field';
 import { SocialLogin } from '@/components/auth/social-login';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { store } from '@/routes/register';
@@ -37,71 +41,72 @@ export default function Register({ passwordRules }: Props) {
                             aria-hidden
                             className="pointer-events-none absolute -left-[9999px] size-px opacity-0"
                         />
-                        <div className="grid gap-5">
-                            <div className="grid grid-cols-2 gap-3">
-                                <div className="grid gap-2">
-                                    <Label htmlFor="first_name">
-                                        {tr("Ім'я")}
-                                    </Label>
-                                    <Input
+                        <div className="grid gap-6">
+                            <div className="grid grid-cols-2 gap-5">
+                                <div className="grid gap-1.5">
+                                    <AuthField
+                                        icon={User}
+                                        label={tr("Ім'я")}
                                         id="first_name"
                                         name="first_name"
                                         required
                                         autoFocus
                                         tabIndex={1}
                                         autoComplete="given-name"
-                                        placeholder={tr('Олександр')}
                                     />
                                     <InputError message={errors.first_name} />
                                 </div>
-                                <div className="grid gap-2">
-                                    <Label htmlFor="last_name">
-                                        {tr('Прізвище')}
-                                    </Label>
-                                    <Input
+                                <div className="grid gap-1.5">
+                                    <AuthField
+                                        icon={User}
+                                        label={tr('Прізвище')}
                                         id="last_name"
                                         name="last_name"
                                         required
                                         tabIndex={2}
                                         autoComplete="family-name"
-                                        placeholder={tr('Коваленко')}
                                     />
                                     <InputError message={errors.last_name} />
                                 </div>
                             </div>
 
-                            <div className="grid gap-2">
-                                <Label htmlFor="email">
-                                    {tr('Електронна пошта')}
-                                </Label>
-                                <Input
+                            <div className="grid gap-1.5">
+                                <AuthField
+                                    icon={Mail}
+                                    label={tr('Електронна пошта')}
                                     id="email"
                                     type="email"
                                     required
                                     tabIndex={3}
                                     autoComplete="email"
                                     name="email"
-                                    placeholder="you@gamecon.online"
                                 />
                                 <InputError message={errors.email} />
                             </div>
 
-                            <div className="grid gap-2">
-                                <Label htmlFor="password">{tr('Пароль')}</Label>
+                            <div className="grid gap-1.5">
+                                <Label htmlFor="password" className="sr-only">
+                                    {tr('Пароль')}
+                                </Label>
                                 <PasswordInput
                                     id="password"
                                     required
                                     tabIndex={4}
                                     autoComplete="new-password"
                                     name="password"
-                                    placeholder={tr('Мінімум 8 символів')}
+                                    placeholder={tr(
+                                        'Пароль (мінімум 8 символів)',
+                                    )}
                                     passwordrules={passwordRules}
                                 />
                                 <InputError message={errors.password} />
                             </div>
 
-                            <div className="grid gap-2">
-                                <Label htmlFor="password_confirmation">
+                            <div className="grid gap-1.5">
+                                <Label
+                                    htmlFor="password_confirmation"
+                                    className="sr-only"
+                                >
                                     {tr('Повторіть пароль')}
                                 </Label>
                                 <PasswordInput
@@ -110,7 +115,7 @@ export default function Register({ passwordRules }: Props) {
                                     tabIndex={5}
                                     autoComplete="new-password"
                                     name="password_confirmation"
-                                    placeholder="••••••••"
+                                    placeholder={tr('Повторіть пароль')}
                                     passwordrules={passwordRules}
                                 />
                                 <InputError
@@ -118,16 +123,19 @@ export default function Register({ passwordRules }: Props) {
                                 />
                             </div>
 
-                            <Button
-                                type="submit"
-                                size="lg"
-                                className="mt-1 w-full"
-                                tabIndex={6}
-                                data-test="register-user-button"
-                            >
-                                {processing && <Spinner />}
-                                {tr('Створити акаунт')}
-                            </Button>
+                            <div className="mt-2 flex flex-wrap items-center gap-x-6 gap-y-3">
+                                <AuthSubmit
+                                    tabIndex={6}
+                                    disabled={processing}
+                                    data-test="register-user-button"
+                                >
+                                    {processing && <Spinner />}
+                                    {tr('Створити акаунт')}
+                                </AuthSubmit>
+                                <AuthSwitch href="/login">
+                                    {tr('Уже є акаунт? Увійти')}
+                                </AuthSwitch>
+                            </div>
                         </div>
                     </>
                 )}
@@ -137,7 +145,7 @@ export default function Register({ passwordRules }: Props) {
 }
 
 Register.layout = {
-    title: tr('Приєднуйся до GameCon'),
+    title: tr('Реєстрація'),
     description: tr(
         'Створи акаунт за хвилину — і знаходь друзів, ігри та кіно',
     ),

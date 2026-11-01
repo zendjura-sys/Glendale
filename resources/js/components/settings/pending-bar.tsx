@@ -43,7 +43,7 @@ export function PendingBar({
                             : { opacity: 0, y: 24, scale: 0.98 }
                     }
                     transition={motionOr(reduce, RISE)}
-                    className="pointer-events-none fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+5rem)] z-50 flex justify-center px-3 lg:bottom-6 lg:pl-[300px]"
+                    className="pointer-events-none fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+5rem)] z-50 flex justify-center px-3 md:bottom-6 md:pl-[300px]"
                     role="status"
                 >
                     <div className="liquid-glass liquid-glass--dense pointer-events-auto flex w-full max-w-[560px] items-center gap-3 rounded-2xl py-2.5 pr-2.5 pl-4">

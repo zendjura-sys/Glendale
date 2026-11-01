@@ -109,7 +109,7 @@ export default function GameDeals({ giveaways, subscribed, wishlist }: Props) {
                             )}
                         </p>
                     ) : (
-                        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                        <div className="grid gap-3 min-[1920px]:grid-cols-4 min-[2400px]:grid-cols-5 sm:grid-cols-2 xl:grid-cols-3">
                             {giveaways.map((g, i) => (
                                 <motion.article
                                     key={g.id}

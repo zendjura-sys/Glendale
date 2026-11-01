@@ -837,10 +837,10 @@ export function PostComposer({
                     </div>
                 )}
 
-            {/* Одна лінія: фото й «＋» (усі вкладення в меню), праворуч — кому видно і «Пост». */}
+            {/* Одна лінія: фото й «＋» (на телефоні вкладення в меню, ширше — значками), праворуч — кому видно і «Пост». */}
             <div
                 className={cn(
-                    'relative mt-3 flex items-center gap-1',
+                    'relative mt-3 flex flex-wrap items-center gap-1',
                     !expanded && 'sm:pl-14',
                 )}
             >
@@ -861,12 +861,51 @@ export function PostComposer({
                     <ImagePlus className="size-5 text-[#6fa2ff]" />
                     <span className="sr-only">{tr('Фото')}</span>
                 </button>
+                {/* Широкий екран: усі інструменти видно одразу — значками з підказками. */}
+                <div className="order-last hidden basis-full flex-wrap items-center gap-0.5 border-t border-white/[0.06] pt-2 md:flex">
+                    {tools.map((tool) => {
+                        const inner = (
+                            <tool.icon
+                                className="size-[18px]"
+                                style={{ color: tool.color }}
+                            />
+                        );
+                        const cls = cn(
+                            'inline-flex size-9 shrink-0 items-center justify-center rounded-xl transition hover:bg-white/[0.08] disabled:opacity-40',
+                            tool.active && 'bg-white/[0.1]',
+                        );
+                        return tool.href ? (
+                            <Link
+                                key={tool.key}
+                                href={tool.href}
+                                title={tool.label}
+                                aria-label={tool.label}
+                                className={cls}
+                            >
+                                {inner}
+                            </Link>
+                        ) : (
+                            <button
+                                key={tool.key}
+                                type="button"
+                                title={tool.label}
+                                aria-label={tool.label}
+                                aria-pressed={tool.active || undefined}
+                                disabled={tool.disabled}
+                                onClick={tool.onSelect}
+                                className={cls}
+                            >
+                                {inner}
+                            </button>
+                        );
+                    })}
+                </div>
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <button
                             type="button"
                             title={tr('Додати до запису')}
-                            className="group inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl bg-white/[0.06] px-3 text-sm font-medium text-white/80 transition hover:bg-white/[0.1] hover:text-white data-[state=open]:bg-gc-indigo/25 data-[state=open]:text-white"
+                            className="group inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl bg-white/[0.06] px-3 text-sm font-medium text-white/80 transition hover:bg-white/[0.1] hover:text-white data-[state=open]:bg-gc-indigo/25 data-[state=open]:text-white md:hidden"
                         >
                             <Plus className="size-4 transition-transform group-data-[state=open]:rotate-45" />
                             <span className="hidden min-[380px]:inline">

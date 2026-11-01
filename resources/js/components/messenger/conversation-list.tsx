@@ -118,7 +118,7 @@ export function ConversationList({
             <div
                 className={cn(
                     'min-h-0 flex-1 overflow-y-auto px-2',
-                    dockedAboveNav(playing, 'lg:pb-2'),
+                    dockedAboveNav(playing, 'md:pb-2'),
                 )}
             >
                 {visible.length === 0 ? (

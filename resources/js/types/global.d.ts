@@ -36,6 +36,10 @@ declare module '@inertiajs/core' {
                     badge: 'get' | 'preregister';
                 } | null;
                 registration_open: boolean;
+                auth_images?: {
+                    site_desktop?: string | null;
+                    site_mobile?: string | null;
+                };
                 translate: boolean;
                 max_attachments: number;
                 max_message_file_mb: number;

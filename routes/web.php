@@ -91,6 +91,7 @@ use App\Http\Controllers\PostController;
 use App\Http\Controllers\PostSeriesController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\QuestController;
+use App\Http\Controllers\RailController;
 use App\Http\Controllers\ReadingController;
 use App\Http\Controllers\ReadyToPlayController;
 use App\Http\Controllers\ReferralController;
@@ -1009,6 +1010,8 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     Route::get('ready', [ReadyToPlayController::class, 'show'])->name('ready.show');
     Route::put('ready', [ReadyToPlayController::class, 'update'])->middleware('throttle:30,1')->name('ready.update');
     Route::delete('ready', [ReadyToPlayController::class, 'destroy'])->name('ready.destroy');
+    // Четверта колонка на екранах 2K+: друзі онлайн і бесіди.
+    Route::get('me/rail', RailController::class)->middleware('throttle:60,1')->name('rail');
     Route::put('me/status', [StatusController::class, 'update'])->middleware('throttle:30,1')->name('status.update');
     Route::delete('me/status', [StatusController::class, 'destroy'])->name('status.destroy');
     // «Граю в…»: ручний статус, автоматичний (Discord, Steam, телефон).
@@ -1157,6 +1160,8 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
             Route::post('seasonal', 'seasonal')->name('seasonal');
             Route::post('background', 'background')->middleware('throttle:30,1')->name('background');
             Route::delete('background/{kind}', 'deleteBackground')->whereIn('kind', ['desktop', 'mobile'])->name('background.destroy');
+            Route::post('auth-images', 'authImages')->middleware('throttle:30,1')->name('auth-images');
+            Route::delete('auth-images/{kind}', 'deleteAuthImage')->whereIn('kind', ['site_desktop', 'site_mobile', 'app_phone', 'app_tablet'])->name('auth-images.destroy');
             Route::whereNumber('theme')->group(function () {
                 Route::post('{theme}', 'update')->middleware('throttle:30,1')->name('update');
                 Route::post('{theme}/activate', 'activate')->name('activate');

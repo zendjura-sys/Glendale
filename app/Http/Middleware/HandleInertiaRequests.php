@@ -21,6 +21,7 @@ use App\Services\Moderation\ContentFilter;
 use App\Services\Phones\PhoneNumbers;
 use App\Services\Spotify\SpotifyClient;
 use App\Services\Wrapped\YearInReview;
+use App\Support\AuthImages;
 use App\Support\Backgrounds;
 use App\Support\I18n\Locales;
 use App\Support\Modules\ModuleManager;
@@ -95,6 +96,8 @@ class HandleInertiaRequests extends Middleware
                 'description' => $this->settings->seoDescription(),
                 'play_store' => transform($this->settings->playStoreUrl(), fn (string $url) => ['url' => $url, 'badge' => $this->settings->playStoreBadge()]),
                 'registration_open' => (bool) $this->settings->get('registration_open'),
+                // Фони входу й реєстрації (Адмінка → Дизайн): комп'ютер і планшет, телефон.
+                'auth_images' => collect(AuthImages::urls())->only(['site_desktop', 'site_mobile'])->all(),
                 'translate' => app(ContentTranslator::class)->enabled(),
                 'max_attachments' => (int) $this->settings->get('max_attachments'),
                 'max_message_file_mb' => (int) $this->settings->get('max_message_file_mb'),

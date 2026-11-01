@@ -5,9 +5,11 @@ import {
     Eye,
     FileCode2,
     ImagePlus,
+    LogIn,
     Monitor,
     Palette,
     Smartphone,
+    Tablet,
     RotateCcw,
     Snowflake,
     Trash2,
@@ -40,6 +42,7 @@ type Props = {
     seasonal: string;
     seasons: string[];
     background: SiteImage | null;
+    authImages: Record<string, string | null>;
 };
 
 type SiteImage = {
@@ -60,6 +63,7 @@ export default function AdminDesign({
     seasonal,
     seasons,
     background,
+    authImages,
 }: Props) {
     const active = themes.find((theme) => theme.is_active) ?? null;
     const fileRef = useRef<HTMLInputElement>(null);
@@ -103,6 +107,7 @@ export default function AdminDesign({
             />
 
             <BackgroundCard image={background} />
+            <AuthImagesCard images={authImages} />
 
             <SeasonalCard value={seasonal} seasons={seasons} />
 
@@ -523,6 +528,140 @@ function SeasonalCard({
                         {labels[id] ?? id}
                     </button>
                 ))}
+            </div>
+        </section>
+    );
+}
+
+/** Фони входу й реєстрації: сайт (комп’ютер і планшет, телефон) і застосунок (телефон, планшет). */
+function AuthImagesCard({ images }: { images: Record<string, string | null> }) {
+    const [sending, setSending] = useState(false);
+    const upload = (kind: string, file: File | undefined) => {
+        if (!file) return;
+        setSending(true);
+        router.post(
+            '/admin/design/auth-images',
+            { [kind]: file },
+            {
+                forceFormData: true,
+                preserveScroll: true,
+                onFinish: () => setSending(false),
+            },
+        );
+    };
+    const remove = (kind: string) =>
+        router.delete(`/admin/design/auth-images/${kind}`, {
+            preserveScroll: true,
+        });
+    const slots = [
+        {
+            kind: 'site_desktop',
+            icon: Monitor,
+            title: tr('Сайт: комп’ютер і планшет'),
+            hint: tr('Горизонтальна, від 1920×1080'),
+            ratio: 'aspect-video w-72',
+        },
+        {
+            kind: 'site_mobile',
+            icon: Smartphone,
+            title: tr('Сайт: телефон'),
+            hint: tr('Вертикальна, від 1080×2340'),
+            ratio: 'aspect-[9/19] w-[7.5rem]',
+        },
+        {
+            kind: 'app_phone',
+            icon: Smartphone,
+            title: tr('Застосунок: телефон'),
+            hint: tr('Вертикальна, від 1080×2340'),
+            ratio: 'aspect-[9/19] w-[7.5rem]',
+        },
+        {
+            kind: 'app_tablet',
+            icon: Tablet,
+            title: tr('Застосунок: планшет'),
+            hint: tr('Горизонтальна 4:3 або 16:10, від 2048×1536'),
+            ratio: 'aspect-[4/3] w-56',
+        },
+    ];
+
+    return (
+        <section className="glass mb-5 rounded-2xl p-4">
+            <div className="flex items-center gap-3">
+                <span className="flex size-11 items-center justify-center rounded-2xl bg-white/[0.06] text-white">
+                    <LogIn className="size-5" />
+                </span>
+                <div className="min-w-0 flex-1">
+                    <h3 className="font-display text-base font-bold text-white">
+                        {tr('Фон входу й реєстрації')}
+                    </h3>
+                    <p className="text-xs text-white/45">
+                        {tr(
+                            'Фото на сторінках входу сайту й застосунку. Без картинки — фірмове тло. Якщо на сайті є лише одна, вона буде і на телефоні, і на комп’ютері. JPG, PNG або WebP до 12 МБ.',
+                        )}
+                    </p>
+                </div>
+            </div>
+            <div className="mt-4 flex flex-wrap items-start gap-4">
+                {slots.map((slot) => {
+                    const url = images[slot.kind] ?? null;
+                    return (
+                        <div key={slot.kind} className="flex flex-col gap-2">
+                            <label
+                                className={cn(
+                                    'group relative flex cursor-pointer items-center justify-center overflow-hidden rounded-2xl border border-dashed border-white/15 bg-white/[0.03] bg-cover bg-center transition hover:border-white/35',
+                                    slot.ratio,
+                                    sending && 'pointer-events-none opacity-60',
+                                )}
+                                style={
+                                    url
+                                        ? { backgroundImage: `url(${url})` }
+                                        : undefined
+                                }
+                            >
+                                <input
+                                    type="file"
+                                    accept="image/jpeg,image/png,image/webp"
+                                    className="sr-only"
+                                    onChange={(e) => {
+                                        upload(slot.kind, e.target.files?.[0]);
+                                        e.target.value = '';
+                                    }}
+                                />
+                                <span
+                                    className={cn(
+                                        'flex flex-col items-center gap-1 rounded-xl px-2 py-1.5 text-center text-xs font-medium text-white/70 transition',
+                                        url &&
+                                            'bg-black/55 opacity-0 group-hover:opacity-100',
+                                    )}
+                                >
+                                    <Upload className="size-4" />
+                                    {url ? tr('Замінити') : tr('Завантажити')}
+                                </span>
+                            </label>
+                            <div className="flex max-w-72 items-start gap-1">
+                                <div className="min-w-0 flex-1">
+                                    <p className="flex items-center gap-1.5 text-sm font-medium text-white">
+                                        <slot.icon className="size-4 text-white/50" />
+                                        {slot.title}
+                                    </p>
+                                    <p className="text-xs text-white/40">
+                                        {slot.hint}
+                                    </p>
+                                </div>
+                                {url && (
+                                    <button
+                                        type="button"
+                                        onClick={() => remove(slot.kind)}
+                                        aria-label={tr('Видалити')}
+                                        className="flex size-8 items-center justify-center rounded-lg text-white/50 transition hover:bg-white/[0.06] hover:text-red-300"
+                                    >
+                                        <Trash2 className="size-4" />
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    );
+                })}
             </div>
         </section>
     );

@@ -1216,6 +1216,7 @@ class _ComposerState extends State<Composer> {
     final expanded = focused || ready;
     final still = MediaQuery.disableAnimationsOf(context);
     final vis = _visibility[visibility] ?? _visibility['public']!;
+    final wide = MediaQuery.sizeOf(context).width >= 600;
     Widget removable(Widget child, VoidCallback onRemove) => Stack(children: [
       child,
       Positioned(
@@ -1351,6 +1352,7 @@ class _ComposerState extends State<Composer> {
             children: [
               _ToolIcon(icon: LucideIcons.imagePlus, onTap: _pickImages, tooltip: tr('Фото')),
               const SizedBox(width: 6),
+              if (!wide)
               ArcticPressable(
                 onTap: () => setState(() => tools = !tools),
                 scale: 0.92,
@@ -1418,7 +1420,14 @@ class _ComposerState extends State<Composer> {
               PrimaryButton(label: publishAt != null ? tr('Запланувати') : tr('Пост'), icon: LucideIcons.sparkles, onPressed: ready ? _publish : null, busy: busy, expand: false, compact: true),
             ],
           ),
-          // Сітка інструментів під «+»: плавно розкривається, плитки з'являються каскадом.
+          // Планшет і ширше: інструменти завжди видно рядком значків — без «+».
+          if (wide)
+            Padding(
+              padding: const EdgeInsets.only(top: 10),
+              child: Wrap(spacing: 6, runSpacing: 6, children: [for (final tool in _tools(session)) _ToolChip(tool: tool)]),
+            ),
+          // Сітка інструментів під «+» (телефон): плавно розкривається, плитки з'являються каскадом.
+          if (!wide)
           AnimatedSize(
             duration: still ? Duration.zero : const Duration(milliseconds: 260),
             curve: Curves.easeOutCubic,
@@ -1468,6 +1477,35 @@ class _Tool {
   final Color color;
   final bool active;
   final VoidCallback? onTap;
+}
+
+/// Компактний значок інструмента для широких екранів: підказка з назвою, вибраний — підсвічений.
+class _ToolChip extends StatelessWidget {
+  const _ToolChip({required this.tool});
+  final _Tool tool;
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = tool.onTap != null;
+    return Tooltip(
+      message: tool.label,
+      child: ArcticPressable(
+        onTap: tool.onTap,
+        scale: 0.92,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          height: 38,
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          decoration: BoxDecoration(color: tool.active ? tool.color.withValues(alpha: 0.22) : fg.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(12)),
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            Icon(tool.icon, size: 18, color: tool.color.withValues(alpha: enabled ? 1 : 0.4)),
+            const SizedBox(width: 6),
+            Text(tool.label, style: body(12.5, color: enabled ? soft : faint, weight: FontWeight.w500)),
+          ]),
+        ),
+      ),
+    );
+  }
 }
 
 /// Кругла плитка інструмента (як .arctic-tile на сайті): вибрана — підсвічена.

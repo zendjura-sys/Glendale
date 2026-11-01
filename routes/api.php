@@ -82,6 +82,7 @@ use App\Http\Controllers\PostController;
 use App\Http\Controllers\PostSeriesController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\QuestController;
+use App\Http\Controllers\RailController;
 use App\Http\Controllers\ReadingController;
 use App\Http\Controllers\ReadyToPlayController;
 use App\Http\Controllers\ReferralController;
@@ -116,6 +117,7 @@ use App\Http\Controllers\WatchPartyController;
 use App\Http\Controllers\WrappedController;
 use App\Http\Middleware\BridgeSiteAction;
 use App\Models\VoiceRoom;
+use App\Support\AuthImages;
 use Illuminate\Support\Facades\Route;
 
 // Вебхук сервера голосу LiveKit (підпис перевіряє контролер).
@@ -135,6 +137,8 @@ Route::prefix('oauth')->group(function () {
 Route::prefix('v1')->group(function () {
     // Мова застосунку: словник його рядків (мова — з X-Locale або Accept-Language).
     Route::get('i18n', [LocaleController::class, 'app'])->middleware('throttle:60,1');
+    // Фони екрана входу застосунку (Адмінка → Дизайн) — без авторизації.
+    Route::get('auth-images', fn () => response()->json(collect(AuthImages::urls())->only(['app_phone', 'app_tablet'])))->middleware('throttle:60,1');
     // Довідка відкрита й без входу — застосунок показує її на екрані «Довідка».
     Route::prefix('help')->controller(HelpController::class)->middleware('throttle:60,1')->where(['category' => '[a-z0-9-]+', 'article' => '[a-z0-9-]+'])->group(function () {
         Route::get('/', 'index');
@@ -435,6 +439,7 @@ Route::prefix('v1')->group(function () {
             Route::middleware('module:games')->group(function () {
                 Route::put('settings/profile-track', [SetupController::class, 'saveTrack'])->middleware('throttle:30,1');
                 Route::get('settings/profile-track', [SetupController::class, 'tracks'])->middleware('throttle:60,1');
+                Route::get('me/rail', RailController::class)->middleware('throttle:60,1');
                 Route::get('games/awards', [GameAwardsController::class, 'index']);
                 Route::get('games/awards/candidates', [GameAwardsController::class, 'candidates'])->middleware('throttle:120,1');
                 Route::post('games/awards/vote', [GameAwardsController::class, 'vote'])->middleware('throttle:60,1');

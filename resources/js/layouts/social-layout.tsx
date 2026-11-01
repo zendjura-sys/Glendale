@@ -1,3 +1,4 @@
+import { SideRail } from '@/components/gc/side-rail';
 import { Link, router, usePage } from '@inertiajs/react';
 import {
     Bookmark,
@@ -115,7 +116,7 @@ function Sidebar() {
     const user = auth.user;
 
     return (
-        <aside className="gc-sidebar-glass sticky top-[calc(72px+env(safe-area-inset-top))] hidden h-[calc(100dvh-88px)] w-[220px] shrink-0 [scrollbar-width:none] flex-col overflow-y-auto overscroll-contain p-2 [view-transition-name:gc-sidebar] lg:flex">
+        <aside className="gc-sidebar-glass sticky top-[calc(72px+env(safe-area-inset-top))] hidden h-[calc(100dvh-88px)] w-[220px] shrink-0 [scrollbar-width:none] flex-col overflow-y-auto overscroll-contain p-2 [view-transition-name:gc-sidebar] md:flex">
             <Link
                 href={`/${user.username}`}
                 className="gc-side-link mb-1 flex items-center gap-2.5 rounded-xl px-2 py-2 transition"
@@ -332,7 +333,7 @@ export function UserMenu() {
                         </DropdownMenuItem>
                     )}
                     <DropdownMenuItem
-                        className="hidden rounded-lg focus:bg-white/[0.06] lg:flex"
+                        className="hidden rounded-lg focus:bg-white/[0.06] md:flex"
                         onSelect={openShortcuts}
                     >
                         <Keyboard /> {tr('Гарячі клавіші')}
@@ -367,7 +368,7 @@ function Topbar() {
         <header className="app-header-wrapper">
             {/* Шапка — плаваюча капсула з безбарвного матового скла (як острів-меню знизу); обгортка прозора. */}
             <div className="ios-glass-bar ios-header-pill [view-transition-name:gc-topbar]">
-                <Link href="/feed" className="shrink-0 lg:w-[220px]">
+                <Link href="/feed" className="shrink-0 md:w-[220px]">
                     <Logo className="hidden sm:inline-flex" />
                     <LogoMark className="sm:hidden" />
                 </Link>
@@ -558,14 +559,14 @@ function MobileNav() {
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         transition={{ duration: reduce ? 0 : 0.2 }}
-                        className="fixed inset-0 z-[54] bg-black/45 lg:hidden"
+                        className="fixed inset-0 z-[54] bg-black/45 md:hidden"
                     />
                 )}
             </AnimatePresence>
             <nav
                 aria-label={tr('Розділи')}
                 className={cn(
-                    'app-footer-wrapper lg:hidden',
+                    'app-footer-wrapper md:hidden',
                     // Розгорнуте меню — над міні-плеєром; згорнута панель — під ним (плеєр стоїть над панеллю).
                     open ? 'z-[55]' : 'z-40',
                 )}
@@ -924,8 +925,8 @@ export default function SocialLayout({ children }: PropsWithChildren) {
             <Topbar />
             <div
                 className={cn(
-                    'gc-split-shift mx-auto flex max-w-[1320px] gap-5 px-3 pt-[calc(72px+env(safe-area-inset-top))] sm:px-5',
-                    current ? 'pb-44 lg:pb-28' : 'pb-24 lg:pb-10',
+                    'gc-split-shift mx-auto flex max-w-[var(--gc-shell-max)] gap-5 px-3 pt-[calc(72px+env(safe-area-inset-top))] sm:px-5',
+                    current ? 'pb-44 md:pb-28' : 'pb-24 md:pb-10',
                 )}
             >
                 <Sidebar />
@@ -938,6 +939,7 @@ export default function SocialLayout({ children }: PropsWithChildren) {
                     </NavigationSkeleton>
                     <SiteFooter className="glass-matte gc-footer-card mb-4" />
                 </main>
+                <SideRail />
             </div>
             <VoiceBar />
             {modules.includes('music') && (

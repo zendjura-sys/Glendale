@@ -104,7 +104,7 @@ export function PlayerBar({ standalone }: { standalone?: boolean }) {
             {queueOpen && (
                 <div
                     className={cn(
-                        'glass-strong fixed right-3 z-50 flex max-h-[min(460px,60vh)] w-[min(380px,calc(100vw-1.5rem))] animate-in flex-col overflow-hidden rounded-3xl border border-white/10 fade-in-0 slide-in-from-bottom-2 lg:hidden',
+                        'glass-strong fixed right-3 z-50 flex max-h-[min(460px,60vh)] w-[min(380px,calc(100vw-1.5rem))] animate-in flex-col overflow-hidden rounded-3xl border border-white/10 fade-in-0 slide-in-from-bottom-2 md:hidden',
                         standalone ? 'bottom-[92px]' : 'bottom-[148px]',
                     )}
                 >
@@ -176,7 +176,7 @@ export function PlayerBar({ standalone }: { standalone?: boolean }) {
             {/* ПК: та сама капсула, що й у «Музиці», — внизу вікна, з усім керуванням. */}
             <div
                 className={cn(
-                    'pointer-events-none fixed inset-x-0 bottom-4 z-[45] hidden px-6 lg:block',
+                    'pointer-events-none fixed inset-x-0 bottom-4 z-[45] hidden px-6 md:block',
                     standalone && 'lg:left-[276px]',
                 )}
             >
@@ -219,7 +219,7 @@ export function PlayerBar({ standalone }: { standalone?: boolean }) {
             {/* Телефон: міні-плеєр над нижньою панеллю. */}
             <div
                 className={cn(
-                    'pointer-events-none fixed inset-x-0 z-[45] bg-transparent px-3 lg:hidden',
+                    'pointer-events-none fixed inset-x-0 z-[45] bg-transparent px-3 md:hidden',
                     standalone
                         ? 'bottom-[calc(env(safe-area-inset-bottom)+12px)]'
                         : 'bottom-[calc(5.25rem+env(safe-area-inset-bottom))]',

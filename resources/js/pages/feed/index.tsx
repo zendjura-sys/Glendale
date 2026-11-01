@@ -202,7 +202,7 @@ export default function Feed({
         <>
             <Head title={tr('Новини')} />
             <div className="flex gap-5">
-                <div className="min-w-0 flex-1 space-y-4 xl:max-w-[640px]">
+                <div className="min-w-0 flex-1 space-y-4 min-[1920px]:max-w-[820px] min-[2400px]:max-w-[960px] xl:max-w-[640px]">
                     {storiesOn && <StoriesBar />}
                     <WrappedBanner />
                     <div className="xl:hidden">
@@ -358,7 +358,7 @@ export default function Feed({
                     )}
                 </div>
 
-                <aside className="gc-split-hide sticky top-[76px] hidden h-fit w-[320px] shrink-0 space-y-4 xl:block">
+                <aside className="gc-split-hide sticky top-[76px] hidden h-fit w-[320px] shrink-0 space-y-4 min-[1920px]:w-[360px] xl:block">
                     {homeWidgets.map((key) => {
                         switch (key) {
                             case 'streak':

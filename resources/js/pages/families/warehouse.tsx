@@ -132,7 +132,7 @@ export default function FamilyWarehouse(props: Props) {
                         )}
                         {grouped.map((g) => (
                             <Panel key={g.key} title={g.label} icon={Package}>
-                                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
+                                <div className="grid grid-cols-1 gap-2 min-[1920px]:grid-cols-4 min-[2400px]:grid-cols-5 sm:grid-cols-2 xl:grid-cols-3">
                                     {g.items.map((item) => (
                                         <div
                                             key={item.id}
