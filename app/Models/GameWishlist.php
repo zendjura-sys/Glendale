@@ -17,16 +17,17 @@ use Illuminate\Support\Carbon;
  * @property string|null $target_price
  * @property string|null $notified_price
  * @property Carbon|null $notified_at
+ * @property Carbon|null $release_notified_at
  * @property Carbon $created_at
  * @property-read User $user
  * @property-read Game $game
  */
-#[Fillable(['user_id', 'game_id', 'target_price', 'notified_price', 'notified_at'])]
+#[Fillable(['user_id', 'game_id', 'target_price', 'notified_price', 'notified_at', 'release_notified_at'])]
 class GameWishlist extends Model
 {
     protected function casts(): array
     {
-        return ['target_price' => 'decimal:2', 'notified_price' => 'decimal:2', 'notified_at' => 'datetime'];
+        return ['target_price' => 'decimal:2', 'notified_price' => 'decimal:2', 'notified_at' => 'datetime', 'release_notified_at' => 'datetime'];
     }
 
     /** @return BelongsTo<User, $this> */

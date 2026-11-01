@@ -34,6 +34,7 @@ use App\Http\Controllers\CrosspostController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\Families;
 use App\Http\Controllers\FollowController;
+use App\Http\Controllers\Fun\GameAwardsController;
 use App\Http\Controllers\Fun\GameJournalController;
 use App\Http\Controllers\Fun\GameReviewController;
 use App\Http\Controllers\Fun\MemoriesController;
@@ -430,6 +431,10 @@ Route::prefix('v1')->group(function () {
             Route::post('music/quiz/{round}', [QuizController::class, 'musicAnswer'])->whereUuid('round')->middleware(['module:music', 'throttle:120,1']);
             Route::get('games/trivia', [QuizController::class, 'trivia'])->middleware('module:games');
             Route::middleware('module:games')->group(function () {
+                Route::get('games/awards', [GameAwardsController::class, 'index']);
+                Route::get('games/awards/candidates', [GameAwardsController::class, 'candidates'])->middleware('throttle:120,1');
+                Route::post('games/awards/vote', [GameAwardsController::class, 'vote'])->middleware('throttle:60,1');
+                Route::get('games/awards/{year}', [GameAwardsController::class, 'index'])->whereNumber('year');
                 Route::get('games/trailers', [GameReviewController::class, 'trailers']);
                 Route::post('games/reviews/{review}/helpful', [GameReviewController::class, 'helpful'])->whereNumber('review')->middleware('throttle:60,1');
                 Route::get('games/{game}/reviews', [GameReviewController::class, 'index'])->middleware('throttle:60,1');
@@ -665,6 +670,7 @@ Route::prefix('v1')->group(function () {
                 Route::put('auto', [PlayingController::class, 'auto']);
                 Route::post('steam', [PlayingController::class, 'linkSteam'])->middleware('throttle:10,1');
                 Route::delete('steam', [PlayingController::class, 'unlinkSteam']);
+                Route::put('consoles', [PlayingController::class, 'consoles'])->middleware('throttle:20,1');
             });
 
             // Календар подій.

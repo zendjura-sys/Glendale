@@ -1,5 +1,6 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import {
+    Crown,
     Clapperboard,
     BookOpen,
     Trophy,
@@ -133,6 +134,7 @@ export default function GamesIndex({
     const nightsOn = usePlugin('game_nights');
     const triviaOn = usePlugin('game_trivia');
     const trailersOn = usePlugin('game_trailers');
+    const awardsOn = usePlugin('game_awards');
     const journalOn = usePlugin('game_journal');
     const signedIn = !!usePage().props.auth.user;
 
@@ -214,6 +216,15 @@ export default function GamesIndex({
                     >
                         <CalendarClock className="size-4 text-cyan-300" />
                         {tr('Ігровий вечір')}
+                    </Link>
+                )}
+                {awardsOn && signedIn && (
+                    <Link
+                        href="/games/awards"
+                        className="inline-flex h-10 items-center gap-2 rounded-xl bg-white/[0.06] px-3.5 text-sm font-semibold text-white/80 transition hover:bg-white/10 hover:text-white"
+                    >
+                        <Crown className="size-4 text-amber-300" />
+                        {tr('Гра року')}
                     </Link>
                 )}
                 {trailersOn && signedIn && (

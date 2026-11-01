@@ -35,6 +35,7 @@ use App\Http\Controllers\FeedbackController;
 use App\Http\Controllers\FeedController;
 use App\Http\Controllers\FollowController;
 use App\Http\Controllers\FriendController;
+use App\Http\Controllers\Fun\GameAwardsController;
 use App\Http\Controllers\Fun\GameJournalController;
 use App\Http\Controllers\Fun\GameReviewController;
 use App\Http\Controllers\Fun\MemoriesController;
@@ -701,6 +702,11 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     // Каталог мультиплеєрних ігор.
     Route::prefix('games')->name('games.')->middleware('module:games')->group(function () {
         Route::get('search', [GameController::class, 'search'])->middleware('throttle:120,1')->name('search');
+        // «Гра року» спільноти.
+        Route::get('awards', [GameAwardsController::class, 'index'])->name('awards');
+        Route::get('awards/candidates', [GameAwardsController::class, 'candidates'])->middleware('throttle:120,1')->name('awards.candidates');
+        Route::post('awards/vote', [GameAwardsController::class, 'vote'])->middleware('throttle:60,1')->name('awards.vote');
+        Route::get('awards/{year}', [GameAwardsController::class, 'index'])->whereNumber('year')->name('awards.year');
         // Трейлери й огляди гравців.
         Route::get('trailers', [GameReviewController::class, 'trailers'])->name('trailers');
         Route::post('reviews/{review}/helpful', [GameReviewController::class, 'helpful'])->whereNumber('review')->middleware('throttle:60,1')->name('reviews.helpful');

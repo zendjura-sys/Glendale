@@ -14,6 +14,7 @@ import 'plus.dart';
 import 'subscription.dart';
 import 'account.dart';
 import 'api.dart';
+import 'awards.dart';
 import 'characters.dart';
 import 'feed.dart';
 import 'posts.dart';
@@ -737,6 +738,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
         if (data['achievements'] is Map) ...[
           const SizedBox(height: 12),
           AchievementsPanel(data: mapOf(data['achievements']), isSelf: data['relation'] == 'self'),
+        ],
+        if (open && profile['platforms'] is Map) ...[
+          const SizedBox(height: 12),
+          GamerIdsPanel(platforms: mapOf(profile['platforms']), isSelf: data['relation'] == 'self' && AppScope.of(context).session.pluginOn('gamer_ids'), onSaved: _load),
         ],
         if (maps(data['characters']).isNotEmpty || data['relation'] == 'self') ...[
           const SizedBox(height: 12),

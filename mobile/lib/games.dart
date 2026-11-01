@@ -376,6 +376,10 @@ class GameScreen extends StatelessWidget {
         }
 
         final palette = mapOf(data['palette']);
+        // Відлік до виходу (лише майбутні релізи) — як на сайті.
+        final releaseDate = DateTime.tryParse(text(game['released']) ?? '');
+        final today = DateUtils.dateOnly(DateTime.now());
+        final releaseIn = AppScope.of(context).session.pluginOn('release_alerts') && releaseDate != null && !releaseDate.isBefore(today) ? releaseDate.difference(today).inDays : null;
         final accent = hexColor(palette['accent']) ?? primary;
         final soft2 = hexColor(palette['soft']) ?? const Color(0xFF9DD8FF);
         final base = hexColor(palette['base']);
@@ -394,8 +398,14 @@ class GameScreen extends StatelessWidget {
               ),
             Glass(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                if (modes.isNotEmpty || genres.isNotEmpty) ...[
+                if (modes.isNotEmpty || genres.isNotEmpty || releaseIn != null) ...[
                   Wrap(spacing: 6, runSpacing: 6, children: [
+                    if (releaseIn != null)
+                      Pill(
+                        label: releaseIn == 0 ? tr('Виходить сьогодні') : tr('Вихід через {n}', {'n': '$releaseIn ${plural(releaseIn, 'день', 'дні', 'днів')}'}),
+                        color: Colors.white,
+                        background: primary.withValues(alpha: 0.35),
+                      ),
                     for (final m in modes) Pill(label: text(m['label']) ?? '', color: soft2, background: accent.withValues(alpha: 0.18)),
                     for (final g in genres) Pill(label: g),
                   ]),

@@ -873,6 +873,7 @@ List<({String title, List<_MenuEntry> items})> _menuGroups(BuildContext context,
         if (session.pluginOn('duels') && fresh('/duels')) go(LucideIcons.swords, tr('Дуелі'), '/duels'),
         if (session.pluginOn('game_configs') && fresh('/configs')) go(LucideIcons.crosshair, tr('Конфіги й приціли'), '/configs'),
         if (session.pluginOn('game_nights') && fresh('/game-nights')) go(LucideIcons.calendarClock, tr('Ігровий вечір'), '/game-nights'),
+        if (session.pluginOn('game_awards') && fresh('/games/awards')) go(LucideIcons.crown, tr('Гра року'), '/games/awards'),
         if (session.pluginOn('game_trailers') && fresh('/games/trailers')) go(LucideIcons.clapperboard, tr('Трейлери'), '/games/trailers'),
         if (session.pluginOn('game_trivia') && fresh('/games/trivia')) go(LucideIcons.trophy, tr('Вікторина дня'), '/games/trivia'),
         if (session.pluginOn('game_journal') && fresh('/journal')) go(LucideIcons.bookOpen, tr('Ігровий щоденник'), '/journal'),
@@ -900,6 +901,15 @@ List<({String title, List<_MenuEntry> items})> _menuGroups(BuildContext context,
         go(LucideIcons.lifeBuoy, tr('Довідка'), '/help'),
         go(LucideIcons.headset, tr('Підтримка'), '/support'),
         if (session.pluginOn('status_page')) go(LucideIcons.activity, tr('Статус GameCon'), '/status'),
+        (
+          icon: LucideIcons.sparkles,
+          label: tr('Що нового'),
+          onTap: () {
+            onClose();
+            showWhatsNew(context, session.prefs, force: true);
+          },
+          color: null,
+        ),
         (
           icon: LucideIcons.messageSquareHeart,
           label: tr('Відгук адмінам'),

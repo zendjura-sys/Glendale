@@ -12,6 +12,8 @@ import { CrosspostButton } from '@/components/gc/crosspost-button';
 import { AuthorStatsButton } from '@/components/profile/author-stats';
 import { AccountCard } from '@/components/profile/account-card';
 import type { AccountCardData } from '@/components/profile/account-card';
+import { GamerIds } from '@/components/profile/gamer-ids';
+import type { GamerId } from '@/components/profile/gamer-ids';
 import { MySetup } from '@/components/profile/my-setup';
 import type { SetupData } from '@/components/profile/my-setup';
 import { StreamSchedule } from '@/components/profile/stream-schedule';
@@ -154,6 +156,7 @@ type Profile = UserCard & {
         xbox_name: string | null;
         playstation: string | null;
         playstation_name: string | null;
+        ids?: GamerId[];
     } | null;
 };
 
@@ -366,6 +369,7 @@ export default function ProfileShow({
     const { modules, auth } = usePage().props;
     const isSelf = relation === 'self';
     const statusOn = usePlugin('status_emoji');
+    const gamerIdsOn = usePlugin('gamer_ids');
     const pixelOn = usePlugin('pixel_avatar');
     const duelsOn = usePlugin('duels');
     const videoCoverOn = usePlugin('plus_video_cover');
@@ -1043,64 +1047,13 @@ export default function ProfileShow({
                         {blockSequence(blockOrder).map((key) => {
                             const widgets: Record<string, ReactNode> = {
                                 // Ігрові блоки — лише в режимах, де є «Граю в…» (не в «Класиці», «Кіномані»…).
-                                platforms: playingOn &&
-                                    profile.platforms &&
-                                    (profile.platforms.steam ||
-                                        profile.platforms.xbox ||
-                                        profile.platforms.playstation) && (
-                                        <Widget title={tr('Платформи')}>
-                                            <div className="flex flex-wrap gap-2 px-1">
-                                                {profile.platforms.steam && (
-                                                    <a
-                                                        href={
-                                                            profile.platforms
-                                                                .steam
-                                                        }
-                                                        className="rounded-chip bg-white/10 px-3 py-1 text-xs text-white"
-                                                        target="_blank"
-                                                        rel="noreferrer"
-                                                    >
-                                                        Steam
-                                                    </a>
-                                                )}
-                                                {profile.platforms.xbox && (
-                                                    <a
-                                                        href={
-                                                            profile.platforms
-                                                                .xbox
-                                                        }
-                                                        className="rounded-chip bg-white/10 px-3 py-1 text-xs text-white"
-                                                        target="_blank"
-                                                        rel="noreferrer"
-                                                    >
-                                                        Xbox ·{' '}
-                                                        {
-                                                            profile.platforms
-                                                                .xbox_name
-                                                        }
-                                                    </a>
-                                                )}
-                                                {profile.platforms
-                                                    .playstation && (
-                                                    <a
-                                                        href={
-                                                            profile.platforms
-                                                                .playstation
-                                                        }
-                                                        className="rounded-chip bg-white/10 px-3 py-1 text-xs text-white"
-                                                        target="_blank"
-                                                        rel="noreferrer"
-                                                    >
-                                                        PlayStation ·{' '}
-                                                        {
-                                                            profile.platforms
-                                                                .playstation_name
-                                                        }
-                                                    </a>
-                                                )}
-                                            </div>
-                                        </Widget>
-                                    ),
+                                platforms: playingOn && profile.platforms && (
+                                    <GamerIds
+                                        steam={profile.platforms.steam}
+                                        ids={profile.platforms.ids ?? []}
+                                        isSelf={isSelf && gamerIdsOn}
+                                    />
+                                ),
                                 steam: playingOn &&
                                     (steamLibrary?.length ?? 0) > 0 && (
                                         <Widget title={tr('Бібліотека Steam')}>

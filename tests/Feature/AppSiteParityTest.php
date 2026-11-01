@@ -46,6 +46,15 @@ class AppSiteParityTest extends TestCase
         return app(ApiTokens::class)->issue($user, 'android');
     }
 
+    public function test_app_reaches_awards_and_gamer_ids(): void
+    {
+        $user = User::factory()->create();
+        $token = $this->app_token($user);
+        $this->withToken($token)->getJson('/api/v1/site/games/awards')->assertOk()->assertJsonPath('categories.0.key', 'goty');
+        $this->withToken($token)->putJson('/api/v1/site/me/playing/consoles', ['epic' => 'HeroEpic'])->assertOk();
+        $this->withToken($token)->getJson('/api/v1/site/me/playing')->assertOk()->assertJsonPath('ids.3.value', 'HeroEpic');
+    }
+
     public function test_app_reaches_reviews_trailers_and_clan_mvp(): void
     {
         $user = User::factory()->create();

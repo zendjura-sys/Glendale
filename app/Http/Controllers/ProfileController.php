@@ -42,6 +42,7 @@ use App\Support\PageSeo;
 use App\Support\Palette;
 use App\Support\Plugins\Plugins;
 use App\Support\PlusStyle;
+use App\Support\Profile\GamerIds;
 use App\Support\ProfileBlocks;
 use chillerlan\QRCode\Output\QROutputInterface;
 use chillerlan\QRCode\QRCode;
@@ -386,7 +387,7 @@ class ProfileController extends Controller
     }
 
     /**
-     * @return array{steam: string|null, xbox: string|null, xbox_name: string|null, playstation: string|null, playstation_name: string|null}
+     * @return array{steam: string|null, xbox: string|null, xbox_name: string|null, playstation: string|null, playstation_name: string|null, ids: list<array{key: string, label: string, value: string, url: string|null}>}
      */
     private function platforms(User $user): array
     {
@@ -399,6 +400,8 @@ class ProfileController extends Controller
             'xbox_name' => $xbox,
             'playstation' => $playstation ? 'https://psnprofiles.com/'.rawurlencode($playstation) : null,
             'playstation_name' => $playstation,
+            // Без плагіна «Ігрові ID» — лише Xbox і PlayStation, як і раніше.
+            'ids' => array_values(array_filter(GamerIds::of($user), fn (array $id) => app(Plugins::class)->on('gamer_ids') || in_array($id['key'], ['xbox', 'playstation'], true))),
         ];
     }
 

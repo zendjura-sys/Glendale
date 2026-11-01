@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Sleep;
 
 /**
- * Знижки на ігри зі списку бажаного (раз на 6 год): найкраща ціна CheapShark нижча за звичайну
+ * Знижки на ігри зі списку бажаного (раз на 6 год) і вихід ігор (щодня): найкраща ціна CheapShark нижча за звичайну
  * (або дійшла до бажаної ціни людини) — сповіщаємо один раз; нове сповіщення — лише коли ціна впала ще.
  */
 class WishlistAlerts
@@ -63,5 +63,27 @@ class WishlistAlerts
         $wish->update(['notified_price' => $best['price'], 'notified_at' => now()]);
 
         return true;
+    }
+
+    /**
+     * Вихід гри зі списку бажаного: сповіщення в день релізу (або протягом двох днів після — якщо пропустили запуск).
+     */
+    public function releases(): int
+    {
+        $today = now('Europe/Kyiv')->startOfDay();
+        $sent = 0;
+        GameWishlist::query()->with(['user', 'game'])
+            ->whereNull('release_notified_at')
+            ->whereHas('game', fn ($q) => $q->whereDate('released', '>=', $today->copy()->subDays(2)->toDateString())->whereDate('released', '<=', $today->toDateString()))
+            ->chunkById(200, function ($wishes) use (&$sent) {
+                foreach ($wishes as $wish) {
+                    $wish->user->notify(new GameDealNotice('game_release', 'Вийшла '.$wish->game->name.' — гра з вашого списку бажаного', 'Вже можна грати', '/games/'.$wish->game->slug));
+                    $wish->update(['release_notified_at' => now()]);
+                    $sent++;
+                }
+            });
+        Log::info('games: release alerts', ['notified' => $sent]);
+
+        return $sent;
     }
 }

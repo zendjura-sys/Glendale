@@ -28,6 +28,7 @@ import 'family_widget.dart';
 import 'game_card.dart';
 import 'engagement.dart';
 import 'fun.dart';
+import 'awards.dart';
 import 'game_reviews.dart';
 import 'game_tools.dart';
 import 'status.dart';
@@ -311,6 +312,9 @@ Future<void> main() async {
               GoRoute(path: 'deals', builder: (_, _) => const DealsScreen()),
               GoRoute(path: 'trivia', builder: (_, _) => const TriviaScreen()),
               GoRoute(path: 'trailers', builder: (_, _) => const TrailersScreen()),
+              GoRoute(path: 'awards', builder: (_, _) => const AwardsScreen(), routes: [
+                GoRoute(path: ':year', builder: (_, state) => AwardsScreen(key: ValueKey(state.pathParameters['year']), year: int.tryParse(state.pathParameters['year'] ?? ''))),
+              ]),
               GoRoute(path: 'backlog', builder: (_, _) => const BacklogScreen(), routes: [
                 GoRoute(path: ':username', builder: (_, state) => BacklogScreen(key: ValueKey(state.pathParameters['username']), username: state.pathParameters['username'])),
               ]),

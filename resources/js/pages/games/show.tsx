@@ -53,6 +53,7 @@ import { MomentCard } from '@/components/moments/moment-card';
 import type { MomentCardData } from '@/components/moments/moment-card';
 import { usePlugin } from '@/lib/plugins';
 import { GameReviews } from '@/components/games/game-reviews';
+import { ReleaseCountdown } from '@/components/games/release-countdown';
 import { GamePrices } from '@/components/games/game-prices';
 import { PcCheck } from '@/components/games/pc-check';
 import { GameNews } from '@/components/games/game-news';
@@ -352,6 +353,7 @@ export default function GameShow({
     const newsOn = usePlugin('steam_patch_news');
     const qaOn = usePlugin('game_qa');
     const reviewsOn = usePlugin('game_reviews');
+    const releaseOn = usePlugin('release_alerts');
     const mentorsOn = usePlugin('game_mentors');
     const tierOn = usePlugin('tier_lists');
     const goalsOn = usePlugin('game_goals');
@@ -469,6 +471,9 @@ export default function GameShow({
                         <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm font-medium text-white/85">
                             {game.released && (
                                 <span>{game.released.slice(0, 4)}</span>
+                            )}
+                            {releaseOn && game.released && (
+                                <ReleaseCountdown date={game.released} />
                             )}
                             {game.platforms.length > 0 && (
                                 <span>

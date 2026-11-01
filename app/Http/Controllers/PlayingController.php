@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Services\Presence\DiscordPresence;
 use App\Services\Presence\PlayingStatus;
 use App\Services\Presence\SteamPresence;
+use App\Support\Profile\GamerIds;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -34,6 +35,7 @@ class PlayingController extends Controller
             'xbox' => (string) $user->pref('xbox', ''),
             'playstation' => (string) $user->pref('playstation', ''),
             'hours' => PlayingStatus::MANUAL_HOURS,
+            'ids' => GamerIds::form($user),
         ]);
     }
 
@@ -96,20 +98,12 @@ class PlayingController extends Controller
         return $this->done('Steam прив’язано. Статус з’явиться, щойно ви запустите гру.');
     }
 
+    /** Ігрові ID (Xbox, PlayStation, Epic, Riot…) — зберігаються лише надіслані поля. */
     public function consoles(Request $request): RedirectResponse
     {
-        $data = $request->validate([
-            'xbox' => ['nullable', 'string', 'max:16', 'regex:/^[A-Za-z0-9 ]*$/'],
-            'playstation' => ['nullable', 'string', 'max:16', 'regex:/^[A-Za-z0-9_-]*$/'],
-        ]);
-        $xbox = trim((string) ($data['xbox'] ?? ''));
-        $playstation = trim((string) ($data['playstation'] ?? ''));
-        $request->user()->mergePref([
-            'xbox' => $xbox !== '' ? $xbox : null,
-            'playstation' => $playstation !== '' ? $playstation : null,
-        ]);
+        GamerIds::save($request->user(), $request->validate(GamerIds::rules(), GamerIds::messages()));
 
-        return $this->done('Xbox і PlayStation збережено.');
+        return $this->done('Ігрові ID збережено.');
     }
 
     public function unlinkSteam(Request $request, SteamPresence $steam): RedirectResponse

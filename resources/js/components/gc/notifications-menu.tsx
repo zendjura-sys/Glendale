@@ -25,6 +25,7 @@ import {
     UserPlus,
     Gift,
     RefreshCw,
+    Rocket,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
@@ -67,6 +68,7 @@ const kindIcon: Record<string, { icon: typeof Bell; className: string }> = {
     clip_of_week: { icon: Trophy, className: 'bg-amber-500' },
     giveaway: { icon: Gift, className: 'bg-emerald-500' },
     price_drop: { icon: BadgePercent, className: 'bg-primary' },
+    game_release: { icon: Rocket, className: 'bg-primary' },
     morning_digest: { icon: Sunrise, className: 'bg-primary' },
     referral_joined: { icon: UserPlus, className: 'bg-emerald-500' },
     plus_gifted: { icon: Gift, className: 'bg-indigo-500' },

@@ -413,6 +413,15 @@ Future<void> showFeedbackSheet(BuildContext context, {String screen = 'menu'}) a
 /// Що нового в цій версії застосунку — один раз після оновлення.
 const whatsNewVersion = '1.1.88';
 
+/// Нове саме в цій версії — зверху, окремим блоком.
+List<String> _whatsNewCurrent() => [
+      tr('«Гра року» спільноти: голосування в грудні, підсумки з 1 січня — меню «Для гравців».'),
+      tr('Гра з бажаного вийшла — прийде сповіщення; на сторінці гри, що ще не вийшла, видно відлік днів.'),
+      tr('Ігрові ID у профілі: PSN, Xbox, Nintendo, Epic, Riot, Battle.net, EA й Ubisoft — копіювання одним дотиком.'),
+      tr('«Що нового» — картками, прокручується; відкрити знову можна в меню «Налаштування й допомога».'),
+    ];
+
+/// Раніше — історія попередніх версій.
 List<String> _whatsNew() => [
       tr('Віджети над стрічкою налаштовуються в «Сповіщення й стрічка» — так само, як на сайті.'),
       tr('Огляди гравців на сторінці гри, стрічка трейлерів у меню й «Гравець місяця» у кланах.'),
@@ -498,45 +507,101 @@ List<String> _whatsNew() => [
       tr('Гарний номер можна купити прямо в застосунку через Google Play — собі або в подарунок другові.'),
     ];
 
-Future<void> showWhatsNew(BuildContext context, SharedPreferences prefs) async {
-  if (prefs.getString('whats_new') == whatsNewVersion) return;
+/// Значок картки за темою пункту — щоб довгий список легше було гортати.
+IconData _whatsNewIcon(String item) {
+  final t = item.toLowerCase();
+  if (t.contains('gamecon+')) return LucideIcons.crown;
+  if (t.contains('музик') || t.contains('плеєр') || t.contains('трек') || t.contains('пісн') || t.contains('радіо') || t.contains('подкаст')) return LucideIcons.music;
+  if (t.contains('чат') || t.contains('повідомлен')) return LucideIcons.messageCircle;
+  if (t.contains('телефон') || t.contains('номер')) return LucideIcons.phone;
+  if (t.contains('кіно') || t.contains('подивитися')) return LucideIcons.clapperboard;
+  if (t.contains('сповіщ')) return LucideIcons.bell;
+  if (t.contains('спільнот') || t.contains('клан') || t.contains('друз')) return LucideIcons.usersRound;
+  if (t.contains('гр') && (t.contains('ігр') || t.contains('гра ') || t.contains('гри') || t.contains('гравц'))) return LucideIcons.gamepad2;
+  if (t.contains('стрічк') || t.contains('запис')) return LucideIcons.newspaper;
+  if (t.contains('вигляд') || t.contains('скло') || t.contains('шапк') || t.contains('меню')) return LucideIcons.palette;
+  return LucideIcons.sparkles;
+}
+
+/// «Що нового»: після оновлення — один раз; [force] — відкрити з меню будь-коли.
+Future<void> showWhatsNew(BuildContext context, SharedPreferences prefs, {bool force = false}) async {
+  if (!force && prefs.getString('whats_new') == whatsNewVersion) return;
   await prefs.setString('whats_new', whatsNewVersion);
   if (!context.mounted) return;
+  final current = _whatsNewCurrent();
+  final earlier = _whatsNew();
+  Widget card(String item, {bool fresh = false}) => Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.fromLTRB(12, 12, 14, 12),
+        decoration: BoxDecoration(
+          color: fresh ? primary.withValues(alpha: 0.14) : fg.withValues(alpha: 0.045),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(color: (fresh ? primary : fg).withValues(alpha: fresh ? 0.22 : 0.07), borderRadius: BorderRadius.circular(11)),
+            child: Icon(_whatsNewIcon(item), size: 17, color: fresh ? const Color(0xFF9DD8FF) : soft),
+          ),
+          const SizedBox(width: 12),
+          Expanded(child: Text(item, style: body(14, color: fresh ? fg : soft).copyWith(height: 1.4))),
+        ]),
+      );
+  Widget heading(String label) => Padding(
+        padding: const EdgeInsets.fromLTRB(2, 6, 2, 10),
+        child: Text(label, style: body(12.5, color: muted, weight: FontWeight.w600)),
+      );
   await showModalBottomSheet<void>(
     context: context,
     backgroundColor: Colors.transparent,
     elevation: 0,
     isScrollControlled: true,
-    builder: (sheet) => ArcticGlassSheetSurface(child: SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
-        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          Row(children: [
-            const Icon(LucideIcons.sparkles, color: Color(0xFF9DD8FF)),
-            const SizedBox(width: 8),
-            Text(tr('Що нового'), style: display(20)),
-            const Spacer(),
-            Text(whatsNewVersion, style: body(12, color: muted)),
-          ]),
-          const SizedBox(height: 14),
-          for (final item in _whatsNew())
-            Container(
-              margin: const EdgeInsets.only(bottom: 8),
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: fg.withValues(alpha: 0.04), borderRadius: BorderRadius.circular(14)),
-              child: Text(item, style: body(14, color: soft).copyWith(height: 1.4)),
+    builder: (sheet) => ArcticGlassSheetSurface(
+      child: SafeArea(
+        child: SizedBox(
+          height: MediaQuery.sizeOf(sheet).height * 0.86,
+          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
+              child: Row(children: [
+                const Icon(LucideIcons.sparkles, color: Color(0xFF9DD8FF)),
+                const SizedBox(width: 8),
+                Text(tr('Що нового'), style: display(20)),
+                const Spacer(),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(color: fg.withValues(alpha: 0.07), borderRadius: BorderRadius.circular(99)),
+                  child: Text(whatsNewVersion, style: body(12, color: soft, weight: FontWeight.w600)),
+                ),
+              ]),
             ),
-          const SizedBox(height: 6),
-          PrimaryButton(label: tr('Зрозуміло'), onPressed: () => Navigator.pop(sheet)),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(sheet);
-              showFeedbackSheet(context, screen: 'whats_new');
-            },
-            child: Text(tr('Розкажіть, що думаєте'), style: body(13.5, color: const Color(0xFF9AA8FF), weight: FontWeight.w600)),
-          ),
-        ]),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+                children: [
+                  heading(tr('Нове в цій версії')),
+                  for (final item in current) card(item, fresh: true),
+                  const SizedBox(height: 8),
+                  heading(tr('Раніше')),
+                  for (final item in earlier) card(item),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 6, 16, 4),
+              child: PrimaryButton(label: tr('Зрозуміло'), onPressed: () => Navigator.pop(sheet)),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(sheet);
+                showFeedbackSheet(context, screen: 'whats_new');
+              },
+              child: Text(tr('Розкажіть, що думаєте'), style: body(13.5, color: const Color(0xFF9AA8FF), weight: FontWeight.w600)),
+            ),
+          ]),
+        ),
       ),
-    )),
+    ),
   );
 }

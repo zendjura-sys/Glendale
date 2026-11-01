@@ -5,11 +5,11 @@ namespace App\Notifications;
 use App\Notifications\Concerns\QuietHours;
 use Illuminate\Notifications\Notification;
 
-/** Безкоштовна роздача або знижка на гру зі списку бажаного. */
+/** Безкоштовна роздача, знижка чи вихід гри зі списку бажаного. */
 class GameDealNotice extends Notification
 {
     /**
-     * @param  'giveaway'|'price_drop'  $kind
+     * @param  'giveaway'|'price_drop'|'game_release'  $kind
      */
     public function __construct(public readonly string $kind, public readonly string $text, public readonly string $excerpt, public readonly string $url) {}
 
