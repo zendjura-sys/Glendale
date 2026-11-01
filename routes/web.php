@@ -39,6 +39,8 @@ use App\Http\Controllers\Fun\GameAwardsController;
 use App\Http\Controllers\Fun\GameJournalController;
 use App\Http\Controllers\Fun\GameReviewController;
 use App\Http\Controllers\Fun\MemoriesController;
+use App\Http\Controllers\Fun\MovieListController;
+use App\Http\Controllers\Fun\MovieReviewController;
 use App\Http\Controllers\Fun\MovieRouletteController;
 use App\Http\Controllers\Fun\QuizController;
 use App\Http\Controllers\GameBacklogController;
@@ -245,6 +247,8 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     Route::get('memories', [MemoriesController::class, 'memories'])->name('memories');
     Route::get('map', [MemoriesController::class, 'map'])->name('players-map');
     Route::put('settings/event-frame', [MemoriesController::class, 'eventFrame'])->middleware('throttle:20,1')->name('event-frame');
+    Route::get('settings/profile-track', [SetupController::class, 'tracks'])->middleware('throttle:60,1')->name('profile-track.index');
+    Route::put('settings/profile-track', [SetupController::class, 'saveTrack'])->middleware('throttle:30,1')->name('profile-track.update');
     Route::put('settings/home-widgets', [MemoriesController::class, 'homeWidgets'])->middleware('throttle:30,1')->name('home-widgets');
     // Ігровий щоденник.
     Route::middleware('module:games')->group(function () {
@@ -673,6 +677,21 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::get('roulette', [MovieRouletteController::class, 'index'])->name('roulette');
         Route::get('roulette/spin', [MovieRouletteController::class, 'spin'])->middleware('throttle:60,1')->name('roulette.spin');
         Route::get('lookup', [CinemaController::class, 'lookup'])->middleware('throttle:10,1')->name('lookup');
+        // Добірки фільмів і рецензії.
+        Route::get('lists', [MovieListController::class, 'index'])->name('lists.index');
+        Route::post('lists', [MovieListController::class, 'store'])->middleware('throttle:20,1')->name('lists.store');
+        Route::get('lists/{list}', [MovieListController::class, 'show'])->whereNumber('list')->name('lists.show');
+        Route::put('lists/{list}', [MovieListController::class, 'update'])->whereNumber('list')->middleware('throttle:30,1')->name('lists.update');
+        Route::delete('lists/{list}', [MovieListController::class, 'destroy'])->whereNumber('list')->name('lists.destroy');
+        Route::post('lists/{list}/items', [MovieListController::class, 'item'])->whereNumber('list')->middleware('throttle:60,1')->name('lists.items');
+        Route::post('lists/{list}/like', [MovieListController::class, 'like'])->whereNumber('list')->middleware('throttle:60,1')->name('lists.like');
+        Route::post('lists/{list}/follow', [MovieListController::class, 'follow'])->whereNumber('list')->middleware('throttle:60,1')->name('lists.follow');
+        Route::get('reviews', [MovieReviewController::class, 'feed'])->name('reviews.feed');
+        Route::post('reviews/{review}/like', [MovieReviewController::class, 'like'])->whereNumber('review')->middleware('throttle:60,1')->name('reviews.like');
+        Route::get('{movie}/lists', [MovieListController::class, 'forMovie'])->name('lists.for-movie');
+        Route::get('{movie}/reviews', [MovieReviewController::class, 'index'])->middleware('throttle:60,1')->name('reviews.index');
+        Route::post('{movie}/reviews', [MovieReviewController::class, 'store'])->middleware('throttle:10,1')->name('reviews.store');
+        Route::delete('{movie}/reviews', [MovieReviewController::class, 'destroy'])->name('reviews.destroy');
         Route::get('{movie}', [CinemaController::class, 'show'])->name('show');
         Route::patch('{movie}/status', [CinemaController::class, 'status'])->middleware('throttle:60,1')->name('status');
         Route::put('{movie}/rating', [CinemaController::class, 'rate'])->middleware('throttle:60,1')->name('rate');

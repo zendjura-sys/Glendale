@@ -29,6 +29,7 @@ import 'game_card.dart';
 import 'engagement.dart';
 import 'fun.dart';
 import 'awards.dart';
+import 'movie_extras.dart';
 import 'game_reviews.dart';
 import 'game_tools.dart';
 import 'status.dart';
@@ -222,6 +223,10 @@ Future<void> main() async {
             routes: [
               GoRoute(path: 'my', builder: (_, state) => MyCinemaScreen(status: state.uri.queryParameters['status'] ?? 'all')),
               GoRoute(path: 'roulette', builder: (_, _) => const RouletteScreen()),
+              GoRoute(path: 'lists', builder: (_, _) => const MovieListsScreen(), routes: [
+                GoRoute(path: ':id', builder: (_, state) => MovieListScreen(key: ValueKey(state.pathParameters['id']), id: int.tryParse(state.pathParameters['id'] ?? '') ?? 0)),
+              ]),
+              GoRoute(path: 'reviews', builder: (_, _) => const MovieReviewsFeedScreen()),
               GoRoute(path: 'ten/:username', builder: (_, state) => TopTenScreen(key: ValueKey(state.pathParameters['username']), username: state.pathParameters['username']!)),
               GoRoute(path: ':slug', builder: (_, state) => MovieScreen(key: ValueKey(state.pathParameters['slug']), slug: state.pathParameters['slug']!)),
             ],

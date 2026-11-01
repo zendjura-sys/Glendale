@@ -59,7 +59,8 @@ import type {
 type PaletteOption = { id: string; name: string; colors: string[] };
 
 const BLOCK_LABELS: Record<string, string> = {
-    platforms: 'Платформи',
+    track: 'Пісня профілю',
+    platforms: 'Платформи й ігрові ID',
     steam: 'Бібліотека Steam',
     steam_achievements: 'Досягнення Steam',
     setup: 'Мій сетап',

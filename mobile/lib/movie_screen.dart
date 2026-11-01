@@ -13,6 +13,7 @@ import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
 
 import 'api.dart';
+import 'movie_extras.dart';
 import 'cinema.dart' show PosterCard;
 import 'core/widgets/arctic_glass/arctic_glass.dart';
 import 'i18n.dart';
@@ -589,6 +590,10 @@ class _MovieScreenState extends State<MovieScreen> {
           ),
           const SizedBox(width: 8),
           _TonalAction(icon: LucideIcons.bookmark, label: compact(movie['watchers_count']), color: gold, onTap: _statusDialog),
+          if (AppScope.of(context).session.pluginOn('movie_lists')) ...[
+            const SizedBox(width: 8),
+            _TonalAction(icon: LucideIcons.listPlus, label: null, color: soft, onTap: () => showAddToList(context, intOf(movie['id']), widget.slug)),
+          ],
           const SizedBox(width: 8),
           _TonalAction(
             icon: LucideIcons.messageSquare,
@@ -699,6 +704,7 @@ class _MovieScreenState extends State<MovieScreen> {
             ),
           ),
         ],
+        if (AppScope.of(context).session.pluginOn('movie_reviews')) MovieReviewsSection(slug: widget.slug),
         SectionLabel(tr('Коментарі'), key: commentsKey, trailing: intOf(movie['comments_count']) > 0 ? '${movie['comments_count']}' : null),
         Glass(
           child: CommentsThread(

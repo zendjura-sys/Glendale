@@ -29,6 +29,7 @@ import {
 import type { EpisodePick, Season } from '@/components/cinema/episode-picker';
 import { MoviePoster, PosterRow } from '@/components/cinema/movie-tile';
 import { ShareMovieDialog } from '@/components/cinema/share-movie-dialog';
+import { AddToList, MovieReviews } from '@/components/cinema/movie-extras';
 import { Comments } from '@/components/gc/comments';
 import { PinButton } from '@/components/gc/pin-button';
 import { SaveButton } from '@/components/gc/save-button';
@@ -195,6 +196,8 @@ export default function CinemaShow({
 }: Props) {
     const [state, setState] = useState(initialState);
     const tenOn = usePlugin('top_ten');
+    const listsOn = usePlugin('movie_lists');
+    const reviewsOn = usePlugin('movie_reviews');
     const [stats, setStats] = useState({
         user_rating: movie.user_rating,
         ratings_count: movie.ratings_count,
@@ -545,6 +548,12 @@ export default function CinemaShow({
                                                 : tr('У десятку')}
                                         </button>
                                     )}
+                                    {listsOn && (
+                                        <AddToList
+                                            movieId={movie.id}
+                                            slug={movie.slug}
+                                        />
+                                    )}
                                     <PinButton
                                         kind="movie"
                                         id={movie.id}
@@ -770,6 +779,7 @@ export default function CinemaShow({
                             slug={movie.slug}
                             canAdd={can.manage}
                         />
+                        {reviewsOn && <MovieReviews slug={movie.slug} />}
                         <section className="glass rounded-2xl p-5">
                             <h2 className="mb-3 flex items-center gap-2 font-display text-lg font-semibold text-white">
                                 <MessageCircle className="size-5 text-gc-lilac-400" />

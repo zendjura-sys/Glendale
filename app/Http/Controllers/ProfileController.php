@@ -43,6 +43,7 @@ use App\Support\Palette;
 use App\Support\Plugins\Plugins;
 use App\Support\PlusStyle;
 use App\Support\Profile\GamerIds;
+use App\Support\Profile\ProfileTrack;
 use App\Support\ProfileBlocks;
 use chillerlan\QRCode\Output\QROutputInterface;
 use chillerlan\QRCode\QRCode;
@@ -144,6 +145,7 @@ class ProfileController extends Controller
         return Inertia::render('profile/show', [
             'compatibility' => $compatibility,
             'setup' => app(Plugins::class)->on('my_setup') ? app(MySetup::class)->visibleFor($user, $viewer) : null,
+            'profileTrack' => app(Plugins::class)->on('profile_track') && $canSeeContent ? ProfileTrack::of($user) : null,
             'account' => app(Plugins::class)->on('account_types') ? $this->accountCard($user) : null,
             'streamSchedule' => app(Plugins::class)->on('stream_schedule') && $canSeeContent ? app(StreamSchedule::class)->of($user) : null,
             'steamAchievements' => app(Plugins::class)->on('steam_achievements') && $user->steam_id !== null && ! $user->is_private,

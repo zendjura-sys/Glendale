@@ -7,10 +7,10 @@ use App\Support\Modules\ModuleManager;
 class ProfileBlocks
 {
     /** @var list<string> */
-    public const ORDER = ['platforms', 'steam', 'steam_achievements', 'setup', 'stream_schedule', 'games', 'about', 'achievements', 'audio', 'friends', 'photos', 'characters'];
+    public const ORDER = ['track', 'platforms', 'steam', 'steam_achievements', 'setup', 'stream_schedule', 'games', 'about', 'achievements', 'audio', 'friends', 'photos', 'characters'];
 
     /** Блоки, що належать розділу: без розділу в режимі глядача їх не видно (порядок зберігається). */
-    public const MODULES = ['platforms' => 'games', 'steam' => 'games', 'steam_achievements' => 'games', 'games' => 'games', 'audio' => 'music', 'photos' => 'photos', 'characters' => 'servers'];
+    public const MODULES = ['track' => 'music', 'platforms' => 'games', 'steam' => 'games', 'steam_achievements' => 'games', 'games' => 'games', 'audio' => 'music', 'photos' => 'photos', 'characters' => 'servers'];
 
     /**
      * Збережений порядок лише з блоками, розділи яких є в режимі глядача.

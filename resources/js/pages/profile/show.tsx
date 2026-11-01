@@ -15,6 +15,8 @@ import type { AccountCardData } from '@/components/profile/account-card';
 import { GamerIds } from '@/components/profile/gamer-ids';
 import type { GamerId } from '@/components/profile/gamer-ids';
 import { MySetup } from '@/components/profile/my-setup';
+import { ProfileTrack } from '@/components/profile/profile-track';
+import type { TrackCard } from '@/types/music';
 import type { SetupData } from '@/components/profile/my-setup';
 import { StreamSchedule } from '@/components/profile/stream-schedule';
 import type { StreamSlot } from '@/components/profile/stream-schedule';
@@ -95,6 +97,7 @@ import { setPageBackgroundVideo } from '@/lib/backgrounds';
 import { useDataSaver } from '@/lib/data-saver';
 
 const PROFILE_BLOCKS = [
+    'track',
     'platforms',
     'steam',
     'steam_achievements',
@@ -163,6 +166,7 @@ type Profile = UserCard & {
 type Props = {
     compatibility?: Compatibility | null;
     setup?: SetupData | null;
+    profileTrack?: TrackCard | null;
     streamSchedule?: StreamSlot[] | null;
     account?: AccountCardData | null;
     steamAchievements?: boolean;
@@ -333,6 +337,7 @@ function Uploader({
 export default function ProfileShow({
     compatibility = null,
     setup = null,
+    profileTrack = null,
     streamSchedule = null,
     account = null,
     steamAchievements = false,
@@ -370,6 +375,7 @@ export default function ProfileShow({
     const isSelf = relation === 'self';
     const statusOn = usePlugin('status_emoji');
     const gamerIdsOn = usePlugin('gamer_ids');
+    const profileTrackOn = usePlugin('profile_track');
     const pixelOn = usePlugin('pixel_avatar');
     const duelsOn = usePlugin('duels');
     const videoCoverOn = usePlugin('plus_video_cover');
@@ -1047,6 +1053,13 @@ export default function ProfileShow({
                         {blockSequence(blockOrder).map((key) => {
                             const widgets: Record<string, ReactNode> = {
                                 // Ігрові блоки — лише в режимах, де є «Граю в…» (не в «Класиці», «Кіномані»…).
+                                track: (profileTrack ||
+                                    (isSelf && profileTrackOn)) && (
+                                    <ProfileTrack
+                                        track={profileTrack}
+                                        isSelf={isSelf && profileTrackOn}
+                                    />
+                                ),
                                 platforms: playingOn && profile.platforms && (
                                     <GamerIds
                                         steam={profile.platforms.steam}

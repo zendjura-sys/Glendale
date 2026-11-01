@@ -3,18 +3,21 @@
 namespace App\Http\Controllers;
 
 use App\Models\Game;
+use App\Models\Track;
 use App\Models\User;
 use App\Services\Games\SteamAchievements;
 use App\Services\Profile\MySetup;
 use App\Services\Profile\StreamSchedule;
 use App\Support\Plugins\Plugins;
+use App\Support\Profile\ProfileTrack;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
-/** «Мій сетап», досягнення Steam на сторінці людини та гри, мемогенератор. */
+/** «Мій сетап», пісня профілю, досягнення Steam на сторінці людини та гри, мемогенератор. */
 class SetupController extends Controller
 {
     public function update(Request $request, MySetup $setup): RedirectResponse
@@ -28,6 +31,34 @@ class SetupController extends Controller
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Сетап збережено.']);
 
         return back();
+    }
+
+    /** Пісня профілю: вибір зі своїх треків і медіатеки (з пошуком). */
+    public function tracks(Request $request): JsonResponse
+    {
+        app(Plugins::class)->ensure('profile_track');
+        $user = $request->user();
+        $q = trim((string) $request->query('q', ''));
+        $like = '%'.str_replace(['%', '_'], ['\%', '\_'], $q).'%';
+        $tracks = Track::query()->where('processing', false)
+            ->where(fn ($w) => $w->where('user_id', $user->id)
+                ->orWhereIn('id', DB::table('music_library')->where('user_id', $user->id)->select('track_id')))
+            ->when($q !== '', fn ($w) => $w->where(fn ($s) => $s->where('title', 'like', $like)->orWhere('artist', 'like', $like)))
+            ->latest('id')->limit(30)->get();
+
+        return response()->json([
+            'current' => ProfileTrack::of($user),
+            'tracks' => $tracks->map(fn (Track $t) => $t->toCard())->values(),
+        ]);
+    }
+
+    public function saveTrack(Request $request): JsonResponse
+    {
+        app(Plugins::class)->ensure('profile_track');
+        $data = $request->validate(['track_id' => ['nullable', 'integer']]);
+        ProfileTrack::set($request->user(), isset($data['track_id']) ? (int) $data['track_id'] : null);
+
+        return response()->json(['ok' => true, 'track' => ProfileTrack::of($request->user()), 'message' => isset($data['track_id']) ? 'Пісню додано в профіль.' : 'Пісню прибрано з профілю.']);
     }
 
     /** Розклад стрімів: до 7 щотижневих слотів. */

@@ -2,6 +2,8 @@ import { Head, InfiniteScroll, Link, router } from '@inertiajs/react';
 import { GridSkeleton } from '@/components/gc/skeletons';
 import {
     Dices,
+    ListVideo,
+    MessageSquareQuote,
     Bookmark,
     Clapperboard,
     Clock,
@@ -297,6 +299,8 @@ export default function CinemaIndex({
     const [search, setSearch] = useState(filters.q);
     const requestOn = usePlugin('movie_request');
     const rouletteOn = usePlugin('movie_roulette');
+    const listsOn = usePlugin('movie_lists');
+    const reviewsOn = usePlugin('movie_reviews');
 
     const apply = (patch: Partial<Filters>) => {
         const next = { ...filters, q: search, ...patch };
@@ -396,6 +400,24 @@ export default function CinemaIndex({
                                 </button>
                             )}
                         </label>
+                        {listsOn && (
+                            <Link
+                                href="/cinema/lists"
+                                className="glass inline-flex h-11 items-center gap-2 rounded-xl px-4 text-sm font-semibold text-white/85 transition hover:text-white"
+                            >
+                                <ListVideo className="size-4 text-sky-300" />
+                                {tr('Добірки')}
+                            </Link>
+                        )}
+                        {reviewsOn && (
+                            <Link
+                                href="/cinema/reviews"
+                                className="glass inline-flex h-11 items-center gap-2 rounded-xl px-4 text-sm font-semibold text-white/85 transition hover:text-white"
+                            >
+                                <MessageSquareQuote className="size-4 text-amber-300" />
+                                {tr('Рецензії')}
+                            </Link>
+                        )}
                         {rouletteOn && (
                             <Link
                                 href="/cinema/roulette"

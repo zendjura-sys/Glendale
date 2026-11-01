@@ -148,7 +148,8 @@ class _ProfileLookScreenState extends State<ProfileLookScreen> {
   bool saving = false;
 
   static Map<String, String> get _labels => {
-    'platforms': tr('Платформи'),
+    'track': tr('Пісня профілю'),
+    'platforms': tr('Платформи й ігрові ID'),
     'steam': tr('Бібліотека Steam'),
     'steam_achievements': tr('Досягнення Steam'),
     'setup': tr('Мій сетап'),

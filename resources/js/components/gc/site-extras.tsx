@@ -42,6 +42,15 @@ const CHANGELOG = () => [
                 'Ігрові ID у профілі: PSN, Xbox, Nintendo, Epic, Riot, Battle.net, EA й Ubisoft — з кнопкою «Копіювати».',
             ),
             tr(
+                'Добірки фільмів: збирайте тайтли кнопкою «У добірку», вподобайте й стежте за чужими.',
+            ),
+            tr(
+                'Рецензії на фільми й серіали зі спойлерами під розмиттям і стрічка рецензій друзів.',
+            ),
+            tr(
+                'Пісня профілю: трек з медіатеки на вашій сторінці — гості слухають натиском.',
+            ),
+            tr(
                 '«Що нового» — картками з прокруткою й історією попередніх оновлень.',
             ),
         ],
@@ -233,10 +242,10 @@ function changeIcon(item: string): LucideIcon {
     if (/музик|плеєр|трек|пісн|радіо|подкаст/.test(t)) return Music;
     if (/чат|повідомлен/.test(t)) return MessageCircle;
     if (/телефон|номер/.test(t)) return Phone;
-    if (/кіно|подивитися/.test(t)) return Clapperboard;
+    if (/кіно|подивитися|фільм|серіал|тайтл/.test(t)) return Clapperboard;
+    if (/ігр|гра |гри|гравц/.test(t)) return Gamepad2;
     if (t.includes('сповіщ')) return Bell;
     if (/спільнот|клан|друз|подій|події/.test(t)) return UsersRound;
-    if (/ігр|гра |гри|гравц/.test(t)) return Gamepad2;
     if (/стрічк|запис/.test(t)) return Newspaper;
     return Sparkles;
 }

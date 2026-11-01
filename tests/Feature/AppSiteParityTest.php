@@ -46,6 +46,18 @@ class AppSiteParityTest extends TestCase
         return app(ApiTokens::class)->issue($user, 'android');
     }
 
+    public function test_app_reaches_movie_lists_reviews_and_profile_track(): void
+    {
+        $user = User::factory()->create();
+        $token = $this->app_token($user);
+        $movie = Movie::query()->create(['slug' => 'matrix', 'type' => 'movie', 'title' => 'Матриця', 'is_published' => true]);
+        $this->withToken($token)->postJson('/api/v1/site/cinema/lists', ['title' => 'Фантастика', 'is_public' => true, 'movie' => $movie->id])->assertOk();
+        $this->withToken($token)->getJson('/api/v1/site/cinema/lists?tab=mine')->assertOk()->assertJsonPath('lists.data.0.items_count', 1);
+        $this->withToken($token)->postJson('/api/v1/site/cinema/matrix/reviews', ['body' => 'Класика кіберпанку, дивиться й сьогодні.', 'score' => 10, 'spoiler' => false])->assertOk();
+        $this->withToken($token)->getJson('/api/v1/site/cinema/reviews?tab=all')->assertOk()->assertJsonPath('reviews.data.0.movie.slug', 'matrix');
+        $this->withToken($token)->getJson('/api/v1/site/settings/profile-track')->assertOk()->assertJsonPath('current', null);
+    }
+
     public function test_app_reaches_awards_and_gamer_ids(): void
     {
         $user = User::factory()->create();

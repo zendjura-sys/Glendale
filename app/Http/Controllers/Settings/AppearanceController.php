@@ -76,7 +76,7 @@ class AppearanceController extends Controller
             'close_friends' => ['sometimes', 'array', 'max:30'],
             'close_friends.*' => ['integer'],
             'show_visitors' => ['sometimes', 'boolean'],
-            'profile_blocks' => ['sometimes', 'array', 'max:12'],
+            'profile_blocks' => ['sometimes', 'array', 'max:'.count(ProfileBlocks::ORDER)],
             'profile_blocks.*' => ['string'],
             'notify' => ['sometimes', 'array'],
             'notify.likes' => ['sometimes', 'boolean'],

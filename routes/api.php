@@ -38,6 +38,8 @@ use App\Http\Controllers\Fun\GameAwardsController;
 use App\Http\Controllers\Fun\GameJournalController;
 use App\Http\Controllers\Fun\GameReviewController;
 use App\Http\Controllers\Fun\MemoriesController;
+use App\Http\Controllers\Fun\MovieListController;
+use App\Http\Controllers\Fun\MovieReviewController;
 use App\Http\Controllers\Fun\MovieRouletteController;
 use App\Http\Controllers\Fun\QuizController;
 use App\Http\Controllers\GameBacklogController;
@@ -431,6 +433,8 @@ Route::prefix('v1')->group(function () {
             Route::post('music/quiz/{round}', [QuizController::class, 'musicAnswer'])->whereUuid('round')->middleware(['module:music', 'throttle:120,1']);
             Route::get('games/trivia', [QuizController::class, 'trivia'])->middleware('module:games');
             Route::middleware('module:games')->group(function () {
+                Route::put('settings/profile-track', [SetupController::class, 'saveTrack'])->middleware('throttle:30,1');
+                Route::get('settings/profile-track', [SetupController::class, 'tracks'])->middleware('throttle:60,1');
                 Route::get('games/awards', [GameAwardsController::class, 'index']);
                 Route::get('games/awards/candidates', [GameAwardsController::class, 'candidates'])->middleware('throttle:120,1');
                 Route::post('games/awards/vote', [GameAwardsController::class, 'vote'])->middleware('throttle:60,1');
@@ -660,6 +664,23 @@ Route::prefix('v1')->group(function () {
                 Route::delete('{conversation}/messages/{message}', [MessageController::class, 'destroy']);
                 Route::post('{conversation}/messages/{message}/report', [MessageController::class, 'report'])->middleware('throttle:20,1');
                 Route::post('{conversation}/messages/{message}/ban-guest', [GuestBanController::class, 'store'])->middleware('throttle:20,1');
+            });
+
+            Route::prefix('cinema')->middleware('module:cinema')->group(function () {
+                Route::get('lists', [MovieListController::class, 'index']);
+                Route::post('lists', [MovieListController::class, 'store'])->middleware('throttle:20,1');
+                Route::get('lists/{list}', [MovieListController::class, 'show'])->whereNumber('list');
+                Route::put('lists/{list}', [MovieListController::class, 'update'])->whereNumber('list')->middleware('throttle:30,1');
+                Route::delete('lists/{list}', [MovieListController::class, 'destroy'])->whereNumber('list');
+                Route::post('lists/{list}/items', [MovieListController::class, 'item'])->whereNumber('list')->middleware('throttle:60,1');
+                Route::post('lists/{list}/like', [MovieListController::class, 'like'])->whereNumber('list')->middleware('throttle:60,1');
+                Route::post('lists/{list}/follow', [MovieListController::class, 'follow'])->whereNumber('list')->middleware('throttle:60,1');
+                Route::get('reviews', [MovieReviewController::class, 'feed']);
+                Route::post('reviews/{review}/like', [MovieReviewController::class, 'like'])->whereNumber('review')->middleware('throttle:60,1');
+                Route::get('{movie}/lists', [MovieListController::class, 'forMovie']);
+                Route::get('{movie}/reviews', [MovieReviewController::class, 'index'])->middleware('throttle:60,1');
+                Route::post('{movie}/reviews', [MovieReviewController::class, 'store'])->middleware('throttle:10,1');
+                Route::delete('{movie}/reviews', [MovieReviewController::class, 'destroy']);
             });
 
             Route::prefix('me/playing')->group(function () {

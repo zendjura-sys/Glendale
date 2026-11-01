@@ -418,6 +418,9 @@ List<String> _whatsNewCurrent() => [
       tr('«Гра року» спільноти: голосування в грудні, підсумки з 1 січня — меню «Для гравців».'),
       tr('Гра з бажаного вийшла — прийде сповіщення; на сторінці гри, що ще не вийшла, видно відлік днів.'),
       tr('Ігрові ID у профілі: PSN, Xbox, Nintendo, Epic, Riot, Battle.net, EA й Ubisoft — копіювання одним дотиком.'),
+      tr('Добірки фільмів: кнопка зі списком на сторінці тайтлу, популярні добірки — у меню.'),
+      tr('Рецензії на фільми зі спойлерами під розмиттям і стрічка рецензій друзів.'),
+      tr('Пісня профілю: трек з медіатеки на вашій сторінці — гості слухають дотиком.'),
       tr('«Що нового» — картками, прокручується; відкрити знову можна в меню «Налаштування й допомога».'),
     ];
 
@@ -514,10 +517,10 @@ IconData _whatsNewIcon(String item) {
   if (t.contains('музик') || t.contains('плеєр') || t.contains('трек') || t.contains('пісн') || t.contains('радіо') || t.contains('подкаст')) return LucideIcons.music;
   if (t.contains('чат') || t.contains('повідомлен')) return LucideIcons.messageCircle;
   if (t.contains('телефон') || t.contains('номер')) return LucideIcons.phone;
-  if (t.contains('кіно') || t.contains('подивитися')) return LucideIcons.clapperboard;
+  if (t.contains('кіно') || t.contains('подивитися') || t.contains('фільм') || t.contains('серіал') || t.contains('тайтл')) return LucideIcons.clapperboard;
+  if (t.contains('ігр') || t.contains('гра ') || t.contains('гри') || t.contains('гравц')) return LucideIcons.gamepad2;
   if (t.contains('сповіщ')) return LucideIcons.bell;
   if (t.contains('спільнот') || t.contains('клан') || t.contains('друз')) return LucideIcons.usersRound;
-  if (t.contains('гр') && (t.contains('ігр') || t.contains('гра ') || t.contains('гри') || t.contains('гравц'))) return LucideIcons.gamepad2;
   if (t.contains('стрічк') || t.contains('запис')) return LucideIcons.newspaper;
   if (t.contains('вигляд') || t.contains('скло') || t.contains('шапк') || t.contains('меню')) return LucideIcons.palette;
   return LucideIcons.sparkles;
