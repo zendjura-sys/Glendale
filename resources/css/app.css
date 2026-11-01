@@ -1161,6 +1161,24 @@ label:has(
  * Вхід і реєстрація (layouts/auth-layout.tsx). Поза шарами — щоб перекрити утиліти Input:
  * матова панель форми й прозорі поля лише з нижньою лінією (біла при фокусі).
  */
+/* Вхід завжди поверх фото: білий текст і темні токени навіть у світлій темі сайту. */
+.auth-screen {
+    --color-white: #fff;
+    --foreground: #fff;
+    --card-foreground: #fff;
+    --muted-foreground: rgb(255 255 255 / 0.65);
+    --secondary: rgb(255 255 255 / 0.08);
+    --secondary-foreground: #fff;
+    --accent: rgb(255 255 255 / 0.1);
+    --accent-foreground: #fff;
+    --border: rgb(255 255 255 / 0.18);
+    --input: rgb(255 255 255 / 0.18);
+    --background: rgb(15 20 28 / 0.35);
+    --popover: #121826;
+    --popover-foreground: #fff;
+    color: #fff;
+    color-scheme: dark;
+}
 .auth-panel {
     background: rgba(15, 20, 28, 0.45);
     -webkit-backdrop-filter: blur(20px);

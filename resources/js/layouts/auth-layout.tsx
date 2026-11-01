@@ -92,7 +92,7 @@ export default function AuthLayout({
     const intro = hero(mode);
 
     return (
-        <div className="relative min-h-dvh text-white">
+        <div className="auth-screen relative min-h-dvh text-white">
             <PaletteSync />
             <AuthBackground />
 
