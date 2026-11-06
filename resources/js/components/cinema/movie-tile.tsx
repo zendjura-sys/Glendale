@@ -93,7 +93,8 @@ export function MovieTile({
                     movie={movie}
                     className="size-full transition duration-500 group-hover:scale-105"
                 />
-                <div className="scrim scrim-dark absolute inset-0 opacity-0 transition group-hover:opacity-100" />
+                {/* Постер — тло картки: назва й опис лежать поверх нього на затемненні внизу. */}
+                <div className="scrim-dark pointer-events-none absolute inset-x-0 bottom-0 h-3/5 bg-gradient-to-t from-black/90 via-black/50 to-transparent" />
                 <div className="absolute top-2 left-2 flex flex-col items-start gap-1">
                     <RatingBadge value={movie.rating} />
                 </div>
@@ -102,32 +103,32 @@ export function MovieTile({
                         {movie.age_rating}
                     </span>
                 )}
-                {badge && (
-                    <div className="absolute inset-x-2 bottom-2">{badge}</div>
-                )}
+                <div data-on-dark className="absolute inset-x-0 bottom-0 p-2.5">
+                    {badge && <div className="mb-1.5">{badge}</div>}
+                    <p className="line-clamp-2 text-[13px] leading-snug font-semibold text-white">
+                        {movie.title}
+                    </p>
+                    <p className="mt-0.5 line-clamp-1 text-[11px] text-white/70">
+                        {[
+                            movie.progress
+                                ? movie.progress.season
+                                    ? tr('Сезон {season}, серія {episode}', {
+                                          season: movie.progress.season,
+                                          episode: movie.progress.episode,
+                                      })
+                                    : tr('Серія {episode}', {
+                                          episode: movie.progress.episode,
+                                      })
+                                : null,
+                            movie.year,
+                            movie.type_label,
+                            movie.genres[0],
+                        ]
+                            .filter(Boolean)
+                            .join(' · ')}
+                    </p>
+                </div>
             </div>
-            <p className="mt-2 line-clamp-2 text-[13px] leading-snug font-semibold text-white/90 group-hover:text-white">
-                {movie.title}
-            </p>
-            <p className="mt-0.5 text-xs break-words text-white/40">
-                {[
-                    movie.progress
-                        ? movie.progress.season
-                            ? tr('Сезон {season}, серія {episode}', {
-                                  season: movie.progress.season,
-                                  episode: movie.progress.episode,
-                              })
-                            : tr('Серія {episode}', {
-                                  episode: movie.progress.episode,
-                              })
-                        : null,
-                    movie.year,
-                    movie.type_label,
-                    movie.genres[0],
-                ]
-                    .filter(Boolean)
-                    .join(' · ')}
-            </p>
         </Link>
     );
 }

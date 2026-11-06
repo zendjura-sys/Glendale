@@ -54,7 +54,7 @@ export function Widget({
                 </Header>
             }
         >
-            <div className="px-3 pb-3">{children}</div>
+            <div className="px-5 pb-5">{children}</div>
         </Group>
     );
 }

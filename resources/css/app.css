@@ -5729,3 +5729,28 @@ html.gc-vk[data-theme='dark'] {
 :root.gc-vk .gc-vk-shell main > div > .flex.gap-5 {
     gap: 12px;
 }
+
+/* Відступи як у референсі Bento: вузькі щілини між плитками (12px), просторі плитки всередині. */
+:root.gc-vk .gc-vk-group .vkuiHeader__host {
+    padding-inline: 20px;
+    padding-top: 6px;
+}
+html.gc-vk[data-theme='dark']
+    :is(
+        .glass,
+        [data-slot='card'],
+        .ios-arctic-card,
+        .gc-post,
+        .vkuiGroup__modeCard
+    ):not(.am *):not(.glass .glass, [data-slot='card'] [data-slot='card']) {
+    border: 0 !important;
+    border-radius: 16px !important;
+}
+/* Групи VKUI — без обводки й з однаковими кутами (VKUI малює рамку ::before і зрізає кути першій групі). */
+:root.gc-vk .vkuiGroup__modeCard::before {
+    display: none !important;
+}
+:root.gc-vk .vkuiGroup__modeCard,
+:root.gc-vk .vkuiGroup__modeCard:first-of-type {
+    border-radius: 16px !important;
+}
