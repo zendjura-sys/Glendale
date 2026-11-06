@@ -29,6 +29,9 @@ class AirAlertService
     /** Скільки секунд тримаємо зібраний стан. */
     public const TTL = 15;
 
+    /** Пріоритет виду тривоги, коли їх кілька на одній території. */
+    public const RANK = ['artillery' => 1, 'urban_fights' => 2, 'air_raid' => 3, 'chemical' => 4, 'nuclear' => 5];
+
     /** Скільки неофіційних каналів читаємо за один запуск (решта — наступними хвилинами). */
     public const BATCH = 30;
 
@@ -37,6 +40,9 @@ class AirAlertService
 
     /** Приблизна швидкість, км/год (лише для підпису на мапі). */
     public const SPEED = ['uav' => 180, 'missile' => 750, 'ballistic' => 2500, 'kab' => 400, 'mig' => 0, 'artillery' => 0];
+
+    /** Швидкість різновиду (км/год), якщо відрізняється від типу: реактивний «Шахед», «Гербера», FPV. */
+    public const VARIANT_SPEED = ['jet' => 500, 'gerbera' => 150, 'fpv' => 90];
 
     /**
      * 26 регіонів: 24 області, м. Київ і АР Крим — назва, центр і основні міста для прив’язки цілей.
@@ -131,10 +137,15 @@ class AirAlertService
                 'minutes' => $started !== null ? max(0, (int) $started->diffInMinutes($now)) : null,
             ];
         }
+        $units = [];
+        foreach ($fetched['units'] as $code => $unit) {
+            $units[] = ['code' => $code, 'kind' => $unit['kind'], 'started_at' => $unit['started_at']];
+        }
         $threats = AirThreat::query()->where('expires_at', '>', $now)->orderByDesc('detected_at')->limit(80)->get();
 
         return [
             'regions' => $regions,
+            'units' => $units,
             'active_count' => count(array_filter($regions, fn (array $r) => $r['active'])),
             'mig_active' => $threats->contains('type', 'mig'),
             'ballistic_threat' => $threats->contains('type', 'ballistic'),
@@ -147,45 +158,117 @@ class AirAlertService
     }
 
     /**
-     * Активні тривоги: alerts.in.ua з токеном, інакше чи при збої — ubilling; якщо обидва мовчать —
+     * Активні тривоги: офіційний UkraineAlarm, далі alerts.in.ua з токеном, далі ubilling; якщо всі мовчать —
      * останній вдалий стан (до 10 хв) з позначкою «може бути неактуальним».
      *
-     * @return array{regions: array<string, array{type: string, kind: string, started_at: string|null}>, source: string|null, stale: bool}
+     * @return array{regions: array<string, array{type: string, kind: string, started_at: string|null}>, units: array<string, array{kind: string, started_at: string|null}>, source: string|null, stale: bool}
      */
     public function fetchAlerts(): array
     {
-        $token = $this->settings->get('alerts_in_ua_token');
-        $regions = null;
-        $source = null;
         $official = $this->settings->get('ukrainealarm_token');
+        $token = $this->settings->get('alerts_in_ua_token');
+        $rows = null;
+        $source = null;
         if (is_string($official) && $official !== '') {
-            $regions = $this->fromUkraineAlarm($official);
-            $source = $regions !== null ? 'UkraineAlarm' : null;
+            $rows = $this->fromUkraineAlarm($official);
+            $source = $rows !== null ? 'UkraineAlarm' : null;
         }
-        if ($regions === null && is_string($token) && $token !== '') {
-            $regions = $this->fromAlertsInUa($token);
-            $source = $regions !== null ? 'alerts.in.ua' : null;
+        if ($rows === null && is_string($token) && $token !== '') {
+            $rows = $this->fromAlertsInUa($token);
+            $source = $rows !== null ? 'alerts.in.ua' : null;
         }
-        if ($regions === null) {
-            $regions = $this->fromUbilling();
-            $source = $regions !== null ? 'ubilling' : null;
+        if ($rows === null) {
+            $rows = $this->fromUbilling();
+            $source = $rows !== null ? 'ubilling' : null;
         }
-        if ($regions !== null) {
-            Cache::put('alerts.last', $regions, now()->addMinutes(10));
+        if ($rows !== null) {
+            Cache::put('alerts.last', $rows, now()->addMinutes(10));
 
-            return ['regions' => $regions, 'source' => $source, 'stale' => false];
+            return [...$this->aggregate($rows), 'source' => $source, 'stale' => false];
         }
-        $last = Cache::get('alerts.last');
 
-        return ['regions' => is_array($last) ? $last : [], 'source' => null, 'stale' => true];
+        return [...$this->aggregate($this->cachedRows()), 'source' => null, 'stale' => true];
     }
 
     /**
-     * Офіційний API UkraineAlarm (api.ukrainealarm.com, ключ у заголовку Authorization):
-     * [{regionType: "State", regionName: "Київська область", activeAlerts: [{type: "AIR", lastUpdate}]}].
-     * Тривога на рівні області — повна, на рівні району чи громади — часткова.
+     * Останні вдалі рядки з кешу (перевіряємо форму — кеш міг лишитися від старішої версії).
      *
-     * @return array<string, array{type: string, kind: string, started_at: string|null}>|null
+     * @return list<array{oblast: string, level: int, code: string|null, kind: string, started_at: string|null}>
+     */
+    private function cachedRows(): array
+    {
+        $rows = [];
+        foreach ((array) Cache::get('alerts.last', []) as $row) {
+            if (! is_array($row) || ! is_string($row['oblast'] ?? null) || ! is_int($row['level'] ?? null) || ! is_string($row['kind'] ?? null) || ! isset(self::RANK[$row['kind']])) {
+                continue;
+            }
+            $rows[] = [
+                'oblast' => $row['oblast'],
+                'level' => $row['level'],
+                'code' => is_string($row['code'] ?? null) ? $row['code'] : null,
+                'kind' => $row['kind'],
+                'started_at' => is_string($row['started_at'] ?? null) ? $row['started_at'] : null,
+            ];
+        }
+
+        return $rows;
+    }
+
+    /** Вид тривоги з будь-якого API → air_raid | artillery | urban_fights | chemical | nuclear. */
+    public static function kindOf(string $raw): string
+    {
+        return match (strtolower(trim($raw))) {
+            'artillery', 'artillery_shelling' => 'artillery',
+            'urban_fights', 'urban_fight' => 'urban_fights',
+            'chemical' => 'chemical',
+            'nuclear', 'radiation' => 'nuclear',
+            default => 'air_raid',
+        };
+    }
+
+    /**
+     * Рядки «одиниця під тривогою» → стан областей (повна чи часткова тривога) і стан районів/громад для заливки.
+     * Тривога на всю область заливає всі її райони; на район — район; на громаду — громаду.
+     *
+     * @param  list<array{oblast: string, level: int, code: string|null, kind: string, started_at: string|null}>  $rows
+     * @return array{regions: array<string, array{type: string, kind: string, started_at: string|null}>, units: array<string, array{kind: string, started_at: string|null}>}
+     */
+    private function aggregate(array $rows): array
+    {
+        $regions = [];
+        $units = [];
+        $put = function (array &$into, string $key, array $value): void {
+            $current = $into[$key] ?? null;
+            if ($current === null || self::RANK[$value['kind']] > self::RANK[$current['kind']]) {
+                $into[$key] = $value;
+            }
+        };
+        foreach ($rows as $row) {
+            $whole = $row['level'] === 1;
+            $put($regions, $row['oblast'], [
+                'type' => $row['kind'] === 'air_raid' ? ($whole ? 'air_raid' : 'partial') : $row['kind'],
+                'kind' => $row['kind'],
+                'started_at' => $row['started_at'],
+            ]);
+            // Повна тривога в області важливіша за часткову з тим самим видом.
+            if ($whole && $regions[$row['oblast']]['type'] === 'partial') {
+                $regions[$row['oblast']]['type'] = 'air_raid';
+            }
+            $value = ['kind' => $row['kind'], 'started_at' => $row['started_at']];
+            $codes = $whole ? AlertUnits::raionsOf($row['oblast']) : ($row['code'] !== null ? [$row['code']] : []);
+            foreach ($codes as $code) {
+                $put($units, $code, $value);
+            }
+        }
+
+        return ['regions' => $regions, 'units' => $units];
+    }
+
+    /**
+     * Офіційний API UkraineAlarm (api.ukrainealarm.com, ключ у заголовку Authorization). Райони й громади
+     * зіставляємо з областю через довідник /regions (кеш на добу).
+     *
+     * @return list<array{oblast: string, level: int, code: string|null, kind: string, started_at: string|null}>|null
      */
     private function fromUkraineAlarm(string $key): ?array
     {
@@ -197,31 +280,77 @@ class AirAlertService
         if (! $response->successful() || ! is_array($response->json())) {
             return null;
         }
-        $out = [];
+        $tree = $this->ukraineAlarmTree($key);
+        $rows = [];
         foreach ((array) $response->json() as $region) {
             if (! is_array($region) || ! is_array($region['activeAlerts'] ?? null) || $region['activeAlerts'] === []) {
                 continue;
             }
-            $whole = ($region['regionType'] ?? '') === 'State';
-            $slug = $this->slugFor((string) ($whole ? ($region['regionName'] ?? '') : ($region['oblastName'] ?? $region['regionName'] ?? '')));
+            $id = (string) ($region['regionId'] ?? '');
+            $type = (string) ($region['regionType'] ?? 'State');
+            $known = $tree[$id] ?? null;
+            $slug = $this->slugFor($known['oblast'] ?? (string) ($region['regionName'] ?? ''));
             if ($slug === null) {
                 continue;
             }
+            $level = $type === 'State' ? 1 : ($type === 'District' ? 2 : 3);
+            if ($slug === 'kyiv') {
+                $level = 1;
+            }
+            $code = $level === 1 ? null : AlertUnits::find($slug, $level, (string) ($region['regionName'] ?? ''), $known['raion'] ?? null);
             foreach ($region['activeAlerts'] as $alert) {
-                $kind = strtoupper((string) ($alert['type'] ?? 'AIR'));
-                $type = $kind === 'AIR' ? ($whole ? 'air_raid' : 'partial') : 'artillery';
-                $current = $out[$slug] ?? null;
-                if ($current === null || ($current['type'] !== 'air_raid' && $type === 'air_raid')) {
-                    $out[$slug] = ['type' => $type, 'kind' => $kind === 'AIR' ? 'air_raid' : strtolower($kind), 'started_at' => isset($alert['lastUpdate']) ? (string) $alert['lastUpdate'] : null];
+                if (! is_array($alert)) {
+                    continue;
                 }
+                $rows[] = ['oblast' => $slug, 'level' => $level, 'code' => $code, 'kind' => self::kindOf((string) ($alert['type'] ?? 'AIR')), 'started_at' => isset($alert['lastUpdate']) ? (string) $alert['lastUpdate'] : null];
             }
         }
 
-        return $out;
+        return $rows;
     }
 
     /**
-     * @return array<string, array{type: string, kind: string, started_at: string|null}>|null
+     * Довідник UkraineAlarm: id району/громади → назва області й код району (КАТОТТГ).
+     *
+     * @return array<string, array{oblast: string, raion: string|null}>
+     */
+    private function ukraineAlarmTree(string $key): array
+    {
+        return Cache::remember('alerts.ua_regions', now()->addDay(), function () use ($key) {
+            try {
+                $response = Http::timeout(5)->withHeaders(['Authorization' => $key])->acceptJson()->get('https://api.ukrainealarm.com/api/v3/regions');
+            } catch (ConnectionException) {
+                return [];
+            }
+            $out = [];
+            foreach ((array) ($response->json('states') ?? []) as $state) {
+                if (! is_array($state)) {
+                    continue;
+                }
+                $oblast = (string) ($state['regionName'] ?? '');
+                $slug = $this->slugFor($oblast);
+                foreach ((array) ($state['regionChildIds'] ?? []) as $district) {
+                    if (! is_array($district)) {
+                        continue;
+                    }
+                    $raion = $slug !== null ? AlertUnits::find($slug, 2, (string) ($district['regionName'] ?? '')) : null;
+                    $out[(string) ($district['regionId'] ?? '')] = ['oblast' => $oblast, 'raion' => null];
+                    foreach ((array) ($district['regionChildIds'] ?? []) as $community) {
+                        if (is_array($community)) {
+                            $out[(string) ($community['regionId'] ?? '')] = ['oblast' => $oblast, 'raion' => $raion];
+                        }
+                    }
+                }
+            }
+
+            return $out;
+        });
+    }
+
+    /**
+     * alerts.in.ua: location_type oblast | raion | hromada | city, alert_type air_raid | artillery_shelling | …
+     *
+     * @return list<array{oblast: string, level: int, code: string|null, kind: string, started_at: string|null}>|null
      */
     private function fromAlertsInUa(string $token): ?array
     {
@@ -233,7 +362,7 @@ class AirAlertService
         if (! $response->successful() || ! is_array($response->json('alerts'))) {
             return null;
         }
-        $out = [];
+        $rows = [];
         foreach ((array) $response->json('alerts') as $alert) {
             if (! is_array($alert)) {
                 continue;
@@ -242,23 +371,30 @@ class AirAlertService
             if ($slug === null) {
                 continue;
             }
-            $kind = (string) ($alert['alert_type'] ?? 'air_raid');
-            $whole = in_array($alert['location_type'] ?? 'oblast', ['oblast', 'city'], true) && $this->slugFor((string) ($alert['location_title'] ?? '')) === $slug;
-            $type = $kind === 'air_raid' ? ($whole ? 'air_raid' : 'partial') : 'artillery';
-            $current = $out[$slug] ?? null;
-            // Повітряна тривога на всю область важливіша за часткову чи артобстріл.
-            if ($current === null || ($current['type'] !== 'air_raid' && $type === 'air_raid')) {
-                $out[$slug] = ['type' => $type, 'kind' => $kind, 'started_at' => isset($alert['started_at']) ? (string) $alert['started_at'] : null];
-            }
+            $title = (string) ($alert['location_title'] ?? '');
+            $level = match ((string) ($alert['location_type'] ?? 'oblast')) {
+                'raion' => 2,
+                'hromada' => 3,
+                'city' => $this->slugFor($title) === $slug ? 1 : 3,
+                default => 1,
+            };
+            $raion = isset($alert['location_raion']) ? AlertUnits::find($slug, 2, (string) $alert['location_raion']) : null;
+            $rows[] = [
+                'oblast' => $slug,
+                'level' => $level,
+                'code' => $level === 1 ? null : AlertUnits::find($slug, $level, $title, $raion),
+                'kind' => self::kindOf((string) ($alert['alert_type'] ?? 'air_raid')),
+                'started_at' => isset($alert['started_at']) ? (string) $alert['started_at'] : null,
+            ];
         }
 
-        return $out;
+        return $rows;
     }
 
     /**
-     * Запасне відкрите джерело ubilling: {"states": {"Київська область": {"alertnow": true, "changed": "…"}}}.
+     * Запасне відкрите джерело ubilling (лише області): {"states": {"Київська область": {"alertnow": true, "changed": "…"}}}.
      *
-     * @return array<string, array{type: string, kind: string, started_at: string|null}>|null
+     * @return list<array{oblast: string, level: int, code: string|null, kind: string, started_at: string|null}>|null
      */
     private function fromUbilling(): ?array
     {
@@ -271,7 +407,7 @@ class AirAlertService
         if (! is_array($states)) {
             return null;
         }
-        $out = [];
+        $rows = [];
         foreach ($states as $name => $state) {
             if (! is_array($state) || ! ($state['alertnow'] ?? $state['alert'] ?? $state['enabled'] ?? false)) {
                 continue;
@@ -279,11 +415,11 @@ class AirAlertService
             $slug = $this->slugFor((string) $name);
             if ($slug !== null) {
                 $changed = $state['changed'] ?? null;
-                $out[$slug] = ['type' => 'air_raid', 'kind' => 'air_raid', 'started_at' => is_string($changed) ? $changed : null];
+                $rows[] = ['oblast' => $slug, 'level' => 1, 'code' => null, 'kind' => 'air_raid', 'started_at' => is_string($changed) ? $changed : null];
             }
         }
 
-        return $out;
+        return $rows;
     }
 
     /** Slug регіону за назвою з API («Київська область», «м. Київ», «Автономна Республіка Крим»). */
@@ -295,6 +431,9 @@ class AirAlertService
         }
         if (str_contains($name, 'київ') && ! str_contains($name, 'область')) {
             return 'kyiv';
+        }
+        if (str_contains($name, 'севастоп')) {
+            return 'crimea';
         }
         foreach (self::REGIONS as $slug => $region) {
             if ($name === mb_strtolower($region['name'])) {
@@ -486,6 +625,7 @@ class AirAlertService
                 'sources' => $sources,
                 'confidence' => AlertSources::confidence($sources),
                 'course_deg' => $same->course_deg ?? $parsed['course_deg'],
+                'variant' => $same->variant ?? $parsed['variant'],
                 'expires_at' => max($same->expires_at, $post['at']->addMinutes(self::LIFETIME[$parsed['type']])),
             ]);
 
@@ -494,7 +634,7 @@ class AirAlertService
         AirThreat::query()->create([
             ...$parsed,
             'title' => Str::limit(preg_replace('/\s+/u', ' ', $post['text']) ?? $post['text'], 290),
-            'speed_kmh' => self::SPEED[$parsed['type']],
+            'speed_kmh' => self::VARIANT_SPEED[$parsed['variant'] ?? ''] ?? self::SPEED[$parsed['type']],
             'source_ref' => $post['ref'],
             'sources' => [$channel],
             'confidence' => AlertSources::confidence([$channel]),
@@ -521,7 +661,7 @@ class AirAlertService
     /**
      * Тип загрози, місце й курс з тексту зведення; null — не впізнали.
      *
-     * @return array{type: string, region_slug: string|null, place_name: string|null, lat: float, lng: float, course_deg: int|null}|null
+     * @return array{type: string, variant: string|null, region_slug: string|null, place_name: string|null, lat: float, lng: float, course_deg: int|null}|null
      */
     public function parse(string $text, ?string $home = null): ?array
     {
@@ -531,12 +671,20 @@ class AirAlertService
             preg_match('/(*UCP)\bкаб(и|ів)?\b|керован\w* авіабомб/u', $lower) === 1 => 'kab',
             preg_match('/(міг|миг|mig)-?31/u', $lower) === 1 => 'mig',
             preg_match('/ракет|крилат|швидкісн\w* ціл|калібр|х-101|х-59/u', $lower) === 1 => 'missile',
-            preg_match('/бпла|шахед|безпілот|дрон|мопед/u', $lower) === 1 => 'uav',
+            preg_match('/бпла|шахед|герань|гербер|безпілот|дрон|мопед|fpv|фпв|квадрокоптер/u', $lower) === 1 => 'uav',
             default => null,
         };
         if ($type === null) {
             return null;
         }
+        $variant = match (true) {
+            $type === 'uav' && preg_match('/реактивн|герань-?[35]|шахед-?238|ш-238/u', $lower) === 1 => 'jet',
+            $type === 'uav' && str_contains($lower, 'гербер') => 'gerbera',
+            $type === 'uav' && preg_match('/fpv|фпв|квадрокоптер|мавік|mavic/u', $lower) === 1 => 'fpv',
+            $type === 'uav' && preg_match('/шахед|герань|мопед/u', $lower) === 1 => 'shahed',
+            $type === 'missile' && preg_match('/крилат|х-101|калібр|х-55|х-59|х-69/u', $lower) === 1 => 'cruise',
+            default => null,
+        };
         $mentions = $this->mentions($lower);
         $origin = null;
         $target = null;
@@ -556,7 +704,7 @@ class AirAlertService
         }
         if ($place === null) {
             // Без місця ціль на мапу не ставимо; МіГ-31 і балістика — загальний прапорець без точки (region null).
-            return in_array($type, ['mig', 'ballistic'], true) ? ['type' => $type, 'region_slug' => null, 'place_name' => null, 'lat' => 49.0, 'lng' => 31.3, 'course_deg' => null] : null;
+            return in_array($type, ['mig', 'ballistic'], true) ? ['type' => $type, 'variant' => null, 'region_slug' => null, 'place_name' => null, 'lat' => 49.0, 'lng' => 31.3, 'course_deg' => null] : null;
         }
         $course = null;
         if ($origin !== null && $target !== null && $origin['slug'] !== $target['slug']) {
@@ -580,6 +728,7 @@ class AirAlertService
 
         return [
             'type' => $type,
+            'variant' => $variant,
             'region_slug' => $place['slug'],
             'place_name' => $place['place'],
             'lat' => $place['lat'],
@@ -600,7 +749,7 @@ class AirAlertService
             $words = [];
             foreach ($region['cities'] as $i => $city) {
                 $c = mb_strtolower($city);
-                $words[] = ['stem' => mb_substr($c, 0, max(4, mb_strlen($c) - 1)), 'place' => $city, 'city' => $i];
+                $words[] = ['stem' => self::stem($c), 'place' => $city, 'city' => $i];
             }
             foreach ($region['keys'] as $key) {
                 $words[] = ['stem' => $key, 'place' => $region['name'], 'city' => null];
@@ -619,6 +768,17 @@ class AirAlertService
         usort($found, fn (array $a, array $b) => $a['pos'] <=> $b['pos']);
 
         return $found;
+    }
+
+    /**
+     * Основа назви міста для пошуку в будь-якому відмінку: «Чернігів» → «черніг» (Черніговом),
+     * «Харків» → «харк» (Харкова), «Полтава» → «полтав». Короткі назви («Київ») — повністю.
+     */
+    public static function stem(string $city): string
+    {
+        $stem = (string) preg_replace('/(ів|їв|ця|ці|ь|а|я|и|е|о|і)$/u', '', $city);
+
+        return mb_strlen($stem) >= 4 ? $stem : $city;
     }
 
     /** Азимут з точки A на точку B, градуси 0–359. */

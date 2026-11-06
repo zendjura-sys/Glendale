@@ -38,6 +38,12 @@ class AirAlertsTest extends TestCase
         $this->assertSame('kyiv', $this->service()->parse('Швидкісна ціль на Київ!')['region_slug']);
         $this->assertSame('mig', $this->service()->parse('Зліт МіГ-31К. Повітряна тривога по всій країні.')['type']);
         $this->assertNull($this->service()->parse('Доброго ранку, Україно!'));
+        // Різновиди для значка й швидкості.
+        $this->assertSame('jet', $this->service()->parse('Реактивний шахед курсом на Київ')['variant']);
+        $this->assertSame('gerbera', $this->service()->parse('Гербери над Черніговом')['variant']);
+        $this->assertSame('fpv', $this->service()->parse('FPV-дрони біля Херсона')['variant']);
+        $this->assertSame('shahed', $this->service()->parse('Шахеди на Полтаву')['variant']);
+        $this->assertSame('cruise', $this->service()->parse('Крилаті ракети курсом на Львів')['variant']);
         $this->assertSame('kyiv', $this->service()->slugFor('м. Київ'));
         $this->assertSame('kyiv-oblast', $this->service()->slugFor('Київська область'));
         $this->assertSame('crimea', $this->service()->slugFor('Автономна Республіка Крим'));
@@ -179,5 +185,34 @@ class AirAlertsTest extends TestCase
         $this->assertSame('UkraineAlarm', $state['source']);
         $this->assertSame(1, $state['active_count']);
         $this->assertSame('air_raid', collect($state['regions'])->firstWhere('slug', 'kyiv-oblast')['type']);
+    }
+
+    public function test_alerts_by_raion_and_hromada_with_kinds(): void
+    {
+        Http::fake([
+            'api.alerts.in.ua/*' => Http::response(['alerts' => [
+                ['location_type' => 'raion', 'location_title' => 'Бучанський район', 'location_oblast' => 'Київська область', 'alert_type' => 'air_raid', 'started_at' => now()->subMinutes(5)->toIso8601String()],
+                ['location_type' => 'hromada', 'location_title' => 'Нікопольська територіальна громада', 'location_oblast' => 'Дніпропетровська область', 'alert_type' => 'artillery_shelling', 'started_at' => now()->toIso8601String()],
+                ['location_type' => 'oblast', 'location_title' => 'Луганська область', 'location_oblast' => 'Луганська область', 'alert_type' => 'air_raid', 'started_at' => now()->subDays(900)->toIso8601String()],
+                ['location_type' => 'raion', 'location_title' => 'Шосткинський район', 'location_oblast' => 'Сумська область', 'alert_type' => 'chemical', 'started_at' => now()->toIso8601String()],
+            ]]),
+            '*' => Http::response(['states' => []]),
+        ]);
+        app(SiteSettings::class)->putSecret('alerts_in_ua_token', 'test-token-1234567890');
+        $state = $this->service()->state();
+        $units = collect($state['units'])->keyBy('code');
+        $regions = collect($state['regions'])->keyBy('slug');
+
+        // Район — лише він, а область — часткова тривога.
+        $this->assertSame('air_raid', $units['UA32080000000084076']['kind']);
+        $this->assertSame('partial', $regions['kyiv-oblast']['type']);
+        // Громада з артобстрілом.
+        $this->assertSame('artillery', $units['UA12080050000062712']['kind']);
+        // Уся область — усі її райони.
+        $this->assertSame(8, $units->filter(fn ($u, $code) => str_starts_with($code, 'UA44'))->count());
+        $this->assertSame('air_raid', $regions['luhansk']['type']);
+        // Хімічна загроза — свій вид.
+        $this->assertSame('chemical', $units['UA59100000000036457']['kind']);
+        $this->assertSame('chemical', $regions['sumy']['type']);
     }
 }

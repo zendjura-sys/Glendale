@@ -1,8 +1,13 @@
-import type { AirThreat, AlertRegion } from '@/components/alerts/alert-map';
+import type {
+    AirThreat,
+    AlertRegion,
+    AlertUnit,
+} from '@/components/alerts/alert-map';
 import { tr } from '@/lib/i18n';
 
 export type AlertState = {
     regions: AlertRegion[];
+    units: AlertUnit[];
     active_count: number;
     mig_active: boolean;
     ballistic_threat: boolean;
@@ -34,6 +39,10 @@ export function duration(startedAt: string | null, now: number): string {
     );
     const h = Math.floor(total / 60);
     const min = total % 60;
+    if (h >= 48) {
+        // Тривала тривога (окуповані території тощо) — у днях.
+        return tr('{d} дн.', { d: Math.floor(h / 24) });
+    }
 
     return h > 0
         ? tr('{h} год {m} хв', { h, m: String(min).padStart(2, '0') })

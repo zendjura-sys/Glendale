@@ -11,6 +11,7 @@ use Illuminate\Support\Carbon;
  *
  * @property int $id
  * @property string $type uav|missile|ballistic|kab|mig|artillery
+ * @property string|null $variant shahed|jet|gerbera|fpv|cruise
  * @property string|null $region_slug
  * @property string|null $place_name
  * @property string $title
@@ -23,8 +24,9 @@ use Illuminate\Support\Carbon;
  * @property int $confidence
  * @property Carbon $detected_at
  * @property Carbon $expires_at
+ * @property Carbon|null $updated_at
  */
-#[Fillable(['type', 'region_slug', 'place_name', 'title', 'lat', 'lng', 'course_deg', 'speed_kmh', 'source_ref', 'sources', 'confidence', 'detected_at', 'expires_at'])]
+#[Fillable(['type', 'variant', 'region_slug', 'place_name', 'title', 'lat', 'lng', 'course_deg', 'speed_kmh', 'source_ref', 'sources', 'confidence', 'detected_at', 'expires_at'])]
 class AirThreat extends Model
 {
     public const TYPES = ['uav', 'missile', 'ballistic', 'kab', 'mig', 'artillery'];
@@ -42,6 +44,7 @@ class AirThreat extends Model
         return [
             'id' => $this->id,
             'type' => $this->type,
+            'variant' => $this->variant,
             'region' => $this->region_slug,
             'place' => $this->place_name,
             'title' => $this->title,
@@ -53,6 +56,8 @@ class AirThreat extends Model
             'sources' => $this->sources ?? [],
             'detected_at' => $this->detected_at->toIso8601String(),
             'expires_at' => $this->expires_at->toIso8601String(),
+            // Коли мітку востаннє підтвердило якесь джерело.
+            'updated_at' => ($this->updated_at ?? $this->detected_at)->toIso8601String(),
         ];
     }
 }

@@ -19,8 +19,13 @@ import { toast } from 'sonner';
 import {
     ALERT_COLOR,
     AlertMap,
+    KIND_COLOR,
+    kindLabel,
+    NEARBY_COLOR,
     THREAT_COLOR,
+    GLYPHS,
     threatLabel,
+    threatTitle,
 } from '@/components/alerts/alert-map';
 import { Toggle } from '@/components/gc/admin';
 import { api } from '@/lib/api';
@@ -293,7 +298,7 @@ export default function Alerts(props: {
                             )}
                             {prefs.shelter
                                 ? tr('Я вже не в укритті')
-                                : tr('🛡️ В укритті')}
+                                : tr('Я в укритті')}
                         </button>
                     </div>
                 </section>
@@ -341,6 +346,7 @@ export default function Alerts(props: {
                         </div>
                         <AlertMap
                             regions={state.regions}
+                            units={state.units ?? []}
                             threats={visibleThreats}
                             mine={prefs.region}
                             showAlerts={layers.includes('alerts')}
@@ -349,39 +355,71 @@ export default function Alerts(props: {
                         />
                         <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-xs text-white/60">
                             {(
-                                ['air_raid', 'partial', 'artillery'] as const
+                                [
+                                    'air_raid',
+                                    'artillery',
+                                    'urban_fights',
+                                    'chemical',
+                                    'nuclear',
+                                ] as const
                             ).map((key) => (
                                 <span
                                     key={key}
                                     className="inline-flex items-center gap-1.5"
                                 >
                                     <span
-                                        className="size-2.5 rounded-full"
-                                        style={{
-                                            background: ALERT_COLOR[key],
-                                        }}
+                                        className="size-2.5 rounded-sm"
+                                        style={{ background: KIND_COLOR[key] }}
                                     />
-                                    {key === 'air_raid'
-                                        ? tr('Повітряна тривога')
-                                        : key === 'partial'
-                                          ? tr('Частина області')
-                                          : tr('Артобстріл')}
+                                    {kindLabel(key)}
                                 </span>
                             ))}
-                            {(
-                                ['uav', 'missile', 'kab', 'ballistic'] as const
-                            ).map((key) => (
+                            <span className="inline-flex items-center gap-1.5">
                                 <span
-                                    key={key}
+                                    className="size-2.5 rounded-sm"
+                                    style={{
+                                        background: `repeating-linear-gradient(-45deg, ${NEARBY_COLOR} 0 1.5px, transparent 1.5px 4px)`,
+                                    }}
+                                />
+                                {tr('Жовтий рівень — тривога в області поруч')}
+                            </span>
+                            <span className="inline-flex items-center gap-1.5">
+                                <span
+                                    className="size-2.5 rounded-sm"
+                                    style={{
+                                        background: `repeating-linear-gradient(45deg, ${KIND_COLOR.air_raid} 0 3px, rgb(0 0 0 / 0.5) 3px 5px)`,
+                                    }}
+                                />
+                                {tr('Штрих — тривога понад добу')}
+                            </span>
+                        </div>
+                        <div className="mt-2 flex flex-wrap gap-x-4 gap-y-2 text-xs text-white/60">
+                            {(
+                                [
+                                    ['shahed', 'uav', tr('Shahed / Гербера')],
+                                    ['jet', 'uav', tr('Реактивний Shahed')],
+                                    ['fpv', 'uav', tr('FPV-дрон')],
+                                    ['cruise', 'missile', tr('Крилата ракета')],
+                                    ['ballistic', 'ballistic', tr('Балістика')],
+                                    ['kab', 'kab', tr('КАБ')],
+                                    ['mig', 'mig', tr('МіГ-31К')],
+                                ] as const
+                            ).map(([glyph, type, label]) => (
+                                <span
+                                    key={glyph}
                                     className="inline-flex items-center gap-1.5"
                                 >
-                                    <span
-                                        className="size-2.5 rounded-full"
-                                        style={{
-                                            background: THREAT_COLOR[key],
-                                        }}
-                                    />
-                                    {threatLabel(key)}
+                                    <svg
+                                        viewBox="0 0 24 24"
+                                        className="size-4"
+                                        aria-hidden
+                                    >
+                                        <path
+                                            d={GLYPHS[glyph]}
+                                            fill={THREAT_COLOR[type]}
+                                        />
+                                    </svg>
+                                    {label}
                                 </span>
                             ))}
                         </div>
@@ -450,7 +488,7 @@ export default function Alerts(props: {
                                                         THREAT_COLOR[t.type],
                                                 }}
                                             >
-                                                {threatLabel(t.type)}
+                                                {threatTitle(t)}
                                             </span>
                                             <span className="min-w-0 flex-1 truncate text-white/80">
                                                 {t.place ?? tr('Україна')}

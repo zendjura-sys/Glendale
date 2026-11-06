@@ -87,14 +87,14 @@ export function AlertMapButton({
                     : tr('Мапа тривог')
             }
             className={cn(
-                'group relative flex items-center gap-2 overflow-hidden rounded-2xl bg-[#0b1a33]/80 p-2 pr-3 ring-1 ring-sky-300/25 transition hover:ring-sky-300/50',
+                'group relative flex shrink-0 flex-col gap-1.5 overflow-hidden rounded-2xl bg-[#0b1a33]/80 p-3 ring-1 ring-sky-300/25 transition hover:ring-sky-300/50',
                 current && 'ring-sky-300/60',
                 className,
             )}
         >
             <svg
                 viewBox={`0 0 ${W} ${H}`}
-                className="h-auto w-[58%] shrink-0"
+                className="h-auto w-full"
                 aria-hidden
             >
                 <defs>
@@ -151,17 +151,17 @@ export function AlertMapButton({
                 />
             </svg>
             <Megaphone
-                className="absolute top-1/2 left-[22%] size-9 -translate-y-1/2 -rotate-12 text-red-600 transition group-hover:scale-110 motion-reduce:transition-none"
+                className="absolute top-[30%] left-[38%] size-10 -translate-y-1/2 -rotate-12 text-red-600 transition group-hover:scale-110 motion-reduce:transition-none"
                 strokeWidth={2.6}
                 aria-hidden
             />
-            <span className="min-w-0 flex-1">
-                <span className="block font-display text-[15px] leading-tight font-extrabold text-white">
+            <span className="flex items-baseline justify-between gap-2">
+                <span className="font-display text-[15px] leading-tight font-extrabold text-white">
                     {tr('Мапа тривог')}
                 </span>
                 <span
                     className={cn(
-                        'mt-0.5 block text-[11px] leading-tight',
+                        'text-[11px] leading-tight whitespace-nowrap',
                         active.length ? 'text-red-300' : 'text-white/50',
                     )}
                 >

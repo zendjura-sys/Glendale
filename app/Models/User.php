@@ -359,11 +359,12 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
         if ($this->pref('event_frame') !== true) {
             return null;
         }
-        // Свято одне на весь запит — рахуємо раз.
+        // Свято одне на весь запит — рахуємо раз. Загортаємо в масив: «немає свята» (null) контейнер
+        // не вважає зареєстрованим і намагався б створити клас з такою назвою.
         if (! app()->bound('event-frame.season')) {
-            app()->instance('event-frame.season', app(Plugins::class)->on('event_frames') ? app(Seasons::class)->for(null) : null);
+            app()->instance('event-frame.season', ['season' => app(Plugins::class)->on('event_frames') ? app(Seasons::class)->for(null) : null]);
         }
-        $season = app('event-frame.season');
+        $season = app('event-frame.season')['season'] ?? null;
 
         return is_string($season) ? $season : null;
     }
