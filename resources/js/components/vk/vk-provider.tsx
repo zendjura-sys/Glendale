@@ -5,30 +5,9 @@ import {
     ConfigProvider,
     Platform,
 } from '@vkontakte/vkui';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
+import { useSiteTheme } from '@/hooks/use-site-theme';
 import type { PropsWithChildren } from 'react';
-
-/** Поточна тема сайту (data-theme на <html>) — стежимо за перемиканням. */
-function useSiteTheme(): 'light' | 'dark' {
-    const read = () =>
-        typeof document !== 'undefined' &&
-        document.documentElement.dataset.theme === 'light'
-            ? 'light'
-            : 'dark';
-    const [theme, setTheme] = useState<'light' | 'dark'>(read);
-
-    useEffect(() => {
-        const observer = new MutationObserver(() => setTheme(read()));
-        observer.observe(document.documentElement, {
-            attributes: true,
-            attributeFilter: ['data-theme'],
-        });
-
-        return () => observer.disconnect();
-    }, []);
-
-    return theme;
-}
 
 /**
  * Дизайн-система VKUI (MIT, github.com/VKCOM/VKUI): вигляд vk.com на комп'ютері, мобільний VK на телефоні.

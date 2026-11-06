@@ -16,6 +16,7 @@ import units from '@/data/ua-units.json';
 import {
     ALERT_TYPES,
     isAlertType,
+    mapFill,
     primaryAlert,
     resolveAlertColors,
 } from '@/lib/alerts-config';
@@ -301,6 +302,20 @@ export function AlertMap({
     const [selected, setSelected] = useState<number | null>(null);
     const [zoom, setZoom] = useState(1);
     const scroller = useRef<HTMLDivElement>(null);
+    // Мапа завжди у стилі alerts.in.ua (світла: бежевий — спокійно, лососевий — тривога, жовтий — БпЛА).
+    // Ширина мапи на екрані: підписи областей тримають читабельний розмір (≈11px) на будь-якому екрані.
+    const [px, setPx] = useState(1000);
+    useEffect(() => {
+        const el = scroller.current;
+        if (!el) return;
+        const observer = new ResizeObserver(() => setPx(el.clientWidth));
+        observer.observe(el);
+        return () => observer.disconnect();
+    }, []);
+    const shownPx = px * zoom;
+    const labelSize = Math.min(26, Math.max(12, (8.5 * W) / shownPx));
+    // Вузька мапа (телефон без зуму): підписуємо лише свою область — інакше назви налазять одна на одну.
+    const compactLabels = shownPx < 420;
     // Масштабуємо навколо центру видимої частини (або обраної цілі).
     const zoomTo = (next: number) => {
         const el = scroller.current;
@@ -344,13 +359,22 @@ export function AlertMap({
     /** Стан зони: головна тривога (найвищий пріоритет), кольори за типом і масштабом. */
     const status = (code: string, oblast: string) => {
         const unit = showAlerts ? byCode.get(code) : undefined;
-        // Заливка — лише офіційні тривоги; рівні загроз з цілей малюємо обвідкою області.
-        const primary = primaryAlert([unit ? unitType(unit) : null]);
+        // Заливка: головна за пріоритетом серед офіційної тривоги району й загрози з цілей в області
+        // (БпЛА — жовтий, балістика — червоний): уся область фарбується, де немає важливішої тривоги.
+        const primary = primaryAlert([
+            unit ? unitType(unit) : null,
+            ...(levels.get(oblast) ?? []),
+        ]);
         const type: AlertTypeCode =
             primary === 'CLEAR' && noData.has(oblast) ? 'NO_DATA' : primary;
         const colors = resolveAlertColors(
             type,
             type === 'AIR' ? (unit?.scale ?? 'oblast') : null,
+        );
+        const fill = mapFill(
+            type,
+            type === 'AIR' ? (unit?.scale ?? 'oblast') : null,
+            'light',
         );
         const long =
             unit !== undefined &&
@@ -361,6 +385,7 @@ export function AlertMap({
         return {
             type,
             colors,
+            fill,
             active: type !== 'CLEAR' && type !== 'NO_DATA',
             long,
         };
@@ -373,7 +398,8 @@ export function AlertMap({
         : [];
 
     return (
-        <div className="relative">
+        // Підкладка мапи — світла в обох темах сайту, як на alerts.in.ua.
+        <div className="gc-alert-map relative rounded-xl bg-[#f2f1ee]">
             <div
                 ref={scroller}
                 className="[scrollbar-width:thin] overflow-auto overscroll-contain rounded-xl"
@@ -431,13 +457,9 @@ export function AlertMap({
                                 <path
                                     key={u.c}
                                     d={u.d}
-                                    fill={st.colors.fill}
-                                    stroke={
-                                        st.active
-                                            ? st.colors.border
-                                            : 'rgb(255 255 255 / 0.12)'
-                                    }
-                                    strokeWidth={st.active ? 0.9 : 0.6}
+                                    fill={st.fill}
+                                    stroke="rgb(255 255 255 / 0.75)"
+                                    strokeWidth={0.7}
                                     className={
                                         onSelect ? 'cursor-pointer' : undefined
                                     }
@@ -458,9 +480,9 @@ export function AlertMap({
                                     <path
                                         key={h.c}
                                         d={h.d}
-                                        fill={st.colors.fill}
-                                        stroke={st.colors.border}
-                                        strokeWidth={0.6}
+                                        fill={st.fill}
+                                        stroke="rgb(255 255 255 / 0.75)"
+                                        strokeWidth={0.5}
                                     >
                                         <title>
                                             {h.n} ·{' '}
@@ -501,7 +523,7 @@ export function AlertMap({
                                 <path
                                     d={CHEZ.d}
                                     fill={`url(#chez-${id})`}
-                                    stroke="rgb(255 255 255 / 0.45)"
+                                    stroke="rgb(30 41 59 / 0.45)"
                                     strokeWidth={0.8}
                                     strokeDasharray="3 2"
                                 >
@@ -514,39 +536,34 @@ export function AlertMap({
                                     y={CHEZ.y - 8}
                                     width={16}
                                     height={16}
-                                    color="rgb(255 255 255 / 0.85)"
+                                    color="rgb(30 41 59 / 0.75)"
                                     strokeWidth={2.2}
                                     aria-hidden
                                 />
                             </g>
                         )}
 
-                        {OBLASTS.map((o) => {
-                            // Рівень загрози з цілей (БпЛА — жовтий, балістика — червоний) — кольорова обвідка області.
-                            const top = primaryAlert(levels.get(o.o) ?? []);
-                            const level = top === 'CLEAR' ? null : top;
-                            return (
-                                <path
-                                    key={o.k}
-                                    d={o.d}
-                                    fill="none"
-                                    stroke={
-                                        o.o === mine
-                                            ? 'rgb(255 255 255 / 0.9)'
-                                            : level
-                                              ? ALERT_TYPES[level].hex
-                                              : 'rgb(255 255 255 / 0.35)'
-                                    }
-                                    strokeWidth={
-                                        o.o === mine ? 2.2 : level ? 2.4 : 1.1
-                                    }
-                                    pointerEvents="none"
-                                />
-                            );
-                        })}
+                        {OBLASTS.map((o) => (
+                            <path
+                                key={o.k}
+                                d={o.d}
+                                fill="none"
+                                stroke={
+                                    o.o === mine
+                                        ? 'rgb(30 41 59 / 0.85)'
+                                        : 'rgb(120 100 80 / 0.45)'
+                                }
+                                strokeWidth={o.o === mine ? 2.2 : 1.1}
+                                pointerEvents="none"
+                            />
+                        ))}
 
                         {regions
-                            .filter((r) => r.slug !== 'kyiv')
+                            .filter(
+                                (r) =>
+                                    r.slug !== 'kyiv' &&
+                                    (!compactLabels || r.slug === mine),
+                            )
                             .map((r) => {
                                 const [x, y] = project(r.lat, r.lng);
                                 return (
@@ -555,9 +572,9 @@ export function AlertMap({
                                         x={x}
                                         y={y}
                                         textAnchor="middle"
-                                        fontSize={14}
+                                        fontSize={labelSize}
                                         fontWeight={600}
-                                        fill="rgb(255 255 255 / 0.62)"
+                                        fill="rgb(30 41 59 / 0.72)"
                                         pointerEvents="none"
                                     >
                                         {r.name
@@ -711,7 +728,7 @@ export function AlertMap({
                             y={H - 6}
                             textAnchor="end"
                             fontSize={10}
-                            fill="rgb(255 255 255 / 0.35)"
+                            fill="rgb(30 41 59 / 0.45)"
                         >
                             © OpenStreetMap · ODbL
                         </text>

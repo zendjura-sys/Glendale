@@ -206,3 +206,64 @@ export function primaryAlert(
 
     return best;
 }
+
+/**
+ * Суцільні заливки зон на мапі. Темна тема — як мапа ukrainealarm (сірий, червоний, жовтий),
+ * світла — як alerts.in.ua (бежевий, лососево-червоний, жовтий). AIR світлішає зі зменшенням масштабу.
+ */
+type MapPalette = {
+    types: Record<AlertTypeCode, string>;
+    air: Record<AlertScaleCode, string>;
+};
+export const MAP_FILL: Record<'light' | 'dark', MapPalette> = {
+    dark: {
+        types: {
+            NUCLEAR: '#7c3aed',
+            CHEMICAL: '#65a30d',
+            BALLISTIC: '#8f1d2c',
+            AIR: '#c8443c',
+            ARTILLERY: '#d9731c',
+            URBAN_FIGHTS: '#b4501a',
+            UAV: '#d4a017',
+            CLEAR: '#3a4252',
+            NO_DATA: '#262b36',
+        },
+        air: {
+            oblast: '#c8443c',
+            raion: '#d4554b',
+            hromada: '#dc675c',
+            city: '#e27b70',
+        },
+    },
+    light: {
+        types: {
+            NUCLEAR: '#a78bfa',
+            CHEMICAL: '#9ccc4a',
+            BALLISTIC: '#d2463e',
+            AIR: '#e8776c',
+            ARTILLERY: '#f39a4a',
+            URBAN_FIGHTS: '#e0783a',
+            UAV: '#ffc93c',
+            CLEAR: '#ece2d4',
+            NO_DATA: '#d8d2c9',
+        },
+        air: {
+            oblast: '#e8776c',
+            raion: '#ec897f',
+            hromada: '#f09b92',
+            city: '#f3ada6',
+        },
+    },
+};
+
+/** Колір заливки зони на мапі: для AIR — за масштабом. */
+export function mapFill(
+    type: AlertTypeCode,
+    scale?: AlertScaleCode | null,
+    theme: 'light' | 'dark' = 'dark',
+): string {
+    const palette = MAP_FILL[theme];
+    if (type === 'AIR' && scale) return palette.air[scale];
+
+    return palette.types[type];
+}

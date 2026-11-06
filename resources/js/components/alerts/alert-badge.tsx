@@ -1,6 +1,7 @@
 import { ALERT_TYPES, resolveAlertColors } from '@/lib/alerts-config';
 import type { AlertScaleCode, AlertTypeCode } from '@/lib/alerts-config';
 import { cn } from '@/lib/utils';
+import type { CSSProperties } from 'react';
 
 /**
  * Плашка тривоги: іконка Lucide й коротка назва в кольорах типу (для AIR — за масштабом).
@@ -28,15 +29,18 @@ export function AlertBadge({
         <span
             title={meta.label()}
             className={cn(
-                'inline-flex shrink-0 items-center gap-1 rounded-chip border font-semibold backdrop-blur-md',
+                'gc-alert-text inline-flex shrink-0 items-center gap-1 rounded-chip border font-semibold',
                 iconOnly ? 'size-6 justify-center' : 'h-6 px-2 text-[11px]',
                 className,
             )}
-            style={{
-                background: colors.fill,
-                borderColor: colors.border,
-                color: colors.text,
-            }}
+            style={
+                {
+                    background: colors.fill,
+                    borderColor: colors.border,
+                    '--a-text': colors.text,
+                    '--a-hex': colors.hex,
+                } as CSSProperties
+            }
         >
             <Icon className="size-3.5" aria-hidden />
             {iconOnly ? (

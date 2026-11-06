@@ -120,20 +120,18 @@ class AlertsScreen extends StatefulWidget {
   State<AlertsScreen> createState() => _AlertsScreenState();
 }
 
-typedef _Legend = ({List<AlertTypeCode> types, List<AlertScaleCode> scales, bool outline, List<(String?, String, String)> glyphs});
+typedef _Legend = ({List<AlertTypeCode> types, List<AlertScaleCode> scales, List<(String?, String, String)> glyphs});
 
 /// Компактна легенда: лише типи, масштаби й значки цілей, які зараз є на мапі.
 _Legend _legendOf(List<Map<String, dynamic>> regions, List<Map<String, dynamic>> units, List<Map<String, dynamic>> threats) {
   final types = <AlertTypeCode>{};
   final scales = <AlertScaleCode>{};
-  var outline = false;
   for (final r in regions) {
     for (final c in (r['alerts'] as List?) ?? [r['alert']]) {
       final t = AlertsConfig.typeOf(c);
       if (t != null) types.add(t);
     }
     final levels = (r['threat_levels'] as List?) ?? const [];
-    if (levels.isNotEmpty) outline = true;
     for (final c in levels) {
       final t = AlertsConfig.typeOf(c);
       if (t != null) types.add(t);
@@ -170,7 +168,6 @@ _Legend _legendOf(List<Map<String, dynamic>> regions, List<Map<String, dynamic>>
   return (
     types: types.isEmpty ? [AlertTypeCode.clear] : [for (final t in AlertsConfig.ordered) if (types.contains(t)) t],
     scales: scales.length > 1 ? [for (final sc in AlertScaleCode.values) if (scales.contains(sc)) sc] : const [],
-    outline: outline,
     glyphs: [for (final (key, variant, type, label) in all) if (used.contains(key)) (variant, type, label)],
   );
 }
@@ -432,7 +429,7 @@ class _AlertsScreenState extends State<AlertsScreen> {
               ),
             if (!compactLegend || legendOpen) ...[
               Wrap(spacing: 6, runSpacing: 6, children: [for (final t in legend.types) AlertBadge(t, full: true)]),
-              if (legend.scales.isNotEmpty || legend.outline) ...[
+              if (legend.scales.isNotEmpty) ...[
                 const SizedBox(height: 8),
                 Wrap(spacing: 12, runSpacing: 6, children: [
                   for (final sc in legend.scales)
@@ -443,15 +440,6 @@ class _AlertsScreenState extends State<AlertsScreen> {
                         decoration: BoxDecoration(color: AlertsConfig.airScale[sc]!.fill, border: Border.all(color: AlertsConfig.airScale[sc]!.border), borderRadius: BorderRadius.circular(2)),
                       ),
                       AlertsConfig.scaleLabel(sc),
-                    ),
-                  if (legend.outline)
-                    _legend(
-                      Container(
-                        width: 10,
-                        height: 10,
-                        decoration: BoxDecoration(border: Border.all(color: AlertsConfig.types[AlertTypeCode.uav]!.palette.hex, width: 2), borderRadius: BorderRadius.circular(2)),
-                      ),
-                      tr('Обвідка області — загроза з цілей'),
                     ),
                 ]),
               ],

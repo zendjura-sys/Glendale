@@ -48,6 +48,29 @@ abstract final class AlertsConfig {
     AlertScaleCode.city: AlertPalette(Color(0xFFFB7185), Color.fromRGBO(251, 113, 133, 0.18), Color.fromRGBO(253, 164, 175, 0.38), Color(0xFFFECDD3)),
   };
 
+  /// Суцільні заливки зон на мапі в стилі alerts.in.ua (бежевий, лососевий, жовтий) — як `MAP_FILL.light` на сайті.
+  static const mapFill = <AlertTypeCode, Color>{
+    AlertTypeCode.nuclear: Color(0xFFA78BFA),
+    AlertTypeCode.chemical: Color(0xFF9CCC4A),
+    AlertTypeCode.ballistic: Color(0xFFD2463E),
+    AlertTypeCode.air: Color(0xFFE8776C),
+    AlertTypeCode.artillery: Color(0xFFF39A4A),
+    AlertTypeCode.urbanFights: Color(0xFFE0783A),
+    AlertTypeCode.uav: Color(0xFFFFC93C),
+    AlertTypeCode.clear: Color(0xFFECE2D4),
+    AlertTypeCode.noData: Color(0xFFD8D2C9),
+  };
+  static const mapAirScaleFill = <AlertScaleCode, Color>{
+    AlertScaleCode.oblast: Color(0xFFE8776C),
+    AlertScaleCode.raion: Color(0xFFEC897F),
+    AlertScaleCode.hromada: Color(0xFFF09B92),
+    AlertScaleCode.city: Color(0xFFF3ADA6),
+  };
+
+  /// Колір заливки зони на мапі: для AIR — за масштабом.
+  static Color mapColor(AlertTypeCode type, [AlertScaleCode? scale]) =>
+      type == AlertTypeCode.air && scale != null ? mapAirScaleFill[scale]! : mapFill[type]!;
+
   /// Від найважливішої до найменш важливої (для легенди).
   static List<AlertTypeCode> get ordered => AlertTypeCode.values.toList()..sort((a, b) => types[b]!.priority - types[a]!.priority);
 

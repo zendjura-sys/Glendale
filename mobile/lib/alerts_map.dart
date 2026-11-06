@@ -325,7 +325,8 @@ class _AlertMapViewState extends State<AlertMapView> with SingleTickerProviderSt
             mine: widget.mine,
             showAlerts: widget.showAlerts,
             selected: widget.selected,
-            ink: fg,
+            // Мапа завжди світла, як на alerts.in.ua: темне чорнило для підписів і меж.
+            ink: const Color(0xFF1E293B),
             now: DateTime.now(),
             pulse: pulse.isAnimating ? (1 - math.cos(pulse.value * 2 * math.pi)) / 2 : 0,
           ),
@@ -379,8 +380,9 @@ class _AlertMapPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     canvas.save();
     canvas.scale(size.width / 1000);
+    canvas.drawRect(const Rect.fromLTWH(0, 0, 1000, 680), Paint()..color = const Color(0xFFF2F1EE));
     final byCode = {for (final u in showAlerts ? units : const <Map<String, dynamic>>[]) '${u['code']}': u};
-    // Рівні загроз з цілей (балістика — червоний, БпЛА — жовтий) — лише кольорова обвідка області, не заливка.
+    // Рівні загроз з цілей (балістика — червоний, БпЛА — жовтий) фарбують райони області, де немає важливішої тривоги.
     final levels = {
       for (final r in regions)
         '${r['slug']}': [if (showAlerts) for (final c in (r['threat_levels'] as List?) ?? const []) AlertsConfig.typeOf(c)],
@@ -388,16 +390,17 @@ class _AlertMapPainter extends CustomPainter {
     final noData = {for (final r in regions) if (r['alert'] == 'NO_DATA') '${r['slug']}'};
     final border = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 0.6
-      ..color = ink.withValues(alpha: 0.12);
+      ..strokeWidth = 0.7
+      ..color = Colors.white.withValues(alpha: 0.75);
 
     /// Головна тривога зони (найвищий пріоритет), кольори за типом і масштабом.
     void fillUnit(String code, String oblast, Path path) {
       final unit = byCode[code];
-      var type = AlertsConfig.primary([if (unit != null) unitType(unit)]);
+      var type = AlertsConfig.primary([if (unit != null) unitType(unit), ...?levels[oblast]]);
       if (type == AlertTypeCode.clear && noData.contains(oblast)) type = AlertTypeCode.noData;
       final palette = AlertsConfig.resolveColors(type, type == AlertTypeCode.air ? (AlertsConfig.scaleOf(unit?['scale']) ?? AlertScaleCode.oblast) : null);
-      canvas.drawPath(path, Paint()..color = palette.fill);
+      final scale = type == AlertTypeCode.air ? (AlertsConfig.scaleOf(unit?['scale']) ?? AlertScaleCode.oblast) : null;
+      canvas.drawPath(path, Paint()..color = AlertsConfig.mapColor(type, scale));
       final active = type != AlertTypeCode.clear && type != AlertTypeCode.noData;
       if (!active) return;
       final started = DateTime.tryParse('${unit?['started_at'] ?? ''}');
@@ -407,10 +410,6 @@ class _AlertMapPainter extends CustomPainter {
       } else if (pulse > 0) {
         canvas.drawPath(path, Paint()..color = palette.hex.withValues(alpha: 0.22 * pulse));
       }
-      canvas.drawPath(path, Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 0.9
-        ..color = palette.border);
     }
 
     for (final u in geo.units) {
@@ -430,28 +429,29 @@ class _AlertMapPainter extends CustomPainter {
       canvas.drawPath(chez.path, Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = 0.8
-        ..color = Colors.white.withValues(alpha: 0.45));
-      _icon(canvas, LucideIcons.radiation, chez.label, 15, Colors.white.withValues(alpha: 0.85));
+        ..color = ink.withValues(alpha: 0.45));
+      _icon(canvas, LucideIcons.radiation, chez.label, 15, ink.withValues(alpha: 0.75));
     }
     for (final o in geo.oblasts) {
       final isMine = o.oblast == mine;
-      final top = AlertsConfig.primary(levels[o.oblast] ?? const []);
-      final level = top == AlertTypeCode.clear ? null : AlertsConfig.types[top]!.palette.hex;
       canvas.drawPath(o.path, Paint()
         ..style = PaintingStyle.stroke
-        ..strokeWidth = isMine ? 2.2 : (level != null ? 2.4 : 1.1)
-        ..color = isMine ? Colors.white.withValues(alpha: 0.9) : (level ?? ink.withValues(alpha: 0.35)));
+        ..strokeWidth = isMine ? 2.2 : 1.1
+        ..color = isMine ? ink.withValues(alpha: 0.85) : const Color(0x73786450));
     }
+    // Підписи читабельні (≈8.5 px) на будь-якій ширині; на вузькій мапі — лише своя область, щоб не налазили.
+    final labelSize = (8.5 * 1000 / size.width).clamp(12.0, 26.0);
+    final compact = size.width < 420;
     for (final r in regions) {
-      if (r['slug'] == 'kyiv') continue;
+      if (r['slug'] == 'kyiv' || (compact && r['slug'] != mine)) continue;
       final name = '${r['name']}'.replaceAll(' область', '').replaceAll('Автономна Республіка ', '');
-      _text(canvas, name, project(_d(r['lat']), _d(r['lng'])), 14, ink.withValues(alpha: 0.62), weight: FontWeight.w600);
+      _text(canvas, name, project(_d(r['lat']), _d(r['lng'])), labelSize, ink.withValues(alpha: 0.72), weight: FontWeight.w600);
     }
     for (final u in byCode.values) {
       final type = unitType(u);
       if (type != AlertTypeCode.nuclear && type != AlertTypeCode.chemical) continue;
       final shape = geo.units.where((s) => s.code == u['code']).firstOrNull;
-      if (shape != null) _icon(canvas, AlertsConfig.types[type]!.icon, shape.label, 20, AlertsConfig.types[type]!.palette.text);
+      if (shape != null) _icon(canvas, AlertsConfig.types[type]!.icon, shape.label, 20, AlertsConfig.types[type]!.palette.hex);
     }
 
     for (final t in threats) {

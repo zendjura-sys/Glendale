@@ -5482,3 +5482,11 @@ iframe {
         border-radius: 12px;
     }
 }
+
+/* Тексти тривог: на темному — пастельний відтінок типу, на світлому — насичений і затемнений. */
+.gc-alert-text {
+    color: var(--a-text);
+}
+:root[data-theme='light'] .gc-alert-text:not([data-on-dark] *) {
+    color: color-mix(in oklab, var(--a-hex) 72%, #000);
+}

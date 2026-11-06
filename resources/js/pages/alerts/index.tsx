@@ -15,6 +15,7 @@ import {
     VolumeX,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import type { CSSProperties } from 'react';
 import { toast } from 'sonner';
 import {
     AlertMap,
@@ -75,7 +76,6 @@ function legendOf(state: AlertState, now: number) {
     const types = new Set<AlertTypeCode>();
     const scales = new Set<AlertScaleCode>();
     let long = false;
-    let outline = false;
     const isLong = (at: string | null) =>
         at !== null && now - new Date(at).getTime() > 24 * 3600_000;
     for (const r of state.regions) {
@@ -83,7 +83,6 @@ function legendOf(state: AlertState, now: number) {
             types.add(code);
         }
         if (r.alert === 'AIR' && r.scale) scales.add(r.scale);
-        if ((r.threat_levels ?? []).length > 0) outline = true;
         for (const code of r.threat_levels ?? []) types.add(code);
         if (r.active && isLong(r.started_at)) long = true;
     }
@@ -120,7 +119,6 @@ function legendOf(state: AlertState, now: number) {
             (s) => scales.has(s) && scales.size > 1,
         ),
         long,
-        outline,
         glyphs: GLYPH_LEGEND.filter(([g]) => used.has(g)).map(
             ([g, type, label]) => [g, type, label()] as const,
         ),
@@ -269,13 +267,13 @@ export default function Alerts(props: {
                                         </span>
                                     ))}
                                 {state.mig_active && (
-                                    <span className="inline-flex items-center gap-1.5 rounded-chip bg-cyan-400/15 px-3 py-1 text-xs font-semibold text-cyan-200">
+                                    <span className="inline-flex items-center gap-1.5 rounded-chip bg-cyan-400/15 px-3 py-1 text-xs font-semibold text-cyan-700 dark:text-cyan-200">
                                         <Radar className="size-3.5" />
                                         {tr('Зліт МіГ-31К')}
                                     </span>
                                 )}
                                 {state.ballistic_threat && (
-                                    <span className="inline-flex items-center gap-1.5 rounded-chip bg-red-500/20 px-3 py-1 text-xs font-semibold text-red-200">
+                                    <span className="inline-flex items-center gap-1.5 rounded-chip bg-red-500/20 px-3 py-1 text-xs font-semibold text-red-700 dark:text-red-200">
                                         <Rocket className="size-3.5" />
                                         {tr('Загроза балістики')}
                                     </span>
@@ -457,9 +455,7 @@ export default function Alerts(props: {
                                     <AlertBadge key={code} type={code} full />
                                 ))}
                             </div>
-                            {(legend.scales.length > 0 ||
-                                legend.long ||
-                                legend.outline) && (
+                            {(legend.scales.length > 0 || legend.long) && (
                                 <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-white/60">
                                     {legend.scales.map((scale) => (
                                         <span
@@ -493,20 +489,6 @@ export default function Alerts(props: {
                                                 }}
                                             />
                                             {tr('Штрих — тривога понад добу')}
-                                        </span>
-                                    )}
-                                    {legend.outline && (
-                                        <span className="inline-flex items-center gap-1.5">
-                                            <span
-                                                className="size-2.5 rounded-sm border-2"
-                                                style={{
-                                                    borderColor:
-                                                        ALERT_TYPES.UAV.hex,
-                                                }}
-                                            />
-                                            {tr(
-                                                'Обвідка області — загроза з цілей',
-                                            )}
                                         </span>
                                     )}
                                 </div>
@@ -580,10 +562,15 @@ export default function Alerts(props: {
                                             scale={r.scale}
                                         />
                                         <span
-                                            className="min-w-0 flex-1 truncate"
-                                            style={{
-                                                color: regionColors(r).text,
-                                            }}
+                                            className="gc-alert-text min-w-0 flex-1 truncate"
+                                            style={
+                                                {
+                                                    '--a-text':
+                                                        regionColors(r).text,
+                                                    '--a-hex':
+                                                        regionColors(r).hex,
+                                                } as CSSProperties
+                                            }
                                         >
                                             {r.name}
                                         </span>
