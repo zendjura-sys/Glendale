@@ -730,6 +730,9 @@ function MenuContent({ onClose }: { onClose: () => void }) {
 
             <PlusMenuCard until={user.plus_until} className="my-2" />
 
+            {/* Мапа тривог — під GameCon+ (кому показувати — в адмінці «Інтеграції»). */}
+            {airAlerts && <AlertMapButton row className="mb-2" />}
+
             <div className="grid grid-cols-4 gap-y-1">
                 {items.map((item) => {
                     const active = isActive(item.href, item.key);
@@ -765,9 +768,6 @@ function MenuContent({ onClose }: { onClose: () => void }) {
                     );
                 })}
             </div>
-
-            {/* Мапа тривог (Україна; кому показувати — в адмінці «Інтеграції»). */}
-            {airAlerts && <AlertMapButton row className="my-2" />}
 
             <div className="my-2 h-px bg-white/[0.07]" />
 
