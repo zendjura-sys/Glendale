@@ -1,6 +1,15 @@
-import { Clock, Gauge, MapPin, Radio, RefreshCw, X } from 'lucide-react';
+import {
+    Clock,
+    Gauge,
+    MapPin,
+    Minus,
+    Plus,
+    Radio,
+    RefreshCw,
+    X,
+} from 'lucide-react';
 import { AnimatePresence, m, useReducedMotion } from 'motion/react';
-import { useEffect, useId, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import units from '@/data/ua-units.json';
 import { tr } from '@/lib/i18n';
 
@@ -220,6 +229,9 @@ const KNOWN = new Set(UNITS.map((u) => u.c));
 /** Чорнобильська зона відчуження (частина Вишгородського району поза громадами). */
 const CHEZ = (units as { chez?: { d: string; x: number; y: number } }).chez;
 
+/** Найбільший масштаб мапи (кнопки «+» / «−»). */
+const MAX_ZOOM = 3.25;
+
 /** Тривога, що триває понад добу (окуповані території тощо), — зі штрихуванням. */
 const LONG_MS = 24 * 3_600_000;
 
@@ -273,6 +285,21 @@ export function AlertMap({
     }, [needHromadas, hromadas]);
     const clock = now ?? 0;
     const [selected, setSelected] = useState<number | null>(null);
+    const [zoom, setZoom] = useState(1);
+    const scroller = useRef<HTMLDivElement>(null);
+    // Масштабуємо навколо центру видимої частини (або обраної цілі).
+    const zoomTo = (next: number) => {
+        const el = scroller.current;
+        const z = Math.min(MAX_ZOOM, Math.max(1, next));
+        if (!el) return setZoom(z);
+        const cx = (el.scrollLeft + el.clientWidth / 2) / el.scrollWidth;
+        const cy = (el.scrollTop + el.clientHeight / 2) / el.scrollHeight;
+        setZoom(z);
+        requestAnimationFrame(() => {
+            el.scrollLeft = cx * el.scrollWidth - el.clientWidth / 2;
+            el.scrollTop = cy * el.scrollHeight - el.clientHeight / 2;
+        });
+    };
     const picked = threats.find((t) => t.id === selected) ?? null;
     const pickedAt = picked
         ? project(
@@ -307,300 +334,353 @@ export function AlertMap({
 
     return (
         <div className="relative">
-            <svg
-                viewBox={`0 0 ${W} ${H}`}
-                className="h-auto w-full"
-                role="img"
-                aria-label={tr('Мапа тривог України')}
-                onClick={(e) => {
-                    if (e.target === e.currentTarget) setSelected(null);
-                }}
+            <div
+                ref={scroller}
+                className="[scrollbar-width:thin] overflow-auto overscroll-contain rounded-xl"
+                style={{ maxHeight: zoom > 1 ? '70vh' : undefined }}
             >
-                <defs>
-                    {(Object.keys(KIND_COLOR) as AlertKind[]).map((kind) => (
-                        <pattern
-                            key={kind}
-                            id={`hatch-${kind}-${id}`}
-                            width="6"
-                            height="6"
-                            patternUnits="userSpaceOnUse"
-                            patternTransform="rotate(45)"
-                        >
-                            <rect
-                                width="6"
-                                height="6"
-                                fill={KIND_COLOR[kind]}
-                            />
-                            <line
-                                x1="0"
-                                y1="0"
-                                x2="0"
-                                y2="6"
-                                stroke="rgb(0 0 0 / 0.45)"
-                                strokeWidth="2.2"
-                            />
-                        </pattern>
-                    ))}
-                    <pattern
-                        id={`chez-${id}`}
-                        width="5"
-                        height="5"
-                        patternUnits="userSpaceOnUse"
-                        patternTransform="rotate(45)"
+                <div className="relative" style={{ width: `${zoom * 100}%` }}>
+                    <svg
+                        viewBox={`0 0 ${W} ${H}`}
+                        className="h-auto w-full"
+                        role="img"
+                        aria-label={tr('Мапа тривог України')}
+                        onClick={(e) => {
+                            if (e.target === e.currentTarget) setSelected(null);
+                        }}
                     >
-                        <line
-                            x1="0"
-                            y1="0"
-                            x2="0"
-                            y2="5"
-                            stroke="rgb(0 0 0 / 0.55)"
-                            strokeWidth="1.8"
-                        />
-                    </pattern>
-                    {/* Жовтий рівень: жовті смуги поверх темного, щоб не змішувалось у оливковий. */}
-                    <pattern
-                        id={`nearby-${id}`}
-                        width="7"
-                        height="7"
-                        patternUnits="userSpaceOnUse"
-                        patternTransform="rotate(-45)"
-                    >
-                        <rect
-                            width="7"
-                            height="7"
-                            fill="rgb(234 179 8 / 0.10)"
-                        />
-                        <line
-                            x1="0"
-                            y1="0"
-                            x2="0"
-                            y2="7"
-                            stroke={NEARBY_COLOR}
-                            strokeOpacity={0.55}
-                            strokeWidth="1.6"
-                        />
-                    </pattern>
-                </defs>
-
-                {UNITS.map((u) => {
-                    const f = fill(u.c, u.o);
-                    const unit = byCode.get(u.c);
-                    return (
-                        <path
-                            key={u.c}
-                            d={u.d}
-                            fill={f.fill}
-                            fillOpacity={f.opacity}
-                            stroke="rgb(255 255 255 / 0.12)"
-                            strokeWidth={0.6}
-                            className={onSelect ? 'cursor-pointer' : undefined}
-                            onClick={() => onSelect?.(u.o)}
-                        >
-                            <title>
-                                {u.n}
-                                {unit ? ` · ${kindLabel(unit.kind)}` : ''}
-                            </title>
-                        </path>
-                    );
-                })}
-
-                {hromadas
-                    ?.filter((h) => byCode.has(h.c))
-                    .map((h) => {
-                        const f = fill(h.c, h.o);
-                        const unit = byCode.get(h.c);
-                        return (
-                            <path
-                                key={h.c}
-                                d={h.d}
-                                fill={f.fill}
-                                fillOpacity={0.95}
-                                stroke="rgb(0 0 0 / 0.35)"
-                                strokeWidth={0.5}
+                        <defs>
+                            {(Object.keys(KIND_COLOR) as AlertKind[]).map(
+                                (kind) => (
+                                    <pattern
+                                        key={kind}
+                                        id={`hatch-${kind}-${id}`}
+                                        width="6"
+                                        height="6"
+                                        patternUnits="userSpaceOnUse"
+                                        patternTransform="rotate(45)"
+                                    >
+                                        <rect
+                                            width="6"
+                                            height="6"
+                                            fill={KIND_COLOR[kind]}
+                                        />
+                                        <line
+                                            x1="0"
+                                            y1="0"
+                                            x2="0"
+                                            y2="6"
+                                            stroke="rgb(0 0 0 / 0.45)"
+                                            strokeWidth="2.2"
+                                        />
+                                    </pattern>
+                                ),
+                            )}
+                            <pattern
+                                id={`chez-${id}`}
+                                width="5"
+                                height="5"
+                                patternUnits="userSpaceOnUse"
+                                patternTransform="rotate(45)"
                             >
-                                <title>
-                                    {h.n}
-                                    {unit ? ` · ${kindLabel(unit.kind)}` : ''}
-                                </title>
-                            </path>
-                        );
-                    })}
-
-                {CHEZ && (
-                    // Зона відчуження завжди штрихована поверх заливки — тривога під нею видна як скрізь.
-                    <g pointerEvents="none">
-                        <path
-                            d={CHEZ.d}
-                            fill={`url(#chez-${id})`}
-                            stroke="rgb(255 255 255 / 0.45)"
-                            strokeWidth={0.8}
-                            strokeDasharray="3 2"
-                        >
-                            <title>{tr('Чорнобильська зона відчуження')}</title>
-                        </path>
-                        <text
-                            x={CHEZ.x}
-                            y={CHEZ.y + 5}
-                            textAnchor="middle"
-                            fontSize={14}
-                            fill="rgb(255 255 255 / 0.8)"
-                        >
-                            ☢
-                        </text>
-                    </g>
-                )}
-
-                {OBLASTS.map((o) => (
-                    <path
-                        key={o.k}
-                        d={o.d}
-                        fill="none"
-                        stroke={
-                            o.o === mine
-                                ? 'rgb(255 255 255 / 0.9)'
-                                : 'rgb(255 255 255 / 0.35)'
-                        }
-                        strokeWidth={o.o === mine ? 2.2 : 1.1}
-                        pointerEvents="none"
-                    />
-                ))}
-
-                {regions
-                    .filter((r) => r.slug !== 'kyiv')
-                    .map((r) => {
-                        const [x, y] = project(r.lat, r.lng);
-                        return (
-                            <text
-                                key={r.slug}
-                                x={x}
-                                y={y}
-                                textAnchor="middle"
-                                fontSize={14}
-                                fontWeight={600}
-                                fill="rgb(255 255 255 / 0.62)"
-                                pointerEvents="none"
-                            >
-                                {r.name
-                                    .replace(' область', '')
-                                    .replace('Автономна Республіка ', '')}
-                            </text>
-                        );
-                    })}
-
-                {special.map((u) => {
-                    const shape = UNITS.find((s) => s.c === u.code);
-                    if (!shape) return null;
-                    return (
-                        <text
-                            key={`s-${u.code}`}
-                            x={shape.x}
-                            y={shape.y + 6}
-                            textAnchor="middle"
-                            fontSize={18}
-                            pointerEvents="none"
-                        >
-                            {u.kind === 'nuclear' ? '☢' : '☣'}
-                        </text>
-                    );
-                })}
-
-                {threats
-                    .filter((t) => t.region !== null)
-                    .map((threat) => {
-                        const [ox, oy] = project(threat.lat, threat.lng);
-                        const pos = now ? threatPosition(threat, now) : threat;
-                        const [x, y] = project(pos.lat, pos.lng);
-                        const moved = Math.hypot(x - ox, y - oy) > 1;
-                        const color = THREAT_COLOR[threat.type];
-
-                        return (
-                            <m.g
-                                key={threat.id}
-                                className="cursor-pointer"
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    setSelected(threat.id);
-                                }}
-                                initial={reduce ? false : { opacity: 0 }}
-                                // Менш упевнена мітка — блідіша.
-                                animate={{
-                                    opacity:
-                                        0.45 + (threat.confidence / 100) * 0.55,
-                                }}
-                            >
-                                <title>
-                                    {threatTitle(threat)} · {threat.place} ·{' '}
-                                    {threat.confidence}%
-                                </title>
-                                {moved && (
-                                    // Слід від точки виявлення до розрахункового місця.
-                                    <line
-                                        x1={ox}
-                                        y1={oy}
-                                        x2={x}
-                                        y2={y}
-                                        stroke={color}
-                                        strokeOpacity={0.45}
-                                        strokeWidth={2}
-                                        strokeDasharray="5 4"
-                                    />
-                                )}
-                                {/* Більша зона натискання. */}
-                                <circle
-                                    cx={x}
-                                    cy={y}
-                                    r={16}
-                                    fill="transparent"
+                                <line
+                                    x1="0"
+                                    y1="0"
+                                    x2="0"
+                                    y2="5"
+                                    stroke="rgb(0 0 0 / 0.55)"
+                                    strokeWidth="1.8"
                                 />
-                                {threat.id === selected && (
-                                    <circle
-                                        cx={x}
-                                        cy={y}
-                                        r={17}
-                                        fill="none"
-                                        stroke="#ffffff"
-                                        strokeOpacity={0.8}
-                                        strokeWidth={1.5}
-                                    />
-                                )}
+                            </pattern>
+                            {/* Жовтий рівень: жовті смуги поверх темного, щоб не змішувалось у оливковий. */}
+                            <pattern
+                                id={`nearby-${id}`}
+                                width="7"
+                                height="7"
+                                patternUnits="userSpaceOnUse"
+                                patternTransform="rotate(-45)"
+                            >
+                                <rect
+                                    width="7"
+                                    height="7"
+                                    fill="rgb(234 179 8 / 0.10)"
+                                />
+                                <line
+                                    x1="0"
+                                    y1="0"
+                                    x2="0"
+                                    y2="7"
+                                    stroke={NEARBY_COLOR}
+                                    strokeOpacity={0.55}
+                                    strokeWidth="1.6"
+                                />
+                            </pattern>
+                        </defs>
+
+                        {UNITS.map((u) => {
+                            const f = fill(u.c, u.o);
+                            const unit = byCode.get(u.c);
+                            return (
                                 <path
-                                    d={glyphFor(threat)}
-                                    fill={color}
-                                    stroke="#0b1220"
-                                    strokeWidth={1.3}
-                                    strokeLinejoin="round"
-                                    transform={`translate(${x} ${y}) rotate(${threat.course ?? 0}) scale(1.15) translate(-12 -12)`}
-                                />
-                            </m.g>
-                        );
-                    })}
+                                    key={u.c}
+                                    d={u.d}
+                                    fill={f.fill}
+                                    fillOpacity={f.opacity}
+                                    stroke="rgb(255 255 255 / 0.12)"
+                                    strokeWidth={0.6}
+                                    className={
+                                        onSelect ? 'cursor-pointer' : undefined
+                                    }
+                                    onClick={() => onSelect?.(u.o)}
+                                >
+                                    <title>
+                                        {u.n}
+                                        {unit
+                                            ? ` · ${kindLabel(unit.kind)}`
+                                            : ''}
+                                    </title>
+                                </path>
+                            );
+                        })}
 
-                <text
-                    x={W - 6}
-                    y={H - 6}
-                    textAnchor="end"
-                    fontSize={10}
-                    fill="rgb(255 255 255 / 0.35)"
+                        {hromadas
+                            ?.filter((h) => byCode.has(h.c))
+                            .map((h) => {
+                                const f = fill(h.c, h.o);
+                                const unit = byCode.get(h.c);
+                                return (
+                                    <path
+                                        key={h.c}
+                                        d={h.d}
+                                        fill={f.fill}
+                                        fillOpacity={0.95}
+                                        stroke="rgb(0 0 0 / 0.35)"
+                                        strokeWidth={0.5}
+                                    >
+                                        <title>
+                                            {h.n}
+                                            {unit
+                                                ? ` · ${kindLabel(unit.kind)}`
+                                                : ''}
+                                        </title>
+                                    </path>
+                                );
+                            })}
+
+                        {CHEZ && (
+                            // Зона відчуження завжди штрихована поверх заливки — тривога під нею видна як скрізь.
+                            <g pointerEvents="none">
+                                <path
+                                    d={CHEZ.d}
+                                    fill={`url(#chez-${id})`}
+                                    stroke="rgb(255 255 255 / 0.45)"
+                                    strokeWidth={0.8}
+                                    strokeDasharray="3 2"
+                                >
+                                    <title>
+                                        {tr('Чорнобильська зона відчуження')}
+                                    </title>
+                                </path>
+                                <text
+                                    x={CHEZ.x}
+                                    y={CHEZ.y + 5}
+                                    textAnchor="middle"
+                                    fontSize={14}
+                                    fill="rgb(255 255 255 / 0.8)"
+                                >
+                                    ☢
+                                </text>
+                            </g>
+                        )}
+
+                        {OBLASTS.map((o) => (
+                            <path
+                                key={o.k}
+                                d={o.d}
+                                fill="none"
+                                stroke={
+                                    o.o === mine
+                                        ? 'rgb(255 255 255 / 0.9)'
+                                        : 'rgb(255 255 255 / 0.35)'
+                                }
+                                strokeWidth={o.o === mine ? 2.2 : 1.1}
+                                pointerEvents="none"
+                            />
+                        ))}
+
+                        {regions
+                            .filter((r) => r.slug !== 'kyiv')
+                            .map((r) => {
+                                const [x, y] = project(r.lat, r.lng);
+                                return (
+                                    <text
+                                        key={r.slug}
+                                        x={x}
+                                        y={y}
+                                        textAnchor="middle"
+                                        fontSize={14}
+                                        fontWeight={600}
+                                        fill="rgb(255 255 255 / 0.62)"
+                                        pointerEvents="none"
+                                    >
+                                        {r.name
+                                            .replace(' область', '')
+                                            .replace(
+                                                'Автономна Республіка ',
+                                                '',
+                                            )}
+                                    </text>
+                                );
+                            })}
+
+                        {special.map((u) => {
+                            const shape = UNITS.find((s) => s.c === u.code);
+                            if (!shape) return null;
+                            return (
+                                <text
+                                    key={`s-${u.code}`}
+                                    x={shape.x}
+                                    y={shape.y + 6}
+                                    textAnchor="middle"
+                                    fontSize={18}
+                                    pointerEvents="none"
+                                >
+                                    {u.kind === 'nuclear' ? '☢' : '☣'}
+                                </text>
+                            );
+                        })}
+
+                        {threats
+                            .filter((t) => t.region !== null)
+                            .map((threat) => {
+                                const [ox, oy] = project(
+                                    threat.lat,
+                                    threat.lng,
+                                );
+                                const pos = now
+                                    ? threatPosition(threat, now)
+                                    : threat;
+                                const [x, y] = project(pos.lat, pos.lng);
+                                const moved = Math.hypot(x - ox, y - oy) > 1;
+                                const color = THREAT_COLOR[threat.type];
+
+                                return (
+                                    <m.g
+                                        key={threat.id}
+                                        className="cursor-pointer"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setSelected(threat.id);
+                                        }}
+                                        initial={
+                                            reduce ? false : { opacity: 0 }
+                                        }
+                                        // Менш упевнена мітка — блідіша.
+                                        animate={{
+                                            opacity:
+                                                0.45 +
+                                                (threat.confidence / 100) *
+                                                    0.55,
+                                        }}
+                                    >
+                                        <title>
+                                            {threatTitle(threat)} ·{' '}
+                                            {threat.place} · {threat.confidence}
+                                            %
+                                        </title>
+                                        {moved && (
+                                            // Слід від точки виявлення до розрахункового місця.
+                                            <line
+                                                x1={ox}
+                                                y1={oy}
+                                                x2={x}
+                                                y2={y}
+                                                stroke={color}
+                                                strokeOpacity={0.45}
+                                                strokeWidth={2}
+                                                strokeDasharray="5 4"
+                                            />
+                                        )}
+                                        {/* Більша зона натискання. */}
+                                        <circle
+                                            cx={x}
+                                            cy={y}
+                                            r={16}
+                                            fill="transparent"
+                                        />
+                                        {threat.id === selected && (
+                                            <circle
+                                                cx={x}
+                                                cy={y}
+                                                r={17}
+                                                fill="none"
+                                                stroke="#ffffff"
+                                                strokeOpacity={0.8}
+                                                strokeWidth={1.5}
+                                            />
+                                        )}
+                                        <path
+                                            d={glyphFor(threat)}
+                                            fill={color}
+                                            stroke="#0b1220"
+                                            strokeWidth={1.3}
+                                            strokeLinejoin="round"
+                                            transform={`translate(${x} ${y}) rotate(${threat.course ?? 0}) scale(1.15) translate(-12 -12)`}
+                                        />
+                                    </m.g>
+                                );
+                            })}
+
+                        <text
+                            x={W - 6}
+                            y={H - 6}
+                            textAnchor="end"
+                            fontSize={10}
+                            fill="rgb(255 255 255 / 0.35)"
+                        >
+                            © OpenStreetMap · ODbL
+                        </text>
+                    </svg>
+                    <AnimatePresence>
+                        {picked && pickedAt && (
+                            <ThreatCard
+                                key={picked.id}
+                                threat={picked}
+                                now={clock}
+                                regionName={
+                                    regions.find(
+                                        (r) => r.slug === picked.region,
+                                    )?.name ?? null
+                                }
+                                left={(pickedAt[0] / W) * 100}
+                                top={(pickedAt[1] / H) * 100}
+                                onClose={() => setSelected(null)}
+                            />
+                        )}
+                    </AnimatePresence>
+                </div>
+            </div>
+            {/* Масштаб: на телефоні мапа дрібна — збільшуємо й гортаємо пальцем. */}
+            <div className="absolute top-2 right-2 flex flex-col overflow-hidden rounded-xl bg-[#0d1626]/85 backdrop-blur">
+                <button
+                    type="button"
+                    onClick={() => zoomTo(zoom + 0.75)}
+                    disabled={zoom >= MAX_ZOOM}
+                    aria-label={tr('Збільшити')}
+                    className="flex size-9 items-center justify-center text-white/80 hover:text-white disabled:opacity-35"
                 >
-                    © OpenStreetMap · ODbL
-                </text>
-            </svg>
-            <AnimatePresence>
-                {picked && pickedAt && (
-                    <ThreatCard
-                        key={picked.id}
-                        threat={picked}
-                        now={clock}
-                        regionName={
-                            regions.find((r) => r.slug === picked.region)
-                                ?.name ?? null
-                        }
-                        left={(pickedAt[0] / W) * 100}
-                        top={(pickedAt[1] / H) * 100}
-                        onClose={() => setSelected(null)}
-                    />
-                )}
-            </AnimatePresence>
+                    <Plus className="size-4" />
+                </button>
+                <button
+                    type="button"
+                    onClick={() => zoomTo(zoom - 0.75)}
+                    disabled={zoom <= 1}
+                    aria-label={tr('Зменшити')}
+                    className="flex size-9 items-center justify-center text-white/80 hover:text-white disabled:opacity-35"
+                >
+                    <Minus className="size-4" />
+                </button>
+            </div>
         </div>
     );
 }

@@ -210,7 +210,7 @@ export default function Alerts(props: {
                     )}
                 >
                     <div className="flex flex-wrap items-center gap-3">
-                        <div className="min-w-0 flex-1">
+                        <div className="w-full min-w-0 sm:w-auto sm:flex-1">
                             <p className="text-xs text-white/50">
                                 {tr('Мій регіон')}
                             </p>
