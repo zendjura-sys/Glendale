@@ -846,7 +846,7 @@ export default function SocialLayout({ children }: PropsWithChildren) {
                 <Topbar />
                 <div
                     className={cn(
-                        'gc-flat gc-vk-shell gc-split-shift mx-auto flex max-w-[var(--gc-shell-max)] gap-5 px-3 pt-[calc(72px+env(safe-area-inset-top))] sm:px-5',
+                        'gc-vk-shell gc-split-shift mx-auto flex max-w-[var(--gc-shell-max)] gap-5 px-3 pt-[calc(72px+env(safe-area-inset-top))] sm:px-5',
                         current ? 'pb-44 md:pb-28' : 'pb-24 md:pb-10',
                     )}
                 >

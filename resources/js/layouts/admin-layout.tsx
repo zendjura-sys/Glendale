@@ -57,6 +57,7 @@ import { useCurrentUrl } from '@/hooks/use-current-url';
 import { usePlayer } from '@/lib/player';
 import { motionOr, POP, SNAP } from '@/lib/motion';
 import { cn } from '@/lib/utils';
+import { VkProvider } from '@/components/vk/vk-provider';
 import { PageTransition } from '@/components/gc/page-transition';
 import { tr } from '@/lib/i18n';
 import { PaletteSync } from '@/components/gc/palette-sync';
@@ -513,142 +514,162 @@ export default function AdminLayout({ children }: PropsWithChildren) {
     useEffect(() => setDrawer(false), [currentUrl]);
 
     return (
-        <div className="relative min-h-dvh">
-            <PaletteSync />
-            <SiteBackground />
+        <VkProvider>
+            <div className="relative min-h-dvh">
+                <PaletteSync />
+                <SiteBackground />
 
-            {/* ПК: бічний острів; згортається в смугу з іконками й назад. */}
-            <m.aside
-                initial={false}
-                animate={{ width: rail ? 76 : 260 }}
-                transition={motionOr(reduce, SNAP)}
-                className="ios-glass fixed top-3 bottom-3 left-3 z-40 hidden flex-col rounded-2xl p-3 [view-transition-name:gc-sidebar] lg:flex"
-            >
-                <NavPanel rail={rail} onToggle={toggleRail} layoutKey="side" />
-            </m.aside>
+                {/* ПК: бічний острів; згортається в смугу з іконками й назад. */}
+                <m.aside
+                    initial={false}
+                    animate={{ width: rail ? 76 : 260 }}
+                    transition={motionOr(reduce, SNAP)}
+                    className="ios-glass fixed top-3 bottom-3 left-3 z-40 hidden flex-col rounded-2xl p-3 [view-transition-name:gc-sidebar] lg:flex"
+                >
+                    <NavPanel
+                        rail={rail}
+                        onToggle={toggleRail}
+                        layoutKey="side"
+                    />
+                </m.aside>
 
-            {/* Планшет і телефон: шапка-острів. Лого плавно від'їжджає праворуч, звільняючи місце,
+                {/* Планшет і телефон: шапка-острів. Лого плавно від'їжджає праворуч, звільняючи місце,
                 і тоді з'являється квадратна кнопка меню (як у референсі). */}
-            <header className="sticky top-0 z-30 px-2 pt-[calc(0.5rem+env(safe-area-inset-top))] lg:hidden">
-                {/* Ім'я переходу — на самій капсулі: на обгортці воно ізолює підкладку й ламає розмиття. */}
-                <div className="ios-glass relative flex h-14 items-center rounded-2xl px-2 [view-transition-name:gc-topbar]">
-                    <m.button
-                        type="button"
-                        onClick={() => setDrawer(true)}
-                        aria-label={tr('Меню адмінки')}
-                        aria-expanded={drawer}
-                        initial={reduce ? false : { opacity: 0, scale: 0.5 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={
-                            reduce ? { duration: 0 } : { ...POP, delay: 0.45 }
-                        }
-                        className="absolute left-2 flex size-10 items-center justify-center rounded-xl bg-black/30 text-white ring-1 ring-white/10"
-                    >
-                        <Menu className="size-5" />
-                    </m.button>
-                    <m.div
-                        initial={reduce ? false : { x: 0 }}
-                        animate={{ x: 50 }}
-                        transition={
-                            reduce ? { duration: 0 } : { ...SNAP, delay: 0.1 }
-                        }
-                    >
-                        <Link
-                            href="/admin"
-                            className="flex items-center gap-2.5"
+                <header className="sticky top-0 z-30 px-2 pt-[calc(0.5rem+env(safe-area-inset-top))] lg:hidden">
+                    {/* Ім'я переходу — на самій капсулі: на обгортці воно ізолює підкладку й ламає розмиття. */}
+                    <div className="ios-glass relative flex h-14 items-center rounded-2xl px-2 [view-transition-name:gc-topbar]">
+                        <m.button
+                            type="button"
+                            onClick={() => setDrawer(true)}
+                            aria-label={tr('Меню адмінки')}
+                            aria-expanded={drawer}
+                            initial={
+                                reduce ? false : { opacity: 0, scale: 0.5 }
+                            }
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={
+                                reduce
+                                    ? { duration: 0 }
+                                    : { ...POP, delay: 0.45 }
+                            }
+                            className="absolute left-2 flex size-10 items-center justify-center rounded-xl bg-black/30 text-white ring-1 ring-white/10"
                         >
-                            <LogoMark className="size-9" />
-                            <span className="leading-tight">
-                                <span className="block font-display text-[15px] font-bold text-white">
-                                    Game
-                                    <span className="text-primary">Con</span>
-                                </span>
-                                <span className="flex items-center gap-1 text-[11px] font-medium text-gold">
-                                    <ShieldCheck className="size-3" />{' '}
-                                    {tr('Адмін-панель')}
-                                </span>
-                            </span>
-                        </Link>
-                    </m.div>
-                    <Link
-                        href="/feed"
-                        aria-label={tr('Повернутися на сайт')}
-                        className="ml-auto flex size-10 items-center justify-center rounded-full bg-black/25 text-white/75 ring-1 ring-white/[0.06]"
-                    >
-                        <ArrowLeft className="size-4" />
-                    </Link>
-                </div>
-            </header>
-
-            <DialogPrimitive.Root open={drawer} onOpenChange={setDrawer}>
-                <AnimatePresence>
-                    {drawer && (
-                        <DialogPrimitive.Portal forceMount>
-                            <DialogPrimitive.Overlay forceMount asChild>
-                                <m.div
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    exit={{ opacity: 0 }}
-                                    className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm lg:hidden"
-                                />
-                            </DialogPrimitive.Overlay>
-                            <DialogPrimitive.Content
-                                forceMount
-                                asChild
-                                aria-describedby={undefined}
+                            <Menu className="size-5" />
+                        </m.button>
+                        <m.div
+                            initial={reduce ? false : { x: 0 }}
+                            animate={{ x: 50 }}
+                            transition={
+                                reduce
+                                    ? { duration: 0 }
+                                    : { ...SNAP, delay: 0.1 }
+                            }
+                        >
+                            <Link
+                                href="/admin"
+                                className="flex items-center gap-2.5"
                             >
-                                <m.div
-                                    initial={
-                                        reduce ? { opacity: 0 } : { x: '-105%' }
-                                    }
-                                    animate={reduce ? { opacity: 1 } : { x: 0 }}
-                                    exit={
-                                        reduce ? { opacity: 0 } : { x: '-105%' }
-                                    }
-                                    transition={motionOr(reduce, SNAP)}
-                                    className="liquid-glass liquid-glass--dense fixed top-2 bottom-2 left-2 z-50 flex w-[min(300px,calc(100vw-1rem))] flex-col rounded-2xl p-3 pt-[calc(0.75rem+env(safe-area-inset-top))] focus:outline-none lg:hidden"
-                                >
-                                    <DialogPrimitive.Title className="sr-only">
-                                        {tr('Меню адмінки')}
-                                    </DialogPrimitive.Title>
-                                    <DialogPrimitive.Close
-                                        aria-label={tr('Закрити')}
-                                        className="absolute top-3 right-3 z-10 flex size-9 items-center justify-center rounded-xl bg-black/25 text-white/70 hover:text-white"
-                                    >
-                                        <X className="size-4" />
-                                    </DialogPrimitive.Close>
-                                    <NavPanel
-                                        rail={false}
-                                        onNavigate={() => setDrawer(false)}
-                                        layoutKey="drawer"
-                                    />
-                                </m.div>
-                            </DialogPrimitive.Content>
-                        </DialogPrimitive.Portal>
-                    )}
-                </AnimatePresence>
-            </DialogPrimitive.Root>
+                                <LogoMark className="size-9" />
+                                <span className="leading-tight">
+                                    <span className="block font-display text-[15px] font-bold text-white">
+                                        Game
+                                        <span className="text-primary">
+                                            Con
+                                        </span>
+                                    </span>
+                                    <span className="flex items-center gap-1 text-[11px] font-medium text-gold">
+                                        <ShieldCheck className="size-3" />{' '}
+                                        {tr('Адмін-панель')}
+                                    </span>
+                                </span>
+                            </Link>
+                        </m.div>
+                        <Link
+                            href="/feed"
+                            aria-label={tr('Повернутися на сайт')}
+                            className="ml-auto flex size-10 items-center justify-center rounded-full bg-black/25 text-white/75 ring-1 ring-white/[0.06]"
+                        >
+                            <ArrowLeft className="size-4" />
+                        </Link>
+                    </div>
+                </header>
 
-            <main
-                id="main-content"
-                className={cn(
-                    'gc-flat px-4 py-6 transition-[margin] duration-300 sm:px-6 lg:px-8 lg:py-8',
-                    rail ? 'lg:ml-[92px]' : 'lg:ml-[276px]',
-                    current && 'pb-28 lg:pb-28',
+                <DialogPrimitive.Root open={drawer} onOpenChange={setDrawer}>
+                    <AnimatePresence>
+                        {drawer && (
+                            <DialogPrimitive.Portal forceMount>
+                                <DialogPrimitive.Overlay forceMount asChild>
+                                    <m.div
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        exit={{ opacity: 0 }}
+                                        className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm lg:hidden"
+                                    />
+                                </DialogPrimitive.Overlay>
+                                <DialogPrimitive.Content
+                                    forceMount
+                                    asChild
+                                    aria-describedby={undefined}
+                                >
+                                    <m.div
+                                        initial={
+                                            reduce
+                                                ? { opacity: 0 }
+                                                : { x: '-105%' }
+                                        }
+                                        animate={
+                                            reduce ? { opacity: 1 } : { x: 0 }
+                                        }
+                                        exit={
+                                            reduce
+                                                ? { opacity: 0 }
+                                                : { x: '-105%' }
+                                        }
+                                        transition={motionOr(reduce, SNAP)}
+                                        className="liquid-glass liquid-glass--dense fixed top-2 bottom-2 left-2 z-50 flex w-[min(300px,calc(100vw-1rem))] flex-col rounded-2xl p-3 pt-[calc(0.75rem+env(safe-area-inset-top))] focus:outline-none lg:hidden"
+                                    >
+                                        <DialogPrimitive.Title className="sr-only">
+                                            {tr('Меню адмінки')}
+                                        </DialogPrimitive.Title>
+                                        <DialogPrimitive.Close
+                                            aria-label={tr('Закрити')}
+                                            className="absolute top-3 right-3 z-10 flex size-9 items-center justify-center rounded-xl bg-black/25 text-white/70 hover:text-white"
+                                        >
+                                            <X className="size-4" />
+                                        </DialogPrimitive.Close>
+                                        <NavPanel
+                                            rail={false}
+                                            onNavigate={() => setDrawer(false)}
+                                            layoutKey="drawer"
+                                        />
+                                    </m.div>
+                                </DialogPrimitive.Content>
+                            </DialogPrimitive.Portal>
+                        )}
+                    </AnimatePresence>
+                </DialogPrimitive.Root>
+
+                <main
+                    id="main-content"
+                    className={cn(
+                        'px-4 py-6 transition-[margin] duration-300 sm:px-6 lg:px-8 lg:py-8',
+                        rail ? 'lg:ml-[92px]' : 'lg:ml-[276px]',
+                        current && 'pb-28 lg:pb-28',
+                    )}
+                >
+                    <NavigationSkeleton>
+                        <PageTransition className="gc-vt-main mx-auto max-w-[1280px]">
+                            {children}
+                        </PageTransition>
+                    </NavigationSkeleton>
+                </main>
+                {modules.includes('music') && (
+                    <>
+                        <PlayerBar standalone />
+                        <ConnectListener />
+                    </>
                 )}
-            >
-                <NavigationSkeleton>
-                    <PageTransition className="gc-vt-main mx-auto max-w-[1280px]">
-                        {children}
-                    </PageTransition>
-                </NavigationSkeleton>
-            </main>
-            {modules.includes('music') && (
-                <>
-                    <PlayerBar standalone />
-                    <ConnectListener />
-                </>
-            )}
-        </div>
+            </div>
+        </VkProvider>
     );
 }

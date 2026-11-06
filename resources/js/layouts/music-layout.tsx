@@ -51,6 +51,7 @@ import {
     toggleMute,
 } from '@/lib/player';
 import { cn } from '@/lib/utils';
+import { VkProvider } from '@/components/vk/vk-provider';
 import { LAST_PAGE_KEY, UserMenu } from '@/layouts/social-layout';
 
 const NowPlaying = lazy(() =>
@@ -122,93 +123,6 @@ function SideLink({
     );
 }
 
-/** Обкладинки плиток меню (GET /music/menu-covers): перші чотири — топ GameCon, решта — з медіатеки. */
-type MenuCovers = {
-    top: { cover_url: string | null; title: string; artist: string }[];
-    tiles: Partial<Record<string, string | null>>;
-};
-
-/**
- * Плитка меню ПК: картинка на все тло (обкладинка чи фото виконавця) з темним градієнтом знизу,
- * над нею — значок і підпис. Без картинки — скляна плитка з акцентним значком.
- */
-function SideTile({
-    href,
-    icon,
-    label,
-    exact,
-    cover,
-    tint,
-    hint,
-}: {
-    href: string;
-    icon: ReactNode;
-    label: string;
-    exact?: boolean;
-    cover?: string | null;
-    /** Фірмове тло, коли картинки немає (напр. зелений градієнт Spotify). */
-    tint?: string;
-    /** Підказка при наведенні (напр. «№1 на GameCon: трек — виконавець»). */
-    hint?: string;
-}) {
-    const active = useActive()(href, exact);
-    const [broken, setBroken] = useState(false);
-    const image = cover && !broken ? cover : null;
-    const filled = image !== null || tint !== undefined;
-
-    return (
-        <Link
-            href={href}
-            title={hint}
-            aria-current={active ? 'page' : undefined}
-            className={cn(
-                'am-tile group relative isolate flex min-h-[74px] min-w-0 flex-col items-start justify-between gap-1.5 overflow-hidden rounded-[14px] border p-2.5 transition',
-                active
-                    ? 'border-[color-mix(in_oklab,var(--am-accent)_70%,transparent)] shadow-[0_0_0_1px_color-mix(in_oklab,var(--am-accent)_45%,transparent),0_0_18px_color-mix(in_oklab,var(--am-accent)_35%,transparent)]'
-                    : 'border-[var(--am-sep)]',
-                tint && !image && tint,
-                !filled &&
-                    (active
-                        ? 'bg-[color-mix(in_oklab,var(--am-accent)_16%,transparent)]'
-                        : 'bg-[var(--am-fill)] hover:bg-[var(--am-fill2)]'),
-            )}
-        >
-            {image && (
-                <>
-                    <img
-                        src={image}
-                        alt=""
-                        loading="lazy"
-                        onError={() => setBroken(true)}
-                        className="absolute inset-0 -z-10 size-full object-cover transition duration-500 group-hover:scale-105"
-                    />
-                    <span className="absolute inset-0 -z-10 bg-gradient-to-t from-black/85 via-black/35 to-black/5" />
-                </>
-            )}
-            <span
-                className={cn(
-                    'flex size-7 items-center justify-center rounded-[9px] [&_svg]:size-4',
-                    filled
-                        ? 'bg-black/35 text-white ring-1 ring-white/20 backdrop-blur-md'
-                        : 'bg-[color-mix(in_oklab,var(--am-accent)_14%,transparent)] text-[var(--am-accent)]',
-                )}
-            >
-                {icon}
-            </span>
-            <span
-                className={cn(
-                    'am-footnote line-clamp-2 w-full leading-tight break-words',
-                    active && 'font-semibold',
-                    image &&
-                        'text-white [text-shadow:0_1px_6px_rgb(0_0_0/0.7)]',
-                )}
-            >
-                {label}
-            </span>
-        </Link>
-    );
-}
-
 function Sidebar({ onUpload }: { onUpload: () => void }) {
     const [q, setQ] = useState('');
     const [playlists, setPlaylists] = useState<{ id: number; title: string }[]>(
@@ -223,13 +137,6 @@ function Sidebar({ onUpload }: { onUpload: () => void }) {
             .then((d) => setPlaylists(d.playlists))
             .catch(() => {});
     }, []);
-    const [covers, setCovers] = useState<MenuCovers | null>(null);
-    useEffect(() => {
-        void api<MenuCovers>('GET', '/music/menu-covers')
-            .then(setCovers)
-            .catch(() => {});
-    }, []);
-    const tile = (key: string) => covers?.tiles[key] ?? null;
     const quizOn = usePlugin('music_quiz');
     // Перші чотири плитки — топ GameCon за прослуховуваннями (№1…№4).
     const top = [
@@ -271,90 +178,64 @@ function Sidebar({ onUpload }: { onUpload: () => void }) {
                     className="am-subhead min-w-0 flex-1 bg-transparent outline-none placeholder:text-[var(--am-label2)]"
                 />
             </form>
-            <nav className="grid grid-cols-2 gap-1.5">
-                {top.map((tab, index) => {
-                    const hit = covers?.top[index];
-
-                    return (
-                        <SideTile
-                            key={tab.href}
-                            href={tab.href}
-                            label={tab.label()}
-                            icon={<tab.icon />}
-                            exact={tab.exact}
-                            cover={hit?.cover_url}
-                            hint={
-                                hit
-                                    ? tr(
-                                          '№{n} на GameCon: {title} — {artist}',
-                                          {
-                                              n: index + 1,
-                                              title: hit.title,
-                                              artist: hit.artist,
-                                          },
-                                      )
-                                    : undefined
-                            }
-                        />
-                    );
-                })}
+            <nav className="grid gap-0.5">
+                {top.map((tab) => (
+                    <SideLink
+                        key={tab.href}
+                        href={tab.href}
+                        label={tab.label()}
+                        icon={<tab.icon />}
+                        exact={tab.exact}
+                    />
+                ))}
             </nav>
             <p className="am-footnote mt-5 mb-1 px-2.5 font-semibold text-[var(--am-label2)]">
                 {tr('Медіатека')}
             </p>
-            <nav className="grid grid-cols-2 gap-1.5">
-                <SideTile
-                    cover={tile('recent')}
+            <nav className="grid gap-0.5">
+                <SideLink
                     href="/music/library"
                     exact
                     label={tr('Нещодавно додане')}
                     icon={<Clock3 />}
                 />
-                <SideTile
-                    cover={tile('artists')}
+                <SideLink
                     href="/music/library/artists"
                     label={tr('Виконавці')}
                     icon={<Mic2 />}
                 />
-                <SideTile
-                    cover={tile('albums')}
+                <SideLink
                     href="/music/library/albums"
                     label={tr('Альбоми')}
                     icon={<Disc3 />}
                 />
-                <SideTile
-                    cover={tile('songs')}
+                <SideLink
                     href="/music/library/songs"
                     label={tr('Пісні')}
                     icon={<Music2 />}
                 />
-                <SideTile
-                    cover={tile('favorites')}
+                <SideLink
                     href="/music/library/favorites"
                     label={tr('Улюблені пісні')}
                     icon={<Star />}
                 />
-                <SideTile
-                    cover={tile('genres')}
+                <SideLink
                     href="/music/library/genres"
                     label={tr('Жанри')}
                     icon={<Tags />}
                 />
-                <SideTile
-                    cover={tile('spotify')}
-                    tint="bg-gradient-to-br from-[#1ed760] via-[#1db954] to-[#0b3d1f]"
+                <SideLink
                     href="/music/library/spotify"
                     label="Spotify"
                     icon={<SpotifyLogo className="size-4" />}
                 />
-                <SideTile
-                    cover={tile('rooms')}
+                <SideLink
                     href="/music/rooms"
                     label={tr('Кімнати')}
                     icon={<Headphones />}
                 />
                 {quizOn && (
-                    <SideTile
+                    <SideLink
                         href="/music/quiz"
                         label={tr('Вгадай пісню')}
                         icon={<Gamepad2 />}
@@ -654,66 +535,70 @@ export default function MusicLayout({ children }: PropsWithChildren) {
     }, []);
 
     return (
-        <div className="am min-h-dvh [--am-gap:12px] [--am-gutter:20px] [--am-tile:min(42vw,190px)] lg:[--am-gap:20px] lg:[--am-gutter:40px] lg:[--am-tile:184px]">
-            {modules.includes('messages') && (
-                <>
-                    <InboxListener userId={auth.user.id} />
-                    <IncomingCall userId={auth.user.id} />
-                </>
-            )}
-            <ConnectListener />
-            <TrackActionsProvider>
-                <div className="flex">
-                    <Sidebar onUpload={() => setUploading(true)} />
-                    <div className="min-w-0 flex-1">
-                        <PhoneHeader />
-                        <main
-                            id="main-content"
-                            className={cn(
-                                'mx-auto max-w-[1280px] lg:pt-4',
-                                player.current
-                                    ? 'pb-[calc(env(safe-area-inset-bottom)+150px)]'
-                                    : 'pb-[calc(env(safe-area-inset-bottom)+90px)]',
-                                player.current ? 'lg:pb-28' : 'lg:pb-16',
-                            )}
-                        >
-                            <NavigationSkeleton>{children}</NavigationSkeleton>
-                        </main>
-                    </div>
-                </div>
-
-                {/* ПК: плеєр — плаваюча капсула внизу, над вмістом (поруч із бічним меню). */}
-                <div className="pointer-events-none fixed right-0 bottom-4 left-[284px] z-40 hidden px-6 lg:block">
-                    <PlayerCapsule onOpen={(v) => showNowPlaying(v)} />
-                </div>
-
-                {/* Телефон: міні-плеєр над «скляною» панеллю. */}
-                <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 px-3 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] lg:hidden">
-                    <MiniPlayer />
-                    <div className="pointer-events-auto mx-auto max-w-[560px]">
-                        <TabBar />
-                    </div>
-                </div>
-
-                {view !== null && (
-                    <Suspense fallback={null}>
-                        <NowPlaying
-                            view={view}
-                            onView={setView}
-                            onClose={() => setView(null)}
-                        />
-                    </Suspense>
+        <VkProvider>
+            <div className="am min-h-dvh [--am-gap:12px] [--am-gutter:20px] [--am-tile:min(42vw,190px)] lg:[--am-gap:20px] lg:[--am-gutter:40px] lg:[--am-tile:184px]">
+                {modules.includes('messages') && (
+                    <>
+                        <InboxListener userId={auth.user.id} />
+                        <IncomingCall userId={auth.user.id} />
+                    </>
                 )}
-                <UploadTracksDialog
-                    open={uploading}
-                    onOpenChange={setUploading}
-                    maxMb={site.music_upload?.max_mb ?? 30}
-                    formats={site.music_upload?.formats ?? []}
-                />
-            </TrackActionsProvider>
-            <VoiceBar />
-            <BillingHost />
-        </div>
+                <ConnectListener />
+                <TrackActionsProvider>
+                    <div className="flex">
+                        <Sidebar onUpload={() => setUploading(true)} />
+                        <div className="min-w-0 flex-1">
+                            <PhoneHeader />
+                            <main
+                                id="main-content"
+                                className={cn(
+                                    'mx-auto max-w-[1280px] lg:pt-4',
+                                    player.current
+                                        ? 'pb-[calc(env(safe-area-inset-bottom)+150px)]'
+                                        : 'pb-[calc(env(safe-area-inset-bottom)+90px)]',
+                                    player.current ? 'lg:pb-28' : 'lg:pb-16',
+                                )}
+                            >
+                                <NavigationSkeleton>
+                                    {children}
+                                </NavigationSkeleton>
+                            </main>
+                        </div>
+                    </div>
+
+                    {/* ПК: плеєр — плаваюча капсула внизу, над вмістом (поруч із бічним меню). */}
+                    <div className="pointer-events-none fixed right-0 bottom-4 left-[284px] z-40 hidden px-6 lg:block">
+                        <PlayerCapsule onOpen={(v) => showNowPlaying(v)} />
+                    </div>
+
+                    {/* Телефон: міні-плеєр над «скляною» панеллю. */}
+                    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 px-3 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] lg:hidden">
+                        <MiniPlayer />
+                        <div className="pointer-events-auto mx-auto max-w-[560px]">
+                            <TabBar />
+                        </div>
+                    </div>
+
+                    {view !== null && (
+                        <Suspense fallback={null}>
+                            <NowPlaying
+                                view={view}
+                                onView={setView}
+                                onClose={() => setView(null)}
+                            />
+                        </Suspense>
+                    )}
+                    <UploadTracksDialog
+                        open={uploading}
+                        onOpenChange={setUploading}
+                        maxMb={site.music_upload?.max_mb ?? 30}
+                        formats={site.music_upload?.formats ?? []}
+                    />
+                </TrackActionsProvider>
+                <VoiceBar />
+                <BillingHost />
+            </div>
+        </VkProvider>
     );
 }
 

@@ -112,7 +112,7 @@ export default function MusicHome({ home }: { home: Home }) {
                 {podcastsOn && (
                     <Link
                         href="/podcasts"
-                        className="mt-3 inline-flex h-9 items-center gap-2 rounded-full bg-white/[0.08] px-4 text-sm font-medium text-white transition hover:bg-white/[0.12]"
+                        className="mt-3 inline-flex h-9 items-center gap-2 rounded-full bg-[var(--am-fill)] px-4 text-sm font-medium text-[var(--am-accent)] transition hover:bg-[var(--am-fill2)]"
                     >
                         <Mic2 className="size-4" />
                         {tr('Подкасти')}

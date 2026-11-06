@@ -38,7 +38,6 @@ import { EngagementCard, HomeWidgetsEditor } from '@/components/gc/engagement';
 import { EmptyState, Widget, WidgetSkeleton } from '@/components/gc/widget';
 import { ReadyToPlayCard } from '@/components/party/ready-to-play';
 import { formatDate } from '@/lib/format';
-import { cn } from '@/lib/utils';
 import type { PersonCard, PostItem, ScrollData, UserCard } from '@/types';
 import { FriendsLive } from '@/components/streams/stream';
 import type { StreamInfo } from '@/components/streams/stream';

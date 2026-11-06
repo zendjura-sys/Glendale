@@ -5529,3 +5529,33 @@ iframe {
     margin-top: 0 !important;
     padding: 0;
 }
+
+/* «Музика» у VKUI: кольори Apple-стилю (--am-*) беруться з токенів vk.com, шрифт — Montserrat. */
+html.gc-vk[data-theme] .am {
+    --am-bg: var(--vkui--color_background);
+    --am-bg2: var(--vkui--color_background_secondary);
+    --am-elevated: var(--vkui--color_background_content);
+    --am-label: var(--vkui--color_text_primary);
+    --am-label2: var(--vkui--color_text_secondary);
+    --am-label3: var(--vkui--color_text_tertiary);
+    --am-sep: var(--vkui--color_separator_primary);
+    --am-fill: var(--vkui--color_background_secondary_alpha);
+    --am-fill2: var(--vkui--color_background_secondary);
+    --am-accent: var(--vkui--color_text_accent);
+    --am-glass: var(--vkui--color_background_content);
+    --am-glass-rim: transparent;
+    --am-glass-shadow: var(--vkui--elevation2, 0 2px 24px rgb(0 0 0 / 0.08));
+    --am-tab-active: var(--vkui--color_background_secondary_alpha);
+    font-family: var(--font-sans);
+}
+html.gc-vk .am :is(.ios-glass, .ios-glass-bar) {
+    background: var(--vkui--color_background_content) !important;
+    background-image: none !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    border: 0 !important;
+    box-shadow: var(
+        --vkui--elevation2,
+        0 2px 24px rgb(0 0 0 / 0.08)
+    ) !important;
+}
