@@ -380,7 +380,7 @@ class _AlertMapPainter extends CustomPainter {
     canvas.save();
     canvas.scale(size.width / 1000);
     final byCode = {for (final u in showAlerts ? units : const <Map<String, dynamic>>[]) '${u['code']}': u};
-    // Рівні загроз з цілей (балістика — червоний, БпЛА — жовтий) діють на всю область.
+    // Рівні загроз з цілей (балістика — червоний, БпЛА — жовтий) — лише кольорова обвідка області, не заливка.
     final levels = {
       for (final r in regions)
         '${r['slug']}': [if (showAlerts) for (final c in (r['threat_levels'] as List?) ?? const []) AlertsConfig.typeOf(c)],
@@ -394,7 +394,7 @@ class _AlertMapPainter extends CustomPainter {
     /// Головна тривога зони (найвищий пріоритет), кольори за типом і масштабом.
     void fillUnit(String code, String oblast, Path path) {
       final unit = byCode[code];
-      var type = AlertsConfig.primary([if (unit != null) unitType(unit), ...?levels[oblast]]);
+      var type = AlertsConfig.primary([if (unit != null) unitType(unit)]);
       if (type == AlertTypeCode.clear && noData.contains(oblast)) type = AlertTypeCode.noData;
       final palette = AlertsConfig.resolveColors(type, type == AlertTypeCode.air ? (AlertsConfig.scaleOf(unit?['scale']) ?? AlertScaleCode.oblast) : null);
       canvas.drawPath(path, Paint()..color = palette.fill);
@@ -435,10 +435,12 @@ class _AlertMapPainter extends CustomPainter {
     }
     for (final o in geo.oblasts) {
       final isMine = o.oblast == mine;
+      final top = AlertsConfig.primary(levels[o.oblast] ?? const []);
+      final level = top == AlertTypeCode.clear ? null : AlertsConfig.types[top]!.palette.hex;
       canvas.drawPath(o.path, Paint()
         ..style = PaintingStyle.stroke
-        ..strokeWidth = isMine ? 2.2 : 1.1
-        ..color = isMine ? Colors.white.withValues(alpha: 0.9) : ink.withValues(alpha: 0.35));
+        ..strokeWidth = isMine ? 2.2 : (level != null ? 2.4 : 1.1)
+        ..color = isMine ? Colors.white.withValues(alpha: 0.9) : (level ?? ink.withValues(alpha: 0.35)));
     }
     for (final r in regions) {
       if (r['slug'] == 'kyiv') continue;

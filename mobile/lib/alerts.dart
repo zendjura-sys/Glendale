@@ -120,6 +120,61 @@ class AlertsScreen extends StatefulWidget {
   State<AlertsScreen> createState() => _AlertsScreenState();
 }
 
+typedef _Legend = ({List<AlertTypeCode> types, List<AlertScaleCode> scales, bool outline, List<(String?, String, String)> glyphs});
+
+/// Компактна легенда: лише типи, масштаби й значки цілей, які зараз є на мапі.
+_Legend _legendOf(List<Map<String, dynamic>> regions, List<Map<String, dynamic>> units, List<Map<String, dynamic>> threats) {
+  final types = <AlertTypeCode>{};
+  final scales = <AlertScaleCode>{};
+  var outline = false;
+  for (final r in regions) {
+    for (final c in (r['alerts'] as List?) ?? [r['alert']]) {
+      final t = AlertsConfig.typeOf(c);
+      if (t != null) types.add(t);
+    }
+    final levels = (r['threat_levels'] as List?) ?? const [];
+    if (levels.isNotEmpty) outline = true;
+    for (final c in levels) {
+      final t = AlertsConfig.typeOf(c);
+      if (t != null) types.add(t);
+    }
+    if (r['alert'] == 'AIR') {
+      final sc = AlertsConfig.scaleOf(r['scale']);
+      if (sc != null) scales.add(sc);
+    }
+  }
+  for (final u in units) {
+    final t = AlertsConfig.typeOf(u['type']);
+    if (t != null) types.add(t);
+    final sc = AlertsConfig.scaleOf(u['scale']);
+    if (t == AlertTypeCode.air && sc != null) scales.add(sc);
+  }
+  types..remove(AlertTypeCode.clear)..remove(AlertTypeCode.noData);
+  String glyph(Map<String, dynamic> t) {
+    final v = t['variant'];
+    if (v == 'gerbera') return 'shahed';
+    if (v != null) return '$v';
+    return switch (t['type']) { 'uav' => 'shahed', 'missile' => 'cruise', final x => '$x' };
+  }
+  final used = {for (final t in threats) glyph(t)};
+  final all = <(String, String?, String, String)>[
+    ('shahed', 'shahed', 'uav', tr('Shahed / Гербера')),
+    ('jet', 'jet', 'uav', tr('Реактивний Shahed')),
+    ('fpv', 'fpv', 'uav', tr('FPV-дрон')),
+    ('cruise', 'cruise', 'missile', tr('Крилата ракета')),
+    ('ballistic', null, 'ballistic', tr('Балістика')),
+    ('kab', null, 'kab', tr('КАБ')),
+    ('mig', null, 'mig', tr('МіГ-31К')),
+    ('artillery', null, 'artillery', tr('Артилерія')),
+  ];
+  return (
+    types: types.isEmpty ? [AlertTypeCode.clear] : [for (final t in AlertsConfig.ordered) if (types.contains(t)) t],
+    scales: scales.length > 1 ? [for (final sc in AlertScaleCode.values) if (scales.contains(sc)) sc] : const [],
+    outline: outline,
+    glyphs: [for (final (key, variant, type, label) in all) if (used.contains(key)) (variant, type, label)],
+  );
+}
+
 class _AlertsScreenState extends State<AlertsScreen> {
   Map<String, dynamic>? data;
   List<Map<String, dynamic>> regionList = [];
@@ -129,6 +184,7 @@ class _AlertsScreenState extends State<AlertsScreen> {
   Timer? tick;
   late Set<String> layers;
   bool showSources = false;
+  bool legendOpen = false;
   int? selected;
   bool? _wasActive;
   Set<int> _seenThreats = {};
@@ -324,6 +380,8 @@ class _AlertsScreenState extends State<AlertsScreen> {
                 : PrimaryButton(label: tr('Я в укритті'), icon: LucideIcons.shield, onPressed: () => _save({'shelter': true})),
           ]),
         );
+    final legend = _legendOf(regions, maps(d['units']), visible);
+    final compactLegend = MediaQuery.sizeOf(context).width < 600;
     final mapCard = Glass(
           padding: const EdgeInsets.fromLTRB(10, 12, 10, 12),
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
@@ -362,35 +420,48 @@ class _AlertsScreenState extends State<AlertsScreen> {
               ),
             ),
             const SizedBox(height: 10),
-            // Легенда: офіційні типи за пріоритетом і масштаб повітряної тривоги.
-            Wrap(spacing: 6, runSpacing: 6, children: [for (final t in AlertsConfig.ordered) AlertBadge(t, full: true)]),
-            const SizedBox(height: 8),
-            Wrap(spacing: 12, runSpacing: 6, children: [
-              Text(tr('Повітряна тривога за масштабом:'), style: body(12, color: muted)),
-              for (final sc in AlertScaleCode.values)
-                _legend(
-                  Container(
-                    width: 10,
-                    height: 10,
-                    decoration: BoxDecoration(color: AlertsConfig.airScale[sc]!.fill, border: Border.all(color: AlertsConfig.airScale[sc]!.border), borderRadius: BorderRadius.circular(2)),
-                  ),
-                  AlertsConfig.scaleLabel(sc),
+            // Легенда — лише те, що зараз є на мапі; на телефоні згорнута за кнопкою.
+            if (compactLegend)
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  onPressed: () => setState(() => legendOpen = !legendOpen),
+                  icon: const Icon(LucideIcons.listTree, size: 16),
+                  label: Text(tr('Легенда')),
                 ),
-              _legend(Icon(LucideIcons.radiation, size: 12, color: muted), tr('Чорнобильська зона відчуження')),
-            ]),
-            const SizedBox(height: 8),
-            Wrap(spacing: 12, runSpacing: 6, children: [
-              for (final (variant, type, label) in [
-                ('shahed', 'uav', tr('Shahed / Гербера')),
-                ('jet', 'uav', tr('Реактивний Shahed')),
-                ('fpv', 'uav', tr('FPV-дрон')),
-                ('cruise', 'missile', tr('Крилата ракета')),
-                (null, 'ballistic', tr('Балістика')),
-                (null, 'kab', tr('КАБ')),
-                (null, 'mig', tr('МіГ-31К')),
-              ])
-                _legend(ThreatGlyph({'type': type, 'variant': variant}, size: 14), label),
-            ]),
+              ),
+            if (!compactLegend || legendOpen) ...[
+              Wrap(spacing: 6, runSpacing: 6, children: [for (final t in legend.types) AlertBadge(t, full: true)]),
+              if (legend.scales.isNotEmpty || legend.outline) ...[
+                const SizedBox(height: 8),
+                Wrap(spacing: 12, runSpacing: 6, children: [
+                  for (final sc in legend.scales)
+                    _legend(
+                      Container(
+                        width: 10,
+                        height: 10,
+                        decoration: BoxDecoration(color: AlertsConfig.airScale[sc]!.fill, border: Border.all(color: AlertsConfig.airScale[sc]!.border), borderRadius: BorderRadius.circular(2)),
+                      ),
+                      AlertsConfig.scaleLabel(sc),
+                    ),
+                  if (legend.outline)
+                    _legend(
+                      Container(
+                        width: 10,
+                        height: 10,
+                        decoration: BoxDecoration(border: Border.all(color: AlertsConfig.types[AlertTypeCode.uav]!.palette.hex, width: 2), borderRadius: BorderRadius.circular(2)),
+                      ),
+                      tr('Обвідка області — загроза з цілей'),
+                    ),
+                ]),
+              ],
+              if (legend.glyphs.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Wrap(spacing: 12, runSpacing: 6, children: [
+                  for (final (variant, type, label) in legend.glyphs) _legend(ThreatGlyph({'type': type, 'variant': variant}, size: 14), label),
+                ]),
+              ],
+            ],
             if (mapOf(d['attribution'])['url'] != null) ...[
               const SizedBox(height: 10),
               // Обов’язкове видиме посилання на джерело (умова API NEPTUN).

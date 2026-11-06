@@ -31,7 +31,7 @@ import {
     ALERT_TYPE_ORDER,
     ALERT_TYPES,
 } from '@/lib/alerts-config';
-import type { AlertScaleCode } from '@/lib/alerts-config';
+import type { AlertScaleCode, AlertTypeCode } from '@/lib/alerts-config';
 import { api } from '@/lib/api';
 import { tr } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
@@ -59,6 +59,74 @@ function clock(iso: string): string {
     });
 }
 
+const GLYPH_LEGEND = [
+    ['shahed', 'uav', () => tr('Shahed / Гербера')],
+    ['jet', 'uav', () => tr('Реактивний Shahed')],
+    ['fpv', 'uav', () => tr('FPV-дрон')],
+    ['cruise', 'missile', () => tr('Крилата ракета')],
+    ['ballistic', 'ballistic', () => tr('Балістика')],
+    ['kab', 'kab', () => tr('КАБ')],
+    ['mig', 'mig', () => tr('МіГ-31К')],
+    ['artillery', 'artillery', () => tr('Артилерія')],
+] as const;
+
+/** Компактна легенда: лише типи, масштаби й значки, які зараз є на мапі. */
+function legendOf(state: AlertState, now: number) {
+    const types = new Set<AlertTypeCode>();
+    const scales = new Set<AlertScaleCode>();
+    let long = false;
+    let outline = false;
+    const isLong = (at: string | null) =>
+        at !== null && now - new Date(at).getTime() > 24 * 3600_000;
+    for (const r of state.regions) {
+        for (const code of r.alerts ?? (r.alert ? [r.alert] : [])) {
+            types.add(code);
+        }
+        if (r.alert === 'AIR' && r.scale) scales.add(r.scale);
+        if ((r.threat_levels ?? []).length > 0) outline = true;
+        for (const code of r.threat_levels ?? []) types.add(code);
+        if (r.active && isLong(r.started_at)) long = true;
+    }
+    for (const u of state.units ?? []) {
+        if (u.type) types.add(u.type);
+        if (u.type === 'AIR' && u.scale) scales.add(u.scale);
+        if (isLong(u.started_at)) long = true;
+    }
+    types.delete('CLEAR');
+    types.delete('NO_DATA');
+    const used = new Set(
+        state.threats.map((t) =>
+            t.variant === 'gerbera'
+                ? 'shahed'
+                : (t.variant ??
+                  (
+                      {
+                          uav: 'shahed',
+                          missile: 'cruise',
+                          ballistic: 'ballistic',
+                          kab: 'kab',
+                          mig: 'mig',
+                          artillery: 'artillery',
+                      } as const
+                  )[t.type]),
+        ),
+    );
+
+    return {
+        types: ALERT_TYPE_ORDER.filter((c) => types.has(c)).concat(
+            types.size === 0 ? ['CLEAR'] : [],
+        ),
+        scales: (Object.keys(AIR_RAID_SCALE_COLORS) as AlertScaleCode[]).filter(
+            (s) => scales.has(s) && scales.size > 1,
+        ),
+        long,
+        outline,
+        glyphs: GLYPH_LEGEND.filter(([g]) => used.has(g)).map(
+            ([g, type, label]) => [g, type, label()] as const,
+        ),
+    };
+}
+
 /** Мапа тривог і радар цілей — лише для людей з України. */
 export default function Alerts(props: {
     state: AlertState;
@@ -72,6 +140,7 @@ export default function Alerts(props: {
     const [layers, setLayers] = useState<AlertLayer[]>(() => loadLayers());
     const [sound, setSound] = useState(() => loadSound());
     const [showSources, setShowSources] = useState(false);
+    const [legendOpen, setLegendOpen] = useState(false);
     const seen = useRef<{ active: boolean; threats: Set<number> } | null>(null);
 
     // Звук: тривога щойно почалась у моїй області або нова ціль у ній.
@@ -156,6 +225,7 @@ export default function Alerts(props: {
                 ALERT_TYPES[a.alert ?? 'AIR'].priority,
         );
     const mine = state.regions.find((r) => r.slug === prefs.region) ?? null;
+    const legend = legendOf(state, now);
 
     return (
         <>
@@ -371,76 +441,102 @@ export default function Alerts(props: {
                             now={now}
                             onSelect={(slug) => save({ region: slug })}
                         />
-                        {/* Легенда: офіційні типи за пріоритетом і масштаб повітряної тривоги. */}
-                        <div className="mt-3 flex flex-wrap gap-1.5">
-                            {ALERT_TYPE_ORDER.map((code) => (
-                                <AlertBadge key={code} type={code} full />
-                            ))}
-                        </div>
-                        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-white/60">
-                            <span>{tr('Повітряна тривога за масштабом:')}</span>
-                            {(
-                                Object.keys(
-                                    AIR_RAID_SCALE_COLORS,
-                                ) as AlertScaleCode[]
-                            ).map((scale) => (
-                                <span
-                                    key={scale}
-                                    className="inline-flex items-center gap-1.5"
-                                >
-                                    <span
-                                        className="size-2.5 rounded-sm border"
-                                        style={{
-                                            background:
-                                                AIR_RAID_SCALE_COLORS[scale]
-                                                    .fill,
-                                            borderColor:
-                                                AIR_RAID_SCALE_COLORS[scale]
-                                                    .border,
-                                        }}
-                                    />
-                                    {AIR_RAID_SCALE_COLORS[scale].label()}
-                                </span>
-                            ))}
-                            <span className="inline-flex items-center gap-1.5">
-                                <span
-                                    className="size-2.5 rounded-sm"
-                                    style={{
-                                        background: `repeating-linear-gradient(45deg, ${ALERT_TYPES.AIR.hex} 0 3px, rgb(0 0 0 / 0.5) 3px 5px)`,
-                                    }}
-                                />
-                                {tr('Штрих — тривога понад добу')}
-                            </span>
-                        </div>
-                        <div className="mt-2 flex flex-wrap gap-x-4 gap-y-2 text-xs text-white/60">
-                            {(
-                                [
-                                    ['shahed', 'uav', tr('Shahed / Гербера')],
-                                    ['jet', 'uav', tr('Реактивний Shahed')],
-                                    ['fpv', 'uav', tr('FPV-дрон')],
-                                    ['cruise', 'missile', tr('Крилата ракета')],
-                                    ['ballistic', 'ballistic', tr('Балістика')],
-                                    ['kab', 'kab', tr('КАБ')],
-                                    ['mig', 'mig', tr('МіГ-31К')],
-                                ] as const
-                            ).map(([glyph, type, label]) => (
-                                <span
-                                    key={glyph}
-                                    className="inline-flex items-center gap-1.5"
-                                >
-                                    <svg
-                                        viewBox="0 0 24 24"
-                                        className="size-4"
-                                        aria-hidden
-                                    >
-                                        <path
-                                            d={GLYPHS[glyph]}
-                                            fill={THREAT_COLOR[type]}
-                                        />
-                                    </svg>
-                                    {label}
-                                </span>
-                            ))}
+                        {/* Легенда — лише те, що зараз є на мапі; на телефоні згорнута. */}
+                        <button
+                            type="button"
+                            onClick={() => setLegendOpen((v) => !v)}
+                            aria-expanded={legendOpen}
+                            className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-white/10 px-3 py-1 text-xs text-white/70 sm:hidden"
+                        >
+                            <ListTree className="size-3.5" />
+                            {tr('Легенда')}
+                        </button>
+                        <div className={cn(!legendOpen && 'hidden sm:block')}>
+                            <div className="mt-3 flex flex-wrap gap-1.5">
+                                {legend.types.map((code) => (
+                                    <AlertBadge key={code} type={code} full />
+                                ))}
+                            </div>
+                            {(legend.scales.length > 0 ||
+                                legend.long ||
+                                legend.outline) && (
+                                <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-white/60">
+                                    {legend.scales.map((scale) => (
+                                        <span
+                                            key={scale}
+                                            className="inline-flex items-center gap-1.5"
+                                        >
+                                            <span
+                                                className="size-2.5 rounded-sm border"
+                                                style={{
+                                                    background:
+                                                        AIR_RAID_SCALE_COLORS[
+                                                            scale
+                                                        ].fill,
+                                                    borderColor:
+                                                        AIR_RAID_SCALE_COLORS[
+                                                            scale
+                                                        ].border,
+                                                }}
+                                            />
+                                            {AIR_RAID_SCALE_COLORS[
+                                                scale
+                                            ].label()}
+                                        </span>
+                                    ))}
+                                    {legend.long && (
+                                        <span className="inline-flex items-center gap-1.5">
+                                            <span
+                                                className="size-2.5 rounded-sm"
+                                                style={{
+                                                    background: `repeating-linear-gradient(45deg, ${ALERT_TYPES.AIR.hex} 0 3px, rgb(0 0 0 / 0.5) 3px 5px)`,
+                                                }}
+                                            />
+                                            {tr('Штрих — тривога понад добу')}
+                                        </span>
+                                    )}
+                                    {legend.outline && (
+                                        <span className="inline-flex items-center gap-1.5">
+                                            <span
+                                                className="size-2.5 rounded-sm border-2"
+                                                style={{
+                                                    borderColor:
+                                                        ALERT_TYPES.UAV.hex,
+                                                }}
+                                            />
+                                            {tr(
+                                                'Обвідка області — загроза з цілей',
+                                            )}
+                                        </span>
+                                    )}
+                                </div>
+                            )}
+                            {legend.glyphs.length > 0 && (
+                                <div className="mt-2 flex flex-wrap gap-x-4 gap-y-2 text-xs text-white/60">
+                                    {legend.glyphs.map(
+                                        ([glyph, type, label]) => (
+                                            <span
+                                                key={glyph}
+                                                className="inline-flex items-center gap-1.5"
+                                            >
+                                                <svg
+                                                    viewBox="0 0 24 24"
+                                                    className="size-4"
+                                                    aria-hidden
+                                                >
+                                                    <path
+                                                        d={GLYPHS[glyph]}
+                                                        fill={
+                                                            THREAT_COLOR[type]
+                                                        }
+                                                    />
+                                                </svg>
+                                                {label}
+                                            </span>
+                                        ),
+                                    )}
+                                </div>
+                            )}
                         </div>
                         {state.attribution && (
                             <p className="mt-3 text-xs">

@@ -344,10 +344,8 @@ export function AlertMap({
     /** Стан зони: головна тривога (найвищий пріоритет), кольори за типом і масштабом. */
     const status = (code: string, oblast: string) => {
         const unit = showAlerts ? byCode.get(code) : undefined;
-        const primary = primaryAlert([
-            unit ? unitType(unit) : null,
-            ...(levels.get(oblast) ?? []),
-        ]);
+        // Заливка — лише офіційні тривоги; рівні загроз з цілей малюємо обвідкою області.
+        const primary = primaryAlert([unit ? unitType(unit) : null]);
         const type: AlertTypeCode =
             primary === 'CLEAR' && noData.has(oblast) ? 'NO_DATA' : primary;
         const colors = resolveAlertColors(
@@ -523,20 +521,29 @@ export function AlertMap({
                             </g>
                         )}
 
-                        {OBLASTS.map((o) => (
-                            <path
-                                key={o.k}
-                                d={o.d}
-                                fill="none"
-                                stroke={
-                                    o.o === mine
-                                        ? 'rgb(255 255 255 / 0.9)'
-                                        : 'rgb(255 255 255 / 0.35)'
-                                }
-                                strokeWidth={o.o === mine ? 2.2 : 1.1}
-                                pointerEvents="none"
-                            />
-                        ))}
+                        {OBLASTS.map((o) => {
+                            // Рівень загрози з цілей (БпЛА — жовтий, балістика — червоний) — кольорова обвідка області.
+                            const top = primaryAlert(levels.get(o.o) ?? []);
+                            const level = top === 'CLEAR' ? null : top;
+                            return (
+                                <path
+                                    key={o.k}
+                                    d={o.d}
+                                    fill="none"
+                                    stroke={
+                                        o.o === mine
+                                            ? 'rgb(255 255 255 / 0.9)'
+                                            : level
+                                              ? ALERT_TYPES[level].hex
+                                              : 'rgb(255 255 255 / 0.35)'
+                                    }
+                                    strokeWidth={
+                                        o.o === mine ? 2.2 : level ? 2.4 : 1.1
+                                    }
+                                    pointerEvents="none"
+                                />
+                            );
+                        })}
 
                         {regions
                             .filter((r) => r.slug !== 'kyiv')
