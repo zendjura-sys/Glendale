@@ -5385,22 +5385,44 @@ iframe {
     ) !important;
 }
 
-/* ---------- Кнопки: як Button VKUI (primary — синя, secondary — прозора синя) ---------- */
+/* ---------- Кнопки: неоновий синій градієнт із відблиском (як раніше), форма — VK ---------- */
 :root.gc-vk
     :is(.btn-glow, button.bg-primary, a.bg-primary, .bg-gradient-brand):not(
         .am *
     ):not(:disabled) {
-    background: var(--vkui--color_background_accent) !important;
-    background-image: none !important;
+    background: linear-gradient(135deg, #0f75ff 0%, #00b4ff 100%) !important;
     border: 0 !important;
-    border-radius: 8px !important;
-    box-shadow: none !important;
+    border-radius: 12px !important;
+    box-shadow:
+        0 0 22px -4px rgb(0 160 255 / 0.65),
+        0 8px 20px -10px rgb(15 117 255 / 0.8),
+        inset 0 1px 0 0 rgb(255 255 255 / 0.3) !important;
     color: #fff !important;
-    font-weight: 500;
+    font-weight: 600;
     filter: none;
+    transition:
+        box-shadow 0.2s ease,
+        filter 0.2s ease,
+        transform 0.2s ease;
 }
-:root.gc-vk :is(.btn-glow, button.bg-primary, a.bg-primary):not(.am *):hover {
-    opacity: 0.88;
+:root.gc-vk[data-theme='light']
+    :is(.btn-glow, button.bg-primary, a.bg-primary, .bg-gradient-brand):not(
+        .am *
+    ):not(:disabled) {
+    box-shadow:
+        0 0 16px -6px rgb(0 140 255 / 0.55),
+        0 6px 14px -8px rgb(15 117 255 / 0.6),
+        inset 0 1px 0 0 rgb(255 255 255 / 0.35) !important;
+}
+:root.gc-vk
+    :is(.btn-glow, button.bg-primary, a.bg-primary):not(.am *):not(
+        :disabled
+    ):hover {
+    filter: brightness(1.08);
+    box-shadow:
+        0 0 30px -2px rgb(0 170 255 / 0.8),
+        0 10px 24px -10px rgb(15 117 255 / 0.9),
+        inset 0 1px 0 0 rgb(255 255 255 / 0.35) !important;
 }
 :root.gc-vk [data-slot='button'] {
     border-radius: 8px;
@@ -5558,4 +5580,81 @@ html.gc-vk .am :is(.ios-glass, .ios-glass-bar) {
         --vkui--elevation2,
         0 2px 24px rgb(0 0 0 / 0.08)
     ) !important;
+}
+
+/* ==========================================================================
+   Темна тема як на референсі (ігровий дашборд): вугільне тло, трохи світліші картки з м'якою
+   об'ємною тінню, без ліній, великі заокруглення; акцент лишається неоновим.
+   ========================================================================== */
+html.gc-vk[data-theme='dark'] {
+    --vkui--color_background: #1c1d21;
+    --vkui--color_background_content: #25262b;
+    --vkui--color_background_secondary: #2d2e34;
+    --vkui--color_background_secondary_alpha: rgb(255 255 255 / 0.06);
+    --vkui--color_background_tertiary: #222327;
+    --vkui--color_background_modal: #2a2b31;
+    --vkui--color_field_background: #1f2025;
+    --vkui--color_field_border_alpha: rgb(255 255 255 / 0.05);
+    --vkui--color_separator_primary: rgb(255 255 255 / 0.06);
+    --vkui--color_text_secondary: #8d8f9a;
+    --vkui--color_text_subhead: #a3a5b0;
+    --vkui--color_icon_secondary: #8d8f9a;
+}
+html.gc-vk[data-theme='dark']
+    :is(
+        .glass,
+        [data-slot='card'],
+        .ios-arctic-card,
+        .gc-post,
+        .gc-vk-group
+    ):not(.am *):not(.glass .glass, [data-slot='card'] [data-slot='card']) {
+    border-radius: 20px !important;
+    box-shadow:
+        0 18px 40px -22px rgb(0 0 0 / 0.75),
+        inset 0 1px 0 0 rgb(255 255 255 / 0.03) !important;
+}
+html.gc-vk[data-theme='dark'] .vkuiGroup__modeCard {
+    background: #25262b !important;
+    border-radius: 20px !important;
+    box-shadow: 0 18px 40px -22px rgb(0 0 0 / 0.75) !important;
+}
+html.gc-vk[data-theme='dark'] .ios-glass-bar.ios-header-pill {
+    background: #25262b !important;
+    box-shadow: 0 18px 40px -22px rgb(0 0 0 / 0.8) !important;
+}
+html.gc-vk[data-theme='dark']
+    :is(.input-glass, [data-slot='input'], textarea, select):not(.am *) {
+    background-color: #1f2025 !important;
+    border-color: transparent !important;
+    box-shadow: inset 0 2px 6px rgb(0 0 0 / 0.35);
+}
+html.gc-vk[data-theme='dark'] .gc-vk-pill {
+    background: #2d2e34;
+    box-shadow: 0 6px 14px -10px rgb(0 0 0 / 0.8);
+}
+
+/* Темна тема: кнопки — помаранчево-рожевий неоновий градієнт, як на референсі; світла — неоновий синій (вище). */
+html.gc-vk[data-theme='dark']
+    :is(.btn-glow, button.bg-primary, a.bg-primary, .bg-gradient-brand):not(
+        .am *
+    ):not(:disabled) {
+    background: linear-gradient(
+        120deg,
+        #ff6a1f 0%,
+        #f5456b 55%,
+        #d93fb0 100%
+    ) !important;
+    box-shadow:
+        0 0 24px -4px rgb(255 84 92 / 0.6),
+        0 10px 22px -10px rgb(240 70 120 / 0.85),
+        inset 0 1px 0 0 rgb(255 255 255 / 0.25) !important;
+}
+html.gc-vk[data-theme='dark']
+    :is(.btn-glow, button.bg-primary, a.bg-primary):not(.am *):not(
+        :disabled
+    ):hover {
+    box-shadow:
+        0 0 32px -2px rgb(255 90 110 / 0.75),
+        0 12px 26px -10px rgb(240 70 120 / 0.95),
+        inset 0 1px 0 0 rgb(255 255 255 / 0.3) !important;
 }
