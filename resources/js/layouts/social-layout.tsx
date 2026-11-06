@@ -662,7 +662,7 @@ function MobileNav() {
 
 /** Вміст розгорнутого острова: профіль, GameCon+, решта розділів і службові посилання — пласко, без плиток. */
 function MenuContent({ onClose }: { onClose: () => void }) {
-    const { auth } = usePage().props;
+    const { auth, airAlerts } = usePage().props;
     const user = auth.user;
     const isActive = useIsActive();
     const supportOn = usePlugin('support_tickets');
@@ -765,6 +765,9 @@ function MenuContent({ onClose }: { onClose: () => void }) {
                     );
                 })}
             </div>
+
+            {/* Мапа тривог (Україна; кому показувати — в адмінці «Інтеграції»). */}
+            {airAlerts && <AlertMapButton row className="my-2" />}
 
             <div className="my-2 h-px bg-white/[0.07]" />
 

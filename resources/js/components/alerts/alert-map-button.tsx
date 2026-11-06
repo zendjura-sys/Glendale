@@ -31,9 +31,12 @@ function project(lat: number, lng: number): [number, number] {
 export function AlertMapButton({
     className,
     current = false,
+    row = false,
 }: {
     className?: string;
     current?: boolean;
+    /** Горизонтально (мапа ліворуч, підпис праворуч) — для мобільного меню. */
+    row?: boolean;
 }) {
     const reduce = useReducedMotion();
     const id = useId().replace(/:/g, '');
@@ -87,14 +90,15 @@ export function AlertMapButton({
                     : tr('Мапа тривог')
             }
             className={cn(
-                'group relative flex shrink-0 flex-col gap-1.5 overflow-hidden rounded-2xl bg-[#0b1a33]/80 p-3 ring-1 ring-sky-300/25 transition hover:ring-sky-300/50',
+                'group relative flex shrink-0 overflow-hidden rounded-2xl bg-[#0b1a33]/80 p-3 ring-1 ring-sky-300/25 transition hover:ring-sky-300/50',
+                row ? 'items-center gap-3' : 'flex-col gap-1.5',
                 current && 'ring-sky-300/60',
                 className,
             )}
         >
             <svg
                 viewBox={`0 0 ${W} ${H}`}
-                className="h-auto w-full"
+                className={row ? 'h-auto w-36 shrink-0' : 'h-auto w-full'}
                 aria-hidden
             >
                 <defs>
@@ -151,11 +155,23 @@ export function AlertMapButton({
                 />
             </svg>
             <Megaphone
-                className="absolute top-[30%] left-[38%] size-10 -translate-y-1/2 -rotate-12 text-red-600 transition group-hover:scale-110 motion-reduce:transition-none"
+                className={cn(
+                    'absolute -translate-y-1/2 -rotate-12 text-red-600 transition group-hover:scale-110 motion-reduce:transition-none',
+                    row
+                        ? 'top-1/2 left-[3.4rem] size-8'
+                        : 'top-[30%] left-[38%] size-10',
+                )}
                 strokeWidth={2.6}
                 aria-hidden
             />
-            <span className="flex items-baseline justify-between gap-2">
+            <span
+                className={cn(
+                    'flex gap-2',
+                    row
+                        ? 'min-w-0 flex-1 flex-col'
+                        : 'items-baseline justify-between',
+                )}
+            >
                 <span className="font-display text-[15px] leading-tight font-extrabold text-white">
                     {tr('Мапа тривог')}
                 </span>
