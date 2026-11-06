@@ -8,6 +8,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gamecon/account.dart';
 import 'package:gamecon/alerts.dart';
+import 'package:gamecon/alerts_map.dart';
 import 'package:gamecon/shell.dart';
 import 'package:gamecon/state.dart';
 import 'package:gamecon/theme.dart';
@@ -42,12 +43,21 @@ Map<String, dynamic> _respond(http.Request request) {
       _region('odesa', 'Одеська область', 46.48, 30.73),
       _region('crimea', 'Автономна Республіка Крим', 45.04, 34.0, 'air_raid'),
     ],
+    'units': [
+      for (final code in ['UA63020000000066931', 'UA63040000000023521', 'UA63060000000053698', 'UA63080000000032022', 'UA63100000000059237', 'UA63120000000091135', 'UA63140000000096278'])
+        {'code': code, 'kind': 'air_raid', 'started_at': now.subtract(const Duration(minutes: 65)).toIso8601String()},
+      {'code': 'UA32100000000065867', 'kind': 'chemical', 'started_at': now.toIso8601String()},
+      {'code': 'UA12080050000062712', 'kind': 'artillery', 'started_at': now.toIso8601String()},
+      for (final code in ['UA01020000000022387', 'UA01040000000069938', 'UA01060000000028159'])
+        {'code': code, 'kind': 'air_raid', 'started_at': now.subtract(const Duration(days: 900)).toIso8601String()},
+    ],
+    'attribution': {'text': 'Дані: Карта повітряних загроз NEPTUN', 'url': 'https://neptun.in.ua/'},
     'active_count': 2,
     'mig_active': true,
     'ballistic_threat': false,
     'threats': [
-      {'id': 1, 'type': 'uav', 'region': 'poltava', 'place': 'Полтава', 'title': 'БпЛА на Полтаву', 'lat': 49.59, 'lng': 34.55, 'course': 250, 'speed': 180, 'confidence': 100, 'sources': ['kpszsu', 'PoltavaRadar'], 'detected_at': now.subtract(const Duration(minutes: 12)).toIso8601String(), 'expires_at': now.add(const Duration(minutes: 20)).toIso8601String()},
-      {'id': 2, 'type': 'missile', 'region': 'kharkiv', 'place': 'Харків', 'title': 'Ракета', 'lat': 49.99, 'lng': 36.23, 'course': null, 'speed': 750, 'confidence': 25, 'sources': ['monitor_ukr'], 'detected_at': now.toIso8601String(), 'expires_at': now.add(const Duration(minutes: 5)).toIso8601String()},
+      {'id': 1, 'type': 'uav', 'variant': 'jet', 'count': 2, 'region': 'poltava', 'place': 'Полтава', 'title': 'БпЛА на Полтаву', 'lat': 49.59, 'lng': 34.55, 'course': 250, 'speed': 180, 'confidence': 100, 'sources': ['kpszsu', 'PoltavaRadar'], 'detected_at': now.subtract(const Duration(minutes: 12)).toIso8601String(), 'expires_at': now.add(const Duration(minutes: 20)).toIso8601String()},
+      {'id': 2, 'type': 'missile', 'variant': 'cruise', 'area_only': true, 'region': 'kharkiv', 'place': 'Харків', 'title': 'Ракета', 'lat': 49.99, 'lng': 36.23, 'course': null, 'speed': 750, 'confidence': 25, 'sources': ['monitor_ukr'], 'detected_at': now.toIso8601String(), 'expires_at': now.add(const Duration(minutes: 5)).toIso8601String()},
     ],
     'feed': [
       {'ref': 'kpszsu/1', 'channel': 'kpszsu', 'group': 'official', 'text': 'Ударні БпЛА з Сумщини курсом на Полтавщину.', 'at': now.toIso8601String()},
@@ -111,7 +121,7 @@ void main() {
                       const Text('Мапа'),
                       AspectRatio(
                         aspectRatio: 1000 / 680,
-                        child: AlertMapView(regions: List<Map<String, dynamic>>.from(d['regions'] as List), threats: List<Map<String, dynamic>>.from(d['threats'] as List), mine: 'poltava'),
+                        child: AlertMapView(regions: List<Map<String, dynamic>>.from(d['regions'] as List), units: List<Map<String, dynamic>>.from(d['units'] as List), threats: List<Map<String, dynamic>>.from(d['threats'] as List), mine: 'poltava'),
                       ),
                     ]),
                   );

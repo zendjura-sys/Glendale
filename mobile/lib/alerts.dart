@@ -12,6 +12,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import 'alerts_map.dart';
 import 'api.dart';
 import 'i18n.dart';
 import 'state.dart';
@@ -19,31 +20,11 @@ import 'theme.dart';
 import 'ukraine_outline.dart';
 import 'widgets.dart';
 
-/// Колір тривоги: повітряна — червоний, часткова — помаранчевий, артобстріл — жовтий.
-const alertColors = {'air_raid': Color(0xFFEF4444), 'partial': Color(0xFFF59E0B), 'artillery': Color(0xFFEAB308)};
-
-/// Колір цілі за типом (як на сайті).
-const threatColors = {
-  'uav': Color(0xFF38BDF8),
-  'missile': Color(0xFFF97316),
-  'ballistic': Color(0xFFEF4444),
-  'kab': Color(0xFFFACC15),
-  'mig': Color(0xFF22D3EE),
-  'artillery': Color(0xFFEAB308),
-};
+/// Колір області в списку: повна тривога, часткова чи свій вид.
+const alertColors = {...kindColors, 'partial': Color(0xFFF59E0B)};
 
 /// Шари мапи (фільтри): тривоги й окремо кожен тип цілей.
 const alertLayers = ['alerts', 'uav', 'missile', 'ballistic', 'kab', 'mig'];
-
-String threatLabel(String type) => switch (type) {
-  'uav' => tr('БпЛА'),
-  'missile' => tr('Ракета'),
-  'ballistic' => tr('Балістика'),
-  'kab' => tr('КАБ'),
-  'mig' => tr('МіГ-31К'),
-  'artillery' => tr('Артилерія'),
-  _ => type,
-};
 
 /// Проєкція для мапи України (як на сайті): lng 22.0–40.4, lat 44.2–52.5.
 Offset _project(double lat, double lng, Size size) =>
@@ -61,26 +42,6 @@ Path _outline(Size size) {
   return path;
 }
 
-/// Найдальше, куди «доповзає» мітка від точки зі зведення (км).
-const _maxDriftKm = 200.0;
-
-/// Поточне розрахункове місце цілі: точка зведення + курс × швидкість × час (до «згасання»).
-/// Без курсу чи швидкості — стоїть на місці. Як `threatPosition` на сайті.
-({double lat, double lng}) threatPosition(Map<String, dynamic> t, DateTime now) {
-  final lat = _d(t['lat']);
-  final lng = _d(t['lng']);
-  final course = t['course'];
-  final speed = _d(t['speed']);
-  final detected = DateTime.tryParse('${t['detected_at'] ?? ''}');
-  if (course is! num || speed <= 0 || detected == null) return (lat: lat, lng: lng);
-  final expires = DateTime.tryParse('${t['expires_at'] ?? ''}');
-  final end = expires != null && expires.isBefore(now) ? expires : now;
-  final hours = math.max(0, end.difference(detected).inMilliseconds) / 3600000;
-  final km = math.min(_maxDriftKm, speed * hours);
-  final rad = course * math.pi / 180;
-  return (lat: lat + km * math.cos(rad) / 111, lng: lng + km * math.sin(rad) / (111 * math.cos(lat * math.pi / 180)));
-}
-
 /// «1 год 05 хв» від початку тривоги.
 String alertDuration(dynamic startedAt) {
   final start = DateTime.tryParse('${startedAt ?? ''}');
@@ -88,6 +49,8 @@ String alertDuration(dynamic startedAt) {
   final total = math.max(0, DateTime.now().difference(start).inMinutes);
   final h = total ~/ 60;
   final m = total % 60;
+  // Тривала тривога (окуповані території тощо) — у днях.
+  if (h >= 48) return tr('{d} дн.', {'d': '${h ~/ 24}'});
   return h > 0 ? tr('{h} год {m} хв', {'h': '$h', 'm': m.toString().padLeft(2, '0')}) : tr('{m} хв', {'m': '$m'});
 }
 
@@ -168,6 +131,7 @@ class _AlertsScreenState extends State<AlertsScreen> {
   Timer? tick;
   late Set<String> layers;
   bool showSources = false;
+  int? selected;
   bool? _wasActive;
   Set<int> _seenThreats = {};
 
@@ -234,6 +198,18 @@ class _AlertsScreenState extends State<AlertsScreen> {
     } catch (e) {
       if (mounted) toast(context, e);
     }
+  }
+
+  Widget _legend(Widget mark, String label) => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [mark, const SizedBox(width: 6), Flexible(child: Text(label, style: body(12, color: muted)))],
+  );
+
+  Future<void> _openThreat(Map<String, dynamic> t, List<Map<String, dynamic>> regions) async {
+    setState(() => selected = intOf(t['id']));
+    final region = regions.where((r) => r['slug'] == t['region']).firstOrNull;
+    await showThreatCard(context, t, text(region?['name']));
+    if (mounted) setState(() => selected = null);
   }
 
   void _toggleLayer(String layer) {
@@ -392,14 +368,45 @@ class _AlertsScreenState extends State<AlertsScreen> {
                   aspectRatio: 1000 / 680,
                   child: AlertMapView(
                     regions: regions,
+                    units: maps(d['units']),
                     threats: visible,
                     mine: mineSlug,
+                    selected: selected,
                     showAlerts: layers.contains('alerts'),
                     onSelect: (slug) => _save({'region': slug}),
+                    onThreat: (t) => _openThreat(t, regions),
                   ),
                 ),
               ),
             ),
+            const SizedBox(height: 10),
+            Wrap(spacing: 12, runSpacing: 6, children: [
+              for (final k in ['air_raid', 'artillery', 'urban_fights', 'chemical', 'nuclear'])
+                _legend(Container(width: 10, height: 10, decoration: BoxDecoration(color: kindColors[k], borderRadius: BorderRadius.circular(2))), kindLabel(k)),
+              _legend(Container(width: 10, height: 10, decoration: BoxDecoration(color: nearbyColor.withValues(alpha: 0.5), borderRadius: BorderRadius.circular(2))), tr('Жовтий рівень — тривога в області поруч')),
+              _legend(Text('☢', style: body(11)), tr('Чорнобильська зона відчуження')),
+            ]),
+            const SizedBox(height: 8),
+            Wrap(spacing: 12, runSpacing: 6, children: [
+              for (final (variant, type, label) in [
+                ('shahed', 'uav', tr('Shahed / Гербера')),
+                ('jet', 'uav', tr('Реактивний Shahed')),
+                ('fpv', 'uav', tr('FPV-дрон')),
+                ('cruise', 'missile', tr('Крилата ракета')),
+                (null, 'ballistic', tr('Балістика')),
+                (null, 'kab', tr('КАБ')),
+                (null, 'mig', tr('МіГ-31К')),
+              ])
+                _legend(ThreatGlyph({'type': type, 'variant': variant}, size: 14), label),
+            ]),
+            if (mapOf(d['attribution'])['url'] != null) ...[
+              const SizedBox(height: 10),
+              // Обов’язкове видиме посилання на джерело (умова API NEPTUN).
+              InkWell(
+                onTap: () => launchUrl(Uri.parse('${mapOf(d['attribution'])['url']}'), mode: LaunchMode.externalApplication),
+                child: Text(text(mapOf(d['attribution'])['text']) ?? 'NEPTUN', style: body(12.5, color: accent, weight: FontWeight.w600)),
+              ),
+            ],
             const SizedBox(height: 10),
             Text(
               tr('Мапа — агрегатор відкритих джерел, а не офіційна система оповіщення. Мітки приблизні; прозоріша мітка — менше джерел її підтвердили. Рішення про укриття приймайте за офіційним сигналом тривоги.'),
@@ -430,14 +437,23 @@ class _AlertsScreenState extends State<AlertsScreen> {
             CardTitle(tr('Цілі в повітрі'), icon: LucideIcons.radar),
             if (visible.isEmpty) Text(tr('Цілей не зафіксовано.'), style: body(14, color: muted)),
             for (final t in visible.take(15))
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child: Row(children: [
-                  Pill(label: threatLabel(text(t['type']) ?? ''), color: threatColors[text(t['type'])] ?? accent),
-                  const SizedBox(width: 10),
-                  Expanded(child: Text(text(t['place']) ?? tr('Україна'), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14))),
-                  Text('${intOf(t['confidence'])}% · ${clock(t['detected_at'])}', style: body(12.5, color: muted)),
-                ]),
+              InkWell(
+                onTap: () => _openThreat(t, regions),
+                borderRadius: BorderRadius.circular(10),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  child: Row(children: [
+                    Transform.rotate(angle: (t['course'] is num ? (t['course'] as num) : 0) * math.pi / 180, child: ThreatGlyph(t, size: 20)),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Text('${threatTitle(t)}${intOf(t['count'], 1) > 1 ? ' ×${t['count']}' : ''}', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14, weight: FontWeight.w600)),
+                        Text(text(t['place']) ?? tr('Україна'), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12.5, color: muted)),
+                      ]),
+                    ),
+                    Text('${intOf(t['confidence'])}% · ${clock(t['detected_at'])}', style: body(12.5, color: muted)),
+                  ]),
+                ),
               ),
           ]),
         ),
@@ -535,155 +551,6 @@ class _AlertsScreenState extends State<AlertsScreen> {
       ],
     );
   }
-}
-
-/// Мапа: контур, області (кола) з пульсом тривоги й цілі зі стрілкою курсу.
-class AlertMapView extends StatefulWidget {
-  const AlertMapView({required this.regions, required this.threats, this.mine, this.showAlerts = true, this.onSelect, super.key});
-  final List<Map<String, dynamic>> regions;
-  final List<Map<String, dynamic>> threats;
-  final String? mine;
-  final bool showAlerts;
-  final ValueChanged<String>? onSelect;
-
-  @override
-  State<AlertMapView> createState() => _AlertMapViewState();
-}
-
-class _AlertMapViewState extends State<AlertMapView> with SingleTickerProviderStateMixin {
-  late final AnimationController pulse = AnimationController(vsync: this, duration: const Duration(milliseconds: 2400));
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // Без анімацій у системі — без пульсу.
-    if (MediaQuery.disableAnimationsOf(context)) {
-      pulse.stop();
-    } else if (!pulse.isAnimating) {
-      pulse.repeat();
-    }
-  }
-
-  @override
-  void dispose() {
-    pulse.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(builder: (context, box) {
-      final size = Size(box.maxWidth, box.maxHeight);
-      return GestureDetector(
-        onTapUp: widget.onSelect == null
-            ? null
-            : (details) {
-                String? best;
-                var bestDist = double.infinity;
-                for (final r in widget.regions) {
-                  final p = _project(_d(r['lat']), _d(r['lng']), size);
-                  final dist = (p - details.localPosition).distance;
-                  if (dist < bestDist) {
-                    bestDist = dist;
-                    best = text(r['slug']);
-                  }
-                }
-                if (best != null && bestDist < size.width * 0.06) widget.onSelect!(best);
-              },
-        child: AnimatedBuilder(
-          animation: pulse,
-          builder: (_, _) => CustomPaint(
-            size: size,
-            painter: _AlertMapPainter(
-              regions: widget.regions,
-              threats: widget.threats,
-              mine: widget.mine,
-              showAlerts: widget.showAlerts,
-              pulse: pulse.value,
-              ink: fg,
-              now: DateTime.now(),
-            ),
-          ),
-        ),
-      );
-    });
-  }
-}
-
-class _AlertMapPainter extends CustomPainter {
-  _AlertMapPainter({required this.regions, required this.threats, required this.mine, required this.showAlerts, required this.pulse, required this.ink, required this.now});
-  final DateTime now;
-  final List<Map<String, dynamic>> regions;
-  final List<Map<String, dynamic>> threats;
-  final String? mine;
-  final bool showAlerts;
-  final double pulse;
-  final Color ink;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final k = size.width / 1000;
-    final outline = _outline(size);
-    canvas.drawPath(outline, Paint()..color = ink.withValues(alpha: 0.05));
-    canvas.drawPath(outline, Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5 * k
-      ..color = ink.withValues(alpha: 0.22));
-
-    for (final r in regions) {
-      final p = _project(_d(r['lat']), _d(r['lng']), size);
-      final small = r['slug'] == 'kyiv';
-      final lit = r['active'] == true && showAlerts;
-      final color = lit ? (alertColors[text(r['type']) ?? 'air_raid'] ?? alertColors['air_raid']!) : ink.withValues(alpha: 0.18);
-      final radius = (small ? 10 : 24) * k;
-      if (lit && pulse > 0) {
-        canvas.drawCircle(p, radius * (1 + 0.8 * pulse), Paint()..color = color.withValues(alpha: 0.35 * (1 - pulse)));
-      }
-      canvas.drawCircle(p, radius, Paint()..color = lit ? color.withValues(alpha: 0.55) : ink.withValues(alpha: 0.06));
-      canvas.drawCircle(p, radius, Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = (r['slug'] == mine ? 3 : 1.5) * k
-        ..color = r['slug'] == mine ? ink : color);
-    }
-
-    for (final t in threats) {
-      if (t['region'] == null) continue;
-      final origin = _project(_d(t['lat']), _d(t['lng']), size);
-      final pos = threatPosition(t, now);
-      final p = _project(pos.lat, pos.lng, size);
-      final color = (threatColors[text(t['type'])] ?? const Color(0xFF38BDF8)).withValues(alpha: 0.45 + intOf(t['confidence']) / 100 * 0.55);
-      if ((p - origin).distance > 1) {
-        // Слід від точки виявлення до розрахункового місця.
-        canvas.drawLine(origin, p, Paint()
-          ..color = color.withValues(alpha: 0.35)
-          ..strokeWidth = 2 * k);
-      }
-      final course = t['course'];
-      if (course is num) {
-        final rad = course * math.pi / 180;
-        final tip = p + Offset(math.sin(rad), -math.cos(rad)) * 46 * k;
-        final line = Paint()
-          ..color = color
-          ..strokeWidth = 3 * k;
-        // Пунктир курсу.
-        const dashes = 6;
-        for (var i = 0; i < dashes; i++) {
-          if (i.isOdd) continue;
-          canvas.drawLine(Offset.lerp(p, tip, i / dashes)!, Offset.lerp(p, tip, (i + 1) / dashes)!, line);
-        }
-        canvas.drawCircle(tip, 4.5 * k, Paint()..color = color);
-      }
-      canvas.drawCircle(p, 9 * k, Paint()..color = color);
-      canvas.drawCircle(p, 9 * k, Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2.5 * k
-        ..color = const Color(0xFF0B1220));
-    }
-  }
-
-  @override
-  bool shouldRepaint(_AlertMapPainter old) =>
-      old.pulse != pulse || old.now != now || old.regions != regions || old.threats != threats || old.mine != mine || old.showAlerts != showAlerts || old.ink != ink;
 }
 
 /// Кнопка «Мапа тривог» (як на сайті): контур України в кольорах прапора, області з тривогою
