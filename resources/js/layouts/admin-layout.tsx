@@ -632,7 +632,7 @@ export default function AdminLayout({ children }: PropsWithChildren) {
             <main
                 id="main-content"
                 className={cn(
-                    'px-4 py-6 transition-[margin] duration-300 sm:px-6 lg:px-8 lg:py-8',
+                    'gc-flat px-4 py-6 transition-[margin] duration-300 sm:px-6 lg:px-8 lg:py-8',
                     rail ? 'lg:ml-[92px]' : 'lg:ml-[276px]',
                     current && 'pb-28 lg:pb-28',
                 )}
