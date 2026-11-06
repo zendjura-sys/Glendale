@@ -44,7 +44,7 @@ import { Comments } from './comments';
 import { RoleBadge } from '@/components/communities/role-badge';
 import { CommunityAvatar } from './community-avatar';
 import { ReactionBar } from './reaction-bar';
-import { MediaGrid } from './media-grid';
+import { Lightbox, MediaGrid } from './media-grid';
 import { UserAvatar } from './user-avatar';
 import { usePlugin } from '@/lib/plugins';
 import { nameDisplayProps, PlusBadge } from './plus';
@@ -79,6 +79,10 @@ export function PostCard({
     );
     const [likes, setLikes] = useState(post.likes_count);
     const [commentsCount, setCommentsCount] = useState(post.comments_count);
+    // Фото як тло картки: перше зображення запису заповнює картку, текст і дії — поверх нього.
+    const cover =
+        post.attachments[0]?.type === 'image' ? post.attachments[0] : null;
+    const [viewer, setViewer] = useState<number | null>(null);
     const [showComments, setShowComments] = useState(
         expanded || post.comments.length > 0,
     );
@@ -149,8 +153,47 @@ export function PostCard({
     return (
         <article
             ref={articleRef}
-            className="gc-post animate-rise px-4 py-4 data-[hotkey-focus]:rounded-2xl data-[hotkey-focus]:ring-1 data-[hotkey-focus]:ring-primary/40 sm:px-5"
+            data-on-dark={cover ? true : undefined}
+            className={cn(
+                'gc-post animate-rise px-4 py-4 data-[hotkey-focus]:rounded-2xl data-[hotkey-focus]:ring-1 data-[hotkey-focus]:ring-primary/40 sm:px-5',
+                cover &&
+                    'gc-post-cover relative isolate flex min-h-[440px] flex-col overflow-hidden text-white',
+            )}
         >
+            {cover && (
+                <>
+                    {/* Фото — тло картки; затемнення вгорі й унизу, щоб текст і кнопки читалися. */}
+                    <button
+                        type="button"
+                        aria-label={tr('Відкрити фото')}
+                        onClick={() => setViewer(0)}
+                        className="absolute inset-0 -z-10 cursor-zoom-in"
+                    >
+                        <img
+                            src={cover.url}
+                            alt=""
+                            loading="lazy"
+                            decoding="async"
+                            className="size-full object-cover"
+                        />
+                    </button>
+                    <span
+                        aria-hidden
+                        className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-32 bg-gradient-to-b from-black/60 to-transparent"
+                    />
+                    <span
+                        aria-hidden
+                        className="pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-[70%] bg-gradient-to-t from-black/90 via-black/55 to-transparent"
+                    />
+                    {viewer !== null && (
+                        <Lightbox
+                            items={post.attachments}
+                            index={viewer}
+                            onClose={() => setViewer(null)}
+                        />
+                    )}
+                </>
+            )}
             <header className="flex items-start gap-3">
                 <Link href={publisherHref} className="shrink-0">
                     {post.publisher ? (
@@ -410,6 +453,16 @@ export function PostCard({
                     </DropdownMenuContent>
                 </DropdownMenu>
             </header>
+            {/* Вільне місце над текстом — сюди видно фото; дотик відкриває його. */}
+            {cover && (
+                <button
+                    type="button"
+                    aria-hidden
+                    tabIndex={-1}
+                    onClick={() => setViewer(0)}
+                    className="min-h-[180px] flex-1 cursor-zoom-in"
+                />
+            )}
 
             {seriesOpen && (
                 <SeriesPicker
@@ -640,11 +693,40 @@ export function PostCard({
                 </Link>
             )}
 
-            {post.attachments.length > 0 && (
-                <div className="mt-3.5">
-                    <MediaGrid items={post.attachments} />
-                </div>
-            )}
+            {cover
+                ? post.attachments.length > 1 && (
+                      // Решта фото — мініатюри поверх тла.
+                      <div className="mt-3 flex gap-2 overflow-x-auto">
+                          {post.attachments.slice(1).map((item, index) => (
+                              <button
+                                  key={item.id}
+                                  type="button"
+                                  onClick={() => setViewer(index + 1)}
+                                  className="size-14 shrink-0 overflow-hidden rounded-xl ring-1 ring-white/30"
+                              >
+                                  {item.type === 'image' ? (
+                                      <img
+                                          src={item.url}
+                                          alt=""
+                                          loading="lazy"
+                                          className="size-full object-cover"
+                                      />
+                                  ) : (
+                                      <video
+                                          src={item.url}
+                                          muted
+                                          className="size-full object-cover"
+                                      />
+                                  )}
+                              </button>
+                          ))}
+                      </div>
+                  )
+                : post.attachments.length > 0 && (
+                      <div className="mt-3.5">
+                          <MediaGrid items={post.attachments} />
+                      </div>
+                  )}
 
             {post.music && <MusicCard track={post.music} className="mt-3.5" />}
 
@@ -838,7 +920,12 @@ export function PostCard({
             </footer>
 
             {showComments && (
-                <div className="mt-3">
+                <div
+                    className={cn(
+                        'mt-3',
+                        cover && 'rounded-2xl bg-black/50 p-3 backdrop-blur-md',
+                    )}
+                >
                     <Comments
                         endpoint={`/posts/${post.id}/comments`}
                         initial={post.comments}

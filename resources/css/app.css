@@ -5281,7 +5281,7 @@ iframe {
 /* ---------- Оболонка: ліве меню без картки, як на vk.com ---------- */
 :root.gc-vk .gc-vk-shell {
     padding-top: calc(82px + env(safe-area-inset-top)) !important;
-    gap: 16px;
+    gap: 12px;
 }
 :root.gc-vk .gc-sidebar-glass {
     top: calc(82px + env(safe-area-inset-top)) !important;
@@ -5697,4 +5697,35 @@ html.gc-vk[data-theme='dark'] {
 }
 .gc-bento-row:not(:has(> .gc-bento-tile:not(:empty))) {
     display: none;
+}
+
+/* Запис із фото-тлом: дії, поля й мітки — напівпрозорі «скляні» поверх фото, текст білий. */
+.gc-post-cover .gc-vk-pill {
+    background: rgb(255 255 255 / 0.16);
+    color: #fff;
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+}
+.gc-post-cover .gc-vk-pill:hover,
+.gc-post-cover .gc-vk-pill.is-on {
+    background: rgb(255 255 255 / 0.28);
+    color: #fff;
+}
+:root.gc-vk .gc-post-cover :is(.input-glass, [data-slot='input'], textarea) {
+    background-color: rgb(255 255 255 / 0.12) !important;
+    border-color: rgb(255 255 255 / 0.18) !important;
+    color: #fff;
+}
+.gc-post-cover :is(p, span, a, time, button) {
+    text-shadow: 0 1px 8px rgb(0 0 0 / 0.35);
+}
+
+/* Щільніша сітка: між картками сторінки й у колонках — 12px замість 16. */
+:root.gc-vk .gc-vk-shell :is(.space-y-4, .space-y-5) > :not(:last-child) {
+    margin-block-end: 12px;
+}
+:root.gc-vk .gc-vk-shell :is(.gap-4, .gap-5).gc-bento,
+:root.gc-vk .gc-vk-shell .gc-bento-row,
+:root.gc-vk .gc-vk-shell main > div > .flex.gap-5 {
+    gap: 12px;
 }
