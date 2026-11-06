@@ -59,6 +59,30 @@ final class AlertUnits
     }
 
     /**
+     * Район (2) чи громада (3) за назвою, коли область невідома: шукаємо по всіх областях.
+     *
+     * @return array{oblast: string, code: string}|null
+     */
+    public static function locate(int $level, string $name, ?string $oblast = null): ?array
+    {
+        if ($oblast !== null) {
+            $code = self::find($oblast, $level, $name);
+
+            return $code !== null ? ['oblast' => $oblast, 'code' => $code] : null;
+        }
+        $key = self::normalize($name);
+        $hits = [];
+        foreach (self::all() as $code => [$unitName, $unitLevel, $unitOblast]) {
+            if ($unitLevel === $level && self::normalize($unitName) === $key) {
+                $hits[] = ['oblast' => $unitOblast, 'code' => $code];
+            }
+        }
+
+        // Однакові назви в різних областях без підказки — не вгадуємо.
+        return count($hits) === 1 ? $hits[0] : null;
+    }
+
+    /**
      * Коди районів області (для тривоги на всю область).
      *
      * @return list<string>

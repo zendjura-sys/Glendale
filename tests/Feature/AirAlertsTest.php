@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\AirThreat;
 use App\Models\User;
+use App\Services\Alerts\AirAlertChannel;
 use App\Services\Alerts\AirAlertService;
 use App\Support\Settings\SiteSettings;
 use Carbon\CarbonImmutable;
@@ -214,5 +215,93 @@ class AirAlertsTest extends TestCase
         // Хімічна загроза — свій вид.
         $this->assertSame('chemical', $units['UA59100000000036457']['kind']);
         $this->assertSame('chemical', $regions['sumy']['type']);
+    }
+
+    public function test_status_without_key_from_official_channel(): void
+    {
+        $post = fn (int $id, string $text, int $minutesAgo) => '<div class="tgme_widget_message_wrap js-widget_message_wrap"><div class="tgme_widget_message" data-post="air_alert_ua/'.$id.'">'
+            .'<div class="tgme_widget_message_text js-message_text" dir="auto">'.$text.'</div>'
+            .'<time datetime="'.now()->subMinutes($minutesAgo)->toIso8601String().'" class="time">10:00</time></div></div>';
+        $html = $post(101, '🔴 10:00 Повітряна тривога в Харківська область.<br/>Слідкуйте за подальшими повідомленнями.<br/>#Харківська_область', 30)
+            .$post(102, '🔴 10:05 Повітряна тривога в Бучанський район.<br/>#Київська_область', 25)
+            .$post(103, '🟡 10:06 Загроза артобстрілу в Нікопольська територіальна громада.<br/>#Дніпропетровська_область', 24)
+            .$post(104, '🔴 10:07 Повітряна тривога в Шосткинський район.<br/>#Сумська_область', 23)
+            .$post(105, '🟢 10:20 Відбій тривоги в Шосткинський район.<br/>#Сумська_область', 10);
+        Http::fake(function ($request) use ($html) {
+            return str_contains($request->url(), 't.me/s/air_alert_ua')
+                ? Http::response(str_contains($request->url(), 'before=') ? '' : $html)
+                : Http::response(['states' => ['Луганська область' => ['alertnow' => true, 'changed' => '2022-04-04 19:45:39'], 'Харківська область' => ['alertnow' => true]]]);
+        });
+
+        $this->artisan('alerts:sync')->assertOk();
+        $state = $this->service()->state();
+        $this->assertSame('Повітряна тривога (Telegram)', $state['source']);
+        $regions = collect($state['regions'])->keyBy('slug');
+        $units = collect($state['units'])->keyBy('code');
+        $this->assertSame('air_raid', $regions['kharkiv']['type']);
+        $this->assertSame('partial', $regions['kyiv-oblast']['type']);
+        $this->assertSame('artillery', $units['UA12080050000062712']['kind']);
+        // Відбій знімає тривогу.
+        $this->assertFalse($regions['sumy']['active']);
+        // Давня тривога, якої немає в останніх дописах, — з ubilling.
+        $this->assertTrue($regions['luhansk']['active']);
+
+        // Повторний запуск не застосовує ті самі дописи вдруге.
+        $this->assertSame(0, app(AirAlertChannel::class)->sync());
+    }
+
+    public function test_neptun_open_api_without_keys(): void
+    {
+        Http::fake([
+            'neptun.in.ua/api/v1/alerts' => Http::response([
+                'raions' => [['key' => 'odeska:odeskyi', 'name' => 'Одеський район'], ['key' => 'kyivska:buchanskyi']],
+                'oblasts' => [['key' => 'krymska', 'name' => 'Автономна Республіка Крим']],
+            ]),
+            'neptun.in.ua/api/v1/threats' => Http::response([
+                'serverTime' => now()->toIso8601String(),
+                'threats' => [
+                    ['id' => 'trk_1a2b', 'type' => 'uav', 'title' => 'Шахед', 'region' => 'Одеська область', 'district' => 'Одеський район', 'locality' => 'Чорноморськ',
+                        'lat' => 46.30, 'lon' => 30.65, 'heading' => 42, 'confidenceLevel' => 'high', 'sourceCount' => 3, 'count' => 2,
+                        'updatedAt' => now()->subMinute()->toIso8601String(), 'status' => 'active', 'explanationShort' => 'БпЛА курсом на Чорноморськ',
+                        'velocity' => ['bearingDeg' => 42, 'speedKmh' => 170], 'confirmedAt' => now()->subMinutes(5)->toIso8601String(),
+                        'uncertaintyKm' => 4, 'positionQuality' => 'confirmed', 'advisory' => false, 'areaOnly' => false],
+                    ['id' => 'trk_area', 'type' => 'missile', 'title' => 'Ракета', 'region' => 'Одеська область', 'lat' => 46.8, 'lon' => 30.2,
+                        'confidenceLevel' => 'low', 'sourceCount' => 1, 'areaOnly' => true, 'heading' => 90],
+                ],
+            ]),
+            'neptun.in.ua/api/v1/messages' => Http::response(['messages' => [['channel' => 'kpszsu', 'text' => 'БпЛА на Одещину', 'date' => now()->toIso8601String()]]]),
+            '*' => Http::response(['states' => []]),
+        ]);
+        $state = $this->service()->state();
+
+        $this->assertSame('NEPTUN', $state['source']);
+        $this->assertSame('Дані: Карта повітряних загроз NEPTUN', $state['attribution']['text']);
+        $regions = collect($state['regions'])->keyBy('slug');
+        $this->assertSame('partial', $regions['odesa']['type']);
+        $this->assertSame('air_raid', $regions['crimea']['type']);
+        $units = collect($state['units'])->keyBy('code');
+        // Райони за ключем без назви (транслітерація) теж знаходимо.
+        $this->assertTrue($units->has('UA32080000000084076'));
+        $this->assertSame(11, $units->filter(fn ($u, $code) => str_starts_with($code, 'UA01') || str_starts_with($code, 'UA85'))->count());
+
+        $shahed = collect($state['threats'])->firstWhere('place', 'Чорноморськ');
+        $this->assertSame('uav', $shahed['type']);
+        $this->assertSame('shahed', $shahed['variant']);
+        $this->assertSame(42, $shahed['course']);
+        $this->assertSame(170, $shahed['speed']);
+        $this->assertSame(2, $shahed['count']);
+        $this->assertSame(90, $shahed['confidence']);
+        $this->assertCount(3, $shahed['sources']);
+        // Лише область — без курсу й руху.
+        $area = collect($state['threats'])->firstWhere('type', 'missile');
+        $this->assertTrue($area['area_only']);
+        $this->assertNull($area['course']);
+        $this->assertSame(0, $area['speed']);
+        $this->assertSame('kpszsu', $state['feed'][0]['channel']);
+
+        // Вимкнено в налаштуваннях — NEPTUN не питаємо.
+        app(SiteSettings::class)->put(['alerts_neptun' => '0']);
+        Cache::forget('alerts.state');
+        $this->assertNotSame('NEPTUN', $this->service()->state()['source']);
     }
 }

@@ -58,6 +58,13 @@ class AirThreat extends Model
             'expires_at' => $this->expires_at->toIso8601String(),
             // Коли мітку востаннє підтвердило якесь джерело.
             'updated_at' => ($this->updated_at ?? $this->detected_at)->toIso8601String(),
+            // Точка lat/lng — місце виявлення; рух рахуємо від нього.
+            'position_at' => $this->detected_at->toIso8601String(),
+            'count' => 1,
+            'advisory' => $this->type === 'mig',
+            'area_only' => false,
+            'uncertainty_km' => null,
+            'provider' => 'gamecon',
         ];
     }
 }

@@ -61,6 +61,16 @@ export type AirThreat = {
     expires_at: string;
     /** Коли мітку востаннє підтвердило джерело. */
     updated_at: string;
+    /** Момент, коли lat/lng були точними (рух рахуємо від нього). */
+    position_at?: string;
+    /** Скільки цілей у групі (NEPTUN). */
+    count?: number;
+    /** Спостереження без сигналу ховатися (напр. зліт МіГ без тривоги) — показуємо спокійно. */
+    advisory?: boolean;
+    /** Відома лише область: точка — центр області, без курсу й руху. */
+    area_only?: boolean;
+    uncertainty_km?: number | null;
+    provider?: 'gamecon' | 'neptun';
 };
 
 /** Колір виду тривоги (без фіолетового й рожевого). */
@@ -205,11 +215,15 @@ export function threatPosition(
     threat: AirThreat,
     now: number,
 ): { lat: number; lng: number } {
-    if (threat.course === null || !threat.speed) {
+    if (threat.area_only || threat.course === null || !threat.speed) {
         return { lat: threat.lat, lng: threat.lng };
     }
     const end = Math.min(now, Date.parse(threat.expires_at));
-    const hours = Math.max(0, end - Date.parse(threat.detected_at)) / 3_600_000;
+    const hours =
+        Math.max(
+            0,
+            end - Date.parse(threat.position_at ?? threat.detected_at),
+        ) / 3_600_000;
     const km = Math.min(MAX_DRIFT_KM, threat.speed * hours);
     const rad = (threat.course * Math.PI) / 180;
     const lat = threat.lat + (km * Math.cos(rad)) / 111;
@@ -562,7 +576,10 @@ export function AlertMap({
                                     : threat;
                                 const [x, y] = project(pos.lat, pos.lng);
                                 const moved = Math.hypot(x - ox, y - oy) > 1;
-                                const color = THREAT_COLOR[threat.type];
+                                // Спостереження без тривоги — сірим, без кольору загрози.
+                                const color = threat.advisory
+                                    ? '#94a3b8'
+                                    : THREAT_COLOR[threat.type];
 
                                 return (
                                     <m.g
@@ -608,6 +625,20 @@ export function AlertMap({
                                             r={16}
                                             fill="transparent"
                                         />
+                                        {threat.area_only && (
+                                            // Лише область: пунктирне коло замість точного місця.
+                                            <circle
+                                                cx={x}
+                                                cy={y}
+                                                r={28}
+                                                fill={color}
+                                                fillOpacity={0.08}
+                                                stroke={color}
+                                                strokeOpacity={0.6}
+                                                strokeWidth={1.2}
+                                                strokeDasharray="4 4"
+                                            />
+                                        )}
                                         {threat.id === selected && (
                                             <circle
                                                 cx={x}
@@ -627,6 +658,20 @@ export function AlertMap({
                                             strokeLinejoin="round"
                                             transform={`translate(${x} ${y}) rotate(${threat.course ?? 0}) scale(1.15) translate(-12 -12)`}
                                         />
+                                        {(threat.count ?? 1) > 1 && (
+                                            <text
+                                                x={x + 13}
+                                                y={y - 9}
+                                                fontSize={11}
+                                                fontWeight={700}
+                                                fill="#ffffff"
+                                                stroke="#0b1220"
+                                                strokeWidth={3}
+                                                paintOrder="stroke"
+                                            >
+                                                ×{threat.count}
+                                            </text>
+                                        )}
                                     </m.g>
                                 );
                             })}
@@ -742,6 +787,7 @@ function ThreatCard({
                 />
                 <b className="min-w-0 flex-1 truncate text-white">
                     {threatTitle(threat)}
+                    {(threat.count ?? 1) > 1 && ` ×${threat.count}`}
                 </b>
                 <button
                     type="button"
@@ -759,9 +805,22 @@ function ThreatCard({
                     {region &&
                         threat.place !== regionName &&
                         `, ${region}`}{' '}
-                    <span className="text-white/45">{tr('(орієнтовно)')}</span>
+                    <span className="text-white/45">
+                        {threat.area_only
+                            ? tr('(відома лише область)')
+                            : threat.uncertainty_km
+                              ? tr('(± {km} км)', { km: threat.uncertainty_km })
+                              : tr('(орієнтовно)')}
+                    </span>
                 </span>
             </p>
+            {threat.advisory && (
+                <p className="mt-1.5 text-xs text-white/55">
+                    {tr(
+                        'Спостереження, а не сигнал ховатися: широкої офіційної тривоги немає.',
+                    )}
+                </p>
+            )}
             {(threat.speed > 0 || threat.course !== null) && (
                 <p className="mt-1.5 flex items-center gap-2">
                     <Gauge className="size-4 shrink-0 text-amber-300" />

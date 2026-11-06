@@ -35,6 +35,8 @@ class SiteSettings
         'ukrainealarm_token' => null,
         'alerts_monitor_channels' => '',
         'alerts_source_groups' => 'official,intel,regional,aggregators',
+        'alerts_status_channel' => 'air_alert_ua',
+        'alerts_neptun' => '1',
         'spotify_client_id' => null,
         'spotify_client_secret' => null,
         // Метадані музики: AcoustID (відбиток), Last.fm (теги, біографії), Discogs (релізи, обкладинки).

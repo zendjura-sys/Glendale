@@ -423,6 +423,18 @@ export default function Alerts(props: {
                                 </span>
                             ))}
                         </div>
+                        {state.attribution && (
+                            <p className="mt-3 text-xs">
+                                <a
+                                    href={state.attribution.url}
+                                    target="_blank"
+                                    rel="noopener"
+                                    className="text-sky-300 hover:underline"
+                                >
+                                    {state.attribution.text}
+                                </a>
+                            </p>
+                        )}
                         <p className="mt-3 text-xs text-white/40">
                             {tr(
                                 'Мапа — агрегатор відкритих джерел, а не офіційна система оповіщення. Мітки приблизні; прозоріша мітка — менше джерел її підтвердили. Рішення про укриття приймайте за офіційним сигналом тривоги.',

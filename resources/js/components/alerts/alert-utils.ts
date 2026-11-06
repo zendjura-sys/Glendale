@@ -20,6 +20,8 @@ export type AlertState = {
         at: string;
     }[];
     source: string | null;
+    /** Обов’язковий підпис-посилання на джерело (NEPTUN). */
+    attribution?: { text: string; url: string } | null;
     stale: boolean;
     updated_at: string;
 };

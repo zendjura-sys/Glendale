@@ -141,17 +141,26 @@ class AirAlertService
         foreach ($fetched['units'] as $code => $unit) {
             $units[] = ['code' => $code, 'kind' => $unit['kind'], 'started_at' => $unit['started_at']];
         }
-        $threats = AirThreat::query()->where('expires_at', '>', $now)->orderByDesc('detected_at')->limit(80)->get();
+        // Цілі й стрічка: NEPTUN (якщо відповідає), інакше власний розбір каналів.
+        $neptun = app(Neptun::class);
+        $cards = $neptun->threatCards();
+        $feed = $cards !== null ? $neptun->feed() : null;
+        $cards ??= AirThreat::query()->where('expires_at', '>', $now)->orderByDesc('detected_at')->limit(80)->get()
+            ->map(fn (AirThreat $t) => $t->toCard())->values()->all();
+        $types = array_column($cards, 'type');
 
         return [
             'regions' => $regions,
             'units' => $units,
             'active_count' => count(array_filter($regions, fn (array $r) => $r['active'])),
-            'mig_active' => $threats->contains('type', 'mig'),
-            'ballistic_threat' => $threats->contains('type', 'ballistic'),
-            'threats' => $threats->map(fn (AirThreat $t) => $t->toCard())->values()->all(),
-            'feed' => array_slice((array) Cache::get('alerts.feed', []), 0, 20),
+            'mig_active' => in_array('mig', $types, true),
+            'ballistic_threat' => in_array('ballistic', $types, true),
+            'threats' => $cards,
+            'feed' => $feed ?? array_slice((array) Cache::get('alerts.feed', []), 0, 20),
             'source' => $fetched['source'],
+            // Обов’язковий підпис-посилання, коли показуємо дані NEPTUN.
+            'attribution' => $fetched['source'] === 'NEPTUN' || $feed !== null
+                ? ['text' => Neptun::ATTRIBUTION, 'url' => Neptun::BASE.'/'] : null,
             'stale' => $fetched['stale'],
             'updated_at' => $now->toIso8601String(),
         ];
@@ -176,6 +185,14 @@ class AirAlertService
         if ($rows === null && is_string($token) && $token !== '') {
             $rows = $this->fromAlertsInUa($token);
             $source = $rows !== null ? 'alerts.in.ua' : null;
+        }
+        if ($rows === null) {
+            $rows = app(Neptun::class)->alertRows();
+            $source = $rows !== null ? 'NEPTUN' : null;
+        }
+        if ($rows === null) {
+            $rows = $this->fromChannel();
+            $source = $rows !== null ? 'Повітряна тривога (Telegram)' : null;
         }
         if ($rows === null) {
             $rows = $this->fromUbilling();
@@ -392,6 +409,29 @@ class AirAlertService
     }
 
     /**
+     * Без ключів: офіційний канал «Повітряна тривога» (райони й громади, види тривог). Давні тривоги, яких уже
+     * немає серед останніх дописів (окуповані території тощо), доповнюємо областями з ubilling.
+     *
+     * @return list<array{oblast: string, level: int, code: string|null, kind: string, started_at: string|null}>|null
+     */
+    private function fromChannel(): ?array
+    {
+        $channel = app(AirAlertChannel::class);
+        if (! $channel->fresh()) {
+            return null;
+        }
+        $rows = $channel->rows();
+        $covered = array_flip(array_column($rows, 'oblast'));
+        foreach ($this->fromUbilling() ?? [] as $row) {
+            if (! isset($covered[$row['oblast']])) {
+                $rows[] = $row;
+            }
+        }
+
+        return $rows;
+    }
+
+    /**
      * Запасне відкрите джерело ubilling (лише області): {"states": {"Київська область": {"alertnow": true, "changed": "…"}}}.
      *
      * @return list<array{oblast: string, level: int, code: string|null, kind: string, started_at: string|null}>|null
@@ -458,8 +498,15 @@ class AirAlertService
      */
     public function syncThreats(): array
     {
+        // Стан тривог з офіційного каналу — лише коли немає ключа API (з ключем він не потрібен).
+        if (blank($this->settings->get('ukrainealarm_token')) && blank($this->settings->get('alerts_in_ua_token'))) {
+            rescue(fn () => app(AirAlertChannel::class)->sync(), report: false);
+            Cache::forget('alerts.state');
+        }
         $created = 0;
-        foreach ($this->fetchChannels($this->channelsForRun()) as $post) {
+        // Цілі вже дає NEPTUN — власний розбір десятків каналів не потрібен (запасний шлях, коли він мовчить).
+        $posts = app(Neptun::class)->threatCards() === null ? $this->fetchChannels($this->channelsForRun()) : [];
+        foreach ($posts as $post) {
             $created += $this->ingest($post) ? 1 : 0;
         }
         AirThreat::query()->where('expires_at', '<', now()->subDay())->delete();
