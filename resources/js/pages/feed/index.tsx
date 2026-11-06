@@ -1,4 +1,5 @@
 import { Group, Tabs, TabsItem } from '@vkontakte/vkui';
+import { BentoGrid, BentoRow, BentoTile } from '@/components/gc/bento';
 import {
     Deferred,
     Head,
@@ -177,15 +178,39 @@ export default function Feed({
             <Head title={tr('Новини')} />
             <div className="flex gap-5">
                 <div className="min-w-0 flex-1 space-y-4 min-[1920px]:max-w-none! xl:max-w-[640px]">
-                    {storiesOn && <StoriesBar />}
-                    <WrappedBanner />
-                    <div className="xl:hidden">
-                        <EngagementCard />
-                    </div>
-                    {liveOn && <FriendsLive streams={streaming ?? []} />}
-                    <ReadyToPlayCard className="xl:hidden" />
-                    <FeedQuests quests={quests ?? []} />
-                    <TomorrowCard events={tomorrow ?? []} />
+                    {/* Bento Grid: верх стрічки — плитки різного розміру. Серія днів і «Готові грати»
+                        живуть тут (у правій колонці їх більше немає — без дублікатів). */}
+                    <BentoGrid>
+                        {storiesOn && (
+                            <BentoTile>
+                                <StoriesBar />
+                            </BentoTile>
+                        )}
+                        <BentoTile>
+                            <WrappedBanner />
+                        </BentoTile>
+                        <BentoRow>
+                            <BentoTile span={4}>
+                                <ReadyToPlayCard />
+                            </BentoTile>
+                            <BentoTile span={2}>
+                                <EngagementCard />
+                            </BentoTile>
+                        </BentoRow>
+                        <BentoRow>
+                            <BentoTile span={4}>
+                                <FeedQuests quests={quests ?? []} />
+                            </BentoTile>
+                            <BentoTile span={2}>
+                                <TomorrowCard events={tomorrow ?? []} />
+                            </BentoTile>
+                        </BentoRow>
+                        {liveOn && (
+                            <BentoTile>
+                                <FriendsLive streams={streaming ?? []} />
+                            </BentoTile>
+                        )}
+                    </BentoGrid>
                     {(picks?.length ?? 0) > 0 && (
                         <div className="flex gap-2 overflow-x-auto">
                             {picks?.map((pick) => (
@@ -335,10 +360,10 @@ export default function Feed({
                 <aside className="gc-split-hide sticky top-[76px] hidden h-fit w-[320px] shrink-0 space-y-4 min-[1920px]:w-[360px] xl:block">
                     {homeWidgets.map((key) => {
                         switch (key) {
+                            // Серія днів і «Готові грати» — у Bento-сітці стрічки.
                             case 'streak':
-                                return <EngagementCard key={key} />;
                             case 'ready':
-                                return <ReadyToPlayCard key={key} />;
+                                return null;
                             case 'online':
                                 return (
                                     <div key={key}>

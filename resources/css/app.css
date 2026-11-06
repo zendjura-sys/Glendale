@@ -5682,3 +5682,19 @@ html.gc-vk[data-theme='dark'] {
     --color-gc-lilac-400: #ff7a50;
     --color-gc-lilac-300: #ff8a5c;
 }
+
+/* Bento Grid: порожня плитка (компонент нічого не показав) не займає клітинку; картка заповнює плитку. */
+.gc-bento-tile:empty {
+    display: none;
+}
+.gc-bento-tile > * {
+    height: 100%;
+}
+@media (min-width: 640px) {
+    .gc-bento-row:has(> .gc-bento-tile:empty) > .gc-bento-tile {
+        grid-column: span 6 / span 6;
+    }
+}
+.gc-bento-row:not(:has(> .gc-bento-tile:not(:empty))) {
+    display: none;
+}
