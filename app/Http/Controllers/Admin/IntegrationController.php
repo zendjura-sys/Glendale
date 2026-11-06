@@ -206,8 +206,16 @@ class IntegrationController extends Controller
     public function testCinema(string $provider): RedirectResponse
     {
         $meta = $this->cinemaProviders()[$provider] ?? abort(404);
-        $ok = $meta['configured'] && ($meta['test'])();
+        $result = $meta['configured'] ? ($meta['test'])() : false;
         Cache::forget('cinema.meta.down.'.$provider);
+        // Детальна перевірка повертає ['ok', 'message'] — показуємо, що саме відповіло.
+        if (is_array($result)) {
+            Log::info('admin: integration test', ['provider' => $provider, 'ok' => $result['ok']]);
+            Inertia::flash('toast', ['type' => $result['ok'] ? 'success' : 'error', 'message' => $meta['label']."\n".$result['message']]);
+
+            return back();
+        }
+        $ok = $result === true;
 
         Inertia::flash('toast', $ok
             ? ['type' => 'success', 'message' => $meta['label'].' відповідає — підключення працює ✅']
@@ -727,9 +735,10 @@ class IntegrationController extends Controller
                     'Групи джерел цілей — через кому: official, intel, regional, aggregators. Власні канали — через кому, без @.',
                     'Натисніть «Перевірити».',
                 ],
-                'configured' => filled($this->settings->get('ukrainealarm_token')) || filled($this->settings->get('alerts_in_ua_token')),
+                // Без ключів працюють відкриті джерела (NEPTUN, офіційний канал), тож картка налаштована й так.
+                'configured' => true,
                 'stat' => null,
-                'test' => fn () => app(AirAlertService::class)->test(),
+                'test' => fn () => app(AirAlertService::class)->diagnose(),
                 'fields' => [
                     ['name' => 'official', 'setting' => 'ukrainealarm_token', 'type' => 'secret', 'label' => 'Ключ UkraineAlarm',
                         'rules' => ['nullable', 'string', 'regex:/^[A-Za-z0-9_\-\.:]{16,200}$/'], 'message' => 'Ключ — латинські літери, цифри, «-», «_», «:» і «.».'],
@@ -737,6 +746,13 @@ class IntegrationController extends Controller
                         'rules' => ['nullable', 'string', 'regex:/^[A-Za-z0-9_\-\.]{16,200}$/'], 'message' => 'Токен — латинські літери, цифри, «-», «_» і «.».'],
                     ['name' => 'channels', 'setting' => 'alerts_monitor_channels', 'type' => 'text', 'label' => 'Додаткові канали',
                         'rules' => ['nullable', 'string', 'max:500', 'regex:/^[A-Za-z0-9_,@\s]*$/'], 'message' => 'Назви каналів латиницею через кому.'],
+                    ['name' => 'visibility', 'setting' => 'alerts_visibility', 'type' => 'select', 'label' => 'Кому показувати мапу',
+                        'options' => [
+                            ['value' => 'ukraine', 'label' => 'Людям з України (IP, країна, мова, обрана область)'],
+                            ['value' => 'all', 'label' => 'Усім'],
+                            ['value' => 'admins', 'label' => 'Лише адміністраторам (перевірка)'],
+                        ],
+                        'rules' => ['nullable', 'in:ukraine,all,admins'], 'message' => 'Оберіть варіант зі списку.'],
                     ['name' => 'neptun', 'setting' => 'alerts_neptun', 'type' => 'text', 'label' => 'NEPTUN (1 — увімкнено, 0 — вимкнено)',
                         'rules' => ['nullable', 'in:0,1'], 'message' => 'Лише 1 або 0.'],
                     ['name' => 'status_channel', 'setting' => 'alerts_status_channel', 'type' => 'text', 'label' => 'Канал статусу тривог (без ключа)',

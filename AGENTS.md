@@ -70,3 +70,4 @@ vendor/bin/pint && npm run check && npm run types:check && npm run i18n:check
 vendor/bin/phpstan analyse --memory-limit=2G
 php artisan test          # LinkPreviewPhotosTest без интернета падает — это известно
 cd mobile && flutter analyze && flutter test
+```

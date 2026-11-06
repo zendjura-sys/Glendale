@@ -304,4 +304,33 @@ class AirAlertsTest extends TestCase
         Cache::forget('alerts.state');
         $this->assertNotSame('NEPTUN', $this->service()->state()['source']);
     }
+
+    public function test_visibility_modes_and_source_diagnostics(): void
+    {
+        Http::fake([
+            'neptun.in.ua/api/v1/alerts' => Http::response(['raions' => [], 'oblasts' => [['key' => 'krymska']]]),
+            'neptun.in.ua/api/v1/threats' => Http::response(['threats' => []]),
+            '*' => Http::response(['states' => []]),
+        ]);
+        $foreign = User::factory()->create(['country' => 'PL', 'locale' => 'en']);
+        $admin = User::factory()->admin()->create(['country' => 'PL', 'locale' => 'en']);
+        $speaker = User::factory()->create(['country' => null, 'locale' => 'uk']);
+        $this->actingAs($foreign)->getJson('/alerts/state')->assertNotFound();
+        // Українська мова інтерфейсу — теж ознака (IP може не визначитись).
+        $this->actingAs($speaker)->getJson('/alerts/state')->assertOk();
+
+        app(SiteSettings::class)->put(['alerts_visibility' => 'admins']);
+        $this->actingAs($speaker)->getJson('/alerts/state')->assertNotFound();
+        $this->actingAs($admin)->getJson('/alerts/state')->assertOk();
+        app(SiteSettings::class)->put(['alerts_visibility' => 'all']);
+        $this->actingAs($foreign)->getJson('/alerts/state')->assertOk();
+
+        // Перевірка в адмінці: картка налаштована без ключів, тост перелічує джерела.
+        $this->actingAs($admin)->post('/admin/integrations/cinema/air_alerts/test')->assertRedirect();
+        $toast = session('inertia.flash_data.toast') ?? session('inertia.flash.toast') ?? collect(session()->all())->flatten(5)->first(fn ($v) => is_string($v) && str_contains($v, 'NEPTUN'));
+        $message = is_array($toast) ? $toast['message'] : (string) $toast;
+        $this->assertStringContainsString('UkraineAlarm: ключ не задано', $message);
+        $this->assertStringContainsString('✅ NEPTUN тривоги', $message);
+        $this->assertStringContainsString('Зараз мапа бере тривоги з: NEPTUN', $message);
+    }
 }

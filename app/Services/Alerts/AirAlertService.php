@@ -97,7 +97,16 @@ class AirAlertService
             return false;
         }
         $user ??= $request->user();
-        if ($user instanceof User && ($user->country === 'UA' || is_string($user->pref('alert_region')))) {
+        // Кому показувати — налаштування в Адмінка → Інтеграції → «Мапа тривог».
+        $mode = (string) ($this->settings->get('alerts_visibility') ?: 'ukraine');
+        if ($mode === 'all') {
+            return true;
+        }
+        if ($mode === 'admins') {
+            return $user instanceof User && $user->isAdmin();
+        }
+        // Україна: країна в профілі, обрана область, українська мова інтерфейсу або IP з України.
+        if ($user instanceof User && ($user->country === 'UA' || is_string($user->pref('alert_region')) || $user->locale === 'uk')) {
             return true;
         }
 
@@ -174,8 +183,8 @@ class AirAlertService
      */
     public function fetchAlerts(): array
     {
-        $official = $this->settings->get('ukrainealarm_token');
-        $token = $this->settings->get('alerts_in_ua_token');
+        $official = $this->settings->secret('ukrainealarm_token');
+        $token = $this->settings->secret('alerts_in_ua_token');
         $rows = null;
         $source = null;
         if (is_string($official) && $official !== '') {
@@ -499,7 +508,7 @@ class AirAlertService
     public function syncThreats(): array
     {
         // Стан тривог з офіційного каналу — лише коли немає ключа API (з ключем він не потрібен).
-        if (blank($this->settings->get('ukrainealarm_token')) && blank($this->settings->get('alerts_in_ua_token'))) {
+        if (blank($this->settings->secret('ukrainealarm_token')) && blank($this->settings->secret('alerts_in_ua_token'))) {
             rescue(fn () => app(AirAlertChannel::class)->sync(), report: false);
             Cache::forget('alerts.state');
         }
@@ -893,17 +902,69 @@ class AirAlertService
         return $count;
     }
 
-    /** Перевірка ключа для картки інтеграції. */
+    /**
+     * Перевірка всіх джерел для кнопки «Перевірити» в адмінці: що відповіло, що ні й чому.
+     *
+     * @return array{ok: bool, message: string}
+     */
+    public function diagnose(): array
+    {
+        $lines = [];
+        $ok = false;
+        $check = function (string $label, ?string $secret, callable $fetch) use (&$lines, &$ok): void {
+            if ($secret !== null && $secret === '') {
+                $lines[] = '— '.$label.': ключ не задано';
+
+                return;
+            }
+            try {
+                $rows = $fetch();
+            } catch (Throwable $e) {
+                $rows = null;
+            }
+            if ($rows === null) {
+                $lines[] = '❌ '.$label.': '.($secret !== null ? 'ключ відхилено або сервіс недоступний' : 'недоступний');
+
+                return;
+            }
+            $ok = true;
+            $lines[] = '✅ '.$label.': відповідає'.(is_int($rows) ? ', записів: '.$rows : '');
+        };
+        $official = (string) $this->settings->secret('ukrainealarm_token');
+        $token = (string) $this->settings->secret('alerts_in_ua_token');
+        $check('UkraineAlarm', $official, fn () => ($r = $this->fromUkraineAlarm($official)) === null ? null : count($r));
+        $check('alerts.in.ua', $token, fn () => ($r = $this->fromAlertsInUa($token)) === null ? null : count($r));
+        $neptun = app(Neptun::class);
+        if (! $neptun->enabled()) {
+            $lines[] = '— NEPTUN: вимкнено в налаштуваннях';
+        } else {
+            Cache::forget('alerts.neptun.'.md5('/api/v1/alerts'));
+            Cache::forget('alerts.neptun.'.md5('/api/v1/threats'));
+            $check('NEPTUN тривоги', null, fn () => ($r = $neptun->alertRows()) === null ? null : count($r));
+            $check('NEPTUN цілі', null, fn () => ($r = $neptun->threatCards()) === null ? null : count($r));
+        }
+        $channel = app(AirAlertChannel::class)->channel();
+        $check('Канал @'.$channel, null, function () use ($channel) {
+            $response = Http::timeout(6)->get('https://t.me/s/'.$channel);
+
+            return $response->successful() ? count($this->parseChannel($response->body())) : null;
+        });
+        $check('ubilling', null, fn () => ($r = $this->fromUbilling()) === null ? null : count($r));
+        Cache::forget('alerts.state');
+        $source = $this->fetchAlerts()['source'];
+        $lines[] = $source !== null ? 'Зараз мапа бере тривоги з: '.$source : 'Жодне джерело тривог зараз не відповідає — мапа покаже останній збережений стан.';
+        $lines[] = 'Показ: '.match ((string) ($this->settings->get('alerts_visibility') ?: 'ukraine')) {
+            'all' => 'усім',
+            'admins' => 'лише адміністраторам',
+            default => 'людям з України (IP, країна в профілі, українська мова чи обрана область)',
+        }.(app(Plugins::class)->on('air_alerts') ? '' : ' · ⚠️ плагін «Мапа тривог» вимкнено в Плагінах');
+
+        return ['ok' => $ok, 'message' => implode("\n", $lines)];
+    }
+
+    /** Чи працює бодай одне джерело (для картки інтеграції). */
     public function test(): bool
     {
-        try {
-            $official = (string) $this->settings->get('ukrainealarm_token');
-            $token = (string) $this->settings->get('alerts_in_ua_token');
-
-            return ($official !== '' && $this->fromUkraineAlarm($official) !== null)
-                || ($token !== '' && $this->fromAlertsInUa($token) !== null);
-        } catch (Throwable) {
-            return false;
-        }
+        return $this->diagnose()['ok'];
     }
 }

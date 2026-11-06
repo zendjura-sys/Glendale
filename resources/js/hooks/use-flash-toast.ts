@@ -13,6 +13,17 @@ export function useFlashToast(): void {
                 return;
             }
 
+            // Багаторядкове повідомлення (напр. перевірка джерел) — перший рядок заголовком, решта списком.
+            const [title, ...rest] = data.message.split('\n');
+            if (rest.length > 0) {
+                toast[data.type](title, {
+                    description: rest.join('\n'),
+                    duration: 15_000,
+                    classNames: { description: 'whitespace-pre-line' },
+                });
+                return;
+            }
+
             toast[data.type](data.message);
         });
     }, []);
