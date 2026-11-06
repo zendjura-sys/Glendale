@@ -14,23 +14,16 @@ import {
     TriangleAlert,
     Eye,
     PanelBottom,
-    MessageCircle,
     MessageSquareHeart,
     Settings,
     ShieldCheck,
     UserRound,
-    UsersRound,
     Headset,
 } from 'lucide-react';
+import { Badge, Counter, Tabbar, TabbarItem } from '@vkontakte/vkui';
 import { useCallback, useEffect, useState } from 'react';
-import type { PropsWithChildren, ReactNode } from 'react';
-import {
-    AnimatePresence,
-    m,
-    useDragControls,
-    useReducedMotion,
-} from 'motion/react';
-import type { PanInfo } from 'motion/react';
+import type { PropsWithChildren } from 'react';
+import { AnimatePresence, m, useReducedMotion } from 'motion/react';
 import { motionOr, SNAP } from '@/lib/motion';
 import { SiteBackground } from '@/components/backgrounds/site-background';
 import { Seasonal } from '@/components/gc/seasonal';
@@ -92,6 +85,7 @@ import {
     openShortcuts,
 } from '@/components/gc/site-extras';
 import { SiteFooter } from '@/components/gc/site-footer';
+import { VkProvider } from '@/components/vk/vk-provider';
 
 function useIsActive() {
     const { currentUrl } = useCurrentUrl();
@@ -168,7 +162,9 @@ function Sidebar() {
                         >
                             <ModuleIcon
                                 name={item.icon}
-                                className="size-[19px] shrink-0"
+                                animated
+                                size={20}
+                                className="shrink-0"
                             />
                             <span className="flex-1 truncate">
                                 {item.label}
@@ -389,7 +385,7 @@ function Topbar() {
                         className={iconButton}
                         aria-label={tr('Заявки в друзі')}
                     >
-                        <UsersRound className="size-[20px]" />
+                        <ModuleIcon name="users-round" animated size={20} />
                         {!!counters?.friend_requests && (
                             <span className="absolute top-1 right-1 flex min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[11px] leading-4 font-bold text-white">
                                 {counters.friend_requests}
@@ -408,7 +404,11 @@ function Topbar() {
                                     : tr('Повідомлення')
                             }
                         >
-                            <MessageCircle className="size-[20px]" />
+                            <ModuleIcon
+                                name="message-circle"
+                                animated
+                                size={20}
+                            />
                             {unreadMessages > 0 && (
                                 <span
                                     aria-hidden
@@ -458,76 +458,15 @@ function useMobileSplit<T extends { key: string }>(items: T[]) {
     return { primary, rest: items.filter((i) => !primary.includes(i)) };
 }
 
-/** Пункт нижньої панелі: іконка й підпис; вибраний — кольором акценту, без підкладок. */
-function TabItem({
-    href,
-    onClick,
-    expanded,
-    active,
-    badge,
-    label,
-    icon,
-}: {
-    href?: string;
-    onClick?: () => void;
-    expanded?: boolean;
-    active: boolean;
-    badge: number;
-    label: string;
-    icon: ReactNode;
-}) {
-    const className = cn(
-        'gc-tab glass-matte-tab relative flex min-h-12 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-full pt-1 text-[11px] font-medium transition-colors active:opacity-70',
-        active && 'is-active',
-    );
-    const body = (
-        <>
-            <span className="relative">
-                {icon}
-                {badge > 0 && (
-                    <span className="absolute -top-1 -right-2.5 min-w-4 rounded-full bg-rose-500 px-1 text-center text-[10px] leading-4 font-bold text-white">
-                        {badge > 99 ? '99+' : badge}
-                    </span>
-                )}
-            </span>
-            <span className="max-w-full truncate px-0.5">{label}</span>
-        </>
-    );
-
-    return href ? (
-        <Link
-            href={href}
-            // На телефоні наведення немає: сторінку підтягуємо вже на дотику, до відпускання пальця.
-            prefetch={['hover', 'click']}
-            aria-current={active ? 'page' : undefined}
-            className={className}
-        >
-            {body}
-        </Link>
-    ) : (
-        <button
-            type="button"
-            onClick={onClick}
-            aria-expanded={expanded}
-            data-test="mobile-menu"
-            className={className}
-        >
-            {body}
-        </button>
-    );
-}
-
 /**
- * Нижня панель-острів (як у iOS 26): капсула з вкладками й «язичком» угорі. Замість кнопки «Меню»
- * острів тягнеться вгору — за язичок, свайпом по панелі або тапом — і розгортається в меню з рештою
- * розділів; вкладки лишаються внизу того самого острова. Згорнути: свайп униз, тап по затемненню, Esc.
+ * Нижня панель на телефоні — Tabbar з VKUI, як у мобільному VK: закріплені розділи й «Меню».
+ * «Меню» відкриває шторку з рештою розділів над панеллю. Закрити: тап по затемненню, Esc, перехід.
  */
 function MobileNav() {
     const isActive = useIsActive();
     const items = useNavItems();
     const [open, setOpen] = useState(false);
     const reduce = useReducedMotion();
-    const drag = useDragControls();
     const close = useCallback(() => setOpen(false), []);
 
     const { primary, rest } = useMobileSplit(items);
@@ -549,114 +488,82 @@ function MobileNav() {
         };
     }, [open, close]);
 
-    const onDragEnd = (_: unknown, info: PanInfo) => {
-        if (!open && (info.offset.y < -24 || info.velocity.y < -300)) {
-            setOpen(true);
-        } else if (open && (info.offset.y > 48 || info.velocity.y > 400)) {
-            setOpen(false);
-        }
-    };
+    const counter = (n: number) =>
+        n > 0 ? (
+            <Counter size="s" mode="primary" appearance="accent-red">
+                {n > 99 ? '99+' : n}
+            </Counter>
+        ) : undefined;
 
     return (
-        <>
+        <div className="md:hidden">
             <AnimatePresence>
                 {open && (
-                    <m.button
-                        type="button"
-                        aria-label={tr('Закрити меню')}
-                        onClick={close}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: reduce ? 0 : 0.2 }}
-                        className="fixed inset-0 z-[54] bg-black/45 md:hidden"
-                    />
+                    <>
+                        <m.button
+                            type="button"
+                            aria-label={tr('Закрити меню')}
+                            onClick={close}
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: reduce ? 0 : 0.2 }}
+                            className="fixed inset-0 z-[54] bg-black/45"
+                        />
+                        <m.div
+                            key="menu"
+                            role="dialog"
+                            aria-label={tr('Меню')}
+                            initial={reduce ? false : { y: '100%' }}
+                            animate={{ y: 0 }}
+                            exit={reduce ? { opacity: 0 } : { y: '100%' }}
+                            transition={motionOr(reduce, SNAP)}
+                            className="gc-vk-sheet fixed inset-x-0 bottom-[calc(var(--vkui_internal--tabbar_height,48px)+env(safe-area-inset-bottom))] z-[55] max-h-[calc(100dvh-env(safe-area-inset-top)-7rem)] overflow-y-auto overscroll-contain rounded-t-2xl px-3 pt-3 pb-2"
+                        >
+                            <MenuContent onClose={close} />
+                        </m.div>
+                    </>
                 )}
             </AnimatePresence>
-            <nav
+            <Tabbar
                 aria-label={tr('Розділи')}
-                className={cn(
-                    'app-footer-wrapper md:hidden',
-                    // Розгорнуте меню — над міні-плеєром; згорнута панель — під ним (плеєр стоїть над панеллю).
-                    open ? 'z-[55]' : 'z-40',
-                )}
+                className="gc-vk-tabbar z-[56] [view-transition-name:gc-tabbar]"
             >
-                <m.div
-                    layout
-                    drag="y"
-                    dragListener={false}
-                    dragControls={drag}
-                    dragConstraints={{ top: 0, bottom: 0 }}
-                    dragElastic={0.22}
-                    onDragEnd={onDragEnd}
-                    transition={motionOr(reduce, SNAP)}
-                    // Згорнутий острів — капсула (радіус = половина висоти), розгорнуте меню — м'які кути.
-                    style={{ borderRadius: open ? 28 : 26 }}
-                    data-open={open || undefined}
-                    className="ios-glass-bar ios-footer-pill [view-transition-name:gc-tabbar]"
+                {primary.map((item) => (
+                    <TabbarItem
+                        key={item.key}
+                        Component={Link}
+                        href={item.href}
+                        selected={!open && isActive(item.href, item.key)}
+                        aria-current={
+                            !open && isActive(item.href, item.key)
+                                ? 'page'
+                                : undefined
+                        }
+                        label={MOBILE_LABEL[item.key] ?? item.label}
+                        indicator={counter(item.badge)}
+                    >
+                        <ModuleIcon name={item.icon} animated size={26} />
+                    </TabbarItem>
+                ))}
+                <TabbarItem
+                    Component="button"
+                    type="button"
+                    data-test="mobile-menu"
+                    aria-expanded={open}
+                    selected={open || restActive}
+                    onClick={() => setOpen((value) => !value)}
+                    label={tr('Меню')}
+                    indicator={
+                        restBadge > 0 && !open ? (
+                            <Badge mode="prominent" />
+                        ) : undefined
+                    }
                 >
-                    <button
-                        type="button"
-                        onClick={() => setOpen((value) => !value)}
-                        onPointerDown={(e) => drag.start(e)}
-                        aria-expanded={open}
-                        aria-label={open ? tr('Згорнути меню') : tr('Меню')}
-                        data-test="mobile-menu"
-                        className="relative flex h-4 w-full shrink-0 touch-none items-start justify-center pt-[3px]"
-                    >
-                        <span
-                            className={cn(
-                                'h-1 w-9 rounded-full transition-colors',
-                                restActive || open
-                                    ? 'bg-primary'
-                                    : 'bg-white/25',
-                            )}
-                        />
-                        {restBadge > 0 && !open && (
-                            <span className="absolute top-1 left-[calc(50%+1.5rem)] size-2 rounded-full bg-rose-500" />
-                        )}
-                    </button>
-                    <AnimatePresence initial={false}>
-                        {open && (
-                            <m.div
-                                key="menu"
-                                role="dialog"
-                                aria-label={tr('Меню')}
-                                initial={{ opacity: 0, height: 0 }}
-                                animate={{ opacity: 1, height: 'auto' }}
-                                exit={{ opacity: 0, height: 0 }}
-                                transition={motionOr(reduce, SNAP)}
-                                className="min-h-0 overflow-hidden"
-                            >
-                                <div className="max-h-[calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-9rem)] overflow-y-auto overscroll-contain px-3 pt-2 pb-1">
-                                    <MenuContent onClose={close} />
-                                </div>
-                            </m.div>
-                        )}
-                    </AnimatePresence>
-                    <div
-                        onPointerDown={(e) => drag.start(e)}
-                        className="flex touch-none items-stretch px-1 pb-1"
-                    >
-                        {primary.map((item) => (
-                            <TabItem
-                                key={item.key}
-                                href={item.href}
-                                active={!open && isActive(item.href, item.key)}
-                                badge={item.badge}
-                                label={MOBILE_LABEL[item.key] ?? item.label}
-                                icon={
-                                    <ModuleIcon
-                                        name={item.icon}
-                                        className="size-[22px]"
-                                    />
-                                }
-                            />
-                        ))}
-                    </div>
-                </m.div>
-            </nav>
-        </>
+                    <ModuleIcon name="menu" animated size={26} />
+                </TabbarItem>
+            </Tabbar>
+        </div>
     );
 }
 
@@ -924,55 +831,60 @@ export default function SocialLayout({ children }: PropsWithChildren) {
     }
 
     return (
-        <div className="relative min-h-dvh">
-            <PaletteSync />
-            {modules.includes('messages') && (
-                <>
-                    <InboxListener userId={auth.user.id} />
-                    <IncomingCall userId={auth.user.id} />
-                </>
-            )}
-            <SiteBackground />
-            <Seasonal />
-            <Konami />
-            <Topbar />
-            <div
-                className={cn(
-                    'gc-flat gc-split-shift mx-auto flex max-w-[var(--gc-shell-max)] gap-5 px-3 pt-[calc(72px+env(safe-area-inset-top))] sm:px-5',
-                    current ? 'pb-44 md:pb-28' : 'pb-24 md:pb-10',
+        <VkProvider>
+            <div className="gc-vk-page relative min-h-dvh">
+                <PaletteSync />
+                {modules.includes('messages') && (
+                    <>
+                        <InboxListener userId={auth.user.id} />
+                        <IncomingCall userId={auth.user.id} />
+                    </>
                 )}
-            >
-                <Sidebar />
-                <main id="main-content" className="gc-vt-main min-w-0 flex-1">
-                    <ViewAsBanner />
-                    <IncidentBanner />
-                    <AlertBanner />
-                    <Announcement />
-                    <NavigationSkeleton>
-                        <PageTransition>{children}</PageTransition>
-                    </NavigationSkeleton>
-                    <SiteFooter className="glass-matte gc-footer-card mb-4" />
-                </main>
-                <SideRail />
+                <SiteBackground />
+                <Seasonal />
+                <Konami />
+                <Topbar />
+                <div
+                    className={cn(
+                        'gc-flat gc-vk-shell gc-split-shift mx-auto flex max-w-[var(--gc-shell-max)] gap-5 px-3 pt-[calc(72px+env(safe-area-inset-top))] sm:px-5',
+                        current ? 'pb-44 md:pb-28' : 'pb-24 md:pb-10',
+                    )}
+                >
+                    <Sidebar />
+                    <main
+                        id="main-content"
+                        className="gc-vt-main min-w-0 flex-1"
+                    >
+                        <ViewAsBanner />
+                        <IncidentBanner />
+                        <AlertBanner />
+                        <Announcement />
+                        <NavigationSkeleton>
+                            <PageTransition>{children}</PageTransition>
+                        </NavigationSkeleton>
+                        <SiteFooter className="glass-matte gc-footer-card mb-4" />
+                    </main>
+                    <SideRail />
+                </div>
+                <VoiceBar />
+                {modules.includes('music') && (
+                    <>
+                        <PlayerBar />
+                        <ConnectListener />
+                    </>
+                )}
+                <BillingHost />
+                <PhonePrompt />
+                <MobileNav />
+                <FeedbackDialog />
+                <KeyboardShortcuts username={auth.user.username} />
+                {paletteOn && (
+                    <>
+                        <CommandPalette />
+                        <SplitPanel />
+                    </>
+                )}
             </div>
-            <VoiceBar />
-            {modules.includes('music') && (
-                <>
-                    <PlayerBar />
-                    <ConnectListener />
-                </>
-            )}
-            <BillingHost />
-            <PhonePrompt />
-            <MobileNav />
-            <FeedbackDialog />
-            <KeyboardShortcuts username={auth.user.username} />
-            {paletteOn && (
-                <>
-                    <CommandPalette />
-                    <SplitPanel />
-                </>
-            )}
-        </div>
+        </VkProvider>
     );
 }

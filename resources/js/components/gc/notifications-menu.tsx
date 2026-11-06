@@ -1,3 +1,4 @@
+import { ModuleIcon } from '@/components/gc/module-icon';
 import { Link, usePage } from '@inertiajs/react';
 import {
     BadgePercent,
@@ -161,7 +162,7 @@ export function NotificationsMenu() {
                         : tr('Сповіщення')
                 }
             >
-                <Bell className="size-[19px]" />
+                <ModuleIcon name="bell" animated size={19} />
                 {unread > 0 && (
                     <span
                         aria-hidden

@@ -1,3 +1,4 @@
+import { ModuleIcon } from '@/components/gc/module-icon';
 import { router, usePage } from '@inertiajs/react';
 import { Moon, Sun } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -58,9 +59,9 @@ export function ThemeButton({ className }: { className?: string }) {
             )}
         >
             {current === 'light' ? (
-                <Moon className="size-[19px]" />
+                <ModuleIcon name="moon" animated size={19} />
             ) : (
-                <Sun className="size-[19px]" />
+                <ModuleIcon name="sun" animated size={19} />
             )}
         </button>
     );

@@ -1,3 +1,4 @@
+import { ModuleIcon } from '@/components/gc/module-icon';
 import { Link, router, useForm } from '@inertiajs/react';
 import {
     Bell,
@@ -317,7 +318,7 @@ export function WhatsNewButton() {
                     unseen ? 'flex' : 'hidden sm:flex',
                 )}
             >
-                <Sparkles className="size-[19px]" />
+                <ModuleIcon name="sparkles" animated size={19} />
                 {unseen && (
                     <span
                         aria-hidden

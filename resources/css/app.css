@@ -5181,51 +5181,142 @@ iframe {
 }
 
 /* ==========================================================================
-   Clean Flat UI & Bento Grid — усе між шапкою й підвалом (.gc-flat на оболонці сторінки).
-   Пласкі картки з тонкою обвідкою, без скла, світіння й важких тіней; акцент — індиго.
-   Не зачіпає шапку (.gc-bar поза оболонкою), підвал (.gc-footer-card), острів телефона,
-   розділ «Музика» (.am) і сторінки входу (окремий layout).
+   VKUI (github.com/VKCOM/VKUI, MIT) — вигляд vk.com. Клас .gc-vk на <html> ставить VkProvider.
+   Токени сайту беруться з токенів VKUI (vkCom light/dark), скло й світіння вимкнені:
+   суцільне тло, білі/темні картки з радіусом 12, акцент — синій VK.
    ========================================================================== */
-:root[data-skin='gamecon'] .gc-flat {
-    --flat-card: #11141c;
-    --flat-card-hover: #151924;
-    --flat-inner: rgb(255 255 255 / 0.03);
-    --flat-border: rgb(255 255 255 / 0.06);
-    --flat-border-strong: rgb(255 255 255 / 0.1);
-    --flat-accent: #6366f1;
-    --flat-accent-soft: rgb(99 102 241 / 0.15);
-    --flat-accent-text: #818cf8;
-    --primary: #6366f1;
-    --ring: #6366f1;
+:root.gc-vk[data-skin='gamecon'] {
+    --radius: 0.5rem;
+    --radius-xl: 0.75rem;
+    --radius-2xl: 0.75rem;
+    --radius-3xl: 0.75rem;
+    --radius-chip: 0.375rem;
+    --radius-control: 0.5rem;
+    --radius-dialog: 0.75rem;
+    --radius-menu: 0.5rem;
+    --background: var(--vkui--color_background);
+    --foreground: var(--vkui--color_text_primary);
+    --card: var(--vkui--color_background_content);
+    --card-foreground: var(--vkui--color_text_primary);
+    --popover: var(
+        --vkui--color_background_modal,
+        var(--vkui--color_background_content)
+    );
+    --popover-foreground: var(--vkui--color_text_primary);
+    --muted-foreground: var(--vkui--color_text_secondary);
+    --border: var(--vkui--color_separator_primary);
+    --input: var(--vkui--color_field_border_alpha);
+    --sidebar: transparent;
+    --glass: var(--vkui--color_background_content);
+    --matte: var(--vkui--color_background_content);
+    --matte-solid: var(--vkui--color_background_content);
+    --primary: var(--vkui--color_background_accent);
+    --primary-foreground: #fff;
+    --ring: var(--vkui--color_background_accent);
+    --sidebar-primary: var(--vkui--color_background_accent);
+    --gc-hover: var(--vkui--color_background_secondary_alpha);
+    --gc-active: var(--vkui--color_background_secondary_alpha);
+    --gc-bar: var(--vkui--color_background_content);
+    --color-gc-lilac-400: var(--vkui--color_icon_accent);
+    --color-gc-lilac-300: var(--vkui--color_text_accent);
+    --ios-glass-surface: var(--vkui--color_background_content);
+    --ios-glass-border: var(--vkui--color_separator_primary);
+    --ios-glass-specular: none;
+    --ios-glass-shadow: none;
+    --ios-search-pill: var(--vkui--color_field_background);
+    --gc-shell-max: 1100px;
+    background: var(--vkui--color_background) !important;
+    background-image: none !important;
 }
-:root[data-skin='gamecon'][data-theme='light'] .gc-flat {
-    --flat-card: #ffffff;
-    --flat-card-hover: #fbfcfe;
-    --flat-inner: #f8fafc;
-    --flat-border: rgb(226 232 240 / 0.8);
-    --flat-border-strong: rgb(203 213 225 / 0.9);
-    --flat-accent-text: #4f46e5;
+:root.gc-vk[data-skin='gamecon'] body {
+    background: var(--vkui--color_background);
+}
+/* Шрифт — фірмовий Montserrat і всередині компонентів VKUI. */
+:root.gc-vk {
+    --vkui--font_family_base: var(--font-sans), 'Montserrat', sans-serif;
+    --vkui--font_family_accent: var(--font-sans), 'Montserrat', sans-serif;
+}
+/* Без декоративного тла сторінки — суцільний колір, як у VK. */
+:root.gc-vk .site-bg {
+    display: none !important;
 }
 
-/* Картки: пласка поверхня + 1px обвідка, без підкладки-скла. */
-:root[data-skin='gamecon']
-    .gc-flat
-    :is(
-        .glass,
-        .liquid-glass,
-        .glass-matte,
-        [data-slot='card'],
-        .ios-arctic-card,
-        .gc-post
-    ):not(.gc-footer-card, .gc-footer-card *, .gc-bar, .am *, .am) {
-    background: var(--flat-card) !important;
-    border: 1px solid var(--flat-border) !important;
+/* ---------- Шапка: острів — плаваюча суцільна панель з тінню VKUI ---------- */
+:root.gc-vk .app-header-wrapper {
+    padding: calc(env(safe-area-inset-top, 0px) + 10px) 12px 0 !important;
+    background: transparent !important;
+    pointer-events: none;
+}
+:root.gc-vk .ios-glass-bar.ios-header-pill {
+    pointer-events: auto;
+    height: 56px;
+    max-width: var(--gc-shell-max);
+    border-radius: 18px !important;
+    border: 0 !important;
+    background: var(--vkui--color_background_content) !important;
+    background-image: none !important;
+    box-shadow: var(
+        --vkui--elevation2,
+        0 2px 24px rgb(0 0 0 / 0.08)
+    ) !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    padding: 0 10px 0 16px;
+}
+:root.gc-vk .ios-header-search {
+    height: 32px;
+    border: 0;
+    border-radius: 8px;
+    background: var(--vkui--color_field_background) !important;
+}
+:root.gc-vk .gc-icon-button {
+    color: var(--vkui--color_icon_secondary);
+    border-radius: 8px;
+}
+:root.gc-vk .gc-icon-button:hover {
+    color: var(--vkui--color_icon_accent);
+    background: var(--vkui--color_background_secondary_alpha);
+}
+
+/* ---------- Оболонка: ліве меню без картки, як на vk.com ---------- */
+:root.gc-vk .gc-vk-shell {
+    padding-top: calc(82px + env(safe-area-inset-top)) !important;
+    gap: 16px;
+}
+:root.gc-vk .gc-sidebar-glass {
+    top: calc(82px + env(safe-area-inset-top)) !important;
+    width: 200px !important;
+    padding: 0 !important;
+    background: transparent !important;
+    border: 0 !important;
+    border-radius: 0 !important;
     box-shadow: none !important;
     -webkit-backdrop-filter: none !important;
     backdrop-filter: none !important;
 }
-:root[data-skin='gamecon']
-    .gc-flat
+:root.gc-vk .gc-side-link {
+    min-height: 32px !important;
+    padding: 0 8px !important;
+    gap: 10px !important;
+    border-radius: 8px !important;
+    font-size: 13px !important;
+    font-weight: 400 !important;
+    color: var(--vkui--color_text_primary);
+}
+:root.gc-vk .gc-side-link svg {
+    width: 20px;
+    height: 20px;
+    color: var(--vkui--color_icon_accent) !important;
+}
+:root.gc-vk .gc-side-link:hover,
+:root.gc-vk .gc-side-link[aria-current='page'] {
+    background: var(--vkui--color_background_secondary_alpha);
+    color: var(--vkui--color_text_primary);
+    font-weight: 400;
+}
+
+/* ---------- Картки: суцільні, радіус 12, без обвідки, скла й тіней ---------- */
+:root.gc-vk
     :is(
         .glass,
         .liquid-glass,
@@ -5233,117 +5324,161 @@ iframe {
         [data-slot='card'],
         .ios-arctic-card,
         .gc-post
-    ):not(.gc-footer-card, .gc-footer-card *, .gc-bar, .am *, .am)::before {
-    display: none !important;
-}
-:root[data-skin='gamecon']
-    .gc-flat
-    :is(.glass, [data-slot='card'], .ios-arctic-card, .gc-post).rounded-2xl:not(
-        .am *
-    ),
-:root[data-skin='gamecon'] .gc-flat .gc-post:not(.am *) {
-    border-radius: 1rem;
-}
-/* Вкладена картка — внутрішня плашка rounded-xl на тлі картки. */
-:root[data-skin='gamecon']
-    .gc-flat
-    :is(.glass, [data-slot='card'], .ios-arctic-card, .gc-post)
-    :is(.glass, [data-slot='card'], .ios-arctic-card):not(.am *) {
-    background: var(--flat-inner) !important;
-}
-@media (hover: hover) {
-    :root[data-skin='gamecon']
-        .gc-flat
-        a:is(.glass, [data-slot='card'], .ios-arctic-card):not(.am *):hover {
-        background: var(--flat-card-hover) !important;
-        border-color: var(--flat-border-strong) !important;
-        transform: none;
-    }
-}
-/* Плаваючі елементи (меню, підказки, зум мапи) — суцільні, з легкою тінню. */
-:root[data-skin='gamecon'] .gc-flat .ios-float:not(.am *) {
-    background: var(--flat-card) !important;
-    border: 1px solid var(--flat-border-strong) !important;
-    -webkit-backdrop-filter: none !important;
-    backdrop-filter: none !important;
-    box-shadow: 0 8px 24px -12px rgb(0 0 0 / 0.35) !important;
-}
-
-/* Кнопки: головні — суцільне індиго-пігулка без світіння. */
-:root[data-skin='gamecon']
-    .gc-flat
-    :is(.btn-glow, button.bg-primary, a.bg-primary):not(
-        .am *,
-        .gc-footer-card *
-    ):not(:disabled) {
-    background: var(--flat-accent) !important;
+    ):not(.gc-bar, .am *, .am, .app-footer-wrapper *) {
+    background: var(--vkui--color_background_content) !important;
     background-image: none !important;
     border: 0 !important;
-    border-radius: 9999px;
     box-shadow: none !important;
-    color: #fff;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
 }
-:root[data-skin='gamecon']
-    .gc-flat
-    :is(.btn-glow, button.bg-primary, a.bg-primary):not(
-        .am *,
-        .gc-footer-card *
-    ):not(:disabled):hover {
-    filter: none;
-    background: #4f46e5 !important;
-}
-:root[data-skin='gamecon'] .gc-flat [data-slot='button'] {
-    border-radius: 9999px;
-}
-
-/* Поля вводу — rounded-xl, тонка обвідка, фокус індиго. */
-:root[data-skin='gamecon']
-    .gc-flat
-    :is(.input-glass, [data-slot='input'], textarea, select):not(.am *) {
-    background-color: var(--flat-inner);
-    border: 1px solid var(--flat-border);
-    border-radius: 0.75rem;
-}
-:root[data-skin='gamecon']
-    .gc-flat
-    :is(.input-glass, [data-slot='input'], textarea, select):not(.am *):focus,
-:root[data-skin='gamecon'] .gc-flat .input-glass:focus-within {
-    border-color: rgb(99 102 241 / 0.6);
-    box-shadow: 0 0 0 3px rgb(99 102 241 / 0.15);
-}
-
-/* Мітки — rounded-md, дрібні. */
-:root[data-skin='gamecon'] .gc-flat [data-slot='badge'] {
-    border-radius: 0.375rem;
-}
-
-/* Бокове меню: активний пункт — індиго-плашка rounded-xl. */
-:root[data-skin='gamecon'] .gc-flat .gc-side-link[aria-current='page'],
-:root[data-skin='gamecon'] .gc-flat .nav-active {
-    background: var(--flat-accent-soft);
-    color: var(--flat-accent-text);
-    font-weight: 500;
-}
-:root[data-skin='gamecon'] .gc-flat .gc-side-link[aria-current='page'] svg {
-    color: var(--flat-accent-text);
-}
-:root[data-skin='gamecon'] .gc-flat .gc-side-link svg {
-    color: color-mix(in oklab, var(--foreground) 55%, transparent);
-}
-
-/* Без світіння, нахилів і «парящих» ефектів у вмісті. */
-:root[data-skin='gamecon']
-    .gc-flat
-    :is(.glow-ring, .gradient-border, .liquid-glass)::after,
-:root[data-skin='gamecon'] .gc-flat .liquid-glass__glare {
+:root.gc-vk
+    :is(
+        .glass,
+        .liquid-glass,
+        .glass-matte,
+        [data-slot='card'],
+        .ios-arctic-card,
+        .gc-post
+    ):not(.gc-bar, .am *, .am)::before {
     display: none !important;
 }
-:root[data-skin='gamecon'] .gc-flat .animate-float {
+:root.gc-vk
+    :is(.glass, [data-slot='card'], .ios-arctic-card, .gc-post):not(.am *) {
+    border-radius: 12px;
+}
+/* Вкладена картка — плашка другорядного тла. */
+:root.gc-vk
+    :is(.glass, [data-slot='card'], .ios-arctic-card, .gc-post)
+    :is(.glass, [data-slot='card'], .ios-arctic-card):not(.am *) {
+    background: var(--vkui--color_background_secondary) !important;
+}
+@media (hover: hover) {
+    :root.gc-vk
+        a:is(.glass, [data-slot='card'], .ios-arctic-card):not(.am *):hover {
+        background: var(--vkui--color_background_content) !important;
+        transform: none;
+        box-shadow: inset 0 0 0 1px var(--vkui--color_separator_primary) !important;
+    }
+}
+/* Спливаючі елементи — суцільні, з тінню VKUI. */
+:root.gc-vk
+    :is(
+        .ios-float,
+        .glass-strong,
+        [data-slot='dropdown-menu-content'],
+        [data-slot='select-content'],
+        [data-slot='popover-content'],
+        [data-slot='dialog-content']
+    ):not(.am *) {
+    background: var(
+        --vkui--color_background_modal,
+        var(--vkui--color_background_content)
+    ) !important;
+    background-image: none !important;
+    border: 0 !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    box-shadow: var(
+        --vkui--elevation3,
+        0 4px 24px rgb(0 0 0 / 0.16)
+    ) !important;
+}
+
+/* ---------- Кнопки: як Button VKUI (primary — синя, secondary — прозора синя) ---------- */
+:root.gc-vk
+    :is(.btn-glow, button.bg-primary, a.bg-primary, .bg-gradient-brand):not(
+        .am *
+    ):not(:disabled) {
+    background: var(--vkui--color_background_accent) !important;
+    background-image: none !important;
+    border: 0 !important;
+    border-radius: 8px !important;
+    box-shadow: none !important;
+    color: #fff !important;
+    font-weight: 500;
+    filter: none;
+}
+:root.gc-vk :is(.btn-glow, button.bg-primary, a.bg-primary):not(.am *):hover {
+    opacity: 0.88;
+}
+:root.gc-vk [data-slot='button'] {
+    border-radius: 8px;
+    font-weight: 500;
+}
+:root.gc-vk .glow-ring::before,
+:root.gc-vk .gradient-border::before,
+:root.gc-vk .liquid-glass::after,
+:root.gc-vk .liquid-glass__glare {
+    display: none !important;
+}
+:root.gc-vk .animate-float {
     animation: none;
 }
 
-/* Цифри — табличні. */
-.gc-flat .tabular-nums,
-.gc-flat :is(time, [data-num]) {
-    font-variant-numeric: tabular-nums;
+/* ---------- Поля вводу: як Input VKUI ---------- */
+:root.gc-vk
+    :is(.input-glass, [data-slot='input'], textarea, select):not(.am *) {
+    background-color: var(--vkui--color_field_background) !important;
+    border: 1px solid var(--vkui--color_field_border_alpha) !important;
+    border-radius: 8px;
+    box-shadow: none;
+}
+:root.gc-vk
+    :is(.input-glass, [data-slot='input'], textarea, select):not(.am *):focus,
+:root.gc-vk .input-glass:focus-within {
+    border-color: var(
+        --vkui--color_stroke_accent,
+        var(--vkui--color_background_accent)
+    ) !important;
+    box-shadow: none !important;
+}
+
+/* ---------- Підвал: простий рядок сірих посилань під вмістом ---------- */
+:root.gc-vk .gc-footer-card {
+    background: transparent !important;
+    background-image: none !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    color: var(--vkui--color_text_secondary);
+}
+:root.gc-vk .gc-footer-card::before {
+    display: none !important;
+}
+
+/* ---------- Телефон: Tabbar VKUI — острів знизу, і шторка меню над ним ---------- */
+:root.gc-vk .gc-vk-tabbar {
+    --vkui_internal--tabbar_height: 64px;
+    left: 10px !important;
+    right: 10px !important;
+    bottom: calc(10px + env(safe-area-inset-bottom, 0px)) !important;
+    width: auto !important;
+    padding: 0 4px !important;
+    border-radius: 24px;
+    background: var(--vkui--color_background_content);
+    box-shadow: var(--vkui--elevation3, 0 4px 24px rgb(0 0 0 / 0.14));
+}
+:root.gc-vk .gc-vk-tabbar .vkuiTabbarItem__label {
+    font-size: 11px;
+    font-weight: 500;
+}
+:root.gc-vk .gc-vk-sheet {
+    left: 10px !important;
+    right: 10px !important;
+    bottom: calc(82px + env(safe-area-inset-bottom, 0px)) !important;
+    border-radius: 24px;
+    background: var(--vkui--color_background_content);
+    box-shadow: var(--vkui--elevation3, 0 4px 24px rgb(0 0 0 / 0.16));
+}
+@media (max-width: 767px) {
+    :root.gc-vk .gc-vk-shell {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+        gap: 0;
+    }
+    :root.gc-vk :is(.glass, [data-slot='card'], .gc-post):not(.am *) {
+        border-radius: 12px;
+    }
 }

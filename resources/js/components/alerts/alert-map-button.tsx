@@ -90,9 +90,9 @@ export function AlertMapButton({
                     : tr('Мапа тривог')
             }
             className={cn(
-                'group relative flex shrink-0 overflow-hidden rounded-2xl bg-[#0b1a33]/80 p-3 ring-1 ring-sky-300/25 transition hover:ring-sky-300/50',
+                'group relative flex shrink-0 overflow-hidden rounded-2xl bg-sky-50 p-3 ring-1 ring-sky-500/20 transition hover:ring-sky-500/40 dark:bg-[#0b1a33]/80 dark:ring-sky-300/25 dark:hover:ring-sky-300/50',
                 row ? 'items-center gap-3' : 'flex-col gap-1.5',
-                current && 'ring-sky-300/60',
+                current && 'ring-sky-500/50 dark:ring-sky-300/60',
                 className,
             )}
         >
@@ -172,13 +172,15 @@ export function AlertMapButton({
                         : 'items-baseline justify-between',
                 )}
             >
-                <span className="font-display text-[15px] leading-tight font-extrabold text-white">
+                <span className="font-display text-[15px] leading-tight font-extrabold text-slate-900 dark:text-white">
                     {tr('Мапа тривог')}
                 </span>
                 <span
                     className={cn(
                         'text-[11px] leading-tight whitespace-nowrap',
-                        active.length ? 'text-red-300' : 'text-white/50',
+                        active.length
+                            ? 'text-red-600 dark:text-red-300'
+                            : 'text-slate-500 dark:text-white/50',
                     )}
                 >
                     {active.length

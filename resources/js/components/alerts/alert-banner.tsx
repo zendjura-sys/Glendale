@@ -78,7 +78,7 @@ export function AlertBanner() {
                     </button>
                     <Link
                         href="/alerts"
-                        className="text-xs font-semibold text-red-200 underline underline-offset-4"
+                        className="text-xs font-semibold text-red-600 underline underline-offset-4 dark:text-red-200"
                     >
                         {tr('Мапа')}
                     </Link>

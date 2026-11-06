@@ -37,6 +37,7 @@
         "@types/react-dom": "^19.2.0",
         "@types/topojson-client": "^3.1.5",
         "@vitejs/plugin-react": "^6.1.1",
+        "@vkontakte/vkui": "^8.4.3",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
         "concurrently": "^10.0.3",
