@@ -22,32 +22,40 @@ export function EngagementCard() {
 
     if ((!streak || streak.days < 2) && memories === 0) return null;
 
+    const hasStreak = !!streak && streak.days >= 2;
+
+    // Плитка Bento: велике число днів поспіль, підпис і рекорд; «Цього дня» — посиланням унизу.
     return (
-        <div className="glass flex flex-wrap items-center gap-x-5 gap-y-2 rounded-2xl px-4 py-3 text-sm">
-            {streak && streak.days >= 2 && (
-                <span className="flex items-center gap-2 text-white/85">
-                    <Flame className="size-4 text-orange-400" />
-                    {tr('{days} {word} поспіль на GameCon', {
-                        days: streak.days,
-                        word: plural(streak.days, [
-                            tr('день'),
-                            tr('дні'),
-                            tr('днів'),
-                        ]),
-                    })}
-                    {streak.best > streak.days && (
-                        <span className="text-xs text-white/40">
-                            {tr('рекорд {best}', { best: streak.best })}
-                        </span>
-                    )}
-                </span>
+        <div className="glass flex flex-col gap-3 rounded-2xl p-5">
+            {hasStreak && (
+                <div className="flex items-center gap-3">
+                    <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-orange-500/15">
+                        <Flame className="size-5 text-orange-500" />
+                    </span>
+                    <div className="min-w-0">
+                        <p className="font-display text-3xl leading-none font-bold text-white tabular-nums">
+                            {streak.days}
+                        </p>
+                        <p className="mt-1 text-xs leading-snug text-white/55">
+                            {tr('{word} поспіль', {
+                                word: plural(streak.days, [
+                                    tr('день'),
+                                    tr('дні'),
+                                    tr('днів'),
+                                ]),
+                            })}
+                            {streak.best > streak.days &&
+                                ` · ${tr('рекорд {best}', { best: streak.best })}`}
+                        </p>
+                    </div>
+                </div>
             )}
             {memories > 0 && (
                 <Link
                     href="/memories"
-                    className="flex items-center gap-2 text-sky-300 hover:text-sky-200"
+                    className="mt-auto flex items-center gap-2 text-xs font-medium text-sky-500 hover:underline"
                 >
-                    <History className="size-4" />
+                    <History className="size-4 shrink-0" />
                     {tr('Цього дня: {count} {word} з минулих років', {
                         count: memories,
                         word: plural(memories, [
