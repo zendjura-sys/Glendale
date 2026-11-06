@@ -242,25 +242,7 @@ class _AlertsScreenState extends State<AlertsScreen> {
     final appPrefs = session.prefs;
     final customSound = AlertSound.path(appPrefs);
 
-    return ScreenScroll(
-      onRefresh: () => _load(full: true),
-      children: [
-        PageTitle(
-          tr('Мапа тривог'),
-          subtitle: [
-            active.isEmpty ? tr('Зараз тривог немає') : tr('Зараз тривога в {n} регіонах', {'n': '${active.length}'}),
-            tr('оновлено о {t}', {'t': clock(d['updated_at'])}),
-          ].join(' · '),
-        ),
-        Wrap(spacing: 8, runSpacing: 8, children: [
-          for (final k in ['uav', 'missile', 'kab'])
-            if ((counts[k] ?? 0) > 0) Pill(label: '${threatLabel(k)} · ${counts[k]}', color: threatColors[k]!),
-          if (d['mig_active'] == true) Pill(label: tr('Зліт МіГ-31К'), icon: LucideIcons.radar, color: threatColors['mig']!),
-          if (d['ballistic_threat'] == true) Pill(label: tr('Загроза балістики'), icon: LucideIcons.rocket, color: threatColors['ballistic']!),
-          if (d['stale'] == true) Pill(label: tr('Дані можуть бути неактуальні'), icon: LucideIcons.triangleAlert, color: const Color(0xFFFBBF24)),
-        ]),
-        const SizedBox(height: 12),
-        Glass(
+    final regionCard = Glass(
           gradient: mine?['active'] == true
               ? LinearGradient(colors: [const Color(0xFFEF4444).withValues(alpha: 0.18), const Color(0xFFEF4444).withValues(alpha: 0.06)])
               : null,
@@ -340,9 +322,8 @@ class _AlertsScreenState extends State<AlertsScreen> {
                 ? GhostButton(label: tr('Я вже не в укритті'), icon: LucideIcons.shieldCheck, iconColor: const Color(0xFF6EE7B7), onPressed: () => _save({'shelter': false}))
                 : PrimaryButton(label: tr('Я в укритті'), icon: LucideIcons.shield, onPressed: () => _save({'shelter': true})),
           ]),
-        ),
-        const SizedBox(height: 12),
-        Glass(
+        );
+    final mapCard = Glass(
           padding: const EdgeInsets.fromLTRB(10, 12, 10, 12),
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             SingleChildScrollView(
@@ -413,9 +394,8 @@ class _AlertsScreenState extends State<AlertsScreen> {
               style: body(12, color: faint),
             ),
           ]),
-        ),
-        const SizedBox(height: 12),
-        Glass(
+        );
+    final activeCard = Glass(
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             CardTitle(tr('Тривога зараз'), icon: LucideIcons.siren),
             if (active.isEmpty) Text(tr('Тривог немає.'), style: body(14, color: muted)),
@@ -430,9 +410,8 @@ class _AlertsScreenState extends State<AlertsScreen> {
                 ]),
               ),
           ]),
-        ),
-        const SizedBox(height: 12),
-        Glass(
+        );
+    final threatsCard = Glass(
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             CardTitle(tr('Цілі в повітрі'), icon: LucideIcons.radar),
             if (visible.isEmpty) Text(tr('Цілей не зафіксовано.'), style: body(14, color: muted)),
@@ -456,10 +435,8 @@ class _AlertsScreenState extends State<AlertsScreen> {
                 ),
               ),
           ]),
-        ),
-        if (maps(d['feed']).isNotEmpty) ...[
-          const SizedBox(height: 12),
-          Glass(
+        );
+    final feedCard = maps(d['feed']).isEmpty ? null : Glass(
             child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
               CardTitle(tr('Зведення'), icon: LucideIcons.messageSquareText),
               for (final item in maps(d['feed']).take(12))
@@ -475,10 +452,8 @@ class _AlertsScreenState extends State<AlertsScreen> {
                   ]),
                 ),
             ]),
-          ),
-        ],
-        const SizedBox(height: 12),
-        Glass(
+          );
+    final sourcesCard = Glass(
           onTap: () => setState(() => showSources = !showSources),
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             Row(children: [
@@ -521,9 +496,8 @@ class _AlertsScreenState extends State<AlertsScreen> {
                   ),
                 ),
           ]),
-        ),
-        const SizedBox(height: 12),
-        Glass(
+        );
+    final guestsCard = Glass(
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             CardTitle(tr('Інформація для гостей України'), icon: LucideIcons.phone),
             Text(tr('Почули сирену чи сповіщення — пройдіть в найближче укриття або метро.'), style: body(14, color: soft)),
@@ -547,7 +521,55 @@ class _AlertsScreenState extends State<AlertsScreen> {
                 ),
               ),
           ]),
+        );
+    const gap = SizedBox(height: 12);
+    // Ширина вмісту (без бічних панелей): від 860 — мапа ліворуч, панель праворуч (як на сайті);
+    // від 600 (планшет) — одна колонка, але мапа першою, щоб її було видно одразу.
+    Widget layout(BuildContext context, BoxConstraints box) {
+      if (box.maxWidth >= 860) {
+        return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [mapCard, gap, sourcesCard, gap, guestsCard])),
+          const SizedBox(width: 16),
+          SizedBox(
+            width: 360,
+            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [regionCard, gap, activeCard, gap, threatsCard, if (feedCard != null) ...[gap, feedCard]]),
+          ),
+        ]);
+      }
+      final tablet = box.maxWidth >= 600;
+      return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        if (tablet) ...[mapCard, gap, regionCard] else ...[regionCard, gap, mapCard],
+        gap,
+        activeCard,
+        gap,
+        threatsCard,
+        if (feedCard != null) ...[gap, feedCard],
+        gap,
+        sourcesCard,
+        gap,
+        guestsCard,
+      ]);
+    }
+
+    return ScreenScroll(
+      onRefresh: () => _load(full: true),
+      children: [
+        PageTitle(
+          tr('Мапа тривог'),
+          subtitle: [
+            active.isEmpty ? tr('Зараз тривог немає') : tr('Зараз тривога в {n} регіонах', {'n': '${active.length}'}),
+            tr('оновлено о {t}', {'t': clock(d['updated_at'])}),
+          ].join(' · '),
         ),
+        Wrap(spacing: 8, runSpacing: 8, children: [
+          for (final k in ['uav', 'missile', 'kab'])
+            if ((counts[k] ?? 0) > 0) Pill(label: '${threatLabel(k)} · ${counts[k]}', color: threatColors[k]!),
+          if (d['mig_active'] == true) Pill(label: tr('Зліт МіГ-31К'), icon: LucideIcons.radar, color: threatColors['mig']!),
+          if (d['ballistic_threat'] == true) Pill(label: tr('Загроза балістики'), icon: LucideIcons.rocket, color: threatColors['ballistic']!),
+          if (d['stale'] == true) Pill(label: tr('Дані можуть бути неактуальні'), icon: LucideIcons.triangleAlert, color: const Color(0xFFFBBF24)),
+        ]),
+        gap,
+        LayoutBuilder(builder: layout),
       ],
     );
   }

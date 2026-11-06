@@ -94,6 +94,7 @@ void main() {
 
   final screens = <(String, String, String)>[
     ('alerts-map', '/alerts', 'Мапа тривог'),
+    ('alerts-tablet', '/alerts', 'Мапа тривог'),
     ('alerts-button', '/button', 'Тривога: 3'),
     ('alerts-mapview', '/mapview', 'Мапа'),
   ];
@@ -102,8 +103,10 @@ void main() {
       await http.runWithClient(() async {
         SharedPreferences.setMockInitialValues({'whats_new': whatsNewVersion});
         final session = Session(await SharedPreferences.getInstance())..me = {'id': 1, 'name': 'Тоні Старк', 'first_name': 'Тоні', 'username': 'tonny', 'role': 'user'};
-        tester.view.physicalSize = const Size(1170, 2532);
-        tester.view.devicePixelRatio = 3;
+        // Планшет 12" (2560×1600, альбом) — як на великому екрані.
+        final tablet = name.endsWith('-tablet');
+        tester.view.physicalSize = tablet ? const Size(2560, 1600) : const Size(1170, 2532);
+        tester.view.devicePixelRatio = tablet ? 2 : 3;
         tester.view.padding = const FakeViewPadding(top: 120, bottom: 60);
         addTearDown(tester.view.reset);
         final router = GoRouter(initialLocation: location, routes: [
