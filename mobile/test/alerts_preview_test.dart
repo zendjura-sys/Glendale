@@ -19,7 +19,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'support/fonts.dart';
 
-Map<String, dynamic> _region(String slug, String name, double lat, double lng, [String? type]) => {
+Map<String, dynamic> _region(String slug, String name, double lat, double lng, [String? type, String? alert, List<String> alerts = const [], List<String> levels = const [], String? scale]) => {
+  'alert': alert ?? (type == null ? 'CLEAR' : 'AIR'),
+  'alerts': alerts,
+  'threat_levels': levels,
+  'scale': scale,
   'slug': slug,
   'name': name,
   'lat': lat,
@@ -36,18 +40,20 @@ Map<String, dynamic> _respond(http.Request request) {
   final now = DateTime.now();
   return {
     'regions': [
-      _region('kharkiv', 'Харківська область', 49.99, 36.23, 'air_raid'),
-      _region('poltava', 'Полтавська область', 49.59, 34.55, 'partial'),
+      _region('kharkiv', 'Харківська область', 49.99, 36.23, 'air_raid', 'BALLISTIC', ['BALLISTIC', 'AIR'], ['BALLISTIC'], 'oblast'),
+      _region('poltava', 'Полтавська область', 49.59, 34.55, 'partial', 'AIR', ['AIR', 'UAV'], ['UAV'], 'raion'),
       _region('kyiv', 'м. Київ', 50.45, 30.52),
+      _region('kyiv-oblast', 'Київська область', 50.05, 30.52, 'chemical', 'CHEMICAL', ['CHEMICAL'], [], 'raion'),
       _region('lviv', 'Львівська область', 49.84, 24.03),
-      _region('odesa', 'Одеська область', 46.48, 30.73),
-      _region('crimea', 'Автономна Республіка Крим', 45.04, 34.0, 'air_raid'),
+      _region('odesa', 'Одеська область', 46.48, 30.73, null, 'UAV', ['UAV'], ['UAV']),
+      _region('crimea', 'Автономна Республіка Крим', 45.04, 34.0, 'air_raid', 'AIR', ['AIR'], [], 'oblast'),
     ],
     'units': [
       for (final code in ['UA63020000000066931', 'UA63040000000023521', 'UA63060000000053698', 'UA63080000000032022', 'UA63100000000059237', 'UA63120000000091135', 'UA63140000000096278'])
-        {'code': code, 'kind': 'air_raid', 'started_at': now.subtract(const Duration(minutes: 65)).toIso8601String()},
-      {'code': 'UA32100000000065867', 'kind': 'chemical', 'started_at': now.toIso8601String()},
-      {'code': 'UA12080050000062712', 'kind': 'artillery', 'started_at': now.toIso8601String()},
+        {'code': code, 'kind': 'air_raid', 'type': 'AIR', 'scale': 'oblast', 'started_at': now.subtract(const Duration(minutes: 65)).toIso8601String()},
+      {'code': 'UA32100000000065867', 'kind': 'chemical', 'type': 'CHEMICAL', 'scale': 'raion', 'started_at': now.toIso8601String()},
+      {'code': 'UA12080050000062712', 'kind': 'artillery', 'type': 'ARTILLERY', 'scale': 'hromada', 'started_at': now.toIso8601String()},
+      {'code': 'UA53080000000068029', 'kind': 'air_raid', 'type': 'AIR', 'scale': 'raion', 'started_at': now.toIso8601String()},
       for (final code in ['UA01020000000022387', 'UA01040000000069938', 'UA01060000000028159'])
         {'code': code, 'kind': 'air_raid', 'started_at': now.subtract(const Duration(days: 900)).toIso8601String()},
     ],
@@ -95,7 +101,7 @@ void main() {
   final screens = <(String, String, String)>[
     ('alerts-map', '/alerts', 'Мапа тривог'),
     ('alerts-tablet', '/alerts', 'Мапа тривог'),
-    ('alerts-button', '/button', 'Тривога: 3'),
+    ('alerts-button', '/button', 'Тривога: 4'),
     ('alerts-mapview', '/mapview', 'Мапа'),
   ];
   for (final (name, location, expected) in screens) {

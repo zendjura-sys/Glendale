@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Enums\AlertScale;
+use App\Enums\AlertType;
 use App\Models\AirThreat;
 use App\Models\User;
 use App\Services\Alerts\AirAlertChannel;
@@ -332,5 +334,42 @@ class AirAlertsTest extends TestCase
         $this->assertStringContainsString('UkraineAlarm: ключ не задано', $message);
         $this->assertStringContainsString('✅ NEPTUN тривоги', $message);
         $this->assertStringContainsString('Зараз мапа бере тривоги з: NEPTUN', $message);
+    }
+
+    public function test_alert_types_priority_scale_and_threat_levels(): void
+    {
+        $this->assertSame(AlertType::AIR, AlertType::fromApi('air_raid'));
+        $this->assertSame(AlertType::ARTILLERY, AlertType::fromApi('artillery_shelling'));
+        $this->assertSame(AlertType::NUCLEAR, AlertType::fromApi('NUCLEAR'));
+        $this->assertSame(AlertScale::HROMADA, AlertScale::fromApi('Community'));
+        $this->assertSame('#E11D48', AlertType::AIR->colors(AlertScale::RAION)['hex']);
+
+        Http::fake([
+            'api.alerts.in.ua/*' => Http::response(['alerts' => [
+                ['location_type' => 'oblast', 'location_title' => 'Сумська область', 'location_oblast' => 'Сумська область', 'alert_type' => 'air_raid'],
+                ['location_type' => 'raion', 'location_title' => 'Шосткинський район', 'location_oblast' => 'Сумська область', 'alert_type' => 'chemical'],
+                ['location_type' => 'raion', 'location_title' => 'Бучанський район', 'location_oblast' => 'Київська область', 'alert_type' => 'air_raid'],
+            ]]),
+            '*' => Http::response(['states' => []]),
+        ]);
+        app(SiteSettings::class)->putSecret('alerts_in_ua_token', 'test-token-1234567890');
+        AirThreat::query()->create(['type' => 'ballistic', 'region_slug' => 'kharkiv', 'place_name' => 'Харків', 'title' => 'Балістика', 'lat' => 50, 'lng' => 36.2, 'detected_at' => now(), 'expires_at' => now()->addMinutes(5)]);
+        AirThreat::query()->create(['type' => 'uav', 'region_slug' => 'sumy', 'place_name' => 'Суми', 'title' => 'Шахед', 'lat' => 50.9, 'lng' => 34.8, 'detected_at' => now(), 'expires_at' => now()->addMinutes(5)]);
+        $state = $this->service()->state();
+        $regions = collect($state['regions'])->keyBy('slug');
+
+        // Хімічна (90) важливіша за повітряну (70) й БпЛА (40); решта — вторинні бейджі.
+        $this->assertSame('CHEMICAL', $regions['sumy']['alert']);
+        $this->assertSame(['CHEMICAL', 'AIR', 'UAV'], $regions['sumy']['alerts']);
+        $this->assertSame('oblast', $regions['sumy']['scale']);
+        // Тривога лише в районі — масштаб «район», колір заливки району.
+        $this->assertSame('AIR', $regions['kyiv-oblast']['alert']);
+        $this->assertSame('raion', $regions['kyiv-oblast']['scale']);
+        $unit = collect($state['units'])->firstWhere('code', 'UA32080000000084076');
+        $this->assertSame(['AIR', 'raion'], [$unit['type'], $unit['scale']]);
+        // Без офіційної тривоги, але з балістикою — червоний рівень; спокійна область — CLEAR.
+        $this->assertSame('BALLISTIC', $regions['kharkiv']['alert']);
+        $this->assertSame(['BALLISTIC'], $regions['kharkiv']['threat_levels']);
+        $this->assertSame('CLEAR', $regions['lviv']['alert']);
     }
 }

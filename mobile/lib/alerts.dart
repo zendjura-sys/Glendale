@@ -12,6 +12,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import 'alerts_config.dart';
 import 'alerts_map.dart';
 import 'api.dart';
 import 'i18n.dart';
@@ -19,9 +20,6 @@ import 'state.dart';
 import 'theme.dart';
 import 'ukraine_outline.dart';
 import 'widgets.dart';
-
-/// Колір області в списку: повна тривога, часткова чи свій вид.
-const alertColors = {...kindColors, 'partial': Color(0xFFF59E0B)};
 
 /// Шари мапи (фільтри): тривоги й окремо кожен тип цілей.
 const alertLayers = ['alerts', 'uav', 'missile', 'ballistic', 'kab', 'mig'];
@@ -232,6 +230,9 @@ class _AlertsScreenState extends State<AlertsScreen> {
     final threats = maps(d['threats']);
     final visible = threats.where((t) => layers.contains(text(t['type']))).toList();
     final active = regions.where((r) => r['active'] == true).toList();
+    // «Тривога зараз»: офіційні тривоги й рівні загроз з цілей, важливіші — вище.
+    final alerting = regions.where((r) => r['active'] == true || !{AlertTypeCode.clear, AlertTypeCode.noData}.contains(regionType(r))).toList()
+      ..sort((a, b) => AlertsConfig.types[regionType(b)]!.priority - AlertsConfig.types[regionType(a)]!.priority);
     final prefs = mapOf(d['prefs']);
     final mineSlug = text(prefs['region']);
     final mine = regions.where((r) => r['slug'] == mineSlug).firstOrNull;
@@ -361,11 +362,21 @@ class _AlertsScreenState extends State<AlertsScreen> {
               ),
             ),
             const SizedBox(height: 10),
+            // Легенда: офіційні типи за пріоритетом і масштаб повітряної тривоги.
+            Wrap(spacing: 6, runSpacing: 6, children: [for (final t in AlertsConfig.ordered) AlertBadge(t, full: true)]),
+            const SizedBox(height: 8),
             Wrap(spacing: 12, runSpacing: 6, children: [
-              for (final k in ['air_raid', 'artillery', 'urban_fights', 'chemical', 'nuclear'])
-                _legend(Container(width: 10, height: 10, decoration: BoxDecoration(color: kindColors[k], borderRadius: BorderRadius.circular(2))), kindLabel(k)),
-              _legend(Container(width: 10, height: 10, decoration: BoxDecoration(color: nearbyColor.withValues(alpha: 0.5), borderRadius: BorderRadius.circular(2))), tr('Жовтий рівень — тривога в області поруч')),
-              _legend(Text('☢', style: body(11)), tr('Чорнобильська зона відчуження')),
+              Text(tr('Повітряна тривога за масштабом:'), style: body(12, color: muted)),
+              for (final sc in AlertScaleCode.values)
+                _legend(
+                  Container(
+                    width: 10,
+                    height: 10,
+                    decoration: BoxDecoration(color: AlertsConfig.airScale[sc]!.fill, border: Border.all(color: AlertsConfig.airScale[sc]!.border), borderRadius: BorderRadius.circular(2)),
+                  ),
+                  AlertsConfig.scaleLabel(sc),
+                ),
+              _legend(Icon(LucideIcons.radiation, size: 12, color: muted), tr('Чорнобильська зона відчуження')),
             ]),
             const SizedBox(height: 8),
             Wrap(spacing: 12, runSpacing: 6, children: [
@@ -398,14 +409,26 @@ class _AlertsScreenState extends State<AlertsScreen> {
     final activeCard = Glass(
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             CardTitle(tr('Тривога зараз'), icon: LucideIcons.siren),
-            if (active.isEmpty) Text(tr('Тривог немає.'), style: body(14, color: muted)),
-            for (final r in active)
+            if (alerting.isEmpty) Text(tr('Тривог немає.'), style: body(14, color: muted)),
+            for (final r in alerting)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 4),
                 child: Row(children: [
-                  Container(width: 8, height: 8, decoration: BoxDecoration(shape: BoxShape.circle, color: alertColors[text(r['type']) ?? 'air_raid'] ?? alertColors['air_raid'])),
+                  // Головна тривога (найвищий пріоритет), решта — вторинні бейджі.
+                  AlertBadge(regionType(r), scale: AlertsConfig.scaleOf(r['scale'])),
                   const SizedBox(width: 10),
-                  Expanded(child: Text(text(r['name']) ?? '', style: body(14))),
+                  Expanded(
+                    child: Text(
+                      text(r['name']) ?? '',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: body(14, color: AlertsConfig.resolveColors(regionType(r), AlertsConfig.scaleOf(r['scale'])).text),
+                    ),
+                  ),
+                  for (final c in ((r['alerts'] as List?) ?? const []).skip(1))
+                    if (AlertsConfig.typeOf(c) != null)
+                      Padding(padding: const EdgeInsets.only(left: 4), child: AlertBadge(AlertsConfig.typeOf(c)!, scale: AlertsConfig.scaleOf(r['scale']), iconOnly: true)),
+                  const SizedBox(width: 8),
                   Text(alertDuration(r['started_at']), style: body(12.5, color: muted)),
                 ]),
               ),

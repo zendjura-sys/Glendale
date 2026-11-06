@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import 'alerts_config.dart';
 import 'api.dart';
 import 'i18n.dart';
 import 'theme.dart';
@@ -16,26 +17,12 @@ import 'widgets.dart';
 // Межі — `assets/geo/ua-units.json` і `ua-hromadas.json` (копії `resources/js/data/*`; © OpenStreetMap, ODbL),
 // шляхи вже в проєкції 1000×680.
 
-/// Колір виду тривоги (як `KIND_COLOR` на сайті).
-const kindColors = {
-  'air_raid': Color(0xFFC42525),
-  'artillery': Color(0xFFE0661A),
-  'urban_fights': Color(0xFF8A2F12),
-  'chemical': Color(0xFF5F9E1C),
-  'nuclear': Color(0xFFD4A20B),
-};
+/// Код типу зони з відповіді: новий `type` (AlertType) або старий `kind` — для сумісності.
+AlertTypeCode unitType(Map<String, dynamic> unit) => AlertsConfig.typeOf(unit['type']) ?? AlertsConfig.typeOf(unit['kind']) ?? AlertTypeCode.air;
 
-/// «Жовтий рівень»: в області тривога, але не в цьому районі.
-const nearbyColor = Color(0xFFEAB308);
-
-String kindLabel(String kind) => switch (kind) {
-  'artillery' => tr('Загроза артобстрілу'),
-  'urban_fights' => tr('Вуличні бої'),
-  'chemical' => tr('Хімічна загроза'),
-  'nuclear' => tr('Радіаційна загроза'),
-  'partial' => tr('Частина області'),
-  _ => tr('Повітряна тривога'),
-};
+/// Головна тривога області (з сервера `alert`; у старих відповідях — за `active`).
+AlertTypeCode regionType(Map<String, dynamic> region) =>
+    AlertsConfig.typeOf(region['alert']) ?? (region['active'] == true ? (AlertsConfig.typeOf(region['kind']) ?? AlertTypeCode.air) : AlertTypeCode.clear);
 
 /// Колір цілі за типом (як на сайті).
 const threatColors = {
@@ -233,9 +220,22 @@ class AlertMapView extends StatefulWidget {
   State<AlertMapView> createState() => _AlertMapViewState();
 }
 
-class _AlertMapViewState extends State<AlertMapView> {
+class _AlertMapViewState extends State<AlertMapView> with SingleTickerProviderStateMixin {
   UaGeo? geo = UaGeo.ready;
   Timer? tick;
+  // М’яка пульсація активних зон; при «менше руху» в системі — без неї.
+  late final AnimationController pulse = AnimationController(vsync: this, duration: const Duration(milliseconds: 2600));
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (MediaQuery.disableAnimationsOf(context)) {
+      pulse.stop();
+      pulse.value = 0;
+    } else if (!pulse.isAnimating) {
+      pulse.repeat();
+    }
+  }
 
   @override
   void initState() {
@@ -263,6 +263,7 @@ class _AlertMapViewState extends State<AlertMapView> {
   @override
   void dispose() {
     tick?.cancel();
+    pulse.dispose();
     super.dispose();
   }
 
@@ -312,7 +313,9 @@ class _AlertMapViewState extends State<AlertMapView> {
       if (g == null) return const Center(child: CircularProgressIndicator());
       return GestureDetector(
         onTapUp: (d) => _tap(d.localPosition, size),
-        child: CustomPaint(
+        child: AnimatedBuilder(
+          animation: pulse,
+          builder: (_, _) => CustomPaint(
           size: size,
           painter: _AlertMapPainter(
             geo: g,
@@ -324,7 +327,9 @@ class _AlertMapViewState extends State<AlertMapView> {
             selected: widget.selected,
             ink: fg,
             now: DateTime.now(),
+            pulse: pulse.isAnimating ? (1 - math.cos(pulse.value * 2 * math.pi)) / 2 : 0,
           ),
+        ),
         ),
       );
     });
@@ -342,7 +347,9 @@ class _AlertMapPainter extends CustomPainter {
     required this.selected,
     required this.ink,
     required this.now,
+    required this.pulse,
   });
+  final double pulse;
   final UaGeo geo;
   final List<Map<String, dynamic>> regions;
   final List<Map<String, dynamic>> units;
@@ -373,27 +380,37 @@ class _AlertMapPainter extends CustomPainter {
     canvas.save();
     canvas.scale(size.width / 1000);
     final byCode = {for (final u in showAlerts ? units : const <Map<String, dynamic>>[]) '${u['code']}': u};
-    final partial = {for (final r in regions) if (showAlerts && r['active'] == true && r['type'] == 'partial') '${r['slug']}'};
+    // Рівні загроз з цілей (балістика — червоний, БпЛА — жовтий) діють на всю область.
+    final levels = {
+      for (final r in regions)
+        '${r['slug']}': [if (showAlerts) for (final c in (r['threat_levels'] as List?) ?? const []) AlertsConfig.typeOf(c)],
+    };
+    final noData = {for (final r in regions) if (r['alert'] == 'NO_DATA') '${r['slug']}'};
     final border = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 0.6
       ..color = ink.withValues(alpha: 0.12);
 
+    /// Головна тривога зони (найвищий пріоритет), кольори за типом і масштабом.
     void fillUnit(String code, String oblast, Path path) {
       final unit = byCode[code];
-      if (unit != null) {
-        final color = kindColors['${unit['kind']}'] ?? kindColors['air_raid']!;
-        canvas.drawPath(path, Paint()..color = color.withValues(alpha: 0.85));
-        final started = DateTime.tryParse('${unit['started_at'] ?? ''}');
+      var type = AlertsConfig.primary([if (unit != null) unitType(unit), ...?levels[oblast]]);
+      if (type == AlertTypeCode.clear && noData.contains(oblast)) type = AlertTypeCode.noData;
+      final palette = AlertsConfig.resolveColors(type, type == AlertTypeCode.air ? (AlertsConfig.scaleOf(unit?['scale']) ?? AlertScaleCode.oblast) : null);
+      canvas.drawPath(path, Paint()..color = palette.fill);
+      final active = type != AlertTypeCode.clear && type != AlertTypeCode.noData;
+      if (!active) return;
+      final started = DateTime.tryParse('${unit?['started_at'] ?? ''}');
+      if (started != null && now.difference(started).inHours >= 24) {
         // Тривога понад добу (окуповані території тощо) — штрих.
-        if (started != null && now.difference(started).inHours >= 24) _hatch(canvas, path, Colors.black.withValues(alpha: 0.45));
-      } else if (partial.contains(oblast)) {
-        // Жовтий рівень — жовті смуги, щоб не змішувались у оливковий.
-        canvas.drawPath(path, Paint()..color = nearbyColor.withValues(alpha: 0.10));
-        _hatch(canvas, path, nearbyColor.withValues(alpha: 0.55), gap: 7, width: 1.6, angle: -1);
-      } else {
-        canvas.drawPath(path, Paint()..color = ink.withValues(alpha: 0.045));
+        _hatch(canvas, path, Colors.black.withValues(alpha: 0.45));
+      } else if (pulse > 0) {
+        canvas.drawPath(path, Paint()..color = palette.hex.withValues(alpha: 0.22 * pulse));
       }
+      canvas.drawPath(path, Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 0.9
+        ..color = palette.border);
     }
 
     for (final u in geo.units) {
@@ -414,7 +431,7 @@ class _AlertMapPainter extends CustomPainter {
         ..style = PaintingStyle.stroke
         ..strokeWidth = 0.8
         ..color = Colors.white.withValues(alpha: 0.45));
-      _text(canvas, '☢', chez.label, 14, Colors.white.withValues(alpha: 0.8));
+      _icon(canvas, LucideIcons.radiation, chez.label, 15, Colors.white.withValues(alpha: 0.85));
     }
     for (final o in geo.oblasts) {
       final isMine = o.oblast == mine;
@@ -429,9 +446,10 @@ class _AlertMapPainter extends CustomPainter {
       _text(canvas, name, project(_d(r['lat']), _d(r['lng'])), 14, ink.withValues(alpha: 0.62), weight: FontWeight.w600);
     }
     for (final u in byCode.values) {
-      if (u['kind'] != 'nuclear' && u['kind'] != 'chemical') continue;
+      final type = unitType(u);
+      if (type != AlertTypeCode.nuclear && type != AlertTypeCode.chemical) continue;
       final shape = geo.units.where((s) => s.code == u['code']).firstOrNull;
-      if (shape != null) _text(canvas, u['kind'] == 'nuclear' ? '☢' : '☣', shape.label, 18, Colors.white);
+      if (shape != null) _icon(canvas, AlertsConfig.types[type]!.icon, shape.label, 20, AlertsConfig.types[type]!.palette.text);
     }
 
     for (final t in threats) {
@@ -485,6 +503,15 @@ class _AlertMapPainter extends CustomPainter {
     }
     _text(canvas, '© OpenStreetMap · ODbL', const Offset(940, 672), 10, ink.withValues(alpha: 0.35));
     canvas.restore();
+  }
+
+  /// Іконка Lucide на мапі (шрифт іконок) по центру точки.
+  void _icon(Canvas canvas, IconData icon, Offset center, double size, Color color) {
+    final tp = TextPainter(
+      text: TextSpan(text: String.fromCharCode(icon.codePoint), style: TextStyle(fontFamily: icon.fontFamily, package: icon.fontPackage, fontSize: size, color: color)),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    tp.paint(canvas, center - Offset(tp.width / 2, tp.height / 2));
   }
 
   void _text(Canvas canvas, String value, Offset center, double size, Color color, {FontWeight weight = FontWeight.w400}) {

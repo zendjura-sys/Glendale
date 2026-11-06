@@ -17,17 +17,21 @@ import {
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import {
-    ALERT_COLOR,
     AlertMap,
-    KIND_COLOR,
-    kindLabel,
-    NEARBY_COLOR,
+    regionColors,
     THREAT_COLOR,
     GLYPHS,
     threatLabel,
     threatTitle,
 } from '@/components/alerts/alert-map';
+import { AlertBadge } from '@/components/alerts/alert-badge';
 import { Toggle } from '@/components/gc/admin';
+import {
+    AIR_RAID_SCALE_COLORS,
+    ALERT_TYPE_ORDER,
+    ALERT_TYPES,
+} from '@/lib/alerts-config';
+import type { AlertScaleCode } from '@/lib/alerts-config';
 import { api } from '@/lib/api';
 import { tr } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
@@ -137,6 +141,20 @@ export default function Alerts(props: {
             .catch((e: Error) => toast.error(e.message));
 
     const active = state.regions.filter((r) => r.active);
+    // Для списку «Тривога зараз»: офіційні тривоги й рівні загроз з цілей, важливіші — вище.
+    const alerting = state.regions
+        .filter(
+            (r) =>
+                r.active ||
+                (r.alert !== undefined &&
+                    r.alert !== 'CLEAR' &&
+                    r.alert !== 'NO_DATA'),
+        )
+        .sort(
+            (a, b) =>
+                ALERT_TYPES[b.alert ?? 'AIR'].priority -
+                ALERT_TYPES[a.alert ?? 'AIR'].priority,
+        );
     const mine = state.regions.find((r) => r.slug === prefs.region) ?? null;
 
     return (
@@ -314,7 +332,7 @@ export default function Alerts(props: {
                                 const on = layers.includes(layer);
                                 const color =
                                     layer === 'alerts'
-                                        ? ALERT_COLOR.air_raid
+                                        ? ALERT_TYPES.AIR.hex
                                         : THREAT_COLOR[layer];
                                 return (
                                     <button
@@ -353,41 +371,42 @@ export default function Alerts(props: {
                             now={now}
                             onSelect={(slug) => save({ region: slug })}
                         />
-                        <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-xs text-white/60">
+                        {/* Легенда: офіційні типи за пріоритетом і масштаб повітряної тривоги. */}
+                        <div className="mt-3 flex flex-wrap gap-1.5">
+                            {ALERT_TYPE_ORDER.map((code) => (
+                                <AlertBadge key={code} type={code} full />
+                            ))}
+                        </div>
+                        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-white/60">
+                            <span>{tr('Повітряна тривога за масштабом:')}</span>
                             {(
-                                [
-                                    'air_raid',
-                                    'artillery',
-                                    'urban_fights',
-                                    'chemical',
-                                    'nuclear',
-                                ] as const
-                            ).map((key) => (
+                                Object.keys(
+                                    AIR_RAID_SCALE_COLORS,
+                                ) as AlertScaleCode[]
+                            ).map((scale) => (
                                 <span
-                                    key={key}
+                                    key={scale}
                                     className="inline-flex items-center gap-1.5"
                                 >
                                     <span
-                                        className="size-2.5 rounded-sm"
-                                        style={{ background: KIND_COLOR[key] }}
+                                        className="size-2.5 rounded-sm border"
+                                        style={{
+                                            background:
+                                                AIR_RAID_SCALE_COLORS[scale]
+                                                    .fill,
+                                            borderColor:
+                                                AIR_RAID_SCALE_COLORS[scale]
+                                                    .border,
+                                        }}
                                     />
-                                    {kindLabel(key)}
+                                    {AIR_RAID_SCALE_COLORS[scale].label()}
                                 </span>
                             ))}
                             <span className="inline-flex items-center gap-1.5">
                                 <span
                                     className="size-2.5 rounded-sm"
                                     style={{
-                                        background: `repeating-linear-gradient(-45deg, ${NEARBY_COLOR} 0 1.5px, transparent 1.5px 4px)`,
-                                    }}
-                                />
-                                {tr('Жовтий рівень — тривога в області поруч')}
-                            </span>
-                            <span className="inline-flex items-center gap-1.5">
-                                <span
-                                    className="size-2.5 rounded-sm"
-                                    style={{
-                                        background: `repeating-linear-gradient(45deg, ${KIND_COLOR.air_raid} 0 3px, rgb(0 0 0 / 0.5) 3px 5px)`,
+                                        background: `repeating-linear-gradient(45deg, ${ALERT_TYPES.AIR.hex} 0 3px, rgb(0 0 0 / 0.5) 3px 5px)`,
                                     }}
                                 />
                                 {tr('Штрих — тривога понад добу')}
@@ -448,29 +467,40 @@ export default function Alerts(props: {
                                 <Siren className="size-4 text-red-400" />
                                 {tr('Тривога зараз')}
                             </h2>
-                            {active.length === 0 && (
+                            {alerting.length === 0 && (
                                 <p className="text-sm text-white/45">
                                     {tr('Тривог немає.')}
                                 </p>
                             )}
                             <ul className="space-y-1.5">
-                                {active.map((r) => (
+                                {alerting.map((r) => (
                                     <li
                                         key={r.slug}
                                         className="flex items-center gap-2 text-sm"
                                     >
-                                        <span
-                                            className="size-2 shrink-0 rounded-full"
-                                            style={{
-                                                background:
-                                                    ALERT_COLOR[
-                                                        r.type ?? 'air_raid'
-                                                    ],
-                                            }}
+                                        {/* Головна тривога (найвищий пріоритет), решта — вторинні бейджі. */}
+                                        <AlertBadge
+                                            type={r.alert ?? 'AIR'}
+                                            scale={r.scale}
                                         />
-                                        <span className="min-w-0 flex-1 truncate text-white/85">
+                                        <span
+                                            className="min-w-0 flex-1 truncate"
+                                            style={{
+                                                color: regionColors(r).text,
+                                            }}
+                                        >
                                             {r.name}
                                         </span>
+                                        {(r.alerts ?? [])
+                                            .slice(1)
+                                            .map((code) => (
+                                                <AlertBadge
+                                                    key={code}
+                                                    type={code}
+                                                    scale={r.scale}
+                                                    iconOnly
+                                                />
+                                            ))}
                                         <span className="text-xs text-white/50 tabular-nums">
                                             {duration(r.started_at, now)}
                                         </span>

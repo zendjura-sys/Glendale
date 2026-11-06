@@ -1,9 +1,11 @@
 import {
+    Biohazard,
     Clock,
     Gauge,
     MapPin,
     Minus,
     Plus,
+    Radiation,
     Radio,
     RefreshCw,
     X,
@@ -11,6 +13,13 @@ import {
 import { AnimatePresence, m, useReducedMotion } from 'motion/react';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import units from '@/data/ua-units.json';
+import {
+    ALERT_TYPES,
+    isAlertType,
+    primaryAlert,
+    resolveAlertColors,
+} from '@/lib/alerts-config';
+import type { AlertScaleCode, AlertTypeCode } from '@/lib/alerts-config';
 import { tr } from '@/lib/i18n';
 
 export type AlertKind =
@@ -28,6 +37,11 @@ export type AlertRegion = {
     active: boolean;
     /** air_raid — уся область, partial — частина області, інше — вид тривоги. */
     type: 'air_raid' | 'partial' | Exclude<AlertKind, 'air_raid'> | null;
+    /** Головна тривога за пріоритетом (AlertType), вторинні й рівні загроз з цілей. */
+    alert?: AlertTypeCode;
+    alerts?: AlertTypeCode[];
+    threat_levels?: AlertTypeCode[];
+    scale?: AlertScaleCode | null;
     kind: AlertKind | null;
     started_at: string | null;
     minutes: number | null;
@@ -37,6 +51,9 @@ export type AlertRegion = {
 export type AlertUnit = {
     code: string;
     kind: AlertKind;
+    /** Код типу (AlertType) і масштаб — визначають колір заливки. */
+    type?: AlertTypeCode;
+    scale?: AlertScaleCode;
     started_at: string | null;
 };
 
@@ -73,34 +90,26 @@ export type AirThreat = {
     provider?: 'gamecon' | 'neptun';
 };
 
-/** Колір виду тривоги (без фіолетового й рожевого). */
-export const KIND_COLOR: Record<AlertKind, string> = {
-    air_raid: '#c42525',
-    artillery: '#e0661a',
-    urban_fights: '#8a2f12',
-    chemical: '#5f9e1c',
-    nuclear: '#d4a20b',
+/** Старий вид тривоги (`kind`) → код типу — для відповідей старого формату. */
+const KIND_TO_TYPE: Record<AlertKind, AlertTypeCode> = {
+    air_raid: 'AIR',
+    artillery: 'ARTILLERY',
+    urban_fights: 'URBAN_FIGHTS',
+    chemical: 'CHEMICAL',
+    nuclear: 'NUCLEAR',
 };
 
-/** «Жовтий рівень»: в області тривога, але не в цьому районі. */
-export const NEARBY_COLOR = '#eab308';
+export function unitType(unit: AlertUnit): AlertTypeCode {
+    return isAlertType(unit.type) ? unit.type : KIND_TO_TYPE[unit.kind];
+}
 
-/** Колір області в списках: повна, часткова чи свій вид тривоги. */
-export const ALERT_COLOR: Record<string, string> = {
-    ...KIND_COLOR,
-    partial: '#f59e0b',
-};
+/** Колір області в списках: головна тривога з масштабом. */
+export function regionColors(region: AlertRegion) {
+    const code =
+        region.alert ??
+        (region.active ? KIND_TO_TYPE[region.kind ?? 'air_raid'] : 'CLEAR');
 
-export function kindLabel(kind: AlertKind | 'partial' | 'nearby'): string {
-    return {
-        air_raid: tr('Повітряна тривога'),
-        artillery: tr('Загроза артобстрілу'),
-        urban_fights: tr('Вуличні бої'),
-        chemical: tr('Хімічна загроза'),
-        nuclear: tr('Радіаційна загроза'),
-        partial: tr('Частина області'),
-        nearby: tr('Тривога поруч'),
-    }[kind];
+    return resolveAlertColors(code, region.scale ?? null);
 }
 
 /** Колір цілі за типом (без фіолетового й рожевого). */
@@ -279,15 +288,6 @@ export function AlertMap({
         () => new Map(alerted.map((u) => [u.code, u])),
         [alerted],
     );
-    const partial = useMemo(
-        () =>
-            new Set(
-                regions
-                    .filter((r) => r.active && r.type === 'partial')
-                    .map((r) => r.slug),
-            ),
-        [regions],
-    );
     // Громади з тривогою — окремий файл меж, вантажимо лише коли вони потрібні.
     const needHromadas = alerted.some((u) => !KNOWN.has(u.code));
     const [hromadas, setHromadas] = useState<Shape[] | null>(null);
@@ -323,27 +323,55 @@ export function AlertMap({
           )
         : null;
 
-    const fill = (code: string, oblast: string) => {
+    // Рівні загроз з цілей (балістика — червоний, БпЛА — жовтий) діють на всю область.
+    const levels = useMemo(
+        () =>
+            new Map(
+                regions.map((r) => [
+                    r.slug,
+                    showAlerts ? (r.threat_levels ?? []) : [],
+                ]),
+            ),
+        [regions, showAlerts],
+    );
+    const noData = useMemo(
+        () =>
+            new Set(
+                regions.filter((r) => r.alert === 'NO_DATA').map((r) => r.slug),
+            ),
+        [regions],
+    );
+    /** Стан зони: головна тривога (найвищий пріоритет), кольори за типом і масштабом. */
+    const status = (code: string, oblast: string) => {
         const unit = showAlerts ? byCode.get(code) : undefined;
-        if (unit) {
-            const long =
-                clock > 0 &&
-                unit.started_at !== null &&
-                clock - Date.parse(unit.started_at) > LONG_MS;
-            return {
-                fill: long
-                    ? `url(#hatch-${unit.kind}-${id})`
-                    : KIND_COLOR[unit.kind],
-                opacity: 0.85,
-            };
-        }
-        if (showAlerts && partial.has(oblast)) {
-            return { fill: `url(#nearby-${id})`, opacity: 1 };
-        }
-        return { fill: 'rgb(255 255 255 / 0.045)', opacity: 1 };
+        const primary = primaryAlert([
+            unit ? unitType(unit) : null,
+            ...(levels.get(oblast) ?? []),
+        ]);
+        const type: AlertTypeCode =
+            primary === 'CLEAR' && noData.has(oblast) ? 'NO_DATA' : primary;
+        const colors = resolveAlertColors(
+            type,
+            type === 'AIR' ? (unit?.scale ?? 'oblast') : null,
+        );
+        const long =
+            unit !== undefined &&
+            clock > 0 &&
+            unit.started_at !== null &&
+            clock - Date.parse(unit.started_at) > LONG_MS;
+
+        return {
+            type,
+            colors,
+            active: type !== 'CLEAR' && type !== 'NO_DATA',
+            long,
+        };
     };
     const special = showAlerts
-        ? alerted.filter((u) => u.kind === 'nuclear' || u.kind === 'chemical')
+        ? alerted.filter((u) => {
+              const t = unitType(u);
+              return t === 'NUCLEAR' || t === 'CHEMICAL';
+          })
         : [];
 
     return (
@@ -364,32 +392,23 @@ export function AlertMap({
                         }}
                     >
                         <defs>
-                            {(Object.keys(KIND_COLOR) as AlertKind[]).map(
-                                (kind) => (
-                                    <pattern
-                                        key={kind}
-                                        id={`hatch-${kind}-${id}`}
-                                        width="6"
-                                        height="6"
-                                        patternUnits="userSpaceOnUse"
-                                        patternTransform="rotate(45)"
-                                    >
-                                        <rect
-                                            width="6"
-                                            height="6"
-                                            fill={KIND_COLOR[kind]}
-                                        />
-                                        <line
-                                            x1="0"
-                                            y1="0"
-                                            x2="0"
-                                            y2="6"
-                                            stroke="rgb(0 0 0 / 0.45)"
-                                            strokeWidth="2.2"
-                                        />
-                                    </pattern>
-                                ),
-                            )}
+                            {/* Тривога понад добу — темні смуги поверх кольору зони. */}
+                            <pattern
+                                id={`long-${id}`}
+                                width="6"
+                                height="6"
+                                patternUnits="userSpaceOnUse"
+                                patternTransform="rotate(45)"
+                            >
+                                <line
+                                    x1="0"
+                                    y1="0"
+                                    x2="0"
+                                    y2="6"
+                                    stroke="rgb(0 0 0 / 0.45)"
+                                    strokeWidth="2.2"
+                                />
+                            </pattern>
                             <pattern
                                 id={`chez-${id}`}
                                 width="5"
@@ -406,52 +425,28 @@ export function AlertMap({
                                     strokeWidth="1.8"
                                 />
                             </pattern>
-                            {/* Жовтий рівень: жовті смуги поверх темного, щоб не змішувалось у оливковий. */}
-                            <pattern
-                                id={`nearby-${id}`}
-                                width="7"
-                                height="7"
-                                patternUnits="userSpaceOnUse"
-                                patternTransform="rotate(-45)"
-                            >
-                                <rect
-                                    width="7"
-                                    height="7"
-                                    fill="rgb(234 179 8 / 0.10)"
-                                />
-                                <line
-                                    x1="0"
-                                    y1="0"
-                                    x2="0"
-                                    y2="7"
-                                    stroke={NEARBY_COLOR}
-                                    strokeOpacity={0.55}
-                                    strokeWidth="1.6"
-                                />
-                            </pattern>
                         </defs>
 
                         {UNITS.map((u) => {
-                            const f = fill(u.c, u.o);
-                            const unit = byCode.get(u.c);
+                            const st = status(u.c, u.o);
                             return (
                                 <path
                                     key={u.c}
                                     d={u.d}
-                                    fill={f.fill}
-                                    fillOpacity={f.opacity}
-                                    stroke="rgb(255 255 255 / 0.12)"
-                                    strokeWidth={0.6}
+                                    fill={st.colors.fill}
+                                    stroke={
+                                        st.active
+                                            ? st.colors.border
+                                            : 'rgb(255 255 255 / 0.12)'
+                                    }
+                                    strokeWidth={st.active ? 0.9 : 0.6}
                                     className={
                                         onSelect ? 'cursor-pointer' : undefined
                                     }
                                     onClick={() => onSelect?.(u.o)}
                                 >
                                     <title>
-                                        {u.n}
-                                        {unit
-                                            ? ` · ${kindLabel(unit.kind)}`
-                                            : ''}
+                                        {u.n} · {ALERT_TYPES[st.type].label()}
                                     </title>
                                 </path>
                             );
@@ -460,26 +455,47 @@ export function AlertMap({
                         {hromadas
                             ?.filter((h) => byCode.has(h.c))
                             .map((h) => {
-                                const f = fill(h.c, h.o);
-                                const unit = byCode.get(h.c);
+                                const st = status(h.c, h.o);
                                 return (
                                     <path
                                         key={h.c}
                                         d={h.d}
-                                        fill={f.fill}
-                                        fillOpacity={0.95}
-                                        stroke="rgb(0 0 0 / 0.35)"
-                                        strokeWidth={0.5}
+                                        fill={st.colors.fill}
+                                        stroke={st.colors.border}
+                                        strokeWidth={0.6}
                                     >
                                         <title>
-                                            {h.n}
-                                            {unit
-                                                ? ` · ${kindLabel(unit.kind)}`
-                                                : ''}
+                                            {h.n} ·{' '}
+                                            {ALERT_TYPES[st.type].label()}
                                         </title>
                                     </path>
                                 );
                             })}
+
+                        {/* Тривога понад добу — штрих; активні зони м’яко пульсують (крім «менше руху»). */}
+                        <g pointerEvents="none">
+                            {UNITS.map((u) => {
+                                const st = status(u.c, u.o);
+                                if (!st.active) return null;
+                                return (
+                                    <g key={`fx-${u.c}`}>
+                                        {st.long && (
+                                            <path
+                                                d={u.d}
+                                                fill={`url(#long-${id})`}
+                                            />
+                                        )}
+                                        {!reduce && !st.long && (
+                                            <path
+                                                d={u.d}
+                                                fill={st.colors.hex}
+                                                className="gc-alert-pulse"
+                                            />
+                                        )}
+                                    </g>
+                                );
+                            })}
+                        </g>
 
                         {CHEZ && (
                             // Зона відчуження завжди штрихована поверх заливки — тривога під нею видна як скрізь.
@@ -495,15 +511,15 @@ export function AlertMap({
                                         {tr('Чорнобильська зона відчуження')}
                                     </title>
                                 </path>
-                                <text
-                                    x={CHEZ.x}
-                                    y={CHEZ.y + 5}
-                                    textAnchor="middle"
-                                    fontSize={14}
-                                    fill="rgb(255 255 255 / 0.8)"
-                                >
-                                    ☢
-                                </text>
+                                <Radiation
+                                    x={CHEZ.x - 8}
+                                    y={CHEZ.y - 8}
+                                    width={16}
+                                    height={16}
+                                    color="rgb(255 255 255 / 0.85)"
+                                    strokeWidth={2.2}
+                                    aria-hidden
+                                />
                             </g>
                         )}
 
@@ -550,17 +566,24 @@ export function AlertMap({
                         {special.map((u) => {
                             const shape = UNITS.find((s) => s.c === u.code);
                             if (!shape) return null;
+                            const nuclear = unitType(u) === 'NUCLEAR';
+                            const Icon = nuclear ? Radiation : Biohazard;
                             return (
-                                <text
+                                <Icon
                                     key={`s-${u.code}`}
-                                    x={shape.x}
-                                    y={shape.y + 6}
-                                    textAnchor="middle"
-                                    fontSize={18}
+                                    x={shape.x - 10}
+                                    y={shape.y - 10}
+                                    width={20}
+                                    height={20}
+                                    color={
+                                        ALERT_TYPES[
+                                            nuclear ? 'NUCLEAR' : 'CHEMICAL'
+                                        ].text
+                                    }
+                                    strokeWidth={2.4}
                                     pointerEvents="none"
-                                >
-                                    {u.kind === 'nuclear' ? '☢' : '☣'}
-                                </text>
+                                    aria-hidden
+                                />
                             );
                         })}
 
@@ -706,7 +729,7 @@ export function AlertMap({
                 </div>
             </div>
             {/* Масштаб: на телефоні мапа дрібна — збільшуємо й гортаємо пальцем. */}
-            <div className="absolute top-2 right-2 flex flex-col overflow-hidden rounded-xl bg-[#0d1626]/85 backdrop-blur">
+            <div className="ios-float absolute top-2 right-2 flex flex-col overflow-hidden rounded-xl">
                 <button
                     type="button"
                     onClick={() => zoomTo(zoom + 0.75)}
@@ -771,7 +794,7 @@ function ThreatCard({
             animate={{ opacity: 1, y: 0 }}
             exit={reduce ? undefined : { opacity: 0 }}
             transition={{ duration: 0.15 }}
-            className="absolute z-10 w-64 rounded-2xl bg-[#0d1626]/95 p-3.5 text-sm text-white/85 backdrop-blur-xl"
+            className="ios-float absolute z-10 w-64 rounded-2xl p-3.5 text-sm text-white/85"
             style={{
                 left: `clamp(8px, calc(${left}% - 128px), calc(100% - 264px))`,
                 top: `${top}%`,

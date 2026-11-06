@@ -5159,3 +5159,23 @@ iframe {
         display: none;
     }
 }
+
+/* Мапа тривог: м’яка пульсація активних зон (вимикається при «менше руху» — див. useReducedMotion у alert-map). */
+@keyframes gc-alert-pulse {
+    0%,
+    100% {
+        opacity: 0;
+    }
+    50% {
+        opacity: 0.22;
+    }
+}
+.gc-alert-pulse {
+    animation: gc-alert-pulse 2.6s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+    .gc-alert-pulse {
+        animation: none;
+        opacity: 0;
+    }
+}

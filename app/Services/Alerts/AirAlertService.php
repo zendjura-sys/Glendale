@@ -2,6 +2,8 @@
 
 namespace App\Services\Alerts;
 
+use App\Enums\AlertScale;
+use App\Enums\AlertType;
 use App\Models\AirThreat;
 use App\Models\User;
 use App\Notifications\AirAlertNotice;
@@ -130,10 +132,30 @@ class AirAlertService
     {
         $fetched = $this->fetchAlerts();
         $now = CarbonImmutable::now();
+        // Цілі й стрічка: NEPTUN (якщо відповідає), інакше власний розбір каналів.
+        $neptun = app(Neptun::class);
+        $cards = $neptun->threatCards();
+        $feed = $cards !== null ? $neptun->feed() : null;
+        $cards ??= AirThreat::query()->where('expires_at', '>', $now)->orderByDesc('detected_at')->limit(80)->get()
+            ->map(fn (AirThreat $t) => $t->toCard())->values()->all();
+        $types = array_column($cards, 'type');
+        $levels = $this->threatLevels($cards);
+        $noData = $fetched['stale'] && $fetched['regions'] === [];
+
         $regions = [];
         foreach (self::REGIONS as $slug => $region) {
             $alert = $fetched['regions'][$slug] ?? null;
             $started = $alert !== null && $alert['started_at'] !== null ? CarbonImmutable::parse($alert['started_at']) : null;
+            // Усі види тривог області + рівні загроз з цілей (червоний — балістика/КАБ/ракети, жовтий — БпЛА).
+            $all = [];
+            foreach (array_keys($alert['codes'] ?? []) as $code) {
+                $all[] = AlertType::from($code);
+            }
+            foreach ($levels[$slug] ?? [] as $level) {
+                $all[] = $level;
+            }
+            $sorted = AlertType::sorted($all);
+            $primary = $noData && $sorted === [] ? AlertType::NO_DATA : AlertType::primary($sorted);
             $regions[] = [
                 'slug' => $slug,
                 'name' => $region['name'],
@@ -142,21 +164,26 @@ class AirAlertService
                 'active' => $alert !== null,
                 'type' => $alert['type'] ?? null,
                 'kind' => $alert['kind'] ?? null,
+                // Головна тривога (найвищий пріоритет), вторинні бейджі й масштаб повітряної тривоги.
+                'alert' => $primary->value,
+                'alerts' => array_map(fn (AlertType $t) => $t->value, $sorted),
+                'threat_levels' => array_map(fn (AlertType $t) => $t->value, $levels[$slug] ?? []),
+                'scale' => $alert === null ? null : ($alert['type'] === 'partial' ? AlertScale::RAION->value : AlertScale::OBLAST->value),
                 'started_at' => $started?->toIso8601String(),
                 'minutes' => $started !== null ? max(0, (int) $started->diffInMinutes($now)) : null,
             ];
         }
         $units = [];
         foreach ($fetched['units'] as $code => $unit) {
-            $units[] = ['code' => $code, 'kind' => $unit['kind'], 'started_at' => $unit['started_at']];
+            $units[] = [
+                'code' => $code,
+                'kind' => $unit['kind'],
+                // Єдиний код типу (AlertType) і масштаб (AlertScale) — для кольору заливки.
+                'type' => AlertType::fromApi($unit['kind'])->value,
+                'scale' => $unit['scale'] ?? AlertScale::OBLAST->value,
+                'started_at' => $unit['started_at'],
+            ];
         }
-        // Цілі й стрічка: NEPTUN (якщо відповідає), інакше власний розбір каналів.
-        $neptun = app(Neptun::class);
-        $cards = $neptun->threatCards();
-        $feed = $cards !== null ? $neptun->feed() : null;
-        $cards ??= AirThreat::query()->where('expires_at', '>', $now)->orderByDesc('detected_at')->limit(80)->get()
-            ->map(fn (AirThreat $t) => $t->toCard())->values()->all();
-        $types = array_column($cards, 'type');
 
         return [
             'regions' => $regions,
@@ -176,10 +203,38 @@ class AirAlertService
     }
 
     /**
+     * Рівні загроз областей з активних цілей: балістика, КАБ і ракети — червоний (BALLISTIC), БпЛА — жовтий (UAV).
+     * Спостереження без тривоги (advisory) і мітки без області не враховуємо.
+     *
+     * @param  array<int, array<string, mixed>>  $cards
+     * @return array<string, list<AlertType>>
+     */
+    private function threatLevels(array $cards): array
+    {
+        $out = [];
+        foreach ($cards as $card) {
+            $slug = $card['region'] ?? null;
+            if (! is_string($slug) || ! isset(self::REGIONS[$slug]) || ($card['advisory'] ?? false) === true) {
+                continue;
+            }
+            $level = match ($card['type'] ?? null) {
+                'ballistic', 'kab', 'missile' => AlertType::BALLISTIC,
+                'uav' => AlertType::UAV,
+                default => null,
+            };
+            if ($level !== null) {
+                $out[$slug][$level->value] = $level;
+            }
+        }
+
+        return array_map(fn (array $levels) => AlertType::sorted($levels), $out);
+    }
+
+    /**
      * Активні тривоги: офіційний UkraineAlarm, далі alerts.in.ua з токеном, далі ubilling; якщо всі мовчать —
      * останній вдалий стан (до 10 хв) з позначкою «може бути неактуальним».
      *
-     * @return array{regions: array<string, array{type: string, kind: string, started_at: string|null}>, units: array<string, array{kind: string, started_at: string|null}>, source: string|null, stale: bool}
+     * @return array{regions: array<string, array{type: string, kind: string, started_at: string|null, codes?: array<string, bool>}>, units: array<string, array{kind: string, started_at: string|null, scale?: string, codes?: array<string, bool>}>, source: string|null, stale: bool}
      */
     public function fetchAlerts(): array
     {
@@ -257,7 +312,7 @@ class AirAlertService
      * Тривога на всю область заливає всі її райони; на район — район; на громаду — громаду.
      *
      * @param  list<array{oblast: string, level: int, code: string|null, kind: string, started_at: string|null}>  $rows
-     * @return array{regions: array<string, array{type: string, kind: string, started_at: string|null}>, units: array<string, array{kind: string, started_at: string|null}>}
+     * @return array{regions: array<string, array{type: string, kind: string, started_at: string|null, codes?: array<string, bool>}>, units: array<string, array{kind: string, started_at: string|null, scale?: string, codes?: array<string, bool>}>}
      */
     private function aggregate(array $rows): array
     {
@@ -265,9 +320,11 @@ class AirAlertService
         $units = [];
         $put = function (array &$into, string $key, array $value): void {
             $current = $into[$key] ?? null;
-            if ($current === null || self::RANK[$value['kind']] > self::RANK[$current['kind']]) {
-                $into[$key] = $value;
+            if ($current === null || AlertType::fromApi($value['kind'])->priority() > AlertType::fromApi($current['kind'])->priority()) {
+                $into[$key] = [...$value, 'codes' => $current['codes'] ?? []];
             }
+            // Усі види тривог регіону — для вторинних бейджів.
+            $into[$key]['codes'][AlertType::fromApi($value['kind'])->value] = true;
         };
         foreach ($rows as $row) {
             $whole = $row['level'] === 1;
@@ -280,7 +337,7 @@ class AirAlertService
             if ($whole && $regions[$row['oblast']]['type'] === 'partial') {
                 $regions[$row['oblast']]['type'] = 'air_raid';
             }
-            $value = ['kind' => $row['kind'], 'started_at' => $row['started_at']];
+            $value = ['kind' => $row['kind'], 'started_at' => $row['started_at'], 'scale' => AlertScale::fromLevel($row['level'])->value];
             $codes = $whole ? AlertUnits::raionsOf($row['oblast']) : ($row['code'] !== null ? [$row['code']] : []);
             foreach ($codes as $code) {
                 $put($units, $code, $value);
