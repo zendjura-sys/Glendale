@@ -437,8 +437,8 @@ export default function ProfileShow({
                         }}
                     />
                 )}
-                {/* Обкладинка — на всю картку; ім’я, кнопки й лічильники лежать поверх неї. */}
-                <div className="absolute inset-0 z-0 overflow-hidden">
+                {/* Обкладинка — смуга вгорі картки, як у VK; аватар заходить на неї, ім’я й кнопки — нижче на картці. */}
+                <div className="absolute inset-x-0 top-0 z-0 h-36 overflow-hidden sm:h-52">
                     {profile.cover_video_url && !dataSaver ? (
                         <video
                             src={profile.cover_video_url}
@@ -476,16 +476,6 @@ export default function ProfileShow({
                             }}
                         />
                     )}
-                    {/* Плавне затемнення донизу: текст поверх фото завжди читається. */}
-                    <div
-                        aria-hidden
-                        className="absolute inset-0"
-                        style={{
-                            backgroundImage:
-                                'linear-gradient(to bottom, rgb(4 7 16 / 0.05) 0%, rgb(4 7 16 / 0.12) 26%, rgb(4 7 16 / 0.58) 46%, rgb(4 7 16 / 0.86) 68%, rgb(4 7 16 / 0.94) 100%)',
-                        }}
-                    />
-                    <div className="grid-lines absolute inset-0 opacity-30" />
                     {profile.accent && profile.cover_url && (
                         <div
                             aria-hidden
@@ -518,7 +508,7 @@ export default function ProfileShow({
                     )}
                 </div>
 
-                <div className="relative z-10 px-5 pt-36 pb-5 sm:px-8 sm:pt-52">
+                <div className="relative z-10 px-5 pt-24 pb-5 sm:px-8 sm:pt-36">
                     <div className="flex flex-col gap-5 sm:flex-row sm:flex-wrap sm:items-end">
                         {/* Світний обідок аватара (стиль Dune); з рамкою GameCon+ — лише рамка. */}
                         <div

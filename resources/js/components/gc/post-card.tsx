@@ -149,7 +149,7 @@ export function PostCard({
     return (
         <article
             ref={articleRef}
-            className="gc-post animate-rise px-1 py-5 data-[hotkey-focus]:rounded-2xl data-[hotkey-focus]:ring-1 data-[hotkey-focus]:ring-primary/40 sm:px-2"
+            className="gc-post animate-rise px-4 py-4 data-[hotkey-focus]:rounded-2xl data-[hotkey-focus]:ring-1 data-[hotkey-focus]:ring-primary/40 sm:px-5"
         >
             <header className="flex items-start gap-3">
                 <Link href={publisherHref} className="shrink-0">
@@ -802,7 +802,7 @@ export function PostCard({
                         setFocusComment(true);
                     }}
                     className={cn(
-                        'inline-flex h-9 items-center gap-1.5 rounded-control bg-white/[0.045] px-3.5 text-sm font-medium text-white/65 transition hover:bg-white/[0.08] hover:text-white',
+                        'gc-vk-pill',
                         !post.comments_enabled &&
                             'pointer-events-none opacity-40',
                     )}
@@ -824,7 +824,7 @@ export function PostCard({
                 <button
                     type="button"
                     onClick={copyLink}
-                    className="inline-flex h-9 items-center gap-1.5 rounded-control bg-white/[0.045] px-3.5 text-sm font-medium text-white/65 transition hover:bg-white/[0.08] hover:text-white"
+                    className="gc-vk-pill"
                     aria-label={tr('Поділитися')}
                 >
                     <Link2 className="size-[18px]" />

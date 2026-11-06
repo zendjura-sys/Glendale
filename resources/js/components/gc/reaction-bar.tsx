@@ -138,10 +138,8 @@ export function ReactionBar({
                     onPick(reaction ?? 'like');
                 }}
                 className={cn(
-                    'inline-flex h-9 min-w-9 items-center justify-center gap-1.5 rounded-full px-3 text-sm transition select-none [-webkit-touch-callout:none]',
-                    current
-                        ? 'bg-white/[0.1] text-white'
-                        : 'bg-white/[0.045] text-white/70 hover:bg-white/10 hover:text-white',
+                    'gc-vk-pill min-w-9 justify-center select-none [-webkit-touch-callout:none]',
+                    current && 'is-on',
                 )}
             >
                 {current ? (
