@@ -1,59 +1,62 @@
 import 'package:flutter/material.dart';
 
-// Дизайн-система «Spatial Glass» (Arctic Ice & Electric Sapphire): токени застосунку.
+// Дизайн-система застосунку в стилі One UI (Samsung, One UI Design Kit): суцільні картки з радіусом 26,
+// акцент #387AFF, тло — чорне (темна) і #F1F1F3 (світла), контейнери #17171A / #FFFFFF.
+// Імена класів лишилися від «Spatial Glass», щоб не чіпати сотні викликів.
 // Лише крижані й сапфірові відтінки — без фіолетового й рожевого. Палітра теми (theme.dart)
 // та віджети core/widgets/arctic_glass беруть кольори звідси; відмінності темної й світлої
 // теми — в ArcticGlassThemeExtension.
 
 abstract final class AppColors {
   // Тло
-  static const bgBase = Color(0xFF04070D);
-  static const bgElevated = Color(0xFF080E1A);
+  static const bgBase = Color(0xFF000000);
+  static const bgElevated = Color(0xFF0B0B0D);
 
   // Скло: tier1 — елементи списків, tier2 — картки й поля, tier3 — шторки та поповери.
-  static const glassTier1 = Color.fromRGBO(255, 255, 255, 0.04);
-  static const glassTier2 = Color.fromRGBO(255, 255, 255, 0.07);
-  static const glassTier3 = Color.fromRGBO(12, 20, 36, 0.78);
+  static const glassTier1 = Color(0xFF17171A);
+  static const glassTier2 = Color(0xFF17171A);
+  static const glassTier3 = Color(0xFF1F1F22);
 
   // Рамки
-  static const borderHairline = Color.fromRGBO(255, 255, 255, 0.10);
+  static const borderHairline = Color.fromRGBO(255, 255, 255, 0.08);
   static const borderSpecularTop = Color.fromRGBO(255, 255, 255, 0.32);
-  static const borderSapphire = Color.fromRGBO(0, 210, 255, 0.40);
+  static const borderSapphire = Color.fromRGBO(56, 122, 255, 0.40);
 
   // Акценти
-  static const accentPrimary = Color(0xFF0A84FF);
-  static const accentCyan = Color(0xFF00D2FF);
-  static const accentGradient = LinearGradient(colors: [accentPrimary, accentCyan], begin: Alignment.topLeft, end: Alignment.bottomRight);
+  static const accentPrimary = Color(0xFF387AFF);
+  static const accentCyan = Color(0xFF5B95FF);
+  static const accentGradient = LinearGradient(colors: [accentPrimary, accentPrimary]);
 
   /// Неоново-кораловий бейдж (лічильники сповіщень).
   static const badge = Color(0xFFFF4D6D);
 
   // Текст темної теми
-  static const textPrimary = Color(0xFFF8FAFC);
-  static const textSecondary = Color(0xFF94A3B8);
-  static const textMuted = Color(0xFF64748B);
+  static const textPrimary = Color(0xFFFCFCFF);
+  static const textSecondary = Color(0xFF9B9BA0);
+  static const textMuted = Color(0xFF848487);
 
   // Текст світлої теми
-  static const lightTitle = Color(0xFF0B1528);
-  static const lightBody = Color(0xFF334155);
-  static const lightMuted = Color(0xFF64748B);
+  static const lightTitle = Color(0xFF0F0F12);
+  static const lightBody = Color(0xFF3A3A3E);
+  static const lightMuted = Color(0xFF75757A);
 
   /// Мерехтіння скелетонів: ледь помітне скло → крижаний ціан → скло.
-  static const shimmer = [Color.fromRGBO(255, 255, 255, 0.03), Color.fromRGBO(0, 210, 255, 0.10), Color.fromRGBO(255, 255, 255, 0.03)];
+  static const shimmer = [Color.fromRGBO(255, 255, 255, 0.04), Color.fromRGBO(255, 255, 255, 0.10), Color.fromRGBO(255, 255, 255, 0.04)];
 }
 
-/// Радіуси: картки — 20, док, шапка й шторки — 28, кнопки й поля — 14.
+/// Радіуси One UI: картки — 26, нижнє меню й шторки — 30, кнопки й поля — пігулки (24).
 abstract final class AppRadii {
-  static const card = 20.0;
-  static const dock = 28.0;
-  static const control = 14.0;
+  static const card = 26.0;
+  static const dock = 30.0;
+  static const control = 24.0;
 }
 
 /// Розмиття «iOS Frosted Material»: картки й блоки — 22, кнопки й поля — 16,
 /// шапка, док і шторки — 28, розгорнуте меню доку — 32.
 abstract final class AppBlur {
-  static const card = 22.0;
-  static const control = 16.0;
+  // One UI: картки й поля суцільні (без розмиття); розмиття лише в плаваючих панелях.
+  static const card = 0.0;
+  static const control = 0.0;
   static const fixed = 28.0;
   static const dock = 28.0;
   static const sheet = 28.0;
@@ -122,58 +125,37 @@ class ArcticGlassThemeExtension extends ThemeExtension<ArcticGlassThemeExtension
 
   static const dark = ArcticGlassThemeExtension(
     light: false,
-    background: [AppColors.bgBase, AppColors.bgBase],
-    glows: [
-      ArcticGlow(Alignment(-1, -1), 1.1, AppColors.accentPrimary, 0.18),
-      ArcticGlow(Alignment(1, 0), 0.95, AppColors.accentCyan, 0.13),
-      ArcticGlow(Alignment(0, 1.15), 1.0, AppColors.accentPrimary, 0.16),
-    ],
-    // Матова тонировка скла: розмите тло під нею лишається видимим.
-    glassFill: LinearGradient(
-      begin: Alignment.topLeft,
-      end: Alignment.bottomRight,
-      colors: [Color.fromRGBO(255, 255, 255, 0.11), Color.fromRGBO(10, 132, 255, 0.04), Color.fromRGBO(255, 255, 255, 0.03)],
-    ),
-    pressedFill: LinearGradient(
-      begin: Alignment.topLeft,
-      end: Alignment.bottomRight,
-      colors: [Color.fromRGBO(255, 255, 255, 0.16), Color.fromRGBO(10, 132, 255, 0.07), Color.fromRGBO(255, 255, 255, 0.05)],
-    ),
-    innerFill: Color.fromRGBO(255, 255, 255, 0.05),
-    border: Color.fromRGBO(255, 255, 255, 0.14),
+    background: [Color(0xFF000000), Color(0xFF000000)],
+    glows: [],
+    // Контейнер One UI — суцільний #17171A.
+    glassFill: LinearGradient(colors: [Color(0xFF17171A), Color(0xFF17171A)]),
+    pressedFill: LinearGradient(colors: [Color(0xFF232326), Color(0xFF232326)]),
+    innerFill: Color(0xFF2E2E30),
+    border: Color(0x00000000),
     outline: null,
-    specular: Color.fromRGBO(255, 255, 255, 0.38),
-    // Без тіней: глибину дають розмиття, грань і блік.
+    specular: Color(0x00000000),
     shadows: [],
-    barFill: LinearGradient(
-      begin: Alignment.topLeft,
-      end: Alignment.bottomRight,
-      colors: [Color.fromRGBO(255, 255, 255, 0.11), Color.fromRGBO(10, 132, 255, 0.04), Color.fromRGBO(255, 255, 255, 0.03)],
-    ),
-    sheetFill: Color.fromRGBO(12, 18, 30, 0.55),
+    // Плаваючі панелі (нижнє меню, кнопки шапки при прокрутці) — напівпрозорі з розмиттям.
+    barFill: LinearGradient(colors: [Color.fromRGBO(46, 46, 48, 0.82), Color.fromRGBO(46, 46, 48, 0.82)]),
+    sheetFill: Color(0xFF17171A),
     title: AppColors.textPrimary,
-    body: Color(0xFFCBD5E1),
+    body: Color(0xFFD6D6DA),
     muted: AppColors.textSecondary,
   );
 
   static const daylight = ArcticGlassThemeExtension(
     light: true,
-    // Прохолодний льодовиковий градієнт і сфери світла: під білим склом завжди грає крижаний тон.
-    background: [Color(0xFFDFECFA), Color(0xFFEDF4FC), Color(0xFFD6E6F8)],
-    glows: [
-      ArcticGlow(Alignment(-1, -0.9), 1.0, AppColors.accentPrimary, 0.12),
-      ArcticGlow(Alignment(1, 0.1), 0.9, AppColors.accentCyan, 0.10),
-      ArcticGlow(Alignment(0, 1.15), 0.8, AppColors.accentPrimary, 0.12),
-    ],
-    glassFill: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color.fromRGBO(255, 255, 255, 0.65), Color.fromRGBO(232, 242, 255, 0.45)]),
-    pressedFill: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color.fromRGBO(255, 255, 255, 0.80), Color.fromRGBO(232, 242, 255, 0.60)]),
-    innerFill: Color.fromRGBO(255, 255, 255, 0.45),
-    border: Color.fromRGBO(255, 255, 255, 0.88),
+    background: [Color(0xFFF1F1F3), Color(0xFFF1F1F3)],
+    glows: [],
+    glassFill: LinearGradient(colors: [Color(0xFFFFFFFF), Color(0xFFFFFFFF)]),
+    pressedFill: LinearGradient(colors: [Color(0xFFEDEDF0), Color(0xFFEDEDF0)]),
+    innerFill: Color(0xFFF1F1F3),
+    border: Color(0x00000000),
     outline: null,
-    specular: Color.fromRGBO(255, 255, 255, 0.95),
+    specular: Color(0x00000000),
     shadows: [],
-    barFill: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color.fromRGBO(255, 255, 255, 0.65), Color.fromRGBO(232, 242, 255, 0.45)]),
-    sheetFill: Color.fromRGBO(246, 250, 255, 0.72),
+    barFill: LinearGradient(colors: [Color.fromRGBO(226, 226, 230, 0.88), Color.fromRGBO(226, 226, 230, 0.88)]),
+    sheetFill: Color(0xFFFFFFFF),
     title: AppColors.lightTitle,
     body: AppColors.lightBody,
     muted: AppColors.lightMuted,
@@ -193,10 +175,8 @@ class ArcticGlassThemeExtension extends ThemeExtension<ArcticGlassThemeExtension
 }
 
 /// Крижане світіння навколо активного елемента (вкладка доку, кнопка ШІ).
-List<BoxShadow> iceGlow({double strength = 1}) => [BoxShadow(color: AppColors.accentCyan.withValues(alpha: 0.45 * strength), blurRadius: 14, spreadRadius: -2)];
+// One UI без світіння: лишилося ім'я для сумісності.
+List<BoxShadow> iceGlow({double strength = 1}) => const [];
 
 /// М'яке крижане (#00D2FF) світіння індикатора доку.
-List<BoxShadow> sapphireGlow({double strength = 1}) => [
-  BoxShadow(color: AppColors.accentCyan.withValues(alpha: 0.38 * strength), blurRadius: 16, spreadRadius: -4),
-  BoxShadow(color: AppColors.accentPrimary.withValues(alpha: 0.22 * strength), blurRadius: 8, spreadRadius: -2),
-];
+List<BoxShadow> sapphireGlow({double strength = 1}) => const [];

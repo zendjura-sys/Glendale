@@ -147,7 +147,7 @@ class _ArcticGlassContainerState extends State<ArcticGlassContainer> {
       );
     }
     if (t < 1) body = Opacity(opacity: t.clamp(0, 1), child: body);
-    if (w.enableBlur && t > 0) {
+    if (w.enableBlur && t > 0 && (inner ? AppBlur.control : w.blur) > 0) {
       final sigma = (inner ? AppBlur.control : w.blur) * t;
       body = ClipRRect(borderRadius: shape, child: BackdropFilter(filter: arcticGlassFilter(sigma), child: body));
     }

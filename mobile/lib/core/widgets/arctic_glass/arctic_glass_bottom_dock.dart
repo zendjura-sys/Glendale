@@ -89,16 +89,15 @@ class ArcticDockTabs extends StatelessWidget {
                 child: AnimatedOpacity(
                   duration: still ? Duration.zero : const Duration(milliseconds: 200),
                   opacity: at == null ? 0 : 1,
-                  // Без обводки й заливки: м'яка неонова пляма світла під активною вкладкою.
-                  child: Center(
+                  // One UI: активна вкладка — пігулка контрастнішої заливки, без світіння.
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 3),
                     child: Container(
-                      width: 64,
                       height: height,
                       decoration: BoxDecoration(
-                        gradient: RadialGradient(
-                          radius: 0.6,
-                          colors: [(light ? AppColors.accentPrimary : AppColors.accentCyan).withValues(alpha: light ? 0.16 : 0.22), (light ? AppColors.accentPrimary : AppColors.accentCyan).withValues(alpha: 0)],
-                        ),
+                        color: light ? const Color(0xFFFFFFFF) : const Color.fromRGBO(255, 255, 255, 0.14),
+                        borderRadius: BorderRadius.circular(height / 2),
+                        boxShadow: light ? const [BoxShadow(color: Color(0x14000000), blurRadius: 8, offset: Offset(0, 1))] : null,
                       ),
                     ),
                   ),
@@ -152,7 +151,8 @@ class ArcticDockTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final still = MediaQuery.disableAnimationsOf(context);
     final idle = palette.isLight ? ink.withValues(alpha: 0.55) : muted;
-    final on = palette.isLight ? AppColors.accentPrimary : AppColors.accentCyan;
+    // One UI: активна вкладка — повний колір тексту (не акцент), як у Samsung-застосунках.
+    final on = ink;
     final color = active ? on : idle;
     return Semantics(
       selected: active,
@@ -169,7 +169,7 @@ class ArcticDockTab extends StatelessWidget {
               children: [
                 AnimatedSwitcher(
                   duration: still ? Duration.zero : const Duration(milliseconds: 200),
-                  child: Icon(active ? (item.activeIcon ?? item.icon) : item.icon, key: ValueKey(active), size: 22, color: color, shadows: active ? _neon(on) : null),
+                  child: Icon(active ? (item.activeIcon ?? item.icon) : item.icon, key: ValueKey(active), size: 22, color: color),
                 ),
                 if (item.badge case final b?) Positioned(right: -10, top: -4, child: b),
               ],
@@ -177,7 +177,7 @@ class ArcticDockTab extends StatelessWidget {
             const SizedBox(height: 3),
             AnimatedDefaultTextStyle(
               duration: still ? Duration.zero : const Duration(milliseconds: 200),
-              style: body(10.5, color: color, weight: active ? FontWeight.w700 : FontWeight.w500).copyWith(shadows: active ? _neon(on, soft: true) : const []),
+              style: body(10.5, color: color, weight: active ? FontWeight.w700 : FontWeight.w500),
               child: Text(item.label, maxLines: 1, overflow: TextOverflow.ellipsis),
             ),
           ],
@@ -186,9 +186,3 @@ class ArcticDockTab extends StatelessWidget {
     );
   }
 }
-
-/// Неонове світіння активної вкладки.
-List<Shadow> _neon(Color color, {bool soft = false}) => [
-  Shadow(color: color.withValues(alpha: soft ? 0.6 : 0.85), blurRadius: soft ? 6 : 10),
-  Shadow(color: color.withValues(alpha: soft ? 0.25 : 0.4), blurRadius: soft ? 14 : 22),
-];

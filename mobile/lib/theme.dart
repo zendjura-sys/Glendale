@@ -41,54 +41,50 @@ class GcPalette {
   bool get isLight => brightness == Brightness.light;
 }
 
-/// Темна тема — «Spatial Glass» (Arctic Ice & Electric Sapphire): глибоке тло, напівпрозоре скло,
-/// сапфірово-ціанові акценти. Значення — з токенів AppColors (core/theme/arctic_glass_theme.dart).
+/// Темна тема One UI: чорне тло, контейнери #17171A, акцент #387AFF.
 const neonPalette = GcPalette(
   brightness: Brightness.dark,
-  voidColor: AppColors.bgBase,
-  abyss: AppColors.bgElevated,
-  deep: Color(0xFF0A1222),
-  // Непрозорий відповідник glassTier3 — діалоги, снекбари, меню без розмиття.
-  popover: Color(0xFF0C1424),
+  voidColor: Color(0xFF000000),
+  abyss: Color(0xFF0B0B0D),
+  deep: Color(0xFF101012),
+  popover: Color(0xFF1F1F22),
   ink: AppColors.textPrimary,
-  soft: Color(0xFFCBD5E1),
+  soft: Color(0xFFD6D6DA),
   muted: AppColors.textSecondary,
   faint: AppColors.textMuted,
   primary: AppColors.accentPrimary,
-  // Скло: tier2 (.07) з бліком угорі (.09).
-  card: AppColors.glassTier2,
-  cardTop: Color.fromRGBO(255, 255, 255, 0.09),
-  raised: Color.fromRGBO(255, 255, 255, 0.10),
-  field: AppColors.glassTier2,
-  bar: Color.fromRGBO(20, 20, 22, 0.55),
-  line: AppColors.borderHairline,
-  lineStrong: Color.fromRGBO(255, 255, 255, 0.12),
+  card: Color(0xFF17171A),
+  cardTop: Color(0xFF17171A),
+  raised: Color(0xFF2E2E30),
+  field: Color(0xFF2E2E30),
+  bar: Color.fromRGBO(23, 23, 26, 0.86),
+  line: Color.fromRGBO(255, 255, 255, 0.08),
+  lineStrong: Color.fromRGBO(255, 255, 255, 0.14),
   fg: Colors.white,
-  brand: [AppColors.accentPrimary, Color(0xFF05ABFF), AppColors.accentCyan],
+  brand: [AppColors.accentPrimary, AppColors.accentPrimary, AppColors.accentCyan],
 );
 
-/// Світла тема — «Alpine Glacier Daylight»: льодовикове блакитне тло, оптичне молочне скло
-/// з білою гранню й сапфіровим контуром, чорнильні заголовки.
+/// Світла тема One UI: тло #F1F1F3, білі контейнери, компоненти #E8E8EA, акцент #387AFF.
 const arcticPalette = GcPalette(
   brightness: Brightness.light,
-  voidColor: Color(0xFFE2ECF8),
-  abyss: Color(0xFFEEF4FC),
-  deep: Color(0xFFF4F8FD),
-  popover: Color(0xFFF6FAFF),
+  voidColor: Color(0xFFF1F1F3),
+  abyss: Color(0xFFF6F6F8),
+  deep: Color(0xFFFAFAFB),
+  popover: Color(0xFFFFFFFF),
   ink: AppColors.lightTitle,
   soft: AppColors.lightBody,
   muted: AppColors.lightMuted,
-  faint: Color(0xFF8A9AB0),
-  primary: Color(0xFF0A6FE0),
-  card: Color.fromRGBO(255, 255, 255, 0.46),
-  cardTop: Color.fromRGBO(255, 255, 255, 0.72),
+  faint: Color(0xFF99999D),
+  primary: AppColors.accentPrimary,
+  card: Color(0xFFFFFFFF),
+  cardTop: Color(0xFFFFFFFF),
   raised: Color(0xFFFFFFFF),
-  field: Color.fromRGBO(255, 255, 255, 0.70),
-  bar: Color.fromRGBO(255, 255, 255, 0.78),
-  line: Color(0x170B1528),
-  lineStrong: Color(0x1F0B1528),
+  field: Color(0xFFE8E8EA),
+  bar: Color.fromRGBO(252, 252, 255, 0.88),
+  line: Color(0x14000000),
+  lineStrong: Color(0x1F000000),
   fg: AppColors.lightTitle,
-  brand: [Color(0xFF0A6FE0), Color(0xFF0A8FE6), Color(0xFF00A8E0)],
+  brand: [AppColors.accentPrimary, AppColors.accentPrimary, AppColors.accentCyan],
 );
 
 /// Поточна палітра (ставить ThemeController).
@@ -104,7 +100,7 @@ Color get muted => palette.muted;
 Color get faint => palette.faint;
 
 /// Акцентний текст та іконки (`text-gc-lilac-400` на сайті): у світлій темі темніший, щоб читався на білому.
-Color get accent => palette.isLight ? Color.lerp(palette.primary, palette.ink, 0.12)! : const Color(0xFF7CC8FF);
+Color get accent => palette.isLight ? const Color(0xFF2F6BE8) : const Color(0xFF6E9EFF);
 Color get primary => palette.primary;
 Color get fg => palette.fg;
 Color get fgSoft => palette.fg.withValues(alpha: 0.7);
@@ -138,7 +134,7 @@ LinearGradient get brand => LinearGradient(
 );
 
 /// Кнопки — сапфіровий градієнт accentGradient.
-LinearGradient get buttonGradient => palette.isLight ? LinearGradient(colors: [primary, primary]) : AppColors.accentGradient;
+LinearGradient get buttonGradient => LinearGradient(colors: [primary, primary]);
 
 /// Скло карток — з токенів теми (ArcticGlassThemeExtension).
 Gradient get glassGradient => (palette.isLight ? ArcticGlassThemeExtension.daylight : ArcticGlassThemeExtension.dark).glassFill;

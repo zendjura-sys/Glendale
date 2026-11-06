@@ -124,9 +124,9 @@ class MatteGlass extends StatelessWidget {
   }
 }
 
-/// Заголовок усередині картки: іконка + ВЕЛИКІ ЛІТЕРИ + дія праворуч («ДРУЗІ … 1 спільний»).
+/// Заголовок усередині картки (One UI — звичайний регістр): іконка, назва й дія праворуч.
 class CardTitle extends StatelessWidget {
-  const CardTitle(this.title, {this.icon, this.trailing, this.onTrailing, this.caps = true, super.key});
+  const CardTitle(this.title, {this.icon, this.trailing, this.onTrailing, this.caps = false, super.key});
   final String title;
   final IconData? icon;
   final String? trailing;
