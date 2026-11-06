@@ -44,7 +44,7 @@ import { VerifiedBadge } from '@/components/gc/verified-badge';
 import { BillingHost } from '@/components/billing/billing-host';
 import { PhonePrompt } from '@/components/phone/phone-prompt';
 import { PlusMenuCard } from '@/components/gc/plus-card';
-import { PlusBadge, plusNameProps, plusNameStyle } from '@/components/gc/plus';
+import { PlusBadge, plusNameProps } from '@/components/gc/plus';
 import { ConnectListener } from '@/components/music/connect-ui';
 import { PlayerBar } from '@/components/music/player-bar';
 import {
@@ -114,30 +114,7 @@ function Sidebar() {
 
     return (
         <aside className="gc-sidebar-glass sticky top-[calc(72px+env(safe-area-inset-top))] hidden h-[calc(100dvh-88px)] w-[220px] shrink-0 [scrollbar-width:none] flex-col overflow-y-auto overscroll-contain p-2 [view-transition-name:gc-sidebar] md:flex">
-            <Link
-                href={`/${user.username}`}
-                className="gc-side-link mb-1 flex items-center gap-2.5 rounded-xl px-2 py-2 transition"
-            >
-                <UserAvatar user={user} size="sm" ring />
-                <span className="min-w-0">
-                    <span className="flex items-center gap-1 truncate text-sm font-semibold text-white">
-                        <span style={plusNameStyle(user.plus)}>
-                            {user.first_name}
-                        </span>
-                        {user.is_verified && (
-                            <VerifiedBadge
-                                kind={user.verified_kind}
-                                className="size-3.5"
-                            />
-                        )}
-                        {user.plus && <PlusBadge className="size-3.5" />}
-                    </span>
-                    <span className="block truncate text-xs text-white/45">
-                        @{user.username}
-                    </span>
-                </span>
-            </Link>
-
+            {/* Профіль — у меню акаунта в шапці, тут не дублюємо (як на vk.com). */}
             <nav aria-label={tr('Розділи')} className="flex flex-col">
                 {nav.map((item) => {
                     const href =
@@ -203,10 +180,7 @@ function Sidebar() {
 
             <KeyboardHint />
 
-            <div className="mt-auto px-2.5 pt-4 text-xs leading-relaxed text-white/35">
-                © {new Date().getFullYear()}{' '}
-                {tr('GameCon · Соціальна мережа нового покоління')}
-            </div>
+            {/* Копірайт — у підвалі сторінки. */}
         </aside>
     );
 }
@@ -368,7 +342,8 @@ function Topbar() {
     const { counters, modules } = usePage().props;
     const unreadMessages = useUnreadMessages();
     const iconButton =
-        'gc-icon-button relative hidden size-10 items-center justify-center rounded-xl transition sm:flex';
+        // Друзі й повідомлення є в лівому меню — у шапці лише на планшеті, де меню немає.
+        'gc-icon-button relative hidden size-10 items-center justify-center rounded-xl transition sm:flex md:hidden';
 
     return (
         <header className="app-header-wrapper">

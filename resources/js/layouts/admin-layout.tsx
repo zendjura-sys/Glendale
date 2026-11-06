@@ -349,12 +349,12 @@ function NavPanel({
                     onClick={onToggle}
                     aria-label={tr('Пошук розділу')}
                     title={tr('Пошук розділу')}
-                    className="mx-auto mt-5 flex size-10 items-center justify-center rounded-xl bg-black/25 text-white/60 ring-1 ring-white/[0.06] hover:text-white"
+                    className="mx-auto mt-5 flex size-10 items-center justify-center rounded-xl bg-[var(--vkui--color_field_background)] text-white/60 hover:text-white"
                 >
                     <Search className="size-4" />
                 </button>
             ) : (
-                <label className="mt-5 flex h-10 items-center gap-2 rounded-xl bg-black/25 px-3 ring-1 ring-white/[0.06] focus-within:ring-white/20">
+                <label className="mt-5 flex h-10 items-center gap-2 rounded-xl bg-[var(--vkui--color_field_background)] px-3 ring-1 ring-[var(--vkui--color_field_border_alpha)] focus-within:ring-[var(--vkui--color_stroke_accent)]">
                     <Search className="size-4 shrink-0 text-white/40" />
                     <input
                         value={query}
@@ -368,7 +368,7 @@ function NavPanel({
                         }}
                         placeholder={tr('Пошук розділу')}
                         aria-label={tr('Пошук розділу')}
-                        className="min-w-0 flex-1 bg-transparent text-sm text-white placeholder:text-white/35 focus:outline-none"
+                        className="min-w-0 flex-1 !border-0 !bg-transparent text-sm text-white placeholder:text-[var(--vkui--color_text_secondary)] focus:outline-none"
                     />
                 </label>
             )}

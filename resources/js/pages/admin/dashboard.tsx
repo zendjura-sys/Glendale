@@ -225,7 +225,8 @@ function ActivityChart({ data }: { data: ChartPoint[] }) {
                     />
                 ))}
                 {data.map((d, i) =>
-                    i % 5 === 0 || i === data.length - 1 ? (
+                    (i % 5 === 0 && data.length - 1 - i >= 3) ||
+                    i === data.length - 1 ? (
                         <text
                             key={d.date}
                             x={x(i)}

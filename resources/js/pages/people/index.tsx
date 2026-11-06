@@ -137,7 +137,7 @@ export default function People({ filters, saved, total, users }: Props) {
                                 setForm({ ...form, online: !form.online })
                             }
                             className={cn(
-                                'inline-flex h-11 items-center gap-2 rounded-xl px-4 text-sm font-medium transition',
+                                'inline-flex h-11 shrink-0 items-center gap-2 rounded-xl px-4 text-sm font-medium whitespace-nowrap transition',
                                 form.online
                                     ? 'nav-active text-white'
                                     : 'bg-white/[0.04] text-white/55 hover:text-white',

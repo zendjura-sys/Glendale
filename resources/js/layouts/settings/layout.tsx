@@ -139,7 +139,7 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
                                             active ? 'page' : undefined
                                         }
                                         className={cn(
-                                            'relative flex flex-1 shrink-0 items-center gap-3 rounded-lg px-2.5 py-2 whitespace-nowrap transition-colors',
+                                            'relative flex flex-1 shrink-0 items-center gap-3 rounded-lg px-2.5 py-2 whitespace-nowrap transition-colors md:whitespace-normal',
                                             active
                                                 ? 'text-white'
                                                 : 'text-white/60 hover:bg-white/[0.045] hover:text-white',
@@ -166,7 +166,7 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
                                         >
                                             <Icon className="size-4" />
                                         </span>
-                                        <span className="relative min-w-0">
+                                        <span className="relative min-w-0 md:flex-1">
                                             <span className="block text-sm font-medium">
                                                 {title}
                                             </span>

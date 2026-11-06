@@ -2,6 +2,7 @@ import { Head, Link } from '@inertiajs/react';
 import { ArrowLeft, House, RotateCw } from 'lucide-react';
 import { m, useReducedMotion } from 'motion/react';
 import { LogoMark } from '@/components/gc/logo';
+import { VkProvider } from '@/components/vk/vk-provider';
 import { tr } from '@/lib/i18n';
 import { motionOr, RISE } from '@/lib/motion';
 
@@ -60,56 +61,59 @@ export default function ErrorPage({
     const text = message ? tr(message) : base.text;
     const retry = status === 429 || status >= 500;
 
+    // VkProvider — ті самі токени vk.com, що й на решті сайту: суцільне тло, картка й кнопки VK.
     return (
-        <main className="flex min-h-dvh items-center justify-center px-4 py-10">
-            <Head title={`${status} · ${title}`} />
-            <m.section
-                initial={reduce ? false : { opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={motionOr(reduce, RISE)}
-                className="glass w-full max-w-md rounded-2xl p-8 text-center"
-            >
-                <Link href="/" aria-label="GameCon" className="inline-flex">
-                    <LogoMark className="size-12" />
-                </Link>
-                <p className="mt-6 font-display text-6xl font-extrabold tracking-tight text-white tabular-nums">
-                    {status}
-                </p>
-                <h1 className="mt-3 font-display text-xl font-bold text-white">
-                    {title}
-                </h1>
-                <p className="mt-2 text-sm leading-relaxed text-white/60">
-                    {text}
-                </p>
-                <div className="mt-7 flex flex-col gap-2.5 sm:flex-row sm:justify-center">
-                    {retry ? (
+        <VkProvider>
+            <main className="flex min-h-dvh items-center justify-center px-4 py-10">
+                <Head title={`${status} · ${title}`} />
+                <m.section
+                    initial={reduce ? false : { opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={motionOr(reduce, RISE)}
+                    className="glass w-full max-w-md rounded-2xl p-8 text-center"
+                >
+                    <Link href="/" aria-label="GameCon" className="inline-flex">
+                        <LogoMark className="size-12" />
+                    </Link>
+                    <p className="mt-6 font-display text-6xl font-extrabold tracking-tight text-white tabular-nums">
+                        {status}
+                    </p>
+                    <h1 className="mt-3 font-display text-xl font-bold text-white">
+                        {title}
+                    </h1>
+                    <p className="mt-2 text-sm leading-relaxed text-white/60">
+                        {text}
+                    </p>
+                    <div className="mt-7 flex flex-col gap-2.5 sm:flex-row sm:justify-center">
+                        {retry ? (
+                            <button
+                                type="button"
+                                onClick={() => window.location.reload()}
+                                className="btn-glow inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold"
+                            >
+                                <RotateCw className="size-4" />
+                                {tr('Оновити сторінку')}
+                            </button>
+                        ) : (
+                            <Link
+                                href="/"
+                                className="btn-glow inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold"
+                            >
+                                <House className="size-4" />
+                                {tr('На головну')}
+                            </Link>
+                        )}
                         <button
                             type="button"
-                            onClick={() => window.location.reload()}
-                            className="btn-glow inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold"
+                            onClick={() => window.history.back()}
+                            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-white/[0.06] px-5 text-sm font-medium text-white/80 transition hover:bg-white/[0.1]"
                         >
-                            <RotateCw className="size-4" />
-                            {tr('Оновити сторінку')}
+                            <ArrowLeft className="size-4" />
+                            {tr('Назад')}
                         </button>
-                    ) : (
-                        <Link
-                            href="/"
-                            className="btn-glow inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold"
-                        >
-                            <House className="size-4" />
-                            {tr('На головну')}
-                        </Link>
-                    )}
-                    <button
-                        type="button"
-                        onClick={() => window.history.back()}
-                        className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-white/[0.06] px-5 text-sm font-medium text-white/80 transition hover:bg-white/[0.1]"
-                    >
-                        <ArrowLeft className="size-4" />
-                        {tr('Назад')}
-                    </button>
-                </div>
-            </m.section>
-        </main>
+                    </div>
+                </m.section>
+            </main>
+        </VkProvider>
     );
 }
