@@ -208,33 +208,15 @@ export function primaryAlert(
 }
 
 /**
- * Суцільні заливки зон на мапі. Темна тема — як мапа ukrainealarm (сірий, червоний, жовтий),
- * світла — як alerts.in.ua (бежевий, лососево-червоний, жовтий). AIR світлішає зі зменшенням масштабу.
+ * Суцільні заливки зон на мапі в стилі alerts.in.ua — світла й темна версії за темою сайту:
+ * світла — бежевий / лососево-червоний / жовтий, темна — нічний синій / темно-малиновий / вохра.
+ * AIR світлішає (на темній — тьмяніє) зі зменшенням масштабу.
  */
 type MapPalette = {
     types: Record<AlertTypeCode, string>;
     air: Record<AlertScaleCode, string>;
 };
 export const MAP_FILL: Record<'light' | 'dark', MapPalette> = {
-    dark: {
-        types: {
-            NUCLEAR: '#7c3aed',
-            CHEMICAL: '#65a30d',
-            BALLISTIC: '#8f1d2c',
-            AIR: '#c8443c',
-            ARTILLERY: '#d9731c',
-            URBAN_FIGHTS: '#b4501a',
-            UAV: '#d4a017',
-            CLEAR: '#3a4252',
-            NO_DATA: '#262b36',
-        },
-        air: {
-            oblast: '#c8443c',
-            raion: '#d4554b',
-            hromada: '#dc675c',
-            city: '#e27b70',
-        },
-    },
     light: {
         types: {
             NUCLEAR: '#a78bfa',
@@ -253,6 +235,52 @@ export const MAP_FILL: Record<'light' | 'dark', MapPalette> = {
             hromada: '#f09b92',
             city: '#f3ada6',
         },
+    },
+    dark: {
+        types: {
+            NUCLEAR: '#5b2f9e',
+            CHEMICAL: '#4f7a1a',
+            BALLISTIC: '#a3162a',
+            AIR: '#8a1f2e',
+            ARTILLERY: '#a8571c',
+            URBAN_FIGHTS: '#8f431a',
+            UAV: '#c8921e',
+            CLEAR: '#1d2a3f',
+            NO_DATA: '#232833',
+        },
+        air: {
+            oblast: '#8a1f2e',
+            raion: '#7c2334',
+            hromada: '#6c283b',
+            city: '#5d2b41',
+        },
+    },
+};
+
+/** Межі й підписи мапи для кожної теми (тла немає — мапа лежить прямо на картці). */
+export const MAP_INK: Record<
+    'light' | 'dark',
+    {
+        unit: string;
+        oblast: string;
+        mine: string;
+        label: string;
+        faint: string;
+    }
+> = {
+    light: {
+        unit: 'rgb(255 255 255 / 0.75)',
+        oblast: 'rgb(120 100 80 / 0.45)',
+        mine: 'rgb(30 41 59 / 0.85)',
+        label: 'rgb(30 41 59 / 0.72)',
+        faint: 'rgb(30 41 59 / 0.45)',
+    },
+    dark: {
+        unit: 'rgb(0 0 0 / 0.35)',
+        oblast: 'rgb(255 255 255 / 0.16)',
+        mine: 'rgb(255 255 255 / 0.85)',
+        label: 'rgb(255 255 255 / 0.82)',
+        faint: 'rgb(255 255 255 / 0.4)',
     },
 };
 

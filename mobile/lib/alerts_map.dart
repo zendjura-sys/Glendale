@@ -325,8 +325,8 @@ class _AlertMapViewState extends State<AlertMapView> with SingleTickerProviderSt
             mine: widget.mine,
             showAlerts: widget.showAlerts,
             selected: widget.selected,
-            // Мапа завжди світла, як на alerts.in.ua: темне чорнило для підписів і меж.
-            ink: const Color(0xFF1E293B),
+            // Як на alerts.in.ua: світла мапа у світлій темі, темна — у темній.
+            dark: Theme.of(context).brightness == Brightness.dark,
             now: DateTime.now(),
             pulse: pulse.isAnimating ? (1 - math.cos(pulse.value * 2 * math.pi)) / 2 : 0,
           ),
@@ -346,7 +346,7 @@ class _AlertMapPainter extends CustomPainter {
     required this.mine,
     required this.showAlerts,
     required this.selected,
-    required this.ink,
+    required this.dark,
     required this.now,
     required this.pulse,
   });
@@ -358,7 +358,8 @@ class _AlertMapPainter extends CustomPainter {
   final String? mine;
   final bool showAlerts;
   final int? selected;
-  final Color ink;
+  final bool dark;
+  Color get ink => dark ? Colors.white : const Color(0xFF1E293B);
   final DateTime now;
 
   /// Штрих поверх області [path]: смуги під 45°.
@@ -380,7 +381,6 @@ class _AlertMapPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     canvas.save();
     canvas.scale(size.width / 1000);
-    canvas.drawRect(const Rect.fromLTWH(0, 0, 1000, 680), Paint()..color = const Color(0xFFF2F1EE));
     final byCode = {for (final u in showAlerts ? units : const <Map<String, dynamic>>[]) '${u['code']}': u};
     // Рівні загроз з цілей (балістика — червоний, БпЛА — жовтий) фарбують райони області, де немає важливішої тривоги.
     final levels = {
@@ -391,7 +391,7 @@ class _AlertMapPainter extends CustomPainter {
     final border = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 0.7
-      ..color = Colors.white.withValues(alpha: 0.75);
+      ..color = dark ? Colors.black.withValues(alpha: 0.35) : Colors.white.withValues(alpha: 0.75);
 
     /// Головна тривога зони (найвищий пріоритет), кольори за типом і масштабом.
     void fillUnit(String code, String oblast, Path path) {
@@ -400,7 +400,7 @@ class _AlertMapPainter extends CustomPainter {
       if (type == AlertTypeCode.clear && noData.contains(oblast)) type = AlertTypeCode.noData;
       final palette = AlertsConfig.resolveColors(type, type == AlertTypeCode.air ? (AlertsConfig.scaleOf(unit?['scale']) ?? AlertScaleCode.oblast) : null);
       final scale = type == AlertTypeCode.air ? (AlertsConfig.scaleOf(unit?['scale']) ?? AlertScaleCode.oblast) : null;
-      canvas.drawPath(path, Paint()..color = AlertsConfig.mapColor(type, scale));
+      canvas.drawPath(path, Paint()..color = AlertsConfig.mapColor(type, scale, dark));
       final active = type != AlertTypeCode.clear && type != AlertTypeCode.noData;
       if (!active) return;
       final started = DateTime.tryParse('${unit?['started_at'] ?? ''}');
@@ -437,7 +437,7 @@ class _AlertMapPainter extends CustomPainter {
       canvas.drawPath(o.path, Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = isMine ? 2.2 : 1.1
-        ..color = isMine ? ink.withValues(alpha: 0.85) : const Color(0x73786450));
+        ..color = isMine ? ink.withValues(alpha: 0.85) : (dark ? Colors.white.withValues(alpha: 0.16) : const Color(0x73786450)));
     }
     // Підписи читабельні (≈8.5 px) на будь-якій ширині; на вузькій мапі — лише своя область, щоб не налазили.
     final labelSize = (8.5 * 1000 / size.width).clamp(12.0, 26.0);

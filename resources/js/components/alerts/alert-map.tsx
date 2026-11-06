@@ -16,12 +16,14 @@ import units from '@/data/ua-units.json';
 import {
     ALERT_TYPES,
     isAlertType,
+    MAP_INK,
     mapFill,
     primaryAlert,
     resolveAlertColors,
 } from '@/lib/alerts-config';
 import type { AlertScaleCode, AlertTypeCode } from '@/lib/alerts-config';
 import { tr } from '@/lib/i18n';
+import { useSiteTheme } from '@/hooks/use-site-theme';
 
 export type AlertKind =
     | 'air_raid'
@@ -302,6 +304,9 @@ export function AlertMap({
     const [selected, setSelected] = useState<number | null>(null);
     const [zoom, setZoom] = useState(1);
     const scroller = useRef<HTMLDivElement>(null);
+    // Як на alerts.in.ua: світла мапа у світлій темі сайту, темна — у темній.
+    const theme = useSiteTheme();
+    const ink = MAP_INK[theme];
     // Мапа завжди у стилі alerts.in.ua (світла: бежевий — спокійно, лососевий — тривога, жовтий — БпЛА).
     // Ширина мапи на екрані: підписи областей тримають читабельний розмір (≈11px) на будь-якому екрані.
     const [px, setPx] = useState(1000);
@@ -374,7 +379,7 @@ export function AlertMap({
         const fill = mapFill(
             type,
             type === 'AIR' ? (unit?.scale ?? 'oblast') : null,
-            'light',
+            theme,
         );
         const long =
             unit !== undefined &&
@@ -398,8 +403,8 @@ export function AlertMap({
         : [];
 
     return (
-        // Підкладка мапи — світла в обох темах сайту, як на alerts.in.ua.
-        <div className="gc-alert-map relative rounded-xl bg-[#f2f1ee]">
+        // Мапа без підкладки — прямо на картці; кольори зон за темою сайту, як на alerts.in.ua.
+        <div className="gc-alert-map relative rounded-xl">
             <div
                 ref={scroller}
                 className="[scrollbar-width:thin] overflow-auto overscroll-contain rounded-xl"
@@ -458,7 +463,7 @@ export function AlertMap({
                                     key={u.c}
                                     d={u.d}
                                     fill={st.fill}
-                                    stroke="rgb(255 255 255 / 0.75)"
+                                    stroke={ink.unit}
                                     strokeWidth={0.7}
                                     className={
                                         onSelect ? 'cursor-pointer' : undefined
@@ -481,7 +486,7 @@ export function AlertMap({
                                         key={h.c}
                                         d={h.d}
                                         fill={st.fill}
-                                        stroke="rgb(255 255 255 / 0.75)"
+                                        stroke={ink.unit}
                                         strokeWidth={0.5}
                                     >
                                         <title>
@@ -523,7 +528,7 @@ export function AlertMap({
                                 <path
                                     d={CHEZ.d}
                                     fill={`url(#chez-${id})`}
-                                    stroke="rgb(30 41 59 / 0.45)"
+                                    stroke={ink.faint}
                                     strokeWidth={0.8}
                                     strokeDasharray="3 2"
                                 >
@@ -536,7 +541,7 @@ export function AlertMap({
                                     y={CHEZ.y - 8}
                                     width={16}
                                     height={16}
-                                    color="rgb(30 41 59 / 0.75)"
+                                    color={ink.label}
                                     strokeWidth={2.2}
                                     aria-hidden
                                 />
@@ -548,11 +553,7 @@ export function AlertMap({
                                 key={o.k}
                                 d={o.d}
                                 fill="none"
-                                stroke={
-                                    o.o === mine
-                                        ? 'rgb(30 41 59 / 0.85)'
-                                        : 'rgb(120 100 80 / 0.45)'
-                                }
+                                stroke={o.o === mine ? ink.mine : ink.oblast}
                                 strokeWidth={o.o === mine ? 2.2 : 1.1}
                                 pointerEvents="none"
                             />
@@ -574,7 +575,7 @@ export function AlertMap({
                                         textAnchor="middle"
                                         fontSize={labelSize}
                                         fontWeight={600}
-                                        fill="rgb(30 41 59 / 0.72)"
+                                        fill={ink.label}
                                         pointerEvents="none"
                                     >
                                         {r.name
@@ -728,7 +729,7 @@ export function AlertMap({
                             y={H - 6}
                             textAnchor="end"
                             fontSize={10}
-                            fill="rgb(30 41 59 / 0.45)"
+                            fill={ink.faint}
                         >
                             © OpenStreetMap · ODbL
                         </text>

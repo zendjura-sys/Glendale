@@ -48,7 +48,7 @@ abstract final class AlertsConfig {
     AlertScaleCode.city: AlertPalette(Color(0xFFFB7185), Color.fromRGBO(251, 113, 133, 0.18), Color.fromRGBO(253, 164, 175, 0.38), Color(0xFFFECDD3)),
   };
 
-  /// Суцільні заливки зон на мапі в стилі alerts.in.ua (бежевий, лососевий, жовтий) — як `MAP_FILL.light` на сайті.
+  /// Суцільні заливки зон на мапі в стилі alerts.in.ua — світла й темна версії, як `MAP_FILL` на сайті.
   static const mapFill = <AlertTypeCode, Color>{
     AlertTypeCode.nuclear: Color(0xFFA78BFA),
     AlertTypeCode.chemical: Color(0xFF9CCC4A),
@@ -66,10 +66,29 @@ abstract final class AlertsConfig {
     AlertScaleCode.hromada: Color(0xFFF09B92),
     AlertScaleCode.city: Color(0xFFF3ADA6),
   };
+  static const mapFillDark = <AlertTypeCode, Color>{
+    AlertTypeCode.nuclear: Color(0xFF5B2F9E),
+    AlertTypeCode.chemical: Color(0xFF4F7A1A),
+    AlertTypeCode.ballistic: Color(0xFFA3162A),
+    AlertTypeCode.air: Color(0xFF8A1F2E),
+    AlertTypeCode.artillery: Color(0xFFA8571C),
+    AlertTypeCode.urbanFights: Color(0xFF8F431A),
+    AlertTypeCode.uav: Color(0xFFC8921E),
+    AlertTypeCode.clear: Color(0xFF1D2A3F),
+    AlertTypeCode.noData: Color(0xFF232833),
+  };
+  static const mapAirScaleFillDark = <AlertScaleCode, Color>{
+    AlertScaleCode.oblast: Color(0xFF8A1F2E),
+    AlertScaleCode.raion: Color(0xFF7C2334),
+    AlertScaleCode.hromada: Color(0xFF6C283B),
+    AlertScaleCode.city: Color(0xFF5D2B41),
+  };
 
-  /// Колір заливки зони на мапі: для AIR — за масштабом.
-  static Color mapColor(AlertTypeCode type, [AlertScaleCode? scale]) =>
-      type == AlertTypeCode.air && scale != null ? mapAirScaleFill[scale]! : mapFill[type]!;
+  /// Колір заливки зони на мапі: для AIR — за масштабом; `dark` — темна версія мапи.
+  static Color mapColor(AlertTypeCode type, [AlertScaleCode? scale, bool dark = false]) {
+    if (type == AlertTypeCode.air && scale != null) return (dark ? mapAirScaleFillDark : mapAirScaleFill)[scale]!;
+    return (dark ? mapFillDark : mapFill)[type]!;
+  }
 
   /// Від найважливішої до найменш важливої (для легенди).
   static List<AlertTypeCode> get ordered => AlertTypeCode.values.toList()..sort((a, b) => types[b]!.priority - types[a]!.priority);
