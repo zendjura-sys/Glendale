@@ -21,6 +21,32 @@ export function resolveTheme(pref: string, skin: string): 'light' | 'dark' {
 export function applyTheme(pref: string, skin?: string): 'light' | 'dark' {
     const root = document.documentElement;
     const theme = resolveTheme(pref, skin ?? root.dataset.skin ?? 'gamecon');
+    const changed = root.dataset.theme !== theme;
+    const reduce = window.matchMedia(
+        '(prefers-reduced-motion: reduce)',
+    ).matches;
+    // Зміна теми — плавне переливання старої в нову (View Transitions); без руху — миттєво.
+    if (
+        changed &&
+        !reduce &&
+        typeof document.startViewTransition === 'function' &&
+        document.visibilityState === 'visible'
+    ) {
+        root.classList.add('gc-theme-vt');
+        const transition = document.startViewTransition(() =>
+            setTheme(root, pref, theme),
+        );
+        const clear = () => root.classList.remove('gc-theme-vt');
+        transition.finished.then(clear, clear);
+
+        return theme;
+    }
+    setTheme(root, pref, theme);
+
+    return theme;
+}
+
+function setTheme(root: HTMLElement, pref: string, theme: 'light' | 'dark') {
     root.dataset.theme = theme;
     root.dataset.themePref = pref;
     root.classList.toggle('dark', theme === 'dark');
@@ -31,7 +57,11 @@ export function applyTheme(pref: string, skin?: string): 'light' | 'dark' {
     );
     if (meta) meta.content = theme === 'light' ? '#e9f1f8' : '#05070f';
 
-    return theme;
+    // Токени VKUI — одразу, щоб у знімок нового стану потрапили й вони.
+    if (root.classList.contains('gc-vk')) {
+        root.classList.remove('vkui--vkCom--light', 'vkui--vkCom--dark');
+        root.classList.add(`vkui--vkCom--${theme}`);
+    }
 }
 
 /** Вибір гостя (без акаунта) живе лише в цьому браузері. */
