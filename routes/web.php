@@ -3,6 +3,7 @@
 use App\Http\Controllers\AccountSwitchController;
 use App\Http\Controllers\Admin;
 use App\Http\Controllers\AiController;
+use App\Http\Controllers\AirAlertController;
 use App\Http\Controllers\AppLinksController;
 use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\Auth\AppLoginController;
@@ -1010,6 +1011,10 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     Route::get('ready', [ReadyToPlayController::class, 'show'])->name('ready.show');
     Route::put('ready', [ReadyToPlayController::class, 'update'])->middleware('throttle:30,1')->name('ready.update');
     Route::delete('ready', [ReadyToPlayController::class, 'destroy'])->name('ready.destroy');
+    // Мапа тривог і радар цілей (лише для України).
+    Route::get('alerts', [AirAlertController::class, 'index'])->name('alerts.index');
+    Route::get('alerts/state', [AirAlertController::class, 'state'])->middleware('throttle:120,1')->name('alerts.state');
+    Route::put('alerts/preferences', [AirAlertController::class, 'preferences'])->middleware('throttle:30,1')->name('alerts.preferences');
     // Четверта колонка на екранах 2K+: друзі онлайн і бесіди.
     Route::get('me/rail', RailController::class)->middleware('throttle:60,1')->name('rail');
     Route::put('me/status', [StatusController::class, 'update'])->middleware('throttle:30,1')->name('status.update');

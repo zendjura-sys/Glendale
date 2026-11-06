@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Fun\MemoriesController;
 use App\Http\Controllers\StatusPageController;
 use App\Models\User;
+use App\Services\Alerts\AirAlertService;
 use App\Services\Engagement\Streaks;
 use App\Services\Moderation\ContentFilter;
 use App\Services\Wrapped\YearInReview;
@@ -86,6 +87,8 @@ class AccountPresenter
             'memories' => MemoriesController::count($user),
             'event_frame' => MemoriesController::frameState($user),
             'home_widgets' => MemoriesController::widgets($user),
+            // Мапа тривог: лише для людей з України (IP, профіль чи обрана область).
+            'air_alerts' => app(AirAlertService::class)->isAvailableFor(request(), $user),
             // «Показувати, що я слухаю»: одне налаштування для сайту й застосунку.
             'show_listening' => $user->showsListening(),
             'morning_digest' => $user->wantsDigest(),

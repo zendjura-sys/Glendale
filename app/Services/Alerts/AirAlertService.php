@@ -1,0 +1,702 @@
+<?php
+
+namespace App\Services\Alerts;
+
+use App\Models\AirThreat;
+use App\Models\User;
+use App\Notifications\AirAlertNotice;
+use App\Services\Geo\VisitorCountry;
+use App\Support\Plugins\Plugins;
+use App\Support\Settings\SiteSettings;
+use Carbon\CarbonImmutable;
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\Pool;
+use Illuminate\Http\Client\Response;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
+use Throwable;
+
+/**
+ * Мапа тривог і радар цілей (лише для України): стан областей з alerts.in.ua (запасне джерело — ubilling),
+ * повітряні цілі з публічних зведень Повітряних сил ЗСУ (t.me/s/kpszsu) — лише приблизне місце (центр міста
+ * чи області з повідомлення) і курс. Жодних точних координат, даних від людей, місць влучань і роботи ППО.
+ */
+class AirAlertService
+{
+    /** Скільки секунд тримаємо зібраний стан. */
+    public const TTL = 15;
+
+    /** Скільки неофіційних каналів читаємо за один запуск (решта — наступними хвилинами). */
+    public const BATCH = 30;
+
+    /** Скільки хвилин «живе» ціль кожного типу. */
+    public const LIFETIME = ['uav' => 25, 'missile' => 10, 'ballistic' => 6, 'kab' => 15, 'mig' => 20, 'artillery' => 15];
+
+    /** Приблизна швидкість, км/год (лише для підпису на мапі). */
+    public const SPEED = ['uav' => 180, 'missile' => 750, 'ballistic' => 2500, 'kab' => 400, 'mig' => 0, 'artillery' => 0];
+
+    /**
+     * 26 регіонів: 24 області, м. Київ і АР Крим — назва, центр і основні міста для прив’язки цілей.
+     * `keys` — основи слів зі зведень («Сумщина», «на Київщину»), міста додаються самі.
+     *
+     * @var array<string, array{name: string, lat: float, lng: float, cities: list<string>, keys: list<string>}>
+     */
+    public const REGIONS = [
+        'vinnytsia' => ['name' => 'Вінницька область', 'lat' => 49.23, 'lng' => 28.47, 'cities' => ['Вінниця', 'Жмеринка', 'Козятин', 'Хмільник', 'Могилів-Подільський'], 'keys' => ['вінниччин', 'вінницьк']],
+        'volyn' => ['name' => 'Волинська область', 'lat' => 50.75, 'lng' => 25.33, 'cities' => ['Луцьк', 'Ковель', 'Нововолинськ'], 'keys' => ['волин']],
+        'dnipropetrovsk' => ['name' => 'Дніпропетровська область', 'lat' => 48.46, 'lng' => 35.04, 'cities' => ['Дніпро', 'Кривий Ріг', 'Кам’янське', 'Нікополь', 'Павлоград', 'Марганець'], 'keys' => ['дніпропетровщин', 'дніпропетровськ', 'дніпровщин', 'кривор', 'кривий ріг', 'кривого рогу']],
+        'donetsk' => ['name' => 'Донецька область', 'lat' => 48.02, 'lng' => 37.80, 'cities' => ['Краматорськ', 'Слов’янськ', 'Покровськ', 'Костянтинівка', 'Маріуполь', 'Донецьк'], 'keys' => ['донеччин', 'донецьк']],
+        'zhytomyr' => ['name' => 'Житомирська область', 'lat' => 50.25, 'lng' => 28.66, 'cities' => ['Житомир', 'Бердичів', 'Коростень', 'Звягель'], 'keys' => ['житомирщин', 'житомирськ']],
+        'zakarpattia' => ['name' => 'Закарпатська область', 'lat' => 48.62, 'lng' => 22.29, 'cities' => ['Ужгород', 'Мукачево', 'Хуст', 'Берегове'], 'keys' => ['закарпатт', 'закарпатськ']],
+        'zaporizhzhia' => ['name' => 'Запорізька область', 'lat' => 47.84, 'lng' => 35.14, 'cities' => ['Запоріжжя', 'Енергодар', 'Оріхів', 'Мелітополь', 'Бердянськ'], 'keys' => ['запоріжж', 'запорізьк', 'запорізщин']],
+        'ivano-frankivsk' => ['name' => 'Івано-Франківська область', 'lat' => 48.92, 'lng' => 24.71, 'cities' => ['Івано-Франківськ', 'Калуш', 'Коломия', 'Бурштин'], 'keys' => ['прикарпатт', 'франківщин', 'івано-франківськ']],
+        'kyiv-oblast' => ['name' => 'Київська область', 'lat' => 50.05, 'lng' => 30.95, 'cities' => ['Біла Церква', 'Бровари', 'Бориспіль', 'Ірпінь', 'Буча', 'Фастів', 'Обухів', 'Вишгород'], 'keys' => ['київщин', 'київськ']],
+        'kirovohrad' => ['name' => 'Кіровоградська область', 'lat' => 48.51, 'lng' => 32.26, 'cities' => ['Кропивницький', 'Олександрія', 'Світловодськ'], 'keys' => ['кіровоградщин', 'кіровоградськ']],
+        'luhansk' => ['name' => 'Луганська область', 'lat' => 48.57, 'lng' => 39.31, 'cities' => ['Сєвєродонецьк', 'Лисичанськ', 'Старобільськ', 'Луганськ'], 'keys' => ['луганщин', 'луганськ']],
+        'lviv' => ['name' => 'Львівська область', 'lat' => 49.84, 'lng' => 24.03, 'cities' => ['Львів', 'Дрогобич', 'Стрий', 'Червоноград', 'Самбір'], 'keys' => ['львівщин', 'львівськ', 'льв']],
+        'mykolaiv' => ['name' => 'Миколаївська область', 'lat' => 46.97, 'lng' => 31.99, 'cities' => ['Миколаїв', 'Первомайськ', 'Южноукраїнськ', 'Вознесенськ', 'Очаків'], 'keys' => ['миколаївщин', 'миколаївськ']],
+        'odesa' => ['name' => 'Одеська область', 'lat' => 46.48, 'lng' => 30.72, 'cities' => ['Одеса', 'Ізмаїл', 'Чорноморськ', 'Білгород-Дністровський', 'Подільськ'], 'keys' => ['одещин', 'одеськ', 'одес']],
+        'poltava' => ['name' => 'Полтавська область', 'lat' => 49.59, 'lng' => 34.55, 'cities' => ['Полтава', 'Кременчук', 'Лубни', 'Миргород', 'Горішні Плавні'], 'keys' => ['полтавщин', 'полтавськ']],
+        'rivne' => ['name' => 'Рівненська область', 'lat' => 50.62, 'lng' => 26.25, 'cities' => ['Рівне', 'Вараш', 'Дубно', 'Сарни'], 'keys' => ['рівненщин', 'рівненськ']],
+        'sumy' => ['name' => 'Сумська область', 'lat' => 50.91, 'lng' => 34.80, 'cities' => ['Суми', 'Конотоп', 'Шостка', 'Охтирка', 'Ромни'], 'keys' => ['сумщин', 'сумськ']],
+        'ternopil' => ['name' => 'Тернопільська область', 'lat' => 49.55, 'lng' => 25.59, 'cities' => ['Тернопіль', 'Чортків', 'Кременець'], 'keys' => ['тернопільщин', 'тернопільськ']],
+        'kharkiv' => ['name' => 'Харківська область', 'lat' => 49.99, 'lng' => 36.23, 'cities' => ['Харків', 'Ізюм', 'Куп’янськ', 'Лозова', 'Чугуїв', 'Балаклія'], 'keys' => ['харківщин', 'харківськ']],
+        'kherson' => ['name' => 'Херсонська область', 'lat' => 46.64, 'lng' => 32.62, 'cities' => ['Херсон', 'Берислав', 'Нова Каховка'], 'keys' => ['херсонщин', 'херсонськ']],
+        'khmelnytskyi' => ['name' => 'Хмельницька область', 'lat' => 49.42, 'lng' => 26.99, 'cities' => ['Хмельницький', 'Кам’янець-Подільський', 'Шепетівка', 'Старокостянтинів', 'Нетішин'], 'keys' => ['хмельниччин', 'хмельницьк']],
+        'cherkasy' => ['name' => 'Черкаська область', 'lat' => 49.44, 'lng' => 32.06, 'cities' => ['Черкаси', 'Умань', 'Сміла', 'Золотоноша'], 'keys' => ['черкащин', 'черкаськ']],
+        'chernivtsi' => ['name' => 'Чернівецька область', 'lat' => 48.29, 'lng' => 25.94, 'cities' => ['Чернівці', 'Новодністровськ'], 'keys' => ['буковин', 'чернівеччин', 'чернівецьк']],
+        'chernihiv' => ['name' => 'Чернігівська область', 'lat' => 51.49, 'lng' => 31.29, 'cities' => ['Чернігів', 'Ніжин', 'Прилуки', 'Новгород-Сіверський'], 'keys' => ['чернігівщин', 'чернігівськ']],
+        'kyiv' => ['name' => 'м. Київ', 'lat' => 50.45, 'lng' => 30.52, 'cities' => ['Київ'], 'keys' => ['києв', 'київ ', 'київ.', 'київ,', 'столиц']],
+        'crimea' => ['name' => 'Автономна Республіка Крим', 'lat' => 45.04, 'lng' => 34.0, 'cities' => ['Сімферополь', 'Севастополь', 'Керч', 'Феодосія', 'Джанкой', 'Євпаторія'], 'keys' => ['крим', 'кримськ']],
+    ];
+
+    /** Курс за словами зведення (градуси від півночі за годинниковою стрілкою). */
+    private const COURSES = [
+        'північно-західн' => 315, 'північно-східн' => 45, 'південно-західн' => 225, 'південно-східн' => 135,
+        'північн' => 0, 'східн' => 90, 'південн' => 180, 'західн' => 270,
+    ];
+
+    /** «з півночі» — ціль летить на південь. */
+    private const FROM_SIDE = ['з півночі' => 180, 'з півдня' => 0, 'зі сходу' => 270, 'з сходу' => 270, 'із заходу' => 90, 'з заходу' => 90];
+
+    public function __construct(private readonly SiteSettings $settings) {}
+
+    /** Чи показувати розділ: людина з України (за IP чи профілем) або сама обрала свою область. */
+    public function isAvailableFor(Request $request, ?User $user = null): bool
+    {
+        if (! app(Plugins::class)->on('air_alerts')) {
+            return false;
+        }
+        $user ??= $request->user();
+        if ($user instanceof User && ($user->country === 'UA' || is_string($user->pref('alert_region')))) {
+            return true;
+        }
+
+        return app(VisitorCountry::class)->of($request) === 'UA';
+    }
+
+    /**
+     * Стан для мапи: області, прапорці загроз, активні цілі й стрічка зведень.
+     *
+     * @return array<string, mixed>
+     */
+    public function state(): array
+    {
+        return Cache::remember('alerts.state', self::TTL, fn () => $this->build());
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function build(): array
+    {
+        $fetched = $this->fetchAlerts();
+        $now = CarbonImmutable::now();
+        $regions = [];
+        foreach (self::REGIONS as $slug => $region) {
+            $alert = $fetched['regions'][$slug] ?? null;
+            $started = $alert !== null && $alert['started_at'] !== null ? CarbonImmutable::parse($alert['started_at']) : null;
+            $regions[] = [
+                'slug' => $slug,
+                'name' => $region['name'],
+                'lat' => $region['lat'],
+                'lng' => $region['lng'],
+                'active' => $alert !== null,
+                'type' => $alert['type'] ?? null,
+                'kind' => $alert['kind'] ?? null,
+                'started_at' => $started?->toIso8601String(),
+                'minutes' => $started !== null ? max(0, (int) $started->diffInMinutes($now)) : null,
+            ];
+        }
+        $threats = AirThreat::query()->where('expires_at', '>', $now)->orderByDesc('detected_at')->limit(80)->get();
+
+        return [
+            'regions' => $regions,
+            'active_count' => count(array_filter($regions, fn (array $r) => $r['active'])),
+            'mig_active' => $threats->contains('type', 'mig'),
+            'ballistic_threat' => $threats->contains('type', 'ballistic'),
+            'threats' => $threats->map(fn (AirThreat $t) => $t->toCard())->values()->all(),
+            'feed' => array_slice((array) Cache::get('alerts.feed', []), 0, 20),
+            'source' => $fetched['source'],
+            'stale' => $fetched['stale'],
+            'updated_at' => $now->toIso8601String(),
+        ];
+    }
+
+    /**
+     * Активні тривоги: alerts.in.ua з токеном, інакше чи при збої — ubilling; якщо обидва мовчать —
+     * останній вдалий стан (до 10 хв) з позначкою «може бути неактуальним».
+     *
+     * @return array{regions: array<string, array{type: string, kind: string, started_at: string|null}>, source: string|null, stale: bool}
+     */
+    public function fetchAlerts(): array
+    {
+        $token = $this->settings->get('alerts_in_ua_token');
+        $regions = null;
+        $source = null;
+        $official = $this->settings->get('ukrainealarm_token');
+        if (is_string($official) && $official !== '') {
+            $regions = $this->fromUkraineAlarm($official);
+            $source = $regions !== null ? 'UkraineAlarm' : null;
+        }
+        if ($regions === null && is_string($token) && $token !== '') {
+            $regions = $this->fromAlertsInUa($token);
+            $source = $regions !== null ? 'alerts.in.ua' : null;
+        }
+        if ($regions === null) {
+            $regions = $this->fromUbilling();
+            $source = $regions !== null ? 'ubilling' : null;
+        }
+        if ($regions !== null) {
+            Cache::put('alerts.last', $regions, now()->addMinutes(10));
+
+            return ['regions' => $regions, 'source' => $source, 'stale' => false];
+        }
+        $last = Cache::get('alerts.last');
+
+        return ['regions' => is_array($last) ? $last : [], 'source' => null, 'stale' => true];
+    }
+
+    /**
+     * Офіційний API UkraineAlarm (api.ukrainealarm.com, ключ у заголовку Authorization):
+     * [{regionType: "State", regionName: "Київська область", activeAlerts: [{type: "AIR", lastUpdate}]}].
+     * Тривога на рівні області — повна, на рівні району чи громади — часткова.
+     *
+     * @return array<string, array{type: string, kind: string, started_at: string|null}>|null
+     */
+    private function fromUkraineAlarm(string $key): ?array
+    {
+        try {
+            $response = Http::timeout(3)->withHeaders(['Authorization' => $key])->acceptJson()->get('https://api.ukrainealarm.com/api/v3/alerts');
+        } catch (ConnectionException) {
+            return null;
+        }
+        if (! $response->successful() || ! is_array($response->json())) {
+            return null;
+        }
+        $out = [];
+        foreach ((array) $response->json() as $region) {
+            if (! is_array($region) || ! is_array($region['activeAlerts'] ?? null) || $region['activeAlerts'] === []) {
+                continue;
+            }
+            $whole = ($region['regionType'] ?? '') === 'State';
+            $slug = $this->slugFor((string) ($whole ? ($region['regionName'] ?? '') : ($region['oblastName'] ?? $region['regionName'] ?? '')));
+            if ($slug === null) {
+                continue;
+            }
+            foreach ($region['activeAlerts'] as $alert) {
+                $kind = strtoupper((string) ($alert['type'] ?? 'AIR'));
+                $type = $kind === 'AIR' ? ($whole ? 'air_raid' : 'partial') : 'artillery';
+                $current = $out[$slug] ?? null;
+                if ($current === null || ($current['type'] !== 'air_raid' && $type === 'air_raid')) {
+                    $out[$slug] = ['type' => $type, 'kind' => $kind === 'AIR' ? 'air_raid' : strtolower($kind), 'started_at' => isset($alert['lastUpdate']) ? (string) $alert['lastUpdate'] : null];
+                }
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * @return array<string, array{type: string, kind: string, started_at: string|null}>|null
+     */
+    private function fromAlertsInUa(string $token): ?array
+    {
+        try {
+            $response = Http::timeout(3)->withToken($token)->acceptJson()->get('https://api.alerts.in.ua/v1/alerts/active.json');
+        } catch (ConnectionException) {
+            return null;
+        }
+        if (! $response->successful() || ! is_array($response->json('alerts'))) {
+            return null;
+        }
+        $out = [];
+        foreach ((array) $response->json('alerts') as $alert) {
+            if (! is_array($alert)) {
+                continue;
+            }
+            $slug = $this->slugFor((string) ($alert['location_oblast'] ?? $alert['location_title'] ?? ''));
+            if ($slug === null) {
+                continue;
+            }
+            $kind = (string) ($alert['alert_type'] ?? 'air_raid');
+            $whole = in_array($alert['location_type'] ?? 'oblast', ['oblast', 'city'], true) && $this->slugFor((string) ($alert['location_title'] ?? '')) === $slug;
+            $type = $kind === 'air_raid' ? ($whole ? 'air_raid' : 'partial') : 'artillery';
+            $current = $out[$slug] ?? null;
+            // Повітряна тривога на всю область важливіша за часткову чи артобстріл.
+            if ($current === null || ($current['type'] !== 'air_raid' && $type === 'air_raid')) {
+                $out[$slug] = ['type' => $type, 'kind' => $kind, 'started_at' => isset($alert['started_at']) ? (string) $alert['started_at'] : null];
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * Запасне відкрите джерело ubilling: {"states": {"Київська область": {"alertnow": true, "changed": "…"}}}.
+     *
+     * @return array<string, array{type: string, kind: string, started_at: string|null}>|null
+     */
+    private function fromUbilling(): ?array
+    {
+        try {
+            $response = Http::timeout(3)->acceptJson()->get('https://ubilling.net.ua/aerialalerts/');
+        } catch (ConnectionException) {
+            return null;
+        }
+        $states = $response->successful() ? ($response->json('states') ?? $response->json('alerts')) : null;
+        if (! is_array($states)) {
+            return null;
+        }
+        $out = [];
+        foreach ($states as $name => $state) {
+            if (! is_array($state) || ! ($state['alertnow'] ?? $state['alert'] ?? $state['enabled'] ?? false)) {
+                continue;
+            }
+            $slug = $this->slugFor((string) $name);
+            if ($slug !== null) {
+                $changed = $state['changed'] ?? null;
+                $out[$slug] = ['type' => 'air_raid', 'kind' => 'air_raid', 'started_at' => is_string($changed) ? $changed : null];
+            }
+        }
+
+        return $out;
+    }
+
+    /** Slug регіону за назвою з API («Київська область», «м. Київ», «Автономна Республіка Крим»). */
+    public function slugFor(string $name): ?string
+    {
+        $name = mb_strtolower(trim($name));
+        if ($name === '') {
+            return null;
+        }
+        if (str_contains($name, 'київ') && ! str_contains($name, 'область')) {
+            return 'kyiv';
+        }
+        foreach (self::REGIONS as $slug => $region) {
+            if ($name === mb_strtolower($region['name'])) {
+                return $slug;
+            }
+        }
+        $stem = mb_substr(explode(' ', $name)[0], 0, 6);
+        foreach (self::REGIONS as $slug => $region) {
+            if ($slug !== 'kyiv' && str_starts_with(mb_strtolower($region['name']), $stem)) {
+                return $slug;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Нові зведення каналів (команда alerts:sync щохвилини): цілі на мапу, стрічка й сповіщення
+     * тим, у кого щойно почалась або скінчилась тривога в обраній області.
+     *
+     * @return array{threats: int, notified: int}
+     */
+    public function syncThreats(): array
+    {
+        $created = 0;
+        foreach ($this->fetchChannels($this->channelsForRun()) as $post) {
+            $created += $this->ingest($post) ? 1 : 0;
+        }
+        AirThreat::query()->where('expires_at', '<', now()->subDay())->delete();
+        Cache::forget('alerts.state');
+        $notified = $this->notifyChanges();
+        Log::info('alerts: sync', ['threats' => $created, 'notified' => $notified]);
+
+        return ['threats' => $created, 'notified' => $notified];
+    }
+
+    /**
+     * Усі увімкнені канали: каталог за групами з налаштувань + додані адміністратором.
+     *
+     * @return list<string>
+     */
+    public function channels(): array
+    {
+        $groups = array_filter(array_map('trim', explode(',', (string) ($this->settings->get('alerts_source_groups') ?? 'official,intel,regional,aggregators'))));
+        $out = [];
+        foreach (AlertSources::CHANNELS as $name => [$group]) {
+            if (in_array($group, $groups, true)) {
+                $out[] = $name;
+            }
+        }
+        $extra = array_map(
+            fn (string $c) => preg_replace('/[^A-Za-z0-9_]/', '', ltrim(trim($c), '@')) ?? '',
+            preg_split('/[\s,]+/', (string) $this->settings->get('alerts_monitor_channels')) ?: [],
+        );
+
+        return array_values(array_unique(array_filter([...$out, ...$extra])));
+    }
+
+    /**
+     * Джерела для вкладки «Джерела»: групи з описом і каналами (увімкнені — з налаштувань).
+     *
+     * @return list<array{group: string, title: string, about: string, enabled: bool, channels: list<array{name: string, regions: list<string>}>}>
+     */
+    public function sources(): array
+    {
+        $enabled = $this->channels();
+        $groups = [];
+        foreach (AlertSources::GROUPS as $key => $group) {
+            $channels = [];
+            foreach ($key === 'custom' ? array_filter($enabled, fn (string $c) => AlertSources::group($c) === 'custom') : array_keys(array_filter(AlertSources::CHANNELS, fn (array $c) => $c[0] === $key)) as $name) {
+                $names = [];
+                foreach (AlertSources::CHANNELS[$name][1] ?? [] as $slug) {
+                    $names[] = self::REGIONS[$slug]['name'];
+                }
+                $channels[] = ['name' => $name, 'regions' => $names];
+            }
+            if ($channels !== []) {
+                $groups[] = ['group' => $key, 'title' => $group['title'], 'about' => $group['about'], 'enabled' => $key === 'custom' || in_array($channels[0]['name'], $enabled, true), 'channels' => $channels];
+            }
+        }
+
+        return $groups;
+    }
+
+    /**
+     * Канали на цей запуск: офіційні — щоразу, решта — по черзі порціями (щоб не смикати
+     * всі сторінки щохвилини); кожен канал оновлюється раз на кілька хвилин.
+     *
+     * @return list<string>
+     */
+    private function channelsForRun(): array
+    {
+        $all = $this->channels();
+        $official = array_values(array_filter($all, fn (string $c) => AlertSources::group($c) === 'official'));
+        $rest = array_values(array_diff($all, $official));
+        if ($rest === []) {
+            return $official;
+        }
+        $cursor = (int) Cache::get('alerts.cursor', 0) % count($rest);
+        $batch = array_slice([...$rest, ...$rest], $cursor, min(self::BATCH, count($rest)));
+        Cache::put('alerts.cursor', $cursor + count($batch), now()->addDay());
+
+        return array_values(array_unique([...$official, ...$batch]));
+    }
+
+    /**
+     * Публічні сторінки каналів t.me/s/{channel} паралельно.
+     *
+     * @param  list<string>  $channels
+     * @return list<array{ref: string, channel: string, text: string, at: CarbonImmutable}>
+     */
+    public function fetchChannels(array $channels): array
+    {
+        if ($channels === []) {
+            return [];
+        }
+        try {
+            $responses = Http::pool(fn (Pool $pool) => array_map(
+                fn (string $channel) => $pool->as($channel)->timeout(6)->withHeaders(['Accept-Language' => 'uk'])->get('https://t.me/s/'.$channel),
+                $channels,
+            ));
+        } catch (Throwable) {
+            return [];
+        }
+        $posts = [];
+        foreach ($responses as $response) {
+            if ($response instanceof Response && $response->successful()) {
+                array_push($posts, ...$this->parseChannel($response->body()));
+            }
+        }
+        // Старіші спершу: тоді перше джерело створює мітку, наступні — підтверджують.
+        usort($posts, fn (array $a, array $b) => $a['at']->getTimestamp() <=> $b['at']->getTimestamp());
+
+        return $posts;
+    }
+
+    /**
+     * @return list<array{ref: string, channel: string, text: string, at: CarbonImmutable}>
+     */
+    public function parseChannel(string $html): array
+    {
+        $posts = [];
+        foreach (preg_split('/class="tgme_widget_message_wrap/', $html) ?: [] as $chunk) {
+            if (preg_match('/data-post="([A-Za-z0-9_]+\/\d+)"/', $chunk, $ref) !== 1) {
+                continue;
+            }
+            if (preg_match('/<div class="tgme_widget_message_text[^"]*"[^>]*>(.*?)<\/div>/s', $chunk, $body) !== 1) {
+                continue;
+            }
+            $text = trim(html_entity_decode(strip_tags(str_replace(['<br/>', '<br>', '<br />'], "\n", $body[1])), ENT_QUOTES | ENT_HTML5));
+            $at = preg_match('/<time[^>]*datetime="([^"]+)"/', $chunk, $time) === 1 ? CarbonImmutable::parse($time[1]) : CarbonImmutable::now();
+            if ($text !== '') {
+                $posts[] = ['ref' => $ref[1], 'channel' => explode('/', $ref[1])[0], 'text' => $text, 'at' => $at];
+            }
+        }
+
+        return $posts;
+    }
+
+    /**
+     * Допис → стрічка й (якщо впізнали тип і місце) мітка на мапі. Та сама ціль з іншого каналу
+     * (той самий тип і місце за останні 15 хв) не дублюється, а підтверджує мітку: росте упевненість.
+     * Старі (понад годину) дописи пропускаємо.
+     *
+     * @param  array{ref: string, channel?: string, text: string, at: CarbonImmutable}  $post
+     */
+    public function ingest(array $post): bool
+    {
+        if ($post['at']->lt(CarbonImmutable::now()->subHour())) {
+            return false;
+        }
+        $channel = $post['channel'] ?? explode('/', $post['ref'])[0];
+        $this->remember($post, $channel);
+        if (AirThreat::query()->where('source_ref', $post['ref'])->exists()) {
+            return false;
+        }
+        $regions = AlertSources::CHANNELS[$channel][1] ?? null;
+        $parsed = $this->parse($post['text'], is_array($regions) && count($regions) === 1 ? $regions[0] : null);
+        if ($parsed === null) {
+            return false;
+        }
+        $same = AirThreat::query()->where('type', $parsed['type'])->where('expires_at', '>', $post['at'])
+            ->where('detected_at', '>=', $post['at']->subMinutes(15))
+            ->where(fn ($q) => $parsed['place_name'] !== null ? $q->where('place_name', $parsed['place_name']) : $q->whereNull('region_slug'))
+            ->latest('detected_at')->first();
+        if ($same !== null) {
+            $sources = array_values(array_unique([...($same->sources ?? []), $channel]));
+            $same->update([
+                'sources' => $sources,
+                'confidence' => AlertSources::confidence($sources),
+                'course_deg' => $same->course_deg ?? $parsed['course_deg'],
+                'expires_at' => max($same->expires_at, $post['at']->addMinutes(self::LIFETIME[$parsed['type']])),
+            ]);
+
+            return false;
+        }
+        AirThreat::query()->create([
+            ...$parsed,
+            'title' => Str::limit(preg_replace('/\s+/u', ' ', $post['text']) ?? $post['text'], 290),
+            'speed_kmh' => self::SPEED[$parsed['type']],
+            'source_ref' => $post['ref'],
+            'sources' => [$channel],
+            'confidence' => AlertSources::confidence([$channel]),
+            'detected_at' => $post['at'],
+            'expires_at' => $post['at']->addMinutes(self::LIFETIME[$parsed['type']]),
+        ]);
+
+        return true;
+    }
+
+    /**
+     * Стрічка останніх зведень (без дублікатів, нові вгорі).
+     *
+     * @param  array{ref: string, text: string, at: CarbonImmutable}  $post
+     */
+    private function remember(array $post, string $channel): void
+    {
+        $feed = array_values(array_filter((array) Cache::get('alerts.feed', []), fn ($item) => is_array($item) && ($item['ref'] ?? null) !== $post['ref']));
+        array_unshift($feed, ['ref' => $post['ref'], 'channel' => $channel, 'group' => AlertSources::group($channel), 'text' => Str::limit($post['text'], 400), 'at' => $post['at']->toIso8601String()]);
+        usort($feed, fn (array $a, array $b) => strcmp((string) $b['at'], (string) $a['at']));
+        Cache::put('alerts.feed', array_slice($feed, 0, 40), now()->addHours(6));
+    }
+
+    /**
+     * Тип загрози, місце й курс з тексту зведення; null — не впізнали.
+     *
+     * @return array{type: string, region_slug: string|null, place_name: string|null, lat: float, lng: float, course_deg: int|null}|null
+     */
+    public function parse(string $text, ?string $home = null): ?array
+    {
+        $lower = mb_strtolower($text);
+        $type = match (true) {
+            str_contains($lower, 'балістик') => 'ballistic',
+            preg_match('/(*UCP)\bкаб(и|ів)?\b|керован\w* авіабомб/u', $lower) === 1 => 'kab',
+            preg_match('/(міг|миг|mig)-?31/u', $lower) === 1 => 'mig',
+            preg_match('/ракет|крилат|швидкісн\w* ціл|калібр|х-101|х-59/u', $lower) === 1 => 'missile',
+            preg_match('/бпла|шахед|безпілот|дрон|мопед/u', $lower) === 1 => 'uav',
+            default => null,
+        };
+        if ($type === null) {
+            return null;
+        }
+        $mentions = $this->mentions($lower);
+        $origin = null;
+        $target = null;
+        foreach ($mentions as $mention) {
+            $before = mb_substr($lower, max(0, $mention['pos'] - 14), min(14, $mention['pos']));
+            if ($origin === null && preg_match('/(^|\s)(з|із|зі|від)\s+$/u', $before) === 1) {
+                $origin = $mention;
+            } elseif ($target === null && preg_match('/(на|в|у|напрямку|курсом на|до)\s+$/u', $before) === 1) {
+                $target = $mention;
+            }
+        }
+        $place = $origin ?? $target ?? ($mentions[0] ?? null);
+        if ($place === null && $home !== null && isset(self::REGIONS[$home])) {
+            // Регіональний канал без назви місця — пишуть про свою область.
+            $region = self::REGIONS[$home];
+            $place = ['slug' => $home, 'place' => $region['name'], 'lat' => $region['lat'], 'lng' => $region['lng'], 'pos' => 0];
+        }
+        if ($place === null) {
+            // Без місця ціль на мапу не ставимо; МіГ-31 і балістика — загальний прапорець без точки (region null).
+            return in_array($type, ['mig', 'ballistic'], true) ? ['type' => $type, 'region_slug' => null, 'place_name' => null, 'lat' => 49.0, 'lng' => 31.3, 'course_deg' => null] : null;
+        }
+        $course = null;
+        if ($origin !== null && $target !== null && $origin['slug'] !== $target['slug']) {
+            $course = $this->bearing($origin['lat'], $origin['lng'], $target['lat'], $target['lng']);
+        } else {
+            foreach (self::FROM_SIDE as $words => $deg) {
+                if (str_contains($lower, $words)) {
+                    $course = $deg;
+                    break;
+                }
+            }
+            if ($course === null && preg_match('/курс\w*\s+(на\s+)?(\S+)|(\S+)\s+курс/u', $lower, $m) === 1) {
+                foreach (self::COURSES as $word => $deg) {
+                    if (str_contains($m[0], $word)) {
+                        $course = $deg;
+                        break;
+                    }
+                }
+            }
+        }
+
+        return [
+            'type' => $type,
+            'region_slug' => $place['slug'],
+            'place_name' => $place['place'],
+            'lat' => $place['lat'],
+            'lng' => $place['lng'],
+            'course_deg' => $course,
+        ];
+    }
+
+    /**
+     * Згадки регіонів і міст у тексті за порядком появи.
+     *
+     * @return list<array{slug: string, place: string, lat: float, lng: float, pos: int}>
+     */
+    private function mentions(string $lower): array
+    {
+        $found = [];
+        foreach (self::REGIONS as $slug => $region) {
+            $words = [];
+            foreach ($region['cities'] as $i => $city) {
+                $c = mb_strtolower($city);
+                $words[] = ['stem' => mb_substr($c, 0, max(4, mb_strlen($c) - 1)), 'place' => $city, 'city' => $i];
+            }
+            foreach ($region['keys'] as $key) {
+                $words[] = ['stem' => $key, 'place' => $region['name'], 'city' => null];
+            }
+            foreach ($words as $word) {
+                $pos = mb_strpos($lower, $word['stem']);
+                if ($pos === false) {
+                    continue;
+                }
+                // Місто — трохи вбік від центру області, щоб цілі не злипались (лише приблизно).
+                $shift = $word['city'] === null ? 0.0 : (($word['city'] % 3) - 1) * 0.25;
+                $found[] = ['slug' => $slug, 'place' => $word['place'], 'lat' => $region['lat'] + $shift * 0.6, 'lng' => $region['lng'] + $shift, 'pos' => $pos];
+                break;
+            }
+        }
+        usort($found, fn (array $a, array $b) => $a['pos'] <=> $b['pos']);
+
+        return $found;
+    }
+
+    /** Азимут з точки A на точку B, градуси 0–359. */
+    public function bearing(float $lat1, float $lng1, float $lat2, float $lng2): int
+    {
+        $p1 = deg2rad($lat1);
+        $p2 = deg2rad($lat2);
+        $dl = deg2rad($lng2 - $lng1);
+        $y = sin($dl) * cos($p2);
+        $x = cos($p1) * sin($p2) - sin($p1) * cos($p2) * cos($dl);
+
+        return ((int) round(rad2deg(atan2($y, $x))) + 360) % 360;
+    }
+
+    /**
+     * Пуш тим, у кого в обраній області щойно почалась тривога чи настав відбій.
+     */
+    public function notifyChanges(): int
+    {
+        $state = $this->state();
+        if ($state['stale'] === true) {
+            return 0;
+        }
+        $active = [];
+        foreach (is_array($state['regions']) ? $state['regions'] : [] as $region) {
+            if (is_array($region) && ($region['active'] ?? false) === true) {
+                $active[] = (string) $region['slug'];
+            }
+        }
+        $previous = Cache::get('alerts.active');
+        Cache::put('alerts.active', $active, now()->addDay());
+        if (! is_array($previous)) {
+            // Перший запуск: лише запам’ятовуємо, щоб не розіслати «тривогу» всім одразу.
+            return 0;
+        }
+        $sent = 0;
+        foreach (array_diff($active, $previous) as $slug) {
+            $sent += $this->notifyRegion($slug, true);
+        }
+        foreach (array_diff($previous, $active) as $slug) {
+            $sent += $this->notifyRegion($slug, false);
+        }
+
+        return $sent;
+    }
+
+    private function notifyRegion(string $slug, bool $started): int
+    {
+        $name = self::REGIONS[$slug]['name'] ?? null;
+        if ($name === null) {
+            return 0;
+        }
+        $count = 0;
+        User::query()->where('preferences->alert_region', $slug)
+            ->chunkById(500, function ($users) use ($name, $started, &$count) {
+                foreach ($users as $user) {
+                    if ($user->pref('alert_push', true) === false) {
+                        continue;
+                    }
+                    rescue(fn () => $user->notify(new AirAlertNotice($started, $name)), report: false);
+                    $count++;
+                }
+            });
+
+        return $count;
+    }
+
+    /** Перевірка ключа для картки інтеграції. */
+    public function test(): bool
+    {
+        try {
+            $official = (string) $this->settings->get('ukrainealarm_token');
+            $token = (string) $this->settings->get('alerts_in_ua_token');
+
+            return ($official !== '' && $this->fromUkraineAlarm($official) !== null)
+                || ($token !== '' && $this->fromAlertsInUa($token) !== null);
+        } catch (Throwable) {
+            return false;
+        }
+    }
+}

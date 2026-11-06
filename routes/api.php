@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AiController;
+use App\Http\Controllers\AirAlertController;
 use App\Http\Controllers\Api\AccountApiController;
 use App\Http\Controllers\Api\AppLoginApiController;
 use App\Http\Controllers\Api\AuthController;
@@ -440,6 +441,9 @@ Route::prefix('v1')->group(function () {
                 Route::put('settings/profile-track', [SetupController::class, 'saveTrack'])->middleware('throttle:30,1');
                 Route::get('settings/profile-track', [SetupController::class, 'tracks'])->middleware('throttle:60,1');
                 Route::get('me/rail', RailController::class)->middleware('throttle:60,1');
+                Route::get('alerts', [AirAlertController::class, 'state'])->middleware('throttle:120,1');
+                Route::get('alerts/state', [AirAlertController::class, 'state'])->middleware('throttle:120,1');
+                Route::put('alerts/preferences', [AirAlertController::class, 'preferences'])->middleware('throttle:30,1');
                 Route::get('games/awards', [GameAwardsController::class, 'index']);
                 Route::get('games/awards/candidates', [GameAwardsController::class, 'candidates'])->middleware('throttle:120,1');
                 Route::post('games/awards/vote', [GameAwardsController::class, 'vote'])->middleware('throttle:60,1');

@@ -11,6 +11,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'alerts.dart';
 import 'api.dart';
 import 'shell.dart';
 import 'state.dart';
@@ -39,6 +40,18 @@ final _calls = AndroidNotificationChannel(
   importance: Importance.max,
   sound: UriAndroidNotificationSound('content://settings/system/ringtone'),
   audioAttributesUsage: AudioAttributesUsage.notificationRingtone,
+);
+
+/// Повітряна тривога: як будильник (звук будильника, поверх «Не турбувати»); звук можна змінити
+/// в системних налаштуваннях каналу — кнопка «Звук push у системі» на мапі тривог.
+final _alerts = AndroidNotificationChannel(
+  'air_alerts',
+  tr('Повітряна тривога'),
+  description: tr('Початок і відбій тривоги в обраній області'),
+  importance: Importance.max,
+  sound: UriAndroidNotificationSound('content://settings/system/alarm_alert'),
+  audioAttributesUsage: AudioAttributesUsage.alarm,
+  enableVibration: true,
 );
 
 const _initSettings = InitializationSettings(
@@ -352,6 +365,7 @@ class Push {
     await android?.createNotificationChannel(_messages);
     await android?.createNotificationChannel(_activity);
     await android?.createNotificationChannel(_calls);
+    await android?.createNotificationChannel(_alerts);
 
     await FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(alert: false, badge: true, sound: false);
     FirebaseMessaging.onMessage.listen(_foreground);
@@ -433,7 +447,10 @@ class Push {
       return;
     }
     if (note == null) return;
-    final channel = chat ? _messages : _activity;
+    final alert = '${data['kind'] ?? ''}'.startsWith('air_alert');
+    // Тривога при відкритому застосунку — ще й свій звук з файлу, якщо обрано.
+    if (alert) unawaited(AlertSound.play(session.prefs));
+    final channel = chat ? _messages : (alert ? _alerts : _activity);
     final tag = chat ? 'chat-${data['conversation_id']}' : null;
     await _local.show(
       id: (tag ?? message.messageId ?? '${DateTime.now().millisecondsSinceEpoch}').hashCode & 0x7fffffff,

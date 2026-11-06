@@ -7,6 +7,7 @@ use App\Http\Controllers\Settings\GameThemeController;
 use App\Http\Controllers\StatusPageController;
 use App\Models\Track;
 use App\Models\User;
+use App\Services\Alerts\AirAlertService;
 use App\Services\Auth\DiscordOAuth;
 use App\Services\Auth\FirebaseAuth;
 use App\Services\Billing\Catalog;
@@ -171,6 +172,8 @@ class HandleInertiaRequests extends Middleware
             // Режим «очима людини»: банер з кнопкою виходу.
             'viewAs' => $request->attributes->get('view_as_admin') !== null && $user ? ['name' => $user->name, 'username' => $user->username] : null,
             // Ролі команди: які розділи адмінки бачить модератор.
+            // Мапа тривог: розділ і інформер — лише для людей з України.
+            'airAlerts' => $user ? fn () => app(AirAlertService::class)->isAvailableFor($request) : false,
             'staffSections' => $user?->isStaff() ? fn () => StaffRoles::sections($user) : null,
             // Активний збій зі сторінки статусу — тонкий банер угорі (null, коли все працює).
             'incident' => fn () => StatusPageController::banner(),

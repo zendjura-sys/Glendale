@@ -33,6 +33,7 @@ import 'movie_extras.dart';
 import 'game_reviews.dart';
 import 'game_tools.dart';
 import 'status.dart';
+import 'alerts.dart';
 import 'pulse_widget.dart';
 import 'feed.dart';
 import 'characters.dart';
@@ -273,6 +274,7 @@ Future<void> main() async {
           GoRoute(path: '/keyword-alerts', builder: (_, _) => const KeywordAlertsScreen()),
           GoRoute(path: '/help', builder: (_, _) => const HelpScreen()),
           GoRoute(path: '/status', builder: (_, _) => const StatusScreen()),
+          GoRoute(path: '/alerts', builder: (_, _) => const AlertsScreen()),
           GoRoute(path: '/help/:category', builder: (_, state) => HelpCategoryScreen(key: ValueKey(state.pathParameters['category']), slug: state.pathParameters['category']!)),
           GoRoute(path: '/help/:category/:article', builder: (_, state) => HelpArticleScreen(key: ValueKey(state.uri.path), category: state.pathParameters['category']!, slug: state.pathParameters['article']!)),
           GoRoute(path: '/support', builder: (_, _) => const SupportScreen()),

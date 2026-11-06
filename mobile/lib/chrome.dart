@@ -14,6 +14,7 @@ import 'language_picker.dart';
 import 'nav_items.dart';
 import 'plus.dart';
 import 'shell.dart';
+import 'alerts.dart';
 import 'state.dart';
 import 'subscription.dart';
 import 'theme.dart';
@@ -822,6 +823,12 @@ class MenuContent extends StatelessWidget {
               }),
           ],
         ),
+        // Мапа тривог — лише для України (сервер вирішує, див. user.air_alerts у /me).
+        if (session.me?['air_alerts'] == true)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(4, 12, 4, 0),
+            child: AlertMapButton(onTap: () => onGo('/alerts')),
+          ),
         // Решта — категоріями: компактна сітка у дві колонки замість довгого списку.
         // Розділи, що вже стоять плитками вгорі, тут не повторюються.
         for (final group in _menuGroups(context, session, rest, onGo, onClose))

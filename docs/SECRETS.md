@@ -22,7 +22,7 @@
 
 - Список секретных ключей — константа `SiteSettings::SECRETS` в `app/Support/Settings/SiteSettings.php`.
   Сейчас там: `spotify_client_secret`, `kodik_token`, `kodik_links_key`, `videoseed_token`,
-  `flixcdn_token`, `tmdb_token`, `omdb_key`, `discord_client_secret`, `discord_bot_token`,
+  `flixcdn_token`, `tmdb_token`, `ukrainealarm_token`, `alerts_in_ua_token`, `omdb_key`, `discord_client_secret`, `discord_bot_token`,
   `fcm_service_account`, `livekit_api_secret`, `rawg_key`, `igdb_client_secret`, `steam_api_key`,
   `deepl_key`, `maxmind_license_key`, `vapid_private`, `telegram_bot_token`, `telegram_webhook_secret`,
   `twitch_client_secret`, `sightengine_secret`, `google_play_service_account` (ключ сервисного аккаунта с доступом

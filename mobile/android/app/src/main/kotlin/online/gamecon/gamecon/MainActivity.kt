@@ -46,6 +46,18 @@ class MainActivity : AudioServiceActivity() {
                     setWifiLock(call.argument<Boolean>("held") == true)
                     result.success(true)
                 }
+                // Системні налаштування каналу сповіщень (звук «Повітряної тривоги» з файлів телефону).
+                "channelSettings" -> {
+                    val intent = if (android.os.Build.VERSION.SDK_INT >= 26) {
+                        android.content.Intent(android.provider.Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS)
+                            .putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, packageName)
+                            .putExtra(android.provider.Settings.EXTRA_CHANNEL_ID, call.argument<String>("channel") ?: "air_alerts")
+                    } else {
+                        android.content.Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS, android.net.Uri.parse("package:$packageName"))
+                    }
+                    startActivity(intent)
+                    result.success(true)
+                }
                 "bluetoothSettings" -> {
                     startActivity(android.content.Intent(android.provider.Settings.ACTION_BLUETOOTH_SETTINGS))
                     result.success(true)

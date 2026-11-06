@@ -27,6 +27,9 @@ class PushNotifier
 
     public const CHANNEL_ACTIVITY = 'activity';
 
+    /** Тривога й відбій в обраній області: окремий гучний канал. */
+    public const CHANNEL_ALERTS = 'air_alerts';
+
     /** Вхідні дзвінки: окремий канал із мелодією й показом поверх екрана. */
     public const CHANNEL_CALLS = 'calls';
 
@@ -62,7 +65,7 @@ class PushNotifier
                 'kind' => (string) ($data['kind'] ?? 'generic'),
                 'url' => (string) ($data['url'] ?? '/notifications'),
             ],
-            self::CHANNEL_ACTIVITY,
+            str_starts_with((string) ($data['kind'] ?? ''), 'air_alert') ? self::CHANNEL_ALERTS : self::CHANNEL_ACTIVITY,
         );
     }
 

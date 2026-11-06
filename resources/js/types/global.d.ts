@@ -85,6 +85,7 @@ declare module '@inertiajs/core' {
             viewAs?: { name: string; username: string } | null;
             /** Розділи адмінки, доручені модератору. */
             staffSections?: string[] | null;
+            airAlerts?: boolean;
             /** Активний збій зі сторінки статусу (null — усе працює). */
             incident?: {
                 id: number;

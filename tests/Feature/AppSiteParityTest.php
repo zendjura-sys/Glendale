@@ -46,6 +46,16 @@ class AppSiteParityTest extends TestCase
         return app(ApiTokens::class)->issue($user, 'android');
     }
 
+    public function test_app_reaches_air_alerts(): void
+    {
+        Http::fake(['*' => Http::response(['states' => []])]);
+        $user = User::factory()->create(['country' => 'UA']);
+        $token = $this->app_token($user);
+        $this->withToken($token)->getJson('/api/v1/me')->assertOk()->assertJsonPath('user.air_alerts', true);
+        $this->withToken($token)->getJson('/api/v1/site/alerts/state')->assertOk()->assertJsonCount(26, 'regions');
+        $this->withToken($token)->putJson('/api/v1/site/alerts/preferences', ['region' => 'kyiv', 'shelter' => true])->assertOk()->assertJsonPath('prefs.shelter', true);
+    }
+
     public function test_app_reaches_movie_lists_reviews_and_profile_track(): void
     {
         $user = User::factory()->create();

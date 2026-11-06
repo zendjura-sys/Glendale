@@ -355,6 +355,13 @@ export default function AdminIntegrations({ spotify, cinema }: Props) {
                         ),
                     ],
                     [
+                        'alerts',
+                        tr('Мапа тривог'),
+                        tr(
+                            'Тривоги за областями й радар цілей для людей з України: alerts.in.ua і зведення Повітряних сил.',
+                        ),
+                    ],
+                    [
                         'media',
                         tr('GIF і медіа'),
                         tr('Пошук GIF у записах і чатах.'),

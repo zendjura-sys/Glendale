@@ -17,6 +17,7 @@ use App\Models\UserStream;
 use App\Models\VoiceParticipant;
 use App\Models\VoiceRoom;
 use App\Services\Ai\AiClient;
+use App\Services\Alerts\AirAlertService;
 use App\Services\Auth\DiscordOAuth;
 use App\Services\Auth\FirebaseAuth;
 use App\Services\Billing\GooglePlay;
@@ -711,6 +712,31 @@ class IntegrationController extends Controller
                 'fields' => [
                     ['name' => 'key', 'setting' => 'giphy_key', 'type' => 'secret', 'label' => 'API Key',
                         'rules' => ['nullable', 'string', 'regex:/^[A-Za-z0-9]{20,64}$/'], 'message' => 'Ключ Giphy — латинські літери й цифри.'],
+                ],
+            ],
+            'air_alerts' => [
+                'label' => 'Мапа тривог (UkraineAlarm, alerts.in.ua)',
+                'group' => 'alerts',
+                'description' => 'Стан тривог за областями для «Мапи тривог» (лише для України): офіційний API UkraineAlarm, далі alerts.in.ua, без ключів — відкрите запасне джерело. Мітки цілей — з публічних каналів моніторингу; збіг кількох джерел підвищує упевненість мітки.',
+                'docs' => 'https://alerts.in.ua/api-request',
+                'steps' => [
+                    'Офіційний статус: попросіть ключ API на api.ukrainealarm.com і вставте в «Ключ UkraineAlarm».',
+                    'Запасний: заявка на токен на alerts.in.ua (безкоштовно для некомерційних проєктів).',
+                    'Групи джерел цілей — через кому: official, intel, regional, aggregators. Власні канали — через кому, без @.',
+                    'Натисніть «Перевірити».',
+                ],
+                'configured' => filled($this->settings->get('ukrainealarm_token')) || filled($this->settings->get('alerts_in_ua_token')),
+                'stat' => null,
+                'test' => fn () => app(AirAlertService::class)->test(),
+                'fields' => [
+                    ['name' => 'official', 'setting' => 'ukrainealarm_token', 'type' => 'secret', 'label' => 'Ключ UkraineAlarm',
+                        'rules' => ['nullable', 'string', 'regex:/^[A-Za-z0-9_\-\.:]{16,200}$/'], 'message' => 'Ключ — латинські літери, цифри, «-», «_», «:» і «.».'],
+                    ['name' => 'token', 'setting' => 'alerts_in_ua_token', 'type' => 'secret', 'label' => 'Токен alerts.in.ua',
+                        'rules' => ['nullable', 'string', 'regex:/^[A-Za-z0-9_\-\.]{16,200}$/'], 'message' => 'Токен — латинські літери, цифри, «-», «_» і «.».'],
+                    ['name' => 'channels', 'setting' => 'alerts_monitor_channels', 'type' => 'text', 'label' => 'Додаткові канали',
+                        'rules' => ['nullable', 'string', 'max:500', 'regex:/^[A-Za-z0-9_,@\s]*$/'], 'message' => 'Назви каналів латиницею через кому.'],
+                    ['name' => 'groups', 'setting' => 'alerts_source_groups', 'type' => 'text', 'label' => 'Групи джерел',
+                        'rules' => ['nullable', 'string', 'max:80', 'regex:/^(official|intel|regional|aggregators|,|\s)*$/'], 'message' => 'Лише official, intel, regional, aggregators через кому.'],
                 ],
             ],
             'ai' => [

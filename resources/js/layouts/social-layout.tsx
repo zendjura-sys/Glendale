@@ -1,4 +1,6 @@
 import { SideRail } from '@/components/gc/side-rail';
+import { AlertMapButton } from '@/components/alerts/alert-map-button';
+import { AlertBanner } from '@/components/alerts/alert-banner';
 import { Link, router, usePage } from '@inertiajs/react';
 import {
     Bookmark,
@@ -110,7 +112,8 @@ function useIsActive() {
 
 /** Бічне меню, як у класичній соцмережі: простий список без карток, вибраний пункт підсвічено. */
 function Sidebar() {
-    const { nav, auth, counters } = usePage().props;
+    const { nav, auth, counters, airAlerts } = usePage().props;
+    const url = usePage().url;
     const isActive = useIsActive();
     const unreadMessages = useUnreadMessages();
     const user = auth.user;
@@ -179,6 +182,13 @@ function Sidebar() {
                     );
                 })}
             </nav>
+
+            {airAlerts && (
+                <AlertMapButton
+                    className="mx-1 mt-3"
+                    current={url.startsWith('/alerts')}
+                />
+            )}
 
             {user.is_admin && (
                 <>
@@ -933,6 +943,7 @@ export default function SocialLayout({ children }: PropsWithChildren) {
                 <main id="main-content" className="gc-vt-main min-w-0 flex-1">
                     <ViewAsBanner />
                     <IncidentBanner />
+                    <AlertBanner />
                     <Announcement />
                     <NavigationSkeleton>
                         <PageTransition>{children}</PageTransition>
