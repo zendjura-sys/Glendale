@@ -1,2 +1,2 @@
 # Glendale
-private project
+ public project
