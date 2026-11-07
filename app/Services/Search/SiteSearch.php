@@ -52,7 +52,7 @@ class SiteSearch
                 });
         }
         if ($this->modules->enabled('cinema')) {
-            Movie::query()->published()->where('title', 'like', $like)->limit(3)->get()
+            Movie::query()->published()->search($q)->limit(3)->get()
                 ->each(function (Movie $movie) use (&$hits) {
                     $hits[] = ['kind' => 'movie', 'title' => $movie->title, 'hint' => 'Кіно', 'href' => '/cinema/'.$movie->slug];
                 });

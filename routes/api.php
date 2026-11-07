@@ -72,6 +72,7 @@ use App\Http\Controllers\NicknameController;
 use App\Http\Controllers\NowPlayingController;
 use App\Http\Controllers\OAuth\TokenController as OAuthTokenController;
 use App\Http\Controllers\PartyController;
+use App\Http\Controllers\PeopleController;
 use App\Http\Controllers\PhoneController;
 use App\Http\Controllers\PhotoAlbumController;
 use App\Http\Controllers\PhotoController;
@@ -384,6 +385,8 @@ Route::prefix('v1')->group(function () {
          * шляхами з префіксом /api/v1/site. BridgeSiteAction перетворює редиректи й Inertia-сторінки на JSON.
          */
         Route::prefix('site')->middleware(BridgeSiteAction::class)->group(function () {
+            // Один пошук на весь сайт: люди, кіно, музика, ігри, сервери, спільноти, клани, сім'ї.
+            Route::get('search/quick', [PeopleController::class, 'quick'])->middleware('throttle:120,1');
             // Беклог ігор — ті самі дії, що й на сайті.
             Route::prefix('games')->middleware('module:games')->controller(GameBacklogController::class)->group(function () {
                 Route::get('backlog', 'mine');

@@ -13,6 +13,7 @@ import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
 
 import 'api.dart';
+import 'cinema_ui.dart';
 import 'movie_extras.dart';
 import 'cinema.dart' show PosterCard;
 import 'core/widgets/arctic_glass/arctic_glass.dart';
@@ -560,25 +561,63 @@ class _MovieScreenState extends State<MovieScreen> {
         : tr('Дивитися');
     final duration = intOf(movie['duration']);
     final episodes = intOf(movie['episodes_count']);
+    // Горизонтальний телефон/планшет: постер закріплений ліворуч, уміст прокручується праворуч.
+    final size = MediaQuery.sizeOf(context);
+    final landscape = size.width > size.height && size.width >= 600;
+    final infoRows = <(String, String)>[
+      if (countries.isNotEmpty) (tr('Країна'), countries.join(', ')),
+      if (text(movie['type_label']) != null) (tr('Тип'), text(movie['type_label'])!),
+      if (episodes > 1) (tr('Епізоди'), '$episodes'),
+      if (duration > 0) (tr('Тривалість'), tr('{v} хв', {'v': duration})),
+      if (genres.isNotEmpty) (tr('Жанри'), genres.join(', ')),
+      if (movie['year'] != null) (tr('Рік'), '${movie['year']}'),
+      if (releaseLabel(movie['release']) != null) (tr('Статус'), releaseLabel(movie['release'])!),
+      if (text(movie['age_rating']) != null) (tr('Вік'), text(movie['age_rating'])!),
+      if (mapOf(movie['ratings']).isNotEmpty) (tr('Рейтинги'), [for (final r in mapOf(movie['ratings']).entries) '${r.key.toUpperCase()} ${r.value}'].join('  ·  ')),
+    ];
 
-    return ScreenScroll(
-      controller: scroll,
-      onRefresh: _load,
-      children: [
-        _Hero(
-          poster: text(movie['poster']),
-          backdrop: text(movie['backdrop']),
-          onBack: () => context.canPop() ? context.pop() : context.go('/cinema'),
-          onMenu: _menu,
-        ),
-        const SizedBox(height: 16),
+    final content = <Widget>[
+        if (!landscape) ...[
+          _Hero(
+            poster: text(movie['poster']),
+            backdrop: text(movie['backdrop']),
+            badges: movie,
+            onBack: () => context.canPop() ? context.pop() : context.go('/cinema'),
+            onMenu: _menu,
+          ),
+          const SizedBox(height: 16),
+        ],
         Text(text(movie['title']) ?? '', style: display(23).copyWith(height: 1.2)),
         const SizedBox(height: 4),
         Row(children: [
           if (text(movie['title_original']) != null) Expanded(child: Text(text(movie['title_original'])!, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14, color: muted))) else const Spacer(),
           if (text(movie['age_rating']) != null) Pill(label: text(movie['age_rating'])!),
         ]),
-        const SizedBox(height: 14),
+        const SizedBox(height: 12),
+        // Ряд статусів перегляду — один дотик, як на сайті.
+        SizedBox(
+          height: 38,
+          child: ListView(scrollDirection: Axis.horizontal, children: [
+            for (final s in [<String, dynamic>{'key': null, 'label': tr('Не дивлюсь')}, ...statuses])
+              Padding(
+                padding: const EdgeInsets.only(right: 6),
+                child: GestureDetector(
+                  onTap: () => _status(s['key'] as String?),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: status == s['key'] ? (_statusColors[s['key']] ?? primary) : fg.withValues(alpha: 0.06),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text('${s['label']}', style: body(13.5, color: status == s['key'] ? Colors.white : soft, weight: FontWeight.w600)),
+                  ),
+                ),
+              ),
+          ]),
+        ),
+        const SizedBox(height: 12),
         Row(children: [
           Expanded(
             child: _TonalAction(
@@ -635,16 +674,21 @@ class _MovieScreenState extends State<MovieScreen> {
           ]),
         ],
         const SizedBox(height: 16),
-        if (countries.isNotEmpty || movie['year'] != null)
-          _InfoRow(icon: LucideIcons.globe, label: [if (countries.isNotEmpty) countries.take(2).join(', '), if (movie['year'] != null) '${movie['year']}'].join(', ')),
-        if (episodes > 1)
-          _InfoRow(icon: LucideIcons.tv, label: duration > 0 ? tr('{n} еп. по ~{m} хв', {'n': episodes, 'm': duration}) : tr('{n} еп.', {'n': episodes}))
-        else if (duration > 0)
-          _InfoRow(icon: LucideIcons.clock, label: tr('{v} хв', {'v': duration})),
-        if (text(movie['type_label']) != null) _InfoRow(icon: LucideIcons.clapperboard, label: text(movie['type_label'])!),
-        if (mapOf(movie['ratings']).isNotEmpty)
-          _InfoRow(icon: LucideIcons.star, label: [for (final r in mapOf(movie['ratings']).entries) '${r.key.toUpperCase()} ${r.value}'].join('  ·  ')),
-        if (genres.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 8), child: Text(genres.join(', '), style: body(14.5, color: const Color(0xFF9AA8FF), weight: FontWeight.w600))),
+        // Відомості таблицею з чергуванням рядків.
+        ClipRRect(
+          borderRadius: BorderRadius.circular(14),
+          child: Column(children: [
+            for (var i = 0; i < infoRows.length; i++)
+              Container(
+                color: i.isEven ? fg.withValues(alpha: 0.05) : Colors.transparent,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  SizedBox(width: 110, child: Text('${infoRows[i].$1}:', style: body(13.5, weight: FontWeight.w700))),
+                  Expanded(child: Text(infoRows[i].$2, style: body(13.5, color: soft))),
+                ]),
+              ),
+          ]),
+        ),
         if (text(movie['tagline']) != null) Padding(padding: const EdgeInsets.only(top: 10), child: Text('«${text(movie['tagline'])}»', style: body(14, color: soft).copyWith(fontStyle: FontStyle.italic))),
         if (text(movie['description']) != null)
           GestureDetector(
@@ -715,15 +759,44 @@ class _MovieScreenState extends State<MovieScreen> {
             onCount: (value) => setState(() => movie['comments_count'] = value),
           ),
         ),
-      ],
-    );
+    ];
+
+    if (!landscape) return ScreenScroll(controller: scroll, onRefresh: _load, children: content);
+    final top = siteHeaderInset(context) + 8;
+    final bottom = ShellChrome.bottomOf(context) + 12;
+    return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Padding(
+        padding: EdgeInsets.fromLTRB(14, top, 4, bottom),
+        child: SizedBox(
+          width: size.width * 0.32,
+          height: size.height - top - bottom,
+          child: Center(
+            child: AspectRatio(
+              aspectRatio: 2 / 3,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(24),
+                child: Stack(fit: StackFit.expand, children: [
+                  NetImage(text(movie['poster']) ?? text(movie['backdrop'])),
+                  PosterBadges(movie: movie),
+                  Positioned(left: 10, top: 36, child: _GlassIcon(icon: LucideIcons.arrowLeft, onTap: () => context.canPop() ? context.pop() : context.go('/cinema'))),
+                  Positioned(right: 10, top: 36, child: _GlassIcon(icon: LucideIcons.ellipsis, onTap: _menu)),
+                ]),
+              ),
+            ),
+          ),
+        ),
+      ),
+      Expanded(child: ScreenScroll(controller: scroll, onRefresh: _load, children: content)),
+    ]);
   }
 }
 
 class _Hero extends StatelessWidget {
-  const _Hero({required this.poster, required this.backdrop, required this.onBack, required this.onMenu});
+  const _Hero({required this.poster, required this.backdrop, required this.onBack, required this.onMenu, this.badges});
   final String? poster;
   final String? backdrop;
+  /// Тайтл — для бейджів на постері (статус виходу, серії, вік).
+  final Map<String, dynamic>? badges;
   final VoidCallback onBack;
   final VoidCallback onMenu;
 
@@ -755,7 +828,13 @@ class _Hero extends StatelessWidget {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(24),
                 ),
-                child: NetImage(cover, radius: 24),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(24),
+                  child: Stack(fit: StackFit.expand, children: [
+                    NetImage(cover),
+                    if (badges != null) PosterBadges(movie: badges!),
+                  ]),
+                ),
               ),
             ),
           ),
@@ -851,24 +930,6 @@ class _PlayPill extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-class _InfoRow extends StatelessWidget {
-  const _InfoRow({required this.icon, required this.label});
-  final IconData icon;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 5),
-      child: Row(children: [
-        Icon(icon, size: 20, color: muted),
-        const SizedBox(width: 12),
-        Expanded(child: Text(label, style: body(15, color: soft))),
-      ]),
     );
   }
 }

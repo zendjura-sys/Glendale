@@ -299,6 +299,7 @@ class _SearchScreenState extends State<SearchScreen> {
   late final query = TextEditingController(text: widget.initial);
   List<Map<String, dynamic>> users = [];
   List<Map<String, dynamic>> communities = [];
+  List<Map<String, dynamic>> hits = [];
   bool loading = false;
   Timer? debounce;
 
@@ -321,6 +322,7 @@ class _SearchScreenState extends State<SearchScreen> {
       setState(() {
         users = [];
         communities = [];
+        hits = [];
       });
       return;
     }
@@ -331,11 +333,14 @@ class _SearchScreenState extends State<SearchScreen> {
       final results = await Future.wait([
         api.get('/api/v1/search?q=$encoded'),
         api.get('/api/v1/communities?tab=all&q=$encoded').catchError((_) => <String, dynamic>{}),
+        api.get(Api.site('/search/quick?q=$encoded')).catchError((_) => <String, dynamic>{}),
       ]);
       if (!mounted || query.text.trim() != q) return;
       setState(() {
         users = maps(results[0]['users']);
         communities = Listing.parse(results[1]['communities']).items.take(6).toList();
+        // Кіно, музика, ігри, сервери, клани, сім'ї — з того самого пошуку, що й на сайті.
+        hits = maps(results[2]['hits']).where((h) => h['kind'] != 'user' && h['kind'] != 'community').toList();
       });
     } catch (e) {
       if (mounted) toast(context, e);
@@ -356,7 +361,7 @@ class _SearchScreenState extends State<SearchScreen> {
             Expanded(
               child: GcField(
                 controller: query,
-                label: tr('Пошук людей і спільнот'),
+                label: tr('Пошук: люди, кіно, музика, ігри…'),
                 icon: LucideIcons.search,
                 autofocus: widget.initial.isEmpty,
                 dense: true,
@@ -375,7 +380,7 @@ class _SearchScreenState extends State<SearchScreen> {
           const ListSkeleton(rows: 5)
         else if (q.length < 2)
           QuietEmpty(icon: LucideIcons.search, text: tr('Введіть щонайменше 2 символи'))
-        else if (users.isEmpty && communities.isEmpty)
+        else if (users.isEmpty && communities.isEmpty && hits.isEmpty)
           QuietEmpty(icon: LucideIcons.userRoundSearch, text: tr('За запитом «{q}» нічого не знайдено', {'q': q}))
         else ...[
           if (users.isNotEmpty)
@@ -411,6 +416,53 @@ class _SearchScreenState extends State<SearchScreen> {
               ),
             ),
           ],
+          if (hits.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Glass(
+              padding: const EdgeInsets.fromLTRB(12, 14, 12, 6),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(padding: EdgeInsets.only(left: 4), child: CardTitle(tr('На сайті'), icon: LucideIcons.layoutGrid)),
+                  const SizedBox(height: 4),
+                  for (final hit in hits)
+                    ListTile(
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+                      leading: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(color: primary.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(12)),
+                        child: Icon(
+                          switch ('${hit['kind']}') {
+                            'movie' => LucideIcons.clapperboard,
+                            'track' => LucideIcons.music,
+                            'game' => LucideIcons.gamepad2,
+                            'server' => LucideIcons.server,
+                            'clan' => LucideIcons.swords,
+                            'family' => LucideIcons.crown,
+                            _ => LucideIcons.search,
+                          },
+                          size: 18,
+                          color: primary,
+                        ),
+                      ),
+                      title: Text(text(hit['title']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(15, weight: FontWeight.w600)),
+                      subtitle: Text(tr(text(hit['hint']) ?? ''), style: body(12.5, color: muted)),
+                      onTap: () => context.push(appPathFor(text(hit['href']))),
+                    ),
+                ],
+              ),
+            ),
+          ],
+          const SizedBox(height: 12),
+          // Той самий запит — одразу в розділах.
+          Wrap(spacing: 8, runSpacing: 8, children: [
+            for (final (icon, label, path) in [
+              (LucideIcons.clapperboard, tr('«{q}» у кіно', {'q': q}), '/cinema?q='),
+              (LucideIcons.music, tr('«{q}» у музиці', {'q': q}), '/music/search?q='),
+            ])
+              GestureDetector(onTap: () => context.push('$path${Uri.encodeQueryComponent(q)}'), child: Pill(label: label, icon: icon, color: primary)),
+          ]),
           const SizedBox(height: 12),
           GhostButton(label: tr('Розширений пошук людей'), icon: LucideIcons.slidersHorizontal, onPressed: () => context.push('/people?q=${Uri.encodeQueryComponent(q)}')),
         ],

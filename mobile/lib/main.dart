@@ -220,8 +220,10 @@ Future<void> main() async {
           ),
           GoRoute(
             path: '/cinema',
-            builder: (_, _) => const CinemaScreen(),
+            builder: (_, state) => CinemaScreen(key: ValueKey(state.uri.queryParameters['q']), query: state.uri.queryParameters['q']),
             routes: [
+              GoRoute(path: 'overview', builder: (_, _) => const CinemaOverviewScreen()),
+              GoRoute(path: 'schedule', builder: (_, _) => const CinemaScheduleScreen()),
               GoRoute(path: 'my', builder: (_, state) => MyCinemaScreen(status: state.uri.queryParameters['status'] ?? 'all')),
               GoRoute(path: 'roulette', builder: (_, _) => const RouletteScreen()),
               GoRoute(path: 'lists', builder: (_, _) => const MovieListsScreen(), routes: [
