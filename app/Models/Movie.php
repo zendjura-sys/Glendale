@@ -82,10 +82,11 @@ class Movie extends Model
     ];
 
     public const STATUSES = [
-        'planned' => 'Буду дивитися',
+        'planned' => 'В планах',
         'watching' => 'Дивлюся',
         'watched' => 'Переглянуто',
-        'dropped' => 'Закинуто',
+        'on_hold' => 'Відкладено',
+        'dropped' => 'Кинуто',
     ];
 
     protected function casts(): array

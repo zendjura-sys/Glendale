@@ -485,7 +485,7 @@ class _MyCinemaScreenState extends State<MyCinemaScreen> {
         if (loading && movies.isEmpty)
           const ListSkeleton(rows: 5)
         else if (movies.isEmpty)
-          EmptyState(icon: LucideIcons.bookmark, title: tr('Список порожній'), text: tr('Позначайте фільми статусами «Буду дивитися», «Дивлюся» тощо — вони з’являться тут.'), action: tr('До каталогу'), onAction: () => context.go('/cinema'))
+          EmptyState(icon: LucideIcons.bookmark, title: tr('Список порожній'), text: tr('Позначайте фільми статусами «В планах», «Дивлюся» тощо — вони з’являться тут.'), action: tr('До каталогу'), onAction: () => context.go('/cinema'))
         else ...[
           PosterGrid(
             movies: movies,

@@ -432,6 +432,10 @@ Route::prefix('v1')->group(function () {
             Route::put('settings/home-widgets', [MemoriesController::class, 'homeWidgets'])->middleware('throttle:30,1');
             // Рулетка кіно, «Вгадай пісню», вікторина дня й ігровий щоденник — ті самі дії, що й на сайті.
             Route::get('cinema/roulette', [MovieRouletteController::class, 'index'])->middleware('module:cinema');
+            Route::get('cinema/overview', [CinemaController::class, 'overview'])->middleware('module:cinema');
+            Route::get('cinema/schedule', [CinemaController::class, 'schedule'])->middleware('module:cinema');
+            Route::get('cinema/my', [CinemaController::class, 'my'])->middleware('module:cinema');
+            Route::get('cinema/random', [CinemaController::class, 'random'])->middleware(['module:cinema', 'throttle:60,1']);
             Route::get('cinema/roulette/spin', [MovieRouletteController::class, 'spin'])->middleware(['module:cinema', 'throttle:60,1']);
             Route::get('music/quiz', [QuizController::class, 'music'])->middleware('module:music');
             Route::post('music/quiz', [QuizController::class, 'musicStart'])->middleware(['module:music', 'throttle:20,1']);

@@ -56,6 +56,24 @@ class AppSiteParityTest extends TestCase
         $this->withToken($token)->putJson('/api/v1/site/alerts/preferences', ['region' => 'kyiv', 'shelter' => true])->assertOk()->assertJsonPath('prefs.shelter', true);
     }
 
+    public function test_app_reaches_cinema_overview_schedule_library_and_random(): void
+    {
+        $user = User::factory()->create();
+        $token = $this->app_token($user);
+        $movie = Movie::query()->create(['slug' => 'bleach', 'type' => 'anime', 'title' => 'Бліч', 'is_published' => true, 'episodes_count' => 12]);
+        $movie->sources()->create(['provider' => 'kodik', 'external_id' => 'serial-1', 'translation' => 'AniLibria', 'link' => 'https://kodik.example/serial-1']);
+
+        $this->withToken($token)->patchJson('/api/v1/site/cinema/bleach/status', ['status' => 'on_hold'])->assertOk();
+        $this->withToken($token)->getJson('/api/v1/site/cinema/my?status=on_hold')->assertOk()->assertJsonPath('movies.data.0.slug', 'bleach');
+        $this->withToken($token)->putJson('/api/v1/site/cinema/bleach/progress', ['season' => 1, 'episode' => 3, 'player_key' => 'kodik:serial-1'])->assertOk();
+        $this->withToken($token)->getJson('/api/v1/site/cinema/my?status=history')->assertOk()
+            ->assertJsonPath('movies.data.0.progress.episode', 3)
+            ->assertJsonPath('movies.data.0.progress.voice', 'AniLibria');
+        $this->withToken($token)->getJson('/api/v1/site/cinema/overview')->assertOk()->assertJsonStructure(['featured', 'discussed', 'watchingNow', 'collections', 'comments', 'recommended']);
+        $this->withToken($token)->getJson('/api/v1/site/cinema/schedule')->assertOk()->assertJsonPath('days.0.movies.0.slug', 'bleach');
+        $this->withToken($token)->getJson('/api/v1/site/cinema/random')->assertOk()->assertJsonPath('redirect', '/cinema/bleach');
+    }
+
     public function test_app_reaches_movie_lists_reviews_and_profile_track(): void
     {
         $user = User::factory()->create();

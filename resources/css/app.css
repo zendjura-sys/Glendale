@@ -5754,3 +5754,37 @@ html.gc-vk[data-theme='dark']
 :root.gc-vk .vkuiGroup__modeCard:first-of-type {
     border-radius: 16px !important;
 }
+
+/* Пошук-пігулка (кіно й розділи сайту): суцільна заливка поля, без рамки. */
+.gc-search-pill {
+    background: var(--vkui--color_field_background, rgb(255 255 255 / 0.06));
+}
+.gc-search-pill:focus-within {
+    box-shadow: 0 0 0 2px
+        var(--vkui--color_stroke_accent, rgb(56 122 255 / 0.6));
+}
+/* Усі звичайні поля пошуку сайту — пігулкою. */
+:root.gc-vk :is(input[type='search'], .ios-header-search) {
+    border-radius: 9999px !important;
+}
+/* Чіп-посилання (швидкі переходи розділу): пігулка з іконкою. */
+.gc-chip {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 6px;
+    height: 36px;
+    padding: 0 14px;
+    border-radius: 9999px;
+    font-size: 13px;
+    font-weight: 500;
+    background: var(--vkui--color_background_content, rgb(255 255 255 / 0.06));
+    color: var(--vkui--color_text_primary, #fff);
+    transition: background 0.15s ease;
+}
+.gc-chip:hover {
+    background: var(--vkui--color_background_secondary, rgb(255 255 255 / 0.1));
+}
+.gc-chip svg {
+    color: var(--vkui--color_icon_accent, currentColor);
+}

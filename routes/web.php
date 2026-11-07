@@ -669,6 +669,9 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     Route::prefix('cinema')->name('cinema.')->middleware('module:cinema')->group(function () {
         Route::get('/', [CinemaController::class, 'index'])->name('index');
         Route::get('my', [CinemaController::class, 'my'])->name('my');
+        Route::get('overview', [CinemaController::class, 'overview'])->name('overview');
+        Route::get('schedule', [CinemaController::class, 'schedule'])->name('schedule');
+        Route::get('random', [CinemaController::class, 'random'])->middleware('throttle:60,1')->name('random');
         Route::get('ten/{user:username}', [CinemaController::class, 'ten'])->name('ten');
         Route::post('ten', [CinemaController::class, 'toggleTen'])->name('ten.store');
         Route::post('ratings/{user:username}', [CinemaController::class, 'followRatings'])->name('ratings.follow');

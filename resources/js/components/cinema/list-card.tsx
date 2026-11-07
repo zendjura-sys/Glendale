@@ -15,52 +15,58 @@ export type MovieListCard = {
     posters: string[];
 };
 
-/** Картка добірки: колаж із чотирьох постерів, назва, автор і лічильники. */
+/**
+ * Картка добірки (колекції): перший постер — тло картки з затемненням, позаду — «стос»
+ * наступної картки; угорі лічильники лайків і підписників, назва й автор — поверх унизу.
+ */
 export function ListCard({ list }: { list: MovieListCard }) {
-    const posters = [...list.posters, null, null, null, null].slice(0, 4);
+    const cover = list.posters[0] ?? null;
 
     return (
         <Link
             href={`/cinema/lists/${list.id}`}
-            className="glass group block overflow-hidden rounded-2xl"
+            className="group relative block pt-2.5"
         >
-            <div className="grid aspect-[3/1] grid-cols-4 gap-0.5 bg-white/[0.03]">
-                {posters.map((poster, i) =>
-                    poster ? (
-                        <img
-                            key={i}
-                            src={poster}
-                            alt=""
-                            loading="lazy"
-                            className="size-full object-cover opacity-90 transition group-hover:opacity-100"
-                        />
-                    ) : (
-                        <span key={i} className="bg-white/[0.04]" />
-                    ),
+            <span
+                aria-hidden
+                className="absolute inset-x-6 top-0 h-6 rounded-t-2xl bg-white/[0.08]"
+            />
+            <span
+                data-on-dark
+                className="relative isolate flex aspect-[16/9] flex-col justify-between overflow-hidden rounded-2xl bg-gradient-to-b from-[#5a5a5e] to-[#2b2b2e] p-4"
+            >
+                {cover && (
+                    <img
+                        src={cover}
+                        alt=""
+                        loading="lazy"
+                        className="absolute inset-0 -z-10 size-full object-cover transition duration-500 group-hover:scale-105"
+                    />
                 )}
-            </div>
-            <div className="p-3.5">
-                <p className="flex items-center gap-1.5 truncate font-semibold text-white">
-                    {!list.is_public && (
-                        <Lock className="size-3.5 shrink-0 text-white/45" />
-                    )}
-                    <span className="truncate">{list.title}</span>
-                </p>
-                <p className="mt-0.5 truncate text-xs text-white/50">
-                    {list.user?.name} ·{' '}
-                    {tr('{n} тайтлів', { n: list.items_count })}
-                </p>
-                <div className="mt-2 flex items-center gap-3 text-xs text-white/50">
-                    <span className="inline-flex items-center gap-1">
-                        <Heart className="size-3.5" />
-                        {list.likes_count}
-                    </span>
-                    <span className="inline-flex items-center gap-1">
-                        <Users className="size-3.5" />
+                <span className="absolute inset-0 -z-10 bg-gradient-to-t from-black/85 via-black/25 to-black/10" />
+                <span className="flex justify-end gap-2">
+                    <span className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-black/45 px-3 text-sm font-semibold text-white/80 tabular-nums backdrop-blur">
                         {list.followers_count}
+                        <Users className="size-4" />
                     </span>
-                </div>
-            </div>
+                    <span className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-black/45 px-3 text-sm font-semibold text-amber-400 tabular-nums backdrop-blur">
+                        {list.likes_count}
+                        <Heart className="size-4 fill-current" />
+                    </span>
+                </span>
+                <span>
+                    <span className="flex items-center gap-1.5 text-lg leading-snug font-semibold text-white">
+                        {!list.is_public && (
+                            <Lock className="size-4 shrink-0 text-white/60" />
+                        )}
+                        <span className="line-clamp-2">{list.title}</span>
+                    </span>
+                    <span className="mt-0.5 block truncate text-xs text-white/65">
+                        {list.user?.name} ·{' '}
+                        {tr('{n} тайтлів', { n: list.items_count })}
+                    </span>
+                </span>
+            </span>
         </Link>
     );
 }

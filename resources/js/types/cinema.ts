@@ -7,7 +7,12 @@ export type MovieType =
     | 'cartoon'
     | 'documentary';
 
-export type MovieStatus = 'planned' | 'watching' | 'watched' | 'dropped';
+export type MovieStatus =
+    | 'planned'
+    | 'watching'
+    | 'watched'
+    | 'on_hold'
+    | 'dropped';
 
 export type MovieCard = {
     id: number;

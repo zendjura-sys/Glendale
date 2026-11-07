@@ -6,6 +6,7 @@ use App\Jobs\RefreshMoviePlayers;
 use App\Models\Comment;
 use App\Models\Like;
 use App\Models\Movie;
+use App\Models\MovieList;
 use App\Models\MovieRequest;
 use App\Models\MovieSource;
 use App\Models\Track;
@@ -32,8 +33,10 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
@@ -80,7 +83,7 @@ class CinemaController extends Controller
             default => $catalog->orderByDesc('created_at'),
         };
         $page = $catalog->orderByDesc('id')->paginate(self::PER_PAGE)->withQueryString();
-        $page->setCollection($page->getCollection()->map(fn (Movie $m) => $m->toCard()));
+        $page->setCollection($page->getCollection()->map(fn (Movie $m) => [...$m->toCard(), 'description' => $m->description]));
 
         return Inertia::render('cinema/index', [
             'filters' => [
@@ -391,22 +394,172 @@ class CinemaController extends Controller
     public function my(Request $request): Response
     {
         $user = $request->user();
-        $data = $request->validate(['status' => ['nullable', Rule::in(['all', 'rated', ...array_keys(Movie::STATUSES)])]]);
+        $data = $request->validate(['status' => ['nullable', Rule::in(['all', 'rated', 'history', 'saved', 'lists', ...array_keys(Movie::STATUSES)])]]);
         $status = $data['status'] ?? 'all';
 
-        $page = $this->listQuery($user, $status)->paginate(self::PER_PAGE)->withQueryString();
+        $lists = null;
+        if ($status === 'history') {
+            // Історія: тайтли з прогресом — остання серія, озвучка й коли дивились.
+            $query = $this->listQuery($user, 'all')->whereNotNull('movie_user.episode')
+                ->addSelect('movie_user.player_key as my_player', 'movie_user.updated_at as my_updated_at');
+        } elseif ($status === 'saved') {
+            $query = Movie::query()->published()
+                ->join('saves', fn ($j) => $j->on('saves.subject_id', '=', 'movies.id')->where('saves.kind', 'movie')->where('saves.user_id', $user->id))
+                ->leftJoin('movie_user', fn ($j) => $j->on('movie_user.movie_id', '=', 'movies.id')->where('movie_user.user_id', $user->id))
+                ->select('movies.*', 'movie_user.status as my_status', 'movie_user.rating as my_rating')
+                ->orderByDesc('saves.id');
+        } else {
+            $query = $this->listQuery($user, $status === 'lists' ? 'all' : $status);
+        }
+        if ($status === 'lists') {
+            $lists = MovieList::query()->where('user_id', $user->id)->latest('updated_at')->limit(60)->get()
+                ->map(fn (MovieList $list) => $list->toCard())->values();
+        }
+
+        $page = $query->paginate(self::PER_PAGE)->withQueryString();
         $page->setCollection($page->getCollection()->map(fn (Movie $m) => [
             ...$m->toCard(),
+            'description' => $m->description,
             'my_status' => $m->getAttribute('my_status'),
             'my_rating' => $m->getAttribute('my_rating') !== null ? (int) $m->getAttribute('my_rating') : null,
+            'progress' => $m->getAttribute('my_episode') !== null ? [
+                'season' => $m->getAttribute('my_season') !== null ? (int) $m->getAttribute('my_season') : null,
+                'episode' => (int) $m->getAttribute('my_episode'),
+                'voice' => $this->voiceName($m, $m->getAttribute('my_player')),
+                'at' => $m->getAttribute('my_updated_at') ? Carbon::parse($m->getAttribute('my_updated_at'))->toIso8601String() : null,
+            ] : null,
         ]));
 
         return Inertia::render('cinema/my', [
             'status' => $status,
             'movies' => Inertia::scroll(fn () => $page),
+            'total' => $page->total(),
+            'lists' => $lists,
             'statuses' => $this->statusOptions(),
             'counts' => $this->myCounts($user),
         ]);
+    }
+
+    /**
+     * «Огляд» кінопорталу: банери, обговорюване, що дивляться зараз, рекомендації, колекції й коментарі тижня.
+     */
+    public function overview(Request $request): Response
+    {
+        $user = $request->user();
+        $week = now()->subDays(7);
+
+        $discussed = Cache::remember('cinema.overview.discussed', now()->addMinutes(10), fn () => Movie::query()->published()
+            ->withCount(['comments as recent_comments' => fn (Builder $q) => $q->where('created_at', '>=', now()->subDay())])
+            ->orderByDesc('recent_comments')->orderByDesc('comments_count')->limit(5)->get()
+            ->map(fn (Movie $m) => [...$m->toCard(), 'comments_count' => (int) $m->comments_count])->values()->all());
+
+        $watchingIds = Cache::remember('cinema.overview.watching', now()->addMinutes(10), fn () => DB::table('movie_user')
+            ->where('status', 'watching')->where('updated_at', '>=', $week)
+            ->selectRaw('movie_id, count(*) as total')->groupBy('movie_id')->orderByDesc('total')->limit(12)->pluck('movie_id')->all());
+        $watchingNow = Movie::query()->published()->whereIn('id', $watchingIds)->get()
+            ->sortBy(fn (Movie $m) => array_search($m->id, $watchingIds, true))->values();
+        if ($watchingNow->isEmpty()) {
+            $watchingNow = Movie::query()->published()->orderByDesc('views_count')->limit(12)->get();
+        }
+
+        $collections = MovieList::query()->where('is_public', true)->where('items_count', '>', 0)
+            ->orderByDesc('likes_count')->orderByDesc('followers_count')->latest('updated_at')->limit(8)->get()
+            ->map(fn (MovieList $list) => $list->toCard())->values();
+
+        $comments = Comment::query()->with(['user', 'movie'])->whereNotNull('movie_id')->where('created_at', '>=', $week)
+            ->orderByDesc('likes_count')->latest('id')->limit(6)->get()
+            ->filter(fn (Comment $c) => $c->movie !== null && $c->movie->is_published)
+            ->map(fn (Comment $c) => [
+                'id' => $c->id,
+                'body' => Str::limit((string) $c->body, 160),
+                'likes' => (int) $c->likes_count,
+                'created_at' => $c->created_at->toIso8601String(),
+                'user' => $c->user?->toCard(),
+                'movie' => ['title' => $c->movie->title, 'href' => '/cinema/'.$c->movie->slug],
+            ])->values();
+
+        return Inertia::render('cinema/overview', [
+            'featured' => $this->featured(),
+            'recommended' => $this->recommended($user),
+            'discussed' => $discussed,
+            'watchingNow' => $this->cards($watchingNow),
+            'collections' => $collections,
+            'comments' => $comments,
+            'counts' => $this->myCounts($user),
+        ]);
+    }
+
+    /**
+     * Розклад: онгоінги з серіями, що виходили останні три тижні, за днем тижня останнього оновлення.
+     */
+    public function schedule(): Response
+    {
+        $rows = DB::table('movie_sources')
+            ->join('movies', 'movies.id', '=', 'movie_sources.movie_id')
+            ->where('movies.is_published', true)->whereNull('movies.deleted_at')
+            ->whereIn('movies.type', ['serial', 'anime', 'cartoon'])
+            ->where('movie_sources.updated_at', '>=', now()->subDays(21))
+            ->selectRaw('movie_sources.movie_id, max(movie_sources.updated_at) as last_at')
+            ->groupBy('movie_sources.movie_id')->get();
+        $movies = Movie::query()->whereIn('id', $rows->pluck('movie_id'))->get()->keyBy('id');
+
+        $days = [];
+        foreach ($rows as $row) {
+            $movie = $movies->get($row->movie_id);
+            if (! $movie instanceof Movie) {
+                continue;
+            }
+            $at = Carbon::parse($row->last_at);
+            $days[$at->dayOfWeekIso][] = [...$movie->toCard(), 'last_at' => $at->toIso8601String()];
+        }
+        ksort($days);
+
+        return Inertia::render('cinema/schedule', [
+            'days' => collect($days)->map(fn (array $items, int $day) => ['day' => $day, 'movies' => array_values(collect($items)->sortByDesc('last_at')->all())])->values(),
+        ]);
+    }
+
+    /** «Рандом»: випадковий опублікований тайтл. */
+    public function random(): RedirectResponse
+    {
+        $movie = Movie::query()->published()->inRandomOrder()->first();
+        abort_unless($movie instanceof Movie, 404);
+
+        return redirect('/cinema/'.$movie->slug);
+    }
+
+    /**
+     * Рекомендації за оцінками: жанри тайтлів, яким глядач поставив 8+, без уже позначених.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function recommended(User $user): array
+    {
+        $liked = DB::table('movie_user')->where('user_id', $user->id)->where('rating', '>=', 8)->pluck('movie_id');
+        if ($liked->isEmpty()) {
+            return [];
+        }
+        $genres = Movie::query()->whereIn('id', $liked)->pluck('genres')->flatten()->filter()->countBy()->sortDesc()->keys()->take(3)->all();
+        $seen = DB::table('movie_user')->where('user_id', $user->id)->pluck('movie_id');
+
+        return $this->cards(Movie::query()->published()->whereNotIn('id', $seen)
+            ->where(function (Builder $q) use ($genres) {
+                foreach ($genres as $genre) {
+                    $q->orWhereJsonContains('genres', $genre);
+                }
+            })
+            ->orderByDesc('views_count')->limit(12)->get());
+    }
+
+    /** Назва озвучки за ключем плеєра (provider:external_id). */
+    private function voiceName(Movie $movie, mixed $playerKey): ?string
+    {
+        if (! is_string($playerKey) || ! str_contains($playerKey, ':')) {
+            return null;
+        }
+        [$provider, $external] = explode(':', $playerKey, 2);
+
+        return MovieSource::query()->where('movie_id', $movie->id)->where('provider', $provider)->where('external_id', $external)->value('translation');
     }
 
     /**
