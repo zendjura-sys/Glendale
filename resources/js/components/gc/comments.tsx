@@ -1,7 +1,14 @@
 import { Link, usePage } from '@inertiajs/react';
 import { usePlugin } from '@/lib/plugins';
 import { useDraft, writeDraft } from '@/lib/drafts';
-import { CornerDownRight, Pin, SendHorizontal, Trash2 } from 'lucide-react';
+import {
+    CornerDownRight,
+    EyeOff,
+    Pin,
+    SendHorizontal,
+    Smile,
+    Trash2,
+} from 'lucide-react';
 import { useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { api, ApiError } from '@/lib/api';
@@ -169,12 +176,7 @@ export function Comments({
     const byId = new Map(comments.map((c) => [c.id, c]));
 
     return (
-        <div
-            className={cn(
-                'space-y-3 border-t border-white/[0.06] pt-3',
-                className,
-            )}
-        >
+        <div className={cn('space-y-3 pt-3', className)}>
             {!loadedAll && total > comments.length && (
                 <button
                     type="button"
@@ -364,48 +366,47 @@ export function Comments({
             {canComment && (
                 <div className="flex items-end gap-2.5 pt-1">
                     <UserAvatar user={auth.user} size="sm" showOnline={false} />
-                    <div className="input-glass flex min-w-0 flex-1 flex-col rounded-2xl">
+                    <div className="gc-comment-pill gc-solid-2 flex min-w-0 flex-1 flex-col rounded-2xl">
                         {replyTo && (
-                            <div className="flex items-center gap-1.5 px-3.5 pt-2 text-xs text-gc-lilac-300">
+                            <div className="flex items-center gap-1.5 px-3.5 pt-2 text-xs text-sky-400">
                                 <CornerDownRight className="size-3.5" />{' '}
                                 {tr('Відповідь для')} {replyTo.user.first_name}
                                 <button
                                     type="button"
-                                    className="ml-auto text-white/40 hover:text-white"
+                                    className="ml-auto text-white/60 hover:text-white"
                                     onClick={() => setReplyTo(null)}
                                 >
                                     {tr('скасувати')}
                                 </button>
                             </div>
                         )}
-                        <label className="flex items-center gap-2 px-3.5 pt-2 text-xs text-white/55">
-                            <input
-                                type="checkbox"
-                                checked={spoiler}
-                                onChange={(event) =>
-                                    setSpoiler(event.target.checked)
-                                }
-                            />
-                            {tr('Спойлер')}
-                            <button
-                                type="button"
-                                className="ml-auto text-white/70 hover:text-white"
-                                onClick={() =>
-                                    setPickingSticker((open) => !open)
-                                }
-                            >
-                                {tr('Стікер')}
-                            </button>
-                        </label>
                         {pickingSticker && (
-                            <div className="px-3 pt-1">
+                            <div className="px-3 pt-2">
                                 <StickerPicker
                                     value={sticker}
                                     onChange={setSticker}
                                 />
                             </div>
                         )}
-                        <div className="flex items-end">
+                        {/* Один рядок: стікер, текст, спойлер і «надіслати» — без зайвих рамок. */}
+                        <div className="flex items-end gap-0.5 px-1">
+                            <button
+                                type="button"
+                                onClick={() =>
+                                    setPickingSticker((open) => !open)
+                                }
+                                aria-pressed={pickingSticker || !!sticker}
+                                title={tr('Стікер')}
+                                aria-label={tr('Стікер')}
+                                className={cn(
+                                    'mb-1 flex size-8 shrink-0 items-center justify-center rounded-xl transition hover:bg-[var(--gc-l3)]',
+                                    pickingSticker || sticker
+                                        ? 'text-sky-400'
+                                        : 'text-white/60',
+                                )}
+                            >
+                                <Smile className="size-[18px]" />
+                            </button>
                             <textarea
                                 ref={inputRef}
                                 rows={1}
@@ -425,13 +426,28 @@ export function Comments({
                                     }
                                 }}
                                 placeholder={tr('Написати коментар…')}
-                                className="[field-sizing:content] max-h-40 min-h-10 flex-1 resize-none bg-transparent px-3.5 py-2.5 text-sm text-white placeholder:text-white/35 focus:outline-none"
+                                className="[field-sizing:content] max-h-40 min-h-10 min-w-0 flex-1 resize-none bg-transparent px-1.5 py-2.5 text-sm text-white placeholder:text-white/50 focus:outline-none"
                             />
+                            <button
+                                type="button"
+                                onClick={() => setSpoiler((v) => !v)}
+                                aria-pressed={spoiler}
+                                title={tr('Спойлер')}
+                                aria-label={tr('Спойлер')}
+                                className={cn(
+                                    'mb-1 flex size-8 shrink-0 items-center justify-center rounded-xl transition hover:bg-[var(--gc-l3)]',
+                                    spoiler
+                                        ? 'text-amber-400'
+                                        : 'text-white/60',
+                                )}
+                            >
+                                <EyeOff className="size-[18px]" />
+                            </button>
                             <button
                                 type="button"
                                 onClick={submit}
                                 disabled={(!body.trim() && !sticker) || sending}
-                                className="m-1 flex size-8 items-center justify-center rounded-xl text-gc-lilac-300 transition hover:bg-white/10 disabled:opacity-30"
+                                className="mb-1 flex size-8 shrink-0 items-center justify-center rounded-xl text-sky-400 transition hover:bg-[var(--gc-l3)] disabled:opacity-30"
                                 aria-label={tr('Надіслати')}
                             >
                                 <SendHorizontal className="size-[18px]" />

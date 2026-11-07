@@ -254,38 +254,37 @@ export function MenuHub({ onClose }: { onClose: () => void }) {
                         )}
                     />
                 </div>
-                <div
-                    className={cn(
-                        'gc-solid-2 mt-3 flex items-center gap-2.5 rounded-xl p-2.5',
-                    )}
-                >
-                    <PlusBadge className="size-7 rounded-lg [&_svg]:size-4" />
-                    <span className="min-w-0 flex-1">
-                        <span className="block text-[13px] font-semibold text-white">
+                {/* GameCon+: дві строки — назва й статус, нижче строк і кнопка (не стиснуто). */}
+                <div className="gc-solid-2 mt-3 rounded-xl p-3">
+                    <div className="flex items-center gap-2.5">
+                        <PlusBadge className="size-8 rounded-lg [&_svg]:size-4" />
+                        <span className="min-w-0 flex-1 text-[14px] font-semibold text-white">
                             GameCon+
                         </span>
-                        <span className="block truncate text-[11px] text-white/60">
+                        <span
+                            className={cn(
+                                'shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-semibold',
+                                plusActive
+                                    ? 'bg-emerald-400/15 text-emerald-400'
+                                    : 'bg-[var(--gc-l3)] text-white/60',
+                            )}
+                        >
+                            {plusActive ? tr('Активний') : tr('Не активний')}
+                        </span>
+                    </div>
+                    <div className="mt-2.5 flex items-center gap-3">
+                        <span className="min-w-0 flex-1 text-xs text-white/60">
                             {plusActive
                                 ? tr('Ще {n} дн.', { n: plusDays })
                                 : tr('Рамки, ник, теми й більше')}
                         </span>
-                    </span>
-                    <span
-                        className={cn(
-                            'rounded-full px-2 py-0.5 text-[11px] font-semibold',
-                            plusActive
-                                ? 'bg-emerald-400/15 text-emerald-400'
-                                : 'bg-[var(--gc-l3)] text-white/60',
-                        )}
-                    >
-                        {plusActive ? tr('Активний') : tr('Не активний')}
-                    </span>
-                    <Link
-                        href="/plus"
-                        className="rounded-lg bg-[var(--gc-active)] px-3 py-1.5 text-xs font-semibold text-sky-400"
-                    >
-                        {plusActive ? tr('Продовжити') : tr('Оформити')}
-                    </Link>
+                        <Link
+                            href="/plus"
+                            className="shrink-0 rounded-lg bg-[var(--gc-active)] px-4 py-2 text-xs font-semibold text-sky-400"
+                        >
+                            {plusActive ? tr('Продовжити') : tr('Оформити')}
+                        </Link>
+                    </div>
                 </div>
             </section>
 

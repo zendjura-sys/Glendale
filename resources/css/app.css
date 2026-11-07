@@ -6198,3 +6198,22 @@ html:root.gc-vk[data-theme] .gc-footer-card {
 html:root.gc-vk[data-theme] .gc-vk-sheet {
     background: var(--gc-page) !important;
 }
+/* Поле коментаря й рядок композера: обведення фокуса — на плашці, не на внутрішньому полі. */
+html:root.gc-vk[data-theme]
+    :is(.gc-comment-pill, .gc-composer-main)
+    textarea:focus {
+    outline: none !important;
+}
+html:root.gc-vk[data-theme] :is(.gc-comment-pill, .gc-composer-main) textarea {
+    background-color: transparent !important;
+}
+html:root.gc-vk[data-theme] .gc-comment-pill:focus-within {
+    outline: 2px solid color-mix(in oklab, var(--gc-accent) 45%, transparent);
+}
+/* Усередині запису — без обведень: вкладення (фото, картки) відділяються тлом рівня 2. */
+html:root.gc-vk[data-theme] .gc-post [class*='border']:not(input, textarea) {
+    border-color: transparent !important;
+}
+html:root.gc-vk[data-theme] .gc-post [class*='ring-']:not(:focus-visible) {
+    --tw-ring-color: transparent;
+}

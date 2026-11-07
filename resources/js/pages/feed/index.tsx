@@ -1,4 +1,4 @@
-import { Group, Tabs, TabsItem } from '@vkontakte/vkui';
+import { UnderlineTabs } from '@/components/gc/underline-tabs';
 import {
     Contacts,
     FriendRequests,
@@ -122,25 +122,19 @@ function FeedTabs({
             : []),
     ];
 
-    // Вкладки VKUI (Tabs): підкреслена активна вкладка, прокрутка до неї на вузькому екрані.
+    // Вкладки з підкресленням: прокручуються вбік на вузькому екрані, активна — завжди в полі зору.
     return (
-        <Group mode="card" separator="hide" className="gc-vk-group px-2">
-            <Tabs mode="accent" withScrollToSelectedTab layoutFillMode="auto">
-                {tabs.map((item) => (
-                    <TabsItem
-                        key={item.key}
-                        Component={Link}
-                        href={item.href}
-                        selected={tab === item.key}
-                        aria-current={tab === item.key ? 'page' : undefined}
-                        disabled={item.disabled}
-                        before={<item.icon aria-hidden className="size-4" />}
-                    >
-                        {item.label}
-                    </TabsItem>
-                ))}
-            </Tabs>
-        </Group>
+        <div className="gc-solid rounded-2xl px-2 pt-1">
+            <UnderlineTabs
+                active={tab}
+                tabs={tabs.map((item) => ({
+                    key: item.key,
+                    label: item.label,
+                    href: item.href,
+                    icon: <item.icon aria-hidden className="size-4" />,
+                }))}
+            />
+        </div>
     );
 }
 
@@ -276,7 +270,7 @@ export default function Feed({
                     {newcomer && <NewcomerWeek data={newcomer} />}
                     <PostComposer />
                     <FeedTabs tab={tab} hasFriends={hasFriends} />
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                         <LanguageFilter
                             tab={tab}
                             lang={lang}

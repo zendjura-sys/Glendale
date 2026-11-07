@@ -133,7 +133,7 @@ export function LanguageFilter({
                         { preserveScroll: false },
                     );
                 }}
-                className="h-9 max-w-36 min-w-0 rounded-xl bg-white/[0.05] pr-2 pl-8 text-xs text-white/80"
+                className="h-9 max-w-44 min-w-32 rounded-xl bg-white/[0.05] pr-7 pl-8 text-xs text-white/80"
             >
                 <option value="">{tr('Усі мови')}</option>
                 {languages.map((code) => (
