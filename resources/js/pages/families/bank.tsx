@@ -67,14 +67,14 @@ type Props = FamilyShellProps & {
 };
 
 const cashoutStatus = {
-    pending: [tr('Очікує видачі'), 'bg-amber-300/10 text-amber-200'],
-    paid: [tr('Видано'), 'bg-emerald-400/10 text-emerald-200'],
+    pending: [tr('Очікує видачі'), 'bg-amber-300/10 text-amber-400'],
+    paid: [tr('Видано'), 'bg-emerald-400/10 text-emerald-400'],
     cancelled: [tr('Скасовано'), 'bg-white/[0.05] text-white/45'],
 } as const;
 
 const depositStatus = {
     active: [tr('Активний'), 'bg-gc-indigo/15 text-[#c4b5fd]'],
-    matured: [tr('Виплачено'), 'bg-emerald-400/10 text-emerald-200'],
+    matured: [tr('Виплачено'), 'bg-emerald-400/10 text-emerald-400'],
     closed: [tr('Закрито достроково'), 'bg-white/[0.05] text-white/45'],
 } as const;
 
@@ -99,7 +99,7 @@ export default function FamilyBank(props: Props) {
                 <Metric
                     label={tr('Мій баланс')}
                     value={uahShort(me.balance)}
-                    tone={me.balance < 0 ? 'text-rose-300' : 'text-emerald-300'}
+                    tone={me.balance < 0 ? 'text-red-400' : 'text-emerald-400'}
                     icon={Wallet}
                 />
                 {totals ? (
@@ -123,7 +123,7 @@ export default function FamilyBank(props: Props) {
                             tone={
                                 totals.balances + totals.pending_cashouts >
                                 family.treasury
-                                    ? 'text-rose-300'
+                                    ? 'text-red-400'
                                     : 'text-white'
                             }
                             icon={Scale}
@@ -375,7 +375,7 @@ function CashoutPanel({
                                     href={`${base}/bank/cashouts/${c.id}/proof`}
                                     target="_blank"
                                     rel="noreferrer"
-                                    className="text-xs text-gc-lilac-200 hover:underline"
+                                    className="text-xs text-sky-400 hover:underline"
                                 >
                                     {tr('скрін')}
                                 </a>
@@ -398,7 +398,7 @@ function CashoutPanel({
                                             { preserveScroll: true },
                                         )
                                     }
-                                    className="text-xs text-white/45 hover:text-rose-300"
+                                    className="text-xs text-white/45 hover:text-red-400"
                                 >
                                     {tr('скасувати')}
                                 </button>
@@ -494,10 +494,10 @@ function DepositPanel({
             <div className="mt-3 flex items-center gap-3 rounded-2xl bg-white/[0.03] p-3 ring-1 ring-white/[0.06]">
                 <div className="min-w-0 flex-1 text-xs text-white/45">
                     {tr('До виплати')}
-                    <div className="font-display text-lg font-bold text-emerald-300">
+                    <div className="font-display text-lg font-bold text-emerald-400">
                         {uah(principal + interest)}
                     </div>
-                    <span className="text-emerald-300/70">
+                    <span className="text-emerald-400/70">
                         +{uah(interest)} {tr('відсотків')}
                     </span>
                 </div>
@@ -527,7 +527,7 @@ function DepositPanel({
                             <div className="min-w-0 flex-1">
                                 <div className="text-sm font-semibold text-white">
                                     {uah(d.amount)} →{' '}
-                                    <span className="text-emerald-300">
+                                    <span className="text-emerald-400">
                                         {uah(d.paid ?? d.payout)}
                                     </span>
                                 </div>
@@ -573,7 +573,7 @@ function DepositPanel({
                                             { preserveScroll: true },
                                         )
                                     }
-                                    className="text-xs text-white/45 hover:text-rose-300"
+                                    className="text-xs text-white/45 hover:text-red-400"
                                 >
                                     {tr('закрити')}
                                 </button>

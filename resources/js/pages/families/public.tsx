@@ -57,7 +57,7 @@ export default function FamilyPublic({
                 >
                     <ArrowLeft className="size-4" /> {tr('До сімей')}
                 </Link>
-                <section className="glass noise relative overflow-hidden rounded-2xl">
+                <section className="gc-solid relative overflow-hidden rounded-2xl">
                     <div className="h-40 sm:h-52">
                         {family.cover_url ? (
                             <img
@@ -79,12 +79,12 @@ export default function FamilyPublic({
                         />
                         <div className="min-w-0 flex-1">
                             <h1 className="flex flex-wrap items-center gap-2 font-display text-3xl font-bold text-white">
-                                <span className="text-amber-300">
+                                <span className="text-amber-400">
                                     [{family.tag}]
                                 </span>
                                 {family.name}
                                 {family.status === 'verified' && (
-                                    <ShieldCheck className="size-6 text-emerald-300" />
+                                    <ShieldCheck className="size-6 text-emerald-400" />
                                 )}
                             </h1>
                             <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-white/50">
@@ -116,7 +116,7 @@ export default function FamilyPublic({
                 <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_360px]">
                     <div className="space-y-4">
                         {family.description && (
-                            <section className="glass rounded-2xl p-5">
+                            <section className="gc-solid rounded-2xl p-5">
                                 <h2 className="mb-2 font-display font-semibold text-white">
                                     {tr('Про сім’ю')}
                                 </h2>
@@ -129,7 +129,7 @@ export default function FamilyPublic({
                             jar={donation}
                             title={tr('Підтримати сім’ю')}
                         />
-                        <section className="glass rounded-2xl p-5">
+                        <section className="gc-solid rounded-2xl p-5">
                             <h2 className="mb-3 font-display font-semibold text-white">
                                 {tr('Керівництво')}
                             </h2>
@@ -161,10 +161,10 @@ export default function FamilyPublic({
                         </section>
                     </div>
 
-                    <section className="glass h-fit rounded-2xl p-5">
+                    <section className="gc-solid h-fit rounded-2xl p-5">
                         {pending ? (
                             <div className="text-center">
-                                <Clock3 className="mx-auto size-8 text-amber-300" />
+                                <Clock3 className="mx-auto size-8 text-amber-400" />
                                 <div className="mt-2 font-semibold text-white">
                                     {tr('Заявку надіслано')}
                                 </div>
@@ -193,11 +193,11 @@ export default function FamilyPublic({
                         ) : canApply ? (
                             <div className="space-y-3">
                                 <h2 className="flex items-center gap-2 font-display font-semibold text-white">
-                                    <UserPlus className="size-4 text-amber-300" />
+                                    <UserPlus className="size-4 text-amber-400" />
                                     {tr('Вступити до сім’ї')}
                                 </h2>
                                 {application?.status === 'declined' && (
-                                    <p className="rounded-xl bg-rose-500/10 px-3 py-2 text-xs text-rose-200">
+                                    <p className="rounded-xl bg-red-500/10 px-3 py-2 text-xs text-red-400">
                                         {tr(
                                             'Попередню заявку відхилено — можна подати знову.',
                                         )}
@@ -273,7 +273,7 @@ export default function FamilyPublic({
                         )}
                     </section>
                     {can_block && (
-                        <section className="glass space-y-3 rounded-2xl p-4">
+                        <section className="gc-solid space-y-3 rounded-2xl p-4">
                             <h2 className="font-display text-base font-semibold text-white">
                                 {tr('Чорний список')}
                             </h2>
@@ -310,7 +310,7 @@ export default function FamilyPublic({
                                     <span>{person.name}</span>
                                     <button
                                         type="button"
-                                        className="text-xs text-rose-300"
+                                        className="text-xs text-red-400"
                                         onClick={() =>
                                             router.delete(
                                                 `/f/${family.slug}/block/${person.username}`,

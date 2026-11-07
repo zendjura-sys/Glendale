@@ -152,7 +152,7 @@ export function FamilyShell({
             <div
                 className={cn('space-y-4', showReportButton && 'pb-20 lg:pb-0')}
             >
-                <header className="glass noise relative overflow-hidden rounded-2xl">
+                <header className="gc-solid relative overflow-hidden rounded-2xl">
                     <div className="relative h-28 sm:h-36">
                         {family.cover_url ? (
                             <img
@@ -190,14 +190,14 @@ export function FamilyShell({
                         <div className="min-w-0 flex-1">
                             <div className="flex flex-wrap items-center gap-2">
                                 <h1 className="font-display text-2xl font-bold text-white sm:text-3xl">
-                                    <span className="text-amber-300">
+                                    <span className="text-amber-400">
                                         [{family.tag}]
                                     </span>{' '}
                                     {family.name}
                                 </h1>
                                 {family.status === 'verified' && (
                                     <ShieldCheck
-                                        className="size-5 text-emerald-300"
+                                        className="size-5 text-emerald-400"
                                         aria-label={tr('Верифіковано')}
                                     />
                                 )}
@@ -251,8 +251,8 @@ export function FamilyShell({
                                         className={cn(
                                             'font-display text-base font-bold whitespace-nowrap',
                                             me.balance < 0
-                                                ? 'text-rose-300'
-                                                : 'text-emerald-300',
+                                                ? 'text-red-400'
+                                                : 'text-emerald-400',
                                         )}
                                     >
                                         {uah(me.balance)}
@@ -262,7 +262,7 @@ export function FamilyShell({
                             {family.conversation_id && (
                                 <a
                                     href={`${base}/chat`}
-                                    className="glass inline-flex h-12 items-center gap-2 rounded-2xl px-4 text-sm font-medium text-white/80 hover:text-white"
+                                    className="gc-solid inline-flex h-12 items-center gap-2 rounded-2xl px-4 text-sm font-medium text-white/80 hover:text-white"
                                 >
                                     <MessagesSquare className="size-4" />{' '}
                                     {tr('Чат')}
@@ -288,7 +288,7 @@ export function FamilyShell({
                                     <t.icon className="size-4" />
                                     {t.label}
                                     {!!t.badge && (
-                                        <span className="rounded-full bg-rose-500 px-1.5 text-[11px] leading-4 font-semibold text-white">
+                                        <span className="rounded-full bg-red-500 px-1.5 text-[11px] leading-4 font-semibold text-white">
                                             {t.badge > 99 ? '99+' : t.badge}
                                         </span>
                                     )}
@@ -305,8 +305,8 @@ export function FamilyShell({
                         className={cn(
                             'flex items-start gap-3 rounded-2xl border px-4 py-3 text-sm',
                             family.status === 'suspended'
-                                ? 'border-rose-400/30 bg-rose-500/10 text-rose-100'
-                                : 'border-amber-300/30 bg-amber-300/10 text-amber-100',
+                                ? 'border-red-400/30 bg-red-500/10 text-red-400'
+                                : 'border-amber-300/30 bg-amber-300/10 text-amber-400',
                         )}
                     >
                         <AlertTriangle className="mt-0.5 size-4 shrink-0" />

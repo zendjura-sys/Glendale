@@ -138,7 +138,7 @@ export default function FamilyEvents(props: Props) {
                                 />
                             )}
                             <div className="flex items-start gap-3">
-                                <div className="flex size-14 shrink-0 flex-col items-center justify-center rounded-2xl bg-gradient-to-br from-amber-300/20 to-rose-500/20 ring-1 ring-amber-300/25">
+                                <div className="flex size-14 shrink-0 flex-col items-center justify-center rounded-2xl bg-gradient-to-br from-amber-300/20 to-red-500/20 ring-1 ring-amber-300/25">
                                     <span className="font-display text-lg leading-none font-bold text-white">
                                         {eventDay(e.starts_at, 'day')}
                                     </span>
@@ -181,13 +181,13 @@ export default function FamilyEvents(props: Props) {
                                             </span>
                                         )}
                                         {e.points > 0 && (
-                                            <span className="flex items-center gap-1 text-amber-200">
+                                            <span className="flex items-center gap-1 text-amber-400">
                                                 <Star className="size-3.5" /> +
                                                 {e.points}
                                             </span>
                                         )}
                                         {e.reward > 0 && (
-                                            <span className="flex items-center gap-1 text-emerald-300">
+                                            <span className="flex items-center gap-1 text-emerald-400">
                                                 <Coins className="size-3.5" />{' '}
                                                 {uah(e.reward)}
                                             </span>
@@ -255,13 +255,13 @@ export default function FamilyEvents(props: Props) {
                                 )}
                             </div>
                             {e.checkin_code && (
-                                <p className="mt-3 flex items-center gap-2 rounded-xl bg-amber-300/10 px-3 py-2 text-sm text-amber-100">
+                                <p className="mt-3 flex items-center gap-2 rounded-xl bg-amber-300/10 px-3 py-2 text-sm text-amber-400">
                                     <KeyRound className="size-4 shrink-0" />
                                     {tr('Код відмітки:')}{' '}
                                     <span className="font-mono text-base font-bold tracking-[0.3em]">
                                         {e.checkin_code}
                                     </span>
-                                    <span className="text-xs text-amber-100/60">
+                                    <span className="text-xs text-amber-400/60">
                                         {tr('назвіть його на початку')}
                                     </span>
                                 </p>
@@ -330,7 +330,7 @@ export default function FamilyEvents(props: Props) {
                                 {e.album_url ? (
                                     <a
                                         href={e.album_url}
-                                        className="flex items-center gap-1 text-xs text-gc-lilac-300 hover:text-white"
+                                        className="flex items-center gap-1 text-xs text-sky-400 hover:text-white"
                                     >
                                         <Images className="size-3.5" />
                                         {tr('Альбом')}
@@ -344,7 +344,7 @@ export default function FamilyEvents(props: Props) {
                                                     `${base}/events/${e.id}/album`,
                                                 )
                                             }
-                                            className="flex items-center gap-1 text-xs text-gc-lilac-300 hover:text-white"
+                                            className="flex items-center gap-1 text-xs text-sky-400 hover:text-white"
                                         >
                                             <Images className="size-3.5" />
                                             {tr('Створити альбом')}
@@ -356,7 +356,7 @@ export default function FamilyEvents(props: Props) {
                                         {tr('скасовано')}
                                     </span>
                                 ) : (
-                                    <span className="text-xs text-emerald-300">
+                                    <span className="text-xs text-emerald-400">
                                         {
                                             e.attendance.filter(
                                                 (a) => a.status === 'attended',

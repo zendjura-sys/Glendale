@@ -53,17 +53,17 @@ const statusView = {
     pending: {
         icon: Clock3,
         label: tr('На перевірці'),
-        tone: 'bg-amber-300/10 text-amber-200',
+        tone: 'bg-amber-400/15 text-amber-400',
     },
     approved: {
         icon: CheckCircle2,
         label: tr('Схвалено'),
-        tone: 'bg-emerald-400/10 text-emerald-200',
+        tone: 'bg-emerald-500/15 text-emerald-400',
     },
     rejected: {
         icon: XCircle,
         label: tr('Відхилено'),
-        tone: 'bg-rose-400/10 text-rose-200',
+        tone: 'bg-red-500/15 text-red-400',
     },
 };
 
@@ -94,11 +94,29 @@ export function ReportRow({
     meId: number;
 }) {
     const Icon = reportIcons[report.type];
+    const similar = !!report.flags?.similar_reports;
+    // Плитка-статус ліворуч: схожий скрін — червона, схвалено — зелена, інакше — тип звіту.
+    const box = similar
+        ? 'bg-red-500/15 text-red-400'
+        : report.status === 'approved'
+          ? 'bg-emerald-500/15 text-emerald-400'
+          : report.status === 'rejected'
+            ? 'bg-white/[0.06] text-white/40'
+            : 'bg-amber-400/15 text-amber-400';
 
     return (
-        <article className="flex gap-3 rounded-2xl bg-white/[0.03] p-3 ring-1 ring-white/[0.05]">
-            <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-white/[0.05]">
-                <Icon className="size-5 text-amber-200" />
+        <article className="gc-solid-2 flex gap-3 rounded-2xl p-3.5">
+            <span
+                className={cn(
+                    'flex size-10 shrink-0 items-center justify-center rounded-xl',
+                    box,
+                )}
+            >
+                {similar ? (
+                    <AlertTriangle className="size-5" />
+                ) : (
+                    <Icon className="size-5" />
+                )}
             </span>
             <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
@@ -109,8 +127,8 @@ export function ReportRow({
                         #{report.id} · {kyivDate(report.event_date)}
                     </span>
                     <ReportStatus status={report.status} />
-                    {report.flags?.similar_reports && (
-                        <span className="inline-flex items-center gap-1 rounded-chip bg-rose-500/10 px-2 py-0.5 text-xs text-rose-200">
+                    {similar && (
+                        <span className="inline-flex items-center gap-1 rounded-chip bg-red-500/15 px-2 py-0.5 text-xs font-semibold text-red-400">
                             <AlertTriangle className="size-3" />{' '}
                             {tr('схожий скрін')}
                         </span>
@@ -135,7 +153,7 @@ export function ReportRow({
                         })}
                 </div>
                 {report.review_comment && (
-                    <div className="mt-1.5 rounded-lg bg-white/[0.04] px-2.5 py-1.5 text-xs text-white/60">
+                    <div className="mt-1.5 rounded-lg bg-[var(--gc-page)] px-2.5 py-1.5 text-xs text-white/60">
                         {report.review_comment}
                     </div>
                 )}
@@ -145,7 +163,7 @@ export function ReportRow({
                     className={cn(
                         'font-display font-bold whitespace-nowrap',
                         report.status === 'approved'
-                            ? 'text-emerald-300'
+                            ? 'text-emerald-400'
                             : report.status === 'rejected'
                               ? 'text-white/30 line-through'
                               : 'text-white/70',
@@ -154,7 +172,7 @@ export function ReportRow({
                     {report.reward > 0 ? uah(report.reward) : '—'}
                 </div>
                 {report.points > 0 && (
-                    <div className="text-xs text-amber-200/70">
+                    <div className="text-xs font-semibold text-amber-400">
                         +{report.points} {tr('балів')}
                     </div>
                 )}

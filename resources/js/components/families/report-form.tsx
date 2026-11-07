@@ -182,7 +182,7 @@ export function ReportForm({
                             className={cn(
                                 'flex h-14 flex-col items-center justify-center gap-0.5 rounded-2xl border text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-30',
                                 data.type === type
-                                    ? 'border-amber-300/50 bg-amber-300/10 text-amber-100 shadow-[0_0_24px_-8px_rgb(250_204_21/0.7)]'
+                                    ? 'border-amber-300/50 bg-amber-300/10 text-amber-400 shadow-[0_0_24px_-8px_rgb(250_204_21/0.7)]'
                                     : 'border-white/[0.07] bg-white/[0.03] text-white/60 hover:text-white',
                             )}
                         >
@@ -289,14 +289,14 @@ export function ReportForm({
                             label={tr('Перемоги')}
                             value={data.wins}
                             onChange={(v) => setData('wins', v)}
-                            tone="text-emerald-300"
+                            tone="text-emerald-400"
                             hint={uah(toMinor(config.rates.bizwar_win ?? 0))}
                         />
                         <Stepper
                             label={tr('Поразки')}
                             value={data.losses}
                             onChange={(v) => setData('losses', v)}
-                            tone="text-rose-300"
+                            tone="text-red-400"
                             hint={uah(toMinor(config.rates.bizwar_loss ?? 0))}
                         />
                     </div>
@@ -314,7 +314,7 @@ export function ReportForm({
                                     className={cn(
                                         'h-9 w-12 rounded-lg font-mono text-sm transition',
                                         data.hours.includes(h)
-                                            ? 'bg-amber-300/20 text-amber-100 ring-1 ring-amber-300/40'
+                                            ? 'bg-amber-300/20 text-amber-400 ring-1 ring-amber-300/40'
                                             : 'bg-white/[0.04] text-white/55 hover:text-white',
                                     )}
                                 >
@@ -338,7 +338,7 @@ export function ReportForm({
                                 className={cn(
                                     'rounded-2xl border px-2 py-2.5 text-center transition',
                                     data.tier === tier
-                                        ? 'border-gc-lilac-500/60 bg-gc-indigo/15 text-white'
+                                        ? 'border-sky-500/60 bg-gc-indigo/15 text-white'
                                         : 'border-white/[0.07] bg-white/[0.03] text-white/55 hover:text-white',
                                 )}
                             >
@@ -377,7 +377,7 @@ export function ReportForm({
                         }
                     />
                     {left === 0 && (
-                        <p className="text-xs text-rose-300">
+                        <p className="text-xs text-red-400">
                             {tr(
                                 'Ліміт контрактів цього рівня на обрану дату вичерпано.',
                             )}
@@ -425,7 +425,7 @@ export function ReportForm({
                     <span className="font-medium text-white/60">
                         {tr('Скріншоти-докази')}
                         {config.require_proof && (
-                            <span className="text-rose-300"> *</span>
+                            <span className="text-red-400"> *</span>
                         )}
                     </span>
                     <span className="text-white/35">
@@ -496,7 +496,7 @@ export function ReportForm({
                     <div className="text-xs text-white/40">
                         {tr('Очікувана винагорода')}
                     </div>
-                    <div className="font-display text-xl font-bold text-emerald-300">
+                    <div className="font-display text-xl font-bold text-emerald-400">
                         {reward === null ? tr('визначить офіцер') : uah(reward)}
                     </div>
                 </div>

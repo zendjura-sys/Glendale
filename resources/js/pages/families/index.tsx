@@ -53,12 +53,12 @@ export default function Families({ mine, families, filters, servers }: Props) {
         <>
             <Head title={tr('Сім’ї GTA RP')} />
             <div className="space-y-5">
-                <section className="glass noise relative overflow-hidden rounded-2xl p-5 sm:p-7">
+                <section className="gc-solid relative overflow-hidden rounded-2xl p-5 sm:p-7">
                     <div className="pointer-events-none absolute -top-24 -right-10 size-96 rounded-full bg-amber-400/20 blur-3xl" />
                     <div className="pointer-events-none absolute -bottom-40 left-10 size-96 rounded-full bg-gc-indigo/25 blur-3xl" />
                     <div className="relative flex flex-wrap items-end justify-between gap-5">
                         <div className="max-w-xl">
-                            <span className="inline-flex items-center gap-2 rounded-chip border border-amber-300/25 bg-amber-300/10 px-3 py-1 text-xs font-semibold text-amber-200">
+                            <span className="inline-flex items-center gap-2 rounded-chip border border-amber-300/25 bg-amber-300/10 px-3 py-1 text-xs font-semibold text-amber-400">
                                 <Crown className="size-3.5" /> Family ERP
                             </span>
                             <h1 className="mt-3 font-display text-3xl font-bold text-white sm:text-4xl">
@@ -90,12 +90,12 @@ export default function Families({ mine, families, filters, servers }: Props) {
                                 <Link
                                     key={f.id}
                                     href={`/f/${f.slug}`}
-                                    className="glass group flex items-center gap-4 rounded-2xl p-4 transition hover:bg-white/[0.06]"
+                                    className="gc-solid group flex items-center gap-4 rounded-2xl p-4 transition hover:bg-white/[0.06]"
                                 >
                                     <FamilyLogo family={f} size="lg" />
                                     <div className="min-w-0 flex-1">
                                         <div className="truncate font-semibold text-white">
-                                            <span className="text-amber-300">
+                                            <span className="text-amber-400">
                                                 [{f.tag}]
                                             </span>{' '}
                                             {f.name}
@@ -106,7 +106,7 @@ export default function Families({ mine, families, filters, servers }: Props) {
                                         <div className="mt-1.5 flex items-center gap-2">
                                             {f.membership.status ===
                                             'pending' ? (
-                                                <span className="inline-flex items-center gap-1 rounded-chip bg-amber-300/10 px-2 py-0.5 text-xs text-amber-200">
+                                                <span className="inline-flex items-center gap-1 rounded-chip bg-amber-300/10 px-2 py-0.5 text-xs text-amber-400">
                                                     <Clock3 className="size-3" />{' '}
                                                     {tr('Заявка на розгляді')}
                                                 </span>
@@ -119,7 +119,7 @@ export default function Families({ mine, families, filters, servers }: Props) {
                                                                 .rank_title
                                                         }
                                                     />
-                                                    <span className="text-xs font-semibold text-emerald-300">
+                                                    <span className="text-xs font-semibold text-emerald-400">
                                                         {uah(
                                                             f.membership
                                                                 .balance,
@@ -184,7 +184,7 @@ export default function Families({ mine, families, filters, servers }: Props) {
                                     key={f.id}
                                     href={`/f/${f.slug}`}
                                     className={cn(
-                                        'glass group relative animate-rise overflow-hidden rounded-2xl transition hover:-translate-y-0.5',
+                                        'gc-solid group relative animate-rise overflow-hidden rounded-2xl transition hover:-translate-y-0.5',
                                         f.plus && 'border-indigo-400/40',
                                     )}
                                     style={{ animationDelay: `${i * 30}ms` }}
@@ -223,13 +223,13 @@ export default function Families({ mine, families, filters, servers }: Props) {
                                         />
                                         <div className="min-w-0 pb-1">
                                             <div className="flex items-center gap-1.5 truncate font-semibold text-white">
-                                                <span className="text-amber-300">
+                                                <span className="text-amber-400">
                                                     [{f.tag}]
                                                 </span>
                                                 <span className="truncate">
                                                     {f.name}
                                                 </span>
-                                                <ShieldCheck className="size-4 shrink-0 text-emerald-300" />
+                                                <ShieldCheck className="size-4 shrink-0 text-emerald-400" />
                                             </div>
                                         </div>
                                     </div>
@@ -260,7 +260,7 @@ export default function Families({ mine, families, filters, servers }: Props) {
                                                 className={cn(
                                                     'ml-auto rounded-chip px-2 py-0.5 text-xs font-medium',
                                                     f.is_recruiting
-                                                        ? 'bg-emerald-400/10 text-emerald-200'
+                                                        ? 'bg-emerald-400/10 text-emerald-400'
                                                         : 'bg-white/[0.05] text-white/40',
                                                 )}
                                             >

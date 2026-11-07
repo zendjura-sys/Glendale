@@ -141,7 +141,7 @@ export default function FamilyWarehouse(props: Props) {
                                                 item.is_archived
                                                     ? 'bg-white/[0.02] opacity-50 ring-white/[0.04]'
                                                     : item.low
-                                                      ? 'bg-rose-500/[0.07] ring-rose-400/25'
+                                                      ? 'bg-red-500/[0.07] ring-red-400/25'
                                                       : 'bg-white/[0.03] ring-white/[0.06]',
                                             )}
                                         >
@@ -175,7 +175,7 @@ export default function FamilyWarehouse(props: Props) {
                                                     className={cn(
                                                         'font-display text-xl font-bold tabular-nums',
                                                         item.low
-                                                            ? 'text-rose-300'
+                                                            ? 'text-red-400'
                                                             : 'text-white',
                                                     )}
                                                 >
@@ -326,16 +326,16 @@ function LogList({ logs, compact }: { logs: Log[]; compact?: boolean }) {
                     key={l.id}
                     className={cn(
                         'flex items-center gap-3 py-2',
-                        l.is_suspicious && 'rounded-lg bg-rose-500/[0.07] px-2',
+                        l.is_suspicious && 'rounded-lg bg-red-500/[0.07] px-2',
                     )}
                 >
                     <span
                         className={cn(
                             'flex size-8 shrink-0 items-center justify-center rounded-lg',
                             l.action === 'take'
-                                ? 'bg-rose-400/10 text-rose-200'
+                                ? 'bg-red-400/10 text-red-400'
                                 : l.action === 'put'
-                                  ? 'bg-emerald-400/10 text-emerald-200'
+                                  ? 'bg-emerald-400/10 text-emerald-400'
                                   : 'bg-white/[0.06] text-white/60',
                         )}
                     >
@@ -360,7 +360,7 @@ function LogList({ logs, compact }: { logs: Log[]; compact?: boolean }) {
                             {kyivDateTime(l.created_at)}
                             {l.comment && ` · ${l.comment}`}
                             {l.is_suspicious && (
-                                <span className="text-rose-300">
+                                <span className="text-red-400">
                                     {' '}
                                     {tr('· понад квоту')}
                                 </span>
@@ -372,7 +372,7 @@ function LogList({ logs, compact }: { logs: Log[]; compact?: boolean }) {
                             href={l.proof_url}
                             target="_blank"
                             rel="noreferrer"
-                            className="text-xs text-gc-lilac-200 hover:underline"
+                            className="text-xs text-sky-400 hover:underline"
                         >
                             {tr('скрін')}
                         </a>

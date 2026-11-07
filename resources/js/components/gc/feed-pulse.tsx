@@ -283,31 +283,22 @@ export function useHub(enabled = true) {
     return data;
 }
 
-/**
- * Віджети між записами стрічки: після 2-го — голосовий штаб, після 4-го — тривога,
- * після 6-го — топ серверів, після 8-го — сезонний пропуск. Порожні — не показуються.
- */
-export function FeedInsert({
-    index,
+/** Картки правої колонки стрічки: голосовий штаб, тривога, топ серверів, сезонний пропуск (порожні не показуються). */
+export function FeedSideCards({
     rail,
     hub,
 }: {
-    index: number;
     rail: RailData | null;
     hub: HubData | null;
 }) {
-    switch (index) {
-        case 1:
-            return <VoiceCard rail={rail} />;
-        case 3:
-            return <AlertCard hub={hub} />;
-        case 5:
-            return <ServersCard rail={rail} />;
-        case 7:
-            return <SeasonCard rail={rail} />;
-        default:
-            return null;
-    }
+    return (
+        <>
+            <VoiceCard rail={rail} />
+            <AlertCard hub={hub} />
+            <ServersCard rail={rail} />
+            <SeasonCard rail={rail} />
+        </>
+    );
 }
 
 function CardHead({

@@ -107,7 +107,7 @@ export default function FamilyRating(props: Props) {
             {period === 'season' && (
                 <Panel>
                     <div className="flex flex-wrap items-center gap-3">
-                        <Flag className="size-5 text-amber-200" />
+                        <Flag className="size-5 text-amber-400" />
                         <div className="mr-auto">
                             <p className="font-semibold text-white">
                                 {tr('Сезон {number}', {
@@ -170,7 +170,7 @@ export default function FamilyRating(props: Props) {
                                                     <span className="min-w-0 flex-1 truncate font-mono">
                                                         {r.name}
                                                     </span>
-                                                    <span className="text-amber-200">
+                                                    <span className="text-amber-400">
                                                         {r.points}
                                                     </span>
                                                 </li>
@@ -198,7 +198,7 @@ export default function FamilyRating(props: Props) {
                             <div
                                 key={row.id}
                                 className={cn(
-                                    'glass relative overflow-hidden rounded-2xl bg-gradient-to-br p-5 text-center ring-1',
+                                    'gc-solid relative overflow-hidden rounded-2xl bg-gradient-to-br p-5 text-center ring-1',
                                     podium[i],
                                     i === 0 && 'sm:order-2 sm:-mt-2',
                                     i === 1 && 'sm:order-1 sm:mt-4',
@@ -209,7 +209,7 @@ export default function FamilyRating(props: Props) {
                                     className={cn(
                                         'mx-auto size-8',
                                         i === 0
-                                            ? 'text-amber-300'
+                                            ? 'text-amber-400'
                                             : i === 1
                                               ? 'text-slate-200'
                                               : 'text-orange-300',
@@ -285,14 +285,14 @@ export default function FamilyRating(props: Props) {
                                                 </div>
                                             </td>
                                             <td className="py-2.5 text-center text-white/70">
-                                                <span className="text-emerald-300">
+                                                <span className="text-emerald-400">
                                                     {row.bizwar_wins}
                                                 </span>
                                                 <span className="text-white/25">
                                                     {' '}
                                                     /{' '}
                                                 </span>
-                                                <span className="text-rose-300">
+                                                <span className="text-red-400">
                                                     {row.bizwar_losses}
                                                 </span>
                                             </td>
@@ -305,10 +305,10 @@ export default function FamilyRating(props: Props) {
                                             <td className="py-2.5 text-center text-white/70">
                                                 {row.events}
                                             </td>
-                                            <td className="py-2.5 text-right text-emerald-300">
+                                            <td className="py-2.5 text-right text-emerald-400">
                                                 {uah(row.earned)}
                                             </td>
-                                            <td className="px-4 py-2.5 text-right font-display font-bold text-amber-200">
+                                            <td className="px-4 py-2.5 text-right font-display font-bold text-amber-400">
                                                 {row.points}
                                             </td>
                                         </tr>

@@ -256,7 +256,7 @@ export default function FamilyMembers(props: Props) {
                                                 {m.display}
                                             </span>
                                             {m.is_owner && (
-                                                <Crown className="size-4 text-amber-300" />
+                                                <Crown className="size-4 text-amber-400" />
                                             )}
                                             <RankBadge
                                                 rank={m.rank}
@@ -264,7 +264,7 @@ export default function FamilyMembers(props: Props) {
                                             />
                                             {m.warns > 0 && (
                                                 <span
-                                                    className="inline-flex items-center gap-1 rounded-chip bg-rose-500/10 px-2 py-0.5 text-xs text-rose-200"
+                                                    className="inline-flex items-center gap-1 rounded-chip bg-red-500/10 px-2 py-0.5 text-xs text-red-400"
                                                     title={tr('Попередження')}
                                                 >
                                                     <TriangleAlert
@@ -313,7 +313,7 @@ export default function FamilyMembers(props: Props) {
                                                         },
                                                     )
                                                 }
-                                                className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-xl bg-amber-300/10 px-3 text-xs font-medium text-amber-100 hover:bg-amber-300/20"
+                                                className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-xl bg-amber-300/10 px-3 text-xs font-medium text-amber-400 hover:bg-amber-300/20"
                                                 title={tr(
                                                     'Давно не заходив — надіслати нагадування',
                                                 )}
@@ -327,8 +327,8 @@ export default function FamilyMembers(props: Props) {
                                             className={cn(
                                                 'text-sm font-semibold whitespace-nowrap',
                                                 m.balance < 0
-                                                    ? 'text-rose-300'
-                                                    : 'text-emerald-300',
+                                                    ? 'text-red-400'
+                                                    : 'text-emerald-400',
                                             )}
                                         >
                                             {uah(m.balance)}
@@ -533,8 +533,8 @@ function MemberDialog({
             )}
 
             {manage && !member.is_owner && (
-                <div className="rounded-2xl border border-rose-400/20 bg-rose-500/[0.05] p-3">
-                    <div className="mb-2 text-sm font-semibold text-rose-100">
+                <div className="rounded-2xl border border-red-400/20 bg-red-500/[0.05] p-3">
+                    <div className="mb-2 text-sm font-semibold text-red-400">
                         {tr('Виключити з сім’ї')}
                     </div>
                     <div className="flex gap-2">
@@ -581,7 +581,7 @@ function MemberDialog({
                             { preserveScroll: true, onSuccess: onClose },
                         )
                     }
-                    className={cn(btnGhost, 'w-full text-amber-200')}
+                    className={cn(btnGhost, 'w-full text-amber-400')}
                 >
                     <Crown className="size-4" /> {tr('Передати лідерство')}
                 </button>

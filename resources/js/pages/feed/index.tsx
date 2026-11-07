@@ -1,4 +1,3 @@
-import { Fragment } from 'react';
 import {
     Contacts,
     FriendRequests,
@@ -40,7 +39,7 @@ import { StoriesBar } from '@/components/gc/stories';
 import { UserAvatar } from '@/components/gc/user-avatar';
 import { WrappedBanner } from '@/components/gc/wrapped-banner';
 import { HomeWidgetsEditor } from '@/components/gc/engagement';
-import { FeedInsert, FeedPulse, useHub } from '@/components/gc/feed-pulse';
+import { FeedPulse, FeedSideCards, useHub } from '@/components/gc/feed-pulse';
 import { EmptyState, Widget, WidgetSkeleton } from '@/components/gc/widget';
 import { formatDate } from '@/lib/format';
 import type { PersonCard, PostItem, ScrollData, UserCard } from '@/types';
@@ -342,15 +341,8 @@ export default function Feed({
                             loading={<PostSkeleton />}
                             className="space-y-4"
                         >
-                            {posts.data.map((post, i) => (
-                                <Fragment key={post.id}>
-                                    <PostCard post={post} />
-                                    <FeedInsert
-                                        index={i}
-                                        rail={rail}
-                                        hub={hub}
-                                    />
-                                </Fragment>
+                            {posts.data.map((post) => (
+                                <PostCard key={post.id} post={post} />
                             ))}
                         </InfiniteScroll>
                     )}
@@ -363,6 +355,8 @@ export default function Feed({
                             <Contacts data={rail} />
                         </>
                     )}
+                    {/* Голосовий штаб, тривога, топ серверів і сезон — у правій колонці, не між записами. */}
+                    <FeedSideCards rail={rail} hub={hub} />
                     {homeWidgets.map((key) => {
                         switch (key) {
                             // Серія днів і «Готові грати» — у Bento-сітці стрічки.

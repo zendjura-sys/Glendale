@@ -47,7 +47,7 @@ function RankPicker({
                     {r}
                 </button>
             ))}
-            <span className="ml-1 inline-flex h-7 items-center gap-1 rounded-lg bg-amber-400/10 px-2 text-xs text-amber-200">
+            <span className="ml-1 inline-flex h-7 items-center gap-1 rounded-lg bg-amber-400/10 px-2 text-xs text-amber-400">
                 <Check className="size-3" /> 10
             </span>
         </div>
@@ -119,7 +119,7 @@ function TemplateRow({ template }: { template: VoiceTemplate }) {
                 type="button"
                 onClick={remove}
                 aria-label={tr('Прибрати кімнату')}
-                className="inline-flex size-9 items-center justify-center rounded-xl text-rose-300 hover:bg-rose-500/10"
+                className="inline-flex size-9 items-center justify-center rounded-xl text-red-400 hover:bg-red-500/10"
             >
                 <Trash2 className="size-4" />
             </button>
@@ -151,7 +151,7 @@ export function VoiceTemplates({ templates }: { templates: VoiceTemplate[] }) {
     };
 
     return (
-        <section className="glass mb-5 rounded-2xl p-4">
+        <section className="gc-solid mb-5 rounded-2xl p-4">
             <div className="mb-3 flex items-start gap-3">
                 <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-white/[0.06]">
                     <Lock className="size-4 text-white/60" />

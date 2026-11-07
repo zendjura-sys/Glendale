@@ -38,9 +38,9 @@ export default function CreateFamily({ servers, server }: Props) {
                 >
                     <ArrowLeft className="size-4" /> {tr('До сімей')}
                 </Link>
-                <section className="glass rounded-2xl p-5 sm:p-7">
+                <section className="gc-solid rounded-2xl p-5 sm:p-7">
                     <div className="flex items-center gap-3">
-                        <span className="flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-300 to-rose-500">
+                        <span className="flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-300 to-red-500">
                             <Crown className="size-6 text-white" />
                         </span>
                         <div>
@@ -91,7 +91,7 @@ export default function CreateFamily({ servers, server }: Props) {
                             ))}
                         </div>
                         {errors.server_id && (
-                            <p className="mt-1 text-xs text-rose-300">
+                            <p className="mt-1 text-xs text-red-400">
                                 {errors.server_id}
                             </p>
                         )}
@@ -99,7 +99,7 @@ export default function CreateFamily({ servers, server }: Props) {
                             {tr('Немає вашого сервера?')}{' '}
                             <Link
                                 href="/servers"
-                                className="text-gc-lilac-200 hover:underline"
+                                className="text-sky-400 hover:underline"
                             >
                                 {tr('Запропонуйте його в каталозі')}
                             </Link>
