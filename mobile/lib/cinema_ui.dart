@@ -14,9 +14,10 @@ import 'widgets.dart';
 /// Спільні елементи кінопорталу (як на сайті): бейджі постера, навігація розділів,
 /// слайдер з мініатюрами, «Продовжити перегляд», вкладки за типом, рядок «списком», віджети.
 
-/// Акцент кінопорталу застосунку (стиль Animax): соковитий зелений, кнопки-пігулки.
-const cinemaAccent = Color(0xFF06C149);
-const cinemaGradient = LinearGradient(colors: [Color(0xFF06C149), Color(0xFF06C149)]);
+/// Акцент кінопорталу — фірмовий колір проекту (теми «Неоновий синій» / «Крижана Арктика»);
+/// компонування — як в Animax: пігулки, рейтинг на постері, контурні чипи.
+Color get cinemaAccent => primary;
+LinearGradient get cinemaGradient => buttonGradient;
 
 const releaseLabels = {'announced': 'Анонс', 'ongoing': 'Виходить', 'released': 'Завершено'};
 
@@ -24,7 +25,7 @@ String? releaseLabel(Object? key) => releaseLabels[key] == null ? null : tr(rele
 
 /// Динамічні бейджі на постері: % переглянутого, статус виходу, кількість серій, вік.
 class PosterBadges extends StatelessWidget {
-  const PosterBadges({required this.movie, this.small = false, this.showAge = true, super.key});
+  const PosterBadges({required this.movie, this.small = false, this.showAge = false, super.key});
   final Map<String, dynamic> movie;
   final bool small;
   final bool showAge;
@@ -66,7 +67,7 @@ class PosterBadges extends StatelessWidget {
           top: 6,
           child: chip(
             releaseLabel(release)!,
-            switch (release) { 'announced' => const Color(0xE60EA5E9), 'ongoing' => cinemaAccent, _ => Colors.black.withValues(alpha: 0.7) },
+            switch (release) { 'announced' => const Color(0xE60EA5E9), 'ongoing' => const Color(0xFF10B981), _ => Colors.black.withValues(alpha: 0.7) },
             release == 'released' ? const Color(0xFFFCD34D) : Colors.white,
           ),
         ),
@@ -261,7 +262,6 @@ class _CinemaHeroState extends State<CinemaHero> {
     final reduce = MediaQuery.of(context).disableAnimations;
 
     return ClipRRect(
-      borderRadius: BorderRadius.circular(24),
       child: Stack(children: [
         Positioned.fill(
           child: AnimatedSwitcher(
@@ -276,9 +276,11 @@ class _CinemaHeroState extends State<CinemaHero> {
             ),
           ),
         ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(18, 220, 18, 18),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Align(
+          alignment: Alignment.bottomLeft,
+          child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 18),
+          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(text(movie['title']) ?? '', maxLines: 2, overflow: TextOverflow.ellipsis, style: display(28, color: Colors.white)),
             const SizedBox(height: 6),
             Row(children: [
@@ -313,6 +315,7 @@ class _CinemaHeroState extends State<CinemaHero> {
               ]),
             ],
           ]),
+        ),
         ),
       ]),
     );
@@ -659,6 +662,447 @@ class _CinemaSideWidgetsState extends State<CinemaSideWidgets> {
               ),
           ]),
         ),
+    ]);
+  }
+}
+
+// ───────────────────────── Стиль Animax ─────────────────────────
+
+/// Тло на всю ширину екрана (виходить за бічні відступи ScreenScroll).
+class CinemaBleed extends StatelessWidget {
+  const CinemaBleed({required this.height, required this.child, super.key});
+  final double height;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final width = MediaQuery.sizeOf(context).width;
+    return SizedBox(height: height, child: OverflowBox(minWidth: width, maxWidth: width, child: SizedBox(width: width, height: height, child: child)));
+  }
+}
+
+/// Заголовок секції: назва жирно, «Усі» зеленим праворуч.
+class CinemaSectionTitle extends StatelessWidget {
+  const CinemaSectionTitle(this.title, {this.onAll, super.key});
+  final String title;
+  final VoidCallback? onAll;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(children: [
+        Expanded(child: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: display(18))),
+        if (onAll != null) GestureDetector(onTap: onAll, child: Text(tr('Усі'), style: body(13.5, color: cinemaAccent, weight: FontWeight.w700))),
+      ]),
+    );
+  }
+}
+
+/// Зелена пігулка рейтингу (як у постерах Animax).
+Widget cinemaRatingPill(Object? value, {double size = 11}) {
+  final rating = value is num ? value.toDouble() : double.tryParse('$value');
+  if (rating == null || rating <= 0) return const SizedBox.shrink();
+  return Container(
+    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+    decoration: BoxDecoration(color: cinemaAccent, borderRadius: BorderRadius.circular(6)),
+    child: Text(rating.toStringAsFixed(1), style: body(size, color: Colors.white, weight: FontWeight.w800)),
+  );
+}
+
+/// Постер Animax: картинка з рейтингом угорі ліворуч; знизу — великий номер у топі або «Серія N».
+class AnimaxPoster extends StatelessWidget {
+  const AnimaxPoster({required this.movie, this.rank, this.episodeLabel = false, this.radius = 12, super.key});
+  final Map<String, dynamic> movie;
+  final int? rank;
+  final bool episodeLabel;
+  final double radius;
+
+  @override
+  Widget build(BuildContext context) {
+    final episodes = intOf(movie['episodes_count']);
+    final pct = movie['progress_pct'] is num ? (movie['progress_pct'] as num).toDouble() : 0.0;
+    return GestureDetector(
+      onTap: () => context.push('/cinema/${movie['slug']}'),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(radius),
+        child: Stack(fit: StackFit.expand, children: [
+          text(movie['poster']) != null ? NetImage(text(movie['poster'])) : CoverPlaceholder(seed: movie['id'] ?? 0, icon: LucideIcons.film, radius: 0, iconSize: 26),
+          if (rank != null || (episodeLabel && episodes > 0))
+            const DecoratedBox(decoration: BoxDecoration(gradient: LinearGradient(begin: Alignment.center, end: Alignment.bottomCenter, colors: [Colors.transparent, Color(0xB3000000)]))),
+          Positioned(left: 8, top: 8, child: cinemaRatingPill(movie['rating'])),
+          // Ярлики стану: «Новинка» (рік виходу — цей) і «Анонс» / «Виходить» / «Завершено». Вік не показуємо.
+          Positioned(right: 8, top: 8, child: CinemaStatusTags(movie: movie)),
+          if (rank != null)
+            Positioned(left: 8, bottom: 2, child: Text('$rank', style: display(40, color: Colors.white).copyWith(height: 1))),
+          if (rank == null && episodeLabel && episodes > 0 && movie['type'] != 'movie')
+            Positioned(left: 8, bottom: 8, child: Text(tr('Серія {n}', {'n': episodes}), style: body(11.5, color: Colors.white, weight: FontWeight.w600))),
+          if (pct > 0)
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: Container(
+                height: 4,
+                color: Colors.black45,
+                alignment: Alignment.centerLeft,
+                child: FractionallySizedBox(widthFactor: (pct / 100).clamp(0.04, 1.0), child: Container(color: cinemaAccent)),
+              ),
+            ),
+        ]),
+      ),
+    );
+  }
+}
+
+/// Ярлики стану тайтлу у правому верхньому куті постера.
+class CinemaStatusTags extends StatelessWidget {
+  const CinemaStatusTags({required this.movie, super.key});
+  final Map<String, dynamic> movie;
+
+  @override
+  Widget build(BuildContext context) {
+    final release = '${movie['release'] ?? ''}';
+    final fresh = intOf(movie['year']) >= DateTime.now().year && release != 'announced';
+    Widget tag(String label, Color bg, Color fg) => Container(
+          margin: const EdgeInsets.only(bottom: 4),
+          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+          decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(6)),
+          child: Text(label, style: body(10.5, color: fg, weight: FontWeight.w800)),
+        );
+    return Column(crossAxisAlignment: CrossAxisAlignment.end, mainAxisSize: MainAxisSize.min, children: [
+      if (fresh) tag(tr('Новинка'), const Color(0xFFEF4444), Colors.white),
+      if (releaseLabel(release) != null)
+        tag(
+          releaseLabel(release)!,
+          switch (release) { 'announced' => const Color(0xFF0EA5E9), 'ongoing' => const Color(0xFF10B981), _ => Colors.black.withValues(alpha: 0.72) },
+          release == 'released' ? const Color(0xFFFCD34D) : Colors.white,
+        ),
+    ]);
+  }
+}
+
+/// Горизонтальна стрічка постерів 150×200 (топ — з номерами, нові серії — з «Серія N»).
+class AnimaxRow extends StatelessWidget {
+  const AnimaxRow({required this.movies, this.ranked = false, this.episodes = false, super.key});
+  final List<Map<String, dynamic>> movies;
+  final bool ranked;
+  final bool episodes;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 200,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: movies.length,
+        separatorBuilder: (_, _) => const SizedBox(width: 12),
+        itemBuilder: (_, i) => SizedBox(width: 150, child: AnimaxPoster(movie: movies[i], rank: ranked ? i + 1 : null, episodeLabel: episodes)),
+      ),
+    );
+  }
+}
+
+/// Сітка 2 колонки: високі постери з рейтингом, назва під постером.
+class AnimaxGrid extends StatelessWidget {
+  const AnimaxGrid({required this.movies, super.key});
+  final List<Map<String, dynamic>> movies;
+
+  @override
+  Widget build(BuildContext context) {
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(maxCrossAxisExtent: 220, mainAxisSpacing: 14, crossAxisSpacing: 12, childAspectRatio: 0.62),
+      itemCount: movies.length,
+      itemBuilder: (_, i) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Expanded(child: AnimaxPoster(movie: movies[i], episodeLabel: true)),
+        const SizedBox(height: 6),
+        Text(text(movies[i]['title']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(13, weight: FontWeight.w700)),
+      ]),
+    );
+  }
+}
+
+/// Пігулка-чип фільтра: вибраний — суцільний зелений, інші — зелений контур.
+class AnimaxChip extends StatelessWidget {
+  const AnimaxChip({required this.label, required this.selected, required this.onTap, super.key});
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 160),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: selected ? cinemaAccent : Colors.transparent,
+          border: Border.all(color: cinemaAccent, width: 2),
+          borderRadius: BorderRadius.circular(100),
+        ),
+        child: Text(label, style: body(13.5, color: selected ? Colors.white : cinemaAccent, weight: FontWeight.w600)),
+      ),
+    );
+  }
+}
+
+/// Кнопка-пігулка «+ Мій список» (суцільна) або «✓ Мій список» (контур), як в Animax.
+class AnimaxListButton extends StatelessWidget {
+  const AnimaxListButton({required this.added, required this.onTap, super.key});
+  final bool added;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        decoration: BoxDecoration(
+          color: added ? Colors.transparent : cinemaAccent,
+          border: Border.all(color: cinemaAccent, width: 2),
+          borderRadius: BorderRadius.circular(100),
+        ),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          Icon(added ? LucideIcons.check : LucideIcons.plus, size: 14, color: added ? cinemaAccent : Colors.white),
+          const SizedBox(width: 6),
+          Text(tr('Мій список'), style: body(12.5, color: added ? cinemaAccent : Colors.white, weight: FontWeight.w700)),
+        ]),
+      ),
+    );
+  }
+}
+
+/// Додати тайтл до «Буду дивитися».
+Future<bool> addToCinemaList(BuildContext context, Map<String, dynamic> movie) async {
+  try {
+    await AppScope.read(context).session.api.patch(Api.site('/cinema/${movie['slug']}/status'), {'status': 'planned'});
+    if (context.mounted) toast(context, tr('Додано до списку «Буду дивитися».'), kind: ToastKind.success);
+    return true;
+  } catch (e) {
+    if (context.mounted) toast(context, e);
+    return false;
+  }
+}
+
+/// Вибір у «Сортування й фільтр».
+class CinemaFilter {
+  const CinemaFilter({this.sort = 'new', this.type, this.release, this.genre, this.year});
+  final String sort;
+  final String? type;
+  final String? release;
+  final String? genre;
+  final int? year;
+}
+
+/// Екран «Сортування й фільтр» (Animax): секції чипів і кнопки «Скинути» / «Застосувати».
+Future<CinemaFilter?> showCinemaFilter(
+  BuildContext context, {
+  required CinemaFilter current,
+  required List<(String, String)> sorts,
+  required List<Map<String, dynamic>> types,
+  required List<Map<String, dynamic>> genres,
+  required List<int> years,
+}) {
+  return Navigator.of(context, rootNavigator: true).push<CinemaFilter>(MaterialPageRoute(
+    builder: (_) => _FilterScreen(current: current, sorts: sorts, types: types, genres: genres, years: years),
+  ));
+}
+
+class _FilterScreen extends StatefulWidget {
+  const _FilterScreen({required this.current, required this.sorts, required this.types, required this.genres, required this.years});
+  final CinemaFilter current;
+  final List<(String, String)> sorts;
+  final List<Map<String, dynamic>> types;
+  final List<Map<String, dynamic>> genres;
+  final List<int> years;
+
+  @override
+  State<_FilterScreen> createState() => _FilterScreenState();
+}
+
+class _FilterScreenState extends State<_FilterScreen> {
+  late String sort = widget.current.sort;
+  late String? type = widget.current.type;
+  late String? release = widget.current.release;
+  late String? genre = widget.current.genre;
+  late int? year = widget.current.year;
+  bool allGenres = false;
+  bool allYears = false;
+
+  Widget _section(String title, List<Widget> chips, {VoidCallback? onAll, bool open = false}) => Padding(
+        padding: const EdgeInsets.only(bottom: 18),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            Expanded(child: Text(title, style: body(16.5, weight: FontWeight.w700))),
+            if (onAll != null) GestureDetector(onTap: onAll, child: Text(open ? tr('Згорнути') : tr('Усі'), style: body(13, color: cinemaAccent, weight: FontWeight.w700))),
+          ]),
+          const SizedBox(height: 12),
+          Wrap(spacing: 10, runSpacing: 10, children: chips),
+        ]),
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    final genres = allGenres ? widget.genres : widget.genres.take(8).toList();
+    final years = allYears ? widget.years : widget.years.take(5).toList();
+    return Scaffold(
+      backgroundColor: abyss,
+      appBar: AppBar(
+        backgroundColor: abyss,
+        surfaceTintColor: Colors.transparent,
+        title: Text(tr('Сортування й фільтр'), style: display(20)),
+        leading: IconButton(icon: const Icon(LucideIcons.arrowLeft), onPressed: () => Navigator.pop(context)),
+      ),
+      body: ListView(padding: const EdgeInsets.fromLTRB(20, 8, 20, 24), children: [
+        _section(tr('Сортування'), [for (final s in widget.sorts) AnimaxChip(label: s.$2, selected: sort == s.$1, onTap: () => setState(() => sort = s.$1))]),
+        _section(tr('Категорії'), [
+          AnimaxChip(label: tr('Усі'), selected: type == null, onTap: () => setState(() => type = null)),
+          for (final t in widget.types) AnimaxChip(label: '${t['label']}', selected: type == '${t['key']}', onTap: () => setState(() => type = '${t['key']}')),
+        ]),
+        _section(tr('Статус'), [
+          AnimaxChip(label: tr('Усі'), selected: release == null, onTap: () => setState(() => release = null)),
+          for (final e in releaseLabels.entries) AnimaxChip(label: tr(e.value), selected: release == e.key, onTap: () => setState(() => release = e.key)),
+        ]),
+        if (widget.genres.isNotEmpty)
+          _section(
+            tr('Жанр'),
+            [
+              AnimaxChip(label: tr('Усі'), selected: genre == null, onTap: () => setState(() => genre = null)),
+              for (final g in genres) AnimaxChip(label: '${g['name']}', selected: genre == '${g['name']}', onTap: () => setState(() => genre = '${g['name']}')),
+            ],
+            onAll: widget.genres.length > 8 ? () => setState(() => allGenres = !allGenres) : null,
+            open: allGenres,
+          ),
+        if (widget.years.isNotEmpty)
+          _section(
+            tr('Рік виходу'),
+            [
+              AnimaxChip(label: tr('Усі'), selected: year == null, onTap: () => setState(() => year = null)),
+              for (final y in years) AnimaxChip(label: '$y', selected: year == y, onTap: () => setState(() => year = y)),
+            ],
+            onAll: widget.years.length > 5 ? () => setState(() => allYears = !allYears) : null,
+            open: allYears,
+          ),
+      ]),
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+          child: Row(children: [
+            Expanded(
+              child: _PillButton(
+                label: tr('Скинути'),
+                filled: false,
+                onTap: () => Navigator.pop(context, const CinemaFilter()),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _PillButton(
+                label: tr('Застосувати'),
+                filled: true,
+                onTap: () => Navigator.pop(context, CinemaFilter(sort: sort, type: type, release: release, genre: genre, year: year)),
+              ),
+            ),
+          ]),
+        ),
+      ),
+    );
+  }
+}
+
+class _PillButton extends StatelessWidget {
+  const _PillButton({required this.label, required this.filled, required this.onTap});
+  final String label;
+  final bool filled;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 54,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(color: filled ? cinemaAccent : cinemaAccent.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(100)),
+        child: Text(label, style: body(15.5, color: filled ? Colors.white : cinemaAccent, weight: FontWeight.w700)),
+      ),
+    );
+  }
+}
+
+/// Рядок пошуку кіно (Animax): поле з лупою й квадратна кнопка фільтра праворуч.
+class CinemaSearchBar extends StatefulWidget {
+  const CinemaSearchBar({required this.initial, required this.onSubmit, required this.onFilter, this.filterActive = false, super.key});
+  final String initial;
+  final ValueChanged<String> onSubmit;
+  final VoidCallback onFilter;
+  final bool filterActive;
+
+  @override
+  State<CinemaSearchBar> createState() => _CinemaSearchBarState();
+}
+
+class _CinemaSearchBarState extends State<CinemaSearchBar> {
+  late final controller = TextEditingController(text: widget.initial);
+  final focus = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    focus.addListener(() => setState(() {}));
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    focus.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final on = focus.hasFocus;
+    return Row(children: [
+      Expanded(
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 160),
+          height: 52,
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          decoration: BoxDecoration(
+            color: on ? cinemaAccent.withValues(alpha: 0.08) : raised,
+            border: Border.all(color: on ? cinemaAccent : Colors.transparent, width: 1.5),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Row(children: [
+            Icon(LucideIcons.search, size: 19, color: on ? cinemaAccent : muted),
+            const SizedBox(width: 10),
+            Expanded(
+              child: TextField(
+                controller: controller,
+                focusNode: focus,
+                textInputAction: TextInputAction.search,
+                onSubmitted: widget.onSubmit,
+                style: body(14.5),
+                decoration: InputDecoration(isCollapsed: true, border: InputBorder.none, hintText: tr('Пошук фільмів, серіалів, аніме'), hintStyle: body(14.5, color: muted)),
+              ),
+            ),
+          ]),
+        ),
+      ),
+      const SizedBox(width: 10),
+      GestureDetector(
+        onTap: widget.onFilter,
+        child: Container(
+          width: 52,
+          height: 52,
+          decoration: BoxDecoration(color: widget.filterActive ? cinemaAccent : cinemaAccent.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(14)),
+          child: Icon(LucideIcons.slidersHorizontal, color: widget.filterActive ? Colors.white : cinemaAccent),
+        ),
+      ),
     ]);
   }
 }

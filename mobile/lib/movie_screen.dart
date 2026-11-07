@@ -15,7 +15,6 @@ import 'package:webview_flutter_android/webview_flutter_android.dart';
 import 'api.dart';
 import 'cinema_ui.dart';
 import 'movie_extras.dart';
-import 'cinema.dart' show PosterCard;
 import 'core/widgets/arctic_glass/arctic_glass.dart';
 import 'i18n.dart';
 import 'posts.dart';
@@ -124,6 +123,8 @@ class _MovieScreenState extends State<MovieScreen> {
   Set<String> marks = {};
   bool about = false;
   final commentsKey = GlobalKey();
+  /// Нижні вкладки (як в Animax): «Схожі» / «Коментарі».
+  String bottomTab = 'similar';
   final scroll = ScrollController();
 
   @override
@@ -472,7 +473,6 @@ class _MovieScreenState extends State<MovieScreen> {
       if (genres.isNotEmpty) (tr('Жанри'), genres.join(', ')),
       if (movie['year'] != null) (tr('Рік'), '${movie['year']}'),
       if (releaseLabel(movie['release']) != null) (tr('Статус'), releaseLabel(movie['release'])!),
-      if (text(movie['age_rating']) != null) (tr('Вік'), text(movie['age_rating'])!),
       if (mapOf(movie['ratings']).isNotEmpty) (tr('Рейтинги'), [for (final r in mapOf(movie['ratings']).entries) '${r.key.toUpperCase()} ${r.value}'].join('  ·  ')),
     ];
 
@@ -489,11 +489,25 @@ class _MovieScreenState extends State<MovieScreen> {
         ],
         Text(text(movie['title']) ?? '', style: display(23).copyWith(height: 1.2)),
         const SizedBox(height: 4),
-        Row(children: [
-          if (text(movie['title_original']) != null) Expanded(child: Text(text(movie['title_original'])!, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14, color: muted))) else const Spacer(),
-          if (text(movie['age_rating']) != null) Pill(label: text(movie['age_rating'])!),
+        if (text(movie['title_original']) != null) Text(text(movie['title_original'])!, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14, color: muted)),
+        const SizedBox(height: 10),
+        // Рядок відомостей (як в Animax): рейтинг, рік і контурні чипи — країна, тип, статус.
+        Wrap(spacing: 8, runSpacing: 6, crossAxisAlignment: WrapCrossAlignment.center, children: [
+          if (movie['rating'] is num && (movie['rating'] as num) > 0)
+            Row(mainAxisSize: MainAxisSize.min, children: [
+              Icon(LucideIcons.star, size: 16, color: cinemaAccent),
+              const SizedBox(width: 4),
+              Text((movie['rating'] as num).toStringAsFixed(1), style: body(13.5, color: cinemaAccent, weight: FontWeight.w700)),
+            ]),
+          if (movie['year'] != null) Text('${movie['year']}', style: body(13.5, weight: FontWeight.w600)),
+          for (final chip in [if (countries.isNotEmpty) countries.first, text(movie['type_label']), releaseLabel(movie['release'])].whereType<String>())
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(border: Border.all(color: cinemaAccent, width: 1.2), borderRadius: BorderRadius.circular(6)),
+              child: Text(chip, style: body(11.5, color: cinemaAccent, weight: FontWeight.w600)),
+            ),
         ]),
-        const SizedBox(height: 12),
+        const SizedBox(height: 14),
         // Ряд статусів перегляду — один дотик, як на сайті.
         SizedBox(
           height: 38,
@@ -540,6 +554,7 @@ class _MovieScreenState extends State<MovieScreen> {
             color: cinemaAccent,
             onTap: () {
               // Список будується ліниво: коментарі ще можуть бути не створені — їдемо в самий низ.
+              setState(() => bottomTab = 'comments');
               final target = commentsKey.currentContext;
               if (target != null) {
                 unawaited(Scrollable.ensureVisible(target, duration: const Duration(milliseconds: 400), curve: Curves.easeOutCubic));
@@ -636,29 +651,31 @@ class _MovieScreenState extends State<MovieScreen> {
             ]),
           ),
         ],
-        if (similar.isNotEmpty) ...[
-          SectionLabel(tr('Рекомендуємо також')),
-          SizedBox(
-            height: 250,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: similar.length,
-              separatorBuilder: (_, _) => const SizedBox(width: 10),
-              itemBuilder: (_, i) => SizedBox(width: 132, child: PosterCard(movie: similar[i])),
+        if (AppScope.of(context).session.pluginOn('movie_reviews')) MovieReviewsSection(slug: widget.slug),
+        const SizedBox(height: 8),
+        UnderlineTabs(
+          key: commentsKey,
+          tabs: [
+            if (similar.isNotEmpty) ('similar', tr('Схожі')),
+            ('comments', intOf(movie['comments_count']) > 0 ? tr('Коментарі ({n})', {'n': compact(movie['comments_count'])}) : tr('Коментарі')),
+          ],
+          active: similar.isEmpty ? 'comments' : bottomTab,
+          onSelect: (key) => setState(() => bottomTab = key),
+        ),
+        Container(height: 1, color: fg.withValues(alpha: 0.08)),
+        const SizedBox(height: 14),
+        if (similar.isNotEmpty && bottomTab == 'similar')
+          AnimaxGrid(movies: similar)
+        else
+          Glass(
+            child: CommentsThread(
+              endpoint: Api.site('/cinema/${widget.slug}/comments'),
+              initial: maps(page['comments']),
+              total: intOf(movie['comments_count']),
+              canComment: movie['comments_enabled'] != false,
+              onCount: (value) => setState(() => movie['comments_count'] = value),
             ),
           ),
-        ],
-        if (AppScope.of(context).session.pluginOn('movie_reviews')) MovieReviewsSection(slug: widget.slug),
-        SectionLabel(tr('Коментарі'), key: commentsKey, trailing: intOf(movie['comments_count']) > 0 ? '${movie['comments_count']}' : null),
-        Glass(
-          child: CommentsThread(
-            endpoint: Api.site('/cinema/${widget.slug}/comments'),
-            initial: maps(page['comments']),
-            total: intOf(movie['comments_count']),
-            canComment: movie['comments_enabled'] != false,
-            onCount: (value) => setState(() => movie['comments_count'] = value),
-          ),
-        ),
     ];
 
     if (!landscape) return ScreenScroll(controller: scroll, onRefresh: _load, children: content);
