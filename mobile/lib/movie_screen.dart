@@ -235,18 +235,7 @@ class _MovieScreenState extends State<MovieScreen> {
     final movie = mapOf(data?['movie']);
     final list = _episodic(source) ? voiceSeasons(seasons, source) : const <Season>[];
     final pick = chosen ?? (list.isEmpty ? null : _continuePick(list));
-    // Прямі потоки (якщо адміністратор додав ключ Kodik video-links) — і вибір плеєра в застосунку.
-    final resolver = text(source['provider']) == 'kodik' && source['id'] != null ? _streams(source) : null;
-    var first = <Stream>[];
-    if (resolver != null) {
-      first = await resolver(pick);
-      if (!mounted) return;
-      if (first.isNotEmpty) {
-        final engine = await _choosePlayer();
-        if (engine == null || !mounted) return;
-        if (engine == 'web') first = [];
-      }
-    }
+    // Лише веб-плеєр балансера, як на сайті (власний плеєр застосунку прибрано).
     unawaited(api.post(Api.site('/cinema/${widget.slug}/started')).then(_applyState).catchError((_) {}));
     await Navigator.of(context, rootNavigator: true).push(MaterialPageRoute<void>(
       fullscreenDialog: true,
@@ -257,8 +246,8 @@ class _MovieScreenState extends State<MovieScreen> {
         pick: pick,
         single: intOf(movie['episodes_count']) <= 1 && list.isEmpty,
         memory: memory,
-        streams: first.isEmpty ? null : resolver,
-        firstStreams: first,
+        streams: null,
+        firstStreams: const [],
         resumeAt: pick != null && pick == _serverPick ? intOf(_state['position']) : (pick == null ? intOf(_state['position']) : 0),
         onWatched: (p) {
           if (!marks.contains('${p.season}:${p.episode}')) unawaited(_toggleMark(p));
@@ -278,91 +267,7 @@ class _MovieScreenState extends State<MovieScreen> {
     if (mounted) setState(() {});
   }
 
-  StreamResolver _streams(Map<String, dynamic> source) => (pick) async {
-        try {
-          final result = await api.get(Api.site('/cinema/${widget.slug}/stream?source=${source['id']}${pick == null ? '' : '&season=${pick.season}&episode=${pick.episode}'}'));
-          return [
-            for (final q in maps(result['qualities']))
-              if (text(q['url']) != null) (label: text(q['label']) ?? '', url: text(q['url'])!),
-          ];
-        } catch (_) {
-          return const <Stream>[];
-        }
-      };
 
-  /// Який плеєр: власний (прямий потік, якість) чи веб-плеєр балансера. Запам’ятовується, якщо попросили.
-  Future<String?> _choosePlayer() async {
-    final prefs = AppScope.read(context).session.prefs;
-    final saved = prefs.getString('cinema.engine');
-    if (saved == 'native' || saved == 'web') return saved;
-    var remember = false;
-    var engine = 'native';
-    return showModalBottomSheet<String>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      elevation: 0,
-      useRootNavigator: true,
-      isScrollControlled: true,
-      builder: (sheet) => ArcticGlassSheetSurface(child: StatefulBuilder(
-        builder: (sheet, setSheet) => SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 18, 20, 14),
-            child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(tr('Оберіть плеєр'), style: display(20)),
-              const SizedBox(height: 14),
-              for (final option in [
-                (key: 'native', icon: LucideIcons.clapperboard, title: tr('Плеєр GameCon'), hint: tr('Власний плеєр: якість відео, жести, швидкість, без чужих кнопок.')),
-                (key: 'web', icon: LucideIcons.globe, title: tr('Веб-плеєр'), hint: tr('Плеєр балансера, як на сайті. Якщо в GameCon-плеєрі щось не грає.')),
-              ])
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Material(
-                    color: engine == option.key ? primary.withValues(alpha: 0.14) : fg.withValues(alpha: 0.04),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18), side: BorderSide(color: engine == option.key ? primary : line)),
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(18),
-                      onTap: () => setSheet(() => engine = option.key),
-                      child: Padding(
-                        padding: const EdgeInsets.all(14),
-                        child: Row(children: [
-                          Icon(option.icon, color: engine == option.key ? primary : muted),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                              Text(option.title, style: body(15.5, weight: FontWeight.w700)),
-                              const SizedBox(height: 2),
-                              Text(option.hint, style: body(12.5, color: muted)),
-                            ]),
-                          ),
-                          Icon(engine == option.key ? LucideIcons.circleDot : LucideIcons.circle, color: engine == option.key ? primary : faint),
-                        ]),
-                      ),
-                    ),
-                  ),
-                ),
-              CheckboxListTile(
-                contentPadding: EdgeInsets.zero,
-                controlAffinity: ListTileControlAffinity.leading,
-                value: remember,
-                onChanged: (v) => setSheet(() => remember = v == true),
-                title: Text(tr('Запам’ятати вибір'), style: body(14)),
-                subtitle: Text(tr('Змінити можна в меню «⋮» на сторінці тайтлу'), style: body(12, color: muted)),
-              ),
-              const SizedBox(height: 6),
-              PrimaryButton(
-                label: tr('Продовжити'),
-                icon: LucideIcons.play,
-                onPressed: () {
-                  if (remember) unawaited(prefs.setString('cinema.engine', engine));
-                  Navigator.pop(sheet, engine);
-                },
-              ),
-            ]),
-          ),
-        ),
-      )),
-    );
-  }
 
   Future<void> _toggleMark(Pick pick) async {
     try {
@@ -488,8 +393,6 @@ class _MovieScreenState extends State<MovieScreen> {
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           if (players.isNotEmpty) SheetAction(icon: LucideIcons.languages, label: tr('Обрати озвучку й серію'), onTap: () => Navigator.pop(sheet, 'voice')),
           if (players.isNotEmpty) SheetAction(icon: LucideIcons.popcorn, label: tr('Дивитися разом'), onTap: () => Navigator.pop(sheet, 'together')),
-          if (AppScope.read(context).session.prefs.getString('cinema.engine') != null)
-            SheetAction(icon: LucideIcons.monitorPlay, label: tr('Обирати плеєр щоразу'), onTap: () => Navigator.pop(sheet, 'engine')),
           SheetAction(
             icon: data?['saved'] == true ? LucideIcons.bookmarkCheck : LucideIcons.bookmark,
             label: data?['saved'] == true ? tr('Прибрати зі збереженого') : tr('Зберегти'),
@@ -516,9 +419,6 @@ class _MovieScreenState extends State<MovieScreen> {
         await _chooseVoice();
       case 'together':
         await _watchTogether();
-      case 'engine':
-        await AppScope.read(context).session.prefs.remove('cinema.engine');
-        if (mounted) toast(context, tr('Плеєр обиратиметься перед переглядом'));
       case 'save':
       case 'pin':
       case 'ten':
