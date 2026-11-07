@@ -146,7 +146,6 @@ export default function CinemaIndex({
     requests,
     lookup = false,
 }: Props) {
-    const [search, setSearch] = useState(filters.q);
     const [showFilters, setShowFilters] = useState(false);
     const requestOn = usePlugin('movie_request');
     const rouletteOn = usePlugin('movie_roulette');
@@ -155,7 +154,7 @@ export default function CinemaIndex({
     const [view, setView] = useCatalogView();
 
     const apply = (patch: Partial<Filters>) => {
-        const next = { ...filters, q: search, ...patch };
+        const next = { ...filters, ...patch };
         router.get(
             '/cinema',
             {
@@ -175,14 +174,6 @@ export default function CinemaIndex({
             },
         );
     };
-
-    useEffect(() => {
-        if (search === filters.q) return;
-        const timer = setTimeout(() => apply({ q: search }), 350);
-
-        return () => clearTimeout(timer);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [search]);
 
     const totalAll = Object.values(typeCounts).reduce(
         (sum, n) => sum + (n ?? 0),
@@ -207,12 +198,7 @@ export default function CinemaIndex({
         <>
             <Head title={tr('Кіно')} />
             <CinemaShell side={side}>
-                <CinemaNav
-                    active="home"
-                    search={search}
-                    onSearch={setSearch}
-                    placeholder={tr('Назва фільму, серіалу чи аніме')}
-                />
+                <CinemaNav active="home" />
                 {!filtered && <Hero items={featured} />}
                 {!filtered && byType.length > 0 && (
                     <TypeCarousel groups={byType} />
@@ -301,13 +287,15 @@ export default function CinemaIndex({
                     </div>
                 )}
 
-                {(filters.country ||
+                {(filters.q ||
+                    filters.country ||
                     filters.release ||
                     filters.genre ||
                     filters.year) && (
                     <div className="flex flex-wrap gap-2">
                         {(
                             [
+                                ['q', filters.q ? `«${filters.q}»` : null],
                                 ['genre', filters.genre],
                                 ['year', filters.year],
                                 ['country', filters.country],

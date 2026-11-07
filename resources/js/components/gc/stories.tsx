@@ -817,14 +817,15 @@ export function StoriesBar() {
                     {own?.stories[0] ? (
                         <StoryThumb item={own.stories[0]} />
                     ) : (
-                        <span className="absolute inset-0">
-                            <UserAvatar
-                                user={me}
-                                size="hero"
-                                showOnline={false}
-                                className="!size-full !rounded-none opacity-60"
+                        // Фото профілю — просто тло плитки, без кола й рамки аватара.
+                        me.avatar_url && (
+                            <img
+                                src={me.avatar_url}
+                                alt=""
+                                loading="lazy"
+                                className="absolute inset-0 size-full object-cover opacity-70"
                             />
-                        </span>
+                        )
                     )}
                     <span className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent" />
                     <span
@@ -878,7 +879,7 @@ export function StoriesBar() {
                     ),
                 )}
                 {groups.filter((x) => !x.own).length === 0 && (
-                    <p className="glass flex h-48 w-56 shrink-0 items-center rounded-2xl p-4 text-xs leading-relaxed text-white/45">
+                    <p className="glass flex h-48 w-[112px] shrink-0 items-end rounded-2xl p-3 text-xs leading-relaxed text-white/45">
                         {tr('Історії друзів з’являться тут на 24 години')}
                     </p>
                 )}

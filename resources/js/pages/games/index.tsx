@@ -8,7 +8,6 @@ import {
     ListChecks,
     Gamepad2,
     Monitor,
-    Search,
     SearchX,
     Smartphone,
     Tv,
@@ -275,15 +274,19 @@ export default function GamesIndex({
             </div>
 
             <div className="glass mb-4 space-y-3 rounded-2xl p-3">
-                <label className="input-glass flex h-11 w-full items-center gap-2 rounded-xl px-3">
-                    <Search className="size-4 shrink-0 text-white/35" />
-                    <input
-                        value={q}
-                        onChange={(e) => setQ(e.target.value)}
-                        placeholder={tr('Назва гри')}
-                        className="min-w-0 flex-1 bg-transparent text-sm text-white placeholder:text-white/30 focus:outline-none"
-                    />
-                </label>
+                {q && (
+                    <button
+                        type="button"
+                        onClick={() => setQ('')}
+                        className="gc-chip self-start"
+                        title={tr('Скинути пошук')}
+                    >
+                        «{q}»{' '}
+                        <span aria-hidden className="text-white/45">
+                            ×
+                        </span>
+                    </button>
+                )}
 
                 <div className="-mx-1 flex [scrollbar-width:none] gap-1 overflow-x-auto px-1">
                     <Chip

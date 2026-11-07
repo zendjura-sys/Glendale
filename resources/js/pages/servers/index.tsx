@@ -4,7 +4,6 @@ import {
     Crown,
     Monitor,
     Plus,
-    Search,
     SearchX,
     Server,
     Smartphone,
@@ -260,15 +259,19 @@ export default function Servers({
                                 </button>
                             ))}
                         </div>
-                        <label className="input-glass flex h-11 min-h-11 min-w-[12rem] flex-1 items-center gap-2.5 rounded-xl px-3.5">
-                            <Search className="size-4 text-white/40" />
-                            <input
-                                value={q}
-                                onChange={(event) => setQ(event.target.value)}
-                                placeholder={tr('Пошук сервера')}
-                                className="min-w-0 flex-1 bg-transparent text-sm text-white placeholder:text-white/35 focus:outline-none"
-                            />
-                        </label>
+                        {q && (
+                            <button
+                                type="button"
+                                onClick={() => setQ('')}
+                                className="gc-chip self-start"
+                                title={tr('Скинути пошук')}
+                            >
+                                «{q}»{' '}
+                                <span aria-hidden className="text-white/45">
+                                    ×
+                                </span>
+                            </button>
+                        )}
                         {languages.length > 1 && (
                             <select
                                 value={filters.lang}

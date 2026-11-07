@@ -6,7 +6,6 @@ import {
     Flame,
     LogIn,
     Plus,
-    Search,
     SearchX,
     Shield,
     Sparkles,
@@ -200,15 +199,19 @@ export default function Communities({
                                 </button>
                             ))}
                         </div>
-                        <label className="input-glass flex h-11 min-h-11 min-w-0 flex-1 items-center gap-2.5 rounded-xl px-3.5">
-                            <Search className="size-4 text-white/40" />
-                            <input
-                                value={q}
-                                onChange={(event) => setQ(event.target.value)}
-                                placeholder={tr('Назва або адреса спільноти')}
-                                className="min-w-0 flex-1 bg-transparent text-sm text-white placeholder:text-white/35 focus:outline-none"
-                            />
-                        </label>
+                        {q && (
+                            <button
+                                type="button"
+                                onClick={() => setQ('')}
+                                className="gc-chip self-start"
+                                title={tr('Скинути пошук')}
+                            >
+                                «{q}»{' '}
+                                <span aria-hidden className="text-white/45">
+                                    ×
+                                </span>
+                            </button>
+                        )}
                     </div>
 
                     {tab === 'discover' && (

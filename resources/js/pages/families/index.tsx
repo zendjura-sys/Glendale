@@ -1,5 +1,5 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { Clock3, Crown, Plus, Search, ShieldCheck, Users } from 'lucide-react';
+import { Clock3, Crown, Plus, ShieldCheck, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Pagination, selectClass } from '@/components/gc/admin';
 import { EmptyState } from '@/components/gc/widget';
@@ -140,15 +140,19 @@ export default function Families({ mine, families, filters, servers }: Props) {
                         <h2 className="mr-auto font-display text-lg font-semibold text-white">
                             {tr('Каталог сімей')}
                         </h2>
-                        <label className="input-glass flex h-10 min-w-[200px] items-center gap-2 rounded-xl px-3">
-                            <Search className="size-4 text-white/35" />
-                            <input
-                                value={q}
-                                onChange={(e) => setQ(e.target.value)}
-                                placeholder={tr('Назва або тег')}
-                                className="min-w-0 flex-1 bg-transparent text-sm text-white placeholder:text-white/30 focus:outline-none"
-                            />
-                        </label>
+                        {q && (
+                            <button
+                                type="button"
+                                onClick={() => setQ('')}
+                                className="gc-chip self-start"
+                                title={tr('Скинути пошук')}
+                            >
+                                «{q}»{' '}
+                                <span aria-hidden className="text-white/45">
+                                    ×
+                                </span>
+                            </button>
+                        )}
                         <select
                             value={filters.server ?? ''}
                             onChange={(e) =>

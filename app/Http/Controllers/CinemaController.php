@@ -101,7 +101,7 @@ class CinemaController extends Controller
             ->map(fn (array $card) => [
                 ...$card,
                 'description' => $byId[$card['id']]->description,
-                'countries' => $byId[$card['id']]->countries ?? [],
+                'countries' => array_values(array_filter((array) ($byId[$card['id']]->countries ?? []), 'is_string')),
                 'duration' => $byId[$card['id']]->duration,
             ]));
 
@@ -551,6 +551,12 @@ class CinemaController extends Controller
     }
 
     /** «Рандом»: випадковий опублікований тайтл. */
+    /** Бічна колонка (навігація й віджети) окремо — для застосунку: міст не віддає відкладених props. */
+    public function side(CinemaSidebar $sidebar): JsonResponse
+    {
+        return response()->json($sidebar->data());
+    }
+
     public function random(): RedirectResponse
     {
         $movie = Movie::query()->published()->inRandomOrder()->first();
@@ -806,7 +812,7 @@ class CinemaController extends Controller
             'description' => $m->description,
             'duration' => $m->duration,
             'genres' => array_slice($m->genres ?? [], 0, 4),
-            'countries' => array_slice($m->countries ?? [], 0, 2),
+            'countries' => array_slice(array_values(array_filter((array) ($m->countries ?? []), 'is_string')), 0, 2),
             'trailer_url' => $m->trailer_url,
         ])->all());
     }

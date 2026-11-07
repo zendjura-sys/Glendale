@@ -72,6 +72,7 @@ class AppSiteParityTest extends TestCase
         $this->withToken($token)->getJson('/api/v1/site/cinema/overview')->assertOk()->assertJsonStructure(['featured', 'discussed', 'watchingNow', 'collections', 'comments', 'recommended']);
         $this->withToken($token)->getJson('/api/v1/site/cinema/schedule')->assertOk()->assertJsonPath('days.0.movies.0.slug', 'bleach');
         $this->withToken($token)->getJson('/api/v1/site/cinema/random')->assertOk()->assertJsonPath('redirect', '/cinema/bleach');
+        $this->withToken($token)->getJson('/api/v1/site/cinema/side')->assertOk()->assertJsonStructure(['genres', 'years', 'countries', 'types', 'popular' => ['week', 'month'], 'trailers', 'comments', 'discussed', 'random']);
     }
 
     public function test_app_reaches_movie_lists_reviews_and_profile_track(): void

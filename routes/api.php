@@ -436,6 +436,7 @@ Route::prefix('v1')->group(function () {
             Route::get('cinema/schedule', [CinemaController::class, 'schedule'])->middleware('module:cinema');
             Route::get('cinema/my', [CinemaController::class, 'my'])->middleware('module:cinema');
             Route::get('cinema/random', [CinemaController::class, 'random'])->middleware(['module:cinema', 'throttle:60,1']);
+            Route::get('cinema/side', [CinemaController::class, 'side'])->middleware('module:cinema');
             Route::get('cinema/roulette/spin', [MovieRouletteController::class, 'spin'])->middleware(['module:cinema', 'throttle:60,1']);
             Route::get('music/quiz', [QuizController::class, 'music'])->middleware('module:music');
             Route::post('music/quiz', [QuizController::class, 'musicStart'])->middleware(['module:music', 'throttle:20,1']);

@@ -8,7 +8,6 @@ import {
     ListPlus,
     Music2,
     Play,
-    Search,
     Shuffle,
     Upload,
 } from 'lucide-react';
@@ -199,20 +198,18 @@ export default function MusicIndex({
                             </Link>
                         ))}
                     </div>
-                    {showTracks && (
-                        <label className="input-glass flex h-11 min-h-11 flex-1 items-center gap-2 rounded-xl px-3.5">
-                            <Search className="size-4 text-white/40" />
-                            <input
-                                value={search}
-                                onChange={(e) => setSearch(e.target.value)}
-                                placeholder={
-                                    tab === 'mine'
-                                        ? tr('Пошук у моїх аудіозаписах')
-                                        : tr('Пошук треків на GameCon')
-                                }
-                                className="h-full flex-1 bg-transparent text-sm text-white outline-none placeholder:text-white/35"
-                            />
-                        </label>
+                    {showTracks && search && (
+                        <button
+                            type="button"
+                            onClick={() => setSearch('')}
+                            className="gc-chip self-start"
+                            title={tr('Скинути пошук')}
+                        >
+                            «{search}»{' '}
+                            <span aria-hidden className="text-white/45">
+                                ×
+                            </span>
+                        </button>
                     )}
                 </div>
 

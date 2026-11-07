@@ -342,6 +342,41 @@ export function QuickSearch({ className }: { className?: string }) {
                             </Link>
                         ))
                     )}
+                    {/* Один пошук на весь сайт: ті самі слова — одразу в розділах. */}
+                    <div className="mt-1 flex flex-wrap gap-1.5 px-2 pt-2">
+                        {(
+                            [
+                                ['cinema', '/cinema', tr('у кіно')],
+                                ['music', '/music', tr('у музиці')],
+                                ['games', '/games', tr('серед ігор')],
+                                ['servers', '/servers', tr('серед серверів')],
+                                [
+                                    'communities',
+                                    '/communities',
+                                    tr('у спільнотах'),
+                                ],
+                                ['clans', '/clans', tr('серед кланів')],
+                                ['families', '/families', tr('серед сімей')],
+                            ] as const
+                        )
+                            .filter(([module]) => modules.includes(module))
+                            .map(([module, base, label]) => (
+                                <Link
+                                    key={module}
+                                    href={`${base}?q=${encodeURIComponent(query.trim())}`}
+                                    onClick={() => {
+                                        remember(query);
+                                        setOpen(false);
+                                    }}
+                                    className="gc-chip text-xs"
+                                >
+                                    {tr('«{q}» {where}', {
+                                        q: query.trim(),
+                                        where: label,
+                                    })}
+                                </Link>
+                            ))}
+                    </div>
                     <Link
                         href={`/people?q=${encodeURIComponent(query.trim())}`}
                         onClick={() => {
