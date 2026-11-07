@@ -28,7 +28,7 @@ export function FamilyLogo({
     return (
         <span
             className={cn(
-                'relative inline-flex shrink-0 overflow-hidden ring-1 ring-white/10',
+                'relative inline-flex shrink-0 overflow-hidden',
                 sizes[size],
                 className,
             )}

@@ -454,7 +454,7 @@ function SettingsGroup({
     children: ReactNode;
 }) {
     return (
-        <div className="space-y-3 rounded-2xl bg-white/[0.03] p-4 ring-1 ring-white/[0.05]">
+        <div className="gc-solid-2 space-y-3 rounded-2xl p-4">
             <div className="text-sm font-semibold text-white">{title}</div>
             {children}
         </div>

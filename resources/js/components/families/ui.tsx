@@ -112,7 +112,7 @@ export function Metric({
 }
 
 const rankTones = [
-    'bg-white/[0.06] text-white/60',
+    'gc-solid-2 text-white/60',
     'bg-sky-500/15 text-sky-400',
     'bg-emerald-500/15 text-emerald-400',
     'bg-amber-400/15 text-amber-400',
@@ -209,7 +209,7 @@ export function Modal({
         <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
             <DialogContent
                 className={cn(
-                    'glass-strong max-h-[92dvh] gap-0 overflow-y-auto rounded-dialog border-white/10 p-5 text-white sm:p-6',
+                    'glass-strong max-h-[92dvh] gap-0 overflow-y-auto rounded-dialog p-5 text-white sm:p-6',
                     wide ? 'sm:max-w-2xl' : 'sm:max-w-md',
                 )}
             >

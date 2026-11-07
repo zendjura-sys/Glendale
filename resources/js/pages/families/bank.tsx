@@ -69,13 +69,13 @@ type Props = FamilyShellProps & {
 const cashoutStatus = {
     pending: [tr('Очікує видачі'), 'bg-amber-300/10 text-amber-400'],
     paid: [tr('Видано'), 'bg-emerald-400/10 text-emerald-400'],
-    cancelled: [tr('Скасовано'), 'bg-white/[0.05] text-white/45'],
+    cancelled: [tr('Скасовано'), 'gc-solid-2 text-white/45'],
 } as const;
 
 const depositStatus = {
     active: [tr('Активний'), 'bg-gc-indigo/15 text-[#c4b5fd]'],
     matured: [tr('Виплачено'), 'bg-emerald-400/10 text-emerald-400'],
-    closed: [tr('Закрито достроково'), 'bg-white/[0.05] text-white/45'],
+    closed: [tr('Закрито достроково'), 'gc-solid-2 text-white/45'],
 } as const;
 
 export default function FamilyBank(props: Props) {
@@ -358,7 +358,7 @@ function CashoutPanel({
                     {cashouts.map((c) => (
                         <li
                             key={c.id}
-                            className="flex items-center gap-3 rounded-xl bg-white/[0.03] px-3 py-2"
+                            className="gc-solid-2 flex items-center gap-3 rounded-xl px-3 py-2"
                         >
                             <div className="min-w-0 flex-1">
                                 <div className="font-semibold text-white">
@@ -491,7 +491,7 @@ function DepositPanel({
                     {form.data.period === 'daily' ? tr('дн.') : tr('тиж.')}
                 </span>
             </div>
-            <div className="mt-3 flex items-center gap-3 rounded-2xl bg-white/[0.03] p-3 ring-1 ring-white/[0.06]">
+            <div className="gc-solid-2 mt-3 flex items-center gap-3 rounded-2xl p-3">
                 <div className="min-w-0 flex-1 text-xs text-white/45">
                     {tr('До виплати')}
                     <div className="font-display text-lg font-bold text-emerald-400">
@@ -522,7 +522,7 @@ function DepositPanel({
                     {deposits.map((d) => (
                         <li
                             key={d.id}
-                            className="flex items-center gap-3 rounded-xl bg-white/[0.03] px-3 py-2"
+                            className="gc-solid-2 flex items-center gap-3 rounded-xl px-3 py-2"
                         >
                             <div className="min-w-0 flex-1">
                                 <div className="text-sm font-semibold text-white">
@@ -610,7 +610,7 @@ function ManualPanel({
                 <button
                     type="button"
                     onClick={() => setOpen((v) => !v)}
-                    className="text-xs text-white/50 hover:text-white"
+                    className="text-xs font-semibold text-sky-400 hover:text-sky-300"
                 >
                     {open ? tr('Згорнути') : tr('Розгорнути')}
                 </button>

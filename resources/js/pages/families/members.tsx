@@ -147,7 +147,7 @@ export default function FamilyMembers(props: Props) {
                             {applications.map((a) => (
                                 <div
                                     key={a.id}
-                                    className="flex flex-col gap-3 rounded-2xl bg-white/[0.03] p-3 ring-1 ring-white/[0.05] sm:flex-row sm:items-center"
+                                    className="gc-solid-2 flex flex-col gap-3 rounded-2xl p-3 sm:flex-row sm:items-center"
                                 >
                                     <div className="flex min-w-0 flex-1 gap-3">
                                         <UserAvatar
@@ -342,7 +342,7 @@ export default function FamilyMembers(props: Props) {
                                         <button
                                             type="button"
                                             onClick={() => setEditing(m)}
-                                            className="flex size-9 items-center justify-center rounded-xl text-white/50 hover:bg-white/[0.06] hover:text-white"
+                                            className="flex size-9 items-center justify-center rounded-xl text-white/50 hover:bg-[var(--gc-l3)] hover:text-white"
                                             aria-label={tr('Керувати')}
                                         >
                                             <Settings2 className="size-4" />
@@ -495,7 +495,7 @@ function MemberDialog({
                 )}
 
             {can['members.manage'] && (manage || isSelf) && (
-                <div className="grid grid-cols-1 gap-3 rounded-2xl bg-white/[0.03] p-3 sm:grid-cols-[1fr_140px_auto]">
+                <div className="gc-solid-2 grid grid-cols-1 gap-3 rounded-2xl p-3 sm:grid-cols-[1fr_140px_auto]">
                     <Field
                         label={tr('RP-нікнейм')}
                         error={form.errors.rp_nickname}
@@ -533,7 +533,7 @@ function MemberDialog({
             )}
 
             {manage && !member.is_owner && (
-                <div className="rounded-2xl border border-red-400/20 bg-red-500/[0.05] p-3">
+                <div className="rounded-2xl bg-red-500/[0.05] p-3">
                     <div className="mb-2 text-sm font-semibold text-red-400">
                         {tr('Виключити з сім’ї')}
                     </div>
@@ -630,8 +630,8 @@ function RanksDialog({
                             className={cn(
                                 'size-6 rounded-md transition disabled:cursor-not-allowed',
                                 on
-                                    ? 'bg-gradient-brand text-white'
-                                    : 'bg-white/[0.05] hover:bg-white/10',
+                                    ? 'bg-sky-500 text-white'
+                                    : 'gc-solid-2 hover:bg-white/10',
                                 locked && 'opacity-30',
                             )}
                             aria-label={tr('{label}: ранг {r}', { label, r })}

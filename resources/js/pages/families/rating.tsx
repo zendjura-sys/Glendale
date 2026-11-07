@@ -31,7 +31,7 @@ type Props = FamilyShellProps & {
 };
 
 const podium = [
-    'from-amber-300/30 to-amber-500/10 ring-amber-300/40',
+    'from-amber-300/30 to-amber-500/10 ',
     'from-slate-200/20 to-slate-400/10 ring-slate-200/30',
     'from-orange-400/25 to-orange-700/10 ring-orange-400/30',
 ];
@@ -128,7 +128,7 @@ export default function FamilyRating(props: Props) {
                             <button
                                 type="button"
                                 onClick={endSeason}
-                                className="inline-flex h-10 items-center gap-2 rounded-xl bg-white/[0.06] px-4 text-sm font-medium text-white/80 hover:bg-white/10 hover:text-white"
+                                className="gc-solid-2 inline-flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-medium text-white/80 hover:bg-white/10 hover:text-white"
                             >
                                 <Trophy className="size-4" />
                                 {tr('Завершити сезон')}
@@ -140,7 +140,7 @@ export default function FamilyRating(props: Props) {
                             {seasons.map((s) => (
                                 <li
                                     key={s.number}
-                                    className="rounded-2xl bg-white/[0.03] p-3"
+                                    className="gc-solid-2 rounded-2xl p-3"
                                 >
                                     <p className="text-sm font-semibold text-white">
                                         {tr('Сезон {number}', {
@@ -198,7 +198,7 @@ export default function FamilyRating(props: Props) {
                             <div
                                 key={row.id}
                                 className={cn(
-                                    'gc-solid relative overflow-hidden rounded-2xl bg-gradient-to-br p-5 text-center ring-1',
+                                    'gc-solid relative overflow-hidden rounded-2xl bg-gradient-to-br p-5 text-center',
                                     podium[i],
                                     i === 0 && 'sm:order-2 sm:-mt-2',
                                     i === 1 && 'sm:order-1 sm:mt-4',
@@ -237,7 +237,7 @@ export default function FamilyRating(props: Props) {
                         <div className="overflow-x-auto">
                             <table className="w-full min-w-[640px] text-sm">
                                 <thead className="text-left text-xs text-white/35">
-                                    <tr className="border-b border-white/[0.06]">
+                                    <tr className=" ">
                                         <th className="px-4 py-3 font-medium">
                                             #
                                         </th>

@@ -265,7 +265,7 @@ export default function FamilyDiscipline(props: Props) {
                             <li
                                 key={p.id}
                                 className={cn(
-                                    'flex flex-wrap items-start gap-3 rounded-2xl bg-white/[0.03] p-3 ring-1 ring-white/[0.05]',
+                                    'gc-solid-2 flex flex-wrap items-start gap-3 rounded-2xl p-3',
                                     !p.active && 'opacity-55',
                                 )}
                             >
@@ -273,7 +273,7 @@ export default function FamilyDiscipline(props: Props) {
                                     className={cn(
                                         'rounded-chip px-2.5 py-1 text-xs font-semibold',
                                         typeTones[p.type] ??
-                                            'bg-white/[0.06] text-white/60',
+                                            'gc-solid-2 text-white/60',
                                     )}
                                 >
                                     {p.type_label}

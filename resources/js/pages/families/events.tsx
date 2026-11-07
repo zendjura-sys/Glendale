@@ -138,11 +138,11 @@ export default function FamilyEvents(props: Props) {
                                 />
                             )}
                             <div className="flex items-start gap-3">
-                                <div className="flex size-14 shrink-0 flex-col items-center justify-center rounded-2xl bg-gradient-to-br from-amber-300/20 to-red-500/20 ring-1 ring-amber-300/25">
-                                    <span className="font-display text-lg leading-none font-bold text-white">
+                                <div className="flex size-14 shrink-0 flex-col items-center justify-center rounded-2xl bg-amber-400/15 text-amber-400">
+                                    <span className="font-display text-lg leading-none font-bold">
                                         {eventDay(e.starts_at, 'day')}
                                     </span>
-                                    <span className="text-xs text-white/55 uppercase">
+                                    <span className="text-xs text-amber-400/80">
                                         {eventDay(e.starts_at, 'month')}
                                     </span>
                                 </div>
@@ -622,8 +622,8 @@ function CloseDialog({
                             className={cn(
                                 'flex items-center gap-2 rounded-xl px-3 py-2 text-left text-sm transition',
                                 on
-                                    ? 'bg-emerald-400/15 text-white ring-1 ring-emerald-300/30'
-                                    : 'bg-white/[0.03] text-white/60',
+                                    ? 'bg-emerald-400/15 text-white'
+                                    : 'gc-solid-2 text-white/60',
                             )}
                         >
                             <span

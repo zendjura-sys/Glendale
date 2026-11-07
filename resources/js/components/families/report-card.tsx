@@ -101,7 +101,7 @@ export function ReportRow({
         : report.status === 'approved'
           ? 'bg-emerald-500/15 text-emerald-400'
           : report.status === 'rejected'
-            ? 'bg-white/[0.06] text-white/40'
+            ? 'gc-solid-2 text-white/40'
             : 'bg-amber-400/15 text-amber-400';
 
     return (

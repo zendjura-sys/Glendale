@@ -137,7 +137,7 @@ export default function FamilyPublic({
                                 {leaders.map((m) => (
                                     <div
                                         key={m.id}
-                                        className="flex items-center gap-3 rounded-2xl bg-white/[0.03] p-2.5"
+                                        className="gc-solid-2 flex items-center gap-3 rounded-2xl p-2.5"
                                     >
                                         <UserAvatar
                                             user={{

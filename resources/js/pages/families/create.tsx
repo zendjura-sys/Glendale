@@ -40,8 +40,8 @@ export default function CreateFamily({ servers, server }: Props) {
                 </Link>
                 <section className="gc-solid rounded-2xl p-5 sm:p-7">
                     <div className="flex items-center gap-3">
-                        <span className="flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-300 to-red-500">
-                            <Crown className="size-6 text-white" />
+                        <span className="flex size-12 items-center justify-center rounded-2xl bg-amber-400/15 text-amber-400">
+                            <Crown className="size-6" />
                         </span>
                         <div>
                             <h1 className="font-display text-2xl font-bold text-white">
@@ -66,10 +66,10 @@ export default function CreateFamily({ servers, server }: Props) {
                                     type="button"
                                     onClick={() => setData('server_id', s.id)}
                                     className={cn(
-                                        'flex items-center gap-3 rounded-2xl border p-2.5 text-left transition',
+                                        'flex items-center gap-3 rounded-2xl p-2.5 text-left transition',
                                         data.server_id === s.id
-                                            ? 'border-amber-300/50 bg-amber-300/10'
-                                            : 'border-white/[0.07] bg-white/[0.03] hover:bg-white/[0.06]',
+                                            ? 'bg-amber-300/10'
+                                            : 'gc-solid-2 hover:bg-[var(--gc-l3)]',
                                     )}
                                 >
                                     <ServerIcon
@@ -188,7 +188,7 @@ export default function CreateFamily({ servers, server }: Props) {
                         </div>
                     </div>
 
-                    <div className="mt-5 rounded-2xl bg-white/[0.03] p-4 ring-1 ring-white/[0.06]">
+                    <div className="gc-solid-2 mt-5 rounded-2xl p-4">
                         <div className="mb-3 text-sm font-semibold text-white">
                             {tr('Ваш персонаж')}
                         </div>

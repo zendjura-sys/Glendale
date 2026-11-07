@@ -122,10 +122,10 @@ export default function FamilyOverview(props: Props) {
                 <div className="space-y-4">
                     <Link
                         href={`${base}/reports?new=1`}
-                        className="gc-solid group flex items-center gap-4 overflow-hidden rounded-2xl p-5 transition hover:bg-white/[0.06]"
+                        className="gc-solid group flex items-center gap-4 overflow-hidden rounded-2xl p-5 transition hover:bg-[var(--gc-l3)]"
                     >
-                        <span className="flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-300 to-red-500 shadow-[0_10px_30px_-10px_rgb(250_204_21/0.8)]">
-                            <FilePlus2 className="size-6 text-white" />
+                        <span className="flex size-12 items-center justify-center rounded-2xl bg-amber-400/15 text-amber-400">
+                            <FilePlus2 className="size-6" />
                         </span>
                         <div className="min-w-0 flex-1">
                             <div className="font-display text-lg font-semibold text-white">
@@ -145,7 +145,7 @@ export default function FamilyOverview(props: Props) {
                         actions={
                             <Link
                                 href={`${base}/rating`}
-                                className="text-xs text-white/50 hover:text-white"
+                                className="text-xs font-semibold text-sky-400 hover:text-sky-300"
                             >
                                 {tr('Увесь рейтинг')}
                             </Link>
@@ -163,7 +163,7 @@ export default function FamilyOverview(props: Props) {
                                 {leaders.map((row) => (
                                     <li
                                         key={row.id}
-                                        className="flex items-center gap-3 rounded-xl bg-white/[0.03] px-3 py-2"
+                                        className="gc-solid-2 flex items-center gap-3 rounded-xl px-3 py-2"
                                     >
                                         <span className="w-6 text-center text-sm">
                                             {medals[row.place - 1] ?? row.place}
@@ -189,7 +189,7 @@ export default function FamilyOverview(props: Props) {
                         actions={
                             <Link
                                 href={`${base}/bank`}
-                                className="text-xs text-white/50 hover:text-white"
+                                className="text-xs font-semibold text-sky-400 hover:text-sky-300"
                             >
                                 {tr('Банк')}
                             </Link>
@@ -231,7 +231,7 @@ export default function FamilyOverview(props: Props) {
                         actions={
                             <Link
                                 href={`${base}/events`}
-                                className="text-xs text-white/50 hover:text-white"
+                                className="text-xs font-semibold text-sky-400 hover:text-sky-300"
                             >
                                 {tr('Усі')}
                             </Link>
@@ -247,7 +247,7 @@ export default function FamilyOverview(props: Props) {
                                 {events.map((e) => (
                                     <li
                                         key={e.id}
-                                        className="flex items-center gap-3 rounded-xl bg-white/[0.03] px-3 py-2.5"
+                                        className="gc-solid-2 flex items-center gap-3 rounded-xl px-3 py-2.5"
                                     >
                                         <CalendarDays className="size-4 text-sky-400" />
                                         <div className="min-w-0 flex-1">
@@ -297,7 +297,7 @@ export default function FamilyOverview(props: Props) {
                             actions={
                                 <Link
                                     href={`${base}/audit`}
-                                    className="text-xs text-white/50 hover:text-white"
+                                    className="text-xs font-semibold text-sky-400 hover:text-sky-300"
                                 >
                                     {tr('Журнал')}
                                 </Link>

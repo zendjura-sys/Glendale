@@ -185,7 +185,7 @@ export function FamilyShell({
                         <FamilyLogo
                             family={family}
                             size="xl"
-                            className="shadow-[0_10px_40px_-10px_rgb(250_204_21/0.5)] ring-4 ring-[#0a0d18]"
+                            className="ring-4 ring-[#0a0d18]"
                         />
                         <div className="min-w-0 flex-1">
                             <div className="flex flex-wrap items-center gap-2">
@@ -232,7 +232,7 @@ export function FamilyShell({
                             </div>
                         </div>
                         <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
-                            <div className="flex min-w-0 flex-1 items-center gap-3 rounded-2xl bg-white/[0.05] px-3.5 py-2 ring-1 ring-white/[0.07] sm:flex-none">
+                            <div className="gc-solid-2 flex min-w-0 flex-1 items-center gap-3 rounded-2xl px-3.5 py-2 sm:flex-none">
                                 <div className="min-w-0">
                                     <div className="font-mono text-sm font-semibold break-words text-white">
                                         {me.display}
@@ -243,7 +243,7 @@ export function FamilyShell({
                                         className="mt-0.5"
                                     />
                                 </div>
-                                <div className="ml-auto border-l border-white/10 pl-3 text-right">
+                                <div className="ml-auto pl-3 text-right">
                                     <div className="text-xs text-white/40">
                                         {tr('Баланс')}
                                     </div>
@@ -270,7 +270,7 @@ export function FamilyShell({
                             )}
                         </div>
                     </div>
-                    <nav className="flex [scrollbar-width:none] gap-1 overflow-x-auto border-t border-white/[0.06] px-2 py-1.5 sm:px-4 [&::-webkit-scrollbar]:hidden">
+                    <nav className="flex [scrollbar-width:none] gap-1 overflow-x-auto px-2 py-1.5 sm:px-4 [&::-webkit-scrollbar]:hidden">
                         {tabs
                             .filter((t) => t.visible)
                             .map((t) => (
@@ -303,10 +303,10 @@ export function FamilyShell({
                 {family.status !== 'verified' && (
                     <div
                         className={cn(
-                            'flex items-start gap-3 rounded-2xl border px-4 py-3 text-sm',
+                            'flex items-start gap-3 rounded-2xl px-4 py-3 text-sm',
                             family.status === 'suspended'
-                                ? 'border-red-400/30 bg-red-500/10 text-red-400'
-                                : 'border-amber-300/30 bg-amber-300/10 text-amber-400',
+                                ? 'bg-red-500/10 text-red-400'
+                                : 'bg-amber-300/10 text-amber-400',
                         )}
                     >
                         <AlertTriangle className="mt-0.5 size-4 shrink-0" />
@@ -337,7 +337,7 @@ export function FamilyShell({
                 <Link
                     href={`${base}/reports?new=1`}
                     className={cn(
-                        'btn-glow fixed right-4 z-30 inline-flex h-14 items-center gap-2 rounded-2xl px-5 text-sm font-semibold shadow-2xl lg:hidden',
+                        'btn-glow fixed right-4 z-30 inline-flex h-14 items-center gap-2 rounded-2xl px-5 text-sm font-semibold lg:hidden',
                         floatingAboveNav(playing),
                     )}
                 >

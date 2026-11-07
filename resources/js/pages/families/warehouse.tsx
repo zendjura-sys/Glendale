@@ -137,12 +137,12 @@ export default function FamilyWarehouse(props: Props) {
                                         <div
                                             key={item.id}
                                             className={cn(
-                                                'rounded-2xl p-3 ring-1',
+                                                'rounded-2xl p-3',
                                                 item.is_archived
-                                                    ? 'bg-white/[0.02] opacity-50 ring-white/[0.04]'
+                                                    ? 'gc-solid-2 opacity-50'
                                                     : item.low
-                                                      ? 'bg-red-500/[0.07] ring-red-400/25'
-                                                      : 'bg-white/[0.03] ring-white/[0.06]',
+                                                      ? 'bg-red-500/[0.07]'
+                                                      : 'gc-solid-2',
                                             )}
                                         >
                                             <div className="flex items-start gap-2">
@@ -200,7 +200,7 @@ export default function FamilyWarehouse(props: Props) {
                                                             action: 'take',
                                                         })
                                                     }
-                                                    className="inline-flex h-8 flex-1 items-center justify-center gap-1 rounded-lg bg-white/[0.06] text-xs font-medium text-white/80 hover:bg-white/10 disabled:opacity-30"
+                                                    className="gc-solid-2 inline-flex h-8 flex-1 items-center justify-center gap-1 rounded-lg text-xs font-medium text-white/80 hover:bg-white/10 disabled:opacity-30"
                                                 >
                                                     <ArrowUpFromLine className="size-3.5" />{' '}
                                                     {tr('Взяти')}
@@ -214,7 +214,7 @@ export default function FamilyWarehouse(props: Props) {
                                                             action: 'put',
                                                         })
                                                     }
-                                                    className="inline-flex h-8 flex-1 items-center justify-center gap-1 rounded-lg bg-white/[0.06] text-xs font-medium text-white/80 hover:bg-white/10 disabled:opacity-30"
+                                                    className="gc-solid-2 inline-flex h-8 flex-1 items-center justify-center gap-1 rounded-lg text-xs font-medium text-white/80 hover:bg-white/10 disabled:opacity-30"
                                                 >
                                                     <ArrowDownToLine className="size-3.5" />{' '}
                                                     {tr('Покласти')}
@@ -225,7 +225,7 @@ export default function FamilyWarehouse(props: Props) {
                                                         onClick={() =>
                                                             setEditing(item)
                                                         }
-                                                        className="flex size-8 items-center justify-center rounded-lg text-white/45 hover:bg-white/[0.06] hover:text-white"
+                                                        className="flex size-8 items-center justify-center rounded-lg text-white/45 hover:bg-[var(--gc-l3)] hover:text-white"
                                                         aria-label={tr(
                                                             'Редагувати',
                                                         )}
@@ -272,7 +272,7 @@ export default function FamilyWarehouse(props: Props) {
                                 {top_takers.map((t, i) => (
                                     <li
                                         key={i}
-                                        className="flex items-center gap-2 rounded-xl bg-white/[0.03] px-3 py-2 text-sm"
+                                        className="gc-solid-2 flex items-center gap-2 rounded-xl px-3 py-2 text-sm"
                                     >
                                         <span className="w-5 text-white/40">
                                             {i + 1}
@@ -336,7 +336,7 @@ function LogList({ logs, compact }: { logs: Log[]; compact?: boolean }) {
                                 ? 'bg-red-400/10 text-red-400'
                                 : l.action === 'put'
                                   ? 'bg-emerald-400/10 text-emerald-400'
-                                  : 'bg-white/[0.06] text-white/60',
+                                  : 'gc-solid-2 text-white/60',
                         )}
                     >
                         {l.action === 'take' ? (
@@ -468,8 +468,8 @@ function MoveDialog({
                         className={cn(
                             'h-9 min-w-12 rounded-lg px-3 text-sm font-medium',
                             form.data.quantity === n
-                                ? 'bg-gradient-brand text-white'
-                                : 'bg-white/[0.05] text-white/60',
+                                ? 'bg-sky-500 text-white'
+                                : 'gc-solid-2 text-white/60',
                         )}
                     >
                         {n}
