@@ -955,31 +955,34 @@ class MetricTile extends StatelessWidget {
   final bool caps;
   final Gradient? gradient;
 
+  // Плитка-показник у стилі прикладів: суцільна поверхня, підпис звичайним регістром,
+  // іконка й велике число в тоні показника.
   @override
   Widget build(BuildContext context) {
+    final tone = color == ink ? null : color;
     return Container(
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(color: fg.withValues(alpha: 0.04), borderRadius: BorderRadius.circular(18)),
+      decoration: BoxDecoration(color: raised, borderRadius: BorderRadius.circular(20)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (caps)
-            Row(children: [
+            Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Expanded(
                 child: SizedBox(
-                  height: 28,
-                  child: Text(label.toUpperCase(), maxLines: 2, overflow: TextOverflow.ellipsis, style: body(11, color: muted, weight: FontWeight.w600).copyWith(letterSpacing: 0.8, height: 1.3)),
+                  height: 34,
+                  child: Text(label, maxLines: 2, overflow: TextOverflow.ellipsis, style: body(13, color: muted, weight: FontWeight.w500).copyWith(height: 1.3)),
                 ),
               ),
-              if (icon != null) Icon(icon, size: 15, color: faint),
+              if (icon != null) Icon(icon, size: 16, color: tone ?? faint),
             ]),
-          if (caps) const SizedBox(height: 10),
+          if (caps) const SizedBox(height: 6),
           FittedBox(
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerLeft,
-            child: gradient == null ? Text(value, maxLines: 1, softWrap: false, style: display(22, color: color)) : GradientText(value, style: display(24), gradient: gradient!),
+            child: gradient == null ? Text(value, maxLines: 1, softWrap: false, style: display(26, color: color)) : GradientText(value, style: display(26), gradient: gradient!),
           ),
-          if (!caps) ...[const SizedBox(height: 4), Text(label, style: body(12, color: muted).copyWith(height: 1.25))],
+          if (!caps) ...[const SizedBox(height: 4), Text(label, style: body(12.5, color: muted).copyWith(height: 1.25))],
         ],
       ),
     );

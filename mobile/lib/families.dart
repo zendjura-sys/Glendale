@@ -38,7 +38,7 @@ class RankPill extends StatelessWidget {
     final color = rankColors[r] ?? soft;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-      decoration: BoxDecoration(color: color.withValues(alpha: 0.14), borderRadius: BorderRadius.circular(8), border: Border.all(color: color.withValues(alpha: 0.3))),
+      decoration: BoxDecoration(color: color.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(8)),
       child: Text('$r ${title ?? ''}'.trim(), style: body(11, color: color, weight: FontWeight.w700)),
     );
   }
@@ -307,7 +307,7 @@ class FamilyCard extends StatelessWidget {
             borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
             child: text(family['cover_url']) != null
                 ? NetImage(text(family['cover_url']))
-                : Container(decoration: const BoxDecoration(gradient: LinearGradient(colors: [Color(0xFF3B2A6E), Color(0xFF1A1F3D)]))),
+                : Container(decoration: const BoxDecoration(gradient: LinearGradient(colors: [Color(0xFF0B2942), Color(0xFF0B1220)]))),
           ),
         ),
         Padding(
@@ -454,7 +454,7 @@ class _CreateFamilyScreenState extends State<CreateFamilyScreen> {
                   height: 76,
                   child: logo == null
                       ? Container(
-                          decoration: BoxDecoration(color: fg.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(18)),
+                          decoration: BoxDecoration(color: raised, borderRadius: BorderRadius.circular(18)),
                           child: Icon(LucideIcons.imagePlus, color: muted),
                         )
                       : ClipRRect(borderRadius: BorderRadius.circular(18), child: Image(image: XFileImage(logo!), fit: BoxFit.cover)),
@@ -763,7 +763,7 @@ class _FamilyHeader extends StatelessWidget {
             borderRadius: const BorderRadius.vertical(top: Radius.circular(26)),
             child: text(family['cover_url']) != null
                 ? NetImage(text(family['cover_url']))
-                : Container(decoration: const BoxDecoration(gradient: LinearGradient(colors: [Color(0xFF4A3A1A), Color(0xFF2A2350), Color(0xFF151A30)]))),
+                : Container(decoration: const BoxDecoration(gradient: LinearGradient(colors: [Color(0xFF0B2942), Color(0xFF121D31), Color(0xFF0B1220)]))),
           ),
         ),
         Padding(
@@ -809,7 +809,7 @@ class _FamilyHeader extends StatelessWidget {
                 Expanded(
                   child: Container(
                     padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(color: fg.withValues(alpha: 0.04), borderRadius: BorderRadius.circular(14)),
+                    decoration: BoxDecoration(color: raised, borderRadius: BorderRadius.circular(14)),
                     child: Row(children: [
                       Expanded(
                         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -1461,7 +1461,7 @@ class _ReportFormState extends State<_ReportForm> {
                 child: Container(
                   width: 72,
                   height: 72,
-                  decoration: BoxDecoration(color: fg.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(12)),
+                  decoration: BoxDecoration(color: raised, borderRadius: BorderRadius.circular(12)),
                   child: Icon(LucideIcons.imagePlus, color: muted),
                 ),
               ),
@@ -1521,7 +1521,7 @@ class _Stepper extends StatelessWidget {
         );
     return Container(
       padding: const EdgeInsets.fromLTRB(12, 10, 8, 10),
-      decoration: BoxDecoration(color: fg.withValues(alpha: 0.04), borderRadius: BorderRadius.circular(14)),
+      decoration: BoxDecoration(color: raised, borderRadius: BorderRadius.circular(14)),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text(label, maxLines: 1, softWrap: false, overflow: TextOverflow.fade, style: body(12.5, color: muted)),
         const SizedBox(height: 4),

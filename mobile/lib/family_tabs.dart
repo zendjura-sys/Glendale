@@ -720,9 +720,8 @@ class WarehouseTab extends StatelessWidget {
                   margin: const EdgeInsets.only(bottom: 8),
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: fg.withValues(alpha: item['is_archived'] == true ? 0.015 : 0.035),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: item['low'] == true ? danger.withValues(alpha: 0.4) : line),
+                    color: item['low'] == true ? danger.withValues(alpha: 0.1) : (item['is_archived'] == true ? raised.withValues(alpha: 0.5) : raised),
+                    borderRadius: BorderRadius.circular(16),
                   ),
                   child: Column(children: [
                     Row(children: [
@@ -1127,7 +1126,7 @@ class _DisciplineTabState extends State<DisciplineTab> {
             Container(
               margin: const EdgeInsets.only(bottom: 8),
               padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(color: fg.withValues(alpha: 0.035), borderRadius: BorderRadius.circular(12), border: Border.all(color: p['active'] == true ? danger.withValues(alpha: 0.35) : line)),
+              decoration: BoxDecoration(color: p['active'] == true ? danger.withValues(alpha: 0.12) : raised, borderRadius: BorderRadius.circular(14)),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Row(children: [
                   Text(text(p['type_label']) ?? '', style: body(13.5, weight: FontWeight.w700, color: p['active'] == true ? dangerSoft : soft)),
@@ -1516,7 +1515,7 @@ class _SettingsTabState extends State<SettingsTab> {
   Widget _group(String title, List<Widget> children) => Container(
         margin: const EdgeInsets.only(bottom: 10),
         padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(color: fg.withValues(alpha: 0.03), borderRadius: BorderRadius.circular(16)),
+        decoration: BoxDecoration(color: raised, borderRadius: BorderRadius.circular(16)),
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [Text(title, style: body(14, weight: FontWeight.w700)), const SizedBox(height: 10), ...children]),
       );
 
