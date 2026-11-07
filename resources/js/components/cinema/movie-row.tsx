@@ -1,6 +1,7 @@
 import { Link } from '@inertiajs/react';
 import { Bookmark, CircleCheck, Clock3, EllipsisVertical } from 'lucide-react';
 import { MoviePoster } from '@/components/cinema/movie-tile';
+import { PosterBadges, PosterHover } from '@/components/cinema/poster-badges';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -90,16 +91,20 @@ export function MovieRow({
                     movie={movie}
                     className="aspect-[2/3] w-full transition duration-500 group-hover:scale-105"
                 />
-                {movie.my_status && (
-                    <span
-                        data-on-dark
-                        className={cn(
-                            'absolute inset-x-1.5 bottom-1.5 truncate rounded-full py-0.5 text-center text-[11px] font-semibold text-white backdrop-blur',
-                            STATUS_TONE[movie.my_status],
-                        )}
-                    >
-                        {statusLabel(movie.my_status)}
-                    </span>
+                {variant === 'compact' ? (
+                    movie.my_status && (
+                        <span
+                            data-on-dark
+                            className={cn(
+                                'absolute inset-x-1.5 bottom-1.5 truncate rounded-full py-0.5 text-center text-[11px] font-semibold text-white backdrop-blur',
+                                STATUS_TONE[movie.my_status],
+                            )}
+                        >
+                            {statusLabel(movie.my_status)}
+                        </span>
+                    )
+                ) : (
+                    <PosterBadges movie={movie} size="sm" />
                 )}
             </Link>
             <div className="min-w-0 flex-1 py-0.5 pr-7">
@@ -109,7 +114,14 @@ export function MovieRow({
                     </h3>
                 </Link>
                 <p className="mt-1 flex flex-wrap items-center gap-x-1.5 text-[13px] text-white/55 tabular-nums">
-                    {meta.join(' • ') || movie.type_label}
+                    {[
+                        variant !== 'compact' && movie.my_status
+                            ? statusLabel(movie.my_status)
+                            : null,
+                        ...meta,
+                    ]
+                        .filter(Boolean)
+                        .join(' • ') || movie.type_label}
                     {movie.saved && (
                         <Bookmark className="size-3.5 fill-amber-400 text-amber-400" />
                     )}
@@ -184,23 +196,19 @@ export function MovieGridTile({ movie }: { movie: MovieRowItem }) {
                     movie={movie}
                     className="aspect-[2/3] w-full transition duration-500 group-hover:scale-105"
                 />
-                {movie.my_status && (
-                    <span
-                        data-on-dark
-                        className={cn(
-                            'absolute inset-x-1.5 bottom-1.5 truncate rounded-full py-0.5 text-center text-[11px] font-semibold text-white backdrop-blur',
-                            STATUS_TONE[movie.my_status],
-                        )}
-                    >
-                        {statusLabel(movie.my_status)}
-                    </span>
-                )}
+                <PosterBadges movie={movie} size="sm" />
+                <PosterHover href={movie.href} />
             </span>
             <span className="mt-2 line-clamp-2 block text-[13px] leading-snug font-semibold text-white">
                 {movie.title}
             </span>
             <span className="mt-0.5 block truncate text-xs text-white/50 tabular-nums">
-                {meta.join(' • ') || movie.type_label}
+                {[
+                    movie.my_status ? statusLabel(movie.my_status) : null,
+                    ...meta,
+                ]
+                    .filter(Boolean)
+                    .join(' • ') || movie.type_label}
             </span>
         </Link>
     );
@@ -225,7 +233,7 @@ export function MovieList({
                 ))}
             </div>
             {variant === 'history' ? (
-                <div className="hidden gap-6 sm:grid xl:grid-cols-2">
+                <div className="hidden gap-6 sm:grid @3xl:grid-cols-2">
                     {movies.map((movie) => (
                         <MovieRow
                             key={movie.id}
@@ -235,7 +243,7 @@ export function MovieList({
                     ))}
                 </div>
             ) : (
-                <div className="hidden grid-cols-3 gap-x-4 gap-y-5 sm:grid md:grid-cols-4 lg:grid-cols-5 2xl:grid-cols-7">
+                <div className="hidden grid-cols-3 gap-x-4 gap-y-5 sm:grid @2xl:grid-cols-4 @4xl:grid-cols-5 @6xl:grid-cols-6">
                     {movies.map((movie) => (
                         <MovieGridTile key={movie.id} movie={movie} />
                     ))}

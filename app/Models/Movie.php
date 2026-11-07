@@ -44,6 +44,8 @@ use Illuminate\Support\Facades\Storage;
  * @property string|null $imdb_id
  * @property string|null $shikimori_id
  * @property int|null $episodes_count
+ * @property string|null $release_status
+ * @property Carbon|null $updated_at
  * @property bool $is_published
  * @property bool $is_featured
  * @property bool $comments_enabled
@@ -61,7 +63,7 @@ use Illuminate\Support\Facades\Storage;
     'user_id', 'slug', 'type', 'title', 'title_original', 'year', 'description', 'poster_url', 'backdrop_url',
     'genres', 'countries', 'duration', 'age_rating', 'rating_kp', 'rating_imdb', 'rating_shikimori',
     'kinopoisk_id', 'imdb_id', 'shikimori_id', 'episodes_count', 'is_published', 'is_featured', 'comments_enabled',
-    'tagline', 'trailer_url', 'rating_tmdb', 'tmdb_id', 'origin', 'enriched_at', 'synced_at',
+    'tagline', 'trailer_url', 'rating_tmdb', 'tmdb_id', 'origin', 'enriched_at', 'synced_at', 'release_status',
 ])]
 class Movie extends Model
 {
@@ -189,6 +191,34 @@ class Movie extends Model
         return Attribute::get(fn () => $this->backdrop_path ? Storage::disk('public')->url($this->backdrop_path) : $this->backdrop_url);
     }
 
+    /** Статус виходу для бейджа на постері. */
+    public const RELEASE = [
+        'announced' => 'Анонс',
+        'ongoing' => 'Виходить',
+        'released' => 'Завершено',
+    ];
+
+    /**
+     * Заданий адміном статус; інакше — за даними: рік у майбутньому → анонс,
+     * серіал зі свіжими серіями (оновлення за 30 днів, рік не старший за минулий) → виходить.
+     */
+    public function releaseStatus(): string
+    {
+        if ($this->release_status !== null && isset(self::RELEASE[$this->release_status])) {
+            return $this->release_status;
+        }
+        $year = (int) now()->year;
+        if ($this->year !== null && $this->year > $year) {
+            return 'announced';
+        }
+        $series = in_array($this->type, ['serial', 'anime', 'cartoon', 'documentary'], true) && ($this->episodes_count ?? 0) > 1;
+        if ($series && $this->year !== null && $this->year >= $year - 1 && $this->updated_at?->gt(now()->subDays(30))) {
+            return 'ongoing';
+        }
+
+        return 'released';
+    }
+
     public function userRating(): ?float
     {
         return $this->ratings_count > 0 ? round($this->ratings_sum / $this->ratings_count, 1) : null;
@@ -214,6 +244,7 @@ class Movie extends Model
             'rating' => $this->rating_imdb ?? $this->rating_tmdb ?? $this->rating_shikimori ?? $this->userRating(),
             'age_rating' => $this->age_rating,
             'episodes_count' => $this->episodes_count,
+            'release' => $this->releaseStatus(),
         ];
     }
 }

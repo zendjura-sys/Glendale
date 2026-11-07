@@ -31,15 +31,15 @@ export function MoviePoster({
     return (
         <div
             className={cn(
-                'flex flex-col items-center justify-center gap-2 p-3 text-center',
+                '@container flex flex-col items-center justify-center gap-2 p-3 text-center',
                 className,
             )}
             style={{
                 background: `radial-gradient(120% 90% at 20% 0%, hsl(${hue} 90% 60% / .55), transparent 60%), linear-gradient(160deg, hsl(${hue + 6} 60% 20%), #0b0d1f)`,
             }}
         >
-            <Clapperboard className="size-8 text-white/50" />
-            <span className="line-clamp-3 font-display text-sm font-semibold text-white/85">
+            <Clapperboard className="size-5 text-white/50 @[90px]:size-8" />
+            <span className="hidden font-display text-sm font-semibold text-white/85 @[90px]:line-clamp-3">
                 {movie.title}
             </span>
         </div>

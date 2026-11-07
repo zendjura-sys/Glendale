@@ -1,69 +1,131 @@
-import { Head } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import { CalendarDays } from 'lucide-react';
+import { useState } from 'react';
 import { CinemaNav } from '@/components/cinema/cinema-nav';
-import { MovieRow } from '@/components/cinema/movie-row';
+import { CinemaShell } from '@/components/cinema/cinema-side';
+import type { CinemaSideData } from '@/components/cinema/cinema-side';
 import type { MovieRowItem } from '@/components/cinema/movie-row';
+import { MoviePoster } from '@/components/cinema/movie-tile';
+import { PosterBadges } from '@/components/cinema/poster-badges';
+import { UnderlineTabs } from '@/components/gc/underline-tabs';
 import { EmptyState } from '@/components/gc/widget';
 import { tr } from '@/lib/i18n';
 
 const DAYS = [
-    () => tr('Понеділок'),
-    () => tr('Вівторок'),
-    () => tr('Середа'),
-    () => tr('Четвер'),
-    () => tr("П'ятниця"),
-    () => tr('Субота'),
-    () => tr('Неділя'),
+    () => tr('Пн'),
+    () => tr('Вт'),
+    () => tr('Ср'),
+    () => tr('Чт'),
+    () => tr('Пт'),
+    () => tr('Сб'),
+    () => tr('Нд'),
 ];
 
-/** Розклад онгоінгів: у які дні тижня виходять нові серії (за останніми оновленнями озвучок). */
+/** Час виходу серії на постері: «чт, 19:30». */
+function timeLabel(iso?: string) {
+    if (!iso) return null;
+    const d = new Date(iso);
+
+    return d.toLocaleTimeString('uk-UA', {
+        hour: '2-digit',
+        minute: '2-digit',
+    });
+}
+
+/**
+ * Розклад онгоінгів: вкладки днів тижня з підкресленням (сьогодні — першим вибором),
+ * під ними постери з бейджами й часом, коли зазвичай з'являється нова серія.
+ */
 export default function CinemaSchedule({
     days,
+    side,
 }: {
     days: { day: number; movies: MovieRowItem[] }[];
+    side?: CinemaSideData;
 }) {
     const today = ((new Date().getDay() + 6) % 7) + 1;
+    const [active, setActive] = useState(
+        days.some((d) => d.day === today) ? today : (days[0]?.day ?? today),
+    );
+    const group = days.find((d) => d.day === active);
 
     return (
         <>
             <Head title={tr('Розклад')} />
-            <div className="space-y-5">
+            <CinemaShell side={side}>
                 <CinemaNav active="schedule" />
-                {days.length === 0 ? (
-                    <EmptyState
-                        icon={CalendarDays}
-                        title={tr('Розклад поки порожній')}
-                        text={tr(
-                            'Тут з’являться серіали й аніме, у яких зараз виходять нові серії.',
+                <section className="glass rounded-2xl p-5">
+                    <h1 className="font-display text-xl font-semibold text-white">
+                        {tr('Розклад нових серій на тиждень')}
+                    </h1>
+                    <UnderlineTabs
+                        className="mt-3"
+                        active={String(active)}
+                        tabs={Array.from({ length: 7 }, (_, i) => i + 1).map(
+                            (day) => ({
+                                key: String(day),
+                                label:
+                                    day === today
+                                        ? tr('Сьогодні')
+                                        : DAYS[day - 1](),
+                                count:
+                                    days.find((d) => d.day === day)?.movies
+                                        .length || undefined,
+                                onClick: () => setActive(day),
+                            }),
                         )}
                     />
-                ) : (
-                    days.map((group) => (
-                        <section
-                            key={group.day}
-                            className="glass rounded-2xl p-5"
-                        >
-                            <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-white">
-                                {DAYS[group.day - 1]()}
-                                {group.day === today && (
-                                    <span className="rounded-full bg-[var(--vkui--color_background_accent)] px-2.5 py-0.5 text-xs font-semibold text-white">
-                                        {tr('Сьогодні')}
+                    {!group || group.movies.length === 0 ? (
+                        <EmptyState
+                            icon={CalendarDays}
+                            title={tr('Цього дня нових серій немає')}
+                            text={tr(
+                                'Тут з’являться серіали й аніме, у яких зараз виходять нові серії.',
+                            )}
+                        />
+                    ) : (
+                        <div className="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-3 @3xl:grid-cols-4 @5xl:grid-cols-5">
+                            {group.movies.map((movie) => (
+                                <Link
+                                    key={movie.id}
+                                    href={movie.href}
+                                    className="group min-w-0"
+                                >
+                                    <span className="relative block overflow-hidden rounded-2xl">
+                                        <MoviePoster
+                                            movie={movie}
+                                            className="aspect-[2/3] w-full transition duration-500 group-hover:scale-105"
+                                        />
+                                        <PosterBadges
+                                            movie={{
+                                                ...movie,
+                                                age_rating: null,
+                                            }}
+                                            size="sm"
+                                        />
+                                        {timeLabel(movie.last_at) && (
+                                            <span
+                                                data-on-dark
+                                                className="absolute bottom-2 left-2 rounded-lg bg-primary px-2 py-1 text-[11px] font-bold text-primary-foreground tabular-nums"
+                                            >
+                                                {timeLabel(movie.last_at)}
+                                            </span>
+                                        )}
                                     </span>
-                                )}
-                            </h2>
-                            <div className="grid gap-5 lg:grid-cols-2">
-                                {group.movies.map((movie) => (
-                                    <MovieRow
-                                        key={movie.id}
-                                        movie={movie}
-                                        variant="compact"
-                                    />
-                                ))}
-                            </div>
-                        </section>
-                    ))
-                )}
-            </div>
+                                    <span className="mt-2 line-clamp-2 text-[13px] font-semibold text-white group-hover:text-primary">
+                                        {movie.title}
+                                    </span>
+                                </Link>
+                            ))}
+                        </div>
+                    )}
+                    <p className="mt-6 rounded-xl bg-white/[0.04] p-4 text-[13px] leading-relaxed text-white/55">
+                        {tr(
+                            'Розклад складається з того, коли в озвучок з’являлися нові серії за останні три тижні, тож це орієнтир, а не точний графік студій. Додайте тайтл до «Дивлюся», щоб отримувати сповіщення про нові серії.',
+                        )}
+                    </p>
+                </section>
+            </CinemaShell>
         </>
     );
 }

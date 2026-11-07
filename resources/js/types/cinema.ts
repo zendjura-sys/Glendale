@@ -30,11 +30,17 @@ export type MovieCard = {
     rating: number | null;
     age_rating: string | null;
     episodes_count: number | null;
+    /** Статус виходу для бейджа: анонс / виходить / завершено. */
+    release?: 'announced' | 'ongoing' | 'released';
+    /** Скільки переглянуто, % (лише в картках, де відомий глядач). */
+    progress_pct?: number | null;
 };
 
 export type MovieFeatured = MovieCard & {
     description: string | null;
     duration: number | null;
+    countries?: string[];
+    trailer_url?: string | null;
 };
 
 export type MovieDetail = MovieCard & {

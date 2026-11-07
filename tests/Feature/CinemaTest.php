@@ -467,4 +467,32 @@ class CinemaTest extends TestCase
         $this->get('/play/embed?src='.urlencode('https://evil.example/phish'))->assertNotFound();
         $this->get('/play/embed?src='.urlencode('http://kodik.info/video/1'))->assertNotFound();
     }
+
+    public function test_catalog_cards_carry_release_and_progress_badges_and_filters_work(): void
+    {
+        $user = User::factory()->create();
+        $series = $this->movie(['type' => 'serial', 'title' => 'Серіал', 'year' => (int) now()->year, 'episodes_count' => 10, 'countries' => ['Японія']]);
+        $soon = $this->movie(['title' => 'Скоро', 'year' => (int) now()->year + 1]);
+        $old = $this->movie(['title' => 'Класика', 'year' => 1999, 'release_status' => 'released']);
+        $series->viewers()->attach($user->id, ['status' => 'watching', 'episode' => 4]);
+        $old->viewers()->attach($user->id, ['status' => 'watched']);
+
+        $this->actingAs($user)->get('/cinema')->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('movies.data', fn ($cards) => collect($cards)->firstWhere('id', $series->id)['release'] === 'ongoing'
+                    && collect($cards)->firstWhere('id', $series->id)['progress_pct'] === 40
+                    && collect($cards)->firstWhere('id', $soon->id)['release'] === 'announced'
+                    && collect($cards)->firstWhere('id', $soon->id)['progress_pct'] === null
+                    && collect($cards)->firstWhere('id', $old->id)['progress_pct'] === 100)
+                ->loadDeferredProps('side', fn (Assert $reload) => $reload
+                    ->has('side.genres')
+                    ->where('side.countries', ['Японія'])
+                    ->has('side.popular.week')));
+
+        $this->actingAs($user)->get('/cinema?country=Японія')->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->where('total', 1));
+        $this->actingAs($user)->get('/cinema?release=announced')->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->where('total', 1)->where('movies.data.0.id', $soon->id));
+        $this->actingAs($user)->get('/cinema?sort=updated')->assertOk();
+    }
 }

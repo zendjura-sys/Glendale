@@ -1,6 +1,8 @@
 import { Head, InfiniteScroll, Link } from '@inertiajs/react';
 import { Bookmark } from 'lucide-react';
 import { CinemaNav } from '@/components/cinema/cinema-nav';
+import { CinemaShell } from '@/components/cinema/cinema-side';
+import type { CinemaSideData } from '@/components/cinema/cinema-side';
 import { ListCard } from '@/components/cinema/list-card';
 import type { MovieListCard } from '@/components/cinema/list-card';
 import { MovieList } from '@/components/cinema/movie-row';
@@ -19,6 +21,7 @@ type Props = {
     lists: MovieListCard[] | null;
     statuses: MovieOption<MovieStatus>[];
     counts: Record<string, number>;
+    side?: CinemaSideData;
 };
 
 /**
@@ -32,6 +35,7 @@ export default function CinemaMy({
     lists,
     statuses,
     counts,
+    side,
 }: Props) {
     const listsOn = usePlugin('movie_lists');
     const tabs = [
@@ -53,7 +57,7 @@ export default function CinemaMy({
     return (
         <>
             <Head title={tr('Закладки')} />
-            <div className="space-y-4">
+            <CinemaShell side={side}>
                 <CinemaNav active="my" />
                 <UnderlineTabs tabs={tabs} active={status} />
 
@@ -116,7 +120,7 @@ export default function CinemaMy({
                         </InfiniteScroll>
                     </section>
                 )}
-            </div>
+            </CinemaShell>
         </>
     );
 }

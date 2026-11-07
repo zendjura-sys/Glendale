@@ -5823,13 +5823,12 @@ html.gc-vk[data-theme='dark']
     display: none;
 }
 
-/* ===== Сторінка тайтлу кіно: телефон — постер по центру; широкий екран і горизонтальний сенсорний —
-   постер закріплений ліворуч (з кнопками «назад»/«додати»), уміст прокручується праворуч. ===== */
-.gc-title-aside,
-.gc-title-banner {
+/* ===== Сторінка тайтлу кіно: одна структура на всіх екранах (шапка, статуси, постер, таблиця);
+   горизонтальний сенсорний — постер закріплений ліворуч, уміст прокручується праворуч. ===== */
+.gc-title-aside {
     display: none;
 }
-@media (min-width: 1024px), (orientation: landscape) and (pointer: coarse) {
+@media (orientation: landscape) and (pointer: coarse) {
     .gc-title {
         display: grid;
         grid-template-columns: minmax(180px, 26%) minmax(0, 1fr);
@@ -5841,19 +5840,20 @@ html.gc-vk[data-theme='dark']
         position: sticky;
         top: calc(82px + env(safe-area-inset-top));
     }
-    .gc-title-poster {
+}
+/* Горизонтальний сенсорний екран: постер уже закріплений ліворуч — у верхньому блоці його не дублюємо. */
+.gc-title-desk {
+    margin-bottom: 1.25rem;
+}
+@media (orientation: landscape) and (pointer: coarse) {
+    .gc-td-poster {
         display: none;
     }
-    .gc-title-info {
-        margin-top: 0;
-        max-width: none;
+    .gc-td-grid {
+        grid-template-columns: minmax(0, 1fr) !important;
     }
 }
-@media (min-width: 1024px) {
-    .gc-title-banner {
-        display: block;
-    }
-}
+
 /* Горизонтальний телефон/планшет: постер на всю висоту екрана, «назад» і «додати» — поверх постера. */
 .gc-title-rail {
     display: none;
@@ -5871,8 +5871,10 @@ html.gc-vk[data-theme='dark']
         margin-inline: auto;
     }
     .gc-title-aside-in > :last-child {
-        max-height: calc(100dvh - 104px - env(safe-area-inset-top));
+        height: min(calc(100dvh - 104px - env(safe-area-inset-top)), 150vw);
         width: auto;
+        max-width: 100%;
+        aspect-ratio: 2 / 3;
         margin-inline: auto;
     }
     .gc-title-rail {
@@ -5894,4 +5896,17 @@ html.gc-vk[data-theme='dark']
         color: #fff;
         font-size: 0;
     }
+}
+
+/* Кінопортал на ПК: ширша оболонка — вміст і бічна колонка навігації/віджетів поруч. */
+@media (min-width: 1280px) {
+    :root.gc-vk:has(.gc-cinema-shell) {
+        --gc-shell-max: 1440px;
+    }
+}
+/* Кнопки дій під таблицею тайтлу — без рамок, м'яке тло. */
+.gc-flat-actions :is(button, a) {
+    border-color: transparent !important;
+    background-color: rgb(127 127 127 / 0.1) !important;
+    box-shadow: none !important;
 }

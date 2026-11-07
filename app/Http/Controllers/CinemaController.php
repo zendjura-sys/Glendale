@@ -14,6 +14,7 @@ use App\Models\User;
 use App\Services\Cinema\CinemaException;
 use App\Services\Cinema\CinemaPlayers;
 use App\Services\Cinema\CinemaService;
+use App\Services\Cinema\CinemaSidebar;
 use App\Services\Cinema\EpisodeGuide;
 use App\Services\Cinema\EpisodeMarks;
 use App\Services\Cinema\FlixcdnPlayer;
@@ -48,7 +49,7 @@ class CinemaController extends Controller
 
     public const PREVIEW_COMMENTS = 20;
 
-    public const SORTS = ['new', 'popular', 'rating', 'year'];
+    public const SORTS = ['new', 'updated', 'popular', 'rating', 'year'];
 
     public function __construct(
         private readonly CinemaService $cinema,
@@ -63,33 +64,54 @@ class CinemaController extends Controller
             'type' => ['nullable', Rule::in(array_keys(Movie::TYPES))],
             'genre' => ['nullable', 'string', 'max:60'],
             'year' => ['nullable', 'integer', 'min:1900', 'max:2100'],
+            'country' => ['nullable', 'string', 'max:60'],
+            'release' => ['nullable', Rule::in(array_keys(Movie::RELEASE))],
             'sort' => ['nullable', Rule::in(self::SORTS)],
             'q' => ['nullable', 'string', 'max:100'],
         ]);
         $sort = $filters['sort'] ?? 'new';
         $plugins = app(Plugins::class);
-        $filtered = filled($filters['type'] ?? null) || filled($filters['genre'] ?? null) || filled($filters['year'] ?? null) || filled($filters['q'] ?? null);
+        $filtered = filled($filters['type'] ?? null) || filled($filters['genre'] ?? null) || filled($filters['year'] ?? null)
+            || filled($filters['country'] ?? null) || filled($filters['release'] ?? null) || filled($filters['q'] ?? null);
 
         $catalog = Movie::query()->published()
             ->search($filters['q'] ?? null)
             ->when($filters['type'] ?? null, fn (Builder $q, string $type) => $q->where('type', $type))
             ->when($filters['year'] ?? null, fn (Builder $q, int $year) => $q->where('year', $year))
-            ->when($filters['genre'] ?? null, fn (Builder $q, string $genre) => $q->whereJsonContains('genres', $genre));
+            ->when($filters['genre'] ?? null, fn (Builder $q, string $genre) => $q->whereJsonContains('genres', $genre))
+            ->when($filters['country'] ?? null, fn (Builder $q, string $country) => $q->whereJsonContains('countries', $country))
+            ->when($filters['release'] ?? null, fn (Builder $q, string $release) => match ($release) {
+                'announced' => $q->where(fn (Builder $w) => $w->where('release_status', 'announced')->orWhere(fn (Builder $a) => $a->whereNull('release_status')->where('year', '>', now()->year))),
+                'ongoing' => $q->where(fn (Builder $w) => $w->where('release_status', 'ongoing')->orWhere(fn (Builder $a) => $a->whereNull('release_status')
+                    ->whereIn('type', ['serial', 'anime', 'cartoon', 'documentary'])->where('episodes_count', '>', 1)
+                    ->where('year', '>=', now()->year - 1)->where('updated_at', '>=', now()->subDays(30)))),
+                default => $q->where(fn (Builder $w) => $w->where('release_status', 'released')->orWhere(fn (Builder $a) => $a->whereNull('release_status')->where(fn (Builder $o) => $o->whereNull('year')->orWhere('year', '<=', now()->year)))),
+            });
 
         match ($sort) {
             'popular' => $catalog->orderByDesc('views_count'),
             'rating' => $catalog->orderByRaw('coalesce(rating_imdb, rating_tmdb, rating_shikimori, 0) desc'),
             'year' => $catalog->orderByDesc('year'),
+            'updated' => $catalog->orderByDesc('updated_at'),
             default => $catalog->orderByDesc('created_at'),
         };
         $page = $catalog->orderByDesc('id')->paginate(self::PER_PAGE)->withQueryString();
-        $page->setCollection($page->getCollection()->map(fn (Movie $m) => [...$m->toCard(), 'description' => $m->description]));
+        $byId = $page->getCollection()->keyBy('id');
+        $page->setCollection(collect($this->withProgress(array_values($page->getCollection()->map(fn (Movie $m) => $m->toCard())->all())))
+            ->map(fn (array $card) => [
+                ...$card,
+                'description' => $byId[$card['id']]->description,
+                'countries' => $byId[$card['id']]->countries ?? [],
+                'duration' => $byId[$card['id']]->duration,
+            ]));
 
         return Inertia::render('cinema/index', [
             'filters' => [
                 'type' => $filters['type'] ?? null,
                 'genre' => $filters['genre'] ?? null,
                 'year' => $filters['year'] ?? null,
+                'country' => $filters['country'] ?? null,
+                'release' => $filters['release'] ?? null,
                 'sort' => $sort,
                 'q' => $filters['q'] ?? '',
             ],
@@ -113,6 +135,11 @@ class CinemaController extends Controller
             'myCounts' => $this->myCounts($user),
             'requests' => $plugins->on('movie_request') ? MovieRequest::query()->where('user_id', $user->id)->latest('id')->limit(5)->pluck('title')->all() : [],
             'playback' => $this->playbackPrefs($user),
+            // Вкладки-каруселі головної: свіжі тайтли кожного популярного типу.
+            'byType' => $filtered ? [] : collect(['serial', 'movie', 'anime', 'cartoon'])
+                ->map(fn (string $type) => ['key' => $type, 'label' => Movie::TYPES[$type] ?? $type, 'movies' => $this->cards(Movie::query()->published()->where('type', $type)->latest('updated_at')->limit(12)->get())])
+                ->filter(fn (array $row) => $row['movies'] !== [])->values(),
+            'side' => Inertia::defer(fn () => app(CinemaSidebar::class)->data(), 'side'),
         ]);
     }
 
@@ -388,6 +415,7 @@ class CinemaController extends Controller
             'pinned' => is_array($pin = $viewer->pref('pin')) && ($pin['kind'] ?? null) === 'movie' && (int) ($pin['id'] ?? 0) === $movie->id,
             'playback' => $this->playbackPrefs($viewer),
             'inTopTen' => app(Plugins::class)->on('top_ten') && in_array($movie->id, array_map('intval', (array) $viewer->pref('top_ten', [])), true),
+            'side' => Inertia::defer(fn () => app(CinemaSidebar::class)->data(), 'side'),
         ]);
     }
 
@@ -437,6 +465,7 @@ class CinemaController extends Controller
             'lists' => $lists,
             'statuses' => $this->statusOptions(),
             'counts' => $this->myCounts($user),
+            'side' => Inertia::defer(fn () => app(CinemaSidebar::class)->data(), 'side'),
         ]);
     }
 
@@ -486,6 +515,7 @@ class CinemaController extends Controller
             'collections' => $collections,
             'comments' => $comments,
             'counts' => $this->myCounts($user),
+            'side' => Inertia::defer(fn () => app(CinemaSidebar::class)->data(), 'side'),
         ]);
     }
 
@@ -516,6 +546,7 @@ class CinemaController extends Controller
 
         return Inertia::render('cinema/schedule', [
             'days' => collect($days)->map(fn (array $items, int $day) => ['day' => $day, 'movies' => array_values(collect($items)->sortByDesc('last_at')->all())])->values(),
+            'side' => Inertia::defer(fn () => app(CinemaSidebar::class)->data(), 'side'),
         ]);
     }
 
@@ -775,6 +806,8 @@ class CinemaController extends Controller
             'description' => $m->description,
             'duration' => $m->duration,
             'genres' => array_slice($m->genres ?? [], 0, 4),
+            'countries' => array_slice($m->countries ?? [], 0, 2),
+            'trailer_url' => $m->trailer_url,
         ])->all());
     }
 
@@ -890,7 +923,40 @@ class CinemaController extends Controller
      */
     private function cards(Collection $movies): array
     {
-        return array_values($movies->map(fn (Movie $m) => $m->toCard())->all());
+        return $this->withProgress(array_values($movies->map(fn (Movie $m) => $m->toCard())->all()));
+    }
+
+    /**
+     * Бейдж «% переглянуто» на постері: переглянуто → 100; інакше відмічені серії / усі серії
+     * (або поточна серія); у списку без прогресу → 0; не в списках → null.
+     *
+     * @param  list<array<string, mixed>>  $cards
+     * @return list<array<string, mixed>>
+     */
+    private function withProgress(array $cards): array
+    {
+        $user = request()->user();
+        $ids = array_column($cards, 'id');
+        if ($user === null || $ids === []) {
+            return $cards;
+        }
+        $rows = DB::table('movie_user')->where('user_id', $user->id)->whereIn('movie_id', $ids)->get(['movie_id', 'status', 'episode'])->keyBy('movie_id');
+        $marks = DB::table('movie_episode_marks')->where('user_id', $user->id)->whereIn('movie_id', $ids)
+            ->selectRaw('movie_id, count(*) as total')->groupBy('movie_id')->pluck('total', 'movie_id');
+
+        return array_map(function (array $card) use ($rows, $marks) {
+            $row = $rows->get($card['id']);
+            $total = (int) ($card['episodes_count'] ?? 0);
+            $done = (int) ($marks[$card['id']] ?? 0) ?: (int) ($row->episode ?? 0);
+            $card['progress_pct'] = match (true) {
+                $row?->status === 'watched' => 100,
+                $total > 0 && $done > 0 => min(100, (int) round($done / $total * 100)),
+                $row !== null || $done > 0 => 0,
+                default => null,
+            };
+
+            return $card;
+        }, $cards);
     }
 
     /**
@@ -898,7 +964,7 @@ class CinemaController extends Controller
      */
     private function watching(User $user): array
     {
-        return array_values($this->listQuery($user, 'watching')->limit(12)->get()->map(function (Movie $movie) {
+        return $this->withProgress(array_values($this->listQuery($user, 'watching')->limit(12)->get()->map(function (Movie $movie) {
             $episode = $movie->getAttribute('my_episode');
             $season = $movie->getAttribute('my_season');
 
@@ -909,7 +975,7 @@ class CinemaController extends Controller
                     'episode' => (int) $episode,
                 ] : null,
             ];
-        })->all());
+        })->all()));
     }
 
     /**

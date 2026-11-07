@@ -8,6 +8,8 @@ import {
     SlidersHorizontal,
 } from 'lucide-react';
 import { CinemaNav } from '@/components/cinema/cinema-nav';
+import { CinemaShell } from '@/components/cinema/cinema-side';
+import type { CinemaSideData } from '@/components/cinema/cinema-side';
 import { Hero } from '@/components/cinema/hero';
 import { ListCard } from '@/components/cinema/list-card';
 import type { MovieListCard } from '@/components/cinema/list-card';
@@ -36,6 +38,7 @@ type Props = {
     watchingNow: MovieCard[];
     collections: MovieListCard[];
     comments: WeekComment[];
+    side?: CinemaSideData;
 };
 
 function SectionTitle({
@@ -75,6 +78,7 @@ export default function CinemaOverview({
     watchingNow,
     collections,
     comments,
+    side,
 }: Props) {
     const listsOn = usePlugin('movie_lists');
     const tiles = [
@@ -94,7 +98,7 @@ export default function CinemaOverview({
     return (
         <>
             <Head title={tr('Огляд кіно')} />
-            <div className="space-y-6">
+            <CinemaShell side={side}>
                 <CinemaNav active="overview" />
                 {featured.length > 0 && <Hero items={featured} />}
 
@@ -212,7 +216,7 @@ export default function CinemaOverview({
                         </div>
                     </section>
                 )}
-            </div>
+            </CinemaShell>
         </>
     );
 }

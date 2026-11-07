@@ -6,16 +6,23 @@ import {
     MessageSquareQuote,
     Bookmark,
     Film,
-    Play,
     SlidersHorizontal,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import {
-    MovieTile,
-    PosterRow,
-    movieGridClass,
-} from '@/components/cinema/movie-tile';
+import { MovieTile, movieGridClass } from '@/components/cinema/movie-tile';
 import { CinemaNav } from '@/components/cinema/cinema-nav';
+import { CinemaShell } from '@/components/cinema/cinema-side';
+import type { CinemaSideData } from '@/components/cinema/cinema-side';
+import { ContinueRow, Hero } from '@/components/cinema/hero';
+import {
+    MovieDetailRow,
+    SortSegments,
+    TypeCarousel,
+    ViewToggle,
+    useCatalogView,
+} from '@/components/cinema/home-blocks';
+import type { DetailMovie } from '@/components/cinema/home-blocks';
+import { releaseLabel } from '@/components/cinema/poster-badges';
 import { MovieList } from '@/components/cinema/movie-row';
 import type { MovieRowItem } from '@/components/cinema/movie-row';
 import { UnderlineTabs } from '@/components/gc/underline-tabs';
@@ -36,7 +43,9 @@ type Filters = {
     type: MovieType | null;
     genre: string | null;
     year: number | null;
-    sort: 'new' | 'popular' | 'rating' | 'year';
+    country: string | null;
+    release: MovieCard['release'] | null;
+    sort: 'new' | 'updated' | 'popular' | 'rating' | 'year';
     q: string;
 };
 
@@ -47,6 +56,8 @@ type Props = {
     total: number;
     featured: MovieFeatured[];
     rows: { key: string; title: string; movies: MovieCard[] }[];
+    byType: { key: string; label: string; movies: MovieCard[] }[];
+    side?: CinemaSideData;
     types: MovieOption<MovieType>[];
     typeCounts: Partial<Record<MovieType, number>>;
     genres: { name: string; count: number }[];
@@ -111,6 +122,7 @@ function TmdbLookup({ query }: { query: string }) {
 }
 
 const sorts: { key: Filters['sort']; label: string }[] = [
+    { key: 'updated', label: tr('Нещодавно оновлені') },
     { key: 'new', label: tr('Нові на сайті') },
     { key: 'popular', label: tr('Популярні') },
     { key: 'rating', label: tr('За рейтингом') },
@@ -122,7 +134,10 @@ export default function CinemaIndex({
     filtered,
     movies,
     total,
+    featured,
     rows,
+    byType,
+    side,
     types,
     typeCounts,
     genres,
@@ -137,6 +152,7 @@ export default function CinemaIndex({
     const rouletteOn = usePlugin('movie_roulette');
     const listsOn = usePlugin('movie_lists');
     const reviewsOn = usePlugin('movie_reviews');
+    const [view, setView] = useCatalogView();
 
     const apply = (patch: Partial<Filters>) => {
         const next = { ...filters, q: search, ...patch };
@@ -146,6 +162,8 @@ export default function CinemaIndex({
                 type: next.type ?? undefined,
                 genre: next.genre ?? undefined,
                 year: next.year ?? undefined,
+                country: next.country ?? undefined,
+                release: next.release ?? undefined,
                 sort: next.sort === 'new' ? undefined : next.sort,
                 q: next.q || undefined,
             },
@@ -188,13 +206,17 @@ export default function CinemaIndex({
     return (
         <>
             <Head title={tr('Кіно')} />
-            <div className="space-y-4">
+            <CinemaShell side={side}>
                 <CinemaNav
                     active="home"
                     search={search}
                     onSearch={setSearch}
                     placeholder={tr('Назва фільму, серіалу чи аніме')}
                 />
+                {!filtered && <Hero items={featured} />}
+                {!filtered && byType.length > 0 && (
+                    <TypeCarousel groups={byType} />
+                )}
 
                 <UnderlineTabs
                     active={filters.type ?? 'all'}
@@ -279,6 +301,36 @@ export default function CinemaIndex({
                     </div>
                 )}
 
+                {(filters.country ||
+                    filters.release ||
+                    filters.genre ||
+                    filters.year) && (
+                    <div className="flex flex-wrap gap-2">
+                        {(
+                            [
+                                ['genre', filters.genre],
+                                ['year', filters.year],
+                                ['country', filters.country],
+                                ['release', releaseLabel(filters.release)],
+                            ] as const
+                        )
+                            .filter(([, v]) => v)
+                            .map(([key, value]) => (
+                                <button
+                                    key={key}
+                                    type="button"
+                                    onClick={() => apply({ [key]: null })}
+                                    className="gc-chip"
+                                >
+                                    {value}
+                                    <span aria-hidden className="text-white/45">
+                                        ×
+                                    </span>
+                                </button>
+                            ))}
+                    </div>
+                )}
+
                 {!filtered && (
                     <div className="scrollbar-none flex gap-2 overflow-x-auto">
                         {listsOn && (
@@ -312,17 +364,12 @@ export default function CinemaIndex({
                 )}
 
                 {!filtered && continueRow && continueRow.movies.length > 0 && (
-                    <PosterRow
-                        title={
-                            <span className="inline-flex items-center gap-2">
-                                <Play className="size-4 fill-current" />
-                                {continueRow.title}
-                            </span>
-                        }
+                    <ContinueRow
+                        title={continueRow.title}
                         action={
                             <Link
                                 href="/cinema/my?status=history"
-                                className="text-xs font-medium text-[var(--vkui--color_text_accent)]"
+                                className="text-xs font-medium text-primary"
                             >
                                 {tr('Усі')}
                             </Link>
@@ -350,12 +397,46 @@ export default function CinemaIndex({
                     />
                 ) : (
                     <section className="glass rounded-2xl p-4 sm:p-5">
+                        <div className="mb-4 flex items-center gap-3">
+                            <h2 className="font-display text-lg font-semibold text-white max-sm:hidden">
+                                {filtered ? tr('Знайдено') : tr('Каталог')}
+                                <span className="ml-2 text-sm font-normal text-white/40 tabular-nums">
+                                    {total}
+                                </span>
+                            </h2>
+                            <div className="min-w-0 flex-1 sm:flex sm:justify-end">
+                                <SortSegments
+                                    items={sorts.slice(0, 4)}
+                                    active={filters.sort}
+                                    onChange={(sort) => apply({ sort })}
+                                />
+                            </div>
+                            <span className="max-sm:hidden">
+                                <ViewToggle view={view} onChange={setView} />
+                            </span>
+                        </div>
                         <InfiniteScroll
                             data="movies"
                             loading={<GridSkeleton count={4} />}
                             preserveUrl
                         >
-                            <MovieList movies={movies.data as MovieRowItem[]} />
+                            {view === 'list' ? (
+                                <div className="hidden space-y-6 sm:block">
+                                    {(movies.data as DetailMovie[]).map(
+                                        (movie) => (
+                                            <MovieDetailRow
+                                                key={movie.id}
+                                                movie={movie}
+                                            />
+                                        ),
+                                    )}
+                                </div>
+                            ) : null}
+                            <div className={view === 'list' ? 'sm:hidden' : ''}>
+                                <MovieList
+                                    movies={movies.data as MovieRowItem[]}
+                                />
+                            </div>
                         </InfiniteScroll>
                     </section>
                 )}
@@ -402,7 +483,7 @@ export default function CinemaIndex({
                         )}
                     </form>
                 )}
-            </div>
+            </CinemaShell>
         </>
     );
 }

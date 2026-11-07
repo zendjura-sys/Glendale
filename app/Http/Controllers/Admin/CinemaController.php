@@ -614,7 +614,7 @@ class CinemaController extends Controller
             'movie' => $movie ? [
                 ...$movie->toCard(),
                 ...$movie->only([
-                    'tagline', 'trailer_url', 'rating_tmdb', 'tmdb_id', 'origin', 'description', 'poster_url', 'backdrop_url', 'countries', 'duration', 'age_rating', 'rating_imdb', 'rating_shikimori',
+                    'tagline', 'trailer_url', 'rating_tmdb', 'tmdb_id', 'origin', 'description', 'poster_url', 'backdrop_url', 'countries', 'duration', 'age_rating', 'release_status', 'rating_imdb', 'rating_shikimori',
                     'imdb_id', 'shikimori_id', 'is_published', 'is_featured', 'comments_enabled', 'views_count', 'watchers_count',
                     'comments_count', 'ratings_count',
                 ]),
@@ -649,6 +649,7 @@ class CinemaController extends Controller
             'countries.*' => ['string', 'max:60'],
             'duration' => ['nullable', 'integer', 'min:1', 'max:1500'],
             'age_rating' => ['nullable', 'string', 'max:10'],
+            'release_status' => ['nullable', Rule::in(array_keys(Movie::RELEASE))],
             'rating_imdb' => ['nullable', 'numeric', 'between:0,10'],
             'rating_shikimori' => ['nullable', 'numeric', 'between:0,10'],
             'rating_tmdb' => ['nullable', 'numeric', 'between:0,10'],

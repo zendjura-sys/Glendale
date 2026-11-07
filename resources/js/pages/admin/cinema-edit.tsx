@@ -25,6 +25,7 @@ import { tr } from '@/lib/i18n';
 import { SpellcheckTextarea } from '@/components/gc/spellcheck';
 
 type EditableMovie = MovieCard & {
+    release_status: string | null;
     tagline: string | null;
     trailer_url: string | null;
     description: string | null;
@@ -108,6 +109,7 @@ export default function AdminCinemaEdit({
         countries: (movie?.countries ?? []).join(', '),
         duration: movie?.duration ?? '',
         age_rating: movie?.age_rating ?? '',
+        release_status: movie?.release_status ?? '',
         rating_imdb: movie?.rating_imdb ?? '',
         rating_tmdb: movie?.rating_tmdb ?? '',
         rating_shikimori: movie?.rating_shikimori ?? '',
@@ -411,6 +413,34 @@ export default function AdminCinemaEdit({
                                     }
                                     placeholder="16+"
                                 />
+                            </Field>
+                            <Field
+                                label={tr('Статус виходу')}
+                                error={errors.release_status}
+                            >
+                                <select
+                                    className={field}
+                                    value={data.release_status}
+                                    onChange={(e) =>
+                                        setData(
+                                            'release_status',
+                                            e.target.value,
+                                        )
+                                    }
+                                >
+                                    <option value="">
+                                        {tr('Автоматично')}
+                                    </option>
+                                    <option value="announced">
+                                        {tr('Анонс')}
+                                    </option>
+                                    <option value="ongoing">
+                                        {tr('Виходить')}
+                                    </option>
+                                    <option value="released">
+                                        {tr('Завершено')}
+                                    </option>
+                                </select>
                             </Field>
                         </div>
                         <Field label={tr('Трейлер')} error={errors.trailer_url}>
