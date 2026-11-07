@@ -12,6 +12,8 @@ import {
 } from 'lucide-react';
 import { DonationJarCard } from '@/components/gc/donation-jar';
 import type { DonationJar } from '@/components/gc/donation-jar';
+import { FamilyChatCard } from '@/components/families/family-chat-card';
+import type { FamilyChatData } from '@/components/families/family-chat-card';
 import { FamilyShell } from '@/components/families/family-shell';
 import { InviteLinkButton } from '@/components/gc/invite-link';
 import { VoiceRooms } from '@/components/gc/voice-rooms';
@@ -59,6 +61,8 @@ type Props = FamilyShellProps & {
         unit: string | null;
     }[];
     activity: AuditEntry[];
+    /** Чат сім’ї: сьогодні, останні повідомлення, ШІ-підсумок. */
+    chat?: FamilyChatData | null;
     /** Банка Monobank сім’ї (відкладений проп). */
     donation?: DonationJar | null;
 };
@@ -117,6 +121,10 @@ export default function FamilyOverview(props: Props) {
                 href={`/f/${family.slug}`}
             />
             <ListenRoomButton group="family" id={family.id} />
+
+            {props.chat && (
+                <FamilyChatCard chat={props.chat} tag={family.tag} />
+            )}
 
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
                 <div className="space-y-4">

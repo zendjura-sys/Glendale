@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Http\Middleware\HandleInertiaRequests;
 use App\Models\Conversation;
 use App\Models\ConversationParticipant;
 use App\Models\Family;
@@ -136,6 +137,29 @@ class FamiliesTest extends TestCase
         $this->assertSame(count(FamilyItem::STARTER), $family->items()->count());
         $this->assertTrue(FamilyAuditLog::query()->where('family_id', $family->id)->where('action', 'FAMILY_CREATE')->exists());
         $this->assertNull($family->conversation_id);
+    }
+
+    public function test_overview_shows_family_chat_card_with_rp_names(): void
+    {
+        $conversation = Conversation::query()->findOrFail($this->family->conversation_id);
+        $conversation->messages()->create(['user_id' => $this->leaderUser->id, 'type' => Message::TYPE_TEXT, 'body' => "Збір о 21:30\nбіля особняка"]);
+
+        $this->actingAs($this->leaderUser)
+            ->get(route('families.show', $this->family), [
+                'X-Inertia' => 'true',
+                'X-Inertia-Version' => app(HandleInertiaRequests::class)->version(request()),
+                'X-Inertia-Partial-Component' => 'families/overview',
+                'X-Inertia-Partial-Data' => 'chat',
+            ])
+            ->assertOk()
+            ->assertJsonPath('props.chat.id', $conversation->id)
+            ->assertJsonPath('props.chat.today', 1)
+            ->assertJsonPath('props.chat.latest.0.name', 'Marco_Scaletta [10001]')
+            ->assertJsonPath('props.chat.latest.0.body', 'Збір о 21:30 біля особняка');
+
+        // Не учасник чату — картки немає (публічна сторінка сім'ї).
+        $this->actingAs(User::factory()->create())->get(route('families.show', $this->family))->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->missing('chat'));
     }
 
     public function test_verification_opens_family_chat_with_rp_names(): void

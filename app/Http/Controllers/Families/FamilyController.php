@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Families;
 
+use App\Models\Conversation;
 use App\Models\Family;
 use App\Models\FamilyAuditLog;
 use App\Models\FamilyEvent;
@@ -9,12 +10,14 @@ use App\Models\FamilyItem;
 use App\Models\FamilyMember;
 use App\Models\FamilyTransaction;
 use App\Models\GtaServer;
+use App\Models\Message;
 use App\Models\User;
 use App\Services\Donations\MonobankJar;
 use App\Services\Families\FamilyRating;
 use App\Services\Families\FamilyService;
 use App\Services\Families\MemberStats;
 use App\Services\ImageStorage;
+use App\Support\Modules\ModuleManager;
 use App\Support\Plugins\Plugins;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
@@ -124,6 +127,8 @@ class FamilyController extends FamilyBaseController
 
         return $this->page($family, $member, 'families/overview', 'overview', [
             'donation' => Inertia::defer(fn () => app(MonobankJar::class)->card($family->donation_jar, $family->donation_note)),
+            // Чат сім'ї на огляді: скільки написали сьогодні, останні повідомлення й ШІ-підсумок.
+            'chat' => fn () => $this->chatCard($request->user(), $family),
             'stats' => $stats->overview($family, $member),
             'leaders' => array_slice($rating->leaderboard($family, 'week'), 0, 5),
             'events' => FamilyEvent::query()->where('family_id', $family->id)
@@ -141,6 +146,39 @@ class FamilyController extends FamilyBaseController
                     ->map(fn (FamilyAuditLog $l) => FamilyAuditController::entry($l))
                 : [],
         ]);
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function chatCard(User $user, Family $family): ?array
+    {
+        if ($family->conversation_id === null || ! app(ModuleManager::class)->enabled('messages')) {
+            return null;
+        }
+        $conversation = Conversation::query()->find($family->conversation_id);
+        if (! $conversation instanceof Conversation || $conversation->participantFor($user) === null) {
+            return null;
+        }
+        $texts = Message::query()->where('conversation_id', $conversation->id)
+            ->where('type', Message::TYPE_TEXT)->whereNotNull('body')->whereNull('publish_at');
+        $latest = (clone $texts)->with('user')->latest('id')->limit(3)->get()->reverse()->values();
+        // Як у самому чаті: RP-нік [static], а не справжнє ім'я.
+        $nicks = FamilyMember::query()->where('family_id', $family->id)
+            ->whereIn('user_id', $latest->pluck('user_id')->filter()->all())->get()
+            ->mapWithKeys(fn (FamilyMember $m) => [$m->user_id => $m->displayName()]);
+
+        return [
+            'id' => $conversation->id,
+            'today' => (clone $texts)->where('created_at', '>=', now('Europe/Kyiv')->startOfDay())->count(),
+            'latest' => $latest->map(fn (Message $m) => [
+                'id' => $m->id,
+                'name' => (string) ($nicks[$m->user_id] ?? $m->user->name ?? 'Учасник'),
+                'body' => Str::limit(str_replace("\n", ' ', (string) $m->body), 160),
+                'at' => $m->created_at->toIso8601String(),
+            ])->all(),
+            'ai' => app(Plugins::class)->on('ai_summary'),
+        ];
     }
 
     public function apply(Request $request, Family $family, FamilyService $families): RedirectResponse

@@ -9,6 +9,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'api.dart';
 import 'core/widgets/arctic_glass/arctic_glass.dart';
+import 'family_chat_card.dart';
 import 'family_tabs.dart';
 import 'feed.dart';
 import 'posts.dart';
@@ -985,6 +986,7 @@ List<Widget> overviewTab(FamilyContext ctx, {required VoidCallback onReport, req
       route: '/families/${ctx.slug}',
     ),
     ListenRoomPanel(key: ValueKey('listen-family-${family['id']}'), type: 'family', id: intOf(family['id'])),
+    if (data['chat'] is Map) FamilyChatCard(key: ValueKey('family-chat-${family['id']}'), chat: mapOf(data['chat']), tag: text(family['tag']) ?? ''),
     Row(children: [
       Expanded(child: MetricTile(caps: true, label: tr('Заробив за тиждень'), value: hryvniaShort(stats['week_earned']), icon: LucideIcons.trendingUp, color: green)),
       const SizedBox(width: 8),
@@ -1003,8 +1005,8 @@ List<Widget> overviewTab(FamilyContext ctx, {required VoidCallback onReport, req
         Container(
           width: 52,
           height: 52,
-          decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color(0xFFF59E0B), Color(0xFFEF4444)]), borderRadius: BorderRadius.circular(16)),
-          child: const Icon(LucideIcons.filePlus, color: Colors.white),
+          decoration: BoxDecoration(color: const Color(0xFFFBBF24).withValues(alpha: 0.15), borderRadius: BorderRadius.circular(16)),
+          child: const Icon(LucideIcons.filePlus, color: Color(0xFFFBBF24)),
         ),
         const SizedBox(width: 12),
         Expanded(
