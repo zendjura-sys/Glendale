@@ -131,9 +131,9 @@ void main() {
           if (open) {
             await tester.tap(find.bySemanticsLabel('Меню'));
             await tester.pumpAndSettle(const Duration(milliseconds: 100));
-            // Меню розділів — категоріями, без повторів плиток угорі.
-            expect(find.text('Нижня панель'), findsOneWidget);
-            expect(find.text('Для гравців'), findsOneWidget);
+            // Меню Bento Hub: ігровий хаб, медіа, «Ще розділи» й системний акордеон.
+            expect(find.text('Ще розділи'), findsOneWidget);
+            expect(find.text('Система'), findsOneWidget);
           }
           Future<void> shot(String name) async {
             if (out == null) return;
@@ -148,7 +148,7 @@ void main() {
           await shot(label);
           if (open) {
             // Друга половина меню — прокрутка вниз.
-            final menu = tester.state<ScrollableState>(find.ancestor(of: find.text('Для гравців'), matching: find.byType(Scrollable)).first);
+            final menu = tester.state<ScrollableState>(find.ancestor(of: find.text('Ще розділи'), matching: find.byType(Scrollable)).first);
             menu.position.jumpTo(menu.position.maxScrollExtent);
             await tester.pumpAndSettle(const Duration(milliseconds: 100));
             await shot('$label-more');

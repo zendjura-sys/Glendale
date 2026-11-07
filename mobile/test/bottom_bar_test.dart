@@ -158,7 +158,7 @@ void main() {
       await tester.tap(menu);
       await settle();
       expect(find.byType(MenuContent), findsOneWidget);
-      expect(find.text('Налаштування'), findsWidgets);
+      expect(find.text('Система'), findsWidgets);
       Navigator.of(tester.element(find.byType(MenuContent))).pop();
       await settle();
       expect(find.byType(MenuContent), findsNothing);

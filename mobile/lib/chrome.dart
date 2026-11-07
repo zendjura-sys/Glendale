@@ -14,7 +14,6 @@ import 'language_picker.dart';
 import 'nav_items.dart';
 import 'plus.dart';
 import 'shell.dart';
-import 'alerts.dart';
 import 'state.dart';
 import 'subscription.dart';
 import 'theme.dart';
@@ -142,7 +141,8 @@ class TopBar extends StatelessWidget {
               ],
               iconButton(LucideIcons.bell, tr('Сповіщення'), () => showNotifications(context, session), badge: session.unreadNotifications),
               SizedBox(width: 2),
-              _UserMenu(session: session, player: player, me: me ?? const {}, wide: wide),
+              // На телефоні профіль і все з цього меню — у «Меню» нижньої панелі (без дублів).
+              if (wide) _UserMenu(session: session, player: player, me: me ?? const {}, wide: wide),
             ],
           ),
         ),
@@ -736,7 +736,10 @@ class _IslandNavState extends State<IslandNav> {
 }
 
 /// Вміст розгорнутого острова: профіль, GameCon+, решта розділів і службові посилання — пласко, без плиток.
-class MenuContent extends StatelessWidget {
+/// Меню «Bento Hub» — як на сайті: профіль і GameCon+, інформер тривог, ігровий хаб
+/// (штаб сім'ї й казна, плитки 2×2), медіа 1×4, «Ще розділи» й системний акордеон.
+/// Поверхні суцільні: картки #0B1220, вкладене #121D31 (світла тема — білі й #F1F5F9).
+class MenuContent extends StatefulWidget {
   const MenuContent({required this.session, required this.player, required this.path, required this.rest, required this.onGo, required this.onClose, super.key});
   final Session session;
   final TrackPlayer player;
@@ -746,110 +749,322 @@ class MenuContent extends StatelessWidget {
   final VoidCallback onClose;
 
   @override
-  Widget build(BuildContext context) {
-    final me = session.me ?? const {};
-    Widget row(IconData icon, String label, VoidCallback onTap, {Color? color}) {
-      // Рядки меню з'являються каскадом під час розгортання й пружно стискаються від дотику.
-      return ArcticCascade(
-        child: ArcticPressable(
-          onTap: onTap,
-          child: ConstrainedBox(
-            constraints: BoxConstraints(minHeight: 44),
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 8),
-              child: Row(children: [
-                Icon(icon, size: 19, color: color ?? ink.withValues(alpha: 0.5)),
-                SizedBox(width: 12),
-                Expanded(child: Text(label, style: body(15, color: color ?? ink.withValues(alpha: 0.85), weight: FontWeight.w500))),
-              ]),
-            ),
-          ),
+  State<MenuContent> createState() => _MenuContentState();
+}
+
+class _MenuContentState extends State<MenuContent> {
+  Map<String, dynamic>? hub;
+  bool more = false;
+  bool system = false;
+
+  Color get _l1 => palette.isLight ? Colors.white : const Color(0xFF0B1220);
+  Color get _l2 => palette.isLight ? const Color(0xFFF1F5F9) : const Color(0xFF121D31);
+  static const _sky = Color(0xFF38BDF8);
+  static const _emerald = Color(0xFF34D399);
+  static const _amber = Color(0xFFFBBF24);
+  static const _cyan = Color(0xFF22D3EE);
+  static const _red = Color(0xFFF87171);
+
+  @override
+  void initState() {
+    super.initState();
+    widget.session.api.get(Api.site('/me/hub')).then((d) {
+      if (mounted) setState(() => hub = mapOf(d));
+    }).catchError((_) {});
+  }
+
+  bool _on(String module) => widget.session.modules?.contains(module) ?? true;
+
+  Widget _block(Widget child) => Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(color: _l1, borderRadius: BorderRadius.circular(18)),
+        child: child,
+      );
+
+  Widget _inner({required Widget child, required VoidCallback onTap, EdgeInsets padding = const EdgeInsets.all(12)}) => ArcticPressable(
+        onTap: onTap,
+        scale: 0.96,
+        child: Container(
+          padding: padding,
+          decoration: BoxDecoration(color: _l2, borderRadius: BorderRadius.circular(14)),
+          child: child,
         ),
       );
-    }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        ArcticPressable(
-          onTap: () => onGo('/profile'),
+  Widget _tile(IconData icon, Color tone, String title, String hint, String path) => _inner(
+        onTap: () => widget.onGo(path),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Icon(icon, size: 22, color: tone),
+          const SizedBox(height: 10),
+          Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(13.5, weight: FontWeight.w700)),
+          Text(hint, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(11.5, color: muted)),
+        ]),
+      );
+
+  Widget _row(IconData icon, String label, VoidCallback onTap, {Color? color}) => ArcticPressable(
+        onTap: onTap,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 44),
           child: Padding(
-            padding: EdgeInsets.all(8),
+            padding: const EdgeInsets.symmetric(horizontal: 8),
             child: Row(children: [
-              Avatar(url: text(me['avatar_url']), name: text(me['name']) ?? tr('Я'), size: 44, online: true, frame: PlusMark.from(session.subscription.style)?.frame),
-              SizedBox(width: 12),
-              Expanded(
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  PlusNameRow(user: {...me, 'plus': session.subscription.style}, style: body(15, weight: FontWeight.w600), animate: true),
-                  Text('@${session.username ?? ''}', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: faint)),
-                ]),
-              ),
+              Icon(icon, size: 19, color: color ?? muted),
+              const SizedBox(width: 12),
+              Expanded(child: Text(label, style: body(15, color: color ?? ink.withValues(alpha: 0.85), weight: FontWeight.w500))),
             ]),
           ),
         ),
-        Padding(padding: EdgeInsets.symmetric(vertical: 8), child: PlusMenuCard(subscription: session.subscription, onTap: () {
-          onClose();
-          showProFeatures(context);
-        })),
-        // Мапа тривог — одразу під GameCon+ (кому показувати, вирішує сервер: user.air_alerts у /me).
-        if (session.me?['air_alerts'] == true)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: AlertMapButton(onTap: () => onGo('/alerts')),
-          ),
-        GridView.count(
-          crossAxisCount: 4,
-          shrinkWrap: true,
-          padding: EdgeInsets.zero,
-          physics: NeverScrollableScrollPhysics(),
-          mainAxisSpacing: 4,
-          childAspectRatio: 1.05,
-          children: [
-            for (final item in rest)
-              Builder(builder: (context) {
-                final active = _isActive(item.path, path, session.username);
-                final badge = item.path == '/messages' ? session.unreadChats : 0;
-                return ArcticCascade(
-                  child: ArcticPressable(
-                  onTap: () => onGo(item.path),
-                  scale: 0.92,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Stack(clipBehavior: Clip.none, children: [
-                        Icon(active ? item.activeIcon : item.icon, size: 24, color: active ? primary : accent),
-                        if (badge > 0) Positioned(right: -10, top: -4, child: _Badge(badge)),
-                      ]),
-                      SizedBox(height: 6),
-                      Text(item.label, textAlign: TextAlign.center, maxLines: 2, style: body(12, color: active ? primary : ink.withValues(alpha: 0.8), weight: FontWeight.w500).copyWith(height: 1.15)),
-                    ],
-                  ),
-                  ),
-                );
-              }),
-          ],
-        ),
-        // Решта — категоріями: компактна сітка у дві колонки замість довгого списку.
-        // Розділи, що вже стоять плитками вгорі, тут не повторюються.
-        for (final group in _menuGroups(context, session, rest, onGo, onClose))
-          if (group.items.isNotEmpty) _MenuGroup(title: group.title, items: group.items),
-        Padding(
-          padding: EdgeInsets.fromLTRB(4, 6, 4, 2),
-          child: Column(children: [
-            row(
-              palette.isLight ? LucideIcons.moon : LucideIcons.sun,
-              palette.isLight ? tr('Темна тема «Неоновий синій»') : tr('Світла тема «Крижана Арктика»'),
-              () => session.setTheme(ThemeController.instance.isLight ? 'dark' : 'light'),
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    final session = widget.session;
+    final me = session.me ?? const {};
+    final sub = session.subscription;
+    final until = sub.proExpiresAt;
+    final plus = sub.isPro;
+    final days = until == null ? 0 : math.max(0, until.difference(DateTime.now()).inHours ~/ 24 + 1);
+    final family = mapOf(hub?['family']);
+    final alerts = mapOf(hub?['alerts']);
+    final alertCount = intOf(alerts['active_count']);
+    final region = mapOf(alerts['region']);
+    // Посилання на профіль — лише одне: якщо «Сторінка» вже в нижній панелі, тут просто картка.
+    final profilePinned = !widget.rest.any((i) => i.path == '/profile');
+    const hubPaths = {'/profile', '/servers', '/clans', '/party', '/games', '/music', '/cinema', '/communities', '/photos', '/phone', '/families'};
+    final restSections = widget.rest.where((i) => !hubPaths.contains(i.path)).toList();
+
+    final identity = Row(children: [
+      Avatar(url: text(me['avatar_url']), name: text(me['name']) ?? tr('Я'), size: 46, online: true, frame: PlusMark.from(sub.style)?.frame),
+      const SizedBox(width: 12),
+      Expanded(
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            Flexible(child: PlusNameRow(user: {...me, 'plus': sub.style}, style: body(15, weight: FontWeight.w700), animate: true)),
+            if (session.isAdmin) const Padding(padding: EdgeInsets.only(left: 4), child: Icon(LucideIcons.shieldCheck, size: 14, color: _amber)),
+          ]),
+          Text('@${session.username ?? ''}', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: muted)),
+        ]),
+      ),
+    ]);
+
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      // 1. Профіль і GameCon+
+      _block(Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        profilePinned ? Padding(padding: const EdgeInsets.all(4), child: identity) : ArcticPressable(onTap: () => widget.onGo('/profile'), child: Padding(padding: const EdgeInsets.all(4), child: identity)),
+        const SizedBox(height: 8),
+        _inner(
+          padding: const EdgeInsets.fromLTRB(10, 8, 8, 8),
+          onTap: () {
+            widget.onClose();
+            showProFeatures(context);
+          },
+          child: Row(children: [
+            Container(
+              width: 30,
+              height: 30,
+              decoration: BoxDecoration(color: const Color(0xFF0EA5E9), borderRadius: BorderRadius.circular(9)),
+              child: const Icon(LucideIcons.plus, size: 17, color: Colors.white),
             ),
-            Padding(padding: EdgeInsets.symmetric(horizontal: 8, vertical: 6), child: LanguagePicker(api: session.api)),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text('GameCon+', style: body(13.5, weight: FontWeight.w700)),
+                Text(plus ? tr('Ще {n} дн.', {'n': '$days'}) : tr('Рамки, ник, теми й більше'), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(11.5, color: muted)),
+              ]),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(color: plus ? _emerald.withValues(alpha: 0.15) : fg.withValues(alpha: 0.07), borderRadius: BorderRadius.circular(20)),
+              child: Text(plus ? tr('Активний') : tr('Не активний'), style: body(11, color: plus ? _emerald : muted, weight: FontWeight.w600)),
+            ),
+            const SizedBox(width: 6),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(color: palette.isLight ? const Color(0xFFE0F2FE) : const Color(0xFF0B2942), borderRadius: BorderRadius.circular(10)),
+              child: Text(plus ? tr('Продовжити') : tr('Оформити'), style: body(12, color: palette.isLight ? const Color(0xFF0284C7) : _sky, weight: FontWeight.w700)),
+            ),
           ]),
         ),
-        row(LucideIcons.logOut, tr('Вийти'), () {
-          onClose();
-          signOut(session, player);
-        }, color: dangerSoft),
-      ],
-    );
+      ])),
+
+      // 2. Інформер тривог (лише для України — вирішує сервер)
+      if (session.me?['air_alerts'] == true)
+        _block(ArcticPressable(
+          onTap: () => widget.onGo('/alerts'),
+          child: Row(children: [
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(color: (alertCount > 0 ? _red : _emerald).withValues(alpha: 0.15), borderRadius: BorderRadius.circular(12)),
+              child: Icon(LucideIcons.siren, size: 21, color: alertCount > 0 ? _red : _emerald),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(alertCount > 0 ? tr('Тривога в {n} обл.', {'n': '$alertCount'}) : tr('Тривог немає'), style: body(14.5, weight: FontWeight.w700)),
+                Text(
+                  region.isEmpty
+                      ? tr('Оберіть свій регіон на мапі')
+                      : region['active'] == true
+                          ? tr('{name}: тривога', {'name': '${region['name']}'})
+                          : tr('{name}: спокійно', {'name': '${region['name']}'}),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: body(12, color: muted),
+                ),
+              ]),
+            ),
+            Icon(LucideIcons.chevronRight, size: 18, color: muted),
+          ]),
+        )),
+
+      // 3. Ігровий хаб і RP
+      _block(Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        if (_on('families'))
+          _inner(
+            onTap: () => widget.onGo(family.isEmpty ? '/families' : '/families/${family['slug']}'),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              Row(children: [
+                const Icon(LucideIcons.shieldHalf, size: 18, color: _sky),
+                const SizedBox(width: 8),
+                Expanded(child: Text(tr('Штаб сім’ї & Казна'), style: body(13.5, weight: FontWeight.w700))),
+                if (family.isNotEmpty) Flexible(child: Text('${family['name']}', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: muted))) else Icon(LucideIcons.chevronRight, size: 18, color: muted),
+              ]),
+              const SizedBox(height: 10),
+              if (family.isEmpty)
+                Text(tr('Знайдіть сім’ю або створіть свою'), style: body(12, color: muted))
+              else
+                Row(children: [
+                  for (final (icon, tone, value, label) in [
+                    (LucideIcons.coins, _amber, '${family['treasury']}', tr('Казна')),
+                    (LucideIcons.package, intOf(family['low_stock']) > 0 ? _amber : _emerald, '${family['items']}', intOf(family['low_stock']) > 0 ? tr('Закінчується: {n}', {'n': '${family['low_stock']}'}) : tr('Склад у нормі')),
+                    (LucideIcons.fileCheck, _cyan, '${family['pending_reports']}', tr('Звітів на перевірці')),
+                  ])
+                    Expanded(
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 3),
+                        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                        decoration: BoxDecoration(color: palette.isLight ? const Color(0xFFE2E8F0) : const Color(0xFF18263F), borderRadius: BorderRadius.circular(10)),
+                        child: Column(children: [
+                          Icon(icon, size: 16, color: tone),
+                          const SizedBox(height: 4),
+                          Text(value, style: body(14, weight: FontWeight.w800)),
+                          Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: TextAlign.center, style: body(10, color: muted)),
+                        ]),
+                      ),
+                    ),
+                ]),
+            ]),
+          ),
+        const SizedBox(height: 8),
+        GridView.count(
+          crossAxisCount: 2,
+          shrinkWrap: true,
+          padding: EdgeInsets.zero,
+          physics: const NeverScrollableScrollPhysics(),
+          mainAxisSpacing: 8,
+          crossAxisSpacing: 8,
+          childAspectRatio: 1.55,
+          children: [
+            if (_on('servers')) _tile(LucideIcons.server, _sky, tr('Сервери GTA'), tr('Онлайн і моніторинг'), '/servers'),
+            if (_on('clans')) _tile(LucideIcons.swords, _amber, tr('Клани & Війни'), tr('Дипломатія й матчі'), '/clans'),
+            if (_on('party')) _tile(LucideIcons.radar, _emerald, tr('Пошук паті'), tr('Хто готовий грати'), '/party'),
+            if (_on('games')) _tile(LucideIcons.gamepad2, _cyan, tr('Ігри & FPS'), tr('Перевірка ПК, беклог, роздачі'), '/games'),
+          ],
+        ),
+      ])),
+
+      // 4. Медіа й спільнота
+      _block(Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Row(children: [
+          for (final (module, icon, label, path) in [
+            ('music', LucideIcons.music, tr('Музика'), '/music'),
+            ('cinema', LucideIcons.clapperboard, tr('Кіно'), '/cinema'),
+            ('communities', LucideIcons.usersRound, tr('Спільноти'), '/communities'),
+            ('photos', LucideIcons.image, tr('Фото'), '/photos'),
+          ])
+            if (_on(module))
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 3),
+                  child: _inner(
+                    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+                    onTap: () => widget.onGo(path),
+                    child: Column(children: [
+                      Icon(icon, size: 21, color: _sky),
+                      const SizedBox(height: 6),
+                      Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(11.5, weight: FontWeight.w600)),
+                    ]),
+                  ),
+                ),
+              ),
+        ]),
+        const SizedBox(height: 8),
+        Row(children: [
+          if (_on('phone'))
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.only(right: 4),
+                child: _inner(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+                  onTap: () => widget.onGo('/phone'),
+                  child: Row(children: [const Icon(LucideIcons.phone, size: 17, color: _emerald), const SizedBox(width: 8), Flexible(child: Text(tr('Телефон'), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(13.5, weight: FontWeight.w600)))]),
+                ),
+              ),
+            ),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.only(left: 4),
+              child: _inner(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+                onTap: () => widget.onGo('/saved'),
+                child: Row(children: [const Icon(LucideIcons.bookmark, size: 17, color: _amber), const SizedBox(width: 8), Flexible(child: Text(tr('Збережене'), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(13.5, weight: FontWeight.w600)))]),
+              ),
+            ),
+          ),
+        ]),
+        ArcticPressable(
+          onTap: () => setState(() => more = !more),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(6, 12, 6, 4),
+            child: Row(children: [
+              Text(tr('Ще розділи'), style: body(12.5, color: muted, weight: FontWeight.w700)),
+              const Spacer(),
+              AnimatedRotation(turns: more ? 0.5 : 0, duration: const Duration(milliseconds: 200), child: Icon(LucideIcons.chevronDown, size: 18, color: muted)),
+            ]),
+          ),
+        ),
+        if (more) ...[
+          if (restSections.isNotEmpty)
+            _MenuGroup(
+              title: tr('Розділи'),
+              items: [for (final item in restSections) (icon: item.icon, label: item.label, onTap: () => widget.onGo(item.path), color: null)],
+            ),
+          for (final group in _menuGroups(context, session, widget.rest, widget.onGo, widget.onClose).where((g) => g.title != tr('Налаштування й допомога')))
+            if (group.items.isNotEmpty) _MenuGroup(title: group.title, items: group.items),
+        ],
+      ])),
+
+      // 5. Системний акордеон
+      _block(Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        _row(LucideIcons.settings, tr('Система'), () => setState(() => system = !system), color: ink),
+        if (system) ...[
+          for (final entry in _menuGroups(context, session, widget.rest, widget.onGo, widget.onClose).firstWhere((g) => g.title == tr('Налаштування й допомога')).items)
+            _row(entry.icon, entry.label, entry.onTap, color: entry.color),
+          _row(
+            palette.isLight ? LucideIcons.moon : LucideIcons.sun,
+            palette.isLight ? tr('Темна тема «Неоновий синій»') : tr('Світла тема «Крижана Арктика»'),
+            () => session.setTheme(ThemeController.instance.isLight ? 'dark' : 'light'),
+          ),
+          Padding(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6), child: LanguagePicker(api: session.api)),
+          _row(LucideIcons.logOut, tr('Вийти'), () {
+            widget.onClose();
+            signOut(session, widget.player);
+          }, color: _red),
+        ],
+      ])),
+    ]);
   }
 }
 

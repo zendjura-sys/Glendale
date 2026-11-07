@@ -62,11 +62,18 @@ void main() {
           await tester.pump(const Duration(milliseconds: 100));
         }
         if (mode == 'tools') {
-          await tester.tap(find.byIcon(LucideIcons.plus).first);
+          // «+» праворуч у полі — стрічка вкладень; параметри запису — значками біля «Пост».
+          await tester.tap(find.byTooltip('Додати до запису'));
           await tester.pumpAndSettle();
-          for (final t in ['Стікер', 'GIF', 'Опитування', 'Картка', 'Спойлер', 'Підписникам', 'Розклад', 'Чернетка', 'Мої чернетки']) {
+          for (final t in ['Фото', 'GIF', 'Стікер']) {
             expect(find.text(t), findsOneWidget);
           }
+          for (final t in ['Спойлер', 'Чернетка', 'Мої чернетки']) {
+            expect(find.byTooltip(t), findsOneWidget);
+          }
+          await tester.tap(find.byTooltip('Емодзі'));
+          await tester.pumpAndSettle();
+          expect(find.text('Смайли'), findsOneWidget);
         }
         if (mode == 'visibility') {
           await tester.tap(find.byTooltip('Хто бачить запис'));
