@@ -170,7 +170,7 @@ class FamilyController extends FamilyBaseController
 
         return [
             'id' => $conversation->id,
-            'today' => (clone $texts)->where('created_at', '>=', now('Europe/Kyiv')->startOfDay())->count(),
+            'today' => (clone $texts)->where('created_at', '>=', now('Europe/Kyiv')->startOfDay()->setTimezone(config('app.timezone')))->count(),
             'latest' => $latest->map(fn (Message $m) => [
                 'id' => $m->id,
                 'name' => (string) ($nicks[$m->user_id] ?? $m->user->name ?? 'Учасник'),

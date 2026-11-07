@@ -160,6 +160,8 @@ class FamiliesTest extends TestCase
 
     public function test_overview_shows_family_chat_card_with_rp_names(): void
     {
+        // Після опівночі за Києвом, але ще «вчора» за UTC — лічильник «сьогодні» має рахувати за Києвом.
+        $this->travelTo(now('UTC')->setTime(22, 30));
         $conversation = Conversation::query()->findOrFail($this->family->conversation_id);
         $conversation->messages()->create(['user_id' => $this->leaderUser->id, 'type' => Message::TYPE_TEXT, 'body' => "Збір о 21:30\nбіля особняка"]);
 
