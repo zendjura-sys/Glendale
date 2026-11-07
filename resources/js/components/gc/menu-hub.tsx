@@ -1,3 +1,5 @@
+import { RpDossier } from '@/components/gc/rp-dossier';
+import type { RailData } from '@/components/gc/rail-widgets';
 import { Link, router, usePage } from '@inertiajs/react';
 import {
     Bookmark,
@@ -56,6 +58,7 @@ type Hub = {
         items: number;
         low_stock: number;
         pending_reports: number;
+        dossier?: NonNullable<NonNullable<RailData['me']>['family']>;
     } | null;
 };
 
@@ -254,6 +257,8 @@ export function MenuHub({ onClose }: { onClose: () => void }) {
                         )}
                     />
                 </div>
+                {/* RP-досьє персонажа: ранг, баланс, догани — для учасників сім'ї. */}
+                {family?.dossier && <RpDossier family={family.dossier} />}
                 {/* GameCon+: дві строки — назва й статус, нижче строк і кнопка (не стиснуто). */}
                 <div className="gc-solid-2 mt-3 rounded-xl p-3">
                     <div className="flex items-center gap-2.5">

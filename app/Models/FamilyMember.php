@@ -94,6 +94,30 @@ class FamilyMember extends Model
     }
 
     /**
+     * RP-досьє персонажа для картки гравця й меню: сім'я, нік, ранг, баланс, догани, сервер.
+     * Сім'я (з сервером) має бути завантажена заздалегідь.
+     *
+     * @return array<string, mixed>
+     */
+    public function dossier(): array
+    {
+        $family = $this->family;
+
+        return [
+            'name' => $family->name,
+            'tag' => $family->tag,
+            'href' => '/f/'.$family->slug,
+            'nickname' => $this->displayName(),
+            'rank' => $this->rank,
+            'rank_title' => $family->rankTitle($this->rank),
+            'balance' => $this->balance,
+            'warns' => FamilyPunishment::query()->active()->where('member_id', $this->id)->where('type', FamilyPunishment::TYPE_WARN)->count(),
+            'warn_limit' => (int) $family->setting('discipline.warn_limit', 3),
+            'server' => $family->server?->name,
+        ];
+    }
+
+    /**
      * Чи може учасник керувати іншим: ранг строго вищий, а власник сім’ї керує всіма, крім себе.
      */
     public function outranks(FamilyMember $other, Family $family): bool

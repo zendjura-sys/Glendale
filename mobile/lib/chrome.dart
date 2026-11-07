@@ -18,6 +18,7 @@ import 'state.dart';
 import 'subscription.dart';
 import 'theme.dart';
 import 'theme_controller.dart';
+import 'rp_dossier.dart';
 import 'widgets.dart';
 
 // Хром застосунку — той самий, що на сайті (layouts/social-layout.tsx):
@@ -853,6 +854,11 @@ class _MenuContentState extends State<MenuContent> {
       _block(Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         profilePinned ? Padding(padding: const EdgeInsets.all(4), child: identity) : ArcticPressable(onTap: () => widget.onGo('/profile'), child: Padding(padding: const EdgeInsets.all(4), child: identity)),
         const SizedBox(height: 8),
+        // RP-досьє персонажа — для учасників сім'ї (дані /me/hub).
+        if (family['dossier'] is Map) ...[
+          RpDossier(data: mapOf(family['dossier']), onTap: () => widget.onGo('/families/${family['slug']}')),
+          const SizedBox(height: 8),
+        ],
         _inner(
           padding: const EdgeInsets.fromLTRB(10, 8, 8, 8),
           onTap: () {

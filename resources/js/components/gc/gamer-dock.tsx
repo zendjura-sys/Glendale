@@ -15,6 +15,7 @@ import type { ReactNode } from 'react';
 import { ModuleIcon } from '@/components/gc/module-icon';
 import { plusNameProps } from '@/components/gc/plus';
 import { useRail } from '@/components/gc/rail-widgets';
+import { RpDossier } from '@/components/gc/rp-dossier';
 import type { RailData } from '@/components/gc/rail-widgets';
 import { UserAvatar } from '@/components/gc/user-avatar';
 import { useCurrentUrl } from '@/hooks/use-current-url';
@@ -136,6 +137,7 @@ function PlayerCard({ me }: { me: RailData['me'] }) {
                     </span>
                 </button>
             )}
+            {me?.family && <RpDossier family={me.family} />}
             <div className="mt-3 grid grid-cols-3 gap-2">
                 <Stat
                     icon={<Trophy className="text-amber-400" />}

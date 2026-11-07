@@ -11,7 +11,18 @@ export type RailData = {
     me?: {
         level: number | null;
         streak: number | null;
-        family: { name: string; href: string } | null;
+        family: {
+            name: string;
+            href: string;
+            tag?: string;
+            nickname?: string;
+            rank?: number;
+            rank_title?: string;
+            balance?: number;
+            warns?: number;
+            warn_limit?: number;
+            server?: string | null;
+        } | null;
         track: {
             id: number;
             title: string;

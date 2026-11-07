@@ -80,7 +80,7 @@ class RailController extends Controller
     private function me(User $user, ModuleManager $modules): array
     {
         $membership = $modules->enabled('families')
-            ? FamilyMember::query()->with('family')->where('user_id', $user->id)->where('status', FamilyMember::STATUS_ACTIVE)->first()
+            ? FamilyMember::query()->with('family.server')->where('user_id', $user->id)->where('status', FamilyMember::STATUS_ACTIVE)->first()
             : null;
         $level = null;
         if ($modules->enabled('quests')) {
@@ -94,7 +94,7 @@ class RailController extends Controller
         return [
             'level' => $level,
             'streak' => app(Streaks::class)->state($user)['days'] ?? null,
-            'family' => $membership?->family ? ['name' => $membership->family->name, 'href' => '/f/'.$membership->family->slug] : null,
+            'family' => $membership?->family ? $membership->dossier() : null,
             'track' => app(Plugins::class)->on('profile_track') ? ProfileTrack::of($user) : null,
             'playing' => $user->playing(),
         ];

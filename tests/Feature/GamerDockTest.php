@@ -67,7 +67,16 @@ class GamerDockTest extends TestCase
         $this->actingAs($user)->getJson('/me/hub')->assertOk()
             ->assertJsonPath('family.treasury', 1500)
             ->assertJsonPath('family.slug', $family->slug)
-            ->assertJsonStructure(['alerts', 'family' => ['name', 'items', 'low_stock', 'pending_reports']]);
+            ->assertJsonStructure(['alerts', 'family' => ['name', 'items', 'low_stock', 'pending_reports']])
+            // RP-досьє персонажа в меню: нік, ранг лідера, баланс і догани.
+            ->assertJsonPath('family.dossier.nickname', 'Marco_Scaletta [10001]')
+            ->assertJsonPath('family.dossier.rank', 10)
+            ->assertJsonPath('family.dossier.warns', 0)
+            ->assertJsonPath('family.dossier.server', 'Quant RP');
+
+        $this->actingAs($user)->getJson('/me/rail')->assertOk()
+            ->assertJsonPath('me.family.rank', 10)
+            ->assertJsonPath('me.family.href', '/f/'.$family->slug);
     }
 
     public function test_composer_can_search_and_attach_a_movie_card(): void

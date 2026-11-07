@@ -72,13 +72,15 @@ class HubController extends Controller
      */
     private function family(int $userId): ?array
     {
-        $family = FamilyMember::query()->with('family')->where('user_id', $userId)
-            ->where('status', FamilyMember::STATUS_ACTIVE)->first()?->family;
-        if ($family === null) {
+        $member = FamilyMember::query()->with('family.server')->where('user_id', $userId)
+            ->where('status', FamilyMember::STATUS_ACTIVE)->first();
+        $family = $member?->family;
+        if ($member === null || $family === null) {
             return null;
         }
 
         return [
+            'dossier' => $member->dossier(),
             'name' => $family->name,
             'slug' => $family->slug,
             'treasury' => (int) $family->treasury,
