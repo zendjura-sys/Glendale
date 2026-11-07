@@ -16,7 +16,8 @@ export function AccountSwitcher({
     variant,
     rowClass,
 }: {
-    variant: 'menu' | 'row';
+    /** quick — одна кругла кнопка: перемкнутися на інший акаунт (або додати). */
+    variant: 'menu' | 'row' | 'quick';
     rowClass?: string;
 }) {
     const on = usePlugin('account_switcher');
@@ -41,6 +42,35 @@ export function AccountSwitcher({
     const switchTo = (id: number) => router.post(`/account/switcher/${id}`);
     const add = () => router.post('/account/switcher/add');
     const canAdd = accounts.length < max;
+
+    if (variant === 'quick') {
+        const next = others[0];
+        if (!next && !canAdd) return null;
+
+        return (
+            <button
+                type="button"
+                onClick={() => (next ? switchTo(next.id) : add())}
+                title={
+                    next
+                        ? tr('Перемкнутися на {name}', { name: next.name })
+                        : tr('Додати акаунт')
+                }
+                aria-label={
+                    next
+                        ? tr('Перемкнутися на {name}', { name: next.name })
+                        : tr('Додати акаунт')
+                }
+                className={cn(rowClass)}
+            >
+                {next ? (
+                    <UserAvatar user={next} size="xs" showOnline={false} />
+                ) : (
+                    <UserPlus className="size-[18px]" />
+                )}
+            </button>
+        );
+    }
 
     if (variant === 'menu') {
         return (

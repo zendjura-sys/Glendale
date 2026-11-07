@@ -6194,3 +6194,7 @@ html:root.gc-vk[data-theme] .gc-footer-card {
         gap: 12px;
     }
 }
+/* Шторка «Меню» — тло сторінки, щоб картки Bento Hub (рівень 1) читалися над нею. */
+html:root.gc-vk[data-theme] .gc-vk-sheet {
+    background: var(--gc-page) !important;
+}

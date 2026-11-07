@@ -1,12 +1,12 @@
 import { SideRail } from '@/components/gc/side-rail';
 import { GamerDock } from '@/components/gc/gamer-dock';
+import { MenuHub } from '@/components/gc/menu-hub';
 import { HeaderNav, ReadyIndicator } from '@/components/gc/header-nav';
 import { AlertMapButton } from '@/components/alerts/alert-map-button';
 import { AlertBanner } from '@/components/alerts/alert-banner';
 import { Link, router, usePage } from '@inertiajs/react';
 import {
     Bookmark,
-    UserPlus,
     ChevronDown,
     Keyboard,
     LayoutDashboard,
@@ -15,10 +15,8 @@ import {
     Megaphone,
     TriangleAlert,
     Eye,
-    PanelBottom,
     MessageSquareHeart,
     Settings,
-    ShieldCheck,
     UserRound,
     Headset,
 } from 'lucide-react';
@@ -42,11 +40,8 @@ import { QuickSearch } from '@/components/gc/quick-search';
 import { StatusDialog } from '@/components/gc/status-dialog';
 import { UserAvatar } from '@/components/gc/user-avatar';
 import { VoiceBar } from '@/components/gc/voice-bar';
-import { VerifiedBadge } from '@/components/gc/verified-badge';
 import { BillingHost } from '@/components/billing/billing-host';
 import { PhonePrompt } from '@/components/phone/phone-prompt';
-import { PlusMenuCard } from '@/components/gc/plus-card';
-import { PlusBadge, plusNameProps } from '@/components/gc/plus';
 import { ConnectListener } from '@/components/music/connect-ui';
 import { PlayerBar } from '@/components/music/player-bar';
 import {
@@ -65,19 +60,12 @@ import { cn } from '@/lib/utils';
 import { NavigationSkeleton } from '@/components/gc/navigation-skeleton';
 import { PageTransition } from '@/components/gc/page-transition';
 import { PlayStoreLink } from '@/components/gc/play-store';
-import {
-    LanguageMenu,
-    LanguageSelect,
-} from '@/components/gc/language-switcher';
+import { LanguageMenu } from '@/components/gc/language-switcher';
 import { tr } from '@/lib/i18n';
 import { CommandPalette } from '@/components/gc/command-palette';
 import { isPanelView, SplitPanel } from '@/components/gc/split-panel';
 import { PaletteSync } from '@/components/gc/palette-sync';
-import {
-    ThemeButton,
-    ThemeMenuItem,
-    ThemeRow,
-} from '@/components/gc/theme-toggle';
+import { ThemeButton, ThemeMenuItem } from '@/components/gc/theme-toggle';
 import {
     FeedbackDialog,
     KeyboardHint,
@@ -323,7 +311,10 @@ function Topbar() {
                     <ThemeButton className="hidden sm:flex" />
                     <WhatsNewButton />
                     <NotificationsMenu />
-                    <UserMenu />
+                    {/* На телефоні профіль і все з цього меню — у «Меню» нижньої панелі (без дублів). */}
+                    <span className="hidden md:block">
+                        <UserMenu />
+                    </span>
                 </div>
             </div>
         </header>
@@ -419,7 +410,7 @@ function MobileNav() {
                             transition={motionOr(reduce, SNAP)}
                             className="gc-vk-sheet fixed inset-x-0 bottom-[calc(var(--vkui_internal--tabbar_height,48px)+env(safe-area-inset-bottom))] z-[55] max-h-[calc(100dvh-env(safe-area-inset-top)-7rem)] overflow-y-auto overscroll-contain rounded-t-2xl px-3 pt-3 pb-2"
                         >
-                            <MenuContent onClose={close} />
+                            <MenuHub onClose={close} />
                         </m.div>
                     </>
                 )}
@@ -463,158 +454,6 @@ function MobileNav() {
                 </TabbarItem>
             </Tabbar>
         </div>
-    );
-}
-
-/** Вміст розгорнутого острова: профіль, GameCon+, решта розділів і службові посилання — пласко, без плиток. */
-function MenuContent({ onClose }: { onClose: () => void }) {
-    const { auth, airAlerts } = usePage().props;
-    const user = auth.user;
-    const isActive = useIsActive();
-    const supportOn = usePlugin('support_tickets');
-    const { rest: items } = useMobileSplit(useNavItems());
-
-    const extra = [
-        {
-            href: '/invite',
-            label: tr('Запросити друзів'),
-            icon: UserPlus,
-        },
-        {
-            href: '/saved',
-            label: tr('Збережене'),
-            icon: Bookmark,
-        },
-        {
-            href: '/settings/navigation',
-            label: tr('Налаштувати нижню панель'),
-            icon: PanelBottom,
-        },
-        {
-            href: '/settings/profile',
-            label: tr('Налаштування'),
-            icon: Settings,
-        },
-        {
-            href: '/help',
-            label: tr('Довідка'),
-            icon: LifeBuoy,
-        },
-        ...(supportOn
-            ? [{ href: '/support', label: tr('Підтримка'), icon: Headset }]
-            : []),
-        ...(user.is_admin
-            ? [{ href: '/admin', label: tr('Адмін-панель'), icon: ShieldCheck }]
-            : []),
-    ];
-    const row =
-        'flex min-h-11 items-center gap-3 rounded-xl px-2 text-left text-[15px] font-medium text-white/85 active:bg-white/[0.06]';
-
-    return (
-        <>
-            <Link
-                href={`/${user.username}`}
-                className="flex items-center gap-3 rounded-xl p-2 active:bg-white/[0.06]"
-            >
-                <UserAvatar user={user} size="md" ring />
-                <span className="min-w-0">
-                    <span className="flex items-center gap-1 truncate text-[15px] font-semibold text-white">
-                        <span {...plusNameProps(user.plus)}>{user.name}</span>
-                        {user.is_verified && (
-                            <VerifiedBadge
-                                kind={user.verified_kind}
-                                className="size-3.5"
-                            />
-                        )}
-                        {user.plus && <PlusBadge className="size-3.5" />}
-                    </span>
-                    <span className="block truncate text-xs text-white/45">
-                        @{user.username}
-                    </span>
-                </span>
-            </Link>
-
-            <PlusMenuCard until={user.plus_until} className="my-2" />
-
-            {/* Мапа тривог — під GameCon+ (кому показувати — в адмінці «Інтеграції»). */}
-            {airAlerts && <AlertMapButton row className="mb-2" />}
-
-            <div className="grid grid-cols-4 gap-y-1">
-                {items.map((item) => {
-                    const active = isActive(item.href, item.key);
-
-                    return (
-                        <Link
-                            key={item.key}
-                            href={item.href}
-                            aria-current={active ? 'page' : undefined}
-                            className={cn(
-                                'relative flex flex-col items-center gap-1.5 rounded-xl px-1 py-2.5 text-center text-[12px] leading-tight font-medium active:bg-white/[0.06]',
-                                active ? 'text-primary' : 'text-white/80',
-                            )}
-                        >
-                            <span className="relative">
-                                <ModuleIcon
-                                    name={item.icon}
-                                    className={cn(
-                                        'size-6',
-                                        active
-                                            ? 'text-primary'
-                                            : 'text-gc-lilac-400',
-                                    )}
-                                />
-                                {item.badge > 0 && (
-                                    <span className="absolute -top-1 -right-2.5 min-w-4 rounded-full bg-rose-500 px-1 text-center text-[10px] leading-4 font-bold text-white">
-                                        {item.badge}
-                                    </span>
-                                )}
-                            </span>
-                            {item.label}
-                        </Link>
-                    );
-                })}
-            </div>
-
-            <div className="my-2 h-px bg-white/[0.07]" />
-
-            <div className="grid">
-                {extra.map((link) => (
-                    <Link key={link.href} href={link.href} className={row}>
-                        <link.icon className="size-[19px] text-white/50" />
-                        {link.label}
-                    </Link>
-                ))}
-                <ThemeRow />
-                <LanguageSelect className="mx-2 my-1.5" />
-                <button
-                    type="button"
-                    onClick={() => {
-                        onClose();
-                        openFeedback();
-                    }}
-                    className={row}
-                >
-                    <MessageSquareHeart className="size-[19px] text-white/50" />
-                    {tr('Відгук адмінам')}
-                </button>
-                <PlayStoreLink
-                    compact
-                    className="mx-2 my-1.5 justify-self-start"
-                />
-                <AccountSwitcher variant="row" rowClass={row} />
-                <button
-                    type="button"
-                    onClick={() => {
-                        forgetOfflinePages();
-                        router.post('/logout');
-                    }}
-                    className={cn(row, 'text-rose-300 active:bg-rose-500/10')}
-                >
-                    <LogOut className="size-[19px]" />
-                    {tr('Вийти')}
-                </button>
-            </div>
-        </>
     );
 }
 
