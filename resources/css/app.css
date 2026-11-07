@@ -5788,3 +5788,110 @@ html.gc-vk[data-theme='dark']
 .gc-chip svg {
     color: var(--vkui--color_icon_accent, currentColor);
 }
+
+/* Spacepark: меню карткою — активний пункт з акцентною смужкою зліва й акцентним текстом. */
+:root.gc-vk .gc-menu-card .gc-side-link {
+    position: relative;
+    border-radius: 0 !important;
+    min-height: 44px !important;
+    padding: 0 18px !important;
+    font-size: 14px !important;
+}
+:root.gc-vk .gc-menu-card .gc-side-link[aria-current='page'] {
+    background: transparent;
+    color: var(--vkui--color_text_accent);
+    font-weight: 600;
+}
+:root.gc-vk .gc-menu-card .gc-side-link[aria-current='page']::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 8px;
+    bottom: 8px;
+    width: 3px;
+    border-radius: 0 3px 3px 0;
+    background: var(--vkui--color_background_accent);
+}
+:root.gc-vk .gc-menu-card .gc-side-link:hover {
+    background: var(--vkui--color_background_secondary_alpha);
+}
+:root.gc-vk .gc-menu-card .gc-side-link .bg-primary {
+    background: var(--vkui--color_background_accent);
+}
+/* Компактний рядок запису: аватар, «Що нового?» і кнопка; інструменти — після фокуса. */
+.gc-composer[data-compact] > :not(.gc-composer-main) {
+    display: none;
+}
+
+/* ===== Сторінка тайтлу кіно: телефон — постер по центру; широкий екран і горизонтальний сенсорний —
+   постер закріплений ліворуч (з кнопками «назад»/«додати»), уміст прокручується праворуч. ===== */
+.gc-title-aside,
+.gc-title-banner {
+    display: none;
+}
+@media (min-width: 1024px), (orientation: landscape) and (pointer: coarse) {
+    .gc-title {
+        display: grid;
+        grid-template-columns: minmax(180px, 26%) minmax(0, 1fr);
+        gap: 20px;
+        align-items: start;
+    }
+    .gc-title-aside {
+        display: block;
+        position: sticky;
+        top: calc(82px + env(safe-area-inset-top));
+    }
+    .gc-title-poster {
+        display: none;
+    }
+    .gc-title-info {
+        margin-top: 0;
+        max-width: none;
+    }
+}
+@media (min-width: 1024px) {
+    .gc-title-banner {
+        display: block;
+    }
+}
+/* Горизонтальний телефон/планшет: постер на всю висоту екрана, «назад» і «додати» — поверх постера. */
+.gc-title-rail {
+    display: none;
+}
+.gc-title-aside-in {
+    position: relative;
+}
+@media (orientation: landscape) and (pointer: coarse) {
+    .gc-title {
+        grid-template-columns: minmax(200px, 32%) minmax(0, 1fr);
+    }
+    .gc-title-aside-in {
+        width: fit-content;
+        max-width: 100%;
+        margin-inline: auto;
+    }
+    .gc-title-aside-in > :last-child {
+        max-height: calc(100dvh - 104px - env(safe-area-inset-top));
+        width: auto;
+        margin-inline: auto;
+    }
+    .gc-title-rail {
+        position: absolute;
+        inset: 12px 12px auto;
+        z-index: 1;
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+    }
+    .gc-title-rail > button {
+        border: 0;
+        border-radius: 999px;
+        background: rgb(0 0 0 / 0.45);
+        backdrop-filter: blur(12px);
+        width: 44px;
+        padding: 0;
+        justify-content: center;
+        color: #fff;
+        font-size: 0;
+    }
+}

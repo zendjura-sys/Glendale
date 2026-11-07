@@ -20,6 +20,7 @@ import {
     CircleAlert,
     Globe,
     CalendarDays,
+    CircleDot,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
@@ -300,546 +301,639 @@ export default function CinemaShow({
     return (
         <>
             <Head title={movie.title} />
-            <div className="space-y-5">
-                {/* Шапка тайтлу: розмитий постер на все тло, постер по центру, дії й відомості нижче. */}
-                <section
-                    data-on-dark
-                    className="relative isolate overflow-hidden rounded-2xl bg-[#121212]"
-                >
-                    {(movie.poster || movie.backdrop) && (
-                        <img
-                            decoding="async"
-                            fetchPriority="high"
-                            src={movie.poster ?? movie.backdrop ?? ''}
-                            alt=""
-                            className="absolute inset-0 -z-10 size-full scale-125 object-cover opacity-35 blur-2xl"
-                        />
-                    )}
-                    <div className="absolute inset-0 -z-10 bg-gradient-to-b from-black/30 via-black/60 to-[#121212]" />
-
-                    <div className="p-5 sm:p-7">
-                        <div className="mb-5 flex items-center gap-2">
+            {/*
+             * Широкий екран — постер ліворуч, банер угорі; горизонтальний сенсорний екран — постер
+             * закріплений ліворуч (з кнопками «назад» і «додати»), уміст прокручується праворуч.
+             */}
+            <div className="gc-title">
+                <aside className="gc-title-aside">
+                    <div className="gc-title-aside-in">
+                        <div className="gc-title-rail">
                             <Link
                                 href="/cinema"
-                                className="inline-flex items-center gap-1.5 rounded-xl bg-black/30 px-3 py-1.5 text-xs font-medium text-white/70 backdrop-blur transition hover:text-white"
+                                aria-label={tr('Назад')}
+                                className="flex size-11 items-center justify-center rounded-full bg-black/45 text-white backdrop-blur-md"
                             >
-                                <ArrowLeft className="size-3.5" /> {tr('Кіно')}
+                                <ArrowLeft className="size-5" />
                             </Link>
-                            {!movie.is_published && (
-                                <span className="rounded-chip bg-amber-400/15 px-2.5 py-1 text-xs font-semibold text-amber-200">
-                                    {tr('Приховано')}
-                                </span>
-                            )}
-                            {can.manage && (
-                                <a
-                                    href={`/admin/cinema/${movie.id}/edit`}
-                                    className="ml-auto inline-flex items-center gap-1.5 rounded-xl bg-black/30 px-3 py-1.5 text-xs font-medium text-white/70 backdrop-blur transition hover:text-white"
-                                >
-                                    <Pencil className="size-3.5" />{' '}
-                                    {tr('Редагувати')}
-                                </a>
+                            {listsOn && (
+                                <AddToList
+                                    movieId={movie.id}
+                                    slug={movie.slug}
+                                />
                             )}
                         </div>
-
-                        <div className="mx-auto w-[220px] sm:w-[260px]">
-                            <MoviePoster
-                                movie={movie}
-                                className="aspect-[2/3] w-full rounded-[28px] shadow-[0_30px_60px_-20px_rgb(0_0_0/0.9)]"
+                        <MoviePoster
+                            movie={movie}
+                            className="aspect-[2/3] w-full rounded-[28px] shadow-[0_30px_60px_-20px_rgb(0_0_0/0.9)]"
+                        />
+                    </div>
+                </aside>
+                <div className="min-w-0 space-y-5">
+                    {/* Шапка тайтлу: розмитий постер на все тло, постер по центру, дії й відомості нижче. */}
+                    <section
+                        data-on-dark
+                        className="relative isolate overflow-hidden rounded-2xl bg-[#121212]"
+                    >
+                        {(movie.poster || movie.backdrop) && (
+                            <img
+                                decoding="async"
+                                fetchPriority="high"
+                                src={movie.poster ?? movie.backdrop ?? ''}
+                                alt=""
+                                className="absolute inset-0 -z-10 size-full scale-125 object-cover opacity-35 blur-2xl"
                             />
-                        </div>
+                        )}
+                        {/* Банер — смугою вгорі на широкому екрані. */}
+                        {movie.backdrop && (
+                            <img
+                                src={movie.backdrop}
+                                alt=""
+                                className="gc-title-banner absolute inset-x-0 top-0 -z-10 h-64 w-full [mask-image:linear-gradient(to_bottom,black,transparent)] object-cover opacity-70"
+                            />
+                        )}
+                        <div className="absolute inset-0 -z-10 bg-gradient-to-b from-black/30 via-black/60 to-[#121212]" />
 
-                        <div className="mx-auto mt-6 max-w-2xl">
-                            <div className="flex items-start gap-3">
-                                <Info className="mt-1.5 size-6 shrink-0 text-white/55" />
-                                <div className="min-w-0">
-                                    <h1 className="text-2xl leading-tight font-bold text-white sm:text-3xl">
-                                        {movie.title}
-                                    </h1>
-                                    <p className="mt-1 flex flex-wrap items-center gap-2 text-[15px] text-white/50">
-                                        {movie.title_original &&
-                                            movie.title_original !==
-                                                movie.title && (
-                                                <span>
-                                                    {movie.title_original}
+                        <div className="p-5 sm:p-7">
+                            <div className="mb-5 flex items-center gap-2">
+                                <Link
+                                    href="/cinema"
+                                    className="inline-flex items-center gap-1.5 rounded-xl bg-black/30 px-3 py-1.5 text-xs font-medium text-white/70 backdrop-blur transition hover:text-white"
+                                >
+                                    <ArrowLeft className="size-3.5" />{' '}
+                                    {tr('Кіно')}
+                                </Link>
+                                {!movie.is_published && (
+                                    <span className="rounded-chip bg-amber-400/15 px-2.5 py-1 text-xs font-semibold text-amber-200">
+                                        {tr('Приховано')}
+                                    </span>
+                                )}
+                                {can.manage && (
+                                    <a
+                                        href={`/admin/cinema/${movie.id}/edit`}
+                                        className="ml-auto inline-flex items-center gap-1.5 rounded-xl bg-black/30 px-3 py-1.5 text-xs font-medium text-white/70 backdrop-blur transition hover:text-white"
+                                    >
+                                        <Pencil className="size-3.5" />{' '}
+                                        {tr('Редагувати')}
+                                    </a>
+                                )}
+                            </div>
+
+                            <div className="gc-title-poster mx-auto w-[220px] sm:w-[260px]">
+                                <MoviePoster
+                                    movie={movie}
+                                    className="aspect-[2/3] w-full rounded-[28px] shadow-[0_30px_60px_-20px_rgb(0_0_0/0.9)]"
+                                />
+                            </div>
+
+                            <div className="gc-title-info mx-auto mt-6 max-w-2xl">
+                                <div className="flex items-start gap-3">
+                                    <Info className="mt-1.5 size-6 shrink-0 text-white/55" />
+                                    <div className="min-w-0">
+                                        <h1 className="text-2xl leading-tight font-bold text-white sm:text-3xl">
+                                            {movie.title}
+                                        </h1>
+                                        <p className="mt-1 flex flex-wrap items-center gap-2 text-[15px] text-white/50">
+                                            {movie.title_original &&
+                                                movie.title_original !==
+                                                    movie.title && (
+                                                    <span>
+                                                        {movie.title_original}
+                                                    </span>
+                                                )}
+                                            {movie.age_rating && (
+                                                <span className="rounded-md bg-white/85 px-1.5 text-xs font-bold text-black">
+                                                    {movie.age_rating}
                                                 </span>
                                             )}
-                                        {movie.age_rating && (
-                                            <span className="rounded-md bg-white/85 px-1.5 text-xs font-bold text-black">
-                                                {movie.age_rating}
-                                            </span>
+                                        </p>
+                                        {movie.tagline && (
+                                            <p className="mt-1 text-sm text-white/60 italic">
+                                                «{movie.tagline}»
+                                            </p>
                                         )}
-                                    </p>
-                                    {movie.tagline && (
-                                        <p className="mt-1 text-sm text-white/60 italic">
-                                            «{movie.tagline}»
-                                        </p>
-                                    )}
-                                </div>
-                            </div>
-
-                            {/* Статус · закладки · коментарі */}
-                            <div className="mt-5 flex flex-wrap items-center gap-3">
-                                <button
-                                    type="button"
-                                    onClick={() => setStatusOpen(true)}
-                                    className={cn(
-                                        'inline-flex h-12 min-w-[9rem] flex-1 items-center justify-center gap-2 rounded-full border-2 px-5 text-[15px] font-semibold sm:flex-none',
-                                        currentStatus
-                                            ? STATUS_OUTLINE[currentStatus.key]
-                                            : 'border-white/25 text-white',
-                                    )}
-                                >
-                                    <ChevronDown className="size-5" />
-                                    {currentStatus?.label ??
-                                        tr('Додати до списку')}
-                                </button>
-                                <SaveButton
-                                    kind="movie"
-                                    id={movie.id}
-                                    saved={saved}
-                                    className="!h-12 !rounded-full !border-2 !border-amber-500/70 !bg-transparent !px-5 !text-amber-400"
-                                />
-                                <a
-                                    href="#comments"
-                                    aria-label={tr('Коментарі')}
-                                    className="inline-flex h-12 items-center gap-2 rounded-full border-2 border-white/20 px-5 text-[15px] font-semibold text-white/80"
-                                >
-                                    <MessageSquare className="size-5" />
-                                    {commentsCount > 0 &&
-                                        compactNumber(commentsCount)}
-                                </a>
-                            </div>
-
-                            {/* «Відтворити» з підписом, що додано останнім */}
-                            {players.length > 0 && (
-                                <div className="mt-4 flex items-center gap-2">
-                                    <div className="min-w-0 flex-1 rounded-[28px] bg-white/[0.06]">
-                                        <a
-                                            href="#player"
-                                            className="flex h-14 items-center justify-center gap-3 rounded-full bg-[#e6e6e6] text-lg font-semibold text-black transition hover:bg-white"
-                                        >
-                                            <Play className="size-5 fill-current" />
-                                            {state.status === 'watching'
-                                                ? tr('Продовжити')
-                                                : tr('Відтворити')}
-                                        </a>
-                                        <p className="truncate px-4 py-2 text-center text-[13px] text-white/55">
-                                            {[
-                                                state.episode
-                                                    ? tr('Ви на {n} серії', {
-                                                          n: state.episode,
-                                                      })
-                                                    : movie.episodes_count &&
-                                                        movie.episodes_count > 1
-                                                      ? tr(
-                                                            'Додано: {n} серія',
-                                                            {
-                                                                n: movie.episodes_count,
-                                                            },
-                                                        )
-                                                      : null,
-                                                player?.translation,
-                                                player?.provider_label,
-                                            ]
-                                                .filter(Boolean)
-                                                .join(' | ')}
-                                        </p>
                                     </div>
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger
-                                            aria-label={tr('Ще')}
-                                            className="flex size-12 items-center justify-center rounded-full text-white/80 hover:bg-white/[0.06]"
+                                </div>
+
+                                {/* Рейтинг-чіпи й плашки «Статус / Епізоди / Рік» */}
+                                <div className="mt-4 flex flex-wrap items-center gap-2">
+                                    {movie.rating && (
+                                        <span className="inline-flex items-center gap-1 rounded-lg bg-amber-400 px-2 py-0.5 text-sm font-bold text-black tabular-nums">
+                                            <Star className="size-3.5 fill-current" />
+                                            {movie.rating.toFixed(2)}
+                                        </span>
+                                    )}
+                                    <span className="inline-flex items-center gap-1 rounded-lg bg-white/85 px-2 py-0.5 text-sm font-bold text-black tabular-nums">
+                                        <UsersRound className="size-3.5" />
+                                        {compactNumber(stats.watchers_count)}
+                                    </span>
+                                </div>
+                                <div className="mt-3 flex flex-wrap gap-2">
+                                    {[
+                                        {
+                                            icon: CircleDot,
+                                            label: tr('Статус'),
+                                            value:
+                                                movie.episodes_count &&
+                                                movie.episodes_count > 1
+                                                    ? tr('Виходить')
+                                                    : tr('Вийшов'),
+                                        },
+                                        ...(movie.episodes_count
+                                            ? [
+                                                  {
+                                                      icon: Tv,
+                                                      label: tr('Епізоди'),
+                                                      value: String(
+                                                          movie.episodes_count,
+                                                      ),
+                                                  },
+                                              ]
+                                            : []),
+                                        ...(movie.year
+                                            ? [
+                                                  {
+                                                      icon: CalendarDays,
+                                                      label: tr('Рік'),
+                                                      value: String(movie.year),
+                                                  },
+                                              ]
+                                            : []),
+                                    ].map((box) => (
+                                        <span
+                                            key={box.label}
+                                            className="flex min-w-[88px] flex-col items-center rounded-xl border border-white/15 px-3 py-2 text-center"
                                         >
-                                            <EllipsisVertical className="size-6" />
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent
-                                            align="end"
-                                            className="min-w-56 rounded-2xl p-1.5"
-                                        >
-                                            <DropdownMenuItem
-                                                onSelect={() =>
-                                                    setSharing(true)
-                                                }
-                                                className="gap-3 rounded-xl px-3 py-2.5"
+                                            <box.icon className="size-4 text-white/70" />
+                                            <span className="mt-1 text-[11px] text-white/45">
+                                                {box.label}
+                                            </span>
+                                            <span className="text-sm font-semibold text-white">
+                                                {box.value}
+                                            </span>
+                                        </span>
+                                    ))}
+                                </div>
+
+                                {/* Статус · закладки · коментарі */}
+                                <div className="mt-5 flex flex-wrap items-center gap-3">
+                                    <button
+                                        type="button"
+                                        onClick={() => setStatusOpen(true)}
+                                        className={cn(
+                                            'inline-flex h-12 min-w-[9rem] flex-1 items-center justify-center gap-2 rounded-full border-2 px-5 text-[15px] font-semibold sm:flex-none',
+                                            currentStatus
+                                                ? STATUS_OUTLINE[
+                                                      currentStatus.key
+                                                  ]
+                                                : 'border-white/25 text-white',
+                                        )}
+                                    >
+                                        <ChevronDown className="size-5" />
+                                        {currentStatus?.label ??
+                                            tr('Додати до списку')}
+                                    </button>
+                                    <SaveButton
+                                        kind="movie"
+                                        id={movie.id}
+                                        saved={saved}
+                                        className="!h-12 !rounded-full !border-2 !border-amber-500/70 !bg-transparent !px-5 !text-amber-400"
+                                    />
+                                    <a
+                                        href="#comments"
+                                        aria-label={tr('Коментарі')}
+                                        className="inline-flex h-12 items-center gap-2 rounded-full border-2 border-white/20 px-5 text-[15px] font-semibold text-white/80"
+                                    >
+                                        <MessageSquare className="size-5" />
+                                        {commentsCount > 0 &&
+                                            compactNumber(commentsCount)}
+                                    </a>
+                                </div>
+
+                                {/* «Відтворити» з підписом, що додано останнім */}
+                                {players.length > 0 && (
+                                    <div className="mt-4 flex items-center gap-2">
+                                        <div className="min-w-0 flex-1 rounded-[28px] bg-white/[0.06]">
+                                            <a
+                                                href="#player"
+                                                className="flex h-14 items-center justify-center gap-3 rounded-full bg-[#e6e6e6] text-lg font-semibold text-black transition hover:bg-white"
                                             >
-                                                <Share2 className="size-5" />
-                                                {tr('Поділитися')}
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem
-                                                onSelect={() => {
-                                                    void navigator.clipboard?.writeText(
-                                                        window.location.href,
-                                                    );
-                                                    toast.success(
-                                                        tr(
-                                                            'Посилання скопійовано',
-                                                        ),
-                                                    );
-                                                }}
-                                                className="gap-3 rounded-xl px-3 py-2.5"
+                                                <Play className="size-5 fill-current" />
+                                                {state.status === 'watching'
+                                                    ? tr('Продовжити')
+                                                    : tr('Відтворити')}
+                                            </a>
+                                            <p className="truncate px-4 py-2 text-center text-[13px] text-white/55">
+                                                {[
+                                                    state.episode
+                                                        ? tr(
+                                                              'Ви на {n} серії',
+                                                              {
+                                                                  n: state.episode,
+                                                              },
+                                                          )
+                                                        : movie.episodes_count &&
+                                                            movie.episodes_count >
+                                                                1
+                                                          ? tr(
+                                                                'Додано: {n} серія',
+                                                                {
+                                                                    n: movie.episodes_count,
+                                                                },
+                                                            )
+                                                          : null,
+                                                    player?.translation,
+                                                    player?.provider_label,
+                                                ]
+                                                    .filter(Boolean)
+                                                    .join(' | ')}
+                                            </p>
+                                        </div>
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger
+                                                aria-label={tr('Ще')}
+                                                className="flex size-12 items-center justify-center rounded-full text-white/80 hover:bg-white/[0.06]"
                                             >
-                                                <Copy className="size-5" />
-                                                {tr('Скопіювати посилання')}
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem
-                                                onSelect={() =>
-                                                    router.post(
-                                                        `/cinema/${movie.slug}/watch`,
-                                                        {
-                                                            player_key:
-                                                                player?.key ??
-                                                                null,
-                                                        },
-                                                    )
-                                                }
-                                                className="gap-3 rounded-xl px-3 py-2.5"
+                                                <EllipsisVertical className="size-6" />
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent
+                                                align="end"
+                                                className="min-w-56 rounded-2xl p-1.5"
                                             >
-                                                <Popcorn className="size-5" />
-                                                {tr('Дивитися разом')}
-                                            </DropdownMenuItem>
-                                            {tenOn && (
+                                                <DropdownMenuItem
+                                                    onSelect={() =>
+                                                        setSharing(true)
+                                                    }
+                                                    className="gap-3 rounded-xl px-3 py-2.5"
+                                                >
+                                                    <Share2 className="size-5" />
+                                                    {tr('Поділитися')}
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem
+                                                    onSelect={() => {
+                                                        void navigator.clipboard?.writeText(
+                                                            window.location
+                                                                .href,
+                                                        );
+                                                        toast.success(
+                                                            tr(
+                                                                'Посилання скопійовано',
+                                                            ),
+                                                        );
+                                                    }}
+                                                    className="gap-3 rounded-xl px-3 py-2.5"
+                                                >
+                                                    <Copy className="size-5" />
+                                                    {tr('Скопіювати посилання')}
+                                                </DropdownMenuItem>
                                                 <DropdownMenuItem
                                                     onSelect={() =>
                                                         router.post(
-                                                            '/cinema/ten',
+                                                            `/cinema/${movie.slug}/watch`,
                                                             {
-                                                                movie_id:
-                                                                    movie.id,
+                                                                player_key:
+                                                                    player?.key ??
+                                                                    null,
                                                             },
                                                         )
                                                     }
                                                     className="gap-3 rounded-xl px-3 py-2.5"
                                                 >
-                                                    <Star className="size-5" />
-                                                    {inTopTen
-                                                        ? tr('У десятці')
-                                                        : tr('У десятку')}
+                                                    <Popcorn className="size-5" />
+                                                    {tr('Дивитися разом')}
                                                 </DropdownMenuItem>
-                                            )}
-                                            <DropdownMenuItem
-                                                asChild
-                                                className="gap-3 rounded-xl px-3 py-2.5 text-rose-400"
-                                            >
-                                                <Link
-                                                    href={`/support?subject=${encodeURIComponent(movie.title)}`}
+                                                {tenOn && (
+                                                    <DropdownMenuItem
+                                                        onSelect={() =>
+                                                            router.post(
+                                                                '/cinema/ten',
+                                                                {
+                                                                    movie_id:
+                                                                        movie.id,
+                                                                },
+                                                            )
+                                                        }
+                                                        className="gap-3 rounded-xl px-3 py-2.5"
+                                                    >
+                                                        <Star className="size-5" />
+                                                        {inTopTen
+                                                            ? tr('У десятці')
+                                                            : tr('У десятку')}
+                                                    </DropdownMenuItem>
+                                                )}
+                                                <DropdownMenuItem
+                                                    asChild
+                                                    className="gap-3 rounded-xl px-3 py-2.5 text-rose-400"
                                                 >
-                                                    <CircleAlert className="size-5" />
-                                                    {tr('Поскаржитися')}
-                                                </Link>
-                                            </DropdownMenuItem>
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
-                                </div>
-                            )}
+                                                    <Link
+                                                        href={`/support?subject=${encodeURIComponent(movie.title)}`}
+                                                    >
+                                                        <CircleAlert className="size-5" />
+                                                        {tr('Поскаржитися')}
+                                                    </Link>
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    </div>
+                                )}
 
-                            {/* Відомості рядками з іконками */}
-                            <ul className="mt-5 space-y-2.5 text-[15px] text-white/75">
-                                {(movie.countries.length > 0 || movie.year) && (
-                                    <li className="flex items-center gap-3">
-                                        <Globe className="size-5 shrink-0 text-white/50" />
-                                        {[
-                                            movie.countries
-                                                .slice(0, 2)
-                                                .join(', '),
-                                            movie.year,
-                                        ]
-                                            .filter(Boolean)
-                                            .join(', ')}
-                                    </li>
-                                )}
-                                {(movie.episodes_count || movie.duration) && (
-                                    <li className="flex items-center gap-3">
-                                        <Tv className="size-5 shrink-0 text-white/50" />
-                                        {[
-                                            movie.episodes_count &&
-                                            movie.episodes_count > 1
-                                                ? `${movie.episodes_count} ${plural(movie.episodes_count, ['епізод', 'епізоди', 'епізодів'])}`
-                                                : null,
-                                            durationLabel(movie.duration),
-                                        ]
-                                            .filter(Boolean)
-                                            .join(' · ')}
-                                    </li>
-                                )}
-                                <li className="flex items-center gap-3">
-                                    <CalendarDays className="size-5 shrink-0 text-white/50" />
-                                    {movie.type_label}
-                                </li>
-                                <li className="flex flex-wrap items-center gap-x-5 gap-y-1 text-sm text-white/55">
-                                    <span className="inline-flex items-center gap-1.5">
-                                        <Eye className="size-4" />
-                                        {compactNumber(movie.views_count)}
-                                    </span>
-                                    <span className="inline-flex items-center gap-1.5">
-                                        <UsersRound className="size-4" />
-                                        {compactNumber(
-                                            stats.watchers_count,
-                                        )}{' '}
-                                        {tr('у списках')}
-                                    </span>
-                                    {ratings.map((r) => (
-                                        <span
-                                            key={r.key}
-                                            className={cn(
-                                                'font-semibold',
-                                                r.tone,
-                                            )}
-                                        >
-                                            {r.label}{' '}
-                                            {movie.ratings[r.key]!.toFixed(1)}
-                                        </span>
-                                    ))}
-                                </li>
-                            </ul>
-
-                            {movie.genres.length > 0 && (
-                                <p className="mt-4 flex flex-wrap gap-x-2 text-[15px]">
-                                    {movie.genres.map((genre, i) => (
-                                        <Link
-                                            key={genre}
-                                            href={`/cinema?genre=${encodeURIComponent(genre)}`}
-                                            className="text-white underline underline-offset-4 hover:text-[var(--vkui--color_text_accent)]"
-                                        >
-                                            {genre}
-                                            {i < movie.genres.length - 1 && ','}
-                                        </Link>
-                                    ))}
-                                </p>
-                            )}
-
-                            <div className="mt-4 flex flex-wrap items-center gap-2">
-                                {listsOn && (
-                                    <AddToList
-                                        movieId={movie.id}
-                                        slug={movie.slug}
-                                    />
-                                )}
-                                <PinButton
-                                    kind="movie"
-                                    id={movie.id}
-                                    pinned={pinned}
-                                />
-                            </div>
-                        </div>
-                    </div>
-                </section>
-                <StatusDialog
-                    open={statusOpen}
-                    onOpenChange={setStatusOpen}
-                    statuses={statuses}
-                    value={state.status}
-                    onPick={(status) => void setStatus(status)}
-                />
-
-                <section
-                    id="player"
-                    className="glass scroll-mt-24 overflow-hidden rounded-2xl"
-                >
-                    {tabs.length === 0 ? (
-                        <div className="flex aspect-video flex-col items-center justify-center gap-3 bg-black/40 p-6 text-center">
-                            <Tv className="size-10 text-white/25" />
-                            <p className="font-display text-lg font-semibold text-white">
-                                {tr('Плеєр ще не додано')}
-                            </p>
-                            <p className="max-w-sm text-sm text-white/45">
-                                {tr(
-                                    'Додайте фільм до списку «В планах» — ми нагадаємо, щойно він з’явиться.',
-                                )}
-                            </p>
-                        </div>
-                    ) : (
-                        <>
-                            <div className="flex flex-wrap items-center gap-2 border-b border-white/[0.06] p-3">
-                                <div className="scrollbar-none flex max-w-full gap-1 overflow-x-auto">
-                                    {tabs.map((tab) => (
-                                        <button
-                                            key={tab.key}
-                                            type="button"
-                                            onClick={() => choose(tab.key)}
-                                            className={cn(
-                                                'rounded-xl px-3.5 py-2 text-sm font-semibold transition',
-                                                provider === tab.key
-                                                    ? 'nav-active text-white'
-                                                    : 'text-white/55 hover:bg-white/[0.05] hover:text-white',
-                                            )}
-                                        >
-                                            {tab.label}
-                                        </button>
-                                    ))}
-                                </div>
-                                {players.length === 1 &&
-                                    provider !== 'trailer' &&
-                                    player?.translation && (
-                                        <span className="ml-auto max-w-full truncate rounded-xl border border-white/[0.06] px-3 py-2 text-sm text-white/60">
-                                            {player.translation}
-                                        </span>
-                                    )}
-                                {provider !== 'trailer' &&
-                                    players.length > 1 && (
-                                        <div className="ml-auto max-w-full">
-                                            <VoicePicker
-                                                players={players}
-                                                current={player}
-                                                onPick={(p) => {
-                                                    setProvider(p.provider);
-                                                    setPlayerKey(p.key);
-                                                }}
-                                            />
-                                        </div>
-                                    )}
-                            </div>
-                            <div className="relative aspect-video bg-black">
-                                <iframe
-                                    ref={frameRef}
-                                    key={
-                                        provider === 'trailer'
-                                            ? 'trailer'
-                                            : episodeMode
-                                              ? `${player.key}:${pick.season}:${pick.episode}`
-                                              : player?.key
-                                    }
-                                    src={
-                                        provider === 'trailer'
-                                            ? (movie.trailer_url ?? '')
-                                            : player && !waitingEpisodes
-                                              ? episodeLink(
-                                                    player.provider,
-                                                    player.link,
-                                                    episodeMode ? pick : null,
-                                                    episodeMode || bare,
-                                                )
-                                              : undefined
-                                    }
-                                    title={movie.title}
-                                    className="absolute inset-0 size-full"
-                                    allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
-                                    allowFullScreen
-                                    referrerPolicy="origin"
-                                />
-                            </div>
-                            {episodes &&
-                                episodes.length > 0 &&
-                                provider !== 'trailer' && (
-                                    <EpisodePicker
-                                        seasons={episodes}
-                                        value={pick}
-                                        onChange={setPick}
-                                        supported={supportsEpisodes(
-                                            player?.provider,
-                                        )}
-                                        watched={marks}
-                                    />
-                                )}
-                        </>
-                    )}
-                </section>
-
-                <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_300px]">
-                    <div className="min-w-0 space-y-5">
-                        {movie.description && (
-                            <section className="glass rounded-2xl p-5">
-                                <h2 className="mb-2 font-display text-lg font-semibold text-white">
-                                    {tr('Про що')}
-                                </h2>
-                                <p
-                                    className={cn(
-                                        'text-[15px] leading-relaxed whitespace-pre-line text-white/75',
-                                        !moreText && 'line-clamp-5',
-                                    )}
-                                >
-                                    {movie.description}
-                                </p>
-                                {!moreText &&
-                                    movie.description.length > 320 && (
-                                        <button
-                                            type="button"
-                                            onClick={() => setMoreText(true)}
-                                            className="mt-2 w-full text-center text-sm font-semibold text-white"
-                                        >
-                                            {tr('Докладніше…')}
-                                        </button>
-                                    )}
-                            </section>
-                        )}
-                        <RatingBreakdown
-                            audience={audience}
-                            mine={state.rating}
-                            onRate={(r) => void rate(r)}
-                        />
-                        <AudienceBar audience={audience} statuses={statuses} />
-                        <Soundtrack
-                            tracks={soundtrack}
-                            slug={movie.slug}
-                            canAdd={can.manage}
-                        />
-                        {reviewsOn && <MovieReviews slug={movie.slug} />}
-                        <section
-                            id="comments"
-                            className="glass scroll-mt-24 rounded-2xl p-5"
-                        >
-                            <h2 className="mb-3 flex items-center gap-2 font-display text-lg font-semibold text-white">
-                                <MessageCircle className="size-5 text-gc-lilac-400" />
-                                {tr('Обговорення')}
-                                <span className="text-sm font-normal text-white/40">
-                                    {commentsCount}
-                                </span>
-                            </h2>
-                            {!movie.comments_enabled && (
-                                <p className="mb-3 text-sm text-white/45">
-                                    {tr('Коментарі до цього фільму вимкнено.')}
-                                </p>
-                            )}
-                            <Comments
-                                endpoint={`/cinema/${movie.slug}/comments`}
-                                initial={comments}
-                                total={commentsCount}
-                                canComment={movie.comments_enabled}
-                                onCountChange={setCommentsCount}
-                                className={cn(
-                                    comments.length === 0 && 'border-t-0 pt-0',
-                                )}
-                            />
-                        </section>
-                    </div>
-                    <aside className="space-y-5">
-                        {seen.length > 0 && (
-                            <section className="glass rounded-2xl p-5">
-                                <h2 className="mb-3 font-display text-sm font-semibold text-white/70">
-                                    {tr('Уже бачили')}
-                                </h2>
-                                <ul className="space-y-2">
-                                    {seen.map((friend) => (
-                                        <li key={friend.id}>
-                                            <Link
-                                                href={`/${friend.username}`}
-                                                className="flex items-center gap-2 text-sm text-white"
-                                            >
-                                                <UserAvatar
-                                                    user={friend}
-                                                    size="sm"
-                                                />
-                                                <span className="truncate">
-                                                    {friend.name}
-                                                </span>
-                                            </Link>
+                                {/* Відомості рядками з іконками */}
+                                <ul className="mt-5 space-y-2.5 text-[15px] text-white/75">
+                                    {(movie.countries.length > 0 ||
+                                        movie.year) && (
+                                        <li className="flex items-center gap-3">
+                                            <Globe className="size-5 shrink-0 text-white/50" />
+                                            {[
+                                                movie.countries
+                                                    .slice(0, 2)
+                                                    .join(', '),
+                                                movie.year,
+                                            ]
+                                                .filter(Boolean)
+                                                .join(', ')}
                                         </li>
-                                    ))}
-                                </ul>
-                            </section>
-                        )}
-                        {taste.length > 0 && (
-                            <section className="glass rounded-2xl p-5">
-                                <h2 className="mb-3 font-display text-sm font-semibold text-white/70">
-                                    {tr('Схожий смак')}
-                                </h2>
-                                <ul className="space-y-2">
-                                    {taste.map((friend) => (
-                                        <li key={friend.id}>
-                                            <Link
-                                                href={`/${friend.username}`}
-                                                className="flex items-center justify-between gap-2 text-sm text-white"
+                                    )}
+                                    {(movie.episodes_count ||
+                                        movie.duration) && (
+                                        <li className="flex items-center gap-3">
+                                            <Tv className="size-5 shrink-0 text-white/50" />
+                                            {[
+                                                movie.episodes_count &&
+                                                movie.episodes_count > 1
+                                                    ? `${movie.episodes_count} ${plural(movie.episodes_count, ['епізод', 'епізоди', 'епізодів'])}`
+                                                    : null,
+                                                durationLabel(movie.duration),
+                                            ]
+                                                .filter(Boolean)
+                                                .join(' · ')}
+                                        </li>
+                                    )}
+                                    <li className="flex items-center gap-3">
+                                        <CalendarDays className="size-5 shrink-0 text-white/50" />
+                                        {movie.type_label}
+                                    </li>
+                                    <li className="flex flex-wrap items-center gap-x-5 gap-y-1 text-sm text-white/55">
+                                        <span className="inline-flex items-center gap-1.5">
+                                            <Eye className="size-4" />
+                                            {compactNumber(movie.views_count)}
+                                        </span>
+                                        <span className="inline-flex items-center gap-1.5">
+                                            <UsersRound className="size-4" />
+                                            {compactNumber(
+                                                stats.watchers_count,
+                                            )}{' '}
+                                            {tr('у списках')}
+                                        </span>
+                                        {ratings.map((r) => (
+                                            <span
+                                                key={r.key}
+                                                className={cn(
+                                                    'font-semibold',
+                                                    r.tone,
+                                                )}
                                             >
-                                                <span className="flex min-w-0 items-center gap-2">
+                                                {r.label}{' '}
+                                                {movie.ratings[r.key]!.toFixed(
+                                                    1,
+                                                )}
+                                            </span>
+                                        ))}
+                                    </li>
+                                </ul>
+
+                                {movie.genres.length > 0 && (
+                                    <p className="mt-4 flex flex-wrap gap-x-2 text-[15px]">
+                                        {movie.genres.map((genre, i) => (
+                                            <Link
+                                                key={genre}
+                                                href={`/cinema?genre=${encodeURIComponent(genre)}`}
+                                                className="text-white underline underline-offset-4 hover:text-[var(--vkui--color_text_accent)]"
+                                            >
+                                                {genre}
+                                                {i < movie.genres.length - 1 &&
+                                                    ','}
+                                            </Link>
+                                        ))}
+                                    </p>
+                                )}
+
+                                <div className="mt-4 flex flex-wrap items-center gap-2">
+                                    {listsOn && (
+                                        <AddToList
+                                            movieId={movie.id}
+                                            slug={movie.slug}
+                                        />
+                                    )}
+                                    <PinButton
+                                        kind="movie"
+                                        id={movie.id}
+                                        pinned={pinned}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                    <StatusDialog
+                        open={statusOpen}
+                        onOpenChange={setStatusOpen}
+                        statuses={statuses}
+                        value={state.status}
+                        onPick={(status) => void setStatus(status)}
+                    />
+
+                    <section
+                        id="player"
+                        className="glass scroll-mt-24 overflow-hidden rounded-2xl"
+                    >
+                        {tabs.length === 0 ? (
+                            <div className="flex aspect-video flex-col items-center justify-center gap-3 bg-black/40 p-6 text-center">
+                                <Tv className="size-10 text-white/25" />
+                                <p className="font-display text-lg font-semibold text-white">
+                                    {tr('Плеєр ще не додано')}
+                                </p>
+                                <p className="max-w-sm text-sm text-white/45">
+                                    {tr(
+                                        'Додайте фільм до списку «В планах» — ми нагадаємо, щойно він з’явиться.',
+                                    )}
+                                </p>
+                            </div>
+                        ) : (
+                            <>
+                                <div className="flex flex-wrap items-center gap-2 border-b border-white/[0.06] p-3">
+                                    <div className="scrollbar-none flex max-w-full gap-1 overflow-x-auto">
+                                        {tabs.map((tab) => (
+                                            <button
+                                                key={tab.key}
+                                                type="button"
+                                                onClick={() => choose(tab.key)}
+                                                className={cn(
+                                                    'rounded-xl px-3.5 py-2 text-sm font-semibold transition',
+                                                    provider === tab.key
+                                                        ? 'nav-active text-white'
+                                                        : 'text-white/55 hover:bg-white/[0.05] hover:text-white',
+                                                )}
+                                            >
+                                                {tab.label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                    {players.length === 1 &&
+                                        provider !== 'trailer' &&
+                                        player?.translation && (
+                                            <span className="ml-auto max-w-full truncate rounded-xl border border-white/[0.06] px-3 py-2 text-sm text-white/60">
+                                                {player.translation}
+                                            </span>
+                                        )}
+                                    {provider !== 'trailer' &&
+                                        players.length > 1 && (
+                                            <div className="ml-auto max-w-full">
+                                                <VoicePicker
+                                                    players={players}
+                                                    current={player}
+                                                    onPick={(p) => {
+                                                        setProvider(p.provider);
+                                                        setPlayerKey(p.key);
+                                                    }}
+                                                />
+                                            </div>
+                                        )}
+                                </div>
+                                <div className="relative aspect-video bg-black">
+                                    <iframe
+                                        ref={frameRef}
+                                        key={
+                                            provider === 'trailer'
+                                                ? 'trailer'
+                                                : episodeMode
+                                                  ? `${player.key}:${pick.season}:${pick.episode}`
+                                                  : player?.key
+                                        }
+                                        src={
+                                            provider === 'trailer'
+                                                ? (movie.trailer_url ?? '')
+                                                : player && !waitingEpisodes
+                                                  ? episodeLink(
+                                                        player.provider,
+                                                        player.link,
+                                                        episodeMode
+                                                            ? pick
+                                                            : null,
+                                                        episodeMode || bare,
+                                                    )
+                                                  : undefined
+                                        }
+                                        title={movie.title}
+                                        className="absolute inset-0 size-full"
+                                        allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
+                                        allowFullScreen
+                                        referrerPolicy="origin"
+                                    />
+                                </div>
+                                {episodes &&
+                                    episodes.length > 0 &&
+                                    provider !== 'trailer' && (
+                                        <EpisodePicker
+                                            seasons={episodes}
+                                            value={pick}
+                                            onChange={setPick}
+                                            supported={supportsEpisodes(
+                                                player?.provider,
+                                            )}
+                                            watched={marks}
+                                        />
+                                    )}
+                            </>
+                        )}
+                    </section>
+
+                    <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_300px]">
+                        <div className="min-w-0 space-y-5">
+                            {movie.description && (
+                                <section className="glass rounded-2xl p-5">
+                                    <h2 className="mb-2 font-display text-lg font-semibold text-white">
+                                        {tr('Про що')}
+                                    </h2>
+                                    <p
+                                        className={cn(
+                                            'text-[15px] leading-relaxed whitespace-pre-line text-white/75',
+                                            !moreText && 'line-clamp-5',
+                                        )}
+                                    >
+                                        {movie.description}
+                                    </p>
+                                    {!moreText &&
+                                        movie.description.length > 320 && (
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    setMoreText(true)
+                                                }
+                                                className="mt-2 w-full text-center text-sm font-semibold text-white"
+                                            >
+                                                {tr('Докладніше…')}
+                                            </button>
+                                        )}
+                                </section>
+                            )}
+                            <RatingBreakdown
+                                audience={audience}
+                                mine={state.rating}
+                                onRate={(r) => void rate(r)}
+                            />
+                            <AudienceBar
+                                audience={audience}
+                                statuses={statuses}
+                            />
+                            <Soundtrack
+                                tracks={soundtrack}
+                                slug={movie.slug}
+                                canAdd={can.manage}
+                            />
+                            {reviewsOn && <MovieReviews slug={movie.slug} />}
+                            <section
+                                id="comments"
+                                className="glass scroll-mt-24 rounded-2xl p-5"
+                            >
+                                <h2 className="mb-3 flex items-center gap-2 font-display text-lg font-semibold text-white">
+                                    <MessageCircle className="size-5 text-gc-lilac-400" />
+                                    {tr('Обговорення')}
+                                    <span className="text-sm font-normal text-white/40">
+                                        {commentsCount}
+                                    </span>
+                                </h2>
+                                {!movie.comments_enabled && (
+                                    <p className="mb-3 text-sm text-white/45">
+                                        {tr(
+                                            'Коментарі до цього фільму вимкнено.',
+                                        )}
+                                    </p>
+                                )}
+                                <Comments
+                                    endpoint={`/cinema/${movie.slug}/comments`}
+                                    initial={comments}
+                                    total={commentsCount}
+                                    canComment={movie.comments_enabled}
+                                    onCountChange={setCommentsCount}
+                                    className={cn(
+                                        comments.length === 0 &&
+                                            'border-t-0 pt-0',
+                                    )}
+                                />
+                            </section>
+                        </div>
+                        <aside className="space-y-5">
+                            {seen.length > 0 && (
+                                <section className="glass rounded-2xl p-5">
+                                    <h2 className="mb-3 font-display text-sm font-semibold text-white/70">
+                                        {tr('Уже бачили')}
+                                    </h2>
+                                    <ul className="space-y-2">
+                                        {seen.map((friend) => (
+                                            <li key={friend.id}>
+                                                <Link
+                                                    href={`/${friend.username}`}
+                                                    className="flex items-center gap-2 text-sm text-white"
+                                                >
                                                     <UserAvatar
                                                         user={friend}
                                                         size="sm"
@@ -847,77 +941,105 @@ export default function CinemaShow({
                                                     <span className="truncate">
                                                         {friend.name}
                                                     </span>
-                                                </span>
-                                                <span className="shrink-0 text-xs text-white/45">
-                                                    {friend.shared}
-                                                </span>
-                                            </Link>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </section>
-                        )}
-                        <section className="glass rounded-2xl p-5">
-                            <h2 className="mb-3 font-display text-sm font-semibold text-white/70">
-                                {tr('Друзі та цей фільм')}
-                            </h2>
-                            {friends.users.length === 0 ? (
-                                <p className="text-sm text-white/45">
-                                    {tr(
-                                        'Ніхто з друзів ще не додав його до списку. Будьте першим і порадьте!',
-                                    )}
-                                </p>
-                            ) : (
-                                <ul className="space-y-2.5">
-                                    {friends.users.map((f) => (
-                                        <li key={f.id}>
-                                            <Link
-                                                href={`/${f.username}`}
-                                                className="flex items-center gap-2.5 rounded-xl p-1 transition hover:bg-white/[0.04]"
-                                            >
-                                                <UserAvatar
-                                                    user={f}
-                                                    size="sm"
-                                                />
-                                                <span className="min-w-0 flex-1">
-                                                    <span className="block truncate text-sm font-medium text-white">
-                                                        {f.name}
-                                                    </span>
-                                                    <span className="block text-xs text-white/45">
-                                                        {
-                                                            statuses.find(
-                                                                (s) =>
-                                                                    s.key ===
-                                                                    f.movie_status,
-                                                            )?.label
-                                                        }
-                                                    </span>
-                                                </span>
-                                                {f.movie_rating && (
-                                                    <span className="inline-flex items-center gap-0.5 text-xs font-semibold text-gc-amber">
-                                                        <Star className="size-3 fill-current" />
-                                                        {f.movie_rating}
-                                                    </span>
-                                                )}
-                                            </Link>
-                                        </li>
-                                    ))}
-                                    {friends.total > friends.users.length && (
-                                        <li className="pl-1 text-xs text-white/40">
-                                            {tr('і ще')}{' '}
-                                            {friends.total -
-                                                friends.users.length}
-                                        </li>
-                                    )}
-                                </ul>
+                                                </Link>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </section>
                             )}
-                        </section>
-                    </aside>
-                </div>
+                            {taste.length > 0 && (
+                                <section className="glass rounded-2xl p-5">
+                                    <h2 className="mb-3 font-display text-sm font-semibold text-white/70">
+                                        {tr('Схожий смак')}
+                                    </h2>
+                                    <ul className="space-y-2">
+                                        {taste.map((friend) => (
+                                            <li key={friend.id}>
+                                                <Link
+                                                    href={`/${friend.username}`}
+                                                    className="flex items-center justify-between gap-2 text-sm text-white"
+                                                >
+                                                    <span className="flex min-w-0 items-center gap-2">
+                                                        <UserAvatar
+                                                            user={friend}
+                                                            size="sm"
+                                                        />
+                                                        <span className="truncate">
+                                                            {friend.name}
+                                                        </span>
+                                                    </span>
+                                                    <span className="shrink-0 text-xs text-white/45">
+                                                        {friend.shared}
+                                                    </span>
+                                                </Link>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </section>
+                            )}
+                            <section className="glass rounded-2xl p-5">
+                                <h2 className="mb-3 font-display text-sm font-semibold text-white/70">
+                                    {tr('Друзі та цей фільм')}
+                                </h2>
+                                {friends.users.length === 0 ? (
+                                    <p className="text-sm text-white/45">
+                                        {tr(
+                                            'Ніхто з друзів ще не додав його до списку. Будьте першим і порадьте!',
+                                        )}
+                                    </p>
+                                ) : (
+                                    <ul className="space-y-2.5">
+                                        {friends.users.map((f) => (
+                                            <li key={f.id}>
+                                                <Link
+                                                    href={`/${f.username}`}
+                                                    className="flex items-center gap-2.5 rounded-xl p-1 transition hover:bg-white/[0.04]"
+                                                >
+                                                    <UserAvatar
+                                                        user={f}
+                                                        size="sm"
+                                                    />
+                                                    <span className="min-w-0 flex-1">
+                                                        <span className="block truncate text-sm font-medium text-white">
+                                                            {f.name}
+                                                        </span>
+                                                        <span className="block text-xs text-white/45">
+                                                            {
+                                                                statuses.find(
+                                                                    (s) =>
+                                                                        s.key ===
+                                                                        f.movie_status,
+                                                                )?.label
+                                                            }
+                                                        </span>
+                                                    </span>
+                                                    {f.movie_rating && (
+                                                        <span className="inline-flex items-center gap-0.5 text-xs font-semibold text-gc-amber">
+                                                            <Star className="size-3 fill-current" />
+                                                            {f.movie_rating}
+                                                        </span>
+                                                    )}
+                                                </Link>
+                                            </li>
+                                        ))}
+                                        {friends.total >
+                                            friends.users.length && (
+                                            <li className="pl-1 text-xs text-white/40">
+                                                {tr('і ще')}{' '}
+                                                {friends.total -
+                                                    friends.users.length}
+                                            </li>
+                                        )}
+                                    </ul>
+                                )}
+                            </section>
+                        </aside>
+                    </div>
 
-                {similar.length > 0 && (
-                    <PosterRow title={tr('Схоже')} movies={similar} />
-                )}
+                    {similar.length > 0 && (
+                        <PosterRow title={tr('Схоже')} movies={similar} />
+                    )}
+                </div>
             </div>
 
             <ShareMovieDialog

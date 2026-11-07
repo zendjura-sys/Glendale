@@ -121,22 +121,21 @@ export function MediaGrid({ items }: { items: Attachment[] }) {
         );
     }
 
-    const visible = items.slice(0, 4);
+    // Мозаїка: 3+ фото — велике зліва й два праворуч, решта — «+N» на останньому.
+    const visible = items.slice(0, 3);
     const rest = items.length - visible.length;
     const layout =
         items.length === 1
             ? 'grid-cols-1'
             : items.length === 2
               ? 'grid-cols-2'
-              : items.length === 3
-                ? 'grid-cols-2 grid-rows-2'
-                : 'grid-cols-2 grid-rows-2';
+              : 'grid-cols-[1.25fr_1fr] grid-rows-2';
 
     return (
         <>
             <div
                 className={cn(
-                    'grid gap-1 overflow-hidden rounded-[10px]',
+                    'grid gap-2 overflow-hidden rounded-2xl',
                     layout,
                     items.length > 1 && 'aspect-[4/3]',
                 )}
@@ -147,8 +146,8 @@ export function MediaGrid({ items }: { items: Attachment[] }) {
                         key={item.id}
                         onClick={() => setOpen(index)}
                         className={cn(
-                            'group relative overflow-hidden bg-white/5',
-                            items.length === 3 && index === 0 && 'row-span-2',
+                            'group relative overflow-hidden rounded-2xl bg-white/5',
+                            items.length >= 3 && index === 0 && 'row-span-2',
                         )}
                     >
                         <img
@@ -167,7 +166,7 @@ export function MediaGrid({ items }: { items: Attachment[] }) {
                                     : undefined
                             }
                         />
-                        {rest > 0 && index === 3 && (
+                        {rest > 0 && index === 2 && (
                             <span className="absolute inset-0 flex items-center justify-center bg-black/55 font-display text-2xl font-bold text-white backdrop-blur-sm">
                                 +{rest}
                             </span>

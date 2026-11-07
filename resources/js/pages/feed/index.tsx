@@ -1,4 +1,9 @@
 import { Group, Tabs, TabsItem } from '@vkontakte/vkui';
+import {
+    Contacts,
+    FriendRequests,
+    useRail,
+} from '@/components/gc/rail-widgets';
 import { BentoGrid, BentoRow, BentoTile } from '@/components/gc/bento';
 import {
     Deferred,
@@ -172,6 +177,8 @@ export default function Feed({
         'birthdays',
     ];
     const liveOn = useFeature('live');
+    // Spacepark: праворуч заявки в друзі й контакти (дані /me/rail).
+    const { data: rail, reload: reloadRail } = useRail();
 
     return (
         <>
@@ -358,6 +365,12 @@ export default function Feed({
                 </div>
 
                 <aside className="gc-split-hide sticky top-[76px] hidden h-fit w-[320px] shrink-0 space-y-4 min-[1920px]:w-[360px] xl:block">
+                    {rail && (
+                        <>
+                            <FriendRequests data={rail} reload={reloadRail} />
+                            <Contacts data={rail} />
+                        </>
+                    )}
                     {homeWidgets.map((key) => {
                         switch (key) {
                             // Серія днів і «Готові грати» — у Bento-сітці стрічки.
@@ -365,6 +378,9 @@ export default function Feed({
                             case 'ready':
                                 return null;
                             case 'online':
+                                // Контакти вже показують друзів — без дубля.
+                                if (rail && rail.contacts.length > 0)
+                                    return null;
                                 return (
                                     <div key={key}>
                                         <Widget

@@ -56,30 +56,6 @@ type Viewer = UserCard & { reaction: string | null; viewed_at: string };
 const failed = (e: unknown, fallback: string) =>
     toast.error(e instanceof ApiError ? e.message : fallback);
 
-/** Кільце довкола аватарки: кольорове — є нові історії, сіре — усе переглянуто. */
-function Ring({
-    seen,
-    children,
-}: {
-    seen: boolean;
-    children: React.ReactNode;
-}) {
-    return (
-        <span
-            className={cn(
-                'inline-flex rounded-full p-[2.5px]',
-                seen
-                    ? 'bg-white/15'
-                    : 'bg-gradient-to-tr from-gc-blue via-gc-violet-400 to-gc-pink',
-            )}
-        >
-            <span className="inline-flex rounded-full bg-[var(--card-solid,#0b0d1d)] p-[2px]">
-                {children}
-            </span>
-        </span>
-    );
-}
-
 /** Нова історія: фото чи відео, підпис, хто бачить. */
 function Composer({
     onClose,
@@ -782,6 +758,26 @@ function StoryViewer({
 }
 
 /** Смуга історій над стрічкою. */
+/** Кадр історії як тло плитки: фото чи перший кадр відео без звуку. */
+function StoryThumb({ item }: { item: StoryItem }) {
+    return item.media_type === 'video' ? (
+        <video
+            src={item.url}
+            muted
+            playsInline
+            preload="metadata"
+            className="absolute inset-0 size-full object-cover"
+        />
+    ) : (
+        <img
+            src={item.url}
+            alt=""
+            loading="lazy"
+            className="absolute inset-0 size-full object-cover"
+        />
+    );
+}
+
 export function StoriesBar() {
     const me = usePage().props.auth.user;
     const [groups, setGroups] = useState<StoryGroup[] | null>(null);
@@ -808,47 +804,43 @@ export function StoriesBar() {
 
     return (
         <>
-            <div className="glass flex [scrollbar-width:none] gap-3 overflow-x-auto rounded-2xl p-3">
+            {/* Історії великими плитками: кадр історії — тло, аватар угорі, ім'я внизу; перша — «Додати». */}
+            <div className="flex [scrollbar-width:none] gap-3 overflow-x-auto">
                 <button
                     type="button"
                     onClick={() =>
                         own ? setOpen(groups.indexOf(own)) : setComposing(true)
                     }
-                    className="flex w-16 shrink-0 flex-col items-center gap-1.5"
+                    data-on-dark
+                    className="relative flex h-48 w-[112px] shrink-0 flex-col items-center justify-end overflow-hidden rounded-2xl bg-gradient-to-b from-[#6f7f9c] to-[#2a3242] p-3"
                 >
-                    <span className="relative">
-                        {own ? (
-                            <Ring seen={own.all_seen}>
-                                <UserAvatar
-                                    user={me}
-                                    size="md"
-                                    showOnline={false}
-                                />
-                            </Ring>
-                        ) : (
-                            <span className="inline-flex p-[4.5px]">
-                                <UserAvatar
-                                    user={me}
-                                    size="md"
-                                    showOnline={false}
-                                />
-                            </span>
-                        )}
-                        <span
-                            role="button"
-                            tabIndex={0}
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                setComposing(true);
-                            }}
-                            className="absolute -right-0.5 -bottom-0.5 flex size-5 items-center justify-center rounded-full border-2 border-[#0b0d1d] bg-gradient-brand text-white"
-                            aria-label={tr('Нова історія')}
-                        >
-                            <Plus className="size-3" />
+                    {own?.stories[0] ? (
+                        <StoryThumb item={own.stories[0]} />
+                    ) : (
+                        <span className="absolute inset-0">
+                            <UserAvatar
+                                user={me}
+                                size="hero"
+                                showOnline={false}
+                                className="!size-full !rounded-none opacity-60"
+                            />
                         </span>
+                    )}
+                    <span className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent" />
+                    <span
+                        role="button"
+                        tabIndex={0}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setComposing(true);
+                        }}
+                        className="relative mb-2 flex size-9 items-center justify-center rounded-xl border-2 border-white/80 text-white"
+                        aria-label={tr('Нова історія')}
+                    >
+                        <Plus className="size-5" />
                     </span>
-                    <span className="w-full text-center text-xs leading-tight break-words text-white/70">
-                        {tr('Ваша історія')}
+                    <span className="relative text-xs font-semibold text-white">
+                        {own ? tr('Ваша історія') : tr('Додати історію')}
                     </span>
                 </button>
                 {groups.map((group, n) =>
@@ -857,23 +849,36 @@ export function StoriesBar() {
                             key={group.user.id}
                             type="button"
                             onClick={() => setOpen(n)}
-                            className="flex w-16 shrink-0 flex-col items-center gap-1.5"
+                            data-on-dark
+                            className="relative flex h-48 w-[112px] shrink-0 flex-col items-center justify-between overflow-hidden rounded-2xl bg-[#2a3242] p-3"
                         >
-                            <Ring seen={group.all_seen}>
+                            {group.stories[0] && (
+                                <StoryThumb item={group.stories[0]} />
+                            )}
+                            <span className="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-black/20" />
+                            <span
+                                className={cn(
+                                    'relative rounded-xl p-0.5',
+                                    group.all_seen
+                                        ? 'bg-white/40'
+                                        : 'bg-[var(--vkui--color_background_accent)]',
+                                )}
+                            >
                                 <UserAvatar
                                     user={group.user}
-                                    size="md"
+                                    size="sm"
                                     showOnline={false}
+                                    className="rounded-[10px]"
                                 />
-                            </Ring>
-                            <span className="w-full text-center text-xs leading-tight break-words text-white/70">
-                                {group.user.first_name}
+                            </span>
+                            <span className="relative w-full truncate text-center text-xs font-semibold text-white">
+                                {group.user.name}
                             </span>
                         </button>
                     ),
                 )}
                 {groups.filter((x) => !x.own).length === 0 && (
-                    <p className="self-center text-xs text-white/40">
+                    <p className="glass flex h-48 w-56 shrink-0 items-center rounded-2xl p-4 text-xs leading-relaxed text-white/45">
                         {tr('Історії друзів з’являться тут на 24 години')}
                     </p>
                 )}

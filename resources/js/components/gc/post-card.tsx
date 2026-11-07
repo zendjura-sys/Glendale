@@ -80,8 +80,11 @@ export function PostCard({
     const [likes, setLikes] = useState(post.likes_count);
     const [commentsCount, setCommentsCount] = useState(post.comments_count);
     // Фото як тло картки: перше зображення запису заповнює картку, текст і дії — поверх нього.
+    // Одне фото — тло картки; кілька — мозаїка під текстом.
     const cover =
-        post.attachments[0]?.type === 'image' ? post.attachments[0] : null;
+        post.attachments.length === 1 && post.attachments[0].type === 'image'
+            ? post.attachments[0]
+            : null;
     const [viewer, setViewer] = useState<number | null>(null);
     const [showComments, setShowComments] = useState(
         expanded || post.comments.length > 0,

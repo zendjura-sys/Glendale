@@ -20,6 +20,7 @@ import {
     UsersRound,
     X,
     SlidersHorizontal,
+    Send,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -405,8 +406,9 @@ export function PostComposer({
 
     return (
         <section
+            data-compact={expanded ? undefined : true}
             className={cn(
-                'glass relative overflow-clip rounded-2xl p-4 transition sm:p-5',
+                'gc-composer glass relative overflow-clip rounded-2xl p-4 transition sm:p-5',
                 expanded && 'ring-1 ring-primary/25',
                 className,
             )}
@@ -417,7 +419,7 @@ export function PostComposer({
             }}
         >
             <div className="pointer-events-none absolute -top-24 -right-24 size-56 rounded-full bg-gc-indigo/20 blur-3xl" />
-            <div className="relative flex gap-3">
+            <div className="gc-composer-main relative flex items-center gap-3">
                 {asCommunity && community ? (
                     <CommunityAvatar community={community} size="md" />
                 ) : (
@@ -456,6 +458,18 @@ export function PostComposer({
                             </p>
                         ))}
                 </div>
+                {!expanded && (
+                    <button
+                        type="button"
+                        onClick={() => setFocused(true)}
+                        className="btn-glow inline-flex h-10 shrink-0 items-center gap-2 rounded-xl px-4 text-sm font-semibold"
+                    >
+                        <Send className="size-4" />
+                        <span className="hidden sm:inline">
+                            {tr('Опублікувати')}
+                        </span>
+                    </button>
+                )}
             </div>
 
             {previews.length > 0 && (

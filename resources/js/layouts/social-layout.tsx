@@ -114,8 +114,31 @@ function Sidebar() {
 
     return (
         <aside className="gc-sidebar-glass sticky top-[calc(72px+env(safe-area-inset-top))] hidden h-[calc(100dvh-88px)] w-[220px] shrink-0 [scrollbar-width:none] flex-col overflow-y-auto overscroll-contain p-2 [view-transition-name:gc-sidebar] md:flex">
-            {/* Профіль — у меню акаунта в шапці, тут не дублюємо (як на vk.com). */}
-            <nav aria-label={tr('Розділи')} className="flex flex-col">
+            {/* Spacepark: картка профілю над меню. */}
+            <Link
+                href={`/${user.username}`}
+                className="glass mb-3 flex items-center gap-3 rounded-2xl p-3"
+            >
+                <UserAvatar user={user} size="md" />
+                <span className="min-w-0">
+                    <span
+                        style={plusNameProps(user.plus).style}
+                        className={cn(
+                            'block truncate text-sm font-semibold text-white',
+                            plusNameProps(user.plus).className,
+                        )}
+                    >
+                        {user.first_name} {user.last_name}
+                    </span>
+                    <span className="block truncate text-xs text-white/45">
+                        @{user.username}
+                    </span>
+                </span>
+            </Link>
+            <nav
+                aria-label={tr('Розділи')}
+                className="gc-menu-card glass flex flex-col rounded-2xl py-2"
+            >
                 {nav.map((item) => {
                     const href =
                         item.key === 'profile'
