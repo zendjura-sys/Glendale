@@ -15,12 +15,6 @@ import 'skeletons.dart';
 
 final _sorts = [('updated', tr('Нещодавно оновлені')), ('new', tr('Нові на сайті')), ('popular', tr('Популярні')), ('rating', tr('За рейтингом'))];
 
-String? _ratingLabel(dynamic value) {
-  final rating = value is num ? value.toDouble() : double.tryParse('$value');
-  if (rating == null || rating <= 0) return null;
-  return rating.toStringAsFixed(rating >= 10 ? 0 : 1);
-}
-
 // ───────────────────────── Каталог ─────────────────────────
 
 class CinemaScreen extends StatefulWidget {
@@ -113,7 +107,7 @@ class _CinemaScreenState extends State<CinemaScreen> {
       if (!filtered && continueRow != null) ...[
         Row(children: [
           Expanded(child: Text(tr('Продовжити перегляд'), style: display(18))),
-          GestureDetector(onTap: () => context.push('/cinema/my?status=history'), child: Text(tr('Усі'), style: body(13, color: primary, weight: FontWeight.w600))),
+          GestureDetector(onTap: () => context.push('/cinema/my?status=history'), child: Text(tr('Усі'), style: body(13, color: cinemaAccent, weight: FontWeight.w600))),
         ]),
         const SizedBox(height: 10),
         ContinueCards(movies: maps(continueRow['movies'])),
@@ -132,7 +126,7 @@ class _CinemaScreenState extends State<CinemaScreen> {
       ),
       const SizedBox(height: 10),
       Wrap(spacing: 8, runSpacing: 8, crossAxisAlignment: WrapCrossAlignment.center, children: [
-        if ((query ?? '').isNotEmpty) GestureDetector(onTap: () => _set(() => query = null), child: Pill(label: '«$query» ×', color: primary)),
+        if ((query ?? '').isNotEmpty) GestureDetector(onTap: () => _set(() => query = null), child: Pill(label: '«$query» ×', color: cinemaAccent)),
         GcSelect<String>(
           value: genre ?? '',
           items: [('', tr('Усі жанри')), for (final g in genres) ('${g['name']}', '${g['name']}')],
@@ -208,7 +202,7 @@ class PosterCard extends StatelessWidget {
         const SizedBox(height: 6),
         Text(text(movie['title']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(13, weight: FontWeight.w700)),
         Text(
-          footer ?? [_ratingLabel(movie['rating']) == null ? null : '★ ${_ratingLabel(movie['rating'])}', movie['year'], text(movie['type_label'])].whereType<Object>().join(' · '),
+          footer ?? [movie['year'], text(movie['type_label'])].whereType<Object>().join(' · '),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: body(11.5, color: muted),
@@ -496,7 +490,7 @@ class _CinemaScheduleScreenState extends State<CinemaScheduleScreen> {
                                   bottom: 6,
                                   child: Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                                    decoration: BoxDecoration(color: primary, borderRadius: BorderRadius.circular(7)),
+                                    decoration: BoxDecoration(color: cinemaAccent, borderRadius: BorderRadius.circular(7)),
                                     child: Text('${at.hour.toString().padLeft(2, '0')}:${at.minute.toString().padLeft(2, '0')}', style: body(10.5, color: Colors.white, weight: FontWeight.w800)),
                                   ),
                                 ),

@@ -331,13 +331,13 @@ class _MovieScreenState extends State<MovieScreen> {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
               leading: Icon(
                 (text(option['key']) ?? '') == (current ?? '') ? LucideIcons.circleDot : LucideIcons.circle,
-                color: (text(option['key']) ?? '') == (current ?? '') ? (_statusColors[option['key']] ?? primary) : muted,
+                color: (text(option['key']) ?? '') == (current ?? '') ? (_statusColors[option['key']] ?? cinemaAccent) : muted,
               ),
               title: Text('${option['label']}', style: body(15.5)),
               onTap: () => Navigator.pop(dialog, '${option['key']}'),
             ),
         ]),
-        actions: [TextButton(onPressed: () => Navigator.pop(dialog), child: Text(tr('Скасувати'), style: body(14, color: primary, weight: FontWeight.w600)))],
+        actions: [TextButton(onPressed: () => Navigator.pop(dialog), child: Text(tr('Скасувати'), style: body(14, color: cinemaAccent, weight: FontWeight.w600)))],
       ),
     );
     if (picked == null) return;
@@ -508,7 +508,7 @@ class _MovieScreenState extends State<MovieScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 14),
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: status == s['key'] ? (_statusColors[s['key']] ?? primary) : fg.withValues(alpha: 0.06),
+                      color: status == s['key'] ? (_statusColors[s['key']] ?? cinemaAccent) : fg.withValues(alpha: 0.06),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text('${s['label']}', style: body(13.5, color: status == s['key'] ? Colors.white : soft, weight: FontWeight.w600)),
@@ -523,21 +523,21 @@ class _MovieScreenState extends State<MovieScreen> {
             child: _TonalAction(
               icon: status == null ? LucideIcons.plus : LucideIcons.chevronDown,
               label: status == null ? tr('Додати до списку') : '$statusLabel',
-              color: _statusColors[status] ?? primary,
+              color: _statusColors[status] ?? cinemaAccent,
               onTap: _statusDialog,
             ),
           ),
           const SizedBox(width: 8),
-          _TonalAction(icon: LucideIcons.bookmark, label: compact(movie['watchers_count']), color: gold, onTap: _statusDialog),
+          _TonalAction(icon: LucideIcons.bookmark, label: compact(movie['watchers_count']), color: cinemaAccent, onTap: _statusDialog),
           if (AppScope.of(context).session.pluginOn('movie_lists')) ...[
             const SizedBox(width: 8),
-            _TonalAction(icon: LucideIcons.listPlus, label: null, color: soft, onTap: () => showAddToList(context, intOf(movie['id']), widget.slug)),
+            _TonalAction(icon: LucideIcons.listPlus, label: null, color: cinemaAccent, onTap: () => showAddToList(context, intOf(movie['id']), widget.slug)),
           ],
           const SizedBox(width: 8),
           _TonalAction(
             icon: LucideIcons.messageSquare,
             label: intOf(movie['comments_count']) > 0 ? compact(movie['comments_count']) : null,
-            color: soft,
+            color: cinemaAccent,
             onTap: () {
               // Список будується ліниво: коментарі ще можуть бути не створені — їдемо в самий низ.
               final target = commentsKey.currentContext;
@@ -817,8 +817,7 @@ class _PlayPill extends StatelessWidget {
           height: 54,
           decoration: ShapeDecoration(
             shape: const StadiumBorder(),
-            gradient: buttonGradient,
-            shadows: [BoxShadow(color: indigo.withValues(alpha: 0.45), blurRadius: 22, offset: const Offset(0, 8), spreadRadius: -10)],
+            gradient: cinemaGradient,
           ),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 18),
@@ -855,7 +854,7 @@ class _TrailerCard extends StatelessWidget {
                 Container(
                   width: 52,
                   height: 52,
-                  decoration: BoxDecoration(color: primary, shape: BoxShape.circle),
+                  decoration: BoxDecoration(color: cinemaAccent, shape: BoxShape.circle),
                   child: const Icon(LucideIcons.play, color: Colors.white, size: 26),
                 ),
                 const SizedBox(width: 12),
@@ -918,7 +917,7 @@ class _RatingBlock extends StatelessWidget {
                           value: top == 0 ? 0 : counts[i]! / top,
                           minHeight: 10,
                           backgroundColor: fg.withValues(alpha: 0.06),
-                          valueColor: AlwaysStoppedAnimation(primary),
+                          valueColor: AlwaysStoppedAnimation(cinemaAccent),
                         ),
                       ),
                     ),
@@ -1073,7 +1072,7 @@ class _VoicePickerScreenState extends State<VoicePickerScreen> {
                           ),
                         ]),
                       ),
-                      if (active) Icon(LucideIcons.circleCheck, color: primary),
+                      if (active) Icon(LucideIcons.circleCheck, color: cinemaAccent),
                     ]),
                   ),
                 );
@@ -1243,7 +1242,7 @@ class _EpisodeListScreenState extends State<EpisodeListScreen> {
                         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                           Text(
                             widget.seasons.length > 1 ? tr('{s} сезон · {e} серія', {'s': pick.season, 'e': pick.episode}) : tr('{n} серія', {'n': pick.episode}),
-                            style: body(16.5, weight: FontWeight.w700, color: last ? primary : ink),
+                            style: body(16.5, weight: FontWeight.w700, color: last ? cinemaAccent : ink),
                           ),
                           if (at > 0) Text(tr('Переглянуто до {t}', {'t': clock(at.toDouble())}), style: body(13, color: muted)),
                         ]),
@@ -2064,10 +2063,10 @@ class _SeekBarState extends State<_SeekBar> {
               child: SliderTheme(
                 data: SliderTheme.of(context).copyWith(
                   trackHeight: 3.5,
-                  activeTrackColor: primary,
+                  activeTrackColor: cinemaAccent,
                   inactiveTrackColor: fg.withValues(alpha: 0.24),
                   thumbColor: Colors.white,
-                  overlayColor: primary.withValues(alpha: 0.2),
+                  overlayColor: cinemaAccent.withValues(alpha: 0.2),
                   thumbShape: RoundSliderThumbShape(enabledThumbRadius: dragging == null ? 6 : 9),
                   overlayShape: const RoundSliderOverlayShape(overlayRadius: 16),
                 ),
@@ -2383,7 +2382,7 @@ class _EpisodeCell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: active ? primary : fg.withValues(alpha: started ? 0.04 : 0.08),
+      color: active ? cinemaAccent : fg.withValues(alpha: started ? 0.04 : 0.08),
       borderRadius: BorderRadius.circular(10),
       child: InkWell(
         borderRadius: BorderRadius.circular(10),

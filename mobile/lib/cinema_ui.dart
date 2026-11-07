@@ -14,6 +14,10 @@ import 'widgets.dart';
 /// Спільні елементи кінопорталу (як на сайті): бейджі постера, навігація розділів,
 /// слайдер з мініатюрами, «Продовжити перегляд», вкладки за типом, рядок «списком», віджети.
 
+/// Акцент кінопорталу застосунку (стиль Animax): соковитий зелений, кнопки-пігулки.
+const cinemaAccent = Color(0xFF06C149);
+const cinemaGradient = LinearGradient(colors: [Color(0xFF06C149), Color(0xFF06C149)]);
+
 const releaseLabels = {'announced': 'Анонс', 'ongoing': 'Виходить', 'released': 'Завершено'};
 
 String? releaseLabel(Object? key) => releaseLabels[key] == null ? null : tr(releaseLabels[key]!);
@@ -38,15 +42,22 @@ class PosterBadges extends StatelessWidget {
           child: Text(label, style: body(small ? 9.5 : 10.5, color: fgColor, weight: FontWeight.w800)),
         );
     final pctValue = pct is num ? pct.round() : null;
+    final rating = movie['rating'] is num && (movie['rating'] as num) > 0 ? (movie['rating'] as num).toDouble() : null;
     return Stack(children: [
-      if (pctValue != null)
+      // Рейтинг — зелена пігулка вгорі ліворуч (як в Animax).
+      if (rating != null)
+        Positioned(left: 6, top: 6, child: chip(rating.toStringAsFixed(1), cinemaAccent, Colors.white)),
+      // Скільки переглянуто — тонка зелена смужка внизу постера.
+      if (pctValue != null && pctValue > 0)
         Positioned(
-          left: 6,
-          top: 6,
-          child: chip(
-            '$pctValue%',
-            pctValue >= 100 ? const Color(0xE610B981) : (pctValue > 0 ? primary : Colors.white.withValues(alpha: 0.85)),
-            pctValue > 0 ? Colors.white : Colors.black54,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          child: Container(
+            height: 4,
+            color: Colors.black.withValues(alpha: 0.45),
+            alignment: Alignment.centerLeft,
+            child: FractionallySizedBox(widthFactor: (pctValue / 100).clamp(0.04, 1.0), child: Container(color: cinemaAccent)),
           ),
         ),
       if (releaseLabel(release) != null)
@@ -55,13 +66,13 @@ class PosterBadges extends StatelessWidget {
           top: 6,
           child: chip(
             releaseLabel(release)!,
-            switch (release) { 'announced' => const Color(0xE60EA5E9), 'ongoing' => const Color(0xE610B981), _ => Colors.black.withValues(alpha: 0.7) },
+            switch (release) { 'announced' => const Color(0xE60EA5E9), 'ongoing' => cinemaAccent, _ => Colors.black.withValues(alpha: 0.7) },
             release == 'released' ? const Color(0xFFFCD34D) : Colors.white,
           ),
         ),
       Positioned(
         left: 6,
-        bottom: 6,
+        bottom: pctValue != null && pctValue > 0 ? 10 : 6,
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
           if (series) chip(tr('{n} серій', {'n': episodes}), Colors.white.withValues(alpha: 0.9), Colors.black),
           if (series && showAge && age != null) const SizedBox(height: 3),
@@ -146,13 +157,13 @@ class UnderlineTabs extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.fromLTRB(10, 10, 10, 0),
               child: Column(mainAxisSize: MainAxisSize.min, children: [
-                Text(t.$2, style: body(15, color: t.$1 == active ? ink : muted, weight: t.$1 == active ? FontWeight.w700 : FontWeight.w500)),
+                Text(t.$2, style: body(15, color: t.$1 == active ? cinemaAccent : muted, weight: t.$1 == active ? FontWeight.w700 : FontWeight.w500)),
                 const SizedBox(height: 8),
                 AnimatedContainer(
                   duration: const Duration(milliseconds: 220),
                   height: 3,
                   width: t.$1 == active ? 34 : 0,
-                  decoration: BoxDecoration(color: primary, borderRadius: BorderRadius.circular(2)),
+                  decoration: BoxDecoration(color: cinemaAccent, borderRadius: BorderRadius.circular(2)),
                 ),
               ]),
             ),
@@ -173,7 +184,7 @@ class RatingRing extends StatelessWidget {
       width: 34,
       height: 34,
       child: CustomPaint(
-        painter: _RingPainter(value / 10, primary),
+        painter: _RingPainter(value / 10, cinemaAccent),
         child: Center(child: Text(value.toStringAsFixed(1), style: body(10.5, color: Colors.white, weight: FontWeight.w800))),
       ),
     );
@@ -247,7 +258,6 @@ class _CinemaHeroState extends State<CinemaHero> {
     final movie = movies[index];
     final rating = (movie['rating'] is num) ? (movie['rating'] as num).toDouble() : null;
     final meta = [movie['year'], ...((movie['countries'] as List?) ?? const []), text(movie['type_label']), ...((movie['genres'] as List?) ?? const [])].whereType<Object>().join(' · ');
-    final next = [...movies.skip(index), ...movies.take(index)].take(4).toList();
     final reduce = MediaQuery.of(context).disableAnimations;
 
     return ClipRRect(
@@ -267,25 +277,30 @@ class _CinemaHeroState extends State<CinemaHero> {
           ),
         ),
         Padding(
-          padding: const EdgeInsets.fromLTRB(18, 120, 18, 16),
+          padding: const EdgeInsets.fromLTRB(18, 220, 18, 18),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(text(movie['title']) ?? '', maxLines: 2, overflow: TextOverflow.ellipsis, style: display(28, color: Colors.white)),
+            const SizedBox(height: 6),
             Row(children: [
-              for (var i = 0; i < 10; i++) Icon(LucideIcons.star, size: 13, color: rating != null && i < rating.round() ? const Color(0xFFFBBF24) : Colors.white30),
-              if (rating != null) Padding(padding: const EdgeInsets.only(left: 6), child: Text(rating.toStringAsFixed(1), style: body(12, color: Colors.white70))),
+              if (rating != null && rating > 0) ...[
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                  decoration: BoxDecoration(color: cinemaAccent, borderRadius: BorderRadius.circular(6)),
+                  child: Text(rating.toStringAsFixed(1), style: body(11.5, color: Colors.white, weight: FontWeight.w800)),
+                ),
+                const SizedBox(width: 8),
+              ],
+              Expanded(child: Text(meta, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12.5, color: Colors.white70))),
             ]),
-            const SizedBox(height: 6),
-            Text(meta, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: Colors.white60)),
-            const SizedBox(height: 6),
-            Text(text(movie['title']) ?? '', maxLines: 2, overflow: TextOverflow.ellipsis, style: display(26, color: Colors.white)),
             if (text(movie['title_original']) != null && movie['title_original'] != movie['title'])
               Text(text(movie['title_original'])!, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14, color: Colors.white54)),
             if (text(movie['description']) != null)
-              Padding(padding: const EdgeInsets.only(top: 8), child: Text(text(movie['description'])!, maxLines: 3, overflow: TextOverflow.ellipsis, style: body(13.5, color: Colors.white70).copyWith(height: 1.4))),
+              Padding(padding: const EdgeInsets.only(top: 8), child: Text(text(movie['description'])!, maxLines: 2, overflow: TextOverflow.ellipsis, style: body(13.5, color: Colors.white70).copyWith(height: 1.4))),
             const SizedBox(height: 14),
             Wrap(spacing: 8, runSpacing: 8, children: [
               _HeroButton(label: tr('Дивитися'), icon: LucideIcons.play, primaryStyle: true, onTap: () => context.push('/cinema/${movie['slug']}')),
               if (text(movie['trailer_url']) != null) _HeroButton(label: tr('Трейлер'), icon: LucideIcons.clapperboard, onTap: () => context.push('/cinema/${movie['slug']}?trailer=1')),
-              _HeroButton(label: tr('У списки'), icon: LucideIcons.bookmark, onTap: () => _addToList(movie)),
+              _HeroButton(label: tr('Мій список'), icon: LucideIcons.plus, onTap: () => _addToList(movie)),
             ]),
             if (movies.length > 1) ...[
               const SizedBox(height: 14),
@@ -293,52 +308,9 @@ class _CinemaHeroState extends State<CinemaHero> {
                 for (var i = 0; i < movies.length; i++)
                   GestureDetector(
                     onTap: () => setState(() => index = i),
-                    child: Container(margin: const EdgeInsets.only(right: 5), width: 26, height: 4, decoration: BoxDecoration(color: i == index ? primary : Colors.white24, borderRadius: BorderRadius.circular(2))),
+                    child: AnimatedContainer(duration: const Duration(milliseconds: 220), margin: const EdgeInsets.only(right: 5), width: i == index ? 22 : 8, height: 8, decoration: BoxDecoration(color: i == index ? cinemaAccent : Colors.white38, borderRadius: BorderRadius.circular(4))),
                   ),
               ]),
-              const SizedBox(height: 12),
-              SizedBox(
-                height: 92,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: next.length,
-                  separatorBuilder: (_, _) => const SizedBox(width: 8),
-                  itemBuilder: (_, i) {
-                    final item = next[i];
-                    final r = item['rating'] is num ? (item['rating'] as num).toDouble() : null;
-                    return GestureDetector(
-                      onTap: () => setState(() => index = movies.indexOf(item)),
-                      child: Opacity(
-                        opacity: i == 0 ? 1 : 0.5,
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
-                          child: SizedBox(
-                            width: 160,
-                            child: Stack(fit: StackFit.expand, children: [
-                              NetImage(text(item['backdrop']) ?? text(item['poster'])),
-                              const DecoratedBox(decoration: BoxDecoration(gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Colors.transparent, Color(0xCC000000)]))),
-                              Positioned(
-                                left: 8,
-                                right: 8,
-                                bottom: 6,
-                                child: Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                                  Expanded(
-                                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-                                      Text(text(item['title']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(11.5, color: Colors.white, weight: FontWeight.w700)),
-                                      if (item['year'] != null) Text('${item['year']}', style: body(10.5, color: Colors.white60)),
-                                    ]),
-                                  ),
-                                  if (r != null && r > 0) RatingRing(r),
-                                ]),
-                              ),
-                            ]),
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
             ],
           ]),
         ),
@@ -361,9 +333,10 @@ class _HeroButton extends StatelessWidget {
       child: Container(
         height: 42,
         padding: const EdgeInsets.symmetric(horizontal: 18),
+        // Animax: «Дивитися» — суцільна зелена пігулка, решта — пігулки з білим контуром.
         decoration: BoxDecoration(
-          color: primaryStyle ? null : Colors.white.withValues(alpha: 0.12),
-          gradient: primaryStyle ? LinearGradient(colors: [primary, accent]) : null,
+          color: primaryStyle ? cinemaAccent : Colors.transparent,
+          border: primaryStyle ? null : Border.all(color: Colors.white, width: 2),
           borderRadius: BorderRadius.circular(21),
         ),
         child: Row(mainAxisSize: MainAxisSize.min, children: [
@@ -413,7 +386,7 @@ class ContinueCards extends StatelessWidget {
                       const SizedBox(height: 10),
                       ClipRRect(
                         borderRadius: BorderRadius.circular(2),
-                        child: LinearProgressIndicator(value: math.max(pct, 4) / 100, minHeight: 4, color: primary, backgroundColor: line.isEmpty ? raised : fg.withValues(alpha: 0.1)),
+                        child: LinearProgressIndicator(value: math.max(pct, 4) / 100, minHeight: 4, color: cinemaAccent, backgroundColor: line.isEmpty ? raised : fg.withValues(alpha: 0.1)),
                       ),
                     ]),
                   ),
@@ -542,14 +515,14 @@ class SideTitle extends StatelessWidget {
         Container(
           width: 32,
           height: 32,
-          decoration: BoxDecoration(color: primary.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(10)),
-          child: Icon(icon, size: 16, color: primary),
+          decoration: BoxDecoration(color: cinemaAccent.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(10)),
+          child: Icon(icon, size: 16, color: cinemaAccent),
         ),
         const SizedBox(width: 10),
         Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
           Text(title, style: display(16)),
           const SizedBox(height: 3),
-          Container(width: 22, height: 3, decoration: BoxDecoration(color: primary, borderRadius: BorderRadius.circular(2))),
+          Container(width: 22, height: 3, decoration: BoxDecoration(color: cinemaAccent, borderRadius: BorderRadius.circular(2))),
         ]),
       ]),
     );
@@ -622,7 +595,7 @@ class _CinemaSideWidgetsState extends State<CinemaSideWidgets> {
                             width: 20,
                             height: 20,
                             alignment: Alignment.center,
-                            decoration: BoxDecoration(color: primary, shape: BoxShape.circle),
+                            decoration: BoxDecoration(color: cinemaAccent, shape: BoxShape.circle),
                             child: Text('${i + 1}', style: body(10, color: Colors.white, weight: FontWeight.w800)),
                           ),
                         ),
