@@ -170,7 +170,6 @@ export default function CinemaIndex({
                 preserveState: true,
                 preserveScroll: true,
                 replace: true,
-                reset: ['movies'],
             },
         );
     };

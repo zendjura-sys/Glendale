@@ -173,11 +173,23 @@ export function SortSegments<T extends string>({
     onChange: (key: T) => void;
 }) {
     return (
-        <div className="scrollbar-none flex min-w-0 gap-1 overflow-x-auto rounded-2xl bg-white/[0.05] p-1">
+        <div
+            ref={(el) => {
+                // Телефон: активна кнопка завжди у полі зору, а не за краєм.
+                el?.querySelector<HTMLElement>(
+                    '[aria-pressed="true"]',
+                )?.scrollIntoView({
+                    block: 'nearest',
+                    inline: 'center',
+                });
+            }}
+            className="scrollbar-none flex min-w-0 gap-1 overflow-x-auto rounded-2xl bg-white/[0.05] p-1"
+        >
             {items.map((item) => (
                 <button
                     key={item.key}
                     type="button"
+                    aria-pressed={active === item.key}
                     onClick={() => onChange(item.key)}
                     className={cn(
                         'shrink-0 rounded-xl px-4 py-2 text-sm font-semibold transition',

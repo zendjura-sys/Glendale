@@ -76,7 +76,7 @@ export default function MusicIndex({
                     tab: tab === 'mine' ? undefined : tab,
                     q: search || undefined,
                 },
-                { preserveState: true, replace: true, reset: ['tracks'] },
+                { preserveState: true, replace: true },
             );
         }, 300);
 

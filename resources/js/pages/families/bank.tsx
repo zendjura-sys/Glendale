@@ -182,7 +182,6 @@ export default function FamilyBank(props: Props) {
                                         preserveScroll: true,
                                         preserveState: true,
                                         replace: true,
-                                        reset: ['ledger'],
                                     },
                                 )
                             }

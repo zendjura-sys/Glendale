@@ -42,7 +42,6 @@ export default function FamilyAudit(props: Props) {
                                     preserveScroll: true,
                                     preserveState: true,
                                     replace: true,
-                                    reset: ['logs'],
                                 },
                             )
                         }

@@ -93,7 +93,6 @@ export default function FamilyReports(props: Props) {
                                         preserveScroll: true,
                                         preserveState: true,
                                         replace: true,
-                                        reset: ['reports'],
                                     },
                                 )
                             }

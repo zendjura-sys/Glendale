@@ -92,7 +92,10 @@ class CinemaController extends Controller
             'popular' => $catalog->orderByDesc('views_count'),
             'rating' => $catalog->orderByRaw('coalesce(rating_imdb, rating_tmdb, rating_shikimori, 0) desc'),
             'year' => $catalog->orderByDesc('year'),
-            'updated' => $catalog->orderByDesc('updated_at'),
+            // «Нещодавно оновлені» — де нещодавно з'явилися нові серії чи озвучки, а не коли змінили запис.
+            'updated' => $catalog->orderByDesc(
+                DB::table('movie_sources')->selectRaw('max(updated_at)')->whereColumn('movie_sources.movie_id', 'movies.id')
+            ),
             default => $catalog->orderByDesc('created_at'),
         };
         $page = $catalog->orderByDesc('id')->paginate(self::PER_PAGE)->withQueryString();
