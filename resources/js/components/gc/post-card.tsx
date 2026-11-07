@@ -198,6 +198,22 @@ export function PostCard({
                                 color={post.badge.color}
                             />
                         )}
+                        {post.family && (
+                            // Роль у сім'ї: «Лідер STARK» — бурштином для лідера й заступника, інакше небесним.
+                            <Link
+                                href={post.family.href}
+                                className={cn(
+                                    'inline-flex max-w-[11rem] items-center gap-1 rounded-lg px-2 py-0.5 text-[11px] font-bold',
+                                    post.family.rank >= 9
+                                        ? 'bg-amber-400/15 text-amber-400'
+                                        : 'bg-sky-500/15 text-sky-400',
+                                )}
+                            >
+                                <span className="truncate">
+                                    {post.family.rank_title} {post.family.tag}
+                                </span>
+                            </Link>
+                        )}
                         {post.wall && (
                             <>
                                 <ChevronRight className="size-3.5 text-white/30" />
@@ -210,6 +226,14 @@ export function PostCard({
                             </>
                         )}
                     </div>
+                    {post.family?.server && (
+                        <p className="mt-0.5 truncate text-xs text-white/50">
+                            {tr('Сервер')}:{' '}
+                            <span className="font-semibold text-white/80">
+                                {post.family.server}
+                            </span>
+                        </p>
+                    )}
                     <div className="mt-1 flex items-center gap-1.5 text-xs text-white/45">
                         <Link
                             href={`/posts/${post.id}`}

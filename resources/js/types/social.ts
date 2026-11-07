@@ -101,6 +101,15 @@ export type PostItem = {
     created_at: string;
     edited_at?: string | null;
     author: UserCard;
+    /** Сім'я автора (верифікована): значок «Лідер STARK» і сервер під ім'ям. */
+    family?: {
+        tag: string;
+        name: string;
+        href: string;
+        rank: number;
+        rank_title: string;
+        server: string | null;
+    } | null;
     badge?: { title: string; color: string | null } | null;
     tag?: { name: string; href: string } | null;
     pending?: boolean;

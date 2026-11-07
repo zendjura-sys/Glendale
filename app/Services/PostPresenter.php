@@ -5,6 +5,8 @@ namespace App\Services;
 use App\Models\Comment;
 use App\Models\Community;
 use App\Models\CommunityMember;
+use App\Models\Family;
+use App\Models\FamilyMember;
 use App\Models\Like;
 use App\Models\Movie;
 use App\Models\PollOption;
@@ -18,6 +20,7 @@ use App\Models\User;
 use App\Models\UserMute;
 use App\Services\Billing\AuthorSubscriptions;
 use App\Services\Games\GameTags;
+use App\Support\Modules\ModuleManager;
 use App\Support\Plugins\Plugins;
 use App\Support\Stickers;
 use Illuminate\Database\Eloquent\Collection;
@@ -52,6 +55,9 @@ class PostPresenter
 
     /** @var array<string, array{title: string, color: string|null}> підписи ролей у спільнотах: "спільнота:автор" */
     private array $badges = [];
+
+    /** @var array<int, array<string, mixed>> сім'я автора (верифікована): тег, ранг, сервер — значок «Лідер STARK» біля імені */
+    private array $families = [];
 
     /**
      * Готує записи до показу: автор, стіна, вкладення, останні коментарі, лайки глядача.
@@ -145,6 +151,29 @@ class PostPresenter
             ? array_flip(app(CommunityService::class)->managedIds($viewer))
             : [];
 
+        $this->families = [];
+        if (app(ModuleManager::class)->enabled('families')) {
+            $members = FamilyMember::query()->with('family.server')
+                ->whereIn('user_id', $posts->pluck('author_id')->unique()->all())
+                ->where('status', FamilyMember::STATUS_ACTIVE)
+                ->whereHas('family', fn ($q) => $q->where('status', Family::STATUS_VERIFIED))
+                ->get();
+            foreach ($members as $member) {
+                $family = $member->family;
+                if (isset($this->families[$member->user_id])) {
+                    continue;
+                }
+                $this->families[$member->user_id] = [
+                    'tag' => $family->tag,
+                    'name' => $family->name,
+                    'href' => '/f/'.$family->slug,
+                    'rank' => $member->rank,
+                    'rank_title' => $family->rankTitle($member->rank),
+                    'server' => $family->server?->name,
+                ];
+            }
+        }
+
         $this->badges = [];
         $communityPosts = $posts->filter(fn (Post $post) => $post->wall instanceof Community);
         if ($communityPosts->isNotEmpty()) {
@@ -225,6 +254,7 @@ class PostPresenter
             'created_at' => $post->created_at->toIso8601String(),
             'edited_at' => $post->edited_at?->toIso8601String(),
             'author' => $post->author->toCard(),
+            'family' => $publisher ? null : ($this->families[$post->author_id] ?? null),
             'badge' => $community && ! $publisher ? $this->badges[$community->id.':'.$post->author_id] ?? null : null,
             'tag' => $post->tag !== null && $community ? ['name' => $post->tag, 'href' => '/c/'.$community->slug.'?tag='.rawurlencode($post->tag)] : null,
             'pending' => $post->is_pending,

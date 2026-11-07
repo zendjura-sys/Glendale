@@ -17,6 +17,7 @@ use App\Models\FamilyReport;
 use App\Models\FamilyTransaction;
 use App\Models\GtaServer;
 use App\Models\Message;
+use App\Models\Post;
 use App\Models\User;
 use App\Services\Families\FamilyBank;
 use App\Services\Families\FamilyNotifier;
@@ -24,6 +25,8 @@ use App\Services\Families\FamilyRating;
 use App\Services\Families\FamilyService;
 use App\Services\Families\WeeklyDigest;
 use App\Services\MessengerPresenter;
+use App\Services\PostPresenter;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
@@ -137,6 +140,22 @@ class FamiliesTest extends TestCase
         $this->assertSame(count(FamilyItem::STARTER), $family->items()->count());
         $this->assertTrue(FamilyAuditLog::query()->where('family_id', $family->id)->where('action', 'FAMILY_CREATE')->exists());
         $this->assertNull($family->conversation_id);
+    }
+
+    public function test_posts_show_author_family_role_and_server(): void
+    {
+        $post = Post::query()->create(['author_id' => $this->leaderUser->id, 'wall_type' => $this->leaderUser->getMorphClass(), 'wall_id' => $this->leaderUser->id, 'body' => 'Закрили контракт', 'visibility' => 'public']);
+        $card = app(PostPresenter::class)->many(new Collection([$post]), $this->leaderUser)[0];
+
+        $this->assertSame('SCL', $card['family']['tag']);
+        $this->assertSame(10, $card['family']['rank']);
+        $this->assertSame($this->family->rankTitle(10), $card['family']['rank_title']);
+        $this->assertSame('Quant RP', $card['family']['server']);
+
+        // Без сім'ї — без значка.
+        $stranger = User::factory()->create();
+        $other = Post::query()->create(['author_id' => $stranger->id, 'wall_type' => $stranger->getMorphClass(), 'wall_id' => $stranger->id, 'body' => 'Привіт', 'visibility' => 'public']);
+        $this->assertNull(app(PostPresenter::class)->many(new Collection([$other]), $stranger)[0]['family']);
     }
 
     public function test_overview_shows_family_chat_card_with_rp_names(): void

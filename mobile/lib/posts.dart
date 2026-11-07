@@ -249,6 +249,8 @@ class _PostCardState extends State<PostCard> {
     final session = AppScope.read(context).session;
     final bodyText = maskProfanity(text(post['body']) ?? '', text(session.me?['profanity_mask']));
     final badge = post['badge'] is Map ? mapOf(post['badge']) : null;
+    // Роль автора в сім'ї («Лідер STARK») і сервер під ім'ям — як на сайті.
+    final family = post['family'] is Map ? mapOf(post['family']) : null;
     final tag = post['tag'] is Map ? mapOf(post['tag']) : null;
     final lang = text(post['lang']);
     final long = bodyText.length > 420 && !fullText && !widget.expanded;
@@ -305,6 +307,21 @@ class _PostCardState extends State<PostCard> {
                           if (publisher == null && PlusMark.of(author) != null) PlusBadge(size: 15),
                           if (publisher == null) SeasonBadge(user: author),
                           if (badge != null) RoleBadge(title: text(badge['title']) ?? '', color: text(badge['color'])),
+                          if (family != null)
+                            GestureDetector(
+                              onTap: () => context.push(appPathFor(text(family['href']))),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: (intOf(family['rank']) >= 9 ? const Color(0xFFFBBF24) : const Color(0xFF38BDF8)).withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  '${text(family['rank_title']) ?? ''} ${text(family['tag']) ?? ''}',
+                                  style: body(11, color: intOf(family['rank']) >= 9 ? const Color(0xFFFBBF24) : const Color(0xFF38BDF8), weight: FontWeight.w800),
+                                ),
+                              ),
+                            ),
                           if (wall != null) ...[
                             Icon(LucideIcons.chevronRight, size: 16, color: faint),
                             GestureDetector(
@@ -317,6 +334,16 @@ class _PostCardState extends State<PostCard> {
                           ],
                         ],
                       ),
+                      if (text(family?['server']) case final server?)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 2),
+                          child: Text.rich(
+                            TextSpan(children: [TextSpan(text: '${tr('Сервер')}: '), TextSpan(text: server, style: body(12, color: soft, weight: FontWeight.w700))]),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: body(12, color: muted),
+                          ),
+                        ),
                       SizedBox(height: 4),
                       Wrap(
                         crossAxisAlignment: WrapCrossAlignment.center,
