@@ -1,4 +1,6 @@
 import { SideRail } from '@/components/gc/side-rail';
+import { GamerDock } from '@/components/gc/gamer-dock';
+import { HeaderNav, ReadyIndicator } from '@/components/gc/header-nav';
 import { AlertMapButton } from '@/components/alerts/alert-map-button';
 import { AlertBanner } from '@/components/alerts/alert-banner';
 import { Link, router, usePage } from '@inertiajs/react';
@@ -102,110 +104,6 @@ function useIsActive() {
             currentUrl.startsWith(`${href}?`)
         );
     };
-}
-
-/** Бічне меню, як у класичній соцмережі: простий список без карток, вибраний пункт підсвічено. */
-function Sidebar() {
-    const { nav, auth, counters, airAlerts } = usePage().props;
-    const url = usePage().url;
-    const isActive = useIsActive();
-    const unreadMessages = useUnreadMessages();
-    const user = auth.user;
-
-    return (
-        <aside className="gc-sidebar-glass sticky top-[calc(72px+env(safe-area-inset-top))] hidden h-[calc(100dvh-88px)] w-[220px] shrink-0 [scrollbar-width:none] flex-col overflow-y-auto overscroll-contain p-2 [view-transition-name:gc-sidebar] md:flex">
-            {/* Spacepark: картка профілю над меню. */}
-            <Link
-                href={`/${user.username}`}
-                className="glass mb-3 flex items-center gap-3 rounded-2xl p-3"
-            >
-                <UserAvatar user={user} size="md" />
-                <span className="min-w-0">
-                    <span
-                        style={plusNameProps(user.plus).style}
-                        className={cn(
-                            'block truncate text-sm font-semibold text-white',
-                            plusNameProps(user.plus).className,
-                        )}
-                    >
-                        {user.first_name} {user.last_name}
-                    </span>
-                    <span className="block truncate text-xs text-white/45">
-                        @{user.username}
-                    </span>
-                </span>
-            </Link>
-            <nav
-                aria-label={tr('Розділи')}
-                className="gc-menu-card glass flex flex-col rounded-2xl py-2"
-            >
-                {nav.map((item) => {
-                    const href =
-                        item.key === 'profile'
-                            ? `/${user.username}`
-                            : item.href;
-                    const active = isActive(href, item.key);
-                    const badge =
-                        item.key === 'friends'
-                            ? counters?.friend_requests
-                            : item.key === 'messages'
-                              ? unreadMessages
-                              : 0;
-
-                    return (
-                        <Link
-                            key={item.key}
-                            href={href}
-                            prefetch
-                            aria-current={active ? 'page' : undefined}
-                            className="gc-side-link relative flex min-h-10 items-center gap-3 rounded-xl px-2.5 text-[14px] font-medium transition"
-                        >
-                            <ModuleIcon
-                                name={item.icon}
-                                animated
-                                size={20}
-                                className="shrink-0"
-                            />
-                            <span className="flex-1 truncate">
-                                {item.label}
-                            </span>
-                            {!!badge && (
-                                <span className="min-w-5 rounded-full bg-primary px-1.5 text-center text-[11px] leading-5 font-bold text-primary-foreground">
-                                    {badge > 99 ? '99+' : badge}
-                                </span>
-                            )}
-                        </Link>
-                    );
-                })}
-            </nav>
-
-            {airAlerts && (
-                <AlertMapButton
-                    className="mx-1 mt-3"
-                    current={url.startsWith('/alerts')}
-                />
-            )}
-
-            {user.is_admin && (
-                <>
-                    <div className="mx-2.5 my-2 h-px bg-white/[0.06]" />
-                    <Link
-                        href="/admin"
-                        className="gc-side-link flex min-h-10 items-center gap-3 rounded-xl px-2.5 text-[14px] font-medium transition"
-                    >
-                        <ShieldCheck className="size-[19px] shrink-0 !text-gold" />
-                        {tr('Адмін-панель')}
-                    </Link>
-                </>
-            )}
-
-            <PlayStoreLink compact className="mt-3 self-start px-2" />
-
-            <KeyboardHint />
-
-            {/* Копірайт — у підвалі сторінки. */}
-        </aside>
-    );
 }
 
 /** Меню облікового запису (аватар): спільне для шапки сайту й розділу «Музика». */
@@ -371,13 +269,16 @@ function Topbar() {
     return (
         <header className="app-header-wrapper">
             {/* Шапка — плаваюча капсула з безбарвного матового скла (як острів-меню знизу); обгортка прозора. */}
-            <div className="ios-glass-bar ios-header-pill [view-transition-name:gc-topbar]">
-                <Link href="/feed" className="shrink-0 md:w-[220px]">
+            {/* Шапка — парящий скляний острів (одне з трьох місць зі склом: шапка, навбар, плеєр). */}
+            <div className="ios-glass-bar ios-header-pill gc-glass-island [view-transition-name:gc-topbar]">
+                <Link href="/feed" className="shrink-0 md:w-[264px]">
                     <Logo className="hidden sm:inline-flex" />
                     <LogoMark className="sm:hidden" />
                 </Link>
-                <QuickSearch className="max-w-[520px] flex-1" />
-                <div className="ml-auto flex items-center gap-0.5">
+                <QuickSearch className="max-w-[340px] min-w-0 flex-1" />
+                <HeaderNav className="mx-auto hidden xl:flex" />
+                <div className="ml-auto flex items-center gap-0.5 xl:ml-0">
+                    <ReadyIndicator />
                     <Link
                         href="/friends?tab=requests"
                         className={iconButton}
@@ -799,7 +700,7 @@ function IncidentBanner() {
 export const LAST_PAGE_KEY = 'gc:last-page';
 
 export default function SocialLayout({ children }: PropsWithChildren) {
-    const { auth, modules } = usePage().props;
+    const { auth, modules, airAlerts } = usePage().props;
     const { url } = usePage();
     const { current } = usePlayer();
     useStreamerMode();
@@ -848,7 +749,22 @@ export default function SocialLayout({ children }: PropsWithChildren) {
                         current ? 'pb-44 md:pb-28' : 'pb-24 md:pb-10',
                     )}
                 >
-                    <Sidebar />
+                    <GamerDock
+                        footer={
+                            <>
+                                {airAlerts && (
+                                    <AlertMapButton
+                                        current={url.startsWith('/alerts')}
+                                    />
+                                )}
+                                <PlayStoreLink
+                                    compact
+                                    className="self-start px-2"
+                                />
+                                <KeyboardHint />
+                            </>
+                        }
+                    />
                     <main
                         id="main-content"
                         className="gc-vt-main min-w-0 flex-1"

@@ -226,7 +226,7 @@ export function PlayerBar({ standalone }: { standalone?: boolean }) {
                 )}
             >
                 {/* Матове нейтральне скло без підсвітки кольором обкладинки; ім'я переходу — на самій панелі, інакше розмиття не бачить сторінку. */}
-                <div className="glass-matte pointer-events-auto relative mx-auto max-w-[1100px] overflow-hidden rounded-full [view-transition-name:gc-player]">
+                <div className="glass-matte gc-player-glass pointer-events-auto relative mx-auto max-w-[1100px] overflow-hidden rounded-full [view-transition-name:gc-player]">
                     <div className="absolute inset-x-0 top-0">
                         <div
                             className="h-0.5 bg-primary transition-[width]"

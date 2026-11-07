@@ -56,6 +56,7 @@ use App\Http\Controllers\GameSoundtrackController;
 use App\Http\Controllers\GifController;
 use App\Http\Controllers\GuestBanController;
 use App\Http\Controllers\HelpController;
+use App\Http\Controllers\HubController;
 use App\Http\Controllers\IdeaController;
 use App\Http\Controllers\InviteLinkController;
 use App\Http\Controllers\ListenPartyController;
@@ -449,6 +450,7 @@ Route::prefix('v1')->group(function () {
                 Route::put('settings/profile-track', [SetupController::class, 'saveTrack'])->middleware('throttle:30,1');
                 Route::get('settings/profile-track', [SetupController::class, 'tracks'])->middleware('throttle:60,1');
                 Route::get('me/rail', RailController::class)->middleware('throttle:60,1');
+                Route::get('me/hub', HubController::class)->middleware('throttle:60,1');
                 Route::get('alerts', [AirAlertController::class, 'state'])->middleware('throttle:120,1');
                 Route::get('alerts/state', [AirAlertController::class, 'state'])->middleware('throttle:120,1');
                 Route::put('alerts/preferences', [AirAlertController::class, 'preferences'])->middleware('throttle:30,1');

@@ -2,11 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\FamilyMember;
 use App\Models\User;
+use App\Models\VoiceRoom;
+use App\Services\Engagement\Streaks;
 use App\Services\FriendshipService;
 use App\Services\Messenger;
 use App\Services\MessengerPresenter;
+use App\Services\Quests\SeasonPass;
 use App\Support\Modules\ModuleManager;
+use App\Support\Plugins\Plugins;
+use App\Support\Profile\ProfileTrack;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -30,6 +36,13 @@ class RailController extends Controller
         }
 
         return response()->json([
+            // Ліва колонка (Gamer Dock): картка гравця, голосові кімнати сімей, друзі в грі.
+            'me' => $this->me($user, $modules),
+            'voice' => $this->voice($user, $modules),
+            'in_game' => User::query()->whereIn('id', $friendIds === [] ? [0] : $friendIds)
+                ->where('last_seen_at', '>=', now()->subMinutes(10))->where('playing_until', '>', now())
+                ->orderByDesc('last_seen_at')->limit(6)->get()
+                ->map(fn (User $u) => [...$u->toCard(), 'playing' => $u->playing()])->values(),
             'requests' => $friendships->incomingQuery($user)->latest('id')->limit(3)->get()
                 ->map(fn (User $u) => $u->toCard())->values(),
             'requests_total' => $friendships->incomingCount($user),
@@ -55,5 +68,59 @@ class RailController extends Controller
                 ], array_slice($chats, 0, 8))
                 : [],
         ]);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function me(User $user, ModuleManager $modules): array
+    {
+        $membership = $modules->enabled('families')
+            ? FamilyMember::query()->with('family')->where('user_id', $user->id)->where('status', FamilyMember::STATUS_ACTIVE)->first()
+            : null;
+        $level = null;
+        if ($modules->enabled('quests')) {
+            try {
+                $level = app(SeasonPass::class)->board($user)['level'] ?? null;
+            } catch (\Throwable $e) {
+                report($e);
+            }
+        }
+
+        return [
+            'level' => $level,
+            'streak' => app(Streaks::class)->state($user)['days'] ?? null,
+            'family' => $membership?->family ? ['name' => $membership->family->name, 'href' => '/f/'.$membership->family->slug] : null,
+            'track' => app(Plugins::class)->on('profile_track') ? ProfileTrack::of($user) : null,
+            'playing' => $user->playing(),
+        ];
+    }
+
+    /**
+     * Голосові кімнати сімей людини, де зараз хтось є (лише читання — нічого не створюємо).
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function voice(User $user, ModuleManager $modules): array
+    {
+        if (! $modules->enabled('families')) {
+            return [];
+        }
+        $families = FamilyMember::query()->with('family')->where('user_id', $user->id)
+            ->where('status', FamilyMember::STATUS_ACTIVE)->get()->pluck('family')->filter()->keyBy('id');
+        if ($families->isEmpty()) {
+            return [];
+        }
+
+        return array_values(VoiceRoom::query()->where('owner_type', VoiceRoom::OWNER_FAMILY)->whereIn('owner_id', $families->keys())
+            ->whereHas('participants')->with(['participants.user'])->limit(4)->get()
+            ->map(fn (VoiceRoom $room) => [
+                'id' => $room->id,
+                'name' => $room->name,
+                'owner' => $families[$room->owner_id]->name ?? '',
+                'href' => '/f/'.($families[$room->owner_id]->slug ?? ''),
+                'count' => $room->participants->count(),
+                'people' => $room->participants->pluck('user')->filter()->take(4)->map(fn (User $u) => $u->toCard())->values()->all(),
+            ])->all());
     }
 }

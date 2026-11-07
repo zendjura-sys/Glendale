@@ -59,6 +59,7 @@ use App\Http\Controllers\GifController;
 use App\Http\Controllers\GooglePlayRtdnController;
 use App\Http\Controllers\GuestBanController;
 use App\Http\Controllers\HelpController;
+use App\Http\Controllers\HubController;
 use App\Http\Controllers\IdeaController;
 use App\Http\Controllers\InviteLinkController;
 use App\Http\Controllers\LegalController;
@@ -1021,6 +1022,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     Route::put('alerts/preferences', [AirAlertController::class, 'preferences'])->middleware('throttle:30,1')->name('alerts.preferences');
     // Четверта колонка на екранах 2K+: друзі онлайн і бесіди.
     Route::get('me/rail', RailController::class)->middleware('throttle:60,1')->name('rail');
+    Route::get('me/hub', HubController::class)->middleware('throttle:60,1')->name('hub');
     Route::put('me/status', [StatusController::class, 'update'])->middleware('throttle:30,1')->name('status.update');
     Route::delete('me/status', [StatusController::class, 'destroy'])->name('status.destroy');
     // «Граю в…»: ручний статус, автоматичний (Discord, Steam, телефон).

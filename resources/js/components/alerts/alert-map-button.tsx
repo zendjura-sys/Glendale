@@ -90,7 +90,7 @@ export function AlertMapButton({
                     : tr('Мапа тривог')
             }
             className={cn(
-                'group relative flex shrink-0 overflow-hidden rounded-2xl bg-sky-50 p-3 ring-1 ring-sky-500/20 transition hover:ring-sky-500/40 dark:bg-[#0b1a33]/80 dark:ring-sky-300/25 dark:hover:ring-sky-300/50',
+                'gc-solid group relative flex shrink-0 overflow-hidden rounded-2xl p-3 transition hover:bg-[var(--gc-l2)]',
                 row ? 'items-center gap-3' : 'flex-col gap-1.5',
                 current && 'ring-sky-500/50 dark:ring-sky-300/60',
                 className,

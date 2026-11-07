@@ -8,6 +8,27 @@ import type { UserCard } from '@/types';
 type Contact = UserCard & { chat_id: number | null; unread: number };
 
 export type RailData = {
+    me?: {
+        level: number | null;
+        streak: number | null;
+        family: { name: string; href: string } | null;
+        track: {
+            id: number;
+            title: string;
+            artist?: string | null;
+            cover_url?: string | null;
+        } | null;
+        playing: { label: string; icon?: string | null } | null;
+    };
+    voice?: {
+        id: number;
+        name: string;
+        owner: string;
+        href: string;
+        count: number;
+        people: UserCard[];
+    }[];
+    in_game?: (UserCard & { playing: { label: string } | null })[];
     requests: UserCard[];
     requests_total: number;
     contacts: Contact[];

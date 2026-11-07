@@ -158,7 +158,7 @@ export function PostCard({
             ref={articleRef}
             data-on-dark={cover ? true : undefined}
             className={cn(
-                'gc-post animate-rise px-5 py-5 data-[hotkey-focus]:rounded-2xl data-[hotkey-focus]:ring-1 data-[hotkey-focus]:ring-primary/40 sm:px-6',
+                'gc-post animate-rise p-4 data-[hotkey-focus]:rounded-2xl data-[hotkey-focus]:ring-1 data-[hotkey-focus]:ring-primary/40 sm:p-5',
                 cover &&
                     'gc-post-cover relative isolate flex min-h-[440px] flex-col overflow-hidden text-white',
             )}

@@ -184,7 +184,7 @@ export default function Feed({
         <>
             <Head title={tr('Новини')} />
             <div className="flex gap-5">
-                <div className="min-w-0 flex-1 space-y-4 min-[1920px]:max-w-none! xl:max-w-[640px]">
+                <div className="min-w-0 flex-1 space-y-4">
                     {/* Bento Grid: верх стрічки — плитки різного розміру. Серія днів і «Готові грати»
                         живуть тут (у правій колонці їх більше немає — без дублікатів). */}
                     <BentoGrid>
@@ -364,7 +364,7 @@ export default function Feed({
                     )}
                 </div>
 
-                <aside className="gc-split-hide sticky top-[76px] hidden h-fit w-[320px] shrink-0 space-y-4 min-[1920px]:w-[360px] xl:block">
+                <aside className="gc-split-hide sticky top-[calc(88px+env(safe-area-inset-top))] hidden h-fit w-[320px] shrink-0 space-y-4 min-[1920px]:w-[360px] xl:block">
                     {rail && (
                         <>
                             <FriendRequests data={rail} reload={reloadRail} />

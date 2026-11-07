@@ -50,7 +50,7 @@ export function SideRail() {
     if (!wide) return null;
 
     return (
-        <aside className="gc-split-hide sticky top-[76px] h-fit w-[300px] shrink-0 space-y-4">
+        <aside className="gc-split-hide sticky top-[calc(88px+env(safe-area-inset-top))] h-fit w-[300px] shrink-0 space-y-4">
             <Widget
                 title={tr('Зараз онлайн')}
                 icon={Radio}

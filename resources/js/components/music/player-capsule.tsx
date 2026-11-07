@@ -108,7 +108,7 @@ export function PlayerCapsule({
                     animate={{ opacity: 1, y: 0 }}
                     exit={reduce ? undefined : { opacity: 0, y: 20 }}
                     transition={motionOr(reduce, SNAP)}
-                    className="glass-matte gc-capsule pointer-events-auto relative mx-auto flex h-16 w-full max-w-[1040px] items-center gap-2 rounded-full py-2 pr-3 pl-2 [view-transition-name:gc-player] xl:gap-3"
+                    className="glass-matte gc-capsule gc-player-glass pointer-events-auto relative mx-auto flex h-16 w-full max-w-[1040px] items-center gap-2 rounded-full py-2 pr-3 pl-2 [view-transition-name:gc-player] xl:gap-3"
                 >
                     <button
                         type="button"

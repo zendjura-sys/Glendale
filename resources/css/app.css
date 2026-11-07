@@ -5910,3 +5910,287 @@ html.gc-vk[data-theme='dark']
     background-color: rgb(127 127 127 / 0.1) !important;
     box-shadow: none !important;
 }
+
+/* ==========================================================================
+   Spatial Arctic UI (останній шар — перекриває VK-тему вище).
+   Скло (розмиття + напівпрозорість) — ЛИШЕ на трьох плаваючих елементах, під якими йде скрол:
+   шапка-острів, навбар (нижня панель на телефоні / перемикач розділів) і капсула музичного плеєра.
+   Усе інше — 100% непрозорі матові поверхні, щоб текст не зливався з тлом під час прокрутки.
+   Без рамок і тіней: ієрархія — щільністю відтінків і відступами. Акцент — небесний (sky).
+   ========================================================================== */
+html:root.gc-vk[data-theme] {
+    --gc-page: #04070d;
+    --gc-l1: #0b1220;
+    --gc-l2: #121d31;
+    --gc-l3: #18263f;
+    --gc-active: #0b2942;
+    --gc-text: #f8fafc;
+    --gc-text-2: #94a3b8;
+    --gc-accent: #38bdf8;
+    --gc-accent-strong: #0ea5e9;
+    --gc-glass-bg: rgb(9 16 29 / 0.8);
+    --vkui--color_background: var(--gc-page);
+    --vkui--color_background_content: var(--gc-l1);
+    --vkui--color_background_secondary: var(--gc-l2);
+    --vkui--color_background_secondary_alpha: var(--gc-l2);
+    --vkui--color_background_tertiary: var(--gc-l2);
+    --vkui--color_background_modal: var(--gc-l2);
+    --vkui--color_field_background: var(--gc-l2);
+    --vkui--color_field_border_alpha: transparent;
+    --vkui--color_separator_primary: rgb(148 163 184 / 0.1);
+    --vkui--color_text_primary: var(--gc-text);
+    --vkui--color_text_secondary: var(--gc-text-2);
+    --vkui--color_text_subhead: var(--gc-text-2);
+    --vkui--color_icon_secondary: var(--gc-text-2);
+    --vkui--color_icon_accent: var(--gc-accent);
+    --vkui--color_text_accent: var(--gc-accent);
+    --vkui--color_background_accent: var(--gc-accent-strong);
+    --vkui--color_stroke_accent: var(--gc-accent-strong);
+    --primary: var(--gc-accent-strong);
+    --ring: var(--gc-accent);
+    --color-gc-lilac-400: var(--gc-accent);
+    --color-gc-lilac-300: var(--gc-accent);
+}
+/* Ширина оболонки: шапка-острів і три колонки (Gamer Dock, стрічка, права колонка). */
+:root.gc-vk[data-skin][data-theme] {
+    --gc-shell-max: 1600px;
+}
+html:root.gc-vk[data-theme='light'] {
+    --gc-page: #f1f5f9;
+    --gc-l1: #ffffff;
+    --gc-l2: #f1f5f9;
+    --gc-l3: #e2e8f0;
+    --gc-active: #e0f2fe;
+    --gc-text: #0f172a;
+    --gc-text-2: #475569;
+    --gc-accent: #0284c7;
+    --gc-accent-strong: #0284c7;
+    --gc-glass-bg: rgb(255 255 255 / 0.85);
+}
+html:root.gc-vk[data-theme],
+html:root.gc-vk[data-theme] body {
+    background: var(--gc-page) !important;
+    background-image: none !important;
+}
+
+/* Суцільні поверхні: рівень 1 — картка/секція, рівень 2 — вкладений блок, поле, плашка. */
+.gc-solid {
+    background: var(--gc-l1);
+}
+.gc-solid-2 {
+    background: var(--gc-l2);
+}
+html:root.gc-vk[data-theme]
+    :is(
+        .glass,
+        .liquid-glass,
+        .glass-matte,
+        .glass-strong,
+        [data-slot='card'],
+        .ios-arctic-card,
+        .gc-post,
+        .gc-vk-group,
+        .vkuiGroup__modeCard
+    ):not(.gc-player-glass, .gc-glass-island, .am *, .am) {
+    background: var(--gc-l1) !important;
+    background-image: none !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    border-radius: 16px !important;
+}
+html:root.gc-vk[data-theme]
+    :is(.glass, [data-slot='card'], .ios-arctic-card, .gc-post, .gc-solid)
+    :is(.glass, [data-slot='card'], .ios-arctic-card, .glass-matte):not(.am *) {
+    background: var(--gc-l2) !important;
+    border-radius: 12px !important;
+}
+@media (hover: hover) {
+    html:root.gc-vk[data-theme]
+        a:is(.glass, [data-slot='card'], .ios-arctic-card):not(.am *):hover {
+        background: var(--gc-l3) !important;
+        box-shadow: none !important;
+    }
+}
+/* Спливаючі меню й діалоги — суцільні (рівень 2), без тіней. */
+html:root.gc-vk[data-theme]
+    :is(
+        .ios-float,
+        [data-slot='dropdown-menu-content'],
+        [data-slot='select-content'],
+        [data-slot='popover-content'],
+        [data-slot='dialog-content'],
+        .gc-vk-sheet
+    ):not(.am *) {
+    background: var(--gc-l2) !important;
+    background-image: none !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+}
+
+/* Розмиття лише на склі: шапка, навбар, плеєр і затемнення під діалогами. */
+html:root.gc-vk[data-theme]
+    [class*='backdrop-blur']:not(
+        .gc-glass-island,
+        .gc-glass-island *,
+        .gc-player-glass,
+        .gc-player-glass *,
+        .gc-vk-tabbar,
+        .gc-vk-tabbar *,
+        [data-slot='dialog-overlay'],
+        [data-slot='sheet-overlay']
+    ) {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+}
+
+/* ---------- Скло №1: шапка-острів (парить над сторінкою) ---------- */
+html:root.gc-vk[data-theme] .app-header-wrapper {
+    padding: calc(env(safe-area-inset-top, 0px) + 12px) 16px 0 !important;
+}
+html:root.gc-vk[data-theme] .ios-glass-bar.ios-header-pill.gc-glass-island {
+    max-width: var(--gc-shell-max);
+    height: 60px;
+    gap: 12px;
+    border-radius: 20px !important;
+    background: var(--gc-glass-bg) !important;
+    -webkit-backdrop-filter: blur(40px) saturate(1.4) !important;
+    backdrop-filter: blur(40px) saturate(1.4) !important;
+    border: 0 !important;
+    box-shadow: none !important;
+}
+html:root.gc-vk[data-theme] .ios-header-search {
+    background: var(--gc-l2) !important;
+    border: 0 !important;
+    border-radius: 12px;
+}
+/* Перемикач розділів у шапці: пігулки, активна — суцільна плашка з небесним текстом. */
+html:root.gc-vk[data-theme] .gc-header-nav {
+    background: color-mix(in oklab, var(--gc-l2) 70%, transparent);
+}
+html:root.gc-vk[data-theme] .gc-header-nav-active {
+    background: var(--gc-active);
+}
+html:root.gc-vk[data-theme] .gc-header-nav a {
+    color: var(--gc-text-2);
+}
+html:root.gc-vk[data-theme] .gc-header-nav a[aria-current='page'],
+html:root.gc-vk[data-theme] .gc-header-nav a:hover {
+    color: var(--gc-accent);
+}
+html:root.gc-vk[data-theme] .gc-vk-shell {
+    padding-top: calc(88px + env(safe-area-inset-top)) !important;
+    gap: 16px;
+}
+
+/* ---------- Скло №2: навбар (нижня панель на телефоні) ---------- */
+html:root.gc-vk[data-theme] .gc-vk-tabbar {
+    background: var(--gc-glass-bg) !important;
+    -webkit-backdrop-filter: blur(40px) saturate(1.4) !important;
+    backdrop-filter: blur(40px) saturate(1.4) !important;
+    box-shadow: none !important;
+    border: 0 !important;
+}
+
+/* ---------- Скло №3: капсула музичного плеєра ---------- */
+html:root.gc-vk[data-theme] .gc-player-glass {
+    background: var(--gc-glass-bg) !important;
+    background-image: none !important;
+    -webkit-backdrop-filter: blur(40px) saturate(1.4) !important;
+    backdrop-filter: blur(40px) saturate(1.4) !important;
+    border: 0 !important;
+    box-shadow: none !important;
+}
+html:root.gc-vk[data-theme] .gc-player-glass::before {
+    display: none !important;
+}
+
+/* ---------- Кнопки: небесний градієнт без світіння й тіней ---------- */
+html:root.gc-vk[data-theme]
+    :is(.btn-glow, button.bg-primary, a.bg-primary, .bg-gradient-brand):not(
+        .am *
+    ):not(:disabled) {
+    background: linear-gradient(120deg, #0ea5e9 0%, #22d3ee 100%) !important;
+    color: #04131f !important;
+    box-shadow: none !important;
+    border: 0 !important;
+}
+html:root.gc-vk[data-theme='light']
+    :is(.btn-glow, button.bg-primary, a.bg-primary, .bg-gradient-brand):not(
+        .am *
+    ):not(:disabled) {
+    background: linear-gradient(120deg, #0284c7 0%, #0ea5e9 100%) !important;
+    color: #fff !important;
+}
+html:root.gc-vk[data-theme]
+    :is(.btn-glow, button.bg-primary, a.bg-primary, .bg-gradient-brand):not(
+        .am *
+    ):not(:disabled):hover {
+    box-shadow: none !important;
+    filter: brightness(1.08);
+}
+html:root.gc-vk[data-theme] .gc-vk-pill {
+    background: var(--gc-l2);
+    box-shadow: none;
+}
+html:root.gc-vk[data-theme] .gc-vk-pill:hover {
+    background: var(--gc-l3);
+}
+html:root.gc-vk[data-theme]
+    :is(.gc-vk-pill.is-on, .gc-vk-pill[aria-pressed='true']) {
+    background: var(--gc-active);
+    color: var(--gc-accent);
+}
+
+/* ---------- Поля вводу — рівень 2, без рамок і внутрішніх тіней ---------- */
+html:root.gc-vk[data-theme]
+    :is(.input-glass, [data-slot='input'], textarea, select):not(.am *) {
+    background-color: var(--gc-l2) !important;
+    border: 0 !important;
+    box-shadow: none !important;
+}
+html:root.gc-vk[data-theme]
+    :is(.input-glass, [data-slot='input'], textarea, select):not(.am *):focus,
+html:root.gc-vk[data-theme] .input-glass:focus-within {
+    outline: 2px solid color-mix(in oklab, var(--gc-accent) 55%, transparent);
+    outline-offset: 0;
+}
+
+/* ---------- Текст: читабельний вторинний колір замість блідого білого на темному ---------- */
+html:root.gc-vk[data-theme='dark']
+    :is(
+        .text-white\/30,
+        .text-white\/35,
+        .text-white\/40,
+        .text-white\/45,
+        .text-white\/50,
+        .text-white\/55
+    ):not([data-on-dark] *, [data-on-dark]) {
+    color: var(--gc-text-2) !important;
+}
+html:root.gc-vk[data-theme='dark']
+    :is(
+        .text-white\/60,
+        .text-white\/65,
+        .text-white\/70,
+        .text-white\/75,
+        .text-white\/80
+    ):not([data-on-dark] *, [data-on-dark]) {
+    color: #cbd5e1 !important;
+}
+
+/* Меню-картка зі старої оболонки й підвал — без тла й тіней. */
+html:root.gc-vk[data-theme] .gc-footer-card {
+    background: transparent !important;
+}
+/* Телефон: картки не впритул до країв — 12px з боків, як у острова-шапки. */
+@media (max-width: 767px) {
+    html:root.gc-vk[data-theme] .gc-vk-shell {
+        padding-left: 12px !important;
+        padding-right: 12px !important;
+        gap: 12px;
+    }
+}
