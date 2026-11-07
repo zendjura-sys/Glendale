@@ -9,7 +9,7 @@ import 'people.dart';
 import 'posts.dart';
 import 'shell.dart';
 import 'state.dart';
-import 'engagement.dart';
+import 'feed_pulse.dart';
 import 'status.dart';
 import 'stories.dart';
 import 'theme.dart';
@@ -96,9 +96,15 @@ class _FeedScreenState extends State<FeedScreen> {
   }
 
   final stories = GlobalKey<StoriesStripState>();
+  final pulse = GlobalKey<FeedPulseState>();
+  final extras = FeedExtras();
 
   Future<void> _reload() async {
     unawaited(stories.currentState?.reload());
+    unawaited(pulse.currentState?.reload());
+    unawaited(extras.load(AppScope.read(context).session.api).then((_) {
+      if (mounted) setState(() {});
+    }));
     try {
       await pager.reset();
       error = null;
@@ -128,23 +134,40 @@ class _FeedScreenState extends State<FeedScreen> {
       onRefresh: _reload,
       children: [
         const IncidentBanner(),
-        if (shows('streak')) const EngagementCard(),
         StoriesStrip(key: stories),
+        FeedPulse(key: pulse),
         if (AppScope.of(context).session.wrappedYear case final year?) ...[WrappedBanner(year: year), const SizedBox(height: 12)],
         if (tomorrow.isNotEmpty) ...[_TomorrowCard(events: tomorrow), const SizedBox(height: 12)],
         Composer(onPosted: _reload),
         SizedBox(height: 12),
-        Segmented(
-          options: [SegmentOption('friends', tr('Друзі'), icon: LucideIcons.usersRound), SegmentOption('discover', tr('Рекомендації'), icon: LucideIcons.flame)],
-          selected: tab,
-          onSelect: (value) {
-            setState(() {
-              tab = value;
-              ready = false;
-            });
-            _reload();
-          },
-        ),
+        // Вкладки-пігулки, як на сайті: активна — суцільна небесна.
+        Row(children: [
+          for (final (key, label, icon) in [('friends', tr('Друзі'), LucideIcons.usersRound), ('discover', tr('Рекомендації'), LucideIcons.flame)]) ...[
+            Expanded(
+              child: GestureDetector(
+                onTap: () {
+                  if (tab == key) return;
+                  setState(() {
+                    tab = key;
+                    ready = false;
+                  });
+                  _reload();
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  height: 42,
+                  decoration: BoxDecoration(color: tab == key ? const Color(0xFF0EA5E9) : card, borderRadius: BorderRadius.circular(14)),
+                  child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                    Icon(icon, size: 16, color: tab == key ? Colors.white : soft),
+                    const SizedBox(width: 7),
+                    Flexible(child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14, color: tab == key ? Colors.white : soft, weight: FontWeight.w700))),
+                  ]),
+                ),
+              ),
+            ),
+            if (key == 'friends') const SizedBox(width: 8),
+          ],
+        ]),
         if (languages.isNotEmpty) ...[
           const SizedBox(height: 10),
           Row(children: [
@@ -205,7 +228,10 @@ class _FeedScreenState extends State<FeedScreen> {
             onAction: () => context.push('/people'),
           )
         else ...[
-          for (final post in pager.posts) PostCard(key: ValueKey('post-${post['id']}'), post: post, onDeleted: () => pager.posts.remove(post)),
+          for (final (i, post) in pager.posts.indexed) ...[
+            PostCard(key: ValueKey('post-${post['id']}'), post: post, onDeleted: () => pager.posts.remove(post)),
+            FeedInsert(index: i, extras: extras),
+          ],
           LoadMore(more: pager.more, onMore: _more),
         ],
         if (suggestions.isNotEmpty && ready && shows('suggestions')) ...[

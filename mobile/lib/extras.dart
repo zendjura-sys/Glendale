@@ -1338,3 +1338,30 @@ class _JoinInviteScreenState extends State<JoinInviteScreen> with _SitePage {
     );
   }
 }
+
+/// Завдання дня списком — розгортаються під смугою над стрічкою.
+class QuestsInline extends StatelessWidget {
+  const QuestsInline({required this.quests, required this.onChanged, super.key});
+  final List<Map<String, dynamic>> quests;
+  final VoidCallback onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final api = AppScope.read(context).session.api;
+    final titles = _questTitles();
+    return Column(children: [
+      for (final q in quests) ...[
+        _QuestTile(
+          quest: q,
+          title: titles[text(q['key'])] ?? text(q['title']) ?? '',
+          icon: _questIcons[text(q['icon'])] ?? LucideIcons.target,
+          onClaim: () async {
+            if (await attempt(context, () => api.post(Api.site('/quests/${q['key']}/claim')))) onChanged();
+          },
+          onGo: _questLinks[text(q['key'])] == null ? null : () => context.go(_questLinks[text(q['key'])]!),
+        ),
+        const SizedBox(height: 8),
+      ],
+    ]);
+  }
+}
