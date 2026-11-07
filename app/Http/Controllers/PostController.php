@@ -137,7 +137,7 @@ class PostController extends Controller
             'gif' => ['nullable', 'array'],
             'gif.url' => ['required_with:gif', 'string', 'max:300'],
             'gif.title' => ['nullable', 'string', 'max:120'],
-            'card.kind' => ['required_with:card', Rule::in(['game', 'server', 'game_event', 'server_event'])],
+            'card.kind' => ['required_with:card', Rule::in(['movie', 'game', 'server', 'game_event', 'server_event'])],
             'card.id' => ['required_with:card', 'integer', 'min:1'],
             'poll' => ['nullable', 'array'],
             'poll.question' => ['required_with:poll', 'string', 'max:200'],

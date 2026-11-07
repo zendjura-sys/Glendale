@@ -43,7 +43,13 @@ class HubController extends Controller
             return null;
         }
         $slug = $request->user()?->pref('alert_region');
-        $region = collect($state['regions'] ?? [])->firstWhere('slug', $slug);
+        $region = null;
+        foreach ((array) ($state['regions'] ?? []) as $row) {
+            if (is_array($row) && ($row['slug'] ?? null) === $slug) {
+                $region = $row;
+                break;
+            }
+        }
 
         return [
             'active_count' => (int) ($state['active_count'] ?? 0),

@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\GtaServer;
+use App\Models\Movie;
 use App\Models\User;
 use App\Services\Families\FamilyService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -47,5 +48,20 @@ class GamerDockTest extends TestCase
             ->assertJsonPath('family.treasury', 1500)
             ->assertJsonPath('family.slug', $family->slug)
             ->assertJsonStructure(['alerts', 'family' => ['name', 'items', 'low_stock', 'pending_reports']]);
+    }
+
+    public function test_composer_can_search_and_attach_a_movie_card(): void
+    {
+        $user = User::factory()->create();
+        $movie = Movie::query()->create(['slug' => 'dune', 'type' => 'movie', 'title' => 'Дюна', 'is_published' => true]);
+
+        $this->actingAs($user)->getJson('/cards/search?q='.urlencode('Дюна').'&kind=movie')->assertOk()
+            ->assertJsonPath('cards.0.kind', 'movie')
+            ->assertJsonPath('cards.0.id', $movie->id);
+        $this->actingAs($user)->getJson('/cards/search?q='.urlencode('Дюна').'&kind=game')->assertOk()
+            ->assertJsonCount(0, 'cards');
+
+        $this->actingAs($user)->post('/posts', ['body' => 'Дивіться', 'visibility' => 'public', 'card' => ['kind' => 'movie', 'id' => $movie->id]])->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('posts', ['author_id' => $user->id, 'body' => 'Дивіться']);
     }
 }

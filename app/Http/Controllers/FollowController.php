@@ -14,8 +14,10 @@ class FollowController extends Controller
     public function cards(Request $request, PostCards $cards): JsonResponse
     {
         $q = trim((string) $request->query('q', ''));
+        $kind = $request->query('kind');
+        $kind = is_string($kind) && in_array($kind, ['movie', 'game', 'server'], true) ? $kind : null;
 
-        return response()->json(['cards' => mb_strlen($q) < 2 ? [] : $cards->search($q)]);
+        return response()->json(['cards' => mb_strlen($q) < 2 ? [] : $cards->search($q, $kind)]);
     }
 
     public function toggle(Request $request, FollowAlerts $follows): JsonResponse

@@ -76,39 +76,58 @@ class PostCards
     /**
      * @return list<array{kind: string, id: int, title: string, hint: string, href: string, image: string|null}>
      */
-    public function search(string $q): array
+    public function search(string $q, ?string $kind = null): array
     {
         $like = '%'.str_replace(['%', '_'], ['\%', '\_'], $q).'%';
         $hits = [];
+        // Кнопки композера шукають один вид: «Кіно», «Гра», «Сервер»; без виду — усе разом.
+        $want = fn (string $k) => $kind === null || $kind === $k || ($kind === 'game' && $k === 'game_event') || ($kind === 'server' && $k === 'server_event');
 
-        Game::query()->published()->where('name', 'like', $like)->orderByDesc('popularity')->limit(4)->get()
-            ->each(function (Game $game) use (&$hits) {
-                $card = $this->resolve('game', $game->id);
-                if ($card) {
-                    $hits[] = $card;
-                }
-            });
-        GtaServer::query()->published()->where('name', 'like', $like)->limit(4)->get()
-            ->each(function (GtaServer $server) use (&$hits) {
-                $card = $this->resolve('server', $server->id);
-                if ($card) {
-                    $hits[] = $card;
-                }
-            });
-        GameEvent::query()->where('title', 'like', $like)->where('starts_at', '>=', now()->subDay())->limit(3)->get()
-            ->each(function (GameEvent $event) use (&$hits) {
-                $card = $this->resolve('game_event', $event->id);
-                if ($card) {
-                    $hits[] = $card;
-                }
-            });
-        ServerEvent::query()->where('title', 'like', $like)->where('starts_at', '>=', now()->subDay())->limit(3)->get()
-            ->each(function (ServerEvent $event) use (&$hits) {
-                $card = $this->resolve('server_event', $event->id);
-                if ($card) {
-                    $hits[] = $card;
-                }
-            });
+        if ($want('movie')) {
+            Movie::query()->published()->search($q)->orderByDesc('views_count')->limit(4)->get()
+                ->each(function (Movie $movie) use (&$hits) {
+                    $card = $this->resolve('movie', $movie->id);
+                    if ($card) {
+                        $hits[] = $card;
+                    }
+                });
+        }
+        if ($want('game')) {
+            Game::query()->published()->where('name', 'like', $like)->orderByDesc('popularity')->limit(4)->get()
+                ->each(function (Game $game) use (&$hits) {
+                    $card = $this->resolve('game', $game->id);
+                    if ($card) {
+                        $hits[] = $card;
+                    }
+                });
+        }
+        if ($want('server')) {
+            GtaServer::query()->published()->where('name', 'like', $like)->limit(4)->get()
+                ->each(function (GtaServer $server) use (&$hits) {
+                    $card = $this->resolve('server', $server->id);
+                    if ($card) {
+                        $hits[] = $card;
+                    }
+                });
+        }
+        if ($want('game_event')) {
+            GameEvent::query()->where('title', 'like', $like)->where('starts_at', '>=', now()->subDay())->limit(3)->get()
+                ->each(function (GameEvent $event) use (&$hits) {
+                    $card = $this->resolve('game_event', $event->id);
+                    if ($card) {
+                        $hits[] = $card;
+                    }
+                });
+        }
+        if ($want('server_event')) {
+            ServerEvent::query()->where('title', 'like', $like)->where('starts_at', '>=', now()->subDay())->limit(3)->get()
+                ->each(function (ServerEvent $event) use (&$hits) {
+                    $card = $this->resolve('server_event', $event->id);
+                    if ($card) {
+                        $hits[] = $card;
+                    }
+                });
+        }
 
         return $hits;
     }

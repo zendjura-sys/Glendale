@@ -1,4 +1,4 @@
-import { Link, useForm, usePage } from '@inertiajs/react';
+import { router, useForm, usePage } from '@inertiajs/react';
 import {
     BarChart3,
     CalendarClock,
@@ -8,8 +8,11 @@ import {
     FilePen,
     Files,
     ImagePlay,
-    Plus,
     ImagePlus,
+    PlusCircle,
+    Clapperboard,
+    Gamepad2,
+    Server,
     EyeOff,
     Lock,
     Megaphone,
@@ -38,6 +41,7 @@ import { cn } from '@/lib/utils';
 import type { PostItem, TrackCard, Visibility } from '@/types';
 import { CommunityAvatar } from './community-avatar';
 import { StickerPicker, stickerEmoji } from './stickers';
+import { EmojiPanel } from './emoji-panel';
 import { GifPicker } from './gif-picker';
 import { PhotoEditor } from './photo-editor';
 import type { GifItem } from './gif-picker';
@@ -99,6 +103,24 @@ export function PostComposer({
     const [gif, setGif] = useState<GifItem | null>(null);
     const [pickingGif, setPickingGif] = useState(false);
     const fileRef = useRef<HTMLInputElement>(null);
+    const textRef = useRef<HTMLTextAreaElement>(null);
+    const [emojiOpen, setEmojiOpen] = useState(false);
+    const [attachOpen, setAttachOpen] = useState(false);
+    // Яку картку шукаємо: «Кіно», «Гра / Конфіг» чи «Сервер GTA».
+    const [cardKind, setCardKind] = useState<'movie' | 'game' | 'server'>(
+        'game',
+    );
+    const insertEmoji = (emoji: string) => {
+        const el = textRef.current;
+        const body = form.data.body;
+        const start = el?.selectionStart ?? body.length;
+        const end = el?.selectionEnd ?? body.length;
+        form.setData('body', body.slice(0, start) + emoji + body.slice(end));
+        requestAnimationFrame(() => {
+            el?.focus();
+            el?.setSelectionRange(start + emoji.length, start + emoji.length);
+        });
+    };
     const storageKey = `gc-composer:${community?.slug ?? wall?.username ?? 'feed'}`;
     const restored = useRef(false);
     const form = useForm<{
@@ -252,27 +274,29 @@ export function PostComposer({
         });
     };
 
-    const toolTile =
-        'arctic-tile flex flex-col items-center gap-1.5 rounded-2xl px-0.5 py-1.5 text-center text-[11px] leading-tight font-medium';
-    const toolIcon =
-        'arctic-bubble flex size-12 items-center justify-center rounded-full';
-    const tools: {
+    // Стрічка вкладень під полем: фото, GIF, стікер, музика, кіно, гра/конфіг, сервер, опитування.
+    const openCard = (kind: 'movie' | 'game' | 'server') => {
+        setCardKind(kind);
+        setCardQuery('');
+        setCardHits([]);
+        setCard(null);
+        setPickingCard(true);
+    };
+    const attachments: {
         key: string;
         label: string;
         icon: typeof Earth;
-        color: string;
-        href?: string;
+        tone: string;
         active?: boolean;
-        disabled?: boolean;
-        onSelect?: () => void;
+        onSelect: () => void;
     }[] = [
         {
-            key: 'sticker',
-            label: tr('Стікер'),
-            icon: Smile,
-            color: '#ffd27a',
-            active: Boolean(form.data.sticker),
-            onSelect: () => setPickingSticker(true),
+            key: 'photo',
+            label: tr('Фото'),
+            icon: ImagePlus,
+            tone: 'text-sky-400',
+            active: form.data.images.length > 0,
+            onSelect: () => fileRef.current?.click(),
         },
         ...(gifOn
             ? [
@@ -280,23 +304,19 @@ export function PostComposer({
                       key: 'gif',
                       label: 'GIF',
                       icon: ImagePlay,
-                      color: '#7ee0b5',
+                      tone: 'text-emerald-400',
                       active: gif !== null,
                       onSelect: () => setPickingGif(true),
                   },
               ]
             : []),
         {
-            key: 'poll',
-            label: tr('Опитування'),
-            icon: BarChart3,
-            color: '#7dffb3',
-            active: form.data.poll !== null,
-            onSelect: () =>
-                form.setData(
-                    'poll',
-                    form.data.poll ? null : { question: '', options: ['', ''] },
-                ),
+            key: 'sticker',
+            label: tr('Стікер'),
+            icon: Smile,
+            tone: 'text-amber-400',
+            active: Boolean(form.data.sticker),
+            onSelect: () => setPickingSticker(true),
         },
         ...(modules.includes('music')
             ? [
@@ -304,19 +324,62 @@ export function PostComposer({
                       key: 'music',
                       label: tr('Музика'),
                       icon: Music2,
-                      color: '#c58bff',
+                      tone: 'text-cyan-400',
                       active: track !== null,
                       onSelect: () => setPicking(true),
                   },
               ]
             : []),
+        ...(modules.includes('cinema')
+            ? [
+                  {
+                      key: 'movie',
+                      label: tr('Кіно'),
+                      icon: Clapperboard,
+                      tone: 'text-sky-400',
+                      active: card?.kind === 'movie',
+                      onSelect: () => openCard('movie'),
+                  },
+              ]
+            : []),
+        ...(modules.includes('games')
+            ? [
+                  {
+                      key: 'game',
+                      label: tr('Гра / Конфіг'),
+                      icon: Gamepad2,
+                      tone: 'text-emerald-400',
+                      active:
+                          card?.kind === 'game' || card?.kind === 'game_event',
+                      onSelect: () => openCard('game'),
+                  },
+              ]
+            : []),
+        ...(modules.includes('servers')
+            ? [
+                  {
+                      key: 'server',
+                      label: tr('Сервер GTA'),
+                      icon: Server,
+                      tone: 'text-amber-400',
+                      active:
+                          card?.kind === 'server' ||
+                          card?.kind === 'server_event',
+                      onSelect: () => openCard('server'),
+                  },
+              ]
+            : []),
         {
-            key: 'card',
-            label: tr('Картка'),
-            icon: Sparkles,
-            color: '#ffd27a',
-            active: card !== null,
-            onSelect: () => setPickingCard(true),
+            key: 'poll',
+            label: tr('Опитування'),
+            icon: BarChart3,
+            tone: 'text-cyan-400',
+            active: form.data.poll !== null,
+            onSelect: () =>
+                form.setData(
+                    'poll',
+                    form.data.poll ? null : { question: '', options: ['', ''] },
+                ),
         },
         ...(memesOn && !community
             ? [
@@ -324,71 +387,13 @@ export function PostComposer({
                       key: 'meme',
                       label: tr('Мем'),
                       icon: Laugh,
-                      color: '#ff9d7a',
-                      href: '/memes/new',
+                      tone: 'text-amber-400',
+                      onSelect: () => router.visit('/memes/new'),
                   },
               ]
             : []),
-        {
-            key: 'spoiler',
-            label: tr('Спойлер'),
-            icon: EyeOff,
-            color: '#c9d2e3',
-            active: form.data.spoiler,
-            onSelect: () => form.setData('spoiler', !form.data.spoiler),
-        },
-        ...(authorSubsOn && !wall && !community
-            ? [
-                  {
-                      key: 'subscribers',
-                      label: tr('Підписникам'),
-                      icon: Lock,
-                      color: '#9db8ff',
-                      active: form.data.subscribers_only,
-                      onSelect: () =>
-                          form.setData(
-                              'subscribers_only',
-                              !form.data.subscribers_only,
-                          ),
-                  },
-              ]
-            : []),
-        ...(scheduleOn
-            ? [
-                  {
-                      key: 'schedule',
-                      label: tr('Розклад'),
-                      icon: CalendarClock,
-                      color: '#8fb4ff',
-                      active: scheduling,
-                      onSelect: () => setScheduling(true),
-                  },
-              ]
-            : []),
-        {
-            key: 'draft',
-            label: tr('Чернетка'),
-            icon: FilePen,
-            color: '#a8b3c7',
-            disabled: !canSubmit,
-            onSelect: () => submit(true),
-        },
-        {
-            key: 'drafts',
-            label: tr('Мої чернетки'),
-            icon: Files,
-            color: '#a8b3c7',
-            href: '/posts/drafts',
-        },
     ];
-    const extrasCount = [
-        form.data.sticker,
-        gif,
-        form.data.poll,
-        track,
-        card,
-        form.data.spoiler || null,
-    ].filter(Boolean).length;
+
     const currentVisibility =
         visibilityOptions.find(
             (option) => option.value === form.data.visibility,
@@ -418,32 +423,96 @@ export function PostComposer({
                 addFiles(event.dataTransfer.files);
             }}
         >
-            <div className="pointer-events-none absolute -top-24 -right-24 size-56 rounded-full bg-gc-indigo/20 blur-3xl" />
-            <div className="gc-composer-main relative flex items-center gap-3">
+            <div className="gc-composer-main relative flex items-start gap-3">
                 {asCommunity && community ? (
                     <CommunityAvatar community={community} size="md" />
                 ) : (
                     <UserAvatar user={auth.user} size="md" showOnline={false} />
                 )}
                 <div className="min-w-0 flex-1">
-                    <textarea
-                        value={form.data.body}
-                        onChange={(event) => {
-                            form.setData('body', event.target.value);
-                            fitTextarea(event.target, 420);
-                        }}
-                        onFocus={() => setFocused(true)}
-                        onKeyDown={(event) => {
-                            if (
-                                event.key === 'Enter' &&
-                                (event.metaKey || event.ctrlKey)
-                            )
-                                submit();
-                        }}
-                        rows={expanded ? 3 : 1}
-                        placeholder={placeholder}
-                        className="[field-sizing:content] max-h-[420px] w-full resize-none bg-transparent pt-2.5 text-[15px] leading-relaxed text-white placeholder:text-white/40 focus:outline-none"
-                    />
+                    {/* Поле вводу: смайлик ліворуч (панель емодзі), плюс праворуч (стрічка вкладень). */}
+                    <div className="gc-solid-2 flex items-start gap-0.5 rounded-2xl px-1">
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setEmojiOpen((v) => !v);
+                                setFocused(true);
+                            }}
+                            aria-expanded={emojiOpen}
+                            title={tr('Емодзі')}
+                            aria-label={tr('Емодзі')}
+                            className={cn(
+                                'mt-1 flex size-9 shrink-0 items-center justify-center rounded-xl transition hover:bg-[var(--gc-l3)]',
+                                emojiOpen ? 'text-sky-400' : 'text-white/60',
+                            )}
+                        >
+                            <Smile className="size-5" />
+                        </button>
+                        <textarea
+                            ref={textRef}
+                            value={form.data.body}
+                            onChange={(event) => {
+                                form.setData('body', event.target.value);
+                                fitTextarea(event.target, 420);
+                            }}
+                            onFocus={() => setFocused(true)}
+                            onKeyDown={(event) => {
+                                if (
+                                    event.key === 'Enter' &&
+                                    (event.metaKey || event.ctrlKey)
+                                )
+                                    submit();
+                            }}
+                            rows={expanded ? 3 : 1}
+                            placeholder={placeholder}
+                            className="[field-sizing:content] max-h-[420px] min-w-0 flex-1 resize-none bg-transparent py-2.5 text-[15px] leading-relaxed text-white placeholder:text-white/40 focus:outline-none"
+                        />
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setAttachOpen((v) => !v);
+                                setFocused(true);
+                            }}
+                            aria-expanded={attachOpen}
+                            title={tr('Додати до запису')}
+                            aria-label={tr('Додати до запису')}
+                            className={cn(
+                                'mt-1 flex size-9 shrink-0 items-center justify-center rounded-xl transition hover:bg-[var(--gc-l3)]',
+                                attachOpen ? 'text-sky-400' : 'text-white/60',
+                            )}
+                        >
+                            <PlusCircle
+                                className={cn(
+                                    'size-5 transition-transform',
+                                    attachOpen && 'rotate-45',
+                                )}
+                            />
+                        </button>
+                    </div>
+                    {emojiOpen && <EmojiPanel onPick={insertEmoji} />}
+                    {attachOpen && (
+                        <div className="mt-2 scrollbar-none flex gap-2 overflow-x-auto pb-1">
+                            {attachments.map((item) => (
+                                <button
+                                    key={item.key}
+                                    type="button"
+                                    onClick={item.onSelect}
+                                    aria-pressed={item.active || undefined}
+                                    className={cn(
+                                        'flex h-10 shrink-0 items-center gap-2 rounded-xl px-3 text-[13px] font-medium transition',
+                                        item.active
+                                            ? 'bg-[var(--gc-active)] text-sky-400'
+                                            : 'gc-solid-2 text-white/85 hover:bg-[var(--gc-l3)]',
+                                    )}
+                                >
+                                    <item.icon
+                                        className={cn('size-4', item.tone)}
+                                    />
+                                    {item.label}
+                                </button>
+                            ))}
+                        </div>
+                    )}
                     {form.errors.body && (
                         <p className="mt-1 text-xs text-rose-300">
                             {form.errors.body}
@@ -539,7 +608,7 @@ export function PostComposer({
                 ))}
 
             {card && (
-                <div className="relative mt-3 flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] p-3">
+                <div className="gc-solid-2 relative mt-3 flex items-center gap-3 rounded-2xl p-3">
                     <span className="min-w-0 flex-1">
                         <span className="block text-xs text-white/40">
                             {tr(card.hint)}
@@ -558,7 +627,7 @@ export function PostComposer({
                 </div>
             )}
             {pickingCard && !card && (
-                <div className="relative mt-3 space-y-2 rounded-2xl border border-white/10 bg-white/[0.03] p-3">
+                <div className="gc-solid-2 relative mt-3 space-y-2 rounded-2xl p-3">
                     <input
                         value={cardQuery}
                         onChange={(event) => {
@@ -573,13 +642,20 @@ export function PostComposer({
                                     cards: NonNullable<PostItem['card']>[];
                                 }>(
                                     'GET',
-                                    `/cards/search?q=${encodeURIComponent(value.trim())}`,
+                                    `/cards/search?q=${encodeURIComponent(value.trim())}&kind=${cardKind}`,
                                 ).then((response) =>
                                     setCardHits(response.cards),
                                 );
                             }, 200);
                         }}
-                        placeholder={tr('Гра, сервер або подія')}
+                        autoFocus
+                        placeholder={
+                            cardKind === 'movie'
+                                ? tr('Назва фільму чи серіалу')
+                                : cardKind === 'server'
+                                  ? tr('Назва сервера')
+                                  : tr('Гра, конфіг або подія')
+                        }
                         className="w-full bg-transparent text-sm text-white placeholder:text-white/40 focus:outline-none"
                     />
                     {cardHits.map((hit) => (
@@ -602,7 +678,7 @@ export function PostComposer({
             )}
 
             {form.data.poll && (
-                <div className="relative mt-3 space-y-2 rounded-2xl border border-white/10 bg-white/[0.03] p-3">
+                <div className="gc-solid-2 relative mt-3 space-y-2 rounded-2xl p-3">
                     <input
                         value={form.data.poll.question}
                         onChange={(event) =>
@@ -661,7 +737,7 @@ export function PostComposer({
                                         anonymous: event.target.checked,
                                     })
                                 }
-                                className="size-4 accent-gc-indigo"
+                                className="size-4 accent-sky-500"
                                 aria-label={tr('Анонімне опитування')}
                             />
                         </label>
@@ -758,7 +834,7 @@ export function PostComposer({
                         </span>
                     )}
                     {form.data.subscribers_only && (
-                        <span className="inline-flex h-8 items-center gap-1.5 rounded-full bg-gc-indigo/20 pr-1 pl-3 text-xs text-white/85">
+                        <span className="inline-flex h-8 items-center gap-1.5 rounded-full bg-[var(--gc-active)] pr-1 pl-3 text-xs text-white/85">
                             <Lock className="size-3.5 text-gc-lilac-300" />
                             {tr('Лише для платних підписників')}
                             <button
@@ -774,7 +850,7 @@ export function PostComposer({
                         </span>
                     )}
                     {scheduling && (
-                        <span className="inline-flex h-8 items-center gap-1.5 rounded-full bg-gc-indigo/20 pr-1 pl-3 text-xs text-white/85">
+                        <span className="inline-flex h-8 items-center gap-1.5 rounded-full bg-[var(--gc-active)] pr-1 pl-3 text-xs text-white/85">
                             <CalendarClock className="size-3.5 text-gc-lilac-300" />
                             <input
                                 type="datetime-local"
@@ -823,7 +899,7 @@ export function PostComposer({
                                     className={cn(
                                         'inline-flex h-9 items-center gap-2 rounded-xl px-3 text-xs font-medium transition',
                                         form.data.as_community
-                                            ? 'bg-gc-indigo/20 text-white'
+                                            ? 'bg-[var(--gc-active)] text-white'
                                             : 'text-white/50 hover:bg-white/[0.06] hover:text-white',
                                     )}
                                 >
@@ -866,120 +942,85 @@ export function PostComposer({
                     hidden
                     onChange={(event) => addFiles(event.target.files)}
                 />
-                <button
-                    type="button"
-                    title={tr('Фото')}
-                    onClick={() => fileRef.current?.click()}
-                    className="inline-flex size-10 shrink-0 items-center justify-center rounded-xl text-white/65 transition hover:bg-white/[0.06] hover:text-white"
-                >
-                    <ImagePlus className="size-5 text-[#6fa2ff]" />
-                    <span className="sr-only">{tr('Фото')}</span>
-                </button>
-                {/* Широкий екран: усі інструменти видно одразу — значками з підказками. */}
-                <div className="order-last hidden basis-full flex-wrap items-center gap-0.5 border-t border-white/[0.06] pt-2 md:flex">
-                    {tools.map((tool) => {
-                        const inner = (
-                            <tool.icon
-                                className="size-[18px]"
-                                style={{ color: tool.color }}
-                            />
-                        );
-                        const cls = cn(
-                            'inline-flex size-9 shrink-0 items-center justify-center rounded-xl transition hover:bg-white/[0.08] disabled:opacity-40',
-                            tool.active && 'bg-white/[0.1]',
-                        );
-                        return tool.href ? (
-                            <Link
-                                key={tool.key}
-                                href={tool.href}
-                                title={tool.label}
-                                aria-label={tool.label}
-                                className={cls}
-                            >
-                                {inner}
-                            </Link>
-                        ) : (
-                            <button
-                                key={tool.key}
-                                type="button"
-                                title={tool.label}
-                                aria-label={tool.label}
-                                aria-pressed={tool.active || undefined}
-                                disabled={tool.disabled}
-                                onClick={tool.onSelect}
-                                className={cls}
-                            >
-                                {inner}
-                            </button>
-                        );
-                    })}
-                </div>
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
+                {/* Параметри запису: спойлер, лише підписникам, розклад, чернетки — компактно значками. */}
+                <div className="flex items-center gap-0.5">
+                    {(
+                        [
+                            {
+                                key: 'spoiler',
+                                label: tr('Спойлер'),
+                                icon: EyeOff,
+                                active: form.data.spoiler,
+                                onSelect: () =>
+                                    form.setData('spoiler', !form.data.spoiler),
+                            },
+                            ...(authorSubsOn && !wall && !community
+                                ? [
+                                      {
+                                          key: 'subscribers',
+                                          label: tr('Підписникам'),
+                                          icon: Lock,
+                                          active: form.data.subscribers_only,
+                                          onSelect: () =>
+                                              form.setData(
+                                                  'subscribers_only',
+                                                  !form.data.subscribers_only,
+                                              ),
+                                      },
+                                  ]
+                                : []),
+                            ...(scheduleOn
+                                ? [
+                                      {
+                                          key: 'schedule',
+                                          label: tr('Розклад'),
+                                          icon: CalendarClock,
+                                          active: scheduling,
+                                          onSelect: () => setScheduling(true),
+                                      },
+                                  ]
+                                : []),
+                            {
+                                key: 'draft',
+                                label: tr('Чернетка'),
+                                icon: FilePen,
+                                disabled: !canSubmit,
+                                onSelect: () => submit(true),
+                            },
+                            {
+                                key: 'drafts',
+                                label: tr('Мої чернетки'),
+                                icon: Files,
+                                onSelect: () => router.visit('/posts/drafts'),
+                            },
+                        ] as {
+                            key: string;
+                            label: string;
+                            icon: typeof Earth;
+                            active?: boolean;
+                            disabled?: boolean;
+                            onSelect: () => void;
+                        }[]
+                    ).map((opt) => (
                         <button
+                            key={opt.key}
                             type="button"
-                            title={tr('Додати до запису')}
-                            className="group inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl bg-white/[0.06] px-3 text-sm font-medium text-white/80 transition hover:bg-white/[0.1] hover:text-white data-[state=open]:bg-gc-indigo/25 data-[state=open]:text-white md:hidden"
-                        >
-                            <Plus className="size-4 transition-transform group-data-[state=open]:rotate-45" />
-                            <span className="hidden min-[380px]:inline">
-                                {tr('Додати')}
-                            </span>
-                            {extrasCount > 0 && (
-                                <span className="flex size-5 items-center justify-center rounded-full bg-gc-indigo text-[11px] font-semibold text-white tabular-nums">
-                                    {extrasCount}
-                                </span>
+                            title={opt.label}
+                            aria-label={opt.label}
+                            aria-pressed={opt.active || undefined}
+                            disabled={opt.disabled}
+                            onClick={opt.onSelect}
+                            className={cn(
+                                'inline-flex size-9 shrink-0 items-center justify-center rounded-xl transition hover:bg-[var(--gc-l3)] disabled:opacity-40',
+                                opt.active
+                                    ? 'bg-[var(--gc-active)] text-sky-400'
+                                    : 'text-white/60',
                             )}
+                        >
+                            <opt.icon className="size-[18px]" />
                         </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent
-                        align="start"
-                        sideOffset={8}
-                        className="arctic-menu grid w-[19rem] grid-cols-4 gap-x-1 gap-y-2 p-3"
-                    >
-                        {tools.map((tool) =>
-                            tool.href ? (
-                                <DropdownMenuItem
-                                    key={tool.key}
-                                    asChild
-                                    className={toolTile}
-                                >
-                                    <Link href={tool.href}>
-                                        <span
-                                            className={toolIcon}
-                                            style={{ color: tool.color }}
-                                        >
-                                            <tool.icon
-                                                className="size-5 text-current"
-                                                style={{ color: tool.color }}
-                                            />
-                                        </span>
-                                        {tool.label}
-                                    </Link>
-                                </DropdownMenuItem>
-                            ) : (
-                                <DropdownMenuItem
-                                    key={tool.key}
-                                    disabled={tool.disabled}
-                                    onSelect={tool.onSelect}
-                                    data-on={tool.active || undefined}
-                                    className={toolTile}
-                                >
-                                    <span
-                                        className={toolIcon}
-                                        style={{ color: tool.color }}
-                                    >
-                                        <tool.icon
-                                            className="size-5 text-current"
-                                            style={{ color: tool.color }}
-                                        />
-                                    </span>
-                                    {tool.label}
-                                </DropdownMenuItem>
-                            ),
-                        )}
-                    </DropdownMenuContent>
-                </DropdownMenu>
+                    ))}
+                </div>
 
                 <div className="ml-auto flex shrink-0 items-center gap-1">
                     {!wall && !community && (
