@@ -153,11 +153,11 @@ void createInertiaApp({
                 return AuthLayout;
             case name.startsWith('admin/'):
                 return AdminLayout;
-            // «Музика» — власний розділ у стилі Apple Music; кімната «Слухати разом» лишається в макеті сайту.
+            // «Музика» — у загальній оболонці сайту; вкладки розділу й завантаження — у MusicLayout.
             case name.startsWith('music/') &&
                 name !== 'music/together' &&
                 name !== 'music/index':
-                return MusicLayout;
+                return [SocialLayout, MusicLayout];
             case name.startsWith('settings/'):
                 return [SocialLayout, SettingsLayout];
             default:

@@ -84,7 +84,7 @@ export default function GameNightsIndex({
                 <div className="flex flex-wrap items-end justify-between gap-3">
                     <div>
                         <h1 className="flex items-center gap-2 font-display text-2xl font-semibold text-white">
-                            <CalendarClock className="size-6 text-sky-300" />
+                            <CalendarClock className="size-6 text-sky-400" />
                             {tr('Ігровий вечір')}
                         </h1>
                         <p className="mt-1 text-sm text-white/50">
@@ -106,7 +106,7 @@ export default function GameNightsIndex({
                 {adding && (
                     <form
                         onSubmit={submit}
-                        className="glass mt-4 space-y-4 rounded-2xl p-4"
+                        className="gc-solid mt-4 space-y-4 rounded-2xl p-4"
                     >
                         <input
                             value={form.data.title}
@@ -153,7 +153,7 @@ export default function GameNightsIndex({
                                                     )
                                                 }
                                                 aria-label={tr('Прибрати')}
-                                                className="rounded-xl px-3 text-white/45 hover:text-rose-300"
+                                                className="rounded-xl px-3 text-white/45 hover:text-red-400"
                                             >
                                                 <Trash2 className="size-4" />
                                             </button>
@@ -169,7 +169,7 @@ export default function GameNightsIndex({
                                                 '',
                                             ])
                                         }
-                                        className="text-sm font-medium text-sky-300 hover:text-sky-200"
+                                        className="text-sm font-medium text-sky-400 hover:text-sky-400"
                                     >
                                         + {tr('Ще варіант часу')}
                                     </button>
@@ -186,7 +186,7 @@ export default function GameNightsIndex({
                                         key={game.id}
                                         className="inline-flex h-8 items-center gap-1.5 rounded-chip bg-white/[0.08] px-3 text-[13px] text-white"
                                     >
-                                        <Gamepad2 className="size-3.5 text-sky-300" />
+                                        <Gamepad2 className="size-3.5 text-sky-400" />
                                         {game.name}
                                         <button
                                             type="button"
@@ -258,7 +258,7 @@ export default function GameNightsIndex({
                                                     'inline-flex h-9 items-center gap-2 rounded-chip pr-3 pl-1 text-[13px] transition',
                                                     on
                                                         ? 'bg-primary text-white'
-                                                        : 'bg-white/[0.06] text-white/75 hover:bg-white/[0.1]',
+                                                        : 'gc-solid-2 text-white/75 hover:bg-white/[0.1]',
                                                 )}
                                             >
                                                 <UserAvatar
@@ -289,7 +289,7 @@ export default function GameNightsIndex({
                             className={cn(field, 'resize-y py-2.5')}
                         />
                         {Object.values(form.errors)[0] && (
-                            <p className="text-xs text-rose-300">
+                            <p className="text-xs text-red-400">
                                 {Object.values(form.errors)[0]}
                             </p>
                         )}
@@ -352,9 +352,9 @@ function NightRow({ night }: { night: NightSummary }) {
         <li>
             <Link
                 href={`/game-nights/${night.id}`}
-                className="glass flex items-center gap-3 rounded-2xl p-4 transition hover:bg-white/[0.04]"
+                className="gc-solid flex items-center gap-3 rounded-2xl p-4 transition hover:bg-[var(--gc-l3)]"
             >
-                <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-sky-500/15 text-sky-200">
+                <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-sky-500/15 text-sky-400">
                     <CalendarClock className="size-5" />
                 </span>
                 <span className="min-w-0 flex-1">

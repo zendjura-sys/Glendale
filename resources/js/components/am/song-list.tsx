@@ -84,7 +84,7 @@ function SongRow({
                         </span>
                     </>
                 )}
-                <span className="flex min-h-12 min-w-0 flex-1 items-center gap-2 border-b border-[var(--am-sep)] py-1 group-last:border-transparent">
+                <span className="flex min-h-12 min-w-0 flex-1 items-center gap-2 border-[var(--am-sep)] py-1 group-last:border-transparent">
                     <span className="min-w-0 flex-1">
                         <span
                             className={cn(

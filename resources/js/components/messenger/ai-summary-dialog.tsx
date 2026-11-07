@@ -51,7 +51,7 @@ export function AiSummaryDialog({
             <DialogContent className="gap-4 sm:max-w-lg">
                 <div>
                     <DialogTitle className="flex items-center gap-2 font-display text-lg font-semibold text-white">
-                        <Sparkles className="size-5 text-gc-lilac-300" />
+                        <Sparkles className="size-5 text-sky-400" />
                         {tr('Підсумок від ШІ')}
                     </DialogTitle>
                     <DialogDescription className="mt-1 text-sm text-white/50">
@@ -61,7 +61,7 @@ export function AiSummaryDialog({
                 {busy ? (
                     <TextSkeleton lines={5} />
                 ) : error ? (
-                    <p className="rounded-xl bg-rose-500/10 p-3 text-sm text-rose-200">
+                    <p className="rounded-xl bg-red-500/10 p-3 text-sm text-red-400">
                         {error}
                     </p>
                 ) : (
@@ -74,7 +74,7 @@ export function AiSummaryDialog({
                         type="button"
                         disabled={busy}
                         onClick={load}
-                        className="inline-flex h-9 items-center gap-2 rounded-xl px-3 text-sm text-white/60 transition hover:bg-white/[0.06] hover:text-white disabled:opacity-50"
+                        className="inline-flex h-9 items-center gap-2 rounded-xl px-3 text-sm text-white/60 transition hover:bg-[var(--gc-l3)] hover:text-white disabled:opacity-50"
                     >
                         <RefreshCw className="size-4" />
                         {tr('Оновити')}

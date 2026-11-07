@@ -55,7 +55,7 @@ export function AlertBanner() {
                     className="mb-4 flex flex-wrap items-center gap-3 rounded-2xl bg-red-500/15 px-4 py-3 text-sm text-white"
                     role="alert"
                 >
-                    <Siren className="size-5 shrink-0 text-red-300" />
+                    <Siren className="size-5 shrink-0 text-red-400" />
                     <span className="min-w-0 flex-1">
                         <b>{tr('Повітряна тривога')}</b> · {region.name} ·{' '}
                         <span className="tabular-nums">
@@ -78,7 +78,7 @@ export function AlertBanner() {
                     </button>
                     <Link
                         href="/alerts"
-                        className="text-xs font-semibold text-red-600 underline underline-offset-4 dark:text-red-200"
+                        className="text-xs font-semibold text-red-600 underline underline-offset-4 dark:text-red-400"
                     >
                         {tr('Мапа')}
                     </Link>

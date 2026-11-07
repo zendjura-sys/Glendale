@@ -117,7 +117,7 @@ export default function Friends({ tab, q, users, counts, suggestions }: Props) {
         <>
             <Head title={tr('Друзі')} />
             <div className="space-y-5">
-                <div className="glass flex flex-col gap-3 rounded-2xl p-3 md:flex-row md:items-center">
+                <div className="gc-solid flex flex-col gap-3 rounded-2xl p-3 md:flex-row md:items-center">
                     <div className="scrollbar-none flex gap-1 overflow-x-auto">
                         {tabs
                             .filter((item) =>
@@ -135,14 +135,13 @@ export default function Friends({ tab, q, users, counts, suggestions }: Props) {
                                         'flex shrink-0 items-center gap-2 rounded-xl px-3.5 py-2.5 text-sm font-semibold transition',
                                         tab === item.key
                                             ? 'nav-active text-white'
-                                            : 'text-white/55 hover:bg-white/[0.04] hover:text-white',
+                                            : 'text-white/55 hover:bg-[var(--gc-l3)] hover:text-white',
                                     )}
                                 >
                                     <item.icon
                                         className={cn(
                                             'size-4',
-                                            tab === item.key &&
-                                                'text-gc-lilac-400',
+                                            tab === item.key && 'text-sky-400',
                                         )}
                                     />
                                     {item.label}
@@ -151,7 +150,7 @@ export default function Friends({ tab, q, users, counts, suggestions }: Props) {
                                             'rounded-full px-1.5 text-[11px] leading-5 tabular-nums',
                                             item.key === 'requests' &&
                                                 counts.requests > 0
-                                                ? 'bg-gradient-brand text-white'
+                                                ? 'bg-sky-500 text-white'
                                                 : 'bg-white/[0.07] text-white/60',
                                         )}
                                     >

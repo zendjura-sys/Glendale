@@ -39,7 +39,7 @@ export function VoiceChannel({
 
     return (
         <section className="flex min-h-0 flex-1 flex-col items-center justify-center gap-6 p-6 text-center">
-            <span className="flex size-16 items-center justify-center rounded-2xl bg-primary/15 text-gc-lilac-300">
+            <span className="flex size-16 items-center justify-center rounded-2xl bg-primary/15 text-sky-400">
                 <Volume2 className="size-8" />
             </span>
             <div>
@@ -64,7 +64,7 @@ export function VoiceChannel({
                                 className={cn(
                                     'rounded-full ring-2 transition',
                                     voice.speaking.includes(`u${user.id}`)
-                                        ? 'ring-emerald-400'
+                                        ? ''
                                         : 'ring-transparent',
                                 )}
                             >
@@ -92,7 +92,7 @@ export function VoiceChannel({
                         <button
                             type="button"
                             onClick={() => void leaveVoice()}
-                            className="inline-flex h-10 items-center gap-2 rounded-xl bg-rose-500/90 px-4 text-sm font-semibold text-white transition hover:bg-rose-500"
+                            className="inline-flex h-10 items-center gap-2 rounded-xl bg-red-500/90 px-4 text-sm font-semibold text-white transition hover:bg-red-500"
                         >
                             <LogOut className="size-4" />
                             {tr('Вийти')}

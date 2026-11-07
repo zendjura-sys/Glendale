@@ -98,7 +98,7 @@ export default function SeasonPass({
             <Head title={tr('Сезонний пропуск')} />
             <div className="mx-auto max-w-4xl space-y-5">
                 <section
-                    className="relative overflow-hidden rounded-xl border border-white/[0.08] p-5 sm:p-7"
+                    className="relative overflow-hidden rounded-xl p-5 sm:p-7"
                     style={{
                         backgroundImage: `linear-gradient(120deg, ${season.colors.join(', ')})`,
                     }}
@@ -165,7 +165,7 @@ export default function SeasonPass({
                     </div>
                 </section>
 
-                <section className="glass rounded-xl p-4 sm:p-5">
+                <section className="gc-solid rounded-xl p-4 sm:p-5">
                     <LevelTrack
                         levels={levels}
                         level={level}
@@ -191,7 +191,7 @@ export default function SeasonPass({
                 </section>
 
                 <div className="grid gap-5 md:grid-cols-[1fr_1.4fr]">
-                    <section className="glass rounded-xl p-4 sm:p-5">
+                    <section className="gc-solid rounded-xl p-4 sm:p-5">
                         <h2 className="flex items-center gap-2 font-display text-lg font-bold text-white">
                             <Target className="size-5 text-primary" />
                             {tr('Як заробляти очки')}
@@ -206,7 +206,7 @@ export default function SeasonPass({
                         </Button>
                     </section>
 
-                    <section className="glass rounded-xl p-4 sm:p-5">
+                    <section className="gc-solid rounded-xl p-4 sm:p-5">
                         <h2 className="flex items-center gap-2 font-display text-lg font-bold text-white">
                             <Shirt className="size-5 text-primary" />
                             {tr('Інвентар')}

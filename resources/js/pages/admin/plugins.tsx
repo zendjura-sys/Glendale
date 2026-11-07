@@ -48,7 +48,7 @@ export default function AdminPlugins({ plugins }: { plugins: PluginItem[] }) {
                                     <div
                                         key={plugin.key}
                                         className={cn(
-                                            'glass relative overflow-hidden rounded-2xl p-5',
+                                            'gc-solid relative overflow-hidden rounded-2xl p-5',
                                             plugin.enabled &&
                                                 'border-gc-indigo/25',
                                         )}
@@ -85,7 +85,7 @@ export default function AdminPlugins({ plugins }: { plugins: PluginItem[] }) {
                                             {plugin.enabled
                                                 ? tr('Увімкнено')
                                                 : tr('Вимкнено')}
-                                            <code className="ml-auto rounded bg-white/[0.04] px-1.5 py-0.5 text-white/30">
+                                            <code className="gc-solid-2 ml-auto rounded px-1.5 py-0.5 text-white/30">
                                                 {plugin.key}
                                             </code>
                                         </div>

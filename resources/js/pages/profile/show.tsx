@@ -237,7 +237,7 @@ function Counter({
     return href ? (
         <Link
             href={href}
-            className="flex flex-col items-center rounded-2xl px-4 py-2 transition hover:bg-white/[0.05]"
+            className="flex flex-col items-center rounded-2xl px-4 py-2 transition hover:bg-[var(--gc-l3)]"
         >
             {content}
         </Link>
@@ -417,7 +417,7 @@ export default function ProfileShow({
         <>
             <Head title={profile.name} />
 
-            <section className="glass relative isolate overflow-hidden rounded-2xl">
+            <section className="gc-solid relative isolate overflow-hidden rounded-2xl">
                 {profile.accent && (
                     // Кольори сторінки (GameCon+ або улюблена гра): м’який відсвіт під шапкою.
                     <div
@@ -561,7 +561,7 @@ export default function ProfileShow({
                                     className="size-6"
                                 />
                                 {roleBadge && (
-                                    <span className="inline-flex items-center gap-1 rounded-chip border border-gold/30 bg-gold/10 px-2.5 py-0.5 text-xs font-semibold text-gold">
+                                    <span className="inline-flex items-center gap-1 rounded-chip border-gold/30 bg-gold/10 px-2.5 py-0.5 text-xs font-semibold text-gold">
                                         <ShieldCheck className="size-3" />{' '}
                                         {roleBadge}
                                     </span>
@@ -578,7 +578,7 @@ export default function ProfileShow({
                                 </p>
                             )}
                             {ready && (
-                                <p className="mt-1.5 inline-flex items-center gap-1.5 rounded-chip bg-emerald-400/10 px-2.5 py-1 text-xs font-semibold text-emerald-300 ring-1 ring-emerald-400/30">
+                                <p className="mt-1.5 inline-flex items-center gap-1.5 rounded-chip bg-emerald-400/10 px-2.5 py-1 text-xs font-semibold text-emerald-300">
                                     <span className="size-1.5 rounded-full bg-emerald-400" />
                                     {ready.game
                                         ? tr('Готовий грати в {game}', {
@@ -607,7 +607,7 @@ export default function ProfileShow({
                                         <button
                                             type="button"
                                             onClick={() => setStatusOpen(true)}
-                                            className="text-xs font-medium text-gc-lilac-300 hover:text-white"
+                                            className="text-xs font-medium text-sky-400 hover:text-white"
                                         >
                                             {tr('Змінити')}
                                         </button>
@@ -621,7 +621,7 @@ export default function ProfileShow({
                                     <button
                                         type="button"
                                         onClick={() => setStatusOpen(true)}
-                                        className="mt-1.5 inline-flex items-center gap-1.5 rounded-chip bg-white/[0.06] px-2.5 py-1 text-xs font-medium text-white/70 transition hover:bg-white/10 hover:text-white"
+                                        className="gc-solid-2 mt-1.5 inline-flex items-center gap-1.5 rounded-chip px-2.5 py-1 text-xs font-medium text-white/70 transition hover:bg-white/10 hover:text-white"
                                     >
                                         <span aria-hidden>🙂</span>
                                         {tr('Встановити статус')}
@@ -645,7 +645,7 @@ export default function ProfileShow({
                                     {profile.languages?.map((code) => (
                                         <span
                                             key={code}
-                                            className="rounded-chip bg-white/[0.05] px-2.5 py-1 text-xs text-white/70"
+                                            className="gc-solid-2 rounded-chip px-2.5 py-1 text-xs text-white/70"
                                         >
                                             {languageName(code, LOCALE)}
                                         </span>
@@ -656,7 +656,7 @@ export default function ProfileShow({
                             {profile.pin && (
                                 <Link
                                     href={profile.pin.href}
-                                    className="mt-2 inline-flex items-center gap-2 rounded-chip bg-white/[0.06] px-3 py-1 text-xs text-white/80"
+                                    className="gc-solid-2 mt-2 inline-flex items-center gap-2 rounded-chip px-3 py-1 text-xs text-white/80"
                                 >
                                     <span className="text-white/40">
                                         {tr(profile.pin.hint)}
@@ -682,7 +682,7 @@ export default function ProfileShow({
                             <p className="mt-1.5 flex items-center gap-1.5 text-xs text-white/45">
                                 {profile.is_online ? (
                                     <>
-                                        <span className="size-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgb(52_211_153)]" />{' '}
+                                        <span className="size-2 rounded-full bg-emerald-400" />{' '}
                                         {tr('онлайн')}
                                     </>
                                 ) : (
@@ -867,7 +867,7 @@ export default function ProfileShow({
                         )}
                     </AnimatePresence>
 
-                    <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-white/[0.06] pt-4">
+                    <div className="mt-5 flex flex-wrap items-center justify-between gap-3 pt-4">
                         <div className="flex flex-wrap gap-x-5 gap-y-2 text-[13px] text-white/55">
                             {friendsSince && (
                                 <span className="inline-flex items-center gap-1.5">
@@ -904,7 +904,7 @@ export default function ProfileShow({
                                 ))}
                             {profile.city && (
                                 <span className="inline-flex items-center gap-1.5">
-                                    <MapPin className="size-4 text-gc-lilac-400" />{' '}
+                                    <MapPin className="size-4 text-sky-400" />{' '}
                                     {profile.city}
                                 </span>
                             )}
@@ -1015,7 +1015,7 @@ export default function ProfileShow({
                                             <Link
                                                 key={visitor.id}
                                                 href={`/${visitor.username}`}
-                                                className="flex items-center gap-2 rounded-2xl px-1 py-1 transition hover:bg-white/[0.04]"
+                                                className="flex items-center gap-2 rounded-2xl px-1 py-1 transition hover:bg-[var(--gc-l3)]"
                                             >
                                                 <UserAvatar
                                                     user={visitor}
@@ -1148,9 +1148,9 @@ export default function ProfileShow({
                                         {audio.tracks > 0 && (
                                             <Link
                                                 href={audio.href}
-                                                className="glass group flex items-center gap-3 rounded-2xl p-4 transition hover:border-white/15"
+                                                className="gc-solid group flex items-center gap-3 rounded-2xl p-4 transition hover:border-white/15"
                                             >
-                                                <span className="flex size-11 items-center justify-center rounded-2xl bg-gradient-to-br from-gc-purple to-gc-blue shadow-[0_10px_30px_-10px_rgb(168_85_247/0.9)]">
+                                                <span className="flex size-11 items-center justify-center rounded-2xl bg-gradient-to-br from-gc-purple to-gc-blue">
                                                     <Music2 className="size-5 text-white" />
                                                 </span>
                                                 <span className="min-w-0 flex-1">
@@ -1200,7 +1200,7 @@ export default function ProfileShow({
                                                     <Link
                                                         key={friend.id}
                                                         href={`/${friend.username}`}
-                                                        className="flex flex-col items-center gap-1.5 rounded-2xl p-2 text-center transition hover:bg-white/[0.04]"
+                                                        className="flex flex-col items-center gap-1.5 rounded-2xl p-2 text-center transition hover:bg-[var(--gc-l3)]"
                                                     >
                                                         <UserAvatar
                                                             user={friend}

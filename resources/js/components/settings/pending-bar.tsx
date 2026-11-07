@@ -65,7 +65,7 @@ export function PendingBar({
                             type="button"
                             onClick={onDiscard}
                             disabled={processing}
-                            className="h-9 rounded-xl px-3 text-sm font-medium text-white/60 transition-colors hover:bg-white/[0.06] hover:text-white disabled:opacity-40"
+                            className="h-9 rounded-xl px-3 text-sm font-medium text-white/60 transition-colors hover:bg-[var(--gc-l3)] hover:text-white disabled:opacity-40"
                         >
                             {tr('Скасувати')}
                         </button>

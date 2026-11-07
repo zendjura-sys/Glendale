@@ -33,17 +33,14 @@ export function IncomingOffers({
     if (offers.length === 0) return null;
 
     return (
-        <section className="glass rounded-2xl p-5">
+        <section className="gc-solid rounded-2xl p-5">
             <h3 className="mb-3 flex items-center gap-2 font-display text-base font-bold text-white">
-                <Gift className="size-4 text-pink-300" />
+                <Gift className="size-4 text-sky-400" />
                 {tr('Вам пропонують номер')}
             </h3>
             <ul className="space-y-3">
                 {offers.map((offer) => (
-                    <li
-                        key={offer.id}
-                        className="rounded-2xl bg-white/[0.04] p-3"
-                    >
+                    <li key={offer.id} className="gc-solid-2 rounded-2xl p-3">
                         <div className="flex items-start gap-3">
                             <UserAvatar user={offer.from} size="sm" />
                             <div className="min-w-0 flex-1">
@@ -76,7 +73,7 @@ export function IncomingOffers({
                                         opts,
                                     )
                                 }
-                                className={`${btn} bg-white/[0.06] text-white/80 hover:bg-white/[0.1]`}
+                                className={`${btn} gc-solid-2 text-white/80 hover:bg-white/[0.1]`}
                             >
                                 <X className="size-4" />
                                 {tr('Відмовитися')}
@@ -116,7 +113,7 @@ export function OutgoingOffers({
     if (offers.length === 0 && gifts.length === 0) return null;
 
     return (
-        <section className="glass rounded-2xl p-5">
+        <section className="gc-solid rounded-2xl p-5">
             <h3 className="mb-3 flex items-center gap-2 font-display text-base font-bold text-white">
                 <Send className="size-4 text-white/50" />
                 {tr('Подарунки й передачі')}
@@ -125,7 +122,7 @@ export function OutgoingOffers({
                 {offers.map((offer) => (
                     <li
                         key={offer.id}
-                        className="flex flex-wrap items-center gap-3 rounded-2xl bg-white/[0.04] p-3"
+                        className="gc-solid-2 flex flex-wrap items-center gap-3 rounded-2xl p-3"
                     >
                         <PhoneBadge phone={offer.phone} size="sm" />
                         <span className="min-w-0 flex-1 text-sm text-white/55">
@@ -138,7 +135,7 @@ export function OutgoingOffers({
                             onClick={() =>
                                 router.delete(`/phone/offers/${offer.id}`, opts)
                             }
-                            className={`${btn} bg-white/[0.06] text-white/70 hover:bg-white/[0.1]`}
+                            className={`${btn} gc-solid-2 text-white/70 hover:bg-white/[0.1]`}
                         >
                             {tr('Скасувати')}
                         </button>
@@ -156,7 +153,7 @@ function GiftRow({ gift, friends }: { gift: UnusedGift; friends: UserCard[] }) {
     const [to, setTo] = useState<number | null>(null);
 
     return (
-        <li className="rounded-2xl bg-white/[0.04] p-3">
+        <li className="gc-solid-2 rounded-2xl p-3">
             <div className="flex flex-wrap items-center gap-2">
                 <PhoneBadge phone={gift} size="sm" />
                 <span className="text-xs text-white/45">
@@ -203,7 +200,7 @@ function GiftRow({ gift, friends }: { gift: UnusedGift; friends: UserCard[] }) {
                             );
                         }
                     }}
-                    className={`${btn} bg-white/[0.06] text-white/80 hover:bg-white/[0.1]`}
+                    className={`${btn} gc-solid-2 text-white/80 hover:bg-white/[0.1]`}
                 >
                     {tr('Взяти собі')}
                 </button>
@@ -223,7 +220,7 @@ export function TransferForm({
     const [to, setTo] = useState<number | null>(null);
 
     return (
-        <div className="mt-4 rounded-2xl bg-white/[0.03] p-3">
+        <div className="gc-solid-2 mt-4 rounded-2xl p-3">
             <p className="mb-2 text-sm text-white/70">
                 {tr(
                     'Передати номер другові. Він перейде, коли друг прийме, а ви отримаєте безкоштовний випадковий +555.',

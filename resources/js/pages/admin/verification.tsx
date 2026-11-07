@@ -86,7 +86,7 @@ export default function AdminVerification({
                 ))}
             </div>
             {requests.data.length === 0 ? (
-                <p className="glass rounded-2xl p-8 text-center text-sm text-white/50">
+                <p className="gc-solid rounded-2xl p-8 text-center text-sm text-white/50">
                     {tr('Заявок немає.')}
                 </p>
             ) : (
@@ -119,7 +119,7 @@ function RequestCard({ item }: { item: Item }) {
         );
 
     return (
-        <li className="glass rounded-2xl p-4 sm:p-5">
+        <li className="gc-solid rounded-2xl p-4 sm:p-5">
             <div className="flex flex-wrap items-start gap-3">
                 {item.user && <UserAvatar user={item.user} size="md" />}
                 <div className="min-w-0 flex-1">
@@ -146,7 +146,7 @@ function RequestCard({ item }: { item: Item }) {
                     </p>
                 </div>
                 <div className="flex w-full items-center gap-2 sm:w-auto">
-                    <span className="inline-flex items-center gap-1.5 rounded-chip bg-white/[0.06] px-2.5 py-1 text-xs text-white/80">
+                    <span className="gc-solid-2 inline-flex items-center gap-1.5 rounded-chip px-2.5 py-1 text-xs text-white/80">
                         <VerifiedBadge kind={item.kind} className="size-3.5" />
                         {item.kind_label}
                     </span>
@@ -166,7 +166,7 @@ function RequestCard({ item }: { item: Item }) {
                             {r.ok ? (
                                 <CircleCheck className="size-3.5 text-emerald-300" />
                             ) : (
-                                <CircleX className="size-3.5 text-rose-300" />
+                                <CircleX className="size-3.5 text-red-400" />
                             )}
                             {r.label}
                         </span>
@@ -181,7 +181,7 @@ function RequestCard({ item }: { item: Item }) {
                             href={link}
                             target="_blank"
                             rel="noopener noreferrer nofollow"
-                            className="inline-flex items-center gap-1.5 text-sm break-all text-gc-lilac-300 hover:underline"
+                            className="inline-flex items-center gap-1.5 text-sm break-all text-sky-400 hover:underline"
                         >
                             <ExternalLink className="size-3.5 shrink-0" />
                             {link}
@@ -248,7 +248,7 @@ function RequestCard({ item }: { item: Item }) {
                             type="button"
                             disabled={busy || !reason.trim()}
                             onClick={() => decide('reject')}
-                            className="h-10 rounded-xl bg-rose-500/15 px-4 text-sm font-medium text-rose-200 transition hover:bg-rose-500/25 disabled:opacity-50"
+                            className="h-10 rounded-xl bg-red-500/15 px-4 text-sm font-medium text-red-400 transition hover:bg-red-500/25 disabled:opacity-50"
                         >
                             {tr('Відхилити')}
                         </button>

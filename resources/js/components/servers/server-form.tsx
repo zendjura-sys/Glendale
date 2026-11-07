@@ -36,7 +36,7 @@ export const inputClass =
 
 export function FieldError({ message }: { message?: string }) {
     return message ? (
-        <p className="mt-1 text-xs text-rose-300">{message}</p>
+        <p className="mt-1 text-xs text-red-400">{message}</p>
     ) : null;
 }
 
@@ -120,10 +120,10 @@ export function ServerFormFields({
                                 }
                             }}
                             className={cn(
-                                'flex h-11 items-center justify-center gap-2 rounded-xl border text-sm font-medium transition',
+                                'flex h-11 items-center justify-center gap-2 rounded-xl text-sm font-medium transition',
                                 data.platform === value
-                                    ? 'border-gc-lilac-500/60 bg-gc-indigo/15 text-white'
-                                    : 'border-white/[0.07] bg-white/[0.03] text-white/55 hover:text-white',
+                                    ? 'bg-gc-indigo/15 text-white'
+                                    : 'gc-solid-2 text-white/55 hover:text-white',
                             )}
                         >
                             <Icon className="size-4" /> {label}

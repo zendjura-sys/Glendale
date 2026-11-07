@@ -50,9 +50,9 @@ export function TimePoll({
     };
 
     return (
-        <div className="space-y-3 rounded-2xl bg-white/[0.03] p-4">
+        <div className="gc-solid-2 space-y-3 rounded-2xl p-4">
             <div className="flex items-center gap-2">
-                <Vote className="size-4 text-gc-lilac-300" />
+                <Vote className="size-4 text-sky-400" />
                 <h2 className="flex-1 text-sm font-semibold text-white">
                     {poll.decided
                         ? tr('Час обрано голосуванням')
@@ -69,8 +69,8 @@ export function TimePoll({
                     <li
                         key={option.id}
                         className={cn(
-                            'relative overflow-hidden rounded-xl bg-white/[0.04]',
-                            option.picked && 'ring-1 ring-gc-lilac-400/60',
+                            'gc-solid-2 relative overflow-hidden rounded-xl',
+                            option.picked && ' ',
                         )}
                     >
                         <motion.span
@@ -89,10 +89,10 @@ export function TimePoll({
                                 aria-pressed={option.mine}
                                 onClick={() => toggle(option.id)}
                                 className={cn(
-                                    'flex size-6 shrink-0 items-center justify-center rounded-lg border transition',
+                                    'flex size-6 shrink-0 items-center justify-center rounded-lg transition',
                                     option.mine
                                         ? 'border-transparent bg-primary text-white'
-                                        : 'border-white/20 text-transparent',
+                                        : 'text-transparent',
                                     active
                                         ? 'hover:border-white/40'
                                         : 'cursor-default',

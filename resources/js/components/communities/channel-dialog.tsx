@@ -240,7 +240,7 @@ export function ChannelDialog({
                                             'rounded-xl p-3 text-left transition',
                                             on
                                                 ? 'bg-primary/90 text-white'
-                                                : 'bg-white/[0.05] text-white/75 hover:bg-white/[0.08]',
+                                                : 'gc-solid-2 text-white/75 hover:bg-[var(--gc-l3)]',
                                         )}
                                     >
                                         <span className="flex items-center gap-1.5 text-sm font-semibold">
@@ -322,7 +322,7 @@ export function ChannelDialog({
                         )}
                     </p>
                     {isPrivate && (
-                        <div className="space-y-2 rounded-xl bg-white/[0.03] p-3">
+                        <div className="gc-solid-2 space-y-2 rounded-xl p-3">
                             {members.length > 0 && (
                                 <div className="flex flex-wrap gap-1.5">
                                     {members.map((member) => (
@@ -368,7 +368,7 @@ export function ChannelDialog({
                                                     'flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm transition',
                                                     picked
                                                         ? 'bg-primary/15 text-white'
-                                                        : 'text-white/75 hover:bg-white/[0.05]',
+                                                        : 'text-white/75 hover:bg-[var(--gc-l3)]',
                                                 )}
                                             >
                                                 <UserAvatar
@@ -387,14 +387,14 @@ export function ChannelDialog({
                     )}
                 </div>
 
-                {error && <p className="text-sm text-rose-300">{error}</p>}
+                {error && <p className="text-sm text-red-400">{error}</p>}
 
                 <div className="flex items-center gap-2">
                     {editing && (
                         <button
                             type="button"
                             onClick={remove}
-                            className="inline-flex h-10 items-center gap-1.5 rounded-xl px-3 text-sm font-medium text-rose-300 transition hover:bg-rose-400/10"
+                            className="inline-flex h-10 items-center gap-1.5 rounded-xl px-3 text-sm font-medium text-red-400 transition hover:bg-red-400/10"
                         >
                             <Trash2 className="size-4" />
                             {tr('Видалити')}

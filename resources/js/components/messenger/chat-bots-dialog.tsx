@@ -161,7 +161,7 @@ export function ChatBotsDialog({
             <DialogContent className="max-h-[calc(100dvh-2rem)] gap-4 overflow-y-auto sm:max-w-xl">
                 <div>
                     <DialogTitle className="flex items-center gap-2 font-display text-lg font-semibold text-white">
-                        <Bot className="size-5 text-gc-lilac-300" />
+                        <Bot className="size-5 text-sky-400" />
                         {tr('Боти бесіди')}
                     </DialogTitle>
                     <DialogDescription className="mt-1 text-sm text-white/50">
@@ -175,7 +175,7 @@ export function ChatBotsDialog({
                     <ListSkeleton rows={3} avatar="square" card={false} />
                 ) : (
                     <>
-                        <div className="flex rounded-xl bg-white/[0.04] p-1">
+                        <div className="gc-solid-2 flex rounded-xl p-1">
                             {(
                                 [
                                     [
@@ -353,7 +353,7 @@ export function ChatBotsDialog({
                                         {data.posts.map((item) => (
                                             <li
                                                 key={item.id}
-                                                className="flex items-start gap-3 rounded-xl bg-white/[0.04] p-3"
+                                                className="gc-solid-2 flex items-start gap-3 rounded-xl p-3"
                                             >
                                                 <CalendarClock className="mt-0.5 size-4 shrink-0 text-white/45" />
                                                 <div className="min-w-0 flex-1">
@@ -410,7 +410,7 @@ export function ChatBotsDialog({
                                                         )
                                                     }
                                                     aria-label={tr('Видалити')}
-                                                    className="flex size-8 shrink-0 items-center justify-center rounded-lg text-white/45 transition hover:bg-rose-500/10 hover:text-rose-300"
+                                                    className="flex size-8 shrink-0 items-center justify-center rounded-lg text-white/45 transition hover:bg-red-500/10 hover:text-red-400"
                                                 >
                                                     <Trash2 className="size-4" />
                                                 </button>
@@ -419,7 +419,7 @@ export function ChatBotsDialog({
                                     </ul>
                                 )}
 
-                                <div className="space-y-3 rounded-xl bg-white/[0.03] p-3">
+                                <div className="gc-solid-2 space-y-3 rounded-xl p-3">
                                     <p className="text-sm font-medium text-white">
                                         {tr('Новий автопост')}
                                     </p>
@@ -441,7 +441,7 @@ export function ChatBotsDialog({
                                             'resize-none py-2.5',
                                         )}
                                     />
-                                    <div className="flex rounded-xl bg-white/[0.04] p-1">
+                                    <div className="gc-solid-2 flex rounded-xl p-1">
                                         {(
                                             [
                                                 ['once', tr('Один раз')],
@@ -524,7 +524,7 @@ export function ChatBotsDialog({
                                                             'h-9 rounded-lg text-xs font-semibold transition',
                                                             on
                                                                 ? 'bg-primary text-white'
-                                                                : 'bg-white/[0.05] text-white/55 hover:text-white',
+                                                                : 'gc-solid-2 text-white/55 hover:text-white',
                                                         )}
                                                     >
                                                         {label}

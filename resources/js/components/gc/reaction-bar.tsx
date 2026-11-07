@@ -93,7 +93,7 @@ export function ReactionBar({
                 <div
                     role="menu"
                     aria-label={tr('Реакції')}
-                    className="glass-strong absolute bottom-full left-0 z-20 mb-2 flex max-w-[calc(100vw-32px)] animate-in items-center gap-1 overflow-x-auto rounded-full border border-white/10 p-1.5 shadow-xl duration-150 fade-in-0 slide-in-from-bottom-1"
+                    className="glass-strong absolute bottom-full left-0 z-20 mb-2 flex max-w-[calc(100vw-32px)] animate-in items-center gap-1 overflow-x-auto rounded-full p-1.5 duration-150 fade-in-0 slide-in-from-bottom-1"
                 >
                     {available.map((item) => (
                         <button

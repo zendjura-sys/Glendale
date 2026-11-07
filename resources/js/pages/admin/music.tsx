@@ -111,7 +111,7 @@ function MetadataPanel({ metadata }: { metadata: MetadataStatus }) {
     };
 
     return (
-        <section className="glass mb-5 rounded-2xl p-5">
+        <section className="gc-solid mb-5 rounded-2xl p-5">
             <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
                 <div>
                     <h2 className="font-display text-lg font-semibold text-white">
@@ -133,7 +133,7 @@ function MetadataPanel({ metadata }: { metadata: MetadataStatus }) {
                         type="button"
                         disabled={checking || !metadata.online}
                         onClick={() => void check()}
-                        className="flex items-center gap-2 rounded-xl bg-white/[0.06] px-4 py-2 text-sm font-medium text-white/85 transition hover:bg-white/[0.1] disabled:opacity-50"
+                        className="gc-solid-2 flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium text-white/85 transition hover:bg-white/[0.1] disabled:opacity-50"
                     >
                         <Activity
                             className={cn(
@@ -169,7 +169,7 @@ function MetadataPanel({ metadata }: { metadata: MetadataStatus }) {
                     return (
                         <li
                             key={source.key}
-                            className="rounded-2xl border border-white/[0.06] bg-white/[0.02] px-3 py-2.5"
+                            className="gc-solid-2 rounded-2xl px-3 py-2.5"
                             title={source.hint}
                         >
                             <div className="flex items-center gap-2">
@@ -190,7 +190,7 @@ function MetadataPanel({ metadata }: { metadata: MetadataStatus }) {
                                         result
                                             ? result.ok
                                                 ? 'text-emerald-300'
-                                                : 'text-rose-300'
+                                                : 'text-red-400'
                                             : 'text-white/40',
                                     )}
                                 >
@@ -207,7 +207,7 @@ function MetadataPanel({ metadata }: { metadata: MetadataStatus }) {
                                 className={cn(
                                     'mt-1 text-xs break-words',
                                     result && !result.ok
-                                        ? 'text-rose-300/80'
+                                        ? 'text-red-400/80'
                                         : 'text-white/40',
                                 )}
                                 title={result?.message ?? source.hint}
@@ -270,7 +270,7 @@ export default function AdminMusic({
                           )
                 }
                 actions={
-                    <div className="glass flex rounded-xl p-1 text-sm">
+                    <div className="gc-solid flex rounded-xl p-1 text-sm">
                         {[
                             { label: tr('Активні'), value: false },
                             {
@@ -287,7 +287,7 @@ export default function AdminMusic({
                                 className={cn(
                                     'rounded-lg px-3.5 py-1.5 font-medium transition',
                                     filters.trashed === tab.value
-                                        ? 'bg-gradient-brand text-white'
+                                        ? 'bg-sky-500 text-white'
                                         : 'text-white/55 hover:text-white',
                                 )}
                             >
@@ -346,7 +346,7 @@ export default function AdminMusic({
 
             <form
                 onSubmit={submit}
-                className="glass relative mb-4 rounded-2xl p-2.5"
+                className="gc-solid relative mb-4 rounded-2xl p-2.5"
             >
                 <Search className="pointer-events-none absolute top-1/2 left-6 size-4 -translate-y-1/2 text-white/30" />
                 <Input
@@ -357,11 +357,11 @@ export default function AdminMusic({
                 />
             </form>
 
-            <div className="glass overflow-hidden rounded-2xl">
+            <div className="gc-solid overflow-hidden rounded-2xl">
                 <div className="overflow-x-auto">
                     <table className="w-full min-w-[820px] text-sm">
                         <thead>
-                            <tr className="border-b border-white/[0.06] text-left text-xs text-white/40">
+                            <tr className="text-left text-xs text-white/40">
                                 <th className="px-4 py-3 font-medium">
                                     {tr('Трек')}
                                 </th>
@@ -393,7 +393,7 @@ export default function AdminMusic({
                                     <tr
                                         key={track.id}
                                         className={cn(
-                                            'border-b border-white/[0.04] transition last:border-0 hover:bg-white/[0.03]',
+                                            'transition last:border-0 hover:bg-[var(--gc-l3)]',
                                             track.deleted_at && 'opacity-60',
                                         )}
                                     >
@@ -507,7 +507,7 @@ export default function AdminMusic({
                                                     onClick={() =>
                                                         remove(track)
                                                     }
-                                                    className="flex size-8 items-center justify-center rounded-lg text-rose-300 hover:bg-rose-400/10"
+                                                    className="flex size-8 items-center justify-center rounded-lg text-red-400 hover:bg-red-400/10"
                                                     title={
                                                         track.deleted_at
                                                             ? tr(

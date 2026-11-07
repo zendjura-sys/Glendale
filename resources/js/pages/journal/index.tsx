@@ -118,7 +118,7 @@ export default function Journal({
                 {mine && (
                     <form
                         onSubmit={submit}
-                        className="glass space-y-3 rounded-2xl p-4"
+                        className="gc-solid space-y-3 rounded-2xl p-4"
                     >
                         <GameSearch
                             value={game}
@@ -154,7 +154,7 @@ export default function Journal({
                                         'flex h-9 items-center gap-2 rounded-xl px-3 text-sm transition',
                                         form.data.mood === mood
                                             ? 'bg-primary text-white'
-                                            : 'bg-white/[0.06] text-white/70 hover:text-white',
+                                            : 'gc-solid-2 text-white/70 hover:text-white',
                                     )}
                                 >
                                     <span
@@ -232,7 +232,7 @@ export default function Journal({
                         {entries.data.map((entry) => (
                             <article
                                 key={entry.id}
-                                className="glass rounded-2xl p-4"
+                                className="gc-solid rounded-2xl p-4"
                             >
                                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-white/50">
                                     <span className="flex items-center gap-1.5">

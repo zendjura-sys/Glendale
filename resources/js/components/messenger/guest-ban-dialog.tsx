@@ -71,7 +71,7 @@ export function GuestBanDialog({
             <DialogContent className="gap-4 sm:max-w-md">
                 <div>
                     <DialogTitle className="flex items-center gap-2 font-display text-lg font-semibold text-white">
-                        <Ban className="size-5 text-rose-300" />
+                        <Ban className="size-5 text-red-400" />
                         {tr('Заблокувати гостя «{name}»', {
                             name: message?.guest?.name ?? '',
                         })}
@@ -82,7 +82,7 @@ export function GuestBanDialog({
                         )}
                     </DialogDescription>
                 </div>
-                <div className="grid grid-cols-4 gap-1 rounded-xl bg-white/[0.04] p-1">
+                <div className="gc-solid-2 grid grid-cols-4 gap-1 rounded-xl p-1">
                     {DAYS.map((value) => (
                         <button
                             key={value}
@@ -115,7 +115,7 @@ export function GuestBanDialog({
                     <button
                         type="button"
                         onClick={onClose}
-                        className="h-10 rounded-xl px-4 text-sm text-white/60 transition hover:bg-white/[0.06] hover:text-white"
+                        className="h-10 rounded-xl px-4 text-sm text-white/60 transition hover:bg-[var(--gc-l3)] hover:text-white"
                     >
                         {tr('Скасувати')}
                     </button>
@@ -123,7 +123,7 @@ export function GuestBanDialog({
                         type="button"
                         disabled={busy}
                         onClick={ban}
-                        className="h-10 rounded-xl bg-rose-500/20 px-5 text-sm font-semibold text-rose-100 transition hover:bg-rose-500/30 disabled:opacity-50"
+                        className="h-10 rounded-xl bg-red-500/20 px-5 text-sm font-semibold text-red-400 transition hover:bg-red-500/30 disabled:opacity-50"
                     >
                         {tr('Заблокувати')}
                     </button>

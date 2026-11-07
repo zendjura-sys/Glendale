@@ -21,7 +21,7 @@ const listLabel: Record<FriendList, string> = {
 export function PersonCard({ person }: { person: Person }) {
     const { modules } = usePage().props;
     return (
-        <div className="glass group relative flex flex-col items-center overflow-hidden rounded-2xl p-5 text-center transition hover:-translate-y-0.5 hover:border-white/15">
+        <div className="gc-solid group relative flex flex-col items-center overflow-hidden rounded-2xl p-5 text-center transition hover:-translate-y-0.5 hover:border-white/15">
             <div className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-gc-indigo/20 to-transparent opacity-0 transition group-hover:opacity-100" />
             <Link href={`/${person.username}`} className="relative">
                 <UserAvatar user={person} size="xl" />

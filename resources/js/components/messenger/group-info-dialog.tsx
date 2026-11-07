@@ -113,7 +113,7 @@ export function GroupInfoDialog({
 
     return (
         <Dialog open={open} onOpenChange={close}>
-            <DialogContent className="glass-strong gap-0 overflow-hidden rounded-dialog border-white/10 p-0 text-white sm:max-w-md">
+            <DialogContent className="glass-strong gap-0 overflow-hidden rounded-dialog p-0 text-white sm:max-w-md">
                 <div className="relative flex flex-col items-center bg-gradient-to-b from-gc-indigo/25 to-transparent px-5 pt-7 pb-5 text-center">
                     <button
                         type="button"
@@ -125,7 +125,7 @@ export function GroupInfoDialog({
                         <ConversationAvatar
                             conversation={conversation}
                             size="lg"
-                            className="shadow-[0_0_50px_-8px_rgb(124_92_255/0.9)]"
+                            className=""
                         />
                         {canManage && (
                             <span className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50 opacity-0 transition group-hover:opacity-100">
@@ -256,7 +256,7 @@ export function GroupInfoDialog({
                                                 reload,
                                             )
                                         }
-                                        className="rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-sm text-white"
+                                        className="rounded-lg bg-white/5 px-2 py-1 text-sm text-white"
                                     >
                                         <option value={0}>
                                             {tr('Вимкнено')}
@@ -276,7 +276,7 @@ export function GroupInfoDialog({
                             <button
                                 type="button"
                                 onClick={() => setAdding(true)}
-                                className="mb-1 flex w-full items-center gap-3 rounded-xl p-2 text-sm font-medium text-[#9fb0ff] transition hover:bg-white/[0.05]"
+                                className="mb-1 flex w-full items-center gap-3 rounded-xl p-2 text-sm font-medium text-[#9fb0ff] transition hover:bg-[var(--gc-l3)]"
                             >
                                 <span className="flex size-10 items-center justify-center rounded-full bg-gc-indigo/15">
                                     <UserPlus className="size-[18px]" />
@@ -287,7 +287,7 @@ export function GroupInfoDialog({
                                 {conversation.members.map((member) => (
                                     <div
                                         key={member.id}
-                                        className="group flex items-center gap-3 rounded-xl p-2 transition hover:bg-white/[0.04]"
+                                        className="group flex items-center gap-3 rounded-xl p-2 transition hover:bg-[var(--gc-l3)]"
                                     >
                                         <Link
                                             href={`/${member.username}`}
@@ -334,7 +334,7 @@ export function GroupInfoDialog({
                                                         ? tr('Зняти тайм-аут')
                                                         : undefined
                                                 }
-                                                className="group/timeout flex items-center gap-1 rounded-chip bg-amber-400/10 px-2 py-0.5 text-xs font-medium text-amber-200 enabled:hover:bg-rose-500/15 enabled:hover:text-rose-200"
+                                                className="group/timeout flex items-center gap-1 rounded-chip bg-amber-400/10 px-2 py-0.5 text-xs font-medium text-amber-200 enabled:hover:bg-red-500/15 enabled:hover:text-red-400"
                                             >
                                                 <Clock3 className="size-3" />
                                                 <span className="group-enabled/timeout:group-hover/timeout:hidden">
@@ -375,7 +375,7 @@ export function GroupInfoDialog({
                                                             reload,
                                                         )
                                                     }
-                                                    className="rounded-lg px-2 py-1 text-xs text-white/70 hover:bg-white/[0.06]"
+                                                    className="rounded-lg px-2 py-1 text-xs text-white/70 hover:bg-[var(--gc-l3)]"
                                                 >
                                                     {member.role === 'admin'
                                                         ? tr('Зняти адміна')
@@ -390,7 +390,7 @@ export function GroupInfoDialog({
                                                     onClick={() =>
                                                         remove(member)
                                                     }
-                                                    className="rounded-lg p-1.5 text-white/40 opacity-0 transition group-hover:opacity-100 hover:bg-rose-500/10 hover:text-rose-300 [@media(hover:none)]:opacity-100"
+                                                    className="rounded-lg p-1.5 text-white/40 opacity-0 transition group-hover:opacity-100 hover:bg-red-500/10 hover:text-red-400 [@media(hover:none)]:opacity-100"
                                                     aria-label={tr('Виключити')}
                                                     title={tr('Виключити')}
                                                 >
@@ -403,7 +403,7 @@ export function GroupInfoDialog({
                             <button
                                 type="button"
                                 onClick={() => remove(auth.user)}
-                                className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border border-rose-400/20 py-2.5 text-sm font-medium text-rose-300 transition hover:bg-rose-500/10"
+                                className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-medium text-red-400 transition hover:bg-red-500/10"
                             >
                                 <LogOut className="size-4" />
                                 {tr('Вийти з бесіди')}
@@ -479,7 +479,7 @@ function GroupAutomod({
                         setRules({ ...rules, words: e.target.value })
                     }
                     onBlur={() => save(rules)}
-                    className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-2 py-1.5 text-sm text-white"
+                    className="mt-1 w-full rounded-lg bg-white/5 px-2 py-1.5 text-sm text-white"
                 />
             </label>
         </div>

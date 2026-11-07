@@ -147,7 +147,7 @@ function Picker({
                                 disabled={busy}
                                 onClick={() => vote(game)}
                                 className={cn(
-                                    'flex w-full items-center gap-3 rounded-xl p-2 text-left transition hover:bg-white/[0.06]',
+                                    'flex w-full items-center gap-3 rounded-xl p-2 text-left transition hover:bg-[var(--gc-l3)]',
                                     picked && 'bg-primary/15',
                                 )}
                             >
@@ -213,7 +213,7 @@ export default function Awards(props: Props) {
         <>
             <Head title={tr('Гра року {year}', { year })} />
             <div className="space-y-4">
-                <header className="glass rounded-2xl p-5">
+                <header className="gc-solid rounded-2xl p-5">
                     <div className="flex items-start gap-4">
                         <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-primary/15">
                             <Trophy className="size-6 text-primary" />
@@ -253,7 +253,7 @@ export default function Awards(props: Props) {
                                         'rounded-chip px-3 py-1 text-xs font-semibold transition',
                                         y === year
                                             ? 'bg-primary text-white'
-                                            : 'bg-white/[0.06] text-white/70 hover:text-white',
+                                            : 'gc-solid-2 text-white/70 hover:text-white',
                                     )}
                                 >
                                     {y}
@@ -281,7 +281,7 @@ export default function Awards(props: Props) {
                             initial={reduce ? false : { opacity: 0, y: 8 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: reduce ? 0 : i * 0.03 }}
-                            className="glass rounded-2xl p-4"
+                            className="gc-solid rounded-2xl p-4"
                         >
                             <h2 className="font-display text-base font-semibold text-white">
                                 {category.label}

@@ -150,7 +150,7 @@ export default function AccountTypePage({
                                                 'flex flex-col items-start gap-2 rounded-2xl p-3 text-left text-[13px] font-medium transition',
                                                 form.data.type === type.key
                                                     ? 'bg-gc-indigo/25 text-white'
-                                                    : 'bg-white/[0.04] text-white/70 hover:bg-white/[0.07]',
+                                                    : 'gc-solid-2 text-white/70 hover:bg-[var(--gc-l3)]',
                                             )}
                                         >
                                             <Icon className="size-5" />
@@ -196,7 +196,7 @@ export default function AccountTypePage({
                                                     {form.errors[
                                                         `details.${key}` as keyof typeof form.errors
                                                     ] && (
-                                                        <span className="mt-1 block text-xs text-rose-300">
+                                                        <span className="mt-1 block text-xs text-red-400">
                                                             {
                                                                 form.errors[
                                                                     `details.${key}` as keyof typeof form.errors
@@ -237,7 +237,7 @@ function LinkedRow({
     children: React.ReactNode;
 }) {
     return (
-        <li className="flex items-center gap-3 rounded-xl bg-white/[0.04] p-2.5">
+        <li className="gc-solid-2 flex items-center gap-3 rounded-xl p-2.5">
             <UserAvatar user={item} size="sm" />
             <div className="min-w-0 flex-1">
                 <Link
@@ -276,7 +276,7 @@ function IconButton({
             onClick={onClick}
             aria-label={label}
             title={label}
-            className="flex size-9 items-center justify-center rounded-xl bg-white/[0.06] text-white/60 transition hover:bg-rose-500/15 hover:text-rose-200"
+            className="gc-solid-2 flex size-9 items-center justify-center rounded-xl text-white/60 transition hover:bg-red-500/15 hover:text-red-400"
         >
             <X className="size-4" />
         </button>
@@ -326,7 +326,7 @@ function RosterCard({ roster }: { roster: Linked[] }) {
                 </button>
             </form>
             {invite.errors.username && (
-                <p className="mt-1 text-xs text-rose-300">
+                <p className="mt-1 text-xs text-red-400">
                     {invite.errors.username}
                 </p>
             )}
@@ -387,7 +387,7 @@ function VerificationCard({ state }: { state: VerificationState }) {
             )}
         >
             {state.verified && (
-                <div className="mb-3 flex items-center gap-2 rounded-xl bg-white/[0.04] p-3 text-sm text-white">
+                <div className="gc-solid-2 mb-3 flex items-center gap-2 rounded-xl p-3 text-sm text-white">
                     <VerifiedBadge kind={state.kind} className="size-5" />
                     {tr('Сторінку верифіковано')}
                     {state.verified_at && (
@@ -398,7 +398,7 @@ function VerificationCard({ state }: { state: VerificationState }) {
                 </div>
             )}
             {state.request && state.request.status !== 'approved' && (
-                <div className="mb-3 rounded-xl bg-white/[0.04] p-3 text-sm">
+                <div className="gc-solid-2 mb-3 rounded-xl p-3 text-sm">
                     <p className="font-medium text-white">
                         {STATUS_TEXT[state.request.status]?.()}
                         <span className="font-normal text-white/45">
@@ -474,7 +474,7 @@ function VerificationCard({ state }: { state: VerificationState }) {
                                     'inline-flex h-9 items-center gap-1.5 rounded-xl px-3 text-[13px] font-medium transition',
                                     form.data.kind === key
                                         ? 'bg-gc-indigo/25 text-white'
-                                        : 'bg-white/[0.05] text-white/65',
+                                        : 'gc-solid-2 text-white/65',
                                 )}
                             >
                                 <VerifiedBadge
@@ -517,7 +517,7 @@ function VerificationCard({ state }: { state: VerificationState }) {
                                         '',
                                     ])
                                 }
-                                className="text-xs font-medium text-gc-lilac-300 hover:text-white"
+                                className="text-xs font-medium text-sky-400 hover:text-white"
                             >
                                 {tr('+ ще посилання')}
                             </button>
@@ -550,7 +550,7 @@ function VerificationCard({ state }: { state: VerificationState }) {
                         />
                     </label>
                     {(form.errors.kind || form.errors.links) && (
-                        <p className="text-xs text-rose-300">
+                        <p className="text-xs text-red-400">
                             {form.errors.kind ?? form.errors.links}
                         </p>
                     )}

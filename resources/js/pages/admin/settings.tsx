@@ -141,10 +141,10 @@ function Section({
     description: string;
 }>) {
     return (
-        <section className="glass grid grid-cols-1 gap-6 rounded-2xl p-6 md:grid-cols-[260px_1fr]">
+        <section className="gc-solid grid grid-cols-1 gap-6 rounded-2xl p-6 md:grid-cols-[260px_1fr]">
             <div>
-                <span className="mb-3 flex size-10 items-center justify-center rounded-xl bg-white/[0.05] ring-1 ring-white/10">
-                    <Icon className="size-[18px] text-gc-lilac-300" />
+                <span className="gc-solid-2 mb-3 flex size-10 items-center justify-center rounded-xl">
+                    <Icon className="size-[18px] text-sky-400" />
                 </span>
                 <h2 className="font-semibold text-white">{title}</h2>
                 <p className="mt-1 text-[13px] leading-relaxed text-white/45">
@@ -168,7 +168,7 @@ function SwitchRow({
     onChange: (v: boolean) => void;
 }) {
     return (
-        <div className="flex items-start gap-4 rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4">
+        <div className="gc-solid-2 flex items-start gap-4 rounded-2xl p-4">
             <div className="flex-1">
                 <div className="text-sm font-medium text-white">{title}</div>
                 <div className="mt-0.5 text-xs text-white/45">{text}</div>
@@ -208,10 +208,10 @@ function MailSection({ mail }: { mail: MailStatus }) {
         >
             <div
                 className={cn(
-                    'rounded-2xl border px-4 py-3 text-sm',
+                    'rounded-2xl px-4 py-3 text-sm',
                     mail.ready
-                        ? 'border-white/10 text-white/70'
-                        : 'border-amber-400/30 bg-amber-400/10 text-amber-100',
+                        ? 'text-white/70'
+                        : 'bg-amber-400/10 text-amber-100',
                 )}
             >
                 {mail.ready ? (
@@ -415,7 +415,7 @@ export default function AdminSettings({
                         decoding="async"
                         src="/og.jpg"
                         alt={tr('Превʼю посилання GameCon')}
-                        className="aspect-[1200/630] w-full max-w-md rounded-2xl border border-white/10"
+                        className="aspect-[1200/630] w-full max-w-md rounded-2xl"
                     />
                 </Section>
 
@@ -465,7 +465,7 @@ export default function AdminSettings({
                                     href={href}
                                     target="_blank"
                                     rel="noreferrer"
-                                    className="text-gc-lilac-300 hover:underline"
+                                    className="text-sky-400 hover:underline"
                                 >
                                     {href}
                                 </a>
@@ -520,10 +520,10 @@ export default function AdminSettings({
                                         setData('play_store_badge', badge.value)
                                     }
                                     className={cn(
-                                        'grid gap-2 rounded-2xl border p-3 text-left transition',
+                                        'grid gap-2 rounded-2xl p-3 text-left transition',
                                         data.play_store_badge === badge.value
                                             ? 'border-primary/70 bg-primary/10'
-                                            : 'border-white/10 hover:border-white/25',
+                                            : 'hover:border-white/25',
                                     )}
                                 >
                                     <img

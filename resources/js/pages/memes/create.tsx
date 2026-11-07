@@ -139,7 +139,7 @@ export default function MemeCreate() {
             <Head title={tr('Мемогенератор')} />
             <div className="mx-auto max-w-5xl">
                 <h1 className="mb-1 flex items-center gap-2 font-display text-2xl font-semibold text-white">
-                    <Laugh className="size-6 text-gc-lilac-200" />
+                    <Laugh className="size-6 text-sky-400" />
                     {tr('Мемогенератор')}
                 </h1>
                 <p className="mb-5 text-sm text-white/55">
@@ -149,7 +149,7 @@ export default function MemeCreate() {
                 </p>
                 <div className="grid gap-5 lg:grid-cols-[1fr_22rem]">
                     <div
-                        className="glass flex items-center justify-center overflow-hidden rounded-2xl p-3"
+                        className="gc-solid flex items-center justify-center overflow-hidden rounded-2xl p-3"
                         onDragOver={(e) => e.preventDefault()}
                         onDrop={(e) => {
                             e.preventDefault();
@@ -161,7 +161,7 @@ export default function MemeCreate() {
                             className="max-h-[70vh] w-auto max-w-full rounded-xl"
                         />
                     </div>
-                    <div className="glass space-y-3 rounded-2xl p-4">
+                    <div className="gc-solid space-y-3 rounded-2xl p-4">
                         <input
                             ref={fileInput}
                             type="file"

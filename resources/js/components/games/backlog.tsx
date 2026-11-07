@@ -24,7 +24,7 @@ export const BACKLOG_META: Record<
     BacklogStatus,
     { label: () => string; icon: LucideIcon; tone: string }
 > = {
-    want: { label: () => tr('Хочу'), icon: Bookmark, tone: 'text-sky-300' },
+    want: { label: () => tr('Хочу'), icon: Bookmark, tone: 'text-sky-400' },
     playing: {
         label: () => tr('Граю'),
         icon: Gamepad2,
@@ -34,7 +34,7 @@ export const BACKLOG_META: Record<
     dropped: {
         label: () => tr('Кинув'),
         icon: CircleOff,
-        tone: 'text-rose-300',
+        tone: 'text-red-400',
     },
 };
 
@@ -166,7 +166,7 @@ export function BacklogWidget({
                         <Link
                             key={game.id}
                             href={`/games/${game.slug}`}
-                            className="group relative aspect-[3/4] overflow-hidden rounded-xl bg-white/[0.04]"
+                            className="group gc-solid-2 relative aspect-[3/4] overflow-hidden rounded-xl"
                         >
                             {game.cover && (
                                 <img
@@ -201,7 +201,7 @@ export function BacklogWidget({
                         <Link
                             key={s}
                             href={`${data.href}#${s}`}
-                            className="flex flex-col items-center gap-0.5 rounded-xl px-1 py-2 text-center transition hover:bg-white/[0.05]"
+                            className="flex flex-col items-center gap-0.5 rounded-xl px-1 py-2 text-center transition hover:bg-[var(--gc-l3)]"
                         >
                             <meta.icon className={cn('size-4', meta.tone)} />
                             <span className="text-sm font-semibold text-white tabular-nums">

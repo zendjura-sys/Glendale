@@ -188,7 +188,7 @@ export function PhotoEditor({
                                 'h-9 rounded-xl px-3 text-sm transition',
                                 ratio === r.value
                                     ? 'bg-gc-indigo text-white'
-                                    : 'bg-white/[0.06] text-white/70 hover:text-white',
+                                    : 'gc-solid-2 text-white/70 hover:text-white',
                             )}
                         >
                             {r.key === 'free' ? tr(r.label) : r.label}
@@ -208,7 +208,7 @@ export function PhotoEditor({
                         }}
                         aria-label={tr('Скинути')}
                         title={tr('Скинути')}
-                        className="ml-auto flex size-9 items-center justify-center rounded-xl bg-white/[0.06] text-white/60 hover:text-white"
+                        className="gc-solid-2 ml-auto flex size-9 items-center justify-center rounded-xl text-white/60 hover:text-white"
                     >
                         <Undo2 className="size-4" />
                     </button>

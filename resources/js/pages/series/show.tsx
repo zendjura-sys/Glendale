@@ -23,8 +23,8 @@ export default function SeriesShow({
         <>
             <Head title={series.title} />
             <div className="mx-auto w-full max-w-2xl space-y-4 px-4 py-6">
-                <section className="glass rounded-2xl p-5">
-                    <p className="flex items-center gap-2 text-xs font-medium text-sky-300">
+                <section className="gc-solid rounded-2xl p-5">
+                    <p className="flex items-center gap-2 text-xs font-medium text-sky-400">
                         <ListOrdered className="size-4" />
                         {tr('Серія записів · {count}', {
                             count: String(posts.length),
@@ -57,7 +57,7 @@ export default function SeriesShow({
                                         ),
                                     ) && router.delete(`/series/${series.id}`)
                                 }
-                                className="ml-auto inline-flex items-center gap-1.5 text-white/45 hover:text-rose-300"
+                                className="ml-auto inline-flex items-center gap-1.5 text-white/45 hover:text-red-400"
                             >
                                 <Trash2 className="size-4" />
                                 {tr('Видалити серію')}

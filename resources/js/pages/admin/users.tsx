@@ -144,7 +144,7 @@ export default function AdminUsers({ users, filters, roles }: Props) {
                 description={tr('Усього {total}', { total: users.total })}
             />
 
-            <div className="glass mb-4 flex flex-wrap items-center gap-2 rounded-2xl p-2.5">
+            <div className="gc-solid mb-4 flex flex-wrap items-center gap-2 rounded-2xl p-2.5">
                 <form
                     onSubmit={submitSearch}
                     className="relative min-w-[220px] flex-1"
@@ -193,7 +193,7 @@ export default function AdminUsers({ users, filters, roles }: Props) {
             </div>
 
             {picked.length > 0 && (
-                <div className="glass sticky top-20 z-20 mb-3 flex flex-wrap items-center gap-2 rounded-2xl p-2.5">
+                <div className="gc-solid sticky top-20 z-20 mb-3 flex flex-wrap items-center gap-2 rounded-2xl p-2.5">
                     <span className="px-2 text-sm text-white/70">
                         {tr('Вибрано: {n}', { n: picked.length })}
                     </span>
@@ -221,7 +221,7 @@ export default function AdminUsers({ users, filters, roles }: Props) {
                     <button
                         type="button"
                         onClick={() => bulk('ban')}
-                        className="h-9 rounded-xl bg-red-500/15 px-3 text-sm text-red-200 hover:bg-red-500/25"
+                        className="h-9 rounded-xl bg-red-500/15 px-3 text-sm text-red-400 hover:bg-red-500/25"
                     >
                         {tr('Заблокувати')}
                     </button>
@@ -235,11 +235,11 @@ export default function AdminUsers({ users, filters, roles }: Props) {
                 </div>
             )}
 
-            <div className="glass overflow-hidden rounded-2xl">
+            <div className="gc-solid overflow-hidden rounded-2xl">
                 <div className="overflow-x-auto">
                     <table className="w-full min-w-[860px] text-sm">
                         <thead>
-                            <tr className="border-b border-white/[0.06] text-left text-xs text-white/35">
+                            <tr className="text-left text-xs text-white/35">
                                 <th className="w-10 py-3 pl-5">
                                     <input
                                         type="checkbox"
@@ -287,7 +287,7 @@ export default function AdminUsers({ users, filters, roles }: Props) {
                                 return (
                                     <tr
                                         key={u.id}
-                                        className="transition hover:bg-white/[0.02]"
+                                        className="transition hover:bg-[var(--gc-l3)]"
                                     >
                                         <td className="py-3 pl-5">
                                             {!self && (
@@ -370,7 +370,7 @@ export default function AdminUsers({ users, filters, roles }: Props) {
                                                 )}
                                             </div>
                                             {u.ban_reason && (
-                                                <div className="mt-1 max-w-[180px] truncate text-xs text-rose-200/60">
+                                                <div className="mt-1 max-w-[180px] truncate text-xs text-red-400/60">
                                                     {u.ban_reason}
                                                 </div>
                                             )}
@@ -390,12 +390,12 @@ export default function AdminUsers({ users, filters, roles }: Props) {
                                         </td>
                                         <td className="px-3 py-3 text-right">
                                             <DropdownMenu>
-                                                <DropdownMenuTrigger className="flex size-8 items-center justify-center rounded-lg text-white/50 outline-none hover:bg-white/[0.06] hover:text-white">
+                                                <DropdownMenuTrigger className="flex size-8 items-center justify-center rounded-lg text-white/50 outline-none hover:bg-[var(--gc-l3)] hover:text-white">
                                                     <MoreHorizontal className="size-4" />
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent
                                                     align="end"
-                                                    className="glass-strong w-56 rounded-2xl border-white/10 p-1.5 text-white"
+                                                    className="glass-strong w-56 rounded-2xl p-1.5 text-white"
                                                 >
                                                     <DropdownMenuLabel className="text-xs text-white/40">
                                                         <UserCog className="mr-1 inline size-3.5" />{' '}
@@ -418,7 +418,7 @@ export default function AdminUsers({ users, filters, roles }: Props) {
                                                             {ROLE_LABELS[r] ??
                                                                 r}
                                                             {u.role === r && (
-                                                                <Check className="ml-auto size-4 text-gc-lilac-400" />
+                                                                <Check className="ml-auto size-4 text-sky-400" />
                                                             )}
                                                         </DropdownMenuItem>
                                                     ))}
@@ -432,7 +432,7 @@ export default function AdminUsers({ users, filters, roles }: Props) {
                                                             }
                                                             className="rounded-lg focus:bg-white/[0.06]"
                                                         >
-                                                            <Eye className="text-sky-300" />{' '}
+                                                            <Eye className="text-sky-400" />{' '}
                                                             {tr(
                                                                 'Подивитися очима',
                                                             )}
@@ -489,9 +489,9 @@ export default function AdminUsers({ users, filters, roles }: Props) {
                                                         onSelect={() =>
                                                             setDeleteTarget(u)
                                                         }
-                                                        className="rounded-lg text-rose-300 focus:bg-rose-500/10 focus:text-rose-200"
+                                                        className="rounded-lg text-red-400 focus:bg-red-500/10 focus:text-red-400"
                                                     >
-                                                        <Trash2 className="text-rose-300" />{' '}
+                                                        <Trash2 className="text-red-400" />{' '}
                                                         {tr('Видалити')}
                                                     </DropdownMenuItem>
                                                 </DropdownMenuContent>
@@ -516,7 +516,7 @@ export default function AdminUsers({ users, filters, roles }: Props) {
                 open={!!banTarget}
                 onOpenChange={(open) => !open && setBanTarget(null)}
             >
-                <DialogContent className="glass-strong rounded-dialog border-white/10 text-white">
+                <DialogContent className="glass-strong rounded-dialog text-white">
                     <DialogTitle>
                         {tr('Заблокувати')} {banTarget?.name}?
                     </DialogTitle>
@@ -565,7 +565,7 @@ export default function AdminUsers({ users, filters, roles }: Props) {
                 open={!!deleteTarget}
                 onOpenChange={(open) => !open && setDeleteTarget(null)}
             >
-                <DialogContent className="glass-strong rounded-dialog border-white/10 text-white">
+                <DialogContent className="glass-strong rounded-dialog text-white">
                     <DialogTitle>
                         {tr('Видалити')} {deleteTarget?.name}?
                     </DialogTitle>

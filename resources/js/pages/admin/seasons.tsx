@@ -149,7 +149,7 @@ export default function AdminSeasons({
             />
 
             <form onSubmit={save} className="space-y-5">
-                <section className="glass grid gap-4 rounded-xl p-5 sm:grid-cols-2">
+                <section className="gc-solid grid gap-4 rounded-xl p-5 sm:grid-cols-2">
                     <label className="block space-y-1.5">
                         <span className="text-sm text-white/60">
                             {tr('Назва теми сезону')}
@@ -172,10 +172,8 @@ export default function AdminSeasons({
                                     type="button"
                                     onClick={() => setTheme(key)}
                                     className={cn(
-                                        'flex h-10 cursor-pointer items-center gap-2 rounded-control border px-3 text-sm text-white',
-                                        theme === key
-                                            ? 'border-primary'
-                                            : 'border-white/10',
+                                        'flex h-10 cursor-pointer items-center gap-2 rounded-control px-3 text-sm text-white',
+                                        theme === key ? 'border-primary' : '',
                                     )}
                                 >
                                     <span
@@ -191,7 +189,7 @@ export default function AdminSeasons({
                     </div>
                 </section>
 
-                <section className="glass rounded-xl p-5">
+                <section className="gc-solid rounded-xl p-5">
                     <div className="flex flex-wrap items-end justify-between gap-3">
                         <div>
                             <h2 className="font-display text-lg font-bold text-white">
@@ -227,7 +225,7 @@ export default function AdminSeasons({
                     <InputError message={errors.levels} />
                 </section>
 
-                <section className="glass overflow-x-auto rounded-xl p-5">
+                <section className="gc-solid overflow-x-auto rounded-xl p-5">
                     <h2 className="font-display text-lg font-bold text-white">
                         {tr('Нагороди')}
                     </h2>
@@ -252,10 +250,7 @@ export default function AdminSeasons({
                                 const row = rewards[String(level)] ?? {};
 
                                 return (
-                                    <tr
-                                        key={level}
-                                        className="border-t border-white/[0.06]"
-                                    >
+                                    <tr key={level} className=" ">
                                         <td className="py-1.5 pr-3 font-semibold text-white tabular-nums">
                                             {level}
                                         </td>
@@ -358,7 +353,7 @@ export default function AdminSeasons({
                     </table>
                 </section>
 
-                <section className="glass rounded-xl p-5">
+                <section className="gc-solid rounded-xl p-5">
                     <div className="flex flex-wrap items-center justify-between gap-3">
                         <h2 className="flex items-center gap-2 font-display text-lg font-bold text-white">
                             <Eye className="size-5 text-primary" />

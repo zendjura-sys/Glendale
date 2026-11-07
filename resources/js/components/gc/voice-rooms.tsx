@@ -134,14 +134,14 @@ export function VoiceRooms({
     if (!data) {
         // Помилку показуємо, а не ховаємо панель, — інакше незрозуміло, куди вона поділась.
         return error ? (
-            <section className={cn('glass rounded-2xl p-4', className)}>
+            <section className={cn('gc-solid rounded-2xl p-4', className)}>
                 <div className="flex items-center gap-2 text-sm text-white/55">
                     <Volume2 className="size-4 text-white/35" />
                     {error}
                 </div>
             </section>
         ) : (
-            <section className={cn('glass rounded-2xl p-4', className)}>
+            <section className={cn('gc-solid rounded-2xl p-4', className)}>
                 <Sk className="mb-4 h-4 w-40" />
                 <ListSkeleton rows={2} avatar="square" card={false} />
             </section>
@@ -206,9 +206,9 @@ export function VoiceRooms({
     const meId = auth.user?.id;
 
     return (
-        <section className={cn('glass rounded-2xl p-4', className)}>
+        <section className={cn('gc-solid rounded-2xl p-4', className)}>
             <div className="mb-3 flex items-center gap-2">
-                <Volume2 className="size-4 text-gc-lilac-200" />
+                <Volume2 className="size-4 text-sky-400" />
                 <h2 className="flex-1 font-display text-base font-semibold text-white">
                     {tr('Голосові кімнати')}
                 </h2>
@@ -226,7 +226,7 @@ export function VoiceRooms({
             </div>
 
             {!data.enabled && (
-                <p className="mb-3 rounded-xl bg-white/[0.04] px-3 py-2 text-xs text-white/45">
+                <p className="gc-solid-2 mb-3 rounded-xl px-3 py-2 text-xs text-white/45">
                     {tr(
                         'Голосовий сервер ще не підключено адміністрацією сайту.',
                     )}
@@ -247,7 +247,7 @@ export function VoiceRooms({
                                     'group flex items-center gap-2 rounded-xl px-2.5 py-2 transition',
                                     here
                                         ? 'bg-[var(--accent)]/15'
-                                        : 'hover:bg-white/[0.05]',
+                                        : 'hover:bg-[var(--gc-l3)]',
                                 )}
                             >
                                 <button
@@ -341,7 +341,7 @@ export function VoiceRooms({
                                             {!room.system && (
                                                 <DropdownMenuItem
                                                     onClick={() => remove(room)}
-                                                    className="text-rose-300"
+                                                    className="text-red-400"
                                                 >
                                                     <Trash2 /> {tr('Видалити')}
                                                 </DropdownMenuItem>
@@ -398,7 +398,7 @@ export function VoiceRooms({
                                                     className={cn(
                                                         'rounded-full ring-2 transition',
                                                         speaking
-                                                            ? 'ring-emerald-400'
+                                                            ? ''
                                                             : 'ring-transparent',
                                                     )}
                                                 >
@@ -430,7 +430,7 @@ export function VoiceRooms({
                                                     )}
                                                 {p.muted && (
                                                     <MicOff
-                                                        className="size-3.5 text-rose-300"
+                                                        className="size-3.5 text-red-400"
                                                         aria-label={tr(
                                                             'Мікрофон вимкнено модератором',
                                                         )}
@@ -504,7 +504,7 @@ export function VoiceRooms({
                                                                         'kick',
                                                                     )
                                                                 }
-                                                                className="text-rose-300"
+                                                                className="text-red-400"
                                                             >
                                                                 <UserX />{' '}
                                                                 {tr(

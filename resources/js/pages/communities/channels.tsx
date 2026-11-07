@@ -97,7 +97,7 @@ export default function CommunityChannels({
 
                 <div
                     className={cn(
-                        'glass flex min-h-0 min-w-0 flex-1 flex-col overflow-clip rounded-2xl',
+                        'gc-solid flex min-h-0 min-w-0 flex-1 flex-col overflow-clip rounded-2xl',
                         listOpen && 'max-md:hidden',
                     )}
                 >
@@ -105,7 +105,7 @@ export default function CommunityChannels({
                         <button
                             type="button"
                             onClick={() => setListOpen(true)}
-                            className="flex items-center gap-2 border-b border-white/[0.06] px-4 py-2 text-sm text-white/70 md:hidden"
+                            className="flex items-center gap-2 px-4 py-2 text-sm text-white/70 md:hidden"
                         >
                             <LayoutList className="size-4" />
                             {tr('Канали')}

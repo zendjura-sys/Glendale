@@ -45,7 +45,7 @@ export function ConnectButton({
                     setTimeout(() => setCopied(false), 1500);
                 });
             }}
-            className="group/copy inline-flex max-w-full items-center gap-1.5 rounded-lg bg-white/[0.05] px-2 py-1 font-mono text-xs text-white/60 ring-1 ring-white/[0.06] transition hover:text-white"
+            className="group/copy gc-solid-2 inline-flex max-w-full items-center gap-1.5 rounded-lg px-2 py-1 font-mono text-xs text-white/60 transition hover:text-white"
             title={tr('Скопіювати адресу підключення')}
         >
             {copied ? (
@@ -101,7 +101,7 @@ export function ServerLinks({
                         trackServerClick(server.slug, kind);
                     }}
                     title={label}
-                    className="flex size-8 items-center justify-center rounded-lg bg-white/[0.04] text-white/50 ring-1 ring-white/[0.06] transition hover:bg-white/10 hover:text-white"
+                    className="gc-solid-2 flex size-8 items-center justify-center rounded-lg text-white/50 transition hover:bg-white/10 hover:text-white"
                 >
                     <Icon className="size-4" />
                 </a>
@@ -123,11 +123,10 @@ export function ServerCard({
         <Link
             href={`/servers/${server.slug}`}
             className={cn(
-                'glass group relative flex animate-rise flex-col gap-4 overflow-hidden rounded-2xl p-5 transition hover:-translate-y-0.5 hover:border-white/15',
-                server.is_featured &&
-                    'shadow-[0_20px_60px_-30px_rgb(124_92_255/0.9)] ring-1 ring-gc-lilac-500/30',
+                'gc-solid group relative flex animate-rise flex-col gap-4 overflow-hidden rounded-2xl p-5 transition hover:-translate-y-0.5 hover:border-white/15',
+                server.is_featured && ' ',
                 server.promo?.includes('highlight') &&
-                    'border-indigo-400/50 ring-1 ring-indigo-400/40',
+                    'border-indigo-400/50 ring-indigo-400/40',
             )}
             style={{ animationDelay: `${Math.min(index, 12) * 40}ms` }}
         >
@@ -150,14 +149,14 @@ export function ServerCard({
                             server.promo?.includes('highlight')) && (
                             <span
                                 title={tr('Платне просування')}
-                                className="ml-auto shrink-0 rounded-chip bg-white/[0.06] px-2 py-0.5 text-[10px] font-semibold text-white/55"
+                                className="gc-solid-2 ml-auto shrink-0 rounded-chip px-2 py-0.5 text-[10px] font-semibold text-white/55"
                             >
                                 {tr('Реклама')}
                             </span>
                         )}
                     </div>
                     <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs font-medium">
-                        <span className="inline-flex items-center gap-1 rounded-chip bg-white/[0.06] px-2 py-0.5 text-white/65">
+                        <span className="gc-solid-2 inline-flex items-center gap-1 rounded-chip px-2 py-0.5 text-white/65">
                             <PlatformIcon className="size-3" />
                             {server.platform_label}
                         </span>
@@ -262,7 +261,7 @@ export function ServerRow({ server }: { server: GtaServerCard }) {
                     {promoted && (
                         <span
                             title={tr('Платне просування')}
-                            className="shrink-0 rounded-md bg-white/[0.06] px-1.5 py-px text-[10px] font-semibold text-white/55"
+                            className="gc-solid-2 shrink-0 rounded-md px-1.5 py-px text-[10px] font-semibold text-white/55"
                         >
                             {tr('Реклама')}
                         </span>
@@ -344,7 +343,7 @@ export function ServerRow({ server }: { server: GtaServerCard }) {
                 ) : (
                     <Link
                         href={href}
-                        className="inline-flex h-8 items-center rounded-lg bg-white/[0.06] px-3 text-xs font-semibold text-white transition hover:bg-white/10"
+                        className="gc-solid-2 inline-flex h-8 items-center rounded-lg px-3 text-xs font-semibold text-white transition hover:bg-white/10"
                     >
                         {tr('Відкрити')}
                     </Link>

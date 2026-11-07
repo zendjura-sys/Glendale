@@ -27,7 +27,7 @@ export function MyGameAchievements({ slug }: { slug: string }) {
     if (data === null) return null;
 
     return (
-        <section className="glass mt-4 rounded-2xl p-4 sm:p-5">
+        <section className="gc-solid mt-4 rounded-2xl p-4 sm:p-5">
             <h2 className="mb-3 flex items-center gap-2 font-display text-base font-semibold text-white">
                 <Trophy className="size-4 text-amber-300" />
                 {tr('Мої досягнення')}

@@ -154,7 +154,7 @@ export default function PlaylistShow({
             <div className="px-[var(--am-gutter)] text-center lg:flex lg:items-end lg:gap-8 lg:text-left">
                 <PlaylistCover
                     playlist={playlist}
-                    className="am-art mx-auto w-[min(70vw,300px)] rounded-[10px] shadow-[0_18px_40px_-16px_rgb(0_0_0/0.45)] lg:mx-0 lg:w-[270px]"
+                    className="am-art mx-auto w-[min(70vw,300px)] rounded-[10px] lg:mx-0 lg:w-[270px]"
                 />
                 <div className="mt-4 min-w-0 lg:mt-0">
                     <h1 className="am-title2 break-words lg:text-[30px] lg:leading-9">

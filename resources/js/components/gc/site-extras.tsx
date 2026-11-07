@@ -327,9 +327,9 @@ export function WhatsNewButton() {
                 )}
             </button>
             <Dialog open={open} onOpenChange={setOpen}>
-                <DialogContent className="glass-strong flex max-h-[85dvh] flex-col gap-0 overflow-hidden rounded-dialog border-white/10 p-0 text-white sm:max-w-lg">
+                <DialogContent className="glass-strong flex max-h-[85dvh] flex-col gap-0 overflow-hidden rounded-dialog p-0 text-white sm:max-w-lg">
                     <div className="flex items-center gap-2 px-6 pt-6 pb-3">
-                        <Sparkles className="size-5 text-gc-lilac-300" />
+                        <Sparkles className="size-5 text-sky-400" />
                         <DialogTitle className="font-display text-lg">
                             {tr('Що нового')}
                         </DialogTitle>
@@ -362,14 +362,14 @@ export function WhatsNewButton() {
                                                     'flex gap-3 rounded-2xl px-3 py-3 text-sm leading-relaxed',
                                                     index === 0
                                                         ? 'bg-primary/15 text-white/90'
-                                                        : 'bg-white/[0.04] text-white/75',
+                                                        : 'gc-solid-2 text-white/75',
                                                 )}
                                             >
                                                 <span
                                                     className={cn(
                                                         'flex size-8 shrink-0 items-center justify-center rounded-xl',
                                                         index === 0
-                                                            ? 'bg-primary/25 text-sky-200'
+                                                            ? 'bg-primary/25 text-sky-400'
                                                             : 'bg-white/[0.07] text-white/60',
                                                     )}
                                                 >
@@ -385,11 +385,11 @@ export function WhatsNewButton() {
                             </section>
                         ))}
                     </div>
-                    <div className="flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-white/[0.06] px-6 py-4">
+                    <div className="flex flex-wrap items-center gap-x-5 gap-y-2 px-6 py-4">
                         <Link
                             href="/ideas"
                             onClick={() => setOpen(false)}
-                            className="inline-flex items-center gap-2 text-sm font-medium text-gc-lilac-300 hover:text-white"
+                            className="inline-flex items-center gap-2 text-sm font-medium text-sky-400 hover:text-white"
                         >
                             <Lightbulb className="size-4" />
                             {tr('Дошка ідей')}
@@ -400,7 +400,7 @@ export function WhatsNewButton() {
                                 setOpen(false);
                                 openFeedback();
                             }}
-                            className="inline-flex items-center gap-2 text-sm font-medium text-gc-lilac-300 hover:text-white"
+                            className="inline-flex items-center gap-2 text-sm font-medium text-sky-400 hover:text-white"
                         >
                             <MessageSquareHeart className="size-4" />
                             {tr('Розкажіть, що думаєте')}
@@ -436,7 +436,7 @@ export function FeedbackDialog() {
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
-            <DialogContent className="glass-strong rounded-dialog border-white/10 p-6 text-white sm:max-w-md">
+            <DialogContent className="glass-strong rounded-dialog p-6 text-white sm:max-w-md">
                 <DialogTitle className="font-display text-lg">
                     {tr('Відгук адмінам')}
                 </DialogTitle>
@@ -458,7 +458,7 @@ export function FeedbackDialog() {
                     }}
                     className="space-y-3"
                 >
-                    <div className="flex gap-1 rounded-xl bg-white/[0.04] p-1">
+                    <div className="gc-solid-2 flex gap-1 rounded-xl p-1">
                         {KINDS().map((kind) => (
                             <button
                                 key={kind.value}
@@ -487,7 +487,7 @@ export function FeedbackDialog() {
                         className="input-glass w-full rounded-xl px-3.5 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none"
                     />
                     {form.errors.body && (
-                        <p className="text-xs text-rose-300">
+                        <p className="text-xs text-red-400">
                             {form.errors.body}
                         </p>
                     )}
@@ -631,9 +631,9 @@ export function KeyboardShortcuts({ username }: { username: string }) {
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
-            <DialogContent className="glass-strong rounded-dialog border-white/10 p-6 text-white sm:max-w-sm">
+            <DialogContent className="glass-strong rounded-dialog p-6 text-white sm:max-w-sm">
                 <DialogTitle className="flex items-center gap-2 font-display text-lg">
-                    <Keyboard className="size-5 text-gc-lilac-300" />
+                    <Keyboard className="size-5 text-sky-400" />
                     {tr('Гарячі клавіші')}
                 </DialogTitle>
                 <DialogDescription className="text-sm text-white/50">
@@ -643,14 +643,14 @@ export function KeyboardShortcuts({ username }: { username: string }) {
                     {SHORTCUTS().map((item) => (
                         <li
                             key={item.label}
-                            className="flex items-center justify-between rounded-xl bg-white/[0.03] px-3 py-2 text-sm text-white/80"
+                            className="gc-solid-2 flex items-center justify-between rounded-xl px-3 py-2 text-sm text-white/80"
                         >
                             {item.label}
                             <span className="flex gap-1">
                                 {item.keys.map((key) => (
                                     <kbd
                                         key={key}
-                                        className="min-w-7 rounded-md border border-white/15 bg-white/[0.06] px-1.5 py-0.5 text-center font-sans text-xs text-white"
+                                        className="gc-solid-2 min-w-7 rounded-md px-1.5 py-0.5 text-center font-sans text-xs text-white"
                                     >
                                         {key}
                                     </kbd>

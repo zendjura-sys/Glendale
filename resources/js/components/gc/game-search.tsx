@@ -37,8 +37,8 @@ export function GameSearch({
 
     if (value) {
         return (
-            <div className="flex h-11 items-center gap-2 rounded-xl bg-white/[0.06] px-3 text-sm text-white">
-                <Gamepad2 className="size-4 text-sky-300" />
+            <div className="gc-solid-2 flex h-11 items-center gap-2 rounded-xl px-3 text-sm text-white">
+                <Gamepad2 className="size-4 text-sky-400" />
                 <span className="min-w-0 flex-1 truncate">{value.name}</span>
                 <button
                     type="button"
@@ -62,7 +62,7 @@ export function GameSearch({
                 className="input-glass h-11 w-full rounded-xl pr-3 pl-9 text-sm text-white placeholder:text-white/30 focus:outline-none"
             />
             {results.length > 0 && (
-                <ul className="absolute inset-x-0 top-12 z-20 overflow-hidden rounded-xl border bg-popover p-1 text-popover-foreground">
+                <ul className="absolute inset-x-0 top-12 z-20 overflow-hidden rounded-xl bg-popover p-1 text-popover-foreground">
                     {results.map((game) => (
                         <li key={game.id}>
                             <button
@@ -72,7 +72,7 @@ export function GameSearch({
                                     setQ('');
                                     setResults([]);
                                 }}
-                                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-white/85 hover:bg-white/[0.08]"
+                                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-white/85 hover:bg-[var(--gc-l3)]"
                             >
                                 <Gamepad2 className="size-4 text-white/40" />
                                 {game.name}

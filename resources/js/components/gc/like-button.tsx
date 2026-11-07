@@ -25,8 +25,8 @@ export function LikeButton({ liked, count, onToggle, size = 'md' }: Props) {
                 'group relative inline-flex items-center gap-1.5 rounded-full font-medium transition',
                 size === 'md' ? 'h-9 px-3.5 text-sm' : 'h-7 px-2 text-xs',
                 liked
-                    ? 'bg-rose-500/[0.14] text-rose-300 shadow-[inset_0_0_0_1px_rgb(244_63_94/0.3)]'
-                    : 'bg-white/[0.045] text-white/65 hover:bg-white/[0.08] hover:text-white',
+                    ? 'bg-red-500/[0.14] text-red-400'
+                    : 'bg-white/[0.045] text-white/65 hover:bg-[var(--gc-l3)] hover:text-white',
             )}
             aria-pressed={liked}
             aria-label={tr('Подобається')}
@@ -37,7 +37,7 @@ export function LikeButton({ liked, count, onToggle, size = 'md' }: Props) {
                     className={cn(
                         size === 'md' ? 'size-[18px]' : 'size-3.5',
                         liked &&
-                            'animate-pop fill-rose-500 text-rose-500 drop-shadow-[0_0_8px_rgb(244_63_94/0.8)]',
+                            'animate-pop fill-red-500 text-red-500 drop-shadow-[0_0_8px_rgb(244_63_94/0.8)]',
                     )}
                 />
                 {burst > 0 && liked && (
@@ -48,7 +48,7 @@ export function LikeButton({ liked, count, onToggle, size = 'md' }: Props) {
                         {Array.from({ length: 6 }).map((_, i) => (
                             <span
                                 key={i}
-                                className="gc-spark absolute top-1/2 left-1/2 -mt-0.5 -ml-0.5 size-1 rounded-full bg-rose-400"
+                                className="gc-spark absolute top-1/2 left-1/2 -mt-0.5 -ml-0.5 size-1 rounded-full bg-red-400"
                                 style={
                                     {
                                         '--r': `${i * 60}deg`,

@@ -76,7 +76,7 @@ export default function AdminBroadcasts({ broadcasts, audiences }: Props) {
 
             <form
                 onSubmit={send}
-                className="glass mb-5 space-y-3 rounded-2xl p-4"
+                className="gc-solid mb-5 space-y-3 rounded-2xl p-4"
             >
                 <div className="flex flex-wrap gap-2">
                     {(Object.keys(audiences) as Audience[]).map((a) => (
@@ -88,7 +88,7 @@ export default function AdminBroadcasts({ broadcasts, audiences }: Props) {
                                 'h-9 rounded-xl px-3 text-sm transition',
                                 form.data.audience === a
                                     ? 'bg-primary text-white'
-                                    : 'bg-white/[0.06] text-white/70 hover:text-white',
+                                    : 'gc-solid-2 text-white/70 hover:text-white',
                             )}
                         >
                             {audienceLabel(a)} · {audiences[a]}
@@ -141,7 +141,7 @@ export default function AdminBroadcasts({ broadcasts, audiences }: Props) {
 
             <div className="space-y-3">
                 {broadcasts.map((b) => (
-                    <article key={b.id} className="glass rounded-2xl p-4">
+                    <article key={b.id} className="gc-solid rounded-2xl p-4">
                         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                             <h3 className="min-w-0 flex-1 font-semibold text-white">
                                 {b.title}
@@ -166,7 +166,7 @@ export default function AdminBroadcasts({ broadcasts, audiences }: Props) {
                     </article>
                 ))}
                 {broadcasts.length === 0 && (
-                    <p className="glass rounded-2xl px-6 py-10 text-center text-sm text-white/40">
+                    <p className="gc-solid rounded-2xl px-6 py-10 text-center text-sm text-white/40">
                         {tr('Розсилок ще не було.')}
                     </p>
                 )}

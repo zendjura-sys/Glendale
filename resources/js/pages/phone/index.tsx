@@ -163,7 +163,7 @@ export default function PhonePage(props: Props) {
             <Head title={tr('Телефон')} />
             <div className="grid gap-4 *:min-w-0 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
                 {/* Набирач */}
-                <section className="glass rounded-2xl p-5">
+                <section className="gc-solid rounded-2xl p-5">
                     <div className="flex min-h-[4.5rem] flex-col items-center justify-center text-center">
                         <div className="flex w-full items-center gap-2">
                             <span className="min-w-0 flex-1 truncate text-[1.7rem] font-semibold tracking-tight text-white tabular-nums">
@@ -182,7 +182,7 @@ export default function PhonePage(props: Props) {
                                         setDialed(dialed.slice(0, -1))
                                     }
                                     aria-label={tr('Стерти')}
-                                    className="flex size-10 items-center justify-center rounded-full text-white/50 transition hover:bg-white/[0.06] hover:text-white"
+                                    className="flex size-10 items-center justify-center rounded-full text-white/50 transition hover:bg-[var(--gc-l3)] hover:text-white"
                                 >
                                     <Delete className="size-5" />
                                 </button>
@@ -192,7 +192,7 @@ export default function PhonePage(props: Props) {
                             {lookup?.found ? (
                                 <Link
                                     href={`/${lookup.user.username}`}
-                                    className="inline-flex items-center gap-2 rounded-2xl bg-white/[0.04] py-1.5 pr-3 pl-1.5 transition hover:bg-white/[0.08]"
+                                    className="gc-solid-2 inline-flex items-center gap-2 rounded-2xl py-1.5 pr-3 pl-1.5 transition hover:bg-[var(--gc-l3)]"
                                 >
                                     <UserAvatar user={lookup.user} size="md" />
                                     <span className="text-left">
@@ -226,7 +226,7 @@ export default function PhonePage(props: Props) {
                                 type="button"
                                 onClick={() => press(key)}
                                 disabled={key === '#'}
-                                className="phone-key flex aspect-[1.35] flex-col items-center justify-center rounded-2xl bg-white/[0.05] text-white hover:bg-white/[0.09] disabled:opacity-30"
+                                className="phone-key gc-solid-2 flex aspect-[1.35] flex-col items-center justify-center rounded-2xl text-white hover:bg-[var(--gc-l3)] disabled:opacity-30"
                             >
                                 <span className="text-2xl font-medium">
                                     {key}
@@ -270,7 +270,7 @@ export default function PhonePage(props: Props) {
 
                 <div className="flex flex-col gap-4">
                     {/* Мій номер */}
-                    <section className="glass rounded-2xl p-5">
+                    <section className="gc-solid rounded-2xl p-5">
                         <p className="text-xs font-medium tracking-wide text-white/45 uppercase">
                             {tr('Мій номер')}
                         </p>
@@ -289,7 +289,7 @@ export default function PhonePage(props: Props) {
                                 <button
                                     type="button"
                                     onClick={() => setChanging((v) => !v)}
-                                    className="ml-auto inline-flex h-9 items-center gap-1.5 rounded-xl bg-white/[0.06] px-3 text-sm font-medium text-white/80 transition hover:bg-white/[0.1]"
+                                    className="gc-solid-2 ml-auto inline-flex h-9 items-center gap-1.5 rounded-xl px-3 text-sm font-medium text-white/80 transition hover:bg-white/[0.1]"
                                 >
                                     <Repeat2 className="size-4" />
                                     {changing
@@ -353,7 +353,7 @@ export default function PhonePage(props: Props) {
                                         'h-10 rounded-xl text-sm font-medium transition',
                                         props.privacy === value
                                             ? 'bg-primary text-primary-foreground'
-                                            : 'bg-white/[0.05] text-white/70 hover:bg-white/[0.09]',
+                                            : 'gc-solid-2 text-white/70 hover:bg-[var(--gc-l3)]',
                                     )}
                                 >
                                     {label}
@@ -418,7 +418,7 @@ export default function PhonePage(props: Props) {
                                             className={cn(
                                                 'truncate text-sm font-semibold',
                                                 call.direction === 'missed'
-                                                    ? 'text-red-300'
+                                                    ? 'text-red-400'
                                                     : 'text-white',
                                             )}
                                         >
@@ -458,7 +458,7 @@ export default function PhonePage(props: Props) {
                                             })
                                         }
                                         aria-label={tr('Подзвонити')}
-                                        className="flex size-10 items-center justify-center rounded-full bg-white/[0.05] text-emerald-300 transition hover:bg-white/[0.1]"
+                                        className="gc-solid-2 flex size-10 items-center justify-center rounded-full text-emerald-300 transition hover:bg-white/[0.1]"
                                     >
                                         <Phone className="size-4" />
                                     </button>

@@ -64,7 +64,7 @@ export default function Duels({
                 <div className="flex flex-wrap items-end justify-between gap-3">
                     <div>
                         <h1 className="flex items-center gap-2 font-display text-2xl font-semibold text-white">
-                            <Swords className="size-6 text-gc-lilac-300" />
+                            <Swords className="size-6 text-sky-400" />
                             {tr('Дуелі')}
                         </h1>
                         <p className="mt-1 text-sm text-white/50">
@@ -77,7 +77,7 @@ export default function Duels({
                         <span className="rounded-xl bg-emerald-500/15 px-3 py-1.5 text-emerald-200">
                             {tr('Перемог: {count}', { count: stats.wins })}
                         </span>
-                        <span className="rounded-xl bg-white/[0.06] px-3 py-1.5 text-white/70">
+                        <span className="gc-solid-2 rounded-xl px-3 py-1.5 text-white/70">
                             {tr('Поразок: {count}', { count: stats.losses })}
                         </span>
                     </div>
@@ -91,7 +91,7 @@ export default function Duels({
                             onSuccess: () => form.reset('terms'),
                         });
                     }}
-                    className="glass grid gap-2 rounded-2xl p-4 sm:grid-cols-2"
+                    className="gc-solid grid gap-2 rounded-2xl p-4 sm:grid-cols-2"
                 >
                     <input
                         value={form.data.username}
@@ -122,7 +122,7 @@ export default function Duels({
                         className={cn(field, 'sm:col-span-2')}
                     />
                     {(form.errors.username || form.errors.terms) && (
-                        <p className="text-xs text-rose-300 sm:col-span-2">
+                        <p className="text-xs text-red-400 sm:col-span-2">
                             {form.errors.username ?? form.errors.terms}
                         </p>
                     )}
@@ -143,7 +143,7 @@ export default function Duels({
                 </form>
 
                 {duels.length === 0 && (
-                    <p className="glass rounded-2xl p-6 text-center text-sm text-white/50">
+                    <p className="gc-solid rounded-2xl p-6 text-center text-sm text-white/50">
                         {tr('Дуелей ще не було.')}
                     </p>
                 )}
@@ -155,7 +155,7 @@ export default function Duels({
                             d.winner_id !== null &&
                             d.winner_id !== other?.id;
                         return (
-                            <li key={d.id} className="glass rounded-2xl p-4">
+                            <li key={d.id} className="gc-solid rounded-2xl p-4">
                                 <div className="flex items-center gap-3">
                                     {other && (
                                         <UserAvatar user={other} size="sm" />
@@ -190,8 +190,8 @@ export default function Duels({
                                             d.status === 'finished'
                                                 ? meWon
                                                     ? 'bg-emerald-500/15 text-emerald-200'
-                                                    : 'bg-rose-500/15 text-rose-200'
-                                                : 'bg-white/[0.06] text-white/60',
+                                                    : 'bg-red-500/15 text-red-400'
+                                                : 'gc-solid-2 text-white/60',
                                         )}
                                     >
                                         {d.status === 'finished'
@@ -217,7 +217,7 @@ export default function Duels({
                                                 onClick={() =>
                                                     act(d, 'decline')
                                                 }
-                                                className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-white/[0.06] px-3.5 text-white/70 hover:text-white"
+                                                className="gc-solid-2 inline-flex h-9 items-center gap-1.5 rounded-xl px-3.5 text-white/70 hover:text-white"
                                             >
                                                 <X className="size-4" />
                                                 {tr('Відхилити')}
@@ -228,7 +228,7 @@ export default function Duels({
                                         <button
                                             type="button"
                                             onClick={() => act(d, 'cancel')}
-                                            className="text-white/50 hover:text-rose-300"
+                                            className="text-white/50 hover:text-red-400"
                                         >
                                             {tr('Скасувати виклик')}
                                         </button>
@@ -261,7 +261,7 @@ export default function Duels({
                                                                 d.my_pick ===
                                                                     p.id
                                                                     ? 'bg-gc-indigo text-white'
-                                                                    : 'bg-white/[0.06] text-white/75 hover:text-white',
+                                                                    : 'gc-solid-2 text-white/75 hover:text-white',
                                                             )}
                                                         >
                                                             <Trophy className="size-4" />

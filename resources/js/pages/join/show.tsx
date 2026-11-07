@@ -24,7 +24,7 @@ export default function JoinShow({ token, invite }: Props) {
     return (
         <>
             <Head title={tr('Запрошення')} />
-            <section className="glass mx-auto max-w-md rounded-2xl p-6">
+            <section className="gc-solid mx-auto max-w-md rounded-2xl p-6">
                 <p className="text-xs font-semibold text-white/40">{kind}</p>
                 <h1 className="mt-1 font-display text-2xl font-bold text-white">
                     {invite.name}
@@ -58,7 +58,7 @@ export default function JoinShow({ token, invite }: Props) {
                                 autoComplete="off"
                             />
                             {form.errors.rp_nickname && (
-                                <p className="text-xs text-rose-300">
+                                <p className="text-xs text-red-400">
                                     {form.errors.rp_nickname}
                                 </p>
                             )}
@@ -75,7 +75,7 @@ export default function JoinShow({ token, invite }: Props) {
                                 inputMode="numeric"
                             />
                             {form.errors.static_id && (
-                                <p className="text-xs text-rose-300">
+                                <p className="text-xs text-red-400">
                                     {form.errors.static_id}
                                 </p>
                             )}

@@ -30,7 +30,7 @@ export default function MusicMix({
                         colors={mix.colors}
                         covers={mix.covers}
                         label={title}
-                        className="rounded-[10px] shadow-[0_18px_40px_-16px_rgb(0_0_0/0.45)]"
+                        className="rounded-[10px]"
                     />
                 </div>
                 <div className="mt-4 lg:mt-0">

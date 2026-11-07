@@ -185,14 +185,14 @@ export function ChannelSidebar({
                         active
                             ? 'nav-active font-semibold text-white'
                             : channel.unread > 0
-                              ? 'font-semibold text-white hover:bg-white/[0.05]'
-                              : 'text-white/60 hover:bg-white/[0.05] hover:text-white',
+                              ? 'font-semibold text-white hover:bg-[var(--gc-l3)]'
+                              : 'text-white/60 hover:bg-[var(--gc-l3)] hover:text-white',
                     )}
                 >
                     <Icon
                         className={cn(
                             'size-4 shrink-0',
-                            active ? 'text-gc-lilac-300' : 'text-white/40',
+                            active ? 'text-sky-400' : 'text-white/40',
                         )}
                     />
                     <span className="min-w-0 flex-1 truncate">
@@ -240,7 +240,7 @@ export function ChannelSidebar({
     return (
         <aside
             className={cn(
-                'glass flex min-h-0 flex-col overflow-hidden rounded-2xl',
+                'gc-solid flex min-h-0 flex-col overflow-hidden rounded-2xl',
                 className,
             )}
         >
@@ -342,7 +342,7 @@ export function ChannelSidebar({
                                                 onClick={() =>
                                                     removeCategory(category)
                                                 }
-                                                className="flex size-6 items-center justify-center rounded-md text-white/45 hover:text-rose-300"
+                                                className="flex size-6 items-center justify-center rounded-md text-white/45 hover:text-red-400"
                                             >
                                                 <Trash2 className="size-3" />
                                             </button>
@@ -398,11 +398,11 @@ export function ChannelSidebar({
             </nav>
 
             {canManage && (
-                <div className="flex gap-1.5 border-t border-white/[0.06] p-2">
+                <div className="flex gap-1.5 p-2">
                     <button
                         type="button"
                         onClick={() => onCreate(null)}
-                        className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg bg-white/[0.06] text-xs font-semibold text-white transition hover:bg-white/[0.1]"
+                        className="gc-solid-2 flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg text-xs font-semibold text-white transition hover:bg-white/[0.1]"
                     >
                         <Plus className="size-3.5" />
                         {tr('Канал')}
@@ -410,7 +410,7 @@ export function ChannelSidebar({
                     <button
                         type="button"
                         onClick={addCategory}
-                        className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg bg-white/[0.06] text-xs font-semibold text-white transition hover:bg-white/[0.1]"
+                        className="gc-solid-2 flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg text-xs font-semibold text-white transition hover:bg-white/[0.1]"
                     >
                         <FolderPlus className="size-3.5" />
                         {tr('Категорія')}

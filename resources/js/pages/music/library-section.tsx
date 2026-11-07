@@ -288,7 +288,7 @@ export default function MusicLibrarySection({
                                             round
                                         />
                                     </span>
-                                    <span className="am-body flex min-h-12 flex-1 items-center border-b border-[var(--am-sep)]">
+                                    <span className="am-body flex min-h-12 flex-1 items-center border-[var(--am-sep)]">
                                         {a.name}
                                     </span>
                                 </Link>
@@ -330,7 +330,7 @@ export default function MusicLibrarySection({
                                             seed={g.name}
                                         />
                                     </span>
-                                    <span className="am-body flex min-h-12 flex-1 items-center justify-between border-b border-[var(--am-sep)]">
+                                    <span className="am-body flex min-h-12 flex-1 items-center justify-between border-[var(--am-sep)]">
                                         {g.name}
                                         <span className="am-subhead text-[var(--am-label2)]">
                                             {g.tracks_count}

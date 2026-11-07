@@ -103,8 +103,8 @@ export function RestrictDialog({
                                             onClick={() => apply(kind, minutes)}
                                             className={
                                                 kind === 'kick'
-                                                    ? 'h-10 rounded-xl bg-rose-500/12 text-[13px] font-medium text-rose-200 transition hover:bg-rose-500/20 disabled:opacity-50'
-                                                    : 'h-10 rounded-xl bg-white/[0.06] text-[13px] font-medium text-white/80 transition hover:bg-white/[0.1] disabled:opacity-50'
+                                                    ? 'h-10 rounded-xl bg-red-500/12 text-[13px] font-medium text-red-400 transition hover:bg-red-500/20 disabled:opacity-50'
+                                                    : 'gc-solid-2 h-10 rounded-xl text-[13px] font-medium text-white/80 transition hover:bg-white/[0.1] disabled:opacity-50'
                                             }
                                         >
                                             {label[minutes]}

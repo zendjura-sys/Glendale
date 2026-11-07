@@ -83,7 +83,7 @@ export function RulesForm({
                 className={cn(field, 'mt-1.5 resize-y')}
             />
             {errors[name] && (
-                <p className="mt-1 text-xs text-rose-300">{errors[name]}</p>
+                <p className="mt-1 text-xs text-red-400">{errors[name]}</p>
             )}
         </label>
     );
@@ -177,7 +177,7 @@ export function RulesForm({
                                 ))}
                             </select>
                         </label>
-                        <label className="flex items-start gap-3 rounded-2xl border border-white/[0.07] p-3.5 text-sm text-white/80">
+                        <label className="flex items-start gap-3 rounded-2xl p-3.5 text-sm text-white/80">
                             <input
                                 type="checkbox"
                                 checked={data.premoderation}
@@ -201,7 +201,7 @@ export function RulesForm({
                             </span>
                         </label>
                         {wikiOn && (
-                            <label className="flex items-start gap-3 rounded-2xl border border-white/[0.07] p-3.5 text-sm text-white/80">
+                            <label className="flex items-start gap-3 rounded-2xl p-3.5 text-sm text-white/80">
                                 <input
                                     type="checkbox"
                                     checked={data.wiki_open ?? false}
@@ -225,7 +225,7 @@ export function RulesForm({
                                 </span>
                             </label>
                         )}
-                        <label className="flex items-start gap-3 rounded-2xl border border-white/[0.07] p-3.5 text-sm text-white/80">
+                        <label className="flex items-start gap-3 rounded-2xl p-3.5 text-sm text-white/80">
                             <input
                                 type="checkbox"
                                 checked={data.weekly_digest ?? false}
@@ -289,7 +289,7 @@ export function StatsCard({ stats }: { stats?: CommunityStats }) {
                         {tiles.map((tile) => (
                             <div
                                 key={tile.label}
-                                className="rounded-2xl bg-white/[0.04] p-3"
+                                className="gc-solid-2 rounded-2xl p-3"
                             >
                                 <p className="font-display text-2xl font-bold text-white tabular-nums">
                                     {tile.value}

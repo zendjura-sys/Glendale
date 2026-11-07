@@ -60,7 +60,7 @@ export default function Saved({ items }: { items: Item[] }) {
                             <Link
                                 key={`${item.kind}-${item.href}-${index}`}
                                 href={item.href}
-                                className="glass flex items-center gap-3 rounded-2xl p-3"
+                                className="gc-solid flex items-center gap-3 rounded-2xl p-3"
                             >
                                 {item.image ? (
                                     <img

@@ -122,7 +122,7 @@ export function ChatSharedDialog({
                         </DialogDescription>
                     </div>
 
-                    <div className="flex gap-1 overflow-x-auto rounded-xl bg-white/[0.04] p-1">
+                    <div className="gc-solid-2 flex gap-1 overflow-x-auto rounded-xl p-1">
                         {KINDS.map((item) => (
                             <button
                                 key={item.value}
@@ -163,7 +163,7 @@ export function ChatSharedDialog({
                                         key={item.id}
                                         type="button"
                                         onClick={() => jump(item.message_id)}
-                                        className="group relative aspect-square overflow-hidden rounded-lg bg-white/[0.04]"
+                                        className="group gc-solid-2 relative aspect-square overflow-hidden rounded-lg"
                                     >
                                         {item.type === 'video_note' ? (
                                             <video
@@ -192,7 +192,7 @@ export function ChatSharedDialog({
                                         key={item.id}
                                         className="flex items-center gap-3 py-2.5"
                                     >
-                                        <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-white/[0.06] text-white/60">
+                                        <span className="gc-solid-2 flex size-10 shrink-0 items-center justify-center rounded-xl text-white/60">
                                             {kind === 'files' ? (
                                                 <FileText className="size-4" />
                                             ) : kind === 'links' ? (
@@ -253,7 +253,7 @@ export function ChatSharedDialog({
                                                 }
                                                 aria-label={tr('Переглянути')}
                                                 title={tr('Переглянути')}
-                                                className="flex size-9 shrink-0 items-center justify-center rounded-xl text-white/55 transition hover:bg-white/[0.07] hover:text-white"
+                                                className="flex size-9 shrink-0 items-center justify-center rounded-xl text-white/55 transition hover:bg-[var(--gc-l3)] hover:text-white"
                                             >
                                                 <Eye className="size-4" />
                                             </button>
@@ -264,7 +264,7 @@ export function ChatSharedDialog({
                                                 download={item.name ?? true}
                                                 aria-label={tr('Завантажити')}
                                                 title={tr('Завантажити')}
-                                                className="flex size-9 shrink-0 items-center justify-center rounded-xl text-white/55 transition hover:bg-white/[0.07] hover:text-white"
+                                                className="flex size-9 shrink-0 items-center justify-center rounded-xl text-white/55 transition hover:bg-[var(--gc-l3)] hover:text-white"
                                             >
                                                 <Download className="size-4" />
                                             </a>
@@ -274,7 +274,7 @@ export function ChatSharedDialog({
                                                 href={item.url}
                                                 target="_blank"
                                                 rel="noopener noreferrer nofollow"
-                                                className="shrink-0 text-xs font-semibold text-gc-lilac-300 hover:underline"
+                                                className="shrink-0 text-xs font-semibold text-sky-400 hover:underline"
                                             >
                                                 {tr('Відкрити')}
                                             </a>
@@ -297,7 +297,7 @@ export function ChatSharedDialog({
                             <button
                                 type="button"
                                 onClick={() => load(kind, next)}
-                                className="mt-3 h-10 w-full rounded-xl bg-white/[0.05] text-sm text-white/70 transition hover:bg-white/[0.08] hover:text-white"
+                                className="gc-solid-2 mt-3 h-10 w-full rounded-xl text-sm text-white/70 transition hover:bg-[var(--gc-l3)] hover:text-white"
                             >
                                 {tr('Показати ще')}
                             </button>

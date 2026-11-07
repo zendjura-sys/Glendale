@@ -317,9 +317,9 @@ export default function AdminDashboard({
             </div>
 
             <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-[1fr_340px]">
-                <section className="glass rounded-2xl p-5 sm:p-6">
+                <section className="gc-solid rounded-2xl p-5 sm:p-6">
                     <div className="mb-4 flex items-center gap-2">
-                        <Activity className="size-4 text-gc-lilac-400" />
+                        <Activity className="size-4 text-sky-400" />
                         <h2 className="font-display text-sm font-semibold text-white/90">
                             {tr('Активність за 30 днів')}
                         </h2>
@@ -333,7 +333,7 @@ export default function AdminDashboard({
                         <ActivityChart data={chart ?? []} />
                     </Deferred>
                     <div className="mt-6 mb-3 flex items-center gap-2">
-                        <CalendarClock className="size-4 text-gc-lilac-400" />
+                        <CalendarClock className="size-4 text-sky-400" />
                         <h2 className="font-display text-sm font-semibold text-white/90">
                             {tr('Коли люди активні')}
                         </h2>
@@ -353,7 +353,7 @@ export default function AdminDashboard({
 
                 <div className="grid gap-4">
                     <div className="grid grid-cols-2 gap-4">
-                        <div className="glass rounded-2xl p-4">
+                        <div className="gc-solid rounded-2xl p-4">
                             <UserPlus className="size-4 text-gc-sky" />
                             <div className="mt-3 font-display text-2xl font-bold text-white">
                                 {compactNumber(stats.friendships)}
@@ -362,8 +362,8 @@ export default function AdminDashboard({
                                 {tr('дружб')}
                             </div>
                         </div>
-                        <div className="glass rounded-2xl p-4">
-                            <Ban className="size-4 text-rose-300" />
+                        <div className="gc-solid rounded-2xl p-4">
+                            <Ban className="size-4 text-red-400" />
                             <div className="mt-3 font-display text-2xl font-bold text-white">
                                 {stats.banned}
                             </div>
@@ -374,7 +374,7 @@ export default function AdminDashboard({
                     </div>
                     <Link
                         href="/admin/modules"
-                        className="glass group rounded-2xl p-5 transition hover:border-white/15"
+                        className="gc-solid group rounded-2xl p-5 transition hover:border-white/15"
                     >
                         <div className="flex items-center justify-between">
                             <Blocks className="size-5 text-[#d3b0ff]" />
@@ -392,18 +392,18 @@ export default function AdminDashboard({
                         <div className="text-xs text-white/45">
                             {tr('модулів увімкнено')}
                         </div>
-                        <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
+                        <div className="gc-solid-2 mt-3 h-1.5 overflow-hidden rounded-full">
                             <div
-                                className="h-full rounded-full bg-gradient-brand"
+                                className="h-full rounded-full bg-sky-500"
                                 style={{
                                     width: `${(stats.modules_enabled / Math.max(1, stats.modules_total)) * 100}%`,
                                 }}
                             />
                         </div>
                     </Link>
-                    <section className="glass rounded-2xl p-5">
+                    <section className="gc-solid rounded-2xl p-5">
                         <div className="mb-3 flex items-center gap-2">
-                            <Server className="size-4 text-gc-lilac-400" />
+                            <Server className="size-4 text-sky-400" />
                             <h2 className="font-display text-xs font-semibold text-white/80">
                                 {tr('Система')}
                             </h2>
@@ -433,7 +433,7 @@ export default function AdminDashboard({
             </div>
 
             <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
-                <section className="glass rounded-2xl p-5">
+                <section className="gc-solid rounded-2xl p-5">
                     <div className="mb-3 flex items-center justify-between">
                         <h2 className="font-display text-sm font-semibold text-white/90">
                             {tr('Нові користувачі')}
@@ -473,7 +473,7 @@ export default function AdminDashboard({
                         ))}
                     </ul>
                 </section>
-                <section className="glass rounded-2xl p-5">
+                <section className="gc-solid rounded-2xl p-5">
                     <div className="mb-3 flex items-center justify-between">
                         <h2 className="font-display text-sm font-semibold text-white/90">
                             {tr('Останні записи')}

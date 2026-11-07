@@ -56,7 +56,7 @@ export default function People({ filters, saved, total, users }: Props) {
         <>
             <Head title={tr('Пошук людей')} />
             <div className="space-y-5">
-                <section className="glass relative overflow-hidden rounded-2xl p-5 sm:p-6">
+                <section className="gc-solid relative overflow-hidden rounded-2xl p-5 sm:p-6">
                     <div className="pointer-events-none absolute -top-24 right-0 size-72 rounded-full bg-gc-blue/20 blur-3xl" />
                     <h1 className="relative font-display text-2xl font-bold text-white">
                         {tr('Знайдіть')}{' '}
@@ -70,7 +70,7 @@ export default function People({ filters, saved, total, users }: Props) {
                         {mapOn && (
                             <Link
                                 href="/map"
-                                className="ml-3 inline-flex items-center gap-1 text-sky-300 hover:text-sky-200"
+                                className="ml-3 inline-flex items-center gap-1 text-sky-400 hover:text-sky-400"
                             >
                                 <Globe2 className="size-3.5" />
                                 {tr('Карта гравців')}
@@ -105,7 +105,7 @@ export default function People({ filters, saved, total, users }: Props) {
                                 className="min-w-0 flex-1 bg-transparent text-sm text-white placeholder:text-white/35 focus:outline-none"
                             />
                         </label>
-                        <div className="flex rounded-xl bg-white/[0.04] p-1">
+                        <div className="gc-solid-2 flex rounded-xl p-1">
                             {[
                                 { value: '', label: tr('Усі') },
                                 { value: 'male', label: tr('Чоловіки') },
@@ -140,7 +140,7 @@ export default function People({ filters, saved, total, users }: Props) {
                                 'inline-flex h-11 shrink-0 items-center gap-2 rounded-xl px-4 text-sm font-medium whitespace-nowrap transition',
                                 form.online
                                     ? 'nav-active text-white'
-                                    : 'bg-white/[0.04] text-white/55 hover:text-white',
+                                    : 'gc-solid-2 text-white/55 hover:text-white',
                             )}
                         >
                             <Radio
@@ -196,7 +196,7 @@ export default function People({ filters, saved, total, users }: Props) {
                             <button
                                 type="button"
                                 onClick={() => setForm(saved)}
-                                className="h-11 rounded-xl px-4 text-sm text-gc-lilac-300 hover:text-white"
+                                className="h-11 rounded-xl px-4 text-sm text-sky-400 hover:text-white"
                             >
                                 {tr('Мій запит')}
                             </button>

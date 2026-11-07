@@ -181,7 +181,7 @@ export function Comments({
                 <button
                     type="button"
                     onClick={() => void loadAll()}
-                    className="text-[13px] font-medium text-gc-lilac-300 hover:text-white"
+                    className="text-[13px] font-medium text-sky-400 hover:text-white"
                 >
                     {tr('Показати всі')} {total}{' '}
                     {plural(total, ['коментар', 'коментарі', 'коментарів'])}
@@ -243,7 +243,7 @@ export function Comments({
                             <div className="min-w-0 flex-1">
                                 <div className="inline-block max-w-full rounded-2xl rounded-tl-md bg-white/[0.045] px-3.5 py-2">
                                     {comment.is_pinned && (
-                                        <span className="mb-1 flex items-center gap-1 text-[11px] font-semibold text-gc-lilac-200">
+                                        <span className="mb-1 flex items-center gap-1 text-[11px] font-semibold text-sky-400">
                                             <Pin className="size-3" />{' '}
                                             {tr('Закріплено')}
                                         </span>
@@ -286,7 +286,7 @@ export function Comments({
                                     </Link>
                                     <p className="text-[14px] leading-snug break-words whitespace-pre-line text-white/85">
                                         {parent && (
-                                            <span className="mr-1 text-gc-lilac-300">
+                                            <span className="mr-1 text-sky-400">
                                                 {parent.user.first_name},
                                             </span>
                                         )}
@@ -344,7 +344,7 @@ export function Comments({
                                     {comment.can_delete && (
                                         <button
                                             type="button"
-                                            className="opacity-0 transition group-hover:opacity-100 hover:text-rose-300 [@media(hover:none)]:opacity-100"
+                                            className="opacity-0 transition group-hover:opacity-100 hover:text-red-400 [@media(hover:none)]:opacity-100"
                                             onClick={() => remove(comment)}
                                             aria-label={tr('Видалити коментар')}
                                         >

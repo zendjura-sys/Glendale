@@ -45,7 +45,7 @@ export function EmbedButton({
                 <DialogContent className="gap-4 sm:max-w-lg">
                     <div>
                         <DialogTitle className="flex items-center gap-2 font-display text-lg font-semibold text-white">
-                            <Code2 className="size-5 text-gc-lilac-300" />
+                            <Code2 className="size-5 text-sky-400" />
                             {tr('Віджет для сайту')}
                         </DialogTitle>
                         <DialogDescription className="mt-1 text-sm text-white/50">

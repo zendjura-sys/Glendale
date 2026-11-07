@@ -163,12 +163,12 @@ export default function Servers({
         <>
             <Head title={tr('Сервери GTA')} />
             <div className="space-y-5">
-                <section className="glass noise relative overflow-hidden rounded-2xl p-5 sm:p-7">
+                <section className="gc-solid relative overflow-hidden rounded-2xl p-5 sm:p-7">
                     <div className="pointer-events-none absolute -top-24 -right-16 size-96 rounded-full bg-[#facc15]/15 blur-3xl" />
                     <div className="pointer-events-none absolute -bottom-36 -left-10 size-96 rounded-full bg-[#2563eb]/25 blur-3xl" />
                     <div className="relative flex flex-wrap items-start justify-between gap-5">
                         <div className="max-w-xl">
-                            <span className="inline-flex items-center gap-2 rounded-chip border border-[#facc15]/25 bg-[#facc15]/10 px-3 py-1 text-xs font-semibold text-[#fde68a]">
+                            <span className="inline-flex items-center gap-2 rounded-chip border-[#facc15]/25 bg-[#facc15]/10 px-3 py-1 text-xs font-semibold text-[#fde68a]">
                                 {tr('🇺🇦 Зроблено в Україні')}
                             </span>
                             <h1 className="mt-3 font-display text-3xl font-bold text-white sm:text-4xl">
@@ -185,7 +185,7 @@ export default function Servers({
                             {tournamentsOn && (
                                 <Link
                                     href="/tournaments"
-                                    className="mt-3 inline-flex h-9 items-center gap-2 rounded-xl bg-white/[0.06] px-3 text-sm font-medium text-white transition hover:bg-white/10"
+                                    className="gc-solid-2 mt-3 inline-flex h-9 items-center gap-2 rounded-xl px-3 text-sm font-medium text-white transition hover:bg-white/10"
                                 >
                                     <Trophy className="size-4" />
                                     {tr('Турніри й челенджі')}
@@ -212,7 +212,7 @@ export default function Servers({
                             ].map(([label, value, tone]) => (
                                 <div
                                     key={label}
-                                    className="rounded-2xl bg-white/[0.04] px-4 py-3 ring-1 ring-white/[0.06]"
+                                    className="gc-solid-2 rounded-2xl px-4 py-3"
                                 >
                                     <div
                                         className={cn(
@@ -231,7 +231,7 @@ export default function Servers({
                     </div>
 
                     <div className="relative mt-6 flex flex-col gap-3 lg:flex-row lg:items-center">
-                        <div className="-mx-1 scrollbar-none flex min-w-0 snap-x snap-mandatory gap-1 overflow-x-auto overscroll-x-contain rounded-xl bg-white/[0.04] p-1 lg:shrink-0">
+                        <div className="gc-solid-2 -mx-1 scrollbar-none flex min-w-0 snap-x snap-mandatory gap-1 overflow-x-auto overscroll-x-contain rounded-xl p-1 lg:shrink-0">
                             {tabs.map((tab) => (
                                 <button
                                     key={tab.label}
@@ -340,7 +340,7 @@ export default function Servers({
                 </section>
 
                 {my_suggestions.length > 0 && (
-                    <div className="glass flex flex-wrap items-center gap-2 rounded-2xl px-4 py-3 text-xs">
+                    <div className="gc-solid flex flex-wrap items-center gap-2 rounded-2xl px-4 py-3 text-xs">
                         <span className="text-white/50">
                             {tr('Ваші пропозиції:')}
                         </span>
@@ -352,7 +352,7 @@ export default function Servers({
                                     'inline-flex items-center gap-1.5 rounded-chip px-2.5 py-1 font-medium',
                                     s.status === 'pending'
                                         ? 'bg-amber-300/10 text-amber-200'
-                                        : 'bg-rose-400/10 text-rose-200',
+                                        : 'bg-red-400/10 text-red-400',
                                 )}
                             >
                                 {s.status === 'pending' ? (
@@ -376,7 +376,7 @@ export default function Servers({
                 {banner && (
                     <Link
                         href={`/servers/${banner.slug}`}
-                        className="glass flex items-center gap-4 rounded-2xl border-indigo-400/40 p-4 transition hover:border-indigo-300/60 sm:p-5"
+                        className="gc-solid flex items-center gap-4 rounded-2xl border-indigo-400/40 p-4 transition hover:border-indigo-300/60 sm:p-5"
                     >
                         <ServerIcon
                             name={banner.name}
@@ -393,7 +393,7 @@ export default function Servers({
                                 </span>
                             )}
                         </span>
-                        <span className="shrink-0 rounded-chip bg-white/[0.06] px-2 py-0.5 text-[10px] font-semibold text-white/55">
+                        <span className="gc-solid-2 shrink-0 rounded-chip px-2 py-0.5 text-[10px] font-semibold text-white/55">
                             {tr('Реклама')}
                         </span>
                     </Link>
@@ -445,8 +445,8 @@ export default function Servers({
                     </div>
                 )}
 
-                <div className="glass flex flex-col gap-4 rounded-2xl p-5 sm:flex-row sm:items-center">
-                    <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-brand">
+                <div className="gc-solid flex flex-col gap-4 rounded-2xl p-5 sm:flex-row sm:items-center">
+                    <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-sky-500">
                         <Crown className="size-6 text-white" />
                     </span>
                     <div className="min-w-0 sm:flex-1">
@@ -461,7 +461,7 @@ export default function Servers({
                     </div>
                     <a
                         href="/families/create"
-                        className="glass inline-flex h-11 w-full shrink-0 items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold text-white hover:bg-white/10 sm:w-auto"
+                        className="gc-solid inline-flex h-11 w-full shrink-0 items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold text-white hover:bg-white/10 sm:w-auto"
                     >
                         <UsersRound className="size-4" /> {tr('Створити сім’ю')}
                     </a>
@@ -469,7 +469,7 @@ export default function Servers({
             </div>
 
             <Dialog open={suggesting} onOpenChange={setSuggesting}>
-                <DialogContent className="glass-strong max-h-[92dvh] gap-0 overflow-y-auto rounded-dialog border-white/10 p-6 text-white sm:max-w-2xl">
+                <DialogContent className="glass-strong max-h-[92dvh] gap-0 overflow-y-auto rounded-dialog p-6 text-white sm:max-w-2xl">
                     <DialogTitle className="font-display text-xl">
                         {tr('Додати відсутній сервер')}
                     </DialogTitle>

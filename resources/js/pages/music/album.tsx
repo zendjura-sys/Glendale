@@ -41,7 +41,7 @@ export default function MusicAlbum({ album }: { album: Album }) {
                 <TrackCover
                     url={album.cover_url}
                     seed={`${album.artist}|${album.title}`}
-                    className="am-art mx-auto aspect-square w-[min(70vw,300px)] rounded-[10px] shadow-[0_18px_40px_-16px_rgb(0_0_0/0.45)] lg:mx-0 lg:w-[270px]"
+                    className="am-art mx-auto aspect-square w-[min(70vw,300px)] rounded-[10px] lg:mx-0 lg:w-[270px]"
                 />
                 <div className="mt-4 text-center lg:mt-0 lg:text-left">
                     <h1 className="am-title2 lg:text-[30px] lg:leading-9">

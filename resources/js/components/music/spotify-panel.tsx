@@ -100,7 +100,7 @@ function Tracks({ url, empty }: { url: string | null; empty: string }) {
     if (loading) return <Skeleton />;
     if (error)
         return (
-            <p className="py-10 text-center text-sm text-rose-300">{error}</p>
+            <p className="py-10 text-center text-sm text-red-400">{error}</p>
         );
     if (!data?.tracks.length)
         return (
@@ -167,7 +167,7 @@ function Playlists() {
     if (loading) return <Skeleton />;
     if (error)
         return (
-            <p className="py-10 text-center text-sm text-rose-300">{error}</p>
+            <p className="py-10 text-center text-sm text-red-400">{error}</p>
         );
     if (!data?.playlists.length)
         return (
@@ -183,7 +183,7 @@ function Playlists() {
                     key={playlist.id}
                     type="button"
                     onClick={() => setOpen(playlist)}
-                    className="group rounded-2xl bg-white/[0.035] p-3 text-left transition hover:bg-white/[0.07]"
+                    className="group rounded-2xl bg-white/[0.035] p-3 text-left transition hover:bg-[var(--gc-l3)]"
                 >
                     <span className="relative block aspect-square overflow-hidden rounded-xl bg-white/5">
                         {playlist.cover_url ? (
@@ -197,7 +197,7 @@ function Playlists() {
                         ) : (
                             <ListMusic className="absolute inset-0 m-auto size-8 text-white/30" />
                         )}
-                        <span className="absolute right-2 bottom-2 flex size-10 translate-y-2 items-center justify-center rounded-full bg-spotify text-[#06140b] opacity-0 shadow-lg transition group-hover:translate-y-0 group-hover:opacity-100 [@media(hover:none)]:opacity-100">
+                        <span className="absolute right-2 bottom-2 flex size-10 translate-y-2 items-center justify-center rounded-full bg-spotify text-[#06140b] opacity-0 transition group-hover:translate-y-0 group-hover:opacity-100 [@media(hover:none)]:opacity-100">
                             <Play className="ml-0.5 size-4 fill-current" />
                         </span>
                     </span>
@@ -262,7 +262,7 @@ export function SpotifyPanel({
 
     if (!configured) {
         return (
-            <div className="glass flex flex-col items-center rounded-3xl px-6 py-14 text-center">
+            <div className="gc-solid flex flex-col items-center rounded-3xl px-6 py-14 text-center">
                 <SpotifyLogo className="size-14 opacity-60" />
                 <h3 className="mt-4 font-display text-lg font-semibold text-white">
                     {tr('Spotify ще не підключено до GameCon')}
@@ -288,7 +288,7 @@ export function SpotifyPanel({
     return (
         <div className="space-y-4">
             {account ? (
-                <section className="glass relative overflow-hidden rounded-3xl">
+                <section className="gc-solid relative overflow-hidden rounded-3xl">
                     <div className="pointer-events-none absolute -top-24 -right-16 size-72 rounded-full bg-spotify/15 blur-3xl" />
                     {/* Профіль зверху, налаштування — рядками списку, як в iOS: на вузькому екрані нічого не «їде». */}
                     <div className="relative flex items-center gap-4 p-4">
@@ -342,7 +342,7 @@ export function SpotifyPanel({
                             </p>
                         </div>
                     </div>
-                    <div className="relative border-t border-white/10">
+                    <div className="relative">
                         <label className="flex min-h-12 items-center gap-3 px-4 py-2 text-[15px] text-white/85">
                             <Radio className="size-5 shrink-0 text-spotify" />
                             <span className="min-w-0 flex-1">
@@ -384,7 +384,7 @@ export function SpotifyPanel({
                                     preserveScroll: true,
                                 })
                             }
-                            className="flex min-h-12 w-full items-center gap-3 border-t border-white/10 px-4 text-left text-[15px] text-rose-300 transition hover:bg-rose-500/10"
+                            className="flex min-h-12 w-full items-center gap-3 px-4 text-left text-[15px] text-red-400 transition hover:bg-red-500/10"
                         >
                             <Link2Off className="size-5 shrink-0" />
                             {tr('Від’єднати')}
@@ -392,7 +392,7 @@ export function SpotifyPanel({
                     </div>
                 </section>
             ) : (
-                <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#0f3d24] via-[#0b1d1a] to-[#120c2c] p-6 ring-1 ring-spotify/25 sm:p-8">
+                <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#0f3d24] via-[#0b1d1a] to-[#120c2c] p-6 ring-spotify/25 sm:p-8">
                     <div className="pointer-events-none absolute -top-20 -right-20 size-80 rounded-full bg-spotify/25 blur-3xl" />
                     <div className="relative flex flex-wrap items-center gap-6">
                         <SpotifyLogo className="size-16 drop-shadow-[0_0_24px_rgb(30_215_96/0.6)]" />
@@ -421,7 +421,7 @@ export function SpotifyPanel({
                         </div>
                         <a
                             href="/music/spotify/connect"
-                            className="inline-flex h-12 items-center gap-2 rounded-full bg-spotify px-6 text-sm font-bold text-[#04140a] shadow-[0_0_30px_-6px_rgb(30_215_96/0.9)] transition hover:scale-[1.03]"
+                            className="inline-flex h-12 items-center gap-2 rounded-full bg-spotify px-6 text-sm font-bold text-[#04140a] transition hover:scale-[1.03]"
                         >
                             <SpotifyLogo className="size-5 fill-[#04140a]" />
                             {tr('Увійти через Spotify')}
@@ -430,8 +430,8 @@ export function SpotifyPanel({
                 </section>
             )}
 
-            <section className="glass rounded-3xl p-3 sm:p-4">
-                <div className="mb-4 flex gap-1 overflow-x-auto rounded-xl bg-white/[0.04] p-1">
+            <section className="gc-solid rounded-3xl p-3 sm:p-4">
+                <div className="gc-solid-2 mb-4 flex gap-1 overflow-x-auto rounded-xl p-1">
                     {sections
                         .filter((s) => account || s.value === 'search')
                         .map((item) => (

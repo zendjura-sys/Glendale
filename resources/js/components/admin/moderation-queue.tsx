@@ -44,10 +44,10 @@ function kindLabel(kind: QueueItem['kind']): string {
 }
 
 const LEVEL_CLASS: Record<QueueItem['level'], string> = {
-    critical: 'bg-red-500/20 text-red-300',
+    critical: 'bg-red-500/20 text-red-400',
     high: 'bg-amber-400/15 text-amber-300',
-    medium: 'bg-sky-400/15 text-sky-300',
-    low: 'bg-white/[0.06] text-white/55',
+    medium: 'bg-sky-400/15 text-sky-400',
+    low: 'gc-solid-2 text-white/55',
 };
 
 /** Спільна черга модерації: усе, що чекає рішення, в порядку важливості. */
@@ -57,15 +57,12 @@ export function ModerationQueue({ items }: { items: QueueItem[] }) {
     const jump = (item: QueueItem) => {
         const node = document.getElementById(`mod-${item.kind}-${item.id}`);
         node?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        node?.classList.add('ring-2', 'ring-sky-400/60');
-        window.setTimeout(
-            () => node?.classList.remove('ring-2', 'ring-sky-400/60'),
-            1600,
-        );
+        node?.classList.add('ring-2', '');
+        window.setTimeout(() => node?.classList.remove('ring-2', ''), 1600);
     };
 
     return (
-        <section className="glass mb-6 rounded-2xl p-4 sm:p-5">
+        <section className="gc-solid mb-6 rounded-2xl p-4 sm:p-5">
             <h2 className="mb-1 flex items-center gap-2 font-display text-lg font-semibold text-white">
                 <AlertTriangle className="size-4 text-amber-300" />
                 {tr('Черга за пріоритетом')}
@@ -84,7 +81,7 @@ export function ModerationQueue({ items }: { items: QueueItem[] }) {
                             <button
                                 type="button"
                                 onClick={() => jump(item)}
-                                className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left hover:bg-white/[0.05]"
+                                className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left hover:bg-[var(--gc-l3)]"
                             >
                                 <span
                                     className={cn(

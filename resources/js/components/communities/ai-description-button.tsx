@@ -36,7 +36,7 @@ export function AiDescriptionButton({
             type="button"
             disabled={busy}
             onClick={write}
-            className="inline-flex h-7 items-center gap-1.5 rounded-lg px-2 text-xs font-medium text-gc-lilac-300 transition hover:bg-white/[0.06] disabled:opacity-60"
+            className="inline-flex h-7 items-center gap-1.5 rounded-lg px-2 text-xs font-medium text-sky-400 transition hover:bg-[var(--gc-l3)] disabled:opacity-60"
         >
             {busy ? (
                 <Loader2 className="size-3.5 animate-spin" />

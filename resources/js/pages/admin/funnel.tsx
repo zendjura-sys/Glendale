@@ -38,14 +38,14 @@ export default function AdminFunnel({
                             'h-9 rounded-xl px-3 text-sm',
                             days === d
                                 ? 'bg-primary text-white'
-                                : 'bg-white/[0.06] text-white/70 hover:text-white',
+                                : 'gc-solid-2 text-white/70 hover:text-white',
                         )}
                     >
                         {tr('{d} днів', { d })}
                     </button>
                 ))}
             />
-            <section className="glass space-y-3 rounded-2xl p-5">
+            <section className="gc-solid space-y-3 rounded-2xl p-5">
                 {steps.map((step, i) => {
                     const share = Math.round((step.count / top) * 100);
                     const prev = i > 0 ? steps[i - 1].count : null;
@@ -68,7 +68,7 @@ export default function AdminFunnel({
                                     {share}%
                                 </span>
                             </div>
-                            <div className="h-3 overflow-hidden rounded-full bg-white/[0.06]">
+                            <div className="gc-solid-2 h-3 overflow-hidden rounded-full">
                                 <div
                                     className="h-full rounded-full bg-sky-400"
                                     style={{ width: `${share}%` }}

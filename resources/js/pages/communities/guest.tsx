@@ -97,7 +97,7 @@ export default function CommunityGuest({
         <>
             <Head title={community.name} />
             <div className="space-y-4">
-                <section className="glass overflow-hidden rounded-2xl">
+                <section className="gc-solid overflow-hidden rounded-2xl">
                     <div className="relative h-32 sm:h-40">
                         {community.cover_url ? (
                             <img
@@ -162,7 +162,7 @@ export default function CommunityGuest({
 
                 {channels.length > 0 && (
                     <div className="flex flex-col gap-4 md:flex-row">
-                        <nav className="glass flex gap-1 overflow-x-auto rounded-2xl p-2 md:w-60 md:shrink-0 md:flex-col md:self-start">
+                        <nav className="gc-solid flex gap-1 overflow-x-auto rounded-2xl p-2 md:w-60 md:shrink-0 md:flex-col md:self-start">
                             {channels.map((item) => {
                                 const Icon =
                                     item.type === 'announcement'
@@ -178,7 +178,7 @@ export default function CommunityGuest({
                                             'flex shrink-0 items-center gap-2 rounded-lg px-2.5 py-2 text-sm transition',
                                             item.id === channel_id
                                                 ? 'bg-white/10 font-semibold text-white'
-                                                : 'text-white/60 hover:bg-white/[0.05] hover:text-white',
+                                                : 'text-white/60 hover:bg-[var(--gc-l3)] hover:text-white',
                                         )}
                                     >
                                         <Icon className="size-4 shrink-0 opacity-70" />
@@ -196,9 +196,9 @@ export default function CommunityGuest({
                         </nav>
 
                         {channel && (
-                            <section className="glass flex h-[min(70dvh,640px)] min-w-0 flex-1 flex-col overflow-clip rounded-2xl">
-                                <header className="flex items-center gap-3 border-b border-white/[0.06] px-4 py-3">
-                                    <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-gc-lilac-300">
+                            <section className="gc-solid flex h-[min(70dvh,640px)] min-w-0 flex-1 flex-col overflow-clip rounded-2xl">
+                                <header className="flex items-center gap-3 px-4 py-3">
+                                    <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-sky-400">
                                         {channel.type === 'announcement' ? (
                                             <Megaphone className="size-[18px]" />
                                         ) : (
@@ -236,7 +236,7 @@ export default function CommunityGuest({
                                 {can_write ? (
                                     <form
                                         onSubmit={send}
-                                        className="space-y-2 border-t border-white/[0.06] p-3"
+                                        className="space-y-2 p-3"
                                     >
                                         <input
                                             type="text"
@@ -300,7 +300,7 @@ export default function CommunityGuest({
                                         {(form.errors.name ||
                                             form.errors.body ||
                                             form.errors.website) && (
-                                            <p className="text-xs text-rose-300">
+                                            <p className="text-xs text-red-400">
                                                 {form.errors.name ??
                                                     form.errors.body ??
                                                     form.errors.website}
@@ -308,7 +308,7 @@ export default function CommunityGuest({
                                         )}
                                     </form>
                                 ) : (
-                                    <div className="flex items-center gap-2 border-t border-white/[0.06] px-4 py-3 text-sm text-white/55">
+                                    <div className="flex items-center gap-2 px-4 py-3 text-sm text-white/55">
                                         <MessageCircle className="size-4 shrink-0" />
                                         <span className="min-w-0 flex-1">
                                             {tr(
@@ -317,7 +317,7 @@ export default function CommunityGuest({
                                         </span>
                                         <Link
                                             href="/login"
-                                            className="shrink-0 font-semibold text-gc-lilac-300 hover:underline"
+                                            className="shrink-0 font-semibold text-sky-400 hover:underline"
                                         >
                                             {tr('Увійти')}
                                         </Link>

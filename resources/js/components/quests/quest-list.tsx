@@ -90,7 +90,7 @@ export function QuestList({ quests }: { quests: Quest[] }) {
                                 'flex size-9 shrink-0 items-center justify-center rounded-xl',
                                 quest.claimed
                                     ? 'bg-emerald-400/15 text-emerald-200'
-                                    : 'bg-primary/12 text-gc-lilac-400',
+                                    : 'bg-primary/12 text-sky-400',
                             )}
                         >
                             <Icon className="size-5" />
@@ -165,10 +165,10 @@ export function FeedQuests({ quests }: { quests: Quest[] }) {
     if (quests.every((q) => q.claimed)) return null;
 
     return (
-        <section className="glass rounded-2xl p-4">
+        <section className="gc-solid rounded-2xl p-4">
             <div className="mb-3 flex items-center justify-between gap-2 px-1">
                 <h2 className="flex items-center gap-2 font-display text-[13px] font-semibold text-white/90">
-                    <Target className="size-4 text-gc-lilac-400" />
+                    <Target className="size-4 text-sky-400" />
                     {tr('Завдання дня')}
                 </h2>
                 <Link

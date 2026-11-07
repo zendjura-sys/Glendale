@@ -205,7 +205,7 @@ export function GenreTile({
                     src={genre.cover_url}
                     alt=""
                     loading="lazy"
-                    className="absolute -right-3 -bottom-3 size-[55%] rotate-[22deg] rounded-md object-cover shadow-lg"
+                    className="absolute -right-3 -bottom-3 size-[55%] rotate-[22deg] rounded-md object-cover"
                 />
             )}
         </Link>

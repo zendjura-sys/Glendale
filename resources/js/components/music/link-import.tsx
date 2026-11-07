@@ -176,7 +176,7 @@ export function LinkImportPanel({
                         spellCheck={false}
                         className={cn(
                             'input-glass h-12 w-full rounded-xl pr-3 pl-10 text-sm text-white placeholder:text-white/30 focus:outline-none',
-                            error && 'ring-1 ring-rose-400/50',
+                            error && ' ',
                         )}
                     />
                 </label>
@@ -188,7 +188,7 @@ export function LinkImportPanel({
                 {error && (
                     <p
                         role="alert"
-                        className="flex items-start gap-1.5 text-sm text-rose-300"
+                        className="flex items-start gap-1.5 text-sm text-red-400"
                     >
                         <AlertCircle className="mt-0.5 size-4 shrink-0" />
                         {error}
@@ -234,12 +234,12 @@ export function LinkImportPanel({
                                     }
                                     transition={motionOr(reduce, RISE)}
                                     className={cn(
-                                        'rounded-2xl border p-3 transition-colors',
+                                        'rounded-2xl p-3 transition-colors',
                                         item.status === 'done'
-                                            ? 'border-emerald-400/20 bg-emerald-400/[0.05]'
+                                            ? 'bg-emerald-400/[0.05]'
                                             : item.status === 'failed'
-                                              ? 'border-rose-400/25 bg-rose-400/[0.05]'
-                                              : 'border-white/[0.07] bg-white/[0.04]',
+                                              ? 'bg-red-400/[0.05]'
+                                              : 'gc-solid-2',
                                     )}
                                 >
                                     <ImportRow
@@ -281,7 +281,7 @@ function ImportRow({
                     className={cn(
                         'mt-0.5 flex items-center gap-1.5 text-xs',
                         item.status === 'failed'
-                            ? 'text-rose-300'
+                            ? 'text-red-400'
                             : item.status === 'done'
                               ? 'text-emerald-300'
                               : 'text-white/50',
@@ -316,7 +316,7 @@ function ImportRow({
                     </div>
                 )}
                 {item.status === 'failed' && item.error && (
-                    <p className="mt-1 text-xs leading-relaxed text-rose-200/80">
+                    <p className="mt-1 text-xs leading-relaxed text-red-400/80">
                         {item.error}
                     </p>
                 )}
@@ -324,7 +324,7 @@ function ImportRow({
                     <button
                         type="button"
                         onClick={() => playQueue([track], 0)}
-                        className="mt-2 inline-flex h-8 items-center gap-1.5 rounded-full border border-white/15 px-3 text-xs font-semibold text-white/85 transition-colors hover:border-white/30 hover:text-white"
+                        className="mt-2 inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-xs font-semibold text-white/85 transition-colors hover:border-white/30 hover:text-white"
                     >
                         <Play className="size-3.5" />
                         {tr('Слухати')}

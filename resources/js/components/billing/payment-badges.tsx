@@ -110,7 +110,7 @@ export function PaymentBadges({ className }: { className?: string }) {
                     <li
                         key={key}
                         title={badge.label}
-                        className="flex h-8 min-w-12 items-center justify-center rounded-lg border border-white/10 bg-white/[0.05] px-2.5 text-white/80"
+                        className="gc-solid-2 flex h-8 min-w-12 items-center justify-center rounded-lg px-2.5 text-white/80"
                     >
                         {badge.mark()}
                         <span className="sr-only">{badge.label}</span>

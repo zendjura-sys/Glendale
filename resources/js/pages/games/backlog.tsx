@@ -87,7 +87,7 @@ export default function GameBacklog({ owner, mine, board, friends }: Props) {
                 <div className="min-w-0">
                     <h1 className="flex items-center gap-2 font-display text-2xl font-semibold text-white">
                         {mine && (
-                            <Gamepad2 className="size-6 shrink-0 text-gc-lilac-200" />
+                            <Gamepad2 className="size-6 shrink-0 text-sky-400" />
                         )}
                         {mine
                             ? tr('Мій беклог')
@@ -104,7 +104,7 @@ export default function GameBacklog({ owner, mine, board, friends }: Props) {
             </div>
 
             {mine && friends.length > 0 && (
-                <section className="glass mb-4 rounded-2xl p-4">
+                <section className="gc-solid mb-4 rounded-2xl p-4">
                     <h2 className="mb-3 px-1 text-[13px] font-semibold text-white/90">
                         {tr('Друзі зараз грають')}
                     </h2>
@@ -118,7 +118,7 @@ export default function GameBacklog({ owner, mine, board, friends }: Props) {
                                     href={`/games/${f.game.slug}`}
                                     className="group block"
                                 >
-                                    <span className="relative block aspect-[3/4] overflow-hidden rounded-xl bg-white/[0.04]">
+                                    <span className="gc-solid-2 relative block aspect-[3/4] overflow-hidden rounded-xl">
                                         <GameCover
                                             game={f.game}
                                             className="transition duration-500 group-hover:scale-105"
@@ -146,7 +146,7 @@ export default function GameBacklog({ owner, mine, board, friends }: Props) {
             {/* Телефон: перемикач колонок. */}
             <div
                 role="tablist"
-                className="mb-3 grid grid-cols-4 gap-1 rounded-xl bg-white/[0.04] p-1 md:hidden"
+                className="gc-solid-2 mb-3 grid grid-cols-4 gap-1 rounded-xl p-1 md:hidden"
             >
                 {BACKLOG_STATUSES.map((s) => {
                     const meta = BACKLOG_META[s];
@@ -181,7 +181,7 @@ export default function GameBacklog({ owner, mine, board, friends }: Props) {
                             key={s}
                             id={s}
                             className={cn(
-                                'glass min-w-0 rounded-2xl p-3',
+                                'gc-solid min-w-0 rounded-2xl p-3',
                                 tab !== s && 'hidden md:block',
                             )}
                         >
@@ -225,7 +225,7 @@ export default function GameBacklog({ owner, mine, board, friends }: Props) {
                                                               scale: 0.97,
                                                           }
                                                 }
-                                                className="group flex items-center gap-2.5 rounded-xl p-1.5 transition hover:bg-white/[0.04]"
+                                                className="group flex items-center gap-2.5 rounded-xl p-1.5 transition hover:bg-[var(--gc-l3)]"
                                             >
                                                 <Link
                                                     href={`/games/${item.game.slug}`}

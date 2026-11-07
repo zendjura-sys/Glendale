@@ -24,7 +24,7 @@ export function ArticleCardView({ article }: { article: ArticleCard }) {
     return (
         <Link
             href={`/articles/${article.slug}`}
-            className="glass group flex flex-col overflow-hidden rounded-2xl transition hover:bg-white/[0.06]"
+            className="gc-solid group flex flex-col overflow-hidden rounded-2xl transition hover:bg-[var(--gc-l3)]"
         >
             {article.cover ? (
                 <img
@@ -38,7 +38,7 @@ export function ArticleCardView({ article }: { article: ArticleCard }) {
             )}
             <div className="flex flex-1 flex-col gap-2 p-4">
                 {article.game && (
-                    <span className="text-xs font-medium text-gc-lilac-200">
+                    <span className="text-xs font-medium text-sky-400">
                         {article.game.name}
                     </span>
                 )}

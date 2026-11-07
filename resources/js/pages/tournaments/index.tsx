@@ -61,7 +61,7 @@ export default function TournamentsIndex({ status, tournaments }: Props) {
                         )}
                     />
                 ) : (
-                    <section className="glass divide-y divide-white/[0.06] rounded-xl p-2">
+                    <section className="gc-solid divide-y divide-white/[0.06] rounded-xl p-2">
                         {tournaments.map((tournament) => (
                             <TournamentRow
                                 key={tournament.id}

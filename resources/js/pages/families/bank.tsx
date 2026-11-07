@@ -610,7 +610,7 @@ function ManualPanel({
                 <button
                     type="button"
                     onClick={() => setOpen((v) => !v)}
-                    className="text-xs font-semibold text-sky-400 hover:text-sky-300"
+                    className="text-xs font-semibold text-sky-400 hover:text-sky-400"
                 >
                     {open ? tr('Згорнути') : tr('Розгорнути')}
                 </button>

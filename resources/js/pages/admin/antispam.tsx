@@ -126,9 +126,9 @@ export default function AdminAntispam({
             />
 
             <div className="grid gap-6 xl:grid-cols-2">
-                <section className="glass rounded-2xl p-4 sm:p-5">
+                <section className="gc-solid rounded-2xl p-4 sm:p-5">
                     <h2 className="mb-1 flex items-center gap-2 font-display text-lg font-semibold text-white">
-                        <Globe2 className="size-5 text-gc-lilac-300" />
+                        <Globe2 className="size-5 text-sky-400" />
                         {tr('Фільтр доменів')}
                     </h2>
                     <p className="mb-4 text-sm text-white/50">
@@ -141,7 +141,7 @@ export default function AdminAntispam({
                               )}
                     </p>
                     <form onSubmit={saveLinks} className="space-y-3">
-                        <div className="flex rounded-xl bg-white/[0.04] p-1">
+                        <div className="gc-solid-2 flex rounded-xl p-1">
                             {(
                                 [
                                     ['blocklist', tr('Чорний список')],
@@ -211,9 +211,9 @@ export default function AdminAntispam({
                     </form>
                 </section>
 
-                <section className="glass rounded-2xl p-4 sm:p-5">
+                <section className="gc-solid rounded-2xl p-4 sm:p-5">
                     <h2 className="mb-1 flex items-center gap-2 font-display text-lg font-semibold text-white">
-                        <Ban className="size-5 text-rose-300" />
+                        <Ban className="size-5 text-red-400" />
                         {tr('Бани за IP')}
                     </h2>
                     <p className="mb-4 text-sm text-white/50">
@@ -254,7 +254,7 @@ export default function AdminAntispam({
                                 banForm.processing ||
                                 banForm.data.ip.trim() === ''
                             }
-                            className="h-10 rounded-xl bg-rose-500/20 px-4 text-sm font-semibold text-rose-100 transition hover:bg-rose-500/30 disabled:opacity-50"
+                            className="h-10 rounded-xl bg-red-500/20 px-4 text-sm font-semibold text-red-400 transition hover:bg-red-500/30 disabled:opacity-50"
                         >
                             {tr('Забанити')}
                         </button>
@@ -268,7 +268,7 @@ export default function AdminAntispam({
                             className={cn(field, 'h-10 sm:col-span-3')}
                         />
                         {banForm.errors.ip && (
-                            <p className="text-sm text-rose-300 sm:col-span-3">
+                            <p className="text-sm text-red-400 sm:col-span-3">
                                 {banForm.errors.ip}
                             </p>
                         )}
@@ -283,12 +283,12 @@ export default function AdminAntispam({
                         {bans.map((row) => (
                             <li
                                 key={row.id}
-                                className="flex items-start gap-3 rounded-xl bg-white/[0.04] p-3"
+                                className="gc-solid-2 flex items-start gap-3 rounded-xl p-3"
                             >
                                 {row.guest ? (
                                     <UserRound className="mt-0.5 size-4 shrink-0 text-white/45" />
                                 ) : (
-                                    <ShieldAlert className="mt-0.5 size-4 shrink-0 text-rose-300" />
+                                    <ShieldAlert className="mt-0.5 size-4 shrink-0 text-red-400" />
                                 )}
                                 <div className="min-w-0 flex-1 text-sm">
                                     <p className="font-medium text-white">
@@ -330,7 +330,7 @@ export default function AdminAntispam({
                                             { preserveScroll: true },
                                         )
                                     }
-                                    className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-xs text-white/60 transition hover:bg-white/[0.06] hover:text-white"
+                                    className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-xs text-white/60 transition hover:bg-[var(--gc-l3)] hover:text-white"
                                 >
                                     <ShieldOff className="size-3.5" />
                                     {tr('Зняти')}
@@ -341,9 +341,9 @@ export default function AdminAntispam({
                 </section>
             </div>
 
-            <section className="glass mt-6 rounded-2xl p-4 sm:p-5">
+            <section className="gc-solid mt-6 rounded-2xl p-4 sm:p-5">
                 <h2 className="mb-1 flex items-center gap-2 font-display text-lg font-semibold text-white">
-                    <Search className="size-5 text-gc-lilac-300" />
+                    <Search className="size-5 text-sky-400" />
                     {tr('Журнал IP')}
                 </h2>
                 <p className="mb-4 text-sm text-white/50">
@@ -418,7 +418,7 @@ export default function AdminAntispam({
                                     )}
                                     <span className="ml-auto">
                                         {row.banned ? (
-                                            <span className="text-xs text-rose-300">
+                                            <span className="text-xs text-red-400">
                                                 {tr('забанено')}
                                             </span>
                                         ) : (
@@ -428,7 +428,7 @@ export default function AdminAntispam({
                                                     onClick={() =>
                                                         banAddress(row.ip)
                                                     }
-                                                    className="text-xs text-white/50 hover:text-rose-300"
+                                                    className="text-xs text-white/50 hover:text-red-400"
                                                 >
                                                     {tr('Забанити на 30 днів')}
                                                 </button>
@@ -471,7 +471,7 @@ export default function AdminAntispam({
                                     </span>
                                 )}
                                 {row.banned && (
-                                    <span className="ml-auto text-xs text-rose-300">
+                                    <span className="ml-auto text-xs text-red-400">
                                         {tr('акаунт заблоковано')}
                                     </span>
                                 )}
@@ -481,9 +481,9 @@ export default function AdminAntispam({
                 )}
             </section>
 
-            <section className="glass mt-6 rounded-2xl p-4 sm:p-5">
+            <section className="gc-solid mt-6 rounded-2xl p-4 sm:p-5">
                 <h2 className="mb-3 flex items-center gap-2 font-display text-lg font-semibold text-white">
-                    <History className="size-5 text-gc-lilac-300" />
+                    <History className="size-5 text-sky-400" />
                     {tr('Що зупинив антиспам')}
                 </h2>
                 {recent.length === 0 ? (
@@ -497,7 +497,7 @@ export default function AdminAntispam({
                                 key={row.id}
                                 className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2 text-sm"
                             >
-                                <span className="rounded-md bg-white/[0.06] px-2 py-0.5 text-xs text-white/70">
+                                <span className="gc-solid-2 rounded-md px-2 py-0.5 text-xs text-white/70">
                                     {row.kind}
                                 </span>
                                 <span className="text-white/80">

@@ -128,11 +128,11 @@ export default function PartyBoard({ parties, filters, options }: Props) {
         <>
             <Head title={tr('Пошук паті')} />
             <div className="space-y-5">
-                <section className="glass rounded-2xl p-5 sm:p-6">
+                <section className="gc-solid rounded-2xl p-5 sm:p-6">
                     <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
                         <div className="min-w-0 flex-1">
                             <h1 className="flex items-center gap-2 font-display text-2xl font-bold text-white">
-                                <UserRoundSearch className="size-6 text-gc-lilac-300" />
+                                <UserRoundSearch className="size-6 text-sky-400" />
                                 {tr('Пошук паті')}
                             </h1>
                             <p className="mt-1 text-sm text-white/50">
@@ -216,7 +216,7 @@ export default function PartyBoard({ parties, filters, options }: Props) {
                                     'inline-flex h-9 items-center gap-1.5 rounded-xl px-3 text-sm transition',
                                     filters.mic
                                         ? 'bg-gc-indigo text-white'
-                                        : 'bg-white/[0.06] text-white/70 hover:text-white',
+                                        : 'gc-solid-2 text-white/70 hover:text-white',
                                 )}
                             >
                                 <Mic className="size-4" />
@@ -290,7 +290,7 @@ export default function PartyBoard({ parties, filters, options }: Props) {
             </div>
 
             <Dialog open={creating} onOpenChange={setCreating}>
-                <DialogContent className="glass-strong max-h-[92dvh] overflow-y-auto rounded-dialog border-white/10 p-6 text-white sm:max-w-lg">
+                <DialogContent className="glass-strong max-h-[92dvh] overflow-y-auto rounded-dialog p-6 text-white sm:max-w-lg">
                     <DialogTitle className="font-display text-xl">
                         {tr('Шукаю паті')}
                     </DialogTitle>
@@ -311,7 +311,7 @@ export default function PartyBoard({ parties, filters, options }: Props) {
                             className={fieldClass}
                         />
                         {form.errors.title && (
-                            <p className="text-xs text-rose-300">
+                            <p className="text-xs text-red-400">
                                 {form.errors.title}
                             </p>
                         )}
@@ -381,7 +381,7 @@ export default function PartyBoard({ parties, filters, options }: Props) {
                                     ),
                                 )}
                             </select>
-                            <label className="flex h-11 min-w-0 items-center justify-between gap-2 rounded-xl bg-white/[0.04] px-3.5 text-sm text-white/70">
+                            <label className="gc-solid-2 flex h-11 min-w-0 items-center justify-between gap-2 rounded-xl px-3.5 text-sm text-white/70">
                                 {tr('Гравців')}
                                 <input
                                     type="number"
@@ -400,7 +400,7 @@ export default function PartyBoard({ parties, filters, options }: Props) {
                         </div>
                         {lfgOn && (
                             <div className="grid gap-2 sm:grid-cols-4">
-                                <label className="flex h-11 items-center gap-2 rounded-xl bg-white/[0.04] px-3.5 text-sm text-white/75">
+                                <label className="gc-solid-2 flex h-11 items-center gap-2 rounded-xl px-3.5 text-sm text-white/75">
                                     <input
                                         type="checkbox"
                                         checked={form.data.mic}
@@ -471,7 +471,7 @@ export default function PartyBoard({ parties, filters, options }: Props) {
                                 </select>
                             </div>
                         )}
-                        <div className="flex gap-1 rounded-xl bg-white/[0.04] p-1">
+                        <div className="gc-solid-2 flex gap-1 rounded-xl p-1">
                             {(
                                 [
                                     ['now', tr('Зараз')],
@@ -562,7 +562,7 @@ export default function PartyBoard({ parties, filters, options }: Props) {
                                                         ),
                                                     )
                                                 }
-                                                className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-white/[0.04] text-white/55 hover:text-white"
+                                                className="gc-solid-2 flex size-11 shrink-0 items-center justify-center rounded-xl text-white/55 hover:text-white"
                                             >
                                                 <X className="size-4" />
                                             </button>
@@ -578,7 +578,7 @@ export default function PartyBoard({ parties, filters, options }: Props) {
                                                 '',
                                             ])
                                         }
-                                        className="inline-flex items-center gap-1.5 text-xs font-medium text-gc-lilac-200 hover:text-white"
+                                        className="inline-flex items-center gap-1.5 text-xs font-medium text-sky-400 hover:text-white"
                                     >
                                         <Plus className="size-3.5" />
                                         {tr('Ще варіант')}
@@ -592,7 +592,7 @@ export default function PartyBoard({ parties, filters, options }: Props) {
                                     .map(([key, message]) => (
                                         <p
                                             key={key}
-                                            className="text-xs text-rose-300"
+                                            className="text-xs text-red-400"
                                         >
                                             {message}
                                         </p>
@@ -614,7 +614,7 @@ export default function PartyBoard({ parties, filters, options }: Props) {
                             />
                         )}
                         {form.errors.starts_at && (
-                            <p className="text-xs text-rose-300">
+                            <p className="text-xs text-red-400">
                                 {form.errors.starts_at}
                             </p>
                         )}
@@ -643,7 +643,7 @@ export default function PartyBoard({ parties, filters, options }: Props) {
                                         form.data.roles.length >= 5
                                     }
                                     aria-label={tr('Додати роль')}
-                                    className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-white/[0.06] text-white transition hover:bg-white/10 disabled:opacity-40"
+                                    className="gc-solid-2 flex size-11 shrink-0 items-center justify-center rounded-xl text-white transition hover:bg-white/10 disabled:opacity-40"
                                 >
                                     <Plus className="size-4" />
                                 </button>

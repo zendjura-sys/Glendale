@@ -81,7 +81,7 @@ export default function HelpIndex({ categories, popular }: Props) {
                         type="button"
                         onClick={() => setQuery('')}
                         aria-label={tr('Очистити')}
-                        className="absolute top-1/2 right-2 flex size-8 -translate-y-1/2 items-center justify-center rounded-lg text-white/50 hover:bg-white/[0.06] hover:text-white"
+                        className="absolute top-1/2 right-2 flex size-8 -translate-y-1/2 items-center justify-center rounded-lg text-white/50 hover:bg-[var(--gc-l3)] hover:text-white"
                     >
                         <X className="size-4" />
                     </button>

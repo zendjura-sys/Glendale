@@ -86,11 +86,11 @@ export default function Moments({
                 }
             />
             <div className="space-y-5">
-                <section className="glass rounded-2xl p-5 sm:p-6">
+                <section className="gc-solid rounded-2xl p-5 sm:p-6">
                     <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
                         <div className="min-w-0 flex-1">
                             <h1 className="flex items-center gap-2 font-display text-2xl font-bold text-white">
-                                <Clapperboard className="size-6 text-gc-lilac-300" />
+                                <Clapperboard className="size-6 text-sky-400" />
                                 {tr('Моменти')}
                             </h1>
                             <p className="mt-1 text-sm text-white/50">
@@ -109,7 +109,7 @@ export default function Moments({
                         </button>
                     </div>
                     <div className="mt-5 flex flex-col gap-2 lg:flex-row lg:items-center">
-                        <div className="-mx-1 scrollbar-none flex min-w-0 snap-x gap-1 overflow-x-auto rounded-xl bg-white/[0.04] p-1">
+                        <div className="gc-solid-2 -mx-1 scrollbar-none flex min-w-0 snap-x gap-1 overflow-x-auto rounded-xl p-1">
                             {TABS().map((tab) => (
                                 <button
                                     key={tab.value}
@@ -190,7 +190,7 @@ export default function Moments({
                                 onClick={() =>
                                     visit({ page: filters.page - 1 })
                                 }
-                                className="h-10 rounded-xl bg-white/[0.06] px-4 text-sm font-medium text-white hover:bg-white/10"
+                                className="gc-solid-2 h-10 rounded-xl px-4 text-sm font-medium text-white hover:bg-white/10"
                             >
                                 {tr('Назад')}
                             </button>
@@ -201,7 +201,7 @@ export default function Moments({
                                 onClick={() =>
                                     visit({ page: filters.page + 1 })
                                 }
-                                className="h-10 rounded-xl bg-white/[0.06] px-4 text-sm font-medium text-white hover:bg-white/10"
+                                className="gc-solid-2 h-10 rounded-xl px-4 text-sm font-medium text-white hover:bg-white/10"
                             >
                                 {tr('Ще моменти')}
                             </button>
@@ -211,7 +211,7 @@ export default function Moments({
             </div>
 
             <Dialog open={adding} onOpenChange={setAdding}>
-                <DialogContent className="glass-strong max-h-[92dvh] overflow-y-auto rounded-dialog border-white/10 p-6 text-white sm:max-w-lg">
+                <DialogContent className="glass-strong max-h-[92dvh] overflow-y-auto rounded-dialog p-6 text-white sm:max-w-lg">
                     <DialogTitle className="font-display text-xl">
                         {tr('Додати момент')}
                     </DialogTitle>
@@ -301,7 +301,7 @@ export default function Moments({
                             </select>
                         </div>
                         {(form.errors.url || form.errors.title) && (
-                            <p className="text-xs text-rose-300">
+                            <p className="text-xs text-red-400">
                                 {form.errors.url ?? form.errors.title}
                             </p>
                         )}

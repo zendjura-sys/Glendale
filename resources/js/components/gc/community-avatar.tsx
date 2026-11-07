@@ -55,8 +55,7 @@ export function CommunityAvatar({
             className={cn(
                 'relative inline-flex shrink-0',
                 sizes[size],
-                ring &&
-                    'ring-gradient p-[3px] shadow-[0_0_40px_-6px_rgb(124_92_255/0.8)]',
+                ring && 'ring-gradient p-[3px]',
                 className,
             )}
         >

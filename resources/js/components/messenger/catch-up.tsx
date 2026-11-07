@@ -66,7 +66,7 @@ export function CatchUpCard({
                             type="button"
                             onClick={() => setOpen(false)}
                             aria-label={tr('Закрити')}
-                            className="flex size-7 items-center justify-center rounded-lg text-white/50 hover:bg-white/[0.06] hover:text-white"
+                            className="flex size-7 items-center justify-center rounded-lg text-white/50 hover:bg-[var(--gc-l3)] hover:text-white"
                         >
                             <X className="size-4" />
                         </button>
@@ -78,7 +78,7 @@ export function CatchUpCard({
                         return (
                             <div key={section.key} className="mt-2.5">
                                 <p className="mb-1 flex items-center gap-1.5 text-[11px] font-medium text-white/45">
-                                    <meta.icon className="size-3.5 text-gc-lilac-300" />
+                                    <meta.icon className="size-3.5 text-sky-400" />
                                     {meta.title}
                                 </p>
                                 <ul className="space-y-0.5">
@@ -90,7 +90,7 @@ export function CatchUpCard({
                                                     setOpen(false);
                                                     onJump(item.id);
                                                 }}
-                                                className="w-full truncate rounded-lg px-2 py-1 text-left text-[13px] text-white/80 transition hover:bg-white/[0.06]"
+                                                className="w-full truncate rounded-lg px-2 py-1 text-left text-[13px] text-white/80 transition hover:bg-[var(--gc-l3)]"
                                             >
                                                 <span className="font-medium text-white">
                                                     {item.author}:

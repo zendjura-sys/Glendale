@@ -20,7 +20,7 @@ export default function ArticlesIndex({ articles, drafts, game }: Props) {
             <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end">
                 <div className="min-w-0 flex-1">
                     <h1 className="flex items-center gap-2 font-display text-2xl font-semibold text-white">
-                        <Newspaper className="size-6 shrink-0 text-gc-lilac-200" />
+                        <Newspaper className="size-6 shrink-0 text-sky-400" />
                         {game
                             ? tr('Статті про {game}', { game: game.name })
                             : tr('Статті')}
@@ -39,7 +39,7 @@ export default function ArticlesIndex({ articles, drafts, game }: Props) {
             </div>
 
             {drafts.length > 0 && (
-                <section className="glass mb-5 rounded-2xl p-4">
+                <section className="gc-solid mb-5 rounded-2xl p-4">
                     <h2 className="mb-2 text-sm font-semibold text-white/70">
                         {tr('Мої чернетки')}
                     </h2>
@@ -54,7 +54,7 @@ export default function ArticlesIndex({ articles, drafts, game }: Props) {
                                 </span>
                                 <Link
                                     href={`/articles/${d.slug}/edit`}
-                                    className="text-sm text-gc-lilac-200 hover:text-white"
+                                    className="text-sm text-sky-400 hover:text-white"
                                 >
                                     {tr('Продовжити')}
                                 </Link>
@@ -65,7 +65,7 @@ export default function ArticlesIndex({ articles, drafts, game }: Props) {
             )}
 
             {articles.data.length === 0 ? (
-                <p className="glass rounded-2xl p-6 text-center text-sm text-white/50">
+                <p className="gc-solid rounded-2xl p-6 text-center text-sm text-white/50">
                     {tr('Статей ще немає — напишіть першу.')}
                 </p>
             ) : (

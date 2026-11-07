@@ -77,8 +77,8 @@ function GamePicker({
                         className={cn(
                             'flex items-center gap-2.5 rounded-xl p-2 text-left transition',
                             value?.id === g.id
-                                ? 'bg-[var(--accent)]/20 ring-1 ring-[var(--accent)]'
-                                : 'bg-white/[0.03] hover:bg-white/[0.07]',
+                                ? 'bg-[var(--accent)]/20 ring-[var(--accent)]'
+                                : 'gc-solid-2 hover:bg-[var(--gc-l3)]',
                         )}
                     >
                         <span className="size-10 shrink-0 overflow-hidden rounded-lg bg-white/10">
@@ -106,7 +106,7 @@ function GamePicker({
                             </span>
                         </span>
                         {value?.id === g.id && (
-                            <Check className="size-4 text-gc-lilac-200" />
+                            <Check className="size-4 text-sky-400" />
                         )}
                     </button>
                 ))}
@@ -157,7 +157,7 @@ export default function ClanCreate({
         <>
             <Head title={tr('Новий клан')} />
             <h1 className="mb-4 flex items-center gap-2 font-display text-2xl font-semibold text-white">
-                <Swords className="size-6 text-gc-lilac-200" />{' '}
+                <Swords className="size-6 text-sky-400" />{' '}
                 {tr('Новий клан або гільдія')}
             </h1>
             <form
@@ -167,7 +167,7 @@ export default function ClanCreate({
                 }}
                 className="space-y-4"
             >
-                <section className="glass rounded-2xl p-4 sm:p-5">
+                <section className="gc-solid rounded-2xl p-4 sm:p-5">
                     <h2 className="mb-3 text-sm font-semibold text-white/80">
                         {tr('1. Тип')}
                     </h2>
@@ -181,8 +181,8 @@ export default function ClanCreate({
                                     className={cn(
                                         'rounded-2xl p-4 text-left transition',
                                         data.type === t
-                                            ? 'bg-gradient-brand text-white'
-                                            : 'bg-white/[0.04] text-white/70 hover:bg-white/[0.07]',
+                                            ? 'bg-sky-500 text-white'
+                                            : 'gc-solid-2 text-white/70 hover:bg-[var(--gc-l3)]',
                                     )}
                                 >
                                     <span className="block font-display text-base font-semibold">
@@ -198,13 +198,11 @@ export default function ClanCreate({
                     </div>
                 </section>
 
-                <section className="glass rounded-2xl p-4 sm:p-5">
+                <section className="gc-solid rounded-2xl p-4 sm:p-5">
                     <h2 className="mb-3 text-sm font-semibold text-white/80">
                         {tr('2. Гра')}{' '}
                         {game && (
-                            <span className="text-gc-lilac-200">
-                                — {game.name}
-                            </span>
+                            <span className="text-sky-400">— {game.name}</span>
                         )}
                     </h2>
                     <GamePicker
@@ -215,13 +213,13 @@ export default function ClanCreate({
                         }}
                     />
                     {errors.game_id && (
-                        <p className="mt-1 text-xs text-rose-300">
+                        <p className="mt-1 text-xs text-red-400">
                             {errors.game_id}
                         </p>
                     )}
                 </section>
 
-                <section className="glass space-y-3 rounded-2xl p-4 sm:p-5">
+                <section className="gc-solid space-y-3 rounded-2xl p-4 sm:p-5">
                     <h2 className="text-sm font-semibold text-white/80">
                         {tr('3. Назва й опис')}
                     </h2>
@@ -237,7 +235,7 @@ export default function ClanCreate({
                                 className={input}
                             />
                             {errors.name && (
-                                <p className="mt-1 text-xs text-rose-300">
+                                <p className="mt-1 text-xs text-red-400">
                                     {errors.name}
                                 </p>
                             )}
@@ -253,7 +251,7 @@ export default function ClanCreate({
                                 className={cn(input, 'uppercase')}
                             />
                             {errors.tag && (
-                                <p className="mt-1 text-xs text-rose-300">
+                                <p className="mt-1 text-xs text-red-400">
                                     {errors.tag}
                                 </p>
                             )}
@@ -285,7 +283,7 @@ export default function ClanCreate({
                     </label>
                 </section>
 
-                <section className="glass rounded-2xl p-4 sm:p-5">
+                <section className="gc-solid rounded-2xl p-4 sm:p-5">
                     <h2 className="mb-1 text-sm font-semibold text-white/80">
                         {tr('4. Що буде в клані')}
                     </h2>
@@ -306,16 +304,16 @@ export default function ClanCreate({
                                     className={cn(
                                         'flex items-start gap-3 rounded-2xl p-3 text-left transition',
                                         on
-                                            ? 'bg-[var(--accent)]/15 ring-1 ring-[var(--accent)]/60'
-                                            : 'bg-white/[0.03] hover:bg-white/[0.06]',
+                                            ? 'bg-[var(--accent)]/15 ring-[var(--accent)]/60'
+                                            : 'gc-solid-2 hover:bg-[var(--gc-l3)]',
                                     )}
                                 >
                                     <span
                                         className={cn(
-                                            'mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-md border',
+                                            'mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-md',
                                             on
-                                                ? 'border-transparent bg-gradient-brand'
-                                                : 'border-white/25',
+                                                ? 'border-transparent bg-sky-500'
+                                                : '',
                                         )}
                                     >
                                         {on && (
@@ -336,7 +334,7 @@ export default function ClanCreate({
                     </div>
                 </section>
 
-                <section className="glass rounded-2xl p-4 sm:p-5">
+                <section className="gc-solid rounded-2xl p-4 sm:p-5">
                     <h2 className="mb-3 text-sm font-semibold text-white/80">
                         {tr('5. Як вступати')}
                     </h2>
@@ -349,8 +347,8 @@ export default function ClanCreate({
                                 className={cn(
                                     'rounded-xl px-4 py-2 text-sm transition',
                                     data.join_mode === key
-                                        ? 'bg-gradient-brand text-white'
-                                        : 'bg-white/[0.05] text-white/65 hover:text-white',
+                                        ? 'bg-sky-500 text-white'
+                                        : 'gc-solid-2 text-white/65 hover:text-white',
                                 )}
                             >
                                 {label}

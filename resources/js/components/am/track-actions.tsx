@@ -338,7 +338,7 @@ export function TrackMenu({
                 align="end"
                 side={side}
                 sideOffset={side === 'top' ? 12 : undefined}
-                className="am z-[90] w-64 rounded-2xl border-[var(--am-sep)] bg-[var(--am-elevated)] p-1.5 text-[var(--am-label)] shadow-2xl"
+                className="am z-[90] w-64 rounded-2xl border-[var(--am-sep)] bg-[var(--am-elevated)] p-1.5 text-[var(--am-label)]"
             >
                 {local && (
                     <>

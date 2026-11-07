@@ -58,7 +58,7 @@ export function AccountCard({ data }: { data: AccountCardData }) {
                                             href={item.value}
                                             target="_blank"
                                             rel="noopener noreferrer nofollow"
-                                            className="text-gc-lilac-300 hover:underline"
+                                            className="text-sky-400 hover:underline"
                                         >
                                             {item.value.replace(
                                                 /^https?:\/\/(www\.)?/,
@@ -68,7 +68,7 @@ export function AccountCard({ data }: { data: AccountCardData }) {
                                     ) : key === 'email' ? (
                                         <a
                                             href={`mailto:${item.value}`}
-                                            className="text-gc-lilac-300 hover:underline"
+                                            className="text-sky-400 hover:underline"
                                         >
                                             {item.value}
                                         </a>

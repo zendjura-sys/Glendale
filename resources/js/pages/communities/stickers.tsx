@@ -106,7 +106,7 @@ export default function CommunityStickers({
                         }
                     />
                 ) : (
-                    <div className="glass grid grid-cols-4 gap-3 rounded-2xl p-4 sm:grid-cols-6">
+                    <div className="gc-solid grid grid-cols-4 gap-3 rounded-2xl p-4 sm:grid-cols-6">
                         {stickers.map((sticker) => (
                             <div key={sticker.id} className="group relative">
                                 <img

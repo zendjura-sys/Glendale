@@ -40,7 +40,7 @@ export default function ArticleShow({
     return (
         <>
             <Head title={article.title} />
-            <article className="glass overflow-hidden rounded-2xl">
+            <article className="gc-solid overflow-hidden rounded-2xl">
                 {article.cover && (
                     <img
                         src={article.cover}
@@ -57,7 +57,7 @@ export default function ArticleShow({
                     {article.game && (
                         <Link
                             href={`/articles?game=${article.game.slug}`}
-                            className="text-sm font-medium text-gc-lilac-200 hover:text-white"
+                            className="text-sm font-medium text-sky-400 hover:text-white"
                         >
                             {article.game.name}
                         </Link>
@@ -70,7 +70,7 @@ export default function ArticleShow({
                             {article.excerpt}
                         </p>
                     )}
-                    <div className="mt-5 flex flex-wrap items-center gap-3 border-b border-white/[0.07] pb-5 text-sm text-white/55">
+                    <div className="mt-5 flex flex-wrap items-center gap-3 pb-5 text-sm text-white/55">
                         <Link
                             href={`/${article.user.username}`}
                             className="flex items-center gap-2 text-white/85 hover:text-white"
@@ -126,7 +126,7 @@ export default function ArticleShow({
                                             `/articles/${article.slug}`,
                                         )
                                     }
-                                    className="rounded-lg p-2 hover:bg-white/10 hover:text-rose-300"
+                                    className="rounded-lg p-2 hover:bg-white/10 hover:text-red-400"
                                     aria-label={tr('Видалити')}
                                     title={tr('Видалити')}
                                 >
@@ -150,7 +150,7 @@ export default function ArticleShow({
                         {article.toc.length > 2 && (
                             <nav
                                 aria-label={tr('Зміст')}
-                                className="order-first rounded-2xl bg-white/[0.03] p-4 lg:sticky lg:top-24 lg:order-last lg:self-start"
+                                className="gc-solid-2 order-first rounded-2xl p-4 lg:sticky lg:top-24 lg:order-last lg:self-start"
                             >
                                 <p className="mb-2 flex items-center gap-2 text-xs font-semibold text-white/50">
                                     <ListTree className="size-4" />

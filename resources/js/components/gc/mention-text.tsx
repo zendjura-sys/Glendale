@@ -25,7 +25,7 @@ export function MentionText({
                 <Link
                     key={`${part}-${index}`}
                     href={`/${part.slice(1)}`}
-                    className="font-medium text-gc-lilac-300 hover:text-white"
+                    className="font-medium text-sky-400 hover:text-white"
                 >
                     {part}
                 </Link>
@@ -57,7 +57,7 @@ export function MentionText({
                             .replace(/[-_]+$/, '')
                             .toLowerCase(),
                     )}`}
-                    className="font-medium text-gc-lilac-300 hover:text-white"
+                    className="font-medium text-sky-400 hover:text-white"
                 >
                     {part}
                 </Link>

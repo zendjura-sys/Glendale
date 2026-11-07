@@ -2728,7 +2728,7 @@ html[data-text='xl'] {
     --gc-active: color-mix(in oklab, var(--primary) 18%, transparent);
 }
 /* Розділ «Музика» (.am) зберігає власну шкалу кутів iOS — і для діалогів, що відкриваються з нього. */
-:root[data-skin='gamecon']:has(.am) {
+:root[data-skin='gamecon']:has(.am:not(.am-in-site)) {
     --radius: 0.75rem;
     --radius-xl: 0.75rem;
     --radius-2xl: 0.875rem;
@@ -4097,7 +4097,7 @@ body:has([data-now-playing]) [data-slot='dialog-content'] {
     z-index: 85;
 }
 /* У розділі «Музика» тло сторінки — тло розділу (без сцен сайту). */
-html:has(.am) body {
+html:has(.am:not(.am-in-site)) body {
     background: var(--am-bg, #050913);
 }
 .am-glass {
@@ -6216,4 +6216,37 @@ html:root.gc-vk[data-theme] .gc-post [class*='border']:not(input, textarea) {
 }
 html:root.gc-vk[data-theme] .gc-post [class*='ring-']:not(:focus-visible) {
     --tw-ring-color: transparent;
+}
+
+/* «Музика» в загальній оболонці сайту: тло, шрифт і поверхні — як у решті розділів
+   (суцільні картки L1/L2, небесний акцент), без власного «скла» й iOS-тла. */
+.am.am-in-site {
+    --color-white: inherit;
+    --am-bg: transparent;
+    --am-bg2: var(--gc-l2);
+    --am-elevated: var(--gc-l1);
+    --am-fill: var(--gc-l2);
+    --am-fill2: var(--gc-l3);
+    --am-glass: var(--gc-l1);
+    --am-glass-rim: transparent;
+    --am-glass-shadow: none;
+    --am-accent: #38bdf8;
+    --am-tab-active: var(--gc-active);
+    background: transparent;
+    font-family: inherit;
+}
+html[data-theme='dark'] .am.am-in-site {
+    --am-bg: transparent;
+    --am-bg2: var(--gc-l2);
+    --am-elevated: var(--gc-l1);
+    --am-fill: var(--gc-l2);
+    --am-fill2: var(--gc-l3);
+    --am-glass: var(--gc-l1);
+    --am-glass-rim: transparent;
+    --am-glass-shadow: none;
+    --am-accent: #38bdf8;
+}
+.am.am-in-site .am-glass {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
 }

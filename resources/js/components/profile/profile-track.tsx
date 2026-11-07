@@ -65,7 +65,7 @@ export function ProfileTrack({
                     <button
                         type="button"
                         onClick={() => (current ? toggle() : playTrack(track))}
-                        className="group relative size-14 shrink-0 overflow-hidden rounded-xl bg-white/[0.06]"
+                        className="group gc-solid-2 relative size-14 shrink-0 overflow-hidden rounded-xl"
                         aria-label={
                             current && player.playing
                                 ? tr('Пауза')
@@ -121,7 +121,7 @@ export function ProfileTrack({
                     onClick={() => setPicking(true)}
                     className="flex w-full items-center gap-3 rounded-xl px-1 py-1 text-left text-sm text-white/60 hover:text-white"
                 >
-                    <span className="flex size-12 items-center justify-center rounded-xl bg-white/[0.06]">
+                    <span className="gc-solid-2 flex size-12 items-center justify-center rounded-xl">
                         <Music className="size-5" />
                     </span>
                     {tr('Додайте пісню — гості послухають її одним натиском.')}
@@ -160,11 +160,11 @@ export function ProfileTrack({
                                 type="button"
                                 onClick={() => save(Number(t.id))}
                                 className={cn(
-                                    'flex w-full items-center gap-3 rounded-xl p-2 text-left transition hover:bg-white/[0.06]',
+                                    'flex w-full items-center gap-3 rounded-xl p-2 text-left transition hover:bg-[var(--gc-l3)]',
                                     track?.key === t.key && 'bg-primary/15',
                                 )}
                             >
-                                <span className="size-10 shrink-0 overflow-hidden rounded-lg bg-white/[0.06]">
+                                <span className="gc-solid-2 size-10 shrink-0 overflow-hidden rounded-lg">
                                     {'cover_url' in t && t.cover_url && (
                                         <img
                                             src={t.cover_url}

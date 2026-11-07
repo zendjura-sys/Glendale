@@ -803,12 +803,12 @@ export function ChatView({
 
     return (
         <section className="flex min-h-0 min-w-0 flex-1 flex-col">
-            <header className="flex items-center gap-3 border-b border-white/[0.06] px-3 py-2.5 sm:px-4">
+            <header className="flex items-center gap-3 px-3 py-2.5 sm:px-4">
                 {channel ? (
                     <button
                         type="button"
                         onClick={channel.onBack}
-                        className="flex size-9 items-center justify-center rounded-xl text-white/70 hover:bg-white/[0.07] md:hidden"
+                        className="flex size-9 items-center justify-center rounded-xl text-white/70 hover:bg-[var(--gc-l3)] md:hidden"
                         aria-label={tr('Канали')}
                     >
                         <ChevronLeft className="size-5" />
@@ -816,7 +816,7 @@ export function ChatView({
                 ) : (
                     <Link
                         href="/messages"
-                        className="flex size-9 items-center justify-center rounded-xl text-white/70 hover:bg-white/[0.07] md:hidden"
+                        className="flex size-9 items-center justify-center rounded-xl text-white/70 hover:bg-[var(--gc-l3)] md:hidden"
                         aria-label={tr('Назад')}
                     >
                         <ChevronLeft className="size-5" />
@@ -835,7 +835,7 @@ export function ChatView({
                     className="flex min-w-0 flex-1 items-center gap-3 text-left"
                 >
                     {channel ? (
-                        <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-gc-lilac-300">
+                        <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-sky-400">
                             <channel.icon className="size-[18px]" />
                         </span>
                     ) : (
@@ -865,7 +865,7 @@ export function ChatView({
                         onClick={() =>
                             router.post(`/messages/${active.id}/unread`)
                         }
-                        className="flex size-9 items-center justify-center rounded-xl text-white/60 transition hover:bg-white/[0.07] hover:text-white max-sm:hidden"
+                        className="flex size-9 items-center justify-center rounded-xl text-white/60 transition hover:bg-[var(--gc-l3)] hover:text-white max-sm:hidden"
                         aria-label={tr('Непрочитане')}
                         title={tr('Позначити непрочитаним')}
                     >
@@ -890,7 +890,7 @@ export function ChatView({
                             'flex size-9 items-center justify-center rounded-xl transition max-sm:hidden',
                             active.share_receipts === false
                                 ? 'bg-white/10 text-white'
-                                : 'text-white/60 hover:bg-white/[0.07] hover:text-white',
+                                : 'text-white/60 hover:bg-[var(--gc-l3)] hover:text-white',
                         )}
                         aria-label={tr('Звіти про прочитання')}
                         title={
@@ -924,7 +924,7 @@ export function ChatView({
                             'flex size-9 items-center justify-center rounded-xl transition max-sm:hidden',
                             active.pinned
                                 ? 'bg-white/10 text-white'
-                                : 'text-white/60 hover:bg-white/[0.07] hover:text-white',
+                                : 'text-white/60 hover:bg-[var(--gc-l3)] hover:text-white',
                         )}
                         aria-label={
                             active.pinned ? tr('Відкріпити') : tr('Закріпити')
@@ -945,7 +945,7 @@ export function ChatView({
                     <button
                         type="button"
                         onClick={() => setFolderOpen((open) => !open)}
-                        className="flex size-9 items-center justify-center rounded-xl text-white/60 transition hover:bg-white/[0.07] hover:text-white max-sm:hidden"
+                        className="flex size-9 items-center justify-center rounded-xl text-white/60 transition hover:bg-[var(--gc-l3)] hover:text-white max-sm:hidden"
                         aria-label={tr('Папка')}
                         title={active.folder ? active.folder : tr('Папка')}
                     >
@@ -971,7 +971,7 @@ export function ChatView({
                             },
                         )
                     }
-                    className="flex size-9 items-center justify-center rounded-xl text-white/60 transition hover:bg-white/[0.07] hover:text-white"
+                    className="flex size-9 items-center justify-center rounded-xl text-white/60 transition hover:bg-[var(--gc-l3)] hover:text-white"
                     aria-label={
                         active.is_muted
                             ? tr('Увімкнути сповіщення')
@@ -1003,8 +1003,8 @@ export function ChatView({
                         className={cn(
                             'flex size-9 items-center justify-center rounded-xl transition',
                             inThisCall
-                                ? 'bg-rose-500 text-white hover:bg-rose-500/85'
-                                : 'text-white/60 hover:bg-white/[0.07] hover:text-white',
+                                ? 'bg-red-500 text-white hover:bg-red-500/85'
+                                : 'text-white/60 hover:bg-[var(--gc-l3)] hover:text-white',
                         )}
                         aria-label={
                             inThisCall
@@ -1040,7 +1040,7 @@ export function ChatView({
                                         : null,
                             })
                         }
-                        className="flex size-9 items-center justify-center rounded-xl text-white/60 transition hover:bg-white/[0.07] hover:text-white max-sm:hidden"
+                        className="flex size-9 items-center justify-center rounded-xl text-white/60 transition hover:bg-[var(--gc-l3)] hover:text-white max-sm:hidden"
                         aria-label={tr('Слухати музику разом')}
                         title={tr('Слухати музику разом')}
                     >
@@ -1050,7 +1050,7 @@ export function ChatView({
                 {(mediaPanelOn || backgroundsOn || !channel) && (
                     <DropdownMenu>
                         <DropdownMenuTrigger
-                            className="flex size-9 items-center justify-center rounded-xl text-white/60 transition outline-none hover:bg-white/[0.07] hover:text-white"
+                            className="flex size-9 items-center justify-center rounded-xl text-white/60 transition outline-none hover:bg-[var(--gc-l3)] hover:text-white"
                             aria-label={tr('Ще')}
                             title={tr('Ще')}
                         >
@@ -1197,7 +1197,7 @@ export function ChatView({
                     <button
                         type="button"
                         onClick={channel.onSettings}
-                        className="flex size-9 items-center justify-center rounded-xl text-white/60 transition hover:bg-white/[0.07] hover:text-white"
+                        className="flex size-9 items-center justify-center rounded-xl text-white/60 transition hover:bg-[var(--gc-l3)] hover:text-white"
                         aria-label={tr('Налаштування каналу')}
                         title={tr('Налаштування каналу')}
                     >
@@ -1208,7 +1208,7 @@ export function ChatView({
                     <button
                         type="button"
                         onClick={onOpenInfo}
-                        className="flex size-9 items-center justify-center rounded-xl text-white/60 transition hover:bg-white/[0.07] hover:text-white"
+                        className="flex size-9 items-center justify-center rounded-xl text-white/60 transition hover:bg-[var(--gc-l3)] hover:text-white"
                         aria-label={tr('Інформація про бесіду')}
                         title={tr('Інформація про бесіду')}
                     >
@@ -1218,7 +1218,7 @@ export function ChatView({
             </header>
 
             {call && !inThisCall && call.joined.length > 0 && (
-                <div className="flex items-center gap-3 border-b border-white/[0.06] bg-emerald-400/[0.07] px-3 py-2 sm:px-4">
+                <div className="flex items-center gap-3 bg-emerald-400/[0.07] px-3 py-2 sm:px-4">
                     <Phone className="size-4 shrink-0 text-emerald-300" />
                     <span className="min-w-0 flex-1 truncate text-sm text-white/80">
                         {isGroup
@@ -1248,7 +1248,7 @@ export function ChatView({
                 <button
                     type="button"
                     onClick={() => setNoteOpen(true)}
-                    className="flex w-full items-center gap-2 border-b border-white/[0.06] px-3 py-1.5 text-left text-xs text-white/55 sm:px-4"
+                    className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs text-white/55 sm:px-4"
                 >
                     <StickyNote className="size-3.5 shrink-0 text-amber-300" />
                     <span className="truncate">{note}</span>
@@ -1289,7 +1289,7 @@ export function ChatView({
                             <ConversationAvatar
                                 conversation={active}
                                 size="lg"
-                                className="mb-3 shadow-[0_0_50px_-10px_rgb(124_92_255/0.9)]"
+                                className="mb-3"
                             />
                             <p className="font-display text-base font-semibold text-white">
                                 {active.title}
@@ -1329,7 +1329,7 @@ export function ChatView({
                                             files: [],
                                         })
                                     }
-                                    className="glass mt-5 inline-flex items-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-medium text-white transition hover:border-white/20"
+                                    className="gc-solid mt-5 inline-flex items-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-medium text-white transition hover:border-white/20"
                                 >
                                     <Sparkles className="size-4 text-gc-gold" />
                                     {tr('Надіслати 👋')}
@@ -1420,7 +1420,7 @@ export function ChatView({
                             setNewBelow(0);
                             scrollToBottom(true);
                         }}
-                        className="absolute bottom-4 left-1/2 flex -translate-x-1/2 animate-rise items-center gap-1.5 rounded-control bg-gradient-brand px-4 py-2 text-xs font-semibold text-white shadow-[0_10px_30px_-8px_rgb(109_93_252/0.9)]"
+                        className="absolute bottom-4 left-1/2 flex -translate-x-1/2 animate-rise items-center gap-1.5 rounded-control bg-sky-500 px-4 py-2 text-xs font-semibold text-white"
                     >
                         <ArrowDown className="size-3.5" />
                         {newBelow}{' '}
@@ -1435,7 +1435,7 @@ export function ChatView({
 
             {folderOpen && (
                 <form
-                    className="flex items-center gap-2 border-t border-white/[0.06] px-4 py-3"
+                    className="flex items-center gap-2 px-4 py-3"
                     onSubmit={(event) => {
                         event.preventDefault();
                         router.put(
@@ -1466,7 +1466,7 @@ export function ChatView({
                 </form>
             )}
             {forwarding && (
-                <div className="border-t border-white/[0.06] bg-[#0b1020]/80 px-4 py-3">
+                <div className="bg-[#0b1020]/80 px-4 py-3">
                     <div className="mb-2 flex items-center justify-between gap-3">
                         <p className="text-sm font-semibold text-white">
                             {tr('Переслати')}
@@ -1509,7 +1509,7 @@ export function ChatView({
                                                 ),
                                             );
                                     }}
-                                    className="flex min-h-11 w-full items-center rounded-xl px-3 text-left text-sm text-white hover:bg-white/[0.06]"
+                                    className="flex min-h-11 w-full items-center rounded-xl px-3 text-left text-sm text-white hover:bg-[var(--gc-l3)]"
                                 >
                                     {item.title}
                                 </button>
@@ -1610,7 +1610,7 @@ export function ChatView({
 function DaySeparator({ iso }: { iso: string }) {
     return (
         <div className="sticky top-1 z-10 flex justify-center py-2">
-            <span className="gc-float-menu rounded-chip border border-white/[0.06] bg-[#0b1020]/80 px-3 py-1 text-xs font-medium text-white/60 backdrop-blur-xl">
+            <span className="gc-float-menu rounded-chip bg-[#0b1020]/80 px-3 py-1 text-xs font-medium text-white/60 backdrop-blur-xl">
                 {dayLabel(iso)}
             </span>
         </div>

@@ -110,8 +110,8 @@ export default function AdminFamilies({
 
             <VoiceTemplates templates={voice_templates} />
 
-            <div className="glass mb-4 flex flex-wrap items-center gap-2 rounded-2xl p-2.5">
-                <div className="scrollbar-none flex max-w-full overflow-x-auto rounded-xl bg-white/[0.04] p-1 text-sm">
+            <div className="gc-solid mb-4 flex flex-wrap items-center gap-2 rounded-2xl p-2.5">
+                <div className="gc-solid-2 scrollbar-none flex max-w-full overflow-x-auto rounded-xl p-1 text-sm">
                     {(Object.keys(statuses) as Status[]).map((s) => (
                         <button
                             key={s}
@@ -120,7 +120,7 @@ export default function AdminFamilies({
                             className={cn(
                                 'inline-flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 font-medium whitespace-nowrap transition',
                                 filters.status === s
-                                    ? 'bg-gradient-brand text-white'
+                                    ? 'bg-sky-500 text-white'
                                     : 'text-white/55 hover:text-white',
                             )}
                         >
@@ -146,7 +146,7 @@ export default function AdminFamilies({
                 {families.data.map((f) => (
                     <article
                         key={f.id}
-                        className="glass flex flex-wrap items-center gap-4 rounded-2xl p-4"
+                        className="gc-solid flex flex-wrap items-center gap-4 rounded-2xl p-4"
                     >
                         <FamilyLogo family={f} />
                         <div className="min-w-0 flex-1">
@@ -206,7 +206,7 @@ export default function AdminFamilies({
                                 </p>
                             )}
                             {f.status_reason && (
-                                <p className="mt-1 text-xs text-rose-200/80">
+                                <p className="mt-1 text-xs text-red-400/80">
                                     {tr('Причина:')} {f.status_reason}
                                 </p>
                             )}
@@ -228,7 +228,7 @@ export default function AdminFamilies({
                                 <button
                                     type="button"
                                     onClick={() => setStatus(f, 'suspended')}
-                                    className="inline-flex h-9 items-center gap-1.5 rounded-xl px-3 text-sm text-rose-300 hover:bg-rose-500/10"
+                                    className="inline-flex h-9 items-center gap-1.5 rounded-xl px-3 text-sm text-red-400 hover:bg-red-500/10"
                                 >
                                     <Ban className="size-4" />{' '}
                                     {tr('Призупинити')}
@@ -238,7 +238,7 @@ export default function AdminFamilies({
                     </article>
                 ))}
                 {families.data.length === 0 && (
-                    <div className="glass rounded-2xl px-6 py-14 text-center text-sm text-white/40">
+                    <div className="gc-solid rounded-2xl px-6 py-14 text-center text-sm text-white/40">
                         {tr('Сімей у цьому статусі немає')}
                     </div>
                 )}

@@ -33,7 +33,7 @@ export function AchievementProgress({ data }: { data: AchievementGame }) {
                     {data.unlocked}/{data.total}
                 </span>
             </div>
-            <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
+            <div className="gc-solid-2 mt-1.5 h-1.5 overflow-hidden rounded-full">
                 <div
                     className="h-full rounded-full bg-amber-300/80"
                     style={{ width: `${percent}%` }}
@@ -55,7 +55,7 @@ export function AchievementProgress({ data }: { data: AchievementGame }) {
                                     loading="lazy"
                                 />
                             ) : (
-                                <span className="flex size-9 items-center justify-center rounded-lg bg-white/[0.06]">
+                                <span className="gc-solid-2 flex size-9 items-center justify-center rounded-lg">
                                     <Trophy className="size-4 text-amber-300" />
                                 </span>
                             )}

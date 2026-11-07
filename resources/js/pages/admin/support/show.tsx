@@ -78,7 +78,7 @@ export default function AdminSupportTicket({
             </Link>
             <div className="grid gap-4 lg:grid-cols-[1fr_300px]">
                 <div className="min-w-0 space-y-4">
-                    <div className="glass rounded-2xl p-4 sm:p-5">
+                    <div className="gc-solid rounded-2xl p-4 sm:p-5">
                         <div className="flex flex-wrap items-start justify-between gap-3">
                             <div className="min-w-0">
                                 <h1 className="font-display text-lg font-semibold text-white">
@@ -94,7 +94,7 @@ export default function AdminSupportTicket({
                                                 href={ticket.url}
                                                 target="_blank"
                                                 rel="noreferrer"
-                                                className="inline-flex items-center gap-1 text-gc-lilac-300 hover:underline"
+                                                className="inline-flex items-center gap-1 text-sky-400 hover:underline"
                                             >
                                                 {tr('сторінка')}{' '}
                                                 <ExternalLink className="size-3" />
@@ -112,8 +112,8 @@ export default function AdminSupportTicket({
 
                     <div
                         className={cn(
-                            'glass space-y-3 rounded-2xl p-4',
-                            form.data.internal && 'ring-1 ring-amber-300/30',
+                            'gc-solid space-y-3 rounded-2xl p-4',
+                            form.data.internal && ' ',
                         )}
                     >
                         <div className="scrollbar-none flex gap-2 overflow-x-auto">
@@ -130,7 +130,7 @@ export default function AdminSupportTicket({
                                         )
                                     }
                                     title={t}
-                                    className="h-8 max-w-56 shrink-0 truncate rounded-lg bg-white/[0.06] px-3 text-xs text-white/70 hover:text-white"
+                                    className="gc-solid-2 h-8 max-w-56 shrink-0 truncate rounded-lg px-3 text-xs text-white/70 hover:text-white"
                                 >
                                     {t}
                                 </button>
@@ -159,7 +159,7 @@ export default function AdminSupportTicket({
                                     form.setData('files', files)
                                 }
                             />
-                            <label className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-xl bg-white/[0.04] px-3 text-sm text-white/70">
+                            <label className="gc-solid-2 inline-flex h-10 cursor-pointer items-center gap-2 rounded-xl px-3 text-sm text-white/70">
                                 <input
                                     type="checkbox"
                                     checked={form.data.internal}
@@ -207,7 +207,7 @@ export default function AdminSupportTicket({
                 </div>
 
                 <aside className="space-y-4">
-                    <div className="glass rounded-2xl p-4">
+                    <div className="gc-solid rounded-2xl p-4">
                         <Link
                             href={`/${requester.username}`}
                             className="flex items-center gap-3"
@@ -258,13 +258,13 @@ export default function AdminSupportTicket({
                                 </dd>
                             </div>
                             {requester.banned && (
-                                <p className="text-red-300">
+                                <p className="text-red-400">
                                     {tr('Заблоковано')}
                                 </p>
                             )}
                         </dl>
                     </div>
-                    <div className="glass space-y-3 rounded-2xl p-4 text-sm">
+                    <div className="gc-solid space-y-3 rounded-2xl p-4 text-sm">
                         <label className="block">
                             <span className="mb-1 block text-xs text-white/45">
                                 {tr('Статус')}
@@ -349,7 +349,7 @@ export default function AdminSupportTicket({
                         </label>
                     </div>
                     {ticket.rating && (
-                        <div className="glass rounded-2xl p-4 text-sm">
+                        <div className="gc-solid rounded-2xl p-4 text-sm">
                             <p className="flex items-center gap-1 text-amber-200">
                                 {Array.from(
                                     { length: ticket.rating },

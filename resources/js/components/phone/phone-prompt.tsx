@@ -63,7 +63,7 @@ export function PhonePrompt() {
                         type="button"
                         onClick={close}
                         aria-label={tr('Закрити')}
-                        className="flex size-9 items-center justify-center rounded-full text-white/50 hover:bg-white/[0.06] hover:text-white"
+                        className="flex size-9 items-center justify-center rounded-full text-white/50 hover:bg-[var(--gc-l3)] hover:text-white"
                     >
                         <X className="size-5" />
                     </button>

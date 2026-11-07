@@ -229,7 +229,7 @@ export default function Alerts(props: {
         <>
             <Head title={tr('Мапа тривог')} />
             <div className="space-y-4">
-                <header className="glass rounded-2xl p-5">
+                <header className="gc-solid rounded-2xl p-5">
                     <div className="flex flex-wrap items-start gap-4">
                         <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-red-500/15">
                             <Siren className="size-6 text-red-400" />
@@ -273,7 +273,7 @@ export default function Alerts(props: {
                                     </span>
                                 )}
                                 {state.ballistic_threat && (
-                                    <span className="inline-flex items-center gap-1.5 rounded-chip bg-red-500/20 px-3 py-1 text-xs font-semibold text-red-700 dark:text-red-200">
+                                    <span className="inline-flex items-center gap-1.5 rounded-chip bg-red-500/20 px-3 py-1 text-xs font-semibold text-red-700 dark:text-red-400">
                                         <Rocket className="size-3.5" />
                                         {tr('Загроза балістики')}
                                     </span>
@@ -291,7 +291,7 @@ export default function Alerts(props: {
 
                 <section
                     className={cn(
-                        'glass rounded-2xl p-5',
+                        'gc-solid rounded-2xl p-5',
                         mine?.active && 'bg-red-500/10',
                     )}
                 >
@@ -321,7 +321,7 @@ export default function Alerts(props: {
                                     className={cn(
                                         'mt-2 text-sm font-semibold',
                                         mine.active
-                                            ? 'text-red-300'
+                                            ? 'text-red-400'
                                             : 'text-emerald-300',
                                     )}
                                 >
@@ -353,7 +353,7 @@ export default function Alerts(props: {
                             className={cn(
                                 'inline-flex h-11 items-center gap-2 rounded-xl px-3 text-sm transition',
                                 sound
-                                    ? 'bg-red-500/15 text-red-100'
+                                    ? 'bg-red-500/15 text-red-400'
                                     : 'bg-white/6 text-white/70 hover:bg-white/10',
                             )}
                             title={tr(
@@ -390,7 +390,7 @@ export default function Alerts(props: {
                 </section>
 
                 <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
-                    <section className="glass rounded-2xl p-3 sm:p-5">
+                    <section className="gc-solid rounded-2xl p-3 sm:p-5">
                         <div className="mb-3 flex flex-wrap items-center gap-2">
                             <Layers
                                 className="size-4 text-white/50"
@@ -444,7 +444,7 @@ export default function Alerts(props: {
                             type="button"
                             onClick={() => setLegendOpen((v) => !v)}
                             aria-expanded={legendOpen}
-                            className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-white/10 px-3 py-1 text-xs text-white/70 sm:hidden"
+                            className="mt-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs text-white/70 sm:hidden"
                         >
                             <ListTree className="size-3.5" />
                             {tr('Легенда')}
@@ -463,7 +463,7 @@ export default function Alerts(props: {
                                             className="inline-flex items-center gap-1.5"
                                         >
                                             <span
-                                                className="size-2.5 rounded-sm border"
+                                                className="size-2.5 rounded-sm"
                                                 style={{
                                                     background:
                                                         AIR_RAID_SCALE_COLORS[
@@ -526,7 +526,7 @@ export default function Alerts(props: {
                                     href={state.attribution.url}
                                     target="_blank"
                                     rel="noopener"
-                                    className="text-sky-300 hover:underline"
+                                    className="text-sky-400 hover:underline"
                                 >
                                     {state.attribution.text}
                                 </a>
@@ -540,7 +540,7 @@ export default function Alerts(props: {
                     </section>
 
                     <aside className="space-y-4">
-                        <section className="glass rounded-2xl p-4">
+                        <section className="gc-solid rounded-2xl p-4">
                             <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-white">
                                 <Siren className="size-4 text-red-400" />
                                 {tr('Тривога зараз')}
@@ -592,9 +592,9 @@ export default function Alerts(props: {
                             </ul>
                         </section>
 
-                        <section className="glass rounded-2xl p-4">
+                        <section className="gc-solid rounded-2xl p-4">
                             <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-white">
-                                <Radar className="size-4 text-sky-300" />
+                                <Radar className="size-4 text-sky-400" />
                                 {tr('Цілі в повітрі')}
                             </h2>
                             {state.threats.length === 0 && (
@@ -634,7 +634,7 @@ export default function Alerts(props: {
                         </section>
 
                         {state.feed.length > 0 && (
-                            <section className="glass rounded-2xl p-4">
+                            <section className="gc-solid rounded-2xl p-4">
                                 <h2 className="mb-3 text-sm font-semibold text-white">
                                     {tr('Зведення')}
                                 </h2>
@@ -655,14 +655,14 @@ export default function Alerts(props: {
                             </section>
                         )}
 
-                        <section className="glass rounded-2xl p-4">
+                        <section className="gc-solid rounded-2xl p-4">
                             <button
                                 type="button"
                                 onClick={() => setShowSources((v) => !v)}
                                 aria-expanded={showSources}
                                 className="flex w-full items-center gap-2 text-left text-sm font-semibold text-white"
                             >
-                                <ListTree className="size-4 text-sky-300" />
+                                <ListTree className="size-4 text-sky-400" />
                                 <span className="flex-1">{tr('Джерела')}</span>
                                 <span className="text-xs font-normal text-white/45">
                                     {props.sources.reduce(
@@ -701,7 +701,7 @@ export default function Alerts(props: {
                                                             href={`https://t.me/${c.name}`}
                                                             target="_blank"
                                                             rel="noopener noreferrer"
-                                                            className="text-sky-300 hover:underline"
+                                                            className="text-sky-400 hover:underline"
                                                         >
                                                             @{c.name}
                                                         </a>
@@ -723,7 +723,7 @@ export default function Alerts(props: {
                             )}
                         </section>
 
-                        <section className="glass rounded-2xl p-4">
+                        <section className="gc-solid rounded-2xl p-4">
                             <h2 className="mb-2 flex items-center gap-2 text-sm font-semibold text-white">
                                 <Phone className="size-4 text-emerald-300" />
                                 {tr('Інформація для гостей України')}

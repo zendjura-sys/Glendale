@@ -20,9 +20,9 @@ export function TomorrowCard({ events }: { events: TomorrowEvent[] }) {
     if (events.length === 0) return null;
 
     return (
-        <section className="glass rounded-2xl p-4">
+        <section className="gc-solid rounded-2xl p-4">
             <h2 className="mb-2 flex items-center gap-2 text-sm font-semibold text-white">
-                <CalendarClock className="size-4 text-gc-lilac-300" />
+                <CalendarClock className="size-4 text-sky-400" />
                 {tr('Завтра')}
             </h2>
             <ul className="space-y-1.5">
@@ -30,7 +30,7 @@ export function TomorrowCard({ events }: { events: TomorrowEvent[] }) {
                     <li key={event.key}>
                         <Link
                             href={event.where?.url ?? '/events'}
-                            className="flex items-center gap-3 rounded-2xl bg-white/[0.03] p-2.5 transition hover:bg-white/[0.06]"
+                            className="gc-solid-2 flex items-center gap-3 rounded-2xl p-2.5 transition hover:bg-[var(--gc-l3)]"
                         >
                             {event.image ? (
                                 <img
@@ -41,7 +41,7 @@ export function TomorrowCard({ events }: { events: TomorrowEvent[] }) {
                                     className="size-11 shrink-0 rounded-xl object-cover"
                                 />
                             ) : (
-                                <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-gc-indigo/15 text-sm font-semibold text-gc-lilac-300 tabular-nums">
+                                <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-gc-indigo/15 text-sm font-semibold text-sky-400 tabular-nums">
                                     {localTime(event.starts_at)}
                                 </span>
                             )}
@@ -75,7 +75,7 @@ export function ChronoSwitch({ onlyFriends }: { onlyFriends: boolean }) {
     return (
         <div
             title={tr('Строго за часом, без алгоритму')}
-            className="flex min-w-0 shrink-0 gap-0.5 rounded-xl bg-white/[0.05] p-0.5 text-xs"
+            className="gc-solid-2 flex min-w-0 shrink-0 gap-0.5 rounded-xl p-0.5 text-xs"
         >
             {options.map((option) => (
                 <button
@@ -133,7 +133,7 @@ export function LanguageFilter({
                         { preserveScroll: false },
                     );
                 }}
-                className="h-9 max-w-44 min-w-32 rounded-xl bg-white/[0.05] pr-7 pl-8 text-xs text-white/80"
+                className="gc-solid-2 h-9 max-w-44 min-w-32 rounded-xl pr-7 pl-8 text-xs text-white/80"
             >
                 <option value="">{tr('Усі мови')}</option>
                 {languages.map((code) => (

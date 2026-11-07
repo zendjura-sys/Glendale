@@ -14,7 +14,7 @@ const PRIORITY: Record<
     TicketCard['priority'],
     { label: () => string; className: string }
 > = {
-    urgent: { label: () => tr('Терміново'), className: 'text-red-300' },
+    urgent: { label: () => tr('Терміново'), className: 'text-red-400' },
     high: { label: () => tr('Високий'), className: 'text-amber-200' },
     normal: { label: () => tr('Звичайний'), className: 'text-white/50' },
     low: { label: () => tr('Низький'), className: 'text-white/35' },
@@ -79,7 +79,7 @@ export default function AdminSupport({
                         stats.rating ? `${stats.rating} ★` : '—',
                     ],
                 ].map(([label, value]) => (
-                    <div key={label} className="glass rounded-2xl p-4">
+                    <div key={label} className="gc-solid rounded-2xl p-4">
                         <p className="text-xs text-white/45">{label}</p>
                         <p className="mt-1 font-display text-xl font-semibold text-white tabular-nums">
                             {value}
@@ -87,7 +87,7 @@ export default function AdminSupport({
                     </div>
                 ))}
             </div>
-            <div className="glass mb-4 flex flex-wrap items-center gap-2 rounded-2xl p-2.5">
+            <div className="gc-solid mb-4 flex flex-wrap items-center gap-2 rounded-2xl p-2.5">
                 <form
                     onSubmit={(e) => {
                         e.preventDefault();
@@ -132,13 +132,13 @@ export default function AdminSupport({
                         'h-10 rounded-xl px-3.5 text-sm',
                         filters.mine
                             ? 'bg-gc-indigo text-white'
-                            : 'bg-white/[0.06] text-white/70',
+                            : 'gc-solid-2 text-white/70',
                     )}
                 >
                     {tr('Мої')}
                 </button>
             </div>
-            <div className="glass overflow-hidden rounded-2xl">
+            <div className="gc-solid overflow-hidden rounded-2xl">
                 {tickets.data.length === 0 ? (
                     <p className="px-5 py-10 text-center text-sm text-white/45">
                         {tr('Черга порожня.')}
@@ -149,7 +149,7 @@ export default function AdminSupport({
                             <li key={t.id}>
                                 <Link
                                     href={`/admin/support/${t.id}`}
-                                    className="flex items-center gap-3 px-4 py-3 transition hover:bg-white/[0.03]"
+                                    className="flex items-center gap-3 px-4 py-3 transition hover:bg-[var(--gc-l3)]"
                                 >
                                     <span
                                         className={cn(

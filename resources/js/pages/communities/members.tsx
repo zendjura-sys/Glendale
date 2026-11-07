@@ -147,12 +147,12 @@ export default function CommunityMembers({
         <>
             <Head title={tr('Учасники — {name}', { name: community.name })} />
             <div className="space-y-5">
-                <section className="glass relative overflow-hidden rounded-2xl p-5 sm:p-6">
+                <section className="gc-solid relative overflow-hidden rounded-2xl p-5 sm:p-6">
                     <div className="pointer-events-none absolute -top-24 right-0 size-72 rounded-full bg-gc-indigo/20 blur-3xl" />
                     <div className="relative flex items-center gap-4">
                         <Link
                             href={`/c/${community.slug}`}
-                            className="flex size-10 items-center justify-center rounded-xl bg-white/[0.05] text-white/70 transition hover:bg-white/10 hover:text-white"
+                            className="gc-solid-2 flex size-10 items-center justify-center rounded-xl text-white/70 transition hover:bg-white/10 hover:text-white"
                             aria-label={tr('Назад')}
                         >
                             <ArrowLeft className="size-5" />
@@ -172,7 +172,7 @@ export default function CommunityMembers({
                     </div>
 
                     <div className="relative mt-5 flex flex-col gap-3 md:flex-row">
-                        <div className="flex shrink-0 overflow-x-auto rounded-xl bg-white/[0.04] p-1">
+                        <div className="gc-solid-2 flex shrink-0 overflow-x-auto rounded-xl p-1">
                             {tabs.map((item) => (
                                 <Link
                                     key={item.value}
@@ -191,7 +191,7 @@ export default function CommunityMembers({
                                             'rounded-full px-1.5 text-[11px] leading-5',
                                             item.value === 'requests' &&
                                                 counts.requests > 0
-                                                ? 'bg-gradient-brand text-white'
+                                                ? 'bg-sky-500 text-white'
                                                 : 'bg-white/10 text-white/60',
                                         )}
                                     >
@@ -228,12 +228,12 @@ export default function CommunityMembers({
                         data="members"
                         loading={<ListSkeleton rows={3} card={false} />}
                         preserveUrl
-                        className="glass divide-y divide-white/[0.05] overflow-hidden rounded-2xl"
+                        className="gc-solid divide-y divide-white/[0.05] overflow-hidden rounded-2xl"
                     >
                         {members.data.map((member) => (
                             <div
                                 key={member.id}
-                                className="flex items-center gap-3 px-4 py-3 transition hover:bg-white/[0.02] sm:px-5"
+                                className="flex items-center gap-3 px-4 py-3 transition hover:bg-[var(--gc-l3)] sm:px-5"
                             >
                                 <Link href={`/${member.username}`}>
                                     <UserAvatar user={member} size="md" />
@@ -268,7 +268,7 @@ export default function CommunityMembers({
                                         )}
                                         {pointsOn &&
                                             (member.points ?? 0) !== 0 && (
-                                                <span className="text-gc-lilac-300">
+                                                <span className="text-sky-400">
                                                     {tr('{count} балів', {
                                                         count:
                                                             member.points ?? 0,
@@ -298,7 +298,7 @@ export default function CommunityMembers({
                                                                 options,
                                                             );
                                                     }}
-                                                    className="text-gc-lilac-300 hover:text-white"
+                                                    className="text-sky-400 hover:text-white"
                                                 >
                                                     {tr('± бали')}
                                                 </button>
@@ -314,7 +314,7 @@ export default function CommunityMembers({
                                     </p>
                                     {member.answers &&
                                         member.answers.length > 0 && (
-                                            <dl className="mt-2 space-y-1.5 rounded-xl bg-white/[0.04] p-2.5 text-xs">
+                                            <dl className="gc-solid-2 mt-2 space-y-1.5 rounded-xl p-2.5 text-xs">
                                                 {member.answers.map(
                                                     (item, i) => (
                                                         <div key={i}>
@@ -371,7 +371,7 @@ export default function CommunityMembers({
                                                     options,
                                                 )
                                             }
-                                            className="inline-flex size-9 items-center justify-center rounded-xl bg-white/[0.06] text-white/60 transition hover:bg-rose-500/15 hover:text-rose-200"
+                                            className="gc-solid-2 inline-flex size-9 items-center justify-center rounded-xl text-white/60 transition hover:bg-red-500/15 hover:text-red-400"
                                             aria-label={tr('Відхилити')}
                                         >
                                             <X className="size-4" />
@@ -380,12 +380,12 @@ export default function CommunityMembers({
                                 ) : (
                                     isAdmin && (
                                         <DropdownMenu>
-                                            <DropdownMenuTrigger className="rounded-full p-2 text-white/45 transition outline-none hover:bg-white/[0.06] hover:text-white">
+                                            <DropdownMenuTrigger className="rounded-full p-2 text-white/45 transition outline-none hover:bg-[var(--gc-l3)] hover:text-white">
                                                 <MoreHorizontal className="size-5" />
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent
                                                 align="end"
-                                                className="glass-strong w-60 rounded-2xl border-white/10 p-1.5 text-white"
+                                                className="glass-strong w-60 rounded-2xl p-1.5 text-white"
                                             >
                                                 <DropdownMenuItem
                                                     className="rounded-lg focus:bg-white/[0.06]"
@@ -456,12 +456,12 @@ export default function CommunityMembers({
                                                         )}
                                                         <DropdownMenuSeparator className="bg-white/5" />
                                                         <DropdownMenuItem
-                                                            className="rounded-lg text-rose-300 focus:bg-rose-500/10 focus:text-rose-200"
+                                                            className="rounded-lg text-red-400 focus:bg-red-500/10 focus:text-red-400"
                                                             onSelect={() =>
                                                                 remove(member)
                                                             }
                                                         >
-                                                            <UserMinus className="text-rose-300" />
+                                                            <UserMinus className="text-red-400" />
                                                             {tr('Виключити')}
                                                         </DropdownMenuItem>
                                                     </>

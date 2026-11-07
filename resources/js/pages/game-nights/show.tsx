@@ -76,7 +76,7 @@ export default function GameNightShow({ night }: { night: Night }) {
         const max = Math.max(1, ...list.map((o) => o.votes));
 
         return (
-            <section className="glass rounded-2xl p-4">
+            <section className="gc-solid rounded-2xl p-4">
                 <h2 className="mb-3 text-sm font-medium text-white/60">
                     {title}
                 </h2>
@@ -84,14 +84,14 @@ export default function GameNightShow({ night }: { night: Night }) {
                     {list.map((o) => (
                         <li
                             key={o.id}
-                            className="relative overflow-hidden rounded-xl bg-white/[0.04]"
+                            className="gc-solid-2 relative overflow-hidden rounded-xl"
                         >
                             <span
                                 className="absolute inset-y-0 left-0 bg-sky-500/15 transition-[width]"
                                 style={{ width: `${(o.votes / max) * 100}%` }}
                             />
                             <div className="relative flex items-center gap-3 px-3 py-2.5">
-                                <Icon className="size-4 text-sky-300" />
+                                <Icon className="size-4 text-sky-400" />
                                 <span className="min-w-0 flex-1 truncate text-sm text-white">
                                     {label(o)}
                                 </span>
@@ -155,7 +155,7 @@ export default function GameNightShow({ night }: { night: Night }) {
                     <ArrowLeft className="size-4" />
                     {tr('Ігрові вечори')}
                 </Link>
-                <section className="glass rounded-2xl p-5">
+                <section className="gc-solid rounded-2xl p-5">
                     <h1 className="font-display text-2xl font-semibold text-white">
                         {night.title}
                     </h1>
@@ -192,7 +192,7 @@ export default function GameNightShow({ night }: { night: Night }) {
                                             ? status === 'going'
                                                 ? 'bg-primary text-white'
                                                 : 'bg-white/15 text-white'
-                                            : 'bg-white/[0.06] text-white/70 hover:bg-white/[0.1]',
+                                            : 'gc-solid-2 text-white/70 hover:bg-white/[0.1]',
                                     )}
                                 >
                                     {status === 'going' ? (
@@ -227,7 +227,7 @@ export default function GameNightShow({ night }: { night: Night }) {
                                 confirm(tr('Скасувати вечір?')) &&
                                 router.delete(`/game-nights/${night.id}`)
                             }
-                            className="h-10 rounded-xl px-4 text-sm font-medium text-white/55 hover:text-rose-300"
+                            className="h-10 rounded-xl px-4 text-sm font-medium text-white/55 hover:text-red-400"
                         >
                             {tr('Скасувати')}
                         </button>
@@ -248,7 +248,7 @@ export default function GameNightShow({ night }: { night: Night }) {
                     </div>
                 )}
 
-                <section className="glass rounded-2xl p-4">
+                <section className="gc-solid rounded-2xl p-4">
                     <h2 className="mb-3 text-sm font-medium text-white/60">
                         {tr('Хто йде')}
                     </h2>
@@ -271,8 +271,8 @@ export default function GameNightShow({ night }: { night: Night }) {
                                         member.status === 'going'
                                             ? 'bg-emerald-500/15 text-emerald-200'
                                             : member.status === 'declined'
-                                              ? 'bg-white/[0.06] text-white/45'
-                                              : 'bg-sky-500/10 text-sky-200',
+                                              ? 'gc-solid-2 text-white/45'
+                                              : 'bg-sky-500/10 text-sky-400',
                                     )}
                                 >
                                     {STATUS[member.status]()}

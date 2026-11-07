@@ -101,8 +101,8 @@ function Chip({
                 'inline-flex shrink-0 items-center gap-1.5 rounded-lg font-medium whitespace-nowrap transition',
                 small ? 'h-8 px-3 text-xs' : 'h-9 px-3 text-sm',
                 active
-                    ? 'bg-gradient-brand text-white'
-                    : 'bg-white/[0.04] text-white/60 hover:bg-white/[0.08] hover:text-white',
+                    ? 'bg-sky-500 text-white'
+                    : 'gc-solid-2 text-white/60 hover:bg-[var(--gc-l3)] hover:text-white',
             )}
         >
             {children}
@@ -162,7 +162,7 @@ export default function GamesIndex({
             <div className="mb-4 flex flex-wrap items-end gap-3">
                 <div className="min-w-[16rem] flex-1">
                     <h1 className="flex items-center gap-2 font-display text-2xl font-semibold text-white">
-                        <Gamepad2 className="size-6 text-gc-lilac-200" />{' '}
+                        <Gamepad2 className="size-6 text-sky-400" />{' '}
                         {tr('Каталог ігор')}
                     </h1>
                     <p className="text-sm text-white/50">
@@ -175,43 +175,43 @@ export default function GamesIndex({
                 {backlogOn && signedIn && (
                     <Link
                         href="/games/backlog"
-                        className="inline-flex h-10 items-center gap-2 rounded-xl bg-white/[0.06] px-3.5 text-sm font-semibold text-white/80 transition hover:bg-white/10 hover:text-white"
+                        className="gc-solid-2 inline-flex h-10 items-center gap-2 rounded-xl px-3.5 text-sm font-semibold text-white/80 transition hover:bg-white/10 hover:text-white"
                     >
-                        <ListChecks className="size-4 text-sky-300" />
+                        <ListChecks className="size-4 text-sky-400" />
                         {tr('Мій беклог')}
                     </Link>
                 )}
                 {tierOn && signedIn && (
                     <Link
                         href="/tierlists"
-                        className="inline-flex h-10 items-center gap-2 rounded-xl bg-white/[0.06] px-3.5 text-sm font-semibold text-white/80 transition hover:bg-white/10 hover:text-white"
+                        className="gc-solid-2 inline-flex h-10 items-center gap-2 rounded-xl px-3.5 text-sm font-semibold text-white/80 transition hover:bg-white/10 hover:text-white"
                     >
-                        <LayoutList className="size-4 text-rose-300" />
+                        <LayoutList className="size-4 text-red-400" />
                         {tr('Тір-листи')}
                     </Link>
                 )}
                 {duelsOn && signedIn && (
                     <Link
                         href="/duels"
-                        className="inline-flex h-10 items-center gap-2 rounded-xl bg-white/[0.06] px-3.5 text-sm font-semibold text-white/80 transition hover:bg-white/10 hover:text-white"
+                        className="gc-solid-2 inline-flex h-10 items-center gap-2 rounded-xl px-3.5 text-sm font-semibold text-white/80 transition hover:bg-white/10 hover:text-white"
                     >
-                        <Swords className="size-4 text-violet-300" />
+                        <Swords className="size-4 text-sky-400" />
                         {tr('Дуелі')}
                     </Link>
                 )}
                 {configsOn && signedIn && (
                     <Link
                         href="/configs"
-                        className="inline-flex h-10 items-center gap-2 rounded-xl bg-white/[0.06] px-3.5 text-sm font-semibold text-white/80 transition hover:bg-white/10 hover:text-white"
+                        className="gc-solid-2 inline-flex h-10 items-center gap-2 rounded-xl px-3.5 text-sm font-semibold text-white/80 transition hover:bg-white/10 hover:text-white"
                     >
-                        <Crosshair className="size-4 text-sky-300" />
+                        <Crosshair className="size-4 text-sky-400" />
                         {tr('Конфіги й приціли')}
                     </Link>
                 )}
                 {nightsOn && signedIn && (
                     <Link
                         href="/game-nights"
-                        className="inline-flex h-10 items-center gap-2 rounded-xl bg-white/[0.06] px-3.5 text-sm font-semibold text-white/80 transition hover:bg-white/10 hover:text-white"
+                        className="gc-solid-2 inline-flex h-10 items-center gap-2 rounded-xl px-3.5 text-sm font-semibold text-white/80 transition hover:bg-white/10 hover:text-white"
                     >
                         <CalendarClock className="size-4 text-cyan-300" />
                         {tr('Ігровий вечір')}
@@ -220,7 +220,7 @@ export default function GamesIndex({
                 {awardsOn && signedIn && (
                     <Link
                         href="/games/awards"
-                        className="inline-flex h-10 items-center gap-2 rounded-xl bg-white/[0.06] px-3.5 text-sm font-semibold text-white/80 transition hover:bg-white/10 hover:text-white"
+                        className="gc-solid-2 inline-flex h-10 items-center gap-2 rounded-xl px-3.5 text-sm font-semibold text-white/80 transition hover:bg-white/10 hover:text-white"
                     >
                         <Crown className="size-4 text-amber-300" />
                         {tr('Гра року')}
@@ -229,16 +229,16 @@ export default function GamesIndex({
                 {trailersOn && signedIn && (
                     <Link
                         href="/games/trailers"
-                        className="inline-flex h-10 items-center gap-2 rounded-xl bg-white/[0.06] px-3.5 text-sm font-semibold text-white/80 transition hover:bg-white/10 hover:text-white"
+                        className="gc-solid-2 inline-flex h-10 items-center gap-2 rounded-xl px-3.5 text-sm font-semibold text-white/80 transition hover:bg-white/10 hover:text-white"
                     >
-                        <Clapperboard className="size-4 text-sky-300" />
+                        <Clapperboard className="size-4 text-sky-400" />
                         {tr('Трейлери')}
                     </Link>
                 )}
                 {triviaOn && signedIn && (
                     <Link
                         href="/games/trivia"
-                        className="inline-flex h-10 items-center gap-2 rounded-xl bg-white/[0.06] px-3.5 text-sm font-semibold text-white/80 transition hover:bg-white/10 hover:text-white"
+                        className="gc-solid-2 inline-flex h-10 items-center gap-2 rounded-xl px-3.5 text-sm font-semibold text-white/80 transition hover:bg-white/10 hover:text-white"
                     >
                         <Trophy className="size-4 text-amber-300" />
                         {tr('Вікторина дня')}
@@ -247,16 +247,16 @@ export default function GamesIndex({
                 {journalOn && signedIn && (
                     <Link
                         href="/journal"
-                        className="inline-flex h-10 items-center gap-2 rounded-xl bg-white/[0.06] px-3.5 text-sm font-semibold text-white/80 transition hover:bg-white/10 hover:text-white"
+                        className="gc-solid-2 inline-flex h-10 items-center gap-2 rounded-xl px-3.5 text-sm font-semibold text-white/80 transition hover:bg-white/10 hover:text-white"
                     >
-                        <BookOpen className="size-4 text-sky-300" />
+                        <BookOpen className="size-4 text-sky-400" />
                         {tr('Ігровий щоденник')}
                     </Link>
                 )}
                 {nickOn && signedIn && (
                     <Link
                         href="/tools/nicknames"
-                        className="inline-flex h-10 items-center gap-2 rounded-xl bg-white/[0.06] px-3.5 text-sm font-semibold text-white/80 transition hover:bg-white/10 hover:text-white"
+                        className="gc-solid-2 inline-flex h-10 items-center gap-2 rounded-xl px-3.5 text-sm font-semibold text-white/80 transition hover:bg-white/10 hover:text-white"
                     >
                         <WandSparkles className="size-4 text-amber-300" />
                         {tr('Генератор ніків')}
@@ -265,7 +265,7 @@ export default function GamesIndex({
                 {(giveawaysOn || dealsOn) && (
                     <Link
                         href="/games/deals"
-                        className="inline-flex h-10 items-center gap-2 rounded-xl bg-white/[0.06] px-3.5 text-sm font-semibold text-white/80 transition hover:bg-white/10 hover:text-white"
+                        className="gc-solid-2 inline-flex h-10 items-center gap-2 rounded-xl px-3.5 text-sm font-semibold text-white/80 transition hover:bg-white/10 hover:text-white"
                     >
                         <Gift className="size-4 text-emerald-300" />
                         {tr('Роздачі й знижки')}
@@ -273,7 +273,7 @@ export default function GamesIndex({
                 )}
             </div>
 
-            <div className="glass mb-4 space-y-3 rounded-2xl p-3">
+            <div className="gc-solid mb-4 space-y-3 rounded-2xl p-3">
                 {q && (
                     <button
                         type="button"
@@ -411,14 +411,14 @@ export default function GamesIndex({
                 )}
 
                 {/* A–Z: на телефоні — один рядок з прокруткою, на ширших екранах — переноситься. Літери без ігор неактивні. */}
-                <div className="-mx-1 flex [scrollbar-width:none] gap-1 overflow-x-auto border-t border-white/[0.06] px-1 pt-3 sm:flex-wrap">
+                <div className="-mx-1 flex [scrollbar-width:none] gap-1 overflow-x-auto px-1 pt-3 sm:flex-wrap">
                     <button
                         type="button"
                         onClick={() => visit({ letter: null })}
                         className={cn(
                             'h-8 shrink-0 rounded-lg px-2.5 text-xs font-semibold transition',
                             !filters.letter
-                                ? 'bg-gradient-brand text-white'
+                                ? 'bg-sky-500 text-white'
                                 : 'text-white/60 hover:bg-white/10',
                         )}
                     >
@@ -439,7 +439,7 @@ export default function GamesIndex({
                                 className={cn(
                                     'size-8 shrink-0 rounded-lg text-xs font-semibold transition disabled:cursor-default disabled:opacity-25',
                                     filters.letter === l
-                                        ? 'bg-gradient-brand text-white'
+                                        ? 'bg-sky-500 text-white'
                                         : 'text-white/70 hover:bg-white/10',
                                 )}
                             >
@@ -465,13 +465,13 @@ export default function GamesIndex({
                             <Link
                                 key={g.id}
                                 href={`/games/${g.slug}`}
-                                className="group relative block aspect-[4/5] overflow-hidden rounded-2xl border border-white/[0.08] bg-black/30 transition hover:border-white/20 sm:aspect-[4/3]"
+                                className="group relative block aspect-[4/5] overflow-hidden rounded-2xl bg-black/30 transition hover:border-white/20 sm:aspect-[4/3]"
                             >
                                 <GameCover
                                     game={g}
                                     className="absolute inset-0 transition duration-300 group-hover:opacity-90"
                                 />
-                                <div className="absolute inset-x-1.5 bottom-1.5 rounded-xl border border-white/15 bg-black/35 px-2.5 py-2 backdrop-blur-xl backdrop-saturate-150">
+                                <div className="absolute inset-x-1.5 bottom-1.5 rounded-xl bg-black/35 px-2.5 py-2 backdrop-blur-xl backdrop-saturate-150">
                                     <p className="line-clamp-2 text-[13px] leading-tight font-semibold text-white sm:text-sm">
                                         {g.name}
                                     </p>

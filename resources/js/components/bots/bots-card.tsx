@@ -69,7 +69,7 @@ function Toggle({
             role="switch"
             aria-checked={checked}
             onClick={() => onChange(!checked)}
-            className="flex w-full items-center justify-between gap-3 rounded-xl bg-white/[0.03] px-3.5 py-2.5 text-left text-sm text-white/80 transition hover:bg-white/[0.06]"
+            className="gc-solid-2 flex w-full items-center justify-between gap-3 rounded-xl px-3.5 py-2.5 text-left text-sm text-white/80 transition hover:bg-[var(--gc-l3)]"
         >
             <span className="min-w-0">{label}</span>
             <span
@@ -95,7 +95,7 @@ function Preview({ community }: { community: boolean }) {
         : ['📅 Події', '👥 Склад', '🙋 Я'];
 
     return (
-        <div className="rounded-2xl border border-white/[0.06] bg-black/20 p-3">
+        <div className="rounded-2xl bg-black/20 p-3">
             <div className="mb-2 text-[11px] font-medium text-white/35">
                 {tr('Так виглядає панель бота')}
             </div>
@@ -117,7 +117,7 @@ function Preview({ community }: { community: boolean }) {
                     <span className="rounded-lg bg-emerald-500/20 px-2.5 py-1 text-xs text-emerald-100">
                         ✅ {tr('Піду')}
                     </span>
-                    <span className="rounded-lg bg-rose-500/20 px-2.5 py-1 text-xs text-rose-100">
+                    <span className="rounded-lg bg-red-500/20 px-2.5 py-1 text-xs text-red-400">
                         ❌ {tr('Не піду')}
                     </span>
                     <span className="self-center text-xs text-white/40">
@@ -168,9 +168,9 @@ export function BotsCard({
 
     if (state === null) {
         return (
-            <section className="glass rounded-2xl p-5">
+            <section className="gc-solid rounded-2xl p-5">
                 <h2 className="flex items-center gap-2 font-display text-lg font-semibold text-white">
-                    <Megaphone className="size-5 text-gc-lilac-300" />
+                    <Megaphone className="size-5 text-sky-400" />
                     {tr('Боти Telegram і Discord')}
                 </h2>
                 {error ? (
@@ -246,7 +246,7 @@ export function BotsCard({
                         act('delete', `/bots/links/${linkId}`);
                     }
                 }}
-                className="inline-flex h-9 items-center gap-2 rounded-xl px-3 text-sm font-medium text-rose-200 transition hover:bg-rose-400/10 disabled:opacity-50"
+                className="inline-flex h-9 items-center gap-2 rounded-xl px-3 text-sm font-medium text-red-400 transition hover:bg-red-400/10 disabled:opacity-50"
             >
                 <Unplug className="size-4" />
                 {tr('Відключити')}
@@ -258,10 +258,10 @@ export function BotsCard({
     const dc = state.discord;
 
     return (
-        <section className="glass space-y-4 rounded-2xl p-5">
+        <section className="gc-solid space-y-4 rounded-2xl p-5">
             <div>
                 <h2 className="flex items-center gap-2 font-display text-lg font-semibold text-white">
-                    <Megaphone className="size-5 text-gc-lilac-300" />
+                    <Megaphone className="size-5 text-sky-400" />
                     {tr('Боти Telegram і Discord')}
                 </h2>
                 <p className="mt-1 text-sm text-white/55">
@@ -273,7 +273,7 @@ export function BotsCard({
             <Preview community={community} />
 
             <div className="grid gap-3 lg:grid-cols-2">
-                <div className="min-w-0 space-y-3 rounded-2xl bg-white/[0.03] p-4">
+                <div className="gc-solid-2 min-w-0 space-y-3 rounded-2xl p-4">
                     <div className="flex items-center gap-2 font-semibold text-white">
                         <TelegramMark /> Telegram
                     </div>
@@ -318,7 +318,7 @@ export function BotsCard({
                     )}
                 </div>
 
-                <div className="min-w-0 space-y-3 rounded-2xl bg-white/[0.03] p-4">
+                <div className="gc-solid-2 min-w-0 space-y-3 rounded-2xl p-4">
                     <div className="flex items-center gap-2 font-semibold text-white">
                         <DiscordMark /> Discord
                     </div>
@@ -398,9 +398,9 @@ export function BotsCard({
                             </label>
                             {dc.link.channel_id && flags(dc.link, dc.link.id)}
 
-                            <div className="space-y-2 rounded-xl border border-white/[0.06] p-3">
+                            <div className="space-y-2 rounded-xl p-3">
                                 <div className="flex items-center gap-2 text-sm font-medium text-white">
-                                    <Shield className="size-4 text-gc-lilac-300" />
+                                    <Shield className="size-4 text-sky-400" />
                                     {tr('Ролі за складом')}
                                 </div>
                                 <p className="text-xs text-white/45">
@@ -462,7 +462,7 @@ export function BotsCard({
                                     </label>
                                 ))}
                                 {dc.link.roles_error && (
-                                    <p className="text-xs text-rose-300">
+                                    <p className="text-xs text-red-400">
                                         {dc.link.roles_error}
                                     </p>
                                 )}
@@ -510,7 +510,7 @@ export function BotsCard({
                                             `/bots/links/${dc.link!.id}`,
                                         )
                                     }
-                                    className="text-sm text-rose-200 hover:text-rose-100"
+                                    className="text-sm text-red-400 hover:text-red-400"
                                 >
                                     {tr('Відключити')}
                                 </button>

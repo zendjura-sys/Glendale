@@ -114,7 +114,7 @@ export function ChatBackgroundDialog({
                 </div>
 
                 {canShare && (
-                    <div className="flex rounded-xl bg-white/[0.04] p-1">
+                    <div className="gc-solid-2 flex rounded-xl p-1">
                         {[
                             [false, tr('Для мене')],
                             [true, tr('Для всіх')],
@@ -142,7 +142,7 @@ export function ChatBackgroundDialog({
                         disabled={busy}
                         onClick={() => save({ preset: null, for_all: forAll })}
                         className={cn(
-                            'relative flex aspect-[3/4] flex-col items-center justify-center gap-1.5 rounded-xl bg-white/[0.04] text-xs text-white/60 transition hover:bg-white/[0.07]',
+                            'gc-solid-2 relative flex aspect-[3/4] flex-col items-center justify-center gap-1.5 rounded-xl text-xs text-white/60 transition hover:bg-[var(--gc-l3)]',
                             selected === null && 'ring-2 ring-primary',
                         )}
                     >
@@ -158,7 +158,7 @@ export function ChatBackgroundDialog({
                                 save({ preset: key, for_all: forAll })
                             }
                             className={cn(
-                                'relative aspect-[3/4] overflow-hidden rounded-xl bg-white/[0.03] transition',
+                                'gc-solid-2 relative aspect-[3/4] overflow-hidden rounded-xl transition',
                                 selected === key && 'ring-2 ring-primary',
                             )}
                         >
@@ -183,7 +183,7 @@ export function ChatBackgroundDialog({
                         disabled={busy}
                         onClick={() => file.current?.click()}
                         className={cn(
-                            'relative flex aspect-[3/4] flex-col items-center justify-center gap-1.5 rounded-xl bg-white/[0.04] text-xs text-white/60 transition hover:bg-white/[0.07]',
+                            'gc-solid-2 relative flex aspect-[3/4] flex-col items-center justify-center gap-1.5 rounded-xl text-xs text-white/60 transition hover:bg-[var(--gc-l3)]',
                             selected?.startsWith('img:') &&
                                 'ring-2 ring-primary',
                         )}

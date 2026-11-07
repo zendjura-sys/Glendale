@@ -8,7 +8,7 @@ export type TopRow = { user: UserCard; score: number; total: number };
 /** Найкращі за сьогодні — для вікторини дня й «Вгадай пісню». */
 export function Leaderboard({ rows }: { rows: TopRow[] }) {
     return (
-        <section className="glass rounded-2xl p-4">
+        <section className="gc-solid rounded-2xl p-4">
             <h2 className="mb-2 text-sm font-semibold text-white">
                 {tr('Найкращі сьогодні')}
             </h2>
@@ -22,7 +22,7 @@ export function Leaderboard({ rows }: { rows: TopRow[] }) {
                         <li key={row.user.id}>
                             <Link
                                 href={`/${row.user.username}`}
-                                className="flex items-center gap-3 rounded-xl px-2 py-1.5 hover:bg-white/[0.05]"
+                                className="flex items-center gap-3 rounded-xl px-2 py-1.5 hover:bg-[var(--gc-l3)]"
                             >
                                 <span className="w-5 text-right text-xs text-white/40 tabular-nums">
                                     {i + 1}

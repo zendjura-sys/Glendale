@@ -103,7 +103,7 @@ export default function AdminCommunities({
                         : tr('Групи та публічні сторінки мережі')
                 }
                 actions={
-                    <div className="glass flex rounded-xl p-1 text-sm">
+                    <div className="gc-solid flex rounded-xl p-1 text-sm">
                         {[
                             { label: tr('Активні'), value: false },
                             { label: tr('Кошик'), value: true },
@@ -115,7 +115,7 @@ export default function AdminCommunities({
                                 className={cn(
                                     'rounded-lg px-3.5 py-1.5 font-medium transition',
                                     filters.trashed === tab.value
-                                        ? 'bg-gradient-brand text-white'
+                                        ? 'bg-sky-500 text-white'
                                         : 'text-white/55 hover:text-white',
                                 )}
                             >
@@ -148,7 +148,7 @@ export default function AdminCommunities({
                 />
             </div>
 
-            <div className="glass mb-4 flex flex-wrap items-center gap-2 rounded-2xl p-2.5">
+            <div className="gc-solid mb-4 flex flex-wrap items-center gap-2 rounded-2xl p-2.5">
                 <form
                     onSubmit={submit}
                     className="relative min-w-[220px] flex-1"
@@ -177,7 +177,7 @@ export default function AdminCommunities({
                     <article
                         key={c.id}
                         className={cn(
-                            'glass flex items-center gap-4 rounded-2xl p-4',
+                            'gc-solid flex items-center gap-4 rounded-2xl p-4',
                             c.deleted_at && 'opacity-70',
                         )}
                     >
@@ -284,9 +284,9 @@ export default function AdminCommunities({
                                         )
                                     }
                                     className={cn(
-                                        'flex size-9 items-center justify-center rounded-xl transition hover:bg-white/[0.06]',
+                                        'flex size-9 items-center justify-center rounded-xl transition hover:bg-[var(--gc-l3)]',
                                         c.promoted
-                                            ? 'text-gc-lilac-300'
+                                            ? 'text-sky-400'
                                             : 'text-white/45',
                                     )}
                                     title={
@@ -317,7 +317,7 @@ export default function AdminCommunities({
                             <button
                                 type="button"
                                 onClick={() => remove(c)}
-                                className="flex size-9 items-center justify-center rounded-xl text-rose-300 transition hover:bg-rose-500/10"
+                                className="flex size-9 items-center justify-center rounded-xl text-red-400 transition hover:bg-red-500/10"
                                 title={
                                     c.deleted_at
                                         ? tr('Видалити назавжди')
@@ -330,7 +330,7 @@ export default function AdminCommunities({
                     </article>
                 ))}
                 {communities.data.length === 0 && (
-                    <div className="glass rounded-2xl px-6 py-14 text-center text-sm text-white/40">
+                    <div className="gc-solid rounded-2xl px-6 py-14 text-center text-sm text-white/40">
                         {tr('Спільнот не знайдено')}
                     </div>
                 )}

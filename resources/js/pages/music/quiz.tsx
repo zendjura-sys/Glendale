@@ -114,7 +114,7 @@ export default function MusicQuiz({
                 </header>
 
                 {!round || done ? (
-                    <section className="glass flex flex-col items-center gap-3 rounded-2xl p-8 text-center">
+                    <section className="gc-solid flex flex-col items-center gap-3 rounded-2xl p-8 text-center">
                         <Music2 className="size-10 text-primary" />
                         {finished && result && (
                             <p className="font-display text-3xl font-bold text-white">
@@ -136,7 +136,7 @@ export default function MusicQuiz({
                             key={index}
                             initial={reduce ? false : { opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
-                            className="glass space-y-3 rounded-2xl p-4"
+                            className="gc-solid space-y-3 rounded-2xl p-4"
                         >
                             <div className="flex items-center gap-3">
                                 <span className="text-sm text-white/50 tabular-nums">
@@ -172,7 +172,7 @@ export default function MusicQuiz({
                                                     ? 'bg-emerald-500/20 text-white'
                                                     : wrong
                                                       ? 'bg-red-500/20 text-white'
-                                                      : 'bg-white/[0.06] text-white/85 hover:bg-white/[0.1]',
+                                                      : 'gc-solid-2 text-white/85 hover:bg-white/[0.1]',
                                             )}
                                         >
                                             <span className="min-w-0 flex-1">

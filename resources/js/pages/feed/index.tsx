@@ -208,7 +208,7 @@ export default function Feed({
                                 <Link
                                     key={pick.href}
                                     href={pick.href}
-                                    className="glass shrink-0 rounded-2xl px-3 py-2 text-sm font-medium text-white"
+                                    className="gc-solid shrink-0 rounded-2xl px-3 py-2 text-sm font-medium text-white"
                                 >
                                     {pick.title}
                                 </Link>
@@ -216,12 +216,12 @@ export default function Feed({
                         </div>
                     )}
                     {(sameGame?.length ?? 0) > 0 && (
-                        <div className="glass flex gap-2 overflow-x-auto rounded-2xl p-3">
+                        <div className="gc-solid flex gap-2 overflow-x-auto rounded-2xl p-3">
                             {sameGame?.map((person) => (
                                 <Link
                                     key={person.id}
                                     href={`/${person.username}`}
-                                    className="min-w-[140px] rounded-xl bg-white/[0.04] px-3 py-2"
+                                    className="gc-solid-2 min-w-[140px] rounded-xl px-3 py-2"
                                 >
                                     <span className="block truncate text-sm font-medium text-white">
                                         {person.first_name}
@@ -234,7 +234,7 @@ export default function Feed({
                         </div>
                     )}
                     {(playingNow?.length ?? 0) > 0 && (
-                        <div className="glass flex gap-2 overflow-x-auto rounded-2xl p-3">
+                        <div className="gc-solid flex gap-2 overflow-x-auto rounded-2xl p-3">
                             {playingNow?.map((person) => (
                                 <Link
                                     key={person.id}
@@ -242,14 +242,14 @@ export default function Feed({
                                         person.playing?.url ||
                                         `/${person.username}`
                                     }
-                                    className="flex min-w-[140px] items-center gap-2 rounded-xl bg-white/[0.04] px-2.5 py-2"
+                                    className="gc-solid-2 flex min-w-[140px] items-center gap-2 rounded-xl px-2.5 py-2"
                                 >
                                     <UserAvatar user={person} size="sm" />
                                     <span className="min-w-0">
                                         <span className="block truncate text-xs font-medium text-white">
                                             {person.first_name}
                                         </span>
-                                        <span className="block truncate text-[11px] text-gc-lilac-200">
+                                        <span className="block truncate text-[11px] text-sky-400">
                                             {person.playing?.label}
                                         </span>
                                     </span>
@@ -272,8 +272,8 @@ export default function Feed({
                     </div>
 
                     {tab === 'discover' && !hasFriends && (
-                        <div className="gradient-border glass flex items-center gap-4 rounded-2xl p-5">
-                            <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-brand shadow-[0_10px_30px_-8px_rgb(109_93_252/0.9)]">
+                        <div className="gradient-border gc-solid flex items-center gap-4 rounded-2xl p-5">
+                            <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-sky-500">
                                 <Sparkles className="size-6 text-white" />
                             </span>
                             <div className="text-sm">
@@ -437,7 +437,7 @@ export default function Feed({
                                                             )}{' '}
                                                             <Link
                                                                 href="/people"
-                                                                className="text-gc-lilac-300 hover:underline"
+                                                                className="text-sky-400 hover:underline"
                                                             >
                                                                 {tr(
                                                                     'Шукати людей',

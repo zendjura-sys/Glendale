@@ -312,7 +312,7 @@ export function HelpContact({ onFeedback }: { onFeedback?: () => void }) {
 
     return (
         <section className="gc-group mt-10 flex flex-col gap-3 p-5 sm:flex-row sm:items-center">
-            <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-white/[0.06] text-white/70">
+            <span className="gc-solid-2 flex size-10 shrink-0 items-center justify-center rounded-lg text-white/70">
                 <Info className="size-5" />
             </span>
             <div className="min-w-0 flex-1">

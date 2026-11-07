@@ -338,7 +338,7 @@ export default function ProfileCard({
         <>
             <Head title={tr('Game Card · {name}', { name: profile.name })} />
             <div className="mx-auto max-w-md space-y-3">
-                <section className="overflow-hidden rounded-xl border border-white/[0.08] bg-[linear-gradient(160deg,#0b1020,#050608)]">
+                <section className="overflow-hidden rounded-xl bg-[linear-gradient(160deg,#0b1020,#050608)]">
                     <div className="h-24 bg-[linear-gradient(120deg,#1d4ed8,#2F7BFF)]" />
                     <div className="px-4 pb-4">
                         <div className="-mt-12 flex items-end justify-between gap-3">
@@ -357,7 +357,7 @@ export default function ProfileCard({
                         </p>
 
                         {facts.length > 0 && (
-                            <div className="mt-4 space-y-3 rounded-[10px] bg-white/[0.05] p-3.5">
+                            <div className="gc-solid-2 mt-4 space-y-3 rounded-[10px] p-3.5">
                                 {facts.map(({ icon: Icon, label, text }) => (
                                     <div key={label}>
                                         <p className="flex items-center gap-1.5 text-xs font-semibold text-white/50">
@@ -372,7 +372,7 @@ export default function ProfileCard({
                             </div>
                         )}
 
-                        <div className="mt-4 flex items-end justify-between gap-4 rounded-[10px] bg-white/[0.05] p-3.5">
+                        <div className="gc-solid-2 mt-4 flex items-end justify-between gap-4 rounded-[10px] p-3.5">
                             <div className="grid flex-1 grid-cols-[repeat(auto-fit,minmax(5.5rem,1fr))] gap-3">
                                 <Stat
                                     label={tr('Нагороди')}

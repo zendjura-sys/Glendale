@@ -229,7 +229,7 @@ export function EditTrackDialog({
 
     return (
         <Dialog open={track !== null} onOpenChange={onOpenChange}>
-            <DialogContent className="glass-strong flex max-h-[calc(100dvh-2rem)] flex-col gap-0 rounded-3xl border-white/10 p-0 text-white sm:max-w-md">
+            <DialogContent className="glass-strong flex max-h-[calc(100dvh-2rem)] flex-col gap-0 rounded-3xl p-0 text-white sm:max-w-md">
                 <DialogTitle className="shrink-0 px-6 pt-6 font-display text-xl">
                     {tr('Редагування треку')}
                 </DialogTitle>
@@ -245,7 +245,7 @@ export function EditTrackDialog({
                             <button
                                 type="button"
                                 onClick={() => coverInput.current?.click()}
-                                className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-white/[0.06] px-3.5 text-sm font-medium text-white/80 transition hover:bg-white/[0.1] hover:text-white"
+                                className="gc-solid-2 inline-flex min-h-10 items-center gap-2 rounded-xl px-3.5 text-sm font-medium text-white/80 transition hover:bg-white/[0.1] hover:text-white"
                             >
                                 <ImagePlus className="size-4" />
                                 {track?.cover_url || preview
@@ -349,7 +349,7 @@ export function EditTrackDialog({
                         </label>
                     )}
                 </div>
-                <div className="flex shrink-0 justify-end gap-2 border-t border-white/10 px-6 pt-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+                <div className="flex shrink-0 justify-end gap-2 px-6 pt-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
                     <button
                         type="button"
                         onClick={() => onOpenChange(false)}

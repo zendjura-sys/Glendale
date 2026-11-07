@@ -33,7 +33,7 @@ export function ClipOfWeekSection({ data }: { data: ClipOfWeekData }) {
     return (
         <section className="grid gap-4 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
             {winner ? (
-                <div className="glass rounded-2xl p-4">
+                <div className="gc-solid rounded-2xl p-4">
                     <header className="mb-3 flex items-center gap-2 px-1">
                         <span className="flex size-8 items-center justify-center rounded-xl bg-amber-400/15 text-amber-300">
                             <Trophy className="size-4" />
@@ -54,7 +54,7 @@ export function ClipOfWeekSection({ data }: { data: ClipOfWeekData }) {
                 </div>
             ) : (
                 leader && (
-                    <div className="glass flex items-center gap-3 rounded-2xl p-4">
+                    <div className="gc-solid flex items-center gap-3 rounded-2xl p-4">
                         <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-amber-400/15 text-amber-300">
                             <Trophy className="size-5" />
                         </span>
@@ -69,14 +69,14 @@ export function ClipOfWeekSection({ data }: { data: ClipOfWeekData }) {
 
             <div className="space-y-4">
                 {leader && (
-                    <div className="glass rounded-2xl p-4">
+                    <div className="gc-solid rounded-2xl p-4">
                         <header className="mb-3 flex items-center gap-2 px-1">
                             <Flame className="size-4 text-orange-300" />
                             <span className="flex-1 font-display text-[13px] font-semibold text-white/90">
                                 {tr('Лідер цього тижня')}
                             </span>
                             <span className="inline-flex items-center gap-1 text-xs text-white/55 tabular-nums">
-                                <Heart className="size-3.5 text-rose-300" />
+                                <Heart className="size-3.5 text-red-400" />
                                 {leader.likes}
                             </span>
                         </header>
@@ -85,7 +85,7 @@ export function ClipOfWeekSection({ data }: { data: ClipOfWeekData }) {
                 )}
 
                 {history.length > 0 && (
-                    <div className="glass rounded-2xl p-4">
+                    <div className="gc-solid rounded-2xl p-4">
                         <h3 className="mb-2 px-1 font-display text-[13px] font-semibold text-white/90">
                             {tr('Минулі переможці')}
                         </h3>
@@ -96,9 +96,9 @@ export function ClipOfWeekSection({ data }: { data: ClipOfWeekData }) {
                                         href={h.moment.url}
                                         target="_blank"
                                         rel="noreferrer"
-                                        className="flex items-center gap-3 rounded-xl p-1.5 transition hover:bg-white/[0.05]"
+                                        className="flex items-center gap-3 rounded-xl p-1.5 transition hover:bg-[var(--gc-l3)]"
                                     >
-                                        <span className="relative aspect-video w-20 shrink-0 overflow-hidden rounded-lg bg-white/[0.05]">
+                                        <span className="gc-solid-2 relative aspect-video w-20 shrink-0 overflow-hidden rounded-lg">
                                             {h.moment.thumbnail && (
                                                 <img
                                                     src={h.moment.thumbnail}

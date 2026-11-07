@@ -52,7 +52,7 @@ function LiveCard({
                 </button>
                 <span
                     className={cn(
-                        'pointer-events-none absolute right-3 bottom-3 flex size-11 items-center justify-center rounded-full bg-[var(--am-accent)] text-white shadow-lg',
+                        'pointer-events-none absolute right-3 bottom-3 flex size-11 items-center justify-center rounded-full bg-[var(--am-accent)] text-white',
                         on && 'animate-pulse',
                     )}
                 >
@@ -106,7 +106,7 @@ export default function MusicRadio({ data }: { data: Data }) {
                             className="aspect-[16/10] rounded-[12px]"
                             icon={<RadioIcon className="size-7" />}
                         />
-                        <span className="absolute right-3 bottom-3 flex size-11 items-center justify-center rounded-full bg-white text-black shadow-lg">
+                        <span className="absolute right-3 bottom-3 flex size-11 items-center justify-center rounded-full bg-white text-black">
                             <Play className="ml-0.5 size-5 fill-current" />
                         </span>
                     </div>

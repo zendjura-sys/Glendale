@@ -68,7 +68,7 @@ export function GameMentors({
                 {data.mentors.map((m) => (
                     <li
                         key={m.id}
-                        className="flex items-start gap-3 rounded-xl bg-white/[0.03] p-3"
+                        className="gc-solid-2 flex items-start gap-3 rounded-xl p-3"
                     >
                         <UserAvatar user={m} size="sm" />
                         <div className="min-w-0 flex-1">
@@ -101,7 +101,7 @@ export function GameMentors({
             </ul>
             {me &&
                 (editing ? (
-                    <div className="space-y-2 rounded-xl bg-white/[0.04] p-3">
+                    <div className="gc-solid-2 space-y-2 rounded-xl p-3">
                         <textarea
                             value={about}
                             onChange={(e) => setAbout(e.target.value)}
@@ -151,7 +151,7 @@ export function GameMentors({
                                 type="button"
                                 disabled={busy}
                                 onClick={() => send('DELETE')}
-                                className="text-sm text-white/45 hover:text-rose-300"
+                                className="text-sm text-white/45 hover:text-red-400"
                             >
                                 {tr('Більше не наставник')}
                             </button>

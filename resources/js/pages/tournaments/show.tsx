@@ -182,9 +182,9 @@ function Bracket({
                                         disabled={!clickable}
                                         onClick={() => onPick(match)}
                                         className={cn(
-                                            'divide-y divide-white/[0.06] overflow-hidden rounded-control bg-white/[0.04] text-left ring-1 ring-white/[0.06] transition',
+                                            'gc-solid-2 divide-y divide-white/[0.06] overflow-hidden rounded-control text-left transition',
                                             clickable &&
-                                                'hover:bg-white/[0.07] hover:ring-primary/40',
+                                                'hover:bg-[var(--gc-l3)] hover:ring-primary/40',
                                             ready &&
                                                 match.winner_id === null &&
                                                 'ring-primary/30',
@@ -236,7 +236,7 @@ function ReportDialog({
                 if (!open) onClose();
             }}
         >
-            <DialogContent className="glass-strong rounded-dialog border-white/10 text-white sm:max-w-sm">
+            <DialogContent className="glass-strong rounded-dialog text-white sm:max-w-sm">
                 <DialogTitle className="font-display text-lg">
                     {tr('Хто переміг?')}
                 </DialogTitle>
@@ -257,9 +257,9 @@ function ReportDialog({
                                     disabled={busy}
                                     onClick={() => report(entry)}
                                     className={cn(
-                                        'flex h-12 items-center gap-3 rounded-control bg-white/[0.06] px-3 text-left text-sm font-medium text-white transition hover:bg-primary/20 disabled:opacity-50',
+                                        'gc-solid-2 flex h-12 items-center gap-3 rounded-control px-3 text-left text-sm font-medium text-white transition hover:bg-primary/20 disabled:opacity-50',
                                         match?.winner_id === entry.id &&
-                                            'ring-1 ring-primary/60',
+                                            'ring-primary/60',
                                     )}
                                 >
                                     <EntryAvatar entry={entry} />
@@ -335,7 +335,7 @@ function SubmitForm({ tournament }: { tournament: Props['tournament'] }) {
                 className="input-glass h-10 w-full rounded-control px-3 text-sm text-white placeholder:text-white/30 focus:outline-none sm:col-span-3"
             />
             {Object.values(form.errors)[0] && (
-                <p className="text-xs text-rose-300 sm:col-span-3">
+                <p className="text-xs text-red-400 sm:col-span-3">
                     {Object.values(form.errors)[0]}
                 </p>
             )}
@@ -484,7 +484,7 @@ export default function TournamentShow({
                                         { preserveScroll: true },
                                     )
                                 }
-                                className="h-10 rounded-control bg-white/[0.06] px-4 text-sm text-white/75 hover:text-white"
+                                className="gc-solid-2 h-10 rounded-control px-4 text-sm text-white/75 hover:text-white"
                             >
                                 {tr('Вийти з турніру')}
                             </button>
@@ -531,7 +531,7 @@ export default function TournamentShow({
                                         );
                                     }
                                 }}
-                                className="h-10 rounded-control px-3 text-sm text-white/50 hover:text-rose-300"
+                                className="h-10 rounded-control px-3 text-sm text-white/50 hover:text-red-400"
                             >
                                 {tr('Скасувати')}
                             </button>
@@ -540,7 +540,7 @@ export default function TournamentShow({
                 </header>
 
                 {winner && (
-                    <section className="flex items-center gap-4 rounded-xl bg-primary/10 px-4 py-4 ring-1 ring-primary/25">
+                    <section className="flex items-center gap-4 rounded-xl bg-primary/10 px-4 py-4 ring-primary/25">
                         <Trophy className="size-7 shrink-0 text-primary" />
                         <EntryAvatar entry={winner} className="size-10" />
                         <div className="min-w-0">
@@ -558,7 +558,7 @@ export default function TournamentShow({
                 )}
 
                 {bracket && rounds.length > 0 && (
-                    <section className="glass rounded-xl p-4 sm:p-5">
+                    <section className="gc-solid rounded-xl p-4 sm:p-5">
                         <h2 className="mb-3 font-display text-lg font-semibold text-white">
                             {tr('Сітка')}
                         </h2>
@@ -579,7 +579,7 @@ export default function TournamentShow({
 
                 {!bracket && (
                     <div className="grid gap-5 lg:grid-cols-[1.4fr_1fr]">
-                        <section className="glass rounded-xl p-4 sm:p-5">
+                        <section className="gc-solid rounded-xl p-4 sm:p-5">
                             <h2 className="font-display text-lg font-semibold text-white">
                                 {tr('Таблиця')}
                             </h2>
@@ -632,7 +632,7 @@ export default function TournamentShow({
                         </section>
                         <div className="space-y-5">
                             {running && (
-                                <section className="glass rounded-xl p-4 sm:p-5">
+                                <section className="gc-solid rounded-xl p-4 sm:p-5">
                                     <h2 className="mb-3 font-display text-lg font-semibold text-white">
                                         {tr('Надіслати результат')}
                                     </h2>
@@ -640,7 +640,7 @@ export default function TournamentShow({
                                 </section>
                             )}
                             {me.submissions.length > 0 && (
-                                <section className="glass rounded-xl p-4 sm:p-5">
+                                <section className="gc-solid rounded-xl p-4 sm:p-5">
                                     <h2 className="mb-2 font-display text-lg font-semibold text-white">
                                         {tr('Мої результати')}
                                     </h2>
@@ -664,7 +664,7 @@ export default function TournamentShow({
                                                             'text-primary',
                                                         item.status ===
                                                             'rejected' &&
-                                                            'text-rose-300',
+                                                            'text-red-400',
                                                         item.status ===
                                                             'pending' &&
                                                             'text-white/55',
@@ -686,7 +686,7 @@ export default function TournamentShow({
                 )}
 
                 {me.can_manage && pending.length > 0 && (
-                    <section className="glass rounded-xl p-4 sm:p-5">
+                    <section className="gc-solid rounded-xl p-4 sm:p-5">
                         <h2 className="mb-3 font-display text-lg font-semibold text-white">
                             {tr('На перевірці: {n}', { n: pending.length })}
                         </h2>
@@ -709,7 +709,7 @@ export default function TournamentShow({
                                             />
                                         </a>
                                     ) : (
-                                        <span className="grid h-14 w-24 place-items-center rounded-[8px] bg-white/[0.04] text-[11px] text-white/35">
+                                        <span className="gc-solid-2 grid h-14 w-24 place-items-center rounded-[8px] text-[11px] text-white/35">
                                             {tr('Без скриншота')}
                                         </span>
                                     )}
@@ -749,7 +749,7 @@ export default function TournamentShow({
                                                     { approve: false },
                                                 )
                                             }
-                                            className="grid size-9 place-items-center rounded-control bg-white/[0.06] text-white/60 hover:text-rose-300"
+                                            className="gc-solid-2 grid size-9 place-items-center rounded-control text-white/60 hover:text-red-400"
                                         >
                                             <X className="size-4" />
                                         </button>
@@ -761,7 +761,7 @@ export default function TournamentShow({
                 )}
 
                 {bracket && rounds.length === 0 && (
-                    <section className="glass rounded-xl p-4 sm:p-5">
+                    <section className="gc-solid rounded-xl p-4 sm:p-5">
                         <h2 className="mb-2 font-display text-lg font-semibold text-white">
                             {tr('Учасники')}
                         </h2>
@@ -777,7 +777,7 @@ export default function TournamentShow({
                                     <li key={entry.id}>
                                         <Link
                                             href={entry.url}
-                                            className="flex items-center gap-2.5 rounded-control px-2 py-2 text-sm text-white hover:bg-white/[0.05]"
+                                            className="flex items-center gap-2.5 rounded-control px-2 py-2 text-sm text-white hover:bg-[var(--gc-l3)]"
                                         >
                                             <EntryAvatar entry={entry} />
                                             <span className="truncate">

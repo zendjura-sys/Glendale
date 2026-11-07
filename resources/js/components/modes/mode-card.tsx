@@ -50,14 +50,14 @@ export function ModeCard({
                 compact ? 'p-4' : 'p-5 sm:p-6',
                 active
                     ? 'text-white'
-                    : 'glass text-white/90 hover:border-white/25',
+                    : 'gc-solid text-white/90 hover:border-white/25',
             )}
         >
             {active && (
                 <m.span
                     layoutId={layoutId}
                     transition={motionOr(reduce, SNAP)}
-                    className="liquid-glass absolute inset-0 rounded-2xl shadow-[0_0_40px_-12px_var(--primary)] ring-2 ring-primary"
+                    className="liquid-glass absolute inset-0 rounded-2xl ring-2 ring-primary"
                 />
             )}
             <span className="relative flex items-start gap-3">
@@ -66,8 +66,8 @@ export function ModeCard({
                         'flex shrink-0 items-center justify-center rounded-2xl transition-colors',
                         compact ? 'size-10' : 'size-12',
                         active
-                            ? 'bg-primary text-primary-foreground shadow-[0_0_24px_-4px_var(--primary)]'
-                            : 'bg-black/25 text-white/80 ring-1 ring-white/10',
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-black/25 text-white/80',
                     )}
                 >
                     <Icon className={compact ? 'size-5' : 'size-6'} />

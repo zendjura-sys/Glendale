@@ -30,11 +30,11 @@ export function PinnedBar({
                 onJump(pin.id);
                 setIndex((i) => (i + 1) % pins.length);
             }}
-            className="flex w-full items-center gap-3 border-b border-white/[0.06] bg-white/[0.03] px-3 py-2 text-left sm:px-4"
+            className="gc-solid-2 flex w-full items-center gap-3 px-3 py-2 text-left sm:px-4"
         >
-            <Pin className="size-4 shrink-0 text-sky-300" />
+            <Pin className="size-4 shrink-0 text-sky-400" />
             <span className="min-w-0 flex-1">
-                <span className="block text-xs text-sky-300">
+                <span className="block text-xs text-sky-400">
                     {pins.length > 1
                         ? tr('Закріплене {n} з {total}', {
                               n: (index % pins.length) + 1,
@@ -133,8 +133,8 @@ export function ThreadPanel({
             className="glass-strong absolute inset-y-0 right-0 z-30 flex w-full max-w-md flex-col"
             aria-label={tr('Гілка')}
         >
-            <header className="flex items-center gap-2 border-b border-white/[0.06] px-4 py-3">
-                <MessagesSquare className="size-4 text-sky-300" />
+            <header className="flex items-center gap-2 px-4 py-3">
+                <MessagesSquare className="size-4 text-sky-400" />
                 <h2 className="flex-1 text-sm font-semibold text-white">
                     {tr('Гілка')}
                 </h2>
@@ -142,7 +142,7 @@ export function ThreadPanel({
                     type="button"
                     onClick={onClose}
                     aria-label={tr('Закрити')}
-                    className="rounded-lg p-1.5 text-white/60 hover:bg-white/[0.07] hover:text-white"
+                    className="rounded-lg p-1.5 text-white/60 hover:bg-[var(--gc-l3)] hover:text-white"
                 >
                     <X className="size-4" />
                 </button>
@@ -168,7 +168,7 @@ export function ThreadPanel({
                                 {message.body ?? message.preview}
                             </p>
                             {i === 0 && (
-                                <p className="mt-2 border-b border-white/[0.06] pb-2 text-xs text-white/40">
+                                <p className="mt-2 pb-2 text-xs text-white/40">
                                     {tr('{count} відповідей', {
                                         count: messages.length,
                                     })}
@@ -178,10 +178,7 @@ export function ThreadPanel({
                     </div>
                 ))}
             </div>
-            <form
-                onSubmit={send}
-                className="flex gap-2 border-t border-white/[0.06] p-3"
-            >
+            <form onSubmit={send} className="flex gap-2 p-3">
                 <input
                     value={body}
                     onChange={(e) => setBody(e.target.value)}
@@ -247,7 +244,7 @@ export function NoteDialog({
                 onClick={(e) => e.stopPropagation()}
             >
                 <h2 className="flex items-center gap-2 font-semibold text-white">
-                    <StickyNote className="size-4 text-sky-300" />
+                    <StickyNote className="size-4 text-sky-400" />
                     {tr('Нотатка до чату')}
                 </h2>
                 <p className="text-xs text-white/50">

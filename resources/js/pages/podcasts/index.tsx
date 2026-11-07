@@ -38,7 +38,7 @@ export function PodcastCover({
     ) : (
         <span
             className={cn(
-                'flex aspect-square items-center justify-center rounded-xl bg-gradient-to-br from-gc-indigo/50 to-violet-500/30',
+                'flex aspect-square items-center justify-center rounded-xl bg-gradient-to-br from-gc-indigo/50 to-sky-500/30',
                 className,
             )}
         >
@@ -74,7 +74,7 @@ export default function Podcasts({
                 <div className="flex flex-wrap items-end justify-between gap-3">
                     <div>
                         <h1 className="flex items-center gap-2 font-display text-2xl font-semibold text-white">
-                            <Mic2 className="size-6 text-gc-lilac-300" />
+                            <Mic2 className="size-6 text-sky-400" />
                             {tr('Подкасти')}
                         </h1>
                         <p className="mt-1 text-sm text-white/50">
@@ -99,7 +99,7 @@ export default function Podcasts({
                             e.preventDefault();
                             form.post('/podcasts', { forceFormData: true });
                         }}
-                        className="glass grid gap-3 rounded-2xl p-4 sm:grid-cols-2"
+                        className="gc-solid grid gap-3 rounded-2xl p-4 sm:grid-cols-2"
                     >
                         <input
                             value={form.data.title}
@@ -152,7 +152,7 @@ export default function Podcasts({
                             />
                         </label>
                         {Object.values(form.errors)[0] && (
-                            <p className="text-xs text-rose-300 sm:col-span-2">
+                            <p className="text-xs text-red-400 sm:col-span-2">
                                 {Object.values(form.errors)[0]}
                             </p>
                         )}
@@ -181,7 +181,7 @@ export default function Podcasts({
                                 <Link
                                     key={p.id}
                                     href={`/podcasts/${p.id}`}
-                                    className="glass flex items-center gap-2 rounded-xl p-2 pr-3 text-sm text-white hover:bg-white/[0.06]"
+                                    className="gc-solid flex items-center gap-2 rounded-xl p-2 pr-3 text-sm text-white hover:bg-[var(--gc-l3)]"
                                 >
                                     <PodcastCover
                                         podcast={p}
@@ -240,7 +240,7 @@ export default function Podcasts({
                             <Link
                                 key={p.id}
                                 href={`/podcasts/${p.id}`}
-                                className="glass block rounded-2xl p-3 transition hover:bg-white/[0.06]"
+                                className="gc-solid block rounded-2xl p-3 transition hover:bg-[var(--gc-l3)]"
                             >
                                 <PodcastCover podcast={p} className="w-full" />
                                 <p className="mt-2 truncate text-sm font-semibold text-white">

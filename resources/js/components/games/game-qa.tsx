@@ -88,7 +88,7 @@ export function GameQa({ slug }: { slug: string }) {
         <div className="space-y-3">
             {signedIn &&
                 (asking ? (
-                    <div className="space-y-2 rounded-xl bg-white/[0.04] p-3">
+                    <div className="gc-solid-2 space-y-2 rounded-xl p-3">
                         <input
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
@@ -205,7 +205,7 @@ function QuestionRow({
                         'mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-lg text-xs font-semibold tabular-nums',
                         q.solved_answer_id
                             ? 'bg-emerald-500/15 text-emerald-200'
-                            : 'bg-white/[0.06] text-white/60',
+                            : 'gc-solid-2 text-white/60',
                     )}
                 >
                     {q.solved_answer_id ? (
@@ -237,7 +237,7 @@ function QuestionRow({
                                 'flex gap-2.5 rounded-xl p-2.5',
                                 q.solved_answer_id === a.id
                                     ? 'bg-emerald-500/10'
-                                    : 'bg-white/[0.03]',
+                                    : 'gc-solid-2',
                             )}
                         >
                             <button
@@ -252,7 +252,7 @@ function QuestionRow({
                                     'flex h-12 w-9 shrink-0 flex-col items-center justify-center rounded-lg text-xs font-semibold tabular-nums transition disabled:cursor-default',
                                     a.voted
                                         ? 'bg-gc-indigo text-white'
-                                        : 'bg-white/[0.06] text-white/65 enabled:hover:bg-white/[0.1]',
+                                        : 'gc-solid-2 text-white/65 enabled:hover:bg-white/[0.1]',
                                 )}
                             >
                                 <ChevronUp className="size-3.5" />
@@ -298,7 +298,7 @@ function QuestionRow({
                                                     },
                                                 )
                                             }
-                                            className="text-gc-lilac-300 hover:text-white"
+                                            className="text-sky-400 hover:text-white"
                                         >
                                             {q.solved_answer_id === a.id
                                                 ? tr('Зняти позначку')
@@ -346,7 +346,7 @@ function QuestionRow({
                                     ),
                                 ) && run('DELETE', `${base}/questions/${q.id}`)
                             }
-                            className="inline-flex items-center gap-1.5 text-xs text-white/40 hover:text-rose-300"
+                            className="inline-flex items-center gap-1.5 text-xs text-white/40 hover:text-red-400"
                         >
                             <Trash2 className="size-3.5" />
                             {tr('Видалити питання')}

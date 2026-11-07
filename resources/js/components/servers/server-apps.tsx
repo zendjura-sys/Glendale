@@ -39,7 +39,7 @@ function CopyValue({
     const [copied, setCopied] = useState(false);
 
     return (
-        <div className="flex min-w-0 items-center gap-2 rounded-xl bg-white/[0.04] px-3 py-2">
+        <div className="gc-solid-2 flex min-w-0 items-center gap-2 rounded-xl px-3 py-2">
             <code
                 className={cn(
                     'min-w-0 flex-1 truncate font-mono text-xs',
@@ -73,7 +73,7 @@ function AppCard({ slug, app }: { slug: string; app: ServerApp }) {
     const base = `/servers/${slug}/apps/${app.id}`;
 
     return (
-        <div className="space-y-3 rounded-2xl bg-white/[0.03] p-4">
+        <div className="gc-solid-2 space-y-3 rounded-2xl p-4">
             <div className="flex items-center justify-between gap-3">
                 <div className="min-w-0">
                     <div className="truncate font-semibold text-white">
@@ -97,7 +97,7 @@ function AppCard({ slug, app }: { slug: string; app: ServerApp }) {
                         }
                     }}
                     aria-label={tr('Вимкнути застосунок')}
-                    className="shrink-0 rounded-lg p-2 text-rose-200/80 transition hover:bg-rose-400/10"
+                    className="shrink-0 rounded-lg p-2 text-red-400/80 transition hover:bg-red-400/10"
                 >
                     <Trash2 className="size-4" />
                 </button>
@@ -180,15 +180,15 @@ export function ServerApps({
     const form = useForm({ name: '', redirect_uris: '' });
 
     return (
-        <section className="glass space-y-4 rounded-2xl p-5">
+        <section className="gc-solid space-y-4 rounded-2xl p-5">
             <div className="flex flex-wrap items-center justify-between gap-2">
                 <h2 className="flex items-center gap-2 font-display text-lg font-semibold text-white">
-                    <LogIn className="size-5 text-gc-lilac-300" />
+                    <LogIn className="size-5 text-sky-400" />
                     {tr('Увійти через GameCon')}
                 </h2>
                 <Link
                     href="/developers"
-                    className="text-sm font-medium text-gc-lilac-300 hover:text-white"
+                    className="text-sm font-medium text-sky-400 hover:text-white"
                 >
                     {tr('Документація')}
                 </Link>
@@ -210,7 +210,7 @@ export function ServerApps({
                             onSuccess: () => form.reset(),
                         });
                     }}
-                    className="space-y-2 rounded-2xl bg-white/[0.03] p-4"
+                    className="gc-solid-2 space-y-2 rounded-2xl p-4"
                 >
                     <input
                         value={form.data.name}
@@ -229,7 +229,7 @@ export function ServerApps({
                         className={cn(fieldClass, 'font-mono text-xs')}
                     />
                     {(form.errors.name || form.errors.redirect_uris) && (
-                        <p className="text-xs text-rose-300">
+                        <p className="text-xs text-red-400">
                             {form.errors.name ?? form.errors.redirect_uris}
                         </p>
                     )}
@@ -266,7 +266,7 @@ export function VerifiedPlayers({ verified }: { verified: VerifiedInfo }) {
                         : tr('Ви підтверджений гравець')}
                 </span>
             )}
-            <span className="rounded-chip bg-white/[0.05] px-3 py-1 text-white/60">
+            <span className="gc-solid-2 rounded-chip px-3 py-1 text-white/60">
                 {tr('Підтверджених гравців: {count}', {
                     count: verified.players,
                 })}

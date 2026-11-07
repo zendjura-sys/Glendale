@@ -47,9 +47,9 @@ export function SeriesPicker({
     };
 
     return (
-        <div className="mt-3 space-y-2 rounded-2xl bg-white/[0.04] p-3">
+        <div className="gc-solid-2 mt-3 space-y-2 rounded-2xl p-3">
             <p className="flex items-center gap-2 text-sm font-medium text-white/70">
-                <ListOrdered className="size-4 text-sky-300" />
+                <ListOrdered className="size-4 text-sky-400" />
                 {tr('Серія записів')}
             </p>
             {series === null ? (
@@ -77,7 +77,7 @@ export function SeriesPicker({
                         <button
                             type="button"
                             onClick={() => attach(null)}
-                            className="h-8 rounded-chip px-3 text-[13px] font-medium text-white/50 hover:text-rose-300"
+                            className="h-8 rounded-chip px-3 text-[13px] font-medium text-white/50 hover:text-red-400"
                         >
                             {tr('Прибрати із серії')}
                         </button>

@@ -47,7 +47,7 @@ export function NotifySoundPicker() {
                             'inline-flex min-h-11 items-center gap-2 rounded-control px-3 text-sm transition',
                             value === sound
                                 ? 'bg-white text-gc-ink'
-                                : 'bg-white/[0.06] text-white/75 hover:bg-white/10',
+                                : 'gc-solid-2 text-white/75 hover:bg-white/10',
                         )}
                     >
                         <Icon className="size-4" />

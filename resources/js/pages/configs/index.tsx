@@ -101,7 +101,7 @@ export default function ConfigsIndex({
                 <div className="flex flex-wrap items-end justify-between gap-3">
                     <div>
                         <h1 className="flex items-center gap-2 font-display text-2xl font-semibold text-white">
-                            <Crosshair className="size-6 text-sky-300" />
+                            <Crosshair className="size-6 text-sky-400" />
                             {tr('Конфіги й приціли')}
                         </h1>
                         <p className="mt-1 text-sm text-white/50">
@@ -123,7 +123,7 @@ export default function ConfigsIndex({
                 {adding && (
                     <form
                         onSubmit={submit}
-                        className="glass mt-4 space-y-3 rounded-2xl p-4"
+                        className="gc-solid mt-4 space-y-3 rounded-2xl p-4"
                     >
                         <GameSearch
                             value={pick}
@@ -176,7 +176,7 @@ export default function ConfigsIndex({
                             className={cn(field, 'resize-y py-2.5')}
                         />
                         {Object.values(form.errors)[0] && (
-                            <p className="text-xs text-rose-300">
+                            <p className="text-xs text-red-400">
                                 {Object.values(form.errors)[0]}
                             </p>
                         )}
@@ -288,9 +288,9 @@ function ConfigRow({ config }: { config: ConfigItem }) {
             .catch(() => {});
 
     return (
-        <li className="glass rounded-2xl p-4">
+        <li className="gc-solid rounded-2xl p-4">
             <div className="flex flex-wrap items-center gap-2">
-                <span className="rounded-chip bg-sky-500/15 px-2 py-0.5 text-[11px] font-medium text-sky-200">
+                <span className="rounded-chip bg-sky-500/15 px-2 py-0.5 text-[11px] font-medium text-sky-400">
                     {KIND[config.kind]()}
                 </span>
                 <h2 className="min-w-0 flex-1 truncate text-[15px] font-semibold text-white">
@@ -333,8 +333,8 @@ function ConfigRow({ config }: { config: ConfigItem }) {
                     className={cn(
                         'inline-flex h-9 items-center gap-1.5 rounded-xl px-3 text-sm font-medium tabular-nums transition',
                         liked
-                            ? 'bg-sky-500/20 text-sky-100'
-                            : 'bg-white/[0.06] text-white/70 hover:bg-white/[0.1]',
+                            ? 'bg-sky-500/20 text-sky-400'
+                            : 'gc-solid-2 text-white/70 hover:bg-white/[0.1]',
                     )}
                 >
                     <Heart className={cn('size-4', liked && 'fill-current')} />
@@ -362,7 +362,7 @@ function ConfigRow({ config }: { config: ConfigItem }) {
                             })
                         }
                         aria-label={tr('Видалити')}
-                        className="rounded-lg p-1.5 text-white/40 hover:text-rose-300"
+                        className="rounded-lg p-1.5 text-white/40 hover:text-red-400"
                     >
                         <Trash2 className="size-4" />
                     </button>

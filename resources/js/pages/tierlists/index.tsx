@@ -37,7 +37,7 @@ export default function TierListsIndex({
                 <div className="flex flex-wrap items-end justify-between gap-3">
                     <div>
                         <h1 className="flex items-center gap-2 font-display text-2xl font-semibold text-white">
-                            <LayoutList className="size-6 text-gc-lilac-300" />
+                            <LayoutList className="size-6 text-sky-400" />
                             {game
                                 ? tr('Тір-листи: {game}', { game: game.name })
                                 : tr('Тір-листи')}
@@ -98,7 +98,7 @@ export default function TierListsIndex({
                                 <Link
                                     key={list.id}
                                     href={`/tierlists/${list.id}`}
-                                    className="glass group block rounded-2xl p-4 transition hover:bg-white/[0.06]"
+                                    className="gc-solid group block rounded-2xl p-4 transition hover:bg-[var(--gc-l3)]"
                                 >
                                     <div className="space-y-1">
                                         {list.preview

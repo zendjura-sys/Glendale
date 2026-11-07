@@ -340,7 +340,7 @@ export default function Appearance({
                                 <span className="inline-flex h-8 items-center rounded-chip bg-primary px-3.5 text-xs font-semibold text-primary-foreground">
                                     {tr('Я в ділі')}
                                 </span>
-                                <span className="inline-flex h-8 items-center rounded-chip border border-white/15 px-3.5 text-xs font-medium text-white/70">
+                                <span className="inline-flex h-8 items-center rounded-chip px-3.5 text-xs font-medium text-white/70">
                                     {tr('Пізніше')}
                                 </span>
                                 <span className="text-xs font-medium text-primary">
@@ -382,11 +382,11 @@ export default function Appearance({
                                 >
                                     <span
                                         className={cn(
-                                            'theme-thumb relative block aspect-[4/3] overflow-hidden rounded-xl ring-1 transition',
+                                            'theme-thumb relative block aspect-[4/3] overflow-hidden rounded-xl transition',
                                             `theme-thumb--${item.id}`,
                                             active
                                                 ? 'ring-2 ring-primary'
-                                                : 'ring-white/10 group-hover:ring-white/30',
+                                                : 'group-hover:ring-white/30',
                                         )}
                                     >
                                         <span className="theme-thumb__card" />
@@ -435,11 +435,11 @@ export default function Appearance({
                                 >
                                     <span
                                         className={cn(
-                                            'skin-thumb relative block aspect-[4/3] overflow-hidden rounded-xl ring-1 transition',
+                                            'skin-thumb relative block aspect-[4/3] overflow-hidden rounded-xl transition',
                                             `skin-thumb--${item.id}`,
                                             active
                                                 ? 'ring-2 ring-primary'
-                                                : 'ring-white/10 group-hover:ring-white/30',
+                                                : 'group-hover:ring-white/30',
                                         )}
                                     >
                                         <span className="skin-thumb__card" />
@@ -542,11 +542,11 @@ export default function Appearance({
                                 >
                                     <span
                                         className={cn(
-                                            'bg-thumb relative block aspect-[16/10] overflow-hidden rounded-xl ring-1 transition',
+                                            'bg-thumb relative block aspect-[16/10] overflow-hidden rounded-xl transition',
                                             `bg-thumb--${item.id}`,
                                             active
                                                 ? 'ring-2 ring-primary'
-                                                : 'ring-white/10 group-hover:ring-white/30',
+                                                : 'group-hover:ring-white/30',
                                         )}
                                         style={
                                             item.id === 'custom'
@@ -611,7 +611,7 @@ export default function Appearance({
                         <EventFrameSwitch />
                     </SettingsRows>
 
-                    <div className="-mx-4 border-t border-[var(--gc-hairline)] px-4 pt-4 sm:-mx-5 sm:px-5">
+                    <div className="-mx-4 border-[var(--gc-hairline)] px-4 pt-4 sm:-mx-5 sm:px-5">
                         <div className="flex items-center gap-2 text-sm font-medium text-white">
                             <Youtube className="size-4 text-[#ff4e45]" />
                             {tr('Відео з YouTube як фон')}
@@ -637,7 +637,7 @@ export default function Appearance({
                             className="input-glass mt-3 h-11 w-full rounded-xl px-3.5 text-sm text-white placeholder:text-white/30 focus:outline-none disabled:opacity-50"
                         />
                         {form.errors.background_video && (
-                            <p className="mt-2 text-xs text-rose-300">
+                            <p className="mt-2 text-xs text-red-400">
                                 {form.errors.background_video}
                             </p>
                         )}
@@ -677,14 +677,14 @@ export default function Appearance({
                                         'relative flex h-14 items-center justify-center rounded-xl transition-colors',
                                         active
                                             ? 'text-white'
-                                            : 'bg-white/[0.03] text-white/50 hover:bg-white/[0.06] hover:text-white',
+                                            : 'gc-solid-2 text-white/50 hover:bg-[var(--gc-l3)] hover:text-white',
                                     )}
                                 >
                                     {active && (
                                         <m.span
                                             layoutId="text-size-active"
                                             transition={motionOr(reduce, SNAP)}
-                                            className="absolute inset-0 rounded-xl border border-primary/60 bg-primary/10"
+                                            className="absolute inset-0 rounded-xl border-primary/60 bg-primary/10"
                                         />
                                     )}
                                     <span
@@ -717,14 +717,14 @@ export default function Appearance({
                                         onClick={() => pick(item.id)}
                                         aria-pressed={active}
                                         className={cn(
-                                            'flex min-h-11 items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition',
+                                            'flex min-h-11 items-center gap-3 rounded-xl px-3 py-2.5 text-left transition',
                                             active
-                                                ? 'border-white/30 bg-white/[0.08]'
-                                                : 'border-white/[0.06] bg-white/[0.03] hover:bg-white/[0.06]',
+                                                ? 'bg-white/[0.08]'
+                                                : 'gc-solid-2 hover:bg-[var(--gc-l3)]',
                                         )}
                                     >
                                         <span
-                                            className="flex size-9 shrink-0 overflow-hidden rounded-full ring-1 ring-white/15"
+                                            className="flex size-9 shrink-0 overflow-hidden rounded-full"
                                             aria-hidden
                                         >
                                             {item.colors.map((color) => (
@@ -848,7 +848,7 @@ export default function Appearance({
                                 }
                             />
                         ))}
-                        <p className="-mx-4 flex items-center gap-2 border-t border-[var(--gc-hairline)] px-4 pt-4 pb-1 text-[13px] text-white/50 sm:-mx-5 sm:px-5">
+                        <p className="-mx-4 flex items-center gap-2 border-[var(--gc-hairline)] px-4 pt-4 pb-1 text-[13px] text-white/50 sm:-mx-5 sm:px-5">
                             <Bell className="size-3.5" />
                             {tr('Куди надсилати')}
                         </p>
@@ -876,7 +876,7 @@ export default function Appearance({
                         )}
                     >
                         {spoilersOn && (
-                            <div className="-mx-4 -mt-4 mb-4 border-b border-[var(--gc-hairline)] px-4 sm:-mx-5 sm:-mt-5 sm:px-5">
+                            <div className="-mx-4 -mt-4 mb-4 border-[var(--gc-hairline)] px-4 sm:-mx-5 sm:-mt-5 sm:px-5">
                                 <SettingsSwitch
                                     label={tr(
                                         'Ховати спойлери на всьому сайті',
@@ -960,7 +960,7 @@ export default function Appearance({
                                                     ),
                                                 )
                                             }
-                                            className="min-h-11 rounded-control bg-white/[0.06] px-3 text-sm text-white/80"
+                                            className="gc-solid-2 min-h-11 rounded-control px-3 text-sm text-white/80"
                                         >
                                             {item} ×
                                         </button>
@@ -1004,7 +1004,7 @@ export default function Appearance({
                                 className={cn(
                                     'pb-4',
                                     (groupOn || visitorsOn) &&
-                                        '-mx-4 border-t border-[var(--gc-hairline)] px-4 sm:-mx-5 sm:px-5',
+                                        '-mx-4 border-[var(--gc-hairline)] px-4 sm:-mx-5 sm:px-5',
                                 )}
                             >
                                 <p className="mt-4 mb-2 flex items-center gap-2 text-[13px] text-white/50">
@@ -1031,7 +1031,7 @@ export default function Appearance({
                                                     'min-h-11 rounded-control px-3 text-sm',
                                                     on
                                                         ? 'bg-white text-gc-ink'
-                                                        : 'bg-white/[0.06] text-white/75',
+                                                        : 'gc-solid-2 text-white/75',
                                                 )}
                                             >
                                                 {language.native}
@@ -1084,7 +1084,7 @@ export default function Appearance({
                                         'min-h-11 rounded-control px-3 text-sm',
                                         on
                                             ? 'bg-white text-gc-ink'
-                                            : 'bg-white/[0.06] text-white/75',
+                                            : 'gc-solid-2 text-white/75',
                                     )}
                                 >
                                     {friend.first_name}

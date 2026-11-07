@@ -59,7 +59,7 @@ export default function AdminStatus({
                         href="/status"
                         target="_blank"
                         rel="noreferrer"
-                        className="glass flex h-10 items-center gap-2 rounded-xl px-4 text-sm text-white/80 hover:text-white"
+                        className="gc-solid flex h-10 items-center gap-2 rounded-xl px-4 text-sm text-white/80 hover:text-white"
                     >
                         <ExternalLink className="size-4" />
                         {tr('Відкрита сторінка')}
@@ -69,7 +69,7 @@ export default function AdminStatus({
 
             <div className="mb-5 grid grid-cols-2 gap-3 md:grid-cols-5">
                 {components.map((c) => (
-                    <div key={c.key} className="glass rounded-2xl p-4">
+                    <div key={c.key} className="gc-solid rounded-2xl p-4">
                         <div className="flex items-center gap-2">
                             <span
                                 className={cn(
@@ -95,7 +95,7 @@ export default function AdminStatus({
 
             <form
                 onSubmit={open}
-                className="glass mb-5 space-y-2 rounded-2xl p-4"
+                className="gc-solid mb-5 space-y-2 rounded-2xl p-4"
             >
                 <h2 className="text-sm font-semibold text-white">
                     {tr('Оголосити збій')}
@@ -157,7 +157,7 @@ export default function AdminStatus({
                     />
                 ))}
                 {incidents.length === 0 && (
-                    <p className="glass rounded-2xl px-6 py-10 text-center text-sm text-white/40">
+                    <p className="gc-solid rounded-2xl px-6 py-10 text-center text-sm text-white/40">
                         {tr('Інцидентів ще не було.')}
                     </p>
                 )}
@@ -203,7 +203,7 @@ function IncidentRow({
     };
 
     return (
-        <article className="glass rounded-2xl p-4">
+        <article className="gc-solid rounded-2xl p-4">
             <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                 <h3 className="min-w-0 flex-1 font-semibold text-white">
                     {incident.title}

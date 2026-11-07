@@ -162,7 +162,7 @@ export default function ServerShow({
                     )}
                 </div>
 
-                <section className="glass noise relative overflow-hidden rounded-2xl p-6 sm:p-8">
+                <section className="gc-solid relative overflow-hidden rounded-2xl p-6 sm:p-8">
                     {server.icon && (
                         <img
                             loading="lazy"
@@ -180,7 +180,7 @@ export default function ServerShow({
                         />
                         <div className="min-w-0 flex-1">
                             <div className="flex flex-wrap items-center gap-2 text-xs font-medium">
-                                <span className="rounded-chip bg-white/[0.06] px-2 py-0.5 text-white/65">
+                                <span className="gc-solid-2 rounded-chip px-2 py-0.5 text-white/65">
                                     {server.platform_label}
                                 </span>
                                 <span className="rounded-chip bg-gc-indigo/15 px-2 py-0.5 text-[#b9b0ff]">
@@ -278,7 +278,7 @@ export default function ServerShow({
                                 <ServerLinks server={server} />
                             </div>
                         </div>
-                        <div className="w-full space-y-3 rounded-2xl bg-white/[0.04] p-4 ring-1 ring-white/[0.06] sm:w-64">
+                        <div className="gc-solid-2 w-full space-y-3 rounded-2xl p-4 sm:w-64">
                             <OnlineMeter
                                 online={server.players_online}
                                 max={server.players_max}
@@ -293,7 +293,7 @@ export default function ServerShow({
                             )}
                             {server.discord_members !== null && (
                                 <div className="flex items-center gap-2 text-xs text-white/55">
-                                    <MessageCircle className="size-3.5 text-gc-lilac-400" />
+                                    <MessageCircle className="size-3.5 text-sky-400" />
                                     {shortNumber(server.discord_members)}{' '}
                                     {tr('у Discord')}
                                     {server.discord_online !== null &&
@@ -325,9 +325,9 @@ export default function ServerShow({
                     href={`/servers/${server.slug}`}
                 />
                 <PlayingNow users={playing_now} count={playing_count} />
-                <section className="glass rounded-2xl p-5">
+                <section className="gc-solid rounded-2xl p-5">
                     <h2 className="mb-3 flex items-center gap-2 font-display text-lg font-semibold text-white">
-                        <CalendarDays className="size-5 text-gc-lilac-200" />{' '}
+                        <CalendarDays className="size-5 text-sky-400" />{' '}
                         {tr('Події сервера')}
                     </h2>
                     {events.length === 0 ? (
@@ -355,7 +355,7 @@ export default function ServerShow({
                                     href={discord_events.invite}
                                     target="_blank"
                                     rel="noreferrer noopener"
-                                    className="text-gc-lilac-200 hover:text-white"
+                                    className="text-sky-400 hover:text-white"
                                 >
                                     {tr('бота GameCon')}
                                 </a>{' '}
@@ -366,7 +366,7 @@ export default function ServerShow({
                         )
                     )}
                     {event_hosts.length > 0 && (
-                        <details className="mt-4 rounded-2xl bg-white/[0.03] p-3">
+                        <details className="gc-solid-2 mt-4 rounded-2xl p-3">
                             <summary className="cursor-pointer text-sm font-semibold text-white/80">
                                 {tr('Нова подія сервера')}
                             </summary>
@@ -389,7 +389,7 @@ export default function ServerShow({
                 {apps && <ServerApps slug={server.slug} apps={apps} />}
                 {tournaments &&
                     (tournaments.list.length > 0 || tournaments.can_host) && (
-                        <section className="glass rounded-2xl p-5">
+                        <section className="gc-solid rounded-2xl p-5">
                             <div className="flex items-center justify-between gap-3">
                                 <h2 className="font-display text-lg font-semibold text-white">
                                     {tr('Турніри')}
@@ -405,7 +405,7 @@ export default function ServerShow({
                                         <button
                                             type="button"
                                             onClick={() => setHosting(true)}
-                                            className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-xl bg-white/[0.06] px-3 text-sm font-medium text-white transition hover:bg-white/10"
+                                            className="gc-solid-2 inline-flex h-9 shrink-0 items-center gap-1.5 rounded-xl px-3 text-sm font-medium text-white transition hover:bg-white/10"
                                         >
                                             <Plus className="size-4" />
                                             {tr('Провести турнір')}
@@ -441,14 +441,14 @@ export default function ServerShow({
                         </section>
                     )}
                 {charactersOn && (
-                    <section className="glass rounded-2xl p-5">
+                    <section className="gc-solid rounded-2xl p-5">
                         <div className="flex items-center justify-between gap-3">
                             <h2 className="font-display text-lg font-semibold text-white">
                                 {tr('Персонажі гравців')}
                             </h2>
                             <Link
                                 href={`/characters/create?server=${server.slug}`}
-                                className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-xl bg-white/[0.06] px-3 text-sm font-medium text-white transition hover:bg-white/10"
+                                className="gc-solid-2 inline-flex h-9 shrink-0 items-center gap-1.5 rounded-xl px-3 text-sm font-medium text-white transition hover:bg-white/10"
                             >
                                 <Plus className="size-4" />
                                 {tr('Мій персонаж')}
@@ -473,7 +473,7 @@ export default function ServerShow({
                         )}
                     </section>
                 )}
-                <section className="glass rounded-2xl p-5">
+                <section className="gc-solid rounded-2xl p-5">
                     <h2 className="font-display text-lg font-semibold text-white">
                         {tr('Відгуки')}
                         {reviews.average !== null && (
@@ -524,7 +524,7 @@ export default function ServerShow({
                         {reviews.items.map((review) => (
                             <div
                                 key={`${review.username}-${review.body.slice(0, 12)}`}
-                                className="rounded-2xl bg-white/[0.04] p-3"
+                                className="gc-solid-2 rounded-2xl p-3"
                             >
                                 <Link
                                     href={`/${review.username}`}
@@ -542,7 +542,7 @@ export default function ServerShow({
                         ))}
                     </div>
                 </section>
-                <section className="glass rounded-2xl p-5">
+                <section className="gc-solid rounded-2xl p-5">
                     <header className="mb-4 flex flex-wrap items-center gap-3">
                         <Trophy className="size-5 text-amber-300" />
                         <h2 className="font-display text-lg font-semibold text-white">
@@ -573,7 +573,7 @@ export default function ServerShow({
                                 <Link
                                     key={family.id}
                                     href={`/f/${family.slug}`}
-                                    className="flex items-center gap-4 rounded-2xl px-2 py-3 transition hover:bg-white/[0.03]"
+                                    className="flex items-center gap-4 rounded-2xl px-2 py-3 transition hover:bg-[var(--gc-l3)]"
                                 >
                                     <span
                                         className={cn(
@@ -592,7 +592,7 @@ export default function ServerShow({
                                     <FamilyLogo family={family} />
                                     <div className="min-w-0 flex-1">
                                         <div className="font-semibold break-words text-white">
-                                            <span className="text-gc-lilac-200">
+                                            <span className="text-sky-400">
                                                 [{family.tag}]
                                             </span>{' '}
                                             {family.name}
@@ -618,7 +618,7 @@ export default function ServerShow({
                 </section>
 
                 {(chartOn || tagsOn || similarOn) && (
-                    <section className="glass space-y-4 rounded-2xl p-5">
+                    <section className="gc-solid space-y-4 rounded-2xl p-5">
                         {chartOn && (
                             <h2 className="font-display text-xl font-bold text-white">
                                 {tr('Онлайн за два тижні')}
@@ -730,7 +730,7 @@ export default function ServerShow({
                 )}
 
                 {(newsOn || claimOn) && (
-                    <section className="glass space-y-4 rounded-2xl p-5">
+                    <section className="gc-solid space-y-4 rounded-2xl p-5">
                         {newsOn && (
                             <h2 className="font-display text-xl font-bold text-white">
                                 {tr('Новини власника')}
@@ -749,7 +749,7 @@ export default function ServerShow({
                             ownership.news.map((item) => (
                                 <article
                                     key={item.id}
-                                    className="rounded-2xl bg-white/[0.04] px-4 py-3"
+                                    className="gc-solid-2 rounded-2xl px-4 py-3"
                                 >
                                     <div className="text-xs text-white/40">
                                         {item.name}

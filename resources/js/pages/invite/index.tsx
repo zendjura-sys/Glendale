@@ -74,9 +74,9 @@ export default function Invite({
         <>
             <Head title={tr('Запросити друзів')} />
             <div className="mx-auto max-w-3xl space-y-5">
-                <section className="glass rounded-2xl p-5 sm:p-6">
+                <section className="gc-solid rounded-2xl p-5 sm:p-6">
                     <h1 className="flex items-center gap-2 font-display text-2xl font-bold text-white">
-                        <UserPlus className="size-6 text-gc-lilac-300" />
+                        <UserPlus className="size-6 text-sky-400" />
                         {tr('Запросити друзів')}
                     </h1>
                     <p className="mt-1 text-sm text-white/55">
@@ -84,7 +84,7 @@ export default function Invite({
                             'Надішліть посилання: хто зареєструється за ним, одразу стане вашим другом. За кожного, хто підтвердить пошту, — 30 XP і бейджі.',
                         )}
                     </p>
-                    <div className="mt-4 flex min-w-0 items-center gap-2 rounded-2xl bg-white/[0.05] p-2 pl-4">
+                    <div className="gc-solid-2 mt-4 flex min-w-0 items-center gap-2 rounded-2xl p-2 pl-4">
                         <code className="min-w-0 flex-1 font-mono text-sm break-all text-white/85">
                             {link}
                         </code>
@@ -119,7 +119,7 @@ export default function Invite({
                         ).map(([label, value]) => (
                             <div
                                 key={label}
-                                className="min-w-0 rounded-2xl bg-white/[0.04] px-3 py-2.5"
+                                className="gc-solid-2 min-w-0 rounded-2xl px-3 py-2.5"
                             >
                                 <div className="font-display text-xl font-bold text-white tabular-nums">
                                     {value}
@@ -132,7 +132,7 @@ export default function Invite({
                     </div>
                 </section>
 
-                <section className="glass rounded-2xl p-5 sm:p-6">
+                <section className="gc-solid rounded-2xl p-5 sm:p-6">
                     <h2 className="flex items-center gap-2 font-display text-lg font-bold text-white">
                         <Gift className="size-5 text-amber-300" />
                         {tr('Нагороди')}
@@ -149,7 +149,7 @@ export default function Invite({
                                     {active}/{next.target}
                                 </span>
                             </div>
-                            <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/[0.06]">
+                            <div className="gc-solid-2 mt-2 h-2 overflow-hidden rounded-full">
                                 <div
                                     className="h-full rounded-full bg-primary transition-[width] duration-500"
                                     style={{
@@ -183,7 +183,7 @@ export default function Invite({
                                     'flex items-center gap-3 rounded-2xl px-4 py-3',
                                     step.reached
                                         ? 'bg-emerald-400/[0.07]'
-                                        : 'bg-white/[0.03]',
+                                        : 'gc-solid-2',
                                 )}
                             >
                                 <span
@@ -191,7 +191,7 @@ export default function Invite({
                                         'flex size-9 shrink-0 items-center justify-center rounded-xl font-display text-sm font-bold',
                                         step.reached
                                             ? 'bg-emerald-400/20 text-emerald-100'
-                                            : 'bg-white/[0.06] text-white/60',
+                                            : 'gc-solid-2 text-white/60',
                                     )}
                                 >
                                     {step.reached ? (
@@ -215,7 +215,7 @@ export default function Invite({
                 </section>
 
                 {people.length > 0 && (
-                    <section className="glass rounded-2xl p-5">
+                    <section className="gc-solid rounded-2xl p-5">
                         <h2 className="font-display text-lg font-bold text-white">
                             {tr('Ви запросили')}
                         </h2>
@@ -229,7 +229,7 @@ export default function Invite({
                                 <li key={person.id}>
                                     <Link
                                         href={`/${person.username}`}
-                                        className="flex min-w-0 items-center gap-3 rounded-2xl px-2 py-2 transition hover:bg-white/[0.05]"
+                                        className="flex min-w-0 items-center gap-3 rounded-2xl px-2 py-2 transition hover:bg-[var(--gc-l3)]"
                                     >
                                         <UserAvatar user={person} size="sm" />
                                         <span className="min-w-0 flex-1">
@@ -257,7 +257,7 @@ export default function Invite({
                                                 'shrink-0 rounded-chip px-2 py-0.5 text-[11px]',
                                                 person.active
                                                     ? 'bg-emerald-400/10 text-emerald-200'
-                                                    : 'bg-white/[0.06] text-white/50',
+                                                    : 'gc-solid-2 text-white/50',
                                             )}
                                         >
                                             {person.active

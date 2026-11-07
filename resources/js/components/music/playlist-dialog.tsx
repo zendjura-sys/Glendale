@@ -63,7 +63,7 @@ export function PlaylistDialog({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="glass-strong gap-0 rounded-3xl border-white/10 p-6 text-white sm:max-w-lg">
+            <DialogContent className="glass-strong gap-0 rounded-3xl p-6 text-white sm:max-w-lg">
                 <DialogTitle className="font-display text-xl">
                     {playlist
                         ? tr('Редагування плейлиста')
@@ -77,7 +77,7 @@ export function PlaylistDialog({
 
                 <div className="mt-5 flex gap-4">
                     {playlist && (
-                        <label className="group relative flex size-28 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-2xl bg-white/[0.05] ring-1 ring-white/10">
+                        <label className="group gc-solid-2 relative flex size-28 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-2xl">
                             {preview ? (
                                 <img
                                     loading="lazy"
@@ -117,7 +117,7 @@ export function PlaylistDialog({
                             className="input-glass h-11 w-full rounded-xl px-3.5 text-sm text-white placeholder:text-white/30 focus:outline-none"
                         />
                         {form.errors.title && (
-                            <p className="text-xs text-rose-300">
+                            <p className="text-xs text-red-400">
                                 {form.errors.title}
                             </p>
                         )}
@@ -146,10 +146,10 @@ export function PlaylistDialog({
                             type="button"
                             onClick={() => form.setData('is_public', value)}
                             className={cn(
-                                'inline-flex items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-sm transition',
+                                'inline-flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm transition',
                                 form.data.is_public === value
-                                    ? 'border-gc-lilac-500/60 bg-gc-indigo/15 text-white'
-                                    : 'border-white/[0.07] text-white/55 hover:border-white/15',
+                                    ? 'bg-gc-indigo/15 text-white'
+                                    : 'text-white/55 hover:border-white/15',
                             )}
                         >
                             <Icon className="size-4" /> {label}

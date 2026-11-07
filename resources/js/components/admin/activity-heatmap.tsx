@@ -64,7 +64,7 @@ export function ActivityHeatmap({ data }: { data: HeatmapData }) {
                                             hour: hh(hour),
                                             n: count,
                                         })}
-                                        className="aspect-square rounded-[4px] bg-white/[0.04]"
+                                        className="gc-solid-2 aspect-square rounded-[4px]"
                                         style={
                                             count > 0
                                                 ? {

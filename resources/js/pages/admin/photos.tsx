@@ -66,7 +66,7 @@ export default function AdminPhotos({ photos, filters, stats }: Props) {
                         : tr('Модерація фото з усіх альбомів мережі')
                 }
                 actions={
-                    <div className="glass flex rounded-xl p-1 text-sm">
+                    <div className="gc-solid flex rounded-xl p-1 text-sm">
                         {[
                             { label: tr('Активні'), value: false },
                             {
@@ -83,7 +83,7 @@ export default function AdminPhotos({ photos, filters, stats }: Props) {
                                 className={cn(
                                     'rounded-lg px-3.5 py-1.5 font-medium transition',
                                     filters.trashed === tab.value
-                                        ? 'bg-gradient-brand text-white'
+                                        ? 'bg-sky-500 text-white'
                                         : 'text-white/55 hover:text-white',
                                 )}
                             >
@@ -118,7 +118,7 @@ export default function AdminPhotos({ photos, filters, stats }: Props) {
 
             <form
                 onSubmit={submit}
-                className="glass relative mb-4 rounded-2xl p-2.5"
+                className="gc-solid relative mb-4 rounded-2xl p-2.5"
             >
                 <Search className="pointer-events-none absolute top-1/2 left-6 size-4 -translate-y-1/2 text-white/30" />
                 <Input
@@ -134,7 +134,7 @@ export default function AdminPhotos({ photos, filters, stats }: Props) {
                     <article
                         key={photo.id}
                         className={cn(
-                            'glass group overflow-hidden rounded-2xl',
+                            'gc-solid group overflow-hidden rounded-2xl',
                             photo.deleted_at && 'opacity-70',
                         )}
                     >
@@ -165,7 +165,7 @@ export default function AdminPhotos({ photos, filters, stats }: Props) {
                                 <button
                                     type="button"
                                     onClick={() => remove(photo)}
-                                    className="flex size-8 items-center justify-center rounded-lg bg-black/60 text-rose-300 backdrop-blur hover:bg-black/80"
+                                    className="flex size-8 items-center justify-center rounded-lg bg-black/60 text-red-400 backdrop-blur hover:bg-black/80"
                                     title={
                                         photo.deleted_at
                                             ? tr('Видалити назавжди')
@@ -211,7 +211,7 @@ export default function AdminPhotos({ photos, filters, stats }: Props) {
                 ))}
             </div>
             {photos.data.length === 0 && (
-                <div className="glass rounded-2xl px-6 py-14 text-center text-sm text-white/40">
+                <div className="gc-solid rounded-2xl px-6 py-14 text-center text-sm text-white/40">
                     {tr('Фотографій не знайдено')}
                 </div>
             )}

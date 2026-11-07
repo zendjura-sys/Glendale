@@ -89,7 +89,7 @@ export default function PlayersMap({ countries }: { countries: Row[] }) {
                         )}
                     </p>
                 </header>
-                <section className="glass relative overflow-hidden rounded-2xl p-2 sm:p-4">
+                <section className="gc-solid relative overflow-hidden rounded-2xl p-2 sm:p-4">
                     <svg
                         viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
                         className="h-auto w-full"
@@ -135,7 +135,7 @@ export default function PlayersMap({ countries }: { countries: Row[] }) {
                         </div>
                     )}
                 </section>
-                <section className="glass rounded-2xl p-4">
+                <section className="gc-solid rounded-2xl p-4">
                     <h2 className="mb-3 text-sm font-semibold text-white">
                         {tr('{total} гравців у {count} країнах', {
                             total,
@@ -153,7 +153,7 @@ export default function PlayersMap({ countries }: { countries: Row[] }) {
                                     <span className="w-36 truncate text-white/80">
                                         {c.name}
                                     </span>
-                                    <span className="h-2 flex-1 overflow-hidden rounded-full bg-white/[0.06]">
+                                    <span className="gc-solid-2 h-2 flex-1 overflow-hidden rounded-full">
                                         <span
                                             className="block h-full rounded-full bg-sky-400"
                                             style={{

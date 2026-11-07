@@ -72,7 +72,7 @@ export function AuthorStatsButton({ className }: { className?: string }) {
                 <DialogContent className="max-h-[calc(100dvh-2rem)] gap-4 overflow-y-auto sm:max-w-lg">
                     <div>
                         <DialogTitle className="flex items-center gap-2 font-display text-lg font-semibold text-white">
-                            <BarChart3 className="size-5 text-gc-lilac-300" />
+                            <BarChart3 className="size-5 text-sky-400" />
                             {tr('Статистика автора')}
                         </DialogTitle>
                         <DialogDescription className="mt-1 text-sm text-white/50">
@@ -87,7 +87,7 @@ export function AuthorStatsButton({ className }: { className?: string }) {
                                 {totals.map(([Icon, label, value]) => (
                                     <div
                                         key={label}
-                                        className="rounded-xl bg-white/[0.04] p-3"
+                                        className="gc-solid-2 rounded-xl p-3"
                                     >
                                         <Icon className="size-4 text-white/40" />
                                         <p className="mt-1.5 font-display text-xl font-semibold text-white tabular-nums">
@@ -129,7 +129,7 @@ export function AuthorStatsButton({ className }: { className?: string }) {
                                         <Link
                                             key={post.id}
                                             href={`/posts/${post.id}`}
-                                            className="block rounded-xl bg-white/[0.04] p-3 transition hover:bg-white/[0.07]"
+                                            className="gc-solid-2 block rounded-xl p-3 transition hover:bg-[var(--gc-l3)]"
                                         >
                                             <p className="truncate text-sm text-white">
                                                 {post.excerpt}

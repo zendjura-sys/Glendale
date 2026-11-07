@@ -78,7 +78,7 @@ export function DeviceList({ onDone }: { onDone?: () => void }) {
     };
 
     return (
-        <div className="border-b border-white/10 pb-1">
+        <div className="pb-1">
             <p className="px-4 pt-3 pb-1 text-[13px] font-semibold text-white/60">
                 {tr('Пристрої')}
             </p>
@@ -246,7 +246,7 @@ export function DevicesButton({
                         role="dialog"
                         aria-label={tr('Пристрої')}
                         className={cn(
-                            'gc-float-menu absolute bottom-full z-10 mb-2 w-80 overflow-hidden rounded-2xl bg-[rgb(28_28_30/0.94)] text-white shadow-2xl ring-1 ring-white/10 backdrop-blur-2xl [&>div]:border-b-0',
+                            'gc-float-menu absolute bottom-full z-10 mb-2 w-80 overflow-hidden rounded-2xl bg-[rgb(28_28_30/0.94)] text-white backdrop-blur-2xl [&>div]:border-b-0',
                             sheetClassName,
                         )}
                     >

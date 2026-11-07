@@ -27,7 +27,7 @@ export function GameLeaderboard({ data }: { data: LeaderboardData }) {
         <div>
             <div className="mb-3 flex items-center gap-2">
                 {data.friends.length > 0 && (
-                    <div className="flex rounded-xl bg-white/[0.04] p-1">
+                    <div className="gc-solid-2 flex rounded-xl p-1">
                         {(
                             [
                                 ['top', tr('Усі')],
@@ -63,7 +63,7 @@ export function GameLeaderboard({ data }: { data: LeaderboardData }) {
                 {rows.map((row, index) => (
                     <li
                         key={row.user.id}
-                        className="flex items-center gap-3 rounded-xl px-2 py-1.5 hover:bg-white/[0.04]"
+                        className="flex items-center gap-3 rounded-xl px-2 py-1.5 hover:bg-[var(--gc-l3)]"
                     >
                         <span
                             className={cn(

@@ -147,7 +147,7 @@ export function MatchRow({
                         {match.reasons.slice(0, 4).map((reason, i) => (
                             <span
                                 key={i}
-                                className="rounded-chip bg-white/[0.06] px-2 py-0.5 text-[11px] text-white/70"
+                                className="gc-solid-2 rounded-chip px-2 py-0.5 text-[11px] text-white/70"
                             >
                                 {reasonLabel(reason)}
                             </span>
@@ -157,7 +157,7 @@ export function MatchRow({
                 <div className="mt-2.5 flex flex-wrap gap-2">
                     <Link
                         href={`/messages/with/${match.user.username}`}
-                        className="inline-flex h-8 items-center gap-1.5 rounded-control bg-white/[0.06] px-3 text-xs font-medium text-white hover:bg-white/10"
+                        className="gc-solid-2 inline-flex h-8 items-center gap-1.5 rounded-control px-3 text-xs font-medium text-white hover:bg-white/10"
                     >
                         <MessageCircle className="size-3.5" />
                         {tr('Написати')}
@@ -204,8 +204,8 @@ export function MatchRow({
                     match.score >= 70
                         ? 'text-primary ring-primary/50'
                         : match.score >= 40
-                          ? 'text-white ring-white/25'
-                          : 'text-white/55 ring-white/10',
+                          ? 'text-white'
+                          : 'text-white/55',
                 )}
                 title={tr('Сумісність')}
             >

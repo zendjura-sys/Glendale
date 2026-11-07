@@ -193,7 +193,7 @@ export function UploadTracksDialog({
 
     return (
         <Dialog open={open} onOpenChange={close}>
-            <DialogContent className="glass-strong flex max-h-[min(92dvh,calc(100dvh-env(safe-area-inset-bottom)-0.75rem))] w-[calc(100%-1rem)] flex-col gap-0 overflow-hidden rounded-3xl border-white/10 p-4 text-white sm:max-w-2xl sm:p-6">
+            <DialogContent className="glass-strong flex max-h-[min(92dvh,calc(100dvh-env(safe-area-inset-bottom)-0.75rem))] w-[calc(100%-1rem)] flex-col gap-0 overflow-hidden rounded-3xl p-4 text-white sm:max-w-2xl sm:p-6">
                 <DialogTitle className="pr-8 font-display text-xl leading-tight">
                     {tr('Завантаження музики')}
                 </DialogTitle>
@@ -209,7 +209,7 @@ export function UploadTracksDialog({
 
                 <div
                     role="tablist"
-                    className="mt-4 flex w-full gap-1 self-start rounded-full border border-white/10 bg-white/[0.04] p-1 sm:w-auto"
+                    className="gc-solid-2 mt-4 flex w-full gap-1 self-start rounded-full p-1 sm:w-auto"
                 >
                     {(
                         [
@@ -265,11 +265,11 @@ export function UploadTracksDialog({
                             void addFiles(event.dataTransfer.files);
                         }}
                         className={cn(
-                            'group mt-4 flex flex-col items-center rounded-3xl border border-dashed px-4 text-center transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none sm:mt-5',
+                            'group mt-4 flex flex-col items-center rounded-3xl px-4 text-center transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none sm:mt-5',
                             items.length > 0 ? 'py-5' : 'py-9 sm:py-11',
                             dragging
                                 ? 'border-primary bg-primary/[0.08]'
-                                : 'border-white/15 bg-white/[0.02] hover:border-white/30',
+                                : 'gc-solid-2 hover:border-white/30',
                         )}
                     >
                         <span className="relative flex size-16 items-center justify-center">
@@ -287,7 +287,7 @@ export function UploadTracksDialog({
                             <m.span
                                 animate={{ scale: dragging ? 1.12 : 1 }}
                                 transition={motionOr(reduce, POP)}
-                                className="relative flex size-16 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_10px_30px_-10px_var(--primary)]"
+                                className="relative flex size-16 items-center justify-center rounded-full bg-primary text-primary-foreground"
                             >
                                 <ArrowUp className="size-7" strokeWidth={2.4} />
                             </m.span>
@@ -357,12 +357,12 @@ export function UploadTracksDialog({
                                     }
                                     transition={motionOr(reduce, RISE)}
                                     className={cn(
-                                        'relative overflow-hidden rounded-2xl border p-3 transition-colors',
+                                        'relative overflow-hidden rounded-2xl p-3 transition-colors',
                                         item.status === 'done'
-                                            ? 'border-emerald-400/20 bg-emerald-400/[0.05]'
+                                            ? 'bg-emerald-400/[0.05]'
                                             : item.status === 'error'
-                                              ? 'border-rose-400/25 bg-rose-400/[0.05]'
-                                              : 'border-white/[0.07] bg-white/[0.04]',
+                                              ? 'bg-red-400/[0.05]'
+                                              : 'gc-solid-2',
                                     )}
                                 >
                                     <div className="relative flex items-start gap-3">
@@ -426,7 +426,7 @@ export function UploadTracksDialog({
                                                         <SuccessCheck />
                                                     ) : item.status ===
                                                       'error' ? (
-                                                        <AlertCircle className="size-5 text-rose-300" />
+                                                        <AlertCircle className="size-5 text-red-400" />
                                                     ) : (
                                                         <button
                                                             type="button"
@@ -460,7 +460,7 @@ export function UploadTracksDialog({
                                                 {item.album &&
                                                     ` · ${item.album}`}
                                                 {item.error && (
-                                                    <span className="text-rose-300">
+                                                    <span className="text-red-400">
                                                         {' '}
                                                         · {item.error}
                                                     </span>
@@ -491,7 +491,7 @@ export function UploadTracksDialog({
                                 type="button"
                                 onClick={() => close(false)}
                                 disabled={linking}
-                                className="h-11 rounded-full border border-white/15 px-6 text-sm font-semibold text-white/80 transition-colors hover:border-white/30 hover:text-white disabled:opacity-50"
+                                className="h-11 rounded-full px-6 text-sm font-semibold text-white/80 transition-colors hover:border-white/30 hover:text-white disabled:opacity-50"
                             >
                                 {tr('Закрити')}
                             </button>
@@ -513,7 +513,7 @@ export function UploadTracksDialog({
                                 type="button"
                                 onClick={() => close(false)}
                                 disabled={busy}
-                                className="h-11 rounded-full border border-white/15 px-6 text-sm font-semibold text-white/80 transition-colors hover:border-white/30 hover:text-white disabled:opacity-50"
+                                className="h-11 rounded-full px-6 text-sm font-semibold text-white/80 transition-colors hover:border-white/30 hover:text-white disabled:opacity-50"
                             >
                                 {pending === 0 && items.length > 0
                                     ? tr('Готово')

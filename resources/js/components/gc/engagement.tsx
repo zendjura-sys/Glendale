@@ -26,7 +26,7 @@ export function EngagementCard() {
 
     // Плитка Bento: велике число днів поспіль, підпис і рекорд; «Цього дня» — посиланням унизу.
     return (
-        <div className="glass flex flex-col gap-3 rounded-2xl p-5">
+        <div className="gc-solid flex flex-col gap-3 rounded-2xl p-5">
             {hasStreak && (
                 <div className="flex items-center gap-3">
                     <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-orange-500/15">
@@ -151,7 +151,7 @@ export function HomeWidgetsEditor({ widgets }: { widgets: string[] }) {
     }
 
     return (
-        <div className="glass space-y-1 rounded-2xl p-3">
+        <div className="gc-solid space-y-1 rounded-2xl p-3">
             <p className="mb-2 text-sm font-semibold text-white">
                 {tr('Віджети біля стрічки')}
             </p>

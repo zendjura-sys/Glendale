@@ -155,7 +155,7 @@ export function GameReviews({
                                 'h-8 rounded-lg px-2.5 text-xs',
                                 sort === s
                                     ? 'bg-primary text-white'
-                                    : 'bg-white/[0.06] text-white/65 hover:text-white',
+                                    : 'gc-solid-2 text-white/65 hover:text-white',
                             )}
                         >
                             {s === 'helpful' ? tr('Корисні') : tr('Нові')}
@@ -168,7 +168,7 @@ export function GameReviews({
                 (writing ? (
                     <form
                         onSubmit={submit}
-                        className="space-y-3 rounded-2xl bg-white/[0.04] p-3"
+                        className="gc-solid-2 space-y-3 rounded-2xl p-3"
                     >
                         <div className="flex flex-wrap items-center gap-2">
                             {[true, false].map((r) => (
@@ -182,7 +182,7 @@ export function GameReviews({
                                             ? r
                                                 ? 'bg-emerald-500/25 text-white'
                                                 : 'bg-red-500/25 text-white'
-                                            : 'bg-white/[0.06] text-white/65',
+                                            : 'gc-solid-2 text-white/65',
                                     )}
                                 >
                                     {r ? (
@@ -259,7 +259,7 @@ export function GameReviews({
                 ))}
 
             {data.reviews.data.map((r) => (
-                <article key={r.id} className="rounded-2xl bg-white/[0.03] p-3">
+                <article key={r.id} className="gc-solid-2 rounded-2xl p-3">
                     <div className="flex items-center gap-2.5">
                         {r.user && (
                             <Link href={`/${r.user.username}`}>
@@ -282,7 +282,7 @@ export function GameReviews({
                                 'flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold',
                                 r.recommended
                                     ? 'bg-emerald-500/15 text-emerald-300'
-                                    : 'bg-red-500/15 text-red-300',
+                                    : 'bg-red-500/15 text-red-400',
                             )}
                         >
                             {r.recommended ? (
@@ -303,7 +303,7 @@ export function GameReviews({
                                 onClick={() => helpful(r)}
                                 className={cn(
                                     'hover:text-white',
-                                    r.helpful && 'text-sky-300',
+                                    r.helpful && 'text-sky-400',
                                 )}
                             >
                                 {tr('Корисно')} · {r.helpful_count}
@@ -313,7 +313,7 @@ export function GameReviews({
                             <button
                                 type="button"
                                 onClick={remove}
-                                className="flex items-center gap-1 hover:text-red-300"
+                                className="flex items-center gap-1 hover:text-red-400"
                             >
                                 <Trash2 className="size-3.5" />
                                 {tr('Видалити')}

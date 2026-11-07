@@ -195,9 +195,9 @@ function Section({
     children: ReactNode;
 }) {
     return (
-        <section className="glass mt-4 rounded-2xl p-4 sm:p-5">
+        <section className="gc-solid mt-4 rounded-2xl p-4 sm:p-5">
             <div className="mb-3 flex items-center gap-2">
-                <Icon className="size-4 text-gc-lilac-200" />
+                <Icon className="size-4 text-sky-400" />
                 <h2 className="font-display text-base font-semibold text-white">
                     {title}
                 </h2>
@@ -209,7 +209,7 @@ function Section({
 
 function Fact({ label, value }: { label: string; value: ReactNode }) {
     return (
-        <div className="rounded-2xl bg-white/[0.03] p-3">
+        <div className="gc-solid-2 rounded-2xl p-3">
             <p className="text-xs text-white/40">{label}</p>
             <p className="mt-0.5 text-sm text-white/85">{value}</p>
         </div>
@@ -231,10 +231,10 @@ function Score({
             ? 'text-emerald-300'
             : value >= 50
               ? 'text-amber-200'
-              : 'text-rose-300';
+              : 'text-red-400';
 
     return (
-        <div className="rounded-2xl bg-white/[0.03] p-3 text-center">
+        <div className="gc-solid-2 rounded-2xl p-3 text-center">
             <p className={cn('font-display text-2xl font-semibold', tone)}>
                 {value}
             </p>
@@ -313,7 +313,7 @@ function paletteStyle(palette: PosterPalette): CSSProperties | undefined {
 
 /** Матове «рідке скло» для кнопок під постером. */
 const POSTER_GLASS =
-    'h-10 rounded-xl border-gc-lilac-400/35 bg-gc-indigo/[0.14] px-3.5 text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.18)] backdrop-blur-xl backdrop-saturate-150 hover:bg-gc-indigo/25';
+    'h-10 rounded-xl  bg-gc-indigo/[0.14] px-3.5 text-white  backdrop-blur-xl backdrop-saturate-150 hover:bg-gc-indigo/25';
 
 export default function GameShow({
     palette = null,
@@ -437,7 +437,7 @@ export default function GameShow({
                 <ArrowLeft className="size-4" /> {tr('Каталог ігор')}
             </Link>
             <div
-                className="glass overflow-hidden rounded-2xl"
+                className="gc-solid overflow-hidden rounded-2xl"
                 style={
                     palette
                         ? {
@@ -494,7 +494,7 @@ export default function GameShow({
                                 {d.age_ratings?.map((a) => (
                                     <span
                                         key={a}
-                                        className="rounded-md border border-white/30 bg-black/20 px-1.5 py-0.5 text-xs font-medium text-white/85 backdrop-blur-md"
+                                        className="rounded-md bg-black/20 px-1.5 py-0.5 text-xs font-medium text-white/85 backdrop-blur-md"
                                     >
                                         {a}
                                     </span>
@@ -553,7 +553,7 @@ export default function GameShow({
                                 <Link
                                     key={m.key}
                                     href={`/games?mode=${m.key}`}
-                                    className="rounded-lg bg-gc-indigo/20 px-2.5 py-1 text-xs text-gc-lilac-200 hover:bg-gc-indigo/30"
+                                    className="rounded-lg bg-gc-indigo/20 px-2.5 py-1 text-xs text-sky-400 hover:bg-gc-indigo/30"
                                 >
                                     {m.label}
                                 </Link>
@@ -562,7 +562,7 @@ export default function GameShow({
                                 <Link
                                     key={g}
                                     href={`/games?genre=${encodeURIComponent(g)}`}
-                                    className="rounded-lg bg-white/[0.06] px-2.5 py-1 text-xs text-white/70 hover:bg-white/10"
+                                    className="gc-solid-2 rounded-lg px-2.5 py-1 text-xs text-white/70 hover:bg-white/10"
                                 >
                                     {g}
                                 </Link>
@@ -608,7 +608,7 @@ export default function GameShow({
             </div>
 
             {(steam_friends.length > 0 || can_curate) && (
-                <section className="glass mt-4 space-y-3 rounded-2xl p-4 sm:p-5">
+                <section className="gc-solid mt-4 space-y-3 rounded-2xl p-4 sm:p-5">
                     {steam_friends.length > 0 && (
                         <div>
                             <h2 className="font-display text-base font-semibold text-white">
@@ -747,9 +747,9 @@ export default function GameShow({
             {tierOn && !guest && (
                 <Link
                     href={`/tierlists?game=${game.slug}`}
-                    className="glass mt-4 flex items-center gap-3 rounded-2xl p-4 transition hover:bg-white/[0.06]"
+                    className="gc-solid mt-4 flex items-center gap-3 rounded-2xl p-4 transition hover:bg-[var(--gc-l3)]"
                 >
-                    <LayoutList className="size-5 text-gc-lilac-300" />
+                    <LayoutList className="size-5 text-sky-400" />
                     <span className="flex-1 text-sm font-medium text-white">
                         {tr('Тір-листи гри')}
                     </span>
@@ -780,15 +780,15 @@ export default function GameShow({
             )}
 
             {(events.length > 0 || can_add_event) && (
-                <section className="glass mt-4 rounded-2xl p-4 sm:p-5">
+                <section className="gc-solid mt-4 rounded-2xl p-4 sm:p-5">
                     <div className="mb-3 flex items-center gap-2">
-                        <CalendarDays className="size-4 text-gc-lilac-200" />
+                        <CalendarDays className="size-4 text-sky-400" />
                         <h2 className="flex-1 font-display text-base font-semibold text-white">
                             {tr('Події гри')}
                         </h2>
                         <Link
                             href="/events?kind=game"
-                            className="text-sm text-gc-lilac-200 hover:text-white"
+                            className="text-sm text-sky-400 hover:text-white"
                         >
                             {tr('Календар')}
                         </Link>
@@ -801,7 +801,7 @@ export default function GameShow({
                         <EventList events={events} />
                     )}
                     {can_add_event && (
-                        <details className="mt-4 rounded-2xl bg-white/[0.03] p-3">
+                        <details className="gc-solid-2 mt-4 rounded-2xl p-3">
                             <summary className="cursor-pointer text-sm font-semibold text-white/80">
                                 {tr('Нова подія гри')}
                             </summary>
@@ -878,7 +878,7 @@ export default function GameShow({
                         {wallpapers.map((url, index) => (
                             <figure
                                 key={url}
-                                className="group relative overflow-hidden rounded-xl bg-white/[0.04]"
+                                className="group gc-solid-2 relative overflow-hidden rounded-xl"
                             >
                                 <img
                                     src={url.replace(
@@ -1037,7 +1037,7 @@ export default function GameShow({
                     ) : null}
                 </div>
                 {d.storyline && (
-                    <details className="mt-3 rounded-2xl bg-white/[0.03] p-3 text-sm text-white/70">
+                    <details className="gc-solid-2 mt-3 rounded-2xl p-3 text-sm text-white/70">
                         <summary className="flex cursor-pointer items-center gap-1.5 text-white/85">
                             <BookOpen className="size-4" /> {tr('Сюжет')}
                         </summary>
@@ -1054,7 +1054,7 @@ export default function GameShow({
                         {d.release_dates.map((r) => (
                             <span
                                 key={r.platform}
-                                className="rounded-xl bg-white/[0.04] px-3 py-1.5 text-sm text-white/75"
+                                className="gc-solid-2 rounded-xl px-3 py-1.5 text-sm text-white/75"
                             >
                                 {r.platform}:{' '}
                                 <span className="text-white">
@@ -1073,7 +1073,7 @@ export default function GameShow({
                             'mb-3 inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-sm',
                             ua
                                 ? 'bg-emerald-500/15 text-emerald-200'
-                                : 'bg-white/[0.04] text-white/55',
+                                : 'gc-solid-2 text-white/55',
                         )}
                     >
                         <ShieldCheck className="size-4" />
@@ -1110,10 +1110,7 @@ export default function GameShow({
                             </thead>
                             <tbody>
                                 {d.languages.map((l) => (
-                                    <tr
-                                        key={l.name}
-                                        className="border-t border-white/[0.05] text-white/70"
-                                    >
+                                    <tr key={l.name} className="text-white/70">
                                         <td className="py-1.5">{l.name}</td>
                                         {(
                                             [
@@ -1150,7 +1147,7 @@ export default function GameShow({
                     </div>
                     <Link
                         href={`/moments?game=${game.slug}`}
-                        className="mt-4 inline-flex text-sm font-medium text-gc-lilac-300 hover:text-white"
+                        className="mt-4 inline-flex text-sm font-medium text-sky-400 hover:text-white"
                     >
                         {tr('Усі моменти гри →')}
                     </Link>
@@ -1169,7 +1166,7 @@ export default function GameShow({
                             {guides.map((guide) => (
                                 <article
                                     key={guide.id}
-                                    className="rounded-2xl bg-white/[0.04] p-4"
+                                    className="gc-solid-2 rounded-2xl p-4"
                                 >
                                     <div className="flex items-start gap-3">
                                         <div className="min-w-0 flex-1">
@@ -1216,7 +1213,7 @@ export default function GameShow({
                                         {guide.mine && (
                                             <button
                                                 type="button"
-                                                className="text-xs text-rose-200 hover:text-rose-100"
+                                                className="text-xs text-red-400 hover:text-red-400"
                                                 onClick={() =>
                                                     router.delete(
                                                         `/games/${game.slug}/guides/${guide.id}`,
@@ -1243,7 +1240,7 @@ export default function GameShow({
                                 href={w.url}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-white/[0.06] px-3 text-sm text-white/80 hover:bg-white/10"
+                                className="gc-solid-2 inline-flex h-9 items-center gap-1.5 rounded-xl px-3 text-sm text-white/80 hover:bg-white/10"
                             >
                                 {w.label}{' '}
                                 <ExternalLink className="size-3.5 opacity-60" />
@@ -1254,7 +1251,7 @@ export default function GameShow({
                                 href={d.igdb_url}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-white/[0.06] px-3 text-sm text-white/80 hover:bg-white/10"
+                                className="gc-solid-2 inline-flex h-9 items-center gap-1.5 rounded-xl px-3 text-sm text-white/80 hover:bg-white/10"
                             >
                                 IGDB{' '}
                                 <ExternalLink className="size-3.5 opacity-60" />
@@ -1265,9 +1262,9 @@ export default function GameShow({
             )}
 
             {features.clans !== false && (
-                <section className="glass mt-4 rounded-2xl p-4 sm:p-5">
+                <section className="gc-solid mt-4 rounded-2xl p-4 sm:p-5">
                     <div className="mb-3 flex items-center gap-2">
-                        <Swords className="size-4 text-gc-lilac-200" />
+                        <Swords className="size-4 text-sky-400" />
                         <h2 className="flex-1 font-display text-base font-semibold text-white">
                             {tr('Клани й гільдії')}
                         </h2>
@@ -1290,7 +1287,7 @@ export default function GameShow({
                                 <Link
                                     key={c.id}
                                     href={`/clans/${c.slug}`}
-                                    className="flex items-center gap-3 rounded-2xl bg-white/[0.03] p-3 transition hover:bg-white/[0.06]"
+                                    className="gc-solid-2 flex items-center gap-3 rounded-2xl p-3 transition hover:bg-[var(--gc-l3)]"
                                 >
                                     <span className="flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white/10 text-sm font-bold text-white">
                                         {c.logo_url ? (
@@ -1333,7 +1330,7 @@ export default function GameShow({
                             <Link
                                 key={g.id}
                                 href={`/games/${g.slug}`}
-                                className="overflow-hidden rounded-2xl bg-white/[0.03] transition hover:bg-white/[0.06]"
+                                className="gc-solid-2 overflow-hidden rounded-2xl transition hover:bg-[var(--gc-l3)]"
                             >
                                 <span className="block aspect-[16/9] overflow-hidden">
                                     <GameCover game={g} />

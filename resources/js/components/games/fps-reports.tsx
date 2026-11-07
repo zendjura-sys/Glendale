@@ -117,7 +117,7 @@ export function FpsReports({ slug }: { slug: string }) {
                                             ? 'bg-emerald-400/80'
                                             : r.fps >= 30
                                               ? 'bg-amber-400/80'
-                                              : 'bg-rose-400/80',
+                                              : 'bg-red-400/80',
                                     )}
                                     style={{
                                         width: `${(r.fps / best) * 100}%`,
@@ -155,7 +155,7 @@ export function FpsReports({ slug }: { slug: string }) {
                                     ),
                                 );
                         }}
-                        className="grid gap-2 rounded-xl bg-white/[0.04] p-3 sm:grid-cols-2"
+                        className="gc-solid-2 grid gap-2 rounded-xl p-3 sm:grid-cols-2"
                     >
                         <input
                             value={form.gpu}
@@ -226,7 +226,7 @@ export function FpsReports({ slug }: { slug: string }) {
                     <button
                         type="button"
                         onClick={() => setOpen(true)}
-                        className="text-sm font-medium text-gc-lilac-300 hover:text-white"
+                        className="text-sm font-medium text-sky-400 hover:text-white"
                     >
                         {data.mine
                             ? tr('Оновити свій FPS ({fps})', {

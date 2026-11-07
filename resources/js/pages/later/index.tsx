@@ -64,7 +64,7 @@ export default function ReadLater({ posts }: { posts: PostItem[] }) {
                                 <button
                                     type="button"
                                     onClick={() => done(post.id)}
-                                    className="glass ml-auto flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-medium text-white/80 transition hover:text-white"
+                                    className="gc-solid ml-auto flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-medium text-white/80 transition hover:text-white"
                                 >
                                     <Check className="size-4 text-emerald-300" />
                                     {tr('Прочитано')}

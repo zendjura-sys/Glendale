@@ -68,7 +68,7 @@ export function ViewOnceAttachment({
                 className={cn(
                     'flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm transition',
                     own || opened
-                        ? 'bg-white/[0.06] text-white/60'
+                        ? 'gc-solid-2 text-white/60'
                         : 'bg-primary/25 text-white hover:bg-primary/35',
                 )}
             >

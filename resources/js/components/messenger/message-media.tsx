@@ -123,9 +123,7 @@ export function VoicePlayer({
                 onClick={toggle}
                 className={cn(
                     'flex size-10 shrink-0 items-center justify-center rounded-full transition hover:scale-105',
-                    own
-                        ? 'bg-white text-[#1d6fe0]'
-                        : 'bg-gradient-brand text-white shadow-[0_0_18px_-4px_rgb(124_92_255/0.9)]',
+                    own ? 'bg-white text-[#1d6fe0]' : 'bg-sky-500 text-white',
                 )}
                 aria-label={isPlaying ? tr('Пауза') : tr('Відтворити')}
             >
@@ -159,7 +157,7 @@ export function VoicePlayer({
                                             ? 'bg-white'
                                             : 'bg-white/40'
                                         : active
-                                          ? 'bg-gc-lilac-400'
+                                          ? 'bg-sky-400'
                                           : 'bg-white/25',
                                 )}
                                 style={{
@@ -211,7 +209,7 @@ function fileVisual(name: string | null | undefined, mime?: string | null) {
         return { icon: FileAudio, tone: 'from-gc-pink to-gc-purple' };
     }
     if (mime?.startsWith('video/')) {
-        return { icon: FileVideo, tone: 'from-rose-400 to-gc-pink' };
+        return { icon: FileVideo, tone: 'from-red-400 to-gc-pink' };
     }
     if (['js', 'ts', 'php', 'json', 'html', 'css', 'py', 'cs'].includes(ext)) {
         return { icon: FileCode, tone: 'from-gc-cyan to-gc-blue' };
@@ -240,12 +238,12 @@ export function FileAttachment({
             download={attachment.name ?? true}
             className={cn(
                 'group/file flex w-[min(300px,62vw)] items-center gap-3 rounded-[14px] p-2 transition',
-                own ? 'hover:bg-white/10' : 'hover:bg-white/[0.05]',
+                own ? 'hover:bg-white/10' : 'hover:bg-[var(--gc-l3)]',
             )}
         >
             <span
                 className={cn(
-                    'relative flex size-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br text-white shadow-lg',
+                    'relative flex size-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br text-white',
                     tone,
                 )}
             >
@@ -287,7 +285,7 @@ export function FileAttachment({
                     'flex size-9 shrink-0 items-center justify-center rounded-xl transition',
                     own
                         ? 'text-white/80 hover:bg-white/15'
-                        : 'text-white/55 hover:bg-white/[0.07] hover:text-white',
+                        : 'text-white/55 hover:bg-[var(--gc-l3)] hover:text-white',
                 )}
             >
                 <Eye className="size-4" />
@@ -337,8 +335,8 @@ export function ContactAttachment({
             </div>
             <div
                 className={cn(
-                    'mt-2.5 grid grid-cols-2 gap-1.5 border-t pt-2',
-                    own ? 'border-white/20' : 'border-white/[0.07]',
+                    'mt-2.5 grid grid-cols-2 gap-1.5 pt-2',
+                    own ? '' : '',
                 )}
             >
                 <Link
@@ -347,7 +345,7 @@ export function ContactAttachment({
                         'flex items-center justify-center gap-1.5 rounded-lg py-1.5 text-xs font-semibold transition',
                         own
                             ? 'bg-white/15 hover:bg-white/25'
-                            : 'bg-white/[0.06] hover:bg-white/10',
+                            : 'gc-solid-2 hover:bg-white/10',
                     )}
                 >
                     <UserRound className="size-3.5" /> {tr('Профіль')}

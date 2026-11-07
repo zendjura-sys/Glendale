@@ -71,7 +71,7 @@ export default function HelpCategory({ category, categories }: Props) {
                                 'inline-flex h-9 items-center rounded-lg px-3 text-sm transition',
                                 c.slug === category.slug
                                     ? 'bg-primary/15 font-medium text-primary'
-                                    : 'bg-white/[0.04] text-white/65 hover:text-white',
+                                    : 'gc-solid-2 text-white/65 hover:text-white',
                             )}
                         >
                             {c.title}

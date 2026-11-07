@@ -55,7 +55,7 @@ export function ServerPromotion({
         buyProduct(product, { server_id: serverId });
 
     return (
-        <section className="glass rounded-2xl p-5">
+        <section className="gc-solid rounded-2xl p-5">
             <h2 className="font-display text-lg font-bold text-white">
                 {tr('Просування сервера')}
             </h2>
@@ -80,7 +80,7 @@ export function ServerPromotion({
                     return (
                         <div
                             key={kind}
-                            className="flex flex-col gap-2 rounded-2xl bg-white/[0.04] p-4"
+                            className="gc-solid-2 flex flex-col gap-2 rounded-2xl p-4"
                         >
                             <span className="flex items-center gap-2 font-semibold text-white">
                                 <Icon className="size-4 text-indigo-300" />

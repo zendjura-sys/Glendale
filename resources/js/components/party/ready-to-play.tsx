@@ -101,7 +101,7 @@ export function ReadyToPlayCard({ className }: { className?: string }) {
             className={className}
         >
             {mine ? (
-                <div className="mb-3 flex items-center gap-2.5 rounded-xl bg-emerald-400/10 p-2.5 ring-1 ring-emerald-400/30">
+                <div className="mb-3 flex items-center gap-2.5 rounded-xl bg-emerald-400/10 p-2.5">
                     <span className="relative flex size-2.5 shrink-0">
                         <span
                             className={cn(
@@ -163,7 +163,7 @@ export function ReadyToPlayCard({ className }: { className?: string }) {
                     {friends.map((f) => (
                         <li
                             key={f.user.id}
-                            className="flex items-center gap-2.5 rounded-xl p-1.5 transition hover:bg-white/[0.04]"
+                            className="flex items-center gap-2.5 rounded-xl p-1.5 transition hover:bg-[var(--gc-l3)]"
                         >
                             <Link href={`/${f.user.username}`}>
                                 <UserAvatar user={f.user} size="sm" />
@@ -198,7 +198,7 @@ export function ReadyToPlayCard({ className }: { className?: string }) {
                                     aria-label={tr('Написати {name}', {
                                         name: f.user.first_name,
                                     })}
-                                    className="flex size-8 shrink-0 items-center justify-center rounded-lg text-gc-lilac-300 transition hover:bg-white/10 hover:text-white"
+                                    className="flex size-8 shrink-0 items-center justify-center rounded-lg text-sky-400 transition hover:bg-white/10 hover:text-white"
                                 >
                                     <MessageCircle className="size-4" />
                                 </Link>
@@ -235,7 +235,7 @@ function Chip({
                 'h-7 max-w-full truncate rounded-lg px-2.5 text-xs font-semibold transition',
                 active
                     ? 'bg-white text-gc-ink'
-                    : 'bg-white/[0.06] text-white/70 hover:bg-white/10',
+                    : 'gc-solid-2 text-white/70 hover:bg-white/10',
             )}
         >
             {children}
@@ -290,7 +290,7 @@ export function ReadyForm({
             exit={reduce ? undefined : { opacity: 0, height: 0 }}
             className="mb-3 overflow-hidden"
         >
-            <div className="space-y-2.5 rounded-xl bg-white/[0.04] p-2.5">
+            <div className="gc-solid-2 space-y-2.5 rounded-xl p-2.5">
                 <div className="flex flex-wrap gap-1">
                     <Chip active={game === null} onClick={() => setGame(null)}>
                         {tr('Будь-яка гра')}
@@ -322,13 +322,13 @@ export function ReadyForm({
                     onChange={(e) => setNote(e.target.value)}
                     placeholder={tr('Примітка: «є мікро, граю спокійно»')}
                     aria-label={tr('Примітка')}
-                    className="h-9 w-full rounded-lg bg-white/[0.05] px-3 text-sm text-white outline-none placeholder:text-white/35 focus:ring-1 focus:ring-primary/60"
+                    className="gc-solid-2 h-9 w-full rounded-lg px-3 text-sm text-white outline-none placeholder:text-white/35 focus:ring-1 focus:ring-primary/60"
                 />
                 <div className="flex gap-2">
                     <button
                         type="button"
                         onClick={onCancel}
-                        className="h-9 rounded-lg px-3 text-sm text-white/60 hover:bg-white/[0.06] hover:text-white"
+                        className="h-9 rounded-lg px-3 text-sm text-white/60 hover:bg-[var(--gc-l3)] hover:text-white"
                     >
                         {tr('Скасувати')}
                     </button>

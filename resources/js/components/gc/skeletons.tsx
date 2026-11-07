@@ -59,7 +59,10 @@ export function ListSkeleton({
         <div
             role="status"
             aria-label={tr('Завантаження')}
-            className={cn('space-y-4', card && 'glass rounded-2xl p-4 sm:p-5')}
+            className={cn(
+                'space-y-4',
+                card && 'gc-solid rounded-2xl p-4 sm:p-5',
+            )}
         >
             {times(rows).map((i) => (
                 <RowSkeleton key={i} avatar={avatar} action={action} />
@@ -74,7 +77,7 @@ export function PostSkeleton({ card = false }: { card?: boolean }) {
         <div
             className={cn(
                 'gc-post space-y-4 px-1 py-5 sm:px-2',
-                card && 'glass rounded-2xl px-4 sm:px-5',
+                card && 'gc-solid rounded-2xl px-4 sm:px-5',
             )}
         >
             <div className="flex items-center gap-3">
@@ -130,7 +133,7 @@ export function GridSkeleton({
             )}
         >
             {times(count).map((i) => (
-                <div key={i} className="glass space-y-3 rounded-2xl p-2.5">
+                <div key={i} className="gc-solid space-y-3 rounded-2xl p-2.5">
                     <Sk
                         className={cn(
                             'w-full rounded-xl',
@@ -160,7 +163,7 @@ export function ServerListSkeleton({ rows = 6 }: { rows?: number }) {
             {times(rows).map((i) => (
                 <div
                     key={i}
-                    className="glass flex items-center gap-4 rounded-2xl p-4 sm:p-5"
+                    className="gc-solid flex items-center gap-4 rounded-2xl p-4 sm:p-5"
                 >
                     <Sk className="size-12 shrink-0 rounded-xl sm:size-14" />
                     <span className="min-w-0 flex-1 space-y-2">
@@ -190,7 +193,7 @@ export function ProfileSkeleton() {
             aria-label={tr('Завантаження')}
             className="space-y-4"
         >
-            <div className="glass overflow-hidden rounded-2xl">
+            <div className="gc-solid overflow-hidden rounded-2xl">
                 <Sk className="h-40 w-full rounded-none sm:h-52" />
                 <div className="flex items-end gap-4 px-4 pb-5 sm:px-6">
                     <Sk className="-mt-12 size-24 shrink-0 rounded-full ring-4 ring-black/20" />
@@ -219,7 +222,7 @@ export function DetailSkeleton() {
             aria-label={tr('Завантаження')}
             className="space-y-4"
         >
-            <div className="glass grid gap-5 rounded-2xl p-4 sm:grid-cols-[12rem_1fr] sm:p-6">
+            <div className="gc-solid grid gap-5 rounded-2xl p-4 sm:grid-cols-[12rem_1fr] sm:p-6">
                 <Sk className="aspect-[3/4] w-full max-w-48 rounded-xl" />
                 <span className="space-y-3">
                     <Sk className="h-7 w-2/3" />
@@ -248,13 +251,13 @@ export function ChatSkeleton() {
             aria-label={tr('Завантаження')}
             className="grid h-[calc(100dvh-9rem)] gap-4 md:grid-cols-[20rem_1fr]"
         >
-            <div className="glass hidden space-y-5 rounded-2xl p-4 md:block">
+            <div className="gc-solid hidden space-y-5 rounded-2xl p-4 md:block">
                 <Sk className="h-10 w-full rounded-xl" />
                 {times(7).map((i) => (
                     <RowSkeleton key={i} />
                 ))}
             </div>
-            <div className="glass flex flex-col rounded-2xl p-4">
+            <div className="gc-solid flex flex-col rounded-2xl p-4">
                 <RowSkeleton />
                 <div className="mt-6 flex-1 space-y-4">
                     {times(6).map((i) => (
@@ -299,7 +302,7 @@ export function TableSkeleton({
                     {times(4).map((i) => (
                         <div
                             key={i}
-                            className="glass space-y-4 rounded-2xl p-5"
+                            className="gc-solid space-y-4 rounded-2xl p-5"
                         >
                             <Sk className="h-3.5 w-1/2" />
                             <Sk className="h-7 w-1/3" />
@@ -307,7 +310,7 @@ export function TableSkeleton({
                     ))}
                 </div>
             )}
-            <div className="glass space-y-4 rounded-2xl p-4 sm:p-5">
+            <div className="gc-solid space-y-4 rounded-2xl p-4 sm:p-5">
                 <Sk className="h-5 w-40" />
                 {times(rows).map((i) => (
                     <div key={i} className="flex items-center gap-4">

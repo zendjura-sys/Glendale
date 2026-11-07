@@ -92,7 +92,7 @@ export function AlertMapButton({
             className={cn(
                 'gc-solid group relative flex shrink-0 overflow-hidden rounded-2xl p-3 transition hover:bg-[var(--gc-l2)]',
                 row ? 'items-center gap-3' : 'flex-col gap-1.5',
-                current && 'ring-sky-500/50 dark:ring-sky-300/60',
+                current && 'dark:ring-sky-300/60',
                 className,
             )}
         >
@@ -179,7 +179,7 @@ export function AlertMapButton({
                     className={cn(
                         'text-[11px] leading-tight whitespace-nowrap',
                         active.length
-                            ? 'text-red-600 dark:text-red-300'
+                            ? 'text-red-600 dark:text-red-400'
                             : 'text-slate-500 dark:text-white/50',
                     )}
                 >

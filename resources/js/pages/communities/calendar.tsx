@@ -102,14 +102,14 @@ export default function CommunityCalendar({
                     <Link
                         href={base}
                         aria-label={tr('Назад')}
-                        className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-white/[0.05] text-white/70 transition hover:bg-white/10 hover:text-white"
+                        className="gc-solid-2 flex size-10 shrink-0 items-center justify-center rounded-xl text-white/70 transition hover:bg-white/10 hover:text-white"
                     >
                         <ArrowLeft className="size-5" />
                     </Link>
                     <CommunityAvatar community={community} size="md" />
                     <div className="min-w-0 flex-1">
                         <h1 className="flex items-center gap-2 font-display text-xl font-bold text-white">
-                            <CalendarDays className="size-5 text-gc-lilac-300" />
+                            <CalendarDays className="size-5 text-sky-400" />
                             {tr('Календар')}
                         </h1>
                         <p className="truncate text-sm text-white/50">
@@ -151,7 +151,7 @@ export default function CommunityCalendar({
                                 },
                             });
                         }}
-                        className="glass grid gap-3 rounded-2xl p-4 sm:grid-cols-2"
+                        className="gc-solid grid gap-3 rounded-2xl p-4 sm:grid-cols-2"
                     >
                         <input
                             value={form.data.title}
@@ -209,7 +209,7 @@ export default function CommunityCalendar({
                             )}
                         />
                         {Object.values(form.errors)[0] && (
-                            <p className="text-xs text-rose-300 sm:col-span-2">
+                            <p className="text-xs text-red-400 sm:col-span-2">
                                 {Object.values(form.errors)[0]}
                             </p>
                         )}
@@ -229,13 +229,13 @@ export default function CommunityCalendar({
                     </form>
                 )}
 
-                <section className="glass rounded-2xl p-3 sm:p-4">
+                <section className="gc-solid rounded-2xl p-3 sm:p-4">
                     <div className="mb-3 flex items-center justify-between">
                         <Link
                             href={`${base}/calendar?month=${shift(month, -1)}`}
                             preserveScroll
                             aria-label={tr('Попередній місяць')}
-                            className="flex size-9 items-center justify-center rounded-xl text-white/60 hover:bg-white/[0.06] hover:text-white"
+                            className="flex size-9 items-center justify-center rounded-xl text-white/60 hover:bg-[var(--gc-l3)] hover:text-white"
                         >
                             <ChevronLeft className="size-5" />
                         </Link>
@@ -249,7 +249,7 @@ export default function CommunityCalendar({
                             href={`${base}/calendar?month=${shift(month, 1)}`}
                             preserveScroll
                             aria-label={tr('Наступний місяць')}
-                            className="flex size-9 items-center justify-center rounded-xl text-white/60 hover:bg-white/[0.06] hover:text-white"
+                            className="flex size-9 items-center justify-center rounded-xl text-white/60 hover:bg-[var(--gc-l3)] hover:text-white"
                         >
                             <ChevronRight className="size-5" />
                         </Link>
@@ -281,7 +281,7 @@ export default function CommunityCalendar({
                                     className={cn(
                                         'min-h-14 rounded-lg p-1 text-left sm:min-h-20',
                                         day >= 1 && day <= days
-                                            ? 'bg-white/[0.03]'
+                                            ? 'gc-solid-2'
                                             : 'opacity-0',
                                     )}
                                 >
@@ -289,7 +289,7 @@ export default function CommunityCalendar({
                                         className={cn(
                                             'text-xs',
                                             isToday
-                                                ? 'font-bold text-gc-lilac-300'
+                                                ? 'font-bold text-sky-400'
                                                 : 'text-white/50',
                                         )}
                                     >
@@ -317,7 +317,7 @@ export default function CommunityCalendar({
                 </section>
 
                 {active && (
-                    <section className="glass rounded-2xl p-4">
+                    <section className="gc-solid rounded-2xl p-4">
                         <div className="flex items-start gap-3">
                             <div className="min-w-0 flex-1">
                                 <h3 className="font-display text-lg font-semibold text-white">
@@ -348,7 +348,7 @@ export default function CommunityCalendar({
                                             },
                                         )
                                     }
-                                    className="flex size-9 items-center justify-center rounded-xl text-white/45 hover:bg-rose-500/10 hover:text-rose-300"
+                                    className="flex size-9 items-center justify-center rounded-xl text-white/45 hover:bg-red-500/10 hover:text-red-400"
                                 >
                                     <Trash2 className="size-4" />
                                 </button>
@@ -405,7 +405,7 @@ export default function CommunityCalendar({
                     </section>
                 )}
 
-                <section className="glass rounded-2xl p-4">
+                <section className="gc-solid rounded-2xl p-4">
                     <h2 className="mb-2 font-display text-base font-semibold text-white">
                         {tr('Найближчі')}
                     </h2>
@@ -431,7 +431,7 @@ export default function CommunityCalendar({
                                             </span>
                                         </span>
                                         {e.my && (
-                                            <span className="text-xs text-gc-lilac-300">
+                                            <span className="text-xs text-sky-400">
                                                 {e.my === 'going'
                                                     ? tr('Буду')
                                                     : tr('Можливо')}

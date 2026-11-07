@@ -134,7 +134,7 @@ export function UserAvatar({
                     </span>
                 </span>
             ) : (
-                <span className="flex size-full overflow-hidden rounded-full bg-white/5 ring-1 ring-white/10">
+                <span className="flex size-full overflow-hidden rounded-full bg-white/5">
                     {inner}
                 </span>
             )}

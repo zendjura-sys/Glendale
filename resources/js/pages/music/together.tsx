@@ -344,10 +344,10 @@ export default function ListenTogether({ party: initial, friends }: Props) {
             <Head title={party.room?.title ?? tr('Слухаємо разом')} />
             <div className="mx-auto grid max-w-5xl grid-cols-1 gap-4 lg:grid-cols-[1fr_340px]">
                 <div className="space-y-4">
-                    <section className="glass relative overflow-hidden rounded-3xl">
+                    <section className="gc-solid relative overflow-hidden rounded-3xl">
                         <FlyingReactions items={flying} />
                         <div className="flex flex-col items-center gap-4 p-5 sm:flex-row sm:items-end">
-                            <div className="size-40 shrink-0 overflow-hidden rounded-2xl bg-white/[0.06] sm:size-44">
+                            <div className="gc-solid-2 size-40 shrink-0 overflow-hidden rounded-2xl sm:size-44">
                                 {state.track?.cover_url ? (
                                     <img
                                         loading="lazy"
@@ -363,7 +363,7 @@ export default function ListenTogether({ party: initial, friends }: Props) {
                                 )}
                             </div>
                             <div className="min-w-0 flex-1 text-center sm:text-left">
-                                <p className="text-xs font-semibold text-gc-lilac-200">
+                                <p className="text-xs font-semibold text-sky-400">
                                     {party.room?.title ?? tr('Слухаємо разом')}
                                     {party.room?.group && (
                                         <>
@@ -420,7 +420,7 @@ export default function ListenTogether({ party: initial, friends }: Props) {
                                         aria-label={tr('Позиція')}
                                     />
                                 ) : (
-                                    <p className="text-center text-xs font-semibold text-rose-200">
+                                    <p className="text-center text-xs font-semibold text-red-400">
                                         {tr('Радіо наживо')}
                                     </p>
                                 )}
@@ -470,7 +470,7 @@ export default function ListenTogether({ party: initial, friends }: Props) {
                                                             ),
                                                         )
                                                 }
-                                                className="glass flex size-11 items-center justify-center rounded-full text-white/80 hover:text-white"
+                                                className="gc-solid flex size-11 items-center justify-center rounded-full text-white/80 hover:text-white"
                                                 aria-label={tr('Наступний')}
                                             >
                                                 <SkipForward className="size-5" />
@@ -484,7 +484,7 @@ export default function ListenTogether({ party: initial, friends }: Props) {
                                                 'inline-flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-semibold',
                                                 synced
                                                     ? 'bg-emerald-500/15 text-emerald-200'
-                                                    : 'glass text-white/70',
+                                                    : 'gc-solid text-white/70',
                                             )}
                                         >
                                             <Headphones className="size-4" />
@@ -497,7 +497,7 @@ export default function ListenTogether({ party: initial, friends }: Props) {
                             </div>
                         )}
                         {party.room && !party.ended && (
-                            <div className="flex flex-wrap justify-center gap-1.5 border-t border-white/[0.06] px-5 py-3">
+                            <div className="flex flex-wrap justify-center gap-1.5 px-5 py-3">
                                 {party.room.emoji.map((emoji) => (
                                     <button
                                         key={emoji}
@@ -513,7 +513,7 @@ export default function ListenTogether({ party: initial, friends }: Props) {
                                                     toast.error(e.message),
                                                 )
                                         }
-                                        className="flex size-9 items-center justify-center rounded-full text-lg transition hover:bg-white/[0.08] active:scale-90"
+                                        className="flex size-9 items-center justify-center rounded-full text-lg transition hover:bg-[var(--gc-l3)] active:scale-90"
                                         aria-label={tr('Реакція {emoji}', {
                                             emoji,
                                         })}
@@ -540,9 +540,9 @@ export default function ListenTogether({ party: initial, friends }: Props) {
                             />
                         )}
 
-                    <section className="glass rounded-3xl p-4 sm:p-5">
+                    <section className="gc-solid rounded-3xl p-4 sm:p-5">
                         <div className="mb-3 flex items-center gap-2">
-                            <ListMusic className="size-4 text-gc-lilac-200" />
+                            <ListMusic className="size-4 text-sky-400" />
                             <h2 className="flex-1 font-display text-base font-semibold text-white">
                                 {tr('Черга')}
                             </h2>
@@ -562,7 +562,7 @@ export default function ListenTogether({ party: initial, friends }: Props) {
                         {party.queue.map((item, i) => (
                             <div
                                 key={`${item.index}-${item.track.id}`}
-                                className="flex items-center gap-3 border-b border-white/[0.05] py-2 last:border-0"
+                                className="flex items-center gap-3 py-2 last:border-0"
                             >
                                 <span className="w-5 text-center text-xs text-white/35">
                                     {i + 1}
@@ -594,7 +594,7 @@ export default function ListenTogether({ party: initial, friends }: Props) {
                                                         toast.error(e.message),
                                                     )
                                             }
-                                            className="text-white/35 hover:text-rose-300"
+                                            className="text-white/35 hover:text-red-400"
                                             aria-label={tr('Прибрати')}
                                         >
                                             <Trash2 className="size-4" />
@@ -604,7 +604,7 @@ export default function ListenTogether({ party: initial, friends }: Props) {
                         ))}
 
                         {!party.ended && (
-                            <div className="mt-4 border-t border-white/[0.06] pt-4">
+                            <div className="mt-4 pt-4">
                                 <label className="input-glass flex h-10 items-center gap-2 rounded-xl px-3">
                                     <Search className="size-4 text-white/35" />
                                     <input
@@ -622,9 +622,9 @@ export default function ListenTogether({ party: initial, friends }: Props) {
                                     {results.map((t) => (
                                         <div
                                             key={t.key}
-                                            className="flex items-center gap-3 rounded-xl px-2 py-1.5 hover:bg-white/[0.04]"
+                                            className="flex items-center gap-3 rounded-xl px-2 py-1.5 hover:bg-[var(--gc-l3)]"
                                         >
-                                            <span className="size-9 shrink-0 overflow-hidden rounded-lg bg-white/[0.06]">
+                                            <span className="gc-solid-2 size-9 shrink-0 overflow-hidden rounded-lg">
                                                 {t.cover_url ? (
                                                     <img
                                                         loading="lazy"
@@ -649,7 +649,7 @@ export default function ListenTogether({ party: initial, friends }: Props) {
                                             <button
                                                 type="button"
                                                 onClick={() => enqueue(t)}
-                                                className="glass flex size-8 items-center justify-center rounded-lg text-white/75 hover:text-white"
+                                                className="gc-solid flex size-8 items-center justify-center rounded-lg text-white/75 hover:text-white"
                                                 aria-label={tr('У чергу')}
                                             >
                                                 <Plus className="size-4" />
@@ -672,9 +672,9 @@ export default function ListenTogether({ party: initial, friends }: Props) {
                                         .map((st) => (
                                             <div
                                                 key={st.key}
-                                                className="flex items-center gap-3 rounded-xl px-2 py-1.5 hover:bg-white/[0.04]"
+                                                className="flex items-center gap-3 rounded-xl px-2 py-1.5 hover:bg-[var(--gc-l3)]"
                                             >
-                                                <span className="size-9 shrink-0 overflow-hidden rounded-lg bg-white/[0.06]">
+                                                <span className="gc-solid-2 size-9 shrink-0 overflow-hidden rounded-lg">
                                                     {st.cover_url ? (
                                                         <img
                                                             loading="lazy"
@@ -693,7 +693,7 @@ export default function ListenTogether({ party: initial, friends }: Props) {
                                                 <button
                                                     type="button"
                                                     onClick={() => enqueue(st)}
-                                                    className="glass flex size-8 items-center justify-center rounded-lg text-white/75 hover:text-white"
+                                                    className="gc-solid flex size-8 items-center justify-center rounded-lg text-white/75 hover:text-white"
                                                     aria-label={tr('У чергу')}
                                                 >
                                                     <Plus className="size-4" />
@@ -715,9 +715,9 @@ export default function ListenTogether({ party: initial, friends }: Props) {
                 </div>
 
                 <aside className="space-y-4">
-                    <section className="glass rounded-3xl p-4">
+                    <section className="gc-solid rounded-3xl p-4">
                         <div className="mb-3 flex items-center gap-2">
-                            <Users className="size-4 text-gc-lilac-200" />
+                            <Users className="size-4 text-sky-400" />
                             <h2 className="flex-1 font-display text-base font-semibold text-white">
                                 {tr('Слухають (')}
                                 {party.members.length})
@@ -792,7 +792,7 @@ export default function ListenTogether({ party: initial, friends }: Props) {
                                                             user_id: m.id,
                                                         })
                                                     }
-                                                    className="rounded-lg p-1 text-white/35 hover:text-rose-300"
+                                                    className="rounded-lg p-1 text-white/35 hover:text-red-400"
                                                 >
                                                     <UserMinus className="size-4" />
                                                 </button>
@@ -836,7 +836,7 @@ export default function ListenTogether({ party: initial, friends }: Props) {
                     )}
 
                     {!party.ended && (
-                        <section className="glass space-y-2 rounded-3xl p-4">
+                        <section className="gc-solid space-y-2 rounded-3xl p-4">
                             <button
                                 type="button"
                                 onClick={() => {
@@ -848,7 +848,7 @@ export default function ListenTogether({ party: initial, friends }: Props) {
                                             ),
                                         );
                                 }}
-                                className="glass flex h-10 w-full items-center justify-center gap-2 rounded-xl text-sm text-white/80 hover:text-white"
+                                className="gc-solid flex h-10 w-full items-center justify-center gap-2 rounded-xl text-sm text-white/80 hover:text-white"
                             >
                                 <Copy className="size-4" />{' '}
                                 {tr('Скопіювати посилання')}
@@ -894,7 +894,7 @@ export default function ListenTogether({ party: initial, friends }: Props) {
                                                         toast.error(e.message),
                                                     )
                                             }
-                                            className="flex w-full items-center gap-2.5 rounded-xl px-2 py-1.5 text-left hover:bg-white/[0.05]"
+                                            className="flex w-full items-center gap-2.5 rounded-xl px-2 py-1.5 text-left hover:bg-[var(--gc-l3)]"
                                         >
                                             <UserAvatar user={f} size="sm" />
                                             <span className="min-w-0 flex-1 truncate text-sm text-white/85">
@@ -955,7 +955,7 @@ export default function ListenTogether({ party: initial, friends }: Props) {
                                                 apply({ ended: true }),
                                             )
                                         }
-                                        className="flex h-10 w-full items-center justify-center gap-2 rounded-xl text-sm text-rose-300 hover:bg-rose-500/10"
+                                        className="flex h-10 w-full items-center justify-center gap-2 rounded-xl text-sm text-red-400 hover:bg-red-500/10"
                                     >
                                         <X className="size-4" />{' '}
                                         {tr('Завершити')}
@@ -1016,9 +1016,9 @@ function Suggestions({
     onReview: (index: number, approve: boolean) => void;
 }) {
     return (
-        <section className="glass rounded-3xl p-4 sm:p-5">
+        <section className="gc-solid rounded-3xl p-4 sm:p-5">
             <div className="mb-3 flex items-center gap-2">
-                <Plus className="size-4 text-gc-lilac-200" />
+                <Plus className="size-4 text-sky-400" />
                 <h2 className="flex-1 font-display text-base font-semibold text-white">
                     {tr('Пропозиції')}
                 </h2>
@@ -1027,7 +1027,7 @@ function Suggestions({
             {items.map((item) => (
                 <div
                     key={`${item.index}-${item.track.key}`}
-                    className="flex items-center gap-3 border-b border-white/[0.05] py-2 last:border-0"
+                    className="flex items-center gap-3 py-2 last:border-0"
                 >
                     <span className="min-w-0 flex-1">
                         <span className="block truncate text-sm text-white">
@@ -1045,7 +1045,7 @@ function Suggestions({
                         <button
                             type="button"
                             onClick={() => onReview(item.index, true)}
-                            className="glass flex size-8 items-center justify-center rounded-lg text-emerald-300 hover:text-emerald-200"
+                            className="gc-solid flex size-8 items-center justify-center rounded-lg text-emerald-300 hover:text-emerald-200"
                             aria-label={tr('Додати в чергу')}
                         >
                             <Check className="size-4" />
@@ -1055,7 +1055,7 @@ function Suggestions({
                         <button
                             type="button"
                             onClick={() => onReview(item.index, false)}
-                            className="glass flex size-8 items-center justify-center rounded-lg text-white/45 hover:text-rose-300"
+                            className="gc-solid flex size-8 items-center justify-center rounded-lg text-white/45 hover:text-red-400"
                             aria-label={
                                 canReview ? tr('Відхилити') : tr('Відкликати')
                             }
@@ -1097,9 +1097,9 @@ function RoomChat({
     };
 
     return (
-        <section className="glass rounded-3xl p-4">
+        <section className="gc-solid rounded-3xl p-4">
             <div className="mb-3 flex items-center gap-2">
-                <MessageCircle className="size-4 text-gc-lilac-200" />
+                <MessageCircle className="size-4 text-sky-400" />
                 <h2 className="flex-1 font-display text-base font-semibold text-white">
                     {tr('Чат кімнати')}
                 </h2>

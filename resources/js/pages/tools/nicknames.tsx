@@ -235,7 +235,7 @@ export default function Nicknames() {
                         )}
                     </p>
                 </div>
-                <section className="glass space-y-3 rounded-2xl p-4">
+                <section className="gc-solid space-y-3 rounded-2xl p-4">
                     <div className="flex flex-wrap gap-2">
                         {(Object.keys(STYLES) as Style[]).map((key) => (
                             <button
@@ -280,7 +280,7 @@ export default function Nicknames() {
                                 key={n}
                                 type="button"
                                 onClick={() => copy(n)}
-                                className="flex items-center gap-2 rounded-xl bg-white/[0.04] px-3 py-2.5 text-left text-sm text-white transition hover:bg-white/[0.08]"
+                                className="gc-solid-2 flex items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm text-white transition hover:bg-[var(--gc-l3)]"
                             >
                                 <UserRound className="size-4 text-white/40" />
                                 <span className="flex-1 truncate font-medium">
@@ -296,10 +296,10 @@ export default function Nicknames() {
                         ))}
                     </div>
                 </section>
-                <section className="glass space-y-3 rounded-2xl p-4">
+                <section className="gc-solid space-y-3 rounded-2xl p-4">
                     <div className="flex items-center justify-between">
                         <h2 className="flex items-center gap-2 font-display text-base font-semibold text-white">
-                            <Shield className="size-4 text-gc-lilac-300" />
+                            <Shield className="size-4 text-sky-400" />
                             {tr('Назва клану')}
                         </h2>
                         <button
@@ -319,7 +319,7 @@ export default function Nicknames() {
                                 key={c.name + c.tag}
                                 type="button"
                                 onClick={() => copy(`[${c.tag}] ${c.name}`)}
-                                className="flex items-center gap-2 rounded-xl bg-white/[0.04] px-3 py-2.5 text-left text-sm text-white transition hover:bg-white/[0.08]"
+                                className="gc-solid-2 flex items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm text-white transition hover:bg-[var(--gc-l3)]"
                             >
                                 <span className="rounded-md bg-gc-indigo/30 px-1.5 py-0.5 font-mono text-xs font-bold">
                                     {c.tag}

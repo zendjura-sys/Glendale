@@ -61,7 +61,7 @@ function Chip({
                 'h-8 rounded-chip px-3 text-sm transition',
                 on
                     ? 'bg-primary/20 font-medium text-primary'
-                    : 'bg-white/[0.05] text-white/65 hover:text-white',
+                    : 'gc-solid-2 text-white/65 hover:text-white',
             )}
         >
             {children}
@@ -320,7 +320,7 @@ export default function TeammateMatch({
                             className={cn(
                                 'inline-flex h-10 items-center gap-2 rounded-control px-4 text-sm font-semibold transition',
                                 looking
-                                    ? 'bg-primary text-white shadow-[0_0_24px_-6px] shadow-primary'
+                                    ? 'bg-primary text-white shadow-primary'
                                     : 'bg-white/[0.08] text-white hover:bg-white/[0.12]',
                             )}
                         >
@@ -340,7 +340,7 @@ export default function TeammateMatch({
                     )}
                 </header>
 
-                <section className="glass rounded-xl p-4 sm:p-5">
+                <section className="gc-solid rounded-xl p-4 sm:p-5">
                     <div className="flex items-center justify-between gap-3">
                         <h2 className="font-display text-lg font-semibold text-white">
                             {tr('Моя анкета')}
@@ -390,7 +390,7 @@ export default function TeammateMatch({
                 </section>
 
                 {profile && (
-                    <section className="glass rounded-xl p-4 sm:p-5">
+                    <section className="gc-solid rounded-xl p-4 sm:p-5">
                         <div className="flex flex-wrap items-center justify-between gap-3">
                             <h2 className="font-display text-lg font-semibold text-white">
                                 {tr('Вам підходять')}

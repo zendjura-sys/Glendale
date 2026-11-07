@@ -67,7 +67,7 @@ export function AlbumDialog({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="glass-strong gap-0 rounded-dialog border-white/10 p-6 text-white sm:max-w-lg">
+            <DialogContent className="glass-strong gap-0 rounded-dialog p-6 text-white sm:max-w-lg">
                 <DialogTitle className="font-display text-xl">
                     {album ? tr('Редагування альбому') : tr('Новий альбом')}
                 </DialogTitle>
@@ -91,7 +91,7 @@ export function AlbumDialog({
                     />
                 </label>
                 {form.errors.title && (
-                    <p className="mt-1 text-xs text-rose-300">
+                    <p className="mt-1 text-xs text-red-400">
                         {form.errors.title}
                     </p>
                 )}
@@ -132,10 +132,10 @@ export function AlbumDialog({
                                         form.setData('privacy', value)
                                     }
                                     className={cn(
-                                        'flex flex-col items-center gap-1.5 rounded-2xl border px-2 py-3 text-xs transition',
+                                        'flex flex-col items-center gap-1.5 rounded-2xl px-2 py-3 text-xs transition',
                                         active
-                                            ? 'border-gc-lilac-500/60 bg-gc-indigo/15 text-white shadow-[0_0_24px_-10px_rgb(124_92_255/0.9)]'
-                                            : 'border-white/[0.07] bg-white/[0.03] text-white/55 hover:border-white/15',
+                                            ? 'bg-gc-indigo/15 text-white'
+                                            : 'gc-solid-2 text-white/55 hover:border-white/15',
                                     )}
                                 >
                                     <meta.icon className="size-4" />
@@ -150,8 +150,8 @@ export function AlbumDialog({
                     </div>
                 </div>
 
-                <label className="mt-4 flex cursor-pointer items-center gap-3 rounded-2xl bg-white/[0.03] px-4 py-3 text-sm text-white/80">
-                    <MessageCircle className="size-4 text-gc-lilac-300" />
+                <label className="gc-solid-2 mt-4 flex cursor-pointer items-center gap-3 rounded-2xl px-4 py-3 text-sm text-white/80">
+                    <MessageCircle className="size-4 text-sky-400" />
                     <span className="flex-1">{tr('Дозволити коментарі')}</span>
                     <input
                         type="checkbox"

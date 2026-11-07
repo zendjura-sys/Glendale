@@ -57,7 +57,7 @@ export function GameThemePicker({ value }: { value: GameThemeValue }) {
     return (
         <div className="space-y-3 px-4 py-3">
             {value && (
-                <div className="flex items-center gap-3 rounded-control bg-white/[0.04] p-2.5">
+                <div className="gc-solid-2 flex items-center gap-3 rounded-control p-2.5">
                     {value.game.cover ? (
                         <img
                             src={value.game.cover}
@@ -76,7 +76,7 @@ export function GameThemePicker({ value }: { value: GameThemeValue }) {
                                 {value.colors.map((c) => (
                                     <span
                                         key={c}
-                                        className="size-4 rounded-full ring-1 ring-white/20"
+                                        className="size-4 rounded-full"
                                         style={{ background: c }}
                                     />
                                 ))}
@@ -118,7 +118,7 @@ export function GameThemePicker({ value }: { value: GameThemeValue }) {
                             type="button"
                             disabled={busy}
                             onClick={() => save(game.id)}
-                            className="flex items-center gap-3 rounded-control px-2 py-1.5 text-left transition hover:bg-white/[0.06]"
+                            className="flex items-center gap-3 rounded-control px-2 py-1.5 text-left transition hover:bg-[var(--gc-l3)]"
                         >
                             {game.cover ? (
                                 <img
@@ -136,7 +136,7 @@ export function GameThemePicker({ value }: { value: GameThemeValue }) {
                     ))}
                 </div>
             )}
-            {error && <p className="text-xs text-rose-300">{error}</p>}
+            {error && <p className="text-xs text-red-400">{error}</p>}
         </div>
     );
 }

@@ -62,7 +62,7 @@ export default function Support({
                             )}{' '}
                             <Link
                                 href="/help"
-                                className="text-gc-lilac-300 hover:underline"
+                                className="text-sky-400 hover:underline"
                             >
                                 {tr('довідці')}
                             </Link>
@@ -93,7 +93,7 @@ export default function Support({
                                 e.preventDefault();
                                 form.post('/support', { forceFormData: true });
                             }}
-                            className="glass space-y-4 rounded-2xl p-4 sm:p-5"
+                            className="gc-solid space-y-4 rounded-2xl p-4 sm:p-5"
                         >
                             <div>
                                 <p className="mb-2 text-sm font-medium text-white">
@@ -115,7 +115,7 @@ export default function Support({
                                                     'h-9 rounded-xl px-3.5 text-sm transition',
                                                     form.data.category === key
                                                         ? 'bg-gc-indigo text-white'
-                                                        : 'bg-white/[0.06] text-white/70 hover:text-white',
+                                                        : 'gc-solid-2 text-white/70 hover:text-white',
                                                 )}
                                             >
                                                 {tr(label)}
@@ -124,7 +124,7 @@ export default function Support({
                                     )}
                                 </div>
                                 {form.errors.category && (
-                                    <p className="mt-1 text-xs text-red-300">
+                                    <p className="mt-1 text-xs text-red-400">
                                         {form.errors.category}
                                     </p>
                                 )}
@@ -140,7 +140,7 @@ export default function Support({
                                     className={cn(field, 'h-11')}
                                 />
                                 {form.errors.subject && (
-                                    <p className="mt-1 text-xs text-red-300">
+                                    <p className="mt-1 text-xs text-red-400">
                                         {form.errors.subject}
                                     </p>
                                 )}
@@ -159,7 +159,7 @@ export default function Support({
                                     className={cn(field, 'resize-y py-3')}
                                 />
                                 {form.errors.body && (
-                                    <p className="mt-1 text-xs text-red-300">
+                                    <p className="mt-1 text-xs text-red-400">
                                         {form.errors.body}
                                     </p>
                                 )}
@@ -202,12 +202,12 @@ export default function Support({
                         />
                     )
                 ) : (
-                    <ul className="glass divide-y divide-white/[0.06] overflow-hidden rounded-2xl">
+                    <ul className="gc-solid divide-y divide-white/[0.06] overflow-hidden rounded-2xl">
                         {tickets.map((t) => (
                             <li key={t.id}>
                                 <Link
                                     href={`/support/${t.id}`}
-                                    className="flex items-center gap-3 px-4 py-3.5 transition hover:bg-white/[0.04]"
+                                    className="flex items-center gap-3 px-4 py-3.5 transition hover:bg-[var(--gc-l3)]"
                                 >
                                     <span
                                         className={cn(

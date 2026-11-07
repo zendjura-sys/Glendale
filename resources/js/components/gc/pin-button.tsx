@@ -37,8 +37,8 @@ export function PinButton({
             onClick={toggle}
             aria-pressed={on}
             className={cn(
-                'inline-flex h-11 items-center gap-2 rounded-xl border border-white/15 bg-white/[0.08] px-4 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/15',
-                on && 'text-gc-lilac-200',
+                'inline-flex h-11 items-center gap-2 rounded-xl bg-white/[0.08] px-4 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/15',
+                on && 'text-sky-400',
                 className,
             )}
         >

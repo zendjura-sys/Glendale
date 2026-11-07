@@ -62,7 +62,7 @@ export default function AdminMusicRadio({ stations, genres, stats }: Props) {
                         <button
                             type="button"
                             onClick={() => setAdding(true)}
-                            className="flex h-10 items-center gap-2 rounded-xl bg-gradient-brand px-4 text-sm font-semibold text-white"
+                            className="flex h-10 items-center gap-2 rounded-xl bg-sky-500 px-4 text-sm font-semibold text-white"
                         >
                             <Plus className="size-4" /> {tr('Додати станцію')}
                         </button>
@@ -92,7 +92,7 @@ export default function AdminMusicRadio({ stations, genres, stats }: Props) {
             </datalist>
 
             {adding && (
-                <section className="glass mb-5 rounded-2xl p-4 sm:p-5">
+                <section className="gc-solid mb-5 rounded-2xl p-4 sm:p-5">
                     <h2 className="mb-4 font-display text-base font-bold text-white">
                         {tr('Нова станція')}
                     </h2>
@@ -100,12 +100,12 @@ export default function AdminMusicRadio({ stations, genres, stats }: Props) {
                 </section>
             )}
 
-            <div className="glass overflow-hidden rounded-2xl">
+            <div className="gc-solid overflow-hidden rounded-2xl">
                 {stations.map((station, index) =>
                     editing === station.id ? (
                         <div
                             key={station.id}
-                            className="border-b border-white/[0.06] p-4 last:border-0 sm:p-5"
+                            className="p-4 last:border-0 sm:p-5"
                         >
                             <StationForm
                                 station={station}
@@ -164,11 +164,11 @@ function StationRow({
     return (
         <div
             className={cn(
-                'flex flex-wrap items-center gap-3 border-b border-white/[0.04] px-4 py-3 last:border-0',
+                'flex flex-wrap items-center gap-3 px-4 py-3 last:border-0',
                 !station.is_active && 'opacity-60',
             )}
         >
-            <span className="flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white/[0.05]">
+            <span className="gc-solid-2 flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-xl">
                 {station.logo_url ? (
                     <img
                         src={station.logo_url}
@@ -249,7 +249,7 @@ function StationRow({
                 </button>
                 <button
                     type="button"
-                    className={cn(iconButton, 'hover:text-rose-300')}
+                    className={cn(iconButton, 'hover:text-red-400')}
                     onClick={() => {
                         if (
                             confirm(
@@ -354,7 +354,7 @@ function StationForm({
                     <button
                         type="button"
                         onClick={() => fileRef.current?.click()}
-                        className="flex size-20 items-center justify-center overflow-hidden rounded-2xl border border-dashed border-white/15 text-white/40 transition hover:border-primary/60 hover:text-white"
+                        className="flex size-20 items-center justify-center overflow-hidden rounded-2xl text-white/40 transition hover:border-primary/60 hover:text-white"
                         title={tr('Завантажити логотип')}
                     >
                         {preview ? (
@@ -378,7 +378,7 @@ function StationForm({
                                     remove_logo: true,
                                 }));
                             }}
-                            className="flex items-center gap-1 text-xs text-white/40 hover:text-rose-300"
+                            className="flex items-center gap-1 text-xs text-white/40 hover:text-red-400"
                         >
                             <X className="size-3" /> {tr('Прибрати')}
                         </button>
@@ -482,7 +482,7 @@ function StationForm({
                 <button
                     type="button"
                     onClick={onDone}
-                    className="h-10 rounded-xl px-4 text-sm font-medium text-white/60 hover:bg-white/[0.06] hover:text-white"
+                    className="h-10 rounded-xl px-4 text-sm font-medium text-white/60 hover:bg-[var(--gc-l3)] hover:text-white"
                 >
                     {tr('Скасувати')}
                 </button>
@@ -493,7 +493,7 @@ function StationForm({
                         !form.data.name.trim() ||
                         !form.data.stream_url.trim()
                     }
-                    className="h-10 rounded-xl bg-gradient-brand px-4 text-sm font-semibold text-white disabled:opacity-50"
+                    className="h-10 rounded-xl bg-sky-500 px-4 text-sm font-semibold text-white disabled:opacity-50"
                 >
                     {station ? tr('Зберегти') : tr('Додати станцію')}
                 </button>

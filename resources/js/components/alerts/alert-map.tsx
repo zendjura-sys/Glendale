@@ -882,7 +882,7 @@ function ThreatCard({
                         .join(' · ')}
                 </p>
             )}
-            <div className="mt-2.5 space-y-1 border-t border-white/10 pt-2.5 text-xs text-white/55">
+            <div className="mt-2.5 space-y-1 pt-2.5 text-xs text-white/55">
                 {now > 0 && (
                     <>
                         <p className="flex items-center gap-2">

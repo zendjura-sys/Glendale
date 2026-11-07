@@ -29,7 +29,7 @@ export function AlertBadge({
         <span
             title={meta.label()}
             className={cn(
-                'gc-alert-text inline-flex shrink-0 items-center gap-1 rounded-chip border font-semibold',
+                'gc-alert-text inline-flex shrink-0 items-center gap-1 rounded-chip font-semibold',
                 iconOnly ? 'size-6 justify-center' : 'h-6 px-2 text-[11px]',
                 className,
             )}

@@ -152,7 +152,7 @@ export default function Account({
                                             options,
                                         )
                                     }
-                                    className="text-sm font-medium text-rose-200 hover:text-rose-100"
+                                    className="text-sm font-medium text-red-400 hover:text-red-400"
                                 >
                                     {tr('Відв’язати')}
                                 </button>
@@ -226,7 +226,7 @@ export default function Account({
                                                 options,
                                             )
                                         }
-                                        className="shrink-0 text-sm font-medium text-rose-200 hover:text-rose-100"
+                                        className="shrink-0 text-sm font-medium text-red-400 hover:text-red-400"
                                     >
                                         {tr('Скасувати')}
                                     </button>
@@ -270,7 +270,7 @@ export default function Account({
                                                 options,
                                             )
                                         }
-                                        className="inline-flex h-9 items-center gap-1.5 rounded-xl px-3 text-xs font-medium text-white/70 transition hover:bg-white/[0.06] hover:text-white"
+                                        className="inline-flex h-9 items-center gap-1.5 rounded-xl px-3 text-xs font-medium text-white/70 transition hover:bg-[var(--gc-l3)] hover:text-white"
                                     >
                                         <LogOut className="size-4" />
                                         {tr('Завершити')}
@@ -300,7 +300,7 @@ export default function Account({
                                             options,
                                         )
                                     }
-                                    className="inline-flex h-9 items-center gap-1.5 rounded-xl px-3 text-xs font-medium text-white/70 transition hover:bg-white/[0.06] hover:text-white"
+                                    className="inline-flex h-9 items-center gap-1.5 rounded-xl px-3 text-xs font-medium text-white/70 transition hover:bg-[var(--gc-l3)] hover:text-white"
                                 >
                                     <LogOut className="size-4" />
                                     {tr('Вийти')}
@@ -317,7 +317,7 @@ export default function Account({
                                     options,
                                 )
                             }
-                            className="flex min-h-12 w-full items-center gap-2 border-t border-[var(--gc-hairline)] py-3 text-[15px] font-medium text-rose-300 transition hover:text-rose-200"
+                            className="flex min-h-12 w-full items-center gap-2 border-[var(--gc-hairline)] py-3 text-[15px] font-medium text-red-400 transition hover:text-red-400"
                         >
                             <LogOut className="size-4" />
                             {tr('Завершити всі інші сесії')}
@@ -423,7 +423,7 @@ export default function Account({
                         </p>
                     )}
                     {strikes.length > 0 && (
-                        <div className="mb-4 rounded-xl bg-white/[0.03] p-3.5">
+                        <div className="gc-solid-2 mb-4 rounded-xl p-3.5">
                             <p className="text-sm font-medium text-white">
                                 {tr('Страйки: активних {count} з 5', {
                                     count: strikes.filter((s) => s.active)
@@ -502,7 +502,7 @@ export default function Account({
                             className={cn(field, 'py-2.5')}
                         />
                         {appeal.errors.body && (
-                            <p className="text-xs text-rose-300">
+                            <p className="text-xs text-red-400">
                                 {appeal.errors.body}
                             </p>
                         )}
@@ -524,7 +524,7 @@ export default function Account({
                             {appeals.map((item) => (
                                 <li
                                     key={item.id}
-                                    className="rounded-xl bg-white/[0.03] px-3.5 py-3 text-sm"
+                                    className="gc-solid-2 rounded-xl px-3.5 py-3 text-sm"
                                 >
                                     <p className="flex flex-wrap items-center gap-2 text-xs text-white/50">
                                         <span>
@@ -551,7 +551,7 @@ export default function Account({
                                                 item.status === 'rejected' &&
                                                     'bg-gc-coral/15 text-gc-coral',
                                                 item.status === 'pending' &&
-                                                    'bg-white/[0.06] text-white/70',
+                                                    'gc-solid-2 text-white/70',
                                             )}
                                         >
                                             {statusLabel(item.status)}
@@ -580,7 +580,7 @@ export default function Account({
                     <a
                         href="/settings/account/export"
                         download
-                        className="inline-flex h-10 items-center gap-2 rounded-xl bg-white/[0.06] px-4 text-sm font-semibold text-white transition hover:bg-white/[0.1]"
+                        className="gc-solid-2 inline-flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-semibold text-white transition hover:bg-white/[0.1]"
                     >
                         <Download className="size-4" />
                         {tr('Завантажити свої дані')}
@@ -630,7 +630,7 @@ export default function Account({
                         </button>
                     </form>
                     {freeze.errors.password && (
-                        <p className="mt-1 text-xs text-rose-300">
+                        <p className="mt-1 text-xs text-red-400">
                             {freeze.errors.password}
                         </p>
                     )}

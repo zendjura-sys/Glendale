@@ -42,7 +42,7 @@ export function VideoNotePlayer({
             type="button"
             onClick={toggle}
             aria-label={tr('Відеоповідомлення')}
-            className="relative block size-56 overflow-hidden rounded-full bg-black/40 ring-2 ring-white/10"
+            className="relative block size-56 overflow-hidden rounded-full bg-black/40 ring-2"
         >
             <video
                 ref={ref}
@@ -203,7 +203,7 @@ export function VideoNoteRecorder({
             <div
                 className={cn(
                     'relative size-72 overflow-hidden rounded-full ring-4',
-                    recording ? 'ring-rose-500' : 'ring-white/20',
+                    recording ? '' : '',
                 )}
             >
                 <video
@@ -247,7 +247,7 @@ export function VideoNoteRecorder({
                         type="button"
                         disabled={!ready}
                         onClick={start}
-                        className="grid size-16 place-items-center rounded-full bg-rose-500 text-white disabled:opacity-50"
+                        className="grid size-16 place-items-center rounded-full bg-red-500 text-white disabled:opacity-50"
                         aria-label={tr('Почати запис')}
                     >
                         <Camera className="size-6" />

@@ -103,7 +103,7 @@ export function CrosspostButton({
                 <DialogContent className="max-h-[calc(100dvh-2rem)] gap-4 overflow-y-auto sm:max-w-lg">
                     <div>
                         <DialogTitle className="flex items-center gap-2 font-display text-lg font-semibold text-white">
-                            <Send className="size-5 text-gc-lilac-300" />
+                            <Send className="size-5 text-sky-400" />
                             {tr('Автопостинг')}
                         </DialogTitle>
                         <DialogDescription className="mt-1 text-sm text-white/50">
@@ -121,7 +121,7 @@ export function CrosspostButton({
                                 {targets.map((t) => (
                                     <li
                                         key={t.id}
-                                        className="flex items-start gap-3 rounded-xl bg-white/[0.04] p-3"
+                                        className="gc-solid-2 flex items-start gap-3 rounded-xl p-3"
                                     >
                                         <div className="min-w-0 flex-1 text-sm">
                                             <p className="truncate font-medium text-white">
@@ -138,7 +138,7 @@ export function CrosspostButton({
                                                     .join(' · ')}
                                             </p>
                                             {t.last_error && (
-                                                <p className="mt-1 text-xs text-rose-300">
+                                                <p className="mt-1 text-xs text-red-400">
                                                     {t.last_error}
                                                 </p>
                                             )}
@@ -162,7 +162,7 @@ export function CrosspostButton({
                                                 run('DELETE', `${base}/${t.id}`)
                                             }
                                             aria-label={tr('Видалити')}
-                                            className="flex size-8 shrink-0 items-center justify-center rounded-lg text-white/45 transition hover:bg-rose-500/10 hover:text-rose-300"
+                                            className="flex size-8 shrink-0 items-center justify-center rounded-lg text-white/45 transition hover:bg-red-500/10 hover:text-red-400"
                                         >
                                             <Trash2 className="size-4" />
                                         </button>
@@ -172,8 +172,8 @@ export function CrosspostButton({
                         )
                     )}
 
-                    <div className="space-y-3 rounded-xl bg-white/[0.03] p-3">
-                        <div className="flex rounded-xl bg-white/[0.04] p-1">
+                    <div className="gc-solid-2 space-y-3 rounded-xl p-3">
+                        <div className="gc-solid-2 flex rounded-xl p-1">
                             {(['discord', 'telegram'] as const).map((value) => (
                                 <button
                                     key={value}

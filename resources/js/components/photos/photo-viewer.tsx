@@ -199,7 +199,7 @@ export function PhotoViewer({
                                     src={imageUrl}
                                     alt={photo?.alt ?? ''}
                                     className={cn(
-                                        'max-h-[calc(55vh-1.5rem)] max-w-full animate-in rounded-xl object-contain shadow-[0_30px_120px_-30px_rgb(124_92_255/0.6)] duration-300 fade-in-0 zoom-in-95 lg:max-h-[calc(100vh-3rem)]',
+                                        'max-h-[calc(55vh-1.5rem)] max-w-full animate-in rounded-xl object-contain duration-300 fade-in-0 zoom-in-95 lg:max-h-[calc(100vh-3rem)]',
                                         photo?.is_sensitive &&
                                             !revealed &&
                                             'scale-105 blur-3xl',
@@ -209,7 +209,7 @@ export function PhotoViewer({
                                     <button
                                         type="button"
                                         onClick={() => setRevealed(true)}
-                                        className="absolute rounded-control bg-black/60 px-4 py-2 text-sm font-medium text-white ring-1 ring-white/15"
+                                        className="absolute rounded-control bg-black/60 px-4 py-2 text-sm font-medium text-white"
                                     >
                                         {tr('Показати')}
                                     </button>
@@ -223,7 +223,7 @@ export function PhotoViewer({
                             <button
                                 type="button"
                                 onClick={() => onNavigate(photo.prev_id!)}
-                                className="absolute top-1/2 left-3 flex size-12 -translate-y-1/2 items-center justify-center rounded-full bg-white/[0.06] text-white/80 ring-1 ring-white/10 backdrop-blur transition hover:bg-white/15 hover:text-white sm:left-6"
+                                className="gc-solid-2 absolute top-1/2 left-3 flex size-12 -translate-y-1/2 items-center justify-center rounded-full text-white/80 backdrop-blur transition hover:bg-white/15 hover:text-white sm:left-6"
                                 aria-label={tr('Попереднє фото')}
                             >
                                 <ChevronLeft className="size-6" />
@@ -233,7 +233,7 @@ export function PhotoViewer({
                             <button
                                 type="button"
                                 onClick={() => onNavigate(photo.next_id!)}
-                                className="absolute top-1/2 right-3 flex size-12 -translate-y-1/2 items-center justify-center rounded-full bg-white/[0.06] text-white/80 ring-1 ring-white/10 backdrop-blur transition hover:bg-white/15 hover:text-white sm:right-6"
+                                className="gc-solid-2 absolute top-1/2 right-3 flex size-12 -translate-y-1/2 items-center justify-center rounded-full text-white/80 backdrop-blur transition hover:bg-white/15 hover:text-white sm:right-6"
                                 aria-label={tr('Наступне фото')}
                             >
                                 <ChevronRight className="size-6" />
@@ -255,15 +255,15 @@ export function PhotoViewer({
                             )}
                         </div>
                         <DialogPrimitive.Close
-                            className="absolute top-3 right-3 flex size-10 items-center justify-center rounded-full bg-white/[0.06] text-white/80 ring-1 ring-white/10 backdrop-blur transition hover:bg-white/15 hover:text-white sm:top-5 sm:right-6 lg:hidden"
+                            className="gc-solid-2 absolute top-3 right-3 flex size-10 items-center justify-center rounded-full text-white/80 backdrop-blur transition hover:bg-white/15 hover:text-white sm:top-5 sm:right-6 lg:hidden"
                             aria-label={tr('Закрити')}
                         >
                             <X className="size-5" />
                         </DialogPrimitive.Close>
                     </div>
 
-                    <aside className="glass-strong flex max-h-[45vh] w-full shrink-0 flex-col border-white/[0.06] lg:max-h-none lg:w-[400px] lg:border-l">
-                        <header className="flex items-center gap-3 border-b border-white/[0.06] p-4">
+                    <aside className="glass-strong flex max-h-[45vh] w-full shrink-0 flex-col lg:max-h-none lg:w-[400px] lg:border-l">
+                        <header className="flex items-center gap-3 p-4">
                             {owner ? (
                                 <>
                                     <Link href={owner.href} onClick={onClose}>
@@ -311,12 +311,12 @@ export function PhotoViewer({
 
                             {photo && (
                                 <DropdownMenu>
-                                    <DropdownMenuTrigger className="rounded-full p-1.5 text-white/50 transition outline-none hover:bg-white/[0.06] hover:text-white">
+                                    <DropdownMenuTrigger className="rounded-full p-1.5 text-white/50 transition outline-none hover:bg-[var(--gc-l3)] hover:text-white">
                                         <MoreHorizontal className="size-5" />
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent
                                         align="end"
-                                        className="glass-strong z-[60] w-56 rounded-2xl border-white/10 p-1.5 text-white"
+                                        className="glass-strong z-[60] w-56 rounded-2xl p-1.5 text-white"
                                     >
                                         <DropdownMenuItem
                                             className={itemClass}
@@ -369,10 +369,10 @@ export function PhotoViewer({
                                             <>
                                                 <DropdownMenuSeparator className="bg-white/5" />
                                                 <DropdownMenuItem
-                                                    className="rounded-lg text-rose-300 focus:bg-rose-500/10 focus:text-rose-200"
+                                                    className="rounded-lg text-red-400 focus:bg-red-500/10 focus:text-red-400"
                                                     onSelect={remove}
                                                 >
-                                                    <Trash2 className="text-rose-300" />{' '}
+                                                    <Trash2 className="text-red-400" />{' '}
                                                     {tr('Видалити фото')}
                                                 </DropdownMenuItem>
                                             </>
@@ -381,7 +381,7 @@ export function PhotoViewer({
                                 </DropdownMenu>
                             )}
                             <DialogPrimitive.Close
-                                className="hidden rounded-full p-1.5 text-white/50 transition hover:bg-white/[0.06] hover:text-white lg:block"
+                                className="hidden rounded-full p-1.5 text-white/50 transition hover:bg-[var(--gc-l3)] hover:text-white lg:block"
                                 aria-label={tr('Закрити')}
                             >
                                 <X className="size-5" />
@@ -469,7 +469,7 @@ export function PhotoViewer({
                                                 {photo.tags.map((person) => (
                                                     <span
                                                         key={person.username}
-                                                        className="inline-flex items-center gap-1 rounded-chip bg-white/[0.06] px-2.5 py-1 text-sm text-white"
+                                                        className="gc-solid-2 inline-flex items-center gap-1 rounded-chip px-2.5 py-1 text-sm text-white"
                                                     >
                                                         <Link
                                                             href={`/${person.username}`}
@@ -577,7 +577,7 @@ export function PhotoViewer({
                                             }
                                         />
                                     ) : (
-                                        <p className="border-t border-white/[0.06] pt-4 text-center text-xs text-white/40">
+                                        <p className="pt-4 text-center text-xs text-white/40">
                                             {tr(
                                                 'Коментарі до цього альбому вимкнено.',
                                             )}

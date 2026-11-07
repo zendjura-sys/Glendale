@@ -46,7 +46,7 @@ export default function EventsIndex({
             <Head title={tr('Календар подій')} />
             <div className="mb-4">
                 <h1 className="flex items-center gap-2 font-display text-2xl font-semibold text-white">
-                    <CalendarDays className="size-6 text-gc-lilac-200" />{' '}
+                    <CalendarDays className="size-6 text-sky-400" />{' '}
                     {tr('Календар подій')}
                 </h1>
                 <p className="text-sm text-white/50">
@@ -66,7 +66,7 @@ export default function EventsIndex({
                     {releasesOn && (
                         <Link
                             href="/events/releases"
-                            className="text-gc-lilac-200 hover:text-white"
+                            className="text-sky-400 hover:text-white"
                         >
                             {tr('Релізи і сезони')}
                         </Link>
@@ -74,7 +74,7 @@ export default function EventsIndex({
                 </p>
             </div>
             <label className="mb-3 flex flex-wrap items-center gap-2 text-sm text-white/60">
-                <Bell className="size-4 text-gc-lilac-200" />
+                <Bell className="size-4 text-sky-400" />
                 {tr('Нагадувати')}
                 <select
                     value={reminder_lead}
@@ -97,7 +97,7 @@ export default function EventsIndex({
             </label>
             {feed_url && (
                 <div className="mb-4 flex flex-wrap items-center gap-2 text-sm text-white/60">
-                    <CalendarPlus className="size-4 text-gc-lilac-200" />
+                    <CalendarPlus className="size-4 text-sky-400" />
                     {tr('Мій календар у Google, Apple чи Outlook:')}
                     <button
                         type="button"
@@ -116,7 +116,7 @@ export default function EventsIndex({
                     </button>
                     <a
                         href={feed_url.replace(/^https?:/, 'webcal:')}
-                        className="inline-flex h-8 items-center rounded-lg px-2 text-sm text-gc-lilac-200 hover:text-white"
+                        className="inline-flex h-8 items-center rounded-lg px-2 text-sm text-sky-400 hover:text-white"
                     >
                         {tr('Відкрити в календарі')}
                     </a>
@@ -150,8 +150,8 @@ export default function EventsIndex({
                         className={cn(
                             'h-9 shrink-0 rounded-lg px-3.5 text-sm font-medium transition',
                             kind === key
-                                ? 'bg-gradient-brand text-white'
-                                : 'bg-white/[0.04] text-white/60 hover:text-white',
+                                ? 'bg-sky-500 text-white'
+                                : 'gc-solid-2 text-white/60 hover:text-white',
                         )}
                     >
                         {label}

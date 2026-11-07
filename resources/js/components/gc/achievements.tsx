@@ -111,9 +111,9 @@ export function AchievementsCard({
     const shown = all ? data.badges : data.badges.filter((b) => b.earned);
 
     return (
-        <section className="glass rounded-2xl p-4">
+        <section className="gc-solid rounded-2xl p-4">
             <div className="flex items-center gap-3">
-                <span className="flex size-12 shrink-0 flex-col items-center justify-center rounded-2xl bg-gradient-brand text-white">
+                <span className="flex size-12 shrink-0 flex-col items-center justify-center rounded-2xl bg-sky-500 text-white">
                     <span className="text-[11px] leading-none font-semibold uppercase opacity-80">
                         {tr('рів.')}
                     </span>
@@ -133,7 +133,7 @@ export function AchievementsCard({
                         aria-valuemax={100}
                     >
                         <div
-                            className="h-full rounded-full bg-gradient-brand transition-[width] duration-500"
+                            className="h-full rounded-full bg-sky-500 transition-[width] duration-500"
                             style={{ width: `${percent}%` }}
                         />
                     </div>
@@ -154,7 +154,7 @@ export function AchievementsCard({
                 <button
                     type="button"
                     onClick={() => setAll(!all)}
-                    className="text-xs text-gc-lilac-200 hover:text-white"
+                    className="text-xs text-sky-400 hover:text-white"
                 >
                     {all ? tr('Лише отримані') : tr('Усі')}
                 </button>
@@ -180,8 +180,8 @@ export function AchievementsCard({
                                     className={cn(
                                         'relative flex size-11 items-center justify-center rounded-2xl',
                                         b.earned
-                                            ? 'bg-amber-300/15 text-amber-200 ring-1 ring-amber-300/40'
-                                            : 'bg-white/[0.04] text-white/25',
+                                            ? 'bg-amber-300/15 text-amber-200'
+                                            : 'gc-solid-2 text-white/25',
                                     )}
                                 >
                                     <Icon className="size-5" />

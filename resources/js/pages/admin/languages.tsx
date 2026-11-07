@@ -188,7 +188,7 @@ export default function AdminLanguages({
                 </p>
             )}
 
-            <section className="glass mb-6 flex flex-wrap items-center gap-3 rounded-3xl p-4 sm:p-5">
+            <section className="gc-solid mb-6 flex flex-wrap items-center gap-3 rounded-3xl p-4 sm:p-5">
                 <div className="min-w-[min(100%,18rem)] flex-1">
                     <h2 className="font-display text-lg font-semibold text-white">
                         {tr('Кнопка «Перекласти»')}
@@ -212,14 +212,14 @@ export default function AdminLanguages({
                         'h-9 rounded-xl px-3 text-sm font-semibold transition',
                         content_translation
                             ? 'bg-emerald-500/15 text-emerald-200'
-                            : 'bg-white/[0.06] text-white/60 hover:text-white',
+                            : 'gc-solid-2 text-white/60 hover:text-white',
                     )}
                 >
                     {content_translation ? tr('Увімкнено') : tr('Вимкнено')}
                 </button>
             </section>
 
-            <section className="glass mb-6 rounded-3xl p-4 sm:p-5">
+            <section className="gc-solid mb-6 rounded-3xl p-4 sm:p-5">
                 <h2 className="mb-1 font-display text-lg font-semibold text-white">
                     {tr('Додати мову')}
                 </h2>
@@ -251,7 +251,7 @@ export default function AdminLanguages({
                         <button
                             type="button"
                             onClick={() => add(suggested.map((s) => s.code))}
-                            className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-white/[0.06] px-4 text-sm text-white/80 hover:bg-white/10"
+                            className="gc-solid-2 inline-flex h-10 items-center gap-1.5 rounded-xl px-4 text-sm text-white/80 hover:bg-white/10"
                         >
                             <Sparkles className="size-4" />{' '}
                             {tr('Додати рекомендовані: {list}', {
@@ -261,13 +261,13 @@ export default function AdminLanguages({
                     )}
                 </form>
                 {form.errors.code && (
-                    <p className="mt-2 text-xs text-rose-300">
+                    <p className="mt-2 text-xs text-red-400">
                         {form.errors.code}
                     </p>
                 )}
             </section>
 
-            <section className="glass mb-6 rounded-3xl p-4 sm:p-5">
+            <section className="gc-solid mb-6 rounded-3xl p-4 sm:p-5">
                 <div className="mb-3 flex flex-wrap items-center gap-3">
                     <h2 className="flex-1 font-display text-lg font-semibold text-white">
                         {tr('Мови сайту й застосунку')}
@@ -326,7 +326,7 @@ export default function AdminLanguages({
                                             · {l.name}
                                         </span>
                                     </p>
-                                    <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
+                                    <div className="gc-solid-2 mt-1.5 h-1.5 overflow-hidden rounded-full">
                                         <div
                                             className="h-full rounded-full bg-[#6d7dff] transition-all"
                                             style={{
@@ -376,7 +376,7 @@ export default function AdminLanguages({
                                             'h-9 rounded-xl px-3 text-sm font-semibold transition',
                                             l.enabled
                                                 ? 'bg-emerald-500/15 text-emerald-200'
-                                                : 'bg-white/[0.06] text-white/60 hover:text-white',
+                                                : 'gc-solid-2 text-white/60 hover:text-white',
                                         )}
                                     >
                                         {l.enabled
@@ -396,7 +396,7 @@ export default function AdminLanguages({
                                                     { preserveScroll: true },
                                                 )
                                             }
-                                            className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-white/[0.06] px-3 text-sm text-white/75 hover:bg-white/10 disabled:opacity-40"
+                                            className="gc-solid-2 inline-flex h-9 items-center gap-1.5 rounded-xl px-3 text-sm text-white/75 hover:bg-white/10 disabled:opacity-40"
                                             title={tr('Перекласти нові рядки')}
                                         >
                                             <RefreshCw className="size-4" />{' '}
@@ -405,7 +405,7 @@ export default function AdminLanguages({
                                     )}
                                     <Link
                                         href={`/admin/languages/${l.code}/strings`}
-                                        className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-white/[0.06] px-3 text-sm text-white/75 hover:bg-white/10"
+                                        className="gc-solid-2 inline-flex h-9 items-center gap-1.5 rounded-xl px-3 text-sm text-white/75 hover:bg-white/10"
                                     >
                                         <PencilLine className="size-4" />{' '}
                                         {tr('Редагувати')}
@@ -423,7 +423,7 @@ export default function AdminLanguages({
                                                 { preserveScroll: true },
                                             )
                                         }
-                                        className="rounded-lg p-2 text-white/35 hover:text-rose-300"
+                                        className="rounded-lg p-2 text-white/35 hover:text-red-400"
                                         aria-label={tr('Видалити')}
                                     >
                                         <Trash2 className="size-4" />
@@ -459,7 +459,7 @@ function EnginesCard({
           : 0;
 
     return (
-        <section className="glass mb-6 grid gap-4 rounded-3xl p-4 sm:grid-cols-2 sm:p-5 lg:grid-cols-3">
+        <section className="gc-solid mb-6 grid gap-4 rounded-3xl p-4 sm:grid-cols-2 sm:p-5 lg:grid-cols-3">
             <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
                     <h2 className="font-display text-base font-semibold text-white">
@@ -489,7 +489,7 @@ function EnginesCard({
                         </button>
                     )}
                 </div>
-                <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
+                <div className="gc-solid-2 mt-2 h-1.5 overflow-hidden rounded-full">
                     <div
                         className={cn(
                             'h-full rounded-full transition-all',
@@ -534,7 +534,7 @@ function EnginesCard({
                     )}
                 </div>
                 {azure.configured && (
-                    <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
+                    <div className="gc-solid-2 mt-2 h-1.5 overflow-hidden rounded-full">
                         <div
                             className={cn(
                                 'h-full rounded-full transition-all',
@@ -607,7 +607,7 @@ function EnginesCard({
                             )
                         }
                         disabled={!libretranslate.configured}
-                        className="ml-auto inline-flex h-8 items-center gap-1.5 rounded-xl bg-white/[0.06] px-3 text-xs text-white/75 transition hover:bg-white/10 disabled:opacity-40"
+                        className="gc-solid-2 ml-auto inline-flex h-8 items-center gap-1.5 rounded-xl px-3 text-xs text-white/75 transition hover:bg-white/10 disabled:opacity-40"
                     >
                         <PlugZap className="size-3.5" /> {tr('Перевірити')}
                     </button>

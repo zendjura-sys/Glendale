@@ -81,7 +81,7 @@ export function PeopleReports({
     };
 
     return (
-        <section className="glass mb-6 rounded-2xl p-4 sm:p-5">
+        <section className="gc-solid mb-6 rounded-2xl p-4 sm:p-5">
             <h2 className="mb-3 flex items-center gap-2 font-display text-lg font-semibold text-white">
                 <UserX className="size-5 text-white/60" />
                 {tr('Скарги на людей')}
@@ -96,7 +96,7 @@ export function PeopleReports({
                         <article
                             key={row.user_id}
                             id={`mod-person-${row.user_id}`}
-                            className="rounded-2xl bg-white/[0.03] p-3"
+                            className="gc-solid-2 rounded-2xl p-3"
                         >
                             <div className="flex items-start gap-2.5">
                                 <Link href={`/${row.user.username}`}>
@@ -105,7 +105,7 @@ export function PeopleReports({
                                 <div className="min-w-0 flex-1">
                                     <p className="flex flex-wrap items-center gap-2 text-sm font-semibold text-white">
                                         {row.user.name}
-                                        <span className="rounded-md bg-rose-500/15 px-2 py-0.5 text-xs font-normal text-rose-200">
+                                        <span className="rounded-md bg-red-500/15 px-2 py-0.5 text-xs font-normal text-red-400">
                                             {tr('Скарг: {count}', {
                                                 count: row.count,
                                             })}
@@ -130,7 +130,7 @@ export function PeopleReports({
                                         {row.reasons.map((reason) => (
                                             <span
                                                 key={reason}
-                                                className="rounded-md bg-white/[0.06] px-2 py-0.5"
+                                                className="gc-solid-2 rounded-md px-2 py-0.5"
                                             >
                                                 {tr(reason)}
                                             </span>
@@ -152,7 +152,7 @@ export function PeopleReports({
                                 <button
                                     type="button"
                                     onClick={() => resolve(row, 'ban')}
-                                    className={`${button} bg-rose-500/15 text-rose-200 hover:bg-rose-500/25`}
+                                    className={`${button} bg-red-500/15 text-red-400 hover:bg-red-500/25`}
                                 >
                                     <Gavel className="size-4" />
                                     {tr('Заблокувати')}
@@ -189,7 +189,7 @@ export function PeopleReports({
                                 <button
                                     type="button"
                                     onClick={() => resolve(row, 'strike')}
-                                    className={`${button} bg-white/[0.06] text-white/80 hover:bg-white/[0.1]`}
+                                    className={`${button} gc-solid-2 text-white/80 hover:bg-white/[0.1]`}
                                 >
                                     <Flag className="size-4" />
                                     {tr('Страйк')}
@@ -197,7 +197,7 @@ export function PeopleReports({
                                 <button
                                     type="button"
                                     onClick={() => resolve(row, 'dismiss')}
-                                    className={`${button} text-white/55 hover:bg-white/[0.06] hover:text-white`}
+                                    className={`${button} text-white/55 hover:bg-[var(--gc-l3)] hover:text-white`}
                                 >
                                     <Ban className="size-4" />
                                     {tr('Відхилити')}
@@ -224,7 +224,7 @@ export function Appeals({ appeals }: { appeals: AppealItem[] }) {
     return (
         <section
             id="appeals"
-            className="glass mb-6 scroll-mt-24 rounded-2xl p-4 sm:p-5"
+            className="gc-solid mb-6 scroll-mt-24 rounded-2xl p-4 sm:p-5"
         >
             <h2 className="mb-3 flex items-center gap-2 font-display text-lg font-semibold text-white">
                 <Gavel className="size-5 text-white/60" />
@@ -240,7 +240,7 @@ export function Appeals({ appeals }: { appeals: AppealItem[] }) {
                         <article
                             key={item.id}
                             id={`mod-appeal-${item.id}`}
-                            className="rounded-2xl bg-white/[0.03] p-3"
+                            className="gc-solid-2 rounded-2xl p-3"
                         >
                             <div className="flex flex-wrap items-center gap-2 text-xs text-white/50">
                                 {item.user && (
@@ -255,11 +255,11 @@ export function Appeals({ appeals }: { appeals: AppealItem[] }) {
                                         {item.user.name}
                                     </Link>
                                 )}
-                                <span className="rounded-md bg-white/[0.06] px-2 py-0.5">
+                                <span className="gc-solid-2 rounded-md px-2 py-0.5">
                                     {tr(item.kind)}
                                 </span>
                                 {item.banned && (
-                                    <span className="rounded-md bg-rose-500/15 px-2 py-0.5 text-rose-200">
+                                    <span className="rounded-md bg-red-500/15 px-2 py-0.5 text-red-400">
                                         {tr('Заблоковано')}
                                         {item.ban_reason &&
                                             `: ${item.ban_reason}`}
@@ -283,7 +283,7 @@ export function Appeals({ appeals }: { appeals: AppealItem[] }) {
                                     className={cn(
                                         'ml-auto',
                                         item.overdue &&
-                                            'font-medium text-rose-300',
+                                            'font-medium text-red-400',
                                     )}
                                 >
                                     {item.overdue
@@ -329,7 +329,7 @@ export function Appeals({ appeals }: { appeals: AppealItem[] }) {
                                 <button
                                     type="button"
                                     onClick={() => answer(item, false)}
-                                    className={`${button} text-white/55 hover:bg-white/[0.06] hover:text-white`}
+                                    className={`${button} text-white/55 hover:bg-[var(--gc-l3)] hover:text-white`}
                                 >
                                     <X className="size-4" />
                                     {tr('Відхилити')}
@@ -355,7 +355,7 @@ export type FeedbackItem = {
 /** Відгуки від людей: прочитане зникає зі списку. */
 export function FeedbackList({ feedback }: { feedback: FeedbackItem[] }) {
     return (
-        <section className="glass mb-6 rounded-2xl p-4 sm:p-5">
+        <section className="gc-solid mb-6 rounded-2xl p-4 sm:p-5">
             <h2 className="mb-3 flex items-center gap-2 font-display text-lg font-semibold text-white">
                 <MessageSquareHeart className="size-5 text-white/60" />
                 {tr('Відгуки')}
@@ -369,7 +369,7 @@ export function FeedbackList({ feedback }: { feedback: FeedbackItem[] }) {
                     {feedback.map((item) => (
                         <article
                             key={item.id}
-                            className="rounded-2xl bg-white/[0.03] p-3"
+                            className="gc-solid-2 rounded-2xl p-3"
                         >
                             <div className="flex flex-wrap items-center gap-2 text-xs text-white/50">
                                 {item.user && (
@@ -384,13 +384,13 @@ export function FeedbackList({ feedback }: { feedback: FeedbackItem[] }) {
                                         {item.user.name}
                                     </Link>
                                 )}
-                                <span className="rounded-md bg-white/[0.06] px-2 py-0.5">
+                                <span className="gc-solid-2 rounded-md px-2 py-0.5">
                                     {tr(item.kind)}
                                 </span>
                                 {item.url && (
                                     <Link
                                         href={item.url}
-                                        className="truncate text-gc-lilac-300 hover:text-white"
+                                        className="truncate text-sky-400 hover:text-white"
                                     >
                                         {item.url}
                                     </Link>
@@ -412,7 +412,7 @@ export function FeedbackList({ feedback }: { feedback: FeedbackItem[] }) {
                                             { preserveScroll: true },
                                         )
                                     }
-                                    className={`${button} text-white/60 hover:bg-white/[0.06] hover:text-white`}
+                                    className={`${button} text-white/60 hover:bg-[var(--gc-l3)] hover:text-white`}
                                 >
                                     <Check className="size-4" />
                                     {tr('Прочитано')}
@@ -456,7 +456,7 @@ export function Newcomers({ items }: { items: NewcomerItem[] }) {
         );
 
     return (
-        <section className="glass mb-6 rounded-2xl p-4 sm:p-5">
+        <section className="gc-solid mb-6 rounded-2xl p-4 sm:p-5">
             <h2 className="mb-1 flex items-center gap-2 font-display text-lg font-semibold text-white">
                 <UserCheck className="size-5 text-white/60" />
                 {tr('Новачки на перевірку')}
@@ -492,8 +492,8 @@ export function Newcomers({ items }: { items: NewcomerItem[] }) {
                                     className={cn(
                                         'rounded-md px-2 py-0.5 text-xs',
                                         u.risk >= 5
-                                            ? 'bg-rose-500/15 text-rose-200'
-                                            : 'bg-white/[0.06] text-white/60',
+                                            ? 'bg-red-500/15 text-red-400'
+                                            : 'gc-solid-2 text-white/60',
                                     )}
                                 >
                                     {tr(signal)}
@@ -527,7 +527,7 @@ export function Newcomers({ items }: { items: NewcomerItem[] }) {
                                 type="button"
                                 onClick={() => act(u.id, 'ban')}
                                 aria-label={tr('Заблокувати')}
-                                className={`${button} bg-rose-500/15 text-rose-200 hover:bg-rose-500/25`}
+                                className={`${button} bg-red-500/15 text-red-400 hover:bg-red-500/25`}
                             >
                                 <Gavel className="size-4" />
                             </button>
@@ -550,7 +550,7 @@ export function Reporters({ items }: { items: ReporterItem[] }) {
         );
 
     return (
-        <section className="glass mb-6 rounded-2xl p-4 sm:p-5">
+        <section className="gc-solid mb-6 rounded-2xl p-4 sm:p-5">
             <h2 className="mb-1 flex items-center gap-2 font-display text-lg font-semibold text-white">
                 <ShieldCheck className="size-5 text-white/60" />
                 {tr('Скаржники')}

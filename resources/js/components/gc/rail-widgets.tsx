@@ -124,7 +124,7 @@ export function FriendRequests({
             <Heading title={tr('Заявки')} count={data.requests_total} />
             <div className="space-y-3">
                 {data.requests.map((user) => (
-                    <div key={user.id} className="glass rounded-2xl p-4">
+                    <div key={user.id} className="gc-solid rounded-2xl p-4">
                         <p className="flex items-start gap-3 text-sm text-white/60">
                             <UserAvatar user={user} size="sm" />
                             <span>
@@ -148,7 +148,7 @@ export function FriendRequests({
                             <button
                                 type="button"
                                 onClick={() => act(user, false)}
-                                className="h-9 rounded-xl border border-white/10 text-sm font-semibold text-white/80 hover:bg-white/[0.05]"
+                                className="h-9 rounded-xl text-sm font-semibold text-white/80 hover:bg-[var(--gc-l3)]"
                             >
                                 {tr('Відхилити')}
                             </button>
@@ -167,7 +167,7 @@ export function Contacts({ data }: { data: RailData }) {
     return (
         <section>
             <Heading title={tr('Контакти')} count={data.contacts_total} />
-            <div className="glass space-y-0.5 rounded-2xl p-2">
+            <div className="gc-solid space-y-0.5 rounded-2xl p-2">
                 {data.contacts.map((contact) => (
                     <Link
                         key={contact.id}
@@ -176,14 +176,14 @@ export function Contacts({ data }: { data: RailData }) {
                                 ? `/messages/${contact.chat_id}`
                                 : `/${contact.username}`
                         }
-                        className="flex items-center gap-3 rounded-xl px-2 py-2 text-sm font-medium text-white transition hover:bg-white/[0.05]"
+                        className="flex items-center gap-3 rounded-xl px-2 py-2 text-sm font-medium text-white transition hover:bg-[var(--gc-l3)]"
                     >
                         <UserAvatar user={contact} size="sm" />
                         <span className="min-w-0 flex-1 truncate">
                             {contact.name}
                         </span>
                         {contact.unread > 0 && (
-                            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-rose-500 px-1.5 text-[11px] font-bold text-white tabular-nums">
+                            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-[11px] font-bold text-white tabular-nums">
                                 {contact.unread}
                             </span>
                         )}

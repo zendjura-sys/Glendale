@@ -133,7 +133,7 @@ export default function Communities({
         <>
             <Head title={tr('Спільноти')} />
             <div className="space-y-5">
-                <section className="glass relative overflow-hidden rounded-2xl p-5 sm:p-6">
+                <section className="gc-solid relative overflow-hidden rounded-2xl p-5 sm:p-6">
                     <div className="pointer-events-none absolute -top-28 -right-10 size-80 rounded-full bg-gc-purple/25 blur-3xl" />
                     <div className="pointer-events-none absolute -bottom-32 left-10 size-72 rounded-full bg-gc-blue/15 blur-3xl" />
                     <div className="relative flex flex-wrap items-start justify-between gap-4">
@@ -173,7 +173,7 @@ export default function Communities({
                     <div className="relative mt-5 flex flex-col gap-3 lg:flex-row lg:items-center">
                         <div
                             className={cn(
-                                'flex shrink-0 rounded-xl bg-white/[0.04] p-1',
+                                'gc-solid-2 flex shrink-0 rounded-xl p-1',
                                 !signedIn && 'hidden',
                             )}
                         >
@@ -249,10 +249,10 @@ export default function Communities({
                                         visit({ category: key || null })
                                     }
                                     className={cn(
-                                        'shrink-0 rounded-control border px-3.5 py-1.5 text-xs font-medium transition',
+                                        'shrink-0 rounded-control px-3.5 py-1.5 text-xs font-medium transition',
                                         active
-                                            ? 'border-transparent bg-gradient-brand text-white shadow-[0_0_18px_-4px_rgb(124_92_255/0.9)]'
-                                            : 'border-white/[0.08] text-white/55 hover:border-white/20 hover:text-white',
+                                            ? 'border-transparent bg-sky-500 text-white'
+                                            : 'text-white/55 hover:border-white/20 hover:text-white',
                                     )}
                                 >
                                     {label}
@@ -263,9 +263,9 @@ export default function Communities({
                 </section>
 
                 {promoted.length > 0 && (
-                    <section className="glass rounded-2xl p-4 sm:p-5">
+                    <section className="gc-solid rounded-2xl p-4 sm:p-5">
                         <h2 className="flex items-center gap-2 font-display text-base font-semibold text-white">
-                            <Megaphone className="size-4 text-gc-lilac-300" />
+                            <Megaphone className="size-4 text-sky-400" />
                             {tr('Просуваються')}
                             <span className="ml-auto text-xs font-normal text-white/40">
                                 {tr('Реклама')}
@@ -276,7 +276,7 @@ export default function Communities({
                                 <Link
                                     key={community.id}
                                     href={`/c/${community.slug}`}
-                                    className="flex flex-col items-center gap-2 rounded-xl px-3 py-3.5 text-center transition hover:bg-white/[0.06]"
+                                    className="flex flex-col items-center gap-2 rounded-xl px-3 py-3.5 text-center transition hover:bg-[var(--gc-l3)]"
                                 >
                                     <CommunityAvatar
                                         community={community}
@@ -374,9 +374,9 @@ function ExploreSection({ section }: { section: Section }) {
     }[section.key];
 
     return (
-        <section className="glass rounded-2xl p-4 sm:p-5">
+        <section className="gc-solid rounded-2xl p-4 sm:p-5">
             <h2 className="flex items-center gap-2 font-display text-base font-semibold text-white">
-                <Icon className="size-4 text-gc-lilac-300" />
+                <Icon className="size-4 text-sky-400" />
                 {title}
             </h2>
             <div className="-mx-1 mt-3 flex gap-2 overflow-x-auto px-1 pb-1">
@@ -384,7 +384,7 @@ function ExploreSection({ section }: { section: Section }) {
                     <Link
                         key={community.id}
                         href={`/c/${community.slug}`}
-                        className="flex w-44 shrink-0 flex-col items-center gap-2 rounded-xl px-3 py-3.5 text-center transition hover:bg-white/[0.06]"
+                        className="flex w-44 shrink-0 flex-col items-center gap-2 rounded-xl px-3 py-3.5 text-center transition hover:bg-[var(--gc-l3)]"
                     >
                         <CommunityAvatar community={community} size="lg" />
                         <span className="flex max-w-full items-center gap-1 text-sm font-semibold text-white">

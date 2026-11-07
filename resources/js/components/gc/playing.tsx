@@ -75,9 +75,9 @@ export function PlayingNow({
     if (count === 0) return null;
 
     return (
-        <section className="glass rounded-2xl p-4 sm:p-5">
+        <section className="gc-solid rounded-2xl p-4 sm:p-5">
             <h2 className="mb-3 flex items-center gap-2 font-display text-base font-semibold text-white">
-                <span className="size-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgb(52_211_153)]" />
+                <span className="size-2 rounded-full bg-emerald-400" />
                 {tr('Зараз грають:')} {count}
             </h2>
             <div className="flex flex-wrap gap-2">
@@ -85,7 +85,7 @@ export function PlayingNow({
                     <Link
                         key={u.id}
                         href={`/${u.username}`}
-                        className="flex items-center gap-2 rounded-xl bg-white/[0.04] py-1 pr-3 pl-1 text-sm text-white/80 hover:bg-white/[0.08]"
+                        className="gc-solid-2 flex items-center gap-2 rounded-xl py-1 pr-3 pl-1 text-sm text-white/80 hover:bg-[var(--gc-l3)]"
                     >
                         <UserAvatar user={u} size="xs" />
                         {u.name}
@@ -195,7 +195,7 @@ export function PlayingDialog({
                                 <button
                                     type="button"
                                     onClick={() => act('delete', '/me/playing')}
-                                    className="ml-auto rounded-lg p-1.5 text-white/40 hover:text-rose-300"
+                                    className="ml-auto rounded-lg p-1.5 text-white/40 hover:text-red-400"
                                     aria-label={tr('Прибрати статус')}
                                 >
                                     <X className="size-4" />
@@ -203,7 +203,7 @@ export function PlayingDialog({
                             </div>
                         )}
 
-                        <section className="space-y-2 rounded-2xl bg-white/[0.03] p-3">
+                        <section className="gc-solid-2 space-y-2 rounded-2xl p-3">
                             <label className="flex items-center justify-between gap-3 text-sm font-semibold text-white">
                                 {tr('Автоматично')}
                                 <input
@@ -227,7 +227,7 @@ export function PlayingDialog({
                                         'rounded-lg px-2 py-1 text-xs',
                                         settings.discord.linked
                                             ? 'bg-emerald-500/15 text-emerald-200'
-                                            : 'bg-white/[0.05] text-white/60',
+                                            : 'gc-solid-2 text-white/60',
                                     )}
                                 >
                                     Discord:{' '}
@@ -238,7 +238,7 @@ export function PlayingDialog({
                                 {!settings.discord.linked && (
                                     <a
                                         href="/auth/discord"
-                                        className="text-xs text-gc-lilac-200 hover:text-white"
+                                        className="text-xs text-sky-400 hover:text-white"
                                     >
                                         {tr('Прив’язати Discord →')}
                                     </a>
@@ -258,7 +258,7 @@ export function PlayingDialog({
                                                     '/me/playing/steam',
                                                 )
                                             }
-                                            className="inline-flex items-center gap-1 text-white/45 hover:text-rose-300"
+                                            className="inline-flex items-center gap-1 text-white/45 hover:text-red-400"
                                         >
                                             <Unplug className="size-3.5" />{' '}
                                             {tr('Відв’язати')}
@@ -286,7 +286,7 @@ export function PlayingDialog({
                                         />
                                         <button
                                             type="submit"
-                                            className="glass h-9 rounded-lg px-3 text-sm text-white/80 hover:text-white"
+                                            className="gc-solid h-9 rounded-lg px-3 text-sm text-white/80 hover:text-white"
                                         >
                                             {tr('Прив’язати')}
                                         </button>
@@ -318,7 +318,7 @@ export function PlayingDialog({
                                 />
                                 <button
                                     type="submit"
-                                    className="glass h-9 rounded-lg px-3 text-sm text-white/80 hover:text-white"
+                                    className="gc-solid h-9 rounded-lg px-3 text-sm text-white/80 hover:text-white"
                                 >
                                     {tr('Зберегти')}
                                 </button>
@@ -349,10 +349,10 @@ export function PlayingDialog({
                                             picked?.kind === o.kind &&
                                                 picked.id === o.id
                                                 ? 'bg-[var(--accent)]/20'
-                                                : 'hover:bg-white/[0.05]',
+                                                : 'hover:bg-[var(--gc-l3)]',
                                         )}
                                     >
-                                        <span className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white/[0.06]">
+                                        <span className="gc-solid-2 flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-lg">
                                             {o.icon ? (
                                                 <img
                                                     loading="lazy"
@@ -466,7 +466,7 @@ export function PlayingSettingsCard() {
                 <button
                     type="button"
                     onClick={() => setOpen(true)}
-                    className="inline-flex h-10 items-center gap-2 rounded-xl bg-white/[0.06] px-4 text-sm font-medium text-white/80 transition hover:bg-white/10 hover:text-white"
+                    className="gc-solid-2 inline-flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-medium text-white/80 transition hover:bg-white/10 hover:text-white"
                 >
                     <Gamepad2 className="size-4" /> {tr('Налаштувати')}
                 </button>

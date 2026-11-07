@@ -53,8 +53,8 @@ export function AiWriter({
             <DropdownMenuTrigger
                 disabled={busy || text.trim() === ''}
                 className={cn(
-                    'mb-1 flex size-9 items-center justify-center rounded-full text-white/50 transition outline-none hover:text-gc-lilac-300 disabled:opacity-40',
-                    busy && 'text-gc-lilac-300',
+                    'mb-1 flex size-9 items-center justify-center rounded-full text-white/50 transition outline-none hover:text-sky-400 disabled:opacity-40',
+                    busy && 'text-sky-400',
                 )}
                 aria-label={tr('ШІ-редактор')}
                 title={tr('ШІ-редактор')}

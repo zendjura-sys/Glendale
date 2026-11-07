@@ -44,7 +44,7 @@ export default function Trailers({
                         {games.data.map((game) => (
                             <article
                                 key={game.id}
-                                className="glass overflow-hidden rounded-2xl"
+                                className="gc-solid overflow-hidden rounded-2xl"
                             >
                                 <button
                                     type="button"

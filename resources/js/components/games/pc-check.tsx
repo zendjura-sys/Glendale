@@ -52,11 +52,11 @@ const SUMMARY: Record<
     },
     below: {
         text: tr('Не дотягує до мінімальних вимог'),
-        className: 'bg-rose-500/12 text-rose-100',
+        className: 'bg-red-500/12 text-red-400',
     },
     unknown: {
         text: tr('Не все вдалося порівняти — дивіться вимоги нижче'),
-        className: 'bg-white/[0.05] text-white/75',
+        className: 'gc-solid-2 text-white/75',
     },
 };
 
@@ -127,7 +127,7 @@ export function PcCheck({
                 <button
                     type="button"
                     onClick={() => setEditing(true)}
-                    className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-white/[0.06] px-3 text-sm text-white/80 transition hover:bg-white/10"
+                    className="gc-solid-2 inline-flex h-9 items-center gap-1.5 rounded-xl px-3 text-sm text-white/80 transition hover:bg-white/10"
                 >
                     <MonitorCog className="size-4" />
                     {data.configured ? tr('Змінити збірку') : tr('Моя збірка')}
@@ -158,7 +158,7 @@ export function PcCheck({
                         Object.keys(level).length === 0 ? null : (
                             <div
                                 key={key}
-                                className="rounded-2xl bg-white/[0.03] p-3"
+                                className="gc-solid-2 rounded-2xl p-3"
                             >
                                 <p className="mb-2 text-xs font-semibold text-white/50">
                                     {title}
@@ -224,7 +224,7 @@ function Mark({ state }: { state: State }) {
     if (state === 'fail')
         return (
             <X
-                className="mt-3 size-4 shrink-0 text-rose-400"
+                className="mt-3 size-4 shrink-0 text-red-400"
                 aria-label={tr('Не дотягує')}
             />
         );
@@ -305,7 +305,7 @@ export function PcDialog({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="glass-strong max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-dialog border-white/10 text-white sm:max-w-md">
+            <DialogContent className="glass-strong max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-dialog text-white sm:max-w-md">
                 <DialogTitle className="font-display text-xl">
                     {tr('Моя збірка')}
                 </DialogTitle>

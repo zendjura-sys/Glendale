@@ -74,7 +74,7 @@ export function SplitPanel() {
                     className="glass-strong fixed top-[76px] right-3 bottom-3 z-40 hidden w-[420px] flex-col overflow-hidden rounded-2xl xl:flex"
                     aria-label={tr('Поруч')}
                 >
-                    <div className="flex items-center gap-1 border-b border-white/[0.08] p-1.5">
+                    <div className="flex items-center gap-1 p-1.5">
                         {TABS.map((tab) => (
                             <button
                                 key={tab.path}
@@ -84,7 +84,7 @@ export function SplitPanel() {
                                     'flex h-9 flex-1 items-center justify-center gap-1.5 rounded-xl text-xs font-medium transition',
                                     path === tab.path
                                         ? 'bg-primary text-white'
-                                        : 'text-white/65 hover:bg-white/[0.06] hover:text-white',
+                                        : 'text-white/65 hover:bg-[var(--gc-l3)] hover:text-white',
                                 )}
                             >
                                 <tab.icon className="size-3.5" />
@@ -95,7 +95,7 @@ export function SplitPanel() {
                             type="button"
                             onClick={() => setPath(null)}
                             aria-label={tr('Закрити панель')}
-                            className="flex size-9 items-center justify-center rounded-xl text-white/60 hover:bg-white/[0.06] hover:text-white"
+                            className="flex size-9 items-center justify-center rounded-xl text-white/60 hover:bg-[var(--gc-l3)] hover:text-white"
                         >
                             <X className="size-4" />
                         </button>

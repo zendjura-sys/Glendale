@@ -70,8 +70,8 @@ export function EventCard({ event }: { event: CalendarEvent }) {
         });
 
     return (
-        <article className="glass flex flex-wrap items-start gap-3 rounded-2xl p-3.5 sm:flex-nowrap">
-            <div className="flex w-14 shrink-0 flex-col items-center rounded-xl bg-white/[0.04] py-2">
+        <article className="gc-solid flex flex-wrap items-start gap-3 rounded-2xl p-3.5 sm:flex-nowrap">
+            <div className="gc-solid-2 flex w-14 shrink-0 flex-col items-center rounded-xl py-2">
                 {event.all_day ? (
                     <span className="text-center text-xs leading-tight font-semibold text-white">
                         {tr('Весь')}
@@ -91,11 +91,11 @@ export function EventCard({ event }: { event: CalendarEvent }) {
                         {tr('Київ')} {kyivHint(event.starts_at)}
                     </span>
                 )}
-                <Icon className="mt-1 size-4 text-gc-lilac-200" />
+                <Icon className="mt-1 size-4 text-sky-400" />
             </div>
             <div className="min-w-0 flex-1">
                 <p className="flex flex-wrap items-center gap-x-2 text-xs text-white/50">
-                    <span className="rounded-md bg-white/[0.06] px-1.5 py-0.5 text-white/70">
+                    <span className="gc-solid-2 rounded-md px-1.5 py-0.5 text-white/70">
                         {event.type_label}
                     </span>
                     <Link
@@ -118,7 +118,7 @@ export function EventCard({ event }: { event: CalendarEvent }) {
                             <Link
                                 key={g.url}
                                 href={g.url}
-                                className="rounded-md bg-white/[0.04] px-1.5 py-0.5 text-xs text-white/60 hover:text-white"
+                                className="gc-solid-2 rounded-md px-1.5 py-0.5 text-xs text-white/60 hover:text-white"
                             >
                                 {g.name}
                             </Link>
@@ -135,7 +135,7 @@ export function EventCard({ event }: { event: CalendarEvent }) {
                             href={event.url}
                             target="_blank"
                             rel="noreferrer noopener"
-                            className="inline-flex items-center gap-1 text-gc-lilac-200 hover:text-white"
+                            className="inline-flex items-center gap-1 text-sky-400 hover:text-white"
                         >
                             <ExternalLink className="size-3.5" />
                             {linkLabel(event.url)}
@@ -148,7 +148,7 @@ export function EventCard({ event }: { event: CalendarEvent }) {
                     src={event.image}
                     alt=""
                     loading="lazy"
-                    className="hidden size-14 shrink-0 rounded-xl bg-white/[0.04] object-contain p-1 sm:block"
+                    className="gc-solid-2 hidden size-14 shrink-0 rounded-xl object-contain p-1 sm:block"
                 />
             )}
             <div className="flex w-full items-center gap-1.5 sm:w-auto">
@@ -165,7 +165,7 @@ export function EventCard({ event }: { event: CalendarEvent }) {
                         'inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-xl px-3 text-sm font-semibold transition sm:flex-none',
                         event.status === 'going' || event.status === 'waitlist'
                             ? 'bg-emerald-500/20 text-emerald-200'
-                            : 'bg-white/[0.06] text-white/75 hover:bg-white/10',
+                            : 'gc-solid-2 text-white/75 hover:bg-white/10',
                     )}
                 >
                     <Check className="size-4" />{' '}
@@ -186,8 +186,8 @@ export function EventCard({ event }: { event: CalendarEvent }) {
                         className={cn(
                             'inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-xl px-3 text-sm transition sm:flex-none',
                             event.status === 'declined'
-                                ? 'bg-rose-500/15 text-rose-200'
-                                : 'bg-white/[0.04] text-white/55 hover:bg-white/10',
+                                ? 'bg-red-500/15 text-red-400'
+                                : 'gc-solid-2 text-white/55 hover:bg-white/10',
                         )}
                     >
                         <X className="size-4" />{' '}
@@ -215,7 +215,7 @@ export function EventCard({ event }: { event: CalendarEvent }) {
                                 { preserveScroll: true },
                             )
                         }
-                        className="rounded-lg p-2 text-white/35 hover:text-rose-300"
+                        className="rounded-lg p-2 text-white/35 hover:text-red-400"
                         aria-label={tr('Видалити')}
                     >
                         <Trash2 className="size-4" />
@@ -239,8 +239,7 @@ export function EventList({ events }: { events: CalendarEvent[] }) {
             {[...days.entries()].map(([day, items]) => (
                 <section key={day}>
                     <h2 className="mb-2 flex items-center gap-2 text-sm font-semibold text-white/70 first-letter:uppercase">
-                        <CalendarDays className="size-4 text-gc-lilac-200" />{' '}
-                        {day}
+                        <CalendarDays className="size-4 text-sky-400" /> {day}
                     </h2>
                     <div className="space-y-2">
                         {items.map((e) => (
@@ -346,7 +345,7 @@ export function ServerEventForm({
                 {tr('Щотижня')}
             </label>
             {(form.errors.starts_at || form.errors.title) && (
-                <p className="text-xs text-rose-300 sm:col-span-2">
+                <p className="text-xs text-red-400 sm:col-span-2">
                     {form.errors.starts_at ?? form.errors.title}
                 </p>
             )}
@@ -436,7 +435,7 @@ export function GameEventForm({
             {(form.errors.starts_at ||
                 form.errors.title ||
                 form.errors.url) && (
-                <p className="text-xs text-rose-300 sm:col-span-2">
+                <p className="text-xs text-red-400 sm:col-span-2">
                     {form.errors.starts_at ??
                         form.errors.title ??
                         form.errors.url}

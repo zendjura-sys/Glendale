@@ -46,7 +46,7 @@ export function StatusPill({ status }: { status: TournamentStatus }) {
                 status === 'running' && 'bg-primary/15 text-primary',
                 status === 'open' && 'bg-white/10 text-white/80',
                 (status === 'finished' || status === 'cancelled') &&
-                    'bg-white/[0.05] text-white/45',
+                    'gc-solid-2 text-white/45',
             )}
         >
             {status === 'running' && (
@@ -74,7 +74,7 @@ export function TournamentRow({
     return (
         <Link
             href={`/tournaments/${tournament.id}`}
-            className="flex items-center gap-3 rounded-control px-2 py-2.5 transition hover:bg-white/[0.05]"
+            className="flex items-center gap-3 rounded-control px-2 py-2.5 transition hover:bg-[var(--gc-l3)]"
         >
             {showServer ? (
                 <ServerIcon
@@ -83,7 +83,7 @@ export function TournamentRow({
                     className="size-10 shrink-0 rounded-control"
                 />
             ) : (
-                <span className="grid size-10 shrink-0 place-items-center rounded-control bg-white/[0.06] text-white/70">
+                <span className="gc-solid-2 grid size-10 shrink-0 place-items-center rounded-control text-white/70">
                     <Icon className="size-5" />
                 </span>
             )}
@@ -143,7 +143,7 @@ export function CreateTournamentDialog({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="glass-strong max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-dialog border-white/10 text-white sm:max-w-lg">
+            <DialogContent className="glass-strong max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-dialog text-white sm:max-w-lg">
                 <DialogTitle className="font-display text-xl">
                     {tr('Новий турнір')}
                 </DialogTitle>
@@ -156,7 +156,7 @@ export function CreateTournamentDialog({
                         });
                     }}
                 >
-                    <div className="grid grid-cols-2 gap-1 rounded-control bg-white/[0.05] p-1">
+                    <div className="gc-solid-2 grid grid-cols-2 gap-1 rounded-control p-1">
                         {(
                             [
                                 ['bracket', tr('Сітка'), Trophy],
@@ -305,7 +305,7 @@ export function CreateTournamentDialog({
                         placeholder={tr('Приз (необов’язково)')}
                         className={input}
                     />
-                    {error && <p className="text-xs text-rose-300">{error}</p>}
+                    {error && <p className="text-xs text-red-400">{error}</p>}
                     <div className="flex justify-end gap-2 pt-1">
                         <button
                             type="button"

@@ -31,7 +31,7 @@ export function ServerIcon({
                 loading="lazy"
                 onError={() => setBroken(true)}
                 className={cn(
-                    'size-12 shrink-0 rounded-2xl bg-white/[0.04] object-cover ring-1 ring-white/10',
+                    'gc-solid-2 size-12 shrink-0 rounded-2xl object-cover',
                     className,
                 )}
             />
@@ -41,7 +41,7 @@ export function ServerIcon({
     return (
         <span
             className={cn(
-                'flex size-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br font-display text-lg font-bold text-white ring-1 ring-white/10',
+                'flex size-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br font-display text-lg font-bold text-white',
                 tone,
                 className,
             )}
@@ -88,9 +88,9 @@ export function OnlineMeter({
                 )}
             </div>
             {max ? (
-                <div className="h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
+                <div className="gc-solid-2 h-1.5 overflow-hidden rounded-full">
                     <div
-                        className="h-full rounded-full bg-gradient-to-r from-emerald-400 via-gc-blue to-gc-purple shadow-[0_0_12px_rgb(79_139_255/0.7)]"
+                        className="h-full rounded-full bg-gradient-to-r from-emerald-400 via-gc-blue to-gc-purple"
                         style={{ width: `${Math.max(percent, 2)}%` }}
                     />
                 </div>

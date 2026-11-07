@@ -48,8 +48,8 @@ export function CompatibilityChip({ data }: { data: Compatibility }) {
         data.score >= 70
             ? 'bg-emerald-500/15 text-emerald-200'
             : data.score >= 40
-              ? 'bg-sky-500/15 text-sky-200'
-              : 'bg-white/[0.06] text-white/65';
+              ? 'bg-sky-500/15 text-sky-400'
+              : 'gc-solid-2 text-white/65';
 
     return (
         <DropdownMenu>

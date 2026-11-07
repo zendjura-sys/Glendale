@@ -64,7 +64,7 @@ export default function Navigation({ defaults, max }: Props) {
                 )}
             >
                 <div
-                    className="mb-6 flex items-stretch rounded-xl border border-[var(--gc-hairline)] bg-black/20"
+                    className="mb-6 flex items-stretch rounded-xl border-[var(--gc-hairline)] bg-black/20"
                     aria-label={tr('Попередній перегляд')}
                 >
                     {[...pinned, null].map((item) => (
@@ -93,7 +93,7 @@ export default function Navigation({ defaults, max }: Props) {
                     {tr('У панелі')}
                 </h3>
                 <ul
-                    className="-mx-4 border-y border-[var(--gc-hairline)] px-4 sm:-mx-5 sm:px-5"
+                    className="-mx-4 border-[var(--gc-hairline)] px-4 sm:-mx-5 sm:px-5"
                     data-test="nav-pinned"
                 >
                     {pinned.map((item, index) => (
@@ -128,7 +128,7 @@ export default function Navigation({ defaults, max }: Props) {
                                 onClick={() =>
                                     save(tabs.filter((key) => key !== item.key))
                                 }
-                                className="text-rose-300"
+                                className="text-red-400"
                             >
                                 <CircleMinus className="size-4" />
                             </IconButton>
@@ -153,7 +153,7 @@ export default function Navigation({ defaults, max }: Props) {
                             type="button"
                             disabled={full}
                             onClick={() => save([...tabs, item.key])}
-                            className="flex items-center gap-2 rounded-control border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[13px] font-medium text-white/75 transition hover:bg-white/[0.07] disabled:opacity-40"
+                            className="gc-solid-2 flex items-center gap-2 rounded-control px-3.5 py-2 text-[13px] font-medium text-white/75 transition hover:bg-[var(--gc-l3)] disabled:opacity-40"
                         >
                             <Plus className="size-3.5 text-white/45" />
                             <ModuleIcon
@@ -171,7 +171,7 @@ export default function Navigation({ defaults, max }: Props) {
                         onClick={() =>
                             save(defaults.filter((key) => byKey.has(key)))
                         }
-                        className="mt-6 inline-flex items-center gap-2 rounded-lg border border-white/10 px-3.5 py-2 text-sm font-medium text-white/75 transition hover:bg-white/[0.06]"
+                        className="mt-6 inline-flex items-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium text-white/75 transition hover:bg-[var(--gc-l3)]"
                     >
                         <RotateCcw className="size-4" />
                         {tr('Повернути як було')}
@@ -193,7 +193,7 @@ function IconButton({
             aria-label={label}
             title={label}
             className={cn(
-                'flex size-9 shrink-0 items-center justify-center rounded-xl text-white/60 transition hover:bg-white/[0.06] disabled:opacity-25',
+                'flex size-9 shrink-0 items-center justify-center rounded-xl text-white/60 transition hover:bg-[var(--gc-l3)] disabled:opacity-25',
                 className,
             )}
             {...props}

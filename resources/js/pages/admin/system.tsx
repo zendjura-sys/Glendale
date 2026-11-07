@@ -84,7 +84,7 @@ export default function AdminSystem({
                 />
             </div>
 
-            <section className="glass mb-5 rounded-2xl p-4">
+            <section className="gc-solid mb-5 rounded-2xl p-4">
                 <div className="mb-3 flex flex-wrap items-center gap-3">
                     <h2 className="flex-1 font-semibold text-white">
                         {tr('Резервні копії')}
@@ -126,7 +126,7 @@ export default function AdminSystem({
                                 </span>
                                 <a
                                     href={`/admin/system/backups/${b.name}`}
-                                    className="rounded-lg p-1.5 text-white/60 hover:bg-white/[0.07] hover:text-white"
+                                    className="rounded-lg p-1.5 text-white/60 hover:bg-[var(--gc-l3)] hover:text-white"
                                     aria-label={tr('Завантажити')}
                                 >
                                     <Download className="size-4" />
@@ -137,7 +137,7 @@ export default function AdminSystem({
                 )}
             </section>
 
-            <section className="glass rounded-2xl p-4">
+            <section className="gc-solid rounded-2xl p-4">
                 <div className="mb-3 flex flex-wrap items-center gap-2">
                     <h2 className="flex-1 font-semibold text-white">
                         {tr('Журнал помилок')}
@@ -157,7 +157,7 @@ export default function AdminSystem({
                                 'h-9 rounded-xl px-3 text-sm',
                                 show === tab
                                     ? 'bg-primary text-white'
-                                    : 'bg-white/[0.06] text-white/70 hover:text-white',
+                                    : 'gc-solid-2 text-white/70 hover:text-white',
                             )}
                         >
                             {tab === 'open' ? tr('Відкриті') : tr('Вирішені')}
@@ -174,7 +174,7 @@ export default function AdminSystem({
                                     preserveScroll: true,
                                 })
                             }
-                            className="flex h-9 items-center gap-1.5 rounded-xl px-3 text-sm text-white/60 hover:text-red-300"
+                            className="flex h-9 items-center gap-1.5 rounded-xl px-3 text-sm text-white/60 hover:text-red-400"
                         >
                             <Trash2 className="size-4" />
                             {tr('Очистити')}
@@ -192,7 +192,7 @@ export default function AdminSystem({
                         {errors.map((e) => (
                             <li
                                 key={e.id}
-                                className="rounded-xl bg-white/[0.03] p-3"
+                                className="gc-solid-2 rounded-xl p-3"
                             >
                                 <button
                                     type="button"
@@ -202,7 +202,7 @@ export default function AdminSystem({
                                     className="flex w-full items-start gap-3 text-left"
                                 >
                                     <span className="min-w-0 flex-1">
-                                        <span className="block truncate font-mono text-xs text-sky-300">
+                                        <span className="block truncate font-mono text-xs text-sky-400">
                                             {e.class}
                                         </span>
                                         <span className="mt-0.5 line-clamp-2 block text-sm text-white/85">
@@ -217,7 +217,7 @@ export default function AdminSystem({
                                     </span>
                                 </button>
                                 {open === e.id && (
-                                    <div className="mt-3 space-y-1 border-t border-white/[0.06] pt-3 font-mono text-xs text-white/60">
+                                    <div className="mt-3 space-y-1 pt-3 font-mono text-xs text-white/60">
                                         <p>
                                             {e.file}:{e.line}
                                         </p>

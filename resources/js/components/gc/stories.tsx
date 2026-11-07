@@ -153,7 +153,7 @@ function Composer({
                 <button
                     type="button"
                     onClick={() => input.current?.click()}
-                    className="relative flex aspect-[9/16] max-h-[50vh] w-full items-center justify-center overflow-hidden rounded-2xl bg-white/[0.04]"
+                    className="gc-solid-2 relative flex aspect-[9/16] max-h-[50vh] w-full items-center justify-center overflow-hidden rounded-2xl"
                 >
                     {preview ? (
                         video ? (
@@ -192,7 +192,7 @@ function Composer({
                     className="input-glass mt-3 h-10 w-full rounded-xl px-3 text-sm text-white placeholder:text-white/30 focus:outline-none"
                 />
                 {pollsOn && (
-                    <div className="mt-3 rounded-xl bg-white/[0.04] p-2">
+                    <div className="gc-solid-2 mt-3 rounded-xl p-2">
                         <button
                             type="button"
                             onClick={() => setPollOn(!pollOn)}
@@ -250,7 +250,7 @@ function Composer({
                         )}
                     </div>
                 )}
-                <div className="mt-3 flex rounded-xl bg-white/[0.04] p-1 text-sm">
+                <div className="gc-solid-2 mt-3 flex rounded-xl p-1 text-sm">
                     {(
                         [
                             ['friends', tr('Друзям'), Users],
@@ -265,7 +265,7 @@ function Composer({
                             className={cn(
                                 'inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg py-1.5 transition',
                                 privacy === key
-                                    ? 'bg-gradient-brand text-white'
+                                    ? 'bg-sky-500 text-white'
                                     : 'text-white/55',
                             )}
                         >
@@ -680,7 +680,7 @@ function StoryViewer({
                                     placeholder={tr('Відповісти {first_name}', {
                                         first_name: group.user.first_name,
                                     })}
-                                    className="h-10 min-w-0 flex-1 rounded-full border border-white/25 bg-transparent px-4 text-sm text-white placeholder:text-white/50 focus:outline-none"
+                                    className="h-10 min-w-0 flex-1 rounded-full bg-transparent px-4 text-sm text-white placeholder:text-white/50 focus:outline-none"
                                 />
                                 <button
                                     type="submit"

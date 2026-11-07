@@ -168,7 +168,7 @@ export default function AdminChatStats({
                 />
             </div>
 
-            <section className="glass mb-6 rounded-2xl p-4 sm:p-5">
+            <section className="gc-solid mb-6 rounded-2xl p-4 sm:p-5">
                 <h2 className="mb-4 font-display text-lg font-semibold text-white">
                     {tr('Повідомлення по днях')}
                 </h2>
@@ -176,7 +176,7 @@ export default function AdminChatStats({
             </section>
 
             <div className="grid gap-6 xl:grid-cols-[1.4fr_1fr]">
-                <section className="glass rounded-2xl p-4 sm:p-5">
+                <section className="gc-solid rounded-2xl p-4 sm:p-5">
                     <h2 className="mb-1 font-display text-lg font-semibold text-white">
                         {tr('Найжвавіші групи')}
                     </h2>
@@ -208,7 +208,7 @@ export default function AdminChatStats({
                                             {compactNumber(row.messages)}
                                         </span>
                                     </div>
-                                    <div className="mt-1.5 h-1.5 rounded-full bg-white/[0.06]">
+                                    <div className="gc-solid-2 mt-1.5 h-1.5 rounded-full">
                                         <div
                                             className="h-full rounded-full bg-[#a78bfa]"
                                             style={{
@@ -222,9 +222,9 @@ export default function AdminChatStats({
                     )}
                 </section>
 
-                <section className="glass rounded-2xl p-4 sm:p-5">
+                <section className="gc-solid rounded-2xl p-4 sm:p-5">
                     <h2 className="mb-1 flex items-center gap-2 font-display text-lg font-semibold text-white">
-                        <ShieldAlert className="size-5 text-rose-300" />
+                        <ShieldAlert className="size-5 text-red-400" />
                         {tr('Антиспам за тиждень')}
                     </h2>
                     <p className="mb-4 text-sm text-white/50">
@@ -246,9 +246,9 @@ export default function AdminChatStats({
                                 <span className="truncate text-white/70">
                                     {tr(row.label)}
                                 </span>
-                                <span className="h-1.5 rounded-full bg-white/[0.06]">
+                                <span className="gc-solid-2 h-1.5 rounded-full">
                                     <span
-                                        className="block h-full rounded-full bg-rose-400/70"
+                                        className="block h-full rounded-full bg-red-400/70"
                                         style={{
                                             width: `${(row.total / maxBlocked) * 100}%`,
                                         }}

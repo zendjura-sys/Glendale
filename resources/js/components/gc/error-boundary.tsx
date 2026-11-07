@@ -41,7 +41,7 @@ function CrashCard() {
         <main className="flex min-h-dvh items-center justify-center px-4 py-10">
             <section
                 role="alert"
-                className="glass w-full max-w-md rounded-2xl p-8 text-center"
+                className="gc-solid w-full max-w-md rounded-2xl p-8 text-center"
             >
                 <a href="/" aria-label="GameCon" className="inline-flex">
                     <LogoMark className="size-12" />
@@ -65,7 +65,7 @@ function CrashCard() {
                     </button>
                     <a
                         href="/"
-                        className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-white/[0.06] px-5 text-sm font-medium text-white/80 transition hover:bg-white/[0.1]"
+                        className="gc-solid-2 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-5 text-sm font-medium text-white/80 transition hover:bg-white/[0.1]"
                     >
                         <House className="size-4" />
                         {tr('На головну')}

@@ -70,7 +70,7 @@ export function StreamSchedule({
             <div className="space-y-2 px-1">
                 {next && (
                     <div className="flex items-center gap-3 rounded-xl bg-gc-indigo/10 p-3">
-                        <Radio className="size-5 shrink-0 text-gc-lilac-300" />
+                        <Radio className="size-5 shrink-0 text-sky-400" />
                         <div className="min-w-0">
                             <p className="text-xs text-white/50">
                                 {tr('Наступний стрім')}
@@ -105,7 +105,7 @@ export function StreamSchedule({
                     <button
                         type="button"
                         onClick={() => setOpen(true)}
-                        className="mt-1 inline-flex items-center gap-1.5 text-xs font-medium text-gc-lilac-300 hover:text-white"
+                        className="mt-1 inline-flex items-center gap-1.5 text-xs font-medium text-sky-400 hover:text-white"
                     >
                         <Pencil className="size-3.5" />
                         {slots.length === 0
@@ -200,7 +200,7 @@ export function StreamSchedule({
                                         setForm(form.filter((_, j) => j !== i))
                                     }
                                     aria-label={tr('Видалити')}
-                                    className="flex size-10 items-center justify-center rounded-xl text-white/45 transition hover:bg-rose-500/10 hover:text-rose-300"
+                                    className="flex size-10 items-center justify-center rounded-xl text-white/45 transition hover:bg-red-500/10 hover:text-red-400"
                                 >
                                     <Trash2 className="size-4" />
                                 </button>
@@ -215,7 +215,7 @@ export function StreamSchedule({
                                         { day: 5, time: '20:00', title: '' },
                                     ])
                                 }
-                                className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-white/[0.06] px-3 text-[13px] font-medium text-white/80 transition hover:bg-white/[0.1]"
+                                className="gc-solid-2 inline-flex h-9 items-center gap-1.5 rounded-xl px-3 text-[13px] font-medium text-white/80 transition hover:bg-white/[0.1]"
                             >
                                 <Plus className="size-4" />
                                 {tr('Додати слот')}

@@ -197,7 +197,7 @@ export function FamilyChatCard({
 
             <Link
                 href={`/messages/${chat.id}`}
-                className="mt-3 inline-flex text-xs font-semibold text-sky-400 hover:text-sky-300"
+                className="mt-3 inline-flex text-xs font-semibold text-sky-400 hover:text-sky-400"
             >
                 {tr('Відкрити чат')}
             </Link>

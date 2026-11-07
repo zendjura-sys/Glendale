@@ -52,14 +52,14 @@ export function StatCard({
 }) {
     return (
         <div
-            className="glass group relative animate-rise overflow-hidden rounded-2xl p-4 sm:p-5"
+            className="gc-solid group relative animate-rise overflow-hidden rounded-2xl p-4 sm:p-5"
             style={{ animationDelay: `${delay}ms` }}
         >
             <div className="relative flex items-start justify-between gap-2">
                 <span className="min-w-0 text-[13px] font-medium text-white/50">
                     {label}
                 </span>
-                <span className="flex size-8 shrink-0 items-center justify-center rounded-[10px] bg-primary/12 text-gc-lilac-300 sm:size-9">
+                <span className="flex size-8 shrink-0 items-center justify-center rounded-[10px] bg-primary/12 text-sky-400 sm:size-9">
                     <Icon className="size-[18px]" />
                 </span>
             </div>
@@ -96,9 +96,7 @@ export function Toggle({
             onClick={() => onChange(!checked)}
             className={cn(
                 'relative h-6 w-11 shrink-0 rounded-full transition disabled:cursor-not-allowed disabled:opacity-40',
-                checked
-                    ? 'bg-gradient-brand shadow-[0_0_18px_-2px_rgb(109_93_252/0.8)]'
-                    : 'bg-white/10',
+                checked ? 'bg-sky-500' : 'bg-white/10',
             )}
         >
             <span
@@ -112,12 +110,12 @@ export function Toggle({
 }
 
 const pillTones = {
-    default: 'border-white/10 bg-white/[0.04] text-white/60',
+    default: ' gc-solid-2 text-white/60',
     blue: 'border-gc-blue/30 bg-gc-blue/10 text-gc-sky',
     violet: 'border-gc-purple/30 bg-gc-purple/10 text-[#d3b0ff]',
-    gold: 'border-amber-300/30 bg-amber-300/10 text-amber-200',
-    green: 'border-emerald-400/30 bg-emerald-400/10 text-emerald-200',
-    red: 'border-rose-400/30 bg-rose-400/10 text-rose-200',
+    gold: ' bg-amber-300/10 text-amber-200',
+    green: ' bg-emerald-400/10 text-emerald-200',
+    red: ' bg-red-400/10 text-red-400',
 };
 
 export function Pill({
@@ -132,7 +130,7 @@ export function Pill({
     return (
         <span
             className={cn(
-                'inline-flex items-center gap-1 rounded-chip border px-2 py-0.5 text-xs font-medium whitespace-nowrap',
+                'inline-flex items-center gap-1 rounded-chip px-2 py-0.5 text-xs font-medium whitespace-nowrap',
                 pillTones[tone],
                 className,
             )}
@@ -171,8 +169,8 @@ export function Pagination({ data }: { data: Paginated<unknown> }) {
                             className={cn(
                                 'flex h-9 min-w-9 items-center justify-center rounded-xl px-2 transition',
                                 link.active
-                                    ? 'bg-gradient-brand font-semibold text-white'
-                                    : 'glass text-white/60 hover:text-white',
+                                    ? 'bg-sky-500 font-semibold text-white'
+                                    : 'gc-solid text-white/60 hover:text-white',
                             )}
                         >
                             {label}

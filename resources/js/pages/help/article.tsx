@@ -151,7 +151,7 @@ export default function HelpArticle({
                                     type="button"
                                     disabled={busy}
                                     onClick={() => vote(true)}
-                                    className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-white/[0.06] px-3 text-sm text-white/80 transition hover:bg-primary/15 hover:text-primary disabled:opacity-50"
+                                    className="gc-solid-2 inline-flex h-9 items-center gap-1.5 rounded-lg px-3 text-sm text-white/80 transition hover:bg-primary/15 hover:text-primary disabled:opacity-50"
                                 >
                                     <ThumbsUp className="size-4" />
                                     {tr('Так')}
@@ -160,7 +160,7 @@ export default function HelpArticle({
                                     type="button"
                                     disabled={busy}
                                     onClick={() => vote(false)}
-                                    className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-white/[0.06] px-3 text-sm text-white/80 transition hover:bg-white/[0.1] hover:text-white disabled:opacity-50"
+                                    className="gc-solid-2 inline-flex h-9 items-center gap-1.5 rounded-lg px-3 text-sm text-white/80 transition hover:bg-white/[0.1] hover:text-white disabled:opacity-50"
                                 >
                                     <ThumbsDown className="size-4" />
                                     {tr('Ні')}

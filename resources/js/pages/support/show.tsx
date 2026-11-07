@@ -38,7 +38,7 @@ export default function SupportTicketPage({
                     <ArrowLeft className="size-4" />
                     {tr('Мої звернення')}
                 </Link>
-                <div className="glass rounded-2xl p-4 sm:p-5">
+                <div className="gc-solid rounded-2xl p-4 sm:p-5">
                     <div className="flex flex-wrap items-start justify-between gap-3">
                         <div className="min-w-0">
                             <h1 className="font-display text-lg font-semibold text-white">
@@ -56,7 +56,7 @@ export default function SupportTicketPage({
                 </div>
 
                 {ticket.status === 'closed' && (
-                    <div className="glass flex flex-wrap items-center justify-between gap-3 rounded-2xl p-4">
+                    <div className="gc-solid flex flex-wrap items-center justify-between gap-3 rounded-2xl p-4">
                         <p className="text-sm text-white/70">
                             {tr('Як вам допомогли?')}
                         </p>
@@ -99,7 +99,7 @@ export default function SupportTicketPage({
                             onSuccess: () => form.reset(),
                         });
                     }}
-                    className="glass space-y-3 rounded-2xl p-4"
+                    className="gc-solid space-y-3 rounded-2xl p-4"
                 >
                     <textarea
                         value={form.data.body}
@@ -114,7 +114,7 @@ export default function SupportTicketPage({
                         className="input-glass w-full resize-y rounded-xl px-3.5 py-3 text-sm text-white placeholder:text-white/30 focus:outline-none"
                     />
                     {form.errors.body && (
-                        <p className="text-xs text-red-300">
+                        <p className="text-xs text-red-400">
                             {form.errors.body}
                         </p>
                     )}

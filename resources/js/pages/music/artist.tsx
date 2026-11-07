@@ -230,7 +230,7 @@ function About({
                     {facts.map((fact) => (
                         <div
                             key={fact.label}
-                            className="flex items-start gap-3 border-b border-[var(--am-sep)] py-3"
+                            className="flex items-start gap-3 border-[var(--am-sep)] py-3"
                         >
                             <fact.icon className="mt-0.5 size-5 shrink-0 text-[var(--am-label2)]" />
                             <div className="min-w-0">
@@ -297,7 +297,7 @@ export default function MusicArtist({ artist }: { artist: Artist }) {
                                     : void playStation(artist.station.key)
                             }
                             aria-label={tr('Слухати')}
-                            className="flex size-12 items-center justify-center rounded-full bg-[var(--am-accent)] text-white shadow-lg transition active:scale-95"
+                            className="flex size-12 items-center justify-center rounded-full bg-[var(--am-accent)] text-white transition active:scale-95"
                         >
                             <Play className="ml-0.5 size-6 fill-current" />
                         </button>

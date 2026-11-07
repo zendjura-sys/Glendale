@@ -52,7 +52,7 @@ function Field({
                 <span className="block text-xs text-white/35">{hint}</span>
             )}
             {error && (
-                <span className="block text-xs text-rose-300">{error}</span>
+                <span className="block text-xs text-red-400">{error}</span>
             )}
         </label>
     );
@@ -127,16 +127,16 @@ export default function CharacterEdit({
                     {tr('Назад')}
                 </Link>
 
-                <section className="glass space-y-5 rounded-2xl p-5 sm:p-6">
+                <section className="gc-solid space-y-5 rounded-2xl p-5 sm:p-6">
                     <h1 className="flex items-center gap-2 font-display text-xl font-bold text-white">
-                        <Drama className="size-5 text-gc-lilac-300" />
+                        <Drama className="size-5 text-sky-400" />
                         {character
                             ? tr('Редагувати персонажа')
                             : tr('Новий персонаж')}
                     </h1>
 
                     <div className="flex flex-col gap-5 sm:flex-row">
-                        <label className="group relative flex aspect-[4/5] w-40 shrink-0 cursor-pointer items-center justify-center self-center overflow-hidden rounded-2xl bg-white/[0.04] ring-1 ring-white/10 transition hover:bg-white/[0.07] sm:w-44 sm:self-start">
+                        <label className="group gc-solid-2 relative flex aspect-[4/5] w-40 shrink-0 cursor-pointer items-center justify-center self-center overflow-hidden rounded-2xl transition hover:bg-[var(--gc-l3)] sm:w-44 sm:self-start">
                             {preview ? (
                                 <img
                                     loading="lazy"
@@ -285,7 +285,7 @@ export default function CharacterEdit({
 
                     <div className="grid gap-3 sm:grid-cols-2">
                         <Field label={tr('Статус')}>
-                            <div className="flex gap-1 rounded-xl bg-white/[0.04] p-1">
+                            <div className="gc-solid-2 flex gap-1 rounded-xl p-1">
                                 {STATUS_OPTIONS().map((option) => (
                                     <button
                                         key={option.value}
@@ -319,7 +319,7 @@ export default function CharacterEdit({
                                     'inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-sm font-medium transition',
                                     form.data.is_main
                                         ? 'bg-amber-300/15 text-amber-100'
-                                        : 'bg-white/[0.05] text-white/70 hover:text-white',
+                                        : 'gc-solid-2 text-white/70 hover:text-white',
                                 )}
                             >
                                 <Star
@@ -369,7 +369,7 @@ export default function CharacterEdit({
                         />
                     </Field>
                     {form.errors.portrait && (
-                        <p className="text-xs text-rose-300">
+                        <p className="text-xs text-red-400">
                             {form.errors.portrait}
                         </p>
                     )}

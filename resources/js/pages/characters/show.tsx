@@ -69,7 +69,7 @@ export default function CharacterShow({
                     {character.player.name}
                 </Link>
 
-                <section className="glass overflow-hidden rounded-2xl">
+                <section className="gc-solid overflow-hidden rounded-2xl">
                     <div className="flex flex-col gap-5 p-5 sm:flex-row sm:p-6">
                         <CharacterPortrait
                             character={character}
@@ -120,7 +120,7 @@ export default function CharacterShow({
                             <div className="flex flex-wrap gap-2">
                                 <Link
                                     href={`/servers/${character.server.slug}`}
-                                    className="inline-flex min-w-0 items-center gap-2 rounded-xl bg-white/[0.05] px-3 py-2 text-sm text-white transition hover:bg-white/10"
+                                    className="gc-solid-2 inline-flex min-w-0 items-center gap-2 rounded-xl px-3 py-2 text-sm text-white transition hover:bg-white/10"
                                 >
                                     <ServerIcon
                                         name={character.server.name}
@@ -134,7 +134,7 @@ export default function CharacterShow({
                                 {character.family && (
                                     <Link
                                         href={`/f/${character.family.slug}`}
-                                        className="inline-flex min-w-0 items-center gap-2 rounded-xl bg-white/[0.05] px-3 py-2 text-sm text-white transition hover:bg-white/10"
+                                        className="gc-solid-2 inline-flex min-w-0 items-center gap-2 rounded-xl px-3 py-2 text-sm text-white transition hover:bg-white/10"
                                     >
                                         <Crown className="size-4 text-amber-300" />
                                         <span className="truncate">
@@ -175,7 +175,7 @@ export default function CharacterShow({
                                                 );
                                             }
                                         }}
-                                        className="inline-flex h-10 items-center gap-2 rounded-xl bg-white/[0.05] px-4 text-sm font-medium text-rose-200 transition hover:bg-rose-400/10"
+                                        className="gc-solid-2 inline-flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-medium text-red-400 transition hover:bg-red-400/10"
                                     >
                                         <Trash2 className="size-4" />
                                         {tr('Видалити')}
@@ -187,7 +187,7 @@ export default function CharacterShow({
                 </section>
 
                 {character.story && (
-                    <section className="glass rounded-2xl p-5 sm:p-6">
+                    <section className="gc-solid rounded-2xl p-5 sm:p-6">
                         <h2 className="font-display text-lg font-bold text-white">
                             {tr('Історія')}
                         </h2>
@@ -198,7 +198,7 @@ export default function CharacterShow({
                 )}
 
                 {(character.photos.length > 0 || can_edit) && (
-                    <section className="glass rounded-2xl p-5 sm:p-6">
+                    <section className="gc-solid rounded-2xl p-5 sm:p-6">
                         <div className="flex items-center justify-between gap-3">
                             <h2 className="font-display text-lg font-bold text-white">
                                 {tr('Фото')}
@@ -212,7 +212,7 @@ export default function CharacterShow({
                                             onClick={() =>
                                                 input.current?.click()
                                             }
-                                            className="inline-flex h-9 items-center gap-2 rounded-xl bg-white/[0.06] px-3 text-sm font-medium text-white transition hover:bg-white/10 disabled:opacity-50"
+                                            className="gc-solid-2 inline-flex h-9 items-center gap-2 rounded-xl px-3 text-sm font-medium text-white transition hover:bg-white/10 disabled:opacity-50"
                                         >
                                             <ImagePlus className="size-4" />
                                             {uploading
@@ -284,7 +284,7 @@ export default function CharacterShow({
                 )}
 
                 {others.length > 0 && (
-                    <section className="glass rounded-2xl p-5">
+                    <section className="gc-solid rounded-2xl p-5">
                         <h2 className="font-display text-lg font-bold text-white">
                             {tr('Інші персонажі гравця')}
                         </h2>

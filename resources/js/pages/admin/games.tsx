@@ -94,7 +94,7 @@ export default function AdminGames({
                     <>
                         <Link
                             href="/admin/integrations"
-                            className="glass inline-flex h-10 items-center gap-2 rounded-xl px-3.5 text-sm text-white/75 hover:text-white"
+                            className="gc-solid inline-flex h-10 items-center gap-2 rounded-xl px-3.5 text-sm text-white/75 hover:text-white"
                         >
                             <PlugZap className="size-4" /> {tr('Ключі IGDB')}
                         </Link>
@@ -165,7 +165,7 @@ export default function AdminGames({
                 />
             </div>
 
-            <section className="glass mb-6 rounded-2xl p-4 sm:p-5">
+            <section className="gc-solid mb-6 rounded-2xl p-4 sm:p-5">
                 <div className="mb-3 flex flex-wrap items-center gap-3">
                     <h2 className="flex-1 font-display text-lg font-semibold text-white">
                         {tr('Можливості')}
@@ -203,7 +203,7 @@ export default function AdminGames({
                     {features.map((f) => (
                         <label
                             key={f.key}
-                            className="flex cursor-pointer items-start gap-3 rounded-2xl bg-white/[0.03] p-3 transition hover:bg-white/[0.05]"
+                            className="gc-solid-2 flex cursor-pointer items-start gap-3 rounded-2xl p-3 transition hover:bg-[var(--gc-l3)]"
                         >
                             <span className="min-w-0 flex-1">
                                 <span className="block text-sm font-semibold text-white">
@@ -225,7 +225,7 @@ export default function AdminGames({
                 </div>
             </section>
 
-            <section className="glass rounded-2xl p-4 sm:p-5">
+            <section className="gc-solid rounded-2xl p-4 sm:p-5">
                 <div className="mb-4 flex flex-wrap items-center gap-2">
                     <label className="input-glass flex h-10 min-w-[200px] flex-1 items-center gap-2 rounded-xl px-3">
                         <Search className="size-4 text-white/35" />

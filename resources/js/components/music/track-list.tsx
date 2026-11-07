@@ -257,7 +257,7 @@ export function TrackList({
                                     className={cn(
                                         'flex size-8 items-center justify-center rounded-full transition',
                                         track.in_library
-                                            ? 'text-gc-lilac-400'
+                                            ? 'text-sky-400'
                                             : 'text-white/40 opacity-100 hover:bg-white/10 hover:text-white sm:opacity-0 sm:group-hover:opacity-100 [@media(hover:none)]:opacity-100',
                                     )}
                                     aria-label={
@@ -291,7 +291,7 @@ export function TrackList({
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent
                                     align="end"
-                                    className="glass-strong w-56 rounded-2xl border-white/10 p-1.5 text-white"
+                                    className="glass-strong w-56 rounded-2xl p-1.5 text-white"
                                 >
                                     <DropdownMenuItem
                                         className={itemClass}
@@ -305,7 +305,7 @@ export function TrackList({
                                                 <ListPlus className="size-4 text-white/60" />
                                                 {tr('До плейлиста')}
                                             </DropdownMenuSubTrigger>
-                                            <DropdownMenuSubContent className="glass-strong max-h-72 w-56 overflow-y-auto rounded-2xl border-white/10 p-1.5 text-white">
+                                            <DropdownMenuSubContent className="glass-strong max-h-72 w-56 overflow-y-auto rounded-2xl p-1.5 text-white">
                                                 {playlists.map((playlist) => (
                                                     <DropdownMenuItem
                                                         key={playlist.id}
@@ -392,7 +392,7 @@ export function TrackList({
                                     )}
                                     {onRemove && (
                                         <DropdownMenuItem
-                                            className="rounded-lg text-rose-300 focus:bg-rose-500/10 focus:text-rose-200"
+                                            className="rounded-lg text-red-400 focus:bg-red-500/10 focus:text-red-400"
                                             onSelect={() => {
                                                 setHidden((all) => [
                                                     ...all,
@@ -401,16 +401,16 @@ export function TrackList({
                                                 onRemove(track);
                                             }}
                                         >
-                                            <Trash2 className="text-rose-300" />{' '}
+                                            <Trash2 className="text-red-400" />{' '}
                                             {removeLabel ?? tr('Прибрати')}
                                         </DropdownMenuItem>
                                     )}
                                     {canManage && (
                                         <DropdownMenuItem
-                                            className="rounded-lg text-rose-300 focus:bg-rose-500/10 focus:text-rose-200"
+                                            className="rounded-lg text-red-400 focus:bg-red-500/10 focus:text-red-400"
                                             onSelect={() => destroy(track)}
                                         >
-                                            <Trash2 className="text-rose-300" />{' '}
+                                            <Trash2 className="text-red-400" />{' '}
                                             {tr('Видалити з сайту')}
                                         </DropdownMenuItem>
                                     )}

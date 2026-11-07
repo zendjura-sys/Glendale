@@ -136,7 +136,7 @@ export default function PixelAvatar() {
                                     tool !== 'fill' &&
                                     paint(i)
                                 }
-                                className="border-[0.5px] border-white/[0.04]"
+                                className="border-[0.5px]"
                                 style={{ background: cell ?? 'transparent' }}
                             />
                         ))}
@@ -161,7 +161,7 @@ export default function PixelAvatar() {
                                         'flex size-10 items-center justify-center rounded-xl transition',
                                         tool === value
                                             ? 'bg-gc-indigo text-white'
-                                            : 'bg-white/[0.06] text-white/70 hover:bg-white/[0.1]',
+                                            : 'gc-solid-2 text-white/70 hover:bg-white/[0.1]',
                                     )}
                                 >
                                     <Icon className="size-4" />
@@ -176,7 +176,7 @@ export default function PixelAvatar() {
                                     'flex size-10 items-center justify-center rounded-xl transition',
                                     mirror
                                         ? 'bg-gc-indigo/30 text-white'
-                                        : 'bg-white/[0.06] text-white/70 hover:bg-white/[0.1]',
+                                        : 'gc-solid-2 text-white/70 hover:bg-white/[0.1]',
                                 )}
                             >
                                 <FlipHorizontal2 className="size-4" />
@@ -186,7 +186,7 @@ export default function PixelAvatar() {
                                 onClick={() => setCells(empty())}
                                 aria-label={tr('Очистити')}
                                 title={tr('Очистити')}
-                                className="flex size-10 items-center justify-center rounded-xl bg-white/[0.06] text-white/70 transition hover:bg-rose-500/15 hover:text-rose-200"
+                                className="gc-solid-2 flex size-10 items-center justify-center rounded-xl text-white/70 transition hover:bg-red-500/15 hover:text-red-400"
                             >
                                 <Trash2 className="size-4" />
                             </button>

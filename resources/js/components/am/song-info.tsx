@@ -63,7 +63,7 @@ function Row({
     children: React.ReactNode;
 }) {
     return (
-        <div className="flex items-baseline justify-between gap-4 border-b border-[var(--am-sep)] py-2.5 last:border-0">
+        <div className="flex items-baseline justify-between gap-4 border-[var(--am-sep)] py-2.5 last:border-0">
             <dt className="am-subhead shrink-0 text-[var(--am-label2)]">
                 {label}
             </dt>

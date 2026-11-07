@@ -47,9 +47,9 @@ export function CommunityTile({ community }: { community: CommunityListItem }) {
                 <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-white/55">
                     <span className="inline-flex items-center gap-1">
                         {isPublic ? (
-                            <Megaphone className="size-3.5 text-gc-lilac-400" />
+                            <Megaphone className="size-3.5 text-sky-400" />
                         ) : (
-                            <UsersRound className="size-3.5 text-gc-lilac-400" />
+                            <UsersRound className="size-3.5 text-sky-400" />
                         )}
                         {membersLabel(community.members_count, isPublic)}
                     </span>

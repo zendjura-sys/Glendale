@@ -178,14 +178,14 @@ export default function AdminServers({
                         <button
                             type="button"
                             onClick={() => sync('stats')}
-                            className="glass inline-flex h-10 items-center gap-2 rounded-xl px-3.5 text-sm text-white/75 hover:text-white"
+                            className="gc-solid inline-flex h-10 items-center gap-2 rounded-xl px-3.5 text-sm text-white/75 hover:text-white"
                         >
                             <RefreshCw className="size-4" /> {tr('Онлайн')}
                         </button>
                         <button
                             type="button"
                             onClick={() => sync('discover')}
-                            className="glass inline-flex h-10 items-center gap-2 rounded-xl px-3.5 text-sm text-white/75 hover:text-white"
+                            className="gc-solid inline-flex h-10 items-center gap-2 rounded-xl px-3.5 text-sm text-white/75 hover:text-white"
                             title={tr(
                                 'Пошук нових UA-серверів у майстер-списку RAGE:MP',
                             )}
@@ -195,7 +195,7 @@ export default function AdminServers({
                         <button
                             type="button"
                             onClick={() => sync('seed')}
-                            className="glass inline-flex h-10 items-center gap-2 rounded-xl px-3.5 text-sm text-white/75 hover:text-white"
+                            className="gc-solid inline-flex h-10 items-center gap-2 rounded-xl px-3.5 text-sm text-white/75 hover:text-white"
                             title={tr(
                                 'Додати відсутні сервери з базового списку',
                             )}
@@ -236,8 +236,8 @@ export default function AdminServers({
                 />
             </div>
 
-            <div className="glass mb-4 flex flex-wrap items-center gap-2 rounded-2xl p-2.5">
-                <div className="scrollbar-none flex max-w-full overflow-x-auto rounded-xl bg-white/[0.04] p-1 text-sm">
+            <div className="gc-solid mb-4 flex flex-wrap items-center gap-2 rounded-2xl p-2.5">
+                <div className="gc-solid-2 scrollbar-none flex max-w-full overflow-x-auto rounded-xl p-1 text-sm">
                     {tabs.map((tab) => (
                         <button
                             key={tab.value}
@@ -246,7 +246,7 @@ export default function AdminServers({
                             className={cn(
                                 'inline-flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 font-medium whitespace-nowrap transition',
                                 filters.status === tab.value
-                                    ? 'bg-gradient-brand text-white'
+                                    ? 'bg-sky-500 text-white'
                                     : 'text-white/55 hover:text-white',
                             )}
                         >
@@ -296,7 +296,7 @@ export default function AdminServers({
                     <article
                         key={s.id}
                         className={cn(
-                            'glass flex flex-wrap items-center gap-4 rounded-2xl p-4',
+                            'gc-solid flex flex-wrap items-center gap-4 rounded-2xl p-4',
                             s.deleted_at && 'opacity-70',
                         )}
                     >
@@ -385,7 +385,7 @@ export default function AdminServers({
                                 </div>
                             )}
                             {s.review_note && (
-                                <div className="mt-1 text-xs text-rose-200/80">
+                                <div className="mt-1 text-xs text-red-400/80">
                                     {tr('Причина:')} {s.review_note}
                                 </div>
                             )}
@@ -473,7 +473,7 @@ export default function AdminServers({
                     </article>
                 ))}
                 {servers.length === 0 && (
-                    <div className="glass rounded-2xl px-6 py-14 text-center text-sm text-white/40">
+                    <div className="gc-solid rounded-2xl px-6 py-14 text-center text-sm text-white/40">
                         {filters.status === 'pending'
                             ? tr('Нових пропозицій немає')
                             : tr('Серверів не знайдено')}
@@ -495,7 +495,7 @@ export default function AdminServers({
                 open={rejecting !== null}
                 onOpenChange={(open) => !open && setRejecting(null)}
             >
-                <DialogContent className="glass-strong rounded-dialog border-white/10 p-6 text-white sm:max-w-md">
+                <DialogContent className="glass-strong rounded-dialog p-6 text-white sm:max-w-md">
                     <DialogTitle className="font-display text-lg">
                         {tr('Відхилити «')}
                         {rejecting?.name}»
@@ -525,7 +525,7 @@ export default function AdminServers({
                                 rejecting &&
                                 moderate(rejecting, 'rejected', note)
                             }
-                            className="h-10 rounded-xl bg-rose-500/80 px-5 text-sm font-semibold text-white hover:bg-rose-500"
+                            className="h-10 rounded-xl bg-red-500/80 px-5 text-sm font-semibold text-white hover:bg-red-500"
                         >
                             {tr('Відхилити')}
                         </button>
@@ -555,10 +555,10 @@ function IconButton({
             className={cn(
                 'flex size-9 items-center justify-center rounded-xl transition',
                 tone === 'red'
-                    ? 'text-rose-300 hover:bg-rose-500/10'
+                    ? 'text-red-400 hover:bg-red-500/10'
                     : tone === 'green'
                       ? 'text-emerald-300 hover:bg-emerald-400/10'
-                      : 'text-white/60 hover:bg-white/[0.06] hover:text-white',
+                      : 'text-white/60 hover:bg-[var(--gc-l3)] hover:text-white',
             )}
         >
             {children}
@@ -595,7 +595,7 @@ function ServerDialog({
 
     return (
         <Dialog open onOpenChange={(open) => !open && onClose()}>
-            <DialogContent className="glass-strong max-h-[92dvh] gap-0 overflow-y-auto rounded-dialog border-white/10 p-6 text-white sm:max-w-2xl">
+            <DialogContent className="glass-strong max-h-[92dvh] gap-0 overflow-y-auto rounded-dialog p-6 text-white sm:max-w-2xl">
                 <DialogTitle className="font-display text-xl">
                     {server
                         ? tr('Редагувати «{name}»', { name: server.name })
@@ -611,7 +611,7 @@ function ServerDialog({
                           )}
                 </DialogDescription>
 
-                <div className="mt-5 flex items-center gap-4 rounded-2xl bg-white/[0.03] p-3 ring-1 ring-white/[0.06]">
+                <div className="gc-solid-2 mt-5 flex items-center gap-4 rounded-2xl p-3">
                     <ServerIcon
                         name={form.data.name || '?'}
                         icon={preview}
@@ -638,7 +638,7 @@ function ServerDialog({
                     <button
                         type="button"
                         onClick={() => fileRef.current?.click()}
-                        className="glass inline-flex h-10 items-center gap-2 rounded-xl px-3.5 text-sm text-white/80 hover:text-white"
+                        className="gc-solid inline-flex h-10 items-center gap-2 rounded-xl px-3.5 text-sm text-white/80 hover:text-white"
                     >
                         <ImagePlus className="size-4" /> {tr('Завантажити')}
                     </button>

@@ -100,7 +100,7 @@ export default function SubscriptionsSettings({
                         ].map(([label, value]) => (
                             <div
                                 key={label}
-                                className="rounded-2xl bg-white/[0.05] px-3 py-3 text-center"
+                                className="gc-solid-2 rounded-2xl px-3 py-3 text-center"
                             >
                                 <p className="font-display text-lg font-semibold text-white tabular-nums">
                                     {value}
@@ -113,7 +113,7 @@ export default function SubscriptionsSettings({
                         {tiers.map((tier, i) => (
                             <div
                                 key={tier.id ?? `new-${i}`}
-                                className="space-y-2 rounded-2xl bg-white/[0.04] p-3"
+                                className="gc-solid-2 space-y-2 rounded-2xl p-3"
                             >
                                 <div className="flex gap-2">
                                     <input
@@ -154,7 +154,7 @@ export default function SubscriptionsSettings({
                                             )
                                         }
                                         aria-label={tr('Видалити рівень')}
-                                        className="flex size-10 shrink-0 items-center justify-center rounded-xl text-white/45 hover:bg-white/[0.06] hover:text-white"
+                                        className="flex size-10 shrink-0 items-center justify-center rounded-xl text-white/45 hover:bg-[var(--gc-l3)] hover:text-white"
                                     >
                                         <Trash2 className="size-4" />
                                     </button>
@@ -184,7 +184,7 @@ export default function SubscriptionsSettings({
                                         { name: '', price: 5000, perks: '' },
                                     ])
                                 }
-                                className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-white/[0.06] px-4 text-sm text-white/80 hover:text-white"
+                                className="gc-solid-2 inline-flex h-10 items-center gap-1.5 rounded-xl px-4 text-sm text-white/80 hover:text-white"
                             >
                                 <Plus className="size-4" />
                                 {tr('Додати рівень')}
@@ -242,7 +242,7 @@ export default function SubscriptionsSettings({
                                     <button
                                         type="button"
                                         onClick={() => toggleRenew(sub)}
-                                        className="h-9 shrink-0 rounded-xl bg-white/[0.06] px-3 text-xs text-white/75 hover:text-white"
+                                        className="gc-solid-2 h-9 shrink-0 rounded-xl px-3 text-xs text-white/75 hover:text-white"
                                     >
                                         {sub.auto_renew
                                             ? tr('Вимкнути продовження')

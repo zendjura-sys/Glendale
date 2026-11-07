@@ -40,7 +40,7 @@ export function SiteFooter({
     return (
         <footer
             className={cn(
-                'mt-8 border-t border-white/[0.06] px-4 py-6 text-center text-xs text-white/40',
+                'mt-8 px-4 py-6 text-center text-xs text-white/40',
                 className,
             )}
         >

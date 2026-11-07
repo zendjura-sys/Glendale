@@ -112,7 +112,7 @@ export default function TierListEdit({ list, game, colors }: Props) {
             className={cn(
                 'cursor-grab rounded-lg px-2.5 py-1.5 text-sm text-white transition',
                 picked?.from === from && picked.index === index
-                    ? 'bg-gc-indigo ring-2 ring-white/60'
+                    ? 'bg-gc-indigo ring-2'
                     : 'bg-white/[0.08] hover:bg-white/[0.12]',
             )}
         >
@@ -134,10 +134,10 @@ export default function TierListEdit({ list, game, colors }: Props) {
                     className="input-glass h-12 w-full rounded-xl px-4 font-display text-lg text-white placeholder:text-white/30"
                 />
                 {errors.title && (
-                    <p className="text-xs text-rose-300">{errors.title}</p>
+                    <p className="text-xs text-red-400">{errors.title}</p>
                 )}
 
-                <div className="glass overflow-hidden rounded-2xl">
+                <div className="gc-solid overflow-hidden rounded-2xl">
                     {tiers.map((tier, i) => (
                         <div
                             key={i}
@@ -146,7 +146,7 @@ export default function TierListEdit({ list, game, colors }: Props) {
                             onClick={() =>
                                 picked && move(picked.from, picked.index, i)
                             }
-                            className="flex min-h-16 border-b border-white/[0.06] last:border-0"
+                            className="flex min-h-16 last:border-0"
                         >
                             <div
                                 className={cn(
@@ -192,7 +192,7 @@ export default function TierListEdit({ list, game, colors }: Props) {
                                                 )
                                             }
                                             className={cn(
-                                                'size-2 rounded-full ring-1 ring-black/30',
+                                                'size-2 rounded-full ring-black/30',
                                                 TIER_COLORS[c],
                                             )}
                                         />
@@ -213,7 +213,7 @@ export default function TierListEdit({ list, game, colors }: Props) {
                                             tiers.filter((_, j) => j !== i),
                                         );
                                     }}
-                                    className="px-2 text-white/30 hover:text-rose-300"
+                                    className="px-2 text-white/30 hover:text-red-400"
                                 >
                                     <X className="size-4" />
                                 </button>
@@ -230,7 +230,7 @@ export default function TierListEdit({ list, game, colors }: Props) {
                                 { label: 'F', color: 'slate', items: [] },
                             ])
                         }
-                        className="inline-flex items-center gap-1.5 text-sm text-gc-lilac-300 hover:text-white"
+                        className="inline-flex items-center gap-1.5 text-sm text-sky-400 hover:text-white"
                     >
                         <Plus className="size-4" />
                         {tr('Ще рівень')}
@@ -243,7 +243,7 @@ export default function TierListEdit({ list, game, colors }: Props) {
                     onClick={() =>
                         picked && move(picked.from, picked.index, -1)
                     }
-                    className="glass space-y-3 rounded-2xl p-4"
+                    className="gc-solid space-y-3 rounded-2xl p-4"
                 >
                     <p className="text-sm text-white/55">
                         {tr(
@@ -298,7 +298,7 @@ export default function TierListEdit({ list, game, colors }: Props) {
                     </button>
                 </div>
                 {Object.keys(errors).some((k) => k.startsWith('tiers')) && (
-                    <p className="text-xs text-rose-300">
+                    <p className="text-xs text-red-400">
                         {tr(
                             'Перевірте рівні: до 8 рівнів, до 30 пунктів у кожному.',
                         )}

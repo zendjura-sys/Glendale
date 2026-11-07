@@ -55,15 +55,15 @@ export function FriendButton({
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
                     align="end"
-                    className="glass-strong rounded-xl border-white/10 p-1 text-white"
+                    className="glass-strong rounded-xl p-1 text-white"
                 >
                     <DropdownMenuItem
-                        className="rounded-lg text-rose-300 focus:bg-rose-500/10 focus:text-rose-200"
+                        className="rounded-lg text-red-400 focus:bg-red-500/10 focus:text-red-400"
                         onSelect={() =>
                             router.delete(`/friends/${username}`, options)
                         }
                     >
-                        <UserMinus className="text-rose-300" />{' '}
+                        <UserMinus className="text-red-400" />{' '}
                         {tr('Видалити з друзів')}
                     </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -92,7 +92,7 @@ export function FriendButton({
                     }
                     className={cn(
                         base,
-                        'bg-white/[0.06] px-3 text-white/70 hover:bg-white/10 hover:text-white',
+                        'gc-solid-2 px-3 text-white/70 hover:bg-white/10 hover:text-white',
                     )}
                     aria-label={tr('Відхилити')}
                 >
@@ -110,7 +110,7 @@ export function FriendButton({
                 onClick={() => router.delete(`/friends/${username}`, options)}
                 className={cn(
                     base,
-                    'group bg-white/[0.06] text-white/75 hover:bg-white/10',
+                    'group gc-solid-2 text-white/75 hover:bg-white/10',
                 )}
             >
                 <Clock className="size-4 group-hover:hidden" />

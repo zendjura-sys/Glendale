@@ -54,10 +54,10 @@ export function ServerAnalytics({ data }: { data: ServerAnalyticsData }) {
     ];
 
     return (
-        <section className="glass rounded-2xl p-5">
+        <section className="gc-solid rounded-2xl p-5">
             <div className="flex flex-wrap items-center justify-between gap-2">
                 <h2 className="flex items-center gap-2 font-display text-lg font-semibold text-white">
-                    <BarChart3 className="size-5 text-gc-lilac-300" />
+                    <BarChart3 className="size-5 text-sky-400" />
                     {tr('Аналітика за 30 днів')}
                 </h2>
                 {delta !== null && (
@@ -66,7 +66,7 @@ export function ServerAnalytics({ data }: { data: ServerAnalyticsData }) {
                             'inline-flex items-center gap-1 rounded-chip px-2.5 py-1 text-xs font-semibold',
                             delta >= 0
                                 ? 'bg-emerald-400/10 text-emerald-200'
-                                : 'bg-rose-400/10 text-rose-200',
+                                : 'bg-red-400/10 text-red-400',
                         )}
                     >
                         {delta >= 0 ? (
@@ -83,7 +83,7 @@ export function ServerAnalytics({ data }: { data: ServerAnalyticsData }) {
                 {tiles.map(([label, value]) => (
                     <div
                         key={label}
-                        className="min-w-0 rounded-2xl bg-white/[0.04] px-3 py-2.5"
+                        className="gc-solid-2 min-w-0 rounded-2xl px-3 py-2.5"
                     >
                         <div className="font-display text-xl font-bold text-white tabular-nums">
                             {shortNumber(value)}
@@ -130,7 +130,7 @@ export function ServerAnalytics({ data }: { data: ServerAnalyticsData }) {
                                 <span className="w-40 shrink-0 break-words text-white/70">
                                     {SOURCE_LABELS[key] ?? key}
                                 </span>
-                                <span className="h-2 min-w-0 flex-1 overflow-hidden rounded-full bg-white/[0.06]">
+                                <span className="gc-solid-2 h-2 min-w-0 flex-1 overflow-hidden rounded-full">
                                     <span
                                         className="block h-full rounded-full bg-gc-indigo/70"
                                         style={{

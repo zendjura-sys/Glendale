@@ -155,7 +155,7 @@ export function SpellcheckHints({
                     exit={{ opacity: 0 }}
                     transition={{ duration: reduce ? 0 : 0.18 }}
                     className={cn(
-                        'mt-2 rounded-xl border border-white/[0.06] bg-white/[0.03] p-2.5 text-xs',
+                        'gc-solid-2 mt-2 rounded-xl p-2.5 text-xs',
                         className,
                     )}
                     role="status"
@@ -181,7 +181,7 @@ export function SpellcheckHints({
                                         'font-medium text-white/85 underline decoration-wavy underline-offset-4',
                                         issue.rule === 'grammar'
                                             ? 'decoration-amber-400/80'
-                                            : 'decoration-rose-400/80',
+                                            : 'decoration-red-400/80',
                                     )}
                                     title={issue.message}
                                 >
@@ -262,7 +262,7 @@ function Underlines({
                     'underline decoration-wavy decoration-[1.5px] underline-offset-[5px]',
                     issue.rule === 'grammar'
                         ? 'decoration-amber-400/80'
-                        : 'decoration-rose-400/80',
+                        : 'decoration-red-400/80',
                 )}
             >
                 {text.slice(issue.offset, issue.offset + issue.length)}
@@ -276,7 +276,7 @@ function Underlines({
         <div
             aria-hidden
             className={cn(
-                'pointer-events-none absolute inset-0 overflow-hidden border border-transparent break-words whitespace-pre-wrap text-transparent',
+                'pointer-events-none absolute inset-0 overflow-hidden border-transparent break-words whitespace-pre-wrap text-transparent',
                 className,
             )}
         >

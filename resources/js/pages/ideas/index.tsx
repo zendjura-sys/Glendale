@@ -27,7 +27,7 @@ const STATUS: Record<Status, { label: () => string; tone: string }> = {
     new: { label: () => tr('Нова'), tone: 'bg-white/[0.07] text-white/60' },
     planned: {
         label: () => tr('У планах'),
-        tone: 'bg-sky-500/15 text-sky-200',
+        tone: 'bg-sky-500/15 text-sky-400',
     },
     progress: {
         label: () => tr('Робимо'),
@@ -39,7 +39,7 @@ const STATUS: Record<Status, { label: () => string; tone: string }> = {
     },
     declined: {
         label: () => tr('Не цього разу'),
-        tone: 'bg-rose-500/15 text-rose-200',
+        tone: 'bg-red-500/15 text-red-400',
     },
 };
 
@@ -87,7 +87,7 @@ export default function IdeasIndex({
                 <div className="flex flex-wrap items-end justify-between gap-3">
                     <div>
                         <h1 className="flex items-center gap-2 font-display text-2xl font-semibold text-white">
-                            <Lightbulb className="size-6 text-gc-lilac-300" />
+                            <Lightbulb className="size-6 text-sky-400" />
                             {tr('Дошка ідей')}
                         </h1>
                         <p className="mt-1 text-sm text-white/50">
@@ -109,7 +109,7 @@ export default function IdeasIndex({
                 {adding && (
                     <form
                         onSubmit={submit}
-                        className="glass mt-4 space-y-3 rounded-2xl p-4"
+                        className="gc-solid mt-4 space-y-3 rounded-2xl p-4"
                     >
                         <input
                             autoFocus
@@ -134,7 +134,7 @@ export default function IdeasIndex({
                             className={cn(field, 'resize-y py-2.5')}
                         />
                         {form.errors.title && (
-                            <p className="text-xs text-rose-300">
+                            <p className="text-xs text-red-400">
                                 {form.errors.title}
                             </p>
                         )}
@@ -229,7 +229,7 @@ function IdeaRow({ idea, canManage }: { idea: IdeaItem; canManage: boolean }) {
     const status = STATUS[idea.status];
 
     return (
-        <li className="glass flex gap-3 rounded-2xl p-4">
+        <li className="gc-solid flex gap-3 rounded-2xl p-4">
             <button
                 type="button"
                 onClick={() =>
@@ -245,7 +245,7 @@ function IdeaRow({ idea, canManage }: { idea: IdeaItem; canManage: boolean }) {
                     'flex w-12 shrink-0 flex-col items-center justify-center rounded-xl py-1.5 text-sm font-semibold tabular-nums transition',
                     idea.voted
                         ? 'bg-gc-indigo text-white'
-                        : 'bg-white/[0.06] text-white/75 hover:bg-white/[0.1]',
+                        : 'gc-solid-2 text-white/75 hover:bg-white/[0.1]',
                 )}
             >
                 <ChevronUp className="size-4" />
@@ -271,7 +271,7 @@ function IdeaRow({ idea, canManage }: { idea: IdeaItem; canManage: boolean }) {
                     </p>
                 )}
                 {idea.answer && (
-                    <p className="mt-2 rounded-xl bg-white/[0.04] px-3 py-2 text-sm text-white/80">
+                    <p className="gc-solid-2 mt-2 rounded-xl px-3 py-2 text-sm text-white/80">
                         <span className="text-white/45">{tr('Команда:')}</span>{' '}
                         {idea.answer}
                     </p>

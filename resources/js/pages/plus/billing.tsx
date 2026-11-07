@@ -52,7 +52,7 @@ type Props = {
 
 const btn =
     'inline-flex h-10 items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold transition disabled:opacity-40';
-const secondary = cn(btn, 'bg-white/[0.06] text-white/85 hover:bg-white/10');
+const secondary = cn(btn, 'gc-solid-2 text-white/85 hover:bg-white/10');
 
 /** Оплата й підписки (лише сайт, вкладка GameCon+): автопродовження, збережені картки, історія оплат. */
 export default function BillingPage({
@@ -93,7 +93,7 @@ export default function BillingPage({
 
                 {opened && <OrderResult order={opened} />}
 
-                <section className="glass rounded-2xl p-5 sm:p-7">
+                <section className="gc-solid rounded-2xl p-5 sm:p-7">
                     <p className="flex items-center gap-2 text-sm text-white/55">
                         <CreditCard className="size-4 text-indigo-300" />
                         {tr('Оплата карткою через monobank')}
@@ -117,7 +117,7 @@ export default function BillingPage({
                     </div>
                 </section>
 
-                <section className="glass rounded-2xl p-5">
+                <section className="gc-solid rounded-2xl p-5">
                     <h2 className="flex items-center gap-2 font-display text-lg font-bold text-white">
                         <RefreshCw className="size-4 text-indigo-300" />
                         {tr('Автопродовження')}
@@ -138,7 +138,7 @@ export default function BillingPage({
                     </ul>
                 </section>
 
-                <section className="glass rounded-2xl p-5">
+                <section className="gc-solid rounded-2xl p-5">
                     <h2 className="flex items-center gap-2 font-display text-lg font-bold text-white">
                         <CreditCard className="size-4 text-indigo-300" />
                         {tr('Збережені картки')}
@@ -158,7 +158,7 @@ export default function BillingPage({
                     )}
                 </section>
 
-                <section className="glass rounded-2xl p-5">
+                <section className="gc-solid rounded-2xl p-5">
                     <h2 className="font-display text-lg font-bold text-white">
                         {tr('Історія оплат')}
                     </h2>
@@ -190,18 +190,13 @@ function OrderResult({ order }: { order: PaymentOrderCard }) {
     const name = useProductName();
     const tone =
         order.status === 'paid'
-            ? 'border-emerald-400/30 bg-emerald-400/10 text-emerald-100'
+            ? ' bg-emerald-400/10 text-emerald-100'
             : order.status === 'pending'
-              ? 'border-white/10 bg-white/[0.04] text-white/80'
-              : 'border-rose-400/30 bg-rose-500/10 text-rose-100';
+              ? ' gc-solid-2 text-white/80'
+              : ' bg-red-500/10 text-red-400';
 
     return (
-        <section
-            className={cn(
-                'flex items-start gap-3 rounded-2xl border p-4',
-                tone,
-            )}
-        >
+        <section className={cn('flex items-start gap-3 rounded-2xl p-4', tone)}>
             {order.status === 'paid' ? (
                 <CheckCircle2 className="mt-0.5 size-5 shrink-0" />
             ) : order.status === 'pending' ? (
@@ -239,7 +234,7 @@ function OrderRow({ order }: { order: PaymentOrderCard }) {
     const statusTone: Record<string, string> = {
         paid: 'text-emerald-200',
         pending: 'text-white/60',
-        refunded: 'text-sky-200',
+        refunded: 'text-sky-400',
     };
 
     return (
@@ -268,7 +263,7 @@ function OrderRow({ order }: { order: PaymentOrderCard }) {
                 <p
                     className={cn(
                         'text-xs',
-                        statusTone[order.status] ?? 'text-rose-200',
+                        statusTone[order.status] ?? 'text-red-400',
                     )}
                 >
                     {ORDER_STATUS()[order.status] ?? order.status}
@@ -304,7 +299,7 @@ function CardRow({ card }: { card: SavedCard }) {
     };
 
     return (
-        <li className="flex items-center gap-3 rounded-2xl bg-white/[0.04] px-4 py-3">
+        <li className="gc-solid-2 flex items-center gap-3 rounded-2xl px-4 py-3">
             <CreditCard className="size-5 text-white/50" />
             <span className="flex-1 font-mono text-sm text-white tabular-nums">
                 {card.masked_pan}
@@ -317,7 +312,7 @@ function CardRow({ card }: { card: SavedCard }) {
             <button
                 type="button"
                 onClick={remove}
-                className="rounded-lg p-2 text-white/45 hover:bg-rose-500/10 hover:text-rose-200"
+                className="rounded-lg p-2 text-white/45 hover:bg-red-500/10 hover:text-red-400"
                 aria-label={tr('Видалити картку')}
             >
                 <Trash2 className="size-4" />
@@ -396,7 +391,7 @@ function RenewalRow({
                         setProduct(e.target.value);
                         if (renewal.active) save(true, e.target.value);
                     }}
-                    className="h-9 rounded-xl border border-white/10 bg-white/[0.04] px-2 text-xs text-white"
+                    className="gc-solid-2 h-9 rounded-xl px-2 text-xs text-white"
                     aria-label={tr('Тариф')}
                 >
                     {options.map((key) => (
@@ -416,7 +411,7 @@ function RenewalRow({
                         setCardId(next);
                         if (renewal.active) save(true, product, next);
                     }}
-                    className="h-9 rounded-xl border border-white/10 bg-white/[0.04] px-2 text-xs text-white"
+                    className="gc-solid-2 h-9 rounded-xl px-2 text-xs text-white"
                     aria-label={tr('Картка')}
                 >
                     {cards.map((card) => (
@@ -449,7 +444,7 @@ function BalanceTopUp({
     const packs = useKind('balance');
 
     return (
-        <div className="mt-5 rounded-2xl bg-white/[0.04] p-4">
+        <div className="gc-solid-2 mt-5 rounded-2xl p-4">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
                 <p className="text-sm font-semibold text-white">
                     {tr('Баланс GameCon')}
@@ -462,10 +457,7 @@ function BalanceTopUp({
                 {tr(
                     'Одиниці балансу — передоплата послуг сайту: підписки на авторів, просування спільнот, GameCon+. Вони враховуються в оплату автоматично, не є грошима й не виводяться.',
                 )}{' '}
-                <Link
-                    href="/terms"
-                    className="text-gc-lilac-300 hover:underline"
-                >
+                <Link href="/terms" className="text-sky-400 hover:underline">
                     {tr('Оферта')}
                 </Link>
             </p>

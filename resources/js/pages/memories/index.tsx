@@ -55,7 +55,7 @@ export default function Memories({
                 ) : (
                     posts.map((post) => (
                         <div key={post.id} className="space-y-2">
-                            <p className="px-1 text-xs font-semibold text-sky-300">
+                            <p className="px-1 text-xs font-semibold text-sky-400">
                                 {tr('{years} {word} тому', {
                                     years:
                                         year -

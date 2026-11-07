@@ -183,7 +183,7 @@ export default function AdminModeration({
 
             <ModerationQueue items={queue} />
 
-            <section className="glass mb-6 rounded-2xl p-4 sm:p-5">
+            <section className="gc-solid mb-6 rounded-2xl p-4 sm:p-5">
                 <h2 className="mb-3 font-display text-lg font-semibold text-white">
                     {tr('Скарги')}
                 </h2>
@@ -197,10 +197,10 @@ export default function AdminModeration({
                             <article
                                 key={r.id}
                                 id={`mod-report-${r.id}`}
-                                className="rounded-2xl bg-white/[0.03] p-3"
+                                className="gc-solid-2 rounded-2xl p-3"
                             >
                                 <div className="flex flex-wrap items-center gap-2 text-xs text-white/50">
-                                    <span className="rounded-md bg-rose-500/15 px-2 py-0.5 text-rose-200">
+                                    <span className="rounded-md bg-red-500/15 px-2 py-0.5 text-red-400">
                                         {r.count}{' '}
                                         {r.count === 1
                                             ? tr('скарга')
@@ -214,7 +214,7 @@ export default function AdminModeration({
                                     {r.reasons.map((reason) => (
                                         <span
                                             key={reason}
-                                            className="rounded-md bg-white/[0.06] px-2 py-0.5"
+                                            className="gc-solid-2 rounded-md px-2 py-0.5"
                                         >
                                             {reason}
                                         </span>
@@ -261,10 +261,10 @@ export default function AdminModeration({
                                             className={cn(
                                                 'inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 font-semibold',
                                                 r.ai.severity === 'high'
-                                                    ? 'bg-rose-500/15 text-rose-200'
+                                                    ? 'bg-red-500/15 text-red-400'
                                                     : r.ai.severity === 'medium'
                                                       ? 'bg-amber-500/15 text-amber-200'
-                                                      : 'bg-white/[0.06] text-white/60',
+                                                      : 'gc-solid-2 text-white/60',
                                             )}
                                         >
                                             <Sparkles className="size-3" />
@@ -293,7 +293,7 @@ export default function AdminModeration({
                                     <button
                                         type="button"
                                         onClick={() => resolve(r, 'delete')}
-                                        className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-rose-500/15 px-3 text-sm text-rose-200 hover:bg-rose-500/25"
+                                        className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-red-500/15 px-3 text-sm text-red-400 hover:bg-red-500/25"
                                     >
                                         <Trash2 className="size-4" />{' '}
                                         {tr('Видалити')}
@@ -332,7 +332,7 @@ export default function AdminModeration({
                                     <button
                                         type="button"
                                         onClick={() => resolve(r, 'dismiss')}
-                                        className="inline-flex h-9 items-center gap-1.5 rounded-xl px-3 text-sm text-white/55 hover:bg-white/[0.06] hover:text-white"
+                                        className="inline-flex h-9 items-center gap-1.5 rounded-xl px-3 text-sm text-white/55 hover:bg-[var(--gc-l3)] hover:text-white"
                                     >
                                         <Ban className="size-4" />{' '}
                                         {tr('Відхилити')}
@@ -361,7 +361,7 @@ export default function AdminModeration({
             <FeedbackList feedback={feedback} />
 
             {muted.length > 0 && (
-                <section className="glass mb-6 rounded-2xl p-4 sm:p-5">
+                <section className="gc-solid mb-6 rounded-2xl p-4 sm:p-5">
                     <h2 className="mb-3 font-display text-lg font-semibold text-white">
                         {tr('Заглушені')}
                     </h2>
@@ -390,7 +390,7 @@ export default function AdminModeration({
                                             { preserveScroll: true },
                                         )
                                     }
-                                    className="text-sm text-gc-lilac-200 hover:text-white"
+                                    className="text-sm text-sky-400 hover:text-white"
                                 >
                                     {tr('Зняти мут')}
                                 </button>
@@ -400,9 +400,9 @@ export default function AdminModeration({
                 </section>
             )}
 
-            <section className="glass rounded-2xl p-4 sm:p-5">
+            <section className="gc-solid rounded-2xl p-4 sm:p-5">
                 <h2 className="mb-1 flex items-center gap-2 font-display text-lg font-semibold text-white">
-                    <MessageSquareWarning className="size-5 text-gc-lilac-200" />
+                    <MessageSquareWarning className="size-5 text-sky-400" />
                     {tr('Автомодерація')}
                 </h2>
                 <p className="mb-4 text-sm text-white/50">

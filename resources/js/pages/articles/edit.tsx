@@ -188,7 +188,7 @@ export default function ArticleEdit({ article }: Props) {
                     {tr('Скасувати')}
                 </Link>
             </div>
-            <div className="glass space-y-3 rounded-2xl p-4 sm:p-5">
+            <div className="gc-solid space-y-3 rounded-2xl p-4 sm:p-5">
                 <input
                     value={form.data.title}
                     maxLength={140}
@@ -225,7 +225,7 @@ export default function ArticleEdit({ article }: Props) {
                     <div className="relative text-xs text-white/55">
                         {tr('Гра (необов’язково)')}
                         {game ? (
-                            <div className="mt-1 flex h-10 items-center gap-2 rounded-xl bg-white/[0.05] px-3 text-sm text-white">
+                            <div className="gc-solid-2 mt-1 flex h-10 items-center gap-2 rounded-xl px-3 text-sm text-white">
                                 <span className="min-w-0 flex-1 break-words">
                                     {game.name}
                                 </span>
@@ -270,7 +270,7 @@ export default function ArticleEdit({ article }: Props) {
                     </div>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-1 rounded-xl bg-white/[0.03] p-1">
+                <div className="gc-solid-2 flex flex-wrap items-center gap-1 rounded-xl p-1">
                     {(['write', 'preview'] as const).map((t) => (
                         <button
                             key={t}
@@ -354,19 +354,19 @@ export default function ArticleEdit({ article }: Props) {
                     />
                 ) : (
                     <div
-                        className="gc-article min-h-[420px] rounded-xl bg-white/[0.02] p-4"
+                        className="gc-article gc-solid-2 min-h-[420px] rounded-xl p-4"
                         dangerouslySetInnerHTML={{
                             __html: preview(form.data.body),
                         }}
                     />
                 )}
-                {error && <p className="text-sm text-rose-300">{error}</p>}
+                {error && <p className="text-sm text-red-400">{error}</p>}
                 <div className="flex flex-wrap justify-end gap-2">
                     <button
                         type="button"
                         disabled={form.processing}
                         onClick={() => submit(false)}
-                        className="h-10 rounded-xl bg-white/[0.06] px-4 text-sm font-medium text-white/80 transition hover:bg-white/10 disabled:opacity-50"
+                        className="gc-solid-2 h-10 rounded-xl px-4 text-sm font-medium text-white/80 transition hover:bg-white/10 disabled:opacity-50"
                     >
                         {tr('Зберегти чернетку')}
                     </button>

@@ -152,7 +152,7 @@ function Images({
 export function SystemMessage({ message }: { message: ChatMessage }) {
     return (
         <div className="flex justify-center py-1.5">
-            <span className="rounded-chip bg-white/[0.05] px-3 py-1 text-center text-xs text-white/50">
+            <span className="gc-solid-2 rounded-chip px-3 py-1 text-center text-xs text-white/50">
                 {message.body}
             </span>
         </div>
@@ -217,7 +217,7 @@ export function MessageBubble({
                 (pending === 'sending' ? (
                     <Clock3 className="size-3" />
                 ) : pending === 'failed' ? (
-                    <AlertCircle className="size-3.5 text-rose-300" />
+                    <AlertCircle className="size-3.5 text-red-400" />
                 ) : read ? (
                     <CheckCheck className="size-3.5 text-[#8fe3ff] drop-shadow-[0_0_4px_rgb(56_225_255/0.8)]" />
                 ) : (
@@ -263,7 +263,7 @@ export function MessageBubble({
                         </Link>
                     )}
                     {showAvatar && message.bot && (
-                        <span className="flex size-8 items-center justify-center rounded-full bg-primary/20 text-gc-lilac-300">
+                        <span className="flex size-8 items-center justify-center rounded-full bg-primary/20 text-sky-400">
                             <Bot className="size-4" />
                         </span>
                     )}
@@ -292,7 +292,7 @@ export function MessageBubble({
                                     'rounded-[14px] px-3.5 py-2',
                                     own
                                         ? 'gc-bubble-out bg-primary text-white'
-                                        : 'gc-bubble-in border border-white/[0.07] bg-white/[0.06] text-white/90 backdrop-blur-xl',
+                                        : 'gc-bubble-in gc-solid-2 text-white/90 backdrop-blur-xl',
                                     own
                                         ? groupEnd
                                             ? 'rounded-br-md'
@@ -308,8 +308,7 @@ export function MessageBubble({
                         hasImages && !onlyImages && 'pt-1.5 pr-1.5 pl-1.5',
                         voice && 'py-2 pr-3 pl-2',
                         pending === 'sending' && 'opacity-80',
-                        highlighted &&
-                            'shadow-[0_0_30px_rgb(124_140_255/0.6)] ring-2 ring-gc-lilac-400',
+                        highlighted && 'ring-2',
                     )}
                 >
                     {showAuthor && message.user && (
@@ -337,10 +336,10 @@ export function MessageBubble({
 
                     {showAuthor && message.bot && (
                         <div className="mb-0.5 flex min-w-0 items-center gap-1.5">
-                            <span className="truncate text-[13px] font-semibold text-gc-lilac-300">
+                            <span className="truncate text-[13px] font-semibold text-sky-400">
                                 {message.bot.name}
                             </span>
-                            <span className="rounded-full bg-primary/20 px-1.5 text-[10px] leading-4 text-gc-lilac-200">
+                            <span className="rounded-full bg-primary/20 px-1.5 text-[10px] leading-4 text-sky-400">
                                 {tr('бот')}
                             </span>
                         </div>
@@ -405,8 +404,8 @@ export function MessageBubble({
                             className={cn(
                                 'mb-1.5 block w-full min-w-0 rounded-lg border-l-2 py-1 pr-2 pl-2 text-left text-[13px] transition',
                                 own
-                                    ? 'border-white/70 bg-white/15 hover:bg-white/20'
-                                    : 'border-gc-lilac-500 bg-gc-lilac-500/10 hover:bg-gc-lilac-500/15',
+                                    ? 'bg-white/15 hover:bg-white/20'
+                                    : 'bg-sky-500/10 hover:bg-sky-500/15',
                                 hasImages && 'mx-0.5 mt-0.5 w-[calc(100%-4px)]',
                             )}
                         >
@@ -565,7 +564,7 @@ export function MessageBubble({
                         <button
                             type="button"
                             onClick={() => actions.onThread?.(message)}
-                            className="inline-flex items-center gap-1.5 rounded-full bg-white/[0.07] px-3 py-1 text-xs font-medium text-sky-300 hover:bg-white/[0.12]"
+                            className="inline-flex items-center gap-1.5 rounded-full bg-white/[0.07] px-3 py-1 text-xs font-medium text-sky-400 hover:bg-white/[0.12]"
                         >
                             <MessagesSquare className="size-3.5" />
                             {tr('{count} відп. у гілці', {
@@ -594,7 +593,7 @@ export function MessageBubble({
                                 className={cn(
                                     'inline-flex h-7 items-center gap-1 rounded-full px-2 text-sm transition',
                                     r.emoji === mine
-                                        ? 'bg-primary/25 ring-1 ring-primary/60'
+                                        ? 'bg-primary/25 ring-primary/60'
                                         : 'bg-white/[0.07] hover:bg-white/[0.12]',
                                 )}
                             >
@@ -613,7 +612,7 @@ export function MessageBubble({
                     <button
                         type="button"
                         onClick={() => actions.onRetry(message)}
-                        className="mt-1 inline-flex items-center gap-1 text-xs text-rose-300 hover:text-rose-200"
+                        className="mt-1 inline-flex items-center gap-1 text-xs text-red-400 hover:text-red-400"
                     >
                         <RotateCw className="size-3" />{' '}
                         {tr('Не надіслано. Повторити')}
@@ -624,7 +623,7 @@ export function MessageBubble({
             {!pending && (
                 <div
                     className={cn(
-                        'gc-float-menu pointer-events-none mb-1 flex shrink-0 items-center gap-0.5 rounded-xl border border-white/[0.06] bg-[#0d1222]/90 p-0.5 opacity-0 shadow-lg backdrop-blur transition group-hover/msg:pointer-events-auto group-hover/msg:opacity-100 focus-within:pointer-events-auto focus-within:opacity-100',
+                        'gc-float-menu pointer-events-none mb-1 flex shrink-0 items-center gap-0.5 rounded-xl bg-[#0d1222]/90 p-0.5 opacity-0 backdrop-blur transition group-hover/msg:pointer-events-auto group-hover/msg:opacity-100 focus-within:pointer-events-auto focus-within:opacity-100',
                         own && 'flex-row-reverse',
                         toolsOpen && 'pointer-events-auto opacity-100',
                         // На телефоні панель не займає місця в рядку, а з’являється над повідомленням по тапу.
@@ -657,7 +656,7 @@ export function MessageBubble({
                                 {reactOpen && (
                                     <span
                                         className={cn(
-                                            'glass-strong absolute bottom-9 z-30 flex gap-0.5 rounded-full p-1 shadow-lg',
+                                            'glass-strong absolute bottom-9 z-30 flex gap-0.5 rounded-full p-1',
                                             own ? 'right-0' : 'left-0',
                                         )}
                                     >
@@ -724,7 +723,7 @@ export function MessageBubble({
                             type="button"
                             className={cn(
                                 toolButton,
-                                actions.isPinned?.(message) && 'text-sky-300',
+                                actions.isPinned?.(message) && 'text-sky-400',
                             )}
                             onClick={() => actions.onPin?.(message)}
                             title={
@@ -771,7 +770,7 @@ export function MessageBubble({
                     {canDelete && (
                         <button
                             type="button"
-                            className={cn(toolButton, 'hover:text-rose-300')}
+                            className={cn(toolButton, 'hover:text-red-400')}
                             onClick={() => actions.onDelete(message)}
                             title={tr('Видалити')}
                         >
@@ -783,7 +782,7 @@ export function MessageBubble({
                             type="button"
                             className={cn(
                                 toolButton,
-                                translation.shown && 'text-gc-lilac-200',
+                                translation.shown && 'text-sky-400',
                             )}
                             onClick={translation.toggle}
                             title={
@@ -798,7 +797,7 @@ export function MessageBubble({
                     {!own && message.user && actions.onRestrict && (
                         <button
                             type="button"
-                            className={cn(toolButton, 'hover:text-rose-300')}
+                            className={cn(toolButton, 'hover:text-red-400')}
                             onClick={() => actions.onRestrict?.(message)}
                             title={tr('Тайм-аут або виключення')}
                         >
@@ -808,7 +807,7 @@ export function MessageBubble({
                     {message.guest && actions.onBanGuest && (
                         <button
                             type="button"
-                            className={cn(toolButton, 'hover:text-rose-300')}
+                            className={cn(toolButton, 'hover:text-red-400')}
                             onClick={() => actions.onBanGuest?.(message)}
                             title={tr('Заблокувати гостя')}
                         >

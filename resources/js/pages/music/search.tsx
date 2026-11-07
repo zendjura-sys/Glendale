@@ -190,7 +190,7 @@ export default function MusicSearch({
                                         seed={t.key}
                                         className="am-art size-12 shrink-0 rounded-[5px]"
                                     />
-                                    <span className="min-w-0 flex-1 border-b border-[var(--am-sep)] py-1">
+                                    <span className="min-w-0 flex-1 border-[var(--am-sep)] py-1">
                                         <span className="am-body block truncate">
                                             {t.title}
                                         </span>

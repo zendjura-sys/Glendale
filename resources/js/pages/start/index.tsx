@@ -76,10 +76,10 @@ export default function Start({
                                         )
                                     }
                                     className={cn(
-                                        'rounded-2xl border px-3 py-3 text-left text-sm font-medium text-white transition',
+                                        'rounded-2xl px-3 py-3 text-left text-sm font-medium text-white transition',
                                         pickedGames.includes(game.id)
-                                            ? 'border-gc-lilac-400/60 bg-gc-indigo/20'
-                                            : 'border-white/10 bg-white/[0.04] hover:bg-white/[0.07]',
+                                            ? 'bg-gc-indigo/20'
+                                            : 'gc-solid-2 hover:bg-[var(--gc-l3)]',
                                     )}
                                 >
                                     {game.name}
@@ -106,10 +106,10 @@ export default function Start({
                                         )
                                     }
                                     className={cn(
-                                        'rounded-2xl border px-3 py-3 text-left text-sm font-medium text-white transition',
+                                        'rounded-2xl px-3 py-3 text-left text-sm font-medium text-white transition',
                                         pickedServers.includes(server.id)
-                                            ? 'border-gc-lilac-400/60 bg-gc-indigo/20'
-                                            : 'border-white/10 bg-white/[0.04] hover:bg-white/[0.07]',
+                                            ? 'bg-gc-indigo/20'
+                                            : 'gc-solid-2 hover:bg-[var(--gc-l3)]',
                                     )}
                                 >
                                     {server.name}

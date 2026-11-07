@@ -66,7 +66,7 @@ export function SideRail() {
                         <Link
                             key={friend.id}
                             href={`/${friend.username}`}
-                            className="flex items-center gap-2.5 rounded-xl px-1 py-1.5 text-sm text-white/85 transition hover:bg-white/[0.05] hover:text-white"
+                            className="flex items-center gap-2.5 rounded-xl px-1 py-1.5 text-sm text-white/85 transition hover:bg-[var(--gc-l3)] hover:text-white"
                         >
                             <UserAvatar user={friend} size="sm" />
                             <span className="truncate">{friend.name}</span>
@@ -85,7 +85,7 @@ export function SideRail() {
                             <Link
                                 key={chat.id}
                                 href={`/messages/${chat.id}`}
-                                className="flex items-center gap-2.5 rounded-xl px-1 py-1.5 text-sm text-white/85 transition hover:bg-white/[0.05] hover:text-white"
+                                className="flex items-center gap-2.5 rounded-xl px-1 py-1.5 text-sm text-white/85 transition hover:bg-[var(--gc-l3)] hover:text-white"
                             >
                                 {chat.peer ? (
                                     <UserAvatar user={chat.peer} size="sm" />

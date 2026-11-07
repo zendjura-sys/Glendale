@@ -148,7 +148,7 @@ const area =
 const btn =
     'btn-glow inline-flex h-10 items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold disabled:opacity-50';
 const ghost =
-    'glass inline-flex h-10 items-center justify-center gap-2 rounded-xl px-3.5 text-sm text-white/75 hover:text-white';
+    'gc-solid inline-flex h-10 items-center justify-center gap-2 rounded-xl px-3.5 text-sm text-white/75 hover:text-white';
 
 const num = (n: number) => new Intl.NumberFormat(LOCALE).format(n);
 
@@ -164,9 +164,9 @@ function Card({
     children: ReactNode;
 }) {
     return (
-        <section className="glass rounded-2xl p-4 sm:p-5">
+        <section className="gc-solid rounded-2xl p-4 sm:p-5">
             <div className="mb-3 flex items-center gap-2">
-                <Icon className="size-4 text-gc-lilac-200" />
+                <Icon className="size-4 text-sky-400" />
                 <h2 className="flex-1 font-display text-base font-semibold text-white">
                     {title}
                 </h2>
@@ -281,7 +281,7 @@ function JoinForm({ base, questions }: { base: string; questions: string[] }) {
 
     return (
         <form
-            className="glass w-full basis-full space-y-2 rounded-2xl p-3"
+            className="gc-solid w-full basis-full space-y-2 rounded-2xl p-3"
             onSubmit={(event) => {
                 event.preventDefault();
                 form.post(`${base}/join`, { preserveScroll: true });
@@ -314,7 +314,7 @@ function JoinForm({ base, questions }: { base: string; questions: string[] }) {
                 className={input}
             />
             {form.errors.answers && (
-                <p className="text-xs text-rose-300">{form.errors.answers}</p>
+                <p className="text-xs text-red-400">{form.errors.answers}</p>
             )}
             <button type="submit" disabled={form.processing} className={btn}>
                 <UserPlus className="size-4" /> {tr('Подати заявку')}
@@ -362,14 +362,14 @@ export default function ClanShow(props: Props) {
     return (
         <>
             <Head title={clan.display_name} />
-            <div className="glass mb-4 flex flex-wrap items-center gap-4 rounded-2xl p-4 sm:p-5">
+            <div className="gc-solid mb-4 flex flex-wrap items-center gap-4 rounded-2xl p-4 sm:p-5">
                 <ClanLogo clan={clan} size="lg" />
                 <div className="min-w-0 flex-1">
                     <h1 className="truncate font-display text-xl font-semibold text-white sm:text-2xl">
                         {clan.display_name}
                     </h1>
                     <p className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-white/55">
-                        <span className="font-mono text-gc-lilac-200">
+                        <span className="font-mono text-sky-400">
                             [{clan.tag}]
                         </span>
                         {clan.game && (
@@ -468,13 +468,13 @@ export default function ClanShow(props: Props) {
                         className={cn(
                             'inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl px-3.5 text-sm transition',
                             tab === key
-                                ? 'bg-gradient-brand text-white'
-                                : 'glass text-white/65 hover:text-white',
+                                ? 'bg-sky-500 text-white'
+                                : 'gc-solid text-white/65 hover:text-white',
                         )}
                     >
                         <Icon className="size-4" /> {label}
                         {key === 'members' && applications.length > 0 && (
-                            <span className="rounded-full bg-rose-500 px-1.5 text-[11px] text-white">
+                            <span className="rounded-full bg-red-500 px-1.5 text-[11px] text-white">
                                 {applications.length}
                             </span>
                         )}
@@ -623,7 +623,7 @@ export default function ClanShow(props: Props) {
                                 {news.slice(0, 3).map((n) => (
                                     <div
                                         key={n.id}
-                                        className="border-b border-white/[0.06] py-2 last:border-0"
+                                        className="py-2 last:border-0"
                                     >
                                         <p className="text-sm font-semibold text-white">
                                             {n.title}
@@ -645,7 +645,7 @@ export default function ClanShow(props: Props) {
                                         key={e.id}
                                         className="py-1 text-sm text-white/75"
                                     >
-                                        <span className="text-gc-lilac-200">
+                                        <span className="text-sky-400">
                                             {eventTime(e.starts_at)}
                                         </span>{' '}
                                         — {e.title} · {e.going_count}{' '}
@@ -835,7 +835,7 @@ function NewsTab({
                 </p>
             )}
             {news.map((n) => (
-                <article key={n.id} className="glass rounded-2xl p-4">
+                <article key={n.id} className="gc-solid rounded-2xl p-4">
                     <div className="mb-1 flex items-center gap-2">
                         {n.is_pinned && (
                             <Pin className="size-4 text-amber-300" />
@@ -852,7 +852,7 @@ function NewsTab({
                                         preserveScroll: true,
                                     })
                                 }
-                                className="text-white/40 hover:text-rose-300"
+                                className="text-white/40 hover:text-red-400"
                                 aria-label={tr('Видалити')}
                             >
                                 <Trash2 className="size-4" />
@@ -930,7 +930,7 @@ function EventsTab({
                             className={cn(area, 'sm:col-span-2')}
                         />
                         {form.errors.starts_at && (
-                            <p className="text-xs text-rose-300 sm:col-span-2">
+                            <p className="text-xs text-red-400 sm:col-span-2">
                                 {form.errors.starts_at}
                             </p>
                         )}
@@ -948,7 +948,7 @@ function EventsTab({
                                 className={cn(input, 'py-2')}
                             />
                             {form.errors.cover && (
-                                <span className="text-rose-300">
+                                <span className="text-red-400">
                                     {form.errors.cover}
                                 </span>
                             )}
@@ -981,7 +981,7 @@ function EventsTab({
             {events.map((e) => (
                 <article
                     key={e.id}
-                    className="glass flex flex-wrap items-center gap-3 rounded-2xl p-4"
+                    className="gc-solid flex flex-wrap items-center gap-3 rounded-2xl p-4"
                 >
                     {e.cover_url && (
                         <img
@@ -993,7 +993,7 @@ function EventsTab({
                         />
                     )}
                     <div className="min-w-0 flex-1">
-                        <p className="text-xs text-gc-lilac-200">
+                        <p className="text-xs text-sky-400">
                             {eventTime(e.starts_at)}
                         </p>
                         <h3 className="font-semibold text-white">{e.title}</h3>
@@ -1038,7 +1038,7 @@ function EventsTab({
                                     preserveScroll: true,
                                 })
                             }
-                            className="text-white/40 hover:text-rose-300"
+                            className="text-white/40 hover:text-red-400"
                             aria-label={tr('Видалити')}
                         >
                             <Trash2 className="size-4" />
@@ -1127,7 +1127,7 @@ function TreasuryTab({
                                 onSuccess: () => spend.reset(),
                             });
                         }}
-                        className="mt-4 flex flex-wrap gap-2 border-t border-white/[0.06] pt-4"
+                        className="mt-4 flex flex-wrap gap-2 pt-4"
                     >
                         <input
                             type="number"
@@ -1156,7 +1156,7 @@ function TreasuryTab({
                             {tr('Записати витрату')}
                         </button>
                         {spend.errors.amount && (
-                            <p className="w-full text-xs text-rose-300">
+                            <p className="w-full text-xs text-red-400">
                                 {spend.errors.amount}
                             </p>
                         )}
@@ -1172,7 +1172,7 @@ function TreasuryTab({
                 {contributions.map((c) => (
                     <div
                         key={c.id}
-                        className="flex flex-wrap items-center gap-3 border-b border-white/[0.06] py-2 last:border-0"
+                        className="flex flex-wrap items-center gap-3 py-2 last:border-0"
                     >
                         {c.user && <UserAvatar user={c.user} size="xs" />}
                         <span className="min-w-0 flex-1 text-sm text-white/75">
@@ -1187,7 +1187,7 @@ function TreasuryTab({
                             className={cn(
                                 'text-sm font-semibold',
                                 c.amount < 0
-                                    ? 'text-rose-300'
+                                    ? 'text-red-400'
                                     : 'text-emerald-300',
                             )}
                         >
@@ -1220,7 +1220,7 @@ function TreasuryTab({
                                             approve: false,
                                         })
                                     }
-                                    className="rounded-lg bg-rose-500/15 p-1.5 text-rose-200"
+                                    className="rounded-lg bg-red-500/15 p-1.5 text-red-400"
                                     aria-label={tr('Відхилити')}
                                 >
                                     <X className="size-4" />
@@ -1314,7 +1314,7 @@ function MembersTab({
                     return (
                         <div
                             key={m.id}
-                            className="flex flex-wrap items-center gap-3 border-b border-white/[0.06] py-2 last:border-0"
+                            className="flex flex-wrap items-center gap-3 py-2 last:border-0"
                         >
                             {m.user && <UserAvatar user={m.user} size="sm" />}
                             <span className="min-w-0 flex-1">
@@ -1379,7 +1379,7 @@ function MembersTab({
                                                 }),
                                             ) && act(m, 'kick')
                                         }
-                                        className="text-xs text-rose-300 hover:underline"
+                                        className="text-xs text-red-400 hover:underline"
                                     >
                                         {tr('Виключити')}
                                     </button>
@@ -1523,8 +1523,8 @@ function SettingsTab({
                             className={cn(
                                 'rounded-xl px-3 py-1.5 text-sm',
                                 form.data.join_mode === key
-                                    ? 'bg-gradient-brand text-white'
-                                    : 'bg-white/[0.05] text-white/65',
+                                    ? 'bg-sky-500 text-white'
+                                    : 'gc-solid-2 text-white/65',
                             )}
                         >
                             {label}
@@ -1580,16 +1580,16 @@ function SettingsTab({
                                 className={cn(
                                     'flex items-start gap-3 rounded-2xl p-3 text-left',
                                     on
-                                        ? 'bg-[var(--accent)]/15 ring-1 ring-[var(--accent)]/60'
-                                        : 'bg-white/[0.03]',
+                                        ? 'bg-[var(--accent)]/15 ring-[var(--accent)]/60'
+                                        : 'gc-solid-2',
                                 )}
                             >
                                 <span
                                     className={cn(
-                                        'mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-md border',
+                                        'mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-md',
                                         on
-                                            ? 'border-transparent bg-gradient-brand'
-                                            : 'border-white/25',
+                                            ? 'border-transparent bg-sky-500'
+                                            : '',
                                     )}
                                 >
                                     {on && (
@@ -1654,10 +1654,7 @@ function SettingsTab({
                             <tbody>
                                 {Object.entries(permissions.labels).map(
                                     ([perm, label]) => (
-                                        <tr
-                                            key={perm}
-                                            className="border-t border-white/[0.05]"
-                                        >
+                                        <tr key={perm} className=" ">
                                             <td className="py-2 pr-2 text-white/70">
                                                 {label}
                                             </td>
@@ -1687,8 +1684,8 @@ function SettingsTab({
                                                             className={cn(
                                                                 'size-6 rounded-md disabled:opacity-30',
                                                                 on
-                                                                    ? 'bg-gradient-brand text-white'
-                                                                    : 'bg-white/[0.05]',
+                                                                    ? 'bg-sky-500 text-white'
+                                                                    : 'gc-solid-2',
                                                             )}
                                                             aria-label={tr(
                                                                 '{label}: ранг {r}',

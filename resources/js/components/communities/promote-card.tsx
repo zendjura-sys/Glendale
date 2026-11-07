@@ -41,9 +41,9 @@ export function CommunityPromoteCard({
     };
 
     return (
-        <section className="glass flex flex-wrap items-center gap-3 rounded-2xl p-4">
+        <section className="gc-solid flex flex-wrap items-center gap-3 rounded-2xl p-4">
             <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-gc-indigo/20">
-                <Megaphone className="size-5 text-gc-lilac-300" />
+                <Megaphone className="size-5 text-sky-400" />
             </span>
             <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold text-white">

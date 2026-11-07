@@ -82,7 +82,7 @@ export default function Trivia({
                             <m.section
                                 initial={reduce ? false : { opacity: 0, y: 8 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                className="glass flex items-center gap-4 rounded-2xl p-5"
+                                className="gc-solid flex items-center gap-4 rounded-2xl p-5"
                             >
                                 <Trophy className="size-8 text-amber-300" />
                                 <div>
@@ -98,7 +98,7 @@ export default function Trivia({
                         {questions.map((q, qi) => (
                             <section
                                 key={qi}
-                                className="glass space-y-3 rounded-2xl p-4"
+                                className="gc-solid space-y-3 rounded-2xl p-4"
                             >
                                 <p className="text-xs text-white/40">
                                     {tr('Питання {n} з {total}', {
@@ -144,7 +144,7 @@ export default function Trivia({
                                                           ? 'bg-red-500/20 text-white'
                                                           : chosen
                                                             ? 'bg-primary text-white'
-                                                            : 'bg-white/[0.06] text-white/85 hover:bg-white/[0.1]',
+                                                            : 'gc-solid-2 text-white/85 hover:bg-white/[0.1]',
                                                 )}
                                             >
                                                 <span className="min-w-0 flex-1">

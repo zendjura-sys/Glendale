@@ -85,14 +85,14 @@ export function CommunityRating({
             </div>
             <div className="sm:col-span-2">
                 {readOnly ? (
-                    <div className="flex flex-wrap items-center gap-2 rounded-2xl bg-white/[0.03] p-3">
+                    <div className="gc-solid-2 flex flex-wrap items-center gap-2 rounded-2xl p-3">
                         <Star className="size-4 shrink-0 text-white/45" />
                         <p className="min-w-0 flex-1 text-sm text-white/60">
                             {tr('Увійдіть, щоб оцінити гру.')}
                         </p>
                         <Link
                             href="/login"
-                            className="inline-flex h-9 items-center rounded-xl bg-white/[0.06] px-3 text-sm text-white/80 transition hover:bg-white/10"
+                            className="gc-solid-2 inline-flex h-9 items-center rounded-xl px-3 text-sm text-white/80 transition hover:bg-white/10"
                         >
                             {tr('Увійти')}
                         </Link>
@@ -127,7 +127,7 @@ export function CommunityRating({
                                             data.mine !== null &&
                                                 score <= data.mine
                                                 ? 'bg-primary text-white'
-                                                : 'bg-white/[0.06] text-white/70 hover:bg-white/10',
+                                                : 'gc-solid-2 text-white/70 hover:bg-white/10',
                                         )}
                                     >
                                         {score}
@@ -137,7 +137,7 @@ export function CommunityRating({
                         </div>
                     </div>
                 ) : (
-                    <div className="flex flex-wrap items-center gap-2 rounded-2xl bg-white/[0.03] p-3">
+                    <div className="gc-solid-2 flex flex-wrap items-center gap-2 rounded-2xl p-3">
                         <Star className="size-4 shrink-0 text-white/45" />
                         <p className="min-w-0 flex-1 text-sm text-white/60">
                             {tr('Оцінювати можуть ті, хто грав у цю гру.')}
@@ -146,7 +146,7 @@ export function CommunityRating({
                             type="button"
                             disabled={busy}
                             onClick={() => send(`/games/${slug}/played`)}
-                            className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-white/[0.06] px-3 text-sm text-white/80 transition hover:bg-white/10 disabled:opacity-50"
+                            className="gc-solid-2 inline-flex h-9 items-center gap-1.5 rounded-xl px-3 text-sm text-white/80 transition hover:bg-white/10 disabled:opacity-50"
                         >
                             <Gamepad2 className="size-4" />
                             {tr('Я грав у цю гру')}

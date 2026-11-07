@@ -24,7 +24,7 @@ import type { PaymentOrderCard, Quote } from '@/types/billing';
 const btn =
     'inline-flex h-11 items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold transition disabled:opacity-40';
 const primary = cn(btn, 'bg-primary text-white hover:opacity-90');
-const secondary = cn(btn, 'bg-white/[0.06] text-white/85 hover:bg-white/10');
+const secondary = cn(btn, 'gc-solid-2 text-white/85 hover:bg-white/10');
 
 /** Вікно оплати для всього сайту: карткою через monobank (Visa, Mastercard, Apple Pay, Google Pay). */
 export function BillingHost() {
@@ -81,7 +81,7 @@ function Modal({
                 onClick={onClose}
             />
             <div className="glass-strong relative flex max-h-[92dvh] w-full max-w-md animate-rise flex-col overflow-hidden rounded-t-2xl sm:rounded-2xl">
-                <header className="flex items-center gap-3 border-b border-white/[0.06] px-5 py-4">
+                <header className="flex items-center gap-3 px-5 py-4">
                     <PlusBadge className="size-7 rounded-lg [&_svg]:size-5" />
                     <span className="min-w-0 flex-1">
                         <span className="block truncate font-display text-base font-bold text-white">
@@ -266,13 +266,13 @@ function PurchaseDialog({
                 <div className="space-y-4">
                     <TextSkeleton
                         lines={3}
-                        className="rounded-2xl bg-white/[0.04] p-4"
+                        className="gc-solid-2 rounded-2xl p-4"
                     />
                     <Sk className="h-11 w-full rounded-xl" />
                 </div>
             ) : (
                 <div className="space-y-4">
-                    <dl className="space-y-2 rounded-2xl bg-white/[0.04] p-4 text-sm">
+                    <dl className="gc-solid-2 space-y-2 rounded-2xl p-4 text-sm">
                         <div className="flex justify-between gap-3">
                             <dt className="text-white/55">{tr('Ціна')}</dt>
                             <dd className="text-white tabular-nums">
@@ -305,7 +305,7 @@ function PurchaseDialog({
                                 </dd>
                             </div>
                         )}
-                        <div className="flex justify-between gap-3 border-t border-white/[0.06] pt-2">
+                        <div className="flex justify-between gap-3 pt-2">
                             <dt className="font-medium text-white">
                                 {tr('До сплати')}
                             </dt>
@@ -329,7 +329,7 @@ function PurchaseDialog({
                             }
                             placeholder={tr('Промокод')}
                             maxLength={32}
-                            className="h-11 min-w-0 flex-1 rounded-xl border border-white/10 bg-white/[0.04] px-3 text-sm text-white uppercase placeholder:text-white/35 placeholder:normal-case focus:outline-none"
+                            className="gc-solid-2 h-11 min-w-0 flex-1 rounded-xl px-3 text-sm text-white uppercase placeholder:text-white/35 placeholder:normal-case focus:outline-none"
                         />
                         <button
                             type="button"
@@ -342,7 +342,7 @@ function PurchaseDialog({
                     </div>
 
                     {renewable && (
-                        <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-white/[0.06] p-3.5">
+                        <label className="flex cursor-pointer items-start gap-3 rounded-2xl p-3.5">
                             <input
                                 type="checkbox"
                                 checked={renew}

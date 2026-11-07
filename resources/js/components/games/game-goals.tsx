@@ -48,7 +48,7 @@ export function GameGoals({ slug }: { slug: string }) {
                 <div
                     key={g.id}
                     className={cn(
-                        'flex items-center gap-3 rounded-xl bg-white/[0.04] p-2.5',
+                        'gc-solid-2 flex items-center gap-3 rounded-xl p-2.5',
                         g.done && 'opacity-60',
                     )}
                 >
@@ -110,7 +110,7 @@ export function GameGoals({ slug }: { slug: string }) {
                         type="button"
                         onClick={() => run('DELETE', `${base}/${g.id}`)}
                         aria-label={tr('Видалити')}
-                        className="text-white/30 hover:text-rose-300"
+                        className="text-white/30 hover:text-red-400"
                     >
                         <Trash2 className="size-4" />
                     </button>

@@ -344,7 +344,7 @@ export function Segmented<T extends string>({
                     className={cn(
                         'am-footnote h-8 flex-1 rounded-[7px] font-semibold transition',
                         option.value === value
-                            ? 'bg-[var(--am-elevated)] shadow-[0_3px_8px_rgb(0_0_0/0.12),0_0_0_0.5px_rgb(0_0_0/0.04)]'
+                            ? 'bg-[var(--am-elevated)]'
                             : 'text-[var(--am-label)]',
                     )}
                 >
@@ -370,7 +370,7 @@ export function NavRow({
     return (
         <Link
             href={href}
-            className="flex min-h-12 items-center gap-4 border-b border-[var(--am-sep)] pr-1 transition active:bg-[var(--am-fill)]"
+            className="flex min-h-12 items-center gap-4 border-[var(--am-sep)] pr-1 transition active:bg-[var(--am-fill)]"
         >
             <span className="flex w-7 justify-center text-[var(--am-accent)]">
                 {icon}

@@ -72,7 +72,7 @@ export function PartyCard({ party }: { party: PartyCardData }) {
     return (
         <Link
             href={party.href}
-            className="glass flex min-w-0 flex-col gap-3 rounded-2xl p-5 transition hover:border-white/15"
+            className="gc-solid flex min-w-0 flex-col gap-3 rounded-2xl p-5 transition hover:border-white/15"
         >
             <div className="flex items-start gap-3">
                 <UserAvatar user={party.host} size="md" />
@@ -94,7 +94,7 @@ export function PartyCard({ party }: { party: PartyCardData }) {
                     className={cn(
                         'inline-flex shrink-0 items-center gap-1 rounded-chip px-2.5 py-1 text-xs font-semibold tabular-nums',
                         full
-                            ? 'bg-white/[0.06] text-white/50'
+                            ? 'gc-solid-2 text-white/50'
                             : 'bg-emerald-400/10 text-emerald-200',
                     )}
                 >
@@ -109,7 +109,7 @@ export function PartyCard({ party }: { party: PartyCardData }) {
                         'inline-flex items-center gap-1 rounded-chip px-2 py-0.5',
                         now
                             ? 'bg-gc-indigo/20 text-[#c4b5fd]'
-                            : 'bg-white/[0.06] text-white/70',
+                            : 'gc-solid-2 text-white/70',
                     )}
                 >
                     {voting ? (
@@ -122,40 +122,40 @@ export function PartyCard({ party }: { party: PartyCardData }) {
                         : partyWhen(party.starts_at)}
                 </span>
                 {party.game && (
-                    <span className="inline-flex max-w-full min-w-0 items-center gap-1 rounded-full bg-white/[0.06] px-2 py-0.5 text-white/70">
+                    <span className="gc-solid-2 inline-flex max-w-full min-w-0 items-center gap-1 rounded-full px-2 py-0.5 text-white/70">
                         <Gamepad2 className="size-3 shrink-0" />
                         <span className="truncate">{party.game.name}</span>
                     </span>
                 )}
                 {party.server && (
-                    <span className="inline-flex max-w-full min-w-0 items-center gap-1 rounded-full bg-white/[0.06] px-2 py-0.5 text-white/70">
+                    <span className="gc-solid-2 inline-flex max-w-full min-w-0 items-center gap-1 rounded-full px-2 py-0.5 text-white/70">
                         <Server className="size-3 shrink-0" />
                         <span className="truncate">{party.server.name}</span>
                     </span>
                 )}
                 {party.platform && (
-                    <span className="rounded-chip bg-white/[0.06] px-2 py-0.5 text-white/70">
+                    <span className="gc-solid-2 rounded-chip px-2 py-0.5 text-white/70">
                         {PARTY_PLATFORMS()[party.platform] ?? party.platform}
                     </span>
                 )}
                 {party.mic && (
-                    <span className="inline-flex items-center gap-1 rounded-chip bg-white/[0.06] px-2 py-0.5 text-white/70">
+                    <span className="gc-solid-2 inline-flex items-center gap-1 rounded-chip px-2 py-0.5 text-white/70">
                         <Mic className="size-3" />
                         {tr('Мікрофон')}
                     </span>
                 )}
                 {party.language_label && (
-                    <span className="rounded-chip bg-white/[0.06] px-2 py-0.5 text-white/70">
+                    <span className="gc-solid-2 rounded-chip px-2 py-0.5 text-white/70">
                         {party.language_label}
                     </span>
                 )}
                 {party.age_min && (
-                    <span className="rounded-chip bg-white/[0.06] px-2 py-0.5 text-white/70">
+                    <span className="gc-solid-2 rounded-chip px-2 py-0.5 text-white/70">
                         {party.age_min}+
                     </span>
                 )}
                 {party.style_label && (
-                    <span className="rounded-chip bg-white/[0.06] px-2 py-0.5 text-white/70">
+                    <span className="gc-solid-2 rounded-chip px-2 py-0.5 text-white/70">
                         {tr(party.style_label)}
                     </span>
                 )}
@@ -178,7 +178,7 @@ export function PartyCard({ party }: { party: PartyCardData }) {
                                 className={cn(
                                     'rounded-lg px-2 py-1 text-xs',
                                     taken
-                                        ? 'bg-white/[0.03] text-white/35 line-through'
+                                        ? 'gc-solid-2 text-white/35 line-through'
                                         : 'bg-amber-300/10 text-amber-100',
                                 )}
                             >

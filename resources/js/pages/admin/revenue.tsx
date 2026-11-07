@@ -61,7 +61,7 @@ export default function AdminRevenue({
                     [tr('Минулий місяць'), uah(totals.previous), null],
                     [tr('Повернено'), uah(totals.refunded), null],
                 ].map(([label, value, hint]) => (
-                    <div key={label} className="glass rounded-2xl p-4">
+                    <div key={label} className="gc-solid rounded-2xl p-4">
                         <p className="text-xs text-white/45">{label}</p>
                         <p className="mt-1 font-display text-xl font-semibold text-white tabular-nums">
                             {value}
@@ -75,7 +75,7 @@ export default function AdminRevenue({
                 ))}
             </div>
 
-            <section className="glass mb-4 rounded-2xl p-4 sm:p-5">
+            <section className="gc-solid mb-4 rounded-2xl p-4 sm:p-5">
                 <div className="flex flex-wrap items-baseline justify-between gap-3 text-xs text-white/55">
                     <span>
                         {tr(
@@ -123,7 +123,7 @@ export default function AdminRevenue({
             </section>
 
             <div className="grid gap-4 lg:grid-cols-2">
-                <section className="glass rounded-2xl p-4 sm:p-5">
+                <section className="gc-solid rounded-2xl p-4 sm:p-5">
                     <h2 className="font-display text-base font-semibold text-white">
                         {tr('Продукти')}
                     </h2>
@@ -151,7 +151,7 @@ export default function AdminRevenue({
                         ))}
                     </ul>
                 </section>
-                <section className="glass rounded-2xl p-4 sm:p-5">
+                <section className="gc-solid rounded-2xl p-4 sm:p-5">
                     <h2 className="font-display text-base font-semibold text-white">
                         {tr('Автори з найбільшим нарахуванням одиниць')}
                     </h2>

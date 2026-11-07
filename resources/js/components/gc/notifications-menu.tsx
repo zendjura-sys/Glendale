@@ -41,14 +41,14 @@ import { WebPushButton } from './web-push-toggle';
 import { tr } from '@/lib/i18n';
 
 const kindIcon: Record<string, { icon: typeof Bell; className: string }> = {
-    post_like: { icon: Heart, className: 'bg-rose-500' },
+    post_like: { icon: Heart, className: 'bg-red-500' },
     post_comment: { icon: MessageSquare, className: 'bg-gc-blue' },
     wall_post: { icon: PenSquare, className: 'bg-gc-purple' },
     friend_request: { icon: UserPlus, className: 'bg-emerald-500' },
     friend_accepted: { icon: UserCheck, className: 'bg-emerald-500' },
     community_request: { icon: Shield, className: 'bg-gc-indigo' },
     community_approved: { icon: ShieldCheck, className: 'bg-gc-indigo' },
-    photo_like: { icon: Heart, className: 'bg-rose-500' },
+    photo_like: { icon: Heart, className: 'bg-red-500' },
     photo_comment: { icon: ImageIcon, className: 'bg-[#38bdf8]' },
     family_application: { icon: UserPlus, className: 'bg-amber-500' },
     family_accepted: { icon: Crown, className: 'bg-amber-500' },
@@ -56,14 +56,14 @@ const kindIcon: Record<string, { icon: typeof Bell; className: string }> = {
     family_review: { icon: ClipboardCheck, className: 'bg-emerald-500' },
     family_cashout: { icon: Wallet, className: 'bg-emerald-500' },
     family_bank: { icon: Wallet, className: 'bg-emerald-500' },
-    family_sanction: { icon: Gavel, className: 'bg-rose-500' },
-    family_kicked: { icon: Gavel, className: 'bg-rose-500' },
-    family_warehouse: { icon: Package, className: 'bg-rose-500' },
+    family_sanction: { icon: Gavel, className: 'bg-red-500' },
+    family_kicked: { icon: Gavel, className: 'bg-red-500' },
+    family_warehouse: { icon: Package, className: 'bg-red-500' },
     family_event: { icon: CalendarDays, className: 'bg-gc-indigo' },
     event_reminder: { icon: AlarmClock, className: 'bg-amber-500' },
     party_join: { icon: UserRoundSearch, className: 'bg-gc-indigo' },
     party_invite: { icon: UserRoundSearch, className: 'bg-primary' },
-    stream_live: { icon: Radio, className: 'bg-rose-500' },
+    stream_live: { icon: Radio, className: 'bg-red-500' },
     listen_room: { icon: Headphones, className: 'bg-gc-indigo' },
     tournament: { icon: Trophy, className: 'bg-amber-500' },
     clip_of_week: { icon: Trophy, className: 'bg-amber-500' },
@@ -76,7 +76,7 @@ const kindIcon: Record<string, { icon: typeof Bell; className: string }> = {
     wallet_topup: { icon: Wallet, className: 'bg-emerald-500' },
     plus_renewed: { icon: RefreshCw, className: 'bg-indigo-500' },
     plus_renewal_failed: { icon: Wallet, className: 'bg-amber-500' },
-    phone_offer: { icon: Gift, className: 'bg-pink-500' },
+    phone_offer: { icon: Gift, className: 'bg-sky-500' },
     phone_offer_result: { icon: Phone, className: 'bg-indigo-500' },
 };
 
@@ -166,7 +166,7 @@ export function NotificationsMenu() {
                 {unread > 0 && (
                     <span
                         aria-hidden
-                        className="absolute top-0.5 right-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-rose-500 px-1 text-[11px] leading-none font-bold text-white"
+                        className="absolute top-0.5 right-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-red-500 px-1 text-[11px] leading-none font-bold text-white"
                     >
                         {unread > 99 ? '99+' : unread}
                     </span>
@@ -190,9 +190,9 @@ export function NotificationsMenu() {
                                     '--nr': `${anchor.right}px`,
                                 } as CSSProperties
                             }
-                            className="gc-float-menu fixed inset-x-3 top-16 z-[60] flex max-h-[min(70dvh,calc(100dvh-env(safe-area-inset-bottom)-8.5rem))] animate-rise flex-col overflow-hidden rounded-2xl border border-white/10 bg-deep shadow-[0_24px_80px_-24px_rgb(0_0_0/0.9)] sm:inset-x-auto sm:top-[var(--nt)] sm:right-[var(--nr)] sm:max-h-[60vh] sm:w-[min(380px,calc(100vw-2rem))]"
+                            className="gc-float-menu fixed inset-x-3 top-16 z-[60] flex max-h-[min(70dvh,calc(100dvh-env(safe-area-inset-bottom)-8.5rem))] animate-rise flex-col overflow-hidden rounded-2xl bg-deep sm:inset-x-auto sm:top-[var(--nt)] sm:right-[var(--nr)] sm:max-h-[60vh] sm:w-[min(380px,calc(100vw-2rem))]"
                         >
-                            <div className="flex shrink-0 items-center justify-between border-b border-white/5 px-4 py-3">
+                            <div className="flex shrink-0 items-center justify-between px-4 py-3">
                                 <span className="font-display text-sm font-semibold">
                                     {tr('Сповіщення')}
                                 </span>

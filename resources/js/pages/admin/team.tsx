@@ -39,7 +39,7 @@ export default function AdminTeam({
             />
             <form
                 onSubmit={add}
-                className="glass mb-5 flex flex-wrap gap-2 rounded-2xl p-3"
+                className="gc-solid mb-5 flex flex-wrap gap-2 rounded-2xl p-3"
             >
                 <Input
                     value={form.data.username}
@@ -89,7 +89,7 @@ function TeamRow({
         );
 
     return (
-        <article className="glass rounded-2xl p-4">
+        <article className="gc-solid rounded-2xl p-4">
             <div className="flex flex-wrap items-center gap-3">
                 <UserAvatar user={member} size="md" />
                 <div className="min-w-0 flex-1">
@@ -138,7 +138,7 @@ function TeamRow({
                                     'h-8 rounded-lg px-2.5 text-xs transition',
                                     on
                                         ? 'bg-sky-500/25 text-white'
-                                        : 'bg-white/[0.05] text-white/55 hover:text-white',
+                                        : 'gc-solid-2 text-white/55 hover:text-white',
                                 )}
                             >
                                 {tr(label)}

@@ -61,7 +61,7 @@ export function EventStories({
                         type="button"
                         disabled={busy}
                         onClick={() => input.current?.click()}
-                        className="flex h-24 w-16 shrink-0 flex-col items-center justify-center gap-1 rounded-xl bg-white/[0.06] text-[11px] text-white/70 transition hover:bg-white/[0.1] disabled:opacity-50"
+                        className="gc-solid-2 flex h-24 w-16 shrink-0 flex-col items-center justify-center gap-1 rounded-xl text-[11px] text-white/70 transition hover:bg-white/[0.1] disabled:opacity-50"
                     >
                         <ImagePlus className="size-5" />
                         {tr('Своя')}
@@ -72,7 +72,7 @@ export function EventStories({
                         key={s.id}
                         type="button"
                         onClick={() => setOpen(i)}
-                        className="relative h-24 w-16 shrink-0 overflow-hidden rounded-xl bg-white/[0.06]"
+                        className="gc-solid-2 relative h-24 w-16 shrink-0 overflow-hidden rounded-xl"
                     >
                         {s.media_type === 'video' ? (
                             <video

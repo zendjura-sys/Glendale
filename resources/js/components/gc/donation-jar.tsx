@@ -33,9 +33,9 @@ export function DonationJarCard({
             : null;
 
     return (
-        <section className="glass rounded-2xl p-5">
+        <section className="gc-solid rounded-2xl p-5">
             <h2 className="flex items-center gap-2 font-display text-lg font-bold text-white">
-                <HandHeart className="size-5 text-rose-300" />
+                <HandHeart className="size-5 text-red-400" />
                 {title}
             </h2>
             {jar.title && (
@@ -105,10 +105,10 @@ export function DonationJarForm({
                 event.preventDefault();
                 form.put(action, { preserveScroll: true });
             }}
-            className="glass space-y-3 rounded-2xl p-5"
+            className="gc-solid space-y-3 rounded-2xl p-5"
         >
             <h2 className="flex items-center gap-2 font-display text-lg font-bold text-white">
-                <HandHeart className="size-5 text-rose-300" />
+                <HandHeart className="size-5 text-red-400" />
                 {tr('Банка Monobank')}
             </h2>
             <p className="text-sm text-white/50">{hint}</p>

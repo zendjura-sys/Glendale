@@ -128,7 +128,7 @@ export function StatusDialog({
                     )}
                 </DialogDescription>
 
-                <div className="flex items-center gap-2 rounded-xl bg-white/[0.05] px-3 py-2">
+                <div className="gc-solid-2 flex items-center gap-2 rounded-xl px-3 py-2">
                     <span className="text-2xl leading-none" aria-hidden>
                         {emoji ?? '🙂'}
                     </span>
@@ -158,8 +158,8 @@ export function StatusDialog({
                                 className={cn(
                                     'flex items-center gap-2 rounded-xl px-2.5 py-2 text-left text-sm transition',
                                     active
-                                        ? 'bg-primary/20 text-white ring-1 ring-primary/60'
-                                        : 'bg-white/[0.04] text-white/80 hover:bg-white/[0.08]',
+                                        ? 'bg-primary/20 text-white ring-primary/60'
+                                        : 'gc-solid-2 text-white/80 hover:bg-[var(--gc-l3)]',
                                 )}
                             >
                                 <span className="text-lg leading-none">
@@ -182,8 +182,8 @@ export function StatusDialog({
                             className={cn(
                                 'flex size-9 items-center justify-center rounded-lg text-lg transition',
                                 emoji === e
-                                    ? 'bg-primary/20 ring-1 ring-primary/60'
-                                    : 'hover:bg-white/[0.08]',
+                                    ? 'bg-primary/20 ring-primary/60'
+                                    : 'hover:bg-[var(--gc-l3)]',
                             )}
                         >
                             {e}
@@ -206,7 +206,7 @@ export function StatusDialog({
                                     'h-8 rounded-lg px-3 text-xs font-semibold transition',
                                     duration === d.key
                                         ? 'bg-white text-gc-ink'
-                                        : 'bg-white/[0.06] text-white/75 hover:bg-white/10',
+                                        : 'gc-solid-2 text-white/75 hover:bg-white/10',
                                 )}
                             >
                                 {d.label()}
@@ -221,7 +221,7 @@ export function StatusDialog({
                             type="button"
                             disabled={busy}
                             onClick={() => send('DELETE')}
-                            className="inline-flex h-10 items-center gap-1.5 rounded-xl px-3 text-sm text-white/60 transition hover:bg-white/[0.06] hover:text-rose-300"
+                            className="inline-flex h-10 items-center gap-1.5 rounded-xl px-3 text-sm text-white/60 transition hover:bg-[var(--gc-l3)] hover:text-red-400"
                         >
                             <Trash2 className="size-4" /> {tr('Прибрати')}
                         </button>

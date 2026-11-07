@@ -382,7 +382,7 @@ export default function Profile({
                         label={tr('Хто може писати мені')}
                         hint={tr('Особисті повідомлення від інших учасників')}
                     >
-                        <div className="flex rounded-lg bg-white/[0.06] p-0.5 text-sm">
+                        <div className="gc-solid-2 flex rounded-lg p-0.5 text-sm">
                             {[
                                 { value: 'everyone', label: tr('Усі') },
                                 {

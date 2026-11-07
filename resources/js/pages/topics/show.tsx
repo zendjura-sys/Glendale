@@ -26,8 +26,8 @@ export default function TopicShow({
         <>
             <Head title={`#${tag}`} />
             <div className="mx-auto w-full max-w-2xl space-y-4">
-                <div className="glass flex items-center gap-3 rounded-2xl p-4">
-                    <span className="flex size-12 items-center justify-center rounded-2xl bg-gc-indigo/20 text-gc-lilac-300">
+                <div className="gc-solid flex items-center gap-3 rounded-2xl p-4">
+                    <span className="flex size-12 items-center justify-center rounded-2xl bg-gc-indigo/20 text-sky-400">
                         <Hash className="size-6" />
                     </span>
                     <div className="min-w-0 flex-1">

@@ -116,7 +116,7 @@ export function GameSoundtracks({
                                 ),
                             )
                     }
-                    className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-white/[0.06] px-3 text-sm text-white/80 transition hover:bg-white/10"
+                    className="gc-solid-2 inline-flex h-9 items-center gap-1.5 rounded-xl px-3 text-sm text-white/80 transition hover:bg-white/10"
                 >
                     <Plus className="size-4" />
                     {tr('Додати свій плейлист')}
@@ -128,13 +128,13 @@ export function GameSoundtracks({
                     )}{' '}
                     <Link
                         href="/music/library"
-                        className="text-gc-lilac-200 hover:text-white"
+                        className="text-sky-400 hover:text-white"
                     >
                         {tr('До бібліотеки')}
                     </Link>
                 </p>
             ) : (
-                <div className="grid gap-1 rounded-2xl bg-white/[0.03] p-2">
+                <div className="gc-solid-2 grid gap-1 rounded-2xl p-2">
                     {mine.map((playlist) => (
                         <button
                             key={playlist.id}
@@ -147,7 +147,7 @@ export function GameSoundtracks({
                                     }),
                                 )
                             }
-                            className="flex items-center gap-2 rounded-xl px-2.5 py-2 text-left text-sm text-white/80 transition hover:bg-white/[0.06]"
+                            className="flex items-center gap-2 rounded-xl px-2.5 py-2 text-left text-sm text-white/80 transition hover:bg-[var(--gc-l3)]"
                         >
                             <ListMusic className="size-4 shrink-0 text-white/50" />
                             <span className="min-w-0 flex-1 break-words">

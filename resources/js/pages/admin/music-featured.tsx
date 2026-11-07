@@ -64,7 +64,7 @@ export default function AdminMusicFeatured({
 
             <form
                 onSubmit={search}
-                className="glass relative mb-4 rounded-2xl p-2.5"
+                className="gc-solid relative mb-4 rounded-2xl p-2.5"
             >
                 <Search className="pointer-events-none absolute top-1/2 left-6 size-4 -translate-y-1/2 text-white/30" />
                 <Input
@@ -78,8 +78,8 @@ export default function AdminMusicFeatured({
             </form>
 
             {filters.q !== '' && (
-                <section className="glass mb-6 overflow-hidden rounded-2xl">
-                    <h2 className="border-b border-white/[0.06] px-4 py-3 text-sm font-medium text-white/60">
+                <section className="gc-solid mb-6 overflow-hidden rounded-2xl">
+                    <h2 className="px-4 py-3 text-sm font-medium text-white/60">
                         {tr('Знайдено: {count}', { count: results.length })}
                     </h2>
                     {results.map((playlist) => (
@@ -103,9 +103,9 @@ export default function AdminMusicFeatured({
                 {groups.map((group) => (
                     <section
                         key={group.category ?? ''}
-                        className="glass overflow-hidden rounded-2xl"
+                        className="gc-solid overflow-hidden rounded-2xl"
                     >
-                        <header className="flex items-center gap-2 border-b border-white/[0.06] px-4 py-3">
+                        <header className="flex items-center gap-2 px-4 py-3">
                             <h2 className="font-display text-base font-bold text-white">
                                 {group.category
                                     ? moodLabel(group.category)
@@ -123,7 +123,7 @@ export default function AdminMusicFeatured({
                     </section>
                 ))}
                 {groups.length === 0 && (
-                    <div className="glass rounded-2xl px-6 py-14 text-center text-sm text-white/40">
+                    <div className="gc-solid rounded-2xl px-6 py-14 text-center text-sm text-white/40">
                         <ListMusic className="mx-auto mb-2 size-6 text-white/25" />
                         {tr(
                             'Добірок ще немає. Знайдіть публічний плейлист і додайте його.',
@@ -145,7 +145,7 @@ function Row({
     const [category, setCategory] = useState(playlist.category ?? '');
 
     return (
-        <div className="flex flex-wrap items-center gap-3 border-b border-white/[0.04] px-4 py-3 last:border-0">
+        <div className="flex flex-wrap items-center gap-3 px-4 py-3 last:border-0">
             <PlaylistCover
                 playlist={playlist}
                 className="size-11 shrink-0 rounded-xl"
@@ -185,7 +185,7 @@ function Row({
                 <button
                     type="button"
                     onClick={() => feature(playlist, false, null)}
-                    className="flex h-10 items-center gap-1.5 rounded-xl px-3 text-sm font-medium text-white/60 transition hover:bg-rose-400/10 hover:text-rose-200"
+                    className="flex h-10 items-center gap-1.5 rounded-xl px-3 text-sm font-medium text-white/60 transition hover:bg-red-400/10 hover:text-red-400"
                 >
                     <X className="size-4" /> {tr('Прибрати')}
                 </button>
@@ -194,7 +194,7 @@ function Row({
                     type="button"
                     onClick={() => feature(playlist, true, category || null)}
                     disabled={!playlist.is_public}
-                    className="flex h-10 items-center gap-1.5 rounded-xl bg-gradient-brand px-3 text-sm font-semibold text-white disabled:opacity-40"
+                    className="flex h-10 items-center gap-1.5 rounded-xl bg-sky-500 px-3 text-sm font-semibold text-white disabled:opacity-40"
                 >
                     <Plus className="size-4" /> {tr('У добірки')}
                 </button>

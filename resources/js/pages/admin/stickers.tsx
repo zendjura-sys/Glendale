@@ -80,7 +80,7 @@ export default function AdminStickers({ packs, stats, limits }: Props) {
 
             <form
                 onSubmit={create}
-                className="glass mb-5 flex flex-wrap items-start gap-2 rounded-2xl p-3"
+                className="gc-solid mb-5 flex flex-wrap items-start gap-2 rounded-2xl p-3"
             >
                 <div className="min-w-[200px] flex-1">
                     <Input
@@ -100,7 +100,7 @@ export default function AdminStickers({ packs, stats, limits }: Props) {
                 <button
                     type="submit"
                     disabled={form.processing || !form.data.name.trim()}
-                    className="btn-glow flex h-10 items-center gap-2 rounded-xl bg-gradient-brand px-4 text-sm font-semibold text-white disabled:opacity-50"
+                    className="btn-glow flex h-10 items-center gap-2 rounded-xl bg-sky-500 px-4 text-sm font-semibold text-white disabled:opacity-50"
                 >
                     <Plus className="size-4" /> {tr('Створити набір')}
                 </button>
@@ -117,7 +117,7 @@ export default function AdminStickers({ packs, stats, limits }: Props) {
                     />
                 ))}
                 {packs.length === 0 && (
-                    <div className="glass rounded-2xl px-6 py-14 text-center text-sm text-white/40">
+                    <div className="gc-solid rounded-2xl px-6 py-14 text-center text-sm text-white/40">
                         {tr(
                             'Наборів ще немає. Створіть перший і завантажте PNG, WebP або GIF до 1 МБ.',
                         )}
@@ -178,12 +178,12 @@ function PackCard({
     return (
         <section
             className={cn(
-                'glass rounded-2xl p-4 sm:p-5',
+                'gc-solid rounded-2xl p-4 sm:p-5',
                 !pack.is_active && 'opacity-70',
             )}
         >
             <header className="mb-4 flex flex-wrap items-center gap-3">
-                <span className="flex size-12 items-center justify-center rounded-2xl bg-white/[0.05] p-1.5">
+                <span className="gc-solid-2 flex size-12 items-center justify-center rounded-2xl p-1.5">
                     {pack.stickers[0] ? (
                         <img
                             loading="lazy"
@@ -250,7 +250,7 @@ function PackCard({
                     </span>
                     <button
                         type="button"
-                        className={cn(iconButton, 'hover:text-rose-300')}
+                        className={cn(iconButton, 'hover:text-red-400')}
                         onClick={() => {
                             if (
                                 confirm(
@@ -275,7 +275,7 @@ function PackCard({
                 {pack.stickers.map((sticker) => (
                     <div
                         key={sticker.id}
-                        className="group relative aspect-square rounded-2xl bg-white/[0.03] p-1.5 ring-1 ring-white/[0.05]"
+                        className="group gc-solid-2 relative aspect-square rounded-2xl p-1.5"
                     >
                         <img
                             src={sticker.url}
@@ -296,7 +296,7 @@ function PackCard({
                                     { preserveScroll: true },
                                 )
                             }
-                            className="absolute top-1 right-1 flex size-6 items-center justify-center rounded-full bg-black/70 text-rose-200 opacity-0 transition group-hover:opacity-100 [@media(hover:none)]:opacity-100"
+                            className="absolute top-1 right-1 flex size-6 items-center justify-center rounded-full bg-black/70 text-red-400 opacity-0 transition group-hover:opacity-100 [@media(hover:none)]:opacity-100"
                             title={tr('Видалити')}
                         >
                             <Trash2 className="size-3" />
@@ -307,7 +307,7 @@ function PackCard({
                     type="button"
                     onClick={() => fileRef.current?.click()}
                     disabled={uploading || pack.stickers.length >= limit}
-                    className="flex aspect-square flex-col items-center justify-center gap-1 rounded-2xl border border-dashed border-white/15 text-xs text-white/45 transition hover:border-gc-lilac-400/60 hover:text-white disabled:opacity-40"
+                    className="flex aspect-square flex-col items-center justify-center gap-1 rounded-2xl text-xs text-white/45 transition hover:border-gc-lilac-400/60 hover:text-white disabled:opacity-40"
                 >
                     <ImagePlus className="size-5" />
                     {uploading ? tr('Завантаження…') : tr('Додати')}
@@ -326,7 +326,7 @@ function PackCard({
                     {tr('PNG, WebP або GIF · до 1 МБ · до 1024×1024 px')}
                 </span>
             </div>
-            {error && <p className="mt-2 text-xs text-rose-300">{error}</p>}
+            {error && <p className="mt-2 text-xs text-red-400">{error}</p>}
 
             <input
                 ref={fileRef}

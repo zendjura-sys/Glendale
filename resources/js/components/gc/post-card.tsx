@@ -250,7 +250,7 @@ export function PostCard({
                         {post.tag && (
                             <Link
                                 href={post.tag.href}
-                                className="ml-1 inline-flex items-center gap-1 rounded-control bg-white/[0.06] px-2 py-0.5 text-xs font-medium text-white/70 hover:text-white"
+                                className="gc-solid-2 ml-1 inline-flex items-center gap-1 rounded-control px-2 py-0.5 text-xs font-medium text-white/70 hover:text-white"
                             >
                                 <Hash className="size-3" />
                                 {post.tag.name}
@@ -270,7 +270,7 @@ export function PostCard({
                         {post.series && (
                             <Link
                                 href={`/series/${post.series.id}`}
-                                className="ml-1 inline-flex max-w-full items-center gap-1 rounded-chip bg-sky-500/15 px-2 py-0.5 text-xs font-medium text-sky-200 hover:text-white"
+                                className="ml-1 inline-flex max-w-full items-center gap-1 rounded-chip bg-sky-500/15 px-2 py-0.5 text-xs font-medium text-sky-400 hover:text-white"
                             >
                                 <ListOrdered className="size-3 shrink-0" />
                                 <span className="truncate">
@@ -291,12 +291,12 @@ export function PostCard({
                 </div>
 
                 <DropdownMenu>
-                    <DropdownMenuTrigger className="rounded-full p-1.5 text-white/40 transition outline-none hover:bg-white/[0.06] hover:text-white">
+                    <DropdownMenuTrigger className="rounded-full p-1.5 text-white/40 transition outline-none hover:bg-[var(--gc-l3)] hover:text-white">
                         <MoreHorizontal className="size-5" />
                     </DropdownMenuTrigger>
                     <DropdownMenuContent
                         align="end"
-                        className="glass-strong w-60 rounded-2xl border-white/10 p-1.5 text-white"
+                        className="glass-strong w-60 rounded-2xl p-1.5 text-white"
                     >
                         <DropdownMenuItem
                             className="rounded-lg focus:bg-white/[0.06]"
@@ -418,7 +418,7 @@ export function PostCard({
                             <>
                                 <DropdownMenuSeparator className="bg-white/5" />
                                 <DropdownMenuItem
-                                    className="rounded-lg text-rose-300 focus:bg-rose-500/10 focus:text-rose-200"
+                                    className="rounded-lg text-red-400 focus:bg-red-500/10 focus:text-red-400"
                                     onSelect={() =>
                                         router.delete(`/posts/${post.id}`, {
                                             preserveScroll: true,
@@ -426,7 +426,7 @@ export function PostCard({
                                         })
                                     }
                                 >
-                                    <Trash2 className="text-rose-300" />{' '}
+                                    <Trash2 className="text-red-400" />{' '}
                                     {tr('Видалити запис')}
                                 </DropdownMenuItem>
                             </>
@@ -467,7 +467,7 @@ export function PostCard({
                         onChange={(event) => setQuoteBody(event.target.value)}
                         rows={3}
                         placeholder={tr('Ваш коментар до цитати…')}
-                        className="w-full resize-none rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white placeholder:text-white/35 focus:outline-none"
+                        className="gc-solid-2 w-full resize-none rounded-2xl px-3 py-2 text-sm text-white placeholder:text-white/35 focus:outline-none"
                     />
                     <div className="flex gap-2">
                         <button
@@ -493,10 +493,10 @@ export function PostCard({
             {post.locked && (
                 <Link
                     href={`/${post.author.username}`}
-                    className="mt-3 flex items-center gap-3.5 rounded-2xl bg-white/[0.05] p-4 transition hover:bg-white/[0.08]"
+                    className="gc-solid-2 mt-3 flex items-center gap-3.5 rounded-2xl p-4 transition hover:bg-[var(--gc-l3)]"
                 >
                     <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-gc-indigo/20">
-                        <Lock className="size-5 text-gc-lilac-300" />
+                        <Lock className="size-5 text-sky-400" />
                     </span>
                     <span className="min-w-0">
                         <span className="block text-sm font-semibold text-white">
@@ -511,7 +511,7 @@ export function PostCard({
                 </Link>
             )}
             {post.subscribers_only && !post.locked && (
-                <span className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-gc-indigo/15 px-2.5 py-0.5 text-xs text-gc-lilac-200">
+                <span className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-gc-indigo/15 px-2.5 py-0.5 text-xs text-sky-400">
                     <Lock className="size-3" />
                     {tr('Для підписників')}
                 </span>
@@ -586,7 +586,7 @@ export function PostCard({
                             <button
                                 type="button"
                                 onClick={() => setFullText(true)}
-                                className="ml-1 font-medium text-gc-lilac-300 hover:text-white"
+                                className="ml-1 font-medium text-sky-400 hover:text-white"
                             >
                                 {tr('Показати повністю')}
                             </button>
@@ -619,7 +619,7 @@ export function PostCard({
             {post.quoted && (
                 <Link
                     href={`/posts/${post.quoted.id}`}
-                    className="mt-3.5 block rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-2.5"
+                    className="gc-solid-2 mt-3.5 block rounded-2xl px-3 py-2.5"
                 >
                     <span className="text-xs text-white/40">
                         {tr('Цитата')}
@@ -638,7 +638,7 @@ export function PostCard({
             {post.shared && (
                 <Link
                     href={post.shared.post_href ?? post.shared.href}
-                    className="mt-3.5 block rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-2.5"
+                    className="gc-solid-2 mt-3.5 block rounded-2xl px-3 py-2.5"
                 >
                     <span className="flex items-center gap-1 text-xs text-white/40">
                         {post.shared.community ? (
@@ -687,7 +687,7 @@ export function PostCard({
             {post.card && post.card.kind !== 'gif' && (
                 <Link
                     href={post.card.href}
-                    className="mt-3.5 flex items-center gap-3 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] p-3"
+                    className="gc-solid-2 mt-3.5 flex items-center gap-3 overflow-hidden rounded-2xl p-3"
                 >
                     {post.card.image && (
                         <img
@@ -710,7 +710,7 @@ export function PostCard({
             )}
 
             {poll && (
-                <div className="mt-3.5 space-y-2 rounded-2xl border border-white/10 bg-white/[0.03] p-3">
+                <div className="gc-solid-2 mt-3.5 space-y-2 rounded-2xl p-3">
                     <p className="text-sm font-medium text-white">
                         {poll.question}
                     </p>
@@ -734,10 +734,10 @@ export function PostCard({
                                     setPoll(next);
                                 }}
                                 className={cn(
-                                    'relative w-full overflow-hidden rounded-xl border px-3 py-2 text-left text-sm',
+                                    'relative w-full overflow-hidden rounded-xl px-3 py-2 text-left text-sm',
                                     chosen
-                                        ? 'border-gc-lilac-400/50 text-white'
-                                        : 'border-white/10 text-white/80 hover:border-white/20',
+                                        ? 'text-white'
+                                        : 'text-white/80 hover:border-white/20',
                                 )}
                             >
                                 <span
@@ -787,7 +787,7 @@ export function PostCard({
                     href={post.link.url}
                     target="_blank"
                     rel="noreferrer"
-                    className="mt-3.5 flex overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04]"
+                    className="gc-solid-2 mt-3.5 flex overflow-hidden rounded-2xl"
                 >
                     {post.link.thumbnail && (
                         <img

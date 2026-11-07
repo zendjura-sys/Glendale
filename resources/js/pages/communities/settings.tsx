@@ -40,7 +40,7 @@ const field =
 
 function Error({ message }: { message?: string }) {
     return message ? (
-        <p className="mt-1 text-xs text-rose-300">{message}</p>
+        <p className="mt-1 text-xs text-red-400">{message}</p>
     ) : null;
 }
 
@@ -61,10 +61,10 @@ function Segmented<T extends string>({
                     type="button"
                     onClick={() => onChange(option.value)}
                     className={cn(
-                        'flex items-start gap-3 rounded-2xl border p-3.5 text-left transition',
+                        'flex items-start gap-3 rounded-2xl p-3.5 text-left transition',
                         value === option.value
-                            ? 'border-gc-lilac-500/60 bg-gc-indigo/15'
-                            : 'border-white/[0.07] bg-white/[0.02] hover:border-white/15',
+                            ? 'bg-gc-indigo/15'
+                            : 'gc-solid-2 hover:border-white/15',
                     )}
                 >
                     <option.icon
@@ -128,7 +128,7 @@ export default function CommunitySettings({
                 <div className="flex items-center gap-4">
                     <Link
                         href={`/c/${community.slug}`}
-                        className="flex size-10 items-center justify-center rounded-xl bg-white/[0.05] text-white/70 transition hover:bg-white/10 hover:text-white"
+                        className="gc-solid-2 flex size-10 items-center justify-center rounded-xl text-white/70 transition hover:bg-white/10 hover:text-white"
                         aria-label={tr('Назад')}
                     >
                         <ArrowLeft className="size-5" />
@@ -459,7 +459,7 @@ export default function CommunitySettings({
                                 disabled={
                                     remove.data.confirm !== community.slug
                                 }
-                                className="h-11 rounded-xl bg-rose-500/80 px-5 text-sm font-semibold text-white transition hover:bg-rose-500 disabled:opacity-40"
+                                className="h-11 rounded-xl bg-red-500/80 px-5 text-sm font-semibold text-white transition hover:bg-red-500 disabled:opacity-40"
                             >
                                 {tr('Видалити')}
                             </button>

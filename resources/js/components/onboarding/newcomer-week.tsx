@@ -28,7 +28,7 @@ export function NewcomerWeek({ data }: { data: NewcomerData }) {
         router.post('/newcomer/hide', {}, { preserveScroll: true });
 
     return (
-        <section className="glass mb-4 rounded-2xl p-4 sm:p-5">
+        <section className="gc-solid mb-4 rounded-2xl p-4 sm:p-5">
             <div className="flex items-start gap-3">
                 <div className="min-w-0 flex-1">
                     <h2 className="flex items-center gap-2 font-display text-base font-semibold text-white">
@@ -57,12 +57,12 @@ export function NewcomerWeek({ data }: { data: NewcomerData }) {
                     type="button"
                     onClick={hide}
                     aria-label={tr('Сховати')}
-                    className="flex size-8 shrink-0 items-center justify-center rounded-lg text-white/40 transition hover:bg-white/[0.06] hover:text-white"
+                    className="flex size-8 shrink-0 items-center justify-center rounded-lg text-white/40 transition hover:bg-[var(--gc-l3)] hover:text-white"
                 >
                     <X className="size-4" />
                 </button>
             </div>
-            <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
+            <div className="gc-solid-2 mt-3 h-1.5 overflow-hidden rounded-full">
                 <div
                     className="h-full rounded-full bg-primary transition-[width] duration-500"
                     style={{ width: `${(data.done / data.total) * 100}%` }}
@@ -78,7 +78,7 @@ export function NewcomerWeek({ data }: { data: NewcomerData }) {
                                     'flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-sm transition',
                                     step.done
                                         ? 'text-white/40'
-                                        : 'text-white/85 hover:bg-white/[0.05]',
+                                        : 'text-white/85 hover:bg-[var(--gc-l3)]',
                                 )}
                             >
                                 <span
@@ -86,7 +86,7 @@ export function NewcomerWeek({ data }: { data: NewcomerData }) {
                                         'flex size-5 shrink-0 items-center justify-center rounded-full',
                                         step.done
                                             ? 'bg-emerald-500/20 text-emerald-300'
-                                            : 'bg-white/[0.06]',
+                                            : 'gc-solid-2',
                                     )}
                                 >
                                     {step.done && (

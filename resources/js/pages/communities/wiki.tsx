@@ -61,14 +61,14 @@ export default function CommunityWiki({
                     <Link
                         href={page ? base : `/c/${community.slug}`}
                         aria-label={tr('Назад')}
-                        className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-white/[0.05] text-white/70 transition hover:bg-white/10 hover:text-white"
+                        className="gc-solid-2 flex size-10 shrink-0 items-center justify-center rounded-xl text-white/70 transition hover:bg-white/10 hover:text-white"
                     >
                         <ArrowLeft className="size-5" />
                     </Link>
                     <CommunityAvatar community={community} size="md" />
                     <div className="min-w-0 flex-1">
                         <h1 className="flex items-center gap-2 font-display text-xl font-bold text-white">
-                            <BookOpenText className="size-5 text-gc-lilac-300" />
+                            <BookOpenText className="size-5 text-sky-400" />
                             {tr('Вікі')}
                         </h1>
                         <p className="truncate text-sm text-white/50">
@@ -91,7 +91,7 @@ export default function CommunityWiki({
 
                 <div className="grid gap-4 md:grid-cols-[14rem_1fr]">
                     <nav
-                        className="glass h-fit rounded-2xl p-2"
+                        className="gc-solid h-fit rounded-2xl p-2"
                         aria-label={tr('Сторінки вікі')}
                     >
                         {pages.length === 0 && (
@@ -107,7 +107,7 @@ export default function CommunityWiki({
                                     'block truncate rounded-xl px-3 py-2 text-sm transition',
                                     page?.slug === p.slug
                                         ? 'bg-white/[0.08] text-white'
-                                        : 'text-white/65 hover:bg-white/[0.05] hover:text-white',
+                                        : 'text-white/65 hover:bg-[var(--gc-l3)] hover:text-white',
                                 )}
                             >
                                 {p.title}
@@ -124,7 +124,7 @@ export default function CommunityWiki({
                                         onSuccess: () => setEditing(false),
                                     });
                                 }}
-                                className="glass space-y-3 rounded-2xl p-4"
+                                className="gc-solid space-y-3 rounded-2xl p-4"
                             >
                                 <input
                                     value={form.data.title}
@@ -148,7 +148,7 @@ export default function CommunityWiki({
                                     className="input-glass w-full resize-y rounded-xl px-3.5 py-3 text-sm leading-relaxed text-white placeholder:text-white/30"
                                 />
                                 {Object.values(form.errors)[0] && (
-                                    <p className="text-xs text-rose-300">
+                                    <p className="text-xs text-red-400">
                                         {Object.values(form.errors)[0]}
                                     </p>
                                 )}
@@ -174,7 +174,7 @@ export default function CommunityWiki({
                                 </div>
                             </form>
                         ) : page ? (
-                            <article className="glass rounded-2xl p-5 sm:p-7">
+                            <article className="gc-solid rounded-2xl p-5 sm:p-7">
                                 <div className="flex flex-wrap items-start gap-3">
                                     <h2 className="min-w-0 flex-1 font-display text-2xl font-semibold text-white">
                                         {page.title}
@@ -192,7 +192,7 @@ export default function CommunityWiki({
                                                     setEditing(true);
                                                 }}
                                                 aria-label={tr('Редагувати')}
-                                                className="flex size-9 items-center justify-center rounded-xl bg-white/[0.06] text-white/70 hover:text-white"
+                                                className="gc-solid-2 flex size-9 items-center justify-center rounded-xl text-white/70 hover:text-white"
                                             >
                                                 <Pencil className="size-4" />
                                             </button>
@@ -204,7 +204,7 @@ export default function CommunityWiki({
                                                 aria-label={tr(
                                                     'Історія правок',
                                                 )}
-                                                className="flex size-9 items-center justify-center rounded-xl bg-white/[0.06] text-white/70 hover:text-white"
+                                                className="gc-solid-2 flex size-9 items-center justify-center rounded-xl text-white/70 hover:text-white"
                                             >
                                                 <History className="size-4" />
                                             </button>
@@ -221,7 +221,7 @@ export default function CommunityWiki({
                                                     )
                                                 }
                                                 aria-label={tr('Видалити')}
-                                                className="flex size-9 items-center justify-center rounded-xl bg-white/[0.06] text-white/70 hover:text-rose-300"
+                                                className="gc-solid-2 flex size-9 items-center justify-center rounded-xl text-white/70 hover:text-red-400"
                                             >
                                                 <Trash2 className="size-4" />
                                             </button>
@@ -233,7 +233,7 @@ export default function CommunityWiki({
                                     {timeAgo(page.updated_at)}
                                 </p>
                                 {history && (
-                                    <ul className="mt-3 space-y-1 rounded-xl bg-white/[0.04] p-3 text-sm">
+                                    <ul className="gc-solid-2 mt-3 space-y-1 rounded-xl p-3 text-sm">
                                         {page.revisions.length === 0 && (
                                             <li className="text-white/50">
                                                 {tr(
@@ -263,7 +263,7 @@ export default function CommunityWiki({
                                                             `${base}/${page.slug}/revert/${r.id}`,
                                                         )
                                                     }
-                                                    className="text-xs text-gc-lilac-300 hover:text-white"
+                                                    className="text-xs text-sky-400 hover:text-white"
                                                 >
                                                     {tr('Повернути')}
                                                 </button>
@@ -298,7 +298,7 @@ export default function CommunityWiki({
                                 </div>
                             </article>
                         ) : (
-                            <div className="glass rounded-2xl p-8 text-center">
+                            <div className="gc-solid rounded-2xl p-8 text-center">
                                 <BookOpenText className="mx-auto size-8 text-white/30" />
                                 <p className="mt-3 text-sm text-white/60">
                                     {pages.length

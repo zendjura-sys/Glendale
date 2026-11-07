@@ -82,7 +82,7 @@ export default function TierListShow({
                                     router.delete(`/tierlists/${list.id}`)
                                 }
                                 aria-label={tr('Видалити')}
-                                className="flex size-10 items-center justify-center rounded-xl bg-white/[0.07] text-white/60 transition hover:bg-rose-500/15 hover:text-rose-200"
+                                className="flex size-10 items-center justify-center rounded-xl bg-white/[0.07] text-white/60 transition hover:bg-red-500/15 hover:text-red-400"
                             >
                                 <Trash2 className="size-4" />
                             </button>
@@ -97,12 +97,9 @@ export default function TierListShow({
 
 export function TierBoard({ tiers }: { tiers: Tier[] }) {
     return (
-        <div className="glass mt-5 overflow-hidden rounded-2xl">
+        <div className="gc-solid mt-5 overflow-hidden rounded-2xl">
             {tiers.map((tier, i) => (
-                <div
-                    key={i}
-                    className="flex min-h-16 border-b border-white/[0.06] last:border-0"
-                >
+                <div key={i} className="flex min-h-16 last:border-0">
                     <div
                         className={cn(
                             'flex w-16 shrink-0 items-center justify-center font-display text-xl font-bold text-black/80 sm:w-20',

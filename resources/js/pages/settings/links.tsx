@@ -58,7 +58,7 @@ export default function LinksSettings({
                         'Одна адреса для біо в Instagram, TikTok чи Twitch — з усіма вашими посиланнями.',
                     )}
                 >
-                    <div className="mb-4 flex items-center gap-2 rounded-xl bg-white/[0.04] p-3 text-sm">
+                    <div className="gc-solid-2 mb-4 flex items-center gap-2 rounded-xl p-3 text-sm">
                         <span className="min-w-0 flex-1 truncate text-white/80">
                             {url}
                         </span>
@@ -69,7 +69,7 @@ export default function LinksSettings({
                                 toast.success(tr('Скопійовано'));
                             }}
                             aria-label={tr('Скопіювати')}
-                            className="flex size-8 items-center justify-center rounded-lg text-white/60 hover:bg-white/[0.08] hover:text-white"
+                            className="flex size-8 items-center justify-center rounded-lg text-white/60 hover:bg-[var(--gc-l3)] hover:text-white"
                         >
                             <Copy className="size-4" />
                         </button>
@@ -78,7 +78,7 @@ export default function LinksSettings({
                             target="_blank"
                             rel="noopener"
                             aria-label={tr('Відкрити')}
-                            className="flex size-8 items-center justify-center rounded-lg text-white/60 hover:bg-white/[0.08] hover:text-white"
+                            className="flex size-8 items-center justify-center rounded-lg text-white/60 hover:bg-[var(--gc-l3)] hover:text-white"
                         >
                             <ExternalLink className="size-4" />
                         </a>
@@ -87,7 +87,7 @@ export default function LinksSettings({
                         {form.data.links.map((link, i) => (
                             <div
                                 key={i}
-                                className="grid gap-2 rounded-xl bg-white/[0.03] p-2 sm:grid-cols-[1fr_1.4fr_auto]"
+                                className="gc-solid-2 grid gap-2 rounded-xl p-2 sm:grid-cols-[1fr_1.4fr_auto]"
                             >
                                 <input
                                     value={link.title}
@@ -147,7 +147,7 @@ export default function LinksSettings({
                                             )
                                         }
                                         aria-label={tr('Видалити')}
-                                        className="flex size-9 items-center justify-center rounded-lg text-white/50 hover:text-rose-300"
+                                        className="flex size-9 items-center justify-center rounded-lg text-white/50 hover:text-red-400"
                                     >
                                         <Trash2 className="size-4" />
                                     </button>
@@ -156,7 +156,7 @@ export default function LinksSettings({
                         ))}
                     </div>
                     {Object.keys(form.errors).length > 0 && (
-                        <p className="mt-2 text-xs text-rose-300">
+                        <p className="mt-2 text-xs text-red-400">
                             {tr(
                                 'Перевірте посилання: назва до 60 символів, адреса — з https://',
                             )}
@@ -172,7 +172,7 @@ export default function LinksSettings({
                                         { title: '', url: '' },
                                     ])
                                 }
-                                className="inline-flex items-center gap-1.5 text-sm text-gc-lilac-300 hover:text-white"
+                                className="inline-flex items-center gap-1.5 text-sm text-sky-400 hover:text-white"
                             >
                                 <Plus className="size-4" />
                                 {tr('Ще посилання')}

@@ -96,7 +96,7 @@ export function SupportAuthorButton({
                                     return (
                                         <div
                                             key={tier.id}
-                                            className="rounded-2xl bg-white/[0.06] p-4"
+                                            className="gc-solid-2 rounded-2xl p-4"
                                         >
                                             <div className="flex items-center justify-between gap-3">
                                                 <div className="min-w-0">
@@ -143,7 +143,7 @@ export function SupportAuthorButton({
                                     );
                                 })}
                             </div>
-                            <div className="flex items-center justify-between gap-3 rounded-xl bg-white/[0.04] px-3.5 py-2.5 text-sm">
+                            <div className="gc-solid-2 flex items-center justify-between gap-3 rounded-xl px-3.5 py-2.5 text-sm">
                                 <span className="inline-flex items-center gap-2 text-white/60">
                                     <Wallet className="size-4" />
                                     {tr('На балансі: {sum}', {
@@ -152,7 +152,7 @@ export function SupportAuthorButton({
                                 </span>
                                 <Link
                                     href="/plus/billing"
-                                    className="font-medium text-gc-lilac-300 hover:underline"
+                                    className="font-medium text-sky-400 hover:underline"
                                 >
                                     {tr('Поповнити')}
                                 </Link>

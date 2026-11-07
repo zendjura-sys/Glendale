@@ -108,7 +108,7 @@ const PERKS = (): { icon: LucideIcon; title: string; text: string }[] => [
 const btn =
     'inline-flex h-10 items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold transition disabled:opacity-40';
 const primary = cn(btn, 'bg-primary text-white hover:opacity-90');
-const secondary = cn(btn, 'bg-white/[0.06] text-white/85 hover:bg-white/10');
+const secondary = cn(btn, 'gc-solid-2 text-white/85 hover:bg-white/10');
 
 export default function PlusPage({
     state,
@@ -130,7 +130,7 @@ export default function PlusPage({
             <Head title="GameCon+" />
             <div className="mx-auto max-w-4xl space-y-5">
                 <PlusTabs current="plus" />
-                <section className="glass rounded-2xl p-5 sm:p-7">
+                <section className="gc-solid rounded-2xl p-5 sm:p-7">
                     <h1 className="flex items-center gap-2.5 font-display text-2xl font-bold text-white sm:text-3xl">
                         <PlusBadge className="size-7 rounded-lg [&_svg]:size-5" />
                         GameCon+
@@ -141,7 +141,7 @@ export default function PlusPage({
                         )}
                     </p>
                     {state.active && (
-                        <div className="mt-3 flex flex-wrap items-center gap-3 rounded-2xl bg-white/[0.04] px-4 py-3">
+                        <div className="gc-solid-2 mt-3 flex flex-wrap items-center gap-3 rounded-2xl px-4 py-3">
                             <Check className="size-5 text-emerald-300" />
                             <span className="text-sm text-white">
                                 {state.until
@@ -174,12 +174,12 @@ export default function PlusPage({
                             <div
                                 key={product}
                                 className={cn(
-                                    'flex flex-col gap-3 rounded-2xl border p-4',
+                                    'flex flex-col gap-3 rounded-2xl p-4',
                                     plan.badge ||
                                         (plans.length > 1 &&
                                             i === plans.length - 1)
                                         ? 'border-indigo-400/40 bg-indigo-500/[0.07]'
-                                        : 'border-white/10 bg-white/[0.03]',
+                                        : 'gc-solid-2',
                                 )}
                             >
                                 <div className="flex items-baseline justify-between gap-2">
@@ -231,7 +231,7 @@ export default function PlusPage({
 
                 <section className="grid gap-3 sm:grid-cols-2">
                     {PERKS().map(({ icon: Icon, title, text }) => (
-                        <div key={title} className="glass rounded-2xl p-5">
+                        <div key={title} className="gc-solid rounded-2xl p-5">
                             <span className="flex items-center gap-2 font-semibold text-white">
                                 <Icon className="size-4 text-indigo-300" />
                                 {title}
@@ -264,7 +264,7 @@ export default function PlusPage({
                 />
 
                 {payments.length > 0 && (
-                    <section className="glass rounded-2xl p-5">
+                    <section className="gc-solid rounded-2xl p-5">
                         <h2 className="font-display text-lg font-bold text-white">
                             {tr('Історія оплат')}
                         </h2>
@@ -368,12 +368,12 @@ function StyleEditor({
     };
 
     return (
-        <form onSubmit={submit} className="glass space-y-4 rounded-2xl p-5">
+        <form onSubmit={submit} className="gc-solid space-y-4 rounded-2xl p-5">
             <h2 className="flex items-center gap-2 font-display text-lg font-bold text-white">
                 <Palette className="size-5 text-indigo-300" />
                 {tr('Оформлення')}
             </h2>
-            <div className="flex items-center gap-3 rounded-2xl bg-white/[0.04] p-3">
+            <div className="gc-solid-2 flex items-center gap-3 rounded-2xl p-3">
                 <UserAvatar user={{ ...preview, plus: mark }} size="lg" />
                 <span className="flex items-center gap-1.5 font-semibold text-white">
                     <span
@@ -449,7 +449,7 @@ function StyleEditor({
                 names={HEADER_FX()}
                 onChange={(value) => form.setData('header', value)}
                 preview={(key) => (
-                    <span className="relative block h-9 w-full overflow-hidden rounded-lg bg-white/[0.05]">
+                    <span className="gc-solid-2 relative block h-9 w-full overflow-hidden rounded-lg">
                         {key === 'aurora' && (
                             <span
                                 className="profile-aurora absolute inset-x-0 bottom-0 h-2/3 [mask-image:linear-gradient(to_top,black,transparent)] opacity-60"
@@ -521,10 +521,10 @@ function EffectPicker({
                         aria-pressed={value === key}
                         onClick={() => onChange(key)}
                         className={cn(
-                            'flex flex-col items-stretch gap-2 rounded-2xl border p-2.5 text-xs font-medium transition',
+                            'flex flex-col items-stretch gap-2 rounded-2xl p-2.5 text-xs font-medium transition',
                             value === key
                                 ? 'border-indigo-400/60 bg-indigo-500/10 text-white'
-                                : 'border-white/10 text-white/65 hover:border-white/25',
+                                : 'text-white/65 hover:border-white/25',
                         )}
                     >
                         {preview?.(key)}
@@ -583,7 +583,7 @@ function GiftForm({
     const ready = username.trim().length > 1 && busy === null;
 
     return (
-        <section className="glass flex flex-col gap-3 rounded-2xl p-5">
+        <section className="gc-solid flex flex-col gap-3 rounded-2xl p-5">
             <h2 className="flex items-center gap-2 font-display text-lg font-bold text-white">
                 <Gift className="size-5 text-indigo-300" />
                 {tr('Подарувати другу')}
@@ -622,7 +622,7 @@ function RedeemForm() {
 
     return (
         <form
-            className="glass flex flex-col gap-3 rounded-2xl p-5"
+            className="gc-solid flex flex-col gap-3 rounded-2xl p-5"
             onSubmit={(event) => {
                 event.preventDefault();
                 form.post('/plus/redeem', {
@@ -645,7 +645,7 @@ function RedeemForm() {
                 className="input-glass h-10 rounded-xl px-3 text-sm uppercase"
             />
             {form.errors.code && (
-                <p className="text-xs text-rose-300">{form.errors.code}</p>
+                <p className="text-xs text-red-400">{form.errors.code}</p>
             )}
             <button
                 type="submit"
@@ -671,7 +671,7 @@ function FamilyPlans({
 }) {
     const plans = useKind('family');
     return (
-        <section className="glass rounded-2xl p-5">
+        <section className="gc-solid rounded-2xl p-5">
             <h2 className="flex items-center gap-2 font-display text-lg font-bold text-white">
                 <Users className="size-5 text-indigo-300" />
                 {tr('GameCon+ для сім’ї')}
@@ -729,7 +729,7 @@ function FamilyRow({
     const [accent, setAccent] = useState(family.style.accent ?? '');
 
     return (
-        <li className="space-y-3 rounded-2xl bg-white/[0.04] p-4">
+        <li className="gc-solid-2 space-y-3 rounded-2xl p-4">
             <div className="flex flex-wrap items-center gap-3">
                 <FamilyLogo family={family} size="md" />
                 <span className="min-w-0 flex-1">

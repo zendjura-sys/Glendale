@@ -61,7 +61,7 @@ export default function PodcastShow({
                     <ArrowLeft className="size-4" />
                     {tr('Подкасти')}
                 </Link>
-                <div className="glass flex flex-col gap-4 rounded-2xl p-4 sm:flex-row">
+                <div className="gc-solid flex flex-col gap-4 rounded-2xl p-4 sm:flex-row">
                     <PodcastCover
                         podcast={podcast}
                         className="w-32 shrink-0 sm:w-40"
@@ -76,7 +76,7 @@ export default function PodcastShow({
                         {podcast.author && (
                             <Link
                                 href={`/${podcast.author.username}`}
-                                className="text-sm text-gc-lilac-300 hover:text-white"
+                                className="text-sm text-sky-400 hover:text-white"
                             >
                                 {podcast.author.name}
                             </Link>
@@ -136,7 +136,7 @@ export default function PodcastShow({
                                 onSuccess: () => form.reset(),
                             });
                         }}
-                        className="glass space-y-3 rounded-2xl p-4"
+                        className="gc-solid space-y-3 rounded-2xl p-4"
                     >
                         <h2 className="flex items-center gap-2 text-sm font-semibold text-white">
                             <Upload className="size-4" />
@@ -161,7 +161,7 @@ export default function PodcastShow({
                             maxLength={5000}
                             className={cn(field, 'h-auto resize-y py-2.5')}
                         />
-                        <label className="flex h-11 cursor-pointer items-center gap-2 rounded-xl bg-white/[0.06] px-4 text-sm text-white/70 transition hover:bg-white/[0.1] hover:text-white">
+                        <label className="gc-solid-2 flex h-11 cursor-pointer items-center gap-2 rounded-xl px-4 text-sm text-white/70 transition hover:bg-white/[0.1] hover:text-white">
                             <FileAudio className="size-4 shrink-0" />
                             <span className="truncate">
                                 {form.data.audio
@@ -183,7 +183,7 @@ export default function PodcastShow({
                         {form.progress && (
                             <div className="h-1 overflow-hidden rounded-full bg-white/5">
                                 <div
-                                    className="h-full bg-gradient-brand"
+                                    className="h-full bg-sky-500"
                                     style={{
                                         width: `${form.progress.percentage}%`,
                                     }}
@@ -191,7 +191,7 @@ export default function PodcastShow({
                             </div>
                         )}
                         {Object.values(form.errors)[0] && (
-                            <p className="text-xs text-rose-300">
+                            <p className="text-xs text-red-400">
                                 {Object.values(form.errors)[0]}
                             </p>
                         )}
@@ -213,12 +213,12 @@ export default function PodcastShow({
 
                 <ul className="space-y-3">
                     {episodes.length === 0 && (
-                        <li className="glass rounded-2xl p-6 text-center text-sm text-white/50">
+                        <li className="gc-solid rounded-2xl p-6 text-center text-sm text-white/50">
                             {tr('Випусків ще немає.')}
                         </li>
                     )}
                     {episodes.map((e) => (
-                        <li key={e.id} className="glass rounded-2xl p-4">
+                        <li key={e.id} className="gc-solid rounded-2xl p-4">
                             <div className="flex items-start gap-3">
                                 <div className="min-w-0 flex-1">
                                     <p className="font-semibold text-white">
@@ -247,7 +247,7 @@ export default function PodcastShow({
                                             )
                                         }
                                         aria-label={tr('Видалити')}
-                                        className="text-white/35 hover:text-rose-300"
+                                        className="text-white/35 hover:text-red-400"
                                     >
                                         <Trash2 className="size-4" />
                                     </button>

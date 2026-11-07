@@ -123,7 +123,7 @@ export default function AdminGeoRestrictions({
                 key={item.key}
                 className={cn(
                     'flex items-start gap-3 rounded-2xl px-3 py-2.5',
-                    on ? 'bg-rose-500/10' : 'hover:bg-white/[0.04]',
+                    on ? 'bg-red-500/10' : 'hover:bg-[var(--gc-l3)]',
                 )}
             >
                 <div className="min-w-0 flex-1">
@@ -137,7 +137,7 @@ export default function AdminGeoRestrictions({
                             </span>
                         )}
                         {!item.enabled && (
-                            <span className="rounded-md bg-white/[0.06] px-1.5 py-0.5 text-[11px] text-white/45">
+                            <span className="gc-solid-2 rounded-md px-1.5 py-0.5 text-[11px] text-white/45">
                                 {tr('Вимкнено для всіх')}
                             </span>
                         )}
@@ -150,7 +150,7 @@ export default function AdminGeoRestrictions({
                             {item.tags.map((tag) => (
                                 <span
                                     key={tag}
-                                    className="rounded bg-white/[0.04] px-1.5 py-0.5 text-[11px] text-white/40"
+                                    className="gc-solid-2 rounded px-1.5 py-0.5 text-[11px] text-white/40"
                                 >
                                     {tr(tags[tag] ?? tag)}
                                 </span>
@@ -185,7 +185,7 @@ export default function AdminGeoRestrictions({
 
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-[18rem_1fr]">
                 <aside className="space-y-4">
-                    <section className="glass rounded-3xl p-4">
+                    <section className="gc-solid rounded-3xl p-4">
                         <h2 className="mb-2 font-display text-sm font-semibold text-white/90">
                             {tr('Країни з обмеженнями')}
                         </h2>
@@ -206,7 +206,7 @@ export default function AdminGeoRestrictions({
                                             'flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-sm',
                                             selected === code
                                                 ? 'bg-white/[0.08] text-white'
-                                                : 'text-white/75 hover:bg-white/[0.05]',
+                                                : 'text-white/75 hover:bg-[var(--gc-l3)]',
                                         )}
                                     >
                                         <span>{flag(code)}</span>
@@ -224,7 +224,7 @@ export default function AdminGeoRestrictions({
                         )}
                     </section>
 
-                    <section className="glass rounded-3xl p-4">
+                    <section className="gc-solid rounded-3xl p-4">
                         <label className="input-glass mb-2 flex h-10 items-center gap-2 rounded-xl px-3">
                             <Search className="size-4 text-white/40" />
                             <input
@@ -244,7 +244,7 @@ export default function AdminGeoRestrictions({
                                         'flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-sm',
                                         selected === c.code
                                             ? 'bg-white/[0.08] text-white'
-                                            : 'text-white/70 hover:bg-white/[0.05]',
+                                            : 'text-white/70 hover:bg-[var(--gc-l3)]',
                                     )}
                                 >
                                     <span>{flag(c.code)}</span>
@@ -270,7 +270,7 @@ export default function AdminGeoRestrictions({
                 </aside>
 
                 {selected === null ? (
-                    <section className="glass flex flex-col items-center justify-center gap-2 rounded-3xl p-10 text-center">
+                    <section className="gc-solid flex flex-col items-center justify-center gap-2 rounded-3xl p-10 text-center">
                         <MapPinOff className="size-8 text-white/30" />
                         <p className="text-sm text-white/55">
                             {tr('Виберіть країну, щоб налаштувати обмеження.')}
@@ -278,7 +278,7 @@ export default function AdminGeoRestrictions({
                     </section>
                 ) : (
                     <div className="space-y-4">
-                        <section className="glass rounded-3xl p-4 sm:p-5">
+                        <section className="gc-solid rounded-3xl p-4 sm:p-5">
                             <div className="flex flex-wrap items-center gap-3">
                                 <span className="text-3xl">
                                     {flag(selected)}
@@ -345,7 +345,7 @@ export default function AdminGeoRestrictions({
                             )}
                         </section>
 
-                        <section className="glass rounded-3xl p-4 sm:p-5">
+                        <section className="gc-solid rounded-3xl p-4 sm:p-5">
                             <h3 className="mb-2 font-display text-sm font-semibold text-white/90">
                                 {tr('Розділи')}
                             </h3>
@@ -354,7 +354,7 @@ export default function AdminGeoRestrictions({
                             </div>
                         </section>
 
-                        <section className="glass rounded-3xl p-4 sm:p-5">
+                        <section className="gc-solid rounded-3xl p-4 sm:p-5">
                             <h3 className="mb-2 font-display text-sm font-semibold text-white/90">
                                 {tr('Функції')}
                             </h3>
@@ -378,7 +378,7 @@ export default function AdminGeoRestrictions({
                             </div>
                         </section>
 
-                        <section className="glass rounded-3xl p-4 sm:p-5">
+                        <section className="gc-solid rounded-3xl p-4 sm:p-5">
                             <label className="mb-1.5 block text-sm text-white/70">
                                 {tr('Нотатка (бачать лише адміністратори)')}
                             </label>
@@ -394,7 +394,7 @@ export default function AdminGeoRestrictions({
                             {(form.errors.modules ||
                                 form.errors.plugins ||
                                 form.errors.note) && (
-                                <p className="mt-2 text-xs text-rose-300">
+                                <p className="mt-2 text-xs text-red-400">
                                     {form.errors.modules ??
                                         form.errors.plugins ??
                                         form.errors.note}

@@ -49,7 +49,7 @@ export function Lightbox({
                 decoding="async"
                 src={items[current].url}
                 alt=""
-                className="max-h-[90vh] max-w-[92vw] animate-in rounded-xl object-contain shadow-2xl zoom-in-95"
+                className="max-h-[90vh] max-w-[92vw] animate-in rounded-xl object-contain zoom-in-95"
                 onClick={(event) => event.stopPropagation()}
             />
             <button
@@ -109,7 +109,7 @@ export function MediaGrid({ items }: { items: Attachment[] }) {
             <button
                 type="button"
                 onClick={() => setShown(true)}
-                className="flex h-28 w-full items-center justify-center gap-2 rounded-[10px] bg-white/[0.04] text-sm text-white/60 transition hover:bg-white/[0.07] hover:text-white"
+                className="gc-solid-2 flex h-28 w-full items-center justify-center gap-2 rounded-[10px] text-sm text-white/60 transition hover:bg-[var(--gc-l3)] hover:text-white"
             >
                 <ImageDown className="size-4" />
                 {items.length === 1

@@ -413,8 +413,8 @@ export function PostComposer({
         <section
             data-compact={expanded ? undefined : true}
             className={cn(
-                'gc-composer glass relative overflow-clip rounded-2xl p-4 transition sm:p-5',
-                expanded && 'ring-1 ring-primary/25',
+                'gc-composer gc-solid relative overflow-clip rounded-2xl p-4 transition sm:p-5',
+                expanded && 'ring-primary/25',
                 className,
             )}
             onDragOver={(event) => event.preventDefault()}
@@ -514,7 +514,7 @@ export function PostComposer({
                         </div>
                     )}
                     {form.errors.body && (
-                        <p className="mt-1 text-xs text-rose-300">
+                        <p className="mt-1 text-xs text-red-400">
                             {form.errors.body}
                         </p>
                     )}
@@ -522,7 +522,7 @@ export function PostComposer({
                         .filter(([key]) => key.startsWith('images'))
                         .slice(0, 1)
                         .map(([key, message]) => (
-                            <p key={key} className="mt-1 text-xs text-rose-300">
+                            <p key={key} className="mt-1 text-xs text-red-400">
                                 {message}
                             </p>
                         ))}
@@ -602,7 +602,7 @@ export function PostComposer({
                 .filter(([key]) => key.startsWith('music'))
                 .slice(0, 1)
                 .map(([key, message]) => (
-                    <p key={key} className="mt-1 text-xs text-rose-300">
+                    <p key={key} className="mt-1 text-xs text-red-400">
                         {message}
                     </p>
                 ))}
@@ -666,7 +666,7 @@ export function PostComposer({
                                 setCard(hit);
                                 setPickingCard(false);
                             }}
-                            className="block w-full rounded-xl px-2 py-1.5 text-left text-sm text-white hover:bg-white/[0.06]"
+                            className="block w-full rounded-xl px-2 py-1.5 text-left text-sm text-white hover:bg-[var(--gc-l3)]"
                         >
                             <span className="text-xs text-white/40">
                                 {tr(hit.hint)}
@@ -703,7 +703,7 @@ export function PostComposer({
                                 });
                             }}
                             placeholder={tr('Варіант {n}', { n: index + 1 })}
-                            className="w-full rounded-xl bg-white/[0.04] px-3 py-2 text-sm text-white placeholder:text-white/35 focus:outline-none"
+                            className="gc-solid-2 w-full rounded-xl px-3 py-2 text-sm text-white placeholder:text-white/35 focus:outline-none"
                         />
                     ))}
                     {form.data.poll.options.length < 4 && (
@@ -715,7 +715,7 @@ export function PostComposer({
                                     options: [...form.data.poll!.options, ''],
                                 })
                             }
-                            className="text-xs font-medium text-gc-lilac-300"
+                            className="text-xs font-medium text-sky-400"
                         >
                             {tr('Ще варіант')}
                         </button>
@@ -804,7 +804,7 @@ export function PostComposer({
             {form.progress && (
                 <div className="mt-3 h-1 overflow-hidden rounded-full bg-white/5">
                     <div
-                        className="h-full bg-gradient-brand transition-all"
+                        className="h-full bg-sky-500 transition-all"
                         style={{ width: `${form.progress.percentage}%` }}
                     />
                 </div>
@@ -835,7 +835,7 @@ export function PostComposer({
                     )}
                     {form.data.subscribers_only && (
                         <span className="inline-flex h-8 items-center gap-1.5 rounded-full bg-[var(--gc-active)] pr-1 pl-3 text-xs text-white/85">
-                            <Lock className="size-3.5 text-gc-lilac-300" />
+                            <Lock className="size-3.5 text-sky-400" />
                             {tr('Лише для платних підписників')}
                             <button
                                 type="button"
@@ -851,7 +851,7 @@ export function PostComposer({
                     )}
                     {scheduling && (
                         <span className="inline-flex h-8 items-center gap-1.5 rounded-full bg-[var(--gc-active)] pr-1 pl-3 text-xs text-white/85">
-                            <CalendarClock className="size-3.5 text-gc-lilac-300" />
+                            <CalendarClock className="size-3.5 text-sky-400" />
                             <input
                                 type="datetime-local"
                                 value={publishAt}
@@ -900,7 +900,7 @@ export function PostComposer({
                                         'inline-flex h-9 items-center gap-2 rounded-xl px-3 text-xs font-medium transition',
                                         form.data.as_community
                                             ? 'bg-[var(--gc-active)] text-white'
-                                            : 'text-white/50 hover:bg-white/[0.06] hover:text-white',
+                                            : 'text-white/50 hover:bg-[var(--gc-l3)] hover:text-white',
                                     )}
                                 >
                                     <Megaphone className="size-4 text-gc-violet-300" />
@@ -914,7 +914,7 @@ export function PostComposer({
                                     form.setData('tag', event.target.value)
                                 }
                                 aria-label={tr('Мітка запису')}
-                                className="h-9 max-w-36 rounded-xl bg-white/[0.04] px-2 text-xs text-white/70"
+                                className="gc-solid-2 h-9 max-w-36 rounded-xl px-2 text-xs text-white/70"
                             >
                                 <option value="">{tr('Без мітки')}</option>
                                 {(community.tags ?? []).map((tag) => (
@@ -1029,7 +1029,7 @@ export function PostComposer({
                                 <button
                                     type="button"
                                     title={tr('Кому видно')}
-                                    className="inline-flex h-10 items-center gap-1 rounded-xl px-2.5 text-white/70 transition hover:bg-white/[0.06] hover:text-white"
+                                    className="inline-flex h-10 items-center gap-1 rounded-xl px-2.5 text-white/70 transition hover:bg-[var(--gc-l3)] hover:text-white"
                                 >
                                     <currentVisibility.icon className="size-4" />
                                     <span className="hidden text-xs sm:inline">
@@ -1060,7 +1060,7 @@ export function PostComposer({
                                         </span>
                                         {form.data.visibility ===
                                             option.value && (
-                                            <Check className="size-4 text-gc-lilac-300" />
+                                            <Check className="size-4 text-sky-400" />
                                         )}
                                     </DropdownMenuItem>
                                 ))}

@@ -160,7 +160,7 @@ export default function AdminPlus({
             <div className="mb-5 grid gap-5 lg:grid-cols-2">
                 <form
                     onSubmit={submitGrant}
-                    className="glass space-y-3 rounded-2xl p-5"
+                    className="gc-solid space-y-3 rounded-2xl p-5"
                 >
                     <h2 className="font-display text-lg font-bold text-white">
                         {tr('Видати GameCon+')}
@@ -208,7 +208,7 @@ export default function AdminPlus({
                 <PromoForm products={products} />
             </div>
 
-            <section className="glass mb-5 rounded-2xl p-5">
+            <section className="gc-solid mb-5 rounded-2xl p-5">
                 <h2 className="font-display text-lg font-bold text-white">
                     {tr('Чинні періоди')}
                 </h2>
@@ -261,7 +261,7 @@ export default function AdminPlus({
                                     <button
                                         type="button"
                                         title={tr('Зняти')}
-                                        className="text-white/40 transition hover:text-rose-300"
+                                        className="text-white/40 transition hover:text-red-400"
                                         onClick={() => {
                                             if (
                                                 window.confirm(
@@ -287,7 +287,7 @@ export default function AdminPlus({
             </section>
 
             <div className="grid gap-5 lg:grid-cols-2">
-                <section className="glass rounded-2xl p-5">
+                <section className="gc-solid rounded-2xl p-5">
                     <h2 className="font-display text-lg font-bold text-white">
                         {tr('Промокоди')}
                     </h2>
@@ -338,7 +338,7 @@ export default function AdminPlus({
                                 <button
                                     type="button"
                                     title={tr('Видалити')}
-                                    className="ml-auto text-white/40 transition hover:text-rose-300"
+                                    className="ml-auto text-white/40 transition hover:text-red-400"
                                     onClick={() =>
                                         router.delete(
                                             `/admin/plus/codes/${c.id}`,
@@ -358,7 +358,7 @@ export default function AdminPlus({
                     </ul>
                 </section>
 
-                <section className="glass rounded-2xl p-5">
+                <section className="gc-solid rounded-2xl p-5">
                     <h2 className="font-display text-lg font-bold text-white">
                         {tr('Останні оплати')}
                     </h2>
@@ -460,7 +460,7 @@ function PromoForm({ products }: { products: Props['products'] }) {
     };
 
     return (
-        <form onSubmit={submit} className="glass space-y-3 rounded-2xl p-5">
+        <form onSubmit={submit} className="gc-solid space-y-3 rounded-2xl p-5">
             <h2 className="flex items-center gap-2 font-display text-lg font-bold text-white">
                 <Ticket className="size-5 text-indigo-300" />
                 {tr('Новий промокод')}
@@ -472,10 +472,10 @@ function PromoForm({ products }: { products: Props['products'] }) {
                         type="button"
                         onClick={() => form.setData('type', key)}
                         className={cn(
-                            'rounded-lg border px-2.5 py-1 text-xs transition',
+                            'rounded-lg px-2.5 py-1 text-xs transition',
                             type === key
                                 ? 'border-indigo-400/50 bg-indigo-500/15 text-white'
-                                : 'border-white/10 text-white/50 hover:text-white',
+                                : 'text-white/50 hover:text-white',
                         )}
                     >
                         {PROMO_TYPES()[key].label}
@@ -537,7 +537,7 @@ function PromoForm({ products }: { products: Props['products'] }) {
                         <label className={field}>
                             {tr('Знижка')}
                             <select
-                                className="h-9 w-full rounded-md border border-white/10 bg-white/[0.04] px-2 text-sm text-white"
+                                className="gc-solid-2 h-9 w-full rounded-md px-2 text-sm text-white"
                                 value={form.data.unit}
                                 onChange={(e) =>
                                     form.setData(
@@ -660,10 +660,10 @@ function PromoForm({ products }: { products: Props['products'] }) {
                                         )
                                     }
                                     className={cn(
-                                        'rounded-lg border px-2 py-0.5 text-xs transition',
+                                        'rounded-lg px-2 py-0.5 text-xs transition',
                                         on
                                             ? 'border-indigo-400/50 bg-indigo-500/15 text-white'
-                                            : 'border-white/10 text-white/50 hover:text-white',
+                                            : 'text-white/50 hover:text-white',
                                     )}
                                 >
                                     {p.name}

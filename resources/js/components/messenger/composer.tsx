@@ -320,12 +320,7 @@ export function Composer({
 
     if (!canWrite) {
         return (
-            <div
-                className={cn(
-                    'border-t border-white/[0.06] px-4 pt-4',
-                    dockedAboveNav(playing),
-                )}
-            >
+            <div className={cn('px-4 pt-4', dockedAboveNav(playing))}>
                 <p className="flex items-center justify-center gap-2 text-center text-sm text-white/45">
                     <Lock className="size-4" />
                     {lockedText ??
@@ -339,12 +334,12 @@ export function Composer({
 
     const context = editing ?? replyTo;
     const iconButton =
-        'flex size-10 shrink-0 items-center justify-center rounded-xl text-white/55 transition hover:bg-white/[0.07] hover:text-white disabled:opacity-40';
+        'flex size-10 shrink-0 items-center justify-center rounded-xl text-white/55 transition hover:bg-[var(--gc-l3)] hover:text-white disabled:opacity-40';
 
     return (
         <div
             className={cn(
-                'relative border-t border-white/[0.06] bg-transparent px-3 pt-2 sm:px-4',
+                'relative bg-transparent px-3 pt-2 sm:px-4',
                 dockedAboveNav(playing),
             )}
             onDragOver={(event) => event.preventDefault()}
@@ -389,7 +384,7 @@ export function Composer({
                 </div>
             )}
             {!editing && card && card.kind !== 'gif' && (
-                <div className="mb-2 flex items-center justify-between gap-2 rounded-xl bg-white/[0.04] px-3 py-2">
+                <div className="gc-solid-2 mb-2 flex items-center justify-between gap-2 rounded-xl px-3 py-2">
                     <span className="min-w-0">
                         <span className="block text-[11px] text-white/40">
                             {tr(card.hint)}
@@ -408,7 +403,7 @@ export function Composer({
                 </div>
             )}
             {!editing && pickingCard && !card && (
-                <div className="mb-2 rounded-xl bg-white/[0.04] p-2">
+                <div className="gc-solid-2 mb-2 rounded-xl p-2">
                     <input
                         value={cardQuery}
                         onChange={(event) => {
@@ -438,7 +433,7 @@ export function Composer({
                                     setCard(hit);
                                     setPickingCard(false);
                                 }}
-                                className="flex min-h-10 w-full items-center rounded-lg px-2 text-left text-sm text-white hover:bg-white/[0.06]"
+                                className="flex min-h-10 w-full items-center rounded-lg px-2 text-left text-sm text-white hover:bg-[var(--gc-l3)]"
                             >
                                 {hit.title}
                             </button>
@@ -474,7 +469,7 @@ export function Composer({
                         <button
                             type="button"
                             onClick={() => setVanish(false)}
-                            className="inline-flex min-h-8 items-center gap-1.5 rounded-chip bg-gc-indigo/15 px-3 text-gc-lilac-200"
+                            className="inline-flex min-h-8 items-center gap-1.5 rounded-chip bg-gc-indigo/15 px-3 text-sky-400"
                         >
                             <Timer className="size-3.5" />
                             {tr('Зникне за добу')}
@@ -485,7 +480,7 @@ export function Composer({
                         <button
                             type="button"
                             onClick={() => setPublishAt('')}
-                            className="inline-flex min-h-8 items-center gap-1.5 rounded-chip bg-gc-indigo/15 px-3 text-gc-lilac-200"
+                            className="inline-flex min-h-8 items-center gap-1.5 rounded-chip bg-gc-indigo/15 px-3 text-sky-400"
                         >
                             <Clock className="size-3.5" />
                             {tr('Надішлеться {date}', {
@@ -505,13 +500,13 @@ export function Composer({
                 </div>
             )}
             {context && (
-                <div className="mb-2 flex animate-in items-center gap-3 rounded-xl bg-white/[0.04] px-3 py-2 fade-in slide-in-from-bottom-1">
+                <div className="gc-solid-2 mb-2 flex animate-in items-center gap-3 rounded-xl px-3 py-2 fade-in slide-in-from-bottom-1">
                     {editing ? (
-                        <Pencil className="size-4 shrink-0 text-gc-lilac-400" />
+                        <Pencil className="size-4 shrink-0 text-sky-400" />
                     ) : (
-                        <Reply className="size-4 shrink-0 text-gc-lilac-400" />
+                        <Reply className="size-4 shrink-0 text-sky-400" />
                     )}
-                    <span className="min-w-0 flex-1 border-l-2 border-gc-lilac-500 pl-2.5 text-[13px]">
+                    <span className="min-w-0 flex-1 border-l-2 pl-2.5 text-[13px]">
                         <span className="block font-semibold text-[#a9b6ff]">
                             {editing
                                 ? tr('Редагування')
@@ -545,7 +540,7 @@ export function Composer({
                     {previews.map((url, index) => (
                         <div
                             key={url}
-                            className="relative size-[72px] shrink-0 animate-in overflow-hidden rounded-xl ring-1 ring-white/10 zoom-in-90"
+                            className="relative size-[72px] shrink-0 animate-in overflow-hidden rounded-xl zoom-in-90"
                         >
                             <img
                                 loading="lazy"
@@ -571,7 +566,7 @@ export function Composer({
                     {docs.map((file, index) => (
                         <div
                             key={`${file.name}-${index}`}
-                            className="relative flex h-[72px] w-[188px] shrink-0 animate-in items-center gap-2.5 rounded-xl bg-white/[0.05] pr-7 pl-2.5 ring-1 ring-white/10 zoom-in-90"
+                            className="gc-solid-2 relative flex h-[72px] w-[188px] shrink-0 animate-in items-center gap-2.5 rounded-xl pr-7 pl-2.5 zoom-in-90"
                         >
                             <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-gc-blue to-gc-indigo text-white">
                                 <FileUp className="size-5" />
@@ -628,7 +623,7 @@ export function Composer({
                     <button
                         type="button"
                         onClick={voice.cancel}
-                        className={cn(iconButton, 'hover:text-rose-300')}
+                        className={cn(iconButton, 'hover:text-red-400')}
                         aria-label={tr('Скасувати запис')}
                         title={tr('Скасувати')}
                     >
@@ -636,8 +631,8 @@ export function Composer({
                     </button>
                     <div className="input-glass flex h-11 min-w-0 flex-1 items-center gap-3 rounded-control px-4">
                         <span className="relative flex size-2.5 shrink-0">
-                            <span className="absolute inset-0 animate-ping rounded-full bg-rose-500/70" />
-                            <span className="relative size-2.5 rounded-full bg-rose-500" />
+                            <span className="absolute inset-0 animate-ping rounded-full bg-red-500/70" />
+                            <span className="relative size-2.5 rounded-full bg-red-500" />
                         </span>
                         <span className="w-10 shrink-0 text-sm font-medium text-white tabular-nums">
                             {formatDuration(voice.elapsed)}
@@ -655,7 +650,7 @@ export function Composer({
                     <button
                         type="button"
                         onClick={sendRecording}
-                        className="flex size-11 shrink-0 items-center justify-center rounded-full bg-gradient-brand text-white shadow-[0_0_24px_-2px_rgb(124_92_255/0.9)] transition hover:brightness-110"
+                        className="flex size-11 shrink-0 items-center justify-center rounded-full bg-sky-500 text-white transition hover:brightness-110"
                         aria-label={tr('Надіслати голосове')}
                     >
                         <SendHorizonal className="size-5" />
@@ -735,7 +730,7 @@ export function Composer({
                                                 setAttachOpen(false);
                                                 item.run();
                                             }}
-                                            className="flex w-full items-center gap-3 rounded-xl px-2.5 py-2 text-left transition hover:bg-white/[0.06]"
+                                            className="flex w-full items-center gap-3 rounded-xl px-2.5 py-2 text-left transition hover:bg-[var(--gc-l3)]"
                                         >
                                             <span
                                                 className={cn(
@@ -858,7 +853,7 @@ export function Composer({
                         <button
                             type="button"
                             onClick={() => setNoteOpen(true)}
-                            className="mb-0.5 flex size-11 shrink-0 items-center justify-center rounded-full bg-white/[0.06] text-white/70 transition hover:bg-white/[0.12] hover:text-white"
+                            className="gc-solid-2 mb-0.5 flex size-11 shrink-0 items-center justify-center rounded-full text-white/70 transition hover:bg-white/[0.12] hover:text-white"
                             aria-label={tr('Записати відеокружок')}
                             title={tr('Відеокружок')}
                         >
@@ -877,7 +872,7 @@ export function Composer({
                         <button
                             type="button"
                             onClick={startRecording}
-                            className="mb-0.5 flex size-11 shrink-0 items-center justify-center rounded-full bg-white/[0.06] text-white/70 transition hover:bg-gradient-brand hover:text-white hover:shadow-[0_0_24px_-2px_rgb(124_92_255/0.9)]"
+                            className="gc-solid-2 mb-0.5 flex size-11 shrink-0 items-center justify-center rounded-full text-white/70 transition hover:bg-sky-500 hover:text-white"
                             aria-label={tr('Записати голосове')}
                             title={tr('Голосове повідомлення')}
                         >
@@ -888,8 +883,8 @@ export function Composer({
                             {sendMenu && (
                                 <div className="glass-strong absolute right-0 bottom-12 z-30 w-64 animate-rise space-y-1 rounded-2xl p-1.5">
                                     {vanishOn && (
-                                        <label className="flex min-h-11 cursor-pointer items-center gap-3 rounded-xl px-2.5 text-sm text-white hover:bg-white/[0.06]">
-                                            <Timer className="size-4 text-gc-lilac-300" />
+                                        <label className="flex min-h-11 cursor-pointer items-center gap-3 rounded-xl px-2.5 text-sm text-white hover:bg-[var(--gc-l3)]">
+                                            <Timer className="size-4 text-sky-400" />
                                             <span className="flex-1">
                                                 {tr('Зникне за добу')}
                                             </span>
@@ -901,14 +896,14 @@ export function Composer({
                                                         event.target.checked,
                                                     )
                                                 }
-                                                className="size-4 accent-gc-lilac-400"
+                                                className="size-4 accent-sky-400"
                                             />
                                         </label>
                                     )}
                                     {scheduleOn && (
                                         <div className="space-y-2 rounded-xl px-2.5 py-2">
                                             <span className="flex items-center gap-3 text-sm text-white">
-                                                <Clock className="size-4 text-gc-lilac-300" />
+                                                <Clock className="size-4 text-sky-400" />
                                                 {tr('Відкласти')}
                                             </span>
                                             <input
@@ -932,7 +927,7 @@ export function Composer({
                                             setSendMenu(false);
                                             submit();
                                         }}
-                                        className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-gradient-brand text-sm font-semibold text-white"
+                                        className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-sky-500 text-sm font-semibold text-white"
                                     >
                                         <SendHorizonal className="size-4" />
                                         {publishAt
@@ -986,8 +981,8 @@ export function Composer({
                                 className={cn(
                                     'flex size-11 shrink-0 items-center justify-center rounded-full text-white transition duration-300 select-none [-webkit-touch-callout:none]',
                                     canSubmit
-                                        ? 'scale-100 bg-gradient-brand shadow-[0_0_24px_-2px_rgb(124_92_255/0.9)] hover:brightness-110'
-                                        : 'scale-95 bg-white/[0.06] text-white/35',
+                                        ? 'scale-100 bg-sky-500 hover:brightness-110'
+                                        : 'gc-solid-2 scale-95 text-white/35',
                                 )}
                                 aria-label={
                                     editing ? tr('Зберегти') : tr('Надіслати')

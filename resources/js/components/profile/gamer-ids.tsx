@@ -116,7 +116,7 @@ export function GamerIds({
                     <button
                         type="button"
                         onClick={edit}
-                        className="mt-1 inline-flex items-center gap-1.5 text-xs font-medium text-gc-lilac-300 hover:text-white"
+                        className="mt-1 inline-flex items-center gap-1.5 text-xs font-medium text-sky-400 hover:text-white"
                     >
                         <Pencil className="size-3.5" />
                         {ids.length === 0 ? tr('Додати ID') : tr('Змінити')}

@@ -98,7 +98,7 @@ export default function AdminDesign({
                 actions={
                     <a
                         href="/admin/design/template"
-                        className="flex h-10 items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-4 text-sm font-medium text-white/80 transition hover:bg-white/[0.08] hover:text-white"
+                        className="gc-solid-2 flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-medium text-white/80 transition hover:bg-[var(--gc-l3)] hover:text-white"
                     >
                         <Download className="size-4" />
                         {tr('Шаблон стилю')}
@@ -111,8 +111,8 @@ export default function AdminDesign({
 
             <SeasonalCard value={seasonal} seasons={seasons} />
 
-            <section className="glass mb-5 flex flex-wrap items-center gap-3 rounded-2xl p-4">
-                <span className="flex size-11 items-center justify-center rounded-2xl bg-gradient-brand text-white">
+            <section className="gc-solid mb-5 flex flex-wrap items-center gap-3 rounded-2xl p-4">
+                <span className="flex size-11 items-center justify-center rounded-2xl bg-sky-500 text-white">
                     <Palette className="size-5" />
                 </span>
                 <div className="min-w-0 flex-1">
@@ -141,7 +141,7 @@ export default function AdminDesign({
                                 );
                             }
                         }}
-                        className="flex h-9 items-center gap-2 rounded-xl px-3 text-sm font-medium text-white/70 transition hover:bg-white/[0.06] hover:text-white"
+                        className="flex h-9 items-center gap-2 rounded-xl px-3 text-sm font-medium text-white/70 transition hover:bg-[var(--gc-l3)] hover:text-white"
                     >
                         <RotateCcw className="size-4" />
                         {tr('Стандартний вигляд')}
@@ -151,7 +151,7 @@ export default function AdminDesign({
 
             <form
                 onSubmit={upload}
-                className="glass mb-5 grid gap-3 rounded-2xl p-4 sm:grid-cols-2"
+                className="gc-solid mb-5 grid gap-3 rounded-2xl p-4 sm:grid-cols-2"
             >
                 <h2 className="font-display text-base font-bold text-white sm:col-span-2">
                     {tr('Новий стиль')}
@@ -192,7 +192,7 @@ export default function AdminDesign({
                     <button
                         type="button"
                         onClick={() => fileRef.current?.click()}
-                        className="flex w-full items-center gap-3 rounded-xl border border-dashed border-white/15 px-4 py-3 text-left text-sm text-white/60 transition hover:border-gc-lilac-400/60 hover:text-white"
+                        className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm text-white/60 transition hover:border-gc-lilac-400/60 hover:text-white"
                     >
                         <FileCode2 className="size-5 shrink-0" />
                         <span className="min-w-0 flex-1 truncate">
@@ -233,7 +233,7 @@ export default function AdminDesign({
                             !form.data.name.trim() ||
                             !form.data.file
                         }
-                        className="btn-glow flex h-10 items-center gap-2 rounded-xl bg-gradient-brand px-4 text-sm font-semibold text-white disabled:opacity-50"
+                        className="btn-glow flex h-10 items-center gap-2 rounded-xl bg-sky-500 px-4 text-sm font-semibold text-white disabled:opacity-50"
                     >
                         <Upload className="size-4" />
                         {form.processing
@@ -258,7 +258,7 @@ export default function AdminDesign({
                     />
                 ))}
                 {themes.length === 0 && (
-                    <div className="glass rounded-2xl px-6 py-10 text-center text-sm text-white/40">
+                    <div className="gc-solid rounded-2xl px-6 py-10 text-center text-sm text-white/40">
                         {tr(
                             'Завантажених стилів ще немає. Скачайте шаблон, змініть кольори й завантажте файл.',
                         )}
@@ -270,11 +270,11 @@ export default function AdminDesign({
 }
 
 const actionClass =
-    'flex h-9 items-center gap-1.5 rounded-xl px-3 text-sm font-medium text-white/70 transition hover:bg-white/[0.06] hover:text-white disabled:opacity-40';
+    'flex h-9 items-center gap-1.5 rounded-xl px-3 text-sm font-medium text-white/70 transition hover:bg-[var(--gc-l3)] hover:text-white disabled:opacity-40';
 
 function DefaultCard({ active }: { active: boolean }) {
     return (
-        <section className="glass flex flex-wrap items-center gap-3 rounded-2xl p-4">
+        <section className="gc-solid flex flex-wrap items-center gap-3 rounded-2xl p-4">
             <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                     <h3 className="font-display text-base font-bold text-white">
@@ -331,10 +331,7 @@ function ThemeCard({ theme, limit }: { theme: Theme; limit: number }) {
 
     return (
         <section
-            className={cn(
-                'glass rounded-2xl p-4',
-                theme.is_active && 'ring-1 ring-emerald-400/30',
-            )}
+            className={cn('gc-solid rounded-2xl p-4', theme.is_active && ' ')}
         >
             <div className="flex flex-wrap items-center gap-3">
                 <div className="min-w-0 flex-1">
@@ -436,13 +433,13 @@ function ThemeCard({ theme, limit }: { theme: Theme; limit: number }) {
                             });
                         }
                     }}
-                    className={cn(actionClass, 'ml-auto hover:text-rose-300')}
+                    className={cn(actionClass, 'ml-auto hover:text-red-400')}
                 >
                     <Trash2 className="size-4" />
                     {tr('Видалити')}
                 </button>
             </div>
-            {error && <p className="mt-2 text-xs text-rose-300">{error}</p>}
+            {error && <p className="mt-2 text-xs text-red-400">{error}</p>}
             <input
                 ref={fileRef}
                 type="file"
@@ -489,9 +486,9 @@ function SeasonalCard({
     };
 
     return (
-        <section className="glass mb-5 rounded-2xl p-4">
+        <section className="gc-solid mb-5 rounded-2xl p-4">
             <div className="flex items-center gap-3">
-                <span className="flex size-11 items-center justify-center rounded-2xl bg-white/[0.06] text-white">
+                <span className="gc-solid-2 flex size-11 items-center justify-center rounded-2xl text-white">
                     <Snowflake className="size-5" />
                 </span>
                 <div className="min-w-0 flex-1">
@@ -522,7 +519,7 @@ function SeasonalCard({
                             'h-9 rounded-xl px-3 text-sm font-medium transition disabled:opacity-60',
                             value === id
                                 ? 'bg-primary text-primary-foreground'
-                                : 'bg-white/[0.05] text-white/70 hover:bg-white/[0.09] hover:text-white',
+                                : 'gc-solid-2 text-white/70 hover:bg-[var(--gc-l3)] hover:text-white',
                         )}
                     >
                         {labels[id] ?? id}
@@ -585,9 +582,9 @@ function AuthImagesCard({ images }: { images: Record<string, string | null> }) {
     ];
 
     return (
-        <section className="glass mb-5 rounded-2xl p-4">
+        <section className="gc-solid mb-5 rounded-2xl p-4">
             <div className="flex items-center gap-3">
-                <span className="flex size-11 items-center justify-center rounded-2xl bg-white/[0.06] text-white">
+                <span className="gc-solid-2 flex size-11 items-center justify-center rounded-2xl text-white">
                     <LogIn className="size-5" />
                 </span>
                 <div className="min-w-0 flex-1">
@@ -608,7 +605,7 @@ function AuthImagesCard({ images }: { images: Record<string, string | null> }) {
                         <div key={slot.kind} className="flex flex-col gap-2">
                             <label
                                 className={cn(
-                                    'group relative flex cursor-pointer items-center justify-center overflow-hidden rounded-2xl border border-dashed border-white/15 bg-white/[0.03] bg-cover bg-center transition hover:border-white/35',
+                                    'group gc-solid-2 relative flex cursor-pointer items-center justify-center overflow-hidden rounded-2xl bg-cover bg-center transition hover:border-white/35',
                                     slot.ratio,
                                     sending && 'pointer-events-none opacity-60',
                                 )}
@@ -653,7 +650,7 @@ function AuthImagesCard({ images }: { images: Record<string, string | null> }) {
                                         type="button"
                                         onClick={() => remove(slot.kind)}
                                         aria-label={tr('Видалити')}
-                                        className="flex size-8 items-center justify-center rounded-lg text-white/50 transition hover:bg-white/[0.06] hover:text-red-300"
+                                        className="flex size-8 items-center justify-center rounded-lg text-white/50 transition hover:bg-[var(--gc-l3)] hover:text-red-400"
                                     >
                                         <Trash2 className="size-4" />
                                     </button>
@@ -713,9 +710,9 @@ function BackgroundCard({ image }: { image: SiteImage | null }) {
     ];
 
     return (
-        <section className="glass mb-5 rounded-2xl p-4">
+        <section className="gc-solid mb-5 rounded-2xl p-4">
             <div className="flex items-center gap-3">
-                <span className="flex size-11 items-center justify-center rounded-2xl bg-white/[0.06] text-white">
+                <span className="gc-solid-2 flex size-11 items-center justify-center rounded-2xl text-white">
                     <ImagePlus className="size-5" />
                 </span>
                 <div className="min-w-0 flex-1">
@@ -735,7 +732,7 @@ function BackgroundCard({ image }: { image: SiteImage | null }) {
                     <div key={slot.kind} className="flex flex-col gap-2">
                         <label
                             className={cn(
-                                'group relative flex cursor-pointer items-center justify-center overflow-hidden rounded-2xl border border-dashed border-white/15 bg-white/[0.03] bg-cover bg-center transition hover:border-white/35',
+                                'group gc-solid-2 relative flex cursor-pointer items-center justify-center overflow-hidden rounded-2xl bg-cover bg-center transition hover:border-white/35',
                                 slot.ratio,
                                 slot.kind === 'desktop' ? 'w-72' : 'w-[7.5rem]',
                                 sending && 'pointer-events-none opacity-60',
@@ -781,7 +778,7 @@ function BackgroundCard({ image }: { image: SiteImage | null }) {
                                     type="button"
                                     onClick={() => remove(slot.kind)}
                                     aria-label={tr('Видалити')}
-                                    className="flex size-8 items-center justify-center rounded-lg text-white/50 transition hover:bg-white/[0.06] hover:text-red-300"
+                                    className="flex size-8 items-center justify-center rounded-lg text-white/50 transition hover:bg-[var(--gc-l3)] hover:text-red-400"
                                 >
                                     <Trash2 className="size-4" />
                                 </button>

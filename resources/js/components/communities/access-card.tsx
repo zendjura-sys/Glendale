@@ -129,8 +129,8 @@ export function AccessCard({
                                 className={cn(
                                     'h-11 rounded-xl px-4 text-sm font-medium transition',
                                     form.data.clear_password
-                                        ? 'bg-rose-500/20 text-rose-200'
-                                        : 'bg-white/[0.06] text-white/70 hover:text-white',
+                                        ? 'bg-red-500/20 text-red-400'
+                                        : 'gc-solid-2 text-white/70 hover:text-white',
                                 )}
                             >
                                 {form.data.clear_password
@@ -140,7 +140,7 @@ export function AccessCard({
                         )}
                     </div>
                     {form.errors.password && (
-                        <p className="text-xs text-rose-300">
+                        <p className="text-xs text-red-400">
                             {form.errors.password}
                         </p>
                     )}
@@ -164,7 +164,7 @@ export function AccessCard({
                     />
                 </Row>
                 {form.errors.guest_view && (
-                    <p className="text-xs text-rose-300">
+                    <p className="text-xs text-red-400">
                         {form.errors.guest_view}
                     </p>
                 )}
@@ -201,7 +201,7 @@ export function AccessCard({
                             ))}
                         </select>
                         {form.errors.guest_chat_channel_id && (
-                            <p className="text-xs text-rose-300">
+                            <p className="text-xs text-red-400">
                                 {form.errors.guest_chat_channel_id}
                             </p>
                         )}
@@ -209,7 +209,7 @@ export function AccessCard({
                 )}
 
                 {access.guest_view && (
-                    <div className="flex items-center gap-2 rounded-xl bg-white/[0.04] px-3 py-2 text-xs text-white/60">
+                    <div className="gc-solid-2 flex items-center gap-2 rounded-xl px-3 py-2 text-xs text-white/60">
                         <span className="min-w-0 flex-1 truncate">
                             {access.guest_url}
                         </span>

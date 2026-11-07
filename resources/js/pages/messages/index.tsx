@@ -118,7 +118,7 @@ export default function Messages({
             <Head title={active ? active.title : tr('Повідомлення')} />
             <div
                 className={cn(
-                    'glass flex min-h-0 overflow-clip rounded-2xl max-lg:h-[calc(100dvh-76px)] max-lg:rounded-b-none md:flex-row lg:h-[calc(100dvh-100px)]',
+                    'gc-solid flex min-h-0 overflow-clip rounded-2xl max-lg:h-[calc(100dvh-76px)] max-lg:rounded-b-none md:flex-row lg:h-[calc(100dvh-100px)]',
                     playing ? 'max-lg:-mb-44' : 'max-lg:-mb-24',
                 )}
             >
@@ -130,7 +130,7 @@ export default function Messages({
                     }
                     onCompose={() => setComposeOpen(true)}
                     className={cn(
-                        'w-full border-white/[0.06] md:w-[300px] md:border-r xl:w-[340px]',
+                        'w-full md:w-[300px] md:border-r xl:w-[340px]',
                         active && 'hidden md:flex',
                     )}
                 />

@@ -293,7 +293,7 @@ export function FamilyShell({
                                         </span>
                                     )}
                                     {section === t.section && (
-                                        <span className="absolute inset-x-3 -bottom-1.5 h-0.5 rounded-full bg-gradient-brand" />
+                                        <span className="absolute inset-x-3 -bottom-1.5 h-0.5 rounded-full bg-sky-500" />
                                     )}
                                 </Link>
                             ))}

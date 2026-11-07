@@ -153,7 +153,7 @@ export default function FamilyOverview(props: Props) {
                         actions={
                             <Link
                                 href={`${base}/rating`}
-                                className="text-xs font-semibold text-sky-400 hover:text-sky-300"
+                                className="text-xs font-semibold text-sky-400 hover:text-sky-400"
                             >
                                 {tr('Увесь рейтинг')}
                             </Link>
@@ -197,7 +197,7 @@ export default function FamilyOverview(props: Props) {
                         actions={
                             <Link
                                 href={`${base}/bank`}
-                                className="text-xs font-semibold text-sky-400 hover:text-sky-300"
+                                className="text-xs font-semibold text-sky-400 hover:text-sky-400"
                             >
                                 {tr('Банк')}
                             </Link>
@@ -239,7 +239,7 @@ export default function FamilyOverview(props: Props) {
                         actions={
                             <Link
                                 href={`${base}/events`}
-                                className="text-xs font-semibold text-sky-400 hover:text-sky-300"
+                                className="text-xs font-semibold text-sky-400 hover:text-sky-400"
                             >
                                 {tr('Усі')}
                             </Link>
@@ -305,7 +305,7 @@ export default function FamilyOverview(props: Props) {
                             actions={
                                 <Link
                                     href={`${base}/audit`}
-                                    className="text-xs font-semibold text-sky-400 hover:text-sky-300"
+                                    className="text-xs font-semibold text-sky-400 hover:text-sky-400"
                                 >
                                     {tr('Журнал')}
                                 </Link>

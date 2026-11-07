@@ -66,7 +66,7 @@ export default function GameDeals({ giveaways, subscribed, wishlist }: Props) {
             <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end">
                 <div className="min-w-0 flex-1">
                     <h1 className="flex items-center gap-2 font-display text-2xl font-semibold text-white">
-                        <Gift className="size-6 shrink-0 text-gc-lilac-200" />{' '}
+                        <Gift className="size-6 shrink-0 text-sky-400" />{' '}
                         {tr('Роздачі й знижки')}
                     </h1>
                     <p className="text-sm text-white/50">
@@ -89,7 +89,7 @@ export default function GameDeals({ giveaways, subscribed, wishlist }: Props) {
                             'inline-flex h-10 items-center justify-center gap-2 rounded-xl px-3.5 text-sm font-semibold transition',
                             subscribed
                                 ? 'bg-primary/15 text-primary hover:bg-primary/25'
-                                : 'bg-white/[0.06] text-white/75 hover:bg-white/10',
+                                : 'gc-solid-2 text-white/75 hover:bg-white/10',
                         )}
                     >
                         <BellRing className="size-4" />
@@ -103,7 +103,7 @@ export default function GameDeals({ giveaways, subscribed, wishlist }: Props) {
             {giveawaysOn && (
                 <section className="mb-6">
                     {giveaways.length === 0 ? (
-                        <p className="glass rounded-2xl p-5 text-sm text-white/50">
+                        <p className="gc-solid rounded-2xl p-5 text-sm text-white/50">
                             {tr(
                                 'Зараз роздач немає — увімкніть сповіщення, і ми напишемо, щойно з’явиться нова.',
                             )}
@@ -123,7 +123,7 @@ export default function GameDeals({ giveaways, subscribed, wishlist }: Props) {
                                             ? 0
                                             : Math.min(i, 8) * 0.03,
                                     }}
-                                    className="glass flex flex-col overflow-hidden rounded-2xl"
+                                    className="gc-solid flex flex-col overflow-hidden rounded-2xl"
                                 >
                                     {g.image && (
                                         <img
@@ -199,9 +199,9 @@ export default function GameDeals({ giveaways, subscribed, wishlist }: Props) {
             )}
 
             {dealsOn && (
-                <section className="glass rounded-2xl p-4 sm:p-5">
+                <section className="gc-solid rounded-2xl p-4 sm:p-5">
                     <div className="mb-3 flex items-center gap-2">
-                        <Heart className="size-4 text-gc-lilac-200" />
+                        <Heart className="size-4 text-sky-400" />
                         <h2 className="font-display text-base font-semibold text-white">
                             {tr('Мій список бажаного')}
                         </h2>

@@ -62,7 +62,7 @@ export function CommunityHub({ slug }: { slug: string }) {
                     action={
                         <Link
                             href={`/c/${slug}/calendar`}
-                            className="text-xs text-gc-lilac-300 hover:text-white"
+                            className="text-xs text-sky-400 hover:text-white"
                         >
                             {tr('Календар')}
                         </Link>
@@ -80,7 +80,7 @@ export function CommunityHub({ slug }: { slug: string }) {
                                 <li key={e.id}>
                                     <Link
                                         href={`/c/${slug}/calendar?event=${e.id}`}
-                                        className="block rounded-xl bg-white/[0.04] p-2.5 transition hover:bg-white/[0.07]"
+                                        className="gc-solid-2 block rounded-xl p-2.5 transition hover:bg-[var(--gc-l3)]"
                                     >
                                         <span className="block truncate text-sm font-medium text-white">
                                             {e.title}
@@ -100,9 +100,9 @@ export function CommunityHub({ slug }: { slug: string }) {
             {showWiki && (
                 <Link
                     href={`/c/${slug}/wiki`}
-                    className="glass flex items-center gap-3 rounded-2xl p-4 transition hover:bg-white/[0.06]"
+                    className="gc-solid flex items-center gap-3 rounded-2xl p-4 transition hover:bg-[var(--gc-l3)]"
                 >
-                    <BookOpenText className="size-5 text-gc-lilac-300" />
+                    <BookOpenText className="size-5 text-sky-400" />
                     <span className="flex-1 text-sm font-medium text-white">
                         {tr('Вікі спільноти')}
                     </span>
@@ -116,9 +116,9 @@ export function CommunityHub({ slug }: { slug: string }) {
             {stickersOn && (
                 <Link
                     href={`/c/${slug}/stickers`}
-                    className="glass flex items-center gap-3 rounded-2xl p-4 transition hover:bg-white/[0.06]"
+                    className="gc-solid flex items-center gap-3 rounded-2xl p-4 transition hover:bg-[var(--gc-l3)]"
                 >
-                    <Sticker className="size-5 text-sky-300" />
+                    <Sticker className="size-5 text-sky-400" />
                     <span className="flex-1 text-sm font-medium text-white">
                         {tr('Стікери спільноти')}
                     </span>
@@ -140,7 +140,7 @@ export function CommunityHub({ slug }: { slug: string }) {
                                     <span className="min-w-0 flex-1 truncate">
                                         {m.name}
                                     </span>
-                                    <span className="text-xs text-gc-lilac-300 tabular-nums">
+                                    <span className="text-xs text-sky-400 tabular-nums">
                                         {m.points}
                                     </span>
                                 </Link>

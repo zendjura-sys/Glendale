@@ -106,7 +106,7 @@ export function ListenRoomButton({
             className={cn(
                 variant === 'button'
                     ? className
-                    : 'glass inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl text-sm text-white/80 hover:text-white',
+                    : 'gc-solid inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl text-sm text-white/80 hover:text-white',
             )}
         >
             <Headphones className="size-4" /> {tr('Слухати разом')}
@@ -134,9 +134,9 @@ export function ListenRoomButton({
     }
 
     return (
-        <section className="glass space-y-3 rounded-2xl p-4">
+        <section className="gc-solid space-y-3 rounded-2xl p-4">
             <div className="flex items-center gap-2">
-                <Headphones className="size-4 text-gc-lilac-200" />
+                <Headphones className="size-4 text-sky-400" />
                 <h2 className="flex-1 font-display text-base font-semibold text-white">
                     {tr('Слухати разом')}
                 </h2>

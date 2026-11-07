@@ -36,7 +36,7 @@ export function RewardIcon({
     className?: string;
 }) {
     const box = cn(
-        'flex size-10 shrink-0 items-center justify-center rounded-control bg-white/[0.06]',
+        'gc-solid-2 flex size-10 shrink-0 items-center justify-center rounded-control',
         className,
     );
     const colors = reward.colors ?? ['#6366f1'];
@@ -202,8 +202,8 @@ export function LevelTrack({ levels, level, plus, onClaim, busy }: Props) {
                                     reached
                                         ? 'bg-primary text-white'
                                         : current
-                                          ? 'bg-primary/15 text-white ring-1 ring-primary'
-                                          : 'bg-white/[0.05] text-white/45',
+                                          ? 'bg-primary/15 text-white ring-primary'
+                                          : 'gc-solid-2 text-white/45',
                                 )}
                                 title={tr('{n} очок', { n: row.total })}
                             >
@@ -248,21 +248,16 @@ function Cell({
     onClaim?: () => void;
 }) {
     if (!reward) {
-        return (
-            <div className="h-24 rounded-xl border border-dashed border-white/[0.06]" />
-        );
+        return <div className="h-24 rounded-xl" />;
     }
     const claimable = reached && allowed && !claimed;
 
     return (
         <div
             className={cn(
-                'relative flex h-24 flex-col items-center justify-between rounded-xl border p-2 text-center transition',
-                premium
-                    ? 'border-primary/20 bg-primary/[0.06]'
-                    : 'border-white/[0.07] bg-white/[0.03]',
-                claimable &&
-                    'border-primary shadow-[0_0_18px_-4px_var(--color-primary)]',
+                'relative flex h-24 flex-col items-center justify-between rounded-xl p-2 text-center transition',
+                premium ? 'border-primary/20 bg-primary/[0.06]' : 'gc-solid-2',
+                claimable && 'border-primary',
                 !reached && 'opacity-60',
             )}
         >

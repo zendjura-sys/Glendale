@@ -87,7 +87,7 @@ export default function MusicIndex({
         <>
             <Head title={tr('Музика')} />
             <div className="space-y-5">
-                <section className="glass relative overflow-hidden rounded-3xl p-5 sm:p-7">
+                <section className="gc-solid relative overflow-hidden rounded-3xl p-5 sm:p-7">
                     <div className="pointer-events-none absolute -top-24 -right-16 size-80 rounded-full bg-gc-purple/25 blur-3xl" />
                     <div className="pointer-events-none absolute -bottom-36 left-10 size-80 rounded-full bg-gc-cyan/15 blur-3xl" />
                     <div className="pointer-events-none absolute top-6 right-8 hidden opacity-[0.07] sm:block">
@@ -95,8 +95,8 @@ export default function MusicIndex({
                     </div>
                     <div className="relative flex flex-col gap-5 sm:flex-row sm:flex-wrap sm:items-end">
                         <div className="min-w-0 flex-1">
-                            <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.05] px-2.5 py-1 text-xs font-semibold text-white/60">
-                                <Music2 className="size-3.5 text-gc-lilac-400" />
+                            <span className="gc-solid-2 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold text-white/60">
+                                <Music2 className="size-3.5 text-sky-400" />
                                 {tr('Музика GameCon')}
                             </span>
                             <h1 className="mt-3 font-display text-3xl font-bold text-white sm:text-4xl">
@@ -112,7 +112,7 @@ export default function MusicIndex({
                                 )}
                             </p>
                             <div className="mt-4 flex flex-wrap gap-2 text-xs text-white/60">
-                                <span className="glass rounded-full px-3 py-1.5">
+                                <span className="gc-solid rounded-full px-3 py-1.5">
                                     <b className="text-white">{stats.tracks}</b>{' '}
                                     {plural(stats.tracks, [
                                         'трек',
@@ -120,13 +120,13 @@ export default function MusicIndex({
                                         'треків',
                                     ])}
                                 </span>
-                                <span className="glass rounded-full px-3 py-1.5">
+                                <span className="gc-solid rounded-full px-3 py-1.5">
                                     <b className="text-white">
                                         {formatLength(stats.duration)}
                                     </b>{' '}
                                     {tr('музики')}
                                 </span>
-                                <span className="glass rounded-full px-3 py-1.5">
+                                <span className="gc-solid rounded-full px-3 py-1.5">
                                     <b className="text-white">
                                         {stats.playlists}
                                     </b>{' '}
@@ -137,7 +137,7 @@ export default function MusicIndex({
                                     ])}
                                 </span>
                                 {spotify.account && (
-                                    <span className="glass inline-flex items-center gap-1.5 rounded-full px-3 py-1.5">
+                                    <span className="gc-solid inline-flex items-center gap-1.5 rounded-full px-3 py-1.5">
                                         <SpotifyLogo className="size-3.5" />
                                         {spotify.account.display_name ??
                                             'Spotify'}
@@ -149,7 +149,7 @@ export default function MusicIndex({
                             <button
                                 type="button"
                                 onClick={() => setCreating(true)}
-                                className="glass inline-flex h-11 items-center gap-2 rounded-xl px-4 text-sm font-semibold text-white/85 transition hover:text-white"
+                                className="gc-solid inline-flex h-11 items-center gap-2 rounded-xl px-4 text-sm font-semibold text-white/85 transition hover:text-white"
                             >
                                 <ListPlus className="size-4" /> {tr('Плейлист')}
                             </button>
@@ -165,7 +165,7 @@ export default function MusicIndex({
                     </div>
                 </section>
 
-                <div className="glass flex flex-col gap-3 rounded-3xl p-3 md:flex-row md:items-center">
+                <div className="gc-solid flex flex-col gap-3 rounded-3xl p-3 md:flex-row md:items-center">
                     <div className="scrollbar-none flex gap-1 overflow-x-auto">
                         {tabs.map((item) => (
                             <Link
@@ -180,7 +180,7 @@ export default function MusicIndex({
                                     'flex shrink-0 items-center gap-2 rounded-xl px-3.5 py-2.5 text-sm font-semibold transition',
                                     tab === item.key
                                         ? 'nav-active text-white'
-                                        : 'text-white/55 hover:bg-white/[0.05] hover:text-white',
+                                        : 'text-white/55 hover:bg-[var(--gc-l3)] hover:text-white',
                                 )}
                             >
                                 {item.key === 'spotify' ? (
@@ -244,7 +244,7 @@ export default function MusicIndex({
                             }
                         />
                     ) : (
-                        <section className="glass rounded-3xl p-2 sm:p-3">
+                        <section className="gc-solid rounded-3xl p-2 sm:p-3">
                             <div className="mb-1 flex flex-wrap items-center gap-2 p-2">
                                 <h2 className="flex-1 font-display text-[13px] font-semibold text-white/70">
                                     {tab === 'mine'
@@ -266,7 +266,7 @@ export default function MusicIndex({
                                     onClick={() =>
                                         playQueue(shuffled(tracks.data), 0)
                                     }
-                                    className="glass inline-flex h-9 items-center gap-1.5 rounded-xl px-3.5 text-xs font-semibold text-white/80 hover:text-white"
+                                    className="gc-solid inline-flex h-9 items-center gap-1.5 rounded-xl px-3.5 text-xs font-semibold text-white/80 hover:text-white"
                                 >
                                     <Shuffle className="size-3.5" />{' '}
                                     {tr('Перемішати')}
@@ -313,7 +313,7 @@ export default function MusicIndex({
                             }
                         />
                     ) : (
-                        <section className="glass rounded-3xl p-4 sm:p-5">
+                        <section className="gc-solid rounded-3xl p-4 sm:p-5">
                             <div className={playlistGridClass}>
                                 {playlists.map((playlist) => (
                                     <PlaylistTile
@@ -324,7 +324,7 @@ export default function MusicIndex({
                                 <button
                                     type="button"
                                     onClick={() => setCreating(true)}
-                                    className="flex aspect-square flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-white/15 text-sm font-medium text-white/50 transition hover:border-gc-lilac-400/50 hover:text-white"
+                                    className="flex aspect-square flex-col items-center justify-center gap-2 rounded-2xl text-sm font-medium text-white/50 transition hover:border-gc-lilac-400/50 hover:text-white"
                                 >
                                     <ListPlus className="size-7" />
                                     {tr('Новий плейлист')}

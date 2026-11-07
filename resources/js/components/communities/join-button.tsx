@@ -163,7 +163,7 @@ export function JoinButton({
                 onClick={() => router.delete(url, options)}
                 title={tr('Скасувати заявку')}
                 className={cn(
-                    'group inline-flex items-center justify-center gap-2 rounded-xl bg-white/[0.07] font-semibold text-white/80 transition hover:bg-rose-500/15 hover:text-rose-200',
+                    'group inline-flex items-center justify-center gap-2 rounded-xl bg-white/[0.07] font-semibold text-white/80 transition hover:bg-red-500/15 hover:text-red-400',
                     height,
                     className,
                 )}
@@ -195,7 +195,7 @@ export function JoinButton({
             </DropdownMenuTrigger>
             <DropdownMenuContent
                 align="end"
-                className="glass-strong w-56 rounded-2xl border-white/10 p-1.5 text-white"
+                className="glass-strong w-56 rounded-2xl p-1.5 text-white"
             >
                 {role === 'owner' ? (
                     <div className="px-2.5 py-2 text-xs leading-relaxed text-white/50">
@@ -205,10 +205,10 @@ export function JoinButton({
                     </div>
                 ) : (
                     <DropdownMenuItem
-                        className="rounded-lg text-rose-300 focus:bg-rose-500/10 focus:text-rose-200"
+                        className="rounded-lg text-red-400 focus:bg-red-500/10 focus:text-red-400"
                         onSelect={() => router.delete(url, options)}
                     >
-                        <LogOut className="text-rose-300" />
+                        <LogOut className="text-red-400" />
                         {isPublic
                             ? tr('Відписатися')
                             : tr('Вийти зі спільноти')}
@@ -272,7 +272,7 @@ function PasswordDialog({
                         placeholder={tr('Пароль')}
                         className="input-glass h-11 w-full rounded-xl px-3.5 text-sm text-white placeholder:text-white/35 focus:outline-none"
                     />
-                    {error && <p className="text-xs text-rose-300">{error}</p>}
+                    {error && <p className="text-xs text-red-400">{error}</p>}
                     <button
                         type="submit"
                         disabled={busy || password === ''}
@@ -356,7 +356,7 @@ function QuestionsDialog({
                             />
                         </label>
                     ))}
-                    {error && <p className="text-xs text-rose-300">{error}</p>}
+                    {error && <p className="text-xs text-red-400">{error}</p>}
                     <button
                         type="submit"
                         disabled={busy || answers.some((a) => a.trim() === '')}

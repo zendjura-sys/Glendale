@@ -80,22 +80,22 @@ export default function AdminModules({
                                 <div
                                     key={m.key}
                                     className={cn(
-                                        'glass group relative animate-rise overflow-hidden rounded-2xl p-5 transition',
+                                        'gc-solid group relative animate-rise overflow-hidden rounded-2xl p-5 transition',
                                         m.enabled && 'border-gc-indigo/25',
                                         !m.available && 'opacity-65',
                                     )}
                                     style={{ animationDelay: `${i * 50}ms` }}
                                 >
                                     {m.enabled && (
-                                        <div className="absolute -top-12 -left-12 size-36 rounded-full bg-gradient-brand opacity-20 blur-3xl" />
+                                        <div className="absolute -top-12 -left-12 size-36 rounded-full bg-sky-500 opacity-20 blur-3xl" />
                                     )}
                                     <div className="relative flex items-start gap-4">
                                         <span
                                             className={cn(
                                                 'flex size-12 shrink-0 items-center justify-center rounded-2xl',
                                                 m.enabled
-                                                    ? 'bg-gradient-brand shadow-[0_10px_30px_-10px_rgb(109_93_252/0.9)]'
-                                                    : 'bg-white/[0.05] ring-1 ring-white/10',
+                                                    ? 'bg-sky-500'
+                                                    : 'gc-solid-2',
                                             )}
                                         >
                                             <ModuleIcon
@@ -146,7 +146,7 @@ export default function AdminModules({
                                             className={cn(
                                                 'size-1.5 rounded-full',
                                                 m.enabled
-                                                    ? 'bg-emerald-400 shadow-[0_0_8px] shadow-emerald-400'
+                                                    ? 'bg-emerald-400 shadow-emerald-400'
                                                     : 'bg-white/25',
                                             )}
                                         />
@@ -155,7 +155,7 @@ export default function AdminModules({
                                             : m.available
                                               ? tr('Вимкнено')
                                               : tr('Недоступно')}
-                                        <code className="ml-auto rounded bg-white/[0.04] px-1.5 py-0.5 text-white/30">
+                                        <code className="gc-solid-2 ml-auto rounded px-1.5 py-0.5 text-white/30">
                                             {m.key}
                                         </code>
                                     </div>

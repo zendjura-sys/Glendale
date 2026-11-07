@@ -47,7 +47,7 @@ export function CommunityWelcomeCard({
                     initial={reduce ? false : { opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={reduce ? { opacity: 0 } : { opacity: 0, height: 0 }}
-                    className="glass relative overflow-hidden rounded-2xl p-4 sm:p-5"
+                    className="gc-solid relative overflow-hidden rounded-2xl p-4 sm:p-5"
                 >
                     <button
                         type="button"
@@ -60,7 +60,7 @@ export function CommunityWelcomeCard({
                     {card.kind === 'member' ? (
                         <div className="flex gap-3.5 pr-8">
                             <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-gc-indigo/20">
-                                <PartyPopper className="size-5 text-gc-lilac-300" />
+                                <PartyPopper className="size-5 text-sky-400" />
                             </span>
                             <div className="min-w-0 space-y-2">
                                 <h2 className="font-semibold text-white">
@@ -75,7 +75,7 @@ export function CommunityWelcomeCard({
                                 {card.has_rules && (
                                     <Link
                                         href={`/c/${slug}/rules`}
-                                        className="inline-flex items-center gap-1.5 text-sm font-medium text-gc-lilac-300 hover:underline"
+                                        className="inline-flex items-center gap-1.5 text-sm font-medium text-sky-400 hover:underline"
                                     >
                                         <ScrollText className="size-4" />
                                         {tr('Правила спільноти')}
