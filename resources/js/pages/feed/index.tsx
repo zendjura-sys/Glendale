@@ -1,10 +1,9 @@
-import { UnderlineTabs } from '@/components/gc/underline-tabs';
+import { Fragment } from 'react';
 import {
     Contacts,
     FriendRequests,
     useRail,
 } from '@/components/gc/rail-widgets';
-import { BentoGrid, BentoRow, BentoTile } from '@/components/gc/bento';
 import {
     Deferred,
     Head,
@@ -40,17 +39,17 @@ import { PostSkeleton } from '@/components/gc/post-skeleton';
 import { StoriesBar } from '@/components/gc/stories';
 import { UserAvatar } from '@/components/gc/user-avatar';
 import { WrappedBanner } from '@/components/gc/wrapped-banner';
-import { EngagementCard, HomeWidgetsEditor } from '@/components/gc/engagement';
+import { HomeWidgetsEditor } from '@/components/gc/engagement';
+import { FeedInsert, FeedPulse, useHub } from '@/components/gc/feed-pulse';
 import { EmptyState, Widget, WidgetSkeleton } from '@/components/gc/widget';
-import { ReadyToPlayCard } from '@/components/party/ready-to-play';
 import { formatDate } from '@/lib/format';
 import type { PersonCard, PostItem, ScrollData, UserCard } from '@/types';
 import { FriendsLive } from '@/components/streams/stream';
 import type { StreamInfo } from '@/components/streams/stream';
-import { FeedQuests } from '@/components/quests/quest-list';
 import type { Quest } from '@/components/quests/quest-list';
 import { tr } from '@/lib/i18n';
 import { usePlugin } from '@/lib/plugins';
+import { cn } from '@/lib/utils';
 import { useFeature } from '@/lib/plugins';
 
 type Props = {
@@ -122,19 +121,35 @@ function FeedTabs({
             : []),
     ];
 
-    // Вкладки з підкресленням: прокручуються вбік на вузькому екрані, активна — завжди в полі зору.
+    // Пігулки: активна — суцільна небесна; прокручуються вбік, активна — завжди в полі зору.
     return (
-        <div className="gc-solid rounded-2xl px-2 pt-1">
-            <UnderlineTabs
-                active={tab}
-                tabs={tabs.map((item) => ({
-                    key: item.key,
-                    label: item.label,
-                    href: item.href,
-                    icon: <item.icon aria-hidden className="size-4" />,
-                }))}
-            />
-        </div>
+        <nav
+            ref={(el) => {
+                el?.querySelector<HTMLElement>(
+                    '[aria-current="page"]',
+                )?.scrollIntoView({ block: 'nearest', inline: 'center' });
+            }}
+            aria-label={tr('Стрічка')}
+            className="flex [scrollbar-width:none] gap-2 overflow-x-auto"
+        >
+            {tabs.map((item) => (
+                <Link
+                    key={item.key}
+                    href={item.href}
+                    preserveScroll
+                    aria-current={tab === item.key ? 'page' : undefined}
+                    className={cn(
+                        'flex h-10 shrink-0 items-center gap-2 rounded-xl px-4 text-sm font-semibold transition',
+                        tab === item.key
+                            ? 'bg-sky-500 text-white'
+                            : 'gc-solid text-white/70 hover:text-white',
+                    )}
+                >
+                    <item.icon aria-hidden className="size-4" />
+                    {item.label}
+                </Link>
+            ))}
+        </nav>
     );
 }
 
@@ -173,45 +188,21 @@ export default function Feed({
     const liveOn = useFeature('live');
     // Spacepark: праворуч заявки в друзі й контакти (дані /me/rail).
     const { data: rail, reload: reloadRail } = useRail();
+    // Тривоги для картки в стрічці (лише Україна — сервер сам вирішує, чи показувати).
+    const hub = useHub();
 
     return (
         <>
             <Head title={tr('Новини')} />
             <div className="flex gap-5">
                 <div className="min-w-0 flex-1 space-y-4">
-                    {/* Bento Grid: верх стрічки — плитки різного розміру. Серія днів і «Готові грати»
-                        живуть тут (у правій колонці їх більше немає — без дублікатів). */}
-                    <BentoGrid>
-                        {storiesOn && (
-                            <BentoTile>
-                                <StoriesBar />
-                            </BentoTile>
-                        )}
-                        <BentoTile>
-                            <WrappedBanner />
-                        </BentoTile>
-                        <BentoRow>
-                            <BentoTile span={4}>
-                                <ReadyToPlayCard />
-                            </BentoTile>
-                            <BentoTile span={2}>
-                                <EngagementCard />
-                            </BentoTile>
-                        </BentoRow>
-                        <BentoRow>
-                            <BentoTile span={4}>
-                                <FeedQuests quests={quests ?? []} />
-                            </BentoTile>
-                            <BentoTile span={2}>
-                                <TomorrowCard events={tomorrow ?? []} />
-                            </BentoTile>
-                        </BentoRow>
-                        {liveOn && (
-                            <BentoTile>
-                                <FriendsLive streams={streaming ?? []} />
-                            </BentoTile>
-                        )}
-                    </BentoGrid>
+                    {/* Верх стрічки за макетом: моменти, одна смуга «серія · готовий грати · завдання»,
+                        далі — Wrapped, «Завтра» й трансляції друзів (порожні не показуються). */}
+                    {storiesOn && <StoriesBar />}
+                    <FeedPulse quests={quests ?? []} />
+                    <WrappedBanner />
+                    <TomorrowCard events={tomorrow ?? []} />
+                    {liveOn && <FriendsLive streams={streaming ?? []} />}
                     {(picks?.length ?? 0) > 0 && (
                         <div className="flex gap-2 overflow-x-auto">
                             {picks?.map((pick) => (
@@ -351,8 +342,15 @@ export default function Feed({
                             loading={<PostSkeleton />}
                             className="space-y-4"
                         >
-                            {posts.data.map((post) => (
-                                <PostCard key={post.id} post={post} />
+                            {posts.data.map((post, i) => (
+                                <Fragment key={post.id}>
+                                    <PostCard post={post} />
+                                    <FeedInsert
+                                        index={i}
+                                        rail={rail}
+                                        hub={hub}
+                                    />
+                                </Fragment>
                             ))}
                         </InfiniteScroll>
                     )}

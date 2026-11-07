@@ -18,7 +18,7 @@ type Ready = {
     until: string;
 };
 
-type State = {
+export type ReadyState = {
     mine: Ready | null;
     friends: Ready[];
     games: GameCard[];
@@ -26,7 +26,7 @@ type State = {
 };
 
 /** «ще 42 хв» / «ще 1 год 10 хв». */
-function left(until: string, now: number): string {
+export function left(until: string, now: number): string {
     const minutes = Math.max(
         1,
         Math.round((new Date(until).getTime() - now) / 60_000),
@@ -56,11 +56,8 @@ export function ReadyToPlayCard({ className }: { className?: string }) {
     const on = usePlugin('ready_to_play');
     const { modules } = usePage().props;
     const reduce = useReducedMotion();
-    const [state, setState] = useState<State | null>(null);
+    const [state, setState] = useState<ReadyState | null>(null);
     const [open, setOpen] = useState(false);
-    const [game, setGame] = useState<string | null>(null);
-    const [minutes, setMinutes] = useState(60);
-    const [note, setNote] = useState('');
     const [busy, setBusy] = useState(false);
     const [now, setNow] = useState(() => Date.now());
 
@@ -68,7 +65,7 @@ export function ReadyToPlayCard({ className }: { className?: string }) {
         if (!on) {
             return;
         }
-        void api<State>('GET', '/ready')
+        void api<ReadyState>('GET', '/ready')
             .then(setState)
             .catch(() => {});
         const tick = window.setInterval(() => setNow(Date.now()), 30_000);
@@ -89,23 +86,11 @@ export function ReadyToPlayCard({ className }: { className?: string }) {
         (f) => new Date(f.until).getTime() > now,
     );
 
-    const send = (method: 'PUT' | 'DELETE') => {
+    const stop = () => {
         setBusy(true);
-        api<State>(
-            method,
-            '/ready',
-            method === 'PUT' ? { game, minutes, note } : undefined,
-        )
-            .then((next) => {
-                setState(next);
-                setOpen(false);
-                toast.success(
-                    method === 'PUT'
-                        ? tr('Друзі бачать, що ви готові грати.')
-                        : tr('Готовність знято.'),
-                );
-            })
-            .catch(() => toast.error(tr('Не вдалося оновити статус.')))
+        stopReady()
+            .then(setState)
+            .catch(() => {})
             .finally(() => setBusy(false));
     };
 
@@ -141,7 +126,7 @@ export function ReadyToPlayCard({ className }: { className?: string }) {
                     <button
                         type="button"
                         disabled={busy}
-                        onClick={() => send('DELETE')}
+                        onClick={stop}
                         aria-label={tr('Зняти готовність')}
                         className="flex size-8 items-center justify-center rounded-lg text-white/55 transition hover:bg-white/10 hover:text-white"
                     >
@@ -162,73 +147,14 @@ export function ReadyToPlayCard({ className }: { className?: string }) {
 
             <AnimatePresence initial={false}>
                 {open && !mine && (
-                    <m.div
-                        initial={reduce ? false : { opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={reduce ? undefined : { opacity: 0, height: 0 }}
-                        className="mb-3 overflow-hidden"
-                    >
-                        <div className="space-y-2.5 rounded-xl bg-white/[0.04] p-2.5">
-                            <div className="flex flex-wrap gap-1">
-                                <Chip
-                                    active={game === null}
-                                    onClick={() => setGame(null)}
-                                >
-                                    {tr('Будь-яка гра')}
-                                </Chip>
-                                {state.games.map((g) => (
-                                    <Chip
-                                        key={g.id}
-                                        active={game === g.slug}
-                                        onClick={() => setGame(g.slug)}
-                                    >
-                                        {g.name}
-                                    </Chip>
-                                ))}
-                            </div>
-                            <div className="flex flex-wrap gap-1">
-                                {state.durations.map((d) => (
-                                    <Chip
-                                        key={d}
-                                        active={minutes === d}
-                                        onClick={() => setMinutes(d)}
-                                    >
-                                        {durationLabel(d)}
-                                    </Chip>
-                                ))}
-                            </div>
-                            <input
-                                value={note}
-                                maxLength={80}
-                                onChange={(e) => setNote(e.target.value)}
-                                placeholder={tr(
-                                    'Примітка: «є мікро, граю спокійно»',
-                                )}
-                                aria-label={tr('Примітка')}
-                                className="h-9 w-full rounded-lg bg-white/[0.05] px-3 text-sm text-white outline-none placeholder:text-white/35 focus:ring-1 focus:ring-primary/60"
-                            />
-                            <div className="flex gap-2">
-                                <button
-                                    type="button"
-                                    onClick={() => setOpen(false)}
-                                    className="h-9 rounded-lg px-3 text-sm text-white/60 hover:bg-white/[0.06] hover:text-white"
-                                >
-                                    {tr('Скасувати')}
-                                </button>
-                                <button
-                                    type="button"
-                                    disabled={busy}
-                                    onClick={() => send('PUT')}
-                                    className="btn-glow ml-auto inline-flex h-9 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-white disabled:opacity-60"
-                                >
-                                    {busy && (
-                                        <Loader2 className="size-4 animate-spin" />
-                                    )}
-                                    {tr('Почати')}
-                                </button>
-                            </div>
-                        </div>
-                    </m.div>
+                    <ReadyForm
+                        state={state}
+                        onSaved={(next) => {
+                            setState(next);
+                            setOpen(false);
+                        }}
+                        onCancel={() => setOpen(false)}
+                    />
                 )}
             </AnimatePresence>
 
@@ -314,5 +240,109 @@ function Chip({
         >
             {children}
         </button>
+    );
+}
+
+/** Зняти свою готовність (повертає новий стан). */
+export function stopReady(): Promise<ReadyState> {
+    return api<ReadyState>('DELETE', '/ready')
+        .then((next) => {
+            toast.success(tr('Готовність знято.'));
+            return next;
+        })
+        .catch((e: unknown) => {
+            toast.error(tr('Не вдалося оновити статус.'));
+            throw e;
+        });
+}
+
+/** Форма «готовий грати»: гра, на скільки, примітка. */
+export function ReadyForm({
+    state,
+    onSaved,
+    onCancel,
+}: {
+    state: ReadyState;
+    onSaved: (next: ReadyState) => void;
+    onCancel: () => void;
+}) {
+    const reduce = useReducedMotion();
+    const [game, setGame] = useState<string | null>(null);
+    const [minutes, setMinutes] = useState(60);
+    const [note, setNote] = useState('');
+    const [busy, setBusy] = useState(false);
+
+    const start = () => {
+        setBusy(true);
+        api<ReadyState>('PUT', '/ready', { game, minutes, note })
+            .then((next) => {
+                onSaved(next);
+                toast.success(tr('Друзі бачать, що ви готові грати.'));
+            })
+            .catch(() => toast.error(tr('Не вдалося оновити статус.')))
+            .finally(() => setBusy(false));
+    };
+
+    return (
+        <m.div
+            initial={reduce ? false : { opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={reduce ? undefined : { opacity: 0, height: 0 }}
+            className="mb-3 overflow-hidden"
+        >
+            <div className="space-y-2.5 rounded-xl bg-white/[0.04] p-2.5">
+                <div className="flex flex-wrap gap-1">
+                    <Chip active={game === null} onClick={() => setGame(null)}>
+                        {tr('Будь-яка гра')}
+                    </Chip>
+                    {state.games.map((g) => (
+                        <Chip
+                            key={g.id}
+                            active={game === g.slug}
+                            onClick={() => setGame(g.slug)}
+                        >
+                            {g.name}
+                        </Chip>
+                    ))}
+                </div>
+                <div className="flex flex-wrap gap-1">
+                    {state.durations.map((d) => (
+                        <Chip
+                            key={d}
+                            active={minutes === d}
+                            onClick={() => setMinutes(d)}
+                        >
+                            {durationLabel(d)}
+                        </Chip>
+                    ))}
+                </div>
+                <input
+                    value={note}
+                    maxLength={80}
+                    onChange={(e) => setNote(e.target.value)}
+                    placeholder={tr('Примітка: «є мікро, граю спокійно»')}
+                    aria-label={tr('Примітка')}
+                    className="h-9 w-full rounded-lg bg-white/[0.05] px-3 text-sm text-white outline-none placeholder:text-white/35 focus:ring-1 focus:ring-primary/60"
+                />
+                <div className="flex gap-2">
+                    <button
+                        type="button"
+                        onClick={onCancel}
+                        className="h-9 rounded-lg px-3 text-sm text-white/60 hover:bg-white/[0.06] hover:text-white"
+                    >
+                        {tr('Скасувати')}
+                    </button>
+                    <button
+                        type="button"
+                        disabled={busy}
+                        onClick={start}
+                        className="btn-glow ml-auto inline-flex h-9 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-white disabled:opacity-60"
+                    >
+                        {busy && <Loader2 className="size-4 animate-spin" />}
+                        {tr('Почати')}
+                    </button>
+                </div>
+            </div>
+        </m.div>
     );
 }

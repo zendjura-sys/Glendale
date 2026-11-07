@@ -29,6 +29,23 @@ export type RailData = {
         people: UserCard[];
     }[];
     in_game?: (UserCard & { playing: { label: string } | null })[];
+    season?: {
+        title: string;
+        level: number;
+        into: number;
+        need: number;
+        max_level: number;
+    } | null;
+    servers?: {
+        id: number;
+        name: string;
+        href: string;
+        tagline: string | null;
+        website: string | null;
+        online: number;
+        max: number | null;
+        featured: boolean;
+    }[];
     requests: UserCard[];
     requests_total: number;
     contacts: Contact[];

@@ -31,6 +31,26 @@ class GamerDockTest extends TestCase
             ->assertJsonPath('in_game', []);
     }
 
+    public function test_rail_feeds_season_and_top_servers_widgets(): void
+    {
+        $user = User::factory()->create();
+        foreach ([['busy-rp', 'Busy RP', 800, true], ['calm-rp', 'Calm RP', 40, false], ['empty-rp', 'Empty RP', 0, false]] as [$slug, $name, $online, $featured]) {
+            GtaServer::query()->forceCreate([
+                'slug' => $slug, 'name' => $name, 'platform' => 'pc', 'multiplayer' => 'ragemp',
+                'status' => GtaServer::STATUS_PUBLISHED, 'origin' => 'seed',
+                'players_online' => $online, 'players_max' => 1000, 'is_featured' => $featured,
+            ]);
+        }
+
+        $this->actingAs($user)->getJson('/me/rail')->assertOk()
+            ->assertJsonStructure(['season' => ['title', 'level', 'into', 'need', 'max_level']])
+            ->assertJsonCount(2, 'servers')
+            ->assertJsonPath('servers.0.name', 'Busy RP')
+            ->assertJsonPath('servers.0.online', 800)
+            ->assertJsonPath('servers.0.featured', true)
+            ->assertJsonPath('servers.1.href', '/servers/calm-rp');
+    }
+
     public function test_hub_returns_family_headquarters_summary(): void
     {
         Storage::fake('public');

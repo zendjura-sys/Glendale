@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\FamilyMember;
+use App\Models\GtaServer;
 use App\Models\User;
 use App\Models\VoiceRoom;
 use App\Services\Engagement\Streaks;
@@ -39,6 +40,9 @@ class RailController extends Controller
             // Ліва колонка (Gamer Dock): картка гравця, голосові кімнати сімей, друзі в грі.
             'me' => $this->me($user, $modules),
             'voice' => $this->voice($user, $modules),
+            // Віджети в стрічці: сезонний пропуск і топ серверів за онлайном.
+            'season' => $this->season($user, $modules),
+            'servers' => $this->servers($modules),
             'in_game' => User::query()->whereIn('id', $friendIds === [] ? [0] : $friendIds)
                 ->where('last_seen_at', '>=', now()->subMinutes(10))->where('playing_until', '>', now())
                 ->orderByDesc('last_seen_at')->limit(6)->get()
@@ -121,6 +125,60 @@ class RailController extends Controller
                 'href' => '/f/'.($families[$room->owner_id]->slug ?? ''),
                 'count' => $room->participants->count(),
                 'people' => $room->participants->pluck('user')->filter()->take(4)->map(fn (User $u) => $u->toCard())->values()->all(),
+            ])->all());
+    }
+
+    /**
+     * Сезонний пропуск коротко: рівень і скільки до наступного.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function season(User $user, ModuleManager $modules): ?array
+    {
+        if (! $modules->enabled('quests')) {
+            return null;
+        }
+        try {
+            $pass = app(SeasonPass::class);
+            $season = $pass->find();
+            $level = $pass->levelFor($pass->points($user, $season->key), $pass->costs($season));
+
+            return [
+                'title' => $season->title,
+                'level' => $level['level'],
+                'into' => $level['into'],
+                'need' => $level['need'],
+                'max_level' => $pass->maxLevel(),
+            ];
+        } catch (\Throwable $e) {
+            report($e);
+
+            return null;
+        }
+    }
+
+    /**
+     * Три сервери з найбільшим онлайном зараз.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function servers(ModuleManager $modules): array
+    {
+        if (! $modules->enabled('servers')) {
+            return [];
+        }
+
+        return array_values(GtaServer::query()->published()->where('players_online', '>', 0)
+            ->orderByDesc('players_online')->limit(3)->get()
+            ->map(fn (GtaServer $s) => [
+                'id' => $s->id,
+                'name' => $s->name,
+                'href' => '/servers/'.$s->slug,
+                'tagline' => $s->tagline,
+                'website' => $s->website,
+                'online' => (int) $s->players_online,
+                'max' => $s->players_max !== null ? (int) $s->players_max : null,
+                'featured' => (bool) $s->is_featured,
             ])->all());
     }
 }

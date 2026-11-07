@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\AlertType;
 use App\Models\FamilyItem;
 use App\Models\FamilyMember;
 use App\Models\FamilyReport;
@@ -53,7 +54,16 @@ class HubController extends Controller
 
         return [
             'active_count' => (int) ($state['active_count'] ?? 0),
-            'region' => is_array($region) ? ['name' => $region['name'], 'active' => (bool) $region['active']] : null,
+            'region' => is_array($region) ? [
+                'name' => $region['name'],
+                'active' => (bool) $region['active'],
+                // Головний вид тривоги (AlertType) і коли почалась — для таймера в стрічці.
+                'alert' => $region['alert'] ?? null,
+                'label' => is_string($region['alert'] ?? null) ? AlertType::tryFrom($region['alert'])?->label() : null,
+                'started_at' => $region['started_at'] ?? null,
+            ] : null,
+            // Останнє повідомлення моніторингу (ПС ЗСУ / канали) — одним рядком.
+            'latest' => is_array($state['feed'][0] ?? null) ? mb_substr((string) ($state['feed'][0]['text'] ?? ''), 0, 200) : null,
         ];
     }
 

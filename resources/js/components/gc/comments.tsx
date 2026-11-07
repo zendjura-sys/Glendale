@@ -307,8 +307,10 @@ export function Comments({
                                         )}
                                     </p>
                                 </div>
-                                <div className="mt-1 flex items-center gap-3 pl-2 text-xs text-white/40">
-                                    <span>{timeAgo(comment.created_at)}</span>
+                                <div className="mt-1 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 pl-2 text-xs text-white/40">
+                                    <span className="whitespace-nowrap">
+                                        {timeAgo(comment.created_at)}
+                                    </span>
                                     {canComment && (
                                         <button
                                             type="button"

@@ -1,4 +1,3 @@
-import { usePage } from '@inertiajs/react';
 import {
     BarChart3,
     ChevronLeft,
@@ -779,7 +778,6 @@ function StoryThumb({ item }: { item: StoryItem }) {
 }
 
 export function StoriesBar() {
-    const me = usePage().props.auth.user;
     const [groups, setGroups] = useState<StoryGroup[] | null>(null);
     const [reactions, setReactions] = useState<string[]>([]);
     const [open, setOpen] = useState<number | null>(null);
@@ -804,85 +802,105 @@ export function StoriesBar() {
 
     return (
         <>
-            {/* Історії великими плитками: кадр історії — тло, аватар угорі, ім'я внизу; перша — «Додати». */}
-            <div className="flex [scrollbar-width:none] gap-3 overflow-x-auto">
-                <button
-                    type="button"
-                    onClick={() =>
-                        own ? setOpen(groups.indexOf(own)) : setComposing(true)
-                    }
-                    data-on-dark
-                    className="relative flex h-48 w-[112px] shrink-0 flex-col items-center justify-end overflow-hidden rounded-2xl bg-gradient-to-b from-[#6f7f9c] to-[#2a3242] p-3"
-                >
-                    {own?.stories[0] ? (
-                        <StoryThumb item={own.stories[0]} />
-                    ) : (
-                        // Фото профілю — просто тло плитки, без кола й рамки аватара.
-                        me.avatar_url && (
-                            <img
-                                src={me.avatar_url}
-                                alt=""
-                                loading="lazy"
-                                className="absolute inset-0 size-full object-cover opacity-70"
-                            />
-                        )
-                    )}
-                    <span className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent" />
-                    <span
-                        role="button"
-                        tabIndex={0}
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            setComposing(true);
-                        }}
-                        className="relative mb-2 flex size-9 items-center justify-center rounded-xl border-2 border-white/80 text-white"
-                        aria-label={tr('Нова історія')}
+            {/* Моменти: компактні квадратні плитки з кільцем (небесне — нове, тьмяне — переглянуте),
+                підпис знизу; перша — «Момент» (нова історія). */}
+            <div className="gc-solid rounded-2xl p-3">
+                <div className="flex [scrollbar-width:none] gap-3 overflow-x-auto">
+                    <button
+                        type="button"
+                        onClick={() =>
+                            own
+                                ? setOpen(groups.indexOf(own))
+                                : setComposing(true)
+                        }
+                        className="flex w-[72px] shrink-0 flex-col items-center gap-1.5"
                     >
-                        <Plus className="size-5" />
-                    </span>
-                    <span className="relative text-xs font-semibold text-white">
-                        {own ? tr('Ваша історія') : tr('Додати історію')}
-                    </span>
-                </button>
-                {groups.map((group, n) =>
-                    group.own ? null : (
-                        <button
-                            key={group.user.id}
-                            type="button"
-                            onClick={() => setOpen(n)}
-                            data-on-dark
-                            className="relative flex h-48 w-[112px] shrink-0 flex-col items-center justify-between overflow-hidden rounded-2xl bg-[#2a3242] p-3"
-                        >
-                            {group.stories[0] && (
-                                <StoryThumb item={group.stories[0]} />
+                        <span
+                            className={cn(
+                                'relative block size-[68px] rounded-[20px] p-[2.5px]',
+                                own && !own.all_seen
+                                    ? 'bg-gradient-to-br from-sky-400 to-cyan-300'
+                                    : 'bg-transparent',
                             )}
-                            <span className="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-black/20" />
-                            <span
-                                className={cn(
-                                    'relative rounded-xl p-0.5',
-                                    group.all_seen
-                                        ? 'bg-white/40'
-                                        : 'bg-[var(--vkui--color_background_accent)]',
+                        >
+                            <span className="gc-solid-2 relative flex size-full items-center justify-center overflow-hidden rounded-[17px] text-sky-400">
+                                {own?.stories[0] ? (
+                                    <StoryThumb item={own.stories[0]} />
+                                ) : (
+                                    <Plus className="size-7" />
                                 )}
+                            </span>
+                            {own && (
+                                <span
+                                    role="button"
+                                    tabIndex={0}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setComposing(true);
+                                    }}
+                                    aria-label={tr('Нова історія')}
+                                    className="absolute -right-1 -bottom-1 flex size-6 items-center justify-center rounded-lg bg-sky-500 text-white"
+                                >
+                                    <Plus className="size-4" />
+                                </span>
+                            )}
+                        </span>
+                        <span className="w-full truncate text-center text-xs font-semibold text-white">
+                            {own ? tr('Ваша історія') : tr('Момент')}
+                        </span>
+                    </button>
+                    {groups.map((group, n) =>
+                        group.own ? null : (
+                            <button
+                                key={group.user.id}
+                                type="button"
+                                onClick={() => setOpen(n)}
+                                className="flex w-[72px] shrink-0 flex-col items-center gap-1.5"
                             >
-                                <UserAvatar
-                                    user={group.user}
-                                    size="sm"
-                                    showOnline={false}
-                                    className="rounded-[10px]"
-                                />
-                            </span>
-                            <span className="relative w-full truncate text-center text-xs font-semibold text-white">
-                                {group.user.name}
-                            </span>
-                        </button>
-                    ),
-                )}
-                {groups.filter((x) => !x.own).length === 0 && (
-                    <p className="glass flex h-48 w-[112px] shrink-0 items-end rounded-2xl p-3 text-xs leading-relaxed text-white/45">
-                        {tr('Історії друзів з’являться тут на 24 години')}
-                    </p>
-                )}
+                                <span
+                                    className={cn(
+                                        'block size-[68px] rounded-[20px] p-[2.5px]',
+                                        group.all_seen
+                                            ? 'bg-white/15'
+                                            : 'bg-gradient-to-br from-sky-400 to-emerald-300',
+                                    )}
+                                >
+                                    <span className="relative block size-full overflow-hidden rounded-[17px] bg-[var(--gc-l2)]">
+                                        {group.stories[0] ? (
+                                            <StoryThumb
+                                                item={group.stories[0]}
+                                            />
+                                        ) : (
+                                            group.user.avatar_url && (
+                                                <img
+                                                    src={group.user.avatar_url}
+                                                    alt=""
+                                                    loading="lazy"
+                                                    className="absolute inset-0 size-full object-cover"
+                                                />
+                                            )
+                                        )}
+                                    </span>
+                                </span>
+                                <span
+                                    className={cn(
+                                        'w-full truncate text-center text-xs font-semibold',
+                                        group.all_seen
+                                            ? 'text-white/60'
+                                            : 'text-sky-400',
+                                    )}
+                                >
+                                    {group.user.first_name || group.user.name}
+                                </span>
+                            </button>
+                        ),
+                    )}
+                    {groups.filter((x) => !x.own).length === 0 && (
+                        <p className="max-w-[220px] self-center text-xs leading-relaxed text-white/50">
+                            {tr('Історії друзів з’являться тут на 24 години')}
+                        </p>
+                    )}
+                </div>
             </div>
             {open !== null && (
                 <StoryViewer
