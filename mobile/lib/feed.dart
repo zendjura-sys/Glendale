@@ -97,14 +97,10 @@ class _FeedScreenState extends State<FeedScreen> {
 
   final stories = GlobalKey<StoriesStripState>();
   final pulse = GlobalKey<FeedPulseState>();
-  final extras = FeedExtras();
 
   Future<void> _reload() async {
     unawaited(stories.currentState?.reload());
     unawaited(pulse.currentState?.reload());
-    unawaited(extras.load(AppScope.read(context).session.api).then((_) {
-      if (mounted) setState(() {});
-    }));
     try {
       await pager.reset();
       error = null;
@@ -228,10 +224,7 @@ class _FeedScreenState extends State<FeedScreen> {
             onAction: () => context.push('/people'),
           )
         else ...[
-          for (final (i, post) in pager.posts.indexed) ...[
-            PostCard(key: ValueKey('post-${post['id']}'), post: post, onDeleted: () => pager.posts.remove(post)),
-            FeedInsert(index: i, extras: extras),
-          ],
+          for (final post in pager.posts) PostCard(key: ValueKey('post-${post['id']}'), post: post, onDeleted: () => pager.posts.remove(post)),
           LoadMore(more: pager.more, onMore: _more),
         ],
         if (suggestions.isNotEmpty && ready && shows('suggestions')) ...[
