@@ -3,11 +3,13 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'api.dart';
+import 'teammates.dart';
 import 'i18n.dart';
 import 'state.dart';
 import 'theme.dart';
 import 'voice_room.dart';
 import 'widgets.dart';
+import 'skeletons.dart';
 
 Map<String, String> partyPlatforms() => {'pc': tr('ПК'), 'playstation': 'PlayStation', 'xbox': 'Xbox', 'switch': 'Switch', 'mobile': tr('Мобільні')};
 
@@ -67,7 +69,7 @@ class _PartyBoardScreenState extends State<PartyBoardScreen> {
   @override
   Widget build(BuildContext context) {
     final data = page;
-    if (data == null) return const Center(child: CircularProgressIndicator(strokeWidth: 2.4));
+    if (data == null) return const ScreenSkeleton();
     final options = mapOf(data['options']);
     final parties = maps(data['parties']);
     return ScreenScroll(
@@ -110,6 +112,8 @@ class _PartyBoardScreenState extends State<PartyBoardScreen> {
             ),
             const SizedBox(height: 12),
             PrimaryButton(label: tr('Шукаю паті'), icon: LucideIcons.plus, onPressed: _create),
+            const SizedBox(height: 8),
+            GhostButton(label: tr('Підбір тиммейтів'), icon: LucideIcons.radar, onPressed: () => context.push('/party/match')),
           ]),
         ),
         const SizedBox(height: 12),
@@ -391,6 +395,16 @@ class PartyScreen extends StatelessWidget {
                   ),
               ]),
             ),
+            if (maps(data['suggestions']).isNotEmpty) ...[
+              SectionLabel(tr('Підходять у паті'), trailing: tr('Підбір тиммейтів'), onTrailing: () => context.push('/party/match')),
+              Glass(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+                child: Column(children: [
+                  for (final match in maps(data['suggestions']))
+                    TeammateTile(match: match, onMessage: () => messageTeammate(context, match), onInvite: () => inviteTeammate(context, intOf(party['id']), match)),
+                ]),
+              ),
+            ],
             if (joined && open) ...[
               const SizedBox(height: 12),
               VoiceRoomsPanel(key: ValueKey('voice-party-$id'), type: 'party', id: intOf(party['id']), label: text(party['title']) ?? '', route: '/party/$id'),

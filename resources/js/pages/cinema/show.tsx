@@ -2,21 +2,17 @@ import { Head, Link, router } from '@inertiajs/react';
 import {
     Popcorn,
     ArrowLeft,
-    Bookmark,
-    Check,
-    ChevronDown,
-    Clock,
-    Eye,
     MessageCircle,
     Pause,
-    Pencil,
     Play,
     Plus,
     Share2,
     Star,
     Tv,
-    UsersRound,
-    X,
+    EllipsisVertical,
+    Copy,
+    CircleAlert,
+    Clapperboard,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
@@ -28,7 +24,19 @@ import {
 } from '@/components/cinema/episode-picker';
 import type { EpisodePick, Season } from '@/components/cinema/episode-picker';
 import { MoviePoster, PosterRow } from '@/components/cinema/movie-tile';
+import { CinemaShell } from '@/components/cinema/cinema-side';
+import type { CinemaSideData } from '@/components/cinema/cinema-side';
+import { MovieList } from '@/components/cinema/movie-row';
+import type { MovieRowItem } from '@/components/cinema/movie-row';
+import { TitleDesktop, TitleSection } from '@/components/cinema/title-desktop';
 import { ShareMovieDialog } from '@/components/cinema/share-movie-dialog';
+import { VoicePicker } from '@/components/cinema/voice-picker';
+import {
+    AudienceBar,
+    RatingBreakdown,
+} from '@/components/cinema/audience-stats';
+import type { Audience } from '@/components/cinema/audience-stats';
+import { AddToList, MovieReviews } from '@/components/cinema/movie-extras';
 import { Comments } from '@/components/gc/comments';
 import { PinButton } from '@/components/gc/pin-button';
 import { SaveButton } from '@/components/gc/save-button';
@@ -40,7 +48,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { api, ApiError } from '@/lib/api';
-import { compactNumber, formatDuration, plural } from '@/lib/format';
+import { formatDuration } from '@/lib/format';
 import { playQueue, toggle, usePlayer } from '@/lib/player';
 import { Equalizer, TrackCover } from '@/components/music/track-cover';
 import { cn } from '@/lib/utils';
@@ -76,6 +84,8 @@ type Props = {
     saved: boolean;
     pinned: boolean;
     inTopTen: boolean;
+    audience: Audience;
+    side?: CinemaSideData;
 };
 
 type StateResponse = {
@@ -95,86 +105,6 @@ const ratingSources: {
     { key: 'shikimori', label: 'Shikimori', tone: 'text-[#8fb4ff]' },
 ];
 
-const statusTone: Record<MovieStatus, string> = {
-    planned: 'from-gc-blue to-gc-indigo',
-    watching: 'from-gc-mint to-gc-cyan',
-    watched: 'from-gc-purple to-gc-pink',
-    dropped: 'from-gc-coral to-gc-pink',
-};
-
-function durationLabel(minutes: number | null) {
-    if (!minutes) return null;
-    const h = Math.floor(minutes / 60);
-    const m = minutes % 60;
-
-    return h
-        ? tr('{h} год{v}', { h, v: m ? tr(' {m} хв', { m }) : '' })
-        : tr('{m} хв', { m });
-}
-
-function ScoreRing({ value, label }: { value: number; label: string }) {
-    const pct = Math.max(0, Math.min(1, value / 10));
-
-    return (
-        <div className="flex items-center gap-2.5">
-            <div
-                className="relative flex size-12 items-center justify-center rounded-full"
-                style={{
-                    background: `conic-gradient(${value >= 7 ? '#22d3a6' : value >= 5 ? '#f5b342' : '#f43f5e'} ${pct * 360}deg, rgb(255 255 255 / 0.08) 0)`,
-                }}
-            >
-                <span className="flex size-[40px] items-center justify-center rounded-full bg-[#0b0d1f] font-display text-sm font-bold text-white tabular-nums">
-                    {value.toFixed(1)}
-                </span>
-            </div>
-            <span className="text-xs leading-tight text-white/55">{label}</span>
-        </div>
-    );
-}
-
-function RatingPicker({
-    value,
-    onChange,
-}: {
-    value: number | null;
-    onChange: (value: number | null) => void;
-}) {
-    const [hover, setHover] = useState<number | null>(null);
-    const shown = hover ?? value ?? 0;
-
-    return (
-        <div className="flex items-center gap-2">
-            <div
-                className="flex items-center"
-                onMouseLeave={() => setHover(null)}
-            >
-                {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
-                    <button
-                        key={n}
-                        type="button"
-                        onMouseEnter={() => setHover(n)}
-                        onClick={() => onChange(n === value ? null : n)}
-                        className="p-0.5"
-                        aria-label={tr('Оцінка {n}', { n })}
-                    >
-                        <Star
-                            className={cn(
-                                'size-[18px] transition',
-                                n <= shown
-                                    ? 'fill-gc-amber text-gc-amber drop-shadow-[0_0_6px_rgb(245_179_66/0.6)]'
-                                    : 'text-white/20',
-                            )}
-                        />
-                    </button>
-                ))}
-            </div>
-            <span className="w-6 font-display text-sm font-bold text-white tabular-nums">
-                {shown || ''}
-            </span>
-        </div>
-    );
-}
-
 export default function CinemaShow({
     movie,
     players,
@@ -192,9 +122,13 @@ export default function CinemaShow({
     saved,
     pinned,
     inTopTen,
+    audience,
+    side,
 }: Props) {
     const [state, setState] = useState(initialState);
     const tenOn = usePlugin('top_ten');
+    const listsOn = usePlugin('movie_lists');
+    const reviewsOn = usePlugin('movie_reviews');
     const [stats, setStats] = useState({
         user_rating: movie.user_rating,
         ratings_count: movie.ratings_count,
@@ -203,6 +137,7 @@ export default function CinemaShow({
     const [commentsCount, setCommentsCount] = useState(movie.comments_count);
     const marks = episodeMarks;
     const [sharing, setSharing] = useState(false);
+    const [moreText, setMoreText] = useState(false);
     const providers = useMemo(
         () => [...new Set(players.map((p) => p.provider))],
         [players],
@@ -329,14 +264,21 @@ export default function CinemaShow({
         setPlayerKey(players.find((p) => p.provider === next)?.key ?? null);
     };
 
-    const currentStatus = statuses.find((s) => s.key === state.status);
+    const playTrailer = () => {
+        choose('trailer');
+        document
+            .getElementById('player')
+            ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
+    // Посилання «…#trailer» (віджет «Трейлери») — одразу вмикаємо трейлер.
+    useEffect(() => {
+        if (window.location.hash === '#trailer' && movie.trailer_url) {
+            playTrailer();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [movie.id]);
+
     const ratings = ratingSources.filter((r) => movie.ratings[r.key]);
-    const meta = [
-        movie.year,
-        movie.type_label,
-        durationLabel(movie.duration),
-        movie.countries.slice(0, 2).join(', ') || null,
-    ].filter(Boolean);
     const tabs = [
         ...providers.map((p) => ({
             key: p,
@@ -347,573 +289,477 @@ export default function CinemaShow({
             : []),
     ];
 
+    const moreMenu = (
+        <DropdownMenu>
+            <DropdownMenuTrigger
+                aria-label={tr('Ще')}
+                className="flex size-12 items-center justify-center rounded-full text-white/80 hover:bg-white/[0.06]"
+            >
+                <EllipsisVertical className="size-6" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+                align="end"
+                className="min-w-56 rounded-2xl p-1.5"
+            >
+                <DropdownMenuItem
+                    onSelect={() => setSharing(true)}
+                    className="gap-3 rounded-xl px-3 py-2.5"
+                >
+                    <Share2 className="size-5" />
+                    {tr('Поділитися')}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                    onSelect={() => {
+                        void navigator.clipboard?.writeText(
+                            window.location.href,
+                        );
+                        toast.success(tr('Посилання скопійовано'));
+                    }}
+                    className="gap-3 rounded-xl px-3 py-2.5"
+                >
+                    <Copy className="size-5" />
+                    {tr('Скопіювати посилання')}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                    onSelect={() =>
+                        router.post(`/cinema/${movie.slug}/watch`, {
+                            player_key: player?.key ?? null,
+                        })
+                    }
+                    className="gap-3 rounded-xl px-3 py-2.5"
+                >
+                    <Popcorn className="size-5" />
+                    {tr('Дивитися разом')}
+                </DropdownMenuItem>
+                {tenOn && (
+                    <DropdownMenuItem
+                        onSelect={() =>
+                            router.post('/cinema/ten', {
+                                movie_id: movie.id,
+                            })
+                        }
+                        className="gap-3 rounded-xl px-3 py-2.5"
+                    >
+                        <Star className="size-5" />
+                        {inTopTen ? tr('У десятці') : tr('У десятку')}
+                    </DropdownMenuItem>
+                )}
+                <DropdownMenuItem
+                    asChild
+                    className="gap-3 rounded-xl px-3 py-2.5 text-rose-400"
+                >
+                    <Link
+                        href={`/support?subject=${encodeURIComponent(movie.title)}`}
+                    >
+                        <CircleAlert className="size-5" />
+                        {tr('Поскаржитися')}
+                    </Link>
+                </DropdownMenuItem>
+            </DropdownMenuContent>
+        </DropdownMenu>
+    );
+
     return (
         <>
             <Head title={movie.title} />
-            <div className="space-y-5">
-                <section className="relative isolate overflow-hidden rounded-3xl border border-white/[0.08] bg-gc-ink">
-                    {(movie.backdrop || movie.poster) && (
-                        <img
-                            decoding="async"
-                            fetchPriority="high"
-                            src={movie.backdrop ?? movie.poster ?? ''}
-                            alt=""
-                            className={cn(
-                                'absolute inset-0 -z-10 size-full object-cover opacity-60',
-                                !movie.backdrop && 'scale-110 blur-3xl',
-                            )}
-                        />
-                    )}
-                    <div className="scrim scrim-side absolute inset-0 -z-10" />
-                    <div className="scrim absolute inset-0 -z-10" />
-
-                    <div className="p-5 sm:p-7">
-                        <div className="mb-5 flex items-center gap-2">
-                            <Link
-                                href="/cinema"
-                                className="inline-flex items-center gap-1.5 rounded-xl bg-black/30 px-3 py-1.5 text-xs font-medium text-white/70 backdrop-blur transition hover:text-white"
-                            >
-                                <ArrowLeft className="size-3.5" /> {tr('Кіно')}
-                            </Link>
-                            {!movie.is_published && (
-                                <span className="rounded-full bg-amber-400/15 px-2.5 py-1 text-xs font-semibold text-amber-200">
-                                    {tr('Приховано')}
-                                </span>
-                            )}
-                            {can.manage && (
-                                <a
-                                    href={`/admin/cinema/${movie.id}/edit`}
-                                    className="ml-auto inline-flex items-center gap-1.5 rounded-xl bg-black/30 px-3 py-1.5 text-xs font-medium text-white/70 backdrop-blur transition hover:text-white"
+            <CinemaShell side={side}>
+                {/*
+                 * Широкий екран — постер ліворуч, банер угорі; горизонтальний сенсорний екран — постер
+                 * закріплений ліворуч (з кнопками «назад» і «додати»), уміст прокручується праворуч.
+                 */}
+                <div className="gc-title">
+                    <aside className="gc-title-aside">
+                        <div className="gc-title-aside-in">
+                            <div className="gc-title-rail">
+                                <Link
+                                    href="/cinema"
+                                    aria-label={tr('Назад')}
+                                    className="flex size-11 items-center justify-center rounded-full bg-black/45 text-white backdrop-blur-md"
                                 >
-                                    <Pencil className="size-3.5" />{' '}
-                                    {tr('Редагувати')}
-                                </a>
-                            )}
-                        </div>
-
-                        <div className="flex flex-col gap-6 sm:flex-row">
-                            <div className="mx-auto w-[180px] shrink-0 sm:mx-0 sm:w-[210px]">
-                                <MoviePoster
-                                    movie={movie}
-                                    className="aspect-[2/3] w-full rounded-2xl shadow-[0_30px_60px_-20px_rgb(0_0_0/0.9)] ring-1 ring-white/15"
-                                />
+                                    <ArrowLeft className="size-5" />
+                                </Link>
+                                {listsOn && (
+                                    <AddToList
+                                        movieId={movie.id}
+                                        slug={movie.slug}
+                                    />
+                                )}
                             </div>
-                            <div className="min-w-0 flex-1">
-                                <h1 className="font-display text-3xl leading-tight font-bold text-white sm:text-4xl">
-                                    {movie.title}
-                                </h1>
-                                {movie.title_original &&
-                                    movie.title_original !== movie.title && (
-                                        <p className="mt-1 text-sm text-white/45">
-                                            {movie.title_original}
-                                        </p>
-                                    )}
-                                {movie.tagline && (
-                                    <p className="mt-2 text-sm text-[#b9c3ff]/80 italic">
-                                        «{movie.tagline}»
-                                    </p>
-                                )}
-                                <div className="mt-3 flex flex-wrap items-center gap-2 text-[13px] text-white/70">
-                                    {meta.map((item, i) => (
-                                        <span
-                                            key={i}
-                                            className="inline-flex items-center gap-1"
-                                        >
-                                            {i > 0 && (
-                                                <span className="mr-1 text-white/25">
-                                                    •
-                                                </span>
-                                            )}
-                                            {i === 2 &&
-                                                movie.duration !== null && (
-                                                    <Clock className="size-3.5" />
-                                                )}
-                                            {item}
-                                        </span>
-                                    ))}
-                                    {movie.age_rating && (
-                                        <span className="rounded border border-white/25 px-1.5 text-xs font-semibold">
-                                            {movie.age_rating}
-                                        </span>
-                                    )}
-                                    {movie.episodes_count &&
-                                        movie.episodes_count > 1 && (
-                                            <span className="inline-flex items-center gap-1 text-white/55">
-                                                <Tv className="size-3.5" />
-                                                {movie.episodes_count}{' '}
-                                                {plural(movie.episodes_count, [
-                                                    'епізод',
-                                                    'епізоди',
-                                                    'епізодів',
-                                                ])}
-                                            </span>
-                                        )}
-                                </div>
-                                {movie.genres.length > 0 && (
-                                    <div className="mt-3 flex flex-wrap gap-1.5">
-                                        {movie.genres.map((genre) => (
-                                            <Link
-                                                key={genre}
-                                                href={`/cinema?genre=${encodeURIComponent(genre)}`}
-                                                className="rounded-full border border-white/10 bg-white/[0.06] px-2.5 py-1 text-xs text-white/70 backdrop-blur transition hover:border-gc-lilac-400/40 hover:text-white"
-                                            >
-                                                {genre}
-                                            </Link>
-                                        ))}
-                                    </div>
-                                )}
-
-                                {(ratings.length > 0 ||
-                                    stats.user_rating !== null) && (
-                                    <div className="mt-5 flex flex-wrap gap-x-6 gap-y-3">
-                                        {stats.user_rating !== null && (
-                                            <ScoreRing
-                                                value={stats.user_rating}
-                                                label={`GameCon · ${stats.ratings_count}`}
+                            <MoviePoster
+                                movie={movie}
+                                className="aspect-[2/3] w-full rounded-[28px] shadow-[0_30px_60px_-20px_rgb(0_0_0/0.9)]"
+                            />
+                        </div>
+                    </aside>
+                    <div className="min-w-0 space-y-5">
+                        <div className="gc-title-desk">
+                            <TitleDesktop
+                                movie={movie}
+                                statuses={statuses}
+                                status={state.status}
+                                onStatus={(status) => void setStatus(status)}
+                                watchers={stats.watchers_count}
+                                commentsCount={commentsCount}
+                                ratings={ratings.map((r) => ({
+                                    ...r,
+                                    value: movie.ratings[r.key]!,
+                                }))}
+                                onTrailer={
+                                    movie.trailer_url ? playTrailer : undefined
+                                }
+                                canManage={can.manage}
+                                playLabel={
+                                    state.status === 'watching'
+                                        ? tr('Продовжити перегляд')
+                                        : tr('Дивитися онлайн')
+                                }
+                                menu={moreMenu}
+                                actions={
+                                    <>
+                                        <SaveButton
+                                            kind="movie"
+                                            id={movie.id}
+                                            saved={saved}
+                                        />
+                                        {listsOn && (
+                                            <AddToList
+                                                movieId={movie.id}
+                                                slug={movie.slug}
                                             />
                                         )}
-                                        {ratings.map((r) => (
-                                            <div
-                                                key={r.key}
-                                                className="flex flex-col"
-                                            >
-                                                <span
-                                                    className={cn(
-                                                        'font-display text-xl font-bold tabular-nums',
-                                                        r.tone,
-                                                    )}
-                                                >
-                                                    {movie.ratings[
-                                                        r.key
-                                                    ]!.toFixed(1)}
-                                                </span>
-                                                <span className="text-xs text-white/45">
-                                                    {r.label}
-                                                </span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-
-                                <div className="mt-6 flex flex-wrap items-center gap-2">
-                                    {players.length > 0 && (
-                                        <a
-                                            href="#player"
-                                            className="btn-glow inline-flex h-11 items-center gap-2 rounded-xl px-6 text-sm font-semibold"
-                                        >
-                                            <Play className="size-4 fill-current" />
-                                            {state.status === 'watching'
-                                                ? tr('Продовжити')
-                                                : tr('Дивитися')}
-                                        </a>
-                                    )}
-                                    {players.length > 0 && (
-                                        <button
-                                            type="button"
-                                            onClick={() =>
-                                                router.post(
-                                                    `/cinema/${movie.slug}/watch`,
-                                                    {
-                                                        player_key:
-                                                            player?.key ?? null,
-                                                    },
-                                                )
-                                            }
-                                            className="inline-flex h-11 items-center gap-2 rounded-xl border border-white/15 bg-white/[0.08] px-4 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/15"
-                                        >
-                                            <Popcorn className="size-4" />
-                                            {tr('Дивитися разом')}
-                                        </button>
-                                    )}
-                                    <SaveButton
-                                        kind="movie"
-                                        id={movie.id}
-                                        saved={saved}
-                                    />
-                                    {tenOn && (
-                                        <button
-                                            type="button"
-                                            onClick={() =>
-                                                router.post('/cinema/ten', {
-                                                    movie_id: movie.id,
-                                                })
-                                            }
-                                            className="inline-flex h-11 items-center rounded-xl border border-white/15 px-3 text-sm text-white"
-                                        >
-                                            {inTopTen
-                                                ? tr('У десятці')
-                                                : tr('У десятку')}
-                                        </button>
-                                    )}
-                                    <PinButton
-                                        kind="movie"
-                                        id={movie.id}
-                                        pinned={pinned}
-                                    />
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <button
-                                                type="button"
-                                                className={cn(
-                                                    'inline-flex h-11 items-center gap-2 rounded-xl px-4 text-sm font-semibold text-white transition',
-                                                    currentStatus
-                                                        ? `bg-gradient-to-r ${statusTone[currentStatus.key]}`
-                                                        : 'border border-white/15 bg-white/[0.08] backdrop-blur hover:bg-white/15',
-                                                )}
-                                            >
-                                                {currentStatus ? (
-                                                    <Check className="size-4" />
-                                                ) : (
-                                                    <Bookmark className="size-4" />
-                                                )}
-                                                {currentStatus?.label ??
-                                                    tr('Додати до списку')}
-                                                <ChevronDown className="size-4 opacity-60" />
-                                            </button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent
-                                            align="start"
-                                            className="glass-strong min-w-52 rounded-2xl border-white/10 p-1.5 text-white"
-                                        >
-                                            {statuses.map((s) => (
-                                                <DropdownMenuItem
-                                                    key={s.key}
-                                                    onSelect={() =>
-                                                        setStatus(s.key)
-                                                    }
-                                                    className="gap-2 rounded-xl px-3 py-2"
-                                                >
-                                                    <span
-                                                        className={cn(
-                                                            'size-2.5 rounded-full bg-gradient-to-r',
-                                                            statusTone[s.key],
-                                                        )}
-                                                    />
-                                                    {s.label}
-                                                    {state.status === s.key && (
-                                                        <Check className="ml-auto size-4" />
-                                                    )}
-                                                </DropdownMenuItem>
-                                            ))}
-                                            {state.status && (
-                                                <DropdownMenuItem
-                                                    onSelect={() =>
-                                                        setStatus(null)
-                                                    }
-                                                    className="gap-2 rounded-xl px-3 py-2 text-rose-300"
-                                                >
-                                                    <X className="size-4" />
-                                                    {tr('Прибрати зі списку')}
-                                                </DropdownMenuItem>
-                                            )}
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
-                                    <button
-                                        type="button"
-                                        onClick={() => setSharing(true)}
-                                        className="inline-flex h-11 items-center gap-2 rounded-xl border border-white/15 bg-white/[0.08] px-4 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/15"
-                                    >
-                                        <Share2 className="size-4" />{' '}
-                                        {tr('Порадити')}
-                                    </button>
-                                </div>
-
-                                <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-white/50">
-                                    <span className="inline-flex items-center gap-2">
-                                        {tr('Ваша оцінка:')}
-                                        <RatingPicker
-                                            value={state.rating}
-                                            onChange={rate}
+                                        <PinButton
+                                            kind="movie"
+                                            id={movie.id}
+                                            pinned={pinned}
                                         />
-                                    </span>
-                                    <span className="inline-flex items-center gap-1.5">
-                                        <Eye className="size-3.5" />
-                                        {compactNumber(movie.views_count)}
-                                    </span>
-                                    <span className="inline-flex items-center gap-1.5">
-                                        <UsersRound className="size-3.5" />
-                                        {compactNumber(
-                                            stats.watchers_count,
-                                        )}{' '}
-                                        {tr('у списках')}
-                                    </span>
-                                </div>
-                            </div>
+                                    </>
+                                }
+                            />
                         </div>
-                    </div>
-                </section>
 
-                <section
-                    id="player"
-                    className="glass scroll-mt-24 overflow-hidden rounded-3xl"
-                >
-                    {tabs.length === 0 ? (
-                        <div className="flex aspect-video flex-col items-center justify-center gap-3 bg-black/40 p-6 text-center">
-                            <Tv className="size-10 text-white/25" />
-                            <p className="font-display text-lg font-semibold text-white">
-                                {tr('Плеєр ще не додано')}
-                            </p>
-                            <p className="max-w-sm text-sm text-white/45">
-                                {tr(
-                                    'Додайте фільм до списку «Буду дивитися» — ми нагадаємо, щойно він з’явиться.',
-                                )}
-                            </p>
-                        </div>
-                    ) : (
-                        <>
-                            <div className="flex flex-wrap items-center gap-2 border-b border-white/[0.06] p-3">
-                                <div className="scrollbar-none flex max-w-full gap-1 overflow-x-auto">
-                                    {tabs.map((tab) => (
-                                        <button
-                                            key={tab.key}
-                                            type="button"
-                                            onClick={() => choose(tab.key)}
+                        <section
+                            id="player"
+                            className="glass scroll-mt-24 overflow-hidden rounded-2xl"
+                        >
+                            {tabs.length === 0 ? (
+                                <div className="flex aspect-video flex-col items-center justify-center gap-3 bg-black/40 p-6 text-center">
+                                    <Tv className="size-10 text-white/25" />
+                                    <p className="font-display text-lg font-semibold text-white">
+                                        {tr('Плеєр ще не додано')}
+                                    </p>
+                                    <p className="max-w-sm text-sm text-white/45">
+                                        {tr(
+                                            'Додайте фільм до списку «В планах» — ми нагадаємо, щойно він з’явиться.',
+                                        )}
+                                    </p>
+                                </div>
+                            ) : (
+                                <>
+                                    <div className="flex flex-wrap items-center gap-2 border-b border-white/[0.06] p-3">
+                                        <div className="scrollbar-none flex max-w-full gap-1 overflow-x-auto">
+                                            {tabs.map((tab) => (
+                                                <button
+                                                    key={tab.key}
+                                                    type="button"
+                                                    onClick={() =>
+                                                        choose(tab.key)
+                                                    }
+                                                    className={cn(
+                                                        'rounded-xl px-3.5 py-2 text-sm font-semibold transition',
+                                                        provider === tab.key
+                                                            ? 'nav-active text-white'
+                                                            : 'text-white/55 hover:bg-white/[0.05] hover:text-white',
+                                                    )}
+                                                >
+                                                    {tab.label}
+                                                </button>
+                                            ))}
+                                        </div>
+                                        {players.length === 1 &&
+                                            provider !== 'trailer' &&
+                                            player?.translation && (
+                                                <span className="ml-auto max-w-full truncate rounded-xl border border-white/[0.06] px-3 py-2 text-sm text-white/60">
+                                                    {player.translation}
+                                                </span>
+                                            )}
+                                        {provider !== 'trailer' &&
+                                            players.length > 1 && (
+                                                <div className="ml-auto max-w-full">
+                                                    <VoicePicker
+                                                        players={players}
+                                                        current={player}
+                                                        onPick={(p) => {
+                                                            setProvider(
+                                                                p.provider,
+                                                            );
+                                                            setPlayerKey(p.key);
+                                                        }}
+                                                    />
+                                                </div>
+                                            )}
+                                    </div>
+                                    <div className="relative aspect-video bg-black">
+                                        <iframe
+                                            ref={frameRef}
+                                            key={
+                                                provider === 'trailer'
+                                                    ? 'trailer'
+                                                    : episodeMode
+                                                      ? `${player.key}:${pick.season}:${pick.episode}`
+                                                      : player?.key
+                                            }
+                                            src={
+                                                provider === 'trailer'
+                                                    ? (movie.trailer_url ?? '')
+                                                    : player && !waitingEpisodes
+                                                      ? episodeLink(
+                                                            player.provider,
+                                                            player.link,
+                                                            episodeMode
+                                                                ? pick
+                                                                : null,
+                                                            episodeMode || bare,
+                                                        )
+                                                      : undefined
+                                            }
+                                            title={movie.title}
+                                            className="absolute inset-0 size-full"
+                                            allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
+                                            allowFullScreen
+                                            referrerPolicy="origin"
+                                        />
+                                    </div>
+                                    {episodes &&
+                                        episodes.length > 0 &&
+                                        provider !== 'trailer' && (
+                                            <EpisodePicker
+                                                seasons={episodes}
+                                                value={pick}
+                                                onChange={setPick}
+                                                supported={supportsEpisodes(
+                                                    player?.provider,
+                                                )}
+                                                watched={marks}
+                                            />
+                                        )}
+                                </>
+                            )}
+                        </section>
+
+                        <div className="grid grid-cols-1 gap-5 @5xl:grid-cols-[1fr_280px]">
+                            <div className="min-w-0 space-y-5">
+                                {movie.description && (
+                                    <section className="glass rounded-2xl p-5">
+                                        <h2 className="mb-2 font-display text-lg font-semibold text-white">
+                                            {tr('Про що')}
+                                        </h2>
+                                        <p
                                             className={cn(
-                                                'rounded-xl px-3.5 py-2 text-sm font-semibold transition',
-                                                provider === tab.key
-                                                    ? 'nav-active text-white'
-                                                    : 'text-white/55 hover:bg-white/[0.05] hover:text-white',
+                                                'text-[15px] leading-relaxed whitespace-pre-line text-white/75',
+                                                !moreText && 'line-clamp-5',
                                             )}
                                         >
-                                            {tab.label}
-                                        </button>
-                                    ))}
-                                </div>
-                                {providerPlayers.length === 1 &&
-                                    provider !== 'trailer' &&
-                                    player?.translation && (
-                                        <span className="ml-auto max-w-full truncate rounded-xl border border-white/[0.06] px-3 py-2 text-sm text-white/60">
-                                            {player.translation}
-                                        </span>
-                                    )}
-                                {providerPlayers.length > 1 && (
-                                    <select
-                                        value={player?.key ?? ''}
-                                        onChange={(e) =>
-                                            setPlayerKey(e.target.value)
-                                        }
-                                        className="input-glass ml-auto h-10 max-w-full rounded-xl px-3 text-sm text-white [color-scheme:dark]"
-                                        aria-label={tr('Озвучка')}
-                                    >
-                                        {providerPlayers.map((p) => (
-                                            <option key={p.key} value={p.key}>
-                                                {p.translation ??
-                                                    tr('Оригінал')}
-                                                {p.quality
-                                                    ? ` · ${p.quality}`
-                                                    : ''}
-                                            </option>
-                                        ))}
-                                    </select>
+                                            {movie.description}
+                                        </p>
+                                        {!moreText &&
+                                            movie.description.length > 320 && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        setMoreText(true)
+                                                    }
+                                                    className="mt-2 w-full text-center text-sm font-semibold text-white"
+                                                >
+                                                    {tr('Докладніше…')}
+                                                </button>
+                                            )}
+                                    </section>
                                 )}
-                            </div>
-                            <div className="relative aspect-video bg-black">
-                                <iframe
-                                    ref={frameRef}
-                                    key={
-                                        provider === 'trailer'
-                                            ? 'trailer'
-                                            : episodeMode
-                                              ? `${player.key}:${pick.season}:${pick.episode}`
-                                              : player?.key
-                                    }
-                                    src={
-                                        provider === 'trailer'
-                                            ? (movie.trailer_url ?? '')
-                                            : player && !waitingEpisodes
-                                              ? episodeLink(
-                                                    player.provider,
-                                                    player.link,
-                                                    episodeMode ? pick : null,
-                                                    episodeMode || bare,
-                                                )
-                                              : undefined
-                                    }
-                                    title={movie.title}
-                                    className="absolute inset-0 size-full"
-                                    allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
-                                    allowFullScreen
-                                    referrerPolicy="origin"
+                                <RatingBreakdown
+                                    audience={audience}
+                                    mine={state.rating}
+                                    onRate={(r) => void rate(r)}
                                 />
-                            </div>
-                            {episodes &&
-                                episodes.length > 0 &&
-                                provider !== 'trailer' && (
-                                    <EpisodePicker
-                                        seasons={episodes}
-                                        value={pick}
-                                        onChange={setPick}
-                                        supported={supportsEpisodes(
-                                            player?.provider,
+                                <AudienceBar
+                                    audience={audience}
+                                    statuses={statuses}
+                                />
+                                <Soundtrack
+                                    tracks={soundtrack}
+                                    slug={movie.slug}
+                                    canAdd={can.manage}
+                                />
+                                {reviewsOn && (
+                                    <MovieReviews slug={movie.slug} />
+                                )}
+                                <section
+                                    id="comments"
+                                    className="glass scroll-mt-24 rounded-2xl p-5"
+                                >
+                                    <h2 className="mb-3 flex items-center gap-2 font-display text-lg font-semibold text-white">
+                                        <MessageCircle className="size-5 text-gc-lilac-400" />
+                                        {tr('Обговорення')}
+                                        <span className="text-sm font-normal text-white/40">
+                                            {commentsCount}
+                                        </span>
+                                    </h2>
+                                    {!movie.comments_enabled && (
+                                        <p className="mb-3 text-sm text-white/45">
+                                            {tr(
+                                                'Коментарі до цього фільму вимкнено.',
+                                            )}
+                                        </p>
+                                    )}
+                                    <Comments
+                                        endpoint={`/cinema/${movie.slug}/comments`}
+                                        initial={comments}
+                                        total={commentsCount}
+                                        canComment={movie.comments_enabled}
+                                        onCountChange={setCommentsCount}
+                                        className={cn(
+                                            comments.length === 0 &&
+                                                'border-t-0 pt-0',
                                         )}
-                                        watched={marks}
                                     />
+                                </section>
+                            </div>
+                            <aside className="space-y-5">
+                                {seen.length > 0 && (
+                                    <section className="glass rounded-2xl p-5">
+                                        <h2 className="mb-3 font-display text-sm font-semibold text-white/70">
+                                            {tr('Уже бачили')}
+                                        </h2>
+                                        <ul className="space-y-2">
+                                            {seen.map((friend) => (
+                                                <li key={friend.id}>
+                                                    <Link
+                                                        href={`/${friend.username}`}
+                                                        className="flex items-center gap-2 text-sm text-white"
+                                                    >
+                                                        <UserAvatar
+                                                            user={friend}
+                                                            size="sm"
+                                                        />
+                                                        <span className="truncate">
+                                                            {friend.name}
+                                                        </span>
+                                                    </Link>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </section>
                                 )}
-                        </>
-                    )}
-                </section>
+                                {taste.length > 0 && (
+                                    <section className="glass rounded-2xl p-5">
+                                        <h2 className="mb-3 font-display text-sm font-semibold text-white/70">
+                                            {tr('Схожий смак')}
+                                        </h2>
+                                        <ul className="space-y-2">
+                                            {taste.map((friend) => (
+                                                <li key={friend.id}>
+                                                    <Link
+                                                        href={`/${friend.username}`}
+                                                        className="flex items-center justify-between gap-2 text-sm text-white"
+                                                    >
+                                                        <span className="flex min-w-0 items-center gap-2">
+                                                            <UserAvatar
+                                                                user={friend}
+                                                                size="sm"
+                                                            />
+                                                            <span className="truncate">
+                                                                {friend.name}
+                                                            </span>
+                                                        </span>
+                                                        <span className="shrink-0 text-xs text-white/45">
+                                                            {friend.shared}
+                                                        </span>
+                                                    </Link>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </section>
+                                )}
+                                <section className="glass rounded-2xl p-5">
+                                    <h2 className="mb-3 font-display text-sm font-semibold text-white/70">
+                                        {tr('Друзі та цей фільм')}
+                                    </h2>
+                                    {friends.users.length === 0 ? (
+                                        <p className="text-sm text-white/45">
+                                            {tr(
+                                                'Ніхто з друзів ще не додав його до списку. Будьте першим і порадьте!',
+                                            )}
+                                        </p>
+                                    ) : (
+                                        <ul className="space-y-2.5">
+                                            {friends.users.map((f) => (
+                                                <li key={f.id}>
+                                                    <Link
+                                                        href={`/${f.username}`}
+                                                        className="flex items-center gap-2.5 rounded-xl p-1 transition hover:bg-white/[0.04]"
+                                                    >
+                                                        <UserAvatar
+                                                            user={f}
+                                                            size="sm"
+                                                        />
+                                                        <span className="min-w-0 flex-1">
+                                                            <span className="block truncate text-sm font-medium text-white">
+                                                                {f.name}
+                                                            </span>
+                                                            <span className="block text-xs text-white/45">
+                                                                {
+                                                                    statuses.find(
+                                                                        (s) =>
+                                                                            s.key ===
+                                                                            f.movie_status,
+                                                                    )?.label
+                                                                }
+                                                            </span>
+                                                        </span>
+                                                        {f.movie_rating && (
+                                                            <span className="inline-flex items-center gap-0.5 text-xs font-semibold text-gc-amber">
+                                                                <Star className="size-3 fill-current" />
+                                                                {f.movie_rating}
+                                                            </span>
+                                                        )}
+                                                    </Link>
+                                                </li>
+                                            ))}
+                                            {friends.total >
+                                                friends.users.length && (
+                                                <li className="pl-1 text-xs text-white/40">
+                                                    {tr('і ще')}{' '}
+                                                    {friends.total -
+                                                        friends.users.length}
+                                                </li>
+                                            )}
+                                        </ul>
+                                    )}
+                                </section>
+                            </aside>
+                        </div>
 
-                <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_300px]">
-                    <div className="min-w-0 space-y-5">
-                        {movie.description && (
-                            <section className="glass rounded-3xl p-5">
-                                <h2 className="mb-2 font-display text-lg font-semibold text-white">
-                                    {tr('Про що')}
-                                </h2>
-                                <p className="text-[15px] leading-relaxed whitespace-pre-line text-white/75">
-                                    {movie.description}
-                                </p>
-                            </section>
+                        {similar.length > 0 && (
+                            <>
+                                <div className="sm:hidden">
+                                    <PosterRow
+                                        title={tr('Схоже')}
+                                        movies={similar}
+                                    />
+                                </div>
+                                <TitleSection
+                                    icon={<Clapperboard />}
+                                    title={tr('Схоже за жанром')}
+                                    className="max-sm:hidden"
+                                >
+                                    <MovieList
+                                        movies={similar as MovieRowItem[]}
+                                    />
+                                </TitleSection>
+                            </>
                         )}
-                        <Soundtrack
-                            tracks={soundtrack}
-                            slug={movie.slug}
-                            canAdd={can.manage}
-                        />
-                        <section className="glass rounded-3xl p-5">
-                            <h2 className="mb-3 flex items-center gap-2 font-display text-lg font-semibold text-white">
-                                <MessageCircle className="size-5 text-gc-lilac-400" />
-                                {tr('Обговорення')}
-                                <span className="text-sm font-normal text-white/40">
-                                    {commentsCount}
-                                </span>
-                            </h2>
-                            {!movie.comments_enabled && (
-                                <p className="mb-3 text-sm text-white/45">
-                                    {tr('Коментарі до цього фільму вимкнено.')}
-                                </p>
-                            )}
-                            <Comments
-                                endpoint={`/cinema/${movie.slug}/comments`}
-                                initial={comments}
-                                total={commentsCount}
-                                canComment={movie.comments_enabled}
-                                onCountChange={setCommentsCount}
-                                className={cn(
-                                    comments.length === 0 && 'border-t-0 pt-0',
-                                )}
-                            />
-                        </section>
                     </div>
-                    <aside className="space-y-5">
-                        {seen.length > 0 && (
-                            <section className="glass rounded-3xl p-5">
-                                <h2 className="mb-3 font-display text-sm font-semibold text-white/70">
-                                    {tr('Уже бачили')}
-                                </h2>
-                                <ul className="space-y-2">
-                                    {seen.map((friend) => (
-                                        <li key={friend.id}>
-                                            <Link
-                                                href={`/${friend.username}`}
-                                                className="flex items-center gap-2 text-sm text-white"
-                                            >
-                                                <UserAvatar
-                                                    user={friend}
-                                                    size="sm"
-                                                />
-                                                <span className="truncate">
-                                                    {friend.name}
-                                                </span>
-                                            </Link>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </section>
-                        )}
-                        {taste.length > 0 && (
-                            <section className="glass rounded-3xl p-5">
-                                <h2 className="mb-3 font-display text-sm font-semibold text-white/70">
-                                    {tr('Схожий смак')}
-                                </h2>
-                                <ul className="space-y-2">
-                                    {taste.map((friend) => (
-                                        <li key={friend.id}>
-                                            <Link
-                                                href={`/${friend.username}`}
-                                                className="flex items-center justify-between gap-2 text-sm text-white"
-                                            >
-                                                <span className="flex min-w-0 items-center gap-2">
-                                                    <UserAvatar
-                                                        user={friend}
-                                                        size="sm"
-                                                    />
-                                                    <span className="truncate">
-                                                        {friend.name}
-                                                    </span>
-                                                </span>
-                                                <span className="shrink-0 text-xs text-white/45">
-                                                    {friend.shared}
-                                                </span>
-                                            </Link>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </section>
-                        )}
-                        <section className="glass rounded-3xl p-5">
-                            <h2 className="mb-3 font-display text-sm font-semibold text-white/70">
-                                {tr('Друзі та цей фільм')}
-                            </h2>
-                            {friends.users.length === 0 ? (
-                                <p className="text-sm text-white/45">
-                                    {tr(
-                                        'Ніхто з друзів ще не додав його до списку. Будьте першим і порадьте!',
-                                    )}
-                                </p>
-                            ) : (
-                                <ul className="space-y-2.5">
-                                    {friends.users.map((f) => (
-                                        <li key={f.id}>
-                                            <Link
-                                                href={`/${f.username}`}
-                                                className="flex items-center gap-2.5 rounded-xl p-1 transition hover:bg-white/[0.04]"
-                                            >
-                                                <UserAvatar
-                                                    user={f}
-                                                    size="sm"
-                                                />
-                                                <span className="min-w-0 flex-1">
-                                                    <span className="block truncate text-sm font-medium text-white">
-                                                        {f.name}
-                                                    </span>
-                                                    <span className="block text-xs text-white/45">
-                                                        {
-                                                            statuses.find(
-                                                                (s) =>
-                                                                    s.key ===
-                                                                    f.movie_status,
-                                                            )?.label
-                                                        }
-                                                    </span>
-                                                </span>
-                                                {f.movie_rating && (
-                                                    <span className="inline-flex items-center gap-0.5 text-xs font-semibold text-gc-amber">
-                                                        <Star className="size-3 fill-current" />
-                                                        {f.movie_rating}
-                                                    </span>
-                                                )}
-                                            </Link>
-                                        </li>
-                                    ))}
-                                    {friends.total > friends.users.length && (
-                                        <li className="pl-1 text-xs text-white/40">
-                                            {tr('і ще')}{' '}
-                                            {friends.total -
-                                                friends.users.length}
-                                        </li>
-                                    )}
-                                </ul>
-                            )}
-                        </section>
-                    </aside>
                 </div>
-
-                {similar.length > 0 && (
-                    <PosterRow title={tr('Схоже')} movies={similar} />
-                )}
-            </div>
-
+            </CinemaShell>
             <ShareMovieDialog
                 movie={movie}
                 description={movie.description}
@@ -938,7 +784,7 @@ function Soundtrack({
     const [adding, setAdding] = useState(false);
 
     return (
-        <section className="glass rounded-3xl p-5">
+        <section className="glass rounded-2xl p-5">
             <div className="mb-3 flex items-center justify-between gap-3">
                 <h2 className="font-display text-lg font-semibold text-white">
                     {tr('Саундтрек')}
@@ -952,7 +798,7 @@ function Soundtrack({
                         className={cn(
                             'flex size-9 items-center justify-center rounded-full transition',
                             adding
-                                ? 'bg-[var(--btn-primary,#6366f1)] text-white'
+                                ? 'bg-primary text-white'
                                 : 'bg-white/[0.06] text-white/70 hover:bg-white/10 hover:text-white',
                         )}
                     >

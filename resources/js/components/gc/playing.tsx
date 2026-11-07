@@ -48,7 +48,7 @@ export function PlayingBadge({
         </>
     );
     const style = cn(
-        'inline-flex max-w-full items-center gap-1.5 rounded-full bg-emerald-500/12 px-2.5 py-1 text-xs font-medium text-emerald-200',
+        'inline-flex max-w-full items-center gap-1.5 rounded-chip bg-emerald-500/12 px-2.5 py-1 text-xs font-medium text-emerald-200',
         className,
     );
 
@@ -75,7 +75,7 @@ export function PlayingNow({
     if (count === 0) return null;
 
     return (
-        <section className="glass rounded-3xl p-4 sm:p-5">
+        <section className="glass rounded-2xl p-4 sm:p-5">
             <h2 className="mb-3 flex items-center gap-2 font-display text-base font-semibold text-white">
                 <span className="size-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgb(52_211_153)]" />
                 {tr('Зараз грають:')} {count}
@@ -442,7 +442,7 @@ export function PlayingSettingsCard() {
     useEffect(load, []);
 
     return (
-        <div className="glass mt-5 rounded-3xl p-6 sm:p-7">
+        <div className="gc-group mt-7 p-4 sm:p-5">
             <div className="flex flex-wrap items-start gap-4">
                 <div className="min-w-[min(100%,16rem)] flex-1">
                     <h2 className="text-[17px] font-semibold text-white">

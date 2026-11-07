@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="gc_void">#05070F</color>
-    <color name="gc_icon_background">#070B18</color>
+    <color name="gc_icon_background">#0E1631</color>
     <color name="notification_accent">#6D7DFF</color>
 </resources>

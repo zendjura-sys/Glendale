@@ -13,7 +13,9 @@ use App\Models\ClanNews;
 use App\Models\Game;
 use App\Models\User;
 use App\Notifications\ComeBackNudge;
+use App\Services\Clans\ClanMvp;
 use App\Services\Clans\ClanService;
+use App\Support\Plugins\Plugins;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -106,6 +108,16 @@ class ClanController extends Controller
         return to_route('clans.show', $clan);
     }
 
+    public function mvp(Request $request, Clan $clan, ClanMvp $mvp): RedirectResponse
+    {
+        app(Plugins::class)->ensure('clan_mvp');
+        $data = $request->validate(['user_id' => ['required', 'integer']]);
+        $mvp->vote($clan, $this->user($request), User::query()->findOrFail((int) $data['user_id']));
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Голос зараховано. Переможця оголосимо на початку наступного місяця.']);
+
+        return back();
+    }
+
     public function show(Request $request, Clan $clan): Response
     {
         $user = $this->user($request);
@@ -148,6 +160,8 @@ class ClanController extends Controller
                 ))),
             ],
             'me' => $me ? [...$me->toCard($clan), 'can' => $can] : null,
+            // «Гравець місяця»: переможець минулого місяця й голосування за поточний.
+            'mvp' => $member && app(Plugins::class)->on('clan_mvp') ? app(ClanMvp::class)->state($clan, $user) : null,
             'application' => $application ? ['applied_at' => $application->created_at->toIso8601String()] : null,
             'features' => Clan::FEATURES,
             'join_modes' => Clan::JOIN_MODES,

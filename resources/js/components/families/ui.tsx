@@ -38,7 +38,7 @@ export function Panel({
     return (
         <section
             className={cn(
-                'glass rounded-3xl',
+                'glass rounded-2xl',
                 padded && 'p-4 sm:p-5',
                 className,
             )}
@@ -122,7 +122,7 @@ export function RankBadge({
     return (
         <span
             className={cn(
-                'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold whitespace-nowrap',
+                'inline-flex items-center gap-1 rounded-chip px-2 py-0.5 text-xs font-semibold whitespace-nowrap',
                 tone,
                 className,
             )}
@@ -196,7 +196,7 @@ export function Modal({
         <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
             <DialogContent
                 className={cn(
-                    'glass-strong max-h-[92dvh] gap-0 overflow-y-auto rounded-3xl border-white/10 p-5 text-white sm:p-6',
+                    'glass-strong max-h-[92dvh] gap-0 overflow-y-auto rounded-dialog border-white/10 p-5 text-white sm:p-6',
                     wide ? 'sm:max-w-2xl' : 'sm:max-w-md',
                 )}
             >

@@ -1,10 +1,19 @@
 import { Link } from '@inertiajs/react';
-import { ArrowUp, Clock3, Gamepad2, Server, Users } from 'lucide-react';
+import {
+    ArrowUp,
+    Clock3,
+    Gamepad2,
+    Mic,
+    Server,
+    Users,
+    Vote,
+} from 'lucide-react';
 import { UserAvatar } from '@/components/gc/user-avatar';
 import { clockTime, dayLabel } from '@/lib/format';
 import { tr } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import type { UserCard } from '@/types';
+import type { TimePollData } from './time-poll';
 
 export type PartyCardData = {
     id: number;
@@ -15,8 +24,14 @@ export type PartyCardData = {
     platform_label: string | null;
     roles: string[];
     taken_roles: string[];
+    mic?: boolean;
+    language_label?: string | null;
+    age_min?: number | null;
+    style_label?: string | null;
     slots: number;
     count: number;
+    full?: boolean;
+    voice_room?: { id: number; name: string } | null;
     starts_at: string | null;
     expires_at: string;
     open: boolean;
@@ -28,6 +43,8 @@ export type PartyCardData = {
     game: { slug: string; name: string; cover: string | null } | null;
     server: { slug: string; name: string; icon: string | null } | null;
     members: (UserCard & { role: string | null })[];
+    /** Голосування за час гри (null — час задав автор). */
+    time_poll?: TimePollData | null;
 };
 
 export const PARTY_PLATFORMS = (): Record<string, string> => ({
@@ -49,12 +66,13 @@ export function partyWhen(startsAt: string | null): string {
 
 export function PartyCard({ party }: { party: PartyCardData }) {
     const full = party.count >= party.slots;
-    const now = partyWhen(party.starts_at) === tr('Зараз');
+    const voting = Boolean(party.time_poll && !party.time_poll.decided);
+    const now = !voting && partyWhen(party.starts_at) === tr('Зараз');
 
     return (
         <Link
             href={party.href}
-            className="glass flex min-w-0 flex-col gap-3 rounded-3xl p-5 transition hover:border-white/15"
+            className="glass flex min-w-0 flex-col gap-3 rounded-2xl p-5 transition hover:border-white/15"
         >
             <div className="flex items-start gap-3">
                 <UserAvatar user={party.host} size="md" />
@@ -74,7 +92,7 @@ export function PartyCard({ party }: { party: PartyCardData }) {
                 </div>
                 <span
                     className={cn(
-                        'inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold tabular-nums',
+                        'inline-flex shrink-0 items-center gap-1 rounded-chip px-2.5 py-1 text-xs font-semibold tabular-nums',
                         full
                             ? 'bg-white/[0.06] text-white/50'
                             : 'bg-emerald-400/10 text-emerald-200',
@@ -88,14 +106,20 @@ export function PartyCard({ party }: { party: PartyCardData }) {
             <div className="flex flex-wrap gap-1.5 text-xs font-medium">
                 <span
                     className={cn(
-                        'inline-flex items-center gap-1 rounded-full px-2 py-0.5',
+                        'inline-flex items-center gap-1 rounded-chip px-2 py-0.5',
                         now
                             ? 'bg-gc-indigo/20 text-[#c4b5fd]'
                             : 'bg-white/[0.06] text-white/70',
                     )}
                 >
-                    <Clock3 className="size-3" />
-                    {partyWhen(party.starts_at)}
+                    {voting ? (
+                        <Vote className="size-3" />
+                    ) : (
+                        <Clock3 className="size-3" />
+                    )}
+                    {voting
+                        ? tr('Час — голосуванням')
+                        : partyWhen(party.starts_at)}
                 </span>
                 {party.game && (
                     <span className="inline-flex max-w-full min-w-0 items-center gap-1 rounded-full bg-white/[0.06] px-2 py-0.5 text-white/70">
@@ -110,8 +134,29 @@ export function PartyCard({ party }: { party: PartyCardData }) {
                     </span>
                 )}
                 {party.platform && (
-                    <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-white/70">
+                    <span className="rounded-chip bg-white/[0.06] px-2 py-0.5 text-white/70">
                         {PARTY_PLATFORMS()[party.platform] ?? party.platform}
+                    </span>
+                )}
+                {party.mic && (
+                    <span className="inline-flex items-center gap-1 rounded-chip bg-white/[0.06] px-2 py-0.5 text-white/70">
+                        <Mic className="size-3" />
+                        {tr('Мікрофон')}
+                    </span>
+                )}
+                {party.language_label && (
+                    <span className="rounded-chip bg-white/[0.06] px-2 py-0.5 text-white/70">
+                        {party.language_label}
+                    </span>
+                )}
+                {party.age_min && (
+                    <span className="rounded-chip bg-white/[0.06] px-2 py-0.5 text-white/70">
+                        {party.age_min}+
+                    </span>
+                )}
+                {party.style_label && (
+                    <span className="rounded-chip bg-white/[0.06] px-2 py-0.5 text-white/70">
+                        {tr(party.style_label)}
                     </span>
                 )}
             </div>

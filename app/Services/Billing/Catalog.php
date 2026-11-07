@@ -13,7 +13,7 @@ use App\Support\Settings\SiteSettings;
  */
 class Catalog
 {
-    public const KINDS = ['plus', 'family', 'gift', 'promo', 'phone'];
+    public const KINDS = ['plus', 'family', 'gift', 'promo', 'phone', 'balance'];
 
     public const PROMOS = ['top', 'highlight', 'banner'];
 
@@ -31,11 +31,11 @@ class Catalog
         // Пропонувати зберегти картку під час оплати (для автопродовження).
         'offer_save_card' => true,
         // Значки способів оплати внизу сайту (лише ті, що реально приймає еквайринг).
-        'badges' => ['visa', 'mastercard', 'apple_pay', 'google_pay'],
+        'badges' => ['plata', 'visa', 'mastercard', 'apple_pay', 'google_pay'],
     ];
 
     /** Значки, які можна показати: Visa, Mastercard, Maestro, ПРОСТІР, Apple Pay, Google Pay. */
-    public const BADGES = ['visa', 'mastercard', 'maestro', 'prostir', 'apple_pay', 'google_pay'];
+    public const BADGES = ['plata', 'visa', 'mastercard', 'maestro', 'prostir', 'apple_pay', 'google_pay'];
 
     public function __construct(private readonly SiteSettings $settings) {}
 

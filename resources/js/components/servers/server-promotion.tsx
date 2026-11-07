@@ -55,7 +55,7 @@ export function ServerPromotion({
         buyProduct(product, { server_id: serverId });
 
     return (
-        <section className="glass rounded-3xl p-5">
+        <section className="glass rounded-2xl p-5">
             <h2 className="font-display text-lg font-bold text-white">
                 {tr('Просування сервера')}
             </h2>
@@ -120,7 +120,7 @@ export function ServerPromotion({
                                             !data.available.includes(product)
                                         }
                                         onClick={() => buy(product)}
-                                        className="inline-flex h-9 items-center rounded-xl bg-[var(--btn-primary,#6366f1)] px-3 text-xs font-semibold text-white transition hover:opacity-90 disabled:opacity-40"
+                                        className="inline-flex h-9 items-center rounded-xl bg-primary px-3 text-xs font-semibold text-white transition hover:opacity-90 disabled:opacity-40"
                                     >
                                         {tr('{days} дн. · {price} ₴', {
                                             days: catalog[product].days,

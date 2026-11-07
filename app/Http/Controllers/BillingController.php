@@ -84,8 +84,9 @@ class BillingController extends Controller
         $data = $request->validate(['product' => ['required', 'string', Rule::in(array_keys($this->catalog->products()))]]);
         $user = $request->user();
         $price = $this->catalog->priceFor($user, $data['product']);
+        $topup = ($this->catalog->get($data['product'])['kind'] ?? null) === 'balance';
         $promo = $codes->discountFor($user, $data['product'], $price);
-        $credit = min(max(0, (int) $user->balance), $price - $promo['amount']);
+        $credit = $topup ? 0 : min(max(0, (int) $user->balance), $price - $promo['amount']);
 
         return response()->json([
             'price' => $price,

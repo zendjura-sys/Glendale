@@ -1,3 +1,9 @@
+import { Fragment } from 'react';
+import {
+    Contacts,
+    FriendRequests,
+    useRail,
+} from '@/components/gc/rail-widgets';
 import {
     Deferred,
     Head,
@@ -5,6 +11,8 @@ import {
     Link,
     usePage,
 } from '@inertiajs/react';
+import { NewcomerWeek } from '@/components/onboarding/newcomer-week';
+import type { NewcomerData } from '@/components/onboarding/newcomer-week';
 import {
     Cake,
     Globe,
@@ -15,8 +23,13 @@ import {
     Sparkles,
     UserPlus,
     UsersRound,
+    Hash,
 } from 'lucide-react';
-import { LanguageFilter, TomorrowCard } from '@/components/gc/feed-extras';
+import {
+    ChronoSwitch,
+    LanguageFilter,
+    TomorrowCard,
+} from '@/components/gc/feed-extras';
 import type { TomorrowEvent } from '@/components/gc/feed-extras';
 import { FriendButton } from '@/components/gc/friend-button';
 import { PersonRow } from '@/components/gc/person-card';
@@ -25,19 +38,25 @@ import { PostComposer } from '@/components/gc/post-composer';
 import { PostSkeleton } from '@/components/gc/post-skeleton';
 import { StoriesBar } from '@/components/gc/stories';
 import { UserAvatar } from '@/components/gc/user-avatar';
+import { WrappedBanner } from '@/components/gc/wrapped-banner';
+import { HomeWidgetsEditor } from '@/components/gc/engagement';
+import { FeedInsert, FeedPulse, useHub } from '@/components/gc/feed-pulse';
 import { EmptyState, Widget, WidgetSkeleton } from '@/components/gc/widget';
 import { formatDate } from '@/lib/format';
-import { cn } from '@/lib/utils';
 import type { PersonCard, PostItem, ScrollData, UserCard } from '@/types';
 import { FriendsLive } from '@/components/streams/stream';
 import type { StreamInfo } from '@/components/streams/stream';
-import { FeedQuests } from '@/components/quests/quest-list';
 import type { Quest } from '@/components/quests/quest-list';
 import { tr } from '@/lib/i18n';
+import { usePlugin } from '@/lib/plugins';
+import { cn } from '@/lib/utils';
 import { useFeature } from '@/lib/plugins';
 
 type Props = {
-    tab: 'friends' | 'discover' | 'country';
+    newcomer?: NewcomerData | null;
+    tab: 'friends' | 'discover' | 'country' | 'topics';
+    topics?: string[] | null;
+    onlyFriends?: boolean;
     lang: string | null;
     languages: string[];
     tomorrow?: TomorrowEvent[];
@@ -66,6 +85,7 @@ function FeedTabs({
     tab: Props['tab'];
     hasFriends: boolean;
 }) {
+    const topicsOn = usePlugin('topic_follows');
     const tabs = [
         {
             key: 'friends',
@@ -88,41 +108,57 @@ function FeedTabs({
             href: '/feed?tab=country',
             disabled: false,
         },
+        ...(topicsOn
+            ? [
+                  {
+                      key: 'topics',
+                      label: tr('Теми'),
+                      icon: Hash,
+                      href: '/feed?tab=topics',
+                      disabled: false,
+                  },
+              ]
+            : []),
     ];
 
+    // Пігулки: активна — суцільна небесна; прокручуються вбік, активна — завжди в полі зору.
     return (
-        <div className="glass flex gap-1 rounded-2xl p-1">
+        <nav
+            ref={(el) => {
+                el?.querySelector<HTMLElement>(
+                    '[aria-current="page"]',
+                )?.scrollIntoView({ block: 'nearest', inline: 'center' });
+            }}
+            aria-label={tr('Стрічка')}
+            className="flex [scrollbar-width:none] gap-2 overflow-x-auto"
+        >
             {tabs.map((item) => (
                 <Link
                     key={item.key}
                     href={item.href}
-                    preserveScroll={false}
+                    preserveScroll
                     aria-current={tab === item.key ? 'page' : undefined}
                     className={cn(
-                        'flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold transition',
+                        'flex h-10 shrink-0 items-center gap-2 rounded-xl px-4 text-sm font-semibold transition',
                         tab === item.key
-                            ? 'nav-active text-white'
-                            : 'text-white/55 hover:bg-white/[0.04] hover:text-white',
-                        item.disabled && 'pointer-events-none opacity-40',
+                            ? 'bg-sky-500 text-white'
+                            : 'gc-solid text-white/70 hover:text-white',
                     )}
                 >
-                    <item.icon
-                        aria-hidden
-                        className={cn(
-                            'size-4',
-                            tab === item.key && 'text-gc-lilac-400',
-                        )}
-                    />
+                    <item.icon aria-hidden className="size-4" />
                     {item.label}
                 </Link>
             ))}
-        </div>
+        </nav>
     );
 }
 
 export default function Feed({
+    newcomer = null,
     tab,
+    topics = null,
     lang,
+    onlyFriends,
     languages,
     tomorrow,
     streaming,
@@ -140,17 +176,33 @@ export default function Feed({
     const { auth } = usePage().props;
     // Режим соцмережі може ховати історії й трансляції друзів.
     const storiesOn = useFeature('stories');
+    const widgetsOn = usePlugin('home_widgets');
+    const engagement = usePage().props.engagement;
+    const homeWidgets = engagement?.widgets ?? [
+        'streak',
+        'ready',
+        'online',
+        'suggestions',
+        'birthdays',
+    ];
     const liveOn = useFeature('live');
+    // Spacepark: праворуч заявки в друзі й контакти (дані /me/rail).
+    const { data: rail, reload: reloadRail } = useRail();
+    // Тривоги для картки в стрічці (лише Україна — сервер сам вирішує, чи показувати).
+    const hub = useHub();
 
     return (
         <>
             <Head title={tr('Новини')} />
             <div className="flex gap-5">
-                <div className="min-w-0 flex-1 space-y-4 xl:max-w-[640px]">
+                <div className="min-w-0 flex-1 space-y-4">
+                    {/* Верх стрічки за макетом: моменти, одна смуга «серія · готовий грати · завдання»,
+                        далі — Wrapped, «Завтра» й трансляції друзів (порожні не показуються). */}
                     {storiesOn && <StoriesBar />}
-                    {liveOn && <FriendsLive streams={streaming ?? []} />}
-                    <FeedQuests quests={quests ?? []} />
+                    <FeedPulse quests={quests ?? []} />
+                    <WrappedBanner />
                     <TomorrowCard events={tomorrow ?? []} />
+                    {liveOn && <FriendsLive streams={streaming ?? []} />}
                     {(picks?.length ?? 0) > 0 && (
                         <div className="flex gap-2 overflow-x-auto">
                             {picks?.map((pick) => (
@@ -206,16 +258,22 @@ export default function Feed({
                             ))}
                         </div>
                     )}
+                    {newcomer && <NewcomerWeek data={newcomer} />}
                     <PostComposer />
                     <FeedTabs tab={tab} hasFriends={hasFriends} />
-                    <LanguageFilter
-                        tab={tab}
-                        lang={lang}
-                        languages={languages}
-                    />
+                    <div className="flex flex-wrap items-center gap-2">
+                        <LanguageFilter
+                            tab={tab}
+                            lang={lang}
+                            languages={languages}
+                        />
+                        {tab === 'friends' && (
+                            <ChronoSwitch onlyFriends={onlyFriends ?? false} />
+                        )}
+                    </div>
 
                     {tab === 'discover' && !hasFriends && (
-                        <div className="gradient-border glass flex items-center gap-4 rounded-3xl p-5">
+                        <div className="gradient-border glass flex items-center gap-4 rounded-2xl p-5">
                             <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-brand shadow-[0_10px_30px_-8px_rgb(109_93_252/0.9)]">
                                 <Sparkles className="size-6 text-white" />
                             </span>
@@ -243,20 +301,28 @@ export default function Feed({
                                       : Compass
                             }
                             title={
-                                tab === 'country'
-                                    ? tr('Стрічка країни порожня')
-                                    : tab === 'friends'
-                                      ? tr('Стрічка поки порожня')
-                                      : tr('Тут ще нічого немає')
+                                tab === 'topics'
+                                    ? topics?.length
+                                        ? tr('За вашими темами поки тихо')
+                                        : tr('Ви ще не стежите за темами')
+                                    : tab === 'country'
+                                      ? tr('Стрічка країни порожня')
+                                      : tab === 'friends'
+                                        ? tr('Стрічка поки порожня')
+                                        : tr('Тут ще нічого немає')
                             }
                             text={
-                                tab === 'country' && !country
+                                tab === 'topics'
                                     ? tr(
-                                          'Вкажіть країну в налаштуваннях профілю — і тут з’являться записи людей звідти.',
+                                          'Торкніться #хештегу в записі й натисніть «Стежити» — такі записи збиратимуться тут.',
                                       )
-                                    : tr(
-                                          'Напишіть перший запис або знайдіть друзів — і стрічка оживе.',
-                                      )
+                                    : tab === 'country' && !country
+                                      ? tr(
+                                            'Вкажіть країну в налаштуваннях профілю — і тут з’являться записи людей звідти.',
+                                        )
+                                      : tr(
+                                            'Напишіть перший запис або знайдіть друзів — і стрічка оживе.',
+                                        )
                             }
                             action={
                                 <Link
@@ -276,106 +342,181 @@ export default function Feed({
                             loading={<PostSkeleton />}
                             className="space-y-4"
                         >
-                            {posts.data.map((post) => (
-                                <PostCard key={post.id} post={post} />
+                            {posts.data.map((post, i) => (
+                                <Fragment key={post.id}>
+                                    <PostCard post={post} />
+                                    <FeedInsert
+                                        index={i}
+                                        rail={rail}
+                                        hub={hub}
+                                    />
+                                </Fragment>
                             ))}
                         </InfiniteScroll>
                     )}
                 </div>
 
-                <aside className="sticky top-[76px] hidden h-fit w-[320px] shrink-0 space-y-4 xl:block">
-                    <Widget
-                        title={tr('Зараз онлайн')}
-                        icon={Radio}
-                        href="/friends?tab=online"
-                    >
-                        <Deferred
-                            data="onlineFriends"
-                            fallback={<WidgetSkeleton rows={1} />}
-                        >
-                            {onlineFriends && onlineFriends.length > 0 ? (
-                                <div className="flex flex-wrap gap-2 px-1">
-                                    {onlineFriends.map((friend) => (
-                                        <Link
-                                            key={friend.id}
-                                            href={`/${friend.username}`}
-                                            title={friend.name}
-                                            className="transition hover:-translate-y-0.5"
+                <aside className="gc-split-hide sticky top-[calc(88px+env(safe-area-inset-top))] hidden h-fit w-[320px] shrink-0 space-y-4 min-[1920px]:w-[360px] xl:block">
+                    {rail && (
+                        <>
+                            <FriendRequests data={rail} reload={reloadRail} />
+                            <Contacts data={rail} />
+                        </>
+                    )}
+                    {homeWidgets.map((key) => {
+                        switch (key) {
+                            // Серія днів і «Готові грати» — у Bento-сітці стрічки.
+                            case 'streak':
+                            case 'ready':
+                                return null;
+                            case 'online':
+                                // Контакти вже показують друзів — без дубля.
+                                if (rail && rail.contacts.length > 0)
+                                    return null;
+                                return (
+                                    <div key={key}>
+                                        <Widget
+                                            title={tr('Зараз онлайн')}
+                                            icon={Radio}
+                                            href="/friends?tab=online"
                                         >
-                                            <UserAvatar
-                                                user={friend}
-                                                size="md"
-                                            />
-                                        </Link>
-                                    ))}
-                                </div>
-                            ) : (
-                                <p className="px-1 text-sm text-white/45">
-                                    {tr('Ніхто з друзів зараз не в мережі.')}
-                                </p>
-                            )}
-                        </Deferred>
-                    </Widget>
-
-                    <Widget
-                        title={tr('Можливо, ви знайомі')}
-                        icon={UserPlus}
-                        href="/friends"
-                    >
-                        <Deferred
-                            data="suggestions"
-                            fallback={<WidgetSkeleton />}
-                        >
-                            <div className="space-y-0.5">
-                                {suggestions?.length === 0 && (
-                                    <p className="px-1 text-sm text-white/45">
-                                        {tr('Ви вже знайомі з усіма.')}{' '}
-                                        <Link
-                                            href="/people"
-                                            className="text-gc-lilac-300 hover:underline"
+                                            <Deferred
+                                                data="onlineFriends"
+                                                fallback={
+                                                    <WidgetSkeleton rows={1} />
+                                                }
+                                            >
+                                                {onlineFriends &&
+                                                onlineFriends.length > 0 ? (
+                                                    <div className="flex flex-wrap gap-2 px-1">
+                                                        {onlineFriends.map(
+                                                            (friend) => (
+                                                                <Link
+                                                                    key={
+                                                                        friend.id
+                                                                    }
+                                                                    href={`/${friend.username}`}
+                                                                    title={
+                                                                        friend.name
+                                                                    }
+                                                                    className="transition hover:-translate-y-0.5"
+                                                                >
+                                                                    <UserAvatar
+                                                                        user={
+                                                                            friend
+                                                                        }
+                                                                        size="md"
+                                                                    />
+                                                                </Link>
+                                                            ),
+                                                        )}
+                                                    </div>
+                                                ) : (
+                                                    <p className="px-1 text-sm text-white/45">
+                                                        {tr(
+                                                            'Ніхто з друзів зараз не в мережі.',
+                                                        )}
+                                                    </p>
+                                                )}
+                                            </Deferred>
+                                        </Widget>
+                                    </div>
+                                );
+                            case 'suggestions':
+                                return (
+                                    <div key={key}>
+                                        <Widget
+                                            title={tr('Можливо, ви знайомі')}
+                                            icon={UserPlus}
+                                            href="/friends"
                                         >
-                                            {tr('Шукати людей')}
-                                        </Link>
-                                    </p>
-                                )}
-                                {(suggestions ?? []).map((person) => (
-                                    <PersonRow
-                                        key={person.id}
-                                        person={person as PersonCard}
-                                        action={
-                                            <FriendButton
-                                                username={person.username}
-                                                relation="none"
-                                                size="sm"
-                                                className="!px-2.5"
-                                            />
-                                        }
-                                    />
-                                ))}
-                            </div>
-                        </Deferred>
-                    </Widget>
-
-                    <Deferred data="birthdays" fallback={<span hidden />}>
-                        {birthdays && birthdays.length > 0 ? (
-                            <Widget title={tr('Дні народження')} icon={Cake}>
-                                <div className="space-y-0.5">
-                                    {birthdays.map((person) => (
-                                        <PersonRow
-                                            key={person.id}
-                                            person={{
-                                                ...person,
-                                                status: formatDate(
-                                                    person.birthday,
-                                                    false,
-                                                ),
-                                            }}
-                                        />
-                                    ))}
-                                </div>
-                            </Widget>
-                        ) : null}
-                    </Deferred>
+                                            <Deferred
+                                                data="suggestions"
+                                                fallback={<WidgetSkeleton />}
+                                            >
+                                                <div className="space-y-0.5">
+                                                    {suggestions?.length ===
+                                                        0 && (
+                                                        <p className="px-1 text-sm text-white/45">
+                                                            {tr(
+                                                                'Ви вже знайомі з усіма.',
+                                                            )}{' '}
+                                                            <Link
+                                                                href="/people"
+                                                                className="text-gc-lilac-300 hover:underline"
+                                                            >
+                                                                {tr(
+                                                                    'Шукати людей',
+                                                                )}
+                                                            </Link>
+                                                        </p>
+                                                    )}
+                                                    {(suggestions ?? []).map(
+                                                        (person) => (
+                                                            <PersonRow
+                                                                key={person.id}
+                                                                person={
+                                                                    person as PersonCard
+                                                                }
+                                                                action={
+                                                                    <FriendButton
+                                                                        username={
+                                                                            person.username
+                                                                        }
+                                                                        relation="none"
+                                                                        size="sm"
+                                                                        className="!px-2.5"
+                                                                    />
+                                                                }
+                                                            />
+                                                        ),
+                                                    )}
+                                                </div>
+                                            </Deferred>
+                                        </Widget>
+                                    </div>
+                                );
+                            case 'birthdays':
+                                return (
+                                    <div key={key}>
+                                        <Deferred
+                                            data="birthdays"
+                                            fallback={<span hidden />}
+                                        >
+                                            {birthdays &&
+                                            birthdays.length > 0 ? (
+                                                <Widget
+                                                    title={tr('Дні народження')}
+                                                    icon={Cake}
+                                                >
+                                                    <div className="space-y-0.5">
+                                                        {birthdays.map(
+                                                            (person) => (
+                                                                <PersonRow
+                                                                    key={
+                                                                        person.id
+                                                                    }
+                                                                    person={{
+                                                                        ...person,
+                                                                        status: formatDate(
+                                                                            person.birthday,
+                                                                            false,
+                                                                        ),
+                                                                    }}
+                                                                />
+                                                            ),
+                                                        )}
+                                                    </div>
+                                                </Widget>
+                                            ) : null}
+                                        </Deferred>
+                                    </div>
+                                );
+                            default:
+                                return null;
+                        }
+                    })}
+                    {widgetsOn && <HomeWidgetsEditor widgets={homeWidgets} />}
                 </aside>
             </div>
         </>

@@ -1,4 +1,4 @@
-import { router, usePage } from '@inertiajs/react';
+import { Link, router, usePage } from '@inertiajs/react';
 import {
     ArrowLeft,
     Clock3,
@@ -23,6 +23,7 @@ import type {
     SpotifyPlaylist,
     SpotifyTrack,
 } from '@/types';
+import { useShowListening } from './listening-switch';
 import { SpotifyLogo } from './track-cover';
 import { TrackList } from './track-list';
 import { tr } from '@/lib/i18n';
@@ -256,6 +257,7 @@ export function SpotifyPanel({
     account: SpotifyAccountCard | null;
 }) {
     const { auth } = usePage().props;
+    const showListening = useShowListening();
     const [section, setSection] = useState<Section>(account ? 'top' : 'search');
 
     if (!configured) {
@@ -286,57 +288,84 @@ export function SpotifyPanel({
     return (
         <div className="space-y-4">
             {account ? (
-                <section className="glass relative overflow-hidden rounded-3xl p-5">
+                <section className="glass relative overflow-hidden rounded-3xl">
                     <div className="pointer-events-none absolute -top-24 -right-16 size-72 rounded-full bg-spotify/15 blur-3xl" />
-                    <div className="relative flex flex-wrap items-center gap-4">
+                    {/* Профіль зверху, налаштування — рядками списку, як в iOS: на вузькому екрані нічого не «їде». */}
+                    <div className="relative flex items-center gap-4 p-4">
                         {account.avatar_url ? (
                             <img
                                 loading="lazy"
                                 decoding="async"
                                 src={account.avatar_url}
                                 alt=""
-                                className="size-14 rounded-full object-cover ring-2 ring-spotify/60"
+                                className="size-14 shrink-0 rounded-full object-cover ring-2 ring-spotify/60"
                             />
                         ) : (
-                            <span className="flex size-14 items-center justify-center rounded-full bg-spotify/15">
+                            <span className="flex size-14 shrink-0 items-center justify-center rounded-full bg-spotify/15">
                                 <SpotifyLogo className="size-7" />
                             </span>
                         )}
                         <div className="min-w-0 flex-1">
-                            <p className="flex items-center gap-2 text-xs font-medium text-spotify">
-                                <SpotifyLogo className="size-3.5" />{' '}
-                                {tr('Spotify під’єднано')}
+                            <p className="flex items-center gap-1.5 text-[13px] font-medium text-spotify">
+                                <SpotifyLogo className="size-3.5 shrink-0" />
+                                <span className="truncate">
+                                    {tr('Spotify під’єднано')}
+                                </span>
                             </p>
                             <a
                                 href={account.profile_url}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="block truncate font-display text-lg font-semibold text-white hover:underline"
+                                className="block truncate text-[17px] font-semibold text-white hover:underline"
                             >
                                 {account.display_name ?? account.spotify_id}
                             </a>
-                            <p className="text-xs text-white/50">
+                            <p className="mt-0.5 flex min-w-0 items-center gap-2 text-[13px] text-white/50">
                                 {account.premium ? (
-                                    <span className="mr-2 rounded-full bg-gradient-to-r from-spotify to-gc-cyan px-2 py-0.5 font-semibold text-[#04140a]">
+                                    <span className="shrink-0 rounded-full bg-gradient-to-r from-spotify to-gc-cyan px-2 py-0.5 text-[11px] font-semibold text-[#04140a]">
                                         Premium
                                     </span>
                                 ) : (
-                                    <span className="mr-2 rounded-full bg-white/10 px-2 py-0.5 font-medium text-white/70">
+                                    <span className="shrink-0 rounded-full bg-white/10 px-2 py-0.5 text-[11px] font-medium text-white/70">
                                         Free
                                     </span>
                                 )}
-                                {account.premium
-                                    ? tr('Повні треки прямо в плеєрі GameCon')
-                                    : tr(
-                                          'Треки грають через вбудований плеєр Spotify',
-                                      )}
+                                <span className="truncate">
+                                    {account.premium
+                                        ? tr(
+                                              'Повні треки прямо в плеєрі GameCon',
+                                          )
+                                        : tr(
+                                              'Треки грають через вбудований плеєр Spotify',
+                                          )}
+                                </span>
                             </p>
                         </div>
-                        <label className="flex items-center gap-2.5 rounded-xl bg-white/[0.04] px-3 py-2 text-xs text-white/70">
-                            <Radio className="size-4 text-spotify" />
-                            {tr('Показувати «Зараз грає»')}
+                    </div>
+                    <div className="relative border-t border-white/10">
+                        <label className="flex min-h-12 items-center gap-3 px-4 py-2 text-[15px] text-white/85">
+                            <Radio className="size-5 shrink-0 text-spotify" />
+                            <span className="min-w-0 flex-1">
+                                {tr('Показувати «Зараз грає»')}
+                                {!showListening && (
+                                    <span className="mt-0.5 block text-[13px] leading-snug text-white/50">
+                                        {tr(
+                                            'Вимкнено в налаштуваннях «Показувати, що я слухаю» — для всієї музики.',
+                                        )}{' '}
+                                        <Link
+                                            href="/settings/profile"
+                                            className="text-white/75 underline-offset-2 hover:underline"
+                                        >
+                                            {tr('Змінити')}
+                                        </Link>
+                                    </span>
+                                )}
+                            </span>
                             <Toggle
-                                checked={account.show_now_playing}
+                                checked={
+                                    showListening && account.show_now_playing
+                                }
+                                disabled={!showListening}
                                 onChange={(value) =>
                                     router.patch(
                                         '/music/spotify',
@@ -355,9 +384,10 @@ export function SpotifyPanel({
                                     preserveScroll: true,
                                 })
                             }
-                            className="inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs text-white/50 transition hover:bg-rose-500/10 hover:text-rose-300"
+                            className="flex min-h-12 w-full items-center gap-3 border-t border-white/10 px-4 text-left text-[15px] text-rose-300 transition hover:bg-rose-500/10"
                         >
-                            <Link2Off className="size-4" /> {tr('Від’єднати')}
+                            <Link2Off className="size-5 shrink-0" />
+                            {tr('Від’єднати')}
                         </button>
                     </div>
                 </section>

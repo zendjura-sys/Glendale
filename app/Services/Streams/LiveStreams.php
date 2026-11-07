@@ -5,6 +5,7 @@ namespace App\Services\Streams;
 use App\Models\User;
 use App\Models\UserStream;
 use App\Notifications\StreamLive;
+use App\Services\Crosspost\Crossposting;
 use App\Services\FriendshipService;
 use App\Support\Settings\SiteSettings;
 use Illuminate\Support\Facades\Cache;
@@ -212,6 +213,11 @@ class LiveStreams
         foreach ($friends as $friend) {
             $friend->notify(new StreamLive($user, $stream));
         }
+        app(Crossposting::class)->dispatch('user', $user->id, 'streams', [
+            'title' => $user->name.' почав стрім',
+            'text' => (string) ($stream->title ?? 'Заходьте дивитися!'),
+            'url' => url('/'.$user->username),
+        ]);
     }
 
     private function twitchToken(): ?string

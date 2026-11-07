@@ -441,8 +441,8 @@ class _CatalogSearchState extends State<CatalogSearch> {
                 child: SizedBox.square(
                   dimension: 40,
                   child: tags.cover == null
-                      ? Container(color: Colors.white.withValues(alpha: 0.06), child: const Icon(LucideIcons.music, size: 18, color: muted))
-                      : Image.network(tags.cover!, fit: BoxFit.cover, errorBuilder: (_, _, _) => Container(color: Colors.white.withValues(alpha: 0.06))),
+                      ? Container(color: fg.withValues(alpha: 0.06), child: Icon(LucideIcons.music, size: 18, color: muted))
+                      : Image.network(tags.cover!, fit: BoxFit.cover, errorBuilder: (_, _, _) => Container(color: fg.withValues(alpha: 0.06))),
                 ),
               ),
               const SizedBox(width: 10),
@@ -452,7 +452,7 @@ class _CatalogSearchState extends State<CatalogSearch> {
                   Text([tags.artist, tags.album].whereType<String>().join(' · '), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: muted)),
                 ]),
               ),
-              if (identical(tags, picked)) const Icon(LucideIcons.check, size: 18, color: primary),
+              if (identical(tags, picked)) Icon(LucideIcons.check, size: 18, color: primary),
             ]),
           ),
         ),
@@ -475,8 +475,8 @@ class CoverPreview extends StatelessWidget {
       height: size,
       child: provider == null
           ? Container(
-              decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(14), border: Border.all(color: line)),
-              child: const Icon(LucideIcons.imagePlus, color: muted),
+              decoration: BoxDecoration(color: fg.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(14)),
+              child: Icon(LucideIcons.imagePlus, color: muted),
             )
           : ClipRRect(borderRadius: BorderRadius.circular(14), child: Image(image: provider, fit: BoxFit.cover, errorBuilder: (_, _, _) => const SizedBox())),
     );
@@ -514,6 +514,9 @@ class _TrackEditorState extends State<_TrackEditor> {
 
   /// Обкладинка з каталогу, яку збережемо разом із треком.
   String? coverUrl;
+
+  /// Обкладинка, вбудована в сам аудіофайл (знайшов сервер) — збережеться з треком.
+  bool coverEmbedded = false;
   late final String? currentCover = absolute(widget.track['cover_url']);
 
   @override
@@ -536,9 +539,36 @@ class _TrackEditorState extends State<_TrackEditor> {
       searching = true;
       note = null;
     });
+    // Спершу сервер: теги файлу, AcoustID, MusicBrainz, Discogs, Spotify, Last.fm, Cover Art Archive —
+    // найнадійніше значення кожного поля. Потім — пошук у застосунку (теги, назва файлу, iTunes).
+    var filled = 0;
+    try {
+      final found = mapOf(await AppScope.read(context).session.api.get(Api.site('/music/tracks/${widget.track['id']}/metadata')));
+      final fields = mapOf(found['fields']);
+      for (final (key, c) in [('title', title), ('artist', artist), ('album', album), ('genre', genre)]) {
+        final value = text(mapOf(fields[key])['value']);
+        if (value != null && value != c.text.trim()) {
+          c.text = value;
+          filled++;
+        }
+      }
+      final cover = mapOf(found['cover']);
+      if (cover.isNotEmpty && coverUrl == null) {
+        if (cover['embedded'] == true) {
+          coverEmbedded = true;
+          filled++;
+        } else if (text(cover['url']) != null) {
+          coverUrl = text(cover['url']);
+          filled++;
+        }
+      }
+    } catch (_) {
+      // Сервер недоступний чи старий — лишається пошук у застосунку.
+    }
+    if (!mounted) return;
     final tags = await discoverMeta(url: absolute(widget.track['url']), title: title.text, artist: artist.text);
     if (!mounted) return;
-    var filled = applyMeta(tags, title: title, artist: artist, album: album, genre: genre);
+    filled += applyMeta(tags, title: title, artist: artist, album: album, genre: genre);
     if (currentCover == null && coverUrl == null && tags.cover != null) {
       coverUrl = tags.cover;
       filled++;
@@ -566,6 +596,7 @@ class _TrackEditorState extends State<_TrackEditor> {
         'album': album.text.trim(),
         'genre': genre.text.trim(),
         if (coverUrl != null) 'cover_url': coverUrl,
+        if (coverUrl == null && coverEmbedded) 'cover_embedded': true,
       });
       if (!mounted) return;
       toast(context, tr('Збережено.'));
@@ -586,7 +617,7 @@ class _TrackEditorState extends State<_TrackEditor> {
         GhostButton(label: searching ? tr('Шукаю метадані…') : tr('Заповнити автоматично'), icon: LucideIcons.wandSparkles, onPressed: searching || busy ? null : _autofill),
         Padding(
           padding: const EdgeInsets.only(top: 6, bottom: 10),
-          child: Text(note ?? tr('Теги файлу, назва файлу й каталог iTunes: назва, виконавець, альбом, жанр і обкладинка.'), style: body(12, color: note == null ? faint : muted)),
+          child: Text(note ?? tr('Теги файлу, AcoustID, MusicBrainz, Discogs, Spotify, Last.fm і каталог iTunes: назва, виконавець, альбом, жанр і обкладинка.'), style: body(12, color: note == null ? faint : muted)),
         ),
         CatalogSearch(onPick: _picked),
         const SizedBox(height: 12),
@@ -595,11 +626,15 @@ class _TrackEditorState extends State<_TrackEditor> {
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              coverUrl != null ? tr('Обкладинка з каталогу — збережеться разом із треком.') : (currentCover != null ? tr('Поточна обкладинка.') : tr('Обкладинки поки немає — знайдіть пісню в пошуку вище.')),
+              coverUrl != null
+                  ? tr('Обкладинка з каталогу — збережеться разом із треком.')
+                  : coverEmbedded
+                  ? tr('Обкладинка з самого файлу — збережеться разом із треком.')
+                  : (currentCover != null ? tr('Поточна обкладинка.') : tr('Обкладинки поки немає — знайдіть пісню в пошуку вище.')),
               style: body(12.5, color: muted),
             ),
           ),
-          if (coverUrl != null) IconButton(tooltip: tr('Не змінювати обкладинку'), onPressed: () => setState(() => coverUrl = null), icon: const Icon(LucideIcons.x, size: 18, color: muted)),
+          if (coverUrl != null) IconButton(tooltip: tr('Не змінювати обкладинку'), onPressed: () => setState(() => coverUrl = null), icon: Icon(LucideIcons.x, size: 18, color: muted)),
         ]),
         const SizedBox(height: 12),
         LabeledField(label: tr('Назва'), child: GcField(controller: title, label: tr('Назва'), onChanged: (_) => setState(() {}))),

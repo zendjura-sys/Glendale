@@ -2,18 +2,21 @@ import { usePage } from '@inertiajs/react';
 import { cn } from '@/lib/utils';
 import { tr } from '@/lib/i18n';
 
-/** Офіційні значки Google Play (public/images), обрізані до краю значка. */
+/**
+ * Офіційні значки Google Play (public/images), обрізані до краю значка.
+ * На сайті — WebP висотою 104 px (удвічі більше за показані 52 px); PNG 815×245 — оригінал від Google.
+ */
 export const PLAY_BADGES = [
     {
         value: 'get',
-        src: '/images/google-play-badge.png',
+        src: '/images/google-play-badge.webp',
         alt: 'Get it on Google Play',
         title: tr('Публічний'),
         text: tr('Застосунок опубліковано — значок «Get it on Google Play».'),
     },
     {
         value: 'preregister',
-        src: '/images/google-play-preregister.png',
+        src: '/images/google-play-preregister.webp',
         alt: 'Pre-register on Google Play',
         title: tr('Попередня реєстрація'),
         text: tr(
@@ -56,8 +59,8 @@ export function PlayStoreLink({
             <img
                 src={badge.src}
                 alt={badge.alt}
-                width={815}
-                height={245}
+                width={346}
+                height={104}
                 loading="lazy"
                 decoding="async"
                 className={cn('w-auto', compact ? 'h-11' : 'h-13')}

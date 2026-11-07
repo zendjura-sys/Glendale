@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'api.dart';
+import 'core/widgets/arctic_glass/arctic_glass.dart';
 import 'family_tabs.dart';
 import 'feed.dart';
 import 'posts.dart';
@@ -15,8 +16,10 @@ import 'shell.dart';
 import 'state.dart';
 import 'theme.dart';
 import 'voice_room.dart';
+import 'listen_rooms.dart';
 import 'widgets.dart';
 import 'i18n.dart';
+import 'skeletons.dart';
 
 /// Шлях сторінки сім’ї на мосту сайту: `/api/v1/site/f/{slug}/{section}`.
 String familyPath(String slug, [String section = '']) => Api.site('/f/$slug${section.isEmpty || section == 'overview' ? '' : '/$section'}');
@@ -102,7 +105,7 @@ class _AuthImageState extends State<AuthImage> {
           return Container(
             color: raised,
             alignment: Alignment.center,
-            child: snapshot.hasError ? const Icon(LucideIcons.imageOff, color: faint) : const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)),
+            child: snapshot.hasError ? Icon(LucideIcons.imageOff, color: faint) : const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)),
           );
         },
       ),
@@ -118,7 +121,8 @@ void openAuthImages(BuildContext context, List<String> paths, int index) {
     fullscreenDialog: true,
     builder: (_) => Scaffold(
       backgroundColor: Colors.black,
-      appBar: AppBar(backgroundColor: Colors.black, foregroundColor: Colors.white),
+      extendBodyBehindAppBar: true,
+      appBar: const ArcticGlassAppBar(),
       body: PageView(
         controller: PageController(initialPage: index),
         children: [for (final p in paths) InteractiveViewer(maxScale: 5, child: Center(child: AuthImage(path: p, fit: BoxFit.contain, radius: 0)))],
@@ -187,7 +191,7 @@ class _FamiliesScreenState extends State<FamiliesScreen> {
   @override
   Widget build(BuildContext context) {
     final data = page;
-    if (data == null) return const Center(child: CircularProgressIndicator(strokeWidth: 2.4));
+    if (data == null) return const ScreenSkeleton();
     final mine = maps(data['mine']);
     final servers = maps(data['servers']);
     return ScreenScroll(
@@ -234,7 +238,7 @@ class _FamiliesScreenState extends State<FamiliesScreen> {
         ),
         const SizedBox(height: 12),
         if (loading && families.isEmpty)
-          const Padding(padding: EdgeInsets.all(30), child: Center(child: CircularProgressIndicator(strokeWidth: 2)))
+          const ListSkeleton(rows: 5)
         else if (families.isEmpty)
           EmptyState(icon: LucideIcons.crown, title: tr('Сімей не знайдено'), text: tr('Спробуйте інший запит або створіть свою.'))
         else ...[
@@ -335,7 +339,7 @@ class FamilyCard extends StatelessWidget {
                 Text(text(server['name']) ?? '', style: body(12, color: muted)),
                 const SizedBox(width: 10),
               ],
-              const Icon(LucideIcons.usersRound, size: 14, color: muted),
+              Icon(LucideIcons.usersRound, size: 14, color: muted),
               const SizedBox(width: 4),
               Text(compact(family['members_count']), style: body(12, color: muted)),
               const Spacer(),
@@ -449,7 +453,7 @@ class _CreateFamilyScreenState extends State<CreateFamilyScreen> {
                   height: 76,
                   child: logo == null
                       ? Container(
-                          decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(18), border: Border.all(color: line)),
+                          decoration: BoxDecoration(color: fg.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(18)),
                           child: Icon(LucideIcons.imagePlus, color: muted),
                         )
                       : ClipRRect(borderRadius: BorderRadius.circular(18), child: Image(image: XFileImage(logo!), fit: BoxFit.cover)),
@@ -591,7 +595,7 @@ class _FamilyScreenState extends State<FamilyScreen> {
     final page = data;
     if (page == null) {
       return error == null
-          ? const Center(child: CircularProgressIndicator(strokeWidth: 2.4))
+          ? const ListSkeleton(rows: 6)
           : Center(child: Padding(padding: const EdgeInsets.all(20), child: EmptyState(icon: LucideIcons.crown, title: tr('Сім’я недоступна'), text: '$error', action: tr('Спробувати знову'), onAction: load)));
     }
     if (page['me'] == null) return FamilyPublic(slug: widget.slug, data: page, onChanged: load);
@@ -641,7 +645,7 @@ class _FamilyScreenState extends State<FamilyScreen> {
               ],
             ),
           ),
-          if (loading) const LinearProgressIndicator(minHeight: 2, color: primary, backgroundColor: Colors.transparent) else const SizedBox(height: 2),
+          if (loading) LinearProgressIndicator(minHeight: 2, color: primary, backgroundColor: Colors.transparent) else const SizedBox(height: 2),
           const SizedBox(height: 10),
           if (family['status'] == 'pending') ...[
             Glass(
@@ -684,7 +688,7 @@ class _FamilyScreenState extends State<FamilyScreen> {
         right: 16,
         bottom: 16 + ShellChrome.bottomOf(context),
         child: DecoratedBox(
-          decoration: BoxDecoration(borderRadius: BorderRadius.circular(18), boxShadow: [BoxShadow(color: indigo.withValues(alpha: 0.5), blurRadius: 24, offset: const Offset(0, 10), spreadRadius: -8)]),
+          decoration: BoxDecoration(borderRadius: BorderRadius.circular(18)),
           child: PrimaryButton(label: tr('Звіт'), icon: LucideIcons.filePlus, expand: false, onPressed: _report),
         ),
       ),
@@ -718,13 +722,13 @@ class _SectionTab extends StatelessWidget {
           curve: Curves.easeOutCubic,
           padding: const EdgeInsets.symmetric(horizontal: 12),
           decoration: BoxDecoration(
-            color: selected ? Colors.white.withValues(alpha: 0.09) : Colors.white.withValues(alpha: 0),
+            color: selected ? fg.withValues(alpha: 0.09) : fg.withValues(alpha: 0),
             borderRadius: BorderRadius.circular(14),
             border: Border(bottom: BorderSide(color: selected ? primary : primary.withValues(alpha: 0), width: 2)),
           ),
           child: Row(children: [
             TweenAnimationBuilder<Color?>(
-              tween: ColorTween(end: selected ? const Color(0xFF9AA6FF) : muted),
+              tween: ColorTween(end: selected ? accent : muted),
               duration: motion,
               builder: (_, color, _) => Icon(icon, size: 16, color: color),
             ),
@@ -788,7 +792,7 @@ class _FamilyHeader extends StatelessWidget {
                           ]),
                         ),
                       Row(mainAxisSize: MainAxisSize.min, children: [
-                        const Icon(LucideIcons.usersRound, size: 13, color: muted),
+                        Icon(LucideIcons.usersRound, size: 13, color: muted),
                         const SizedBox(width: 3),
                         Text(compact(family['members_count']), style: body(12, color: muted)),
                       ]),
@@ -804,7 +808,7 @@ class _FamilyHeader extends StatelessWidget {
                 Expanded(
                   child: Container(
                     padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.04), borderRadius: BorderRadius.circular(14), border: Border.all(color: line)),
+                    decoration: BoxDecoration(color: fg.withValues(alpha: 0.04), borderRadius: BorderRadius.circular(14)),
                     child: Row(children: [
                       Expanded(
                         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -980,6 +984,7 @@ List<Widget> overviewTab(FamilyContext ctx, {required VoidCallback onReport, req
       label: '[${text(family['tag']) ?? ''}] ${text(family['name']) ?? ''}',
       route: '/families/${ctx.slug}',
     ),
+    ListenRoomPanel(key: ValueKey('listen-family-${family['id']}'), type: 'family', id: intOf(family['id'])),
     Row(children: [
       Expanded(child: MetricTile(caps: true, label: tr('Заробив за тиждень'), value: hryvniaShort(stats['week_earned']), icon: LucideIcons.trendingUp, color: green)),
       const SizedBox(width: 8),
@@ -1025,7 +1030,7 @@ List<Widget> overviewTab(FamilyContext ctx, {required VoidCallback onReport, req
             child: Row(children: [
               SizedBox(width: 22, child: Text('${l['place']}', style: body(13, color: intOf(l['place']) <= 3 ? gold : muted, weight: FontWeight.w800))),
               Expanded(child: Text(text(l['display']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(13.5).copyWith(fontFamily: 'monospace'))),
-              Text(tr('{v} балів', {'v': l['points']}), style: body(12.5, color: const Color(0xFF9AA6FF), weight: FontWeight.w700)),
+              Text(tr('{v} балів', {'v': l['points']}), style: body(12.5, color: accent, weight: FontWeight.w700)),
             ]),
           ),
       ],
@@ -1051,7 +1056,7 @@ List<Widget> overviewTab(FamilyContext ctx, {required VoidCallback onReport, req
           ListTile(
             contentPadding: EdgeInsets.zero,
             dense: true,
-            leading: const Icon(LucideIcons.calendarDays, color: Color(0xFF9AA6FF)),
+            leading: Icon(LucideIcons.calendarDays, color: accent),
             title: Text(text(e['title']) ?? '', style: body(14, weight: FontWeight.w600)),
             subtitle: Text('${e['type_label']} · ${shortStamp(e['starts_at'])} ${clock(e['starts_at'])}', style: body(12, color: muted)),
           ),
@@ -1181,7 +1186,7 @@ class ReportCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.035), borderRadius: BorderRadius.circular(16), border: Border.all(color: line)),
+      decoration: BoxDecoration(color: fg.withValues(alpha: 0.035), borderRadius: BorderRadius.circular(16)),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
           Text('#${report['id']} ', style: body(12, color: faint)),
@@ -1198,7 +1203,7 @@ class ReportCard extends StatelessWidget {
           if (report['for_friend'] == true) Text(tr('За: {v}', {'v': mapOf(report['beneficiary'])['display']}), style: body(12, color: muted)),
           if (report['for_friend'] == true) Text(tr('Подав: {v}', {'v': mapOf(report['submitter'])['display']}), style: body(12, color: muted)),
           if (intOf(report['reward']) > 0) Text(hryvnia(report['reward']), style: body(12.5, color: green, weight: FontWeight.w700)),
-          if (intOf(report['points']) > 0) Text(tr('{v} балів', {'v': report['points']}), style: body(12, color: const Color(0xFF9AA6FF))),
+          if (intOf(report['points']) > 0) Text(tr('{v} балів', {'v': report['points']}), style: body(12, color: accent)),
         ]),
         if (flags['similar_reports'] != null) Padding(padding: const EdgeInsets.only(top: 6), child: Pill(label: tr('Скріншот схожий на попередні'), icon: LucideIcons.triangleAlert, color: gold)),
         if (paths.isNotEmpty) ...[
@@ -1454,8 +1459,8 @@ class _ReportFormState extends State<_ReportForm> {
                 child: Container(
                   width: 72,
                   height: 72,
-                  decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(12), border: Border.all(color: line)),
-                  child: const Icon(LucideIcons.imagePlus, color: muted),
+                  decoration: BoxDecoration(color: fg.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(12)),
+                  child: Icon(LucideIcons.imagePlus, color: muted),
                 ),
               ),
           ]),
@@ -1482,13 +1487,13 @@ class _Choice extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: selected ? primary.withValues(alpha: 0.14) : Colors.white.withValues(alpha: 0.04),
+      color: selected ? primary.withValues(alpha: 0.14) : fg.withValues(alpha: 0.04),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14), side: BorderSide(color: selected ? primary.withValues(alpha: 0.6) : line)),
       child: InkWell(
         borderRadius: BorderRadius.circular(14),
         onTap: onTap,
         child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-          Icon(icon, size: 18, color: selected ? const Color(0xFF9AA6FF) : muted),
+          Icon(icon, size: 18, color: selected ? accent : muted),
           const SizedBox(width: 8),
           Text(label, style: body(13.5, color: selected ? ink : soft, weight: FontWeight.w600)),
         ]),
@@ -1510,11 +1515,11 @@ class _Stepper extends StatelessWidget {
   Widget build(BuildContext context) {
     Widget step(IconData icon, VoidCallback? onPressed) => SizedBox.square(
           dimension: 34,
-          child: IconButton(padding: EdgeInsets.zero, onPressed: onPressed, icon: Icon(icon, size: 18), style: IconButton.styleFrom(backgroundColor: Colors.white.withValues(alpha: 0.05))),
+          child: IconButton(padding: EdgeInsets.zero, onPressed: onPressed, icon: Icon(icon, size: 18), style: IconButton.styleFrom(backgroundColor: fg.withValues(alpha: 0.05))),
         );
     return Container(
       padding: const EdgeInsets.fromLTRB(12, 10, 8, 10),
-      decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.04), borderRadius: BorderRadius.circular(14), border: Border.all(color: line)),
+      decoration: BoxDecoration(color: fg.withValues(alpha: 0.04), borderRadius: BorderRadius.circular(14)),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text(label, maxLines: 1, softWrap: false, overflow: TextOverflow.fade, style: body(12.5, color: muted)),
         const SizedBox(height: 4),

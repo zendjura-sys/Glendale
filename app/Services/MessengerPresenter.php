@@ -9,8 +9,11 @@ use App\Models\FamilyMember;
 use App\Models\Message;
 use App\Models\MessageAttachment;
 use App\Models\MessageFavorite;
+use App\Models\MessagePin;
 use App\Models\User;
+use App\Services\Chat\ChatBackgrounds;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -26,7 +29,7 @@ class MessengerPresenter
 
     public function load(Message $message): Message
     {
-        return $message->loadMissing(['user', 'attachments', 'replyTo.user', 'replyTo.attachments']);
+        return $message->loadMissing(['user', 'attachments', 'reactions', 'replyTo.user', 'replyTo.attachments']);
     }
 
     /**
@@ -44,6 +47,8 @@ class MessengerPresenter
             'type' => $message->type,
             'body' => $message->body,
             'user' => $this->author($message->conversation_id, $message->user),
+            'guest' => is_array($meta['guest'] ?? null) ? ['name' => (string) ($meta['guest']['name'] ?? 'Гість')] : null,
+            'bot' => is_array($meta['bot'] ?? null) ? ['name' => (string) ($meta['bot']['name'] ?? 'Бот')] : null,
             'reply_to' => $reply ? [
                 'id' => $reply->id,
                 'body' => $reply->trashed() ? null : Str::limit((string) $reply->body, 120),
@@ -53,10 +58,15 @@ class MessengerPresenter
                 'deleted' => $reply->trashed(),
             ] : null,
             'preview' => $this->preview($message),
+            'thread_root_id' => $message->thread_root_id,
+            'thread' => $message->thread_count > 0 ? ['count' => $message->thread_count, 'last_at' => $message->thread_last_at?->toIso8601String()] : null,
             'attachments' => $message->attachments->map(fn (MessageAttachment $a) => [
                 'id' => $a->id,
                 'type' => $a->type,
-                'url' => $a->url,
+                // «На один перегляд»: посилання немає — фото відкривається лише через /once і лише раз.
+                'url' => ($a->meta['view_once'] ?? false) ? null : $a->url,
+                'view_once' => (bool) ($a->meta['view_once'] ?? false),
+                'viewed_by' => ($a->meta['view_once'] ?? false) ? array_map('intval', DB::table('message_attachment_views')->where('message_attachment_id', $a->id)->pluck('user_id')->all()) : [],
                 'width' => $a->width,
                 'height' => $a->height,
                 'name' => $a->name,
@@ -64,6 +74,7 @@ class MessengerPresenter
                 'size' => $a->size,
                 'duration' => $a->duration,
                 'waveform' => $a->meta['waveform'] ?? null,
+                'preview' => $a->type === MessageAttachment::TYPE_FILE ? MessageAttachment::previewKind($a->mime, $a->name) : null,
             ])->all(),
             'sticker' => $message->type === Message::TYPE_STICKER && isset($message->meta['sticker']['path']) ? [
                 'id' => $message->meta['sticker']['id'] ?? null,
@@ -76,6 +87,7 @@ class MessengerPresenter
             'expires_at' => $message->expires_at?->isFuture() ? $message->expires_at->toIso8601String() : null,
             'created_at' => $message->created_at->toIso8601String(),
             'starred' => $starred,
+            'reactions' => $this->reactions($message),
             'card' => is_array($meta['card'] ?? null) && is_string($meta['card']['title'] ?? null) && is_string($meta['card']['href'] ?? null) ? [
                 'kind' => (string) ($meta['card']['kind'] ?? ''),
                 'id' => (int) ($meta['card']['id'] ?? 0),
@@ -89,6 +101,28 @@ class MessengerPresenter
                 'username' => is_string($forward['username'] ?? null) ? $forward['username'] : null,
             ] : null,
         ];
+    }
+
+    /**
+     * Реакції під повідомленням: емодзі, скільки й хто (id — щоб клієнт знав свою; до 30 на емодзі).
+     *
+     * @return list<array{emoji: string, count: int, user_ids: list<int>}>
+     */
+    private function reactions(Message $message): array
+    {
+        if (! $message->relationLoaded('reactions')) {
+            return [];
+        }
+        $groups = [];
+        foreach ($message->reactions->sortBy('created_at') as $reaction) {
+            $groups[$reaction->emoji] ??= ['emoji' => $reaction->emoji, 'count' => 0, 'user_ids' => []];
+            $groups[$reaction->emoji]['count']++;
+            if (count($groups[$reaction->emoji]['user_ids']) < 30) {
+                $groups[$reaction->emoji]['user_ids'][] = $reaction->user_id;
+            }
+        }
+
+        return array_values($groups);
     }
 
     /**
@@ -143,6 +177,7 @@ class MessengerPresenter
         return match ($message->type) {
             Message::TYPE_STICKER => trim(($message->meta['sticker']['emoji'] ?? '').' Стікер'),
             Message::TYPE_VOICE => 'Голосове повідомлення',
+            Message::TYPE_VIDEO_NOTE => 'Відеоповідомлення',
             Message::TYPE_CONTACT => 'Контакт: '.(($contact = $this->contact($message)) instanceof User ? $contact->name : 'видалений акаунт'),
             default => $this->textPreview($message),
         };
@@ -211,7 +246,9 @@ class MessengerPresenter
     public function history(Conversation $conversation, ?int $beforeId = null, ?User $viewer = null): array
     {
         $messages = $conversation->messages()
-            ->with(['user', 'attachments', 'replyTo.user', 'replyTo.attachments'])
+            ->with(['user', 'attachments', 'reactions', 'replyTo.user', 'replyTo.attachments'])
+            // Відповіді в гілках — лише у вікні гілки.
+            ->whereNull('thread_root_id')
             ->where(function ($query) use ($viewer) {
                 $query->where(fn ($visible) => $visible
                     ->where(fn ($q) => $q->whereNull('publish_at')->orWhere('publish_at', '<=', now()))
@@ -258,6 +295,8 @@ class MessengerPresenter
             ->withCount('activeParticipants as members_count')
             ->with(['lastMessage' => fn ($q) => $q->with(['user', 'attachments'])])
             ->where(fn ($q) => $q->whereNotNull('conversations.last_message_id')->when($includeId, fn ($q, int $id) => $q->orWhere('conversations.id', $id)))
+            // Канали спільнот живуть на сторінці спільноти, не в «Повідомленнях».
+            ->whereNull('conversations.community_channel_id')
             ->orderByRaw('case when me.pinned_at is null then 1 else 0 end')
             ->orderByDesc('me.pinned_at')
             ->orderByDesc('conversations.last_message_at')
@@ -325,20 +364,50 @@ class MessengerPresenter
             'can_write' => $conversation->isGroup() || ($peer !== null && $messenger->canMessage($viewer, $peer)),
             'is_muted' => $me->is_muted,
             'slow_seconds' => (int) $conversation->slow_seconds,
+            'automod' => is_array($conversation->automod) ? $conversation->automod : null,
             'share_receipts' => $me->share_receipts,
             'pinned' => $me->pinned_at !== null,
             'folder' => $me->folder,
             'my_role' => $me->role,
+            'note' => $me->note,
+            'pins' => $this->pins($conversation),
+            'can_pin' => ! $conversation->isGroup() || $me->canManage(),
+            // Тайм-аут: до коли не можна писати; фон чату — особистий, інакше спільний від адміністраторів.
+            'timeout_until' => $me->timedOut() ? $me->timeout_until?->toIso8601String() : null,
+            'background' => app(ChatBackgrounds::class)->resolve($me->background ?? $conversation->background),
+            'my_background' => $me->background,
+            'shared_background' => $conversation->background,
             'read_up_to' => (int) $others->filter(fn (ConversationParticipant $participant) => $participant->share_receipts)->max('last_read_message_id'),
             'members' => $conversation->isGroup()
                 ? $participants
                     ->sortBy(fn (ConversationParticipant $p) => [$p->role === ConversationParticipant::ROLE_OWNER ? 0 : ($p->role === ConversationParticipant::ROLE_ADMIN ? 1 : 2), $p->user->name])
-                    ->map(fn (ConversationParticipant $p) => [...($this->author($conversation->id, $p->user) ?? []), 'role' => $p->role])
+                    ->map(fn (ConversationParticipant $p) => [
+                        ...($this->author($conversation->id, $p->user) ?? []),
+                        'role' => $p->role,
+                        'timeout_until' => $p->timedOut() ? $p->timeout_until?->toIso8601String() : null,
+                    ])
                     ->values()
                     ->all()
                 : [],
             'members_count' => $participants->count(),
         ];
+    }
+
+    /**
+     * Закріплені повідомлення: новіші — першими.
+     *
+     * @return list<array{id: int, preview: string, author: string|null}>
+     */
+    public function pins(Conversation $conversation): array
+    {
+        return array_values(MessagePin::query()->where('conversation_id', $conversation->id)
+            ->with(['message.user', 'message.attachments'])->latest('id')->limit(MessagePin::MAX)->get()
+            ->filter(fn (MessagePin $pin) => $pin->message !== null)
+            ->map(fn (MessagePin $pin) => [
+                'id' => (int) $pin->message_id,
+                'preview' => $this->preview($pin->message),
+                'author' => $pin->message->user?->first_name,
+            ])->all());
     }
 
     /**

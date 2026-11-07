@@ -8,13 +8,16 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'api.dart';
+import 'core/widgets/arctic_glass/arctic_glass.dart';
 import 'feed.dart';
 import 'posts.dart';
 import 'state.dart';
 import 'theme.dart';
 import 'voice_room.dart';
+import 'listen_rooms.dart';
 import 'widgets.dart';
 import 'i18n.dart';
+import 'skeletons.dart';
 
 final communityRoles = {'owner': tr('Власник'), 'admin': tr('Адміністратор'), 'editor': tr('Редактор'), 'member': tr('Учасник')};
 
@@ -160,7 +163,7 @@ class _CommunitiesScreenState extends State<CommunitiesScreen> {
         ),
         const SizedBox(height: 12),
         if (loading && items.isEmpty)
-          const Padding(padding: EdgeInsets.all(30), child: Center(child: CircularProgressIndicator(strokeWidth: 2.4)))
+          const ListSkeleton(rows: 5)
         else if (items.isEmpty)
           EmptyState(
             icon: LucideIcons.searchX,
@@ -204,7 +207,7 @@ class CommunityCard extends StatelessWidget {
               children: [
                 Row(children: [
                   Flexible(child: Text(text(community['name']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(15, weight: FontWeight.w700))),
-                  if (community['is_verified'] == true) ...[const SizedBox(width: 4), const Icon(LucideIcons.badgeCheck, size: 15, color: primary)],
+                  if (community['is_verified'] == true) ...[const SizedBox(width: 4), Icon(LucideIcons.badgeCheck, size: 15, color: primary)],
                 ]),
                 const SizedBox(height: 2),
                 Text([text(community['category_label']), communityKind(community)].whereType<String>().join(' · '), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: muted)),
@@ -376,7 +379,7 @@ class _TypeOption extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: selected ? primary.withValues(alpha: 0.12) : Colors.white.withValues(alpha: 0.04),
+      color: selected ? primary.withValues(alpha: 0.12) : fg.withValues(alpha: 0.04),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: selected ? primary.withValues(alpha: 0.6) : line)),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
@@ -384,7 +387,7 @@ class _TypeOption extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(14),
           child: Row(children: [
-            Icon(icon, color: selected ? const Color(0xFF9AA6FF) : muted),
+            Icon(icon, color: selected ? accent : muted),
             const SizedBox(width: 12),
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -425,15 +428,17 @@ class _CommunityScreenState extends State<CommunityScreen> {
     final api = AppScope.read(context).session.api;
     await showModalBottomSheet<void>(
       context: context,
+      backgroundColor: Colors.transparent,
+      elevation: 0,
       isScrollControlled: true,
-      builder: (sheet) => DraggableScrollableSheet(
+      builder: (sheet) => ArcticGlassSheetSurface(child: DraggableScrollableSheet(
         expand: false,
         initialChildSize: 0.85,
         maxChildSize: 0.95,
         builder: (sheet, controller) => FutureBuilder<Map<String, dynamic>>(
           future: api.get(Api.site('/c/${widget.slug}/$kind')),
           builder: (sheet, snap) {
-            if (!snap.hasData) return const Center(child: CircularProgressIndicator(strokeWidth: 2.4));
+            if (!snap.hasData) return const ScreenSkeleton();
             final lines = (text(snap.data!['text']) ?? '').split(RegExp(r'\r?\n'));
             return ListView(controller: controller, padding: const EdgeInsets.fromLTRB(20, 20, 20, 32), children: [
               Text(kind == 'rules' ? tr('Правила') : tr('Довідник'), style: display(20)),
@@ -446,7 +451,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
             ]);
           },
         ),
-      ),
+      )),
     );
   }
 
@@ -482,7 +487,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
     final data = page;
     if (data == null) {
       return error == null
-          ? const Center(child: CircularProgressIndicator(strokeWidth: 2.4))
+          ? const ListSkeleton(rows: 6)
           : Center(child: Padding(padding: const EdgeInsets.all(20), child: EmptyState(icon: LucideIcons.usersRound, title: tr('Спільнота недоступна'), text: '$error', action: tr('Спробувати знову'), onAction: _load)));
     }
     final c = mapOf(data['community']);
@@ -526,7 +531,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                   children: [
                     Row(children: [
                       Flexible(child: Text(text(c['name']) ?? '', style: display(22))),
-                      if (c['is_verified'] == true) ...[const SizedBox(width: 6), const Icon(LucideIcons.badgeCheck, color: primary, size: 20)],
+                      if (c['is_verified'] == true) ...[const SizedBox(width: 6), Icon(LucideIcons.badgeCheck, color: primary, size: 20)],
                     ]),
                     if (text(c['status']) != null) Padding(padding: const EdgeInsets.only(top: 4), child: Text(text(c['status'])!, style: body(14, color: soft))),
                     const SizedBox(height: 8),
@@ -575,6 +580,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
               label: text(c['name']) ?? '',
               route: '/communities/${widget.slug}',
             ),
+            ListenRoomPanel(key: ValueKey('listen-community-${c['id']}'), type: 'community', id: intOf(c['id'])),
           ],
           if (mapOf(page?['rules'])['rules'] == true || mapOf(page?['rules'])['handbook'] == true) ...[
             const SizedBox(height: 12),
@@ -597,17 +603,33 @@ class _CommunityScreenState extends State<CommunityScreen> {
                 CardTitle(tr('Інформація'), icon: LucideIcons.info),
                 const SizedBox(height: 10),
                 if (text(c['description']) != null) Text(text(c['description'])!, style: body(14, color: soft).copyWith(height: 1.5)),
-                if (text(c['city']) != null) Padding(padding: const EdgeInsets.only(top: 8), child: Row(children: [const Icon(LucideIcons.mapPin, size: 16, color: muted), const SizedBox(width: 8), Text(text(c['city'])!, style: body(13.5, color: soft))])),
+                if (text(c['city']) != null) Padding(padding: const EdgeInsets.only(top: 8), child: Row(children: [Icon(LucideIcons.mapPin, size: 16, color: muted), const SizedBox(width: 8), Text(text(c['city'])!, style: body(13.5, color: soft))])),
                 if (text(c['website']) != null)
                   Padding(
                     padding: const EdgeInsets.only(top: 8),
                     child: GestureDetector(
                       onTap: () => launchUrl(Uri.parse(text(c['website'])!), mode: LaunchMode.externalApplication),
-                      child: Row(children: [const Icon(LucideIcons.link, size: 16, color: muted), const SizedBox(width: 8), Flexible(child: Text(text(c['website'])!.replaceFirst(RegExp(r'^https?://'), ''), style: body(13.5, color: const Color(0xFF9AA8FF))))]),
+                      child: Row(children: [Icon(LucideIcons.link, size: 16, color: muted), const SizedBox(width: 8), Flexible(child: Text(text(c['website'])!.replaceFirst(RegExp(r'^https?://'), ''), style: body(13.5, color: const Color(0xFF9AA8FF))))]),
                     ),
                   ),
               ]),
             ),
+          ],
+          // Розділи спільноти, як на сайті: канали, календар, вікі (кожен — свій плагін).
+          if (AppScope.read(context).session case final session when session.pluginOn('community_channels') || session.pluginOn('community_calendar') || session.pluginOn('community_wiki')) ...[
+            const SizedBox(height: 12),
+            Row(children: [
+              if (session.pluginOn('community_channels'))
+                Expanded(child: GhostButton(label: tr('Канали'), icon: LucideIcons.hash, compact: true, onPressed: () => context.push('/communities/${widget.slug}/channels'))),
+              if (session.pluginOn('community_calendar')) ...[
+                const SizedBox(width: 8),
+                Expanded(child: GhostButton(label: tr('Календар'), icon: LucideIcons.calendarDays, compact: true, onPressed: () => context.push('/communities/${widget.slug}/calendar'))),
+              ],
+              if (session.pluginOn('community_wiki')) ...[
+                const SizedBox(width: 8),
+                Expanded(child: GhostButton(label: tr('Вікі'), icon: LucideIcons.bookOpen, compact: true, onPressed: () => context.push('/communities/${widget.slug}/wiki'))),
+              ],
+            ]),
           ],
           if (members.isNotEmpty) ...[
             const SizedBox(height: 12),
@@ -843,7 +865,7 @@ class _CommunityMembersScreenState extends State<CommunityMembersScreen> {
         ),
         const SizedBox(height: 12),
         if (loading && items.isEmpty)
-          const Padding(padding: EdgeInsets.all(30), child: Center(child: CircularProgressIndicator(strokeWidth: 2.4)))
+          const ListSkeleton(rows: 5)
         else if (items.isEmpty)
           QuietEmpty(icon: LucideIcons.usersRound, text: tab == 'requests' ? tr('Нових заявок немає') : tr('Нікого не знайдено'))
         else
@@ -860,7 +882,7 @@ class _CommunityMembersScreenState extends State<CommunityMembersScreen> {
                           IconButton(tooltip: tr('Відхилити'), onPressed: () => _act(() => api.delete(Api.site('/c/${widget.slug}/members/${member['username']}/request'))), icon: const Icon(LucideIcons.circleX, color: dangerSoft)),
                         ])
                       : admin && member['role'] != 'owner' && intOf(member['id']) != AppScope.of(context).session.myId
-                          ? IconButton(onPressed: () => _memberMenu(member), icon: const Icon(LucideIcons.ellipsis, color: muted))
+                          ? IconButton(onPressed: () => _memberMenu(member), icon: Icon(LucideIcons.ellipsis, color: muted))
                           : null,
                 ),
             ]),
@@ -980,7 +1002,7 @@ class _CommunitySettingsScreenState extends State<CommunitySettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final data = page;
-    if (data == null) return const Center(child: CircularProgressIndicator(strokeWidth: 2.4));
+    if (data == null) return const ScreenSkeleton();
     final c = mapOf(data['community']);
     final categories = mapOf(data['categories']);
     return ScreenScroll(

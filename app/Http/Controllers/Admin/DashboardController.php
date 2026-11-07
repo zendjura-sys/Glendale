@@ -6,10 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Models\Comment;
 use App\Models\Friendship;
 use App\Models\Like;
+use App\Models\Message;
 use App\Models\Post;
 use App\Models\User;
 use App\Support\Modules\ModuleManager;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -37,6 +39,7 @@ class DashboardController extends Controller
                 'modules_total' => $modules->all()->count(),
             ],
             'chart' => Inertia::defer(fn () => $this->chart($from, $days)),
+            'heatmap' => Inertia::defer(fn () => Cache::remember('admin.heatmap', now()->addMinutes(30), fn () => $this->heatmap()), 'heatmap'),
             'latestUsers' => User::query()->latest()->limit(6)->get()
                 ->map(fn (User $u) => [...$u->toCard(), 'created_at' => $u->created_at?->toIso8601String()])
                 ->all(),
@@ -58,6 +61,47 @@ class DashboardController extends Controller
                 'queue' => config('queue.default'),
             ],
         ]);
+    }
+
+    /**
+     * Теплова карта активності за 4 тижні: дні тижня (пн–нд) × години за Києвом.
+     * Рахуються пости, коментарі, вподобання й повідомлення; у БД групуємо за годиною UTC,
+     * а в київський час переводимо тут (з урахуванням переходу на літній час).
+     *
+     * @return array{grid: list<list<int>>, max: int, peak: array{day: int, hour: int}|null, total: int}
+     */
+    private function heatmap(): array
+    {
+        $from = now()->subDays(28)->startOfHour();
+        $bucket = match (DB::connection()->getDriverName()) {
+            'mysql', 'mariadb' => "DATE_FORMAT(created_at, '%Y-%m-%d %H')",
+            'pgsql' => "to_char(created_at, 'YYYY-MM-DD HH24')",
+            default => "strftime('%Y-%m-%d %H', created_at)",
+        };
+        $grid = array_fill(0, 7, array_fill(0, 24, 0));
+        foreach ([Post::query(), Comment::query(), Like::query(), Message::query()] as $query) {
+            $rows = $query->where('created_at', '>=', $from)->selectRaw("{$bucket} as h, COUNT(*) as c")->groupBy('h')->pluck('c', 'h');
+            foreach ($rows as $hour => $count) {
+                $at = CarbonImmutable::createFromFormat('Y-m-d H', (string) $hour, 'UTC');
+                if ($at === null) {
+                    continue;
+                }
+                $local = $at->setTimezone('Europe/Kyiv');
+                $grid[$local->dayOfWeekIso - 1][$local->hour] += (int) $count;
+            }
+        }
+        $max = 0;
+        $peak = null;
+        foreach ($grid as $day => $hours) {
+            foreach ($hours as $hour => $count) {
+                if ($count > $max) {
+                    $max = $count;
+                    $peak = ['day' => $day, 'hour' => $hour];
+                }
+            }
+        }
+
+        return ['grid' => array_values(array_map('array_values', $grid)), 'max' => $max, 'peak' => $peak, 'total' => array_sum(array_map('array_sum', $grid))];
     }
 
     /**

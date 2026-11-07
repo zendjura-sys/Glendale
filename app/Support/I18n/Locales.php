@@ -3,6 +3,7 @@
 namespace App\Support\I18n;
 
 use App\Models\User;
+use App\Services\Geo\VisitorCountry;
 use App\Support\Settings\SiteSettings;
 use Illuminate\Http\Request;
 use Locale;
@@ -17,6 +18,17 @@ class Locales
     public const SOURCE = 'uk';
 
     public const COOKIE = 'locale';
+
+    /** Основна мова країни — для гостей, у яких браузер англійською. */
+    public const COUNTRY_LANGUAGES = [
+        'UA' => 'uk', 'PL' => 'pl', 'DE' => 'de', 'AT' => 'de', 'CH' => 'de', 'LI' => 'de',
+        'FR' => 'fr', 'BE' => 'fr', 'LU' => 'fr', 'MC' => 'fr', 'ES' => 'es', 'MX' => 'es', 'AR' => 'es',
+        'CO' => 'es', 'CL' => 'es', 'PE' => 'es', 'IT' => 'it', 'SM' => 'it', 'PT' => 'pt', 'BR' => 'pt-BR',
+        'CZ' => 'cs', 'SK' => 'sk', 'RO' => 'ro', 'MD' => 'ro', 'HU' => 'hu', 'BG' => 'bg', 'LT' => 'lt',
+        'LV' => 'lv', 'EE' => 'et', 'NL' => 'nl', 'SE' => 'sv', 'NO' => 'nb', 'DK' => 'da', 'FI' => 'fi',
+        'GR' => 'el', 'CY' => 'el', 'TR' => 'tr', 'GE' => 'ka', 'AZ' => 'az', 'KZ' => 'kk', 'JP' => 'ja',
+        'KR' => 'ko', 'CN' => 'zh', 'TW' => 'zh-TW', 'HR' => 'hr', 'RS' => 'sr', 'SI' => 'sl', 'IL' => 'he',
+    ];
 
     public function __construct(private readonly SiteSettings $settings) {}
 
@@ -98,7 +110,36 @@ class Locales
             }
         }
 
-        return $this->match((string) $request->header('Accept-Language')) ?? $this->fallback();
+        // Браузер англійською (типово на багатьох телефонах) або мовою, якої немає на сайті, —
+        // беремо мову країни за IP: в Україні — українська, хоч телефон і англійською.
+        $browser = $this->match((string) $request->header('Accept-Language'));
+        if ($browser === null || self::primary($browser) === 'en') {
+            $byCountry = $this->forCountry(app(VisitorCountry::class)->of($request));
+            if ($byCountry !== null) {
+                return $byCountry;
+            }
+        }
+
+        return $browser ?? $this->fallback();
+    }
+
+    /** Мова країни (ISO 3166 → увімкнена мова сайту) або null. */
+    public function forCountry(?string $country): ?string
+    {
+        $code = self::COUNTRY_LANGUAGES[strtoupper((string) $country)] ?? null;
+        if ($code === null) {
+            return null;
+        }
+        if ($this->isEnabled($code)) {
+            return $code;
+        }
+        foreach ($this->enabled() as $candidate) {
+            if (self::primary($candidate) === self::primary($code)) {
+                return $candidate;
+            }
+        }
+
+        return null;
     }
 
     /**

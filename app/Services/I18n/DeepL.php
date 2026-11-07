@@ -7,10 +7,16 @@ use App\Support\Settings\SiteSettings;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Машинний переклад DeepL: інтерфейс (з української) і тексти користувачів (кнопка «Перекласти»).
  * Підстановки {0}, {name}, :attribute беремо в теги, які DeepL не чіпає.
+ *
+ * Ліміт: DeepL рахує символи вихідного тексту — разом із пробілами, розділовими знаками й тегами —
+ * за розрахунковий місяць. Free — 500 000 символів на місяць, Pro — скільки оплачено. Коли ліміт
+ * вичерпано, DeepL відповідає 456 «Quota exceeded»: ставимо позначку «вичерпано», і до нового місяця
+ * перекладає LibreTranslate (див. Translator).
  */
 class DeepL
 {
@@ -19,6 +25,12 @@ class DeepL
 
     /** Скільки рядків в одному запиті (обмеження DeepL — 50). */
     public const BATCH = 50;
+
+    /** Позначка «ліміт вичерпано»: {at, used} — коли й скільки символів було використано. */
+    private const EXHAUSTED = 'deepl.exhausted';
+
+    /** Кеш лічильника символів (/v2/usage не витрачає ліміт, але й часто питати не треба). */
+    private const USAGE = 'deepl.usage';
 
     private const CONTEXT = 'User interface of GameCon, a social network for gamers: GTA RP servers, role-play families, clans, friends, chats, music and movies.';
 
@@ -105,6 +117,86 @@ class DeepL
     }
 
     /**
+     * Лічильник символів із кешем на 30 хв. Заодно оновлює позначку «вичерпано»:
+     * used ≥ limit — вичерпано; лічильник став меншим, ніж у момент позначки, — почався новий місяць.
+     *
+     * @return array{used: int, limit: int}|null
+     */
+    public function quota(bool $fresh = false): ?array
+    {
+        if (! $this->configured()) {
+            return null;
+        }
+        if ($fresh) {
+            Cache::forget(self::USAGE);
+        }
+        $usage = Cache::get(self::USAGE);
+        if (! is_array($usage)) {
+            $usage = $this->usage();
+            if ($usage === null) {
+                return null;
+            }
+            Cache::put(self::USAGE, $usage, now()->addMinutes(30));
+        }
+        $used = (int) ($usage['used'] ?? 0);
+        $limit = (int) ($usage['limit'] ?? 0);
+        $flag = Cache::get(self::EXHAUSTED);
+        $flagUsed = is_array($flag) && is_numeric($flag['used'] ?? null) ? (int) $flag['used'] : null;
+        if ($limit > 0 && $used >= $limit) {
+            if (! is_array($flag)) {
+                $this->markExhausted($used);
+                Cache::put(self::USAGE, $usage, now()->addMinutes(30));
+            }
+        } elseif (is_array($flag) && $flagUsed === null) {
+            // Позначка з відповіді 456 — запам'ятовуємо лічильник, щоб помітити його обнулення.
+            Cache::put(self::EXHAUSTED, ['at' => $flag['at'] ?? now()->toIso8601String(), 'used' => $used], now()->addMonthNoOverflow()->startOfMonth());
+        } elseif ($flagUsed !== null && $used < $flagUsed) {
+            // Лічильник обнулився — новий розрахунковий місяць DeepL (він не завжди збігається з календарним).
+            Cache::forget(self::EXHAUSTED);
+        }
+
+        return ['used' => $used, 'limit' => $limit];
+    }
+
+    /**
+     * Чи вичерпано ліміт цього місяця. Без $check — лише позначка в кеші (без запитів: викликається
+     * на кожній сторінці); з $check — ще й свіжий (до 30 хв) лічильник /v2/usage.
+     */
+    public function exhausted(bool $check = false): bool
+    {
+        if ($check) {
+            $this->quota();
+        }
+
+        return Cache::get(self::EXHAUSTED) !== null;
+    }
+
+    /** Коли поставлено позначку «вичерпано» (ISO 8601) або null. */
+    public function exhaustedAt(): ?string
+    {
+        $flag = Cache::get(self::EXHAUSTED);
+
+        return is_array($flag) && is_string($flag['at'] ?? null) ? $flag['at'] : null;
+    }
+
+    /**
+     * Позначка «вичерпано» — до початку наступного календарного місяця. Якщо розрахунковий місяць DeepL
+     * почнеться раніше, quota() побачить обнулений лічильник і зніме позначку сама.
+     */
+    public function markExhausted(?int $used = null): void
+    {
+        Cache::put(self::EXHAUSTED, ['at' => now()->toIso8601String(), 'used' => $used], now()->addMonthNoOverflow()->startOfMonth());
+        Cache::forget(self::USAGE);
+    }
+
+    /** Admin «Скинути позначку» / тести. */
+    public function clearExhausted(): void
+    {
+        Cache::forget(self::EXHAUSTED);
+        Cache::forget(self::USAGE);
+    }
+
+    /**
      * Переклад інтерфейсу: з української, з підстановками. Порядок і кількість — як у вхідному списку.
      *
      * @param  list<string>  $texts
@@ -180,6 +272,14 @@ class DeepL
             $client = Http::timeout(60)->acceptJson()->withHeaders(['Authorization' => 'DeepL-Auth-Key '.$key]);
             $response = $method === 'get' ? $client->get($this->url($path), $payload) : $client->asJson()->post($this->url($path), $payload);
         } catch (ConnectionException) {
+            return null;
+        }
+
+        // 456 Quota exceeded — символи цього місяця закінчилися; далі перекладає LibreTranslate.
+        if ($response->status() === 456) {
+            Log::warning('deepl: quota exceeded — переходимо на LibreTranslate');
+            $this->markExhausted();
+
             return null;
         }
 

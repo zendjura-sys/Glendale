@@ -360,7 +360,7 @@ function SettingsPanel({
                     'Кожна зміна записується в журнал аудиту (було → стало). Нові ставки діють для звітів, схвалених після збереження.',
                 )}
             </p>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 min-[1920px]:grid-cols-4 min-[2400px]:grid-cols-5 md:grid-cols-2 xl:grid-cols-3">
                 {groups.map((g) => (
                     <SettingsGroup key={g.key} title={g.title}>
                         {Object.entries(form.data[g.key]).map(

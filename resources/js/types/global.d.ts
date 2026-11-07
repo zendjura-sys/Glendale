@@ -23,6 +23,7 @@ declare module '@inertiajs/core' {
                 refund: string;
                 pricing: string;
                 contacts: string;
+                child_safety: string;
                 rights: string;
             };
             auth: Auth;
@@ -35,10 +36,18 @@ declare module '@inertiajs/core' {
                     badge: 'get' | 'preregister';
                 } | null;
                 registration_open: boolean;
+                auth_images?: {
+                    site_desktop?: string | null;
+                    site_mobile?: string | null;
+                };
                 translate: boolean;
                 max_attachments: number;
                 max_message_file_mb: number;
                 announcement: string | null;
+                analytics?: string | null;
+                music_upload?: { max_mb: number; formats: string[] };
+                /** Рік «Підсумків року», якщо зараз їхній сезон (грудень — січень). */
+                wrapped?: number | null;
                 social: {
                     discord: boolean;
                     google: FirebaseConfig | null;
@@ -60,6 +69,29 @@ declare module '@inertiajs/core' {
                 desktop: string | null;
                 mobile: string | null;
                 default: boolean;
+            } | null;
+            /** Серія днів поспіль, спогади «цього дня», рамка свята. */
+            engagement?: {
+                streak: {
+                    days: number;
+                    best: number;
+                    milestone: number | null;
+                } | null;
+                memories: number;
+                frame: { season: string; on: boolean } | null;
+                widgets: string[];
+            } | null;
+            /** Режим «очима людини» (адміністратор переглядає сайт як ця людина). */
+            viewAs?: { name: string; username: string } | null;
+            /** Розділи адмінки, доручені модератору. */
+            staffSections?: string[] | null;
+            airAlerts?: boolean;
+            /** Активний збій зі сторінки статусу (null — усе працює). */
+            incident?: {
+                id: number;
+                title: string;
+                severity: 'minor' | 'major';
+                status: string;
             } | null;
             music: SharedMusic;
             counters: {

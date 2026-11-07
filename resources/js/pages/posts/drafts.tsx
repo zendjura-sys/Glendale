@@ -26,14 +26,14 @@ export default function Drafts({ drafts }: { drafts: Draft[] }) {
                     </Link>
                 </div>
                 {drafts.length === 0 && (
-                    <p className="glass rounded-3xl p-6 text-sm text-white/50">
+                    <p className="glass rounded-2xl p-6 text-sm text-white/50">
                         {tr('Збережених чернеток немає.')}
                     </p>
                 )}
                 {drafts.map((draft) => (
                     <article
                         key={draft.id}
-                        className="glass space-y-3 rounded-3xl p-5"
+                        className="glass space-y-3 rounded-2xl p-5"
                     >
                         <p className="text-sm whitespace-pre-line text-white/80">
                             {draft.body || tr('Без тексту')}

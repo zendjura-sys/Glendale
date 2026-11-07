@@ -2,20 +2,24 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\CommunityMember;
 use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\MessageAttachment;
 use App\Models\MessageFavorite;
+use App\Models\MessageReaction;
 use App\Models\MessageReport;
 use App\Models\Sticker;
 use App\Models\StickerPack;
 use App\Models\User;
+use App\Services\Media\GifSearch;
 use App\Services\Messenger;
 use App\Services\MessengerPresenter;
 use App\Services\Moderation\ContentFilter;
 use App\Services\Moderation\MessageReports;
 use App\Services\Plus\Plus;
 use App\Services\PostCards;
+use App\Services\Quests\SeasonPass;
 use App\Support\Plugins\Plugins;
 use App\Support\Settings\SiteSettings;
 use Carbon\CarbonInterface;
@@ -39,6 +43,10 @@ class MessageController extends Controller
     public const MAX_VOICE_KB = 10240;
 
     public const MAX_VOICE_SECONDS = 600;
+
+    public const MAX_VIDEO_NOTE_KB = 30720;
+
+    public const MAX_VIDEO_NOTE_SECONDS = 60;
 
     public const VOICE_MIMES = ['audio/webm', 'audio/ogg', 'audio/mp4', 'audio/x-m4a', 'audio/aac', 'audio/mpeg', 'video/webm', 'video/mp4'];
 
@@ -73,14 +81,22 @@ class MessageController extends Controller
             'voice' => ['nullable', 'file', 'max:'.self::MAX_VOICE_KB, 'mimetypes:'.implode(',', self::VOICE_MIMES)],
             'voice_duration' => ['required_with:voice', 'integer', 'min:1', 'max:'.self::MAX_VOICE_SECONDS],
             'voice_waveform' => ['nullable', 'string', 'max:1000'],
+            'video_note' => ['nullable', 'file', 'max:'.self::MAX_VIDEO_NOTE_KB, 'mimetypes:video/webm,video/mp4,video/quicktime'],
+            'video_duration' => ['required_with:video_note', 'integer', 'min:1', 'max:'.self::MAX_VIDEO_NOTE_SECONDS],
             'publish_at' => ['nullable', 'date'],
             'disappear' => ['nullable', 'boolean'],
+            'view_once' => ['nullable', 'boolean'],
             'card' => ['nullable', 'array'],
+            'gif' => ['nullable', 'array'],
+            'gif.url' => ['required_with:gif', 'string', 'max:300'],
+            'gif.title' => ['nullable', 'string', 'max:120'],
             'card.kind' => ['required_with:card', Rule::in(['game', 'movie', 'server'])],
             'card.id' => ['required_with:card', 'integer', 'min:1'],
         ], [
             'voice.mimetypes' => 'Непідтримуваний формат запису.',
             'voice.max' => 'Голосове повідомлення завелике.',
+            'video_note.max' => 'Відеоповідомлення завелике.',
+            'video_note.mimetypes' => 'Непідтримуваний формат відео.',
             'files.*.max' => 'Файл завеликий.',
         ]);
 
@@ -90,6 +106,12 @@ class MessageController extends Controller
         }
         if ($request->boolean('disappear')) {
             $plugins->ensure('disappearing_messages');
+        }
+        if ($request->boolean('view_once')) {
+            $plugins->ensure('view_once');
+            if (count($request->file('images', [])) !== 1 || $request->hasFile('files') || $request->filled('publish_at')) {
+                throw ValidationException::withMessages(['images' => 'На один перегляд можна надіслати одне фото без файлів і без відкладення.']);
+            }
         }
         $replyTo = isset($data['reply_to_id']) ? (int) $data['reply_to_id'] : null;
         $card = $this->card($data);
@@ -102,9 +124,12 @@ class MessageController extends Controller
             isset($data['sticker_id']) => $this->messenger->sendSticker(
                 $conversation,
                 $user,
-                Sticker::query()->whereKey($data['sticker_id'])->whereHas('pack', fn ($q) => $q->active()->when(! $user->isPlus(), fn ($q) => $q->where('is_plus', false)))->firstOr(
-                    fn () => throw ValidationException::withMessages(['sticker_id' => 'Стікер недоступний.'])
-                ),
+                Sticker::query()->whereKey($data['sticker_id'])->whereHas('pack', fn ($q) => $q->active()->where(fn ($q) => $q
+                    // Набір спільноти — лише її учасникам.
+                    ->where(fn ($q) => $q->whereNotNull('community_id')->whereIn('community_id', $this->memberCommunities($user)))
+                    ->orWhere(fn ($q) => $q->whereNull('community_id')->when(! $user->isPlus(), fn ($q) => $q->where(fn ($q) => $q->where('is_plus', false)->orWhereIn('slug', app(SeasonPass::class)->stickerPacks($user)))))))->firstOr(
+                        fn () => throw ValidationException::withMessages(['sticker_id' => 'Стікер недоступний.'])
+                    ),
                 $replyTo,
             ),
             $request->hasFile('voice') => $this->messenger->sendVoice(
@@ -115,6 +140,7 @@ class MessageController extends Controller
                 $this->waveform($data['voice_waveform'] ?? '[]'),
                 $replyTo,
             ),
+            $request->hasFile('video_note') => $this->sendVideoNote($conversation, $user, $request, (int) $data['video_duration'], $replyTo),
             isset($data['contact_id']) => $this->messenger->sendContact(
                 $conversation,
                 $user,
@@ -152,8 +178,38 @@ class MessageController extends Controller
     {
         // Набори GameCon+ видно всім (як рекламу), але надсилати їх можна лише з підпискою.
         $plus = (bool) request()->user()?->isPlus();
+        // Набори, відкриті нагородою сезонного пропуску, доступні й без підписки.
+        $owned = request()->user() ? app(SeasonPass::class)->stickerPacks(request()->user()) : [];
 
-        return response()->json(['packs' => array_map(fn (array $pack) => [...$pack, 'locked' => $pack['is_plus'] && ! $plus], StickerPack::catalog())]);
+        $packs = array_map(fn (array $pack) => [...$pack, 'locked' => $pack['is_plus'] && ! $plus && ! in_array($pack['slug'], $owned, true)], StickerPack::catalog());
+        // Набори спільнот, у яких людина є учасником.
+        $user = request()->user();
+        if ($user !== null && app(Plugins::class)->on('community_stickers')) {
+            $community = StickerPack::query()->active()->whereIn('community_id', $this->memberCommunities($user))->whereHas('stickers')
+                ->with(['stickers', 'community'])->orderBy('id')->get()
+                ->map(fn (StickerPack $pack) => [
+                    'id' => $pack->id,
+                    'slug' => $pack->slug,
+                    'name' => $pack->name,
+                    'is_plus' => false,
+                    'community' => $pack->community?->name,
+                    'stickers' => array_values($pack->stickers->map->toCard()->all()),
+                    'locked' => false,
+                ])->all();
+            $packs = [...$community, ...$packs];
+        }
+
+        return response()->json(['packs' => $packs]);
+    }
+
+    /**
+     * Спільноти, де людина — учасник (для їхніх наборів стікерів).
+     *
+     * @return list<int>
+     */
+    private function memberCommunities(User $user): array
+    {
+        return array_values(array_map('intval', CommunityMember::query()->where('user_id', $user->id)->where('status', CommunityMember::STATUS_ACTIVE)->pluck('community_id')->all()));
     }
 
     public function download(Request $request, MessageAttachment $attachment): StreamedResponse
@@ -188,6 +244,7 @@ class MessageController extends Controller
             $publishAt,
             $expiresAt,
             $card,
+            $request->boolean('view_once'),
         );
     }
 
@@ -232,6 +289,9 @@ class MessageController extends Controller
      */
     private function card(array $data): ?array
     {
+        if (isset($data['gif']) && is_array($data['gif']) && app(Plugins::class)->on('gif_search')) {
+            return app(GifSearch::class)->card($data['gif']);
+        }
         if (! isset($data['card']) || ! is_array($data['card'])) {
             return null;
         }
@@ -293,6 +353,7 @@ class MessageController extends Controller
         $data = $request->validate(['conversation_id' => ['required', 'integer']]);
         $target = Conversation::query()->findOrFail((int) $data['conversation_id']);
         abort_if($target->participantFor($user) === null, 404);
+        $this->messenger->assertCanSend($target, $user);
 
         if (! $target->isGroup()) {
             $peer = $target->activeParticipants()->where('user_id', '!=', $user->id)->with('user')->first()?->user;
@@ -302,6 +363,28 @@ class MessageController extends Controller
         $copy = $this->messenger->forward($target, $user, $message);
 
         return response()->json(['message' => $this->presenter->message($this->presenter->load($copy))], 201);
+    }
+
+    private function sendVideoNote(Conversation $conversation, User $user, Request $request, int $duration, ?int $replyTo): Message
+    {
+        app(Plugins::class)->ensure('video_notes');
+        $file = $request->file('video_note');
+        abort_unless($file instanceof UploadedFile, 422);
+
+        return $this->messenger->sendVideoNote($conversation, $user, $file, $duration, $replyTo);
+    }
+
+    /** Реакція на повідомлення (той самий емодзі ще раз — прибрати). */
+    public function react(Request $request, Conversation $conversation, Message $message): JsonResponse
+    {
+        app(Plugins::class)->ensure('message_reactions');
+        $user = $request->user();
+        abort_if($conversation->participantFor($user) === null, 404);
+        abort_unless($message->conversation_id === $conversation->id && ! $message->trashed() && $message->type !== Message::TYPE_SYSTEM, 404);
+        $data = $request->validate(['emoji' => ['nullable', 'string', Rule::in(MessageReaction::EMOJI)]]);
+        $this->messenger->react($message, $user, $data['emoji'] ?? null);
+
+        return response()->json(['message' => $this->presenter->message($this->presenter->load($message))]);
     }
 
     public function favorite(Request $request, Conversation $conversation, Message $message): JsonResponse

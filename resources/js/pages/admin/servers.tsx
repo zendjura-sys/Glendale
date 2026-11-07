@@ -473,7 +473,7 @@ export default function AdminServers({
                     </article>
                 ))}
                 {servers.length === 0 && (
-                    <div className="glass rounded-3xl px-6 py-14 text-center text-sm text-white/40">
+                    <div className="glass rounded-2xl px-6 py-14 text-center text-sm text-white/40">
                         {filters.status === 'pending'
                             ? tr('Нових пропозицій немає')
                             : tr('Серверів не знайдено')}
@@ -495,7 +495,7 @@ export default function AdminServers({
                 open={rejecting !== null}
                 onOpenChange={(open) => !open && setRejecting(null)}
             >
-                <DialogContent className="glass-strong rounded-3xl border-white/10 p-6 text-white sm:max-w-md">
+                <DialogContent className="glass-strong rounded-dialog border-white/10 p-6 text-white sm:max-w-md">
                     <DialogTitle className="font-display text-lg">
                         {tr('Відхилити «')}
                         {rejecting?.name}»
@@ -595,7 +595,7 @@ function ServerDialog({
 
     return (
         <Dialog open onOpenChange={(open) => !open && onClose()}>
-            <DialogContent className="glass-strong max-h-[92dvh] gap-0 overflow-y-auto rounded-3xl border-white/10 p-6 text-white sm:max-w-2xl">
+            <DialogContent className="glass-strong max-h-[92dvh] gap-0 overflow-y-auto rounded-dialog border-white/10 p-6 text-white sm:max-w-2xl">
                 <DialogTitle className="font-display text-xl">
                     {server
                         ? tr('Редагувати «{name}»', { name: server.name })
@@ -615,7 +615,7 @@ function ServerDialog({
                     <ServerIcon
                         name={form.data.name || '?'}
                         icon={preview}
-                        className="size-16 rounded-[20px]"
+                        className="size-16 rounded-xl"
                     />
                     <div className="min-w-0 flex-1">
                         <div className="text-sm font-medium text-white">

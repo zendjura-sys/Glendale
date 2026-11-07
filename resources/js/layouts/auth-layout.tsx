@@ -1,26 +1,16 @@
 import { Link, usePage } from '@inertiajs/react';
-import {
-    AnimatePresence,
-    LayoutGroup,
-    m,
-    useReducedMotion,
-} from 'motion/react';
-import { useRef } from 'react';
-import type { PointerEvent, ReactNode } from 'react';
-import { AuthBackdrop } from '@/components/auth/auth-backdrop';
+import { AnimatePresence, m, useReducedMotion } from 'motion/react';
+import type { ReactNode } from 'react';
 import { LanguageSelect } from '@/components/gc/language-switcher';
 import { Logo } from '@/components/gc/logo';
 import { PaletteSync } from '@/components/gc/palette-sync';
-import { SiteFooter } from '@/components/gc/site-footer';
 import { tr } from '@/lib/i18n';
-import { blurSwap, EASE_OUT, motionOr, SWAP } from '@/lib/motion';
-import { cn } from '@/lib/utils';
+import { blurSwap } from '@/lib/motion';
 
 /**
- * Макет входу й реєстрації: одна скляна картка, розділена навскіс на форму й «запрошення».
- * Макет постійний (Inertia зберігає його між /login і /register), тож при переході половини
- * міняються місцями анімацією layout, а вміст розмивається й проявляється знову.
- * Інші сторінки (відновлення пароля, 2FA, оскарження) — та сама картка з коротким запрошенням.
+ * Вхід і реєстрація — Frosted Glass Split-Screen: фото з адмінки на весь екран (Адмінка → Дизайн),
+ * ліва половина прозора з великим заголовком, права — матове скло на всю висоту з формою.
+ * На телефоні форма на весь екран поверх того самого фото. Інші сторінки (пароль, 2FA) — той самий макет.
  */
 
 type Mode = 'login' | 'register' | 'other';
@@ -35,64 +25,53 @@ function useMode(): Mode {
           : 'other';
 }
 
-/** Ліва/права «запрошувальна» половина: що сказати й куди вести. */
-function Invite({ mode }: { mode: Mode }) {
-    const registrationOpen = usePage().props.site?.registration_open !== false;
+/** Заголовок лівої половини: що відбувається на цій сторінці. */
+function hero(mode: Mode): { title: string; text: string } {
+    if (mode === 'register') {
+        return {
+            title: tr('Ще немає акаунта?'),
+            text: tr(
+                'Зареєструйтеся — друзі, кіно разом і ваші ігрові сервери в одному місці. Це безкоштовно.',
+            ),
+        };
+    }
+    if (mode === 'login') {
+        return {
+            title: tr('З поверненням!'),
+            text: tr('Увійдіть — і продовжимо з того місця, де ви зупинилися.'),
+        };
+    }
 
-    const content =
-        mode === 'login'
-            ? registrationOpen
-                ? {
-                      title: tr('Вперше тут?'),
-                      text: tr(
-                          'Акаунт — за хвилину. Друзі, кіно разом і ваші ігрові сервери вже чекають.',
-                      ),
-                      href: '/register',
-                      action: tr('Створити акаунт'),
-                  }
-                : {
-                      title: tr('Раді бачити'),
-                      text: tr(
-                          'Реєстрація зараз закрита, але вхід працює як завжди.',
-                      ),
-                      href: null,
-                      action: null,
-                  }
-            : mode === 'register'
-              ? {
-                    title: tr('Уже з нами?'),
-                    text: tr(
-                        'Увійдіть — і продовжимо з того місця, де ви зупинилися.',
-                    ),
-                    href: '/login',
-                    action: tr('Увійти'),
-                }
-              : {
-                    title: tr('GameCon'),
-                    text: tr('Соцмережа для гравців і кіноманів.'),
-                    href: '/login',
-                    action: tr('До входу'),
-                };
+    return {
+        title: 'GameCon',
+        text: tr('Соцмережа для гравців і кіноманів.'),
+    };
+}
+
+/** Фон з адмінки на весь екран (телефон — вертикальне фото) і затемнення для читабельності тексту. */
+function AuthBackground() {
+    const images = usePage().props.site?.auth_images;
+    const desktop = images?.site_desktop ?? images?.site_mobile ?? null;
+    const mobile = images?.site_mobile ?? images?.site_desktop ?? null;
 
     return (
-        <div className="flex h-full flex-col justify-end">
-            {/* На телефоні — компактний рядок під формою: питання й кнопка. */}
-            <div className="flex items-center justify-between gap-4 lg:block">
-                <h2 className="font-display text-base font-semibold tracking-tight text-balance text-white lg:text-[clamp(1.9rem,3vw,2.6rem)] lg:leading-[1.05] lg:font-bold">
-                    {content.title}
-                </h2>
-                <p className="mt-3 hidden max-w-[30ch] text-[15px] leading-relaxed text-white/55 lg:block">
-                    {content.text}
-                </p>
-                {content.href && (
-                    <Link
-                        href={content.href}
-                        className="inline-flex h-10 shrink-0 items-center rounded-full border border-white/20 px-5 text-sm font-semibold text-white transition-colors hover:border-white/40 hover:bg-white/[0.06] focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none lg:mt-7 lg:h-11 lg:px-6"
-                    >
-                        {content.action}
-                    </Link>
-                )}
-            </div>
+        <div aria-hidden className="fixed inset-0 h-dvh w-screen">
+            {desktop || mobile ? (
+                <>
+                    <div
+                        className="absolute inset-0 hidden bg-cover bg-center md:block"
+                        style={{ backgroundImage: `url(${desktop})` }}
+                    />
+                    <div
+                        className="absolute inset-0 bg-cover bg-center md:hidden"
+                        style={{ backgroundImage: `url(${mobile})` }}
+                    />
+                </>
+            ) : (
+                // Без фото — темне фірмове тло.
+                <div className="absolute inset-0 bg-[#070b14] bg-[radial-gradient(90%_70%_at_15%_85%,rgb(10_132_255/0.28),transparent_60%),radial-gradient(70%_60%_at_85%_15%,rgb(0_200_255/0.16),transparent_60%)]" />
+            )}
+            <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(0,0,0,0.45),rgba(0,0,0,0.2))]" />
         </div>
     );
 }
@@ -109,108 +88,93 @@ export default function AuthLayout({
     const mode = useMode();
     const component = usePage().component;
     const reduce = useReducedMotion();
-    const card = useRef<HTMLDivElement>(null);
-    // «Рідке скло»: відблиск іде за курсором. Пишемо CSS-змінні напряму — без перерендеру React.
-    const glare = (e: PointerEvent<HTMLDivElement>) => {
-        const el = card.current;
-        if (!el || reduce || e.pointerType !== 'mouse') return;
-        const box = el.getBoundingClientRect();
-        el.style.setProperty('--lx', `${e.clientX - box.left}px`);
-        el.style.setProperty('--ly', `${e.clientY - box.top}px`);
-    };
-    // Вхід: форма ліворуч, запрошення праворуч; реєстрація — навпаки (як у референсі).
-    const inviteFirst = mode === 'register';
-    const spring = motionOr(reduce, SWAP);
     const fade = blurSwap(reduce);
+    const intro = hero(mode);
 
     return (
-        <div className="relative flex min-h-dvh flex-col items-center justify-center px-4 py-8 sm:px-6">
+        <div className="auth-screen relative min-h-dvh text-white">
             <PaletteSync />
-            <AuthBackdrop />
+            <AuthBackground />
 
             <main
                 id="main-content"
-                className="relative z-10 w-full max-w-[440px] lg:max-w-[960px]"
+                className="relative z-10 grid min-h-dvh md:grid-cols-2"
             >
-                <Link
-                    href="/"
-                    className="mb-6 flex justify-center lg:hidden"
-                    aria-label="GameCon"
-                >
-                    <Logo />
-                </Link>
-                <m.div
-                    initial={reduce ? false : { opacity: 0, y: 16 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6, ease: EASE_OUT }}
-                    ref={card}
-                    onPointerMove={glare}
-                    className="auth-card liquid-glass overflow-hidden rounded-[30px]"
-                >
-                    <span aria-hidden className="liquid-glass__glare" />
-                    <LayoutGroup>
-                        <div className="relative flex flex-col lg:grid lg:min-h-[600px] lg:grid-cols-2">
-                            {/* Запрошення: на ПК — половина зі скошеним краєм, на телефоні — рядок над формою. */}
-                            <m.section
-                                layout
-                                transition={spring}
-                                className={cn(
-                                    'auth-invite relative order-2 px-7 py-5 sm:px-9 lg:px-12 lg:py-12',
-                                    inviteFirst ? 'lg:order-1' : 'lg:order-2',
-                                    inviteFirst
-                                        ? 'auth-invite--left'
-                                        : 'auth-invite--right',
-                                )}
-                            >
-                                <AnimatePresence mode="wait" initial={false}>
-                                    <m.div
-                                        key={`invite-${mode}`}
-                                        className="h-full"
-                                        {...fade}
-                                    >
-                                        <Invite mode={mode} />
-                                    </m.div>
-                                </AnimatePresence>
-                            </m.section>
+                {/* Ліва половина: прозора, заголовок по центру висоти, вирівняний ліворуч. */}
+                <section className="relative hidden flex-col justify-center px-10 py-12 md:flex lg:px-16">
+                    <Link
+                        href="/"
+                        className="absolute top-8 left-10 w-fit lg:left-16"
+                        aria-label="GameCon"
+                    >
+                        <Logo />
+                    </Link>
+                    <AnimatePresence mode="wait" initial={false}>
+                        <m.div
+                            key={`hero-${mode}`}
+                            className="max-w-[32rem]"
+                            {...fade}
+                        >
+                            <h2 className="font-display text-[clamp(2.4rem,4.2vw,4rem)] leading-[1.05] font-bold tracking-tight text-balance">
+                                {intro.title}
+                            </h2>
+                            <p className="mt-4 max-w-[36ch] text-base leading-relaxed text-white/80">
+                                {intro.text}
+                            </p>
+                        </m.div>
+                    </AnimatePresence>
+                </section>
 
-                            <m.section
-                                layout
-                                transition={spring}
-                                className={cn(
-                                    'auth-form relative order-1 px-7 pt-8 pb-8 sm:px-9 lg:px-12 lg:py-12',
-                                    inviteFirst ? 'lg:order-2' : 'lg:order-1',
-                                )}
+                {/* Права половина: матове скло на всю висоту, впритик до країв. */}
+                <section className="auth-form auth-panel flex min-h-dvh flex-col px-7 pt-[calc(env(safe-area-inset-top)+2rem)] pb-8 sm:px-12 lg:px-16">
+                    <Link
+                        href="/"
+                        className="mb-10 w-fit md:hidden"
+                        aria-label="GameCon"
+                    >
+                        <Logo />
+                    </Link>
+                    <div className="flex flex-1 flex-col justify-center">
+                        <AnimatePresence mode="wait" initial={false}>
+                            <m.div
+                                key={component}
+                                className="w-full max-w-[420px]"
+                                {...fade}
                             >
-                                {/* Логотип над формою: їде разом із нею на інший бік. */}
-                                <Link
-                                    href="/"
-                                    className="mb-10 hidden w-fit lg:block"
-                                    aria-label="GameCon"
-                                >
-                                    <Logo />
-                                </Link>
-                                <AnimatePresence mode="wait" initial={false}>
-                                    <m.div key={component} {...fade}>
-                                        <h1 className="font-display text-xl font-semibold tracking-tight text-white">
-                                            {title}
-                                        </h1>
-                                        {description && (
-                                            <p className="mt-1.5 text-sm leading-relaxed text-white/50">
-                                                {description}
-                                            </p>
-                                        )}
-                                        <div className="mt-7">{children}</div>
-                                    </m.div>
-                                </AnimatePresence>
-                            </m.section>
-                        </div>
-                    </LayoutGroup>
-                </m.div>
-
-                <div className="mt-5 flex justify-center">
-                    <LanguageSelect />
-                </div>
-                <SiteFooter className="mt-4 border-t-0 px-0" />
+                                <h1 className="font-display text-3xl font-semibold tracking-tight">
+                                    {title}
+                                </h1>
+                                {description && (
+                                    <p className="mt-2 text-sm leading-relaxed text-white/65">
+                                        {description}
+                                    </p>
+                                )}
+                                <div className="mt-8">{children}</div>
+                            </m.div>
+                        </AnimatePresence>
+                    </div>
+                    <div className="mt-10 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-white/60">
+                        <LanguageSelect />
+                        <Link
+                            href="/help/start"
+                            className="transition hover:text-white"
+                        >
+                            {tr('Довідка')}
+                        </Link>
+                        <Link
+                            href="/privacy"
+                            className="transition hover:text-white"
+                        >
+                            {tr('Конфіденційність')}
+                        </Link>
+                        <Link
+                            href="/terms"
+                            className="transition hover:text-white"
+                        >
+                            {tr('Умови')}
+                        </Link>
+                    </div>
+                </section>
             </main>
         </div>
     );

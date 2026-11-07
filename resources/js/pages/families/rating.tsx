@@ -119,7 +119,9 @@ export default function FamilyRating(props: Props) {
                                     ? tr('З {date}', {
                                           date: day(season.started_at),
                                       })
-                                    : tr('Перший сезон — рахуються всі бали')}
+                                    : tr(
+                                          'Перший сезон — враховуються всі бали',
+                                      )}
                             </p>
                         </div>
                         {season.can_end && (
@@ -196,7 +198,7 @@ export default function FamilyRating(props: Props) {
                             <div
                                 key={row.id}
                                 className={cn(
-                                    'glass relative overflow-hidden rounded-3xl bg-gradient-to-br p-5 text-center ring-1',
+                                    'glass relative overflow-hidden rounded-2xl bg-gradient-to-br p-5 text-center ring-1',
                                     podium[i],
                                     i === 0 && 'sm:order-2 sm:-mt-2',
                                     i === 1 && 'sm:order-1 sm:mt-4',

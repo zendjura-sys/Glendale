@@ -1,6 +1,7 @@
 import { Link, router, usePage } from '@inertiajs/react';
 import {
     Camera,
+    Clock3,
     Crown,
     LogOut,
     Pencil,
@@ -24,6 +25,7 @@ import { tr } from '@/lib/i18n';
 import { usePlugin } from '@/lib/plugins';
 
 const reload = { preserveScroll: true, preserveState: true } as const;
+const RELOAD = reload;
 
 export function GroupInfoDialog({
     open,
@@ -36,6 +38,7 @@ export function GroupInfoDialog({
 }) {
     const { auth } = usePage().props;
     const slowOn = usePlugin('slow_mode');
+    const automodOn = usePlugin('group_automod');
     const rolesOn = usePlugin('chat_roles');
     const [adding, setAdding] = useState(false);
     const [picked, setPicked] = useState<UserCard[]>([]);
@@ -110,7 +113,7 @@ export function GroupInfoDialog({
 
     return (
         <Dialog open={open} onOpenChange={close}>
-            <DialogContent className="glass-strong gap-0 overflow-hidden rounded-3xl border-white/10 p-0 text-white sm:max-w-md">
+            <DialogContent className="glass-strong gap-0 overflow-hidden rounded-dialog border-white/10 p-0 text-white sm:max-w-md">
                 <div className="relative flex flex-col items-center bg-gradient-to-b from-gc-indigo/25 to-transparent px-5 pt-7 pb-5 text-center">
                     <button
                         type="button"
@@ -230,6 +233,13 @@ export function GroupInfoDialog({
                         </>
                     ) : (
                         <>
+                            {canManage && automodOn && (
+                                <GroupAutomod
+                                    base={base}
+                                    value={conversation.automod ?? null}
+                                    reload={reload}
+                                />
+                            )}
                             {canManage && slowOn && (
                                 <label className="mb-1 flex items-center justify-between gap-3 rounded-xl p-2 text-sm text-white/70">
                                     <span>{tr('Повільний режим')}</span>
@@ -306,13 +316,42 @@ export function GroupInfoDialog({
                                                 </span>
                                             </span>
                                         </Link>
+                                        {member.timeout_until && (
+                                            <button
+                                                type="button"
+                                                disabled={!canManage}
+                                                onClick={() =>
+                                                    router.delete(
+                                                        `/messages/${conversation.id}/members/${member.username}/restrict`,
+                                                        {
+                                                            preserveScroll: true,
+                                                            preserveState: true,
+                                                        },
+                                                    )
+                                                }
+                                                title={
+                                                    canManage
+                                                        ? tr('Зняти тайм-аут')
+                                                        : undefined
+                                                }
+                                                className="group/timeout flex items-center gap-1 rounded-chip bg-amber-400/10 px-2 py-0.5 text-xs font-medium text-amber-200 enabled:hover:bg-rose-500/15 enabled:hover:text-rose-200"
+                                            >
+                                                <Clock3 className="size-3" />
+                                                <span className="group-enabled/timeout:group-hover/timeout:hidden">
+                                                    {tr('Тайм-аут')}
+                                                </span>
+                                                <span className="hidden group-enabled/timeout:group-hover/timeout:inline">
+                                                    {tr('Зняти')}
+                                                </span>
+                                            </button>
+                                        )}
                                         {member.role === 'owner' ? (
-                                            <span className="flex items-center gap-1 rounded-full bg-gc-gold/10 px-2 py-0.5 text-xs font-medium text-gc-gold">
+                                            <span className="flex items-center gap-1 rounded-chip bg-gc-gold/10 px-2 py-0.5 text-xs font-medium text-gc-gold">
                                                 <Crown className="size-3" />
                                                 {tr('Творець')}
                                             </span>
                                         ) : member.role === 'admin' ? (
-                                            <span className="flex items-center gap-1 rounded-full bg-gc-blue/10 px-2 py-0.5 text-xs font-medium text-[#8fb4ff]">
+                                            <span className="flex items-center gap-1 rounded-chip bg-gc-blue/10 px-2 py-0.5 text-xs font-medium text-[#8fb4ff]">
                                                 <ShieldCheck className="size-3" />
                                                 {tr('Адмін')}
                                             </span>
@@ -374,5 +413,75 @@ export function GroupInfoDialog({
                 </div>
             </DialogContent>
         </Dialog>
+    );
+}
+
+/** Автомодерація групи: посилання, капс, флуд і свої заборонені слова (адмінів не стосується). */
+function GroupAutomod({
+    base,
+    value,
+    reload,
+}: {
+    base: string;
+    value: {
+        links: boolean;
+        caps: boolean;
+        flood: boolean;
+        words: string[];
+    } | null;
+    reload: typeof RELOAD;
+}) {
+    const [rules, setRules] = useState({
+        links: value?.links ?? false,
+        caps: value?.caps ?? false,
+        flood: value?.flood ?? false,
+        words: (value?.words ?? []).join(', '),
+    });
+    const save = (next: typeof rules) => {
+        setRules(next);
+        router.post(`${base}/automod`, next, reload);
+    };
+    const toggles: [keyof typeof rules, string][] = [
+        ['links', tr('Посилання лише від адмінів')],
+        ['caps', tr('Без капсу')],
+        ['flood', tr('Не більше 5 повідомлень за 10 с')],
+    ];
+
+    return (
+        <div className="mb-1 rounded-xl p-2 text-sm text-white/70">
+            <p className="mb-1.5 font-medium text-white/85">
+                {tr('Автомодерація')}
+            </p>
+            {toggles.map(([key, label]) => (
+                <label
+                    key={key}
+                    className="flex items-center justify-between gap-3 py-1"
+                >
+                    <span>{label}</span>
+                    <input
+                        type="checkbox"
+                        checked={Boolean(rules[key])}
+                        onChange={(e) =>
+                            save({ ...rules, [key]: e.target.checked })
+                        }
+                        className="size-4 accent-gc-indigo"
+                    />
+                </label>
+            ))}
+            <label className="mt-1 block">
+                <span className="text-xs text-white/50">
+                    {tr('Заборонені слова (через кому)')}
+                </span>
+                <input
+                    value={rules.words}
+                    maxLength={2000}
+                    onChange={(e) =>
+                        setRules({ ...rules, words: e.target.value })
+                    }
+                    onBlur={() => save(rules)}
+                    className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-2 py-1.5 text-sm text-white"
+                />
+            </label>
+        </div>
     );
 }

@@ -1,12 +1,13 @@
 import { usePage } from '@inertiajs/react';
 import { useReducedMotion } from 'motion/react';
-import { useMemo, useSyncExternalStore } from 'react';
+import { useMemo } from 'react';
 import { Aurora } from '@/components/gc/aurora';
 import {
     DEFAULT_BACKGROUND,
     useBackgroundPreview,
     usePageBackgroundVideo,
 } from '@/lib/backgrounds';
+import { useDataSaver } from '@/lib/data-saver';
 import { cn } from '@/lib/utils';
 import type { SiteBackgroundPreset } from '@/types';
 
@@ -32,21 +33,6 @@ function starField(count: number, seed: number, spread = 100): string {
 
         return `${x}vw ${y}vh 0 rgb(255 255 255 / ${a})`;
     }).join(',');
-}
-
-function useSaveData(): boolean {
-    return useSyncExternalStore(
-        () => () => {},
-        () =>
-            Boolean(
-                (
-                    navigator as Navigator & {
-                        connection?: { saveData?: boolean };
-                    }
-                ).connection?.saveData,
-            ),
-        () => false,
-    );
 }
 
 function DuneScene() {
@@ -323,7 +309,7 @@ export function SiteBackground({ className }: { className?: string }) {
     const prefs =
         preview ?? (pageVideo ? { ...saved, video: pageVideo } : saved);
     const reduce = useReducedMotion();
-    const saveData = useSaveData();
+    const saveData = useDataSaver();
     const still = !prefs.motion || Boolean(reduce) || saveData;
 
     if (prefs.video) {

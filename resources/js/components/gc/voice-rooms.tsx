@@ -1,4 +1,7 @@
 import {
+    Hand,
+    Headphones,
+    Link2,
     Loader2,
     Lock,
     Mic,
@@ -6,11 +9,13 @@ import {
     MoreHorizontal,
     Pencil,
     Plus,
+    Presentation,
     Trash2,
     UserX,
     Volume2,
 } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { ListSkeleton, Sk } from '@/components/gc/skeletons';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { UserAvatar } from '@/components/gc/user-avatar';
 import {
@@ -26,14 +31,22 @@ import { joinVoice, useVoice } from '@/lib/voice';
 import type { VoiceOwner } from '@/lib/voice';
 import type { UserCard } from '@/types';
 import { tr } from '@/lib/i18n';
+import { usePlugin } from '@/lib/plugins';
+import { usePage } from '@inertiajs/react';
 
-type Participant = UserCard & { muted: boolean; joined_at: string };
+type Participant = UserCard & {
+    muted: boolean;
+    joined_at: string;
+    speaker?: boolean;
+    hand?: boolean;
+};
 
 type VoiceRoom = {
     id: number;
     name: string;
     locked: boolean;
     system: boolean;
+    stage?: boolean;
     count: number;
     participants: Participant[];
 };
@@ -65,6 +78,8 @@ export function VoiceRooms({
     className?: string;
 }) {
     const voice = useVoice();
+    const { auth } = usePage().props;
+    const stageOn = usePlugin('voice_stage');
     const [busy, setBusy] = useState(false);
     const [data, setData] = useState<VoiceState | null>(null);
     const [error, setError] = useState<string | null>(null);
@@ -99,16 +114,38 @@ export function VoiceRooms({
         if (voice.status !== 'connecting') void load();
     }, [voice.status, voice.roomId, load]);
 
+    // Посилання-запрошення: ?voice=ID на сторінці групи — одразу заходимо в цю кімнату.
+    const autoJoined = useRef(false);
+    useEffect(() => {
+        if (!data || autoJoined.current) return;
+        const wanted = Number(
+            new URLSearchParams(window.location.search).get('voice'),
+        );
+        const room = data.rooms.find((r) => r.id === wanted);
+        if (!room) return;
+        autoJoined.current = true;
+        const url = new URL(window.location.href);
+        url.searchParams.delete('voice');
+        window.history.replaceState(window.history.state, '', url.toString());
+        if (data.enabled && !room.locked)
+            void joinVoice(room, owner, label, href);
+    }, [data, owner, label, href]);
+
     if (!data) {
         // Помилку показуємо, а не ховаємо панель, — інакше незрозуміло, куди вона поділась.
         return error ? (
-            <section className={cn('glass rounded-3xl p-4', className)}>
+            <section className={cn('glass rounded-2xl p-4', className)}>
                 <div className="flex items-center gap-2 text-sm text-white/55">
                     <Volume2 className="size-4 text-white/35" />
                     {error}
                 </div>
             </section>
-        ) : null;
+        ) : (
+            <section className={cn('glass rounded-2xl p-4', className)}>
+                <Sk className="mb-4 h-4 w-40" />
+                <ListSkeleton rows={2} avatar="square" card={false} />
+            </section>
+        );
     }
 
     const run = async (fn: () => Promise<VoiceState>) => {
@@ -138,10 +175,23 @@ export function VoiceRooms({
         if (confirm(tr('Видалити кімнату «{name}»?', { name: room.name })))
             void run(() => api('DELETE', `/voice/rooms/${room.id}`));
     };
+    // Посилання на 14 днів: хто відкриє — одразу опиниться в цій кімнаті (якщо має доступ).
+    const copyInvite = async (room: VoiceRoom) => {
+        try {
+            const { url } = await api<{ url: string }>(
+                'POST',
+                `/voice/rooms/${room.id}/invite-link`,
+            );
+            await navigator.clipboard.writeText(url);
+            toast(tr('Запрошення скопійовано'));
+        } catch (e) {
+            failed(e);
+        }
+    };
     const moderate = (
         room: VoiceRoom,
         user: Participant,
-        action: 'mute' | 'unmute' | 'kick',
+        action: 'mute' | 'unmute' | 'kick' | 'speaker' | 'listener',
     ) =>
         void run(() =>
             api('POST', `/voice/rooms/${room.id}/members/${user.id}`, {
@@ -149,8 +199,14 @@ export function VoiceRooms({
             }),
         );
 
+    const setStage = (room: VoiceRoom, stage: boolean) =>
+        void run(() => api('PATCH', `/voice/rooms/${room.id}`, { stage }));
+    const toggleHand = (room: VoiceRoom, raised: boolean) =>
+        void run(() => api('POST', `/voice/rooms/${room.id}/hand`, { raised }));
+    const meId = auth.user?.id;
+
     return (
-        <section className={cn('glass rounded-3xl p-4', className)}>
+        <section className={cn('glass rounded-2xl p-4', className)}>
             <div className="mb-3 flex items-center gap-2">
                 <Volume2 className="size-4 text-gc-lilac-200" />
                 <h2 className="flex-1 font-display text-base font-semibold text-white">
@@ -228,12 +284,31 @@ export function VoiceRooms({
                                     >
                                         {room.name}
                                     </span>
+                                    {room.stage && (
+                                        <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-amber-200">
+                                            <Presentation className="size-3" />
+                                            {tr('Сцена')}
+                                        </span>
+                                    )}
                                     {room.count > 0 && (
                                         <span className="ml-auto text-xs text-white/40">
                                             {room.count}
                                         </span>
                                     )}
                                 </button>
+                                {!room.locked && data.enabled && (
+                                    <button
+                                        type="button"
+                                        onClick={() => void copyInvite(room)}
+                                        aria-label={tr(
+                                            'Скопіювати запрошення в кімнату',
+                                        )}
+                                        title={tr('Запрошення в кімнату')}
+                                        className="inline-flex size-7 items-center justify-center rounded-lg text-white/40 opacity-0 transition group-hover:opacity-100 hover:bg-white/10 hover:text-white focus-visible:opacity-100 [@media(hover:none)]:opacity-100"
+                                    >
+                                        <Link2 className="size-4" />
+                                    </button>
+                                )}
                                 {data.can_manage && (
                                     <DropdownMenu>
                                         <DropdownMenuTrigger
@@ -248,6 +323,21 @@ export function VoiceRooms({
                                             >
                                                 <Pencil /> {tr('Перейменувати')}
                                             </DropdownMenuItem>
+                                            {stageOn && (
+                                                <DropdownMenuItem
+                                                    onClick={() =>
+                                                        setStage(
+                                                            room,
+                                                            !room.stage,
+                                                        )
+                                                    }
+                                                >
+                                                    <Presentation />{' '}
+                                                    {room.stage
+                                                        ? tr('Вимкнути сцену')
+                                                        : tr('Зробити сценою')}
+                                                </DropdownMenuItem>
+                                            )}
                                             {!room.system && (
                                                 <DropdownMenuItem
                                                     onClick={() => remove(room)}
@@ -261,6 +351,38 @@ export function VoiceRooms({
                                 )}
                             </div>
 
+                            {room.stage &&
+                                here &&
+                                !data.can_manage &&
+                                (() => {
+                                    const me = room.participants.find(
+                                        (p) => p.id === meId,
+                                    );
+                                    if (!me || me.speaker) return null;
+
+                                    return (
+                                        <div className="mt-1 mb-1.5 flex items-center gap-2 pl-8 text-xs text-white/55">
+                                            {tr('Ви слухач.')}
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    toggleHand(room, !me.hand)
+                                                }
+                                                className={cn(
+                                                    'inline-flex h-7 items-center gap-1.5 rounded-lg px-2.5 font-medium transition',
+                                                    me.hand
+                                                        ? 'bg-amber-500/20 text-amber-100'
+                                                        : 'bg-white/[0.07] text-white hover:bg-white/[0.11]',
+                                                )}
+                                            >
+                                                <Hand className="size-3.5" />
+                                                {me.hand
+                                                    ? tr('Опустити руку')
+                                                    : tr('Підняти руку')}
+                                            </button>
+                                        </div>
+                                    );
+                                })()}
                             {room.participants.length > 0 && (
                                 <ul className="mt-0.5 mb-1 space-y-0.5 pl-8">
                                     {room.participants.map((p) => {
@@ -288,6 +410,24 @@ export function VoiceRooms({
                                                 <span className="min-w-0 flex-1 truncate text-xs text-white/70">
                                                     {p.name}
                                                 </span>
+                                                {room.stage && p.hand && (
+                                                    <Hand
+                                                        className="size-3.5 text-amber-300"
+                                                        aria-label={tr(
+                                                            'Підняв руку',
+                                                        )}
+                                                    />
+                                                )}
+                                                {room.stage &&
+                                                    !p.speaker &&
+                                                    !p.hand && (
+                                                        <Headphones
+                                                            className="size-3.5 text-white/30"
+                                                            aria-label={tr(
+                                                                'Слухач',
+                                                            )}
+                                                        />
+                                                    )}
                                                 {p.muted && (
                                                     <MicOff
                                                         className="size-3.5 text-rose-300"
@@ -307,6 +447,28 @@ export function VoiceRooms({
                                                             <MoreHorizontal className="size-3.5" />
                                                         </DropdownMenuTrigger>
                                                         <DropdownMenuContent align="end">
+                                                            {room.stage && (
+                                                                <DropdownMenuItem
+                                                                    onClick={() =>
+                                                                        moderate(
+                                                                            room,
+                                                                            p,
+                                                                            p.speaker
+                                                                                ? 'listener'
+                                                                                : 'speaker',
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    <Presentation />{' '}
+                                                                    {p.speaker
+                                                                        ? tr(
+                                                                              'Повернути в слухачі',
+                                                                          )
+                                                                        : tr(
+                                                                              'Запросити на сцену',
+                                                                          )}
+                                                                </DropdownMenuItem>
+                                                            )}
                                                             <DropdownMenuItem
                                                                 onClick={() =>
                                                                     moderate(

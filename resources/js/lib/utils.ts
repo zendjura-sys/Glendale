@@ -12,7 +12,7 @@ export function toUrl(url: NonNullable<InertiaLinkProps['href']>): string {
 }
 
 /** Внутрішній відступ, щоб останній елемент ліг над скляним меню й плеєром. */
-export function dockedAboveNav(playing: boolean, desktopClass = 'lg:pb-3') {
+export function dockedAboveNav(playing: boolean, desktopClass = 'md:pb-3') {
     return cn(
         playing
             ? 'pb-[calc(10rem+env(safe-area-inset-bottom))]'
@@ -24,8 +24,8 @@ export function dockedAboveNav(playing: boolean, desktopClass = 'lg:pb-3') {
 /** Плаваюча кнопка чи панель над тим самим меню. */
 export function floatingAboveNav(playing: boolean) {
     return playing
-        ? 'bottom-[calc(10.5rem+env(safe-area-inset-bottom))] lg:bottom-28'
-        : 'bottom-[calc(5rem+env(safe-area-inset-bottom))] lg:bottom-4';
+        ? 'bottom-[calc(10.5rem+env(safe-area-inset-bottom))] md:bottom-28'
+        : 'bottom-[calc(5rem+env(safe-area-inset-bottom))] md:bottom-4';
 }
 
 /** Текст поля форми: FormData.get() може повернути й файл. */

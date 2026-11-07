@@ -1,4 +1,4 @@
-import { Link, router } from '@inertiajs/react';
+import { Link, router, usePage } from '@inertiajs/react';
 import { Search, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { api } from '@/lib/api';
@@ -16,7 +16,36 @@ type Result =
     | { kind: 'community'; href: string; item: CommunityCard }
     | { kind: 'hit'; href: string; item: Hit };
 
+/** Чи вміщається повна підказка пошуку (на вузькому екрані — коротка, без обрізання). */
+function useWideSearch(): boolean {
+    const [wide, setWide] = useState(
+        () =>
+            typeof window === 'undefined' ||
+            window.matchMedia('(min-width: 640px)').matches,
+    );
+    useEffect(() => {
+        const media = window.matchMedia('(min-width: 640px)');
+        const update = () => setWide(media.matches);
+        media.addEventListener('change', update);
+
+        return () => media.removeEventListener('change', update);
+    }, []);
+
+    return wide;
+}
+
 export function QuickSearch({ className }: { className?: string }) {
+    const wide = useWideSearch();
+    // Підказка — лише про розділи режиму людини: у «Класиці» немає ігор, кіно й серверів.
+    const { modules } = usePage().props;
+    const scope = [
+        tr('людей'),
+        modules.includes('games') && tr('ігор'),
+        modules.includes('cinema') && tr('кіно'),
+        modules.includes('music') && tr('музики'),
+        modules.includes('servers') && tr('серверів'),
+        modules.includes('communities') && tr('спільнот'),
+    ].filter(Boolean);
     const [query, setQuery] = useState('');
     const [results, setResults] = useState<Result[]>([]);
     const [recent, setRecent] = useState<string[]>([]);
@@ -135,8 +164,12 @@ export function QuickSearch({ className }: { className?: string }) {
     };
 
     return (
-        <div ref={boxRef} className={cn('relative min-w-0', className)}>
-            <label className="input-glass flex h-10 items-center gap-2.5 rounded-xl px-3.5">
+        <div
+            ref={boxRef}
+            data-quick-search
+            className={cn('relative min-w-0', className)}
+        >
+            <label className="ios-header-search">
                 <Search className="size-4 text-white/45" />
                 <input
                     ref={inputRef}
@@ -162,7 +195,13 @@ export function QuickSearch({ className }: { className?: string }) {
                             inputRef.current?.blur();
                         }
                     }}
-                    placeholder={tr('Пошук людей, ігор, кіно, серверів…')}
+                    placeholder={
+                        wide
+                            ? tr('Пошук: {scope}…', {
+                                  scope: scope.slice(0, 4).join(', '),
+                              })
+                            : tr('Пошук')
+                    }
                     className="min-w-0 flex-1 bg-transparent text-sm text-white placeholder:text-white/40 focus:outline-none"
                 />
                 {query ? (
@@ -264,7 +303,16 @@ export function QuickSearch({ className }: { className?: string }) {
                                             : result.item.name}
                                         {result.kind !== 'hit' &&
                                             result.item.is_verified && (
-                                                <VerifiedBadge className="size-3.5" />
+                                                <VerifiedBadge
+                                                    kind={
+                                                        'verified_kind' in
+                                                        result.item
+                                                            ? result.item
+                                                                  .verified_kind
+                                                            : null
+                                                    }
+                                                    className="size-3.5"
+                                                />
                                             )}
                                     </span>
                                     <span className="block truncate text-xs text-white/45">
@@ -294,6 +342,41 @@ export function QuickSearch({ className }: { className?: string }) {
                             </Link>
                         ))
                     )}
+                    {/* Один пошук на весь сайт: ті самі слова — одразу в розділах. */}
+                    <div className="mt-1 flex flex-wrap gap-1.5 px-2 pt-2">
+                        {(
+                            [
+                                ['cinema', '/cinema', tr('у кіно')],
+                                ['music', '/music', tr('у музиці')],
+                                ['games', '/games', tr('серед ігор')],
+                                ['servers', '/servers', tr('серед серверів')],
+                                [
+                                    'communities',
+                                    '/communities',
+                                    tr('у спільнотах'),
+                                ],
+                                ['clans', '/clans', tr('серед кланів')],
+                                ['families', '/families', tr('серед сімей')],
+                            ] as const
+                        )
+                            .filter(([module]) => modules.includes(module))
+                            .map(([module, base, label]) => (
+                                <Link
+                                    key={module}
+                                    href={`${base}?q=${encodeURIComponent(query.trim())}`}
+                                    onClick={() => {
+                                        remember(query);
+                                        setOpen(false);
+                                    }}
+                                    className="gc-chip text-xs"
+                                >
+                                    {tr('«{q}» {where}', {
+                                        q: query.trim(),
+                                        where: label,
+                                    })}
+                                </Link>
+                            ))}
+                    </div>
                     <Link
                         href={`/people?q=${encodeURIComponent(query.trim())}`}
                         onClick={() => {

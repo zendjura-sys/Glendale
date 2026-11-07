@@ -73,7 +73,7 @@ export function QuestList({ quests }: { quests: Quest[] }) {
     const [busy, setBusy] = useState<string | null>(null);
 
     return (
-        <ul className="space-y-2">
+        <ul className="divide-y divide-white/[0.06]">
             {quests.map((quest) => {
                 const Icon = ICONS[quest.icon] ?? Target;
                 const percent = Math.round(
@@ -83,19 +83,14 @@ export function QuestList({ quests }: { quests: Quest[] }) {
                 return (
                     <li
                         key={quest.key}
-                        className={cn(
-                            'flex items-center gap-3 rounded-2xl px-3 py-3 transition',
-                            quest.claimed
-                                ? 'bg-emerald-400/[0.06]'
-                                : 'bg-white/[0.04]',
-                        )}
+                        className="flex items-center gap-3 px-1 py-3 transition first:pt-1 last:pb-1"
                     >
                         <span
                             className={cn(
-                                'flex size-10 shrink-0 items-center justify-center rounded-xl',
+                                'flex size-9 shrink-0 items-center justify-center rounded-xl',
                                 quest.claimed
                                     ? 'bg-emerald-400/15 text-emerald-200'
-                                    : 'bg-gc-indigo/15 text-[#c4b5fd]',
+                                    : 'bg-primary/12 text-gc-lilac-400',
                             )}
                         >
                             <Icon className="size-5" />
@@ -114,13 +109,13 @@ export function QuestList({ quests }: { quests: Quest[] }) {
                                 </span>
                             )}
                             <div className="mt-1.5 flex items-center gap-2">
-                                <span className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-white/10">
+                                <span className="h-1 min-w-0 flex-1 overflow-hidden rounded-full bg-white/10">
                                     <span
                                         className={cn(
                                             'block h-full rounded-full transition-all',
                                             quest.done
                                                 ? 'bg-emerald-400'
-                                                : 'bg-gc-indigo',
+                                                : 'bg-primary',
                                         )}
                                         style={{ width: `${percent}%` }}
                                     />
@@ -154,7 +149,7 @@ export function QuestList({ quests }: { quests: Quest[] }) {
                                 {tr('Забрати +{xp}', { xp: quest.xp })}
                             </button>
                         ) : (
-                            <span className="shrink-0 rounded-lg bg-white/[0.06] px-2 py-1 text-xs text-white/55">
+                            <span className="shrink-0 text-xs font-medium text-white/50 tabular-nums">
                                 +{quest.xp} XP
                             </span>
                         )}
@@ -170,7 +165,7 @@ export function FeedQuests({ quests }: { quests: Quest[] }) {
     if (quests.every((q) => q.claimed)) return null;
 
     return (
-        <section className="glass rounded-3xl p-4">
+        <section className="glass rounded-2xl p-4">
             <div className="mb-3 flex items-center justify-between gap-2 px-1">
                 <h2 className="flex items-center gap-2 font-display text-[13px] font-semibold text-white/90">
                     <Target className="size-4 text-gc-lilac-400" />

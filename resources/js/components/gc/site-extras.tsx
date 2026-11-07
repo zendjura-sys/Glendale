@@ -1,5 +1,21 @@
-import { router, useForm } from '@inertiajs/react';
-import { Keyboard, MessageSquareHeart, Sparkles } from 'lucide-react';
+import { ModuleIcon } from '@/components/gc/module-icon';
+import { Link, router, useForm } from '@inertiajs/react';
+import {
+    Bell,
+    Clapperboard,
+    Crown,
+    Gamepad2,
+    Keyboard,
+    Lightbulb,
+    MessageCircle,
+    MessageSquareHeart,
+    Music,
+    Newspaper,
+    Phone,
+    Sparkles,
+    UsersRound,
+} from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import {
     Dialog,
@@ -13,6 +29,118 @@ import { cn } from '@/lib/utils';
 
 /** Останні оновлення сайту: нова версія — нова позначка в шапці. */
 const CHANGELOG = () => [
+    {
+        version: '2026.11.06',
+        date: '2026-11-06',
+        items: [
+            tr(
+                'Мапа тривог (лише для України): тривоги за областями з таймерами й рухомі цілі з курсом і слідом.',
+            ),
+            tr(
+                'Фільтри шарів мапи, звук тривоги на сторінці й кнопка «В укритті» — статус бачать друзі.',
+            ),
+            tr(
+                'Мітки цілей підтверджують кілька відкритих джерел; упевненість видно на мітці, перелік джерел — на сторінці.',
+            ),
+        ],
+    },
+    {
+        version: '2026.11.01',
+        date: '2026-11-01',
+        items: [
+            tr(
+                '«Гра року» спільноти: голосування в грудні, підсумки з 1 січня й архів років — у каталозі ігор.',
+            ),
+            tr(
+                'Гра з бажаного вийшла — прийде сповіщення; на сторінці гри, що ще не вийшла, видно відлік днів.',
+            ),
+            tr(
+                'Ігрові ID у профілі: PSN, Xbox, Nintendo, Epic, Riot, Battle.net, EA й Ubisoft — з кнопкою «Копіювати».',
+            ),
+            tr(
+                'Добірки фільмів: збирайте тайтли кнопкою «У добірку», вподобайте й стежте за чужими.',
+            ),
+            tr(
+                'Рецензії на фільми й серіали зі спойлерами під розмиттям і стрічка рецензій друзів.',
+            ),
+            tr(
+                'Пісня профілю: трек з медіатеки на вашій сторінці — гості слухають натиском.',
+            ),
+            tr(
+                '«Що нового» — картками з прокруткою й історією попередніх оновлень.',
+            ),
+        ],
+    },
+    {
+        version: '2026.10.31',
+        date: '2026-10-31',
+        items: [
+            tr(
+                'Конфіги й приціли: діліться кодом прицілу, конфігом чи біндами до гри — інші копіюють одним дотиком.',
+            ),
+            tr(
+                'Ігровий вечір: покличте друзів, проголосуйте за час і гру — організатор призначає, усі отримують сповіщення.',
+            ),
+            tr(
+                'Серії записів: об’єднайте записи в «Гайд, частина 1…5» — читачі гортають частини по порядку.',
+            ),
+            tr(
+                'Підлітковий режим: для 13–17 років особисті лише від друзів, без незнайомців у пошуку й без мату.',
+            ),
+            tr(
+                'Сторінка статусу /status: чи все працює, збої й хід робіт; під час збою — банер над стрічкою.',
+            ),
+            tr(
+                'Посилання на профіль чи спільноту в месенджерах тепер показують картку з аватаром, ім’ям і описом.',
+            ),
+            tr(
+                '«Що подивитися?» у «Кіно»: рулетка підбирає фільм, серіал чи аніме за типом, жанром і роком.',
+            ),
+            tr(
+                '«Вгадай пісню» в «Музиці» й вікторина дня про ігри — з таблицею найкращих за день.',
+            ),
+            tr(
+                'Ігровий щоденник: нотатки про ігри з настроєм і часом у грі; приватні або відкриті.',
+            ),
+            tr(
+                'Чати: гілки в групах, до 10 закріплених, особиста нотатка до бесіди й фото на один перегляд.',
+            ),
+            tr(
+                'Стікери спільноти: свій набір, який учасники надсилають у будь-якому чаті.',
+            ),
+            tr(
+                'Серія днів поспіль, «Цього дня» зі спогадами, карта гравців і святкові рамки аватара.',
+            ),
+            tr(
+                'Якщо розділ на техроботах, ви побачите пояснення команди замість помилки.',
+            ),
+            tr(
+                'Огляди гравців на сторінках ігор, стрічка трейлерів і «Гравець місяця» в кланах.',
+            ),
+            tr(
+                'Ctrl+K — палітра команд: розділи, дії й пошук з клавіатури. «Розділити екран» — чат чи музика поруч.',
+            ),
+            tr(
+                'Віджети біля стрічки тепер налаштовуються: які показувати й у якому порядку.',
+            ),
+        ],
+    },
+    {
+        version: '2026.10.27',
+        date: '2026-10-27',
+        items: [
+            tr(
+                'Голосові кімнати-«сцени»: слухачі піднімають руку, ведучий запрошує говорити.',
+            ),
+            tr(
+                'Автопостинг у Discord і Telegram, розклад стрімів на сторінці й анкета вступу до закритих спільнот.',
+            ),
+            tr(
+                'Статистика автора, піксельний аватар, режим стримера й секретні досягнення — шукайте!',
+            ),
+            tr('Дошка ідей: пропонуйте, що додати, і голосуйте за чужі ідеї.'),
+        ],
+    },
     {
         version: '2026.10.16',
         date: '2026-10-16',
@@ -51,7 +179,7 @@ const CHANGELOG = () => [
                 'Просування серверів: місце в топі, виділена картка й банер із позначкою «Реклама».',
             ),
             tr(
-                'Кіно: другий плеєр Videoseed, порядок і фільтри озвучок в адмінці, автопарсинг TMDB з автододаванням популярних тайтлів, посерійний вибір серій.',
+                'Кіно: ще один вбудований плеєр, порядок і фільтри озвучок в адмінці, автопарсинг TMDB з автододаванням популярних тайтлів, посерійний вибір серій.',
             ),
             tr(
                 'Білінг у GameCon+: особистий рахунок, поповнення донатом (Donatello, Diaka та інші), покупки з рахунку й автопродовження. Нова картка GameCon+ у меню. Оформлення профілю: анімований нік (перелив, відблиск) і ефект шапки (сяйво, жива рамка). «Дивилися й слухали разом» — з назвою фільму чи треку, можна прибрати людину або сховати блок. Сторінки: умови використання, конфіденційність, повернення коштів і ціни — вісьмома мовами.',
@@ -123,6 +251,21 @@ const CHANGELOG = () => [
     },
 ];
 
+/** Значок картки за темою пункту — довгий список легше гортати. */
+function changeIcon(item: string): LucideIcon {
+    const t = item.toLowerCase();
+    if (t.includes('gamecon+')) return Crown;
+    if (/музик|плеєр|трек|пісн|радіо|подкаст/.test(t)) return Music;
+    if (/чат|повідомлен/.test(t)) return MessageCircle;
+    if (/телефон|номер/.test(t)) return Phone;
+    if (/кіно|подивитися|фільм|серіал|тайтл/.test(t)) return Clapperboard;
+    if (/ігр|гра |гри|гравц/.test(t)) return Gamepad2;
+    if (t.includes('сповіщ')) return Bell;
+    if (/спільнот|клан|друз|подій|події/.test(t)) return UsersRound;
+    if (/стрічк|запис/.test(t)) return Newspaper;
+    return Sparkles;
+}
+
 const SEEN_KEY = 'gc-whats-new';
 const FEEDBACK_EVENT = 'gc:feedback';
 const SHORTCUTS_EVENT = 'gc:shortcuts';
@@ -171,50 +314,98 @@ export function WhatsNewButton() {
                 aria-label={tr('Що нового')}
                 title={tr('Що нового')}
                 className={cn(
-                    'relative size-11 items-center justify-center rounded-xl text-white/70 transition hover:bg-white/[0.06] hover:text-white',
+                    'gc-icon-button relative size-10 items-center justify-center rounded-xl transition',
                     unseen ? 'flex' : 'hidden sm:flex',
                 )}
             >
-                <Sparkles className="size-[19px]" />
+                <ModuleIcon name="sparkles" animated size={19} />
                 {unseen && (
                     <span
                         aria-hidden
-                        className="absolute top-2.5 right-2.5 size-2 rounded-full bg-gc-indigo ring-2 ring-background"
+                        className="absolute top-2 right-2 size-2 rounded-full bg-primary"
                     />
                 )}
             </button>
             <Dialog open={open} onOpenChange={setOpen}>
-                <DialogContent className="glass-strong max-h-[85dvh] overflow-y-auto rounded-3xl border-white/10 p-6 text-white sm:max-w-lg">
-                    <DialogTitle className="flex items-center gap-2 font-display text-lg">
+                <DialogContent className="glass-strong flex max-h-[85dvh] flex-col gap-0 overflow-hidden rounded-dialog border-white/10 p-0 text-white sm:max-w-lg">
+                    <div className="flex items-center gap-2 px-6 pt-6 pb-3">
                         <Sparkles className="size-5 text-gc-lilac-300" />
-                        {tr('Що нового')}
-                    </DialogTitle>
-                    <DialogDescription className="text-sm text-white/50">
+                        <DialogTitle className="font-display text-lg">
+                            {tr('Що нового')}
+                        </DialogTitle>
+                        <span className="mr-8 ml-auto rounded-chip bg-white/[0.07] px-2.5 py-0.5 text-xs font-semibold text-white/70">
+                            {formatDate(latest.date)}
+                        </span>
+                    </div>
+                    <DialogDescription className="sr-only">
                         {tr('Оновлення від {date}', {
                             date: formatDate(latest.date),
                         })}
                     </DialogDescription>
-                    <ul className="space-y-2.5">
-                        {latest.items.map((item) => (
-                            <li
-                                key={item}
-                                className="rounded-2xl bg-white/[0.04] px-3.5 py-3 text-sm leading-relaxed text-white/80"
-                            >
-                                {item}
-                            </li>
+                    <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-3">
+                        {entries.map((entry, index) => (
+                            <section key={entry.version} className="mb-3">
+                                <h3 className="px-2 pt-2 pb-2 text-xs font-semibold text-white/50">
+                                    {index === 0
+                                        ? tr('Нове')
+                                        : tr('Раніше · {date}', {
+                                              date: formatDate(entry.date),
+                                          })}
+                                </h3>
+                                <ul className="space-y-2">
+                                    {entry.items.map((item) => {
+                                        const Icon = changeIcon(item);
+                                        return (
+                                            <li
+                                                key={item}
+                                                className={cn(
+                                                    'flex gap-3 rounded-2xl px-3 py-3 text-sm leading-relaxed',
+                                                    index === 0
+                                                        ? 'bg-primary/15 text-white/90'
+                                                        : 'bg-white/[0.04] text-white/75',
+                                                )}
+                                            >
+                                                <span
+                                                    className={cn(
+                                                        'flex size-8 shrink-0 items-center justify-center rounded-xl',
+                                                        index === 0
+                                                            ? 'bg-primary/25 text-sky-200'
+                                                            : 'bg-white/[0.07] text-white/60',
+                                                    )}
+                                                >
+                                                    <Icon className="size-4" />
+                                                </span>
+                                                <span className="min-w-0 pt-1">
+                                                    {item}
+                                                </span>
+                                            </li>
+                                        );
+                                    })}
+                                </ul>
+                            </section>
                         ))}
-                    </ul>
-                    <button
-                        type="button"
-                        onClick={() => {
-                            setOpen(false);
-                            openFeedback();
-                        }}
-                        className="inline-flex items-center gap-2 text-sm font-medium text-gc-lilac-300 hover:text-white"
-                    >
-                        <MessageSquareHeart className="size-4" />
-                        {tr('Розкажіть, що думаєте')}
-                    </button>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-white/[0.06] px-6 py-4">
+                        <Link
+                            href="/ideas"
+                            onClick={() => setOpen(false)}
+                            className="inline-flex items-center gap-2 text-sm font-medium text-gc-lilac-300 hover:text-white"
+                        >
+                            <Lightbulb className="size-4" />
+                            {tr('Дошка ідей')}
+                        </Link>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setOpen(false);
+                                openFeedback();
+                            }}
+                            className="inline-flex items-center gap-2 text-sm font-medium text-gc-lilac-300 hover:text-white"
+                        >
+                            <MessageSquareHeart className="size-4" />
+                            {tr('Розкажіть, що думаєте')}
+                        </button>
+                    </div>
                 </DialogContent>
             </Dialog>
         </>
@@ -245,7 +436,7 @@ export function FeedbackDialog() {
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
-            <DialogContent className="glass-strong rounded-3xl border-white/10 p-6 text-white sm:max-w-md">
+            <DialogContent className="glass-strong rounded-dialog border-white/10 p-6 text-white sm:max-w-md">
                 <DialogTitle className="font-display text-lg">
                     {tr('Відгук адмінам')}
                 </DialogTitle>
@@ -320,6 +511,9 @@ export function FeedbackDialog() {
 
 const SHORTCUTS = () => [
     { keys: ['/'], label: tr('Пошук') },
+    { keys: ['J'], label: tr('Наступний запис у стрічці') },
+    { keys: ['K'], label: tr('Попередній запис') },
+    { keys: ['L'], label: tr('Вподобати вибраний запис') },
     { keys: ['G', 'F'], label: tr('Новини') },
     { keys: ['G', 'M'], label: tr('Повідомлення') },
     { keys: ['G', 'P'], label: tr('Моя сторінка') },
@@ -335,6 +529,31 @@ const GO: Record<string, (username: string) => string> = {
     n: () => '/notifications',
     s: () => '/settings/profile',
 };
+
+/** J/K: перейти до наступного чи попереднього запису стрічки й позначити його для L. */
+function stepPost(step: number) {
+    const list = Array.from(
+        document.querySelectorAll<HTMLElement>('article.gc-post'),
+    );
+    if (list.length === 0) return;
+    let index = list.findIndex((el) => el.hasAttribute('data-hotkey-focus'));
+    if (index < 0) {
+        // Ще не ходили клавішами — від запису, що зараз угорі екрана.
+        index =
+            list.findIndex((el) => el.getBoundingClientRect().bottom > 120) -
+            (step > 0 ? 1 : 0);
+    }
+    const next = list[Math.min(list.length - 1, Math.max(0, index + step))];
+    list.forEach((el) => el.removeAttribute('data-hotkey-focus'));
+    next.setAttribute('data-hotkey-focus', '');
+    const reduce = window.matchMedia(
+        '(prefers-reduced-motion: reduce)',
+    ).matches;
+    window.scrollTo({
+        top: next.getBoundingClientRect().top + window.scrollY - 96,
+        behavior: reduce ? 'auto' : 'smooth',
+    });
+}
 
 function typing(target: EventTarget | null): boolean {
     const el = target as HTMLElement | null;
@@ -376,6 +595,19 @@ export function KeyboardShortcuts({ username }: { username: string }) {
 
                 return;
             }
+            if (key === 'j' || key === 'k') {
+                event.preventDefault();
+                stepPost(key === 'j' ? 1 : -1);
+
+                return;
+            }
+            if (key === 'l') {
+                document
+                    .querySelector('article.gc-post[data-hotkey-focus]')
+                    ?.dispatchEvent(new CustomEvent('gc:like'));
+
+                return;
+            }
             if (key === 'g') {
                 pendingG = Date.now();
 
@@ -399,7 +631,7 @@ export function KeyboardShortcuts({ username }: { username: string }) {
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
-            <DialogContent className="glass-strong rounded-3xl border-white/10 p-6 text-white sm:max-w-sm">
+            <DialogContent className="glass-strong rounded-dialog border-white/10 p-6 text-white sm:max-w-sm">
                 <DialogTitle className="flex items-center gap-2 font-display text-lg">
                     <Keyboard className="size-5 text-gc-lilac-300" />
                     {tr('Гарячі клавіші')}

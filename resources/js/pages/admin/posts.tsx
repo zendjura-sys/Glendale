@@ -243,7 +243,7 @@ export default function AdminPosts({ posts, filters }: Props) {
                     );
                 })}
                 {posts.data.length === 0 && (
-                    <div className="glass rounded-3xl px-6 py-14 text-center text-sm text-white/40">
+                    <div className="glass rounded-2xl px-6 py-14 text-center text-sm text-white/40">
                         {tr('Записів не знайдено')}
                     </div>
                 )}

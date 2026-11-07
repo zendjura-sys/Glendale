@@ -37,7 +37,7 @@ class ProfileDecorTest extends TestCase
             ->where('profile.plus.fx', 'shine'));
 
         // Невідомі значення відкидаються.
-        $this->actingAs($user)->put('/plus/style', ['fx' => 'rainbow', 'header' => 'glow'])->assertRedirect();
+        $this->actingAs($user)->put('/plus/style', ['fx' => 'blink', 'header' => 'glow'])->assertRedirect();
         $this->assertArrayNotHasKey('fx', $user->fresh()->plus_style ?? []);
         $this->actingAs($viewer)->get(route('profile.show', $user))->assertInertia(fn (Assert $page) => $page
             ->where('profile.header_fx', null)

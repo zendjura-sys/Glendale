@@ -38,6 +38,8 @@ class SendPushNotification implements ShouldQueue
         public readonly string $channel,
         public readonly ?string $tag = null,
         public readonly bool $dataOnly = false,
+        /** Лише в застосунок (без push у браузери). */
+        public readonly bool $appOnly = false,
     ) {}
 
     public function handle(FcmClient $fcm, ?WebPush $web = null): void
@@ -51,7 +53,9 @@ class SendPushNotification implements ShouldQueue
         $title = $translations->line($this->title, $locale);
         $body = $translations->line($this->body, $locale);
 
-        $this->toBrowsers($web, $title, $body);
+        if (! $this->appOnly) {
+            $this->toBrowsers($web, $title, $body);
+        }
         if (! $fcm->configured()) {
             return;
         }

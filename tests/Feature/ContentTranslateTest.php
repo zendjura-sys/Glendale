@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Message;
 use App\Models\Post;
+use App\Models\Track;
 use App\Models\User;
 use App\Services\FriendshipService;
 use App\Services\Messenger;
@@ -72,5 +73,16 @@ class ContentTranslateTest extends TestCase
 
         $this->actingAs($bob)->postJson('/translate', ['type' => 'message', 'id' => $message->id])->assertJsonPath('translation', 'Переклад: See you tonight');
         $this->actingAs(User::factory()->create())->postJson('/translate', ['type' => 'message', 'id' => $message->id])->assertNotFound();
+    }
+
+    public function test_song_lyrics_are_translated_without_timestamps(): void
+    {
+        $track = Track::query()->create([
+            'title' => 'Song', 'artist' => 'Band', 'duration' => 100, 'path' => 'music/s.mp3', 'mime' => 'audio/mpeg', 'size' => 1,
+            'lyrics' => "[ar:Band]\n[00:01.00] Hello there\n[00:04.00] Good night",
+        ]);
+
+        $this->actingAs(User::factory()->create())->postJson('/translate', ['type' => 'track', 'id' => $track->id])
+            ->assertOk()->assertJsonPath('translation', "Переклад: Hello there\nGood night");
     }
 }

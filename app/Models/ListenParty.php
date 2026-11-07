@@ -14,8 +14,14 @@ use Illuminate\Support\Carbon;
  * @property int $id
  * @property string $code
  * @property int $host_id
+ * @property string|null $group_type family | clan | community; null — кімната з друзями
+ * @property int|null $group_id
+ * @property string|null $title
  * @property int|null $track_id
- * @property list<array{track_id: int, by: int}>|null $queue
+ * @property int|null $station_id
+ * @property list<array{track_id?: int, station_id?: int, by: int}>|null $queue
+ * @property list<array{track_id?: int, station_id?: int, by: int}>|null $suggestions
+ * @property bool $moderated
  * @property bool $playing
  * @property float $position
  * @property int $state_ms
@@ -24,7 +30,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $ended_at
  * @property Carbon $created_at
  */
-#[Fillable(['code', 'host_id', 'track_id', 'queue', 'playing', 'position', 'state_ms', 'shared_control', 'repeat', 'ended_at'])]
+#[Fillable(['code', 'host_id', 'group_type', 'group_id', 'title', 'track_id', 'station_id', 'queue', 'suggestions', 'playing', 'position', 'state_ms', 'shared_control', 'moderated', 'repeat', 'ended_at'])]
 class ListenParty extends Model
 {
     /** Скільки секунд без сигналу людина ще вважається слухачем. */
@@ -33,10 +39,18 @@ class ListenParty extends Model
     /** Найбільша довжина черги. */
     public const QUEUE_LIMIT = 100;
 
+    /** Групи, у яких відкривають кімнати «Слухати разом». */
+    public const GROUP_TYPES = ['family', 'clan', 'community'];
+
+    /** Кімната без жодного слухача завершується через стільки хвилин. */
+    public const IDLE_MINUTES = 10;
+
     protected function casts(): array
     {
         return [
             'queue' => 'array',
+            'suggestions' => 'array',
+            'moderated' => 'boolean',
             'playing' => 'boolean',
             'position' => 'float',
             'state_ms' => 'integer',
@@ -68,6 +82,22 @@ class ListenParty extends Model
     }
 
     /**
+     * @return BelongsTo<RadioStation, $this>
+     */
+    public function station(): BelongsTo
+    {
+        return $this->belongsTo(RadioStation::class);
+    }
+
+    /**
+     * @return HasMany<ListenPartyMessage, $this>
+     */
+    public function messages(): HasMany
+    {
+        return $this->hasMany(ListenPartyMessage::class);
+    }
+
+    /**
      * @return HasMany<ListenPartyMember, $this>
      */
     public function members(): HasMany
@@ -78,6 +108,12 @@ class ListenParty extends Model
     public function isLive(): bool
     {
         return $this->ended_at === null;
+    }
+
+    /** Кімната групи (сім’ї, клану чи спільноти), а не посилання для друзів. */
+    public function isGroupRoom(): bool
+    {
+        return $this->group_type !== null && $this->group_id !== null;
     }
 
     public function canControl(User $user): bool

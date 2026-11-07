@@ -1,5 +1,8 @@
 import { usePage } from '@inertiajs/react';
+import { GifPicker } from '@/components/gc/gif-picker';
 import {
+    Eye,
+    Camera,
     Clock,
     FileUp,
     ImagePlus,
@@ -16,7 +19,7 @@ import {
     UserRound,
     X,
 } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { useVoiceRecorder } from '@/hooks/use-voice-recorder';
 import { api } from '@/lib/api';
@@ -26,7 +29,10 @@ import { fitTextarea } from '@/lib/textarea';
 import { cn, dockedAboveNav } from '@/lib/utils';
 import type { ChatMessage, OutgoingMessage } from '@/types';
 import { ContactShareDialog } from './contact-share-dialog';
+import { AiWriter } from './ai-writer';
 import { EmojiPanel } from './emoji-panel';
+import { VideoNoteRecorder } from './video-note';
+import { useDraft, writeDraft } from '@/lib/drafts';
 import { LOCALE, tr } from '@/lib/i18n';
 import { usePlugin } from '@/lib/plugins';
 
@@ -35,6 +41,8 @@ const MAX_LENGTH = 4096;
 
 type Props = {
     canWrite: boolean;
+    /** Чому писати не можна (за замовчуванням — обмеження в особистих). */
+    lockedText?: string | null;
     replyTo: ChatMessage | null;
     editing: ChatMessage | null;
     onCancel: () => void;
@@ -43,6 +51,8 @@ type Props = {
     onTyping: () => void;
     onEditLast: () => void;
     draft?: string | null;
+    /** Ключ чернетки незакінченого повідомлення (на цьому пристрої). */
+    draftKey?: string | null;
 };
 
 function useOutsideClose(
@@ -63,6 +73,7 @@ function useOutsideClose(
 
 export function Composer({
     canWrite,
+    lockedText = null,
     replyTo,
     editing,
     onCancel,
@@ -71,13 +82,28 @@ export function Composer({
     onTyping,
     onEditLast,
     draft = null,
+    draftKey = null,
 }: Props) {
-    const { site } = usePage().props;
+    const { site, modules } = usePage().props;
+    // Картки — лише розділів режиму (гра, фільм, сервер); без жодного пункт ховається.
+    const cardWords = [
+        modules.includes('games') && tr('гра'),
+        modules.includes('cinema') && tr('фільм'),
+        modules.includes('servers') && tr('сервер'),
+    ].filter((word): word is string => Boolean(word));
+    const cardScope = cardWords.join(', ');
     const vanishOn = usePlugin('disappearing_messages');
     const scheduleOn = usePlugin('scheduled_messages');
+    const videoNotesPlugin = usePlugin('video_notes');
     const [body, setBody] = useState(draft ?? '');
+    const draftsOn = usePlugin('local_drafts');
+    useDraft(draftsOn && !editing ? draftKey : null, body, setBody);
+    const aiWriterOn = usePlugin('ai_writer');
     const [publishAt, setPublishAt] = useState('');
     const [vanish, setVanish] = useState(false);
+    // Одне фото можна надіслати «на один перегляд».
+    const onceOn = usePlugin('view_once');
+    const [once, setOnce] = useState(false);
     const [card, setCard] = useState<{
         kind: string;
         id: number;
@@ -89,6 +115,8 @@ export function Composer({
     const [cardQuery, setCardQuery] = useState('');
     const [cardHits, setCardHits] = useState<NonNullable<typeof card>[]>([]);
     const [pickingCard, setPickingCard] = useState(false);
+    const gifOn = usePlugin('gif_search');
+    const [pickingGif, setPickingGif] = useState(false);
     const [images, setImages] = useState<File[]>([]);
     const [docs, setDocs] = useState<File[]>([]);
     const [emojiOpen, setEmojiOpen] = useState(false);
@@ -206,9 +234,16 @@ export function Composer({
         ? trimmed.length > 0 && trimmed !== editing.body
         : trimmed.length > 0 || hasAttachments || card !== null;
     const showMic = !editing && !canSubmit && voice.supported;
+    const videoNotesOn =
+        videoNotesPlugin &&
+        typeof MediaRecorder !== 'undefined' &&
+        !!navigator.mediaDevices;
+    const [noteOpen, setNoteOpen] = useState(false);
+    const closeNote = useCallback(() => setNoteOpen(false), []);
 
     const reset = () => {
         setBody('');
+        if (draftKey) writeDraft(draftKey, '');
         setImages([]);
         setDocs([]);
         setPublishAt('');
@@ -239,8 +274,10 @@ export function Composer({
                 files: docs,
                 publishAt: publishAt || null,
                 vanish,
+                once: once && images.length === 1 && docs.length === 0,
                 card,
             });
+            setOnce(false);
         }
 
         reset();
@@ -291,9 +328,10 @@ export function Composer({
             >
                 <p className="flex items-center justify-center gap-2 text-center text-sm text-white/45">
                     <Lock className="size-4" />
-                    {tr(
-                        'Користувач обмежив коло осіб, які можуть надсилати йому повідомлення.',
-                    )}
+                    {lockedText ??
+                        tr(
+                            'Користувач обмежив коло осіб, які можуть надсилати йому повідомлення.',
+                        )}
                 </p>
             </div>
         );
@@ -315,7 +353,42 @@ export function Composer({
                 addFiles(event.dataTransfer.files);
             }}
         >
-            {!editing && card && (
+            {!editing && pickingGif && (
+                <div className="mb-2">
+                    <GifPicker
+                        onPick={(gif) => {
+                            setCard({
+                                kind: 'gif',
+                                id: 0,
+                                title: gif.title,
+                                hint: 'GIF',
+                                href: gif.url,
+                                image: gif.url,
+                            });
+                            setPickingGif(false);
+                        }}
+                        onClose={() => setPickingGif(false)}
+                    />
+                </div>
+            )}
+            {!editing && card?.kind === 'gif' && (
+                <div className="relative mb-2 w-fit max-w-full">
+                    <img
+                        src={card.href}
+                        alt={card.title}
+                        className="max-h-40 rounded-xl"
+                    />
+                    <button
+                        type="button"
+                        onClick={() => setCard(null)}
+                        aria-label={tr('Прибрати')}
+                        className="absolute top-1 right-1 rounded-full bg-black/60 px-2 py-0.5 text-xs text-white"
+                    >
+                        ×
+                    </button>
+                </div>
+            )}
+            {!editing && card && card.kind !== 'gif' && (
                 <div className="mb-2 flex items-center justify-between gap-2 rounded-xl bg-white/[0.04] px-3 py-2">
                     <span className="min-w-0">
                         <span className="block text-[11px] text-white/40">
@@ -350,7 +423,10 @@ export function Composer({
                                 `/messages/cards?q=${encodeURIComponent(value.trim())}`,
                             ).then((response) => setCardHits(response.cards));
                         }}
-                        placeholder={tr('Гра, фільм або сервер')}
+                        placeholder={
+                            cardScope.charAt(0).toUpperCase() +
+                            cardScope.slice(1)
+                        }
                         className="input-glass h-10 w-full rounded-xl px-3 text-sm text-white"
                     />
                     <div className="mt-1 max-h-36 overflow-y-auto">
@@ -370,13 +446,35 @@ export function Composer({
                     </div>
                 </div>
             )}
+            {!editing &&
+                onceOn &&
+                images.length === 1 &&
+                docs.length === 0 &&
+                !publishAt && (
+                    <div className="mb-2 px-1">
+                        <button
+                            type="button"
+                            onClick={() => setOnce(!once)}
+                            aria-pressed={once}
+                            className={cn(
+                                'inline-flex min-h-8 items-center gap-1.5 rounded-chip px-3 text-xs transition',
+                                once
+                                    ? 'bg-primary text-white'
+                                    : 'bg-white/[0.07] text-white/70 hover:text-white',
+                            )}
+                        >
+                            <Eye className="size-3.5" />
+                            {tr('На один перегляд')}
+                        </button>
+                    </div>
+                )}
             {!editing && (vanish || publishAt) && (
                 <div className="mb-2 flex flex-wrap items-center gap-2 px-1 text-xs">
                     {vanish && (
                         <button
                             type="button"
                             onClick={() => setVanish(false)}
-                            className="inline-flex min-h-8 items-center gap-1.5 rounded-full bg-gc-indigo/15 px-3 text-gc-lilac-200"
+                            className="inline-flex min-h-8 items-center gap-1.5 rounded-chip bg-gc-indigo/15 px-3 text-gc-lilac-200"
                         >
                             <Timer className="size-3.5" />
                             {tr('Зникне за добу')}
@@ -387,7 +485,7 @@ export function Composer({
                         <button
                             type="button"
                             onClick={() => setPublishAt('')}
-                            className="inline-flex min-h-8 items-center gap-1.5 rounded-full bg-gc-indigo/15 px-3 text-gc-lilac-200"
+                            className="inline-flex min-h-8 items-center gap-1.5 rounded-chip bg-gc-indigo/15 px-3 text-gc-lilac-200"
                         >
                             <Clock className="size-3.5" />
                             {tr('Надішлеться {date}', {
@@ -536,7 +634,7 @@ export function Composer({
                     >
                         <Trash2 className="size-5" />
                     </button>
-                    <div className="input-glass flex h-11 min-w-0 flex-1 items-center gap-3 rounded-[22px] px-4">
+                    <div className="input-glass flex h-11 min-w-0 flex-1 items-center gap-3 rounded-control px-4">
                         <span className="relative flex size-2.5 shrink-0">
                             <span className="absolute inset-0 animate-ping rounded-full bg-rose-500/70" />
                             <span className="relative size-2.5 rounded-full bg-rose-500" />
@@ -613,13 +711,22 @@ export function Composer({
                                             tone: 'from-gc-mint to-gc-cyan',
                                             run: () => setContactOpen(true),
                                         },
-                                        {
-                                            label: tr('Картка'),
-                                            hint: tr('Гра, фільм, сервер'),
-                                            icon: LayoutGrid,
-                                            tone: 'from-gc-amber to-gc-coral',
-                                            run: () => setPickingCard(true),
-                                        },
+                                        ...(cardWords.length > 0
+                                            ? [
+                                                  {
+                                                      label: tr('Картка'),
+                                                      hint:
+                                                          cardScope
+                                                              .charAt(0)
+                                                              .toUpperCase() +
+                                                          cardScope.slice(1),
+                                                      icon: LayoutGrid,
+                                                      tone: 'from-gc-amber to-gc-coral',
+                                                      run: () =>
+                                                          setPickingCard(true),
+                                                  },
+                                              ]
+                                            : []),
                                     ].map((item) => (
                                         <button
                                             key={item.label}
@@ -653,7 +760,7 @@ export function Composer({
                         </div>
                     )}
 
-                    <div className="input-glass flex min-w-0 flex-1 items-end rounded-[22px] pr-1">
+                    <div className="input-glass flex min-w-0 flex-1 items-end rounded-control pr-1">
                         <textarea
                             ref={textRef}
                             value={body}
@@ -692,9 +799,30 @@ export function Composer({
                                     onEditLast();
                                 }
                             }}
-                            placeholder={tr('Напишіть повідомлення…')}
+                            placeholder={
+                                hasAttachments
+                                    ? tr('Додайте підпис…')
+                                    : tr('Напишіть повідомлення…')
+                            }
                             className="[field-sizing:content] max-h-[180px] min-h-11 min-w-0 flex-1 resize-none bg-transparent py-[11px] pl-4 text-[14.5px] leading-[1.45] text-white placeholder:text-white/35 focus:outline-none"
                         />
+                        {aiWriterOn && !editing && (
+                            <AiWriter text={body} onResult={setBody} />
+                        )}
+                        {gifOn && !editing && (
+                            <button
+                                type="button"
+                                onClick={() => setPickingGif((v) => !v)}
+                                aria-label="GIF"
+                                title="GIF"
+                                className={cn(
+                                    'mb-1 flex h-9 items-center justify-center rounded-full px-1.5 text-[11px] font-bold text-white/50 transition hover:text-white',
+                                    pickingGif && 'text-[#7ee0b5]',
+                                )}
+                            >
+                                GIF
+                            </button>
+                        )}
                         <div ref={emojiRef} className="relative mb-1">
                             <button
                                 type="button"
@@ -726,6 +854,25 @@ export function Composer({
                         </div>
                     </div>
 
+                    {showMic && videoNotesOn && (
+                        <button
+                            type="button"
+                            onClick={() => setNoteOpen(true)}
+                            className="mb-0.5 flex size-11 shrink-0 items-center justify-center rounded-full bg-white/[0.06] text-white/70 transition hover:bg-white/[0.12] hover:text-white"
+                            aria-label={tr('Записати відеокружок')}
+                            title={tr('Відеокружок')}
+                        >
+                            <Camera className="size-5" />
+                        </button>
+                    )}
+                    {noteOpen && (
+                        <VideoNoteRecorder
+                            onClose={closeNote}
+                            onSend={(blob, duration) =>
+                                onSend({ kind: 'video_note', blob, duration })
+                            }
+                        />
+                    )}
                     {showMic ? (
                         <button
                             type="button"
@@ -848,7 +995,7 @@ export function Composer({
                                 title={
                                     !editing && (vanishOn || scheduleOn)
                                         ? tr(
-                                              'Утримуйте, щоб відкласти або зробити зникаючим',
+                                              'Утримуйте, щоб відкласти або зробити тимчасовим',
                                           )
                                         : undefined
                                 }

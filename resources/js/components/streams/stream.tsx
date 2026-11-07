@@ -57,7 +57,7 @@ export function ProfileStream({ stream }: { stream: StreamInfo }) {
     }
 
     return (
-        <section className="glass overflow-hidden rounded-3xl">
+        <section className="glass overflow-hidden rounded-2xl">
             {stream.embed && (
                 <div className="relative aspect-video w-full bg-black">
                     <iframe
@@ -107,7 +107,7 @@ export function FriendsLive({ streams }: { streams: StreamInfo[] }) {
     if (streams.length === 0) return null;
 
     return (
-        <section className="glass rounded-3xl p-4">
+        <section className="glass rounded-2xl p-4">
             <h2 className="mb-3 flex items-center gap-2 px-1 font-display text-[13px] font-semibold text-white/90">
                 <Radio className="size-4 text-rose-400" />
                 {tr('Друзі в ефірі')}

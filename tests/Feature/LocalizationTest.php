@@ -53,6 +53,19 @@ class LocalizationTest extends TestCase
         $this->get('/login', ['Accept-Language' => 'ru'])->assertHeader('Content-Language', 'en');
     }
 
+    public function test_english_browser_in_ukraine_gets_ukrainian_by_ip(): void
+    {
+        app(SiteSettings::class)->put(['geo_trust_cloudflare' => true]);
+        // Телефон англійською, але відвідувач з України — українська.
+        $this->get('/login', ['Accept-Language' => 'en-US,en;q=0.9', 'CF-IPCountry' => 'UA'])->assertHeader('Content-Language', 'uk');
+        // Мова браузера, яка є на сайті (не англійська), — важливіша за країну.
+        $this->get('/login', ['Accept-Language' => 'de', 'CF-IPCountry' => 'UA'])->assertHeader('Content-Language', 'de');
+        // Країна, мови якої немає на сайті, — лишається англійська.
+        $this->get('/login', ['Accept-Language' => 'en-US', 'CF-IPCountry' => 'JP'])->assertHeader('Content-Language', 'en');
+        // Ручний вибір (cookie) — найважливіший.
+        $this->withUnencryptedCookie('locale', 'en')->get('/login', ['Accept-Language' => 'en', 'CF-IPCountry' => 'UA'])->assertHeader('Content-Language', 'en');
+    }
+
     public function test_manual_choice_is_saved_in_profile_and_cookie(): void
     {
         $this->post('/locale', ['locale' => 'de'])->assertCookie('locale', 'de', false);

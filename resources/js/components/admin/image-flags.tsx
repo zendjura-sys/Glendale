@@ -26,7 +26,7 @@ export function ImageFlags({ flags }: { flags: ImageFlagItem[] }) {
         );
 
     return (
-        <section className="glass mb-6 rounded-3xl p-4 sm:p-5">
+        <section className="glass mb-6 rounded-2xl p-4 sm:p-5">
             <h2 className="mb-1 flex items-center gap-2 font-display text-lg font-bold text-white">
                 <ImageOff className="size-5 text-rose-300" />
                 {tr('Фото на перевірці')}
@@ -40,6 +40,7 @@ export function ImageFlags({ flags }: { flags: ImageFlagItem[] }) {
                 {flags.map((flag) => (
                     <div
                         key={flag.id}
+                        id={`mod-image-${flag.id}`}
                         className="overflow-hidden rounded-2xl bg-white/[0.04]"
                     >
                         <a
@@ -54,7 +55,7 @@ export function ImageFlags({ flags }: { flags: ImageFlagItem[] }) {
                                 loading="lazy"
                                 className="group-hover:blur-0 size-full object-cover blur-xl transition"
                             />
-                            <span className="absolute top-2 left-2 rounded-full bg-rose-500/90 px-2 py-0.5 text-[11px] font-semibold text-white">
+                            <span className="absolute top-2 left-2 rounded-chip bg-rose-500/90 px-2 py-0.5 text-[11px] font-semibold text-white">
                                 {Math.round(flag.score * 100)}%
                             </span>
                         </a>

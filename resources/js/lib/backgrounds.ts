@@ -36,7 +36,7 @@ export function BACKGROUNDS(custom = false): {
 }
 
 export const DEFAULT_BACKGROUND: SiteBackgroundPrefs = {
-    preset: 'dune',
+    preset: 'aurora',
     motion: true,
     video: null,
 };

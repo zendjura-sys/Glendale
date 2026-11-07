@@ -8,6 +8,7 @@ import {
     FileSpreadsheet,
     FileText,
     FileVideo,
+    Eye,
     MessageCircle,
     Pause,
     Play,
@@ -123,7 +124,7 @@ export function VoicePlayer({
                 className={cn(
                     'flex size-10 shrink-0 items-center justify-center rounded-full transition hover:scale-105',
                     own
-                        ? 'bg-white text-[#5b4cf0]'
+                        ? 'bg-white text-[#1d6fe0]'
                         : 'bg-gradient-brand text-white shadow-[0_0_18px_-4px_rgb(124_92_255/0.9)]',
                 )}
                 aria-label={isPlaying ? tr('Пауза') : tr('Відтворити')}
@@ -225,14 +226,15 @@ function fileVisual(name: string | null | undefined, mime?: string | null) {
 export function FileAttachment({
     attachment,
     own,
+    onPreview,
 }: {
     attachment: ChatAttachment;
     own: boolean;
+    onPreview?: (attachment: ChatAttachment) => void;
 }) {
     const { icon: Icon, tone } = fileVisual(attachment.name, attachment.mime);
     const ext = attachment.name?.split('.').pop()?.toUpperCase();
-
-    return (
+    const card = (
         <a
             href={attachment.url}
             download={attachment.name ?? true}
@@ -266,6 +268,32 @@ export function FileAttachment({
             </span>
         </a>
     );
+
+    if (!attachment.preview || !onPreview) return card;
+
+    // Документ, який можна відкрити тут: кнопка «Переглянути» поруч із карткою.
+    return (
+        <div className="flex items-center gap-1">
+            {card}
+            <button
+                type="button"
+                onClick={(event) => {
+                    event.stopPropagation();
+                    onPreview(attachment);
+                }}
+                aria-label={tr('Переглянути')}
+                title={tr('Переглянути')}
+                className={cn(
+                    'flex size-9 shrink-0 items-center justify-center rounded-xl transition',
+                    own
+                        ? 'text-white/80 hover:bg-white/15'
+                        : 'text-white/55 hover:bg-white/[0.07] hover:text-white',
+                )}
+            >
+                <Eye className="size-4" />
+            </button>
+        </div>
+    );
 }
 
 export function ContactAttachment({
@@ -293,7 +321,9 @@ export function ContactAttachment({
                 <span className="min-w-0 flex-1">
                     <span className="flex items-center gap-1 truncate text-[14.5px] font-semibold">
                         {contact.name}
-                        {contact.is_verified && <VerifiedBadge />}
+                        {contact.is_verified && (
+                            <VerifiedBadge kind={contact.verified_kind} />
+                        )}
                     </span>
                     <span
                         className={cn(

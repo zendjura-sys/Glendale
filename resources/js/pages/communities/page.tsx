@@ -85,7 +85,7 @@ export default function CommunityPage({ community, page, text, other }: Props) {
                 {toc.length > 2 && (
                     <nav
                         aria-label={tr('Зміст')}
-                        className="glass rounded-3xl p-4 sm:p-5"
+                        className="glass rounded-2xl p-4 sm:p-5"
                     >
                         <p className="mb-2 text-xs font-semibold text-white/45">
                             {tr('Зміст')}
@@ -105,7 +105,7 @@ export default function CommunityPage({ community, page, text, other }: Props) {
                     </nav>
                 )}
 
-                <article className="glass space-y-6 rounded-3xl p-5 sm:p-7">
+                <article className="glass space-y-6 rounded-2xl p-5 sm:p-7">
                     {parts.map((part) => (
                         <section
                             key={part.id}

@@ -8,7 +8,7 @@ use Illuminate\Support\Str;
 use Throwable;
 
 /**
- * Відправка повідомлень сім’ї в Discord (webhook) і Telegram (бот).
+ * Надсилання повідомлень сім’ї в Discord (webhook) і Telegram (бот).
  */
 class FamilyBot
 {

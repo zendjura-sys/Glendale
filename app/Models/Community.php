@@ -37,16 +37,25 @@ use Illuminate\Support\Facades\Storage;
  * @property list<string>|null $banned_words
  * @property list<string>|null $post_tags
  * @property int $slow_mode
+ * @property bool $weekly_digest
  * @property bool $premoderation
  * @property Carbon $created_at
  * @property-read string|null $avatar_url
  * @property-read string|null $cover_url
  * @property string|null $donation_jar Банка Monobank (https://send.monobank.ua/jar/…)
  * @property string|null $donation_note
+ * @property bool $is_listed Показувати в каталозі й пошуку; інакше — лише за посиланням
+ * @property string|null $join_password Хеш пароля для вступу
+ * @property Carbon|null $promoted_until Просування в каталозі до
+ * @property bool $guest_view Гості без акаунта бачать сторінку й відкриті канали
+ * @property bool $auto_join Нові люди вступають самі (вмикає адмін сайту)
+ * @property int|null $guest_chat_channel_id Канал, де можуть писати гості
+ * @property bool $wiki_open Вікі редагують усі учасники (інакше — лише керівники)
+ * @property list<string>|null $join_questions Анкета вступу до закритої спільноти
  */
 // Банка — лише для сторінок сайту (картка «Підтримати»); у застосунок і API не віддається.
-#[Hidden(['donation_jar', 'donation_note'])]
-#[Fillable(['slug', 'name', 'type', 'privacy', 'wall', 'category', 'status', 'description', 'website', 'city', 'avatar_path', 'cover_path', 'owner_id', 'is_verified', 'rules', 'handbook', 'welcome', 'banned_words', 'post_tags', 'slow_mode', 'premoderation'])]
+#[Hidden(['donation_jar', 'donation_note', 'join_password'])]
+#[Fillable(['slug', 'name', 'type', 'privacy', 'wall', 'category', 'status', 'description', 'website', 'city', 'avatar_path', 'cover_path', 'owner_id', 'is_verified', 'rules', 'handbook', 'welcome', 'banned_words', 'post_tags', 'slow_mode', 'premoderation', 'weekly_digest', 'is_listed', 'guest_view', 'guest_chat_channel_id', 'join_questions', 'wiki_open'])]
 class Community extends Model
 {
     use SoftDeletes;
@@ -94,8 +103,16 @@ class Community extends Model
             'is_verified' => 'boolean',
             'banned_words' => 'array',
             'post_tags' => 'array',
+            'join_questions' => 'array',
+            'wiki_open' => 'boolean',
+            'promoted_until' => 'datetime',
             'slow_mode' => 'integer',
+            'weekly_digest' => 'boolean',
             'premoderation' => 'boolean',
+            'is_listed' => 'boolean',
+            'guest_view' => 'boolean',
+            'auto_join' => 'boolean',
+            'join_password' => 'hashed',
         ];
     }
 
@@ -126,6 +143,24 @@ class Community extends Model
     public function activeMembers(): HasMany
     {
         return $this->memberships()->where('status', CommunityMember::STATUS_ACTIVE);
+    }
+
+    /**
+     * Канали спільноти (текстові, «Оголошення», голосові).
+     *
+     * @return HasMany<CommunityChannel, $this>
+     */
+    public function channels(): HasMany
+    {
+        return $this->hasMany(CommunityChannel::class);
+    }
+
+    /**
+     * @return HasMany<CommunityChannelCategory, $this>
+     */
+    public function channelCategories(): HasMany
+    {
+        return $this->hasMany(CommunityChannelCategory::class);
     }
 
     /**
@@ -200,6 +235,8 @@ class Community extends Model
             'cover_url' => $this->cover_url,
             'members_count' => $this->members_count,
             'is_verified' => $this->is_verified,
+            'has_password' => $this->join_password !== null,
+            'join_questions' => $this->isClosed() ? $this->join_questions ?? [] : [],
         ];
     }
 }

@@ -163,7 +163,7 @@ export default function PhonePage(props: Props) {
             <Head title={tr('Телефон')} />
             <div className="grid gap-4 *:min-w-0 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
                 {/* Набирач */}
-                <section className="glass rounded-3xl p-5">
+                <section className="glass rounded-2xl p-5">
                     <div className="flex min-h-[4.5rem] flex-col items-center justify-center text-center">
                         <div className="flex w-full items-center gap-2">
                             <span className="min-w-0 flex-1 truncate text-[1.7rem] font-semibold tracking-tight text-white tabular-nums">
@@ -270,7 +270,7 @@ export default function PhonePage(props: Props) {
 
                 <div className="flex flex-col gap-4">
                     {/* Мій номер */}
-                    <section className="glass rounded-3xl p-5">
+                    <section className="glass rounded-2xl p-5">
                         <p className="text-xs font-medium tracking-wide text-white/45 uppercase">
                             {tr('Мій номер')}
                         </p>

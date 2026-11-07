@@ -11,6 +11,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'alerts.dart';
 import 'api.dart';
 import 'shell.dart';
 import 'state.dart';
@@ -39,6 +40,18 @@ final _calls = AndroidNotificationChannel(
   importance: Importance.max,
   sound: UriAndroidNotificationSound('content://settings/system/ringtone'),
   audioAttributesUsage: AudioAttributesUsage.notificationRingtone,
+);
+
+/// Повітряна тривога: як будильник (звук будильника, поверх «Не турбувати»); звук можна змінити
+/// в системних налаштуваннях каналу — кнопка «Звук push у системі» на мапі тривог.
+final _alerts = AndroidNotificationChannel(
+  'air_alerts',
+  tr('Повітряна тривога'),
+  description: tr('Початок і відбій тривоги в обраній області'),
+  importance: Importance.max,
+  sound: UriAndroidNotificationSound('content://settings/system/alarm_alert'),
+  audioAttributesUsage: AudioAttributesUsage.alarm,
+  enableVibration: true,
 );
 
 const _initSettings = InitializationSettings(
@@ -78,10 +91,19 @@ String? _urlOf(String? payload) {
   if (payload == null || payload.isEmpty) return null;
   if (!payload.startsWith('{')) return payload;
   try {
-    return text((jsonDecode(payload) as Map)['url']);
+    return pushTarget(Map<String, dynamic>.from(jsonDecode(payload) as Map));
   } catch (_) {
     return null;
   }
+}
+
+/// Куди веде push: шлях сайту з `url`, а запит на вхід {type: 'app_login', id} — на екран підтвердження.
+String? pushTarget(Map<String, dynamic> data) {
+  final url = text(data['url']);
+  if (url != null) return url;
+  final login = text(data['id']);
+  if (data['type'] == 'app_login' && login != null) return '/app-login/$login';
+  return null;
 }
 
 /// Вхідний дзвінок у шторці: «Відповісти» відкриває застосунок і підключає розмову,
@@ -343,10 +365,11 @@ class Push {
     await android?.createNotificationChannel(_messages);
     await android?.createNotificationChannel(_activity);
     await android?.createNotificationChannel(_calls);
+    await android?.createNotificationChannel(_alerts);
 
     await FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(alert: false, badge: true, sound: false);
     FirebaseMessaging.onMessage.listen(_foreground);
-    FirebaseMessaging.onMessageOpenedApp.listen((message) => _open(message.data['url']));
+    FirebaseMessaging.onMessageOpenedApp.listen((message) => _open(pushTarget(message.data)));
 
     // Застосунок запущено натисканням на push або локальне сповіщення.
     final initial = await FirebaseMessaging.instance.getInitialMessage();
@@ -355,7 +378,7 @@ class Push {
     if (response != null && response.actionId == 'call_accept') {
       WidgetsBinding.instance.addPostFrameCallback((_) => _answer(response));
     }
-    final url = initial?.data['url'] ?? (response != null && response.actionId == null ? response.payload : null);
+    final url = (initial == null ? null : pushTarget(initial.data)) ?? (response != null && response.actionId == null ? response.payload : null);
     if (url != null) WidgetsBinding.instance.addPostFrameCallback((_) => _open(url));
 
     session.addListener(_sync);
@@ -409,6 +432,11 @@ class Push {
       await _callNotes.incoming(data);
       return;
     }
+    // Запит на вхід на сайт: застосунок відкритий — одразу показуємо екран підтвердження.
+    if (data['type'] == 'app_login') {
+      _open(pushTarget(data));
+      return;
+    }
     final chat = data['type'] == 'message';
     // Бесіда вже відкрита — повідомлення й так з’явиться на екрані.
     if (chat && url != null && _location == url) return;
@@ -419,7 +447,10 @@ class Push {
       return;
     }
     if (note == null) return;
-    final channel = chat ? _messages : _activity;
+    final alert = '${data['kind'] ?? ''}'.startsWith('air_alert');
+    // Тривога при відкритому застосунку — ще й свій звук з файлу, якщо обрано.
+    if (alert) unawaited(AlertSound.play(session.prefs));
+    final channel = chat ? _messages : (alert ? _alerts : _activity);
     final tag = chat ? 'chat-${data['conversation_id']}' : null;
     await _local.show(
       id: (tag ?? message.messageId ?? '${DateTime.now().millisecondsSinceEpoch}').hashCode & 0x7fffffff,

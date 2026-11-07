@@ -44,6 +44,7 @@ class FamilyAuditLog extends Model
         'RANK_TITLES_UPDATE' => 'Назви рангів',
         'PERMISSIONS_UPDATE' => 'Матриця прав',
         'VOICE_ACCESS_UPDATE' => 'Доступ до голосових кімнат',
+        'LISTEN_ROOMS_UPDATE' => 'Кімнати «Слухати разом»',
         'RATE_CHANGE' => 'Зміна ставок і налаштувань',
         'REPORT_APPROVE' => 'Схвалення звіту',
         'REPORT_REJECT' => 'Відхилення звіту',

@@ -117,7 +117,7 @@ export default function AdminStickers({ packs, stats, limits }: Props) {
                     />
                 ))}
                 {packs.length === 0 && (
-                    <div className="glass rounded-3xl px-6 py-14 text-center text-sm text-white/40">
+                    <div className="glass rounded-2xl px-6 py-14 text-center text-sm text-white/40">
                         {tr(
                             'Наборів ще немає. Створіть перший і завантажте PNG, WebP або GIF до 1 МБ.',
                         )}
@@ -178,7 +178,7 @@ function PackCard({
     return (
         <section
             className={cn(
-                'glass rounded-3xl p-4 sm:p-5',
+                'glass rounded-2xl p-4 sm:p-5',
                 !pack.is_active && 'opacity-70',
             )}
         >
@@ -307,7 +307,7 @@ function PackCard({
                     type="button"
                     onClick={() => fileRef.current?.click()}
                     disabled={uploading || pack.stickers.length >= limit}
-                    className="flex aspect-square flex-col items-center justify-center gap-1 rounded-2xl border border-dashed border-white/15 text-xs text-white/45 transition hover:border-[#8b7dff]/60 hover:text-white disabled:opacity-40"
+                    className="flex aspect-square flex-col items-center justify-center gap-1 rounded-2xl border border-dashed border-white/15 text-xs text-white/45 transition hover:border-gc-lilac-400/60 hover:text-white disabled:opacity-40"
                 >
                     <ImagePlus className="size-5" />
                     {uploading ? tr('Завантаження…') : tr('Додати')}

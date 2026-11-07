@@ -5,12 +5,16 @@ import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileCo
 import { ConnectedAccounts } from '@/components/auth/connected-accounts';
 import { PlayingSettingsCard } from '@/components/gc/playing';
 import DeleteUser from '@/components/delete-user';
+import { ListeningSwitch } from '@/components/music/listening-switch';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
-import { SettingsCard } from '@/layouts/settings/layout';
+import {
+    SettingsCard,
+    SettingsRow,
+    SettingsSwitch,
+} from '@/layouts/settings/layout';
 import { usePlayer } from '@/lib/player';
 import { cn, floatingAboveNav } from '@/lib/utils';
 import { send } from '@/routes/verification';
@@ -18,6 +22,7 @@ import type { SocialConnection } from '@/types/auth';
 import { StreamSettings } from '@/components/streams/stream';
 import type { StreamInfo } from '@/components/streams/stream';
 import { tr } from '@/lib/i18n';
+import { listWords } from '@/lib/modes';
 import { useFeature } from '@/lib/plugins';
 
 type ProfileForm = {
@@ -57,7 +62,7 @@ export default function Profile({
     countries,
     stream,
 }: Props) {
-    const { auth } = usePage().props;
+    const { auth, modules } = usePage().props;
     const playing = usePlayer().current !== null;
     const playingOn = useFeature('playing');
     const form = useForm<ProfileForm>({
@@ -90,46 +95,52 @@ export default function Profile({
         <>
             <Head title={tr('Налаштування профілю')} />
 
-            <form onSubmit={submit} className="space-y-5">
+            <form onSubmit={submit} className="space-y-7">
                 <SettingsCard
+                    list
                     title={tr('Основне')}
                     description={tr('Так вас бачать інші учасники')}
                 >
-                    <div className="grid grid-cols-1 gap-5">
-                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                            <div className="grid gap-2">
-                                <Label htmlFor="first_name">{tr("Ім'я")}</Label>
-                                <Input
-                                    id="first_name"
-                                    value={data.first_name}
-                                    onChange={(e) =>
-                                        setData('first_name', e.target.value)
-                                    }
-                                    required
-                                    autoComplete="given-name"
-                                />
-                                <InputError message={errors.first_name} />
-                            </div>
-                            <div className="grid gap-2">
-                                <Label htmlFor="last_name">
-                                    {tr('Прізвище')}
-                                </Label>
-                                <Input
-                                    id="last_name"
-                                    value={data.last_name}
-                                    onChange={(e) =>
-                                        setData('last_name', e.target.value)
-                                    }
-                                    autoComplete="family-name"
-                                />
-                                <InputError message={errors.last_name} />
-                            </div>
+                    <SettingsRow label={tr("Ім'я")} htmlFor="first_name" stack>
+                        <div className="grid w-full gap-1">
+                            <Input
+                                id="first_name"
+                                value={data.first_name}
+                                onChange={(e) =>
+                                    setData('first_name', e.target.value)
+                                }
+                                required
+                                autoComplete="given-name"
+                            />
+                            <InputError message={errors.first_name} />
                         </div>
-
-                        <div className="grid gap-2">
-                            <Label htmlFor="username">
-                                {tr('Адреса сторінки')}
-                            </Label>
+                    </SettingsRow>
+                    <SettingsRow
+                        label={tr('Прізвище')}
+                        htmlFor="last_name"
+                        stack
+                    >
+                        <div className="grid w-full gap-1">
+                            <Input
+                                id="last_name"
+                                value={data.last_name}
+                                onChange={(e) =>
+                                    setData('last_name', e.target.value)
+                                }
+                                autoComplete="family-name"
+                            />
+                            <InputError message={errors.last_name} />
+                        </div>
+                    </SettingsRow>
+                    <SettingsRow
+                        label={tr('Адреса сторінки')}
+                        hint={tr(
+                            'Латиниця, цифри, крапка та підкреслення. 3–32 символи.',
+                        )}
+                        htmlFor="username"
+                        stack
+                    >
+                        <div className="grid w-full gap-1">
                             <div className="input-glass flex h-11 items-center rounded-xl pl-3.5 text-sm">
                                 <span className="shrink-0 text-white/35">
                                     gamecon.online/
@@ -149,18 +160,16 @@ export default function Profile({
                                 />
                                 <AtSign className="mr-3 size-4 shrink-0 text-white/25" />
                             </div>
-                            <p className="text-xs text-white/35">
-                                {tr(
-                                    'Латиниця, цифри, крапка та підкреслення. 3–32 символи.',
-                                )}
-                            </p>
                             <InputError message={errors.username} />
                         </div>
-
-                        <div className="grid gap-2">
-                            <Label htmlFor="status">
-                                {tr('Короткий статус')}
-                            </Label>
+                    </SettingsRow>
+                    <SettingsRow
+                        label={tr('Короткий статус')}
+                        hint={`${data.status.length}/140`}
+                        htmlFor="status"
+                        stack
+                    >
+                        <div className="grid w-full gap-1">
                             <Input
                                 id="status"
                                 value={data.status}
@@ -170,34 +179,37 @@ export default function Profile({
                                 maxLength={140}
                                 placeholder={tr('Що у вас нового?')}
                             />
-                            <div className="flex justify-between">
-                                <InputError message={errors.status} />
-                                <span className="ml-auto text-xs text-white/30">
-                                    {data.status.length}/140
-                                </span>
-                            </div>
+                            <InputError message={errors.status} />
                         </div>
-
-                        <div className="grid gap-2">
-                            <Label htmlFor="about">{tr('Про себе')}</Label>
-                            <textarea
-                                id="about"
-                                value={data.about}
-                                onChange={(e) =>
-                                    setData('about', e.target.value)
-                                }
-                                rows={4}
-                                maxLength={2000}
-                                placeholder={tr(
-                                    'Розкажіть про свої захоплення, улюблені ігри та фільми',
-                                )}
-                                className={cn(
-                                    fieldClass,
-                                    'resize-y py-3 leading-relaxed',
-                                )}
-                            />
-                            <InputError message={errors.about} />
-                        </div>
+                    </SettingsRow>
+                    <div className="gc-row grid gap-2 py-3">
+                        <label
+                            htmlFor="about"
+                            className="text-[15px] text-white"
+                        >
+                            {tr('Про себе')}
+                        </label>
+                        <textarea
+                            id="about"
+                            value={data.about}
+                            onChange={(e) => setData('about', e.target.value)}
+                            rows={4}
+                            maxLength={2000}
+                            placeholder={tr('Розкажіть про {what}', {
+                                what: listWords([
+                                    tr('свої захоплення'),
+                                    modules.includes('games') &&
+                                        tr('улюблені ігри'),
+                                    modules.includes('cinema') && tr('фільми'),
+                                    modules.includes('music') && tr('музику'),
+                                ]),
+                            })}
+                            className={cn(
+                                fieldClass,
+                                'resize-y py-3 leading-relaxed',
+                            )}
+                        />
+                        <InputError message={errors.about} />
                     </div>
                 </SettingsCard>
 
@@ -210,10 +222,9 @@ export default function Profile({
                     <StreamSettings stream={stream} />
                 </SettingsCard>
 
-                <SettingsCard title={tr('Особиста інформація')}>
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                        <div className="grid gap-2">
-                            <Label htmlFor="city">{tr('Місто')}</Label>
+                <SettingsCard list title={tr('Особиста інформація')}>
+                    <SettingsRow label={tr('Місто')} htmlFor="city" stack>
+                        <div className="grid w-full gap-1">
                             <div className="relative">
                                 <MapPin className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-white/30" />
                                 <Input
@@ -228,8 +239,9 @@ export default function Profile({
                             </div>
                             <InputError message={errors.city} />
                         </div>
-                        <div className="grid gap-2">
-                            <Label htmlFor="country">{tr('Країна')}</Label>
+                    </SettingsRow>
+                    <SettingsRow label={tr('Країна')} htmlFor="country" stack>
+                        <div className="grid w-full gap-1">
                             <select
                                 id="country"
                                 value={data.country}
@@ -247,10 +259,13 @@ export default function Profile({
                             </select>
                             <InputError message={errors.country} />
                         </div>
-                        <div className="grid gap-2">
-                            <Label htmlFor="birthday">
-                                {tr('Дата народження')}
-                            </Label>
+                    </SettingsRow>
+                    <SettingsRow
+                        label={tr('Дата народження')}
+                        htmlFor="birthday"
+                        stack
+                    >
+                        <div className="grid w-full gap-1">
                             <Input
                                 id="birthday"
                                 type="date"
@@ -262,8 +277,9 @@ export default function Profile({
                             />
                             <InputError message={errors.birthday} />
                         </div>
-                        <div className="grid gap-2">
-                            <Label htmlFor="gender">{tr('Стать')}</Label>
+                    </SettingsRow>
+                    <SettingsRow label={tr('Стать')} htmlFor="gender" stack>
+                        <div className="grid w-full gap-1">
                             <select
                                 id="gender"
                                 value={data.gender}
@@ -281,8 +297,9 @@ export default function Profile({
                             </select>
                             <InputError message={errors.gender} />
                         </div>
-                        <div className="grid gap-2">
-                            <Label htmlFor="website">{tr('Вебсайт')}</Label>
+                    </SettingsRow>
+                    <SettingsRow label={tr('Вебсайт')} htmlFor="website" stack>
+                        <div className="grid w-full gap-1">
                             <div className="relative">
                                 <Globe className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-white/30" />
                                 <Input
@@ -298,17 +315,39 @@ export default function Profile({
                             </div>
                             <InputError message={errors.website} />
                         </div>
-                    </div>
+                    </SettingsRow>
                 </SettingsCard>
 
-                <SettingsCard title={tr('Акаунт і приватність')}>
-                    <div className="grid grid-cols-1 gap-5">
-                        <div className="grid gap-2">
-                            <Label htmlFor="email">
-                                {tr('Електронна пошта')}
-                            </Label>
+                <SettingsCard list title={tr('Акаунт і приватність')}>
+                    <SettingsRow
+                        label={tr('Електронна пошта')}
+                        htmlFor="email"
+                        stack
+                        hint={
+                            mustVerifyEmail &&
+                            auth.user.email_verified_at === null && (
+                                <span className="text-amber-200/80">
+                                    {tr('Пошту не підтверджено.')}{' '}
+                                    <Link
+                                        href={send()}
+                                        as="button"
+                                        className="text-primary underline underline-offset-4"
+                                    >
+                                        {tr('Надіслати лист ще раз')}
+                                    </Link>
+                                    {status === 'verification-link-sent' && (
+                                        <span className="ml-1 text-emerald-300">
+                                            {tr('Посилання надіслано.')}
+                                        </span>
+                                    )}
+                                </span>
+                            )
+                        }
+                    >
+                        <div className="grid w-full gap-1">
                             <Input
                                 id="email"
+                                data-private
                                 type="email"
                                 value={data.email}
                                 onChange={(e) =>
@@ -318,128 +357,65 @@ export default function Profile({
                                 autoComplete="username"
                             />
                             <InputError message={errors.email} />
-
-                            {mustVerifyEmail &&
-                                auth.user.email_verified_at === null && (
-                                    <p className="text-xs text-amber-200/80">
-                                        {tr('Пошту не підтверджено.')}{' '}
-                                        <Link
-                                            href={send()}
-                                            as="button"
-                                            className="text-gc-lilac-300 underline underline-offset-4"
-                                        >
-                                            {tr('Надіслати лист ще раз')}
-                                        </Link>
-                                        {status ===
-                                            'verification-link-sent' && (
-                                            <span className="ml-1 text-emerald-300">
-                                                {tr('Посилання надіслано.')}
-                                            </span>
-                                        )}
-                                    </p>
-                                )}
                         </div>
-
-                        <label className="flex cursor-pointer items-start gap-4 rounded-2xl border border-white/[0.07] bg-white/[0.02] p-4 transition hover:border-white/15">
-                            <span className="mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-xl bg-white/[0.05]">
-                                <Lock className="size-[18px] text-gc-violet-300" />
-                            </span>
-                            <span className="flex-1">
-                                <span className="block text-sm font-semibold text-white">
-                                    {tr('Закритий профіль')}
-                                </span>
-                                <span className="mt-0.5 block text-xs leading-relaxed text-white/45">
-                                    {tr(
-                                        'Записи, друзів і фото бачитимуть лише ваші друзі.',
+                    </SettingsRow>
+                    <SettingsSwitch
+                        icon={<Lock />}
+                        label={tr('Закритий профіль')}
+                        hint={tr(
+                            'Записи, друзів і фото бачитимуть лише ваші друзі.',
+                        )}
+                        checked={data.is_private}
+                        onChange={(on) => setData('is_private', on)}
+                    />
+                    <SettingsSwitch
+                        icon={<Mail />}
+                        label={tr('Листи про активність')}
+                        hint={tr(
+                            'Друзі, коментарі, спільноти й сім’ї — на пошту. Службові листи (підтвердження, пароль) приходять завжди.',
+                        )}
+                        checked={data.email_social}
+                        onChange={(on) => setData('email_social', on)}
+                    />
+                    <SettingsRow
+                        icon={<MessageCircle />}
+                        label={tr('Хто може писати мені')}
+                        hint={tr('Особисті повідомлення від інших учасників')}
+                    >
+                        <div className="flex rounded-lg bg-white/[0.06] p-0.5 text-sm">
+                            {[
+                                { value: 'everyone', label: tr('Усі') },
+                                {
+                                    value: 'friends',
+                                    label: tr('Лише друзі'),
+                                },
+                            ].map((option) => (
+                                <button
+                                    key={option.value}
+                                    type="button"
+                                    onClick={() =>
+                                        setData('message_privacy', option.value)
+                                    }
+                                    aria-pressed={
+                                        data.message_privacy === option.value
+                                    }
+                                    className={cn(
+                                        'rounded-md px-3 py-1.5 font-medium transition',
+                                        data.message_privacy === option.value
+                                            ? 'bg-primary text-primary-foreground'
+                                            : 'text-white/55 hover:text-white',
                                     )}
-                                </span>
-                            </span>
-                            <input
-                                type="checkbox"
-                                checked={data.is_private}
-                                onChange={(e) =>
-                                    setData('is_private', e.target.checked)
-                                }
-                                className="peer sr-only"
-                            />
-                            <span className="relative mt-2 h-6 w-11 shrink-0 rounded-full bg-white/10 transition peer-checked:bg-gradient-brand after:absolute after:top-0.5 after:left-0.5 after:size-5 after:rounded-full after:bg-white after:shadow after:transition peer-checked:after:translate-x-5" />
-                        </label>
-
-                        <label className="flex cursor-pointer items-start gap-4 rounded-2xl border border-white/[0.07] bg-white/[0.02] p-4 transition hover:border-white/15">
-                            <span className="mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-xl bg-white/[0.05]">
-                                <Mail className="size-[18px] text-gc-violet-300" />
-                            </span>
-                            <span className="flex-1">
-                                <span className="block text-sm font-semibold text-white">
-                                    {tr('Листи про активність')}
-                                </span>
-                                <span className="mt-0.5 block text-xs leading-relaxed text-white/45">
-                                    {tr(
-                                        'Друзі, коментарі, спільноти й сім’ї — на пошту. Службові листи (підтвердження, пароль) приходять завжди.',
-                                    )}
-                                </span>
-                            </span>
-                            <input
-                                type="checkbox"
-                                checked={data.email_social}
-                                onChange={(e) =>
-                                    setData('email_social', e.target.checked)
-                                }
-                                className="peer sr-only"
-                            />
-                            <span className="relative mt-2 h-6 w-11 shrink-0 rounded-full bg-white/10 transition peer-checked:bg-gradient-brand after:absolute after:top-0.5 after:left-0.5 after:size-5 after:rounded-full after:bg-white after:shadow after:transition peer-checked:after:translate-x-5" />
-                        </label>
-
-                        <div className="flex flex-wrap items-center gap-4 rounded-2xl border border-white/[0.07] bg-white/[0.02] p-4">
-                            <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-white/[0.05]">
-                                <MessageCircle className="size-[18px] text-gc-violet-300" />
-                            </span>
-                            <span className="min-w-[160px] flex-1">
-                                <span className="block text-sm font-semibold text-white">
-                                    {tr('Хто може писати мені')}
-                                </span>
-                                <span className="mt-0.5 block text-xs text-white/45">
-                                    {tr(
-                                        'Особисті повідомлення від інших учасників',
-                                    )}
-                                </span>
-                            </span>
-                            <div className="glass flex rounded-xl p-1 text-sm">
-                                {[
-                                    { value: 'everyone', label: tr('Усі') },
-                                    {
-                                        value: 'friends',
-                                        label: tr('Лише друзі'),
-                                    },
-                                ].map((option) => (
-                                    <button
-                                        key={option.value}
-                                        type="button"
-                                        onClick={() =>
-                                            setData(
-                                                'message_privacy',
-                                                option.value,
-                                            )
-                                        }
-                                        className={cn(
-                                            'rounded-lg px-3 py-1.5 font-medium transition',
-                                            data.message_privacy ===
-                                                option.value
-                                                ? 'bg-gradient-brand text-white'
-                                                : 'text-white/55 hover:text-white',
-                                        )}
-                                    >
-                                        {option.label}
-                                    </button>
-                                ))}
-                            </div>
+                                >
+                                    {option.label}
+                                </button>
+                            ))}
                         </div>
-                    </div>
+                    </SettingsRow>
                 </SettingsCard>
 
                 <div
                     className={cn(
-                        'glass-strong sticky z-10 flex items-center justify-end gap-3 rounded-2xl p-3',
+                        'glass-strong sticky z-10 flex items-center justify-end gap-3 rounded-xl p-3',
                         floatingAboveNav(playing),
                     )}
                 >
@@ -457,6 +433,12 @@ export default function Profile({
                     </Button>
                 </div>
             </form>
+
+            <div className="mt-7">
+                <SettingsCard list title={tr('Приватність')}>
+                    <ListeningSwitch />
+                </SettingsCard>
+            </div>
 
             {playingOn && <PlayingSettingsCard />}
 

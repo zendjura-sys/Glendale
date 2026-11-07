@@ -9,10 +9,14 @@ import 'people.dart';
 import 'posts.dart';
 import 'shell.dart';
 import 'state.dart';
+import 'feed_pulse.dart';
+import 'status.dart';
 import 'stories.dart';
 import 'theme.dart';
 import 'widgets.dart';
+import 'wrapped.dart';
 import 'i18n.dart';
+import 'skeletons.dart';
 
 /// Сторінки записів з підвантаженням: стрічка, стіна профілю, спільнота.
 class PostPager {
@@ -92,9 +96,15 @@ class _FeedScreenState extends State<FeedScreen> {
   }
 
   final stories = GlobalKey<StoriesStripState>();
+  final pulse = GlobalKey<FeedPulseState>();
+  final extras = FeedExtras();
 
   Future<void> _reload() async {
     unawaited(stories.currentState?.reload());
+    unawaited(pulse.currentState?.reload());
+    unawaited(extras.load(AppScope.read(context).session.api).then((_) {
+      if (mounted) setState(() {});
+    }));
     try {
       await pager.reset();
       error = null;
@@ -115,30 +125,53 @@ class _FeedScreenState extends State<FeedScreen> {
   Widget build(BuildContext context) {
     final online = maps(pager.first['online_friends']);
     final suggestions = maps(pager.first['suggestions']);
+    // Віджети головної — ті самі, що людина обрала на сайті (за замовчуванням усі).
+    final widgets = (AppScope.of(context).session.me?['home_widgets'] is List) ? {for (final w in AppScope.of(context).session.me!['home_widgets'] as List) '$w'} : null;
+    bool shows(String key) => widgets == null || widgets.contains(key);
     final tomorrow = maps(pager.first['tomorrow']);
     final languages = (pager.first['languages'] is List ? pager.first['languages'] as List : const []).map((l) => '$l').toList();
     return ScreenScroll(
       onRefresh: _reload,
       children: [
+        const IncidentBanner(),
         StoriesStrip(key: stories),
+        FeedPulse(key: pulse),
+        if (AppScope.of(context).session.wrappedYear case final year?) ...[WrappedBanner(year: year), const SizedBox(height: 12)],
         if (tomorrow.isNotEmpty) ...[_TomorrowCard(events: tomorrow), const SizedBox(height: 12)],
         Composer(onPosted: _reload),
         SizedBox(height: 12),
-        Segmented(
-          options: [SegmentOption('friends', tr('Друзі'), icon: LucideIcons.usersRound), SegmentOption('discover', tr('Рекомендації'), icon: LucideIcons.flame)],
-          selected: tab,
-          onSelect: (value) {
-            setState(() {
-              tab = value;
-              ready = false;
-            });
-            _reload();
-          },
-        ),
+        // Вкладки-пігулки, як на сайті: активна — суцільна небесна.
+        Row(children: [
+          for (final (key, label, icon) in [('friends', tr('Друзі'), LucideIcons.usersRound), ('discover', tr('Рекомендації'), LucideIcons.flame)]) ...[
+            Expanded(
+              child: GestureDetector(
+                onTap: () {
+                  if (tab == key) return;
+                  setState(() {
+                    tab = key;
+                    ready = false;
+                  });
+                  _reload();
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  height: 42,
+                  decoration: BoxDecoration(color: tab == key ? const Color(0xFF0EA5E9) : card, borderRadius: BorderRadius.circular(14)),
+                  child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                    Icon(icon, size: 16, color: tab == key ? Colors.white : soft),
+                    const SizedBox(width: 7),
+                    Flexible(child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14, color: tab == key ? Colors.white : soft, weight: FontWeight.w700))),
+                  ]),
+                ),
+              ),
+            ),
+            if (key == 'friends') const SizedBox(width: 8),
+          ],
+        ]),
         if (languages.isNotEmpty) ...[
           const SizedBox(height: 10),
           Row(children: [
-            const Icon(LucideIcons.languages, size: 16, color: muted),
+            Icon(LucideIcons.languages, size: 16, color: muted),
             const SizedBox(width: 8),
             Text(tr('Мова записів'), style: body(12.5, color: muted)),
             const SizedBox(width: 10),
@@ -159,7 +192,7 @@ class _FeedScreenState extends State<FeedScreen> {
           ]),
         ],
         const SizedBox(height: 12),
-        if (online.isNotEmpty) ...[
+        if (online.isNotEmpty && shows('online')) ...[
           Glass(
             padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
             child: Column(
@@ -182,7 +215,7 @@ class _FeedScreenState extends State<FeedScreen> {
           const SizedBox(height: 12),
         ],
         if (!ready)
-          const Padding(padding: EdgeInsets.all(40), child: Center(child: CircularProgressIndicator(strokeWidth: 2.4)))
+          const FeedSkeleton()
         else if (error != null)
           EmptyState(icon: LucideIcons.wifiOff, title: tr('Не вдалося завантажити'), text: '$error', action: tr('Спробувати знову'), onAction: _reload)
         else if (pager.posts.isEmpty)
@@ -195,10 +228,13 @@ class _FeedScreenState extends State<FeedScreen> {
             onAction: () => context.push('/people'),
           )
         else ...[
-          for (final post in pager.posts) PostCard(key: ValueKey('post-${post['id']}'), post: post, onDeleted: () => pager.posts.remove(post)),
+          for (final (i, post) in pager.posts.indexed) ...[
+            PostCard(key: ValueKey('post-${post['id']}'), post: post, onDeleted: () => pager.posts.remove(post)),
+            FeedInsert(index: i, extras: extras),
+          ],
           LoadMore(more: pager.more, onMore: _more),
         ],
-        if (suggestions.isNotEmpty && ready) ...[
+        if (suggestions.isNotEmpty && ready && shows('suggestions')) ...[
           const SizedBox(height: 4),
           Glass(
             padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
@@ -289,6 +325,7 @@ class _SearchScreenState extends State<SearchScreen> {
   late final query = TextEditingController(text: widget.initial);
   List<Map<String, dynamic>> users = [];
   List<Map<String, dynamic>> communities = [];
+  List<Map<String, dynamic>> hits = [];
   bool loading = false;
   Timer? debounce;
 
@@ -311,6 +348,7 @@ class _SearchScreenState extends State<SearchScreen> {
       setState(() {
         users = [];
         communities = [];
+        hits = [];
       });
       return;
     }
@@ -321,11 +359,14 @@ class _SearchScreenState extends State<SearchScreen> {
       final results = await Future.wait([
         api.get('/api/v1/search?q=$encoded'),
         api.get('/api/v1/communities?tab=all&q=$encoded').catchError((_) => <String, dynamic>{}),
+        api.get(Api.site('/search/quick?q=$encoded')).catchError((_) => <String, dynamic>{}),
       ]);
       if (!mounted || query.text.trim() != q) return;
       setState(() {
         users = maps(results[0]['users']);
         communities = Listing.parse(results[1]['communities']).items.take(6).toList();
+        // Кіно, музика, ігри, сервери, клани, сім'ї — з того самого пошуку, що й на сайті.
+        hits = maps(results[2]['hits']).where((h) => h['kind'] != 'user' && h['kind'] != 'community').toList();
       });
     } catch (e) {
       if (mounted) toast(context, e);
@@ -346,7 +387,7 @@ class _SearchScreenState extends State<SearchScreen> {
             Expanded(
               child: GcField(
                 controller: query,
-                label: tr('Пошук людей і спільнот'),
+                label: tr('Пошук: люди, кіно, музика, ігри…'),
                 icon: LucideIcons.search,
                 autofocus: widget.initial.isEmpty,
                 dense: true,
@@ -362,10 +403,10 @@ class _SearchScreenState extends State<SearchScreen> {
         ),
         const SizedBox(height: 14),
         if (loading && users.isEmpty && communities.isEmpty)
-          const Padding(padding: EdgeInsets.all(30), child: Center(child: CircularProgressIndicator(strokeWidth: 2)))
+          const ListSkeleton(rows: 5)
         else if (q.length < 2)
           QuietEmpty(icon: LucideIcons.search, text: tr('Введіть щонайменше 2 символи'))
-        else if (users.isEmpty && communities.isEmpty)
+        else if (users.isEmpty && communities.isEmpty && hits.isEmpty)
           QuietEmpty(icon: LucideIcons.userRoundSearch, text: tr('За запитом «{q}» нічого не знайдено', {'q': q}))
         else ...[
           if (users.isNotEmpty)
@@ -401,6 +442,53 @@ class _SearchScreenState extends State<SearchScreen> {
               ),
             ),
           ],
+          if (hits.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Glass(
+              padding: const EdgeInsets.fromLTRB(12, 14, 12, 6),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(padding: EdgeInsets.only(left: 4), child: CardTitle(tr('На сайті'), icon: LucideIcons.layoutGrid)),
+                  const SizedBox(height: 4),
+                  for (final hit in hits)
+                    ListTile(
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+                      leading: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(color: primary.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(12)),
+                        child: Icon(
+                          switch ('${hit['kind']}') {
+                            'movie' => LucideIcons.clapperboard,
+                            'track' => LucideIcons.music,
+                            'game' => LucideIcons.gamepad2,
+                            'server' => LucideIcons.server,
+                            'clan' => LucideIcons.swords,
+                            'family' => LucideIcons.crown,
+                            _ => LucideIcons.search,
+                          },
+                          size: 18,
+                          color: primary,
+                        ),
+                      ),
+                      title: Text(text(hit['title']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(15, weight: FontWeight.w600)),
+                      subtitle: Text(tr(text(hit['hint']) ?? ''), style: body(12.5, color: muted)),
+                      onTap: () => context.push(appPathFor(text(hit['href']))),
+                    ),
+                ],
+              ),
+            ),
+          ],
+          const SizedBox(height: 12),
+          // Той самий запит — одразу в розділах.
+          Wrap(spacing: 8, runSpacing: 8, children: [
+            for (final (icon, label, path) in [
+              (LucideIcons.clapperboard, tr('«{q}» у кіно', {'q': q}), '/cinema?q='),
+              (LucideIcons.music, tr('«{q}» у музиці', {'q': q}), '/music/search?q='),
+            ])
+              GestureDetector(onTap: () => context.push('$path${Uri.encodeQueryComponent(q)}'), child: Pill(label: label, icon: icon, color: primary)),
+          ]),
           const SizedBox(height: 12),
           GhostButton(label: tr('Розширений пошук людей'), icon: LucideIcons.slidersHorizontal, onPressed: () => context.push('/people?q=${Uri.encodeQueryComponent(q)}')),
         ],
@@ -434,7 +522,7 @@ class _TomorrowCard extends StatelessWidget {
                   height: 44,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(color: primary.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(12)),
-                  child: Text(clock(e['starts_at']), style: body(13.5, color: const Color(0xFFB4BFFF), weight: FontWeight.w700)),
+                  child: Text(clock(e['starts_at']), style: body(13.5, color: const Color(0xFF9DD8FF), weight: FontWeight.w700)),
                 ),
                 const SizedBox(width: 12),
                 Expanded(

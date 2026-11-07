@@ -31,7 +31,7 @@
     <li>game servers you authorised via "Sign in with {{ $legal['name'] }}" — within the permissions you granted;</li>
     <li>public authorities — in cases and in the manner required by law.</li>
 </ul>
-<p>Embedded third-party players and media (Kodik, Videoseed, FlixCDN, YouTube, Twitch, etc.) load from their servers and may process your IP address and set cookies under their own rules.</p>
+<p>Embedded third-party players and media (partner video players, YouTube, Twitch, etc.) load from their servers and may process your IP address and set cookies under their own rules.</p>
 
 <h2>4. Cross-border transfers</h2>
 <p>Some providers process data outside Ukraine. We transfer data only to countries ensuring adequate protection or with safeguards required by law (including standard contractual clauses).</p>

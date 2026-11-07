@@ -16,6 +16,10 @@ const REASONS = () => [
     { value: 'fake', label: tr('Фейкова сторінка') },
     { value: 'scam', label: tr('Шахрайство') },
     { value: 'cheat', label: tr('Читерство') },
+    {
+        value: 'child_safety',
+        label: tr('Загроза дитині, сексуальна експлуатація'),
+    },
     { value: 'other', label: tr('Інше') },
 ];
 
@@ -43,7 +47,7 @@ export function ReportPersonButton({
                 {tr('Поскаржитися')}
             </button>
             <Dialog open={open} onOpenChange={setOpen}>
-                <DialogContent className="glass-strong rounded-3xl border-white/10 p-6 text-white sm:max-w-md">
+                <DialogContent className="glass-strong rounded-dialog border-white/10 p-6 text-white sm:max-w-md">
                     <DialogTitle className="font-display text-lg">
                         {tr('Скарга на {name}', { name })}
                     </DialogTitle>

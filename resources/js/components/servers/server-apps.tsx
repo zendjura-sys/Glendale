@@ -180,7 +180,7 @@ export function ServerApps({
     const form = useForm({ name: '', redirect_uris: '' });
 
     return (
-        <section className="glass space-y-4 rounded-3xl p-5">
+        <section className="glass space-y-4 rounded-2xl p-5">
             <div className="flex flex-wrap items-center justify-between gap-2">
                 <h2 className="flex items-center gap-2 font-display text-lg font-semibold text-white">
                     <LogIn className="size-5 text-gc-lilac-300" />
@@ -257,7 +257,7 @@ export function VerifiedPlayers({ verified }: { verified: VerifiedInfo }) {
     return (
         <div className="flex flex-wrap items-center gap-2 text-sm">
             {verified.me && (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-400/10 px-3 py-1 text-emerald-200">
+                <span className="inline-flex items-center gap-1.5 rounded-chip bg-emerald-400/10 px-3 py-1 text-emerald-200">
                     <BadgeCheck className="size-4" />
                     {verified.me.nickname
                         ? tr('Ви підтверджений гравець · {nick}', {
@@ -266,7 +266,7 @@ export function VerifiedPlayers({ verified }: { verified: VerifiedInfo }) {
                         : tr('Ви підтверджений гравець')}
                 </span>
             )}
-            <span className="rounded-full bg-white/[0.05] px-3 py-1 text-white/60">
+            <span className="rounded-chip bg-white/[0.05] px-3 py-1 text-white/60">
                 {tr('Підтверджених гравців: {count}', {
                     count: verified.players,
                 })}

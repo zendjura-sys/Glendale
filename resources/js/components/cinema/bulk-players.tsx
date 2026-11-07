@@ -7,6 +7,7 @@ import {
     DialogDescription,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { playerName } from '@/components/cinema/player-names';
 import { selectClass } from '@/components/gc/admin';
 import { tr } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
@@ -44,14 +45,8 @@ export type BulkData = {
     running: boolean;
 };
 
-const PROVIDER_NAMES: Record<string, string> = {
-    kodik: 'Kodik',
-    flixcdn: 'FlixCDN',
-    videoseed: 'Videoseed',
-};
-
 /**
- * Масова проставка плеєрів на всі тайтли. Перед запуском — питання, чи замінювати наявні плеєри:
+ * Масове призначення плеєрів на всі тайтли. Перед запуском — питання, чи замінювати наявні плеєри:
  * «Так» — плеєри оновлюються; «Ні» — лише додаються нові озвучки. На тайтлах позначок немає —
  * що й де змінено, видно у звіті.
  */
@@ -67,7 +62,7 @@ export function BulkPlayersPanel({
     const state = data.state;
     const running = data.running;
 
-    // Поки йде проставка — оновлюємо стан кожні 5 секунд.
+    // Поки йде призначення плеєрів — оновлюємо стан кожні 5 секунд.
     useEffect(() => {
         if (!running) return;
         const timer = window.setInterval(
@@ -99,16 +94,16 @@ export function BulkPlayersPanel({
             : 0;
 
     return (
-        <section className="glass mb-5 rounded-3xl p-5 sm:p-6">
+        <section className="glass mb-5 rounded-2xl p-5 sm:p-6">
             <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0">
                     <h2 className="flex items-center gap-2 font-display text-lg font-semibold text-white">
                         <Layers className="size-5 text-gc-sky" />
-                        {tr('Проставка плеєрів')}
+                        {tr('Призначення плеєрів')}
                     </h2>
                     <p className="mt-1 max-w-xl text-sm text-white/50">
                         {tr(
-                            'Шукає плеєри Kodik, Videoseed і FlixCDN для всіх фільмів, серіалів, аніме й мультфільмів. Нові озвучки додаються до тайтлу, наявні плеєри можна замінити. Що саме змінено — у звіті нижче.',
+                            'Шукає вбудовані плеєри для всіх фільмів, серіалів, аніме й мультфільмів. Нові озвучки додаються до тайтлу, наявні плеєри можна замінити. Що саме змінено — у звіті нижче.',
                         )}
                     </p>
                 </div>
@@ -137,7 +132,7 @@ export function BulkPlayersPanel({
                     </div>
                     <div className="h-2 overflow-hidden rounded-full bg-white/[0.06]">
                         <div
-                            className="h-full rounded-full bg-[var(--btn-primary,#6366f1)] transition-[width] duration-500"
+                            className="h-full rounded-full bg-primary transition-[width] duration-500"
                             style={{ width: `${percent}%` }}
                         />
                     </div>
@@ -175,8 +170,8 @@ export function BulkPlayersPanel({
                 <div className="mt-4 rounded-2xl border border-white/[0.06] p-3">
                     <p className="text-xs font-semibold text-white/60">
                         {state.status === 'cancelled'
-                            ? tr('Останню проставку зупинено')
-                            : tr('Остання проставка')}
+                            ? tr('Останнє призначення зупинено')
+                            : tr('Останнє призначення')}
                         {' · '}
                         {state.replace
                             ? tr('із заміною')
@@ -192,7 +187,7 @@ export function BulkPlayersPanel({
             )}
 
             <Dialog open={asking} onOpenChange={setAsking}>
-                <DialogContent className="glass-strong gap-0 rounded-3xl border-white/10 p-6 text-white sm:max-w-md">
+                <DialogContent className="glass-strong gap-0 rounded-dialog border-white/10 p-6 text-white sm:max-w-md">
                     <DialogTitle className="font-display text-xl">
                         {tr('Замінювати наявні плеєри?')}
                     </DialogTitle>
@@ -287,8 +282,7 @@ function Report({ rows }: { rows: BulkReportRow[] }) {
                                 ([provider, change]) => (
                                     <span key={provider}>
                                         <b className="font-semibold text-white/65">
-                                            {PROVIDER_NAMES[provider] ??
-                                                provider}
+                                            {playerName(provider)}
                                         </b>
                                         {change.added > 0 &&
                                             tr(' · додано {n}', {

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Story;
 use App\Models\User;
 use App\Services\Stories;
+use App\Support\Plugins\Plugins;
 use App\Support\Settings\SiteSettings;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -39,6 +40,9 @@ class StoryController extends Controller
             'caption' => ['nullable', 'string', 'max:200'],
             'privacy' => ['nullable', Rule::in(Story::PRIVACIES)],
             'duration' => ['nullable', 'integer', 'min:1', 'max:'.Story::MAX_VIDEO_SECONDS],
+            'poll_question' => ['nullable', 'string', 'max:80'],
+            'poll_options' => ['nullable', 'array', 'min:2', 'max:4', 'required_with:poll_question'],
+            'poll_options.*' => ['required', 'string', 'max:40'],
         ], ['media.mimetypes' => 'Додайте фото (JPG, PNG, WebP, GIF) або відео (MP4, WebM, MOV).']);
 
         $file = $request->file('media');
@@ -47,7 +51,11 @@ class StoryController extends Controller
             return response()->json(['message' => 'Фото завелике.', 'errors' => ['media' => ['Фото завелике.']]], 422);
         }
 
-        $story = $this->stories->create($user, $file, $data['caption'] ?? null, $data['privacy'] ?? Story::PRIVACY_FRIENDS, isset($data['duration']) ? (int) $data['duration'] : null);
+        $poll = null;
+        if (filled($data['poll_question'] ?? null) && app(Plugins::class)->on('story_polls')) {
+            $poll = ['question' => trim((string) $data['poll_question']), 'options' => array_values(array_map(fn ($o) => trim((string) $o), (array) $data['poll_options']))];
+        }
+        $story = $this->stories->create($user, $file, $data['caption'] ?? null, $data['privacy'] ?? Story::PRIVACY_FRIENDS, isset($data['duration']) ? (int) $data['duration'] : null, $poll);
 
         return response()->json(['story' => $this->stories->present($story, $user, true)], 201);
     }
@@ -58,6 +66,25 @@ class StoryController extends Controller
         $this->stories->view($story, $user);
 
         return response()->json(['ok' => true]);
+    }
+
+    public function vote(Request $request, Story $story): JsonResponse
+    {
+        $user = $this->visible($request, $story);
+        $options = is_array($story->poll) ? count($story->poll['options'] ?? []) : 0;
+        abort_if($options === 0 || $story->user_id === $user->id, 422, 'У цій історії немає опитування.');
+        $data = $request->validate(['option' => ['required', 'integer', 'min:0', 'max:'.($options - 1)]]);
+        $this->stories->vote($story, $user, (int) $data['option']);
+
+        return response()->json(['poll' => $this->stories->poll($story, $user)]);
+    }
+
+    /** Свіжі результати (автор і ті, хто вже проголосував, бачать їх наживо). */
+    public function poll(Request $request, Story $story): JsonResponse
+    {
+        $user = $this->visible($request, $story);
+
+        return response()->json(['poll' => $this->stories->poll($story, $user)]);
     }
 
     public function react(Request $request, Story $story): JsonResponse

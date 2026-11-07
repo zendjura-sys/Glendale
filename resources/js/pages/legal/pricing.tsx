@@ -8,7 +8,7 @@ import { PRODUCT_LABELS } from '@/lib/plus';
 
 type Product = {
     key: string;
-    kind: 'plus' | 'gift' | 'family' | 'promo' | 'phone';
+    kind: 'plus' | 'gift' | 'family' | 'promo' | 'phone' | 'balance';
     price: number;
     days: number;
     recurring: boolean;
@@ -71,6 +71,7 @@ const GROUPS = (): Record<Product['kind'], string> => ({
     gift: tr('Подарунок другу'),
     promo: tr('Просування сервера'),
     phone: tr('Внутрішні номери +777'),
+    balance: tr('Поповнення балансу GameCon (передоплата електронних послуг)'),
 });
 
 /**
@@ -91,7 +92,7 @@ export default function Pricing({
 
     return (
         <LegalShell title={labels.pricing} locale={locale} labels={labels}>
-            <section className="glass rounded-3xl p-5 sm:p-8">
+            <section className="glass rounded-2xl p-5 sm:p-8">
                 <h1 className="flex items-center gap-2.5 font-display text-2xl font-bold text-white sm:text-3xl">
                     <PlusBadge className="size-7 rounded-lg [&_svg]:size-5" />
                     {labels.pricing}
@@ -166,7 +167,7 @@ export default function Pricing({
                 </p>
                 <Link
                     href={user ? '/plus' : '/register'}
-                    className="mt-5 inline-flex h-11 items-center rounded-xl bg-[var(--btn-primary,#6366f1)] px-5 text-sm font-semibold text-white transition hover:opacity-90"
+                    className="mt-5 inline-flex h-11 items-center rounded-xl bg-primary px-5 text-sm font-semibold text-white transition hover:opacity-90"
                 >
                     {user ? tr('Оформити GameCon+') : tr('Зареєструватися')}
                 </Link>

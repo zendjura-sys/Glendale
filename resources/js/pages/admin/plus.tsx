@@ -94,7 +94,7 @@ const SOURCES = (): Record<string, string> => ({
 });
 
 const button =
-    'inline-flex h-10 items-center justify-center rounded-xl bg-[var(--btn-primary,#6366f1)] px-4 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-40';
+    'inline-flex h-10 items-center justify-center rounded-xl bg-primary px-4 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-40';
 
 export default function AdminPlus({
     stats,
@@ -160,7 +160,7 @@ export default function AdminPlus({
             <div className="mb-5 grid gap-5 lg:grid-cols-2">
                 <form
                     onSubmit={submitGrant}
-                    className="glass space-y-3 rounded-3xl p-5"
+                    className="glass space-y-3 rounded-2xl p-5"
                 >
                     <h2 className="font-display text-lg font-bold text-white">
                         {tr('Видати GameCon+')}
@@ -208,9 +208,9 @@ export default function AdminPlus({
                 <PromoForm products={products} />
             </div>
 
-            <section className="glass mb-5 rounded-3xl p-5">
+            <section className="glass mb-5 rounded-2xl p-5">
                 <h2 className="font-display text-lg font-bold text-white">
-                    {tr('Діючі періоди')}
+                    {tr('Чинні періоди')}
                 </h2>
                 {grants.length === 0 ? (
                     <p className="mt-3 text-sm text-white/40">
@@ -287,7 +287,7 @@ export default function AdminPlus({
             </section>
 
             <div className="grid gap-5 lg:grid-cols-2">
-                <section className="glass rounded-3xl p-5">
+                <section className="glass rounded-2xl p-5">
                     <h2 className="font-display text-lg font-bold text-white">
                         {tr('Промокоди')}
                     </h2>
@@ -358,7 +358,7 @@ export default function AdminPlus({
                     </ul>
                 </section>
 
-                <section className="glass rounded-3xl p-5">
+                <section className="glass rounded-2xl p-5">
                     <h2 className="font-display text-lg font-bold text-white">
                         {tr('Останні оплати')}
                     </h2>
@@ -460,7 +460,7 @@ function PromoForm({ products }: { products: Props['products'] }) {
     };
 
     return (
-        <form onSubmit={submit} className="glass space-y-3 rounded-3xl p-5">
+        <form onSubmit={submit} className="glass space-y-3 rounded-2xl p-5">
             <h2 className="flex items-center gap-2 font-display text-lg font-bold text-white">
                 <Ticket className="size-5 text-indigo-300" />
                 {tr('Новий промокод')}

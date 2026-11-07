@@ -4,9 +4,11 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Community;
+use App\Services\Billing\CommunityPromotion;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -35,6 +37,8 @@ class CommunityController extends Controller
                 ...$c->toCard(),
                 'owner' => $c->owner?->toCard(),
                 'posts_count' => $c->posts_count,
+                'auto_join' => $c->auto_join,
+                'promoted' => (bool) $c->promoted_until?->isFuture(),
                 'created_at' => $c->created_at->toIso8601String(),
                 'deleted_at' => $c->deleted_at?->toIso8601String(),
             ]);
@@ -56,10 +60,29 @@ class CommunityController extends Controller
 
     public function update(Request $request, Community $community): RedirectResponse
     {
-        $data = $request->validate(['is_verified' => ['required', 'boolean']]);
-        $community->update($data);
+        $data = $request->validate([
+            'is_verified' => ['required_without:auto_join', 'boolean'],
+            'auto_join' => ['required_without:is_verified', 'boolean'],
+        ]);
+        $community->forceFill($data)->save();
+        // Журнал адмінки: хто змінив верифікацію чи автовступ.
+        Log::info('admin: community updated', ['community' => $community->id, 'changes' => $data, 'by' => $request->user()?->id]);
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => $data['is_verified'] ? 'Спільноту верифіковано.' : 'Верифікацію знято.']);
+        $message = array_key_exists('auto_join', $data)
+            ? ($data['auto_join'] ? 'Нові люди вступатимуть сюди автоматично.' : 'Автовступ вимкнено.')
+            : ($data['is_verified'] ? 'Спільноту верифіковано.' : 'Верифікацію знято.');
+        Inertia::flash('toast', ['type' => 'success', 'message' => $message]);
+
+        return back();
+    }
+
+    /** Просування від адміністрації (без оплати): N днів або зупинити. */
+    public function promote(Request $request, Community $community, CommunityPromotion $promotion): RedirectResponse
+    {
+        $data = $request->validate(['days' => ['required', 'integer', 'min:0', 'max:90']]);
+        $data['days'] > 0 ? $promotion->extend($community, (int) $data['days']) : $promotion->stop($community);
+        Log::info('admin: community promotion', ['community' => $community->id, 'days' => $data['days'], 'by' => $request->user()?->id]);
+        Inertia::flash('toast', ['type' => 'success', 'message' => $data['days'] > 0 ? 'Спільноту просуваємо.' : 'Просування зупинено.']);
 
         return back();
     }

@@ -9,6 +9,8 @@ use App\Models\MomentLike;
 use App\Models\User;
 use App\Services\FriendshipService;
 use App\Services\Moments\ClipLinks;
+use App\Services\Moments\ClipOfWeek;
+use App\Support\Plugins\Plugins;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -42,6 +44,7 @@ class MomentController extends Controller
         $items = $query->skip(($page - 1) * 24)->take(25)->get();
 
         return Inertia::render('moments/index', [
+            'clip_of_week' => $page === 1 && $game === null && app(Plugins::class)->on('clip_of_week') ? $this->clipOfWeek($user, $request) : null,
             'moments' => $this->cards($items->take(24), $user, $request),
             'more' => $items->count() > 24,
             'filters' => ['tab' => $tab, 'game' => $game?->slug, 'page' => $page],
@@ -127,6 +130,34 @@ class MomentController extends Controller
             ->where('created_at', '>=', now()->subDays(30))->orderByDesc('likes_count')->latest('id')->limit($limit)->get();
 
         return (new self)->cards($items, $viewer, $request);
+    }
+
+    /**
+     * «Кліп тижня»: переможець минулого тижня, лідер поточного й архів переможців.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function clipOfWeek(User $viewer, Request $request): ?array
+    {
+        $clips = app(ClipOfWeek::class);
+        $history = $clips->history(7);
+        $leader = $clips->leader(ClipOfWeek::weekStart());
+        $ids = array_values(array_filter([...array_column($history, 'moment_id'), $leader['moment_id'] ?? null]));
+        if ($ids === []) {
+            return null;
+        }
+        $cards = collect($this->cards(Moment::query()->with(['user', 'game', 'server'])->whereIn('id', $ids)->get(), $viewer, $request))->keyBy('id');
+        $past = array_values(array_filter(array_map(fn (array $h) => $h['moment_id'] !== null && $cards->has($h['moment_id'])
+            ? ['week' => $h['week'], 'likes' => $h['likes'], 'moment' => $cards->get($h['moment_id'])]
+            : null, $history)));
+        // Переможець — лише за минулий тиждень; старіші — в архіві.
+        $winner = ($past[0]['week'] ?? null) === ClipOfWeek::weekStart()->subWeek()->toDateString() ? array_shift($past) : null;
+
+        return [
+            'winner' => $winner,
+            'leader' => $leader && $cards->has($leader['moment_id']) ? ['likes' => $leader['likes'], 'moment' => $cards->get($leader['moment_id'])] : null,
+            'history' => $past,
+        ];
     }
 
     /**

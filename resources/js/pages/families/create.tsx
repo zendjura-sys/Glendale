@@ -38,7 +38,7 @@ export default function CreateFamily({ servers, server }: Props) {
                 >
                     <ArrowLeft className="size-4" /> {tr('До сімей')}
                 </Link>
-                <section className="glass rounded-3xl p-5 sm:p-7">
+                <section className="glass rounded-2xl p-5 sm:p-7">
                     <div className="flex items-center gap-3">
                         <span className="flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-300 to-rose-500">
                             <Crown className="size-6 text-white" />
@@ -120,7 +120,7 @@ export default function CreateFamily({ servers, server }: Props) {
                                 }}
                                 size="xl"
                             />
-                            <span className="absolute inset-0 flex items-center justify-center rounded-[26px] bg-black/50 opacity-0 transition group-hover:opacity-100">
+                            <span className="absolute inset-0 flex items-center justify-center rounded-2xl bg-black/50 opacity-0 transition group-hover:opacity-100">
                                 <ImagePlus className="size-6 text-white" />
                             </span>
                         </button>

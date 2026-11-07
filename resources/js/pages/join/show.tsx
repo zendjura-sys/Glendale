@@ -4,7 +4,7 @@ import { tr } from '@/lib/i18n';
 type Props = {
     token: string;
     invite: {
-        kind: 'clan' | 'family' | 'community';
+        kind: 'clan' | 'family' | 'community' | 'party' | 'voice';
         name: string;
         href: string;
         needs_identity: boolean;
@@ -13,23 +13,28 @@ type Props = {
 
 export default function JoinShow({ token, invite }: Props) {
     const form = useForm({ rp_nickname: '', static_id: '' });
-    const kind =
-        invite.kind === 'family'
-            ? tr('Сім’я')
-            : invite.kind === 'community'
-              ? tr('Спільнота')
-              : tr('Клан');
+    const kind = {
+        family: tr('Сім’я'),
+        community: tr('Спільнота'),
+        clan: tr('Клан'),
+        party: tr('Паті'),
+        voice: tr('Голосова кімната'),
+    }[invite.kind];
 
     return (
         <>
             <Head title={tr('Запрошення')} />
-            <section className="glass mx-auto max-w-md rounded-3xl p-6">
+            <section className="glass mx-auto max-w-md rounded-2xl p-6">
                 <p className="text-xs font-semibold text-white/40">{kind}</p>
                 <h1 className="mt-1 font-display text-2xl font-bold text-white">
                     {invite.name}
                 </h1>
                 <p className="mt-2 text-sm text-white/55">
-                    {tr('Вас запросили приєднатися.')}
+                    {invite.kind === 'voice'
+                        ? tr(
+                              'Вас кличуть у голосову кімнату — після кнопки одразу підключимо.',
+                          )
+                        : tr('Вас запросили приєднатися.')}
                 </p>
                 <form
                     className="mt-5 space-y-3"

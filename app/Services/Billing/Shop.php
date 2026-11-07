@@ -85,7 +85,7 @@ class Shop
         $kind = (string) (app(Catalog::class)->get($product)['kind'] ?? '');
 
         return match ($kind) {
-            'plus' => $payer,
+            'plus', 'balance' => $payer,
             'gift' => $this->recipient($payer, (string) ($input['username'] ?? '')),
             'family' => PlusController::ledFamilies($payer)->firstWhere('id', (int) ($input['family_id'] ?? 0))
                 ?? throw ValidationException::withMessages(['family_id' => 'Підключити GameCon+ для сім’ї може лише її лідер.']),
@@ -302,6 +302,13 @@ class Shop
             app(PhoneNumbers::class)->revoke($payment->id);
 
             $payer = $payment->user;
+            // Повернення поповнення: списати ще не використані одиниці цього поповнення.
+            if ($payer !== null && (app(Catalog::class)->get($payment->product)['kind'] ?? null) === 'balance') {
+                $left = min((int) $payer->fresh()?->balance, $payment->amount);
+                if ($left > 0) {
+                    $this->wallet->debit($payer, $left, 'refund', 'Повернення поповнення балансу', $payment->product, 'payment:'.$payment->id, $by);
+                }
+            }
             if ($payer !== null && $payment->provider === 'wallet' && str_starts_with($payment->provider_id, 'wt-')) {
                 $this->wallet->credit($payer, $payment->amount, 'refund', 'Повернення: '.self::label($payment->product), $payment->product, 'payment:'.$payment->id, $by);
             }
@@ -349,6 +356,14 @@ class Shop
     {
         $meta = (array) app(Catalog::class)->get($product);
         $days = (int) ($meta['days'] ?? 0);
+
+        // Поповнення балансу: зарахувати розрахункові одиниці (послугу надано в момент зарахування).
+        if (($meta['kind'] ?? null) === 'balance') {
+            $this->wallet->credit($payer, $payment->amount, 'topup', 'Поповнення балансу GameCon', $product, 'payment:'.$payment->id);
+            $payer->notify(new BillingNotice('wallet_topup', 'Баланс поповнено: +'.Wallet::units($payment->amount).'.'));
+
+            return;
+        }
 
         if ($target instanceof PhoneNumber) {
             app(PhoneNumbers::class)->activate($target, $payment->id);

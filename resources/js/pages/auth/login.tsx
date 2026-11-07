@@ -1,11 +1,16 @@
-import { Form, Head } from '@inertiajs/react';
+import { Form, Head, usePage } from '@inertiajs/react';
+import { Mail } from 'lucide-react';
+import {
+    AuthField,
+    AuthSubmit,
+    AuthSwitch,
+} from '@/components/auth/auth-field';
+import { AppLoginButton } from '@/components/auth/app-login';
 import { SocialLogin } from '@/components/auth/social-login';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
 import TextLink from '@/components/text-link';
-import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { store } from '@/routes/login';
@@ -18,6 +23,7 @@ type Props = {
 };
 
 export default function Login({ status, canResetPassword }: Props) {
+    const registrationOpen = usePage().props.site?.registration_open !== false;
     return (
         <>
             <Head title={tr('Вхід')} />
@@ -28,7 +34,8 @@ export default function Login({ status, canResetPassword }: Props) {
                 </div>
             )}
 
-            <div className="mb-6 empty:hidden">
+            <div className="mb-6 grid gap-2.5">
+                <AppLoginButton />
                 <SocialLogin mode="login" />
             </div>
 
@@ -39,12 +46,11 @@ export default function Login({ status, canResetPassword }: Props) {
             >
                 {({ processing, errors }) => (
                     <>
-                        <div className="grid gap-5">
-                            <div className="grid gap-2">
-                                <Label htmlFor="email">
-                                    {tr('Електронна пошта')}
-                                </Label>
-                                <Input
+                        <div className="grid gap-6">
+                            <div className="grid gap-1.5">
+                                <AuthField
+                                    icon={Mail}
+                                    label={tr('Електронна пошта')}
                                     id="email"
                                     type="email"
                                     name="email"
@@ -52,7 +58,6 @@ export default function Login({ status, canResetPassword }: Props) {
                                     autoFocus
                                     tabIndex={1}
                                     autoComplete="email"
-                                    placeholder="you@gamecon.online"
                                 />
                                 <InputError message={errors.email} />
                                 {errors.email && (
@@ -65,28 +70,17 @@ export default function Login({ status, canResetPassword }: Props) {
                                 )}
                             </div>
 
-                            <div className="grid gap-2">
-                                <div className="flex items-center">
-                                    <Label htmlFor="password">
-                                        {tr('Пароль')}
-                                    </Label>
-                                    {canResetPassword && (
-                                        <TextLink
-                                            href={request()}
-                                            className="ml-auto text-xs"
-                                            tabIndex={5}
-                                        >
-                                            {tr('Забули пароль?')}
-                                        </TextLink>
-                                    )}
-                                </div>
+                            <div className="grid gap-1.5">
+                                <Label htmlFor="password" className="sr-only">
+                                    {tr('Пароль')}
+                                </Label>
                                 <PasswordInput
                                     id="password"
                                     name="password"
                                     required
                                     tabIndex={2}
                                     autoComplete="current-password"
-                                    placeholder="••••••••"
+                                    placeholder={tr('Пароль')}
                                 />
                                 <InputError message={errors.password} />
                             </div>
@@ -99,23 +93,36 @@ export default function Login({ status, canResetPassword }: Props) {
                                 />
                                 <Label
                                     htmlFor="remember"
-                                    className="text-sm text-white/60"
+                                    className="text-sm text-white/70"
                                 >
                                     {tr("Запам'ятати мене")}
                                 </Label>
+                                {canResetPassword && (
+                                    <TextLink
+                                        href={request()}
+                                        className="ml-auto text-xs text-white/70"
+                                        tabIndex={5}
+                                    >
+                                        {tr('Забули пароль?')}
+                                    </TextLink>
+                                )}
                             </div>
 
-                            <Button
-                                type="submit"
-                                size="lg"
-                                className="mt-1 w-full"
-                                tabIndex={4}
-                                disabled={processing}
-                                data-test="login-button"
-                            >
-                                {processing && <Spinner />}
-                                {tr('Увійти')}
-                            </Button>
+                            <div className="mt-2 flex flex-wrap items-center gap-x-6 gap-y-3">
+                                <AuthSubmit
+                                    tabIndex={4}
+                                    disabled={processing}
+                                    data-test="login-button"
+                                >
+                                    {processing && <Spinner />}
+                                    {tr('Увійти')}
+                                </AuthSubmit>
+                                {registrationOpen && (
+                                    <AuthSwitch href="/register">
+                                        {tr('Немає акаунта? Зареєструватися')}
+                                    </AuthSwitch>
+                                )}
+                            </div>
                         </div>
                     </>
                 )}
@@ -125,6 +132,6 @@ export default function Login({ status, canResetPassword }: Props) {
 }
 
 Login.layout = {
-    title: tr('З поверненням!'),
+    title: tr('Вхід'),
     description: tr('Увійдіть, щоб продовжити спілкування з друзями'),
 };

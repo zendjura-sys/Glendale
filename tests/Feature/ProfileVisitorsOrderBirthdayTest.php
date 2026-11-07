@@ -35,7 +35,7 @@ class ProfileVisitorsOrderBirthdayTest extends TestCase
                 ->where('showVisitors', false)
                 ->where('visitors', [])
                 ->where('birthdayToday', true)
-                ->where('blockOrder.0', 'platforms'));
+                ->where('blockOrder.0', 'track'));
 
         $this->actingAs($owner)->put(route('appearance.update'), $this->appearance([
             'show_visitors' => true,
@@ -45,7 +45,7 @@ class ProfileVisitorsOrderBirthdayTest extends TestCase
         $owner->refresh();
         $this->assertTrue($owner->pref('show_visitors'));
         $this->assertSame(
-            ['photos', 'friends', 'platforms', 'steam', 'about', 'achievements', 'audio', 'characters'],
+            ['photos', 'friends', 'track', 'platforms', 'steam', 'steam_achievements', 'setup', 'stream_schedule', 'games', 'about', 'achievements', 'audio', 'characters'],
             $owner->pref('profile_blocks'),
         );
 

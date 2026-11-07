@@ -2,6 +2,9 @@
     xmlns:tools="http://schemas.android.com/tools">
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <!-- Камера — лише для сканування QR-коду входу на сайт (mobile_scanner). -->
+    <uses-permission android:name="android.permission.CAMERA"/>
+    <uses-feature android:name="android.hardware.camera" android:required="false"/>
     <!-- Музика у фоні: foreground-сервіс медіасесії (audio_service). -->
     <uses-permission android:name="android.permission.RECORD_AUDIO"/>
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
@@ -58,6 +61,21 @@
                 <category android:name="android.intent.category.BROWSABLE"/>
                 <data android:scheme="gamecon" android:host="spotify"/>
             </intent-filter>
+            <!-- Вхід на сайт через застосунок: gamecon://app-login/{id} (кнопка на сторінці входу сайту). -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="gamecon" android:host="app-login"/>
+            </intent-filter>
+            <!-- Те саме за посиланням https://gamecon.online/app-login/{id} (Android App Links): працює, коли на сайті
+                 опубліковано /.well-known/assetlinks.json з відбитком підпису (Адмінка → Інтеграції). -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="https" android:host="gamecon.online" android:pathPrefix="/app-login/"/>
+            </intent-filter>
             <!-- Натискання на push, надісланий із click_action (старі версії сервера). -->
             <intent-filter>
                 <action android:name="FLUTTER_NOTIFICATION_CLICK"/>
@@ -97,6 +115,18 @@
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/family_widget_info"/>
+        </receiver>
+        <!-- Віджет «Пульс GameCon» на головному екрані. -->
+        <receiver
+            android:name=".PulseWidgetProvider"
+            android:label="@string/pulse_widget_label"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/pulse_widget_info"/>
         </receiver>
         <!-- Кнопка «Оновити» й планове оновлення віджета: завантаження даних у фоні (home_widget). -->
         <receiver

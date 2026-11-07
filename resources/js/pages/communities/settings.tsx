@@ -1,6 +1,8 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import { toast } from 'sonner';
 import { ArrowLeft, Globe2, Lock, Megaphone, UsersRound } from 'lucide-react';
+import { AccessCard } from '@/components/communities/access-card';
+import type { CommunityAccess } from '@/components/communities/access-card';
 import { DonationJarForm } from '@/components/gc/donation-jar';
 import type { FormEvent } from 'react';
 import { selectClass } from '@/components/gc/admin';
@@ -18,6 +20,8 @@ import { cn } from '@/lib/utils';
 import type { CommunityDetails } from '@/types';
 import { BotsCard } from '@/components/bots/bots-card';
 import { tr } from '@/lib/i18n';
+import { usePlugin } from '@/lib/plugins';
+import { AiDescriptionButton } from '@/components/communities/ai-description-button';
 
 type Props = {
     community: CommunityDetails;
@@ -28,6 +32,7 @@ type Props = {
     slowModes: number[];
     stats?: CommunityStats;
     jar: { url: string | null; note: string | null };
+    access: CommunityAccess | null;
 };
 
 const field =
@@ -93,6 +98,7 @@ export default function CommunitySettings({
     slowModes,
     stats,
     jar,
+    access,
 }: Props) {
     const form = useForm({
         name: community.name,
@@ -107,6 +113,7 @@ export default function CommunitySettings({
         city: community.city ?? '',
     });
     const remove = useForm({ confirm: '' });
+    const aiDescriptionOn = usePlugin('ai_community_description');
     const { data, setData, errors } = form;
 
     const submit = (event: FormEvent) => {
@@ -191,9 +198,22 @@ export default function CommunitySettings({
                                 />
                                 <Error message={errors.status} />
                             </label>
-                            <label className="text-sm font-medium text-white/80">
-                                {tr('Опис')}
+                            <div className="text-sm font-medium text-white/80">
+                                <div className="flex items-center justify-between gap-2">
+                                    <label htmlFor="community-description">
+                                        {tr('Опис')}
+                                    </label>
+                                    {aiDescriptionOn && (
+                                        <AiDescriptionButton
+                                            slug={community.slug}
+                                            onResult={(text) =>
+                                                setData('description', text)
+                                            }
+                                        />
+                                    )}
+                                </div>
                                 <textarea
+                                    id="community-description"
                                     value={data.description}
                                     onChange={(e) =>
                                         setData('description', e.target.value)
@@ -206,7 +226,7 @@ export default function CommunitySettings({
                                     )}
                                 />
                                 <Error message={errors.description} />
-                            </label>
+                            </div>
                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                                 <label className="text-sm font-medium text-white/80">
                                     {tr('Тематика')}
@@ -383,6 +403,14 @@ export default function CommunitySettings({
                         </button>
                     </div>
                 </form>
+
+                {access && (
+                    <AccessCard
+                        slug={community.slug}
+                        access={access}
+                        closed={community.privacy === 'closed'}
+                    />
+                )}
 
                 <RulesForm
                     slug={community.slug}

@@ -59,7 +59,7 @@ class NetworkModes
 
         // Через normalize(): ті самі правила, що й для збережених режимів.
         return array_values(array_filter(array_map(fn (array $item) => $this->normalize($item), [
-            $mode('all', 'Все включено', 'Усе, що вміє GameCon: ігри, кіно, музика, спільноти й історії.', 'layers', $all, []),
+            $mode('all', 'Усе включено', 'Усе, що вміє GameCon: ігри, кіно, музика, спільноти й історії.', 'layers', $all, []),
             $mode('gamer', 'Геймер', 'Ігри, сервери, клани, пошук паті, завдання й моменти. Без історій і кіно — лише гра.', 'gamepad-2', $without(['cinema']), ['stories' => false]),
             $mode('classic', 'Класика', 'Звична соцмережа: друзі, повідомлення, музика, фото, спільноти й події. Без кіно, ігрових розділів і моментів.', 'sparkles', $without(['cinema', ...self::GAMING]), ['live' => false, 'playing' => false]),
             $mode('adventure', 'Пригоди', 'Музика, кіно, фото, спільноти й події. Без ігрових розділів.', 'compass', $without(self::GAMING), ['live' => false, 'playing' => false]),
@@ -105,6 +105,7 @@ class NetworkModes
     {
         $modes = array_values(array_filter(array_map(fn ($mode) => $this->normalize($mode), $config['modes'])));
         $this->settings->put([self::SETTING => ['default' => $config['default'], 'modes' => $modes, 'known_modules' => $this->moduleKeys()]]);
+        $this->modules->flush();
     }
 
     /**
@@ -215,7 +216,7 @@ class NetworkModes
             return null;
         }
         $modules = $this->moduleKeys();
-        $plugins = array_keys($this->plugins->flags());
+        $plugins = $this->plugins->keys();
         $features = is_array($mode['features'] ?? null) ? $mode['features'] : [];
         $icon = is_string($mode['icon'] ?? null) && in_array($mode['icon'], self::ICONS, true) ? $mode['icon'] : 'layers';
 

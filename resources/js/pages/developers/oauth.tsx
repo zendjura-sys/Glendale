@@ -21,7 +21,7 @@ function Step({
     children: React.ReactNode;
 }) {
     return (
-        <section className="glass min-w-0 space-y-3 rounded-3xl p-5 sm:p-6">
+        <section className="glass min-w-0 space-y-3 rounded-2xl p-5 sm:p-6">
             <h2 className="font-display text-lg font-bold text-white">
                 {title}
             </h2>

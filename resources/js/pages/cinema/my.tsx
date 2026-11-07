@@ -1,80 +1,91 @@
 import { Head, InfiniteScroll, Link } from '@inertiajs/react';
-import { ArrowLeft, Bookmark, Star } from 'lucide-react';
-import { MovieTile, movieGridClass } from '@/components/cinema/movie-tile';
+import { Bookmark } from 'lucide-react';
+import { CinemaNav } from '@/components/cinema/cinema-nav';
+import { CinemaShell } from '@/components/cinema/cinema-side';
+import type { CinemaSideData } from '@/components/cinema/cinema-side';
+import { ListCard } from '@/components/cinema/list-card';
+import type { MovieListCard } from '@/components/cinema/list-card';
+import { MovieList } from '@/components/cinema/movie-row';
+import type { MovieRowItem } from '@/components/cinema/movie-row';
+import { GridSkeleton } from '@/components/gc/skeletons';
+import { UnderlineTabs } from '@/components/gc/underline-tabs';
 import { EmptyState } from '@/components/gc/widget';
-import { cn } from '@/lib/utils';
-import type { MovieCard, MovieOption, MovieStatus, ScrollData } from '@/types';
 import { tr } from '@/lib/i18n';
-
-type MyMovie = MovieCard & {
-    my_status: MovieStatus | null;
-    my_rating: number | null;
-};
+import { usePlugin } from '@/lib/plugins';
+import type { MovieOption, MovieStatus, ScrollData } from '@/types';
 
 type Props = {
     status: string;
-    movies: ScrollData<MyMovie>;
+    movies: ScrollData<MovieRowItem>;
+    total: number;
+    lists: MovieListCard[] | null;
     statuses: MovieOption<MovieStatus>[];
     counts: Record<string, number>;
+    side?: CinemaSideData;
 };
 
-export default function CinemaMy({ status, movies, statuses, counts }: Props) {
+/**
+ * «Закладки» кінопорталу: колекції, історія переглядів, обране й списки за статусами
+ * (дивлюсь, у планах, переглянуто, відкладено, кинуто) — вкладками з підкресленням.
+ */
+export default function CinemaMy({
+    status,
+    movies,
+    total,
+    lists,
+    statuses,
+    counts,
+    side,
+}: Props) {
+    const listsOn = usePlugin('movie_lists');
     const tabs = [
-        { key: 'all', label: tr('Усі') },
-        ...statuses,
-        { key: 'rated', label: tr('Оцінені') },
-    ];
-    const labels = Object.fromEntries(statuses.map((s) => [s.key, s.label]));
+        ...(listsOn ? [{ key: 'lists', label: tr('Колекції') }] : []),
+        { key: 'history', label: tr('Історія') },
+        { key: 'saved', label: tr('Обране') },
+        ...statuses.map((s) => ({
+            key: s.key as string,
+            label: s.label,
+            count: counts[s.key] ?? 0,
+        })),
+        { key: 'all', label: tr('Усі'), count: counts.all ?? 0 },
+        { key: 'rated', label: tr('Оцінені'), count: counts.rated ?? 0 },
+    ].map((tab) => ({
+        ...tab,
+        href: tab.key === 'all' ? '/cinema/my' : `/cinema/my?status=${tab.key}`,
+    }));
 
     return (
         <>
-            <Head title={tr('Мої фільми')} />
-            <div className="space-y-5">
-                <section className="glass relative overflow-hidden rounded-3xl p-5 sm:p-7">
-                    <div className="pointer-events-none absolute -top-24 -right-16 size-80 rounded-full bg-gc-indigo/25 blur-3xl" />
-                    <Link
-                        href="/cinema"
-                        className="relative inline-flex items-center gap-1.5 text-xs font-medium text-white/55 hover:text-white"
-                    >
-                        <ArrowLeft className="size-3.5" /> {tr('Кіно')}
-                    </Link>
-                    <h1 className="relative mt-3 font-display text-3xl font-bold text-white">
-                        {tr('Мої')}{' '}
-                        <span className="text-gradient">{tr('списки')}</span>
-                    </h1>
-                    <p className="relative mt-1 text-sm text-white/50">
-                        {tr(
-                            'Що ви дивитеся, що вже подивилися і що чекає свого вечора.',
-                        )}
-                    </p>
-                </section>
+            <Head title={tr('Закладки')} />
+            <CinemaShell side={side}>
+                <CinemaNav active="my" />
+                <UnderlineTabs tabs={tabs} active={status} />
 
-                <div className="glass scrollbar-none flex gap-1 overflow-x-auto rounded-3xl p-2">
-                    {tabs.map((tab) => (
-                        <Link
-                            key={tab.key}
-                            href={
-                                tab.key === 'all'
-                                    ? '/cinema/my'
-                                    : `/cinema/my?status=${tab.key}`
-                            }
-                            preserveScroll
-                            className={cn(
-                                'flex shrink-0 items-center gap-2 rounded-xl px-3.5 py-2.5 text-sm font-semibold transition',
-                                status === tab.key
-                                    ? 'nav-active text-white'
-                                    : 'text-white/55 hover:bg-white/[0.05] hover:text-white',
+                {status === 'lists' ? (
+                    lists && lists.length > 0 ? (
+                        <div className="grid gap-4 sm:grid-cols-2">
+                            {lists.map((list) => (
+                                <ListCard key={list.id} list={list} />
+                            ))}
+                        </div>
+                    ) : (
+                        <EmptyState
+                            icon={Bookmark}
+                            title={tr('Колекцій поки немає')}
+                            text={tr(
+                                'Відкрийте фільм і додайте його в нову добірку.',
                             )}
-                        >
-                            {tab.label}
-                            <span className="rounded-full bg-white/10 px-1.5 text-[11px] text-white/70">
-                                {counts[tab.key] ?? 0}
-                            </span>
-                        </Link>
-                    ))}
-                </div>
-
-                {movies.data.length === 0 ? (
+                            action={
+                                <Link
+                                    href="/cinema/lists"
+                                    className="btn-glow rounded-xl px-5 py-2.5 text-sm font-semibold"
+                                >
+                                    {tr('Усі добірки')}
+                                </Link>
+                            }
+                        />
+                    )
+                ) : movies.data.length === 0 ? (
                     <EmptyState
                         icon={Bookmark}
                         title={tr('Тут поки порожньо')}
@@ -91,39 +102,25 @@ export default function CinemaMy({ status, movies, statuses, counts }: Props) {
                         }
                     />
                 ) : (
-                    <section className="glass rounded-3xl p-4 sm:p-5">
-                        <InfiniteScroll data="movies" preserveUrl>
-                            <div className={movieGridClass}>
-                                {movies.data.map((movie) => (
-                                    <MovieTile
-                                        key={movie.id}
-                                        movie={movie}
-                                        badge={
-                                            <div className="flex items-center justify-between gap-1">
-                                                {movie.my_status && (
-                                                    <span className="truncate rounded-md bg-black/70 px-1.5 py-0.5 text-xs font-semibold text-white backdrop-blur">
-                                                        {
-                                                            labels[
-                                                                movie.my_status
-                                                            ]
-                                                        }
-                                                    </span>
-                                                )}
-                                                {movie.my_rating && (
-                                                    <span className="ml-auto inline-flex items-center gap-0.5 rounded-md bg-gc-amber px-1.5 py-0.5 text-xs font-bold text-black">
-                                                        <Star className="size-2.5 fill-current" />
-                                                        {movie.my_rating}
-                                                    </span>
-                                                )}
-                                            </div>
-                                        }
-                                    />
-                                ))}
-                            </div>
+                    <section className="glass rounded-2xl p-4 sm:p-5">
+                        <p className="mb-4 text-sm text-white/50 tabular-nums">
+                            {tr('{n} всього', { n: total })}
+                        </p>
+                        <InfiniteScroll
+                            data="movies"
+                            loading={<GridSkeleton count={4} />}
+                            preserveUrl
+                        >
+                            <MovieList
+                                movies={movies.data}
+                                variant={
+                                    status === 'history' ? 'history' : 'default'
+                                }
+                            />
                         </InfiniteScroll>
                     </section>
                 )}
-            </div>
+            </CinemaShell>
         </>
     );
 }

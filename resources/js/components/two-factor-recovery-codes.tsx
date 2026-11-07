@@ -140,7 +140,7 @@ export default function TwoFactorRecoveryCodes({
                                                 (_, index) => (
                                                     <div
                                                         key={index}
-                                                        className="h-4 animate-pulse rounded bg-muted-foreground/20"
+                                                        className="skeleton h-4 rounded"
                                                         aria-hidden="true"
                                                     />
                                                 ),

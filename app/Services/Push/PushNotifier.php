@@ -3,6 +3,7 @@
 namespace App\Services\Push;
 
 use App\Jobs\SendPushNotification;
+use App\Models\AppLoginRequest;
 use App\Models\Community;
 use App\Models\Conversation;
 use App\Models\Family;
@@ -10,6 +11,7 @@ use App\Models\Message;
 use App\Models\PushDevice;
 use App\Models\User;
 use App\Models\WebPushSubscription;
+use App\Services\Auth\AccountSecurity;
 use App\Support\I18n\Locales;
 use App\Support\I18n\Translations;
 use Illuminate\Notifications\DatabaseNotification;
@@ -24,6 +26,9 @@ class PushNotifier
     public const CHANNEL_MESSAGES = 'messages';
 
     public const CHANNEL_ACTIVITY = 'activity';
+
+    /** Тривога й відбій в обраній області: окремий гучний канал. */
+    public const CHANNEL_ALERTS = 'air_alerts';
 
     /** Вхідні дзвінки: окремий канал із мелодією й показом поверх екрана. */
     public const CHANNEL_CALLS = 'calls';
@@ -60,7 +65,7 @@ class PushNotifier
                 'kind' => (string) ($data['kind'] ?? 'generic'),
                 'url' => (string) ($data['url'] ?? '/notifications'),
             ],
-            self::CHANNEL_ACTIVITY,
+            str_starts_with((string) ($data['kind'] ?? ''), 'air_alert') ? self::CHANNEL_ALERTS : self::CHANNEL_ACTIVITY,
         );
     }
 
@@ -113,6 +118,31 @@ class PushNotifier
                 dataOnly: true,
             );
         }
+    }
+
+    /**
+     * «Увійти через застосунок»: браузер просить вхід — лише в застосунок (не в браузери).
+     */
+    public function appLogin(User $user, AppLoginRequest $request): void
+    {
+        if (! $this->fcm->configured() || ! PushDevice::query()->where('user_id', $user->id)->exists()) {
+            return;
+        }
+
+        SendPushNotification::dispatch(
+            $user->id,
+            'Запит на вхід у GameCon',
+            // Видимий блок notification (не data-only): у фоні застосунок інакше push не покаже.
+            implode(' · ', array_filter([AccountSecurity::device($request->user_agent), $request->city ?? $request->country])).'. Підтвердіть, якщо це ви.',
+            [
+                'type' => 'app_login',
+                'id' => $request->id,
+                'url' => '/app-login/'.$request->id,
+            ],
+            self::CHANNEL_ACTIVITY,
+            'app-login-'.$request->id,
+            appOnly: true,
+        );
     }
 
     private function reachable(int $userId): bool

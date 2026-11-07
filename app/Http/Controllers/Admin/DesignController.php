@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\SiteTheme;
 use App\Services\Design\SiteThemes;
 use App\Services\ImageStorage;
+use App\Support\AuthImages;
 use App\Support\Backgrounds;
 use App\Support\Seasons;
 use App\Support\Settings\SiteSettings;
@@ -44,6 +45,7 @@ class DesignController extends Controller
             'seasonal' => app(Seasons::class)->setting(),
             'seasons' => Seasons::ALL,
             'background' => Backgrounds::image(),
+            'authImages' => AuthImages::urls(),
         ]);
     }
 
@@ -166,6 +168,45 @@ class DesignController extends Controller
         app(SiteSettings::class)->put([Backgrounds::SETTING => $stored]);
         Log::info('design: background removed', ['kind' => $kind, 'by' => $request->user()->id]);
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Картинку фону видалено.']);
+
+        return back();
+    }
+
+    /** Фони входу й реєстрації: сайт (комп'ютер/планшет, телефон) і застосунок (телефон, планшет). */
+    public function authImages(Request $request, ImageStorage $images): RedirectResponse
+    {
+        $rules = [];
+        foreach (array_keys(AuthImages::KINDS) as $kind) {
+            $rules[$kind] = ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:12288', 'dimensions:min_width=600,min_height=600'];
+        }
+        $request->validate($rules);
+        $stored = AuthImages::stored();
+        $changed = [];
+        foreach (AuthImages::KINDS as $kind => $size) {
+            $file = $request->file($kind);
+            if ($file !== null) {
+                $path = $images->store($file, 'auth', $size)['path'];
+                $images->delete($stored[$kind]);
+                $stored[$kind] = $path;
+                $changed[] = $kind;
+            }
+        }
+        AuthImages::save($stored);
+        Log::info('design: auth image updated', ['kinds' => $changed, 'by' => $request->user()->id]);
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Фон входу збережено.']);
+
+        return back();
+    }
+
+    public function deleteAuthImage(Request $request, ImageStorage $images, string $kind): RedirectResponse
+    {
+        $stored = AuthImages::stored();
+        abort_unless(array_key_exists($kind, $stored), 404);
+        $images->delete($stored[$kind]);
+        $stored[$kind] = null;
+        AuthImages::save($stored);
+        Log::info('design: auth image removed', ['kind' => $kind, 'by' => $request->user()->id]);
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Фон входу видалено.']);
 
         return back();
     }

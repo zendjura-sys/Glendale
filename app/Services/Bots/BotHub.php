@@ -13,6 +13,7 @@ use App\Models\DiscordRoleGrant;
 use App\Models\Family;
 use App\Models\FamilyEvent;
 use App\Models\FamilyMember;
+use App\Models\ListenParty;
 use App\Models\Post;
 use App\Models\User;
 use App\Services\Clans\ClanService;
@@ -231,6 +232,20 @@ class BotHub
         }
     }
 
+    /** У групі відкрили кімнату «Слухати разом» — оголошення в прив’язані чати. */
+    public function listenRoomStarted(string $type, int $id, ListenParty $party, User $host): void
+    {
+        $owner = rescue(fn () => $this->owner($type, $id), null, false);
+        if ($owner === null) {
+            return;
+        }
+        foreach ($this->links($owner) as $link) {
+            if ($link->post_music) {
+                $this->send($link, $this->cards->listenRoom($owner, $party, $host));
+            }
+        }
+    }
+
     /**
      * @return list<BotLink>
      */
@@ -263,6 +278,7 @@ class BotHub
             'mb' => ['card' => $this->cards->members($owner), 'toast' => null, 'personal' => true],
             'ps' => ['card' => $owner instanceof Community ? $this->cards->posts($owner) : null, 'toast' => null, 'personal' => true],
             'me' => ['card' => $this->cards->me($owner, $user, $platform), 'toast' => null, 'personal' => true],
+            'mu' => ['card' => $this->cards->music($owner), 'toast' => null, 'personal' => true],
             'e' => $this->showEvent($owner, (int) ($parts[3] ?? 0)),
             'r' => $this->rsvp($owner, (int) ($parts[3] ?? 0), ($parts[4] ?? '1') === '1', $user, $platform),
             default => ['card' => null, 'toast' => null, 'personal' => true],
@@ -443,7 +459,7 @@ class BotHub
         $tg = $this->link($owner, BotLink::TELEGRAM);
         $dc = $this->link($owner, BotLink::DISCORD);
         $members = $this->members($owner);
-        $flags = fn (?BotLink $l) => $l ? ['post_events' => $l->post_events, 'post_reminders' => $l->post_reminders, 'post_posts' => $l->post_posts] : null;
+        $flags = fn (?BotLink $l) => $l ? ['post_events' => $l->post_events, 'post_reminders' => $l->post_reminders, 'post_posts' => $l->post_posts, 'post_music' => $l->post_music] : null;
 
         return [
             'owner' => ['type' => self::type($owner), 'id' => $owner->id],

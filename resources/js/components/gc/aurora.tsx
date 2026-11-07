@@ -1,7 +1,8 @@
 import { cn } from '@/lib/utils';
 
 /**
- * Анімований фон: кольорові «плями» під розмиттям, сітка й шум.
+ * Анімований фон: кольорові «плями» під розмиттям, сітка й шум. Кольори плям — змінні
+ * --aurora-1…4 (стиль «GameCon» задає неоновий синій і крижаний варіанти).
  */
 export function Aurora({
     className,
@@ -14,7 +15,7 @@ export function Aurora({
         <div
             aria-hidden
             className={cn(
-                'noise pointer-events-none fixed inset-0 -z-10 overflow-hidden bg-void',
+                'noise gc-aurora pointer-events-none fixed inset-0 -z-10 overflow-hidden bg-background',
                 className,
             )}
         >
@@ -26,7 +27,7 @@ export function Aurora({
                 )}
                 style={{
                     background:
-                        'radial-gradient(circle at 30% 30%, #3b6dff 0%, transparent 60%)',
+                        'radial-gradient(circle at 30% 30%, var(--aurora-1, #3b6dff) 0%, transparent 60%)',
                 }}
             />
             <div
@@ -36,7 +37,7 @@ export function Aurora({
                 )}
                 style={{
                     background:
-                        'radial-gradient(circle at 60% 40%, #9b4dff 0%, transparent 60%)',
+                        'radial-gradient(circle at 60% 40%, var(--aurora-2, #9b4dff) 0%, transparent 60%)',
                 }}
             />
             <div
@@ -46,17 +47,17 @@ export function Aurora({
                 )}
                 style={{
                     background:
-                        'radial-gradient(circle at 50% 50%, #e04fd0 0%, transparent 60%)',
+                        'radial-gradient(circle at 50% 50%, var(--aurora-3, #e04fd0) 0%, transparent 60%)',
                 }}
             />
             <div
                 className="absolute top-[40%] left-[-10%] h-[40vmax] w-[40vmax] animate-aurora rounded-full opacity-[0.12] blur-[120px] [animation-delay:-4s]"
                 style={{
                     background:
-                        'radial-gradient(circle, #38e1ff 0%, transparent 60%)',
+                        'radial-gradient(circle, var(--aurora-4, #38e1ff) 0%, transparent 60%)',
                 }}
             />
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_40%,#05070f_100%)]" />
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_40%,var(--background)_100%)]" />
         </div>
     );
 }

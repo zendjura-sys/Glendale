@@ -61,6 +61,6 @@ export default function ConfirmPassword() {
 }
 
 ConfirmPassword.layout = {
-    title: tr('Підтвердіть пароль'),
-    description: tr('Це захищена дія. Підтвердіть пароль, щоб продовжити.'),
+    title: tr('Підтвердьте пароль'),
+    description: tr('Це захищена дія. Підтвердьте пароль, щоб продовжити.'),
 };

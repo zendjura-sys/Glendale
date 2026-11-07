@@ -10,7 +10,7 @@ export function AlbumCard({ album }: { album: PhotoAlbumCard }) {
     return (
         <Link
             href={`/albums/${album.id}`}
-            className="group relative block aspect-[4/3] overflow-hidden rounded-3xl bg-white/[0.04] ring-1 ring-white/[0.06] transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_50px_-18px_rgb(124_92_255/0.75)] hover:ring-gc-lilac-500/40"
+            className="group relative block aspect-[4/3] overflow-hidden rounded-2xl bg-white/[0.04] ring-1 ring-white/[0.06] transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_50px_-18px_rgb(124_92_255/0.75)] hover:ring-gc-lilac-500/40"
         >
             {album.cover_url ? (
                 <img

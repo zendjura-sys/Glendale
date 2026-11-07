@@ -5,17 +5,19 @@ namespace App\Services\I18n;
 use App\Models\Translation;
 use App\Support\I18n\Translations;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 /**
- * Автопереклад каталогу інтерфейсу на мову через DeepL: лише відсутні рядки
- * (або всі, крім виправлених вручну). Прогрес видно в Адмінці → Мови.
+ * Автопереклад каталогу інтерфейсу на мову через DeepL (коли його ліміт вичерпано — через
+ * LibreTranslate, див. Translator): лише відсутні рядки (або всі, крім виправлених вручну).
+ * Прогрес видно в Адмінці → Мови.
  */
 class CatalogTranslator
 {
-    /** Скільки ключів перекладаємо за один прохід (кожен прохід — кілька запитів до DeepL). */
+    /** Скільки ключів перекладаємо за один прохід (кожен прохід — кілька запитів до перекладача). */
     private const CHUNK = 200;
 
-    public function __construct(private readonly DeepL $deepl, private readonly Translations $translations) {}
+    public function __construct(private readonly Translator $translator, private readonly Translations $translations) {}
 
     /**
      * @return array{done: int, total: int, running: bool, error: string|null, finished_at: string|null}
@@ -53,13 +55,13 @@ class CatalogTranslator
      */
     public function run(string $locale, bool $all = false): array
     {
-        $target = $this->deepl->target($locale);
-        if (! $this->deepl->configured()) {
-            return $this->finish($locale, 0, 0, 'Додайте ключ DeepL в Адмінці → Інтеграції.');
+        if (! $this->translator->available()) {
+            return $this->finish($locale, 0, 0, 'Немає робочого перекладача. Додайте ключ DeepL чи Azure в Адмінці → Інтеграції або увімкніть перекладач в Адмінці → Мови.');
         }
-        if ($target === null) {
-            return $this->finish($locale, 0, 0, 'DeepL не перекладає цією мовою — заповніть переклади вручну.');
+        if (! $this->translator->supports($locale)) {
+            return $this->finish($locale, 0, 0, 'Перекладач не знає цієї мови — заповніть переклади вручну.');
         }
+        $engines = [];
 
         $existing = Translation::query()->where('locale', $locale)->get(['hash', 'is_manual'])->keyBy('hash');
         $todo = array_values(array_filter($this->translations->catalog(), function (string $key) use ($existing, $all) {
@@ -79,10 +81,14 @@ class CatalogTranslator
                     $texts[] = $part;
                 }
             }
-            $result = $this->deepl->interface($texts, $target);
-            if ($result === null) {
-                return $this->finish($locale, $done, $total, 'DeepL не відповів або вичерпано ліміт символів. Решту можна докласти пізніше.');
+            $translated = $this->translator->interface($texts, $locale);
+            if ($translated === null) {
+                Log::warning('i18n: translate failed', ['locale' => $locale, 'done' => $done, 'total' => $total]);
+
+                return $this->finish($locale, $done, $total, 'Переклад зупинився: '.$this->translator->lastError().'. Решту можна докласти пізніше.');
             }
+            $result = $translated['texts'];
+            $engines[$translated['engine']] = ($engines[$translated['engine']] ?? 0) + count($chunk);
             $i = 0;
             $now = now();
             $rows = [];
@@ -103,6 +109,9 @@ class CatalogTranslator
         $hashes = array_map(fn (string $k) => Translation::hashOf($k), $this->translations->catalog());
         Translation::query()->where('locale', $locale)->where('is_manual', false)->whereNotIn('hash', $hashes)->delete();
         $this->translations->touch($locale);
+        if ($engines !== []) {
+            Log::info('i18n: translated', ['locale' => $locale, 'engines' => $engines]);
+        }
 
         return $this->finish($locale, $done, $total, null);
     }

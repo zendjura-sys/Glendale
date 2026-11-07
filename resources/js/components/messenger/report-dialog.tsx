@@ -14,6 +14,7 @@ const REASONS = {
     spam: tr('Спам або реклама'),
     abuse: tr('Образи, мат, цькування'),
     scam: tr('Шахрайство'),
+    child_safety: tr('Загроза дитині, сексуальна експлуатація'),
     other: tr('Інше'),
 } as const;
 

@@ -1,4 +1,5 @@
 import { Link } from '@inertiajs/react';
+import { Group, Header, Placeholder } from '@vkontakte/vkui';
 import type { LucideIcon } from 'lucide-react';
 import type { PropsWithChildren, ReactNode } from 'react';
 import { cn } from '@/lib/utils';
@@ -12,6 +13,7 @@ type Props = PropsWithChildren<{
     className?: string;
 }>;
 
+/** Блок бічної колонки чи сторінки — Group з VKUI: заголовок Header (іконка, «Усі» праворуч) і вміст. */
 export function Widget({
     title,
     icon: Icon,
@@ -21,28 +23,39 @@ export function Widget({
     children,
 }: Props) {
     return (
-        <section className={cn('glass rounded-3xl p-4', className)}>
-            <header className="mb-3 flex items-center gap-2 px-1">
-                {Icon && (
-                    <Icon aria-hidden className="size-4 text-gc-lilac-400" />
-                )}
-                <h3 className="font-display text-[13px] font-semibold text-white/90">
-                    {title}
-                </h3>
-                <span className="ml-auto">
-                    {action ??
+        <Group
+            mode="card"
+            separator="hide"
+            className={cn('gc-vk-group', className)}
+            header={
+                <Header
+                    size="m"
+                    before={
+                        Icon && (
+                            <Icon
+                                aria-hidden
+                                className="size-4 text-[var(--vkui--color_icon_accent)]"
+                            />
+                        )
+                    }
+                    after={
+                        action ??
                         (href && (
                             <Link
                                 href={href}
-                                className="text-xs font-medium text-white/45 hover:text-white"
+                                className="text-[13px] text-[var(--vkui--color_text_accent)] hover:underline"
                             >
                                 {tr('Усі')}
                             </Link>
-                        ))}
-                </span>
-            </header>
-            {children}
-        </section>
+                        ))
+                    }
+                >
+                    {title}
+                </Header>
+            }
+        >
+            <div className="px-5 pb-5">{children}</div>
+        </Group>
     );
 }
 
@@ -62,6 +75,7 @@ export function WidgetSkeleton({ rows = 3 }: { rows?: number }) {
     );
 }
 
+/** Порожній стан — Placeholder з VKUI: іконка в акцентному колі, заголовок, пояснення й дія. */
 export function EmptyState({
     icon: Icon,
     title,
@@ -74,21 +88,18 @@ export function EmptyState({
     action?: ReactNode;
 }) {
     return (
-        <div className="glass flex flex-col items-center rounded-3xl px-6 py-14 text-center">
-            <span className="relative mb-5 flex size-16 items-center justify-center rounded-2xl bg-white/[0.04] ring-1 ring-white/10">
-                <span className="absolute inset-0 rounded-2xl bg-gradient-brand opacity-20 blur-xl" />
-                <Icon
-                    aria-hidden
-                    className="relative size-7 text-gc-lilac-300"
-                />
-            </span>
-            <h3 className="font-display text-lg font-semibold text-white">
-                {title}
-            </h3>
-            {text && (
-                <p className="mt-2 max-w-sm text-sm text-white/50">{text}</p>
-            )}
-            {action && <div className="mt-5">{action}</div>}
-        </div>
+        <Group mode="card" separator="hide" className="gc-vk-group">
+            <Placeholder
+                icon={
+                    <span className="flex size-16 items-center justify-center rounded-full bg-[var(--vkui--color_background_accent)]/10 text-[var(--vkui--color_icon_accent)]">
+                        <Icon aria-hidden className="size-8" />
+                    </span>
+                }
+                title={title}
+                action={action}
+            >
+                {text}
+            </Placeholder>
+        </Group>
     );
 }

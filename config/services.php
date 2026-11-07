@@ -79,6 +79,29 @@ return [
         'url' => env('DEEPL_URL'),
     ],
 
+    // Хмарний запасний перекладач після DeepL: Azure Translator (F0 — 2 млн символів на місяць).
+    'azure_translator' => [
+        'key' => env('AZURE_TRANSLATOR_KEY'),
+        'region' => env('AZURE_TRANSLATOR_REGION'),
+    ],
+
+    // Запасний перекладач, коли ліміт DeepL вичерпано: власний LibreTranslate на сервері
+    // (deploy/libretranslate.sh, INSTALL_LIBRETRANSLATE=1). Порожня адреса — вимкнено.
+    'libretranslate' => [
+        'url' => env('LIBRETRANSLATE_URL', 'http://127.0.0.1:5000'),
+        'key' => env('LIBRETRANSLATE_KEY'),
+    ],
+
+    // Перевірка орфографії текстів адміністрації: Hunspell (завжди) + LanguageTool (граматика, якщо вказано адресу).
+    'hunspell' => [
+        'path' => env('HUNSPELL_PATH', 'hunspell'),
+    ],
+    'languagetool' => [
+        'url' => env('LANGUAGETOOL_URL'),
+        'username' => env('LANGUAGETOOL_USERNAME'),
+        'key' => env('LANGUAGETOOL_KEY'),
+    ],
+
     'discord' => [
         'client_id' => env('DISCORD_CLIENT_ID'),
         'client_secret' => env('DISCORD_CLIENT_SECRET'),
@@ -160,6 +183,45 @@ return [
 
     'shikimori' => [
         'url' => env('SHIKIMORI_URL', 'https://shikimori.one'),
+    ],
+
+    // Звукові дані й перекодування треків (музика); не знайдено — завантаження без них.
+    'ffmpeg' => [
+        'ffmpeg' => env('FFMPEG_PATH', 'ffmpeg'),
+        'ffprobe' => env('FFPROBE_PATH', 'ffprobe'),
+    ],
+
+    // Метадані треків: відбиток Chromaprint (fpcalc) → AcoustID → MusicBrainz, обкладинки Cover Art Archive.
+    // MUSIC_METADATA=false вимикає всі зовнішні запити (у тестах — щоб не ходити в мережу).
+    'music_metadata' => [
+        'enabled' => (bool) env('MUSIC_METADATA', true),
+    ],
+
+    'chromaprint' => [
+        'fpcalc' => env('FPCALC_PATH', 'fpcalc'),
+    ],
+
+    'acoustid' => [
+        'key' => env('ACOUSTID_KEY'),
+        'url' => env('ACOUSTID_API_URL', 'https://api.acoustid.org/v2'),
+    ],
+
+    'musicbrainz' => [
+        'url' => env('MUSICBRAINZ_API_URL', 'https://musicbrainz.org/ws/2'),
+        // Правила MusicBrainz: не частіше одного запиту на секунду з однієї адреси.
+        'interval_ms' => (int) env('MUSICBRAINZ_INTERVAL_MS', 1100),
+    ],
+
+    'lastfm' => [
+        'key' => env('LASTFM_KEY'),
+        'url' => env('LASTFM_API_URL', 'https://ws.audioscrobbler.com/2.0/'),
+    ],
+
+    'discogs' => [
+        'token' => env('DISCOGS_TOKEN'),
+        'url' => env('DISCOGS_API_URL', 'https://api.discogs.com'),
+        // Discogs з токеном — до 60 запитів на хвилину.
+        'interval_ms' => (int) env('DISCOGS_INTERVAL_MS', 1000),
     ],
 
 ];

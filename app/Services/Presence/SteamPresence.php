@@ -118,7 +118,7 @@ class SteamPresence
     /**
      * Ігри з бібліотеки Steam, найдовше зіграні зверху. Порожньо, якщо ключа або профілю немає.
      *
-     * @return list<array{name: string, hours: int, href: string|null}>
+     * @return list<array{name: string, app_id?: string, hours: int, href: string|null}>
      */
     public function library(User $user, int $limit = 12): array
     {
@@ -158,6 +158,7 @@ class SteamPresence
                 $appId = (string) ($game['appid'] ?? '');
                 $cards[] = [
                     'name' => $game['name'],
+                    'app_id' => $appId,
                     'hours' => (int) floor(((int) ($game['playtime_forever'] ?? 0)) / 60),
                     'href' => $appId !== '' ? $this->status->steamGameHref($appId) : null,
                 ];
@@ -191,7 +192,7 @@ class SteamPresence
      * @param  array<string, string>  $query
      * @return array<string, mixed>|null
      */
-    private function get(string $path, array $query): ?array
+    public function get(string $path, array $query): ?array
     {
         $key = $this->key();
         if ($key === null) {
