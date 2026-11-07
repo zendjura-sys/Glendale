@@ -60,6 +60,9 @@ class AirAlertsTest extends TestCase
                 ['location_title' => 'Нікопольський район', 'location_type' => 'raion', 'location_oblast' => 'Дніпропетровська область', 'alert_type' => 'artillery_shelling', 'started_at' => now()->toIso8601String()],
             ]]),
             'ubilling.net.ua/*' => Http::response(['states' => ['Сумська область' => ['alertnow' => true, 'changed' => now()->toDateTimeString()]]]),
+            // Без підміни тест ходив би до справжніх NEPTUN і Telegram (у CI мережа є).
+            'neptun.in.ua/*' => Http::response(null, 503),
+            't.me/*' => Http::response(null, 503),
         ]);
         app(SiteSettings::class)->putSecret('alerts_in_ua_token', 'test-token-1234567890');
         $state = $this->service()->state();
