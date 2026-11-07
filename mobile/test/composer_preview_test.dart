@@ -14,7 +14,6 @@ import 'package:gamecon/state.dart';
 import 'package:gamecon/theme.dart';
 import 'package:gamecon/widgets.dart';
 import 'package:go_router/go_router.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
