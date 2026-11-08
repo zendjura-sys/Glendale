@@ -13,8 +13,10 @@ use App\Services\ImageStorage;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -39,6 +41,7 @@ class FamilySettingsController extends FamilyBaseController
                 'telegram_chat' => $family->webhook('telegram_chat'),
             ],
             'jar' => ['url' => $family->donation_jar, 'note' => $family->donation_note],
+            'can_delete' => $family->owner_id === $request->user()->id || $request->user()->isStaff(),
             'digest' => [
                 'text' => $digest->format($family, $preview),
                 'members' => count($preview['lines']),
@@ -46,6 +49,23 @@ class FamilySettingsController extends FamilyBaseController
                 'last' => $family->settings['digest_last'] ?? null,
             ],
         ]);
+    }
+
+    /** Видалити сім’ю: лідер-засновник або персонал сайту, з підтвердженням адресою (м’яке видалення). */
+    public function destroy(Request $request, Family $family): RedirectResponse
+    {
+        $user = $request->user();
+        abort_unless($family->owner_id === $user->id || $user->isStaff(), 403);
+        $request->validate(['confirm' => ['required', 'string']]);
+        if ($request->input('confirm') !== $family->slug) {
+            throw ValidationException::withMessages(['confirm' => 'Введіть адресу сім’ї, щоб підтвердити видалення.']);
+        }
+
+        $family->delete();
+        Log::info('family: deleted', ['family' => $family->id, 'slug' => $family->slug, 'by' => $user->id, 'staff' => $family->owner_id !== $user->id]);
+        Inertia::flash('toast', ['type' => 'success', 'message' => "Сім’ю «{$family->name}» видалено."]);
+
+        return to_route('families.index');
     }
 
     /** Банка Monobank для донатів сім’ї (картка «Підтримати» на сторінці; лише сайт). */

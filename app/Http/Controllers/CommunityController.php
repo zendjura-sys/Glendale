@@ -24,6 +24,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
@@ -480,6 +481,7 @@ class CommunityController extends Controller
         }
 
         $community->delete();
+        Log::info('community: deleted', ['community' => $community->id, 'slug' => $community->slug, 'by' => $user->id, 'staff' => $community->owner_id !== $user->id]);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => "Спільноту «{$community->name}» видалено."]);
 

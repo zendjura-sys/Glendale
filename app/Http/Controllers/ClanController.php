@@ -21,6 +21,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -249,6 +250,24 @@ class ClanController extends Controller
         };
 
         return $this->done('Збережено.');
+    }
+
+    /** Видалити клан чи гільдію: засновник або персонал сайту, з підтвердженням адресою. */
+    public function destroy(Request $request, Clan $clan): RedirectResponse
+    {
+        $user = $request->user();
+        abort_unless($clan->owner_id === $user->id || $user->isStaff(), 403);
+        $request->validate(['confirm' => ['required', 'string']]);
+        if ($request->input('confirm') !== $clan->slug) {
+            throw ValidationException::withMessages(['confirm' => 'Введіть адресу, щоб підтвердити видалення.']);
+        }
+
+        $clan->delete();
+        Log::info('clan: deleted', ['clan' => $clan->id, 'slug' => $clan->slug, 'type' => $clan->type, 'by' => $user->id, 'staff' => $clan->owner_id !== $user->id]);
+        $kind = $clan->type === 'guild' ? 'Гільдію' : 'Клан';
+        Inertia::flash('toast', ['type' => 'success', 'message' => "{$kind} «{$clan->name}» видалено."]);
+
+        return to_route('clans.index');
     }
 
     public function update(Request $request, Clan $clan): RedirectResponse

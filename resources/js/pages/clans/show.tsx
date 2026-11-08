@@ -31,6 +31,7 @@ import type { ClanCard, UserCard } from '@/types';
 import { ClanLogo } from './index';
 import { eventTime } from '@/lib/event-time';
 import { BotsCard } from '@/components/bots/bots-card';
+import { DeleteZone } from '@/components/gc/delete-zone';
 import { LOCALE, tr } from '@/lib/i18n';
 
 type Member = {
@@ -753,6 +754,20 @@ export default function ClanShow(props: Props) {
                         logs={props.logs}
                         isOwner={!!me?.is_owner}
                         myRank={me?.rank ?? 0}
+                    />
+                )}
+                {tab === 'settings' && props.settings && me?.is_owner && (
+                    <DeleteZone
+                        title={
+                            clan.type === 'guild'
+                                ? tr('Видалення гільдії')
+                                : tr('Видалення клану')
+                        }
+                        description={tr(
+                            'Зникне для всіх учасників разом із новинами, подіями й скарбницею.',
+                        )}
+                        slug={clan.slug}
+                        action={base}
                     />
                 )}
             </div>

@@ -11,6 +11,7 @@ use App\Services\Families\FamilyService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -68,6 +69,16 @@ class FamilyController extends Controller
 
         $families->setStatus($family, $request->user(), $data['status'], $data['reason'] ?? null);
         Inertia::flash('toast', ['type' => 'success', 'message' => "[{$family->tag}] {$family->name}: ".Family::STATUSES[$data['status']]]);
+
+        return back();
+    }
+
+    /** Видалити сім’ю з адмінки (м’яке видалення, у журнал). */
+    public function destroy(Request $request, Family $family): RedirectResponse
+    {
+        $family->delete();
+        Log::info('admin: family deleted', ['family' => $family->id, 'slug' => $family->slug, 'by' => $request->user()->id]);
+        Inertia::flash('toast', ['type' => 'success', 'message' => "Сім’ю [{$family->tag}] {$family->name} видалено."]);
 
         return back();
     }

@@ -28,6 +28,7 @@ import { uah } from '@/lib/money';
 import { cn } from '@/lib/utils';
 import type { FamilyShellProps } from '@/types';
 import { BotsCard } from '@/components/bots/bots-card';
+import { DeleteZone } from '@/components/gc/delete-zone';
 import { tr } from '@/lib/i18n';
 
 type Settings = {
@@ -43,6 +44,7 @@ type Settings = {
 type Props = FamilyShellProps & {
     settings: Settings;
     jar: { url: string | null; note: string | null };
+    can_delete: boolean;
     profile: {
         name: string;
         tag: string;
@@ -176,6 +178,16 @@ export default function FamilySettings(props: Props) {
                     </pre>
                 </Panel>
             </div>
+            {props.can_delete && (
+                <DeleteZone
+                    title={tr('Видалення сім’ї')}
+                    description={tr(
+                        'Сім’я зникне для всіх учасників разом зі штабом, банком і складом.',
+                    )}
+                    slug={family.slug}
+                    action={base}
+                />
+            )}
         </FamilyShell>
     );
 }

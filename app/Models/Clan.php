@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Storage;
 
 /**
@@ -38,6 +39,8 @@ use Illuminate\Support\Facades\Storage;
 #[Fillable(['slug', 'type', 'name', 'tag', 'game_id', 'owner_id', 'description', 'rules', 'logo_path', 'features', 'rank_titles', 'permissions', 'join_mode', 'is_recruiting', 'currency', 'questions'])]
 class Clan extends Model
 {
+    use SoftDeletes;
+
     public const TYPES = ['clan' => 'Клан', 'guild' => 'Гільдія'];
 
     /** Розділи, які засновник обирає при створенні (і змінює в налаштуваннях). */

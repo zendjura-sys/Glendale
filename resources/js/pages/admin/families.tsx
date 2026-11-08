@@ -1,5 +1,13 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { Ban, Crown, FileText, Search, ShieldCheck, Users } from 'lucide-react';
+import {
+    Ban,
+    Crown,
+    FileText,
+    Search,
+    ShieldCheck,
+    Trash2,
+    Users,
+} from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { FamilyLogo } from '@/components/families/family-logo';
 import { VoiceTemplates } from '@/components/families/voice-templates';
@@ -234,6 +242,27 @@ export default function AdminFamilies({
                                     {tr('Призупинити')}
                                 </button>
                             )}
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    if (
+                                        confirm(
+                                            tr(
+                                                'Видалити сім’ю [{tag}] {name}? Вона зникне для всіх учасників.',
+                                                { tag: f.tag, name: f.name },
+                                            ),
+                                        )
+                                    ) {
+                                        router.delete(
+                                            `/admin/families/${f.id}`,
+                                            { preserveScroll: true },
+                                        );
+                                    }
+                                }}
+                                className="inline-flex h-9 items-center gap-1.5 rounded-xl px-3 text-sm text-red-400 hover:bg-red-500/10"
+                            >
+                                <Trash2 className="size-4" /> {tr('Видалити')}
+                            </button>
                         </div>
                     </article>
                 ))}

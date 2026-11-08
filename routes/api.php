@@ -741,6 +741,7 @@ Route::prefix('v1')->group(function () {
                     Route::post('leave', [ClanController::class, 'leave']);
                     Route::post('members/{member}', [ClanController::class, 'member'])->whereNumber('member');
                     Route::post('settings', [ClanController::class, 'update']);
+                    Route::delete('/', [ClanController::class, 'destroy']);
                     Route::post('news', [ClanController::class, 'news'])->middleware('throttle:20,1');
                     Route::delete('news/{news}', [ClanController::class, 'deleteNews'])->whereNumber('news');
                     Route::post('events', [ClanController::class, 'event'])->middleware('throttle:20,1');
@@ -991,6 +992,7 @@ Route::prefix('v1')->group(function () {
                     Route::get('audit', [Families\FamilyAuditController::class, 'index']);
                     Route::get('settings', [Families\FamilySettingsController::class, 'index']);
                     Route::put('settings', [Families\FamilySettingsController::class, 'update']);
+                    Route::delete('/', [Families\FamilySettingsController::class, 'destroy']);
 
                     Route::delete('apply', [Families\FamilyController::class, 'withdraw']);
                     Route::post('leave', [Families\FamilyController::class, 'leave']);

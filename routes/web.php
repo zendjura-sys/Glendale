@@ -783,6 +783,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
             Route::post('members/{member}', [ClanController::class, 'member'])->whereNumber('member')->name('members.update');
             Route::post('members/{member}/nudge', [ClanController::class, 'nudge'])->whereNumber('member')->middleware('throttle:20,1')->name('members.nudge');
             Route::post('settings', [ClanController::class, 'update'])->name('update');
+            Route::delete('/', [ClanController::class, 'destroy'])->name('destroy');
             Route::post('allies', [ClanController::class, 'ally'])->name('allies.store');
             Route::post('allies/{alliance}/accept', [ClanController::class, 'acceptAlly'])->whereNumber('alliance')->name('allies.accept');
             Route::post('matches', [ClanController::class, 'match'])->name('matches.store');
@@ -1000,6 +1001,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
             Route::get('settings', [Families\FamilySettingsController::class, 'index'])->name('settings');
             Route::post('settings/profile', [Families\FamilySettingsController::class, 'profile'])->name('settings.profile');
             Route::put('settings', [Families\FamilySettingsController::class, 'update'])->name('settings.update');
+            Route::delete('/', [Families\FamilySettingsController::class, 'destroy'])->name('destroy');
             Route::put('settings/webhooks', [Families\FamilySettingsController::class, 'webhooks'])->name('settings.webhooks');
             Route::put('settings/jar', [Families\FamilySettingsController::class, 'jar'])->name('settings.jar');
             Route::post('settings/webhooks/test', [Families\FamilySettingsController::class, 'test'])->middleware('throttle:6,1')->name('settings.webhooks.test');
@@ -1264,6 +1266,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         });
         Route::get('families', [Admin\FamilyController::class, 'index'])->name('families.index');
         Route::patch('families/{family:id}', [Admin\FamilyController::class, 'update'])->whereNumber('family')->name('families.update');
+        Route::delete('families/{family:id}', [Admin\FamilyController::class, 'destroy'])->whereNumber('family')->name('families.destroy');
         Route::post('families/voice-rooms', [Admin\VoiceTemplateController::class, 'store'])->name('voice-templates.store');
         Route::patch('families/voice-rooms/{template}', [Admin\VoiceTemplateController::class, 'update'])->name('voice-templates.update');
         Route::delete('families/voice-rooms/{template}', [Admin\VoiceTemplateController::class, 'destroy'])->name('voice-templates.destroy');
