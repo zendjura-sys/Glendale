@@ -98,7 +98,7 @@ class ArcticDockTabs extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: light ? const Color(0xFFFFFFFF) : const Color.fromRGBO(255, 255, 255, 0.14),
                         borderRadius: BorderRadius.circular(height / 2),
-                        boxShadow: light ? const [BoxShadow(color: Color(0x14000000), blurRadius: 8, offset: Offset(0, 1))] : null,
+
                       ),
                     ),
                   ),

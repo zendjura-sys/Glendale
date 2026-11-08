@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 // Дизайн-система застосунку «iOS Frosted Ice Glass»: теми «Неоновий синій» (темна) і «Крижана Арктика» (світла).
-// Картки — «Frosted Ice Glass»: молочний лід поверх розмиття 32 (насичення й яскравість), внутрішній іній,
-// кришталева грань і шум 1.5%; панелі — щільне скло з розмиттям 40; акцент — сапфір #0A84FF / #00D2FF.
+// Картки — «Frosted Ice Glass»: молочний лід поверх розмиття 32 (насичення й яскравість) і шум 1.5%,
+// без обводок і тіней; панелі — щільне скло з розмиттям 40; акцент — сапфір #0A84FF / #00D2FF.
 // Імена класів лишилися від «Spatial Glass», щоб не чіпати сотні викликів.
 // Лише крижані й сапфірові відтінки — без фіолетового й рожевого. Палітра теми (theme.dart)
 // та віджети core/widgets/arctic_glass беруть кольори звідси; відмінності темної й світлої
@@ -126,8 +126,7 @@ class ArcticGlassThemeExtension extends ThemeExtension<ArcticGlassThemeExtension
   final Color muted;
 
   // Темна «Frosted Ice Glass»: тло #060B14 з блакитними плямами (#0EA5E9 / #1D4ED8, 22%);
-  // картка — молочно-крижаний градієнт 145° поверх сильного розмиття, внутрішній іній,
-  // кришталева грань (верх .32, ліво .22, решта .16) і м'яка тінь 0 10 30 -5 / .45.
+  // картка — молочно-крижаний градієнт 145° поверх сильного розмиття; без обводок і тіней.
   static const dark = ArcticGlassThemeExtension(
     light: false,
     background: [Color(0xFF060B14), Color(0xFF060B14)],
@@ -149,10 +148,10 @@ class ArcticGlassThemeExtension extends ThemeExtension<ArcticGlassThemeExtension
       stops: [0, 0.5, 1],
     ),
     innerFill: Color.fromRGBO(255, 255, 255, 0.06),
-    border: Color.fromRGBO(255, 255, 255, 0.16),
+    border: Color(0x00000000),
     outline: null,
     specular: Color.fromRGBO(255, 255, 255, 0.28),
-    shadows: [BoxShadow(color: Color.fromRGBO(0, 0, 0, 0.45), blurRadius: 30, offset: Offset(0, 10), spreadRadius: -5)],
+    shadows: [],
     barFill: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Color.fromRGBO(22, 32, 52, 0.78), Color.fromRGBO(12, 19, 34, 0.86)]),
     sheetFill: Color.fromRGBO(14, 22, 38, 0.9),
     title: AppColors.textPrimary,
@@ -176,10 +175,10 @@ class ArcticGlassThemeExtension extends ThemeExtension<ArcticGlassThemeExtension
     ),
     pressedFill: LinearGradient(colors: [Color.fromRGBO(255, 255, 255, 0.95), Color.fromRGBO(255, 255, 255, 0.8)]),
     innerFill: Color.fromRGBO(15, 23, 42, 0.04),
-    border: Color.fromRGBO(255, 255, 255, 0.7),
-    outline: Color.fromRGBO(15, 23, 42, 0.07),
+    border: Color(0x00000000),
+    outline: null,
     specular: Color.fromRGBO(255, 255, 255, 0.95),
-    shadows: [BoxShadow(color: Color.fromRGBO(15, 23, 42, 0.08), blurRadius: 30, offset: Offset(0, 10), spreadRadius: -5)],
+    shadows: [],
     barFill: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Color.fromRGBO(255, 255, 255, 0.8), Color.fromRGBO(248, 251, 255, 0.86)]),
     sheetFill: Color.fromRGBO(255, 255, 255, 0.9),
     title: AppColors.lightTitle,
