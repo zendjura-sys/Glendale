@@ -44,7 +44,8 @@ class SeasonBackdrop extends StatelessWidget {
       child: Stack(children: [
         Positioned.fill(child: CustomPaint(painter: _TintPainter(s, palette.isLight))),
         if (s == 'newyear')
-          Positioned(left: 0, bottom: bottom + 72, width: 150, child: Opacity(opacity: 0.95, child: Image.asset('assets/seasons/corner-bottom.webp'))),
+          // Під матовим склом карток кут лише ледь проступає — текст лишається читабельним на 100%.
+          Positioned(left: 0, bottom: bottom + 72, width: 128, child: Opacity(opacity: 0.42, child: Image.asset('assets/seasons/corner-bottom.webp'))),
       ]),
     );
   }

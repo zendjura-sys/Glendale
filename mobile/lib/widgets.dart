@@ -495,10 +495,13 @@ class Segmented extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           if (option.icon != null) ...[
-            TweenAnimationBuilder<Color?>(
-              tween: ColorTween(end: on ? accent : muted),
-              duration: _motion,
-              builder: (_, color, _) => Icon(option.icon, size: 16, color: color),
+            ArcticIconPop(
+              active: on,
+              child: TweenAnimationBuilder<Color?>(
+                tween: ColorTween(end: on ? accent : muted),
+                duration: _motion,
+                builder: (_, color, _) => Icon(option.icon, size: 16, color: color),
+              ),
             ),
             SizedBox(width: 7),
           ],
@@ -1230,8 +1233,11 @@ class ScreenScroll extends StatelessWidget {
       // Картки з'являються каскадом; показані раніше (за ключем) — без повтору.
       children: [for (final child in children) ArcticCascade(key: child.key is GlobalKey ? null : child.key, id: child.key, child: child)],
     );
-    if (onRefresh == null) return list;
-    return RefreshIndicator(color: primary, backgroundColor: popover, onRefresh: onRefresh!, child: list);
+    // Спільне тло для розмиття карток (BackdropFilter.grouped): картки не наїжджають одна на одну,
+    // під ними лише тло екрана. Шапка й док — поза групою й розмивають сам контент під собою.
+    final grouped = BackdropGroup(child: list);
+    if (onRefresh == null) return grouped;
+    return RefreshIndicator(color: primary, backgroundColor: popover, onRefresh: onRefresh!, child: grouped);
   }
 }
 

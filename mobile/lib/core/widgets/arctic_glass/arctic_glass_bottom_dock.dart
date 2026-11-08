@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../theme.dart' show palette, ink, muted, body;
 import '../../theme/arctic_glass_theme.dart';
 import 'arctic_glass_container.dart';
+import 'arctic_icon_pop.dart';
 import 'arctic_pressable.dart';
 
 /// Розміри плаваючого доку: висота 64, радіус 32, відступ знизу 6 (над системною смугою).
@@ -167,9 +168,12 @@ class ArcticDockTab extends StatelessWidget {
             Stack(
               clipBehavior: Clip.none,
               children: [
-                AnimatedSwitcher(
-                  duration: still ? Duration.zero : const Duration(milliseconds: 200),
-                  child: Icon(active ? (item.activeIcon ?? item.icon) : item.icon, key: ValueKey(active), size: 22, color: color),
+                ArcticIconPop(
+                  active: active,
+                  child: AnimatedSwitcher(
+                    duration: still ? Duration.zero : const Duration(milliseconds: 200),
+                    child: Icon(active ? (item.activeIcon ?? item.icon) : item.icon, key: ValueKey(active), size: 22, color: color),
+                  ),
                 ),
                 if (item.badge case final b?) Positioned(right: -10, top: -4, child: b),
               ],

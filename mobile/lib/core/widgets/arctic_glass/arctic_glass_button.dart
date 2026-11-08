@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../theme.dart' show palette, ink, body;
+import '../../../theme.dart' show ink, body;
 import '../../theme/arctic_glass_theme.dart';
 import 'arctic_glass_container.dart';
 import 'arctic_pressable.dart';
@@ -80,10 +80,8 @@ class ArcticGlassButton extends StatelessWidget {
         : LinearGradient(
             colors: [
               AppColors.accentPrimary.withValues(alpha: dim),
-              (palette.isLight ? const Color(0xFF00A8E0) : AppColors.accentCyan).withValues(alpha: dim),
+              AppColors.accentPrimary.withValues(alpha: dim),
             ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
           );
     final shape = BorderRadius.circular(AppRadii.control);
     return ArcticPressable(
@@ -94,9 +92,6 @@ class ArcticGlassButton extends StatelessWidget {
         decoration: BoxDecoration(
           gradient: gradient,
           borderRadius: shape,
-          border: Border(
-            top: BorderSide(color: Colors.white.withValues(alpha: enabled ? 0.32 : 0.1)),
-          ),
         ),
         child: content,
       ),

@@ -345,8 +345,8 @@ class _UserMenu extends StatelessWidget {
             SizedBox(width: 10),
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-                Text(text(me['name']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14, weight: FontWeight.w600)),
-                Text(text(me['email']) ?? '@${text(me['username']) ?? ''}', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: muted)),
+                Text(text(me['name']) ?? '', style: body(14, weight: FontWeight.w600)),
+                Text(text(me['email']) ?? '@${text(me['username']) ?? ''}', style: body(12, color: muted)),
               ]),
             ),
           ]),
@@ -457,7 +457,7 @@ class SideList extends StatelessWidget {
                 child: Row(children: [
                   Icon(icon, size: 19, color: iconColor ?? (active ? ink : ink.withValues(alpha: 0.82))),
                   SizedBox(width: 12),
-                  Expanded(child: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14, color: active ? ink : ink.withValues(alpha: 0.82), weight: active ? FontWeight.w600 : FontWeight.w500))),
+                  Expanded(child: Text(title, style: body(14, color: active ? ink : ink.withValues(alpha: 0.82), weight: active ? FontWeight.w600 : FontWeight.w500))),
                   if (badge > 0)
                     Container(
                       constraints: BoxConstraints(minWidth: 20),
@@ -490,7 +490,7 @@ class SideList extends StatelessWidget {
                 Expanded(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     PlusNameRow(user: {...me, 'name': text(me['first_name']) ?? text(me['name']) ?? '', 'plus': session.subscription.style}, style: body(14, weight: FontWeight.w600)),
-                    Text('@${session.username ?? ''}', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: faint)),
+                    Text('@${session.username ?? ''}', style: body(12, color: faint)),
                   ]),
                 ),
               ]),
@@ -798,8 +798,9 @@ class _MenuContentState extends State<MenuContent> {
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Icon(icon, size: 22, color: tone),
           const SizedBox(height: 10),
-          Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(13.5, weight: FontWeight.w700)),
-          Text(hint, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(11.5, color: muted)),
+          // Плитка фіксованої висоти: довгий підпис трохи зменшується, а не обрізається «…».
+          FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text(title, maxLines: 1, softWrap: false, style: body(13.5, weight: FontWeight.w700))),
+          FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text(hint, maxLines: 1, softWrap: false, style: body(11.5, color: muted))),
         ]),
       );
 
@@ -844,7 +845,7 @@ class _MenuContentState extends State<MenuContent> {
             Flexible(child: PlusNameRow(user: {...me, 'plus': sub.style}, style: body(15, weight: FontWeight.w700), animate: true)),
             if (session.isAdmin) const Padding(padding: EdgeInsets.only(left: 4), child: Icon(LucideIcons.shieldCheck, size: 14, color: _amber)),
           ]),
-          Text('@${session.username ?? ''}', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: muted)),
+          Text('@${session.username ?? ''}', style: body(12, color: muted)),
         ]),
       ),
     ]);
@@ -917,8 +918,6 @@ class _MenuContentState extends State<MenuContent> {
                       : region['active'] == true
                           ? tr('{name}: тривога', {'name': '${region['name']}'})
                           : tr('{name}: спокійно', {'name': '${region['name']}'}),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                   style: body(12, color: muted),
                 ),
               ]),
@@ -937,7 +936,7 @@ class _MenuContentState extends State<MenuContent> {
                 const Icon(LucideIcons.shieldHalf, size: 18, color: _sky),
                 const SizedBox(width: 8),
                 Expanded(child: Text(tr('Штаб сім’ї & Казна'), style: body(13.5, weight: FontWeight.w700))),
-                if (family.isNotEmpty) Flexible(child: Text('${family['name']}', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: muted))) else Icon(LucideIcons.chevronRight, size: 18, color: muted),
+                if (family.isNotEmpty) Flexible(child: Text('${family['name']}', style: body(12, color: muted))) else Icon(LucideIcons.chevronRight, size: 18, color: muted),
               ]),
               const SizedBox(height: 10),
               if (family.isEmpty)
@@ -958,7 +957,7 @@ class _MenuContentState extends State<MenuContent> {
                           Icon(icon, size: 16, color: tone),
                           const SizedBox(height: 4),
                           Text(value, style: body(14, weight: FontWeight.w800)),
-                          Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: TextAlign.center, style: body(10, color: muted)),
+                          FittedBox(fit: BoxFit.scaleDown, child: Text(label, maxLines: 1, softWrap: false, textAlign: TextAlign.center, style: body(10, color: muted))),
                         ]),
                       ),
                     ),
@@ -1002,7 +1001,7 @@ class _MenuContentState extends State<MenuContent> {
                     child: Column(children: [
                       Icon(icon, size: 21, color: _sky),
                       const SizedBox(height: 6),
-                      Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(11.5, weight: FontWeight.w600)),
+                      FittedBox(fit: BoxFit.scaleDown, child: Text(label, maxLines: 1, softWrap: false, style: body(11.5, weight: FontWeight.w600))),
                     ]),
                   ),
                 ),
@@ -1017,7 +1016,7 @@ class _MenuContentState extends State<MenuContent> {
                 child: _inner(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
                   onTap: () => widget.onGo('/phone'),
-                  child: Row(children: [const Icon(LucideIcons.phone, size: 17, color: _emerald), const SizedBox(width: 8), Flexible(child: Text(tr('Телефон'), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(13.5, weight: FontWeight.w600)))]),
+                  child: Row(children: [const Icon(LucideIcons.phone, size: 17, color: _emerald), const SizedBox(width: 8), Flexible(child: FittedBox(fit: BoxFit.scaleDown, child: Text(tr('Телефон'), maxLines: 1, softWrap: false, style: body(13.5, weight: FontWeight.w600))))]),
                 ),
               ),
             ),
@@ -1027,7 +1026,7 @@ class _MenuContentState extends State<MenuContent> {
               child: _inner(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
                 onTap: () => widget.onGo('/saved'),
-                child: Row(children: [const Icon(LucideIcons.bookmark, size: 17, color: _amber), const SizedBox(width: 8), Flexible(child: Text(tr('Збережене'), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(13.5, weight: FontWeight.w600)))]),
+                child: Row(children: [const Icon(LucideIcons.bookmark, size: 17, color: _amber), const SizedBox(width: 8), Flexible(child: FittedBox(fit: BoxFit.scaleDown, child: Text(tr('Збережене'), maxLines: 1, softWrap: false, style: body(13.5, weight: FontWeight.w600))))]),
               ),
             ),
           ),

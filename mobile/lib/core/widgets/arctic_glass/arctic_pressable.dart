@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-/// Тактильна обгортка: від дотику елемент м'яко стискається до 0.97 (120 мс), дає легкий
-/// тактильний відгук і пружно повертається (easeOutBack). [pressed] — для підсвітки грані.
+/// Тактильна обгортка: від дотику елемент м'яко стискається до 0.98 (150 мс), дає легкий
+/// тактильний відгук і плавно повертається (220 мс). [pressed] — для підсвітки грані.
 class ArcticPressable extends StatefulWidget {
-  const ArcticPressable({required this.child, this.onTap, this.onLongPress, this.scale = 0.97, this.haptic = true, this.onPressed, super.key});
+  const ArcticPressable({required this.child, this.onTap, this.onLongPress, this.scale = 0.98, this.haptic = true, this.onPressed, super.key});
   final Widget child;
   final VoidCallback? onTap;
   final VoidCallback? onLongPress;
@@ -45,8 +45,9 @@ class _ArcticPressableState extends State<ArcticPressable> {
       onLongPress: widget.onLongPress,
       child: AnimatedScale(
         scale: down && !still ? widget.scale : 1,
-        duration: Duration(milliseconds: down ? 120 : 260),
-        curve: down ? Curves.easeOutCubic : Curves.easeOutBack,
+        // Lucian UX: 150 мс на стиск, 220 мс на повернення, cubic-bezier(0.22, 1, 0.36, 1) — без «желе».
+        duration: Duration(milliseconds: down ? 150 : 220),
+        curve: const Cubic(0.22, 1, 0.36, 1),
         child: widget.child,
       ),
     );
