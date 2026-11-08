@@ -208,16 +208,19 @@ class FeedPulseState extends State<FeedPulse> {
                         height: 44,
                         padding: const EdgeInsets.symmetric(horizontal: 10),
                         decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(14),
+                          borderRadius: BorderRadius.circular(22),
                           color: mine != null
                               ? _emerald.withValues(alpha: 0.15)
                               : null,
                           gradient: mine != null
                               ? null
+                              // Скляна сапфірова капсула (.45 → .35), без обводки й світіння.
                               : const LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
                                   colors: [
-                                    Color(0xFF0EA5E9),
-                                    Color(0xFF22D3EE),
+                                    Color.fromRGBO(14, 165, 233, 0.45),
+                                    Color.fromRGBO(37, 99, 235, 0.35),
                                   ],
                                 ),
                         ),
@@ -231,7 +234,7 @@ class FeedPulseState extends State<FeedPulse> {
                               size: 16,
                               color: mine != null
                                   ? _emerald
-                                  : const Color(0xFF04121F),
+                                  : Colors.white,
                             ),
                             const SizedBox(width: 6),
                             Flexible(
@@ -241,7 +244,7 @@ class FeedPulseState extends State<FeedPulse> {
                                   14,
                                   color: mine != null
                                       ? _emerald
-                                      : const Color(0xFF04121F),
+                                      : Colors.white,
                                   weight: FontWeight.w700,
                                 )),
                             ),

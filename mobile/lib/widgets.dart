@@ -338,8 +338,12 @@ class GcField extends StatelessWidget {
     this.prefixText,
     this.autofocus = false,
     this.dense = false,
+    this.pill = false,
     super.key,
   });
+
+  /// Капсула (пошук); інакше — заокруглення 22.
+  final bool pill;
   final TextEditingController controller;
   final String label;
   final bool obscure;
@@ -356,12 +360,14 @@ class GcField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Поле — матове скло: справжнє розмиття фону (16) під напівпрозорою заливкою.
+    // Поле — гладка скляна капсула: напівпрозора заливка без обводки.
     return ClipRRect(
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(_radius),
       child: BackdropFilter(filter: arcticGlassFilter(AppBlur.control), child: _field()),
     );
   }
+
+  double get _radius => pill || (maxLines == 1 && dense) ? 999 : 22;
 
   Widget _field() {
     return TextField(
@@ -386,9 +392,10 @@ class GcField extends StatelessWidget {
         fillColor: enabled ? field : field.withValues(alpha: field.a * 0.5),
         isDense: true,
         contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: dense ? 11 : 15),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
-        disabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: primary, width: 1.4)),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(_radius), borderSide: BorderSide.none),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(_radius), borderSide: BorderSide.none),
+        disabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(_radius), borderSide: BorderSide.none),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(_radius), borderSide: BorderSide.none),
       ),
     );
   }
@@ -432,6 +439,7 @@ class SearchField extends StatelessWidget {
       label: hint,
       icon: LucideIcons.search,
       dense: true,
+      pill: true,
       onSubmit: () => onSearch(controller.text.trim()),
     );
   }

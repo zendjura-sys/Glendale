@@ -411,10 +411,17 @@ Future<void> showFeedbackSheet(BuildContext context, {String screen = 'menu'}) a
 
 
 /// Що нового в цій версії застосунку — один раз після оновлення.
-const whatsNewVersion = '1.1.110';
+const whatsNewVersion = '1.1.111';
 
 /// Нове саме в цій версії — зверху, окремим блоком.
 List<String> _whatsNewCurrent() => [
+      tr('Гладке скло: картки — молочна вуаль поверх сильного розмиття, без зернистості, ряби, обводок і тіней.'),
+      tr('Тло — м’які розфокусовані плями світла без смуг і мерехтіння під час прокрутки.'),
+      tr('Кнопки — скляні сапфірові капсули; поля пошуку й «Що нового» — гладкі капсули.'),
+    ];
+
+/// Попередня версія (1.1.110).
+List<String> _whatsNewPrev() => [
       tr('Значки біля ніка — зменшені логотипи: сім’я поруч із сервером ГТА, клан чи гільдія — з логотипом своєї гри.'),
       tr('Кілька сімей, кланів і гільдій — показуються всі; на телефоні видно першу групу, решта — за кнопкою «+N» зі списком і описами.'),
       tr('Налаштування → «Значки біля ніка»: оберіть, що показувати першим.'),
@@ -580,7 +587,7 @@ Future<void> showWhatsNew(BuildContext context, SharedPreferences prefs, {bool f
   await prefs.setString('whats_new', whatsNewVersion);
   if (!context.mounted) return;
   final current = _whatsNewCurrent();
-  final earlier = _whatsNew();
+  final earlier = [..._whatsNewPrev(), ..._whatsNew()];
   Widget card(String item, {bool fresh = false}) => Container(
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.fromLTRB(12, 12, 14, 12),

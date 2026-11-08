@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 
 import '../../theme/arctic_glass_theme.dart';
 import 'arctic_cascade.dart';
-import 'arctic_noise.dart';
 import 'arctic_pressable.dart';
 
 /// Базова поверхня «Spatial Glass» — матеріал iOS (UIVisualEffectView): справжнє розмиття
@@ -91,15 +90,14 @@ ColorFilter _frost(double sat, double bright) {
   ]);
 }
 
-// Картки безбарвні: власна заливка нейтральна, а крізь скло м'яко видно розмите тло в його кольорах.
-final _cardFrost = _frost(1.15, 1.12);
-final _panelFrost = _frost(1.9, 1.15);
+// Silk Glass: насичення ×1.9 — крізь гладке скло видно кольори тла, без сірості.
+final _silkFrost = _frost(1.9, 1.04);
 
-/// Фільтр скла: насичення й висвітлення, потім розмиття (mirror — без темних ореолів на краях).
-/// Картки (до 36) — blur 32, безбарвна заливка, saturate 115% brightness 1.12; панелі — blur 40 saturate 190% brightness 1.15.
+/// Фільтр скла: насичення, потім велике розмиття (mirror — без темних ореолів на краях).
+/// Картки й панелі — blur 42 saturate 190%, кнопки — 24; дрібного розмиття немає, тож текст під склом не «рябить».
 ImageFilter arcticGlassFilter(double sigma) => ImageFilter.compose(
   outer: ImageFilter.blur(sigmaX: sigma, sigmaY: sigma, tileMode: TileMode.mirror),
-  inner: sigma >= 36 ? _panelFrost : _cardFrost,
+  inner: _silkFrost,
 );
 
 class _ArcticGlassContainerState extends State<ArcticGlassContainer> {
@@ -122,7 +120,9 @@ class _ArcticGlassContainerState extends State<ArcticGlassContainer> {
   Widget _surface(BuildContext context, bool nested, double t) {
     final tokens = ArcticGlassThemeExtension.of(context);
     final w = widget;
-    final shape = w.borderRadius ?? BorderRadius.circular(w.radius);
+    final plainInner = nested && w.fill == null && w.color == null;
+    // Плитки в картці — заокруглення 18 (концентрично до картки 26), якщо радіус не задано явно.
+    final shape = w.borderRadius ?? BorderRadius.circular(plainInner && w.radius == AppRadii.card ? AppRadii.tile : w.radius);
     final still = MediaQuery.disableAnimationsOf(context);
     final plain = w.fill == null && w.color == null;
     final inner = nested && plain;
@@ -163,8 +163,6 @@ class _ArcticGlassContainerState extends State<ArcticGlassContainer> {
         child: body,
       );
     }
-    // Матова мікротекстура: ледь помітний шум 2% поверх поверхні (не на вкладених плашках).
-    if (!inner) body = CustomPaint(foregroundPainter: ArcticNoisePainter(shape), child: body);
     if (t < 1) body = Opacity(opacity: t.clamp(0, 1), child: body);
     if (w.enableBlur && t > 0 && (inner ? AppBlur.control : w.blur) > 0) {
       final sigma = (inner ? AppBlur.control : w.blur) * t;

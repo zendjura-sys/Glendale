@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-// Дизайн-система застосунку «iOS Frosted Ice Glass»: теми «Неоновий синій» (темна) і «Крижана Арктика» (світла).
-// Картки — «Frosted Ice Glass»: молочний лід поверх розмиття 32 (насичення й яскравість) і шум 1.5%,
-// без обводок і тіней; панелі — щільне скло з розмиттям 40; акцент — сапфір #0A84FF / #00D2FF.
+// Дизайн-система застосунку «Smooth Silk Glass»: теми «Неоновий синій» (темна) і «Крижана Арктика» (світла).
+// Картки — гладкий оптичний акрил: молочна вуаль 135° поверх розмиття 42 (насичення ×1.9), без шуму,
+// обводок і тіней; панелі — щільне скло з тим самим розмиттям; акцент — сапфір #0A84FF / #00D2FF.
 // Імена класів лишилися від «Spatial Glass», щоб не чіпати сотні викликів.
 // Лише крижані й сапфірові відтінки — без фіолетового й рожевого. Палітра теми (theme.dart)
 // та віджети core/widgets/arctic_glass беруть кольори звідси; відмінності темної й світлої
@@ -47,7 +47,10 @@ abstract final class AppColors {
 
 /// Радіуси iOS (концентричні: вкладене = зовнішнє − відступ): картки — 26, нижнє меню й шторки — 30, кнопки й поля — пігулки (24).
 abstract final class AppRadii {
-  static const card = 20.0;
+  static const card = 26.0;
+
+  /// Плитки всередині картки (метрики «Ранг», «Казна»…).
+  static const tile = 18.0;
   static const dock = 30.0;
   static const control = 12.0;
 }
@@ -55,13 +58,14 @@ abstract final class AppRadii {
 /// Розмиття «iOS Frosted Material»: картки й блоки — 22, кнопки й поля — 16,
 /// шапка, док і шторки — 28, розгорнуте меню доку — 32.
 abstract final class AppBlur {
-  // Frosted Ice Glass: картки — розмиття 32 з насиченням ×1.8 і яскравістю ×1.18 (молочний лід);
-  // панелі (шапка, док, плеєр, шторки) — 40 з ×1.9 / ×1.15; вкладені плашки й кнопки — без розмиття.
-  static const card = 32.0;
+  // Silk Glass: картки й панелі — розмиття 42 з насиченням ×1.9 (великий радіус — без ряби під текстом);
+  // кнопки — 24; вкладені плашки — без власного розмиття.
+  static const card = 42.0;
   static const control = 0.0;
-  static const fixed = 40.0;
-  static const dock = 40.0;
-  static const sheet = 40.0;
+  static const button = 24.0;
+  static const fixed = 42.0;
+  static const dock = 42.0;
+  static const sheet = 42.0;
   static const menu = 48.0;
 }
 
@@ -135,10 +139,20 @@ class ArcticGlassThemeExtension extends ThemeExtension<ArcticGlassThemeExtension
       ArcticGlow(Alignment(1.0, 0.15), 0.8, Color(0xFF1D4ED8), 0.22),
       ArcticGlow(Alignment(-0.7, 1.0), 0.75, Color(0xFF0EA5E9), 0.16),
     ],
-    // Пласка заливка: рівний молочний лід без діагонального переливу й об'єму.
-    glassFill: LinearGradient(colors: [Color.fromRGBO(255, 255, 255, 0.06), Color.fromRGBO(255, 255, 255, 0.06)]),
-    pressedFill: LinearGradient(colors: [Color.fromRGBO(255, 255, 255, 0.1), Color.fromRGBO(255, 255, 255, 0.1)]),
-    innerFill: Color.fromRGBO(255, 255, 255, 0.07),
+    // Гладка молочна вуаль під кутом 135°: .14 → .05 (55%) → .08; без шуму, обводок і тіней.
+    glassFill: LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [Color.fromRGBO(255, 255, 255, 0.14), Color.fromRGBO(255, 255, 255, 0.05), Color.fromRGBO(255, 255, 255, 0.08)],
+      stops: [0, 0.55, 1],
+    ),
+    pressedFill: LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [Color.fromRGBO(255, 255, 255, 0.19), Color.fromRGBO(255, 255, 255, 0.09), Color.fromRGBO(255, 255, 255, 0.12)],
+      stops: [0, 0.55, 1],
+    ),
+    innerFill: Color.fromRGBO(255, 255, 255, 0.06),
     border: Color(0x00000000),
     outline: null,
     specular: Color(0x00000000),
@@ -158,8 +172,18 @@ class ArcticGlassThemeExtension extends ThemeExtension<ArcticGlassThemeExtension
       ArcticGlow(Alignment(-0.95, -0.75), 0.85, Color(0xFF0EA5E9), 0.18),
       ArcticGlow(Alignment(1.0, 0.15), 0.8, Color(0xFF1D4ED8), 0.12),
     ],
-    glassFill: LinearGradient(colors: [Color.fromRGBO(255, 255, 255, 0.72), Color.fromRGBO(255, 255, 255, 0.72)]),
-    pressedFill: LinearGradient(colors: [Color.fromRGBO(255, 255, 255, 0.88), Color.fromRGBO(255, 255, 255, 0.88)]),
+    glassFill: LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [Color.fromRGBO(255, 255, 255, 0.80), Color.fromRGBO(255, 255, 255, 0.62), Color.fromRGBO(255, 255, 255, 0.70)],
+      stops: [0, 0.55, 1],
+    ),
+    pressedFill: LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [Color.fromRGBO(255, 255, 255, 0.92), Color.fromRGBO(255, 255, 255, 0.78), Color.fromRGBO(255, 255, 255, 0.84)],
+      stops: [0, 0.55, 1],
+    ),
     innerFill: Color.fromRGBO(15, 23, 42, 0.04),
     border: Color(0x00000000),
     outline: null,
