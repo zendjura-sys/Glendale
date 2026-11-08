@@ -1426,6 +1426,8 @@ class _Playback {
 }
 
 class _MoviePlayerScreenState extends State<MoviePlayerScreen> {
+  /// Власний плеєр застосунку вимкнено: показуємо веб-версію плеєра, як на сайті.
+  static const webOnly = true;
   static const _speeds = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
   static const _hideAfter = Duration(milliseconds: 3500);
 
@@ -1541,7 +1543,8 @@ class _MoviePlayerScreenState extends State<MoviePlayerScreen> {
     setState(() {
       started = false;
       tapAt = 0;
-      embedded = embed;
+      // Лише веб-плеєр балансера з його власними кнопками — як на сайті; свої елементи керування не накладаємо.
+      embedded = embed || webOnly;
       assist = false;
       reported = false;
       resumed = false;

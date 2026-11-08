@@ -246,21 +246,11 @@ class _CinemaHeroState extends State<CinemaHero> {
     super.dispose();
   }
 
-  Future<void> _addToList(Map<String, dynamic> movie) async {
-    try {
-      await AppScope.read(context).session.api.patch(Api.site('/cinema/${movie['slug']}/status'), {'status': 'planned'});
-      if (mounted) toast(context, tr('Додано до списку «В планах».'), kind: ToastKind.success);
-    } catch (e) {
-      if (mounted) toast(context, e);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final movies = widget.movies;
     final movie = movies[index];
     final rating = (movie['rating'] is num) ? (movie['rating'] as num).toDouble() : null;
-    final meta = [movie['year'], ...((movie['countries'] as List?) ?? const []), text(movie['type_label']), ...((movie['genres'] as List?) ?? const [])].whereType<Object>().join(' · ');
     final reduce = MediaQuery.of(context).disableAnimations;
 
     return ClipRRect(
@@ -283,28 +273,34 @@ class _CinemaHeroState extends State<CinemaHero> {
           child: Padding(
           padding: const EdgeInsets.fromLTRB(20, 0, 20, 18),
           child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-            FitText(text(movie['title']) ?? '', style: display(28, color: Colors.white), maxLines: 2, wrap: false),
-            const SizedBox(height: 6),
-            Row(children: [
-              if (rating != null && rating > 0) ...[
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                  decoration: BoxDecoration(color: cinemaAccent, borderRadius: BorderRadius.circular(6)),
-                  child: Text(rating.toStringAsFixed(1), style: body(11.5, color: Colors.white, weight: FontWeight.w800)),
+            // Лише назва, оцінка й кнопка ▶ (решта — на сторінці тайтлу).
+            Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
+              Expanded(
+                child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  FitText(text(movie['title']) ?? '', style: display(28, color: Colors.white), maxLines: 2),
+                  if (rating != null && rating > 0) ...[
+                    const SizedBox(height: 6),
+                    Row(children: [
+                      const Icon(LucideIcons.star, size: 18, color: Color(0xFFFACC15)),
+                      const SizedBox(width: 5),
+                      Text(rating.toStringAsFixed(1), style: body(15, color: Colors.white, weight: FontWeight.w700)),
+                    ]),
+                  ],
+                ]),
+              ),
+              const SizedBox(width: 14),
+              GestureDetector(
+                onTap: () => context.push('/cinema/${movie['slug']}'),
+                child: Container(
+                  width: 60,
+                  height: 60,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFF0EA5E9), Color(0xFF2563EB)]),
+                  ),
+                  child: Semantics(label: tr('Дивитися'), button: true, child: const Icon(LucideIcons.play, color: Colors.white, size: 26)),
                 ),
-                const SizedBox(width: 8),
-              ],
-              Expanded(child: FitText(meta, style: body(12.5, color: Colors.white70), wrap: false)),
-            ]),
-            if (text(movie['title_original']) != null && movie['title_original'] != movie['title'])
-              FitText(text(movie['title_original'])!, style: body(14, color: Colors.white54), wrap: false),
-            if (text(movie['description']) != null)
-              Padding(padding: const EdgeInsets.only(top: 8), child: FitText(text(movie['description'])!, style: body(13.5, color: Colors.white70).copyWith(height: 1.4), maxLines: 2, wrap: false)),
-            const SizedBox(height: 14),
-            Wrap(spacing: 8, runSpacing: 8, children: [
-              _HeroButton(label: tr('Дивитися'), icon: LucideIcons.play, primaryStyle: true, onTap: () => context.push('/cinema/${movie['slug']}')),
-              if (text(movie['trailer_url']) != null) _HeroButton(label: tr('Трейлер'), icon: LucideIcons.clapperboard, onTap: () => context.push('/cinema/${movie['slug']}?trailer=1')),
-              _HeroButton(label: tr('Мій список'), icon: LucideIcons.plus, onTap: () => _addToList(movie)),
+              ),
             ]),
             if (movies.length > 1) ...[
               const SizedBox(height: 14),
@@ -324,37 +320,6 @@ class _CinemaHeroState extends State<CinemaHero> {
   }
 }
 
-class _HeroButton extends StatelessWidget {
-  const _HeroButton({required this.label, required this.icon, required this.onTap, this.primaryStyle = false});
-  final String label;
-  final IconData icon;
-  final VoidCallback onTap;
-  final bool primaryStyle;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        height: 42,
-        padding: const EdgeInsets.symmetric(horizontal: 18),
-        // Animax: «Дивитися» — суцільна зелена пігулка, решта — пігулки з білим контуром.
-        decoration: BoxDecoration(
-          color: primaryStyle ? cinemaAccent : Colors.transparent,
-          border: primaryStyle ? null : Border.all(color: Colors.white, width: 2),
-          borderRadius: BorderRadius.circular(21),
-        ),
-        child: Row(mainAxisSize: MainAxisSize.min, children: [
-          Icon(icon, size: 16, color: Colors.white),
-          const SizedBox(width: 6),
-          Text(label, style: body(13.5, color: Colors.white, weight: FontWeight.w700)),
-        ]),
-      ),
-    );
-  }
-}
-
-/// «Продовжити перегляд»: мініатюра, назва, «Сезон N · Серія M» і смужка прогресу.
 class ContinueCards extends StatelessWidget {
   const ContinueCards({required this.movies, super.key});
   final List<Map<String, dynamic>> movies;
