@@ -810,6 +810,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::post('messages', [WatchPartyController::class, 'message'])->middleware('throttle:30,1')->name('messages');
         Route::post('voice', [WatchPartyController::class, 'voice'])->middleware('throttle:20,1')->name('voice');
         Route::post('invite', [WatchPartyController::class, 'invite'])->middleware('throttle:10,1')->name('invite');
+        Route::post('leave', [WatchPartyController::class, 'leave'])->name('leave');
         Route::delete('/', [WatchPartyController::class, 'end'])->name('end');
     });
 
@@ -849,6 +850,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::post('chat', [ListenRoomController::class, 'chat'])->middleware('throttle:30,1')->name('chat');
         Route::post('kick', [ListenRoomController::class, 'kick'])->middleware('throttle:30,1')->name('kick');
         Route::post('host', [ListenRoomController::class, 'host'])->middleware('throttle:20,1')->name('host');
+        Route::post('leave', [ListenPartyController::class, 'leave'])->name('leave');
         Route::delete('/', [ListenPartyController::class, 'end'])->name('end');
     });
 

@@ -226,6 +226,21 @@ class _ListenScreenState extends State<ListenScreen> {
     return '${t ~/ 60}:${(t % 60).toString().padLeft(2, '0')}';
   }
 
+  /// Вийти з кімнати: зникаємо зі списку присутніх, решта продовжує без нас.
+  Future<void> _leave() async {
+    unawaited(api.post('$base/leave').then((_) {}).catchError((_) {}));
+    if (!mounted) return;
+    context.canPop() ? context.pop() : context.go('/music');
+  }
+
+  Widget _leaveBar() => Align(
+        alignment: Alignment.centerRight,
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: GhostButton(label: tr('Вийти'), icon: LucideIcons.logOut, compact: true, expand: false, onPressed: _leave),
+        ),
+      );
+
   @override
   Widget build(BuildContext context) {
     final p = party;
@@ -253,6 +268,7 @@ class _ListenScreenState extends State<ListenScreen> {
     return ScreenScroll(
       onRefresh: _refresh,
       children: [
+        _leaveBar(),
         Glass(
           child: Column(children: [
             ClipRRect(

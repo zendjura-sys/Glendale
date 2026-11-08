@@ -286,6 +286,14 @@ class _WatchPartyScreenState extends State<WatchPartyScreen> {
     }
   }
 
+  /// Вийти з кімнати: зникаємо зі списку присутніх, решта продовжує без нас.
+  Future<void> _leave() async {
+    unawaited(api.post('$base/leave').then((_) {}).catchError((_) {}));
+    if (!mounted) return;
+    context.canPop() ? context.pop() : context.go('/cinema');
+  }
+
+
   @override
   Widget build(BuildContext context) {
     final film = movie;
@@ -312,6 +320,7 @@ class _WatchPartyScreenState extends State<WatchPartyScreen> {
             ]),
           ),
           if (!ended) IconButton(tooltip: tr('Запросити'), onPressed: _invite, icon: Icon(LucideIcons.userPlus, color: primary)),
+          IconButton(tooltip: tr('Вийти'), onPressed: _leave, icon: const Icon(LucideIcons.logOut, color: dangerSoft)),
           IconButton(
             tooltip: tr('Скопіювати посилання'),
             onPressed: () {

@@ -170,6 +170,13 @@ class ListenParties
         $this->broadcast($party, ['ended' => true]);
     }
 
+    /** Вийти з кімнати: глядач зникає зі списку присутніх, кімната триває для інших. */
+    public function leave(ListenParty $party, User $user): void
+    {
+        $party->members()->where('user_id', $user->id)->update(['last_seen_at' => now()->subDay()]);
+        $this->broadcast($party, ['members' => $this->members($party)]);
+    }
+
     /**
      * Запросити друзів: кожному — повідомлення в особистий чат із посиланням.
      *

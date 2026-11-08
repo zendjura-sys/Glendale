@@ -1,6 +1,7 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import {
     ArrowLeft,
+    LogOut,
     Copy,
     Crown,
     Headphones,
@@ -388,6 +389,17 @@ export default function WatchParty({
                         <UserPlus className="size-4" /> {tr('Запросити')}
                     </button>
                 )}
+                <button
+                    type="button"
+                    onClick={() =>
+                        void api('POST', `/watch/${party.code}/leave`)
+                            .catch(() => undefined)
+                            .then(() => router.visit(movie.href))
+                    }
+                    className="inline-flex h-10 items-center gap-2 rounded-xl px-3 text-sm text-rose-300 hover:bg-rose-500/10"
+                >
+                    <LogOut className="size-4" /> {tr('Вийти')}
+                </button>
             </div>
 
             {party.ended && (

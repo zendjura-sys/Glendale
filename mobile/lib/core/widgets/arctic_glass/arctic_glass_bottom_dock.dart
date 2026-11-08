@@ -65,9 +65,8 @@ class ArcticDockItem {
   final Widget? badge;
 }
 
-/// Ряд вкладок доку з перетічною світловою капсулою під активною вкладкою
-/// (AnimatedAlign, easeOutBack, 280 мс): без обводки — м'яка неонова пляма, а іконка й підпис
-/// активної вкладки світяться неоном. [current] null — без підсвітки.
+/// Ряд вкладок доку: без капсули під активною вкладкою — її іконка й підпис світяться неоном.
+/// [current] null — без підсвітки.
 class ArcticDockTabs extends StatelessWidget {
   const ArcticDockTabs({required this.items, required this.current, required this.onTap, this.height = 56, super.key});
   final List<ArcticDockItem> items;
@@ -77,39 +76,12 @@ class ArcticDockTabs extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final still = MediaQuery.disableAnimationsOf(context);
     final n = items.length;
     final at = current;
-    final light = palette.isLight;
     return SizedBox(
       height: height,
       child: Stack(
         children: [
-          if (n > 0)
-            AnimatedAlign(
-              duration: still ? Duration.zero : const Duration(milliseconds: 280),
-              curve: Curves.easeOutBack,
-              alignment: Alignment(n == 1 ? 0 : -1 + 2 * (at ?? 0) / (n - 1), 0),
-              child: FractionallySizedBox(
-                widthFactor: 1 / n,
-                child: AnimatedOpacity(
-                  duration: still ? Duration.zero : const Duration(milliseconds: 200),
-                  opacity: at == null ? 0 : 1,
-                  // One UI: активна вкладка — пігулка контрастнішої заливки, без світіння.
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 3),
-                    child: Container(
-                      height: height,
-                      decoration: BoxDecoration(
-                        color: light ? const Color(0xFFFFFFFF) : const Color.fromRGBO(255, 255, 255, 0.14),
-                        borderRadius: BorderRadius.circular(height / 2),
-
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
           Row(
             children: [
               for (var i = 0; i < n; i++)
@@ -157,9 +129,12 @@ class ArcticDockTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final still = MediaQuery.disableAnimationsOf(context);
     final idle = palette.isLight ? ink.withValues(alpha: 0.55) : muted;
-    // One UI: активна вкладка — повний колір тексту (не акцент), як у Samsung-застосунках.
-    final on = ink;
+    // Активна вкладка — неоновий ціан зі світінням тексту й іконки, без плашки.
+    final on = palette.isLight ? AppColors.accentPrimary : AppColors.accentCyan;
     final color = active ? on : idle;
+    final glow = active
+        ? [Shadow(color: on.withValues(alpha: 0.85), blurRadius: 8), Shadow(color: on.withValues(alpha: 0.45), blurRadius: 18)]
+        : const <Shadow>[];
     return Semantics(
       selected: active,
       button: true,
@@ -177,7 +152,7 @@ class ArcticDockTab extends StatelessWidget {
                   active: active,
                   child: AnimatedSwitcher(
                     duration: still ? Duration.zero : const Duration(milliseconds: 200),
-                    child: Icon(active ? (item.activeIcon ?? item.icon) : item.icon, key: ValueKey(active), size: 22, color: color),
+                    child: Icon(active ? (item.activeIcon ?? item.icon) : item.icon, key: ValueKey(active), size: 22, color: color, shadows: glow),
                   ),
                 ),
                 if (item.badge case final b?) Positioned(right: -10, top: -4, child: b),
@@ -186,7 +161,7 @@ class ArcticDockTab extends StatelessWidget {
             const SizedBox(height: 3),
             AnimatedDefaultTextStyle(
               duration: still ? Duration.zero : const Duration(milliseconds: 200),
-              style: body(10.5, color: color, weight: active ? FontWeight.w700 : FontWeight.w500),
+              style: body(10.5, color: color, weight: active ? FontWeight.w700 : FontWeight.w500).copyWith(shadows: glow),
               child: FitText(item.label, wrap: false),
             ),
           ],

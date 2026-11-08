@@ -275,6 +275,7 @@ Route::prefix('v1')->group(function () {
                 Route::post('messages', [WatchPartyController::class, 'message'])->middleware('throttle:30,1');
                 Route::post('voice', [WatchPartyController::class, 'voice'])->middleware('throttle:20,1');
                 Route::post('invite', [WatchPartyController::class, 'invite'])->middleware('throttle:10,1');
+                Route::post('leave', [WatchPartyController::class, 'leave']);
                 Route::delete('/', [WatchPartyController::class, 'end']);
             });
         });
@@ -298,6 +299,7 @@ Route::prefix('v1')->group(function () {
                 Route::post('chat', [ListenRoomController::class, 'chat'])->middleware('throttle:30,1');
                 Route::post('kick', [ListenRoomController::class, 'kick'])->middleware('throttle:30,1');
                 Route::post('host', [ListenRoomController::class, 'host'])->middleware('throttle:20,1');
+                Route::post('leave', [ListenPartyController::class, 'leave']);
                 Route::delete('/', [ListenPartyController::class, 'end']);
             });
         });

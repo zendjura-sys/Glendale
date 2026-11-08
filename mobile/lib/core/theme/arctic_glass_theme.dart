@@ -157,7 +157,13 @@ class ArcticGlassThemeExtension extends ThemeExtension<ArcticGlassThemeExtension
     outline: null,
     specular: Color(0x00000000),
     shadows: [],
-    barFill: LinearGradient(colors: [Color.fromRGBO(16, 25, 42, 0.84), Color.fromRGBO(16, 25, 42, 0.84)]),
+    // Шапка й док — те саме молочне скло, що й картки (розмиття 42): крізь них м'яко видно вміст.
+    barFill: LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [Color.fromRGBO(255, 255, 255, 0.16), Color.fromRGBO(255, 255, 255, 0.07), Color.fromRGBO(255, 255, 255, 0.10)],
+      stops: [0, 0.55, 1],
+    ),
     sheetFill: Color.fromRGBO(10, 17, 30, 0.74),
     title: AppColors.textPrimary,
     body: Color(0xFFCBD5E1),
@@ -189,7 +195,12 @@ class ArcticGlassThemeExtension extends ThemeExtension<ArcticGlassThemeExtension
     outline: null,
     specular: Color(0x00000000),
     shadows: [],
-    barFill: LinearGradient(colors: [Color.fromRGBO(255, 255, 255, 0.84), Color.fromRGBO(255, 255, 255, 0.84)]),
+    barFill: LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [Color.fromRGBO(255, 255, 255, 0.62), Color.fromRGBO(255, 255, 255, 0.46), Color.fromRGBO(255, 255, 255, 0.54)],
+      stops: [0, 0.55, 1],
+    ),
     sheetFill: Color.fromRGBO(244, 248, 253, 0.8),
     title: AppColors.lightTitle,
     body: AppColors.lightBody,

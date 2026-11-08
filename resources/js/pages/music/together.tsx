@@ -18,6 +18,7 @@ import {
     UserMinus,
     UserPlus,
     Users,
+    LogOut,
     X,
 } from 'lucide-react';
 import { AnimatePresence, m, useReducedMotion } from 'motion/react';
@@ -342,6 +343,19 @@ export default function ListenTogether({ party: initial, friends }: Props) {
     return (
         <>
             <Head title={party.room?.title ?? tr('Слухаємо разом')} />
+            <div className="mx-auto mb-3 flex max-w-5xl justify-end">
+                <button
+                    type="button"
+                    onClick={() =>
+                        void api('POST', `${base}/leave`)
+                            .catch(() => undefined)
+                            .then(() => router.visit('/music'))
+                    }
+                    className="inline-flex h-10 items-center gap-2 rounded-xl px-3 text-sm text-rose-300 hover:bg-rose-500/10"
+                >
+                    <LogOut className="size-4" /> {tr('Вийти')}
+                </button>
+            </div>
             <div className="mx-auto grid max-w-5xl grid-cols-1 gap-4 lg:grid-cols-[1fr_340px]">
                 <div className="space-y-4">
                     <section className="gc-solid relative overflow-hidden rounded-3xl">

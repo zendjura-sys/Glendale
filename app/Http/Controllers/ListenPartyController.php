@@ -148,6 +148,13 @@ class ListenPartyController extends Controller
         return response()->json(['ok' => true]);
     }
 
+    public function leave(Request $request, ListenParty $party): JsonResponse
+    {
+        $this->parties->leave($party, $request->user());
+
+        return response()->json(['ok' => true]);
+    }
+
     public function end(Request $request, ListenParty $party): JsonResponse
     {
         $this->parties->end($party, $this->live($request, $party));
