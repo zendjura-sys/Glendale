@@ -91,11 +91,12 @@ ColorFilter _frost(double sat, double bright) {
   ]);
 }
 
-final _cardFrost = _frost(1.8, 1.18);
+// Картки безбарвні: тло під ними знебарвлюється (насичення 0.12), лишається лише світлий матовий іній.
+final _cardFrost = _frost(0.12, 1.18);
 final _panelFrost = _frost(1.9, 1.15);
 
 /// Фільтр скла: насичення й висвітлення, потім розмиття (mirror — без темних ореолів на краях).
-/// Картки (до 36) — blur 32 saturate 180% brightness 1.18; панелі — blur 40 saturate 190% brightness 1.15.
+/// Картки (до 36) — blur 32, безбарвні (saturate 12%) brightness 1.18; панелі — blur 40 saturate 190% brightness 1.15.
 ImageFilter arcticGlassFilter(double sigma) => ImageFilter.compose(
   outer: ImageFilter.blur(sigmaX: sigma, sigmaY: sigma, tileMode: TileMode.mirror),
   inner: sigma >= 36 ? _panelFrost : _cardFrost,
