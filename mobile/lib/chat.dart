@@ -1498,7 +1498,10 @@ class _Bubble extends StatelessWidget {
               ]),
             ]),
           ),
-        if (bodyText != null && bodyText.isNotEmpty) Text(bodyText, style: body(15, color: own ? Colors.white : ink).copyWith(height: 1.35)),
+        if (partyInvite(rawBody) case final invite?)
+          _PartyInviteCard(invite: invite, own: own)
+        else if (bodyText != null && bodyText.isNotEmpty)
+          Text(bodyText, style: body(15, color: own ? Colors.white : ink).copyWith(height: 1.35)),
         const SizedBox(height: 3),
         Align(alignment: Alignment.bottomRight, widthFactor: 1, child: meta),
       ],
@@ -2004,6 +2007,52 @@ class _CallBanner extends StatelessWidget {
           ]),
         );
       },
+    );
+  }
+}
+
+/// Запрошення «слухати / дивитися разом» з чату: тип, назва й шлях кімнати в застосунку.
+typedef PartyInvite = ({String kind, String title, String path});
+
+final _partyPattern = RegExp(r'^\s*(?:🎧|🎬)?\s*(.+?):\s*https?://[^\s/]+/(listen|watch)/([A-Za-z0-9_-]+)\s*$', unicode: true);
+
+/// Повідомлення-запрошення — замість посилання показуємо картку з кнопкою «Приєднатися».
+PartyInvite? partyInvite(String? body) {
+  final match = body == null ? null : _partyPattern.firstMatch(body);
+  if (match == null) return null;
+  return (kind: match.group(2)!, title: match.group(1)!.trim(), path: '/${match.group(2)}/${match.group(3)}');
+}
+
+class _PartyInviteCard extends StatelessWidget {
+  const _PartyInviteCard({required this.invite, required this.own});
+  final PartyInvite invite;
+  final bool own;
+
+  @override
+  Widget build(BuildContext context) {
+    final listen = invite.kind == 'listen';
+    final icon = listen ? LucideIcons.headphones : LucideIcons.clapperboard;
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minWidth: 220),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: MainAxisSize.min, children: [
+        Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(color: const Color(0xFF0EA5E9).withValues(alpha: 0.15), borderRadius: BorderRadius.circular(12)),
+            child: Icon(icon, size: 20, color: const Color(0xFF38BDF8)),
+          ),
+          const SizedBox(width: 10),
+          Flexible(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(listen ? tr('Запрошення слухати разом') : tr('Запрошення дивитися разом'), style: body(12, color: own ? Colors.white70 : muted)),
+              Text(invite.title, style: body(14.5, color: own ? Colors.white : ink, weight: FontWeight.w600)),
+            ]),
+          ),
+        ]),
+        const SizedBox(height: 10),
+        PrimaryButton(label: tr('Приєднатися'), icon: icon, compact: true, onPressed: () => context.push(invite.path)),
+      ]),
     );
   }
 }

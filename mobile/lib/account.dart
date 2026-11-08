@@ -411,10 +411,15 @@ Future<void> showFeedbackSheet(BuildContext context, {String screen = 'menu'}) a
 
 
 /// Що нового в цій версії застосунку — один раз після оновлення.
-const whatsNewVersion = '1.1.112';
+const whatsNewVersion = '1.1.113';
 
 /// Нове саме в цій версії — зверху, окремим блоком.
 List<String> _whatsNewCurrent() => [
+      tr('Запрошення слухати чи дивитися разом приходять у чат карткою з кнопкою «Приєднатися», а не посиланням.'),
+    ];
+
+/// Версія 1.1.112.
+List<String> _whatsNew112() => [
       tr('Кіно: на головній — лише назва, оцінка й кнопка ▶, без зайвого тексту.'),
       tr('Фільми й серіали грають у веб-плеєрі, як на сайті.'),
     ];
@@ -593,7 +598,7 @@ Future<void> showWhatsNew(BuildContext context, SharedPreferences prefs, {bool f
   await prefs.setString('whats_new', whatsNewVersion);
   if (!context.mounted) return;
   final current = _whatsNewCurrent();
-  final earlier = [..._whatsNew111(), ..._whatsNewPrev(), ..._whatsNew()];
+  final earlier = [..._whatsNew112(), ..._whatsNew111(), ..._whatsNewPrev(), ..._whatsNew()];
   Widget card(String item, {bool fresh = false}) => Container(
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.fromLTRB(12, 12, 14, 12),

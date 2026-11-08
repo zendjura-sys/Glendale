@@ -34,6 +34,7 @@ import {
 import { useContentTranslation } from '@/components/gc/translate';
 import { VideoNotePlayer } from './video-note';
 import { ViewOnceAttachment } from './view-once';
+import { PartyInvite, parsePartyInvite } from './party-invite';
 import { tr } from '@/lib/i18n';
 import { useProfanityMask } from '@/lib/profanity';
 import { usePlugin } from '@/lib/plugins';
@@ -197,6 +198,7 @@ export function MessageBubble({
         (hasImages && !message.body && !message.reply_to && !files.length);
     const pending = message.pending;
     const translation = useContentTranslation('message', message.id);
+    const invite = parsePartyInvite(message.body);
     const mask = useProfanityMask();
     const [toolsOpen, setToolsOpen] = useState(false);
 
@@ -541,10 +543,14 @@ export function MessageBubble({
                                 hasImages && 'px-2 pt-1.5 pb-1.5',
                             )}
                         >
-                            {message.body && (
-                                <span className="break-words whitespace-pre-wrap">
-                                    {mask(translation.text ?? message.body)}
-                                </span>
+                            {invite ? (
+                                <PartyInvite invite={invite} />
+                            ) : (
+                                message.body && (
+                                    <span className="break-words whitespace-pre-wrap">
+                                        {mask(translation.text ?? message.body)}
+                                    </span>
+                                )
                             )}
                             <span className="float-right mt-1.5 ml-2.5 translate-y-0.5">
                                 {meta}
