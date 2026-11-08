@@ -411,7 +411,7 @@ Future<void> showFeedbackSheet(BuildContext context, {String screen = 'menu'}) a
 
 
 /// Що нового в цій версії застосунку — один раз після оновлення.
-const whatsNewVersion = '1.1.114';
+const whatsNewVersion = '1.1.115';
 
 /// Нове саме в цій версії — зверху, окремим блоком.
 List<String> _whatsNewCurrent() => [
