@@ -5,6 +5,8 @@ import {
     Check,
     DatabaseBackup,
     Download,
+    ListChecks,
+    RotateCcw,
     Trash2,
 } from 'lucide-react';
 import { useState } from 'react';
@@ -14,6 +16,19 @@ import { tr } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
 type Backup = { name: string; size: number; created_at: string };
+type FailedJob = {
+    uuid: string;
+    queue: string;
+    job: string;
+    error: string;
+    failed_at: string;
+};
+type Queue = {
+    pending: number;
+    oldest: number | null;
+    failed_total: number;
+    failed: FailedJob[];
+};
 type ErrorRow = {
     id: number;
     class: string;
@@ -33,12 +48,14 @@ export default function AdminSystem({
     backups,
     backup_stale,
     errors,
+    queue,
     show,
     stats,
 }: {
     backups: Backup[];
     backup_stale: boolean;
     errors: ErrorRow[];
+    queue: Queue;
     show: 'open' | 'resolved';
     stats: { open: number; today: number };
 }) {
@@ -60,7 +77,7 @@ export default function AdminSystem({
             <PageHeader
                 title={tr('Система')}
                 description={tr(
-                    'Резервні копії бази (щодня о 04:10, зберігаються останні 14) і журнал помилок сервера.',
+                    'Резервні копії бази (щодня о 04:10, зберігаються останні 14), черга фонових задач і журнал помилок сервера.',
                 )}
             />
 
@@ -131,6 +148,118 @@ export default function AdminSystem({
                                 >
                                     <Download className="size-4" />
                                 </a>
+                            </li>
+                        ))}
+                    </ul>
+                )}
+            </section>
+
+            <section className="gc-solid mb-5 rounded-2xl p-4">
+                <div className="mb-3 flex flex-wrap items-center gap-3">
+                    <h2 className="flex flex-1 items-center gap-2 font-semibold text-white">
+                        <ListChecks className="size-4 text-sky-400" />
+                        {tr('Черга задач')}
+                    </h2>
+                    {queue.failed_total > 0 && (
+                        <>
+                            <button
+                                type="button"
+                                onClick={() =>
+                                    router.post(
+                                        '/admin/system/jobs/all/retry',
+                                        {},
+                                        { preserveScroll: true },
+                                    )
+                                }
+                                className="flex h-9 items-center gap-2 rounded-xl bg-[var(--gc-l2)] px-3 text-sm font-semibold text-white hover:bg-[var(--gc-l3)]"
+                            >
+                                <RotateCcw className="size-4" />
+                                {tr('Повторити всі')}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() =>
+                                    router.delete('/admin/system/jobs/all', {
+                                        preserveScroll: true,
+                                    })
+                                }
+                                className="flex h-9 items-center gap-2 rounded-xl px-3 text-sm text-white/60 hover:bg-[var(--gc-l3)] hover:text-white"
+                            >
+                                <Trash2 className="size-4" />
+                                {tr('Очистити')}
+                            </button>
+                        </>
+                    )}
+                </div>
+                <p className="mb-3 text-sm text-white/60 tabular-nums">
+                    {tr('Чекають: {n}', { n: queue.pending })}
+                    {queue.oldest !== null &&
+                        queue.pending > 0 &&
+                        ' · ' +
+                            tr('найстаріша — {ago}', {
+                                ago: timeAgo(
+                                    new Date(queue.oldest * 1000).toISOString(),
+                                ),
+                            })}
+                    {' · '}
+                    {tr('Впали: {n}', { n: queue.failed_total })}
+                </p>
+                {queue.pending > 100 && (
+                    <p className="mb-3 rounded-xl bg-amber-400/10 px-3 py-2 text-sm text-amber-200">
+                        {tr(
+                            'У черзі понад 100 задач. Перевірте, що на сервері працює обробник черги (queue:work).',
+                        )}
+                    </p>
+                )}
+                {queue.failed.length === 0 ? (
+                    <p className="text-sm text-white/45">
+                        {tr('Задач, що впали, немає.')}
+                    </p>
+                ) : (
+                    <ul className="divide-y divide-white/[0.06]">
+                        {queue.failed.map((j) => (
+                            <li
+                                key={j.uuid}
+                                className="flex items-start gap-3 py-2 text-sm"
+                            >
+                                <span className="min-w-0 flex-1">
+                                    <span className="block font-medium break-words text-white/85">
+                                        {j.job || tr('Задача')}{' '}
+                                        <span className="text-xs text-white/40">
+                                            {j.queue} · {timeAgo(j.failed_at)}
+                                        </span>
+                                    </span>
+                                    <span className="block text-xs break-words text-red-300/80">
+                                        {j.error}
+                                    </span>
+                                </span>
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        router.post(
+                                            `/admin/system/jobs/${j.uuid}/retry`,
+                                            {},
+                                            { preserveScroll: true },
+                                        )
+                                    }
+                                    className="rounded-lg p-1.5 text-white/60 hover:bg-[var(--gc-l3)] hover:text-white"
+                                    aria-label={tr('Повторити')}
+                                >
+                                    <RotateCcw className="size-4" />
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        router.delete(
+                                            `/admin/system/jobs/${j.uuid}`,
+                                            { preserveScroll: true },
+                                        )
+                                    }
+                                    className="rounded-lg p-1.5 text-white/60 hover:bg-[var(--gc-l3)] hover:text-white"
+                                    aria-label={tr('Прибрати')}
+                                >
+                                    <Trash2 className="size-4" />
+                                </button>
                             </li>
                         ))}
                     </ul>

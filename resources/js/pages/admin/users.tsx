@@ -56,6 +56,7 @@ type AdminUser = UserCard & {
     created_at: string;
     email_verified: boolean;
     two_factor: boolean;
+    previous_usernames?: string[];
 };
 
 type Props = {
@@ -340,6 +341,32 @@ export default function AdminUsers({ users, filters, roles }: Props) {
                                                         @{u.username} ·{' '}
                                                         {u.email}
                                                     </span>
+                                                    {(
+                                                        u.previous_usernames ??
+                                                        []
+                                                    ).length > 0 && (
+                                                        <span className="block text-xs text-white/40">
+                                                            {tr(
+                                                                'Раніше: {names}',
+                                                                {
+                                                                    names: (
+                                                                        u.previous_usernames ??
+                                                                        []
+                                                                    )
+                                                                        .map(
+                                                                            (
+                                                                                n,
+                                                                            ) =>
+                                                                                '@' +
+                                                                                n,
+                                                                        )
+                                                                        .join(
+                                                                            ', ',
+                                                                        ),
+                                                                },
+                                                            )}
+                                                        </span>
+                                                    )}
                                                 </span>
                                             </Link>
                                         </td>

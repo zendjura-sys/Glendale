@@ -304,6 +304,9 @@ class _PostCardState extends State<PostCard> {
                             ),
                           ),
                           if (who['is_verified'] == true) Icon(LucideIcons.badgeCheck, size: 15, color: primary),
+                          // Команда GameCon (адміністратор чи модератор).
+                          if (publisher == null && (author['staff'] == 'admin' || author['staff'] == 'moderator'))
+                            Tooltip(message: author['staff'] == 'admin' ? tr('Адміністрація GameCon') : tr('Модератор GameCon'), child: const Icon(LucideIcons.shieldCheck, size: 15, color: Color(0xFF38BDF8))),
                           if (publisher == null && PlusMark.of(author) != null) PlusBadge(size: 15),
                           if (publisher == null) SeasonBadge(user: author),
                           if (badge != null) RoleBadge(title: text(badge['title']) ?? '', color: text(badge['color'])),

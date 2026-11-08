@@ -10,6 +10,7 @@ use App\Models\SpamBlock;
 use App\Models\User;
 use App\Services\Antispam\IpBans;
 use App\Services\Antispam\LinkFilter;
+use App\Services\Antispam\PhishingGuard;
 use App\Support\Settings\SiteSettings;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Cache;
@@ -72,6 +73,11 @@ class ContentFilter
     {
         if ($text === null || $text === '') {
             return $text;
+        }
+        if (($phish = app(PhishingGuard::class)->suspicious($text)) !== null) {
+            $this->deny('phishing', $phish['brand'] !== null
+                ? "Посилання {$phish['host']} схоже на підробку {$phish['brand']} (фішинг) — повідомлення не надіслано."
+                : "Посилання прямо на IP-адресу {$phish['host']} не пропускаємо — це часто фішинг.", null, null, $phish['host']);
         }
         if (($host = app(LinkFilter::class)->forbidden($text)) !== null) {
             $this->deny('domain', "Посилання на {$host} заборонені на GameCon.", null, null, $host);

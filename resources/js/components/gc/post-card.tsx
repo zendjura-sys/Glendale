@@ -52,6 +52,7 @@ import {
     CosmeticBadge,
     cosmeticNameStyle,
 } from '@/components/season/cosmetics';
+import { StaffBadge } from './staff-badge';
 import { VerifiedBadge } from './verified-badge';
 import {
     TranslateToggle,
@@ -181,6 +182,9 @@ export function PostCard({
                             )}
                             {(post.publisher ?? post.author).is_verified && (
                                 <VerifiedBadge />
+                            )}
+                            {!post.publisher && (
+                                <StaffBadge role={post.author.staff} />
                             )}
                             {!post.publisher && post.author.plus && (
                                 <PlusBadge />

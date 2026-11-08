@@ -147,6 +147,13 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
                 Log::info('verification: revoked after rename', ['user' => $user->id]);
             }
         });
+        // Історія ніків: стара адреса лишається в журналі (і 30 днів не віддається іншим).
+        static::updated(function (User $user) {
+            $old = (string) $user->getOriginal('username');
+            if ($user->wasChanged('username') && $old !== '' && mb_strtolower($old) !== mb_strtolower((string) $user->username)) {
+                UsernameChange::query()->create(['user_id' => $user->id, 'old_username' => mb_strtolower($old), 'new_username' => mb_strtolower((string) $user->username)]);
+            }
+        });
     }
 
     protected function casts(): array
@@ -341,6 +348,8 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
             'avatar_url' => $this->avatar_url,
             'is_online' => $this->is_online,
             'is_verified' => $this->is_verified,
+            // Команда сайту (адміністратор чи модератор) — значок біля імені.
+            'staff' => $this->isStaff() ? $this->role : null,
             'verified_kind' => $this->is_verified ? $this->verification_kind : null,
             'account_type' => $this->account_type !== 'personal' ? $this->account_type : null,
             'status' => $this->statusExpired() ? null : $this->status,
