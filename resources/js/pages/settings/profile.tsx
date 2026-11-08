@@ -21,6 +21,7 @@ import { send } from '@/routes/verification';
 import type { SocialConnection } from '@/types/auth';
 import { StreamSettings } from '@/components/streams/stream';
 import type { StreamInfo } from '@/components/streams/stream';
+import { BadgeOrderSettings } from '@/components/settings/badge-order';
 import { tr } from '@/lib/i18n';
 import { listWords } from '@/lib/modes';
 import { useFeature } from '@/lib/plugins';
@@ -433,6 +434,17 @@ export default function Profile({
                     </Button>
                 </div>
             </form>
+
+            <div className="mt-7">
+                <SettingsCard
+                    title={tr('Значки біля ніка')}
+                    description={tr(
+                        'Логотипи сім’ї, кланів і гільдій біля вашого імені. Перший показується завжди, решта на телефоні — за кнопкою «+N».',
+                    )}
+                >
+                    <BadgeOrderSettings />
+                </SettingsCard>
+            </div>
 
             <div className="mt-7">
                 <SettingsCard list title={tr('Приватність')}>

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import 'affiliation_badges.dart' show showBadgeOrder;
 import 'api.dart';
 import 'family_widget.dart';
 import 'nav_items.dart';
@@ -380,6 +381,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ListTile(leading: Icon(LucideIcons.badgeCheck, color: accent), title: Text(tr('Тип акаунта й верифікація'), style: body(14.5, weight: FontWeight.w600)), trailing: Icon(LucideIcons.chevronRight, color: faint), onTap: () => context.push('/settings/account-type')),
             if (session.pluginOn('pixel_avatar'))
               ListTile(leading: Icon(LucideIcons.grid3x3, color: accent), title: Text(tr('Піксельна аватарка'), style: body(14.5, weight: FontWeight.w600)), trailing: Icon(LucideIcons.chevronRight, color: faint), onTap: () => context.push('/settings/pixel-avatar')),
+            ListTile(leading: Icon(LucideIcons.shield, color: accent), title: Text(tr('Значки біля ніка'), style: body(14.5, weight: FontWeight.w600)), subtitle: Text(tr('Який логотип показувати першим'), style: body(12.5, color: muted)), trailing: Icon(LucideIcons.chevronRight, color: faint), onTap: () => showBadgeOrder(context)),
           ]),
         ),
       ],

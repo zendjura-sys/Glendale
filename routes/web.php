@@ -101,6 +101,7 @@ use App\Http\Controllers\SavedController;
 use App\Http\Controllers\SeasonController;
 use App\Http\Controllers\ServerAppController;
 use App\Http\Controllers\ServerController;
+use App\Http\Controllers\Settings\BadgeOrderController;
 use App\Http\Controllers\SetupController;
 use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\SpotifyController;
@@ -252,6 +253,8 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     Route::put('settings/event-frame', [MemoriesController::class, 'eventFrame'])->middleware('throttle:20,1')->name('event-frame');
     Route::get('settings/profile-track', [SetupController::class, 'tracks'])->middleware('throttle:60,1')->name('profile-track.index');
     Route::put('settings/profile-track', [SetupController::class, 'saveTrack'])->middleware('throttle:30,1')->name('profile-track.update');
+    Route::get('settings/badges', [BadgeOrderController::class, 'show'])->name('settings.badges');
+    Route::put('settings/badges', [BadgeOrderController::class, 'update'])->middleware('throttle:30,1')->name('settings.badges.update');
     Route::put('settings/home-widgets', [MemoriesController::class, 'homeWidgets'])->middleware('throttle:30,1')->name('home-widgets');
     // Ігровий щоденник.
     Route::middleware('module:games')->group(function () {

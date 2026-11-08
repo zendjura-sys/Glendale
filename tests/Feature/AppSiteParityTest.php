@@ -114,6 +114,8 @@ class AppSiteParityTest extends TestCase
         $this->withToken($token)->getJson('/api/v1/site/memories')->assertOk()->assertJsonStructure(['posts', 'date']);
         $this->withToken($token)->getJson('/api/v1/site/map')->assertOk()->assertJsonPath('countries.0.code', 'UA');
         $this->withToken($token)->putJson('/api/v1/site/settings/event-frame', ['on' => true])->assertOk()->assertJsonPath('ok', true);
+        $this->withToken($token)->getJson('/api/v1/site/settings/badges')->assertOk()->assertJsonStructure(['groups']);
+        $this->withToken($token)->putJson('/api/v1/site/settings/badges', ['order' => ['family']])->assertOk()->assertJsonPath('ok', true);
         $this->withToken($token)->getJson('/api/v1/me')->assertOk()->assertJsonStructure(['user' => ['streak', 'memories', 'event_frame']]);
     }
 

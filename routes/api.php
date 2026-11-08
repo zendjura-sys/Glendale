@@ -95,6 +95,7 @@ use App\Http\Controllers\ServerController;
 use App\Http\Controllers\Settings\AccountController as SettingsAccountController;
 use App\Http\Controllers\Settings\AccountTypeController;
 use App\Http\Controllers\Settings\AppearanceController;
+use App\Http\Controllers\Settings\BadgeOrderController;
 use App\Http\Controllers\Settings\DigestController;
 use App\Http\Controllers\Settings\GameThemeController;
 use App\Http\Controllers\Settings\ListeningController;
@@ -434,6 +435,9 @@ Route::prefix('v1')->group(function () {
             Route::get('map', [MemoriesController::class, 'map']);
             Route::put('settings/event-frame', [MemoriesController::class, 'eventFrame'])->middleware('throttle:20,1');
             Route::put('settings/home-widgets', [MemoriesController::class, 'homeWidgets'])->middleware('throttle:30,1');
+            // Порядок значків біля ніка (сім'я, клани, гільдії).
+            Route::get('settings/badges', [BadgeOrderController::class, 'show']);
+            Route::put('settings/badges', [BadgeOrderController::class, 'update'])->middleware('throttle:30,1');
             // Рулетка кіно, «Вгадай пісню», вікторина дня й ігровий щоденник — ті самі дії, що й на сайті.
             Route::get('cinema/roulette', [MovieRouletteController::class, 'index'])->middleware('module:cinema');
             Route::get('cinema/overview', [CinemaController::class, 'overview'])->middleware('module:cinema');
