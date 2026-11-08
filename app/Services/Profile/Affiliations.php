@@ -132,7 +132,7 @@ class Affiliations
                 $type = self::t(Clan::TYPES[$clan->type] ?? 'Клан');
                 $group = [[
                     'kind' => $clan->type === 'guild' ? 'guild' : 'clan',
-                    'name' => $clan->display_name,
+                    'name' => $clan->name,
                     'tag' => $clan->tag,
                     'logo' => $icons->url($clan->logo_path),
                     'href' => '/clans/'.$clan->slug,
@@ -144,7 +144,7 @@ class Affiliations
                 ]];
                 if ($clan->game) {
                     $clanGames[] = $clan->game->id;
-                    $group[] = $this->game($clan->game->name, $this->gameLogo($clan->game), '/games/'.$clan->game->slug, self::t('Гра :type «:name»', ['type' => mb_strtolower($type), 'name' => $clan->display_name]));
+                    $group[] = $this->game($clan->game->name, $this->gameLogo($clan->game), '/games/'.$clan->game->slug, self::t($clan->type === 'guild' ? 'Гра гільдії «:name»' : 'Гра клану «:name»', ['name' => $clan->name]));
                 }
                 $groups['clan:'.$clan->id] = $group;
             }
