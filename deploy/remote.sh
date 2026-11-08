@@ -51,6 +51,9 @@ sudo chmod -R ug+rwX storage bootstrap/cache
 # Скомпільовані шаблони — власність PHP-FPM: Blade робить touch() на файлі, а змінити час може лише власник
 # (інакше 500 «touch(): Utime failed: Operation not permitted» на кожній сторінці).
 sudo chown -R www-data:www-data storage/framework/views
+# Журнали: нові файли успадковують групу www-data (setgid) і доступні на запис і сайту, і черзі.
+sudo chmod g+s storage/logs
+sudo chmod -R ug+rw storage/logs
 
 # Версія PHP-FPM залежить від релізу Ubuntu (24.04 — 8.3, 26.04 — 8.5): беремо ту, що встановлена.
 PHP_FPM="php$(php -r 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;')-fpm"

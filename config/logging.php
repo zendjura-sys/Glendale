@@ -70,6 +70,8 @@ return [
             'path' => storage_path('logs/laravel.log'),
             'level' => env('LOG_LEVEL', 'debug'),
             'max_files' => env('LOG_DAILY_DAYS', 14),
+            // Сайт (www-data) і черга пишуть в один файл: група теж може дописувати.
+            'permission' => 0664,
             'replace_placeholders' => true,
         ],
 

@@ -2,6 +2,7 @@
 
 namespace App\Services\System;
 
+use App\Services\Cinema\CinemaException;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -25,6 +26,8 @@ class ErrorJournal
         AuthorizationException::class,
         ModelNotFoundException::class,
         TokenMismatchException::class,
+        // Плеєр балансера не відповів — це збій чужого сервісу, глядач уже бачить повідомлення.
+        CinemaException::class,
     ];
 
     public function record(Throwable $e): void
