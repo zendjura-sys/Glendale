@@ -48,6 +48,8 @@ else
     bash deploy/remote.sh
     chown -R "$OWNER":www-data "$APP"
 fi
+# Після chown шаблони знову повертаємо PHP-FPM (див. remote.sh): інакше Blade падає на touch().
+chown -R www-data:www-data "$APP/storage/framework/views"
 
 # 5. Сайт відкривається в браузері (порожній екран через помилку JavaScript curl не помічає).
 if ! bash deploy/smoke.sh; then
