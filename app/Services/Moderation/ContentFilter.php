@@ -75,9 +75,7 @@ class ContentFilter
             return $text;
         }
         if (($phish = app(PhishingGuard::class)->suspicious($text)) !== null) {
-            $this->deny('phishing', $phish['brand'] !== null
-                ? "Посилання {$phish['host']} схоже на підробку {$phish['brand']} (фішинг) — повідомлення не надіслано."
-                : "Посилання прямо на IP-адресу {$phish['host']} не пропускаємо — це часто фішинг.", null, null, $phish['host']);
+            $this->deny('phishing', "Посилання {$phish['host']} схоже на підробку {$phish['brand']} (фішинг) — повідомлення не надіслано.", null, null, $phish['host']);
         }
         if (($host = app(LinkFilter::class)->forbidden($text)) !== null) {
             $this->deny('domain', "Посилання на {$host} заборонені на GameCon.", null, null, $host);

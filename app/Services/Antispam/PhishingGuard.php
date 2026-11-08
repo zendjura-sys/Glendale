@@ -6,7 +6,8 @@ use App\Support\Plugins\Plugins;
 
 /**
  * Перевірка посилань на фішинг: підробки Steam, Discord, Epic Games та інших сервісів
- * (схожі написання, літери з іншої абетки, «подарункові» домени) і посилання прямо на IP-адресу.
+ * (схожі написання, літери з іншої абетки, «подарункові» домени). Посилання на IP не чіпаємо:
+ * гравці постійно діляться адресами серверів.
  * Справжні домени й піддомени сервісів пропускаємо, свій сайт — теж.
  */
 class PhishingGuard
@@ -32,17 +33,14 @@ class PhishingGuard
     ];
 
     /**
-     * Перше підозріле посилання в тексті: ['host' => …, 'brand' => назва сервісу чи null] або null.
+     * Перше підозріле посилання в тексті: ['host' => …, 'brand' => назва сервісу] або null.
      *
-     * @return array{host: string, brand: string|null}|null
+     * @return array{host: string, brand: string}|null
      */
     public function suspicious(string $text): ?array
     {
         if (! app(Plugins::class)->on('phishing_guard')) {
             return null;
-        }
-        if (preg_match('~https?://((?:\d{1,3}\.){3}\d{1,3})(?=[/:?#\s]|$)~i', $text, $ip) === 1) {
-            return ['host' => $ip[1], 'brand' => null];
         }
         foreach (LinkFilter::hosts($text) as $host) {
             if (($brand = $this->imitates($host)) !== null) {

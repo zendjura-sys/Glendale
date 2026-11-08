@@ -28,8 +28,9 @@ class SafetyExtrasTest extends TestCase
         foreach (['steamcommunity.com', 'store.steampowered.com', 'discord.gg', 'cdn.discordapp.com', 'youtube.com', 'gamecon.online', 'top.gg', 'example.com', 'steamdb.info'] as $real) {
             $this->assertNull($guard->imitates($real), $real);
         }
-        $this->assertSame('1.2.3.4', $guard->suspicious('логін тут http://1.2.3.4/login')['host'] ?? null);
-        $this->assertNull($guard->suspicious('версія 1.2.3.4 вийшла'));
+        // Адреси серверів за IP — звична річ для гравців, їх не блокуємо.
+        $this->assertNull($guard->suspicious('заходь http://1.2.3.4:30120 або connect 5.6.7.8:27015'));
+        $this->assertSame('Discord', $guard->suspicious('халява https://discord-nitro.xyz')['brand'] ?? null);
     }
 
     public function test_phishing_link_is_not_sent_in_chat(): void
