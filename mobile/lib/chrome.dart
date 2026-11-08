@@ -600,7 +600,13 @@ class _IslandNavState extends State<IslandNav> {
         tween: Tween(end: open ? AppBlur.menu : AppBlur.dock),
         duration: _motion(context, _snap),
         curve: _snapCurve,
-        builder: (context, blur, child) => ArcticDockSurface(blur: blur, child: child!),
+        // Розгорнуте меню — легше скло: крізь сильне кольорове розмиття проступають барви стрічки,
+        // тож меню не сіре, а плитки на ньому — той самий безбарвний матовий лід, що й картки.
+        builder: (context, blur, child) => ArcticDockSurface(
+          blur: blur,
+          fill: open ? LinearGradient(colors: palette.isLight ? const [Color.fromRGBO(255, 255, 255, 0.55), Color.fromRGBO(255, 255, 255, 0.55)] : const [Color.fromRGBO(8, 14, 26, 0.5), Color.fromRGBO(8, 14, 26, 0.5)]) : null,
+          child: child!,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -759,8 +765,8 @@ class _MenuContentState extends State<MenuContent> {
   bool system = false;
 
   // Плитки меню — той самий пласкій матовий лід, що й картки стрічки.
-  Color get _l1 => palette.isLight ? const Color.fromRGBO(255, 255, 255, 0.72) : const Color.fromRGBO(255, 255, 255, 0.07);
-  Color get _l2 => palette.isLight ? const Color.fromRGBO(15, 23, 42, 0.04) : const Color.fromRGBO(255, 255, 255, 0.07);
+  Color get _l1 => palette.isLight ? const Color.fromRGBO(255, 255, 255, 0.6) : const Color.fromRGBO(255, 255, 255, 0.035);
+  Color get _l2 => palette.isLight ? const Color.fromRGBO(15, 23, 42, 0.035) : const Color.fromRGBO(255, 255, 255, 0.05);
   static const _sky = Color(0xFF38BDF8);
   static const _emerald = Color(0xFF34D399);
   static const _amber = Color(0xFFFBBF24);

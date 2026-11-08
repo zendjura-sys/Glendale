@@ -62,7 +62,7 @@ abstract final class AppBlur {
   static const fixed = 40.0;
   static const dock = 40.0;
   static const sheet = 40.0;
-  static const menu = 32.0;
+  static const menu = 48.0;
 }
 
 /// Пляма світла на тлі: центр (Alignment), радіус градієнта, колір і прозорість.

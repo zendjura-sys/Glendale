@@ -30,8 +30,11 @@ abstract final class ArcticDock {
 /// Поверхня нерухомих панелей (док, шапка, міні-плеєр): щільніше скло з розмиттям 24
 /// без тіні: панель відділяє від стрічки лише розмиття й грань.
 class ArcticDockSurface extends StatelessWidget {
-  const ArcticDockSurface({required this.child, this.height, this.radius = ArcticDock.radius, this.glowing = false, this.blur = AppBlur.dock, super.key});
+  const ArcticDockSurface({required this.child, this.height, this.radius = ArcticDock.radius, this.glowing = false, this.blur = AppBlur.dock, this.fill, super.key});
   final Widget child;
+
+  /// Своя заливка замість щільного скла панелей (напр. розгорнуте меню — прозоріше).
+  final Gradient? fill;
   final double blur;
   final double? height;
   final double radius;
@@ -46,7 +49,7 @@ class ArcticDockSurface extends StatelessWidget {
       radius: radius,
       height: height,
       glowing: glowing,
-      fill: tokens.barFill,
+      fill: fill ?? tokens.barFill,
       child: child,
     );
   }
