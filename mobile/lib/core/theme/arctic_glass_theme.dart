@@ -126,7 +126,7 @@ class ArcticGlassThemeExtension extends ThemeExtension<ArcticGlassThemeExtension
   final Color muted;
 
   // Темна «Frosted Ice Glass»: тло #060B14 з блакитними плямами (#0EA5E9 / #1D4ED8, 22%);
-  // картка — безбарвний пласкій матовий лід поверх сильного знебарвленого розмиття; без обводок, тіней і переливів.
+  // картка — безбарвний пласкій матовий лід: крізь сильне розмиття м'яко видно тло; без обводок, тіней і переливів.
   static const dark = ArcticGlassThemeExtension(
     light: false,
     background: [Color(0xFF060B14), Color(0xFF060B14)],
@@ -136,8 +136,8 @@ class ArcticGlassThemeExtension extends ThemeExtension<ArcticGlassThemeExtension
       ArcticGlow(Alignment(-0.7, 1.0), 0.75, Color(0xFF0EA5E9), 0.16),
     ],
     // Пласка заливка: рівний молочний лід без діагонального переливу й об'єму.
-    glassFill: LinearGradient(colors: [Color.fromRGBO(255, 255, 255, 0.09), Color.fromRGBO(255, 255, 255, 0.09)]),
-    pressedFill: LinearGradient(colors: [Color.fromRGBO(255, 255, 255, 0.14), Color.fromRGBO(255, 255, 255, 0.14)]),
+    glassFill: LinearGradient(colors: [Color.fromRGBO(255, 255, 255, 0.06), Color.fromRGBO(255, 255, 255, 0.06)]),
+    pressedFill: LinearGradient(colors: [Color.fromRGBO(255, 255, 255, 0.1), Color.fromRGBO(255, 255, 255, 0.1)]),
     innerFill: Color.fromRGBO(255, 255, 255, 0.07),
     border: Color(0x00000000),
     outline: null,
