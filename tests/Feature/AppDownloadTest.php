@@ -5,6 +5,9 @@ namespace Tests\Feature;
 use App\Models\User;
 use App\Support\Settings\SiteSettings;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
@@ -49,5 +52,48 @@ class AppDownloadTest extends TestCase
 
         $this->actingAs(User::factory()->admin()->create())->put('/admin/design/app-links', ['apk' => 'https://gamecon.online/gamecon.apk'])->assertSessionHasNoErrors();
         $this->assertSame(['apk'], array_keys(app(SiteSettings::class)->appLinks()));
+    }
+
+    public function test_admin_uploads_direct_download_in_chunks(): void
+    {
+        Storage::fake('public');
+        Storage::fake('local');
+        $admin = User::factory()->admin()->create();
+        $id = (string) Str::uuid();
+        $body = 'PK'.str_repeat('x', 3000);
+        $parts = str_split($body, 1200);
+        $send = fn (int $i, string $name = 'GameCon 1.1.110.apk') => $this->actingAs($admin)->postJson('/admin/design/app-files/apk', [
+            'upload_id' => $id, 'index' => $i, 'total' => count($parts), 'name' => $name,
+            'chunk' => UploadedFile::fake()->createWithContent('blob', $parts[$i]),
+        ]);
+
+        $this->actingAs(User::factory()->create())->postJson('/admin/design/app-files/apk', [])->assertForbidden();
+        $send(0, 'virus.exe')->assertJsonValidationErrors('name');
+        $send(0)->assertOk()->assertJson(['done' => false]);
+        $send(1)->assertOk()->assertJson(['done' => false]);
+        $send(2)->assertOk()->assertJson(['done' => true, 'file' => ['name' => 'GameCon-1.1.110.apk', 'size' => strlen($body), 'sha256' => hash('sha256', $body)]]);
+
+        Storage::disk('public')->assertExists('downloads/apk/GameCon-1.1.110.apk');
+        $this->assertSame([], Storage::disk('local')->directories('app-uploads'));
+        // Файл має перевагу над посиланням; на сторінці /app — розмір і контрольна сума.
+        $this->assertStringEndsWith('downloads/apk/GameCon-1.1.110.apk', app(SiteSettings::class)->appLinks()['apk'] ?? '');
+        $this->get('/app')->assertInertia(fn (Assert $page) => $page
+            ->where('files.apk.sha256', hash('sha256', $body))
+            ->where('files.apk.size', strlen($body)));
+
+        $this->actingAs($admin)->delete('/admin/design/app-files/apk')->assertRedirect();
+        Storage::disk('public')->assertMissing('downloads/apk/GameCon-1.1.110.apk');
+        $this->assertArrayNotHasKey('apk', app(SiteSettings::class)->appLinks());
+    }
+
+    public function test_apk_upload_rejects_non_zip_file(): void
+    {
+        Storage::fake('public');
+        Storage::fake('local');
+        $this->actingAs(User::factory()->admin()->create())->postJson('/admin/design/app-files/apk', [
+            'upload_id' => (string) Str::uuid(), 'index' => 0, 'total' => 1, 'name' => 'app.apk',
+            'chunk' => UploadedFile::fake()->createWithContent('blob', 'not a zip'),
+        ])->assertJsonValidationErrors('chunk');
+        $this->assertArrayNotHasKey('apk', app(SiteSettings::class)->appLinks());
     }
 }

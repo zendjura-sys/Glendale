@@ -17,12 +17,14 @@ import {
 } from '@/components/app-promo/store-buttons';
 import type { StoreKey } from '@/components/app-promo/store-buttons';
 import { InstallGuides } from '@/components/app-promo/install-guides';
+import type { DownloadFile } from '@/components/app-promo/install-guides';
 import { tr } from '@/lib/i18n';
 
 type Props = {
     links: Partial<Record<StoreKey, string>>;
     version: string | null;
     screens: string[];
+    files: Partial<Record<StoreKey, DownloadFile>>;
 };
 
 type Device = 'android' | 'ios' | 'windows' | 'macos' | 'linux' | 'other';
@@ -214,7 +216,7 @@ const FEATURES = [
 ];
 
 /** Сторінка застосунку: магазини, де він є, пряме завантаження, QR для телефона й знімки екранів. */
-export default function AppDownload({ links, version, screens }: Props) {
+export default function AppDownload({ links, version, screens, files }: Props) {
     const [device, setDevice] = useState<Device>('other');
     useEffect(() => setDevice(platform()), []);
 
@@ -305,7 +307,7 @@ export default function AppDownload({ links, version, screens }: Props) {
                     </div>
                 </section>
 
-                <InstallGuides links={links} />
+                <InstallGuides links={links} files={files} />
 
                 <section className="mt-6 grid gap-3 sm:grid-cols-2">
                     {FEATURES.map((f) => (

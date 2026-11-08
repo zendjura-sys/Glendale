@@ -4,7 +4,11 @@ import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { STORES } from '@/components/app-promo/store-buttons';
 import type { StoreKey } from '@/components/app-promo/store-buttons';
+import { formatBytes } from '@/lib/format';
 import { tr } from '@/lib/i18n';
+
+/** Файл, завантажений в адмінці: розмір і SHA-256 для перевірки. */
+export type DownloadFile = { name: string; size: number; sha256: string };
 
 type Guide = {
     key: StoreKey;
@@ -116,8 +120,10 @@ const GUIDES: Guide[] = [
 /** Покрокові інструкції встановлення для файлів, що завантажуються напряму (лише ті, де є посилання). */
 export function InstallGuides({
     links,
+    files = {},
 }: {
     links: Partial<Record<StoreKey, string>>;
+    files?: Partial<Record<StoreKey, DownloadFile>>;
 }) {
     const reduce = useReducedMotion();
     const guides = GUIDES.filter((g) => links[g.key]);
@@ -152,8 +158,10 @@ export function InstallGuides({
                                     <span className="block font-semibold text-white">
                                         {s.name}
                                     </span>
-                                    <span className="block text-xs text-white/50">
-                                        {g.file}
+                                    <span className="block text-xs text-white/50 tabular-nums">
+                                        {files[g.key]
+                                            ? `${files[g.key]!.name} · ${formatBytes(files[g.key]!.size)}`
+                                            : g.file}
                                     </span>
                                 </span>
                                 <ChevronDown
@@ -195,6 +203,16 @@ export function InstallGuides({
                                                 </li>
                                             ))}
                                         </ol>
+                                        {files[g.key]?.sha256 && (
+                                            <p className="mb-3 text-xs text-white/55">
+                                                {tr(
+                                                    'Контрольна сума SHA-256 — звірте, щоб переконатися, що файл не підмінено:',
+                                                )}
+                                                <span className="mt-1 block font-mono text-[11px] break-all text-white/70 select-all">
+                                                    {files[g.key]!.sha256}
+                                                </span>
+                                            </p>
+                                        )}
                                         {g.note && (
                                             <p className="mb-4 rounded-xl bg-sky-500/10 px-3 py-2 text-xs leading-relaxed text-sky-200">
                                                 {g.note()}

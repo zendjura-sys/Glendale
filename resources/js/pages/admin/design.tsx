@@ -21,6 +21,8 @@ import { PageHeader, Pill } from '@/components/gc/admin';
 import InputError from '@/components/input-error';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+import { xsrfToken } from '@/lib/api';
+import { formatBytes } from '@/lib/format';
 import {
     DESKTOP_STORES,
     MOBILE_STORES,
@@ -50,7 +52,22 @@ type Props = {
     background: SiteImage | null;
     authImages: Record<string, string | null>;
     appLinks: Partial<Record<StoreKey, string>>;
+    appFiles: Partial<Record<DirectKey, AppFile>>;
+    appFileTypes: Record<DirectKey, string[]>;
 };
+
+type DirectKey = 'apk' | 'windows' | 'macos' | 'linux';
+
+type AppFile = {
+    name: string;
+    size: number;
+    sha256: string;
+    uploaded_at: string;
+    url: string;
+};
+
+/** Розмір частини, як на сервері (AppFiles::CHUNK_BYTES). */
+const CHUNK_BYTES = 4 * 1024 * 1024;
 
 type SiteImage = {
     desktop: string | null;
@@ -72,6 +89,8 @@ export default function AdminDesign({
     background,
     authImages,
     appLinks,
+    appFiles,
+    appFileTypes,
 }: Props) {
     const active = themes.find((theme) => theme.is_active) ?? null;
     const fileRef = useRef<HTMLInputElement>(null);
@@ -115,7 +134,11 @@ export default function AdminDesign({
             />
 
             <BackgroundCard image={background} />
-            <AppLinksCard links={appLinks} />
+            <AppLinksCard
+                links={appLinks}
+                files={appFiles}
+                types={appFileTypes}
+            />
 
             <AuthImagesCard images={authImages} />
 
@@ -826,7 +849,15 @@ function BackgroundCard({ image }: { image: SiteImage | null }) {
  * Посилання на застосунок: магазини й пряме завантаження. Порожнє поле — кнопки на сайті не видно;
  * якщо не заповнено жодного, ховається й картка «Офіційний застосунок» у меню.
  */
-function AppLinksCard({ links }: { links: Partial<Record<StoreKey, string>> }) {
+function AppLinksCard({
+    links,
+    files,
+    types,
+}: {
+    links: Partial<Record<StoreKey, string>>;
+    files: Partial<Record<DirectKey, AppFile>>;
+    types: Record<DirectKey, string[]>;
+}) {
     const all = [...MOBILE_STORES, ...DESKTOP_STORES];
     const form = useForm<Record<StoreKey, string>>(
         Object.fromEntries(all.map((k) => [k, links[k] ?? ''])) as Record<
@@ -848,8 +879,9 @@ function AppLinksCard({ links }: { links: Partial<Record<StoreKey, string>> }) {
         e.preventDefault();
         form.put('/admin/design/app-links', { preserveScroll: true });
     };
+    const isDirect = (key: StoreKey): key is DirectKey => key in types;
     const field = (key: StoreKey) => (
-        <div key={key} className="grid gap-1.5">
+        <div key={key} className="grid content-start gap-1.5">
             <label
                 htmlFor={`app-${key}`}
                 className="flex items-center gap-2 text-sm font-medium text-white/85"
@@ -857,16 +889,35 @@ function AppLinksCard({ links }: { links: Partial<Record<StoreKey, string>> }) {
                 {STORES[key].mark()}
                 {STORES[key].name}
             </label>
-            <Input
-                id={`app-${key}`}
-                type="url"
-                inputMode="url"
-                value={form.data[key]}
-                onChange={(e) => form.setData(key, e.target.value)}
-                placeholder={hints[key] ?? 'https://…'}
-                maxLength={500}
-            />
+            {isDirect(key) && files[key] ? (
+                <p className="text-xs text-white/45">
+                    {tr(
+                        'Використовується завантажений файл; посилання не потрібне.',
+                    )}
+                </p>
+            ) : (
+                <Input
+                    id={`app-${key}`}
+                    type="url"
+                    inputMode="url"
+                    value={form.data[key]}
+                    onChange={(e) => form.setData(key, e.target.value)}
+                    placeholder={
+                        isDirect(key)
+                            ? tr('Посилання або завантажте файл нижче')
+                            : (hints[key] ?? 'https://…')
+                    }
+                    maxLength={500}
+                />
+            )}
             <InputError message={form.errors[key]} />
+            {isDirect(key) && (
+                <AppFileUpload
+                    platform={key}
+                    file={files[key] ?? null}
+                    accept={types[key]}
+                />
+            )}
         </div>
     );
 
@@ -917,5 +968,198 @@ function AppLinksCard({ links }: { links: Partial<Record<StoreKey, string>> }) {
                 </a>
             </div>
         </form>
+    );
+}
+
+/**
+ * Файл для прямого завантаження: вантажимо частинами по 4 МБ (до 1 ГБ), сервер складає й перевіряє файл
+ * і віддає його на сторінці /app замість посилання. Показує прогрес, розмір, дату й SHA-256.
+ */
+function AppFileUpload({
+    platform,
+    file,
+    accept,
+}: {
+    platform: DirectKey;
+    file: AppFile | null;
+    accept: string[];
+}) {
+    const input = useRef<HTMLInputElement>(null);
+    const [progress, setProgress] = useState<number | null>(null);
+    const [error, setError] = useState<string | null>(null);
+
+    const sendChunk = (
+        body: FormData,
+        onProgress: (loaded: number) => void,
+    ): Promise<{ done: boolean }> =>
+        new Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', `/admin/design/app-files/${platform}`);
+            xhr.setRequestHeader('Accept', 'application/json');
+            xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+            xhr.setRequestHeader('X-XSRF-TOKEN', xsrfToken());
+            xhr.upload.onprogress = (e) => onProgress(e.loaded);
+            xhr.onload = () => {
+                let payload: {
+                    done?: boolean;
+                    message?: string;
+                    errors?: Record<string, string[]>;
+                } = {};
+                try {
+                    payload = JSON.parse(xhr.responseText);
+                } catch {
+                    // відповідь не JSON (наприклад, 413 від nginx)
+                }
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    return resolve({ done: Boolean(payload.done) });
+                }
+                const first = payload.errors
+                    ? Object.values(payload.errors)[0]?.[0]
+                    : undefined;
+                reject(
+                    new Error(
+                        first ??
+                            payload.message ??
+                            tr('Не вдалося завантажити файл.'),
+                    ),
+                );
+            };
+            xhr.onerror = () => reject(new Error(tr('Немає з’єднання.')));
+            xhr.send(body);
+        });
+
+    const upload = async (picked: File) => {
+        setError(null);
+        setProgress(0);
+        const total = Math.max(1, Math.ceil(picked.size / CHUNK_BYTES));
+        const id = crypto.randomUUID();
+        try {
+            for (let i = 0; i < total; i++) {
+                const body = new FormData();
+                body.append('upload_id', id);
+                body.append('index', String(i));
+                body.append('total', String(total));
+                body.append('name', picked.name);
+                body.append(
+                    'chunk',
+                    picked.slice(i * CHUNK_BYTES, (i + 1) * CHUNK_BYTES),
+                    'chunk',
+                );
+                // Одна частина може не дійти через мережу — пробуємо ще двічі.
+                for (let attempt = 0; ; attempt++) {
+                    try {
+                        await sendChunk(body, (loaded) =>
+                            setProgress(
+                                Math.min(
+                                    1,
+                                    (i * CHUNK_BYTES + loaded) / picked.size,
+                                ),
+                            ),
+                        );
+                        break;
+                    } catch (e) {
+                        if (
+                            attempt >= 2 ||
+                            (e as Error).message !== tr('Немає з’єднання.')
+                        ) {
+                            throw e;
+                        }
+                    }
+                }
+            }
+            router.reload({ only: ['appFiles', 'appLinks'] });
+        } catch (e) {
+            setError((e as Error).message);
+        } finally {
+            setProgress(null);
+            if (input.current) input.current.value = '';
+        }
+    };
+
+    const remove = () => {
+        if (!confirm(tr('Видалити файл? Кнопка зникне, якщо немає посилання.')))
+            return;
+        router.delete(`/admin/design/app-files/${platform}`, {
+            preserveScroll: true,
+            only: ['appFiles', 'appLinks', 'flash'],
+        });
+    };
+
+    return (
+        <div className="gc-solid-2 mt-1 rounded-xl p-3">
+            {file ? (
+                <div className="flex items-start gap-2">
+                    <Download className="mt-0.5 size-4 shrink-0 text-sky-400" />
+                    <div className="min-w-0 flex-1 text-xs">
+                        <a
+                            href={file.url}
+                            className="block font-medium break-all text-white hover:underline"
+                        >
+                            {file.name}
+                        </a>
+                        <p className="mt-0.5 text-white/50 tabular-nums">
+                            {formatBytes(file.size)}
+                            {file.uploaded_at &&
+                                ` · ${new Date(file.uploaded_at).toLocaleString()}`}
+                        </p>
+                        <p
+                            className="mt-0.5 font-mono text-[11px] break-all text-white/40"
+                            title="SHA-256"
+                        >
+                            SHA-256 {file.sha256}
+                        </p>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={remove}
+                        aria-label={tr('Видалити файл')}
+                        className="grid size-8 shrink-0 place-items-center rounded-lg text-white/60 hover:bg-[var(--gc-l3)] hover:text-rose-400"
+                    >
+                        <Trash2 className="size-4" />
+                    </button>
+                </div>
+            ) : (
+                <p className="text-xs text-white/45">
+                    {tr('Файл не завантажено. Підходять: {types}, до 1 ГБ.', {
+                        types: accept.join(', '),
+                    })}
+                </p>
+            )}
+            {progress !== null && (
+                <div className="mt-2">
+                    <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
+                        <div
+                            className="h-full rounded-full bg-sky-500 transition-[width]"
+                            style={{ width: `${Math.round(progress * 100)}%` }}
+                        />
+                    </div>
+                    <p className="mt-1 text-xs text-white/50 tabular-nums">
+                        {tr('Завантаження {percent}%', {
+                            percent: Math.round(progress * 100),
+                        })}
+                    </p>
+                </div>
+            )}
+            {error && <p className="mt-2 text-xs text-rose-400">{error}</p>}
+            <input
+                ref={input}
+                type="file"
+                accept={accept.join(',')}
+                className="hidden"
+                onChange={(e) => {
+                    const picked = e.target.files?.[0];
+                    if (picked) void upload(picked);
+                }}
+            />
+            <button
+                type="button"
+                disabled={progress !== null}
+                onClick={() => input.current?.click()}
+                className="mt-2 flex h-9 items-center gap-2 rounded-lg px-3 text-sm font-medium text-sky-400 transition hover:bg-[var(--gc-l3)] disabled:opacity-50"
+            >
+                <Upload className="size-4" />
+                {file ? tr('Замінити файл') : tr('Завантажити файл')}
+            </button>
+        </div>
     );
 }

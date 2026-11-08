@@ -2,6 +2,7 @@
 
 namespace App\Support\Settings;
 
+use App\Support\AppFiles;
 use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Crypt;
@@ -278,6 +279,10 @@ class SiteSettings
             if (is_string($url) && preg_match('#\Ahttps://[^\s<>"]+\z#i', $url) === 1) {
                 $links[$store] = $url;
             }
+        }
+        // Завантажений в адмінці файл має перевагу над посиланням.
+        foreach (AppFiles::all($this) as $platform => $file) {
+            $links[$platform] = $file['url'];
         }
 
         return $links;

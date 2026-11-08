@@ -6,15 +6,20 @@ use App\Http\Controllers\Controller;
 use App\Models\SiteTheme;
 use App\Services\Design\SiteThemes;
 use App\Services\ImageStorage;
+use App\Support\AppFiles;
 use App\Support\AuthImages;
 use App\Support\Backgrounds;
 use App\Support\Seasons;
 use App\Support\Settings\SiteSettings;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
+use RuntimeException;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 /**
@@ -48,6 +53,8 @@ class DesignController extends Controller
             'authImages' => AuthImages::urls(),
             // Разом зі старим посиланням Google Play із загальних налаштувань (якщо нове ще не задане).
             'appLinks' => (object) app(SiteSettings::class)->appLinks(),
+            'appFiles' => (object) AppFiles::all(),
+            'appFileTypes' => AppFiles::PLATFORMS,
         ]);
     }
 
@@ -115,7 +122,6 @@ class DesignController extends Controller
         return back();
     }
 
-    /** Сезонні прикраси: автоматично за датою, вимкнено або показати потрібний сезон уже зараз. */
     /** Посилання на застосунок у магазинах; порожнє поле — кнопки магазину на сайті не видно. */
     public function appLinks(Request $request): RedirectResponse
     {
@@ -133,6 +139,58 @@ class DesignController extends Controller
         return back();
     }
 
+    /**
+     * Частина файлу застосунку для прямого завантаження (APK, Windows, macOS, Linux). Файл іде частинами
+     * по 4 МБ; коли прийшла остання — сервер складає його, перевіряє й публікує замість посилання.
+     */
+    public function appFileChunk(Request $request, string $platform): JsonResponse
+    {
+        $maxParts = (int) ceil(AppFiles::MAX_BYTES / AppFiles::CHUNK_BYTES);
+        $data = $request->validate([
+            'upload_id' => ['required', 'uuid'],
+            'index' => ['required', 'integer', 'min:0'],
+            'total' => ['required', 'integer', 'min:1', 'max:'.$maxParts],
+            'name' => ['required', 'string', 'max:200'],
+            'chunk' => ['required', 'file', 'max:'.intdiv(AppFiles::CHUNK_BYTES, 1024) + 64],
+        ], ['total.max' => 'Файл більший за 1 ГБ.']);
+        $name = (string) $data['name'];
+        if (! AppFiles::allowed($platform, $name)) {
+            throw ValidationException::withMessages(['name' => 'Для цієї платформи підходять файли: '.implode(', ', AppFiles::PLATFORMS[$platform]).'.']);
+        }
+        $index = (int) $data['index'];
+        $total = (int) $data['total'];
+        if ($index >= $total) {
+            throw ValidationException::withMessages(['index' => 'Неправильний номер частини.']);
+        }
+
+        $chunk = $request->file('chunk');
+        if (! $chunk instanceof UploadedFile) {
+            throw ValidationException::withMessages(['chunk' => 'Частина файлу не дійшла.']);
+        }
+
+        try {
+            $file = AppFiles::receive($platform, (string) $data['upload_id'], $index, $total, $name, $chunk);
+        } catch (RuntimeException $e) {
+            throw ValidationException::withMessages(['chunk' => $e->getMessage()]);
+        }
+        if ($file === null) {
+            return response()->json(['done' => false]);
+        }
+        Log::info('design: app file uploaded', ['platform' => $platform, 'name' => $file['name'], 'size' => $file['size'], 'sha256' => $file['sha256'], 'by' => $request->user()->id]);
+
+        return response()->json(['done' => true, 'file' => $file]);
+    }
+
+    public function deleteAppFile(Request $request, string $platform): RedirectResponse
+    {
+        AppFiles::delete($platform);
+        Log::info('design: app file deleted', ['platform' => $platform, 'by' => $request->user()->id]);
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Файл видалено.']);
+
+        return back();
+    }
+
+    /** Сезонні прикраси: автоматично за датою, вимкнено або показати потрібний сезон уже зараз. */
     public function seasonal(Request $request): RedirectResponse
     {
         $data = $request->validate(['seasonal' => ['required', 'string', 'in:'.implode(',', ['auto', 'off', ...Seasons::ALL])]]);

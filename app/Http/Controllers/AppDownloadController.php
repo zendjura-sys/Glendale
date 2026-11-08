@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\AppFiles;
 use App\Support\Settings\SiteSettings;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -13,6 +14,8 @@ class AppDownloadController extends Controller
     {
         return Inertia::render('app/index', [
             'links' => (object) $settings->appLinks(),
+            // Розмір і контрольна сума завантажених у адмінці файлів — для перевірки після завантаження.
+            'files' => (object) collect(AppFiles::all($settings))->map(fn (array $f) => ['name' => $f['name'], 'size' => $f['size'], 'sha256' => $f['sha256']])->all(),
             'version' => self::version(),
             'screens' => ['01-menu', '02-chats', '05-music', '07-cinema'],
         ]);

@@ -1177,6 +1177,8 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
             Route::post('reset', 'reset')->name('reset');
             Route::post('seasonal', 'seasonal')->name('seasonal');
             Route::put('app-links', 'appLinks')->name('app-links');
+            Route::post('app-files/{platform}', 'appFileChunk')->whereIn('platform', ['apk', 'windows', 'macos', 'linux'])->middleware('throttle:600,1')->name('app-files.chunk');
+            Route::delete('app-files/{platform}', 'deleteAppFile')->whereIn('platform', ['apk', 'windows', 'macos', 'linux'])->name('app-files.destroy');
             Route::post('background', 'background')->middleware('throttle:30,1')->name('background');
             Route::delete('background/{kind}', 'deleteBackground')->whereIn('kind', ['desktop', 'mobile'])->name('background.destroy');
             Route::post('auth-images', 'authImages')->middleware('throttle:30,1')->name('auth-images');
