@@ -34,6 +34,12 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
+          # Кеш Gradle (дистрибутив обгортки й залежності): збірка менше залежить від того, чи відповідає
+          # github.com з архівом Gradle (8.11.2026 він двічі віддав 504 й зірвав збірку).
+          cache: gradle
+          cache-dependency-path: |
+            mobile/android/*.gradle.kts
+            mobile/android/gradle/wrapper/gradle-wrapper.properties
 
       - uses: subosito/flutter-action@v2
         with:
