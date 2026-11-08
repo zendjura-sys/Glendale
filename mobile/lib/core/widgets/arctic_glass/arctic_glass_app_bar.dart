@@ -30,13 +30,12 @@ class ArcticGlassAppBar extends StatelessWidget implements PreferredSizeWidget {
       radius: 0,
       specular: false,
       borderRadius: BorderRadius.zero,
-      fill: LinearGradient(colors: [AppColors.bgBase.withValues(alpha: 0.55), AppColors.bgBase.withValues(alpha: 0.35)], begin: Alignment.topCenter, end: Alignment.bottomCenter),
+      blur: AppBlur.fixed,
+      // Молочне скло, як шапка-капсула й док; без лінії знизу.
+      fill: ArcticGlassThemeExtension.of(context).barFill,
       child: Container(
         height: top + height,
         padding: EdgeInsets.only(top: top, left: 4, right: 4),
-        decoration: const BoxDecoration(
-          border: Border(bottom: BorderSide(color: AppColors.borderHairline)),
-        ),
         child: Row(
           children: [
             if (leading != null)
