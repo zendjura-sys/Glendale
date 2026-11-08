@@ -16,7 +16,7 @@ class AffiliationBadges extends StatelessWidget {
   final double size;
 
   static const _kinds = {
-    'family': (LucideIcons.shield, 'Сім’я'),
+    'family': (LucideIcons.castle, 'Сім’я'),
     'clan': (LucideIcons.swords, 'Клан / гільдія'),
     'server': (LucideIcons.server, 'Сервер'),
     'game': (LucideIcons.gamepad2, 'Гра'),

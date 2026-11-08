@@ -1,6 +1,6 @@
 import { Link } from '@inertiajs/react';
 import * as TooltipPrimitive from '@radix-ui/react-tooltip';
-import { Gamepad2, Server, Shield, Swords } from 'lucide-react';
+import { Castle, Gamepad2, Server, Swords } from 'lucide-react';
 import type { ComponentType } from 'react';
 import { tr } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
@@ -20,7 +20,7 @@ const KIND: Record<
     string,
     { icon: ComponentType<{ className?: string }>; label: () => string }
 > = {
-    family: { icon: Shield, label: () => tr('Сім’я') },
+    family: { icon: Castle, label: () => tr('Сім’я') },
     clan: { icon: Swords, label: () => tr('Клан / гільдія') },
     server: { icon: Server, label: () => tr('Сервер') },
     game: { icon: Gamepad2, label: () => tr('Гра') },
