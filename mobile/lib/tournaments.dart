@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import 'core/widgets/arctic_glass/arctic_fit_text.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
@@ -74,14 +76,9 @@ class TournamentTile extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(text(tournament['title']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14.5, weight: FontWeight.w600)),
+              FitText(text(tournament['title']) ?? '', style: body(14.5, weight: FontWeight.w600)),
               const SizedBox(height: 2),
-              Text(
-                [if (showServer) text(server['name']), bracket ? tr('Сітка') : tr('Челендж'), _when(tournament['starts_at'])].whereType<String>().join(' · '),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: body(12, color: muted),
-              ),
+              FitText([if (showServer) text(server['name']), bracket ? tr('Сітка') : tr('Челендж'), _when(tournament['starts_at'])].whereType<String>().join(' · '), style: body(12, color: muted)),
             ]),
           ),
           const SizedBox(width: 8),
@@ -191,7 +188,7 @@ class TournamentView extends StatelessWidget {
       Row(children: [
         RoundIcon(icon: LucideIcons.arrowLeft, onTap: () => context.canPop() ? context.pop() : context.go('/servers/${server['slug']}')),
         const SizedBox(width: 8),
-        Expanded(child: Text(text(server['name']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14, color: muted))),
+        Expanded(child: FitText(text(server['name']) ?? '', style: body(14, color: muted))),
       ]),
       const SizedBox(height: 14),
       Wrap(spacing: 8, runSpacing: 6, crossAxisAlignment: WrapCrossAlignment.center, children: [
@@ -275,7 +272,7 @@ class TournamentView extends StatelessWidget {
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text(tr('Переможець'), style: body(12, color: muted)),
-                Text(text(winner['name']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: display(18)),
+                FitText(text(winner['name']) ?? '', style: display(18)),
               ]),
             ),
           ]),
@@ -364,9 +361,9 @@ class TournamentView extends StatelessWidget {
                   const SizedBox(width: 10),
                   Expanded(
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text(text(mapOf(s['entry'])['name']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(13.5, weight: FontWeight.w600)),
+                      FitText(text(mapOf(s['entry'])['name']) ?? '', style: body(13.5, weight: FontWeight.w600)),
                       Text(_number(s['value']), style: body(13, weight: FontWeight.w700)),
-                      if (text(s['note']) != null) Text(text(s['note'])!, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: muted)),
+                      if (text(s['note']) != null) FitText(text(s['note'])!, style: body(12, color: muted)),
                     ]),
                   ),
                   RoundIcon(icon: LucideIcons.check, onTap: () => _act(context, () => api.post(Api.site('/tournaments/$id/submissions/${s['id']}'), {'approve': true}))),
@@ -496,7 +493,7 @@ class _EntryRow extends StatelessWidget {
         if (place != null) SizedBox(width: 26, child: Text('$place', style: body(13, weight: FontWeight.w800, color: place! <= 3 ? ink : muted))),
         Avatar(url: text(entry['avatar']), name: text(entry['name']) ?? '?', size: 32, square: entry['family'] == true),
         const SizedBox(width: 10),
-        Expanded(child: Text(text(entry['name']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14, weight: FontWeight.w600, color: mine ? primary : null))),
+        Expanded(child: FitText(text(entry['name']) ?? '', style: body(14, weight: FontWeight.w600, color: mine ? primary : null))),
         if (trailing != null) Text(trailing!, style: body(14, weight: FontWeight.w700)),
       ]),
     );
@@ -569,12 +566,7 @@ class _MatchBox extends StatelessWidget {
               Avatar(url: text(e['avatar']), name: text(e['name']) ?? '?', size: 20, square: e['family'] == true),
               const SizedBox(width: 7),
               Expanded(
-                child: Text(
-                  text(e['name']) ?? '',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: body(13, weight: won ? FontWeight.w700 : FontWeight.w500, color: winner != null && !won ? muted : ink),
-                ),
+                child: FitText(text(e['name']) ?? '', style: body(13, weight: won ? FontWeight.w700 : FontWeight.w500, color: winner != null && !won ? muted : ink)),
               ),
               if (won && text(match['score']) != null) Text(text(match['score'])!, style: body(11, color: muted)),
               if (won) ...[const SizedBox(width: 4), Icon(LucideIcons.check, size: 13, color: primary)],

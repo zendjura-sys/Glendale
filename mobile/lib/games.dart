@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+
+import 'core/widgets/arctic_glass/arctic_fit_text.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -252,9 +254,9 @@ class _GamesScreenState extends State<GamesScreen> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text(text(g['name']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(15, weight: FontWeight.w600)),
+                      FitText(text(g['name']) ?? '', style: body(15, weight: FontWeight.w600)),
                       const SizedBox(height: 3),
-                      Text(platformsLabel(g), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: muted)),
+                      FitText(platformsLabel(g), style: body(12, color: muted)),
                     ]),
                   ),
                   Pill(label: text(g['category_label']) ?? '', color: soft),
@@ -547,7 +549,7 @@ class GameScreen extends StatelessWidget {
                           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                             GameCover(g, size: 110),
                             const SizedBox(height: 6),
-                            Text(text(g['name']) ?? '', maxLines: 2, overflow: TextOverflow.ellipsis, style: body(12.5)),
+                            FitText(text(g['name']) ?? '', style: body(12.5), maxLines: 2),
                           ]),
                         ),
                       ),

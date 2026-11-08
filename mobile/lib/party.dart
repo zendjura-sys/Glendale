@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import 'core/widgets/arctic_glass/arctic_fit_text.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
@@ -147,8 +149,8 @@ class PartyCard extends StatelessWidget {
             const SizedBox(width: 10),
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(text(party['title']) ?? '', maxLines: 2, overflow: TextOverflow.ellipsis, style: body(15, weight: FontWeight.w700)),
-                Text(text(host['name']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: muted)),
+                FitText(text(party['title']) ?? '', style: body(15, weight: FontWeight.w700), maxLines: 2),
+                FitText(text(host['name']) ?? '', style: body(12, color: muted)),
               ]),
             ),
             Pill(label: '${party['count']}/${party['slots']}', icon: LucideIcons.users, color: full ? muted : green),
@@ -162,7 +164,7 @@ class PartyCard extends StatelessWidget {
           ]),
           if (text(party['note']) != null) ...[
             const SizedBox(height: 8),
-            Text(text(party['note'])!, maxLines: 2, overflow: TextOverflow.ellipsis, style: body(13, color: soft)),
+            FitText(text(party['note'])!, style: body(13, color: soft), maxLines: 2),
           ],
           if (roles.isNotEmpty) ...[
             const SizedBox(height: 8),
@@ -389,7 +391,7 @@ class PartyScreen extends StatelessWidget {
                   ListTile(
                     contentPadding: const EdgeInsets.symmetric(horizontal: 4),
                     leading: Avatar(url: text(member['avatar_url']), name: text(member['name']) ?? '?', size: 38),
-                    title: Text(text(member['name']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14)),
+                    title: FitText(text(member['name']) ?? '', style: body(14)),
                     trailing: text(member['role']) == null ? null : Pill(label: text(member['role'])!, color: gold),
                     onTap: () => context.push('/u/${member['username']}'),
                   ),

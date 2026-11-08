@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+
+import 'core/widgets/arctic_glass/arctic_fit_text.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
@@ -156,7 +158,7 @@ class _FeedScreenState extends State<FeedScreen> {
                   child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                     Icon(icon, size: 16, color: tab == key ? Colors.white : soft),
                     const SizedBox(width: 7),
-                    Flexible(child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14, color: tab == key ? Colors.white : soft, weight: FontWeight.w700))),
+                    Flexible(child: FitText(label, style: body(14, color: tab == key ? Colors.white : soft, weight: FontWeight.w700))),
                   ]),
                 ),
               ),
@@ -266,7 +268,7 @@ class _AvatarChip extends StatelessWidget {
           children: [
             Avatar(url: text(user['avatar_url']), name: text(user['name']) ?? name, size: 50, online: true),
             const SizedBox(height: 6),
-            Text(name, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(11.5, color: soft)),
+            FitText(name, style: body(11.5, color: soft)),
           ],
         ),
       ),
@@ -465,7 +467,7 @@ class _SearchScreenState extends State<SearchScreen> {
                           color: primary,
                         ),
                       ),
-                      title: Text(text(hit['title']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(15, weight: FontWeight.w600)),
+                      title: FitText(text(hit['title']) ?? '', style: body(15, weight: FontWeight.w600)),
                       subtitle: Text(tr(text(hit['hint']) ?? ''), style: body(12.5, color: muted)),
                       onTap: () => context.push(appPathFor(text(hit['href']))),
                     ),
@@ -520,8 +522,8 @@ class _TomorrowCard extends StatelessWidget {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(text(e['title']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14, weight: FontWeight.w600)),
-                    Text(text(mapOf(e['where'])['name']) ?? text(e['type_label']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: muted)),
+                    FitText(text(e['title']) ?? '', style: body(14, weight: FontWeight.w600)),
+                    FitText(text(mapOf(e['where'])['name']) ?? text(e['type_label']) ?? '', style: body(12, color: muted)),
                   ]),
                 ),
               ]),

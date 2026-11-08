@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+
+import 'core/widgets/arctic_glass/arctic_fit_text.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
@@ -163,13 +165,8 @@ class _ListenRoomsScreenState extends State<ListenRoomsScreen> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(text(room['title']) ?? text(mapOf(room['group'])['name']) ?? tr('Кімната з друзями'), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14.5, weight: FontWeight.w600)),
-                    Text(
-                      mapOf(room['now_playing']).isEmpty ? tr('Діджей ще обирає музику') : '${mapOf(room['now_playing'])['title']} · ${mapOf(room['now_playing'])['artist'] ?? ''}',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: body(12.5, color: muted),
-                    ),
+                    FitText(text(room['title']) ?? text(mapOf(room['group'])['name']) ?? tr('Кімната з друзями'), style: body(14.5, weight: FontWeight.w600)),
+                    FitText(mapOf(room['now_playing']).isEmpty ? tr('Діджей ще обирає музику') : '${mapOf(room['now_playing'])['title']} · ${mapOf(room['now_playing'])['artist'] ?? ''}', style: body(12.5, color: muted)),
                     Text('${tr('Зараз у кімнаті: {n}', {'n': intOf(room['listeners'])})} · ${_kind(text(mapOf(room['group'])['type']))}', style: body(11.5, color: faint)),
                   ]),
                 ),

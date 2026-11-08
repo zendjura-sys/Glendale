@@ -1,5 +1,7 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+
+import 'core/widgets/arctic_glass/arctic_fit_text.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
@@ -62,7 +64,7 @@ class HelpScreen extends StatelessWidget {
                 for (final a in maps(d['popular']))
                   ListTile(
                     title: Text(text(a['title']) ?? '', style: body(14.5, weight: FontWeight.w600)),
-                    subtitle: Text(text(a['summary']) ?? '', style: body(12.5, color: muted), maxLines: 2, overflow: TextOverflow.ellipsis),
+                    subtitle: FitText(text(a['summary']) ?? '', style: body(12.5, color: muted), maxLines: 2),
                     trailing: Icon(LucideIcons.chevronRight, size: 18, color: muted),
                     onTap: () => context.push('/help/${a['category']}/${a['slug']}'),
                   ),
@@ -83,7 +85,7 @@ class HelpScreen extends StatelessWidget {
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       Text(text(c['title']) ?? '', style: body(15, weight: FontWeight.w600)),
                       const SizedBox(height: 2),
-                      Text(text(c['summary']) ?? '', style: body(12.5, color: muted), maxLines: 2, overflow: TextOverflow.ellipsis),
+                      FitText(text(c['summary']) ?? '', style: body(12.5, color: muted), maxLines: 2),
                     ]),
                   ),
                   Icon(LucideIcons.chevronRight, size: 18, color: muted),
@@ -332,7 +334,7 @@ class _SupportScreenState extends State<SupportScreen> {
                     ListTile(
                       leading: Container(width: 8, height: 8, decoration: BoxDecoration(color: t['unread'] == true ? primary : Colors.transparent, shape: BoxShape.circle)),
                       minLeadingWidth: 8,
-                      title: Text('#${t['id']} · ${t['subject']}', style: body(14, weight: FontWeight.w600), maxLines: 1, overflow: TextOverflow.ellipsis),
+                      title: FitText('#${t['id']} · ${t['subject']}', style: body(14, weight: FontWeight.w600)),
                       subtitle: Text('${t['category_label']} · ${ago(t['updated_at'])}', style: body(12, color: muted)),
                       trailing: Text(_statusLabel(text(t['status'])), style: body(12, color: _statusColor(text(t['status'])), weight: FontWeight.w600)),
                       onTap: () async {
@@ -725,8 +727,8 @@ class PodcastsScreen extends StatelessWidget {
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Text(text(p['title']) ?? '', style: body(15, weight: FontWeight.w600), maxLines: 1, overflow: TextOverflow.ellipsis),
-                        Text('${text(mapOf(p['author'])['name']) ?? ''} · ${text(p['category']) ?? ''}', style: body(12.5, color: muted), maxLines: 1, overflow: TextOverflow.ellipsis),
+                        FitText(text(p['title']) ?? '', style: body(15, weight: FontWeight.w600)),
+                        FitText('${text(mapOf(p['author'])['name']) ?? ''} · ${text(p['category']) ?? ''}', style: body(12.5, color: muted)),
                         Text(tr('Випусків: {n} · підписників: {s}', {'n': '${p['episodes']}', 's': '${p['subscribers']}'}), style: body(12, color: muted)),
                       ]),
                     ),

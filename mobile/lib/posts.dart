@@ -339,8 +339,6 @@ class _PostCardState extends State<PostCard> {
                           padding: const EdgeInsets.only(top: 2),
                           child: Text.rich(
                             TextSpan(children: [TextSpan(text: '${tr('Сервер')}: '), TextSpan(text: server, style: body(12, color: soft, weight: FontWeight.w700))]),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
                             style: body(12, color: muted),
                           ),
                         ),
@@ -783,18 +781,8 @@ class MusicAttachment extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      text(track['title']) ?? tr('Трек'),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: body(14.5, weight: FontWeight.w700),
-                    ),
-                    Text(
-                      artistOf(track['artist']),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: body(12.5, color: muted),
-                    ),
+                    FitText(text(track['title']) ?? tr('Трек'), style: body(14.5, weight: FontWeight.w700)),
+                    FitText(artistOf(track['artist']), style: body(12.5, color: muted)),
                   ],
                 ),
               ),
@@ -849,12 +837,7 @@ class MovieAttachment extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  text(movie['title']) ?? '',
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: body(15, weight: FontWeight.w700),
-                ),
+                FitText(text(movie['title']) ?? '', style: body(15, weight: FontWeight.w700), maxLines: 2),
                 const SizedBox(height: 4),
                 Text([movie['year'], text(movie['type_label'])].whereType<Object>().join(' · '), style: body(12.5, color: muted)),
               ],
@@ -1569,12 +1552,7 @@ class _ComposerState extends State<Composer> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(tr(text(card!['hint']) ?? ''), style: body(11.5, color: faint)),
-                      Text(
-                        text(card!['title']) ?? '',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: body(14.5, weight: FontWeight.w600),
-                      ),
+                      FitText(text(card!['title']) ?? '', style: body(14.5, weight: FontWeight.w600)),
                     ],
                   ),
                 ),
@@ -1801,12 +1779,7 @@ class _CardPickerState extends State<_CardPicker> {
                       for (final hit in hits)
                         ListTile(
                           contentPadding: const EdgeInsets.symmetric(horizontal: 6),
-                          title: Text(
-                            text(hit['title']) ?? '',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: body(14.5, weight: FontWeight.w600),
-                          ),
+                          title: FitText(text(hit['title']) ?? '', style: body(14.5, weight: FontWeight.w600)),
                           subtitle: Text(tr(text(hit['hint']) ?? ''), style: body(12, color: faint)),
                           onTap: () => Navigator.pop(context, hit),
                         ),
@@ -2010,18 +1983,8 @@ class TrackRow extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    text(track['title']) ?? tr('Без назви'),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: body(14.5, color: playing ? accent : ink, weight: FontWeight.w600),
-                  ),
-                  Text(
-                    artistOf(track['artist'], '—'),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: body(12.5, color: muted),
-                  ),
+                  FitText(text(track['title']) ?? tr('Без назви'), style: body(14.5, color: playing ? accent : ink, weight: FontWeight.w600)),
+                  FitText(artistOf(track['artist'], '—'), style: body(12.5, color: muted)),
                 ],
               ),
             ),
@@ -2186,11 +2149,7 @@ class _SharedCard extends StatelessWidget {
                 children: [
                   if (community != null) ...[Icon(LucideIcons.usersRound, size: 13, color: muted), const SizedBox(width: 4)],
                   Flexible(
-                    child: Text(
-                      community != null ? tr('Із спільноти «{name}»', {'name': community['name']}) : tr('Запис'),
-                      style: body(11.5, color: muted),
-                      overflow: TextOverflow.ellipsis,
-                    ),
+                    child: FitText(community != null ? tr('Із спільноти «{name}»', {'name': community['name']}) : tr('Запис'), style: body(11.5, color: muted)),
                   ),
                 ],
               ),
@@ -2198,12 +2157,7 @@ class _SharedCard extends StatelessWidget {
               Text(text(shared['name']) ?? '', style: body(13.5, weight: FontWeight.w600)),
               if (source.isNotEmpty && source != ownText) ...[
                 const SizedBox(height: 4),
-                Text(
-                  source,
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                  style: body(13.5, color: soft),
-                ),
+                FitText(source, style: body(13.5, color: soft), maxLines: 3),
               ],
             ],
           ),
@@ -2244,12 +2198,7 @@ class _PostCardLink extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(tr(text(card['hint']) ?? ''), style: body(11.5, color: muted)),
-                Text(
-                  text(card['title']) ?? '',
-                  style: body(14, weight: FontWeight.w600),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
+                FitText(text(card['title']) ?? '', style: body(14, weight: FontWeight.w600)),
               ],
             ),
           ),

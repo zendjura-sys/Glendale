@@ -200,11 +200,11 @@ class _PlusNameState extends State<PlusName> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     final plus = widget.plus;
     final colors = plus?.name;
-    final label = Text(widget.name, maxLines: widget.maxLines, overflow: TextOverflow.ellipsis, style: widget.style.copyWith(color: Colors.white));
+    final label = Text(widget.name, maxLines: widget.maxLines == 1 ? null : widget.maxLines, style: widget.style.copyWith(color: Colors.white));
     final fx = _fx;
     if (fx == null) {
-      if (colors == null) return Text(widget.name, maxLines: widget.maxLines, overflow: TextOverflow.ellipsis, style: widget.style);
-      if (colors.length == 1) return Text(widget.name, maxLines: widget.maxLines, overflow: TextOverflow.ellipsis, style: widget.style.copyWith(color: colors.first));
+      if (colors == null) return Text(widget.name, maxLines: widget.maxLines == 1 ? null : widget.maxLines, style: widget.style);
+      if (colors.length == 1) return Text(widget.name, maxLines: widget.maxLines == 1 ? null : widget.maxLines, style: widget.style.copyWith(color: colors.first));
       return ShaderMask(blendMode: BlendMode.srcIn, shaderCallback: (rect) => LinearGradient(colors: colors).createShader(rect), child: label);
     }
     final tones = colors ?? const [Colors.white];
@@ -215,7 +215,7 @@ class _PlusNameState extends State<PlusName> with TickerProviderStateMixin {
       // Нік у своїх кольорах; неон — пульсуюче сяйво, веселка — плавний поворот відтінку.
       Widget painted(double t) {
         final glow = fx == 'neon' ? [Shadow(color: first, blurRadius: 1 + 5 * (0.5 - 0.5 * math.cos(t * 2 * math.pi)))] : null;
-        final text = Text(widget.name, maxLines: widget.maxLines, overflow: TextOverflow.ellipsis, style: widget.style.copyWith(color: tones.length == 1 ? first : Colors.white, shadows: glow));
+        final text = Text(widget.name, maxLines: widget.maxLines == 1 ? null : widget.maxLines, style: widget.style.copyWith(color: tones.length == 1 ? first : Colors.white, shadows: glow));
         final colored = tones.length == 1 ? text : ShaderMask(blendMode: BlendMode.srcIn, shaderCallback: (rect) => LinearGradient(colors: tones).createShader(rect), child: text);
         return fx == 'rainbow' ? ColorFiltered(colorFilter: ColorFilter.matrix(_hueRotate(t * 360)), child: colored) : colored;
       }

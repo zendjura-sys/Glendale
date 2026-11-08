@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+
+import 'core/widgets/arctic_glass/arctic_fit_text.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
@@ -233,20 +235,15 @@ class FeedPulseState extends State<FeedPulse> {
                             ),
                             const SizedBox(width: 6),
                             Flexible(
-                              child: Text(
-                                mine != null
+                              child: FitText(mine != null
                                     ? '${tr('Готові')} · ${_left(text(mine['until']))}'
-                                    : tr('Я готовий грати'),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: body(
+                                    : tr('Я готовий грати'), style: body(
                                   14,
                                   color: mine != null
                                       ? _emerald
                                       : const Color(0xFF04121F),
                                   weight: FontWeight.w700,
-                                ),
-                              ),
+                                )),
                             ),
                             if (mine == null && friends.isNotEmpty) ...[
                               const SizedBox(width: 6),
@@ -347,16 +344,11 @@ class FeedPulseState extends State<FeedPulse> {
             child: Row(
               children: [
                 Expanded(
-                  child: Text(
-                    mapOf(mine['game'])['name'] != null
+                  child: FitText(mapOf(mine['game'])['name'] != null
                         ? tr('Готові грати в {game}', {
                             'game': mapOf(mine['game'])['name'],
                           })
-                        : tr('Готові грати'),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: body(14, weight: FontWeight.w600),
-                  ),
+                        : tr('Готові грати'), style: body(14, weight: FontWeight.w600)),
                 ),
                 TextButton.icon(
                   onPressed: busy ? null : () => _send(false),
@@ -438,12 +430,7 @@ class FeedPulseState extends State<FeedPulse> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            '${text(mapOf(f['user'])['first_name']) ?? ''}${mapOf(f['game'])['name'] != null ? ' · ${mapOf(f['game'])['name']}' : ''}',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: body(14, weight: FontWeight.w600),
-                          ),
+                          FitText('${text(mapOf(f['user'])['first_name']) ?? ''}${mapOf(f['game'])['name'] != null ? ' · ${mapOf(f['game'])['name']}' : ''}', style: body(14, weight: FontWeight.w600)),
                           Text(
                             _left(text(f['until'])),
                             style: body(12, color: muted),

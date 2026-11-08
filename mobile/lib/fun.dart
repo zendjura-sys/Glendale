@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+
+import 'core/widgets/arctic_glass/arctic_fit_text.dart';
 import 'package:go_router/go_router.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -78,7 +80,7 @@ class _Leaderboard extends StatelessWidget {
               SizedBox(width: 22, child: Text('${i + 1}', style: body(12.5, color: muted))),
               Avatar(name: text(mapOf(row['user'])['name']) ?? '', url: text(mapOf(row['user'])['avatar_url']), size: 30),
               const SizedBox(width: 10),
-              Expanded(child: Text(text(mapOf(row['user'])['name']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14))),
+              Expanded(child: FitText(text(mapOf(row['user'])['name']) ?? '', style: body(14))),
               Text('${intOf(row['score'])}/${intOf(row['total'])}', style: body(14, weight: FontWeight.w600)),
             ]),
           ),
@@ -182,7 +184,7 @@ class _RouletteScreenState extends State<RouletteScreen> {
                       Text(text(m['title']) ?? '', style: display(18)),
                       if (text(m['description']) != null) ...[
                         const SizedBox(height: 6),
-                        Text(text(m['description'])!, maxLines: 5, overflow: TextOverflow.ellipsis, style: body(13.5, color: soft)),
+                        FitText(text(m['description'])!, style: body(13.5, color: soft), maxLines: 5),
                       ],
                     ]),
                   ),

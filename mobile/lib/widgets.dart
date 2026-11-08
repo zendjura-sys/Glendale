@@ -459,7 +459,7 @@ class GcSelect<T> extends StatelessWidget {
           borderRadius: BorderRadius.circular(14),
           icon: Icon(LucideIcons.chevronDown, color: muted),
           style: body(14.5),
-          items: [for (final item in items) DropdownMenuItem<T>(value: item.$1, child: Text(item.$2, overflow: TextOverflow.ellipsis))],
+          items: [for (final item in items) DropdownMenuItem<T>(value: item.$1, child: Text(item.$2))],
           onChanged: onChanged,
         ),
       ),
@@ -693,8 +693,8 @@ class Pill extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           if (icon != null) ...[Icon(icon, size: 12, color: color), SizedBox(width: 4)],
-          // Довгий підпис (назва серії тощо) скорочується «…», а не вилазить за край.
-          Flexible(child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(11, color: color, weight: FontWeight.w700))),
+          // Довгий підпис (назва серії тощо) трохи зменшується або переноситься, а не обрізається.
+          Flexible(child: FitText(label, wrap: false, style: body(11, color: color, weight: FontWeight.w700))),
         ],
       ),
     );
@@ -843,10 +843,8 @@ class UserTile extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   PlusNameRow(user: user, style: body(15, weight: FontWeight.w600)),
-                  Text(
+                  FitText(
                     subtitle ?? '@${text(user['username']) ?? ''}',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
                     style: body(12.5, color: muted),
                   ),
                 ],
@@ -972,10 +970,7 @@ class MetricTile extends StatelessWidget {
           if (caps)
             Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Expanded(
-                child: SizedBox(
-                  height: 34,
-                  child: Text(label, maxLines: 2, overflow: TextOverflow.ellipsis, style: body(13, color: muted, weight: FontWeight.w500).copyWith(height: 1.3)),
-                ),
+                child: Text(label, style: body(13, color: muted, weight: FontWeight.w500).copyWith(height: 1.3)),
               ),
               if (icon != null) Icon(icon, size: 16, color: tone ?? faint),
             ]),
@@ -1163,7 +1158,7 @@ class NeonTabLabel extends StatelessWidget {
             if (badge case final b?) Positioned(right: -10, top: -4, child: b),
           ]),
           const SizedBox(height: 2),
-          Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(11, color: color, weight: weight).copyWith(shadows: glow(6, 14))),
+          FitText(label, wrap: false, style: body(11, color: color, weight: weight).copyWith(shadows: glow(6, 14))),
         ]);
       },
     );
@@ -1925,3 +1920,4 @@ class _EdgeFadeState extends State<EdgeFade> {
     );
   }
 }
+

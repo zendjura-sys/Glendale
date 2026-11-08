@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+
+import 'core/widgets/arctic_glass/arctic_fit_text.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -127,7 +129,7 @@ class _ArtistHeroState extends State<_ArtistHero> {
                 child: Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
                   Expanded(
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-                      Text(name, maxLines: 2, overflow: TextOverflow.ellipsis, style: display(30, color: Colors.white).copyWith(letterSpacing: -0.6)),
+                      FitText(name, style: display(30, color: Colors.white).copyWith(letterSpacing: -0.6), maxLines: 2),
                       if (text(widget.artist['genre']) != null) Text(text(widget.artist['genre'])!, style: body(13, color: Colors.white70)),
                     ]),
                   ),
@@ -199,8 +201,8 @@ class _LatestRelease extends StatelessWidget {
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(track['year'] == null ? tr('Останній реліз') : '${track['year']}', style: body(12, color: muted, weight: FontWeight.w600)),
               const SizedBox(height: 2),
-              Text(album ?? text(track['title']) ?? '', maxLines: 2, overflow: TextOverflow.ellipsis, style: body(16, weight: FontWeight.w700)),
-              Text(album == null ? tr('Сингл') : text(track['title']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(13, color: muted)),
+              FitText(album ?? text(track['title']) ?? '', style: body(16, weight: FontWeight.w700), maxLines: 2),
+              FitText(album == null ? tr('Сингл') : text(track['title']) ?? '', style: body(13, color: muted)),
             ]),
           ),
           IconButton(tooltip: tr('Ще'), onPressed: () => showTrackMenu(context, track), icon: Icon(LucideIcons.ellipsis, color: muted)),
@@ -266,7 +268,7 @@ class _ArtistAboutState extends State<_ArtistAbout> {
         child: Glass(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             if (bio != null) ...[
-              Text(bio, maxLines: open ? null : 5, overflow: open ? null : TextOverflow.ellipsis, style: body(14.5, color: soft).copyWith(height: 1.5)),
+              Text(bio, maxLines: open ? null : 5, overflow: open ? null : TextOverflow.fade, style: body(14.5, color: soft).copyWith(height: 1.5)),
               Row(children: [
                 TextButton(onPressed: () => setState(() => open = !open), child: Text(open ? tr('Згорнути') : tr('Ще'), style: body(13.5, color: accent, weight: FontWeight.w600))),
                 const Spacer(),
@@ -671,7 +673,7 @@ class _LibrarySectionScreenState extends State<LibrarySectionScreen> {
               child: Row(children: [
                 SizedBox(width: 52, child: Artwork(url: text(a['cover_url']), seed: text(a['name']) ?? '', round: true, icon: LucideIcons.micVocal)),
                 const SizedBox(width: 14),
-                Expanded(child: Text(text(a['name']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(16, weight: FontWeight.w500))),
+                Expanded(child: FitText(text(a['name']) ?? '', style: body(16, weight: FontWeight.w500))),
                 Text(_songs(intOf(a['tracks_count'])), style: body(12.5, color: muted)),
                 Icon(LucideIcons.chevronRight, size: 18, color: faint),
               ]),

@@ -70,8 +70,8 @@ class _Row extends StatelessWidget {
         const SizedBox(width: 12),
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14, weight: FontWeight.w600)),
-            Text(subtitle, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: muted)),
+            FitText(title, style: body(14, weight: FontWeight.w600)),
+            FitText(subtitle, style: body(12, color: muted)),
           ]),
         ),
         ?trailing,

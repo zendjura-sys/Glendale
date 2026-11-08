@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import 'core/widgets/arctic_glass/arctic_fit_text.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'api.dart';
@@ -70,7 +72,7 @@ class IncidentBanner extends StatelessWidget {
         child: Row(children: [
           Icon(LucideIcons.triangleAlert, size: 18, color: color),
           const SizedBox(width: 10),
-          Expanded(child: Text(title, maxLines: 2, overflow: TextOverflow.ellipsis, style: body(13.5))),
+          Expanded(child: FitText(title, style: body(13.5), maxLines: 2)),
           const SizedBox(width: 8),
           Text(tr('Подробиці'), style: body(12, color: muted)),
         ]),

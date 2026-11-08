@@ -1,6 +1,8 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+
+import 'core/widgets/arctic_glass/arctic_fit_text.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
@@ -46,10 +48,10 @@ class CharacterRow extends StatelessWidget {
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [
-                Flexible(child: Text(text(character['name']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14.5, weight: FontWeight.w600))),
+                Flexible(child: FitText(text(character['name']) ?? '', style: body(14.5, weight: FontWeight.w600))),
                 if (character['is_main'] == true) ...[const SizedBox(width: 4), const Icon(LucideIcons.star, size: 14, color: gold)],
               ]),
-              if (subtitle.isNotEmpty) Text(subtitle, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: muted)),
+              if (subtitle.isNotEmpty) FitText(subtitle, style: body(12, color: muted)),
             ]),
           ),
           if (character['status'] != 'active') Pill(label: characterStatuses()[character['status']] ?? '', color: _statusColor(text(character['status']))),
@@ -113,7 +115,7 @@ class CharacterScreen extends StatelessWidget {
             Row(children: [
               RoundIcon(icon: LucideIcons.arrowLeft, onTap: () => context.canPop() ? context.pop() : context.go('/')),
               const SizedBox(width: 8),
-              Expanded(child: Text(text(player['name']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14, color: muted))),
+              Expanded(child: FitText(text(player['name']) ?? '', style: body(14, color: muted))),
             ]),
             const SizedBox(height: 10),
             Glass(

@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+
+import 'core/widgets/arctic_glass/arctic_fit_text.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -200,7 +202,7 @@ class _MomentCard extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.fromLTRB(12, 10, 6, 10),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(text(moment['title']) ?? '', maxLines: 2, overflow: TextOverflow.ellipsis, style: body(15, weight: FontWeight.w700)),
+            FitText(text(moment['title']) ?? '', style: body(15, weight: FontWeight.w700), maxLines: 2),
             const SizedBox(height: 6),
             Row(children: [
               GestureDetector(
@@ -209,12 +211,7 @@ class _MomentCard extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Expanded(
-                child: Text(
-                  [text(user['name']), text(game['name']), text(server['name']), ago(moment['created_at'])].whereType<String>().where((s) => s.isNotEmpty).join(' · '),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: body(12.5, color: muted),
-                ),
+                child: FitText([text(user['name']), text(game['name']), text(server['name']), ago(moment['created_at'])].whereType<String>().where((s) => s.isNotEmpty).join(' · '), style: body(12.5, color: muted)),
               ),
               TextButton.icon(
                 onPressed: onLike,
@@ -528,7 +525,7 @@ class _SavedScreenState extends State<SavedScreen> with _SitePage {
                       const SizedBox(width: 12),
                       Expanded(
                         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          Text(text(item['title']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(15, weight: FontWeight.w600)),
+                          FitText(text(item['title']) ?? '', style: body(15, weight: FontWeight.w600)),
                           Text(switch (item['kind']) { 'movie' => tr('Кіно'), 'game' => tr('Гра'), _ => tr('Сервер') }, style: body(12.5, color: muted)),
                         ]),
                       ),
@@ -663,7 +660,7 @@ class _DraftsScreenState extends State<DraftsScreen> with _SitePage {
               padding: const EdgeInsets.all(14),
               radius: 18,
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(text(draft['body']) ?? tr('Без тексту'), maxLines: 6, overflow: TextOverflow.ellipsis, style: body(14.5).copyWith(height: 1.4)),
+                FitText(text(draft['body']) ?? tr('Без тексту'), style: body(14.5).copyWith(height: 1.4), maxLines: 6),
                 const SizedBox(height: 8),
                 Text(
                   text(draft['publish_at']) != null ? tr('Вийде {time}', {'time': _when(draft['publish_at'])}) : tr('Чернетка · {time}', {'time': ago(draft['created_at'])}),
@@ -726,7 +723,7 @@ class _SavedMessagesScreenState extends State<SavedMessagesScreen> with _SitePag
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(text(item['body']) ?? text(item['preview']) ?? '', maxLines: 4, overflow: TextOverflow.ellipsis, style: body(14).copyWith(height: 1.35)),
+                    FitText(text(item['body']) ?? text(item['preview']) ?? '', style: body(14).copyWith(height: 1.35), maxLines: 4),
                     const SizedBox(height: 4),
                     Text([text(item['author']), _when(item['created_at'])].whereType<String>().where((s) => s.isNotEmpty).join(' · '), style: body(12, color: muted)),
                   ]),
@@ -934,7 +931,7 @@ class _ServerCompareScreenState extends State<ServerCompareScreen> with _SitePag
                       flex: 3,
                       child: GestureDetector(
                         onTap: side == null ? null : () => context.push('/servers/${side['slug']}'),
-                        child: Text(text(side?['name']) ?? '—', textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis, style: body(13, weight: FontWeight.w700, color: side == null ? faint : primary)),
+                        child: FitText(text(side?['name']) ?? '—', style: body(13, weight: FontWeight.w700, color: side == null ? faint : primary), textAlign: TextAlign.center, maxLines: 2),
                       ),
                     ),
                 ]),
@@ -988,12 +985,7 @@ class StreamBadge extends StatelessWidget {
         child: Row(mainAxisSize: MainAxisSize.min, children: [
           if (live) ...[const LiveBadge(), const SizedBox(width: 8)] else ...[Icon(LucideIcons.radio, size: 15, color: muted), const SizedBox(width: 6)],
           Flexible(
-            child: Text(
-              live ? (text(stream['title']) ?? tr('В ефірі на {platform}', {'platform': text(stream['platform_label']) ?? ''})) : tr('Стрімить на {platform}', {'platform': text(stream['platform_label']) ?? ''}),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: body(12.5, weight: FontWeight.w600, color: live ? ink : soft),
-            ),
+            child: FitText(live ? (text(stream['title']) ?? tr('В ефірі на {platform}', {'platform': text(stream['platform_label']) ?? ''})) : tr('Стрімить на {platform}', {'platform': text(stream['platform_label']) ?? ''}), style: body(12.5, weight: FontWeight.w600, color: live ? ink : soft)),
           ),
           if (live && details.isNotEmpty) ...[const SizedBox(width: 6), Text(details, style: body(11.5, color: muted))],
         ]),

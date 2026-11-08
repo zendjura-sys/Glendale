@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+
+import 'core/widgets/arctic_glass/arctic_fit_text.dart';
 import 'package:http/http.dart' as http;
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'api.dart';
@@ -48,12 +50,7 @@ class _PinnedBarState extends State<PinnedBar> {
                   pins.length > 1 ? tr('Закріплене {n} з {total}', {'n': '${index % pins.length + 1}', 'total': '${pins.length}'}) : tr('Закріплене'),
                   style: body(11.5, color: primary, weight: FontWeight.w600),
                 ),
-                Text(
-                  [if (text(pin['author']) != null) '${text(pin['author'])}:', text(pin['preview']) ?? ''].join(' '),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: body(13, color: soft),
-                ),
+                FitText([if (text(pin['author']) != null) '${text(pin['author'])}:', text(pin['preview']) ?? ''].join(' '), style: body(13, color: soft)),
               ]),
             ),
           ]),

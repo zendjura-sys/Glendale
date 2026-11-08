@@ -111,7 +111,7 @@ class _PhotosScreenState extends State<PhotosScreen> {
               const SizedBox(width: 12),
               Expanded(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(text(owner['name']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: display(17)),
+                  FitText(text(owner['name']) ?? '', style: display(17)),
                   const SizedBox(height: 2),
                   Text('${albums.length} ${plural(albums.length, 'альбом', 'альбоми', 'альбомів')} · $total ${plural(total, 'фотографія', 'фотографії', 'фотографій')}', style: body(12.5, color: muted)),
                 ]),
@@ -187,7 +187,7 @@ class AlbumTile extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 4),
           child: Row(children: [
-            Expanded(child: Text(text(album['title']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14, weight: FontWeight.w700))),
+            Expanded(child: FitText(text(album['title']) ?? '', style: body(14, weight: FontWeight.w700))),
             if (privacy != null && album['privacy'] != 'public') Icon(privacy.$1, size: 14, color: muted),
           ]),
         ),
@@ -435,7 +435,7 @@ class _AlbumScreenState extends State<AlbumScreen> {
               const SizedBox(width: 6),
               Avatar(url: text(owner['avatar_url']), name: text(owner['name']) ?? '?', size: 28, square: owner['type'] == 'community'),
               const SizedBox(width: 8),
-              Expanded(child: Text(text(owner['name']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(13, color: muted))),
+              Expanded(child: FitText(text(owner['name']) ?? '', style: body(13, color: muted))),
               if (can['manage'] == true) IconButton(onPressed: _menu, icon: Icon(LucideIcons.ellipsis, color: muted)),
             ]),
             const SizedBox(height: 10),
@@ -629,7 +629,7 @@ class _PhotoScreenState extends State<PhotoScreen> {
                         Expanded(
                           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                             Text(text(user['name']) ?? text(mapOf(album['owner'])['name']) ?? '', style: body(13.5, weight: FontWeight.w700)),
-                            Text('${album['title']} · ${ago(photo['created_at'])}', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: muted)),
+                            FitText('${album['title']} · ${ago(photo['created_at'])}', style: body(12, color: muted)),
                           ]),
                         ),
                         IconButton(

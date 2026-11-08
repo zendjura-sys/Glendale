@@ -103,7 +103,7 @@ class _GameExtrasState extends State<GameExtras> {
                     SizedBox(width: 28, child: Text('${row['place']}', style: body(14, color: intOf(row['place']) <= 3 ? gold : muted, weight: FontWeight.w700))),
                     Avatar(url: text(mapOf(row['user'])['avatar_url']), name: text(mapOf(row['user'])['name']) ?? '?', size: 32),
                     const SizedBox(width: 10),
-                    Expanded(child: Text(text(mapOf(row['user'])['name']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14, weight: FontWeight.w600))),
+                    Expanded(child: FitText(text(mapOf(row['user'])['name']) ?? '', style: body(14, weight: FontWeight.w600))),
                     Text(tr('{n} дн.', {'n': '${row['days']}'}), style: body(12.5, color: muted)),
                   ]),
                 ),
@@ -397,8 +397,8 @@ class _News extends StatelessWidget {
         ListTile(
           contentPadding: EdgeInsets.zero,
           leading: Icon(n['patch'] == true ? LucideIcons.wrench : LucideIcons.newspaper, color: n['patch'] == true ? gold : accent, size: 20),
-          title: Text(text(n['title']) ?? '', maxLines: 2, overflow: TextOverflow.ellipsis, style: body(14, weight: FontWeight.w600)),
-          subtitle: text(n['excerpt']) == null ? null : Text(text(n['excerpt'])!, maxLines: 2, overflow: TextOverflow.ellipsis, style: body(12.5, color: faint)),
+          title: FitText(text(n['title']) ?? '', style: body(14, weight: FontWeight.w600), maxLines: 2),
+          subtitle: text(n['excerpt']) == null ? null : FitText(text(n['excerpt'])!, style: body(12.5, color: faint), maxLines: 2),
           onTap: text(n['url']) == null ? null : () => launchUrl(Uri.parse(text(n['url'])!), mode: LaunchMode.externalApplication),
         ),
     ]);
@@ -537,7 +537,7 @@ class _Mentors extends StatelessWidget {
           contentPadding: EdgeInsets.zero,
           leading: Avatar(url: text(m['avatar_url']), name: text(m['name']) ?? '?', size: 38),
           title: Text(text(m['name']) ?? '', style: body(14, weight: FontWeight.w600)),
-          subtitle: Text(text(m['about']) ?? '', maxLines: 2, overflow: TextOverflow.ellipsis, style: body(12.5, color: faint)),
+          subtitle: FitText(text(m['about']) ?? '', style: body(12.5, color: faint), maxLines: 2),
           trailing: IconButton(
             tooltip: tr('Написати'),
             icon: Icon(LucideIcons.messageCircle, color: accent),

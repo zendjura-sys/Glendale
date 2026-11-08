@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import 'core/widgets/arctic_glass/arctic_fit_text.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -141,7 +143,7 @@ class EventTile extends StatelessWidget {
               ]),
               const SizedBox(height: 4),
               Text(text(event['title']) ?? '', style: body(15, weight: FontWeight.w600)),
-              if (text(event['description']) != null) Text(text(event['description'])!, maxLines: 2, overflow: TextOverflow.ellipsis, style: body(13, color: muted)),
+              if (text(event['description']) != null) FitText(text(event['description'])!, style: body(13, color: muted), maxLines: 2),
               const SizedBox(height: 4),
               Wrap(spacing: 12, runSpacing: 4, crossAxisAlignment: WrapCrossAlignment.center, children: [
                 Text('${isGame ? 'Цікаво' : 'Іде'}: ${event['going_count'] ?? 0}', style: body(12, color: faint)),

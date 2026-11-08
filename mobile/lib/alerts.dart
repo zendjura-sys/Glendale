@@ -4,6 +4,8 @@ import 'dart:math' as math;
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+
+import 'core/widgets/arctic_glass/arctic_fit_text.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:just_audio/just_audio.dart';
@@ -477,12 +479,7 @@ class _AlertsScreenState extends State<AlertsScreen> {
                   AlertBadge(regionType(r), scale: AlertsConfig.scaleOf(r['scale'])),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: Text(
-                      text(r['name']) ?? '',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: body(14, color: AlertsConfig.resolveColors(regionType(r), AlertsConfig.scaleOf(r['scale'])).text),
-                    ),
+                    child: FitText(text(r['name']) ?? '', style: body(14, color: AlertsConfig.resolveColors(regionType(r), AlertsConfig.scaleOf(r['scale'])).text)),
                   ),
                   for (final c in ((r['alerts'] as List?) ?? const []).skip(1))
                     if (AlertsConfig.typeOf(c) != null)
@@ -508,8 +505,8 @@ class _AlertsScreenState extends State<AlertsScreen> {
                     const SizedBox(width: 10),
                     Expanded(
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Text('${threatTitle(t)}${intOf(t['count'], 1) > 1 ? ' ×${t['count']}' : ''}', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14, weight: FontWeight.w600)),
-                        Text(text(t['place']) ?? tr('Україна'), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12.5, color: muted)),
+                        FitText('${threatTitle(t)}${intOf(t['count'], 1) > 1 ? ' ×${t['count']}' : ''}', style: body(14, weight: FontWeight.w600)),
+                        FitText(text(t['place']) ?? tr('Україна'), style: body(12.5, color: muted)),
                       ]),
                     ),
                     Text('${intOf(t['confidence'])}% · ${clock(t['detected_at'])}', style: body(12.5, color: muted)),
@@ -564,12 +561,7 @@ class _AlertsScreenState extends State<AlertsScreen> {
                               Text('@${c['name']}', style: body(13, color: accent)),
                               const SizedBox(width: 8),
                               Expanded(
-                                child: Text(
-                                  (c['regions'] is List && (c['regions'] as List).isNotEmpty) ? (c['regions'] as List).join(' / ') : tr('Вся Україна'),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: body(12, color: faint),
-                                ),
+                                child: FitText((c['regions'] is List && (c['regions'] as List).isNotEmpty) ? (c['regions'] as List).join(' / ') : tr('Вся Україна'), style: body(12, color: faint)),
                               ),
                             ]),
                           ),

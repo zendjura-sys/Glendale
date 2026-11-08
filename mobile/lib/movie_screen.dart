@@ -489,7 +489,7 @@ class _MovieScreenState extends State<MovieScreen> {
         ],
         Text(text(movie['title']) ?? '', style: display(23).copyWith(height: 1.2)),
         const SizedBox(height: 4),
-        if (text(movie['title_original']) != null) Text(text(movie['title_original'])!, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14, color: muted)),
+        if (text(movie['title_original']) != null) FitText(text(movie['title_original'])!, style: body(14, color: muted)),
         const SizedBox(height: 10),
         // Рядок відомостей (як в Animax): рейтинг, рік і контурні чипи — країна, тип, статус.
         Wrap(spacing: 8, runSpacing: 6, crossAxisAlignment: WrapCrossAlignment.center, children: [
@@ -576,7 +576,7 @@ class _MovieScreenState extends State<MovieScreen> {
                   if (added != null)
                     Padding(
                       padding: const EdgeInsets.fromLTRB(14, 7, 14, 9),
-                      child: Text(tr('Додано: {v}', {'v': added}), textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12.5, color: muted)),
+                      child: FitText(tr('Додано: {v}', {'v': added}), style: body(12.5, color: muted), textAlign: TextAlign.center),
                     ),
                 ]),
               ),
@@ -993,7 +993,7 @@ class _ListsBar extends StatelessWidget {
                 child: Row(children: [
                   Container(width: 12, height: 12, decoration: BoxDecoration(color: _statusColors[item.key] ?? muted, shape: BoxShape.circle)),
                   const SizedBox(width: 8),
-                  Flexible(child: Text(item.label, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14, color: muted))),
+                  Flexible(child: FitText(item.label, style: body(14, color: muted))),
                   const SizedBox(width: 6),
                   Text(compact(item.count), style: body(14, weight: FontWeight.w700)),
                 ]),
@@ -1081,7 +1081,7 @@ class _VoicePickerScreenState extends State<VoicePickerScreen> {
                       const SizedBox(width: 14),
                       Expanded(
                         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          Text(name, maxLines: 2, overflow: TextOverflow.ellipsis, style: body(16, weight: FontWeight.w700)),
+                          FitText(name, style: body(16, weight: FontWeight.w700), maxLines: 2),
                           const SizedBox(height: 2),
                           Text(
                             [if (count > 0) tr('{n} серій', {'n': count}), text(p['provider_label']), text(p['quality'])].whereType<String>().join(' · '),
@@ -1150,8 +1150,8 @@ class _PageBar extends StatelessWidget {
         const SizedBox(width: 4),
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: display(20)),
-            if (subtitle != null) Text(subtitle!, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(13.5, color: muted)),
+            FitText(title, style: display(20)),
+            if (subtitle != null) FitText(subtitle!, style: body(13.5, color: muted)),
           ]),
         ),
         ?trailing,
@@ -1976,8 +1976,8 @@ class _MoviePlayerScreenState extends State<MoviePlayerScreen> {
               const SizedBox(width: 6),
               Expanded(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-                  Text(widget.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: display(17, color: Colors.white)),
-                  if (_subtitle.isNotEmpty) Text(_subtitle, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(13, color: fgSoft)),
+                  FitText(widget.title, style: display(17, color: Colors.white)),
+                  if (_subtitle.isNotEmpty) FitText(_subtitle, style: body(13, color: fgSoft)),
                 ]),
               ),
               _PillButton(icon: LucideIcons.gauge, label: speed == 1 ? '1x' : '${speed}x', onTap: _speedMenu),

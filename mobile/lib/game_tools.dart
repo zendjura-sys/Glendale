@@ -262,7 +262,7 @@ class _ConfigCardState extends State<_ConfigCard> {
         Row(children: [
           _tag(_kindName(text(c['kind']) ?? ''), AppColors.accentCyan),
           const SizedBox(width: 8),
-          Expanded(child: Text(text(c['title']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(15, weight: FontWeight.w600))),
+          Expanded(child: FitText(text(c['title']) ?? '', style: body(15, weight: FontWeight.w600))),
         ]),
         if (text(game['name']) != null) Padding(padding: const EdgeInsets.only(top: 4), child: Text(text(game['name'])!, style: body(12, color: muted))),
         const SizedBox(height: 10),
@@ -295,7 +295,7 @@ class _ConfigCardState extends State<_ConfigCard> {
             ),
         ]),
         if (c['mine'] != true && text(author['name']) != null)
-          Padding(padding: const EdgeInsets.only(top: 8), child: Text(text(author['name'])!, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: muted))),
+          Padding(padding: const EdgeInsets.only(top: 8), child: FitText(text(author['name'])!, style: body(12, color: muted))),
       ]),
     );
   }
@@ -464,14 +464,9 @@ class _NightTile extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(text(night['title']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(15, weight: FontWeight.w600)),
+              FitText(text(night['title']) ?? '', style: body(15, weight: FontWeight.w600)),
               const SizedBox(height: 2),
-              Text(
-                [set ? _when(text(night['starts_at'])) : tr('Голосування за час'), ?text(game['name'])].join(' · '),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: body(12.5, color: muted),
-              ),
+              FitText([set ? _when(text(night['starts_at'])) : tr('Голосування за час'), ?text(game['name'])].join(' · '), style: body(12.5, color: muted)),
             ]),
           ),
           Icon(LucideIcons.users, size: 15, color: muted),

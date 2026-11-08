@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import 'core/widgets/arctic_glass/arctic_fit_text.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
@@ -1379,7 +1381,7 @@ List<Widget> ratingTab(FamilyContext ctx) {
                 SizedBox(width: 22, child: Text('${r['place']}', style: body(12.5, color: intOf(r['place']) <= 3 ? gold : muted, weight: FontWeight.w700))),
                 Expanded(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(text(r['display']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12.5).copyWith(fontFamily: 'monospace')),
+                    FitText(text(r['display']) ?? '', style: body(12.5).copyWith(fontFamily: 'monospace')),
                     Text(text(r['rank_title']) ?? '', style: body(11, color: muted)),
                   ]),
                 ),

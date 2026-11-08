@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+
+import 'core/widgets/arctic_glass/arctic_fit_text.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
@@ -281,7 +283,7 @@ class _CinemaHeroState extends State<CinemaHero> {
           child: Padding(
           padding: const EdgeInsets.fromLTRB(20, 0, 20, 18),
           child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(text(movie['title']) ?? '', maxLines: 2, overflow: TextOverflow.ellipsis, style: display(28, color: Colors.white)),
+            FitText(text(movie['title']) ?? '', style: display(28, color: Colors.white), maxLines: 2, wrap: false),
             const SizedBox(height: 6),
             Row(children: [
               if (rating != null && rating > 0) ...[
@@ -292,12 +294,12 @@ class _CinemaHeroState extends State<CinemaHero> {
                 ),
                 const SizedBox(width: 8),
               ],
-              Expanded(child: Text(meta, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12.5, color: Colors.white70))),
+              Expanded(child: FitText(meta, style: body(12.5, color: Colors.white70), wrap: false)),
             ]),
             if (text(movie['title_original']) != null && movie['title_original'] != movie['title'])
-              Text(text(movie['title_original'])!, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14, color: Colors.white54)),
+              FitText(text(movie['title_original'])!, style: body(14, color: Colors.white54), wrap: false),
             if (text(movie['description']) != null)
-              Padding(padding: const EdgeInsets.only(top: 8), child: Text(text(movie['description'])!, maxLines: 2, overflow: TextOverflow.ellipsis, style: body(13.5, color: Colors.white70).copyWith(height: 1.4))),
+              Padding(padding: const EdgeInsets.only(top: 8), child: FitText(text(movie['description'])!, style: body(13.5, color: Colors.white70).copyWith(height: 1.4), maxLines: 2, wrap: false)),
             const SizedBox(height: 14),
             Wrap(spacing: 8, runSpacing: 8, children: [
               _HeroButton(label: tr('Дивитися'), icon: LucideIcons.play, primaryStyle: true, onTap: () => context.push('/cinema/${movie['slug']}')),
@@ -383,9 +385,9 @@ class ContinueCards extends StatelessWidget {
                   const SizedBox(width: 10),
                   Expanded(
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [
-                      Text(text(movie['title']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14, weight: FontWeight.w700)),
+                      FitText(text(movie['title']) ?? '', style: body(14, weight: FontWeight.w700), wrap: false),
                       const SizedBox(height: 2),
-                      Text(line, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: muted)),
+                      FitText(line, style: body(12, color: muted), wrap: false),
                       const SizedBox(height: 10),
                       ClipRRect(
                         borderRadius: BorderRadius.circular(2),
@@ -448,7 +450,7 @@ class _TypeCarouselState extends State<TypeCarousel> {
                         bottom: 10,
                         child: Column(mainAxisSize: MainAxisSize.min, children: [
                           Text(text(movie['type_label']) ?? '', style: body(10.5, color: accent, weight: FontWeight.w600)),
-                          Text(text(movie['title']) ?? '', maxLines: 2, textAlign: TextAlign.center, overflow: TextOverflow.ellipsis, style: body(12.5, color: Colors.white, weight: FontWeight.w700)),
+                          FitText(text(movie['title']) ?? '', style: body(12.5, color: Colors.white, weight: FontWeight.w700), textAlign: TextAlign.center, maxLines: 2, wrap: false),
                         ]),
                       ),
                     ]),
@@ -484,19 +486,17 @@ class MovieDetailRow extends StatelessWidget {
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(text(movie['type_label']) ?? '', style: body(11.5, color: muted)),
-            Text(text(movie['title']) ?? '', maxLines: 2, overflow: TextOverflow.ellipsis, style: body(16, weight: FontWeight.w700)),
+            FitText(text(movie['title']) ?? '', style: body(16, weight: FontWeight.w700), maxLines: 2, wrap: false),
             const SizedBox(height: 6),
             for (final f in facts)
               Padding(
                 padding: const EdgeInsets.only(bottom: 2),
                 child: Text.rich(
                   TextSpan(children: [TextSpan(text: '${f.$1}: ', style: body(12.5, weight: FontWeight.w700)), TextSpan(text: f.$2, style: body(12.5, color: soft))]),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             if (text(movie['description']) != null)
-              Padding(padding: const EdgeInsets.only(top: 4), child: Text(text(movie['description'])!, maxLines: 3, overflow: TextOverflow.ellipsis, style: body(12.5, color: muted).copyWith(height: 1.35))),
+              Padding(padding: const EdgeInsets.only(top: 4), child: FitText(text(movie['description'])!, style: body(12.5, color: muted).copyWith(height: 1.35), maxLines: 3, wrap: false)),
           ]),
         ),
       ]),
@@ -584,7 +584,7 @@ class _CinemaSideWidgetsState extends State<CinemaSideWidgets> {
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 5),
                   child: Row(children: [
-                    Expanded(child: Text(text(popular[i]['title']) ?? '', maxLines: 2, overflow: TextOverflow.ellipsis, style: body(13.5, color: soft))),
+                    Expanded(child: FitText(text(popular[i]['title']) ?? '', style: body(13.5, color: soft), maxLines: 2, wrap: false)),
                     const SizedBox(width: 10),
                     SizedBox(
                       width: 44,
@@ -629,7 +629,7 @@ class _CinemaSideWidgetsState extends State<CinemaSideWidgets> {
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       AspectRatio(aspectRatio: 16 / 9, child: NetImage(text(trailers[i]['backdrop']) ?? text(trailers[i]['poster']), radius: 12)),
                       const SizedBox(height: 6),
-                      Text(text(trailers[i]['title']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(13, weight: FontWeight.w600)),
+                      FitText(text(trailers[i]['title']) ?? '', style: body(13, weight: FontWeight.w600), wrap: false),
                     ]),
                   ),
                 ),
@@ -651,7 +651,7 @@ class _CinemaSideWidgetsState extends State<CinemaSideWidgets> {
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 5),
                   child: Row(children: [
-                    Expanded(child: Text('${item['title']}', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(13.5, color: soft))),
+                    Expanded(child: FitText('${item['title']}', style: body(13.5, color: soft), wrap: false)),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(color: fg.withValues(alpha: 0.07), borderRadius: BorderRadius.circular(8)),
@@ -692,7 +692,7 @@ class CinemaSectionTitle extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(children: [
-        Expanded(child: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: display(18))),
+        Expanded(child: FitText(title, style: display(18), wrap: false)),
         if (onAll != null) GestureDetector(onTap: onAll, child: Text(tr('Усі'), style: body(13.5, color: cinemaAccent, weight: FontWeight.w700))),
       ]),
     );
@@ -818,7 +818,7 @@ class AnimaxGrid extends StatelessWidget {
       itemBuilder: (_, i) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Expanded(child: AnimaxPoster(movie: movies[i], episodeLabel: true)),
         const SizedBox(height: 6),
-        Text(text(movies[i]['title']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(13, weight: FontWeight.w700)),
+        FitText(text(movies[i]['title']) ?? '', style: body(13, weight: FontWeight.w700), wrap: false),
       ]),
     );
   }

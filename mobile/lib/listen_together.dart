@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+
+import 'core/widgets/arctic_glass/arctic_fit_text.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -342,8 +344,8 @@ class _ListenScreenState extends State<ListenScreen> {
                 child: Row(children: [
                   Expanded(
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text(text(mapOf(sug['track'])['title']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14)),
-                      Text(tr('пропонує {v}', {'v': mapOf(sug['by'])['name'] ?? ''}), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: muted)),
+                      FitText(text(mapOf(sug['track'])['title']) ?? '', style: body(14)),
+                      FitText(tr('пропонує {v}', {'v': mapOf(sug['by'])['name'] ?? ''}), style: body(12, color: muted)),
                     ]),
                   ),
                   if (room['can_review'] == true)
@@ -396,8 +398,8 @@ class _ListenScreenState extends State<ListenScreen> {
                 SizedBox(width: 24, child: Text('${i + 1}', style: body(12, color: faint))),
                 Expanded(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(text(mapOf(queue[i]['track'])['title']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14)),
-                    Text('${mapOf(queue[i]['track'])['artist'] ?? ''}${queue[i]['by'] != null ? ' · ${mapOf(queue[i]['by'])['name']}' : ''}', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: muted)),
+                    FitText(text(mapOf(queue[i]['track'])['title']) ?? '', style: body(14)),
+                    FitText('${mapOf(queue[i]['track'])['artist'] ?? ''}${queue[i]['by'] != null ? ' · ${mapOf(queue[i]['by'])['name']}' : ''}', style: body(12, color: muted)),
                   ]),
                 ),
                 if (!ended && (canControl || mapOf(queue[i]['by'])['id'] == me?['id']))
@@ -427,8 +429,8 @@ class _ListenScreenState extends State<ListenScreen> {
               leading: text(t['cover_url']) != null
                   ? NetImage(text(t['cover_url']), width: 42, height: 42, radius: 10)
                   : Container(width: 42, height: 42, decoration: BoxDecoration(color: raised, borderRadius: BorderRadius.circular(10)), child: Icon(LucideIcons.music2, color: faint, size: 18)),
-              title: Text(text(t['title']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14)),
-              subtitle: Text('${t['artist'] ?? ''} · ${_clock(intOf(t['duration']))}', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: muted)),
+              title: FitText(text(t['title']) ?? '', style: body(14)),
+              subtitle: FitText('${t['artist'] ?? ''} · ${_clock(intOf(t['duration']))}', style: body(12, color: muted)),
               trailing: Icon(LucideIcons.plus, color: primary),
               onTap: () => _add(t, suggests),
             ),
@@ -439,7 +441,7 @@ class _ListenScreenState extends State<ListenScreen> {
               leading: text(st['cover_url']) != null
                   ? NetImage(text(st['cover_url']), width: 42, height: 42, radius: 10)
                   : Container(width: 42, height: 42, decoration: BoxDecoration(color: raised, borderRadius: BorderRadius.circular(10)), child: Icon(LucideIcons.radio, color: faint, size: 18)),
-              title: Text(text(st['title']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14)),
+              title: FitText(text(st['title']) ?? '', style: body(14)),
               trailing: Icon(LucideIcons.plus, color: primary),
               onTap: () => _add(st, suggests),
             ),

@@ -272,8 +272,6 @@ class _MyFamilyCard extends StatelessWidget {
                 TextSpan(text: '[${family['tag']}] ', style: body(15, color: gold, weight: FontWeight.w800)),
                 TextSpan(text: text(family['name']) ?? '', style: body(15, weight: FontWeight.w700)),
               ]),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
             ),
             Text(text(membership['display']) ?? '', style: body(12, color: muted).copyWith(fontFamily: 'monospace')),
             const SizedBox(height: 6),
@@ -324,15 +322,13 @@ class FamilyCard extends StatelessWidget {
                       TextSpan(text: '[${family['tag']}] ', style: body(15, color: gold, weight: FontWeight.w800)),
                       TextSpan(text: text(family['name']) ?? '', style: body(15, weight: FontWeight.w700)),
                     ]),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 if (family['status'] == 'verified') const Icon(LucideIcons.shieldCheck, size: 18, color: green),
               ]),
             ),
             if (text(family['description']) != null)
-              Transform.translate(offset: const Offset(0, -14), child: Text(text(family['description'])!, maxLines: 2, overflow: TextOverflow.ellipsis, style: body(13, color: soft))),
+              Transform.translate(offset: const Offset(0, -14), child: FitText(text(family['description'])!, style: body(13, color: soft), maxLines: 2)),
             Row(children: [
               if (server != null) ...[
                 if (text(server['icon']) != null) SizedBox(width: 16, height: 16, child: NetImage(text(server['icon']), radius: 4)),
@@ -779,7 +775,7 @@ class _FamilyHeader extends StatelessWidget {
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Text('[${family['tag']}]', style: display(18, color: gold)),
                     Row(children: [
-                      Flexible(child: Text(text(family['name']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: display(19))),
+                      Flexible(child: FitText(text(family['name']) ?? '', style: display(19))),
                       if (family['status'] == 'verified') const Padding(padding: EdgeInsets.only(left: 6), child: Icon(LucideIcons.shieldCheck, size: 18, color: green)),
                     ]),
                     const SizedBox(height: 2),
@@ -814,7 +810,7 @@ class _FamilyHeader extends StatelessWidget {
                     child: Row(children: [
                       Expanded(
                         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          Text(text(me['display']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(13, weight: FontWeight.w600).copyWith(fontFamily: 'monospace')),
+                          FitText(text(me['display']) ?? '', style: body(13, weight: FontWeight.w600).copyWith(fontFamily: 'monospace')),
                           const SizedBox(height: 4),
                           RankPill(rank: me['rank'], title: text(me['rank_title'])),
                         ]),
@@ -950,7 +946,7 @@ class MemberTile extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(text(member['display']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14, weight: FontWeight.w600).copyWith(fontFamily: 'monospace')),
+              FitText(text(member['display']) ?? '', style: body(14, weight: FontWeight.w600).copyWith(fontFamily: 'monospace')),
               const SizedBox(height: 3),
               Wrap(spacing: 6, runSpacing: 4, crossAxisAlignment: WrapCrossAlignment.center, children: [
                 if (member['is_owner'] == true) const Icon(LucideIcons.crown, size: 14, color: gold),
@@ -1032,7 +1028,7 @@ List<Widget> overviewTab(FamilyContext ctx, {required VoidCallback onReport, req
             padding: const EdgeInsets.symmetric(vertical: 5),
             child: Row(children: [
               SizedBox(width: 22, child: Text('${l['place']}', style: body(13, color: intOf(l['place']) <= 3 ? gold : muted, weight: FontWeight.w800))),
-              Expanded(child: Text(text(l['display']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(13.5).copyWith(fontFamily: 'monospace'))),
+              Expanded(child: FitText(text(l['display']) ?? '', style: body(13.5).copyWith(fontFamily: 'monospace'))),
               Text(tr('{v} балів', {'v': l['points']}), style: body(12.5, color: accent, weight: FontWeight.w700)),
             ]),
           ),

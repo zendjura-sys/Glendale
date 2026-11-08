@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+
+import 'core/widgets/arctic_glass/arctic_fit_text.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -254,7 +256,7 @@ class ServerCard extends StatelessWidget {
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [
-                Flexible(child: Text(text(server['name']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: display(16))),
+                Flexible(child: FitText(text(server['name']) ?? '', style: display(16))),
                 if (server['is_featured'] == true) const Padding(padding: EdgeInsets.only(left: 6), child: Icon(LucideIcons.sparkles, size: 16, color: gold)),
               ]),
               const SizedBox(height: 6),
@@ -297,7 +299,7 @@ class ServerCard extends StatelessWidget {
                   child: Row(mainAxisSize: MainAxisSize.min, children: [
                     Icon(LucideIcons.copy, size: 13, color: muted),
                     const SizedBox(width: 6),
-                    Flexible(child: Text(text(server['connect'])!, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: soft).copyWith(fontFamily: 'monospace'))),
+                    Flexible(child: FitText(text(server['connect'])!, style: body(12, color: soft).copyWith(fontFamily: 'monospace'))),
                   ]),
                 ),
               ),
@@ -490,7 +492,7 @@ class ServerScreen extends StatelessWidget {
                           Avatar(url: text(families[i]['logo_url']), name: text(families[i]['tag']) ?? '?', size: 40, square: true),
                         ]),
                       ),
-                      title: Text('[${families[i]['tag']}] ${families[i]['name']}', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14.5, weight: FontWeight.w600)),
+                      title: FitText('[${families[i]['tag']}] ${families[i]['name']}', style: body(14.5, weight: FontWeight.w600)),
                       subtitle: Text(tr('{v} учасників · {v2} балів', {'v': families[i]['members_count'] ?? 0, 'v2': compact(families[i]['score'])}), style: body(12, color: muted)),
                       onTap: () => context.push('/families/${families[i]['slug']}'),
                     ),
@@ -552,7 +554,7 @@ class _VoteTopsState extends State<VoteTops> {
                   const SizedBox(width: 10),
                   Expanded(
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text(text(rows[i]['name']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14, weight: FontWeight.w600)),
+                      FitText(text(rows[i]['name']) ?? '', style: body(14, weight: FontWeight.w600)),
                       Text(text(rows[i]['platform_label']) ?? '', style: body(11.5, color: muted)),
                     ]),
                   ),

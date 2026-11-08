@@ -1,6 +1,8 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+
+import 'core/widgets/arctic_glass/arctic_fit_text.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
@@ -272,11 +274,11 @@ class _TaskRow extends StatelessWidget {
         const SizedBox(width: 12),
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(text(task.card['title']) ?? tr('Без назви'), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14.5, weight: FontWeight.w500)),
+            FitText(text(task.card['title']) ?? tr('Без назви'), style: body(14.5, weight: FontWeight.w500)),
             const SizedBox(height: 4),
             if (!failed) LinearProgressIndicator(value: task.running ? task.progress : null, minHeight: 3, color: accent, backgroundColor: faint.withValues(alpha: 0.25), borderRadius: BorderRadius.circular(2)),
             const SizedBox(height: 3),
-            Text(status, maxLines: 2, overflow: TextOverflow.ellipsis, style: body(12, color: failed ? dangerSoft : muted)),
+            FitText(status, style: body(12, color: failed ? dangerSoft : muted), maxLines: 2),
           ]),
         ),
         if (failed) IconButton(tooltip: tr('Спробувати знову'), onPressed: () => downloads.retry(task.id), icon: Icon(LucideIcons.rotateCw, size: 18, color: muted)),
@@ -306,13 +308,8 @@ class _CollectionRow extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(collectionTitle(collection), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(15, weight: FontWeight.w500)),
-              Text(
-                [?collection.subtitle, done < total ? tr('{done} з {total}', {'done': done, 'total': total}) : '$total ${plural(total, 'пісня', 'пісні', 'пісень')}', bytesLabel(bytes)].join(' · '),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: body(12.5, color: muted),
-              ),
+              FitText(collectionTitle(collection), style: body(15, weight: FontWeight.w500)),
+              FitText([?collection.subtitle, done < total ? tr('{done} з {total}', {'done': done, 'total': total}) : '$total ${plural(total, 'пісня', 'пісні', 'пісень')}', bytesLabel(bytes)].join(' · '), style: body(12.5, color: muted)),
             ]),
           ),
           IconButton(

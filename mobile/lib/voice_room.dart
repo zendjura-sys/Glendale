@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+
+import 'core/widgets/arctic_glass/arctic_fit_text.dart';
 import 'package:flutter_background/flutter_background.dart';
 import 'package:go_router/go_router.dart';
 import 'package:livekit_client/livekit_client.dart';
@@ -422,11 +424,7 @@ class _VoiceRoomsPanelState extends State<VoiceRoomsPanel> {
                 Icon(locked ? LucideIcons.lock : LucideIcons.volume2, size: 18, color: locked ? faint : (here ? green : muted)),
               const SizedBox(width: 10),
               Expanded(
-                child: Text(
-                  text(room['name']) ?? '',
-                  overflow: TextOverflow.ellipsis,
-                  style: body(14.5, color: locked ? faint : (here ? ink : soft), weight: here ? FontWeight.w700 : FontWeight.w500),
-                ),
+                child: FitText(text(room['name']) ?? '', style: body(14.5, color: locked ? faint : (here ? ink : soft), weight: here ? FontWeight.w700 : FontWeight.w500)),
               ),
               if (count > 0) Text('$count', style: body(12.5, color: muted)),
               if (manage) ...[
@@ -456,7 +454,7 @@ class _VoiceRoomsPanelState extends State<VoiceRoomsPanel> {
                   child: Avatar(name: text(person['name']) ?? '', url: absolute(person['avatar_url']), size: 26),
                 ),
                 const SizedBox(width: 8),
-                Expanded(child: Text(text(person['name']) ?? '', overflow: TextOverflow.ellipsis, style: body(13, color: soft))),
+                Expanded(child: FitText(text(person['name']) ?? '', style: body(13, color: soft))),
                 if (person['muted'] == true) const Icon(LucideIcons.micOff, size: 15, color: dangerSoft),
               ]),
             ),
@@ -539,8 +537,8 @@ class _VoiceBarState extends State<VoiceBar> {
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(call.roomName, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14, weight: FontWeight.w700)),
-                    Text(call.status == 'connecting' ? tr('Підключення…') : (call.kind == 'call' ? '${call.label} · ${_elapsed(call.connectedAt)}' : call.label), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: muted)),
+                    FitText(call.roomName, style: body(14, weight: FontWeight.w700)),
+                    FitText(call.status == 'connecting' ? tr('Підключення…') : (call.kind == 'call' ? '${call.label} · ${_elapsed(call.connectedAt)}' : call.label), style: body(12, color: muted)),
                   ]),
                 ),
                 _BarButton(

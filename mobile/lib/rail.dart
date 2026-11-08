@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+
+import 'core/widgets/arctic_glass/arctic_fit_text.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'api.dart';
@@ -56,7 +58,7 @@ class _RailPanelState extends State<RailPanel> {
           child: Row(children: [
             Avatar(name: name, url: avatar, size: 32, online: online),
             const SizedBox(width: 10),
-            Expanded(child: Text(name, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14))),
+            Expanded(child: FitText(name, style: body(14))),
             if (unread > 0)
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),

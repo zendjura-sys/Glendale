@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+
+import 'core/widgets/arctic_glass/arctic_fit_text.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -305,7 +307,7 @@ class _WatchPartyScreenState extends State<WatchPartyScreen> {
           IconButton(onPressed: () => context.canPop() ? context.pop() : context.go('/cinema'), icon: Icon(LucideIcons.arrowLeft, color: soft)),
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(16, weight: FontWeight.w700)),
+              FitText(title, style: body(16, weight: FontWeight.w700)),
               Text(tr('Разом · ведучий {v}', {'v': text(mapOf(party['host'])['name']) ?? '—'}), style: body(12, color: muted)),
             ]),
           ),
@@ -426,7 +428,7 @@ class _WatchPartyScreenState extends State<WatchPartyScreen> {
                     child: Avatar(name: text(m['name']) ?? '', url: absolute(m['avatar_url']), size: 28),
                   ),
                   const SizedBox(width: 8),
-                  Expanded(child: Text(text(m['name']) ?? '', overflow: TextOverflow.ellipsis, style: body(13.5, color: soft))),
+                  Expanded(child: FitText(text(m['name']) ?? '', style: body(13.5, color: soft))),
                   if (m['is_host'] == true) const Icon(LucideIcons.crown, size: 15, color: gold),
                 ]),
               ),

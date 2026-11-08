@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import 'core/widgets/arctic_glass/arctic_fit_text.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'api.dart';
@@ -119,7 +121,7 @@ class _AchievementsPanelState extends State<AchievementsPanel> {
                       child: Icon(_icons[b['icon']] ?? LucideIcons.award, size: 21, color: b['earned'] == true ? gold : faint),
                     ),
                     const SizedBox(height: 5),
-                    Text(text(b['title']) ?? '', textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis, style: body(11, color: b['earned'] == true ? soft : faint)),
+                    FitText(text(b['title']) ?? '', style: body(11, color: b['earned'] == true ? soft : faint), textAlign: TextAlign.center, maxLines: 2),
                   ]),
                 ),
             ],

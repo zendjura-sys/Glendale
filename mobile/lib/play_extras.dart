@@ -293,7 +293,7 @@ class _DuelCard extends StatelessWidget {
       child: Column(children: [
         Avatar(url: text(u['avatar_url']), name: text(u['name']) ?? '?', size: 44, ring: winner != null && winner == u['id']),
         const SizedBox(height: 6),
-        Text(text(u['name']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(13, weight: FontWeight.w600)),
+        FitText(text(u['name']) ?? '', style: body(13, weight: FontWeight.w600)),
         if (winner != null && winner == u['id']) Text(tr('Переможець'), style: body(11.5, color: gold, weight: FontWeight.w700)),
       ]),
     );

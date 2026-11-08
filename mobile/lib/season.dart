@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+
+import 'core/widgets/arctic_glass/arctic_fit_text.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
@@ -353,12 +355,12 @@ class _RewardCell extends StatelessWidget {
         ),
         child: Column(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
           RewardIcon(reward: item, size: 34),
-          Text(text(item['name']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(11, color: soft)),
+          FitText(text(item['name']) ?? '', wrap: false, textAlign: TextAlign.center, style: body(11, color: soft)),
           if (claimed)
             Row(mainAxisSize: MainAxisSize.min, children: [
               const Icon(LucideIcons.check, size: 12, color: green),
               const SizedBox(width: 3),
-              Flexible(child: Text(tr('Отримано'), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(11, color: green, weight: FontWeight.w600))),
+              Flexible(child: FitText(tr('Отримано'), wrap: false, style: body(11, color: green, weight: FontWeight.w600))),
             ])
           else if (claimable)
             SizedBox(
@@ -376,7 +378,7 @@ class _RewardCell extends StatelessWidget {
               child: Row(mainAxisSize: MainAxisSize.min, children: [
                 Icon(LucideIcons.lock, size: 11, color: muted),
                 const SizedBox(width: 3),
-                Flexible(child: Text(reached && !allowed ? 'GameCon+' : tr('Рівень'), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(11, color: muted))),
+                Flexible(child: FitText(reached && !allowed ? 'GameCon+' : tr('Рівень'), style: body(11, color: muted))),
               ]),
             ),
         ]),

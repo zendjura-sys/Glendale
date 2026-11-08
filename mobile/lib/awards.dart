@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+
+import 'core/widgets/arctic_glass/arctic_fit_text.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -138,7 +140,7 @@ class _AwardsBodyState extends State<_AwardsBody> {
                             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                               Row(children: [
                                 if (i == 0) const Padding(padding: EdgeInsets.only(right: 4), child: Icon(LucideIcons.crown, size: 15, color: Color(0xFFFCD34D))),
-                                Expanded(child: Text(text(g['name']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14, weight: FontWeight.w600))),
+                                Expanded(child: FitText(text(g['name']) ?? '', style: body(14, weight: FontWeight.w600))),
                               ]),
                               const SizedBox(height: 5),
                               ClipRRect(
@@ -159,7 +161,7 @@ class _AwardsBodyState extends State<_AwardsBody> {
                     Expanded(
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                         Text(tr('Ваш вибір'), style: body(12, color: muted)),
-                        Text(text(mapOf(c['mine'])['name']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14.5, weight: FontWeight.w600)),
+                        FitText(text(mapOf(c['mine'])['name']) ?? '', style: body(14.5, weight: FontWeight.w600)),
                       ]),
                     ),
                     if (phase == 'voting') TextButton(onPressed: () => _pick(c), child: Text(tr('Змінити'))),
@@ -347,8 +349,8 @@ class GamerIdsPanel extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 8),
           child: Row(children: [
-            SizedBox(width: 110, child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12.5, color: muted))),
-            Expanded(child: Text(value, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14))),
+            SizedBox(width: 110, child: FitText(label, style: body(12.5, color: muted))),
+            Expanded(child: FitText(value, style: body(14))),
             Icon(icon, size: 16, color: muted),
           ]),
         ),

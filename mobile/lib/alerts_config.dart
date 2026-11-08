@@ -190,12 +190,7 @@ class AlertBadge extends StatelessWidget {
           if (!iconOnly) ...[
             const SizedBox(width: 5),
             Flexible(
-              child: Text(
-                full ? AlertsConfig.label(type) : AlertsConfig.short(type),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: palette.text),
-              ),
+              child: FitText(full ? AlertsConfig.label(type) : AlertsConfig.short(type), style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: palette.text)),
             ),
           ],
         ]),

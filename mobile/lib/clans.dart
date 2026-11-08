@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+
+import 'core/widgets/arctic_glass/arctic_fit_text.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
@@ -63,9 +65,9 @@ class ClanTile extends StatelessWidget {
         const SizedBox(width: 12),
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(text(clan['display_name']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14.5, weight: FontWeight.w600)),
+            FitText(text(clan['display_name']) ?? '', style: body(14.5, weight: FontWeight.w600)),
             const SizedBox(height: 2),
-            Text(text(game['name']) ?? '—', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: muted)),
+            FitText(text(game['name']) ?? '—', style: body(12, color: muted)),
             const SizedBox(height: 2),
             Row(children: [
               Icon(LucideIcons.usersRound, size: 13, color: faint),
@@ -324,7 +326,7 @@ class _ClanCreateScreenState extends State<ClanCreateScreen> {
                 child: Row(children: [
                   GameCover(g, size: 38),
                   const SizedBox(width: 10),
-                  Expanded(child: Text(text(g['name']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14))),
+                  Expanded(child: FitText(text(g['name']) ?? '', style: body(14))),
                   if (game?['id'] == g['id']) Icon(LucideIcons.check, color: primary, size: 18),
                 ]),
               ),
@@ -729,7 +731,7 @@ class _ClanScreenState extends State<ClanScreen> {
                 SizedBox(width: 26, child: Text('${i + 1}', style: body(14, color: muted, weight: FontWeight.w700))),
                 Avatar(url: text(mapOf(rows[i]['user'])['avatar_url']), name: text(mapOf(rows[i]['user'])['name']) ?? '?', size: 34),
                 const SizedBox(width: 10),
-                Expanded(child: Text(text(rows[i]['nickname']) ?? text(mapOf(rows[i]['user'])['name']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14))),
+                Expanded(child: FitText(text(rows[i]['nickname']) ?? text(mapOf(rows[i]['user'])['name']) ?? '', style: body(14))),
                 Text(tr('{v} зах. · ', {'v': intOf(rows[i]['events'])}), style: body(12, color: faint)),
                 Text('${_num(rows[i]['contributed'])} ${clan['currency']}', style: body(13, color: gold)),
               ]),
@@ -761,10 +763,10 @@ class _ClanScreenState extends State<ClanScreen> {
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [
-                Flexible(child: Text(text(m['nickname']) ?? text(user['name']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14, weight: FontWeight.w600))),
+                Flexible(child: FitText(text(m['nickname']) ?? text(user['name']) ?? '', style: body(14, weight: FontWeight.w600))),
                 if (m['is_owner'] == true) const Padding(padding: EdgeInsets.only(left: 4), child: Icon(LucideIcons.crown, size: 14, color: gold)),
               ]),
-              Text(text(m['note']) ?? text(m['rank_title']) ?? '', maxLines: 2, overflow: TextOverflow.ellipsis, style: body(12, color: muted)),
+              FitText(text(m['note']) ?? text(m['rank_title']) ?? '', style: body(12, color: muted), maxLines: 2),
             ]),
           ),
           ...trailing,

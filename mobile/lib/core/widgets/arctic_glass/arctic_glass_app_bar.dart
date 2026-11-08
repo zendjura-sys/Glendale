@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import 'arctic_fit_text.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../i18n.dart';
@@ -47,7 +49,7 @@ class ArcticGlassAppBar extends StatelessWidget implements PreferredSizeWidget {
               ),
             if (leading == null && !canPop) const SizedBox(width: 12),
             Expanded(
-              child: title == null ? const SizedBox() : Text(title!, maxLines: 1, overflow: TextOverflow.ellipsis, style: display(17)),
+              child: title == null ? const SizedBox() : FitText(title!, style: display(17)),
             ),
             ...actions,
             IconTheme.merge(

@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+
+import 'core/widgets/arctic_glass/arctic_fit_text.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
@@ -106,9 +108,9 @@ class PersonCard extends StatelessWidget {
         children: [
           Avatar(url: text(user['avatar_url']), name: name, size: 76, online: user['is_online'] == true),
           const SizedBox(height: 12),
-          Text(name, maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: TextAlign.center, style: body(14.5, weight: FontWeight.w700)),
+          FitText(name, style: body(14.5, weight: FontWeight.w700), textAlign: TextAlign.center),
           const SizedBox(height: 3),
-          Text(subtitle, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: muted)),
+          FitText(subtitle, style: body(12, color: muted)),
           const SizedBox(height: 12),
           FriendAction(username: '${user['username']}', relation: text(user['relation']) ?? 'none', compact: true, onChanged: onChanged),
         ],
@@ -803,7 +805,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         child: Column(children: [
                           Avatar(url: text(friend['avatar_url']), name: text(friend['name']) ?? '?', size: 54, online: friend['is_online'] == true),
                           const SizedBox(height: 6),
-                          Text(text(friend['first_name']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: soft)),
+                          FitText(text(friend['first_name']) ?? '', style: body(12, color: soft)),
                         ]),
                       ),
                     ),

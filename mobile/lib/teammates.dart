@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import 'core/widgets/arctic_glass/arctic_fit_text.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
@@ -62,8 +64,8 @@ class TeammateTile extends StatelessWidget {
               if (match['looking'] == true) Pill(label: tr('Шукає зараз'), icon: LucideIcons.radar, color: primary),
               if (match['friend'] == true) Pill(label: tr('Друг')),
             ]),
-            if (meta.isNotEmpty) ...[const SizedBox(height: 2), Text(meta, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: muted))],
-            if (text(match['note']) != null) ...[const SizedBox(height: 4), Text(text(match['note'])!, maxLines: 2, overflow: TextOverflow.ellipsis, style: body(13.5, color: soft))],
+            if (meta.isNotEmpty) ...[const SizedBox(height: 2), FitText(meta, style: body(12, color: muted))],
+            if (text(match['note']) != null) ...[const SizedBox(height: 4), FitText(text(match['note'])!, style: body(13.5, color: soft), maxLines: 2)],
             if (reasons.isNotEmpty) ...[
               const SizedBox(height: 8),
               Wrap(spacing: 6, runSpacing: 6, children: [

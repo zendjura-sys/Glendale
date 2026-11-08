@@ -4,6 +4,8 @@ import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+
+import 'core/widgets/arctic_glass/arctic_fit_text.dart';
 import 'package:http/http.dart' as http;
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
@@ -448,8 +450,8 @@ class _CatalogSearchState extends State<CatalogSearch> {
               const SizedBox(width: 10),
               Expanded(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(tags.title ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(13.5, weight: FontWeight.w600)),
-                  Text([tags.artist, tags.album].whereType<String>().join(' · '), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: muted)),
+                  FitText(tags.title ?? '', style: body(13.5, weight: FontWeight.w600)),
+                  FitText([tags.artist, tags.album].whereType<String>().join(' · '), style: body(12, color: muted)),
                 ]),
               ),
               if (identical(tags, picked)) Icon(LucideIcons.check, size: 18, color: primary),

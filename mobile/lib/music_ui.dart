@@ -3,6 +3,8 @@ import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+
+import 'core/widgets/arctic_glass/arctic_fit_text.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -195,7 +197,7 @@ class SectionHeader extends StatelessWidget {
         onTap: onMore,
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
-            Flexible(child: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: display(20))),
+            Flexible(child: FitText(title, style: display(20))),
             if (onMore != null) Padding(padding: const EdgeInsets.only(left: 2, top: 2), child: Icon(LucideIcons.chevronRight, size: 20, color: muted)),
           ]),
           if (subtitle != null) Padding(padding: const EdgeInsets.only(top: 2), child: Text(subtitle!, style: body(13, color: muted))),
@@ -337,8 +339,8 @@ class MixArt extends StatelessWidget {
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               if (icon != null) Icon(icon, size: 20, color: Colors.white.withValues(alpha: 0.9)),
               const Spacer(),
-              Text(label, maxLines: 3, overflow: TextOverflow.ellipsis, style: display(16, color: Colors.white).copyWith(height: 1.1)),
-              if (footnote != null) Padding(padding: const EdgeInsets.only(top: 4), child: Text(footnote!, maxLines: 2, overflow: TextOverflow.ellipsis, style: body(12, color: Colors.white70))),
+              FitText(label, style: display(16, color: Colors.white).copyWith(height: 1.1), maxLines: 3, wrap: false),
+              if (footnote != null) Padding(padding: const EdgeInsets.only(top: 4), child: FitText(footnote!, style: body(12, color: Colors.white70), maxLines: 2, wrap: false)),
             ]),
           ),
         ]),
@@ -368,8 +370,8 @@ class Tile extends StatelessWidget {
         child: Column(crossAxisAlignment: center ? CrossAxisAlignment.center : CrossAxisAlignment.start, children: [
           art,
           const SizedBox(height: 7),
-          Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: center ? TextAlign.center : TextAlign.start, style: body(13.5, weight: FontWeight.w600)),
-          if (subtitle != null) Text(subtitle!, maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: center ? TextAlign.center : TextAlign.start, style: body(12.5, color: muted)),
+          FitText(title, style: body(13.5, weight: FontWeight.w600), textAlign: center ? TextAlign.center : TextAlign.start, wrap: false),
+          if (subtitle != null) FitText(subtitle!, style: body(12.5, color: muted), textAlign: center ? TextAlign.center : TextAlign.start, wrap: false),
         ]),
       ),
     );
@@ -528,7 +530,7 @@ class GenreTile extends StatelessWidget {
                   ),
                 Padding(
                   padding: const EdgeInsets.all(12),
-                  child: SizedBox(width: box.maxWidth * 0.7, child: Text(name, maxLines: 2, overflow: TextOverflow.ellipsis, style: display(16, color: Colors.white))),
+                  child: SizedBox(width: box.maxWidth * 0.7, child: FitText(name, style: display(16, color: Colors.white), maxLines: 2, wrap: false)),
                 ),
               ]);
             }),
@@ -623,15 +625,10 @@ class _SongRowState extends State<SongRow> {
               const SizedBox(width: 12),
               Expanded(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(text(track['title']) ?? tr('Без назви'), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(15, color: on ? accent : ink, weight: FontWeight.w500)),
-                  Text(
-                    widget.cover ? [artistOf(track['artist'], '—'), ?album].join(' · ') : artistOf(track['artist'], '—'),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: body(12.5, color: muted),
-                  ),
+                  FitText(text(track['title']) ?? tr('Без назви'), style: body(15, color: on ? accent : ink, weight: FontWeight.w500)),
+                  FitText(widget.cover ? [artistOf(track['artist'], '—'), ?album].join(' · ') : artistOf(track['artist'], '—'), style: body(12.5, color: muted)),
                   if (widget.subtitle != null && widget.subtitle!.isNotEmpty)
-                    Text('«${widget.subtitle}»', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: faint).copyWith(fontStyle: FontStyle.italic)),
+                    FitText('«${widget.subtitle}»', style: body(12, color: faint).copyWith(fontStyle: FontStyle.italic)),
                 ]),
               ),
               if (track['favorite'] == true) Padding(padding: const EdgeInsets.only(left: 6), child: Icon(LucideIcons.star, size: 13, color: accent)),
@@ -938,8 +935,8 @@ Future<void> showSongInfo(BuildContext context, Map<String, dynamic> track, {Voi
             const SizedBox(width: 14),
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(text(track['title']) ?? tr('Без назви'), maxLines: 2, overflow: TextOverflow.ellipsis, style: display(17)),
-                Text(artistOf(artist, '—'), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14, color: muted)),
+                FitText(text(track['title']) ?? tr('Без назви'), style: display(17), maxLines: 2),
+                FitText(artistOf(artist, '—'), style: body(14, color: muted)),
                 if (local && QualityBadge.label(text(track['quality'])) != null) Padding(padding: const EdgeInsets.only(top: 6), child: QualityBadge(text(track['quality']))),
               ]),
             ),

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'arctic_fit_text.dart';
+
 import '../../../theme.dart' show palette, ink, muted, body;
 import '../../theme/arctic_glass_theme.dart';
 import 'arctic_glass_container.dart';
@@ -185,7 +187,7 @@ class ArcticDockTab extends StatelessWidget {
             AnimatedDefaultTextStyle(
               duration: still ? Duration.zero : const Duration(milliseconds: 200),
               style: body(10.5, color: color, weight: active ? FontWeight.w700 : FontWeight.w500),
-              child: Text(item.label, maxLines: 1, overflow: TextOverflow.ellipsis),
+              child: FitText(item.label, wrap: false),
             ),
           ],
         ),

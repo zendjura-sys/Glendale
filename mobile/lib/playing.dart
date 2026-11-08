@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+
+import 'core/widgets/arctic_glass/arctic_fit_text.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -39,12 +41,7 @@ class PlayingBadge extends StatelessWidget {
             Icon(playing['kind'] == 'server' ? LucideIcons.server : LucideIcons.gamepad2, size: 14, color: green),
           const SizedBox(width: 6),
           Flexible(
-            child: Text(
-              tr('Грає в {v}{v2}', {'v': playing['label'], 'v2': note != null ? ' · $note' : ''}),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: body(12.5, color: const Color(0xFFA7F3D0), weight: FontWeight.w600),
-            ),
+            child: FitText(tr('Грає в {v}{v2}', {'v': playing['label'], 'v2': note != null ? ' · $note' : ''}), style: body(12.5, color: const Color(0xFFA7F3D0), weight: FontWeight.w600)),
           ),
         ]),
       ),
@@ -341,7 +338,7 @@ class _PlayingSettingsScreenState extends State<PlayingSettingsScreen> with Widg
             leading: text(o['icon']) != null
                 ? NetImage(text(o['icon']), width: 36, height: 36, radius: 9)
                 : Icon(o['kind'] == 'server' ? LucideIcons.server : LucideIcons.gamepad2, color: muted),
-            title: Text(text(o['label']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14)),
+            title: FitText(text(o['label']) ?? '', style: body(14)),
             subtitle: Text(text(o['hint']) ?? '', style: body(11.5, color: faint)),
             onTap: () => setState(() => picked = o),
           ),

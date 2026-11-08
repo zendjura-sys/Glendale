@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+
+import 'core/widgets/arctic_glass/arctic_fit_text.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
@@ -258,9 +260,9 @@ class _CinemaTopScreenState extends State<CinemaTopScreen> {
                   Expanded(
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       const SizedBox(height: 8),
-                      GestureDetector(onTap: () => context.push('/cinema/${m['slug']}'), child: Text(text(m['title']) ?? '', maxLines: 2, overflow: TextOverflow.ellipsis, style: display(17))),
+                      GestureDetector(onTap: () => context.push('/cinema/${m['slug']}'), child: FitText(text(m['title']) ?? '', style: display(17), maxLines: 2)),
                       if (place.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 8), child: Text(place, style: body(13, color: soft))),
-                      if (genres.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 8), child: Text('${tr('Жанр')}: $genres', maxLines: 2, overflow: TextOverflow.ellipsis, style: body(12, color: muted))),
+                      if (genres.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 8), child: FitText('${tr('Жанр')}: $genres', style: body(12, color: muted), maxLines: 2)),
                       const SizedBox(height: 12),
                       AnimaxListButton(
                         added: added.contains(m['id']),
@@ -290,13 +292,8 @@ class PosterCard extends StatelessWidget {
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         AspectRatio(aspectRatio: 2 / 3, child: BadgedPoster(movie: movie, small: true)),
         const SizedBox(height: 6),
-        Text(text(movie['title']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(13, weight: FontWeight.w700)),
-        Text(
-          footer ?? [movie['year'], text(movie['type_label'])].whereType<Object>().join(' · '),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: body(11.5, color: muted),
-        ),
+        FitText(text(movie['title']) ?? '', style: body(13, weight: FontWeight.w700)),
+        FitText(footer ?? [movie['year'], text(movie['type_label'])].whereType<Object>().join(' · '), style: body(11.5, color: muted)),
       ]),
     );
   }
@@ -412,7 +409,7 @@ class _MyCinemaScreenState extends State<MyCinemaScreen> {
                         right: 14,
                         bottom: 12,
                         child: Row(children: [
-                          Expanded(child: Text(text(list['title']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(16, color: Colors.white, weight: FontWeight.w700))),
+                          Expanded(child: FitText(text(list['title']) ?? '', style: body(16, color: Colors.white, weight: FontWeight.w700))),
                           Pill(label: '${list['items_count'] ?? 0}', icon: LucideIcons.film, color: Colors.white),
                         ]),
                       ),
@@ -500,7 +497,7 @@ class CinemaOverviewScreen extends StatelessWidget {
                             right: 14,
                             bottom: 12,
                             child: Row(children: [
-                              Expanded(child: Text(text(list['title']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(16, color: Colors.white, weight: FontWeight.w700))),
+                              Expanded(child: FitText(text(list['title']) ?? '', style: body(16, color: Colors.white, weight: FontWeight.w700))),
                               Pill(label: '${list['items_count'] ?? 0}', icon: LucideIcons.film, color: Colors.white),
                             ]),
                           ),
@@ -649,7 +646,7 @@ class _CinemaScheduleScreenState extends State<CinemaScheduleScreen> {
                       const SizedBox(width: 14),
                       Expanded(
                         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          Text(text(m['title']) ?? '', maxLines: 2, overflow: TextOverflow.ellipsis, style: body(15, weight: FontWeight.w700)),
+                          FitText(text(m['title']) ?? '', style: body(15, weight: FontWeight.w700), maxLines: 2),
                           if (intOf(m['episodes_count']) > 0) Padding(padding: const EdgeInsets.only(top: 6), child: Text(tr('Серій: {n}', {'n': intOf(m['episodes_count'])}), style: body(12.5, color: soft))),
                           const SizedBox(height: 10),
                           AnimaxListButton(

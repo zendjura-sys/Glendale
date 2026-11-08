@@ -6,6 +6,7 @@ export 'arctic_glass_bottom_dock.dart';
 export 'arctic_glass_button.dart';
 export 'arctic_cascade.dart';
 export 'arctic_glass_container.dart';
+export 'arctic_fit_text.dart';
 export 'arctic_icon_pop.dart';
 export 'arctic_pressable.dart';
 export 'arctic_glass_sheet.dart';

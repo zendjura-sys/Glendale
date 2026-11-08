@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import 'core/widgets/arctic_glass/arctic_fit_text.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -119,7 +121,7 @@ class _GameReviewsSectionState extends State<GameReviewsSection> {
             Row(children: [
               Avatar(name: text(mapOf(r['user'])['name']) ?? '', url: text(mapOf(r['user'])['avatar_url']), size: 32),
               const SizedBox(width: 10),
-              Expanded(child: Text(text(mapOf(r['user'])['name']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14, weight: FontWeight.w600))),
+              Expanded(child: FitText(text(mapOf(r['user'])['name']) ?? '', style: body(14, weight: FontWeight.w600))),
               Icon(r['recommended'] == true ? LucideIcons.thumbsUp : LucideIcons.thumbsDown, size: 15, color: r['recommended'] == true ? const Color(0xFF34D399) : const Color(0xFFF87171)),
               const SizedBox(width: 4),
               Text('${intOf(r['score'])}/10', style: body(13, weight: FontWeight.w600)),
@@ -182,7 +184,7 @@ class TrailersScreen extends StatelessWidget {
                     ListTile(
                       onTap: () => context.push('/games/${g['slug']}'),
                       title: Text(text(g['name']) ?? '', style: body(15, weight: FontWeight.w600)),
-                      subtitle: Text(text(maps(g['videos']).first['name']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12.5, color: muted)),
+                      subtitle: FitText(text(maps(g['videos']).first['name']) ?? '', style: body(12.5, color: muted)),
                       trailing: Icon(LucideIcons.chevronRight, color: muted),
                     ),
                   ]),

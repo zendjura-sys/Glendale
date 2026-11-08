@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+
+import 'core/widgets/arctic_glass/arctic_fit_text.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
@@ -284,7 +286,7 @@ class _MusicScreenState extends State<MusicScreen> {
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text(tr('Аудіозаписи'), style: body(12.5, color: muted)),
-                Text(text(owner['name']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: display(17)),
+                FitText(text(owner['name']) ?? '', style: display(17)),
                 Text('$total ${plural(total, 'трек', 'треки', 'треків')}', style: body(12.5, color: muted)),
               ]),
             ),
@@ -726,7 +728,7 @@ class _ImportCard extends StatelessWidget {
           const SizedBox(width: 10),
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(name, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14, weight: FontWeight.w600)),
+              FitText(name, style: body(14, weight: FontWeight.w600)),
               const SizedBox(height: 2),
               Text(label, style: body(12.5, color: status == 'failed' ? danger : muted)),
             ]),
@@ -796,7 +798,7 @@ class PlaylistGrid extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 4),
                 child: Row(children: [
-                  Expanded(child: Text(text(p['title']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14, weight: FontWeight.w700))),
+                  Expanded(child: FitText(text(p['title']) ?? '', style: body(14, weight: FontWeight.w700))),
                   if (p['is_public'] == false) Icon(LucideIcons.lock, size: 14, color: muted),
                 ]),
               ),
@@ -1280,7 +1282,7 @@ class _SpotifyPanelState extends State<SpotifyPanel> {
               ListTile(
                 contentPadding: const EdgeInsets.symmetric(horizontal: 4),
                 leading: SizedBox(width: 46, height: 46, child: NetImage(text(p['cover_url']), radius: 10)),
-                title: Text(text(p['name']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14.5, weight: FontWeight.w600)),
+                title: FitText(text(p['name']) ?? '', style: body(14.5, weight: FontWeight.w600)),
                 subtitle: Text(tr('{v} треків', {'v': p['tracks_count'] ?? 0}), style: body(12, color: muted)),
                 onTap: () => _openPlaylist(p),
               )

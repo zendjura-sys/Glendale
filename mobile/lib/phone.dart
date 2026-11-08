@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+
+import 'core/widgets/arctic_glass/arctic_fit_text.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
@@ -390,7 +392,7 @@ class _DialButton extends StatelessWidget {
             child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
               busy ? SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2, color: foreground)) : Icon(icon, size: 19, color: foreground),
               SizedBox(width: 8),
-              Flexible(child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(15, color: foreground, weight: FontWeight.w600))),
+              Flexible(child: FitText(label, style: body(15, color: foreground, weight: FontWeight.w600))),
             ]),
           ),
         ),
@@ -595,7 +597,7 @@ class SecondaryAction extends StatelessWidget {
             child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
               if (busy) SizedBox.square(dimension: 16, child: CircularProgressIndicator(strokeWidth: 2)) else if (icon != null) Icon(icon, size: 17, color: ink),
               SizedBox(width: 8),
-              Flexible(child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(15, weight: FontWeight.w600))),
+              Flexible(child: FitText(label, style: body(15, weight: FontWeight.w600))),
             ]),
           ),
         ),
@@ -1004,7 +1006,7 @@ class _History extends StatelessWidget {
                   SizedBox(width: 12),
                   Expanded(
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text(text(user['name']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14, color: direction == 'missed' ? dangerSoft : ink, weight: FontWeight.w600)),
+                      FitText(text(user['name']) ?? '', style: body(14, color: direction == 'missed' ? dangerSoft : ink, weight: FontWeight.w600)),
                       Wrap(crossAxisAlignment: WrapCrossAlignment.center, spacing: 6, children: [
                         Icon(icon, size: 13, color: muted),
                         Text(_date(text(call['at'])) + (seconds == null ? '' : ' · ${seconds ~/ 60}:${(seconds % 60).toString().padLeft(2, '0')}'), style: body(12, color: muted)),

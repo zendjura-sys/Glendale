@@ -70,9 +70,9 @@ class MiniPlayer extends StatelessWidget {
                             mainAxisAlignment: MainAxisAlignment.center,
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(track.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14.5, weight: FontWeight.w700).copyWith(height: 1.2)),
+                              FitText(track.title, style: body(14.5, weight: FontWeight.w700).copyWith(height: 1.2), wrap: false),
                               const SizedBox(height: 2),
-                              Text(artistOf(track.artist), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12.5, color: muted).copyWith(height: 1.2)),
+                              FitText(artistOf(track.artist), style: body(12.5, color: muted).copyWith(height: 1.2), wrap: false),
                             ],
                           ),
                         ),

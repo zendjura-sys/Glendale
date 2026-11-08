@@ -206,11 +206,11 @@ class CommunityCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(children: [
-                  Flexible(child: Text(text(community['name']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(15, weight: FontWeight.w700))),
+                  Flexible(child: FitText(text(community['name']) ?? '', style: body(15, weight: FontWeight.w700))),
                   if (community['is_verified'] == true) ...[const SizedBox(width: 4), Icon(LucideIcons.badgeCheck, size: 15, color: primary)],
                 ]),
                 const SizedBox(height: 2),
-                Text([text(community['category_label']), communityKind(community)].whereType<String>().join(' · '), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: muted)),
+                FitText([text(community['category_label']), communityKind(community)].whereType<String>().join(' · '), style: body(12, color: muted)),
                 const SizedBox(height: 2),
                 Text('${compact(members)} ${membersLabel(community, members)}', style: body(12, color: faint)),
               ],
@@ -646,7 +646,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                         child: Column(children: [
                           Avatar(url: text(user['avatar_url']), name: text(user['name']) ?? '?', size: 50, online: user['is_online'] == true),
                           const SizedBox(height: 6),
-                          Text(text(user['first_name']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(11.5, color: soft)),
+                          FitText(text(user['first_name']) ?? '', style: body(11.5, color: soft)),
                         ]),
                       ),
                     ),
@@ -830,7 +830,7 @@ class _CommunityMembersScreenState extends State<CommunityMembersScreen> {
         Row(children: [
           RoundIcon(icon: LucideIcons.arrowLeft, onTap: () => context.pop()),
           const SizedBox(width: 8),
-          Expanded(child: Text(text(community['name']) ?? tr('Учасники'), maxLines: 1, overflow: TextOverflow.ellipsis, style: display(18))),
+          Expanded(child: FitText(text(community['name']) ?? tr('Учасники'), style: display(18))),
         ]),
         const SizedBox(height: 12),
         Glass(

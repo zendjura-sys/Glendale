@@ -4,6 +4,8 @@ import 'dart:math' as math;
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+
+import 'core/widgets/arctic_glass/arctic_fit_text.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
@@ -150,7 +152,7 @@ class _ConversationRow extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(children: [
-                    Expanded(child: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(15, weight: FontWeight.w700))),
+                    Expanded(child: FitText(title, style: body(15, weight: FontWeight.w700))),
                     if (conversation['is_muted'] == true) Padding(padding: EdgeInsets.only(right: 4), child: Icon(LucideIcons.bellOff, size: 14, color: faint)),
                     if (last != null) Text(shortStamp(last['created_at']), style: body(11.5, color: muted)),
                   ]),
@@ -162,8 +164,8 @@ class _ConversationRow extends StatelessWidget {
                           TextSpan(text: prefix, style: body(13, color: soft.withValues(alpha: 0.8))),
                           TextSpan(text: text(last?['preview']) ?? tr('Немає повідомлень')),
                         ]),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                        maxLines: 2,
+                        overflow: TextOverflow.fade,
                         style: body(13, color: muted),
                       ),
                     ),
@@ -879,7 +881,7 @@ class _ChatScreenState extends State<ChatScreen> {
                       const SizedBox(width: 10),
                       Expanded(
                         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          Text(text(chat['title']) ?? tr('Бесіда'), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(15, weight: FontWeight.w700)),
+                          FitText(text(chat['title']) ?? tr('Бесіда'), style: body(15, weight: FontWeight.w700)),
                           if (subtitle.isNotEmpty) Text(subtitle, style: body(12, color: peer?['is_online'] == true ? green : muted)),
                         ]),
                       ),
@@ -916,7 +918,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   child: Row(children: [
                     const Icon(LucideIcons.stickyNote, size: 14, color: Color(0xFFFCD34D)),
                     const SizedBox(width: 8),
-                    Expanded(child: Text(text(chat['note'])!, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12.5, color: muted))),
+                    Expanded(child: FitText(text(chat['note'])!, style: body(12.5, color: muted))),
                   ]),
                 ),
               ),
@@ -995,7 +997,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 Expanded(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Text(banner.$1, style: body(12, color: primary, weight: FontWeight.w700)),
-                    Text(banner.$2, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12.5, color: muted)),
+                    FitText(banner.$2, style: body(12.5, color: muted)),
                   ]),
                 ),
                 IconButton(
@@ -1031,7 +1033,7 @@ class _ChatScreenState extends State<ChatScreen> {
                         child: Row(children: [
                           const Icon(LucideIcons.file, size: 18, color: violet),
                           const SizedBox(width: 6),
-                          Expanded(child: Text(files[i].name, maxLines: 2, overflow: TextOverflow.ellipsis, style: body(11))),
+                          Expanded(child: FitText(files[i].name, style: body(11), maxLines: 2)),
                         ]),
                       ),
                     ),
@@ -1130,7 +1132,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   opacity: cancelHint,
                   child: Row(mainAxisAlignment: MainAxisAlignment.end, children: [
                     Icon(LucideIcons.chevronLeft, size: 16, color: muted),
-                    Flexible(child: Text(tr('Вліво — скасувати'), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12.5, color: muted))),
+                    Flexible(child: FitText(tr('Вліво — скасувати'), style: body(12.5, color: muted))),
                     const SizedBox(width: 8),
                     Icon(LucideIcons.lock, size: 14, color: faint),
                     Icon(LucideIcons.chevronUp, size: 14, color: faint),
@@ -1464,7 +1466,7 @@ class _Bubble extends StatelessWidget {
               ),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text(text(reply['author']) ?? '', style: body(11.5, color: own ? Colors.white : const Color(0xFF9AA8FF), weight: FontWeight.w700)),
-                Text(reply['deleted'] == true ? tr('Повідомлення видалено') : (text(reply['preview']) ?? ''), maxLines: 2, overflow: TextOverflow.ellipsis, style: body(12, color: own ? fgSoft : muted)),
+                FitText(reply['deleted'] == true ? tr('Повідомлення видалено') : (text(reply['preview']) ?? ''), style: body(12, color: own ? fgSoft : muted), maxLines: 2),
               ]),
             ),
           ),
@@ -1577,7 +1579,7 @@ class _FileChip extends StatelessWidget {
           const SizedBox(width: 10),
           Flexible(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(text(file['name']) ?? tr('Файл'), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(13.5, weight: FontWeight.w600)),
+              FitText(text(file['name']) ?? tr('Файл'), style: body(13.5, weight: FontWeight.w600)),
               Text(label, style: body(11.5, color: own ? fgSoft : muted)),
             ]),
           ),
@@ -1989,12 +1991,7 @@ class _CallBanner extends StatelessWidget {
             const Icon(LucideIcons.phone, size: 16, color: green),
             const SizedBox(width: 10),
             Expanded(
-              child: Text(
-                '${chat['type'] == 'group' ? 'Іде груповий дзвінок' : 'Іде дзвінок'} · ${joined.map((p) => text(p['name']) ?? '').join(', ')}',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: body(13, color: soft),
-              ),
+              child: FitText('${chat['type'] == 'group' ? 'Іде груповий дзвінок' : 'Іде дзвінок'} · ${joined.map((p) => text(p['name']) ?? '').join(', ')}', style: body(13, color: soft)),
             ),
             if (canCall)
               TextButton(

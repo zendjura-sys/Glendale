@@ -4,6 +4,8 @@ import 'dart:ui' as ui;
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+
+import 'core/widgets/arctic_glass/arctic_fit_text.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -415,11 +417,11 @@ class _TitleRow extends StatelessWidget {
     return Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
       Expanded(
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-          Text(track.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: display(22, color: Colors.white).copyWith(letterSpacing: -0.3)),
+          FitText(track.title, style: display(22, color: Colors.white).copyWith(letterSpacing: -0.3), wrap: false),
           const SizedBox(height: 2),
           GestureDetector(
             onTap: track.live || junkMeta(track.artist) ? null : () => onArtist(track.artist),
-            child: Text(artist, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(18, color: Colors.white.withValues(alpha: 0.65))),
+            child: FitText(artist, style: body(18, color: Colors.white.withValues(alpha: 0.65)), wrap: false),
           ),
         ]),
       ),
@@ -859,8 +861,6 @@ class _PlayingFrom extends StatelessWidget {
         TextSpan(text: '${tr('Грає з:')} ', style: body(13, color: Colors.white54)),
         TextSpan(text: from.label, style: body(13, color: Colors.white, weight: FontWeight.w600)),
       ]),
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
     );
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
@@ -978,8 +978,8 @@ class _QueueRow extends StatelessWidget {
             const SizedBox(width: 12),
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(track.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14.5, color: Colors.white, weight: FontWeight.w500)),
-                Text(artistOf(track.artist, '—'), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12.5, color: Colors.white54)),
+                FitText(track.title, style: body(14.5, color: Colors.white, weight: FontWeight.w500), wrap: false),
+                FitText(artistOf(track.artist, '—'), style: body(12.5, color: Colors.white54), wrap: false),
               ]),
             ),
             if (onRemove != null) IconButton(tooltip: tr('Прибрати з черги'), visualDensity: VisualDensity.compact, onPressed: onRemove, icon: const Icon(LucideIcons.circleMinus, size: 18, color: Colors.white54)),

@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+
+import 'core/widgets/arctic_glass/arctic_fit_text.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'api.dart';
@@ -64,8 +66,8 @@ class _ReviewTileState extends State<ReviewTile> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(text(user['name']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(13.5, weight: FontWeight.w600)),
-                    if (widget.showMovie && movie.isNotEmpty) Text(text(movie['title']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: muted)),
+                    FitText(text(user['name']) ?? '', style: body(13.5, weight: FontWeight.w600)),
+                    if (widget.showMovie && movie.isNotEmpty) FitText(text(movie['title']) ?? '', style: body(12, color: muted)),
                   ]),
                 ),
                 Pill(label: '${r['score']}/10', icon: LucideIcons.star, color: const Color(0xFFFDE68A), background: const Color(0x33FBBF24)),
@@ -310,7 +312,7 @@ class _ListTile extends StatelessWidget {
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [
                 if (list['is_public'] != true) Padding(padding: const EdgeInsets.only(right: 6), child: Icon(LucideIcons.lock, size: 14, color: muted)),
-                Expanded(child: Text(text(list['title']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(15.5, weight: FontWeight.w700))),
+                Expanded(child: FitText(text(list['title']) ?? '', style: body(15.5, weight: FontWeight.w700))),
               ]),
               const SizedBox(height: 2),
               Text('${text(mapOf(list['user'])['name']) ?? ''} · ${tr('{n} тайтлів', {'n': '${list['items_count']}'})}', style: body(12.5, color: muted)),
@@ -530,8 +532,8 @@ class ProfileTrackPanel extends StatelessWidget {
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 leading: SizedBox(width: 42, height: 42, child: NetImage(text(t['cover_url']), radius: 10)),
-                title: Text(text(t['title']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14.5, weight: FontWeight.w600)),
-                subtitle: Text(text(t['artist']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12.5, color: muted)),
+                title: FitText(text(t['title']) ?? '', style: body(14.5, weight: FontWeight.w600)),
+                subtitle: FitText(text(t['artist']) ?? '', style: body(12.5, color: muted)),
                 trailing: track?['id'] == t['id'] ? Icon(LucideIcons.check, color: primary) : null,
                 onTap: () => save(intOf(t['id'])),
               ),
@@ -571,8 +573,8 @@ class ProfileTrackPanel extends StatelessWidget {
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(tr('Пісня профілю'), style: body(12, color: muted)),
-            Text(t == null ? tr('Додайте пісню — гості послухають її одним натиском.') : text(t['title']) ?? '', maxLines: 2, overflow: TextOverflow.ellipsis, style: body(14.5, weight: FontWeight.w600)),
-            if (t != null) Text(text(t['artist']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12.5, color: soft)),
+            FitText(t == null ? tr('Додайте пісню — гості послухають її одним натиском.') : text(t['title']) ?? '', style: body(14.5, weight: FontWeight.w600), maxLines: 2),
+            if (t != null) FitText(text(t['artist']) ?? '', style: body(12.5, color: soft)),
           ]),
         ),
         if (isSelf && t != null) IconButton(onPressed: () => _pick(context), tooltip: tr('Змінити пісню'), icon: Icon(LucideIcons.pencil, size: 18, color: muted)),

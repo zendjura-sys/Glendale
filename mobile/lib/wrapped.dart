@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import 'core/widgets/arctic_glass/arctic_fit_text.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -347,7 +349,7 @@ class _StoryState extends State<_Story> with SingleTickerProviderStateMixin {
                   ClipRRect(borderRadius: BorderRadius.circular(16), child: AspectRatio(aspectRatio: 16 / 9, child: NetImage(text(top['image'])!, fit: BoxFit.cover))),
                 const SizedBox(height: 10),
                 Text(tr('Найпопулярніший пост'), style: body(13, color: Colors.white60)),
-                if ((text(top['body']) ?? '').isNotEmpty) Text(text(top['body'])!, maxLines: 3, overflow: TextOverflow.ellipsis, style: body(15, color: Colors.white)),
+                if ((text(top['body']) ?? '').isNotEmpty) FitText(text(top['body'])!, style: body(15, color: Colors.white), maxLines: 3),
                 const SizedBox(height: 6),
                 Row(children: [
                   const Icon(LucideIcons.heart, size: 16, color: Color(0xFFFF4D6D)),
@@ -417,8 +419,8 @@ class _StoryState extends State<_Story> with SingleTickerProviderStateMixin {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(text(tracks[i]['title']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(15, color: Colors.white, weight: FontWeight.w600)),
-                    Text(text(tracks[i]['artist']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(13, color: Colors.white60)),
+                    FitText(text(tracks[i]['title']) ?? '', style: body(15, color: Colors.white, weight: FontWeight.w600)),
+                    FitText(text(tracks[i]['artist']) ?? '', style: body(13, color: Colors.white60)),
                   ]),
                 ),
                 Text('×${intOf(tracks[i]['plays'])}', style: body(13, color: Colors.white60)),
@@ -467,7 +469,7 @@ class _StoryState extends State<_Story> with SingleTickerProviderStateMixin {
                 Expanded(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Text(tr('Сервер року'), style: body(13, color: Colors.white60)),
-                    Text(text(server['name']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(15, color: Colors.white, weight: FontWeight.w600)),
+                    FitText(text(server['name']) ?? '', style: body(15, color: Colors.white, weight: FontWeight.w600)),
                   ]),
                 ),
               ]),
@@ -517,7 +519,7 @@ class _StoryState extends State<_Story> with SingleTickerProviderStateMixin {
               const SizedBox(width: 12),
               Expanded(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(text(user['name']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(16, color: Colors.white, weight: FontWeight.w600)),
+                  FitText(text(user['name']) ?? '', style: body(16, color: Colors.white, weight: FontWeight.w600)),
                   Text('${persona.$1} · $year', style: body(13.5, color: Colors.white60)),
                 ]),
               ),
@@ -677,7 +679,7 @@ class _Posters extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 6),
-                  Text(items[i].$2, maxLines: 2, overflow: TextOverflow.ellipsis, style: body(13, color: Colors.white.withValues(alpha: 0.8))),
+                  FitText(items[i].$2, style: body(13, color: Colors.white.withValues(alpha: 0.8)), maxLines: 2),
                 ]),
         ),
       ],

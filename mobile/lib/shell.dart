@@ -1,6 +1,8 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+
+import 'core/widgets/arctic_glass/arctic_fit_text.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
@@ -484,7 +486,7 @@ class NotificationRow extends StatelessWidget {
                     ]),
                   ),
                   if (text(row['excerpt']) != null)
-                    Padding(padding: EdgeInsets.only(top: 3), child: Text('«${text(row['excerpt'])}»', maxLines: 2, overflow: TextOverflow.ellipsis, style: body(12.5, color: muted))),
+                    Padding(padding: EdgeInsets.only(top: 3), child: FitText('«${text(row['excerpt'])}»', style: body(12.5, color: muted), maxLines: 2)),
                   SizedBox(height: 4),
                   Text(ago(row['created_at']), style: body(11.5, color: faint)),
                 ],

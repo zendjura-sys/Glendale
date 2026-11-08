@@ -139,7 +139,7 @@ class _ArticleTile extends StatelessWidget {
           padding: const EdgeInsets.all(14),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(text(article['title']) ?? '', style: body(16, weight: FontWeight.w700)),
-            if (text(article['excerpt']) case final e?) Padding(padding: const EdgeInsets.only(top: 4), child: Text(e, maxLines: 3, overflow: TextOverflow.ellipsis, style: body(13.5, color: soft))),
+            if (text(article['excerpt']) case final e?) Padding(padding: const EdgeInsets.only(top: 4), child: FitText(e, style: body(13.5, color: soft), maxLines: 3)),
             const SizedBox(height: 8),
             Text(
               [
@@ -854,7 +854,7 @@ class CommunityChannelsScreen extends StatelessWidget {
                       title: Text(text(ch['name']) ?? '', style: body(15, weight: FontWeight.w600)),
                       subtitle: (ch['voice'] is List && (ch['voice'] as List).isNotEmpty)
                           ? Text(tr('У каналі: {n}', {'n': '${(ch['voice'] as List).length}'}), style: body(12, color: green))
-                          : (text(ch['topic']) == null ? null : Text(text(ch['topic'])!, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: faint))),
+                          : (text(ch['topic']) == null ? null : FitText(text(ch['topic'])!, style: body(12, color: faint))),
                       trailing: intOf(ch['unread']) > 0
                           ? Container(padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2), decoration: BoxDecoration(color: primary, borderRadius: BorderRadius.circular(10)), child: Text('${ch['unread']}', style: body(11, color: Colors.white, weight: FontWeight.w700)))
                           : (ch['is_private'] == true ? Icon(LucideIcons.lock, size: 16, color: faint) : null),

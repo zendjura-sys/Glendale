@@ -472,7 +472,7 @@ String _clock(double seconds) {
 Widget _playingOn(ConnectDevice device, {double size = 12.5}) => Row(mainAxisSize: MainAxisSize.min, children: [
       Icon(LucideIcons.monitorSpeaker, size: size + 1, color: accent),
       const SizedBox(width: 5),
-      Flexible(child: Text(tr('Грає на: {device}', {'device': device.name}), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(size, color: accent, weight: FontWeight.w600).copyWith(height: 1.2))),
+      Flexible(child: FitText(tr('Грає на: {device}', {'device': device.name}), style: body(size, color: accent, weight: FontWeight.w600).copyWith(height: 1.2))),
     ]);
 
 /// Міні-плеєр, коли музика грає на іншому пристрої: та сама капсула, кнопки керують ним.
@@ -505,7 +505,7 @@ class RemoteMiniPlayer extends StatelessWidget {
                     const SizedBox(width: 11),
                     Expanded(
                       child: Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Text(state.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14.5, weight: FontWeight.w700).copyWith(height: 1.2)),
+                        FitText(state.title, style: body(14.5, weight: FontWeight.w700).copyWith(height: 1.2)),
                         const SizedBox(height: 2),
                         _playingOn(device),
                       ]),
@@ -551,9 +551,9 @@ Future<void> showRemotePlayer(BuildContext context, GameConnect connect) {
           child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             Center(child: TrackCover(url: state.cover, seed: state.key, size: 220, radius: 18)),
             const SizedBox(height: 18),
-            Text(state.title, maxLines: 2, overflow: TextOverflow.ellipsis, style: display(20)),
+            FitText(state.title, style: display(20), maxLines: 2),
             const SizedBox(height: 4),
-            Text(artistOf(state.artist), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14, color: muted)),
+            FitText(artistOf(state.artist), style: body(14, color: muted)),
             const SizedBox(height: 8),
             _playingOn(device, size: 13),
             const SizedBox(height: 10),
@@ -676,8 +676,8 @@ Future<void> showConnectDevices(BuildContext context) async {
         final local = player.current;
         Widget row({required IconData icon, required String title, required String subtitle, required bool active, VoidCallback? onTap}) => ListTile(
               leading: Icon(icon, color: active ? accent : muted),
-              title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(15, weight: FontWeight.w600, color: active ? accent : ink)),
-              subtitle: Text(subtitle, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(13, color: muted)),
+              title: FitText(title, style: body(15, weight: FontWeight.w600, color: active ? accent : ink)),
+              subtitle: FitText(subtitle, style: body(13, color: muted)),
               trailing: active ? Icon(LucideIcons.audioLines, color: accent, size: 20) : null,
               onTap: onTap,
             );
