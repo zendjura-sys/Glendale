@@ -11,8 +11,8 @@ use App\Support\Modules\ModuleManager;
 use Illuminate\Support\Collection;
 
 /**
- * Значки біля ніка: логотипи сім'ї, клану (гільдії), сервера й гри, у якій людина зараз.
- * Кожен значок — логотип із відповідного розділу, назва й рядки для підказки при наведенні.
+ * Значки біля ніка: зменшені копії логотипів сім'ї, клану (гільдії), сервера й гри, у якій людина зараз
+ * (BadgeIcons). Кожен значок — логотип із відповідного розділу, назва й рядки для підказки при наведенні.
  *
  * @phpstan-type Badge array{kind: string, name: string, tag: string|null, logo: string|null, href: string, role: string|null, lines: list<string>}
  */
@@ -83,6 +83,7 @@ class Affiliations
                 ->get()->filter(fn (ClanMember $m) => $m->clan !== null)->unique('user_id')->keyBy('user_id');
         }
 
+        $icons = app(BadgeIcons::class);
         foreach ($users as $user) {
             $badges = [];
             $member = $families->get($user->id);
@@ -92,7 +93,7 @@ class Affiliations
                     'kind' => 'family',
                     'name' => $family->name,
                     'tag' => $family->tag,
-                    'logo' => $family->logo_url,
+                    'logo' => $icons->url($family->logo_path),
                     'href' => '/f/'.$family->slug,
                     'role' => $family->rankTitle($member->rank),
                     'lines' => array_values(array_filter([
@@ -108,7 +109,7 @@ class Affiliations
                     'kind' => 'clan',
                     'name' => $clan->display_name,
                     'tag' => $clan->tag,
-                    'logo' => $clan->logo_url,
+                    'logo' => $icons->url($clan->logo_path),
                     'href' => '/clans/'.$clan->slug,
                     'role' => $clan->rankTitle($clanMember->rank),
                     'lines' => array_values(array_filter([
@@ -120,9 +121,9 @@ class Affiliations
             $server = $family?->server;
             $playing = $user->playing();
             if ($server !== null) {
-                $badges[] = $this->server($server->name, $server->icon, '/servers/'.$server->slug, $server->players_online, $server->players_max);
+                $badges[] = $this->server($server->name, $icons->url($server->icon_path) ?? $icons->external($server->icon_url), '/servers/'.$server->slug, $server->players_online, $server->players_max);
             } elseif ($playing !== null && $playing['kind'] === 'server' && $playing['url'] !== null) {
-                $badges[] = $this->server($playing['label'], $playing['icon'], $playing['url'], null, null);
+                $badges[] = $this->server($playing['label'], $icons->external($playing['icon']), $playing['url'], null, null);
             }
             if ($playing !== null && $playing['kind'] === 'game') {
                 $badges[] = [

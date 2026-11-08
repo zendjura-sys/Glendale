@@ -24,8 +24,10 @@ use App\Services\Families\FamilyNotifier;
 use App\Services\Families\FamilyRating;
 use App\Services\Families\FamilyService;
 use App\Services\Families\WeeklyDigest;
+use App\Services\ImageStorage;
 use App\Services\MessengerPresenter;
 use App\Services\PostPresenter;
+use App\Services\Profile\Affiliations;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -164,6 +166,27 @@ class FamiliesTest extends TestCase
         $other = Post::query()->create(['author_id' => $stranger->id, 'wall_type' => $stranger->getMorphClass(), 'wall_id' => $stranger->id, 'body' => 'Привіт', 'visibility' => 'public']);
         $this->assertNull(app(PostPresenter::class)->many(new Collection([$other]), $stranger)[0]['family']);
         $this->assertSame([], app(PostPresenter::class)->many(new Collection([$other]), $stranger)[0]['author']['badges']);
+    }
+
+    public function test_badge_is_small_copy_of_logo_and_follows_new_logo(): void
+    {
+        Storage::fake('public');
+        $images = app(ImageStorage::class);
+        $this->family->forceFill(['logo_path' => $images->store(UploadedFile::fake()->image('a.png', 600, 600), 'families/logos', cover: [512, 512])['path']])->save();
+        $this->family->server?->forceFill(['icon_path' => $images->store(UploadedFile::fake()->image('s.png', 300, 300), 'gta-servers', cover: [256, 256])['path'], 'icon_url' => null])->save();
+
+        $badges = app(Affiliations::class)->forUsers([$this->leaderUser->fresh()])[$this->leaderUser->id];
+        $first = (string) $badges[0]['logo'];
+        $this->assertStringContainsString('/badges/', $first);
+        $this->assertStringContainsString('/badges/', (string) $badges[1]['logo']);
+        $thumb = 'badges/'.basename($first);
+        Storage::disk('public')->assertExists($thumb);
+        $this->assertSame([64, 64], array_slice(getimagesizefromstring((string) Storage::disk('public')->get($thumb)) ?: [], 0, 2));
+
+        // Новий логотип — новий значок.
+        $this->family->forceFill(['logo_path' => $images->store(UploadedFile::fake()->image('b.png', 600, 600), 'families/logos', cover: [512, 512])['path']])->save();
+        $again = app(Affiliations::class)->forUsers([$this->leaderUser->fresh()])[$this->leaderUser->id];
+        $this->assertNotSame($first, $again[0]['logo']);
     }
 
     public function test_overview_shows_family_chat_card_with_rp_names(): void
