@@ -17,6 +17,7 @@ class SiteSettings
         'tagline' => 'Соціальна мережа нового покоління',
         // Офіційні сторінки сайту в соцмережах (по одній адресі в рядку) — для розмітки Schema «sameAs».
         'seo_same_as' => null,
+        'app_links' => [],
         // Ідентифікатор потоку Google Analytics 4 (G-XXXXXXX); порожньо — аналітики немає.
         'analytics_ga_id' => null,
         'seo_description' => 'GameCon — соціальна мережа для геймерів і кіноманів: друзі, спільноти, музика, кіно, сімʼї та ігрові сервери.',
@@ -227,7 +228,7 @@ class SiteSettings
     {
         $lines = preg_split('/\R/', (string) $this->get('seo_same_as')) ?: [];
         $links = array_values(array_filter(array_map('trim', $lines), fn (string $url) => preg_match('#\Ahttps://[^\s<>"]+\z#i', $url) === 1));
-        $play = $this->playStoreUrl();
+        $play = $this->appLinks()['google_play'] ?? null;
 
         return array_values(array_unique($play !== null ? [...$links, $play] : $links));
     }
@@ -248,6 +249,38 @@ class SiteSettings
         $url = $this->get('play_store_url');
 
         return is_string($url) && preg_match('#\Ahttps?://#i', $url) === 1 ? $url : null;
+    }
+
+    /** Магазини застосунку для сторінки /app і картки «Офіційний застосунок» (Адмінка → Дизайн). */
+    public const APP_STORES = [
+        // Магазини
+        'google_play', 'app_store', 'app_gallery', 'galaxy_store', 'amazon', 'xiaomi', 'microsoft_store',
+        // Пряме завантаження: Android (APK), Windows, macOS (.dmg), Linux / Ubuntu (.deb, AppImage)
+        'apk', 'windows', 'macos', 'linux',
+    ];
+
+    /**
+     * Посилання на застосунок у магазинах; без посилання кнопки не видно. Google Play — і зі старого
+     * налаштування play_store_url, якщо в новому порожньо.
+     *
+     * @return array<string, string>
+     */
+    public function appLinks(): array
+    {
+        $stored = $this->get('app_links');
+        $stored = is_array($stored) ? $stored : [];
+        $links = [];
+        foreach (self::APP_STORES as $store) {
+            $url = $stored[$store] ?? null;
+            if ($store === 'google_play' && ! is_string($url)) {
+                $url = $this->playStoreUrl();
+            }
+            if (is_string($url) && preg_match('#\Ahttps://[^\s<>"]+\z#i', $url) === 1) {
+                $links[$store] = $url;
+            }
+        }
+
+        return $links;
     }
 
     /** Офіційний значок Google Play: «Get it on» (застосунок опубліковано) або «Pre-register» (попередня реєстрація). */

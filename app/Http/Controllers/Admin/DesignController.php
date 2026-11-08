@@ -46,6 +46,8 @@ class DesignController extends Controller
             'seasons' => Seasons::ALL,
             'background' => Backgrounds::image(),
             'authImages' => AuthImages::urls(),
+            // Разом зі старим посиланням Google Play із загальних налаштувань (якщо нове ще не задане).
+            'appLinks' => (object) app(SiteSettings::class)->appLinks(),
         ]);
     }
 
@@ -114,6 +116,23 @@ class DesignController extends Controller
     }
 
     /** Сезонні прикраси: автоматично за датою, вимкнено або показати потрібний сезон уже зараз. */
+    /** Посилання на застосунок у магазинах; порожнє поле — кнопки магазину на сайті не видно. */
+    public function appLinks(Request $request): RedirectResponse
+    {
+        $rules = [];
+        foreach (SiteSettings::APP_STORES as $store) {
+            $rules[$store] = ['nullable', 'string', 'max:500', 'regex:#\Ahttps://[^\s<>"]+\z#i'];
+        }
+        $data = $request->validate($rules, ['regex' => 'Посилання має починатися з https://']);
+        $links = array_filter(array_map(fn ($v) => is_string($v) ? trim($v) : null, $data));
+        // Посилання Google Play тепер лише тут: старе налаштування вимикаємо, щоб не підставлялося.
+        app(SiteSettings::class)->put(['app_links' => $links, 'play_store_enabled' => false]);
+        Log::info('design: app store links', ['stores' => array_keys($links), 'by' => $request->user()->id]);
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Посилання на застосунок збережено.']);
+
+        return back();
+    }
+
     public function seasonal(Request $request): RedirectResponse
     {
         $data = $request->validate(['seasonal' => ['required', 'string', 'in:'.implode(',', ['auto', 'off', ...Seasons::ALL])]]);

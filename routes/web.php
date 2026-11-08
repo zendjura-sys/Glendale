@@ -4,6 +4,7 @@ use App\Http\Controllers\AccountSwitchController;
 use App\Http\Controllers\Admin;
 use App\Http\Controllers\AiController;
 use App\Http\Controllers\AirAlertController;
+use App\Http\Controllers\AppDownloadController;
 use App\Http\Controllers\AppLinksController;
 use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\Auth\AppLoginController;
@@ -148,6 +149,7 @@ Route::get('contacts', [LegalController::class, 'contacts'])->name('legal.contac
 
 // Сторінка статусу й картки для прев’ю посилань — відкриті без входу.
 Route::get('status', StatusPageController::class)->middleware('throttle:60,1')->name('status.page');
+Route::get('app', AppDownloadController::class)->name('app.download');
 Route::get('og/u/{username}.png', [OgImageController::class, 'profile'])->where('username', '[A-Za-z0-9_.]{3,32}')->middleware('throttle:120,1')->name('og.profile');
 Route::get('og/c/{slug}.png', [OgImageController::class, 'community'])->where('slug', '[A-Za-z0-9_-]{2,64}')->middleware('throttle:120,1')->name('og.community');
 Route::get('child-safety', [LegalController::class, 'childSafety'])->name('legal.child-safety');
@@ -1174,6 +1176,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
             Route::post('/', 'store')->middleware('throttle:30,1')->name('store');
             Route::post('reset', 'reset')->name('reset');
             Route::post('seasonal', 'seasonal')->name('seasonal');
+            Route::put('app-links', 'appLinks')->name('app-links');
             Route::post('background', 'background')->middleware('throttle:30,1')->name('background');
             Route::delete('background/{kind}', 'deleteBackground')->whereIn('kind', ['desktop', 'mobile'])->name('background.destroy');
             Route::post('auth-images', 'authImages')->middleware('throttle:30,1')->name('auth-images');

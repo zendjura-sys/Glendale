@@ -59,7 +59,7 @@ import { usePlugin } from '@/lib/plugins';
 import { cn } from '@/lib/utils';
 import { NavigationSkeleton } from '@/components/gc/navigation-skeleton';
 import { PageTransition } from '@/components/gc/page-transition';
-import { PlayStoreLink } from '@/components/gc/play-store';
+import { AppPromoCard } from '@/components/app-promo/app-promo-card';
 import { LanguageMenu } from '@/components/gc/language-switcher';
 import { tr } from '@/lib/i18n';
 import { CommandPalette } from '@/components/gc/command-palette';
@@ -596,10 +596,7 @@ export default function SocialLayout({ children }: PropsWithChildren) {
                                         current={url.startsWith('/alerts')}
                                     />
                                 )}
-                                <PlayStoreLink
-                                    compact
-                                    className="self-start px-2"
-                                />
+                                <AppPromoCard className="mt-1" />
                                 <KeyboardHint />
                             </>
                         }

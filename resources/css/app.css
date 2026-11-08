@@ -6250,3 +6250,65 @@ html[data-theme='dark'] .am.am-in-site {
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
 }
+
+/* ── Жива грань «Офіційний застосунок» і кнопок магазинів (без розмиття — суцільні градієнти) ── */
+.gc-live-edge {
+    background: linear-gradient(110deg, #0ea5e9, #2563eb, #38bdf8, #0ea5e9);
+    background-size: 300% 100%;
+    animation: gc-edge-flow 8s linear infinite;
+    box-shadow: 0 0 0 0 rgba(56, 189, 248, 0);
+    transition:
+        box-shadow 0.25s ease,
+        transform 0.2s ease;
+}
+.gc-live-edge:hover {
+    box-shadow: 0 0 22px rgba(56, 189, 248, 0.35);
+}
+.gc-live-edge-strong {
+    box-shadow: 0 0 18px rgba(56, 189, 248, 0.28);
+}
+.gc-live-edge-strong:hover {
+    box-shadow: 0 0 30px rgba(56, 189, 248, 0.45);
+}
+.gc-float {
+    animation: gc-logo-float 5s ease-in-out infinite;
+}
+.gc-sparkle {
+    animation: gc-sparkle 3.2s ease-in-out infinite;
+    opacity: 0;
+}
+@keyframes gc-edge-flow {
+    to {
+        background-position: 300% 0;
+    }
+}
+@keyframes gc-logo-float {
+    0%,
+    100% {
+        transform: translateY(0) rotate(-3deg);
+    }
+    50% {
+        transform: translateY(-3px) rotate(2deg);
+    }
+}
+@keyframes gc-sparkle {
+    0%,
+    100% {
+        opacity: 0;
+        transform: scale(0.6);
+    }
+    50% {
+        opacity: 0.9;
+        transform: scale(1);
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .gc-live-edge,
+    .gc-float,
+    .gc-sparkle {
+        animation: none;
+    }
+    .gc-sparkle {
+        opacity: 0.6;
+    }
+}

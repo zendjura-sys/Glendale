@@ -31,6 +31,23 @@ declare module '@inertiajs/core' {
                 name: string;
                 tagline: string | null;
                 description: string;
+                /** Магазини застосунку з посиланнями (Адмінка → Дизайн). */
+                app_links: Partial<
+                    Record<
+                        | 'google_play'
+                        | 'app_store'
+                        | 'app_gallery'
+                        | 'galaxy_store'
+                        | 'amazon'
+                        | 'xiaomi'
+                        | 'microsoft_store'
+                        | 'apk'
+                        | 'windows'
+                        | 'macos'
+                        | 'linux',
+                        string
+                    >
+                >;
                 play_store: {
                     url: string;
                     badge: 'get' | 'preregister';

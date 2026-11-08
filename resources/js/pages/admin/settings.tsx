@@ -6,7 +6,6 @@ import {
     Mail,
     Search,
     ShieldCheck,
-    Smartphone,
     Wrench,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -18,7 +17,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
-import { PLAY_BADGES } from '@/components/gc/play-store';
 import { cn } from '@/lib/utils';
 import { tr } from '@/lib/i18n';
 import { SpellcheckTextarea } from '@/components/gc/spellcheck';
@@ -472,78 +470,6 @@ export default function AdminSettings({
                             </span>
                         ))}
                     </p>
-                </Section>
-
-                <Section
-                    icon={Smartphone}
-                    title="Google Play"
-                    description={tr(
-                        'Кнопка завантаження зʼявляється на головній, у бічному меню і в мобільному меню, коли ввімкнено і вказано посилання.',
-                    )}
-                >
-                    <SwitchRow
-                        title={tr('Показувати кнопку')}
-                        text={tr(
-                            'Вимкнено — кнопка ніде не зʼявляється, навіть якщо посилання збережене.',
-                        )}
-                        checked={data.play_store_enabled}
-                        onChange={(v) => setData('play_store_enabled', v)}
-                    />
-                    <div className="grid gap-2">
-                        <Label htmlFor="play_store_url">
-                            {tr('Посилання на Google Play')}
-                        </Label>
-                        <Input
-                            id="play_store_url"
-                            type="url"
-                            inputMode="url"
-                            value={data.play_store_url}
-                            onChange={(e) =>
-                                setData('play_store_url', e.target.value)
-                            }
-                            maxLength={300}
-                            placeholder="https://play.google.com/store/apps/details?id=…"
-                        />
-                        <InputError message={errors.play_store_url} />
-                    </div>
-                    <div className="grid gap-2">
-                        <Label>{tr('Тип застосунку')}</Label>
-                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                            {PLAY_BADGES.map((badge) => (
-                                <button
-                                    key={badge.value}
-                                    type="button"
-                                    aria-pressed={
-                                        data.play_store_badge === badge.value
-                                    }
-                                    onClick={() =>
-                                        setData('play_store_badge', badge.value)
-                                    }
-                                    className={cn(
-                                        'grid gap-2 rounded-2xl p-3 text-left transition',
-                                        data.play_store_badge === badge.value
-                                            ? 'border-primary/70 bg-primary/10'
-                                            : 'hover:border-white/25',
-                                    )}
-                                >
-                                    <img
-                                        loading="lazy"
-                                        decoding="async"
-                                        src={badge.src}
-                                        alt={badge.title}
-                                        className="h-11 w-auto self-start"
-                                    />
-                                    <span className="text-sm font-medium text-white/85">
-                                        {badge.title}
-                                    </span>
-                                    <span className="text-xs text-white/50">
-                                        {badge.text}
-                                    </span>
-                                </button>
-                            ))}
-                        </div>
-                        <InputError message={errors.play_store_badge} />
-                    </div>
                 </Section>
 
                 <Section

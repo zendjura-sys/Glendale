@@ -95,6 +95,8 @@ class HandleInertiaRequests extends Middleware
                 'name' => $this->settings->get('site_name'),
                 'tagline' => $this->settings->get('tagline'),
                 'description' => $this->settings->seoDescription(),
+                // Магазини застосунку (Адмінка → Дизайн): лише ті, де вказано посилання.
+                'app_links' => (object) $this->settings->appLinks(),
                 'play_store' => transform($this->settings->playStoreUrl(), fn (string $url) => ['url' => $url, 'badge' => $this->settings->playStoreBadge()]),
                 'registration_open' => (bool) $this->settings->get('registration_open'),
                 // Фони входу й реєстрації (Адмінка → Дизайн): комп'ютер і планшет, телефон.

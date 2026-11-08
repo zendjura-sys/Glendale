@@ -21,6 +21,12 @@ import { PageHeader, Pill } from '@/components/gc/admin';
 import InputError from '@/components/input-error';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+import {
+    DESKTOP_STORES,
+    MOBILE_STORES,
+    STORES,
+} from '@/components/app-promo/store-buttons';
+import type { StoreKey } from '@/components/app-promo/store-buttons';
 import { tr } from '@/lib/i18n';
 
 type Theme = {
@@ -43,6 +49,7 @@ type Props = {
     seasons: string[];
     background: SiteImage | null;
     authImages: Record<string, string | null>;
+    appLinks: Partial<Record<StoreKey, string>>;
 };
 
 type SiteImage = {
@@ -64,6 +71,7 @@ export default function AdminDesign({
     seasons,
     background,
     authImages,
+    appLinks,
 }: Props) {
     const active = themes.find((theme) => theme.is_active) ?? null;
     const fileRef = useRef<HTMLInputElement>(null);
@@ -107,6 +115,8 @@ export default function AdminDesign({
             />
 
             <BackgroundCard image={background} />
+            <AppLinksCard links={appLinks} />
+
             <AuthImagesCard images={authImages} />
 
             <SeasonalCard value={seasonal} seasons={seasons} />
@@ -809,5 +819,103 @@ function BackgroundCard({ image }: { image: SiteImage | null }) {
                 </span>
             </label>
         </section>
+    );
+}
+
+/**
+ * Посилання на застосунок: магазини й пряме завантаження. Порожнє поле — кнопки на сайті не видно;
+ * якщо не заповнено жодного, ховається й картка «Офіційний застосунок» у меню.
+ */
+function AppLinksCard({ links }: { links: Partial<Record<StoreKey, string>> }) {
+    const all = [...MOBILE_STORES, ...DESKTOP_STORES];
+    const form = useForm<Record<StoreKey, string>>(
+        Object.fromEntries(all.map((k) => [k, links[k] ?? ''])) as Record<
+            StoreKey,
+            string
+        >,
+    );
+    const hints: Partial<Record<StoreKey, string>> = {
+        google_play:
+            'https://play.google.com/store/apps/details?id=online.gamecon.app',
+        app_store: 'https://apps.apple.com/app/…/id…',
+        microsoft_store: 'https://apps.microsoft.com/detail/…',
+        apk: 'https://gamecon.online/downloads/gamecon.apk',
+        windows: 'https://…/GameCon-Setup.exe',
+        macos: 'https://…/GameCon.dmg',
+        linux: 'https://…/gamecon.deb',
+    };
+    const submit = (e: FormEvent) => {
+        e.preventDefault();
+        form.put('/admin/design/app-links', { preserveScroll: true });
+    };
+    const field = (key: StoreKey) => (
+        <div key={key} className="grid gap-1.5">
+            <label
+                htmlFor={`app-${key}`}
+                className="flex items-center gap-2 text-sm font-medium text-white/85"
+            >
+                {STORES[key].mark()}
+                {STORES[key].name}
+            </label>
+            <Input
+                id={`app-${key}`}
+                type="url"
+                inputMode="url"
+                value={form.data[key]}
+                onChange={(e) => form.setData(key, e.target.value)}
+                placeholder={hints[key] ?? 'https://…'}
+                maxLength={500}
+            />
+            <InputError message={form.errors[key]} />
+        </div>
+    );
+
+    return (
+        <form onSubmit={submit} className="gc-solid mb-5 rounded-2xl p-4">
+            <div className="flex items-center gap-3">
+                <span className="gc-solid-2 flex size-11 items-center justify-center rounded-2xl text-white">
+                    <Smartphone className="size-5" />
+                </span>
+                <div className="min-w-0 flex-1">
+                    <h3 className="font-display text-base font-bold text-white">
+                        {tr('Застосунок і магазини')}
+                    </h3>
+                    <p className="text-xs text-white/45">
+                        {tr(
+                            'Посилання для сторінки /app і картки «Офіційний застосунок» у меню. Порожнє поле — кнопки не видно.',
+                        )}
+                    </p>
+                </div>
+            </div>
+            <p className="mt-4 mb-2 text-xs font-semibold text-white/50">
+                {tr('Телефон і планшет')}
+            </p>
+            <div className="grid gap-3 sm:grid-cols-2">
+                {MOBILE_STORES.map(field)}
+            </div>
+            <p className="mt-5 mb-2 text-xs font-semibold text-white/50">
+                {tr('Комп’ютер: магазин і пряме завантаження')}
+            </p>
+            <div className="grid gap-3 sm:grid-cols-2">
+                {DESKTOP_STORES.map(field)}
+            </div>
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+                <button
+                    type="submit"
+                    disabled={form.processing}
+                    className="flex h-10 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-white disabled:opacity-50"
+                >
+                    {tr('Зберегти посилання')}
+                </button>
+                <a
+                    href="/app"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-sm text-sky-400 hover:underline"
+                >
+                    {tr('Відкрити сторінку застосунку')}
+                </a>
+            </div>
+        </form>
     );
 }
