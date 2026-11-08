@@ -152,10 +152,18 @@ class FamiliesTest extends TestCase
         $this->assertSame($this->family->rankTitle(10), $card['family']['rank_title']);
         $this->assertSame('Quant RP', $card['family']['server']);
 
+        // Логотипи біля ніка: сім'я (з роллю й підказкою) і сервер сім'ї.
+        $badges = $card['author']['badges'];
+        $this->assertSame(['family', 'server'], array_column($badges, 'kind'));
+        $this->assertSame('/f/'.$this->family->slug, $badges[0]['href']);
+        $this->assertSame($this->family->rankTitle(10), $badges[0]['role']);
+        $this->assertSame('Quant RP', $badges[1]['name']);
+
         // Без сім'ї — без значка.
         $stranger = User::factory()->create();
         $other = Post::query()->create(['author_id' => $stranger->id, 'wall_type' => $stranger->getMorphClass(), 'wall_id' => $stranger->id, 'body' => 'Привіт', 'visibility' => 'public']);
         $this->assertNull(app(PostPresenter::class)->many(new Collection([$other]), $stranger)[0]['family']);
+        $this->assertSame([], app(PostPresenter::class)->many(new Collection([$other]), $stranger)[0]['author']['badges']);
     }
 
     public function test_overview_shows_family_chat_card_with_rp_names(): void

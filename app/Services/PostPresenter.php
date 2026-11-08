@@ -20,6 +20,7 @@ use App\Models\User;
 use App\Models\UserMute;
 use App\Services\Billing\AuthorSubscriptions;
 use App\Services\Games\GameTags;
+use App\Services\Profile\Affiliations;
 use App\Support\Modules\ModuleManager;
 use App\Support\Plugins\Plugins;
 use App\Support\Stickers;
@@ -151,6 +152,8 @@ class PostPresenter
             ? array_flip(app(CommunityService::class)->managedIds($viewer))
             : [];
 
+        // Значки біля ніків авторів — одним заходом для всієї стрічки.
+        app(Affiliations::class)->prime($posts->pluck('author'));
         $this->families = [];
         if (app(ModuleManager::class)->enabled('families')) {
             $members = FamilyMember::query()->with('family.server')

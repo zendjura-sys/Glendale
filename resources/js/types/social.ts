@@ -20,6 +20,8 @@ export type UserCard = {
     avatar_url: string | null;
     is_online: boolean;
     is_verified: boolean;
+    /** Логотипи сім'ї, клану, сервера й гри біля ніка. */
+    badges?: import('@/components/gc/affiliation-badges').AffiliationBadge[];
     /** Команда сайту: 'admin' | 'moderator'. */
     staff?: string | null;
     /** Вид позначки (верифікація 2.0): identity, creator, business, organization. */

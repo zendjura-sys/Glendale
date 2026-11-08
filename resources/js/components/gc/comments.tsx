@@ -32,6 +32,7 @@ import {
 } from '@/components/gc/translate';
 import { MentionText } from './mention-text';
 import { StickerPicker } from './stickers';
+import { AffiliationBadges } from '@/components/gc/affiliation-badges';
 import { tr } from '@/lib/i18n';
 
 type CommentSort = 'old' | 'new' | 'reactions';
@@ -248,42 +249,51 @@ export function Comments({
                                             {tr('Закріплено')}
                                         </span>
                                     )}
-                                    <Link
-                                        href={`/${comment.user.username}`}
-                                        className="flex items-center gap-1 text-[13px] font-semibold text-white hover:underline"
-                                    >
-                                        <span
-                                            {...nameDisplayProps(
-                                                comment.user.plus,
-                                                cosmeticNameStyle(
-                                                    comment.user.cosmetics,
-                                                ),
-                                            )}
+                                    <div className="flex flex-wrap items-center gap-1">
+                                        <Link
+                                            href={`/${comment.user.username}`}
+                                            className="flex items-center gap-1 text-[13px] font-semibold text-white hover:underline"
                                         >
-                                            {comment.user.name}
-                                        </span>
-                                        {comment.badge && (
-                                            <RoleBadge
-                                                title={comment.badge.title}
-                                                color={comment.badge.color}
-                                            />
-                                        )}
-                                        {comment.user.is_verified && (
-                                            <VerifiedBadge
-                                                kind={
-                                                    comment.user.verified_kind
+                                            <span
+                                                {...nameDisplayProps(
+                                                    comment.user.plus,
+                                                    cosmeticNameStyle(
+                                                        comment.user.cosmetics,
+                                                    ),
+                                                )}
+                                            >
+                                                {comment.user.name}
+                                            </span>
+                                            {comment.badge && (
+                                                <RoleBadge
+                                                    title={comment.badge.title}
+                                                    color={comment.badge.color}
+                                                />
+                                            )}
+                                            {comment.user.is_verified && (
+                                                <VerifiedBadge
+                                                    kind={
+                                                        comment.user
+                                                            .verified_kind
+                                                    }
+                                                    className="size-3"
+                                                />
+                                            )}
+                                            {comment.user.plus && (
+                                                <PlusBadge className="size-3.5" />
+                                            )}
+                                            <CosmeticBadge
+                                                cosmetics={
+                                                    comment.user.cosmetics
                                                 }
-                                                className="size-3"
+                                                className="size-3.5"
                                             />
-                                        )}
-                                        {comment.user.plus && (
-                                            <PlusBadge className="size-3.5" />
-                                        )}
-                                        <CosmeticBadge
-                                            cosmetics={comment.user.cosmetics}
-                                            className="size-3.5"
+                                        </Link>
+                                        <AffiliationBadges
+                                            badges={comment.user.badges}
+                                            size={15}
                                         />
-                                    </Link>
+                                    </div>
                                     <p className="text-[14px] leading-snug break-words whitespace-pre-line text-white/85">
                                         {parent && (
                                             <span className="mr-1 text-sky-400">

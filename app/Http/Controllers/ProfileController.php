@@ -29,6 +29,7 @@ use App\Services\PlayedTogether;
 use App\Services\PostCards;
 use App\Services\PostPresenter;
 use App\Services\Presence\SteamPresence;
+use App\Services\Profile\Affiliations;
 use App\Services\Profile\MySetup;
 use App\Services\Profile\StreamSchedule;
 use App\Services\Quests\SeasonPass;
@@ -174,6 +175,8 @@ class ProfileController extends Controller
                 'last_seen_at' => $user->last_seen_at?->toIso8601String(),
                 'joined_at' => $user->created_at?->toIso8601String(),
                 'role' => $user->role,
+                // Логотипи сім'ї, клану, сервера й гри біля імені.
+                'badges' => app(Affiliations::class)->of($user),
                 'pin' => $this->pinCard($user),
                 'looking_for_group' => app(Plugins::class)->on('looking_for_group') && (bool) $user->pref('looking_for_group'),
                 'languages' => array_values(array_filter((array) $user->pref('languages', []), 'is_string')),

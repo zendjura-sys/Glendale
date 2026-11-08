@@ -15,6 +15,7 @@ import 'phone.dart';
 import 'plus.dart';
 import 'subscription.dart';
 import 'account.dart';
+import 'affiliation_badges.dart';
 import 'api.dart';
 import 'awards.dart';
 import 'movie_extras.dart';
@@ -649,6 +650,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     Row(children: [
                       Flexible(child: PlusName(fullName, plus: nameMarkOf(profile), style: display(24), animate: true, maxLines: 2)),
                       if (profile['is_verified'] == true) ...[const SizedBox(width: 6), Icon(LucideIcons.badgeCheck, color: primary, size: 20)],
+                      // Логотипи сім'ї, клану, сервера й гри.
+                      const SizedBox(width: 6),
+                      AffiliationBadges(user: profile, size: 22),
                       if (plus != null) ...[const SizedBox(width: 6), const PlusBadge(size: 20)],
                       SeasonBadge(user: profile, size: 20),
                     ]),

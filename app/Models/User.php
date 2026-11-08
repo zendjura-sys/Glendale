@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\Profile\Affiliations;
 use App\Services\Quests\SeasonPass;
 use App\Support\Palette;
 use App\Support\Plugins\Plugins;
@@ -359,6 +360,8 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
             'plus' => $this->plusCard(),
             'cosmetics' => SeasonPass::card($this->cosmetics),
             'event_frame' => $this->eventFrame(),
+            // Логотипи сім'ї, клану, сервера й гри біля ніка (з підказкою при наведенні).
+            'badges' => app(Affiliations::class)->of($this),
         ];
     }
 

@@ -89,6 +89,7 @@ import type {
     ScrollData,
     UserCard,
 } from '@/types';
+import { AffiliationBadges } from '@/components/gc/affiliation-badges';
 import { LOCALE, tr } from '@/lib/i18n';
 import { LiveBadge, ProfileStream } from '@/components/streams/stream';
 import type { StreamInfo } from '@/components/streams/stream';
@@ -559,6 +560,10 @@ export default function ProfileShow({
                                 <CosmeticBadge
                                     cosmetics={profile.cosmetics}
                                     className="size-6"
+                                />
+                                <AffiliationBadges
+                                    badges={profile.badges}
+                                    size={24}
                                 />
                                 {roleBadge && (
                                     <span className="inline-flex items-center gap-1 rounded-chip border-gold/30 bg-gold/10 px-2.5 py-0.5 text-xs font-semibold text-gold">
