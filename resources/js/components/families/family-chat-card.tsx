@@ -1,4 +1,3 @@
-import { Link } from '@inertiajs/react';
 import { ChevronDown, MessageSquareText, Sparkles, Wand2 } from 'lucide-react';
 import { AnimatePresence, m, useReducedMotion } from 'motion/react';
 import { useState } from 'react';
@@ -74,21 +73,32 @@ export function FamilyChatCard({
 
     return (
         <section className="gc-solid rounded-[22px] p-4 sm:p-5">
-            <div className="mb-4 flex items-center gap-2.5">
-                <MessageSquareText className="size-5 shrink-0 text-sky-400" />
-                <h2 className="min-w-0 flex-1 truncate font-display text-[15px] font-bold text-white sm:text-base">
-                    {tr('Чат сім’ї {tag}', { tag })}
-                </h2>
-                <span className="shrink-0 rounded-full bg-sky-500/15 px-3 py-1 text-xs font-bold text-sky-400">
-                    {tr('{n} {word} сьогодні', {
-                        n: chat.today,
-                        word: plural(chat.today, [
-                            tr('повідомлення'),
-                            tr('повідомлення'),
-                            tr('повідомлень'),
-                        ]),
-                    })}
+            <div className="mb-4 flex items-start gap-3">
+                <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-sky-500/15">
+                    <MessageSquareText className="size-5 text-sky-400" />
                 </span>
+                <div className="min-w-0 flex-1">
+                    <h2 className="font-display text-[15px] font-bold break-words text-white sm:text-base">
+                        {tr('Чат сім’ї {tag}', { tag })}
+                    </h2>
+                    <p
+                        className={cn(
+                            'mt-0.5 text-xs font-semibold',
+                            chat.today > 0 ? 'text-sky-400' : 'text-white/50',
+                        )}
+                    >
+                        {chat.today > 0
+                            ? tr('{n} {word} сьогодні', {
+                                  n: chat.today,
+                                  word: plural(chat.today, [
+                                      tr('повідомлення'),
+                                      tr('повідомлення'),
+                                      tr('повідомлень'),
+                                  ]),
+                              })
+                            : tr('Сьогодні ще тихо')}
+                    </p>
+                </div>
             </div>
 
             {chat.ai && (
@@ -104,7 +114,7 @@ export function FamilyChatCard({
                             <span className="block text-sm font-bold text-sky-400">
                                 {tr('Зробити ШІ-підсумок чату')}
                             </span>
-                            <span className="block truncate text-xs text-white/55">
+                            <span className="block text-xs text-white/55">
                                 {tr(
                                     'Останні ~80 повідомлень коротко: про що домовились',
                                 )}
@@ -168,16 +178,13 @@ export function FamilyChatCard({
             )}
 
             {chat.latest.length > 0 && (
-                <div className="mt-3 space-y-2">
+                <div className="gc-solid-2 mt-3 divide-y divide-white/[0.06] overflow-hidden rounded-2xl">
                     {chat.latest.map((msg) => (
-                        <div
-                            key={msg.id}
-                            className="gc-solid-2 rounded-2xl px-4 py-3"
-                        >
-                            <div className="flex items-center justify-between gap-2">
+                        <div key={msg.id} className="px-4 py-3">
+                            <div className="flex items-start justify-between gap-2">
                                 <span
                                     className={cn(
-                                        'truncate text-sm font-bold',
+                                        'min-w-0 text-sm font-bold break-words',
                                         nameTone(msg.name),
                                     )}
                                 >
@@ -187,20 +194,13 @@ export function FamilyChatCard({
                                     {time(msg.at)}
                                 </span>
                             </div>
-                            <p className="mt-1 text-sm break-words text-white/80">
+                            <p className="mt-1 text-sm leading-snug break-words text-white/80">
                                 {msg.body}
                             </p>
                         </div>
                     ))}
                 </div>
             )}
-
-            <Link
-                href={`/messages/${chat.id}`}
-                className="mt-3 inline-flex text-xs font-semibold text-sky-400 hover:text-sky-400"
-            >
-                {tr('Відкрити чат')}
-            </Link>
         </section>
     );
 }

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-// Дизайн-система застосунку в стилі One UI (Samsung, One UI Design Kit): суцільні картки з радіусом 26,
-// акцент #387AFF, тло — чорне (темна) і #F1F1F3 (світла), контейнери #17171A / #FFFFFF.
+// Дизайн-система застосунку: теми «Неоновий синій» (темна) і «Крижана Арктика» (світла), як на сайті:
+// суцільні матові картки з великим радіусом, небесний акцент, тло #04070D / #F1F5F9, картки #0B1220 / #FFFFFF.
 // Імена класів лишилися від «Spatial Glass», щоб не чіпати сотні викликів.
 // Лише крижані й сапфірові відтінки — без фіолетового й рожевого. Палітра теми (theme.dart)
 // та віджети core/widgets/arctic_glass беруть кольори звідси; відмінності темної й світлої
@@ -9,36 +9,36 @@ import 'package:flutter/material.dart';
 
 abstract final class AppColors {
   // Тло
-  static const bgBase = Color(0xFF000000);
-  static const bgElevated = Color(0xFF0B0B0D);
+  static const bgBase = Color(0xFF04070D);
+  static const bgElevated = Color(0xFF080D18);
 
   // Скло: tier1 — елементи списків, tier2 — картки й поля, tier3 — шторки та поповери.
-  static const glassTier1 = Color(0xFF17171A);
-  static const glassTier2 = Color(0xFF17171A);
-  static const glassTier3 = Color(0xFF1F1F22);
+  static const glassTier1 = Color(0xFF0B1220);
+  static const glassTier2 = Color(0xFF0B1220);
+  static const glassTier3 = Color(0xFF121D31);
 
   // Рамки
   static const borderHairline = Color.fromRGBO(255, 255, 255, 0.08);
   static const borderSpecularTop = Color.fromRGBO(255, 255, 255, 0.32);
-  static const borderSapphire = Color.fromRGBO(56, 122, 255, 0.40);
+  static const borderSapphire = Color.fromRGBO(14, 165, 233, 0.40);
 
   // Акценти
-  static const accentPrimary = Color(0xFF387AFF);
-  static const accentCyan = Color(0xFF5B95FF);
+  static const accentPrimary = Color(0xFF0EA5E9);
+  static const accentCyan = Color(0xFF38BDF8);
   static const accentGradient = LinearGradient(colors: [accentPrimary, accentPrimary]);
 
   /// Неоново-кораловий бейдж (лічильники сповіщень).
   static const badge = Color(0xFFFF4D6D);
 
   // Текст темної теми
-  static const textPrimary = Color(0xFFFCFCFF);
-  static const textSecondary = Color(0xFF9B9BA0);
-  static const textMuted = Color(0xFF848487);
+  static const textPrimary = Color(0xFFF8FAFC);
+  static const textSecondary = Color(0xFF94A3B8);
+  static const textMuted = Color(0xFF64748B);
 
   // Текст світлої теми
-  static const lightTitle = Color(0xFF0F0F12);
-  static const lightBody = Color(0xFF3A3A3E);
-  static const lightMuted = Color(0xFF75757A);
+  static const lightTitle = Color(0xFF0F172A);
+  static const lightBody = Color(0xFF334155);
+  static const lightMuted = Color(0xFF64748B);
 
   /// Мерехтіння скелетонів: ледь помітне скло → крижаний ціан → скло.
   static const shimmer = [Color.fromRGBO(255, 255, 255, 0.04), Color.fromRGBO(255, 255, 255, 0.10), Color.fromRGBO(255, 255, 255, 0.04)];
@@ -125,36 +125,36 @@ class ArcticGlassThemeExtension extends ThemeExtension<ArcticGlassThemeExtension
 
   static const dark = ArcticGlassThemeExtension(
     light: false,
-    background: [Color(0xFF000000), Color(0xFF000000)],
+    background: [Color(0xFF04070D), Color(0xFF04070D)],
     glows: [],
-    // Контейнер One UI — суцільний #17171A.
-    glassFill: LinearGradient(colors: [Color(0xFF17171A), Color(0xFF17171A)]),
-    pressedFill: LinearGradient(colors: [Color(0xFF232326), Color(0xFF232326)]),
-    innerFill: Color(0xFF2E2E30),
+    // Картка «Неонового синього» — суцільна #0B1220, натиснута — #18263F, вкладене — #121D31.
+    glassFill: LinearGradient(colors: [Color(0xFF0B1220), Color(0xFF0B1220)]),
+    pressedFill: LinearGradient(colors: [Color(0xFF18263F), Color(0xFF18263F)]),
+    innerFill: Color(0xFF121D31),
     border: Color(0x00000000),
     outline: null,
     specular: Color(0x00000000),
     shadows: [],
     // Плаваючі панелі (нижнє меню, кнопки шапки при прокрутці) — напівпрозорі з розмиттям.
-    barFill: LinearGradient(colors: [Color.fromRGBO(46, 46, 48, 0.82), Color.fromRGBO(46, 46, 48, 0.82)]),
-    sheetFill: Color(0xFF17171A),
+    barFill: LinearGradient(colors: [Color.fromRGBO(9, 16, 29, 0.82), Color.fromRGBO(9, 16, 29, 0.82)]),
+    sheetFill: Color(0xFF0B1220),
     title: AppColors.textPrimary,
-    body: Color(0xFFD6D6DA),
+    body: Color(0xFFCBD5E1),
     muted: AppColors.textSecondary,
   );
 
   static const daylight = ArcticGlassThemeExtension(
     light: true,
-    background: [Color(0xFFF1F1F3), Color(0xFFF1F1F3)],
+    background: [Color(0xFFF1F5F9), Color(0xFFF1F5F9)],
     glows: [],
     glassFill: LinearGradient(colors: [Color(0xFFFFFFFF), Color(0xFFFFFFFF)]),
-    pressedFill: LinearGradient(colors: [Color(0xFFEDEDF0), Color(0xFFEDEDF0)]),
-    innerFill: Color(0xFFF1F1F3),
+    pressedFill: LinearGradient(colors: [Color(0xFFE2E8F0), Color(0xFFE2E8F0)]),
+    innerFill: Color(0xFFF1F5F9),
     border: Color(0x00000000),
     outline: null,
     specular: Color(0x00000000),
     shadows: [],
-    barFill: LinearGradient(colors: [Color.fromRGBO(226, 226, 230, 0.88), Color.fromRGBO(226, 226, 230, 0.88)]),
+    barFill: LinearGradient(colors: [Color.fromRGBO(255, 255, 255, 0.86), Color.fromRGBO(255, 255, 255, 0.86)]),
     sheetFill: Color(0xFFFFFFFF),
     title: AppColors.lightTitle,
     body: AppColors.lightBody,

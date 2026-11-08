@@ -126,7 +126,6 @@ class FeedPulseState extends State<FeedPulse> {
         quests.isNotEmpty && !quests.every((q) => q['claimed'] == true);
     final done = quests.where((q) => q['done'] == true).length;
     if (streak < 1 && state == null && !showQuests) return const SizedBox.shrink();
-    final narrow = MediaQuery.sizeOf(context).width < 400;
 
     Widget pill({required Widget child, VoidCallback? onTap}) =>
         GestureDetector(
@@ -152,14 +151,14 @@ class FeedPulseState extends State<FeedPulse> {
             Row(
               children: [
                 if (streak > 0) ...[
-                  pill(
+                  Expanded(child: pill(
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         const Icon(LucideIcons.flame, size: 16, color: _amber),
                         const SizedBox(width: 5),
                         Text(
-                          narrow ? '$streak' : '$streak ${_days(streak)}',
+                          '$streak ${_days(streak)}',
                           style: body(
                             14,
                             color: _amber,
@@ -168,12 +167,40 @@ class FeedPulseState extends State<FeedPulse> {
                         ),
                       ],
                     ),
-                  ),
-                  const SizedBox(width: 8),
+                  )),
                 ],
-                if (state != null)
-                  Expanded(
-                    child: GestureDetector(
+                if (showQuests) ...[
+                  if (streak > 0) const SizedBox(width: 8),
+                  Expanded(child: pill(
+                    onTap: () => _toggle('quests'),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(LucideIcons.target, size: 16, color: _sky),
+                        const SizedBox(width: 5),
+                        Text(
+                          tr('Завдання {done}/{all}', {'done': done, 'all': quests.length}),
+                          style: body(14, color: _sky, weight: FontWeight.w800),
+                        ),
+                        AnimatedRotation(
+                          turns: panel == 'quests' ? 0.5 : 0,
+                          duration: const Duration(milliseconds: 200),
+                          child: const Icon(
+                            LucideIcons.chevronDown,
+                            size: 16,
+                            color: _sky,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )),
+                ],
+              ],
+            ),
+            // «Я готовий грати» — на всю ширину окремим рядком: текст повністю, без «…».
+            if (state != null) ...[
+              if (streak > 0 || showQuests) const SizedBox(height: 8),
+              GestureDetector(
                       onTap: () => _toggle('ready'),
                       child: Container(
                         height: 44,
@@ -239,37 +266,7 @@ class FeedPulseState extends State<FeedPulse> {
                         ),
                       ),
                     ),
-                  )
-                else
-                  const Spacer(),
-                if (showQuests) ...[
-                  const SizedBox(width: 8),
-                  pill(
-                    onTap: () => _toggle('quests'),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(LucideIcons.target, size: 16, color: _sky),
-                        const SizedBox(width: 5),
-                        Text(
-                          '$done/${quests.length}${narrow ? '' : ' XP'}',
-                          style: body(14, color: _sky, weight: FontWeight.w800),
-                        ),
-                        AnimatedRotation(
-                          turns: panel == 'quests' ? 0.5 : 0,
-                          duration: const Duration(milliseconds: 200),
-                          child: const Icon(
-                            LucideIcons.chevronDown,
-                            size: 16,
-                            color: _sky,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ],
-            ),
+            ],
             AnimatedSize(
               duration: const Duration(milliseconds: 220),
               curve: Curves.easeOutCubic,

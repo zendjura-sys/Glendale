@@ -26,14 +26,20 @@ class RpDossier extends StatelessWidget {
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(color: raised, borderRadius: BorderRadius.circular(18)),
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          // Без скорочень: назва повністю, нижче — нік і сервер (переносяться, якщо довгі).
           Row(children: [
             const Icon(LucideIcons.idCard, size: 16, color: Color(0xFF38BDF8)),
             const SizedBox(width: 8),
-            Expanded(child: Text(tr('RP-досьє персонажа'), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(13.5, weight: FontWeight.w700))),
-            if (text(data['server']) case final server?)
-              Flexible(child: Text(server, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(11.5, color: const Color(0xFF38BDF8), weight: FontWeight.w800))),
+            Expanded(child: Text(tr('RP-досьє персонажа'), style: body(13.5, weight: FontWeight.w700))),
           ]),
-          if (text(data['nickname']) case final nick?) Padding(padding: const EdgeInsets.only(top: 3), child: Text(nick, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: muted))),
+          const SizedBox(height: 4),
+          Text.rich(
+            TextSpan(children: [
+              if (text(data['nickname']) case final nick?) TextSpan(text: nick),
+              if (text(data['server']) case final server?) TextSpan(text: '  ·  $server', style: body(12, color: accent, weight: FontWeight.w700)),
+            ]),
+            style: body(12, color: muted),
+          ),
           const SizedBox(height: 10),
           Row(children: [
             for (final (i, t) in tiles.indexed) ...[
@@ -41,11 +47,11 @@ class RpDossier extends StatelessWidget {
               Expanded(
                 child: Container(
                   padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-                  decoration: BoxDecoration(color: abyss, borderRadius: BorderRadius.circular(12)),
+                  decoration: BoxDecoration(color: card, borderRadius: BorderRadius.circular(12)),
                   child: Column(children: [
-                    Text(t.$1, style: body(11, color: muted)),
+                    FittedBox(fit: BoxFit.scaleDown, child: Text(t.$1, maxLines: 1, style: body(11, color: muted))),
                     const SizedBox(height: 2),
-                    Text(t.$2, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(13, color: t.$3, weight: FontWeight.w800)),
+                    FittedBox(fit: BoxFit.scaleDown, child: Text(t.$2, maxLines: 1, style: body(13, color: t.$3, weight: FontWeight.w800))),
                   ]),
                 ),
               ),

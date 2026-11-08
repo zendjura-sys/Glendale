@@ -865,31 +865,33 @@ class _MenuContentState extends State<MenuContent> {
             widget.onClose();
             showProFeatures(context);
           },
-          child: Row(children: [
-            Container(
-              width: 30,
-              height: 30,
-              decoration: BoxDecoration(color: const Color(0xFF0EA5E9), borderRadius: BorderRadius.circular(9)),
-              child: const Icon(LucideIcons.plus, size: 17, color: Colors.white),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('GameCon+', style: body(13.5, weight: FontWeight.w700)),
-                Text(plus ? tr('Ще {n} дн.', {'n': '$days'}) : tr('Рамки, ник, теми й більше'), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(11.5, color: muted)),
-              ]),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(color: plus ? _emerald.withValues(alpha: 0.15) : fg.withValues(alpha: 0.07), borderRadius: BorderRadius.circular(20)),
-              child: Text(plus ? tr('Активний') : tr('Не активний'), style: body(11, color: plus ? _emerald : muted, weight: FontWeight.w600)),
-            ),
-            const SizedBox(width: 6),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(color: palette.isLight ? const Color(0xFFE0F2FE) : const Color(0xFF0B2942), borderRadius: BorderRadius.circular(10)),
-              child: Text(plus ? tr('Продовжити') : tr('Оформити'), style: body(12, color: palette.isLight ? const Color(0xFF0284C7) : _sky, weight: FontWeight.w700)),
-            ),
+          // Два ряди без скорочень: назва й статус угорі, строк і кнопка — нижче.
+          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            Row(children: [
+              Container(
+                width: 30,
+                height: 30,
+                decoration: BoxDecoration(color: primary, borderRadius: BorderRadius.circular(9)),
+                child: const Icon(LucideIcons.plus, size: 17, color: Colors.white),
+              ),
+              const SizedBox(width: 10),
+              Expanded(child: Text('GameCon+', softWrap: false, style: body(14.5, weight: FontWeight.w800))),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                decoration: BoxDecoration(color: plus ? _emerald.withValues(alpha: 0.15) : fg.withValues(alpha: 0.07), borderRadius: BorderRadius.circular(20)),
+                child: Text(plus ? tr('Активний') : tr('Не активний'), style: body(11.5, color: plus ? _emerald : muted, weight: FontWeight.w700)),
+              ),
+            ]),
+            const SizedBox(height: 10),
+            Row(children: [
+              Expanded(child: Text(plus ? tr('Ще {n} дн.', {'n': '$days'}) : tr('Рамки, ник, теми й більше'), style: body(12.5, color: muted))),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                decoration: BoxDecoration(color: primary.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(12)),
+                child: Text(plus ? tr('Продовжити') : tr('Оформити'), style: body(13, color: accent, weight: FontWeight.w700)),
+              ),
+            ]),
           ]),
         ),
       ])),

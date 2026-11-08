@@ -136,7 +136,7 @@ class StoriesStripState extends State<StoriesStrip> {
                   child: _Ring(seen: list[i]['all_seen'] == true, child: _cover(list[i])),
                 ),
               if (others.isEmpty)
-                Center(child: Padding(padding: const EdgeInsets.only(left: 8), child: Text(tr('Історії друзів з’являться тут на 24 години'), style: body(12.5, color: muted)))),
+                Center(child: Padding(padding: const EdgeInsets.only(left: 10), child: SizedBox(width: 150, child: Text(tr('Історії друзів з’являться тут на 24 години'), maxLines: 3, style: body(12.5, color: muted).copyWith(height: 1.3))))),
             ],
           ),
         ),
@@ -165,7 +165,7 @@ class _Tile extends StatelessWidget {
             if (badge != null) Positioned(right: -2, bottom: -2, child: badge!),
           ]),
           const SizedBox(height: 5),
-          Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: highlight ? const Color(0xFF38BDF8) : soft, weight: FontWeight.w600)),
+          FittedBox(fit: BoxFit.scaleDown, child: Text(label, maxLines: 1, softWrap: false, style: body(12, color: highlight ? const Color(0xFF38BDF8) : soft, weight: FontWeight.w600))),
         ]),
       ),
     );

@@ -685,6 +685,7 @@ class _FamilyScreenState extends State<FamilyScreen> {
           ),
         ],
       ),
+      if (section != 'overview' && section != 'reports')
       Positioned(
         right: 16,
         bottom: 16 + ShellChrome.bottomOf(context),

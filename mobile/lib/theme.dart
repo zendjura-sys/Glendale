@@ -41,50 +41,52 @@ class GcPalette {
   bool get isLight => brightness == Brightness.light;
 }
 
-/// Темна тема One UI: чорне тло, контейнери #17171A, акцент #387AFF.
+/// «Неоновий синій» (темна): глибоке нічне тло #04070D, картки #0B1220, вкладене #121D31,
+/// наведення #18263F; небесний акцент. Ті самі токени, що --gc-* на сайті.
 const neonPalette = GcPalette(
   brightness: Brightness.dark,
-  voidColor: Color(0xFF000000),
-  abyss: Color(0xFF0B0B0D),
-  deep: Color(0xFF101012),
-  popover: Color(0xFF1F1F22),
-  ink: AppColors.textPrimary,
-  soft: Color(0xFFD6D6DA),
-  muted: AppColors.textSecondary,
-  faint: AppColors.textMuted,
-  primary: AppColors.accentPrimary,
-  card: Color(0xFF17171A),
-  cardTop: Color(0xFF17171A),
-  raised: Color(0xFF2E2E30),
-  field: Color(0xFF2E2E30),
-  bar: Color.fromRGBO(23, 23, 26, 0.86),
-  line: Color.fromRGBO(255, 255, 255, 0.08),
-  lineStrong: Color.fromRGBO(255, 255, 255, 0.14),
+  voidColor: Color(0xFF04070D),
+  abyss: Color(0xFF04070D),
+  deep: Color(0xFF080D18),
+  popover: Color(0xFF121D31),
+  ink: Color(0xFFF8FAFC),
+  soft: Color(0xFFCBD5E1),
+  muted: Color(0xFF94A3B8),
+  faint: Color(0xFF64748B),
+  primary: Color(0xFF0EA5E9),
+  card: Color(0xFF0B1220),
+  cardTop: Color(0xFF0B1220),
+  raised: Color(0xFF121D31),
+  field: Color(0xFF121D31),
+  bar: Color.fromRGBO(9, 16, 29, 0.82),
+  line: Color.fromRGBO(148, 163, 184, 0.12),
+  lineStrong: Color.fromRGBO(148, 163, 184, 0.2),
   fg: Colors.white,
-  brand: [AppColors.accentPrimary, AppColors.accentPrimary, AppColors.accentCyan],
+  brand: [Color(0xFF2F7BFF), Color(0xFF0EA5E9), Color(0xFF38BDF8)],
 );
 
-/// Світла тема One UI: тло #F1F1F3, білі контейнери, компоненти #E8E8EA, акцент #387AFF.
+/// «Крижана Арктика» (світла): тло #F1F5F9, білі картки, вкладене #F1F5F9, наведення #E2E8F0;
+/// акцент — глибокий небесний #0284C7 (читається на білому).
 const arcticPalette = GcPalette(
   brightness: Brightness.light,
-  voidColor: Color(0xFFF1F1F3),
-  abyss: Color(0xFFF6F6F8),
-  deep: Color(0xFFFAFAFB),
+  voidColor: Color(0xFFF1F5F9),
+  abyss: Color(0xFFF1F5F9),
+  deep: Color(0xFFF8FAFC),
   popover: Color(0xFFFFFFFF),
-  ink: AppColors.lightTitle,
-  soft: AppColors.lightBody,
-  muted: AppColors.lightMuted,
-  faint: Color(0xFF99999D),
-  primary: AppColors.accentPrimary,
+  ink: Color(0xFF0F172A),
+  soft: Color(0xFF334155),
+  muted: Color(0xFF64748B),
+  faint: Color(0xFF94A3B8),
+  primary: Color(0xFF0284C7),
   card: Color(0xFFFFFFFF),
   cardTop: Color(0xFFFFFFFF),
-  raised: Color(0xFFFFFFFF),
-  field: Color(0xFFE8E8EA),
-  bar: Color.fromRGBO(252, 252, 255, 0.88),
-  line: Color(0x14000000),
-  lineStrong: Color(0x1F000000),
-  fg: AppColors.lightTitle,
-  brand: [AppColors.accentPrimary, AppColors.accentPrimary, AppColors.accentCyan],
+  raised: Color(0xFFF1F5F9),
+  field: Color(0xFFE2E8F0),
+  bar: Color.fromRGBO(255, 255, 255, 0.86),
+  line: Color(0x140F172A),
+  lineStrong: Color(0x240F172A),
+  fg: Color(0xFF0F172A),
+  brand: [Color(0xFF0369A1), Color(0xFF0284C7), Color(0xFF0EA5E9)],
 );
 
 /// Поточна палітра (ставить ThemeController).
@@ -100,7 +102,7 @@ Color get muted => palette.muted;
 Color get faint => palette.faint;
 
 /// Акцентний текст та іконки (`text-gc-lilac-400` на сайті): у світлій темі темніший, щоб читався на білому.
-Color get accent => palette.isLight ? const Color(0xFF2F6BE8) : const Color(0xFF6E9EFF);
+Color get accent => palette.isLight ? const Color(0xFF0284C7) : const Color(0xFF38BDF8);
 Color get primary => palette.primary;
 Color get fg => palette.fg;
 Color get fgSoft => palette.fg.withValues(alpha: 0.7);

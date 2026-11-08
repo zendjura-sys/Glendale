@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'api.dart';
@@ -53,14 +52,23 @@ class _FamilyChatCardState extends State<FamilyChatCard> {
       padding: const EdgeInsets.only(bottom: 12),
       child: Glass(
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          Row(children: [
-            const Icon(LucideIcons.messageSquareText, size: 19, color: _sky),
-            const SizedBox(width: 8),
-            Expanded(child: Text(tr('Чат сім’ї {tag}', {'tag': widget.tag}), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(15.5, weight: FontWeight.w800))),
+          Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(color: _sky.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(20)),
-              child: Text(tr('{n} {word} сьогодні', {'n': today, 'word': plural(today, tr('повідомлення'), tr('повідомлення'), tr('повідомлень'))}), style: body(12, color: _sky, weight: FontWeight.w700)),
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(color: _sky.withValues(alpha: 0.14), borderRadius: BorderRadius.circular(12)),
+              child: const Icon(LucideIcons.messageSquareText, size: 19, color: _sky),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(tr('Чат сім’ї {tag}', {'tag': widget.tag}), style: body(15.5, weight: FontWeight.w800)),
+                const SizedBox(height: 2),
+                Text(
+                  today > 0 ? tr('{n} {word} сьогодні', {'n': today, 'word': plural(today, tr('повідомлення'), tr('повідомлення'), tr('повідомлень'))}) : tr('Сьогодні ще тихо'),
+                  style: body(12.5, color: today > 0 ? _sky : muted, weight: FontWeight.w600),
+                ),
+              ]),
             ),
           ]),
           const SizedBox(height: 12),
@@ -76,7 +84,7 @@ class _FamilyChatCardState extends State<FamilyChatCard> {
                   Expanded(
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       Text(tr('Зробити ШІ-підсумок чату'), style: body(14, color: _sky, weight: FontWeight.w800)),
-                      Text(tr('Останні ~80 повідомлень коротко: про що домовились'), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: muted)),
+                      Text(tr('Останні ~80 повідомлень коротко: про що домовились'), style: body(12, color: muted)),
                     ]),
                   ),
                   AnimatedRotation(turns: open ? 0.5 : 0, duration: const Duration(milliseconds: 200), child: const Icon(LucideIcons.chevronDown, size: 18, color: _sky)),
@@ -119,35 +127,44 @@ class _FamilyChatCardState extends State<FamilyChatCard> {
                     ),
             ),
           ],
-          for (final m in latest) ...[
-            const SizedBox(height: 8),
+          if (latest.isNotEmpty) ...[
+            const SizedBox(height: 12),
             Container(
-              padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
               decoration: BoxDecoration(color: raised, borderRadius: BorderRadius.circular(18)),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Row(children: [
-                  Expanded(
-                    child: Text(
-                      text(m['name']) ?? '',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: body(14, color: _tones[(text(m['name']) ?? '').runes.fold<int>(0, (a, b) => a + b) % _tones.length], weight: FontWeight.w800),
-                    ),
-                  ),
-                  Text(_time(text(m['at'])), style: body(12, color: muted)),
-                ]),
-                const SizedBox(height: 3),
-                Text(text(m['body']) ?? '', style: body(14, color: soft)),
+              child: Column(children: [
+                for (var i = 0; i < latest.length; i++) ...[
+                  if (i > 0) Divider(height: 1, thickness: 1, indent: 14, endIndent: 14, color: muted.withValues(alpha: 0.12)),
+                  _Message(latest[i]),
+                ],
               ]),
             ),
           ],
-          const SizedBox(height: 10),
-          GestureDetector(
-            onTap: () => context.push('/messages/${chat['id']}'),
-            child: Text(tr('Відкрити чат'), style: body(13, color: _sky, weight: FontWeight.w700)),
-          ),
         ]),
       ),
+    );
+  }
+
+}
+
+/// Один рядок останніх повідомлень: ім'я сталим кольором, час і текст повністю.
+class _Message extends StatelessWidget {
+  const _Message(this.m);
+  final Map<String, dynamic> m;
+
+  @override
+  Widget build(BuildContext context) {
+    final name = text(m['name']) ?? '';
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(14, 11, 14, 11),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Expanded(child: Text(name, style: body(13.5, color: _tones[name.runes.fold<int>(0, (a, b) => a + b) % _tones.length], weight: FontWeight.w800))),
+          const SizedBox(width: 8),
+          Text(_time(text(m['at'])), style: body(11.5, color: muted)),
+        ]),
+        const SizedBox(height: 3),
+        Text(text(m['body']) ?? '', style: body(14, color: soft).copyWith(height: 1.35)),
+      ]),
     );
   }
 
