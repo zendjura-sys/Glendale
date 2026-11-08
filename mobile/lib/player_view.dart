@@ -77,7 +77,7 @@ class MiniPlayer extends StatelessWidget {
                           ),
                         ),
                         control(LucideIcons.skipBack, player.prev),
-                        RoundIcon(icon: player.playing ? LucideIcons.pause : LucideIcons.play, onTap: player.toggle, filled: true, size: 44),
+                        RoundIcon(icon: player.playing ? LucideIcons.pause : LucideIcons.play, onTap: player.toggle, filled: true, size: 44, animate: player.playing),
                         control(LucideIcons.skipForward, player.next),
                         control(LucideIcons.x, player.stop, color: muted, size: 20),
                       ],

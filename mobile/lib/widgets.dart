@@ -286,7 +286,10 @@ class DangerButton extends StatelessWidget {
 
 /// Кругла іконка-кнопка (скріпка, мікрофон, ⋯).
 class RoundIcon extends StatelessWidget {
-  RoundIcon({required this.icon, required this.onTap, this.size = 40, Color? color, this.filled = false, this.tooltip, super.key}) : color = color ?? muted;
+  RoundIcon({required this.icon, required this.onTap, this.size = 40, Color? color, this.filled = false, this.tooltip, this.animate, super.key}) : color = color ?? muted;
+
+  /// Зміна значення «прорисовує» іконку (напр. плей/пауза).
+  final Object? animate;
   final IconData icon;
   final VoidCallback? onTap;
   final double size;
@@ -310,7 +313,7 @@ class RoundIcon extends StatelessWidget {
             gradient: filled ? buttonGradient : null,
             color: filled ? null : fg.withValues(alpha: 0.05),
           ),
-          child: Icon(icon, size: size * 0.48, color: filled ? Colors.white : color),
+          child: ArcticIconPop(trigger: animate, child: Icon(icon, size: size * 0.48, color: filled ? Colors.white : color)),
         ),
       ),
     );

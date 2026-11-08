@@ -72,7 +72,8 @@ Widget _headerButton(IconData icon, String label, VoidCallback onTap, {int badge
           clipBehavior: Clip.none,
           alignment: Alignment.center,
           children: [
-            Icon(icon, size: 20, color: ink.withValues(alpha: 0.72)),
+            // Нове сповіщення — іконка коротко «прорисовується».
+            ArcticIconPop(trigger: badge, child: Icon(icon, size: 20, color: ink.withValues(alpha: 0.72))),
             if (badge > 0) Positioned(right: 3, top: 3, child: _Badge(badge)),
           ],
         ),
