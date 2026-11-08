@@ -758,8 +758,9 @@ class _MenuContentState extends State<MenuContent> {
   bool more = false;
   bool system = false;
 
-  Color get _l1 => palette.isLight ? Colors.white : const Color(0xFF0B1220);
-  Color get _l2 => palette.isLight ? const Color(0xFFF1F5F9) : const Color(0xFF121D31);
+  // Плитки меню — той самий пласкій матовий лід, що й картки стрічки.
+  Color get _l1 => palette.isLight ? const Color.fromRGBO(255, 255, 255, 0.72) : const Color.fromRGBO(200, 222, 255, 0.07);
+  Color get _l2 => palette.isLight ? const Color.fromRGBO(15, 23, 42, 0.04) : const Color.fromRGBO(200, 222, 255, 0.07);
   static const _sky = Color(0xFF38BDF8);
   static const _emerald = Color(0xFF34D399);
   static const _amber = Color(0xFFFBBF24);
@@ -952,7 +953,7 @@ class _MenuContentState extends State<MenuContent> {
                       child: Container(
                         margin: const EdgeInsets.symmetric(horizontal: 3),
                         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-                        decoration: BoxDecoration(color: palette.isLight ? const Color(0xFFE2E8F0) : const Color(0xFF18263F), borderRadius: BorderRadius.circular(10)),
+                        decoration: BoxDecoration(color: palette.isLight ? const Color.fromRGBO(15, 23, 42, 0.07) : const Color.fromRGBO(200, 222, 255, 0.12), borderRadius: BorderRadius.circular(10)),
                         child: Column(children: [
                           Icon(icon, size: 16, color: tone),
                           const SizedBox(height: 4),

@@ -47,7 +47,7 @@ class RpDossier extends StatelessWidget {
               Expanded(
                 child: Container(
                   padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-                  decoration: BoxDecoration(color: card, borderRadius: BorderRadius.circular(12)),
+                  decoration: BoxDecoration(color: raised, borderRadius: BorderRadius.circular(12)),
                   child: Column(children: [
                     FittedBox(fit: BoxFit.scaleDown, child: Text(t.$1, maxLines: 1, style: body(11, color: muted))),
                     const SizedBox(height: 2),

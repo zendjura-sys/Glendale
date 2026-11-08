@@ -1439,7 +1439,7 @@ class _ComposerState extends State<Composer> {
                       hintText: placeholder,
                       hintStyle: body(15, color: faint),
                       filled: true,
-                      fillColor: palette.isLight ? const Color(0xFFF1F5F9) : const Color(0xFF121D31),
+                      fillColor: field,
                       isDense: true,
                       contentPadding: const EdgeInsets.fromLTRB(4, 12, 4, 12),
                       // Ліворуч — емодзі, праворуч — «+» зі стрічкою вкладень.
@@ -1492,7 +1492,7 @@ class _ComposerState extends State<Composer> {
                           scale: 0.95,
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 12),
-                            decoration: BoxDecoration(color: tool.active ? (palette.isLight ? const Color(0xFFE0F2FE) : const Color(0xFF0B2942)) : (palette.isLight ? const Color(0xFFF1F5F9) : const Color(0xFF121D31)), borderRadius: BorderRadius.circular(12)),
+                            decoration: BoxDecoration(color: tool.active ? (palette.isLight ? const Color(0xFFE0F2FE) : const Color(0xFF0B2942)) : raised, borderRadius: BorderRadius.circular(12)),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
@@ -2577,7 +2577,7 @@ class _EmojiPanelState extends State<_EmojiPanel> {
 
   @override
   Widget build(BuildContext context) {
-    final l2 = palette.isLight ? const Color(0xFFF1F5F9) : const Color(0xFF121D31);
+    final l2 = raised;
     final active = palette.isLight ? const Color(0xFFE0F2FE) : const Color(0xFF0B2942);
     final current = _groups[group];
     return Container(

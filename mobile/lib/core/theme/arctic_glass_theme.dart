@@ -126,7 +126,7 @@ class ArcticGlassThemeExtension extends ThemeExtension<ArcticGlassThemeExtension
   final Color muted;
 
   // Темна «Frosted Ice Glass»: тло #060B14 з блакитними плямами (#0EA5E9 / #1D4ED8, 22%);
-  // картка — молочно-крижаний градієнт 145° поверх сильного розмиття; без обводок і тіней.
+  // картка — рівний (пласкій) молочний лід поверх сильного розмиття; без обводок, тіней і переливів.
   static const dark = ArcticGlassThemeExtension(
     light: false,
     background: [Color(0xFF060B14), Color(0xFF060B14)],
@@ -135,25 +135,16 @@ class ArcticGlassThemeExtension extends ThemeExtension<ArcticGlassThemeExtension
       ArcticGlow(Alignment(1.0, 0.15), 0.8, Color(0xFF1D4ED8), 0.22),
       ArcticGlow(Alignment(-0.7, 1.0), 0.75, Color(0xFF0EA5E9), 0.16),
     ],
-    glassFill: LinearGradient(
-      begin: Alignment(-0.82, -1),
-      end: Alignment(0.82, 1),
-      colors: [Color.fromRGBO(255, 255, 255, 0.13), Color.fromRGBO(210, 230, 255, 0.06), Color.fromRGBO(15, 23, 42, 0.65)],
-      stops: [0, 0.5, 1],
-    ),
-    pressedFill: LinearGradient(
-      begin: Alignment(-0.82, -1),
-      end: Alignment(0.82, 1),
-      colors: [Color.fromRGBO(255, 255, 255, 0.18), Color.fromRGBO(210, 230, 255, 0.09), Color.fromRGBO(15, 23, 42, 0.6)],
-      stops: [0, 0.5, 1],
-    ),
-    innerFill: Color.fromRGBO(255, 255, 255, 0.06),
+    // Пласка заливка: рівний молочний лід без діагонального переливу й об'єму.
+    glassFill: LinearGradient(colors: [Color.fromRGBO(200, 222, 255, 0.09), Color.fromRGBO(200, 222, 255, 0.09)]),
+    pressedFill: LinearGradient(colors: [Color.fromRGBO(200, 222, 255, 0.14), Color.fromRGBO(200, 222, 255, 0.14)]),
+    innerFill: Color.fromRGBO(200, 222, 255, 0.07),
     border: Color(0x00000000),
     outline: null,
-    specular: Color.fromRGBO(255, 255, 255, 0.28),
+    specular: Color(0x00000000),
     shadows: [],
-    barFill: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Color.fromRGBO(22, 32, 52, 0.78), Color.fromRGBO(12, 19, 34, 0.86)]),
-    sheetFill: Color.fromRGBO(14, 22, 38, 0.9),
+    barFill: LinearGradient(colors: [Color.fromRGBO(16, 25, 42, 0.84), Color.fromRGBO(16, 25, 42, 0.84)]),
+    sheetFill: Color.fromRGBO(10, 17, 30, 0.74),
     title: AppColors.textPrimary,
     body: Color(0xFFCBD5E1),
     muted: AppColors.textSecondary,
@@ -167,20 +158,15 @@ class ArcticGlassThemeExtension extends ThemeExtension<ArcticGlassThemeExtension
       ArcticGlow(Alignment(-0.95, -0.75), 0.85, Color(0xFF0EA5E9), 0.18),
       ArcticGlow(Alignment(1.0, 0.15), 0.8, Color(0xFF1D4ED8), 0.12),
     ],
-    glassFill: LinearGradient(
-      begin: Alignment(-0.82, -1),
-      end: Alignment(0.82, 1),
-      colors: [Color.fromRGBO(255, 255, 255, 0.86), Color.fromRGBO(240, 246, 255, 0.7), Color.fromRGBO(255, 255, 255, 0.62)],
-      stops: [0, 0.5, 1],
-    ),
-    pressedFill: LinearGradient(colors: [Color.fromRGBO(255, 255, 255, 0.95), Color.fromRGBO(255, 255, 255, 0.8)]),
+    glassFill: LinearGradient(colors: [Color.fromRGBO(255, 255, 255, 0.72), Color.fromRGBO(255, 255, 255, 0.72)]),
+    pressedFill: LinearGradient(colors: [Color.fromRGBO(255, 255, 255, 0.88), Color.fromRGBO(255, 255, 255, 0.88)]),
     innerFill: Color.fromRGBO(15, 23, 42, 0.04),
     border: Color(0x00000000),
     outline: null,
-    specular: Color.fromRGBO(255, 255, 255, 0.95),
+    specular: Color(0x00000000),
     shadows: [],
-    barFill: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Color.fromRGBO(255, 255, 255, 0.8), Color.fromRGBO(248, 251, 255, 0.86)]),
-    sheetFill: Color.fromRGBO(255, 255, 255, 0.9),
+    barFill: LinearGradient(colors: [Color.fromRGBO(255, 255, 255, 0.84), Color.fromRGBO(255, 255, 255, 0.84)]),
+    sheetFill: Color.fromRGBO(244, 248, 253, 0.8),
     title: AppColors.lightTitle,
     body: AppColors.lightBody,
     muted: AppColors.lightMuted,
