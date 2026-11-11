@@ -11,7 +11,7 @@ const sizes = {
     md: 'size-11 text-sm',
     lg: 'size-14 text-base',
     xl: 'size-20 text-xl',
-    hero: 'size-36 text-4xl sm:size-40',
+    hero: 'size-24 text-3xl sm:size-36 sm:text-4xl lg:size-40',
 } as const;
 
 /** Емодзі статусу — кружечок у лівому нижньому куті аватара. */
@@ -21,7 +21,7 @@ const emojiSizes = {
     md: 'size-5 text-[11px] -bottom-0.5 -left-0.5',
     lg: 'size-6 text-[13px] -bottom-0.5 -left-0.5',
     xl: 'size-7 text-[15px] bottom-0 left-0',
-    hero: 'size-11 text-2xl bottom-2 left-2',
+    hero: 'size-8 text-lg bottom-1 left-1 sm:size-11 sm:text-2xl sm:bottom-2 sm:left-2',
 } as const;
 
 const dotSizes = {
@@ -30,7 +30,7 @@ const dotSizes = {
     md: 'size-3 ring-2',
     lg: 'size-3.5 ring-[2.5px]',
     xl: 'size-4 ring-[3px]',
-    hero: 'size-6 ring-4 right-3 bottom-3',
+    hero: 'size-4 ring-[3px] right-1.5 bottom-1.5 sm:size-6 sm:ring-4 sm:right-3 sm:bottom-3',
 } as const;
 
 const palettes = [
