@@ -3,6 +3,8 @@
  * Нові частини додаються в кінець переліку варіантів, щоб збережені раніше персонажі не змінились.
  */
 export type CharacterConfig = {
+    /** 0 — чоловічий тип обличчя, 1 — жіночий. */
+    sex: number;
     skin: number;
     /** Тілобудова: худорлява, середня, кремезна, атлетична. */
     build: number;
@@ -13,6 +15,10 @@ export type CharacterConfig = {
     eyes: number;
     /** Розріз: рівний, з піднятими кутиками, з опущеними. */
     eyeTilt: number;
+    /** Посадка очей: від близької до широкої (2 — середня). */
+    eyeGap: number;
+    /** Розмір очей: від менших до більших (2 — середній). */
+    eyeSize: number;
     eyeColor: number;
     lashes: number;
     brows: number;
@@ -37,13 +43,16 @@ export type CharacterConfig = {
 export type CharacterPart = keyof CharacterConfig;
 
 export const PARTS: Record<CharacterPart, number> = {
+    sex: 2,
     skin: 10,
     build: 4,
-    head: 5,
-    hair: 14,
+    head: 8,
+    hair: 30,
     hairColor: 11,
-    eyes: 5,
+    eyes: 8,
     eyeTilt: 3,
+    eyeGap: 5,
+    eyeSize: 5,
     eyeColor: 7,
     lashes: 3,
     brows: 5,
@@ -127,6 +136,7 @@ export const BG = [
 ];
 
 export const DEFAULT_CHARACTER: CharacterConfig = {
+    sex: 0,
     skin: 1,
     build: 1,
     head: 0,
@@ -134,6 +144,8 @@ export const DEFAULT_CHARACTER: CharacterConfig = {
     hairColor: 1,
     eyes: 0,
     eyeTilt: 0,
+    eyeGap: 2,
+    eyeSize: 2,
     eyeColor: 0,
     lashes: 0,
     brows: 1,
@@ -166,7 +178,7 @@ export function normalizeCharacter(
 }
 
 /** Випадковий персонаж — кнопка «Перемішати». Макіяж, борода й аксесуари — не в кожного. */
-export function randomCharacter(): CharacterConfig {
+export function randomCharacter(sex?: number): CharacterConfig {
     const out = { ...DEFAULT_CHARACTER };
     (Object.keys(PARTS) as CharacterPart[]).forEach((part) => {
         out[part] = Math.floor(Math.random() * PARTS[part]);
@@ -177,8 +189,20 @@ export function randomCharacter(): CharacterConfig {
     if (Math.random() < 0.6) out.earrings = 0;
     if (Math.random() < 0.65) out.tattoo = 0;
     if (Math.random() < 0.5) out.lipColor = 0;
-    if (out.beard > 0) {
-        out.makeup = out.makeup === 5 ? 5 : 0;
+    if (sex !== undefined) out.sex = sex;
+    // Зачіска — з набору для обраного типу (або спільна).
+    const styles = HAIR_STYLES.map((h, i) => ({ ...h, i })).filter(
+        (h) => h.sex === 'u' || h.sex === (out.sex === 1 ? 'f' : 'm'),
+    );
+    out.hair = styles[Math.floor(Math.random() * styles.length)].i;
+    const eyes = EYE_STYLES.map((e, i) => ({ ...e, i })).filter(
+        (e) => e.sex === 'u' || e.sex === (out.sex === 1 ? 'f' : 'm'),
+    );
+    out.eyes = eyes[Math.floor(Math.random() * eyes.length)].i;
+    if (out.sex === 1) {
+        out.beard = 0;
+    } else {
+        if (Math.random() < 0.8) out.makeup = out.makeup === 5 ? 5 : 0;
         out.lipColor = 0;
         out.lashes = 0;
     }
@@ -292,3 +316,61 @@ export function newAudioContext(): AudioContext {
 
     return new Ctx();
 }
+
+/** Назви форм обличчя (той самий порядок, що й варіанти `head`). */
+export const HEAD_NAMES = [
+    'Яйцеподібне',
+    'Кругле',
+    'Квадратне',
+    'Овальне',
+    'Сердечко',
+    'Видовжене',
+    'Ромб',
+    'Трикутне',
+];
+
+/** Зачіски: назва й для кого (m — чоловічі, f — жіночі, u — для всіх). Порядок = номер варіанта. */
+export const HAIR_STYLES: { name: string; sex: 'm' | 'f' | 'u' }[] = [
+    { name: 'Без волосся', sex: 'm' },
+    { name: 'Коротка', sex: 'm' },
+    { name: 'Їжак', sex: 'm' },
+    { name: 'Кучері', sex: 'u' },
+    { name: 'Довге пряме', sex: 'f' },
+    { name: 'Гулька', sex: 'f' },
+    { name: 'Ірокез', sex: 'm' },
+    { name: 'Проділ набік', sex: 'm' },
+    { name: 'Високий хвіст', sex: 'f' },
+    { name: 'Афро', sex: 'u' },
+    { name: 'Каре з чубчиком', sex: 'f' },
+    { name: 'Дві коси', sex: 'f' },
+    { name: 'Піксі', sex: 'f' },
+    { name: 'Пучок', sex: 'm' },
+    { name: 'Зачесане назад', sex: 'm' },
+    { name: 'Кок', sex: 'm' },
+    { name: 'Андеркат', sex: 'm' },
+    { name: 'Французький кроп', sex: 'm' },
+    { name: 'Скуйовджене', sex: 'm' },
+    { name: 'Кучерявий верх', sex: 'm' },
+    { name: 'Довге чоловіче', sex: 'm' },
+    { name: 'Хвилясте довге', sex: 'f' },
+    { name: 'Кучеряве довге', sex: 'f' },
+    { name: 'Неохайна гулька', sex: 'f' },
+    { name: 'Дві гульки', sex: 'f' },
+    { name: 'Хвостики', sex: 'f' },
+    { name: 'Напівзібране', sex: 'f' },
+    { name: 'Набік', sex: 'f' },
+    { name: 'Подовжене каре', sex: 'f' },
+    { name: 'Шторки', sex: 'f' },
+];
+
+/** Стилі очей і для кого (той самий порядок, що й варіанти `eyes`). */
+export const EYE_STYLES: { name: string; sex: 'm' | 'f' | 'u' }[] = [
+    { name: 'Універсальні', sex: 'u' },
+    { name: 'Чоловічі', sex: 'm' },
+    { name: 'Котячі', sex: 'f' },
+    { name: 'Круглі', sex: 'f' },
+    { name: 'Сріблясті', sex: 'f' },
+    { name: 'Рішучі', sex: 'f' },
+    { name: 'Привітні', sex: 'f' },
+    { name: 'Чарівні', sex: 'f' },
+];

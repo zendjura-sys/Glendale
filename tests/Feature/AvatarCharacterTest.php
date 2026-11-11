@@ -18,8 +18,8 @@ class AvatarCharacterTest extends TestCase
         $set = ['skin' => 3, 'head' => 1, 'hair' => 9, 'hairColor' => 2, 'eyes' => 4, 'eyeColor' => 1, 'brows' => 2, 'nose' => 1, 'mouth' => 2, 'beard' => 2, 'extra' => 4, 'outfit' => 2, 'outfitColor' => 5, 'bg' => 3];
 
         $this->actingAs($user)->put('/me/character', ['character' => $set])->assertSessionHasNoErrors();
-        // Частини, яких не передали (тілобудова, тату, губи…), стають нульовими варіантами.
-        $full = [...array_map(fn () => 0, Character::PARTS), ...$set];
+        // Частини, яких не передали, стають варіантами за замовчуванням (посадка й розмір очей — середні).
+        $full = [...array_map(fn () => 0, Character::PARTS), ...Character::DEFAULTS, ...$set];
         $this->assertEquals($full, $user->fresh()->character);
         $this->assertSame(0, $user->fresh()->character['tattoo']);
         $this->assertEquals($full, $user->fresh()->toCard()['character']);

@@ -9,6 +9,8 @@ import {
     createVoiceMeter,
     EYE,
     HAIR,
+    HAIR_STYLES,
+    EYE_STYLES,
     normalizeCharacter,
     OUTFIT,
     PARTS,
@@ -29,14 +31,21 @@ const TABS: {
     label: string;
     colors?: string[];
     face?: boolean;
+    names?: string[];
 }[] = [
-    { part: 'hair', label: 'Зачіска' },
+    { part: 'hair', label: 'Зачіска', names: HAIR_STYLES.map((h) => h.name) },
     { part: 'hairColor', label: 'Колір волосся', colors: HAIR },
     { part: 'build', label: 'Тілобудова' },
-    { part: 'head', label: 'Форма обличчя' },
     { part: 'skin', label: 'Шкіра', colors: SKIN },
-    { part: 'eyes', label: 'Форма очей', face: true },
+    {
+        part: 'eyes',
+        label: 'Очі',
+        face: true,
+        names: EYE_STYLES.map((e) => e.name),
+    },
     { part: 'eyeTilt', label: 'Розріз очей', face: true },
+    { part: 'eyeGap', label: 'Посадка очей', face: true },
+    { part: 'eyeSize', label: 'Розмір очей', face: true },
     { part: 'eyeColor', label: 'Колір очей', colors: EYE },
     { part: 'lashes', label: 'Вії', face: true },
     { part: 'brows', label: 'Брови', face: true },
@@ -53,6 +62,14 @@ const TABS: {
     { part: 'outfitColor', label: 'Колір одягу', colors: OUTFIT },
     { part: 'bg', label: 'Тло', colors: BG },
 ];
+
+/** Залишити зачіску, якщо вона підходить новому типу, інакше — першу з його набору. */
+function hairFor(hair: number, sex: number): number {
+    const want = sex === 1 ? 'f' : 'm';
+    const now = HAIR_STYLES[hair]?.sex ?? 'u';
+
+    return now === 'u' || now === want ? hair : sex === 1 ? 4 : 1;
+}
 
 /**
  * Конструктор персонажа: великий перегляд угорі, «Перемішати», перевірка голосом
@@ -188,10 +205,53 @@ export default function CharacterEditor({
                                 className="size-full"
                             />
                         </motion.div>
+                        <div
+                            role="radiogroup"
+                            aria-label={tr('Тип персонажа')}
+                            className="mt-4 inline-flex rounded-xl bg-white/10 p-1"
+                        >
+                            {[tr('Чоловічий'), tr('Жіночий')].map(
+                                (label, i) => (
+                                    <button
+                                        key={label}
+                                        type="button"
+                                        role="radio"
+                                        aria-checked={config.sex === i}
+                                        onClick={() =>
+                                            setConfig({
+                                                ...config,
+                                                sex: i,
+                                                beard:
+                                                    i === 1 ? 0 : config.beard,
+                                                // Зачіска з іншого набору → перша з нового.
+                                                hair: hairFor(config.hair, i),
+                                                // Очі з іншого набору → жіночі або чоловічі.
+                                                eyes:
+                                                    config.eyes === 0
+                                                        ? 0
+                                                        : i === 1
+                                                          ? 2
+                                                          : 1,
+                                            })
+                                        }
+                                        className={cn(
+                                            'h-9 rounded-lg px-4 text-sm font-semibold transition',
+                                            config.sex === i
+                                                ? 'bg-primary text-white'
+                                                : 'text-white/70 hover:text-white',
+                                        )}
+                                    >
+                                        {label}
+                                    </button>
+                                ),
+                            )}
+                        </div>
                         <div className="mt-4 flex w-full flex-wrap items-center justify-center gap-2">
                             <button
                                 type="button"
-                                onClick={() => setConfig(randomCharacter())}
+                                onClick={() =>
+                                    setConfig(randomCharacter(config.sex))
+                                }
                                 className="inline-flex h-10 items-center gap-2 rounded-xl bg-white/10 px-4 text-sm font-semibold text-white hover:bg-white/15"
                             >
                                 <Shuffle className="size-4" />
@@ -272,36 +332,61 @@ export default function CharacterEditor({
                             </div>
                         ) : (
                             <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
-                                {Array.from(
-                                    { length: PARTS[tab] },
-                                    (_, i) => i,
-                                ).map((i) => (
-                                    <button
-                                        key={i}
-                                        type="button"
-                                        onClick={() =>
-                                            setConfig({ ...config, [tab]: i })
-                                        }
-                                        aria-label={`${tr(current.label)} ${i + 1}`}
-                                        aria-pressed={config[tab] === i}
-                                        className={cn(
-                                            'aspect-square overflow-hidden rounded-2xl transition',
-                                            config[tab] === i
-                                                ? 'ring-2 ring-primary'
-                                                : 'opacity-85 hover:opacity-100',
-                                        )}
-                                    >
-                                        <Character
-                                            config={{ ...config, [tab]: i }}
-                                            zoom={
-                                                current.face
-                                                    ? 'face'
-                                                    : undefined
+                                {Array.from({ length: PARTS[tab] }, (_, i) => i)
+                                    // Зачіски — набір для обраного типу й спільні.
+                                    .filter(
+                                        (i) =>
+                                            !['hair', 'eyes'].includes(tab) ||
+                                            (tab === 'hair'
+                                                ? HAIR_STYLES
+                                                : EYE_STYLES)[i]?.sex === 'u' ||
+                                            (tab === 'hair'
+                                                ? HAIR_STYLES
+                                                : EYE_STYLES)[i]?.sex ===
+                                                (config.sex === 1 ? 'f' : 'm'),
+                                    )
+                                    .map((i) => (
+                                        <button
+                                            key={i}
+                                            type="button"
+                                            onClick={() =>
+                                                setConfig({
+                                                    ...config,
+                                                    [tab]: i,
+                                                })
                                             }
-                                            className="size-full"
-                                        />
-                                    </button>
-                                ))}
+                                            aria-label={
+                                                current.names?.[i]
+                                                    ? tr(current.names[i])
+                                                    : `${tr(current.label)} ${i + 1}`
+                                            }
+                                            aria-pressed={config[tab] === i}
+                                            className={cn(
+                                                'relative aspect-square overflow-hidden rounded-2xl transition',
+                                                config[tab] === i
+                                                    ? 'ring-2 ring-primary'
+                                                    : 'opacity-85 hover:opacity-100',
+                                            )}
+                                        >
+                                            <Character
+                                                config={{ ...config, [tab]: i }}
+                                                zoom={
+                                                    current.face
+                                                        ? 'face'
+                                                        : undefined
+                                                }
+                                                className="size-full"
+                                            />
+                                            {current.names?.[i] && (
+                                                <span
+                                                    data-on-dark
+                                                    className="absolute inset-x-0 bottom-0 bg-black/55 py-1 text-center text-[11px] font-semibold text-white"
+                                                >
+                                                    {tr(current.names[i])}
+                                                </span>
+                                            )}
+                                        </button>
+                                    ))}
                             </div>
                         )}
                     </div>

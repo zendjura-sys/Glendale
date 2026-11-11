@@ -10,13 +10,16 @@ use Illuminate\Validation\ValidationException;
 class Character
 {
     public const PARTS = [
+        'sex' => 2,
         'skin' => 10,
         'build' => 4,
-        'head' => 5,
-        'hair' => 14,
+        'head' => 8,
+        'hair' => 30,
         'hairColor' => 11,
-        'eyes' => 5,
+        'eyes' => 8,
         'eyeTilt' => 3,
+        'eyeGap' => 5,
+        'eyeSize' => 5,
         'eyeColor' => 7,
         'lashes' => 3,
         'brows' => 5,
@@ -34,6 +37,9 @@ class Character
         'bg' => 9,
     ];
 
+    /** Варіант за замовчуванням, якщо частину не передали (посередині шкали — для посадки й розміру очей). */
+    public const DEFAULTS = ['eyeGap' => 2, 'eyeSize' => 2];
+
     /**
      * Перевіряє й нормалізує набір: лише відомі частини, цілі числа в межах.
      *
@@ -46,7 +52,7 @@ class Character
         }
         $out = [];
         foreach (self::PARTS as $part => $count) {
-            $v = $value[$part] ?? 0;
+            $v = $value[$part] ?? (self::DEFAULTS[$part] ?? 0);
             if (! is_int($v) && ! (is_string($v) && ctype_digit($v))) {
                 throw ValidationException::withMessages(['character' => 'Персонажа не збережено: невідома частина.']);
             }

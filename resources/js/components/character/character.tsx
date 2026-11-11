@@ -3,11 +3,12 @@ import type { ReactNode } from 'react';
 import { BG, EYE, HAIR, LIP, mix, OUTFIT, shade, SKIN } from '@/lib/character';
 import type { CharacterConfig, VoiceReading } from '@/lib/character';
 import { cn } from '@/lib/utils';
+import { AnimeEye } from './anime-eyes';
 
 const INK = '#211a1d';
 
 /** Центри очей і рота (SVG 200×200). */
-const EYE_Y = 98;
+const EYE_Y = 94;
 const EYE_DX = 18;
 const MOUTH_Y = 129;
 
@@ -90,6 +91,7 @@ export function Character({
     }, [meter]);
 
     const skin = SKIN[config.skin] ?? SKIN[0];
+    const earScale = (CHEEK + 1) / 50;
     const hair = HAIR[config.hairColor] ?? HAIR[0];
     const id = (name: string) => `${name}${uid}`;
     const url = (name: string) => `url(#${id(name)})`;
@@ -172,14 +174,8 @@ export function Character({
                 <Body config={config} skin={skin} cloth={url('cloth')} />
                 <g ref={head}>
                     {hairBack(config.hair, url('hair'))}
-                    <rect
-                        x={100 - neckWidth(config.build) / 2}
-                        y="124"
-                        width={neckWidth(config.build)}
-                        height="38"
-                        rx="10"
-                        fill={url('neck')}
-                    />
+                    {/* Шия за макетом: рівна, внизу м’яко переходить у плечі. */}
+                    <path d={neckPath(config.build)} fill={url('neck')} />
                     {config.outfit === 4 && (
                         <rect
                             x={100 - neckWidth(config.build) / 2 - 3}
@@ -191,20 +187,14 @@ export function Character({
                         />
                     )}
                     {tattooNeck(config.tattoo)}
-                    <Ears skin={skin} />
-                    {earrings(config.earrings)}
-                    {headShape(config.head, url('skin'))}
-                    {/* Тінь під волоссям на лобі — обличчя не виглядає пласким. */}
-                    {config.hair !== 0 && (
-                        <ellipse
-                            cx="100"
-                            cy="58"
-                            rx="40"
-                            ry="12"
-                            fill={shade(skin, 0.2)}
-                            opacity="0.35"
-                        />
-                    )}
+                    {/* Вуха й сережки — на ширині вилиць обраного типу обличчя. */}
+                    <g
+                        transform={`translate(100 0) scale(${earScale} 1) translate(-100 0)`}
+                    >
+                        <Ears skin={skin} />
+                        {earrings(config.earrings)}
+                    </g>
+                    <path d={HEAD_PATH} fill={url('skin')} />
                     {makeupUnder(config.makeup, skin)}
                     {tattooFace(config.tattoo)}
                     {beard(config.beard, url('hair'))}
@@ -214,8 +204,13 @@ export function Character({
                         iris={url('iris')}
                         uid={uid}
                     />
-                    {brows(config.brows, shade(hair, 0.1))}
-                    {nose(config.nose, skin)}
+                    {brows(
+                        config.brows,
+                        shade(hair, 0.1),
+                        eyeGap(config.eyeGap) - EYE_DX,
+                        config.sex !== 1,
+                    )}
+                    <g transform="translate(0 5)">{nose(config.nose, skin)}</g>
                     <Lips
                         config={config}
                         color={lip}
@@ -226,15 +221,34 @@ export function Character({
                     />
                     {config.beard === 3 && mustache(url('hair'))}
                     {hairFront(config.hair, url('hair'), hair)}
-                    {extra(config.extra)}
+                    <g
+                        transform={
+                            config.extra >= 1 && config.extra <= 3
+                                ? 'translate(0 -4)'
+                                : undefined
+                        }
+                    >
+                        {extra(config.extra)}
+                    </g>
                 </g>
             </g>
         </svg>
     );
 }
 
+function neckFactor(build: number): number {
+    return [0.86, 1, 1.12, 1.06][build] ?? 1;
+}
+
 function neckWidth(build: number): number {
-    return [20, 24, 30, 27][build] ?? 24;
+    return 52.8 * neckFactor(build);
+}
+
+function neckPath(build: number): string {
+    const w = 26.4 * neckFactor(build);
+    const f = 33 * neckFactor(build);
+
+    return `M${100 - w} 120 L${100 - w} 143 C${100 - w} 150 ${100 - f + 3} 155 ${100 - f} 160 L${100 + f} 160 C${100 + f - 3} 155 ${100 + w} 150 ${100 + w} 143 L${100 + w} 120 Z`;
 }
 
 /* ---------- Тіло й одяг ---------- */
@@ -577,35 +591,15 @@ function Body({
 
 /* ---------- Голова ---------- */
 
-function headShape(kind: number, fill: string): ReactNode {
-    switch (kind) {
-        case 1: // кругле
-            return <circle cx="100" cy="96" r="49" fill={fill} />;
-        case 2: // квадратне підборіддя
-            return (
-                <path
-                    d="M54 74 C54 48 74 42 100 42 C126 42 146 48 146 74 L146 112 C146 136 126 148 100 148 C74 148 54 136 54 112 Z"
-                    fill={fill}
-                />
-            );
-        case 3: // видовжене
-            return <ellipse cx="100" cy="95" rx="43" ry="57" fill={fill} />;
-        case 4: // «сердечко»: широкі вилиці, гостре підборіддя
-            return (
-                <path
-                    d="M52 88 C52 58 72 42 100 42 C128 42 148 58 148 88 C148 118 124 146 100 150 C76 146 52 118 52 88 Z"
-                    fill={fill}
-                />
-            );
-        default: // овальне
-            return (
-                <path
-                    d="M53 92 C53 60 74 42 100 42 C126 42 147 60 147 92 C147 126 126 150 100 150 C74 150 53 126 53 92 Z"
-                    fill={fill}
-                />
-            );
-    }
-}
+/**
+ * Голова за макетом (контур знято з еталонного рисунка й переведено в криві): одна форма для всіх.
+ * Тім’я y=34, підборіддя y=155, найширше місце (±44) — на рівні скронь.
+ */
+const HEAD_PATH =
+    'M100 34 C104.4 34.0 109.4 34.7 113.1 35.5 C116.8 36.2 119.6 37.4 122.0 38.4 C124.3 39.4 125.8 40.4 127.3 41.4 C128.9 42.4 130.0 43.4 131.2 44.4 C132.3 45.3 133.2 46.3 134.1 47.3 C135.0 48.3 135.7 49.3 136.4 50.3 C137.2 51.2 137.8 52.2 138.4 53.2 C139.0 54.2 139.5 55.2 139.9 56.2 C140.3 57.2 140.5 58.1 140.9 59.1 C141.2 60.1 141.6 61.1 141.9 62.1 C142.2 63.1 142.5 64.1 142.7 65.0 C142.9 66.0 143.0 67.0 143.1 68.0 C143.2 69.0 143.3 69.8 143.4 71.0 C143.5 72.2 143.7 73.5 143.8 75.0 C143.9 76.5 144.0 78.5 144.0 80.0 C144.0 81.5 143.8 82.5 143.7 84.0 C143.6 85.5 143.6 87.3 143.5 89.0 C143.4 90.7 143.2 92.2 143.0 94.0 C142.8 95.8 142.6 98.2 142.4 100.0 C142.2 101.8 141.9 103.3 141.6 105.0 C141.3 106.7 141.0 108.3 140.6 110.0 C140.2 111.7 139.9 113.2 139.4 115.0 C138.9 116.8 138.4 118.8 137.8 120.5 C137.2 122.2 136.7 123.8 136.0 125.5 C135.3 127.2 134.5 128.8 133.6 130.5 C132.7 132.2 131.7 134.2 130.4 136.0 C129.1 137.8 127.4 139.9 126.0 141.6 C124.6 143.3 123.6 144.5 122.0 145.9 C120.3 147.3 118.0 148.7 116.0 149.9 C114.1 151.1 112.1 152.4 110.1 153.2 C108.2 154.0 105.9 154.5 104.2 154.8 C102.5 155.1 101.4 155.1 100.0 155.1 C98.6 155.1 97.5 155.1 95.8 154.8 C94.1 154.5 91.8 154.0 89.9 153.2 C87.9 152.4 85.9 151.1 84.0 149.9 C82.0 148.7 79.7 147.3 78.0 145.9 C76.4 144.5 75.4 143.3 74.0 141.6 C72.6 139.9 70.9 137.8 69.6 136.0 C68.3 134.2 67.3 132.2 66.4 130.5 C65.5 128.8 64.7 127.2 64.0 125.5 C63.3 123.8 62.8 122.2 62.2 120.5 C61.6 118.8 61.1 116.8 60.6 115.0 C60.1 113.2 59.8 111.7 59.4 110.0 C59.0 108.3 58.7 106.7 58.4 105.0 C58.1 103.3 57.8 101.8 57.6 100.0 C57.4 98.2 57.2 95.8 57.0 94.0 C56.8 92.2 56.6 90.7 56.5 89.0 C56.4 87.3 56.4 85.5 56.3 84.0 C56.2 82.5 56.0 81.5 56.0 80.0 C56.0 78.5 56.1 76.5 56.2 75.0 C56.3 73.5 56.5 72.2 56.6 71.0 C56.7 69.8 56.8 69.0 56.9 68.0 C57.0 67.0 57.1 66.0 57.3 65.0 C57.5 64.1 57.8 63.1 58.1 62.1 C58.4 61.1 58.8 60.1 59.1 59.1 C59.5 58.1 59.7 57.2 60.1 56.2 C60.5 55.2 61.0 54.2 61.6 53.2 C62.1 52.2 62.8 51.2 63.6 50.3 C64.3 49.3 65.0 48.3 65.9 47.3 C66.8 46.3 67.7 45.3 68.8 44.4 C70.0 43.4 71.1 42.4 72.7 41.4 C74.2 40.4 75.7 39.4 78.0 38.4 C80.4 37.4 83.2 36.2 86.9 35.5 C90.6 34.7 95.6 34.0 100.0 34.0 Z';
+
+/** Напівширина обличчя на рівні вух (для вух і сережок). */
+const CHEEK = 42.5;
 
 function Ears({ skin }: { skin: string }) {
     const base = shade(skin, 0.06);
@@ -613,17 +607,17 @@ function Ears({ skin }: { skin: string }) {
 
     return (
         <g>
-            <ellipse cx="54" cy="101" rx="8" ry="11" fill={base} />
-            <ellipse cx="146" cy="101" rx="8" ry="11" fill={base} />
+            <ellipse cx="50" cy="103" rx="8" ry="15" fill={base} />
+            <ellipse cx="150" cy="103" rx="8" ry="15" fill={base} />
             <path
-                d="M56 95 C51 98 52 106 56 108"
+                d="M52 94 C45 98 46 110 52 114"
                 stroke={inner}
                 strokeWidth="2"
                 fill="none"
                 strokeLinecap="round"
             />
             <path
-                d="M144 95 C149 98 148 106 144 108"
+                d="M148 94 C155 98 154 110 148 114"
                 stroke={inner}
                 strokeWidth="2"
                 fill="none"
@@ -637,15 +631,15 @@ function earrings(kind: number): ReactNode {
     if (kind === 1)
         return (
             <g fill="#f5c542">
-                <circle cx="53" cy="111" r="2.4" />
-                <circle cx="147" cy="111" r="2.4" />
+                <circle cx="49" cy="110" r="2.4" />
+                <circle cx="151" cy="110" r="2.4" />
             </g>
         );
     if (kind === 2)
         return (
             <g stroke="#f5c542" strokeWidth="1.8" fill="none">
-                <circle cx="53" cy="116" r="5" />
-                <circle cx="147" cy="116" r="5" />
+                <circle cx="49" cy="115" r="5" />
+                <circle cx="151" cy="115" r="5" />
             </g>
         );
 
@@ -654,55 +648,49 @@ function earrings(kind: number): ReactNode {
 
 /* ---------- Волосся ---------- */
 
-function hairBack(kind: number, fill: string): ReactNode {
-    switch (kind) {
-        case 4: // довге
-            return (
-                <path
-                    d="M48 94 C42 46 72 30 100 30 C128 30 158 46 152 94 L158 172 C142 180 124 168 120 152 L80 152 C76 168 58 180 42 172 Z"
-                    fill={fill}
-                />
-            );
-        case 8: // хвіст
-            return (
-                <path
-                    d="M136 60 C166 64 174 102 162 140 C158 154 146 160 140 152 C152 128 152 96 134 80 Z"
-                    fill={fill}
-                />
-            );
-        case 9: // афро
-            return <circle cx="100" cy="78" r="66" fill={fill} />;
-        case 10: // хвиляста каре
-            return (
-                <path
-                    d="M48 96 C42 48 72 32 100 32 C128 32 158 48 152 96 C156 112 150 128 140 134 C134 124 130 118 128 112 L72 112 C70 118 66 124 60 134 C50 128 44 112 48 96 Z"
-                    fill={fill}
-                />
-            );
-        case 11: // дві коси
-            return (
-                <g fill={fill}>
-                    {[52, 148].map((x) => (
-                        <g key={x}>
-                            {[0, 1, 2, 3].map((i) => (
-                                <ellipse
-                                    key={i}
-                                    cx={x}
-                                    cy={128 + i * 13}
-                                    rx="9"
-                                    ry="8"
-                                />
-                            ))}
-                        </g>
-                    ))}
-                </g>
-            );
-        default:
-            return null;
-    }
+/**
+ * «Шапка» волосся по формі голови: від тім’я до лінії росту волосся й скронь.
+ * w — напівширина, top — верх, line — лінія волосся по центру, temple — де волосся закінчується на скронях.
+ */
+function cap(
+    w: number,
+    top: number,
+    line: number,
+    temple: number,
+    part = 0,
+): string {
+    const l = 100 - w;
+    const r = 100 + w;
+
+    return `M${l} ${temple} C${l - 1} ${top + 10} ${100 - w * 0.55} ${top} 100 ${top} C${100 + w * 0.55} ${top} ${r + 1} ${top + 10} ${r} ${temple} C${r - 5} ${line + 10} ${100 + w * 0.45 + part} ${line} ${100 + part} ${line + (part ? 3 : 0)} C${100 - w * 0.45 + part} ${line} ${l + 5} ${line + 10} ${l} ${temple} Z`;
 }
 
-/** Відблиск на волоссі — тонка світла дуга. */
+/** Довге волосся позаду: від тім’я до `len`, `flare` — наскільки розходиться донизу, `wave` — хвилястий край. */
+function longBack(len: number, w = 56, flare = 4, wave = false): string {
+    const l = 100 - w;
+    const r = 100 + w;
+    const bottom = wave
+        ? `Q${r + flare - 4} ${len + 6} ${r - 6} ${len - 2} Q${100 + w * 0.55} ${len + 8} ${100 + w * 0.3} ${len - 4} L${100 - w * 0.3} ${len - 4} Q${100 - w * 0.55} ${len + 8} ${l + 6} ${len - 2} Q${l - flare + 4} ${len + 6} ${l - flare} ${len - 10}`
+        : `Q${r + flare} ${len} ${r - 6} ${len} L${l + 6} ${len} Q${l - flare} ${len} ${l - flare} ${len - 10}`;
+
+    return `M${l} 86 C${l - 2} 40 ${100 - w * 0.5} 26 100 26 C${100 + w * 0.5} 26 ${r + 2} 40 ${r} 86 L${r + flare} ${len - 10} ${bottom} Z`;
+}
+
+/** Пасма — тонкі темніші лінії для фактури. */
+function strands(d: string, color: string): ReactNode {
+    return (
+        <path
+            d={d}
+            stroke={shade(color, 0.3)}
+            strokeWidth="1.2"
+            fill="none"
+            strokeLinecap="round"
+            opacity="0.5"
+        />
+    );
+}
+
+/** Відблиск на волоссі — світла дуга. */
 function sheen(d: string, color: string): ReactNode {
     return (
         <path
@@ -716,165 +704,426 @@ function sheen(d: string, color: string): ReactNode {
     );
 }
 
-function hairFront(kind: number, fill: string, color: string): ReactNode {
+function curls(points: number[][], fill: string): ReactNode {
+    return (
+        <g fill={fill}>
+            {points.map(([x, y, r]) => (
+                <circle key={`${x}-${y}`} cx={x} cy={y} r={r} />
+            ))}
+        </g>
+    );
+}
+
+function hairBack(kind: number, fill: string): ReactNode {
     switch (kind) {
-        case 1: // коротке
-            return (
-                <g>
-                    <path
-                        d="M52 92 C48 50 74 34 100 34 C128 34 152 50 148 92 C140 70 122 58 100 60 C80 58 62 68 52 92 Z"
-                        fill={fill}
-                    />
-                    {sheen('M74 46 Q90 38 108 40', color)}
-                </g>
-            );
-        case 2: // їжак
+        case 4: // довге пряме
+            return <path d={longBack(176, 55, 3)} fill={fill} />;
+        case 8: // високий хвіст
             return (
                 <path
-                    d="M56 82 C58 50 80 38 100 38 C122 38 142 50 144 82 C130 64 116 58 100 58 C84 58 70 64 56 82 Z"
+                    d="M112 34 C150 30 168 70 160 118 C156 140 146 152 138 150 C148 120 146 80 120 52 Z"
                     fill={fill}
-                    opacity="0.9"
                 />
             );
-        case 3: // кучері
+        case 9: // афро
+            return <circle cx="100" cy="76" r="66" fill={fill} />;
+        case 10: // каре з чубчиком
+            return <path d={longBack(132, 57, 5)} fill={fill} />;
+        case 11: // дві коси
             return (
                 <g fill={fill}>
-                    {[
-                        [58, 74, 13],
-                        [70, 55, 14],
-                        [88, 45, 15],
-                        [108, 43, 15],
-                        [126, 51, 14],
-                        [140, 67, 13],
-                        [147, 86, 10],
-                        [53, 90, 10],
-                    ].map(([x, y, r]) => (
-                        <circle key={`${x}-${y}`} cx={x} cy={y} r={r} />
+                    {[49, 151].map((x) => (
+                        <g key={x}>
+                            {[0, 1, 2, 3, 4].map((i) => (
+                                <ellipse
+                                    key={i}
+                                    cx={x}
+                                    cy={124 + i * 12}
+                                    rx={8.5 - i * 0.6}
+                                    ry="7.5"
+                                />
+                            ))}
+                        </g>
                     ))}
                 </g>
             );
-        case 4: // довге — чубчик набік
+        case 20: // довге чоловіче
+            return <path d={longBack(148, 55, 2)} fill={fill} />;
+        case 21: // хвилясте довге
+            return <path d={longBack(172, 57, 8, true)} fill={fill} />;
+        case 22: // кучеряве довге
+            return curls(
+                [
+                    [52, 70, 16],
+                    [148, 70, 16],
+                    [46, 96, 16],
+                    [154, 96, 16],
+                    [46, 122, 15],
+                    [154, 122, 15],
+                    [50, 146, 14],
+                    [150, 146, 14],
+                    [62, 162, 12],
+                    [138, 162, 12],
+                    [76, 40, 18],
+                    [124, 40, 18],
+                    [100, 32, 18],
+                ],
+                fill,
+            );
+        case 25: // хвостики
+            return (
+                <g fill={fill}>
+                    <path d="M54 92 C34 100 30 132 40 158 C46 168 54 166 54 156 C50 132 56 112 62 100 Z" />
+                    <path d="M146 92 C166 100 170 132 160 158 C154 168 146 166 146 156 C150 132 144 112 138 100 Z" />
+                </g>
+            );
+        case 26: // напівзібране
+            return <path d={longBack(164, 55, 4)} fill={fill} />;
+        case 27: // набік
+            return <path d={longBack(170, 56, 6, true)} fill={fill} />;
+        case 28: // подовжене каре
+            return <path d={longBack(146, 57, 6)} fill={fill} />;
+        case 29: // шторки
+            return <path d={longBack(168, 55, 4)} fill={fill} />;
+        default:
+            return null;
+    }
+}
+
+function hairFront(kind: number, fill: string, color: string): ReactNode {
+    switch (kind) {
+        case 1: // коротка
             return (
                 <g>
+                    <path d={cap(52, 28, 58, 90)} fill={fill} />
+                    {strands(
+                        'M78 40 L74 54 M92 34 L90 52 M108 34 L110 52 M122 40 L126 54',
+                        color,
+                    )}
+                </g>
+            );
+        case 2: // їжак
+            return <path d={cap(51, 31, 60, 92)} fill={fill} opacity="0.88" />;
+        case 3: // кучері
+            return curls(
+                [
+                    [56, 72, 13],
+                    [66, 52, 14],
+                    [84, 40, 15],
+                    [104, 36, 15],
+                    [122, 42, 14],
+                    [138, 56, 13],
+                    [146, 76, 11],
+                    [52, 90, 10],
+                    [148, 92, 10],
+                    [92, 52, 10],
+                    [112, 52, 10],
+                ],
+                fill,
+            );
+        case 4: // довге пряме — проділ посередині
+            return (
+                <g>
+                    <path d={cap(54, 26, 54, 104)} fill={fill} />
                     <path
-                        d="M52 92 C52 52 76 36 100 36 C124 36 148 52 148 92 C140 68 120 56 100 58 C86 68 66 78 52 92 Z"
-                        fill={fill}
+                        d="M100 27 L100 52"
+                        stroke={shade(color, 0.35)}
+                        strokeWidth="1.4"
                     />
-                    {sheen('M70 52 Q86 40 106 42', color)}
+                    {sheen('M70 44 Q84 32 96 30', color)}
                 </g>
             );
         case 5: // гулька
             return (
                 <g fill={fill}>
-                    <circle cx="100" cy="30" r="16" />
-                    <path d="M54 88 C52 52 76 38 100 38 C124 38 148 52 146 88 C134 66 118 60 100 60 C82 60 66 66 54 88 Z" />
+                    <circle cx="100" cy="20" r="15" />
+                    <path d={cap(52, 30, 54, 88)} />
+                    {strands('M88 22 Q100 14 112 22', color)}
                 </g>
             );
         case 6: // ірокез
             return (
-                <path
-                    d="M88 70 C86 42 94 24 100 18 C106 24 114 42 112 70 C108 62 92 62 88 70 Z"
-                    fill={fill}
-                />
+                <g>
+                    <path d={cap(50, 34, 60, 90)} fill={fill} opacity="0.3" />
+                    <path
+                        d="M88 64 C86 38 94 18 100 10 C106 18 114 38 112 64 C108 56 92 56 88 64 Z"
+                        fill={fill}
+                    />
+                </g>
             );
         case 7: // проділ набік
             return (
                 <g>
+                    <path d={cap(53, 25, 58, 92, 16)} fill={fill} />
                     <path
-                        d="M50 98 C46 52 72 32 102 32 C132 32 154 52 150 98 C146 76 136 64 120 58 C110 70 80 72 62 66 C56 74 52 86 50 98 Z"
-                        fill={fill}
+                        d="M118 28 C108 36 94 44 70 50"
+                        stroke={shade(color, 0.3)}
+                        strokeWidth="1.4"
+                        fill="none"
                     />
-                    {sheen('M80 42 Q100 34 124 40', color)}
+                    {sheen('M78 38 Q96 28 116 30', color)}
                 </g>
             );
-        case 8: // хвіст — передня частина
+        case 8: // високий хвіст — гладко зачесане
             return (
                 <g>
-                    <path
-                        d="M52 90 C50 52 74 36 100 36 C126 36 150 52 148 90 C138 66 118 58 100 60 C82 58 64 66 52 90 Z"
-                        fill={fill}
-                    />
-                    {sheen('M74 46 Q92 38 112 42', color)}
+                    <path d={cap(52, 28, 52, 92)} fill={fill} />
+                    <circle cx="118" cy="34" r="5" fill={shade(color, 0.35)} />
+                    {sheen('M76 42 Q94 30 114 34', color)}
                 </g>
             );
         case 9: // афро — лінія лоба
-            return (
-                <path
-                    d="M56 82 C62 56 80 46 100 46 C120 46 138 56 144 82 C128 66 116 62 100 62 C84 62 72 66 56 82 Z"
-                    fill={fill}
-                />
-            );
-        case 10: // каре — чубчик
+            return <path d={cap(52, 40, 60, 88)} fill={fill} />;
+        case 10: // каре з рівним чубчиком
             return (
                 <g>
                     <path
-                        d="M52 96 C50 54 74 36 100 36 C126 36 150 54 148 96 C142 78 132 68 118 64 C104 72 84 74 66 68 C58 76 54 86 52 96 Z"
+                        d="M46 104 C42 50 70 26 100 26 C130 26 158 50 154 104 C150 92 148 82 146 76 L54 76 C52 82 50 92 46 104 Z"
                         fill={fill}
                     />
-                    {sheen('M72 48 Q92 38 116 44', color)}
+                    {strands(
+                        'M70 60 L68 76 M86 58 L85 76 M100 58 L100 76 M114 58 L115 76 M130 60 L132 76',
+                        color,
+                    )}
                 </g>
             );
-        case 11: // коси — проділ посередині
+        case 11: // дві коси — проділ посередині
             return (
                 <g>
+                    <path d={cap(53, 28, 56, 98)} fill={fill} />
                     <path
-                        d="M52 96 C50 52 76 36 100 36 C124 36 150 52 148 96 C144 72 124 58 100 58 C76 58 56 72 52 96 Z"
-                        fill={fill}
-                    />
-                    <path
-                        d="M100 37 L100 58"
+                        d="M100 29 L100 54"
                         stroke={shade(color, 0.35)}
-                        strokeWidth="1.5"
+                        strokeWidth="1.4"
                     />
                 </g>
             );
-        case 12: // піксі
+        case 12: // піксі з косим чубчиком
             return (
                 <g>
                     <path
-                        d="M54 86 C52 50 76 36 102 36 C130 36 150 52 146 84 C140 66 128 60 116 60 C104 70 82 76 62 76 C58 78 56 82 54 86 Z"
+                        d="M48 92 C44 50 72 28 102 28 C132 28 156 50 152 90 C146 74 136 66 124 62 C112 72 86 80 60 80 C54 82 50 86 48 92 Z"
                         fill={fill}
                     />
-                    {sheen('M84 42 Q102 36 122 42', color)}
+                    {sheen('M80 38 Q100 30 124 36', color)}
                 </g>
             );
         case 13: // пучок на маківці
             return (
                 <g fill={fill}>
-                    <ellipse cx="100" cy="34" rx="14" ry="10" />
-                    <path d="M56 80 C58 50 80 40 100 40 C120 40 142 50 144 80 C130 64 116 60 100 60 C84 60 70 64 56 80 Z" />
+                    <ellipse cx="100" cy="24" rx="13" ry="9" />
+                    <path d={cap(52, 30, 52, 90)} />
                 </g>
             );
-        default: // лиса голова
+        case 14: // зачесане назад
+            return (
+                <g>
+                    <path d={cap(52, 24, 50, 90)} fill={fill} />
+                    {strands(
+                        'M82 50 Q84 36 92 28 M100 50 Q100 36 104 26 M118 50 Q118 36 114 28',
+                        color,
+                    )}
+                    {sheen('M76 40 Q92 28 110 28', color)}
+                </g>
+            );
+        case 15: // кок
+            return (
+                <g>
+                    <path d={cap(52, 30, 56, 90)} fill={fill} />
+                    <path
+                        d="M70 52 C66 30 84 12 108 14 C126 16 136 30 132 48 C120 36 92 40 70 52 Z"
+                        fill={fill}
+                    />
+                    {sheen('M84 26 Q100 16 118 22', color)}
+                </g>
+            );
+        case 16: // андеркат: об’ємний верх, коротко на скронях
+            return (
+                <g>
+                    <path d={cap(51, 34, 60, 92)} fill={fill} opacity="0.4" />
+                    <path
+                        d="M64 58 C62 30 82 18 104 18 C128 18 142 32 138 56 C126 46 112 44 100 48 C88 44 74 48 64 58 Z"
+                        fill={fill}
+                    />
+                    {strands('M80 30 Q96 24 120 28', color)}
+                </g>
+            );
+        case 17: // французький кроп: короткий рваний чубчик
+            return (
+                <g>
+                    <path d={cap(52, 28, 62, 90)} fill={fill} />
+                    <path
+                        d="M66 58 L72 66 L78 59 L85 67 L92 60 L100 68 L108 60 L115 67 L122 59 L128 66 L134 58 Z"
+                        fill={fill}
+                    />
+                </g>
+            );
+        case 18: // скуйовджене
+            return (
+                <g>
+                    <path d={cap(53, 30, 58, 92)} fill={fill} />
+                    <path
+                        d="M58 46 L66 26 L74 40 L84 18 L92 36 L102 14 L110 34 L120 18 L126 38 L138 26 L142 48 Z"
+                        fill={fill}
+                    />
+                </g>
+            );
+        case 19: // кучерявий верх, коротко з боків
+            return (
+                <g>
+                    <path d={cap(51, 36, 62, 92)} fill={fill} opacity="0.45" />
+                    {curls(
+                        [
+                            [74, 44, 11],
+                            [88, 34, 12],
+                            [104, 30, 12],
+                            [120, 36, 11],
+                            [132, 48, 9],
+                            [80, 56, 8],
+                            [96, 50, 9],
+                            [112, 50, 9],
+                            [126, 58, 7],
+                        ],
+                        fill,
+                    )}
+                </g>
+            );
+        case 20: // довге чоловіче — проділ посередині
+            return (
+                <g>
+                    <path d={cap(54, 26, 54, 106)} fill={fill} />
+                    <path
+                        d="M100 27 L100 52"
+                        stroke={shade(color, 0.35)}
+                        strokeWidth="1.4"
+                    />
+                </g>
+            );
+        case 21: // хвилясте довге — чубчик набік
+            return (
+                <g>
+                    <path d={cap(55, 26, 56, 106, -14)} fill={fill} />
+                    {sheen('M74 40 Q88 30 104 30', color)}
+                </g>
+            );
+        case 22: // кучеряве довге — лінія лоба
+            return <path d={cap(53, 34, 56, 100)} fill={fill} />;
+        case 23: // неохайна гулька
+            return (
+                <g>
+                    <path d={cap(52, 30, 54, 92)} fill={fill} />
+                    <circle cx="100" cy="22" r="14" fill={fill} />
+                    {strands('M90 14 Q86 6 92 2 M110 14 Q116 6 112 2', color)}
+                    <path
+                        d="M56 86 Q52 100 58 112 M144 86 Q148 100 142 112"
+                        stroke={fill}
+                        strokeWidth="2.4"
+                        fill="none"
+                        strokeLinecap="round"
+                    />
+                </g>
+            );
+        case 24: // дві гульки
+            return (
+                <g fill={fill}>
+                    <circle cx="66" cy="30" r="13" />
+                    <circle cx="134" cy="30" r="13" />
+                    <path d={cap(52, 30, 54, 92)} />
+                    <path
+                        d="M100 31 L100 52"
+                        stroke={shade(color, 0.35)}
+                        strokeWidth="1.4"
+                    />
+                </g>
+            );
+        case 25: // хвостики — проділ і резинки
+            return (
+                <g>
+                    <path d={cap(53, 28, 54, 96)} fill={fill} />
+                    <path
+                        d="M100 29 L100 52"
+                        stroke={shade(color, 0.35)}
+                        strokeWidth="1.4"
+                    />
+                    <circle cx="54" cy="94" r="4" fill="#e2475b" />
+                    <circle cx="146" cy="94" r="4" fill="#e2475b" />
+                </g>
+            );
+        case 26: // напівзібране: верх у маленький пучок
+            return (
+                <g>
+                    <path d={cap(54, 28, 54, 104)} fill={fill} />
+                    <circle cx="100" cy="24" r="9" fill={fill} />
+                    {sheen('M74 42 Q90 32 108 32', color)}
+                </g>
+            );
+        case 27: // набік: пасмо закриває частину лоба
+            return (
+                <g>
+                    <path d={cap(55, 26, 56, 106, 18)} fill={fill} />
+                    <path
+                        d="M124 30 C100 40 76 56 56 96 C58 70 70 46 96 34 Z"
+                        fill={fill}
+                    />
+                    {sheen('M90 34 Q108 26 126 32', color)}
+                </g>
+            );
+        case 28: // подовжене каре — проділ набік
+            return (
+                <g>
+                    <path d={cap(55, 27, 56, 108, 12)} fill={fill} />
+                    {sheen('M76 42 Q92 30 110 30', color)}
+                </g>
+            );
+        case 29: // шторки: чубчик, розділений посередині
+            return (
+                <g>
+                    <path d={cap(54, 26, 56, 106)} fill={fill} />
+                    <path
+                        d="M100 52 C92 58 80 64 62 86 C66 70 80 56 100 48 Z M100 52 C108 58 120 64 138 86 C134 70 120 56 100 48 Z"
+                        fill={fill}
+                    />
+                </g>
+            );
+        default: // без волосся
             return null;
     }
 }
 
 /* ---------- Очі й брови ---------- */
 
-type EyeShape = { w: number; h: number; hood: boolean };
+type EyeShape = { w: number; h: number; hood: boolean; lift: number };
 
+/**
+ * Стилі очей: 0 — універсальні (тонкий гострий мигдаль), 1 — чоловічі (важка пласка повіка),
+ * 2 — жіночі (велика райдужка, вії-«прапорці»), 3 — жіночі круглі, 4 — котячі (зіниця-щілина).
+ */
 function eyeShape(kind: number): EyeShape {
+    // Розріз вузький (висота ≈ ширина / 3–3,5), як на зразках; райдужка більша за розріз.
     switch (kind) {
         case 1:
-            return { w: 12, h: 11, hood: false }; // круглі
+            return { w: 16.5, h: 5.2, hood: false, lift: 0.85 }; // чоловічі
         case 2:
-            return { w: 13.5, h: 6, hood: false }; // вузькі
+            return { w: 15.5, h: 7.2, hood: false, lift: 1.15 }; // жіночі
         case 3:
-            return { w: 13, h: 8.5, hood: true }; // з нависанням повік
+            return { w: 14.5, h: 8.6, hood: false, lift: 1.05 }; // круглі
         case 4:
-            return { w: 14.5, h: 12.5, hood: false }; // великі
+            return { w: 16, h: 6.2, hood: false, lift: 1.3 }; // котячі
         default:
-            return { w: 13.5, h: 8.5, hood: false }; // мигдалеві
+            return { w: 17, h: 5, hood: false, lift: 1.1 }; // універсальні
     }
 }
 
-function eyePath(x: number, y: number, s: EyeShape): string {
-    const hw = s.w / 2;
-
-    return `M${x - hw} ${y} C${x - hw * 0.55} ${y - s.h * 0.95} ${x + hw * 0.55} ${y - s.h * 0.95} ${x + hw} ${y} C${x + hw * 0.5} ${y + s.h * 0.7} ${x - hw * 0.5} ${y + s.h * 0.7} ${x - hw} ${y} Z`;
+/** Відстань від центру обличчя до центру ока. */
+function eyeGap(kind: number): number {
+    return [14.5, 16.3, 18, 19.8, 21.6][kind] ?? EYE_DX;
 }
 
+/**
+ * Око в стилі ілюстрації: густа лінія верхніх вій з «хвостиком» назовні, складка повіки,
+ * висока райдужка (темніша вгорі, світліша внизу), великий відблиск, тонка нижня повіка біля зовнішнього кута.
+ * Усе будується в локальних координатах ока: u — від внутрішнього кута (−) до зовнішнього (+).
+ */
 function Eyes({
     config,
     skin,
@@ -886,117 +1135,203 @@ function Eyes({
     iris: string;
     uid: string;
 }) {
-    const s = eyeShape(config.eyes);
-    // Розріз: кут нахилу для лівого ока; праве — дзеркально.
+    const base = eyeShape(config.eyes);
+    const k = ([0.8, 0.9, 1, 1.12, 1.25][config.eyeSize] ?? 1) * 1.12;
+    const s = { ...base, w: base.w * k, h: base.h * k };
+    const style = config.eyes;
+    const universal = style === 0;
+    const male = style === 1;
+    const anime = style >= 2;
+    const dx = eyeGap(config.eyeGap);
     const tilt = config.eyeTilt === 1 ? 9 : config.eyeTilt === 2 ? -7 : 0;
     const liner = config.makeup === 2 || config.makeup === 4;
     const shadow = config.makeup === 3 || config.makeup === 4;
+    const irisColor = EYE[config.eyeColor] ?? EYE[0];
 
     return (
         <g className="character-eyes">
             {[-1, 1].map((side) => {
-                const x = 100 + side * EYE_DX;
-                const y = EYE_Y;
-                const angle = side === -1 ? tilt : -tilt;
-                const path = eyePath(x, y, s);
-                const clip = `eye${side}${uid}`;
-                const r = Math.min(s.h * 0.5 + 1.2, 5.6);
+                const cx = 100 + side * dx;
+                const cy = EYE_Y;
+                // Стилі 2–7 — аніме-очі (окремий компонент на кривих Безьє).
+                if (style >= 2) {
+                    const angle = side === -1 ? tilt : -tilt;
+
+                    return (
+                        <g
+                            key={side}
+                            transform={`rotate(${angle} ${cx} ${cy})`}
+                        >
+                            <AnimeEye
+                                variant={style - 2}
+                                side={side as -1 | 1}
+                                cx={cx}
+                                cy={cy}
+                                hw={10.4 * k}
+                                uid={uid}
+                                lashes={config.lashes}
+                            />
+                        </g>
+                    );
+                }
                 const hw = s.w / 2;
-                const outer = x + side * hw;
+                const h = s.h;
+                // Локальна точка → SVG: зовнішній кут завжди назовні від центру обличчя.
+                const P = (u: number, v: number) =>
+                    `${(cx + side * u).toFixed(2)} ${(cy + v).toFixed(2)}`;
+                // Чоловіче й універсальне — пласкіші, з гострими кутами.
+                const inner = P(-hw, male ? 1.4 : universal ? 0.6 : 0.8);
+                const outer = P(hw, male ? -1.2 : universal ? -1 : -0.4);
+                const topC1 = male
+                    ? P(-hw * 0.5, -h * 0.82)
+                    : P(-hw * 0.45, -h * s.lift);
+                const topC2 = male
+                    ? P(hw * 0.45, -h * 0.9)
+                    : P(hw * 0.5, -h * 0.98);
+                // Універсальні: верх рівний (легкий підйом до зовнішнього кута), низ — півдуга.
+                const eye = universal
+                    ? `M${P(-hw, -h * 0.2)} L${P(hw, -h * 0.55)} C${P(hw * 0.7, h * 1.05)} ${P(-hw * 0.55, h * 1.1)} ${P(-hw, -h * 0.2)} Z`
+                    : male
+                      ? `M${inner} C${topC1} ${topC2} ${outer} C${P(hw * 0.55, h * 0.48)} ${P(-hw * 0.4, h * 0.62)} ${inner} Z`
+                      : `M${inner} C${topC1} ${topC2} ${outer} C${P(hw * 0.45, h * 0.72)} ${P(-hw * 0.5, h * 0.78)} ${inner} Z`;
+                const clip = `eye${side}${uid}`;
+                // Райдужка більша за розріз — повіки зрізають її згори й знизу.
+                const ir = universal
+                    ? h * 0.98
+                    : Math.min(h * (anime ? 0.78 : 0.72), hw * 0.48);
+                const irisY = universal ? h * 0.3 : 0.8;
+                const iry = anime ? ir * 1.12 : ir;
+                // Аніме-очі — густа лінія вій із «хвостиком», чоловічі — рівна, універсальні — тонка.
+                const t = liner ? 3.4 : anime ? 2.6 : universal ? 1.3 : 1.6;
+                const wing = liner ? 6 : anime ? 2.6 : universal ? 4.5 : 1;
+                const angle = side === -1 ? tilt : -tilt;
+                // Густа лінія вій: верхня крива, «хвостик», назад вище кривої.
+                const lash = universal
+                    ? // Тонка лінія, що виходить гострим кінчиком за зовнішній кут.
+                      `M${P(-hw - 0.6, -h * 0.2 + 0.5)} L${P(hw + 2.2, -h * 0.55 - 0.1)} L${P(hw + 0.6, -h * 0.55 - t - 0.5)} L${P(-hw + 0.6, -h * 0.2 - t * 0.7)} Z`
+                    : male
+                      ? // Рівна товста лінія з гачком донизу на зовнішньому куті.
+                        `M${inner} C${topC1} ${topC2} ${outer} L${P(hw + 1.6, 2.2)} L${P(hw + 2.4, -1.4)} L${P(hw - 0.4, -h * 0.25 - t)} C${P(hw * 0.45, -h * 0.9 - t)} ${P(-hw * 0.5, -h * 0.82 - t * 0.7)} ${P(-hw - 0.3, 0.6)} Z`
+                      : `M${P(-hw + 0.4, 0.4)} C${topC1} ${topC2} ${outer} L${P(hw + wing, -h * 0.6 - 2.2)} L${P(hw - 1.2, -h * 0.32 - t * 0.6)} C${P(hw * 0.5, -h * 0.98 - t)} ${P(-hw * 0.45, -h * s.lift - t * 0.7)} ${P(-hw - 0.4, -0.6)} Z`;
 
                 return (
-                    <g key={side} transform={`rotate(${angle} ${x} ${y})`}>
+                    <g key={side} transform={`rotate(${angle} ${cx} ${cy})`}>
                         {shadow && (
                             <ellipse
-                                cx={x}
-                                cy={y - s.h * 0.6}
-                                rx={hw + 3}
-                                ry={s.h * 0.75 + 2}
+                                cx={cx + side * 1.5}
+                                cy={cy - h * 0.75}
+                                rx={hw + 3.5}
+                                ry={h * 0.7 + 2.5}
                                 fill="#8a5aa8"
-                                opacity="0.38"
+                                opacity="0.35"
+                            />
+                        )}
+                        {/* Складка повіки — лише в аніме-очей */}
+                        {anime && (
+                            <path
+                                d={`M${P(-hw * 0.5, -h * (s.hood ? 0.9 : 1.05) - 1.8)} Q${P(hw * 0.1, -h * (s.hood ? 1.1 : 1.22) - 2.2)} ${P(hw * 0.85, -h * 0.72 - 1.8)}`}
+                                stroke={shade(skin, 0.3)}
+                                strokeWidth="0.9"
+                                fill="none"
+                                strokeLinecap="round"
+                                opacity="0.32"
                             />
                         )}
                         <clipPath id={clip}>
-                            <path d={path} />
+                            <path d={eye} />
                         </clipPath>
-                        <path d={path} fill="#fbfbfd" />
+                        <path d={eye} fill="#fbfbfe" />
                         <g clipPath={`url(#${clip})`}>
-                            <circle cx={x} cy={y + 0.4} r={r} fill={iris} />
-                            <circle
-                                cx={x}
-                                cy={y + 0.4}
-                                r={r * 0.46}
+                            <ellipse
+                                cx={cx + side * 0.6}
+                                cy={cy + irisY}
+                                rx={ir}
+                                ry={iry}
+                                fill={iris}
+                            />
+                            <ellipse
+                                cx={cx + side * 0.6}
+                                cy={cy + irisY}
+                                rx={ir}
+                                ry={iry}
+                                fill="none"
+                                stroke={shade(irisColor, 0.55)}
+                                strokeWidth="0.7"
+                            />
+                            <ellipse
+                                cx={cx + side * 0.6}
+                                cy={cy + irisY + 0.2}
+                                rx={style === 4 ? ir * 0.16 : ir * 0.4}
+                                ry={style === 4 ? iry * 0.78 : iry * 0.5}
                                 fill={INK}
                             />
-                            <circle
-                                cx={x + r * 0.38}
-                                cy={y - r * 0.38}
-                                r={r * 0.28}
-                                fill="#fff"
-                            />
-                            <circle
-                                cx={x - r * 0.35}
-                                cy={y + r * 0.42}
-                                r={r * 0.13}
-                                fill="#fff"
-                                opacity="0.8"
-                            />
-                            {/* Тінь від верхньої повіки на білку */}
+                            {/* Тінь від верхньої повіки */}
                             <path
-                                d={`M${x - hw} ${y - s.h * 0.95} L${x + hw} ${y - s.h * 0.95} L${x + hw} ${y - s.h * 0.35} Q${x} ${y - s.h * 0.1} ${x - hw} ${y - s.h * 0.35} Z`}
+                                d={`M${P(-hw - 1, -h * 1.4)} L${P(hw + 1, -h * 1.4)} L${P(hw + 1, -h * 0.25)} Q${P(0, -h * 0.35)} ${P(-hw - 1, -h * 0.05)} Z`}
                                 fill={INK}
-                                opacity="0.12"
+                                opacity={anime ? 0.16 : 0.24}
                             />
                             {s.hood && (
                                 <path
-                                    d={`M${x - hw - 1} ${y - s.h} L${x + hw + 1} ${y - s.h} L${x + hw + 1} ${y - s.h * 0.2} Q${x} ${y - s.h * 0.45} ${x - hw - 1} ${y - s.h * 0.2} Z`}
+                                    d={`M${P(-hw - 1, -h * 1.4)} L${P(hw + 1, -h * 1.4)} L${P(hw + 1, -h * 0.15)} Q${P(0, -h * 0.55)} ${P(-hw - 1, -h * 0.1)} Z`}
                                     fill={skin}
                                 />
                             )}
+                            {/* Відблиски */}
+                            <ellipse
+                                cx={cx - side * ir * 0.25}
+                                cy={cy - iry * 0.32}
+                                rx={ir * 0.36}
+                                ry={ir * 0.3}
+                                fill="#fff"
+                            />
+                            <circle
+                                cx={cx + side * ir * 0.42}
+                                cy={cy + iry * 0.42}
+                                r={ir * 0.14}
+                                fill="#fff"
+                                opacity="0.85"
+                            />
                         </g>
-                        {/* Лінія верхніх вій */}
+                        <path d={lash} fill={INK} />
+                        {/* Нижня повіка — коротка лінія біля зовнішнього кута */}
                         <path
-                            d={`M${x - hw} ${y} C${x - hw * 0.55} ${y - s.h * 0.95} ${x + hw * 0.55} ${y - s.h * 0.95} ${x + hw} ${y}`}
+                            d={
+                                universal
+                                    ? `M${P(-hw * 0.4, h * 0.82)} C${P(hw * 0.2, h * 0.95)} ${P(hw * 0.75, h * 0.6)} ${P(hw, -h * 0.55)}`
+                                    : male
+                                      ? `M${P(-hw * 0.4, h * 0.42)} Q${P(hw * 0.25, h * 0.5)} ${P(hw * 0.85, 0.1)}`
+                                      : `M${P(hw * 0.05, h * 0.62)} Q${P(hw * 0.6, h * 0.55)} ${P(hw * 0.95, h * 0.05)}`
+                            }
                             stroke={INK}
-                            strokeWidth={liner ? 2.6 : 1.7}
+                            strokeWidth="0.9"
                             fill="none"
                             strokeLinecap="round"
+                            opacity="0.7"
                         />
-                        {s.hood && (
-                            <path
-                                d={`M${x - hw} ${y - s.h * 0.55} Q${x} ${y - s.h * 1.25} ${x + hw} ${y - s.h * 0.55}`}
-                                stroke={shade(skin, 0.25)}
-                                strokeWidth="1.2"
-                                fill="none"
-                            />
-                        )}
-                        {/* Нижня повіка — ледь помітна */}
-                        <path
-                            d={`M${x - hw * 0.8} ${y + s.h * 0.42} Q${x} ${y + s.h * 0.78} ${x + hw * 0.8} ${y + s.h * 0.42}`}
-                            stroke={shade(skin, 0.3)}
-                            strokeWidth="1"
-                            fill="none"
-                            opacity="0.6"
-                        />
-                        {liner && (
-                            <path
-                                d={`M${outer} ${y} L${outer + side * 5} ${y - 3.5} L${outer - side * 1} ${y - 1.6} Z`}
-                                fill={INK}
-                            />
-                        )}
-                        {config.lashes > 0 &&
-                            [0, 1, 2].map((i) => {
-                                const t = 0.55 + i * 0.2;
-                                const lx = x + side * hw * t;
-                                const ly = y - s.h * 0.9 * (1 - t * t) - 0.4;
-                                const len = config.lashes === 2 ? 4.2 : 2.6;
+                        {!universal &&
+                            (config.lashes > 0 || anime) &&
+                            (config.lashes > 0
+                                ? [0.35, 0.65, 0.92]
+                                : [0.7, 0.95]
+                            ).map((at, i) => {
+                                const len =
+                                    (config.lashes === 2
+                                        ? 4.6
+                                        : config.lashes === 1
+                                          ? 3
+                                          : 2.2) +
+                                    i * 0.6;
+                                const u = hw * at;
+                                const v = -h * (0.95 - at * 0.55) - t * 0.6;
 
                                 return (
                                     <path
-                                        key={i}
-                                        d={`M${lx} ${ly} l${side * len * 0.7} ${-len}`}
+                                        key={at}
+                                        d={`M${P(u, v)} Q${P(u + len * 0.4, v - len * 0.7)} ${P(u + len, v - len * 0.6)}`}
                                         stroke={INK}
-                                        strokeWidth="1.2"
+                                        strokeWidth="1.1"
+                                        fill="none"
                                         strokeLinecap="round"
                                     />
                                 );
@@ -1015,11 +1350,15 @@ function brow(
     thick: number,
     lift: number,
     color: string,
+    shift: number,
+    male = false,
 ): ReactNode {
-    const inner = 100 + side * 8;
-    const outer = 100 + side * 29;
-    const mid = 100 + side * 19;
-    const y = 82;
+    // Брови йдуть за посадкою очей.
+    const inner = 100 + side * (8 + shift);
+    const outer = 100 + side * (29 + shift);
+    const mid = 100 + side * (19 + shift);
+    // Чоловічі брови — нижче, прямі й густіші.
+    const y = male ? 85.5 : 82;
     const yIn = y + lift;
     const yOut = y + 1.5 - lift * 0.4;
 
@@ -1032,11 +1371,32 @@ function brow(
     );
 }
 
-function brows(kind: number, color: string): ReactNode {
+function brows(
+    kind: number,
+    color: string,
+    shift = 0,
+    male = false,
+): ReactNode {
     const set = (arch: number, thick: number, lift: number) => (
         <g>
-            {brow(-1, arch, thick, lift, color)}
-            {brow(1, arch, thick, lift, color)}
+            {brow(
+                -1,
+                male ? arch * 0.45 : arch,
+                male ? thick * 1.45 : thick,
+                lift,
+                color,
+                shift,
+                male,
+            )}
+            {brow(
+                1,
+                male ? arch * 0.45 : arch,
+                male ? thick * 1.45 : thick,
+                lift,
+                color,
+                shift,
+                male,
+            )}
         </g>
     );
 
@@ -1168,7 +1528,16 @@ function Lips({
     insideRef: React.RefObject<SVGEllipseElement | null>;
     stillRef: React.RefObject<SVGGElement | null>;
 }) {
-    const s = lipShape(config.lips);
+    const base = lipShape(config.lips);
+    // Ширина губ — як на схемі пропорцій (≈ відстань між зіницями).
+    const male = config.sex !== 1;
+    // Чоловічі губи — ширші й тонші (за схемою пропорцій).
+    const s = {
+        ...base,
+        w: base.w * (male ? 1.5 : 1.3),
+        up: base.up * (male ? 0.75 : 1),
+        low: base.low * (male ? 0.85 : 1),
+    };
     const y = MOUTH_Y;
     const hw = s.w / 2;
     // Вираз: куточки губ угору (усмішка), рівно, однобічно (ухмилка).
