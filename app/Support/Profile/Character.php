@@ -10,35 +10,31 @@ use Illuminate\Validation\ValidationException;
 class Character
 {
     public const PARTS = [
-        'sex' => 2,
         'skin' => 10,
-        'build' => 4,
-        'head' => 8,
-        'hair' => 30,
-        'hairColor' => 11,
-        'eyes' => 8,
-        'eyeTilt' => 3,
-        'eyeGap' => 5,
-        'eyeSize' => 5,
-        'eyeColor' => 7,
-        'lashes' => 3,
-        'brows' => 5,
-        'nose' => 4,
-        'lips' => 5,
-        'lipColor' => 6,
-        'mouth' => 5,
-        'makeup' => 6,
-        'beard' => 5,
-        'extra' => 7,
-        'earrings' => 3,
-        'tattoo' => 6,
-        'outfit' => 14,
+        'freckles' => 2,
+        'blush' => 2,
+        'head' => 5,
+        'hair' => 12,
+        'hairColor' => 14,
+        'hairOmbre' => 2,
+        'eyes' => 11,
+        'pupil' => 6,
+        'eyeColor' => 12,
+        'eyeColorRight' => 12,
+        'hetero' => 2,
+        'brows' => 6,
+        'nose' => 5,
+        'mouth' => 6,
+        'lipTint' => 6,
+        'facialHair' => 6,
+        'extra' => 8,
+        'outfit' => 4,
         'outfitColor' => 9,
         'bg' => 9,
     ];
 
-    /** Варіант за замовчуванням, якщо частину не передали (посередині шкали — для посадки й розміру очей). */
-    public const DEFAULTS = ['eyeGap' => 2, 'eyeSize' => 2];
+    /** Варіант за замовчуванням, якщо частину не передали (як DEFAULT_CHARACTER на клієнті). */
+    public const DEFAULTS = ['skin' => 5, 'hair' => 1, 'hairColor' => 1];
 
     /**
      * Перевіряє й нормалізує набір: лише відомі частини, цілі числа в межах.

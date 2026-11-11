@@ -1,40 +1,27 @@
 /**
- * Персонаж-аватар: набір частин (номери варіантів). Межі — як у App\Support\Profile\Character::PARTS.
- * Нові частини додаються в кінець переліку варіантів, щоб збережені раніше персонажі не змінились.
+ * Персонаж-аватар у стилі Stereo: номери варіантів частин (геометрія — components/character/geometry.ts).
+ * Межі — як у App\Support\Profile\Character::PARTS. Форма й колір незалежні: будь-яка форма очей
+ * з будь-яким кольором і зіницею, окремі кольори лівого й правого ока (гетерохромія).
  */
 export type CharacterConfig = {
-    /** 0 — чоловічий тип обличчя, 1 — жіночий. */
-    sex: number;
     skin: number;
-    /** Тілобудова: худорлява, середня, кремезна, атлетична. */
-    build: number;
+    freckles: number;
+    blush: number;
     head: number;
     hair: number;
     hairColor: number;
-    /** Форма очей: мигдалеві, круглі, вузькі, з нависанням повік, великі. */
+    hairOmbre: number;
     eyes: number;
-    /** Розріз: рівний, з піднятими кутиками, з опущеними. */
-    eyeTilt: number;
-    /** Посадка очей: від близької до широкої (2 — середня). */
-    eyeGap: number;
-    /** Розмір очей: від менших до більших (2 — середній). */
-    eyeSize: number;
+    pupil: number;
     eyeColor: number;
-    lashes: number;
+    eyeColorRight: number;
+    hetero: number;
     brows: number;
     nose: number;
-    /** Форма губ: тонкі, повні, «сердечко», широкі, маленькі. */
-    lips: number;
-    lipColor: number;
-    /** Вираз: усмішка, спокійний, широка усмішка, ухмилка, «о». */
     mouth: number;
-    /** Макіяж: без, рум’янець, стрілки, тіні, тіні + стрілки, веснянки. */
-    makeup: number;
-    beard: number;
+    lipTint: number;
+    facialHair: number;
     extra: number;
-    earrings: number;
-    /** Тату: без, зірка на шиї, племінне, напис на ключиці, троянда, на обличчі. */
-    tattoo: number;
     outfit: number;
     outfitColor: number;
     bg: number;
@@ -43,123 +30,50 @@ export type CharacterConfig = {
 export type CharacterPart = keyof CharacterConfig;
 
 export const PARTS: Record<CharacterPart, number> = {
-    sex: 2,
     skin: 10,
-    build: 4,
-    head: 8,
-    hair: 30,
-    hairColor: 11,
-    eyes: 8,
-    eyeTilt: 3,
-    eyeGap: 5,
-    eyeSize: 5,
-    eyeColor: 7,
-    lashes: 3,
-    brows: 5,
-    nose: 4,
-    lips: 5,
-    lipColor: 6,
-    mouth: 5,
-    makeup: 6,
-    beard: 5,
-    extra: 7,
-    earrings: 3,
-    tattoo: 6,
-    outfit: 14,
+    freckles: 2,
+    blush: 2,
+    head: 5,
+    hair: 12,
+    hairColor: 14,
+    hairOmbre: 2,
+    eyes: 11,
+    pupil: 6,
+    eyeColor: 12,
+    eyeColorRight: 12,
+    hetero: 2,
+    brows: 6,
+    nose: 5,
+    mouth: 6,
+    lipTint: 6,
+    facialHair: 6,
+    extra: 8,
+    outfit: 4,
     outfitColor: 9,
     bg: 9,
 };
 
-export const SKIN = [
-    '#f9dcc4',
-    '#f1c27d',
-    '#e0ac69',
-    '#c68642',
-    '#a86b3c',
-    '#8d5524',
-    '#6b3e26',
-    '#4a2c1d',
-    '#fbe7da',
-    '#d9a07c',
-];
-export const HAIR = [
-    '#1f1a17',
-    '#3b2a20',
-    '#6b4423',
-    '#a0662f',
-    '#d9a441',
-    '#ecdcb0',
-    '#b0b4bb',
-    '#c2413a',
-    '#5b6cff',
-    '#e58fb8',
-    '#2fb5a0',
-];
-export const EYE = [
-    '#4a3222',
-    '#2f6f9f',
-    '#3f7d4e',
-    '#6b6f78',
-    '#7a4fbf',
-    '#b07a2a',
-    '#1f1a17',
-];
-export const LIP = [
-    'natural',
-    '#e58fa5',
-    '#c8323c',
-    '#8e2a4f',
-    '#c99582',
-    '#5a2230',
-];
-export const OUTFIT = [
-    '#2a3550',
-    '#4f6bff',
-    '#e2475b',
-    '#2bb673',
-    '#f2a33a',
-    '#7c4dff',
-    '#e9edf2',
-    '#1f2430',
-    '#f4b6c2',
-];
-export const BG = [
-    '#1d2a44',
-    '#4f6bff',
-    '#22d3ee',
-    '#a855f7',
-    '#f97316',
-    '#10b981',
-    '#e11d48',
-    '#e5e7eb',
-    '#fde68a',
-];
-
 export const DEFAULT_CHARACTER: CharacterConfig = {
-    sex: 0,
-    skin: 1,
-    build: 1,
+    skin: 5,
+    freckles: 0,
+    blush: 0,
     head: 0,
     hair: 1,
     hairColor: 1,
+    hairOmbre: 0,
     eyes: 0,
-    eyeTilt: 0,
-    eyeGap: 2,
-    eyeSize: 2,
+    pupil: 0,
     eyeColor: 0,
-    lashes: 0,
-    brows: 1,
+    eyeColorRight: 0,
+    hetero: 0,
+    brows: 0,
     nose: 0,
-    lips: 0,
-    lipColor: 0,
     mouth: 0,
-    makeup: 0,
-    beard: 0,
+    lipTint: 0,
+    facialHair: 0,
     extra: 0,
-    earrings: 0,
-    tattoo: 0,
     outfit: 0,
-    outfitColor: 1,
+    outfitColor: 0,
     bg: 0,
 };
 
@@ -177,35 +91,20 @@ export function normalizeCharacter(
     return out;
 }
 
-/** Випадковий персонаж — кнопка «Перемішати». Макіяж, борода й аксесуари — не в кожного. */
-export function randomCharacter(sex?: number): CharacterConfig {
+/** Випадковий персонаж — кнопка «Перемішати». Борода, аксесуари й незвичні зіниці — не в кожного. */
+export function randomCharacter(): CharacterConfig {
     const out = { ...DEFAULT_CHARACTER };
     (Object.keys(PARTS) as CharacterPart[]).forEach((part) => {
         out[part] = Math.floor(Math.random() * PARTS[part]);
     });
+    if (Math.random() < 0.6) out.facialHair = 0;
     if (Math.random() < 0.5) out.extra = 0;
-    if (Math.random() < 0.6) out.beard = 0;
-    if (Math.random() < 0.5) out.makeup = 0;
-    if (Math.random() < 0.6) out.earrings = 0;
-    if (Math.random() < 0.65) out.tattoo = 0;
-    if (Math.random() < 0.5) out.lipColor = 0;
-    if (sex !== undefined) out.sex = sex;
-    // Зачіска — з набору для обраного типу (або спільна).
-    const styles = HAIR_STYLES.map((h, i) => ({ ...h, i })).filter(
-        (h) => h.sex === 'u' || h.sex === (out.sex === 1 ? 'f' : 'm'),
-    );
-    out.hair = styles[Math.floor(Math.random() * styles.length)].i;
-    const eyes = EYE_STYLES.map((e, i) => ({ ...e, i })).filter(
-        (e) => e.sex === 'u' || e.sex === (out.sex === 1 ? 'f' : 'm'),
-    );
-    out.eyes = eyes[Math.floor(Math.random() * eyes.length)].i;
-    if (out.sex === 1) {
-        out.beard = 0;
-    } else {
-        if (Math.random() < 0.8) out.makeup = out.makeup === 5 ? 5 : 0;
-        out.lipColor = 0;
-        out.lashes = 0;
-    }
+    if (Math.random() < 0.7) out.pupil = 0;
+    if (Math.random() < 0.85) out.hetero = 0;
+    if (Math.random() < 0.7) out.hairOmbre = 0;
+    if (Math.random() < 0.6) out.freckles = 0;
+    if (Math.random() < 0.5) out.lipTint = 0;
+    out.eyeColorRight = out.eyeColor;
 
     return out;
 }
@@ -316,61 +215,3 @@ export function newAudioContext(): AudioContext {
 
     return new Ctx();
 }
-
-/** Назви форм обличчя (той самий порядок, що й варіанти `head`). */
-export const HEAD_NAMES = [
-    'Яйцеподібне',
-    'Кругле',
-    'Квадратне',
-    'Овальне',
-    'Сердечко',
-    'Видовжене',
-    'Ромб',
-    'Трикутне',
-];
-
-/** Зачіски: назва й для кого (m — чоловічі, f — жіночі, u — для всіх). Порядок = номер варіанта. */
-export const HAIR_STYLES: { name: string; sex: 'm' | 'f' | 'u' }[] = [
-    { name: 'Без волосся', sex: 'm' },
-    { name: 'Коротка', sex: 'm' },
-    { name: 'Їжак', sex: 'm' },
-    { name: 'Кучері', sex: 'u' },
-    { name: 'Довге пряме', sex: 'f' },
-    { name: 'Гулька', sex: 'f' },
-    { name: 'Ірокез', sex: 'm' },
-    { name: 'Проділ набік', sex: 'm' },
-    { name: 'Високий хвіст', sex: 'f' },
-    { name: 'Афро', sex: 'u' },
-    { name: 'Каре з чубчиком', sex: 'f' },
-    { name: 'Дві коси', sex: 'f' },
-    { name: 'Піксі', sex: 'f' },
-    { name: 'Пучок', sex: 'm' },
-    { name: 'Зачесане назад', sex: 'm' },
-    { name: 'Кок', sex: 'm' },
-    { name: 'Андеркат', sex: 'm' },
-    { name: 'Французький кроп', sex: 'm' },
-    { name: 'Скуйовджене', sex: 'm' },
-    { name: 'Кучерявий верх', sex: 'm' },
-    { name: 'Довге чоловіче', sex: 'm' },
-    { name: 'Хвилясте довге', sex: 'f' },
-    { name: 'Кучеряве довге', sex: 'f' },
-    { name: 'Неохайна гулька', sex: 'f' },
-    { name: 'Дві гульки', sex: 'f' },
-    { name: 'Хвостики', sex: 'f' },
-    { name: 'Напівзібране', sex: 'f' },
-    { name: 'Набік', sex: 'f' },
-    { name: 'Подовжене каре', sex: 'f' },
-    { name: 'Шторки', sex: 'f' },
-];
-
-/** Стилі очей і для кого (той самий порядок, що й варіанти `eyes`). */
-export const EYE_STYLES: { name: string; sex: 'm' | 'f' | 'u' }[] = [
-    { name: 'Універсальні', sex: 'u' },
-    { name: 'Чоловічі', sex: 'm' },
-    { name: 'Котячі', sex: 'f' },
-    { name: 'Круглі', sex: 'f' },
-    { name: 'Сріблясті', sex: 'f' },
-    { name: 'Рішучі', sex: 'f' },
-    { name: 'Привітні', sex: 'f' },
-    { name: 'Чарівні', sex: 'f' },
-];

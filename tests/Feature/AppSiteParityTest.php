@@ -845,8 +845,8 @@ class AppSiteParityTest extends TestCase
     public function test_app_edits_character_through_bridge(): void
     {
         $token = $this->app_token(User::factory()->create());
-        $this->withToken($token)->getJson('/api/v1/site/settings/character')->assertOk()->assertJsonPath('parts.hair', 30)->assertJsonPath('parts.tattoo', 6);
-        $this->withToken($token)->putJson('/api/v1/site/me/character', ['character' => ['hair' => 3, 'bg' => 2]])->assertOk()->assertJsonPath('character.hair', 3)->assertJsonPath('character.skin', 0);
+        $this->withToken($token)->getJson('/api/v1/site/settings/character')->assertOk()->assertJsonPath('parts.hair', 12)->assertJsonPath('parts.extra', 8);
+        $this->withToken($token)->putJson('/api/v1/site/me/character', ['character' => ['hair' => 3, 'bg' => 2]])->assertOk()->assertJsonPath('character.hair', 3)->assertJsonPath('character.skin', 5);
     }
 
     public function test_app_hosts_and_joins_live_shows_through_bridge(): void
