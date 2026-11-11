@@ -124,6 +124,8 @@ class HandleInertiaRequests extends Middleware
                     'email_verified_at' => $user->email_verified_at,
                     'two_factor_enabled' => $user->two_factor_confirmed_at !== null,
                     'role' => $user->role,
+                    // Свій вибір мережевого статусу (інші бачать «Невидимий» як offline).
+                    'presence_choice' => $user->pref('presence', 'online'),
                     'is_admin' => $user->isAdmin(),
                     'cover_url' => $user->cover_url,
                     'nav_tabs' => array_values(array_intersect($this->modules->navTabsFor($user), app(NetworkModes::class)->modulesFor($user))),

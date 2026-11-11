@@ -653,6 +653,7 @@ Route::prefix('v1')->group(function () {
             Route::put('ready', [ReadyToPlayController::class, 'update'])->middleware('throttle:30,1');
             Route::delete('ready', [ReadyToPlayController::class, 'destroy']);
             Route::put('me/status', [StatusController::class, 'update'])->middleware('throttle:30,1');
+            Route::put('me/presence', [StatusController::class, 'presence'])->middleware('throttle:30,1');
             Route::delete('me/status', [StatusController::class, 'destroy']);
 
             // Запросити друзів (реферальна програма) і вступ за посиланням-запрошенням у клан, сім’ю чи спільноту.

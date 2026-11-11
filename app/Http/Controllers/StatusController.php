@@ -40,6 +40,16 @@ class StatusController extends Controller
         return response()->json(['status' => $this->card($user)]);
     }
 
+    /** Мережевий статус: «В мережі», «Неактивний», «Не турбувати» чи «Невидимий». */
+    public function presence(Request $request): JsonResponse
+    {
+        $data = $request->validate(['presence' => ['required', Rule::in(User::PRESENCES)]]);
+        $user = $this->user($request);
+        $user->mergePref(['presence' => $data['presence']]);
+
+        return response()->json(['presence' => $data['presence']]);
+    }
+
     public function destroy(Request $request): JsonResponse
     {
         $this->plugins->ensure('status_emoji');

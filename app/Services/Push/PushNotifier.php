@@ -40,7 +40,7 @@ class PushNotifier
      */
     public function notification(object $notifiable, DatabaseNotification $notification): void
     {
-        if (! $notifiable instanceof User || ! $this->reachable($notifiable->id)) {
+        if (! $notifiable instanceof User || ! $this->reachable($notifiable->id) || $notifiable->doNotDisturb()) {
             return;
         }
 
@@ -85,6 +85,9 @@ class PushNotifier
             ->where('is_muted', false)
             ->pluck('user_id')
             ->all();
+        // «Не турбувати» — без пушів.
+        $recipients = User::query()->whereIn('id', $recipients)->get(['id', 'preferences'])
+            ->reject(fn (User $u) => $u->doNotDisturb())->pluck('id')->all();
         $recipients = array_values(array_unique([
             ...($this->fcm->configured() ? PushDevice::query()->whereIn('user_id', $recipients)->distinct()->pluck('user_id')->all() : []),
             ...WebPushSubscription::query()->whereIn('user_id', $recipients)->distinct()->pluck('user_id')->all(),

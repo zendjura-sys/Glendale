@@ -1034,6 +1034,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     Route::get('me/rail', RailController::class)->middleware('throttle:60,1')->name('rail');
     Route::get('me/hub', HubController::class)->middleware('throttle:60,1')->name('hub');
     Route::put('me/status', [StatusController::class, 'update'])->middleware('throttle:30,1')->name('status.update');
+    Route::put('me/presence', [StatusController::class, 'presence'])->middleware('throttle:30,1')->name('presence.update');
     Route::delete('me/status', [StatusController::class, 'destroy'])->name('status.destroy');
     // «Граю в…»: ручний статус, автоматичний (Discord, Steam, телефон).
     Route::prefix('me/playing')->name('playing.')->group(function () {

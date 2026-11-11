@@ -19,6 +19,8 @@ export type UserCard = {
     first_name: string;
     avatar_url: string | null;
     is_online: boolean;
+    /** Мережевий статус: online | idle | dnd | offline. */
+    presence?: string | null;
     is_verified: boolean;
     /** Логотипи сім'ї, клану, сервера й гри біля ніка. */
     badges?: import('@/components/gc/affiliation-badges').AffiliationBadge[];

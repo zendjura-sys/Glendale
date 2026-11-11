@@ -56,6 +56,7 @@ type Props = {
         name: string;
         avatar_url: string | null;
         is_online?: boolean;
+        presence?: string | null;
         id?: number;
         plus?: PlusMark | null;
         cosmetics?: Cosmetics | null;
@@ -150,16 +151,23 @@ export function UserAvatar({
                     {user.status_emoji}
                 </span>
             )}
-            {showOnline && user.is_online && (
-                <span
-                    className={cn(
-                        'absolute right-0 bottom-0 rounded-full bg-emerald-400 ring-void',
-                        dotSizes[size],
-                        size !== 'xs' && 'animate-pulse-ring',
-                    )}
-                    title={tr('Онлайн')}
-                />
-            )}
+            {showOnline &&
+                (user.presence
+                    ? user.presence !== 'offline'
+                    : user.is_online) && (
+                    <span
+                        className={cn(
+                            'absolute right-0 bottom-0 rounded-full ring-void',
+                            PRESENCE_DOT[user.presence ?? 'online'] ??
+                                'bg-emerald-400',
+                            dotSizes[size],
+                            size !== 'xs' &&
+                                (user.presence ?? 'online') === 'online' &&
+                                'animate-pulse-ring',
+                        )}
+                        title={presenceLabel(user.presence ?? 'online')}
+                    />
+                )}
             {santa && (
                 <img
                     src="/images/seasons/newyear/santa-hat.webp"
@@ -171,4 +179,19 @@ export function UserAvatar({
             )}
         </span>
     );
+}
+
+/** Колір точки мережевого статусу на аватарі. */
+const PRESENCE_DOT: Record<string, string> = {
+    online: 'bg-emerald-400',
+    idle: 'bg-amber-400',
+    dnd: 'bg-rose-500',
+};
+
+function presenceLabel(presence: string): string {
+    return presence === 'idle'
+        ? tr('Неактивний')
+        : presence === 'dnd'
+          ? tr('Не турбувати')
+          : tr('Онлайн');
 }

@@ -346,7 +346,8 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
      */
     protected function isOnline(): Attribute
     {
-        return Attribute::get(fn () => $this->last_seen_at !== null && $this->last_seen_at->gt(now()->subMinutes(5)));
+        // «Невидимий» — для інших не в мережі.
+        return Attribute::get(fn () => $this->pref('presence') !== 'invisible' && $this->last_seen_at !== null && $this->last_seen_at->gt(now()->subMinutes(5)));
     }
 
     /**
@@ -363,6 +364,7 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
             'first_name' => $this->first_name,
             'avatar_url' => $this->avatar_url,
             'is_online' => $this->is_online,
+            'presence' => $this->presence(),
             'is_verified' => $this->is_verified,
             // Команда сайту (адміністратор чи модератор) — значок біля імені.
             'staff' => $this->isStaff() ? $this->role : null,
@@ -472,6 +474,32 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
             'until' => $this->playing_until->toIso8601String(),
             'auto' => $this->playing_source !== null && $this->playing_source !== 'manual',
         ];
+    }
+
+    /** Мережевий статус, який обирає людина (як у Discord). */
+    public const PRESENCES = ['online', 'idle', 'dnd', 'invisible'];
+
+    /**
+     * Що бачать інші: online, idle («Неактивний» — сам після 10 хв без дій), dnd («Не турбувати») чи offline
+     * («Невидимий» або давно не заходив).
+     */
+    public function presence(): string
+    {
+        $chosen = $this->pref('presence', 'online');
+        if ($chosen === 'invisible' || $this->last_seen_at === null || $this->last_seen_at->lt(now()->subMinutes(15))) {
+            return 'offline';
+        }
+        if ($chosen === 'dnd') {
+            return 'dnd';
+        }
+
+        return $chosen === 'idle' || $this->last_seen_at->lt(now()->subMinutes(10)) ? 'idle' : 'online';
+    }
+
+    /** «Не турбувати»: пуш-сповіщення не надсилаються (у самому сайті й застосунку все видно). */
+    public function doNotDisturb(): bool
+    {
+        return $this->pref('presence') === 'dnd';
     }
 
     public function pref(string $key, mixed $default = null): mixed

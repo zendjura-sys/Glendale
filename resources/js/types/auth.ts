@@ -1,6 +1,8 @@
 import type { PlusMark } from './social';
 
 export type User = {
+    /** Свій вибір мережевого статусу (online | idle | dnd | invisible). */
+    presence_choice?: string;
     id: number;
     username: string;
     name: string;

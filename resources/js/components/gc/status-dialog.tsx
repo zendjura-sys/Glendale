@@ -128,6 +128,8 @@ export function StatusDialog({
                     )}
                 </DialogDescription>
 
+                <PresencePicker current={user.presence ?? 'online'} />
+
                 <div className="gc-solid-2 flex items-center gap-2 rounded-xl px-3 py-2">
                     <span className="text-2xl leading-none" aria-hidden>
                         {emoji ?? '🙂'}
@@ -238,5 +240,77 @@ export function StatusDialog({
                 </div>
             </DialogContent>
         </Dialog>
+    );
+}
+
+/** Мережевий статус (як у Discord): зберігається одразу, без кнопки «Зберегти». */
+const PRESENCES = (): {
+    key: 'online' | 'idle' | 'dnd' | 'invisible';
+    label: string;
+    hint: string;
+    dot: string;
+}[] => [
+    {
+        key: 'online',
+        label: tr('В мережі'),
+        hint: tr('Друзі бачать, що ви тут.'),
+        dot: 'bg-emerald-400',
+    },
+    {
+        key: 'idle',
+        label: tr('Неактивний'),
+        hint: tr('Вмикається й сам після 10 хвилин без дій.'),
+        dot: 'bg-amber-400',
+    },
+    {
+        key: 'dnd',
+        label: tr('Не турбувати'),
+        hint: tr('Без пуш-сповіщень — усе чекатиме на сайті.'),
+        dot: 'bg-rose-500',
+    },
+    {
+        key: 'invisible',
+        label: tr('Невидимий'),
+        hint: tr('Для інших ви не в мережі, але все працює.'),
+        dot: 'bg-slate-400',
+    },
+];
+
+function PresencePicker({ current }: { current: string }) {
+    // Свій статус «Невидимий» інші бачать як offline, тож поточний вибір беремо з налаштувань.
+    const own = usePage().props.auth.user?.presence_choice;
+    const [value, setValue] = useState<string>(
+        typeof own === 'string' ? own : current,
+    );
+    const pick = (key: string) => {
+        setValue(key);
+        api('PUT', '/me/presence', { presence: key })
+            .then(() => router.reload())
+            .catch(() => toast.error(tr('Не вдалося змінити статус.')));
+    };
+
+    return (
+        <div className="grid grid-cols-2 gap-1.5">
+            {PRESENCES().map((p) => (
+                <button
+                    key={p.key}
+                    type="button"
+                    onClick={() => pick(p.key)}
+                    aria-pressed={value === p.key}
+                    title={p.hint}
+                    className={cn(
+                        'flex items-center gap-2 rounded-xl px-3 py-2 text-left text-sm transition',
+                        value === p.key
+                            ? 'bg-sky-500/20 text-white'
+                            : 'gc-solid-2 text-white/70 hover:text-white',
+                    )}
+                >
+                    <span
+                        className={cn('size-2.5 shrink-0 rounded-full', p.dot)}
+                    />
+                    {p.label}
+                </button>
+            ))}
+        </div>
     );
 }
