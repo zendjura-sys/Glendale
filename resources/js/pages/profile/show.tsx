@@ -337,7 +337,7 @@ function VideoCoverButton({ has }: { has: boolean }) {
     const input = useRef<HTMLInputElement>(null);
 
     return (
-        <div className="absolute top-4 left-4 flex gap-1.5">
+        <div className="absolute top-4 left-4 flex gap-1.5 max-sm:hidden">
             <input
                 ref={input}
                 type="file"
@@ -528,11 +528,9 @@ export default function ProfileShow({
                     />
                 )}
                 {/* Обкладинка на всю ширину картки: аватар, ім’я й кнопки — поверх неї, на затемненні знизу ліворуч. */}
-                <div
-                    data-on-dark
-                    className="relative isolate h-60 overflow-hidden rounded-xl sm:h-80"
-                >
-                    <div className="absolute inset-0 -z-10">
+                <div className="profile-cover relative isolate overflow-hidden rounded-xl sm:h-80">
+                    {/* На телефоні обкладинки немає — лише аватар, ім’я й кнопки на картці. */}
+                    <div className="absolute inset-0 -z-10 max-sm:hidden">
                         {profile.cover_video_url && !dataSaver ? (
                             <video
                                 src={profile.cover_video_url}
@@ -583,7 +581,7 @@ export default function ProfileShow({
                     {/* Темніше там, де текст: знизу й ліворуч, обкладинка вгорі лишається яскравою. */}
                     <div
                         aria-hidden
-                        className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_top,rgb(5_10_20/0.88)_0%,rgb(5_10_20/0.55)_32%,rgb(5_10_20/0.12)_62%,transparent_80%),radial-gradient(ellipse_at_0%_100%,rgb(5_10_20/0.6),transparent_60%)]"
+                        className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_top,rgb(5_10_20/0.88)_0%,rgb(5_10_20/0.55)_32%,rgb(5_10_20/0.12)_62%,transparent_80%),radial-gradient(ellipse_at_0%_100%,rgb(5_10_20/0.6),transparent_60%)] max-sm:hidden"
                     />
                     {isSelf &&
                         videoCoverOn &&
@@ -597,7 +595,7 @@ export default function ProfileShow({
                         <Uploader
                             field="cover"
                             url="/me/cover"
-                            className="absolute top-4 right-4 inline-flex items-center gap-2 rounded-xl bg-black/40 px-3 py-2 text-xs font-semibold text-white backdrop-blur-md transition hover:bg-black/60"
+                            className="absolute top-4 right-4 inline-flex items-center gap-2 rounded-xl bg-black/40 px-3 py-2 text-xs font-semibold text-white backdrop-blur-md transition hover:bg-black/60 max-sm:hidden"
                         >
                             <Camera className="size-4" />
                             <span className="sr-only sm:not-sr-only">
@@ -605,7 +603,7 @@ export default function ProfileShow({
                             </span>
                         </Uploader>
                     )}
-                    <div className="absolute inset-x-0 bottom-0 flex items-end gap-4 p-4 sm:gap-5 sm:p-6">
+                    <div className="flex items-end gap-4 px-2 pt-3 sm:absolute sm:inset-x-0 sm:bottom-0 sm:gap-5 sm:p-6">
                         <div className="shrink-0">
                             <div
                                 className={cn(
@@ -633,7 +631,7 @@ export default function ProfileShow({
                             <div className="flex flex-wrap items-center gap-2">
                                 <h1
                                     className={cn(
-                                        'font-display text-xl leading-tight font-bold tracking-tight text-white drop-shadow-[0_1px_8px_rgb(0_0_0/0.45)] sm:text-[34px]',
+                                        'font-display text-xl leading-tight font-bold tracking-tight text-white sm:text-[34px] sm:drop-shadow-[0_1px_8px_rgb(0_0_0/0.45)]',
                                         nameProps.className,
                                     )}
                                     style={nameProps.style}
