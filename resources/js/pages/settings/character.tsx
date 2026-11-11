@@ -297,7 +297,7 @@ export default function CharacterEditor({
             <div className="mx-auto w-full max-w-3xl px-2 py-4 sm:px-4">
                 <div className="mb-3 flex items-center gap-2">
                     <Link
-                        href="/settings/profile"
+                        href="/settings/appearance"
                         aria-label={tr('Назад')}
                         className="grid size-10 place-items-center rounded-xl text-white/70 hover:bg-white/[0.06] hover:text-white"
                     >

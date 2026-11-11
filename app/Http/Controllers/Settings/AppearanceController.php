@@ -28,6 +28,8 @@ class AppearanceController extends Controller
         $user = $request->user();
 
         return Inertia::render('settings/appearance', [
+            // Персонаж-аватар: мініатюра на кнопці конструктора.
+            'character' => $request->user()->character,
             'palette' => $user->palette(),
             'palettes' => Palette::all(),
             'background' => [

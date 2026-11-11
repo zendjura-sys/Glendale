@@ -1,8 +1,9 @@
-import { Head, useForm, usePage } from '@inertiajs/react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import {
     Bell,
     Check,
     ChevronDown,
+    ChevronRight,
     ChevronUp,
     Eye,
     Languages,
@@ -13,6 +14,7 @@ import {
 import { m, useReducedMotion } from 'motion/react';
 import { type FormEvent, useEffect, useRef, useState } from 'react';
 import { update as updateAppearance } from '@/routes/appearance';
+import { Character } from '@/components/character/character';
 import { PlusBadge } from '@/components/gc/plus';
 import { DataSaverSwitch } from '@/components/settings/data-saver-switch';
 import { StreamerModeSwitch } from '@/components/settings/streamer-mode-switch';
@@ -29,6 +31,8 @@ import {
     SettingsRows,
     SettingsSwitch,
 } from '@/layouts/settings/layout';
+import { normalizeCharacter } from '@/lib/character';
+import type { CharacterConfig } from '@/lib/character';
 import {
     applyTextSize,
     readTextSize,
@@ -147,8 +151,10 @@ export default function Appearance({
     seasonal,
     gameTheme,
     gameThemeOn = true,
+    character = null,
 }: {
     palette: string;
+    character?: Partial<CharacterConfig> | null;
     palettes: PaletteOption[];
     quiet: { enabled: boolean; from: string; to: string };
     languages: string[];
@@ -172,6 +178,7 @@ export default function Appearance({
     gameTheme?: GameThemeValue;
     gameThemeOn?: boolean;
 }) {
+    const characterOn = usePlugin('characters');
     const palettesOn = usePlugin('palettes');
     const quietOn = usePlugin('quiet_hours');
     const notifyOn = usePlugin('notify_switches');
@@ -350,6 +357,38 @@ export default function Appearance({
                         </div>
                     </div>
                 </div>
+
+                {characterOn && (
+                    <Link
+                        href="/settings/character"
+                        className="gc-solid flex items-center gap-4 rounded-xl p-3 pr-4 transition hover:bg-white/[0.03]"
+                    >
+                        <span className="size-16 shrink-0 overflow-hidden rounded-2xl bg-[#121214]">
+                            <Character
+                                config={normalizeCharacter(character)}
+                                background={false}
+                                zoom="card"
+                                outfit={false}
+                                className="size-full"
+                            />
+                        </span>
+                        <span className="min-w-0 flex-1">
+                            <span className="block text-[15px] font-semibold text-white">
+                                {tr('Персонаж')}
+                            </span>
+                            <span className="mt-0.5 block text-[13px] leading-snug text-white/50">
+                                {character
+                                    ? tr(
+                                          'Обличчя, зачіска, одяг — говорить вашим голосом у GameCast.',
+                                      )
+                                    : tr(
+                                          'Створіть свого персонажа — він говоритиме вашим голосом у GameCast.',
+                                      )}
+                            </span>
+                        </span>
+                        <ChevronRight className="size-5 shrink-0 text-white/40" />
+                    </Link>
+                )}
 
                 <SettingsCard
                     title={tr('Тема')}

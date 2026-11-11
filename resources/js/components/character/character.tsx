@@ -306,8 +306,13 @@ export function Character({
                 </g>
 
                 {/* Борода й вуса рухаються разом із ротом */}
-                <g transform={`translate(0 ${mouthDy})`}>
-                    <FacialHair kind={config.facialHair} color={hairColor} />
+                <g clipPath={url('head')}>
+                    <g transform={`translate(0 ${mouthDy})`}>
+                        <FacialHair
+                            kind={config.facialHair}
+                            color={hairColor}
+                        />
+                    </g>
                 </g>
 
                 {hair.front && (
@@ -743,8 +748,22 @@ function FacialHair({ kind, color }: { kind: number; color: string }) {
     const f = FACIAL_HAIR_PRESETS[kind];
     if (!f || !f.path) return null;
 
+    // Бороди малювалися під вужчу голову (74..226): розтягуємо від центру до 64..236, щоб ішли по щелепі
+    // до скронь. Вуса й цапина — по центру, як є. Зайве обрізає контур голови.
+    const wide = ['stubble', 'full_beard', 'chin_strap'].includes(f.id);
+
     return (
-        <path d={f.path} fill={color} opacity={f.opacity} fillRule="evenodd" />
+        <path
+            d={f.path}
+            fill={color}
+            opacity={f.opacity}
+            fillRule="evenodd"
+            transform={
+                wide
+                    ? 'translate(150 0) scale(1.16 1.02) translate(-150 0)'
+                    : undefined
+            }
+        />
     );
 }
 
