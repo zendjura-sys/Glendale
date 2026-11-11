@@ -343,6 +343,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::post('{show}/start', 'start')->name('start');
         Route::post('{show}/end', 'end')->name('end');
     });
+    Route::put('me/wishlist-visibility', [ProfileController::class, 'wishlistVisibility'])->middleware('throttle:30,1')->name('profile.wishlist-visibility');
     Route::get('settings/character', [AvatarCharacterController::class, 'edit'])->name('character.edit');
     Route::put('me/character', [AvatarCharacterController::class, 'update'])->middleware('throttle:30,1')->name('character.update');
     Route::delete('me/character', [AvatarCharacterController::class, 'destroy'])->name('character.destroy');
@@ -1370,6 +1371,9 @@ Route::get('{user}/card', [ProfileController::class, 'card'])
 Route::get('cinema/{movie}', [PublicPageController::class, 'movie'])->middleware('module:cinema')->name('cinema.show');
 Route::get('servers/{server}', [PublicPageController::class, 'server'])->middleware('module:servers')->name('servers.show');
 Route::get('clans/{clan}', [PublicPageController::class, 'clan'])->middleware('module:clans')->name('clans.show');
+Route::get('{user}/tab/{tab}', [ProfileController::class, 'tab'])
+    ->where('user', '[A-Za-z][A-Za-z0-9_.]{1,30}[A-Za-z0-9]')->whereIn('tab', ['activity', 'wishlist'])
+    ->middleware('throttle:60,1')->name('profile.tab');
 Route::get('id{id}', [ProfileController::class, 'byId'])->whereNumber('id')->name('profile.id');
 Route::get('{user}', [ProfileController::class, 'show'])
     ->where('user', '[A-Za-z][A-Za-z0-9_.]{1,30}[A-Za-z0-9]')

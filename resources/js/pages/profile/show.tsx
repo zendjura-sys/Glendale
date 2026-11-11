@@ -21,6 +21,13 @@ import type { SetupData } from '@/components/profile/my-setup';
 import { StreamSchedule } from '@/components/profile/stream-schedule';
 import type { StreamSlot } from '@/components/profile/stream-schedule';
 import { SteamAchievements } from '@/components/profile/steam-achievements';
+import {
+    ProfileSectionBody,
+    ProfileSectionTabs,
+} from '@/components/profile/profile-sections';
+import type { ProfileSection } from '@/components/profile/profile-sections';
+import { BadgeStrip } from '@/components/profile/tiered-badges';
+import type { TieredBadge } from '@/components/profile/tiered-badges';
 import { EmbedButton } from '@/components/gc/embed-button';
 import { CompatibilityChip } from '@/components/games/compatibility-chip';
 import type { Compatibility } from '@/components/games/compatibility-chip';
@@ -48,6 +55,8 @@ import {
     Video,
     X,
     Settings,
+    Coins,
+    Link2,
 } from 'lucide-react';
 import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react';
 import { FriendButton } from '@/components/gc/friend-button';
@@ -205,6 +214,10 @@ type Props = {
     }[];
     photosHref: string | null;
     achievements?: AchievementsData;
+    tieredBadges?: TieredBadge[];
+    questPoints?: number | null;
+    linkedAccounts?: { kind: string; label: string; href: string | null }[];
+    wishlistVisible?: boolean;
     backlog?: BacklogSummary | null;
     ready?: {
         game: { name: string; slug: string } | null;
@@ -448,6 +461,10 @@ export default function ProfileShow({
     photos,
     photosHref,
     achievements,
+    tieredBadges = [],
+    questPoints = null,
+    linkedAccounts = [],
+    wishlistVisible = false,
     backlog = null,
     ready = null,
     audio,
@@ -461,6 +478,11 @@ export default function ProfileShow({
 }: Props) {
     const { modules, auth } = usePage().props;
     const isSelf = relation === 'self';
+    const [section, setSection] = useState<ProfileSection>('main');
+    const wishlistVisibility =
+        ((auth.user as { wishlist_visibility?: string } | null)
+            ?.wishlist_visibility as 'all' | 'friends' | 'none' | undefined) ??
+        'friends';
     const statusOn = usePlugin('status_emoji');
     const gamerIdsOn = usePlugin('gamer_ids');
     const profileTrackOn = usePlugin('profile_track');
@@ -813,6 +835,32 @@ export default function ProfileShow({
                             roles={profile.roles}
                             className="px-2.5 py-1 text-xs"
                         />
+                        <BadgeStrip badges={tieredBadges} isSelf={isSelf} />
+                        {questPoints !== null && questPoints > 0 && (
+                            <span
+                                title={tr('Очки за виконані завдання')}
+                                className="inline-flex items-center gap-1 rounded-chip bg-amber-400/10 px-2.5 py-1 text-xs font-semibold text-amber-300 tabular-nums"
+                            >
+                                <Coins className="size-3.5" />
+                                {tr('{n} очок', {
+                                    n: questPoints.toLocaleString('uk-UA'),
+                                })}
+                            </span>
+                        )}
+                        {linkedAccounts.map((a) =>
+                            a.href ? (
+                                <a
+                                    key={a.kind}
+                                    href={a.href}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 rounded-chip bg-white/[0.06] px-2.5 py-1 text-xs font-semibold text-white/75 transition hover:text-white"
+                                >
+                                    <Link2 className="size-3.5" />
+                                    {a.label}
+                                </a>
+                            ) : null,
+                        )}
                         {roleBadge && (
                             <span className="inline-flex items-center gap-1 rounded-chip border-gold/30 bg-gold/10 px-2.5 py-0.5 text-xs font-semibold text-gold">
                                 <ShieldCheck className="size-3" /> {roleBadge}
@@ -1174,307 +1222,361 @@ export default function ProfileShow({
                     />
                 </div>
             ) : (
-                <div className="mt-5 flex flex-col gap-5 xl:flex-row">
-                    <aside className="w-full shrink-0 space-y-4 xl:sticky xl:top-[76px] xl:h-fit xl:w-[320px]">
-                        {showVisitors && (
-                            <Widget title={tr('Хто заходив')} icon={Eye}>
-                                {visitors.length === 0 ? (
-                                    <p className="px-1 text-sm text-white/45">
-                                        {tr('Поки ніхто не заходив.')}
-                                    </p>
-                                ) : (
-                                    <div className="space-y-2">
-                                        {visitors.map((visitor) => (
-                                            <Link
-                                                key={visitor.id}
-                                                href={`/${visitor.username}`}
-                                                className="flex items-center gap-2 rounded-2xl px-1 py-1 transition hover:bg-[var(--gc-l3)]"
-                                            >
-                                                <UserAvatar
-                                                    user={visitor}
-                                                    size="sm"
-                                                />
-                                                <span className="min-w-0 flex-1">
-                                                    <span className="block truncate text-sm text-white">
-                                                        {visitor.first_name}
-                                                    </span>
-                                                    <span className="block text-xs text-white/40">
-                                                        {formatDate(
-                                                            visitor.visited_at,
-                                                            false,
-                                                        )}
-                                                    </span>
-                                                </span>
-                                            </Link>
-                                        ))}
-                                    </div>
-                                )}
-                            </Widget>
+                <>
+                    <ProfileSectionTabs
+                        value={section}
+                        onChange={setSection}
+                        wishlist={wishlistVisible}
+                    />
+                    {section !== 'main' && (
+                        <div className="mt-4">
+                            <ProfileSectionBody
+                                section={section}
+                                username={profile.username}
+                                isSelf={isSelf}
+                                visibility={wishlistVisibility}
+                            />
+                        </div>
+                    )}
+                    <div
+                        className={cn(
+                            'mt-5 flex flex-col gap-5 xl:flex-row',
+                            section !== 'main' && 'hidden',
                         )}
-                        {liveOn && stream && <ProfileStream stream={stream} />}
-                        {account && <AccountCard data={account} />}
-                        {blockSequence(blockOrder).map((key) => {
-                            const widgets: Record<string, ReactNode> = {
-                                // Ігрові блоки — лише в режимах, де є «Граю в…» (не в «Класиці», «Кіномані»…).
-                                track: (profileTrack ||
-                                    (isSelf && profileTrackOn)) && (
-                                    <ProfileTrack
-                                        track={profileTrack}
-                                        isSelf={isSelf && profileTrackOn}
-                                    />
-                                ),
-                                platforms: playingOn && profile.platforms && (
-                                    <GamerIds
-                                        steam={profile.platforms.steam}
-                                        ids={profile.platforms.ids ?? []}
-                                        isSelf={isSelf && gamerIdsOn}
-                                    />
-                                ),
-                                steam: playingOn &&
-                                    (steamLibrary?.length ?? 0) > 0 && (
-                                        <Widget title={tr('Бібліотека Steam')}>
-                                            <div className="space-y-1 px-1">
-                                                {steamLibrary?.map((game) =>
-                                                    game.href ? (
-                                                        <Link
-                                                            key={game.name}
-                                                            href={game.href}
-                                                            className="flex justify-between gap-3 text-sm text-white"
-                                                        >
-                                                            <span className="truncate">
-                                                                {game.name}
-                                                            </span>
-                                                            <span className="text-xs text-white/40">
-                                                                {game.hours}г
-                                                            </span>
-                                                        </Link>
-                                                    ) : (
-                                                        <div
-                                                            key={game.name}
-                                                            className="flex justify-between gap-3 text-sm text-white/80"
-                                                        >
-                                                            <span className="truncate">
-                                                                {game.name}
-                                                            </span>
-                                                            <span className="text-xs text-white/40">
-                                                                {game.hours}г
-                                                            </span>
-                                                        </div>
-                                                    ),
-                                                )}
-                                            </div>
-                                        </Widget>
-                                    ),
-                                steam_achievements: steamAchievements &&
-                                    canSeeContent && (
-                                        <SteamAchievements
-                                            username={profile.username}
-                                        />
-                                    ),
-                                setup: setup && (
-                                    <MySetup data={setup} isSelf={isSelf} />
-                                ),
-                                stream_schedule: streamSchedule && (
-                                    <StreamSchedule
-                                        slots={streamSchedule}
-                                        isSelf={isSelf}
-                                    />
-                                ),
-                                about: profile.about && (
-                                    <Widget title={tr('Про себе')}>
-                                        <p className="px-1 text-sm leading-relaxed whitespace-pre-line text-white/75">
-                                            {profile.about}
+                    >
+                        <aside className="w-full shrink-0 space-y-4 xl:sticky xl:top-[76px] xl:h-fit xl:w-[320px]">
+                            {showVisitors && (
+                                <Widget title={tr('Хто заходив')} icon={Eye}>
+                                    {visitors.length === 0 ? (
+                                        <p className="px-1 text-sm text-white/45">
+                                            {tr('Поки ніхто не заходив.')}
                                         </p>
-                                    </Widget>
-                                ),
-                                characters: (characters.length > 0 ||
-                                    (isSelf && charactersOn)) && (
-                                    <CharactersWidget
-                                        characters={characters}
-                                        isSelf={isSelf}
-                                    />
-                                ),
-                                games: backlog && (
-                                    <BacklogWidget
-                                        data={backlog}
-                                        isSelf={isSelf}
-                                    />
-                                ),
-                                achievements: achievements && (
-                                    <AchievementsCard
-                                        data={achievements}
-                                        isSelf={isSelf}
-                                    />
-                                ),
-                                audio: audio && (
-                                    <>
-                                        <Deferred
-                                            data="nowPlaying"
-                                            fallback={<span hidden />}
-                                        >
-                                            {nowPlaying ? (
-                                                <NowPlayingCard
-                                                    track={nowPlaying}
-                                                />
-                                            ) : null}
-                                        </Deferred>
-                                        {audio.tracks > 0 && (
-                                            <Link
-                                                href={audio.href}
-                                                className="gc-solid group flex items-center gap-3 rounded-2xl p-4 transition hover:border-white/15"
-                                            >
-                                                <span className="flex size-11 items-center justify-center rounded-2xl bg-gradient-to-br from-gc-purple to-gc-blue">
-                                                    <Music2 className="size-5 text-white" />
-                                                </span>
-                                                <span className="min-w-0 flex-1">
-                                                    <span className="block text-sm font-semibold text-white">
-                                                        {tr('Аудіозаписи')}
-                                                    </span>
-                                                    <span className="block text-xs text-white/45">
-                                                        {audio.tracks}{' '}
-                                                        {plural(audio.tracks, [
-                                                            'трек',
-                                                            'треки',
-                                                            'треків',
-                                                        ])}
-                                                    </span>
-                                                </span>
-                                                <span className="text-xs text-white/40 transition group-hover:text-white">
-                                                    {tr('Слухати →')}
-                                                </span>
-                                            </Link>
-                                        )}
-                                    </>
-                                ),
-                                friends: (
-                                    <Widget
-                                        title={tr('Друзі')}
-                                        icon={UsersRound}
-                                        action={
-                                            stats.mutual > 0 ? (
-                                                <span className="text-xs text-white/45">
-                                                    {stats.mutual}{' '}
-                                                    {plural(stats.mutual, [
-                                                        'спільний',
-                                                        'спільні',
-                                                        'спільних',
-                                                    ])}
-                                                </span>
-                                            ) : undefined
-                                        }
-                                    >
-                                        {friends.length === 0 ? (
-                                            <p className="px-1 text-sm text-white/45">
-                                                {tr('Поки немає друзів.')}
-                                            </p>
-                                        ) : (
-                                            <div className="grid grid-cols-3 gap-2">
-                                                {friends.map((friend) => (
-                                                    <Link
-                                                        key={friend.id}
-                                                        href={`/${friend.username}`}
-                                                        className="flex flex-col items-center gap-1.5 rounded-2xl p-2 text-center transition hover:bg-[var(--gc-l3)]"
-                                                    >
-                                                        <UserAvatar
-                                                            user={friend}
-                                                            size="lg"
-                                                        />
-                                                        <span className="w-full truncate text-xs text-white/75">
-                                                            {friend.first_name}
-                                                        </span>
-                                                    </Link>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </Widget>
-                                ),
-                                photos: photos.length > 0 && (
-                                    <Widget
-                                        title={tr('Фото')}
-                                        icon={ImageIcon}
-                                        action={
-                                            photosHref ? (
+                                    ) : (
+                                        <div className="space-y-2">
+                                            {visitors.map((visitor) => (
                                                 <Link
-                                                    href={photosHref}
-                                                    className="text-xs text-cyan-300/80 transition hover:text-cyan-200"
+                                                    key={visitor.id}
+                                                    href={`/${visitor.username}`}
+                                                    className="flex items-center gap-2 rounded-2xl px-1 py-1 transition hover:bg-[var(--gc-l3)]"
                                                 >
-                                                    {tr('Усі')} {stats.photos}
-                                                </Link>
-                                            ) : undefined
-                                        }
-                                    >
-                                        <div className="grid grid-cols-3 gap-1.5 overflow-hidden rounded-2xl">
-                                            {photos.map((photo) => (
-                                                <Link
-                                                    key={photo.id}
-                                                    href={photo.href}
-                                                    className="group aspect-square overflow-hidden bg-white/5"
-                                                >
-                                                    <img
-                                                        src={photo.url}
-                                                        alt={photo.alt ?? ''}
-                                                        loading="lazy"
-                                                        className={cn(
-                                                            'size-full object-cover transition duration-500',
-                                                            photo.is_sensitive
-                                                                ? 'scale-110 blur-2xl'
-                                                                : 'group-hover:scale-110',
-                                                        )}
+                                                    <UserAvatar
+                                                        user={visitor}
+                                                        size="sm"
                                                     />
+                                                    <span className="min-w-0 flex-1">
+                                                        <span className="block truncate text-sm text-white">
+                                                            {visitor.first_name}
+                                                        </span>
+                                                        <span className="block text-xs text-white/40">
+                                                            {formatDate(
+                                                                visitor.visited_at,
+                                                                false,
+                                                            )}
+                                                        </span>
+                                                    </span>
                                                 </Link>
                                             ))}
                                         </div>
-                                    </Widget>
-                                ),
-                            };
-                            const node = widgets[key];
-                            if (!node) return null;
+                                    )}
+                                </Widget>
+                            )}
+                            {liveOn && stream && (
+                                <ProfileStream stream={stream} />
+                            )}
+                            {account && <AccountCard data={account} />}
+                            {blockSequence(blockOrder).map((key) => {
+                                const widgets: Record<string, ReactNode> = {
+                                    // Ігрові блоки — лише в режимах, де є «Граю в…» (не в «Класиці», «Кіномані»…).
+                                    track: (profileTrack ||
+                                        (isSelf && profileTrackOn)) && (
+                                        <ProfileTrack
+                                            track={profileTrack}
+                                            isSelf={isSelf && profileTrackOn}
+                                        />
+                                    ),
+                                    platforms: playingOn &&
+                                        profile.platforms && (
+                                            <GamerIds
+                                                steam={profile.platforms.steam}
+                                                ids={
+                                                    profile.platforms.ids ?? []
+                                                }
+                                                isSelf={isSelf && gamerIdsOn}
+                                            />
+                                        ),
+                                    steam: playingOn &&
+                                        (steamLibrary?.length ?? 0) > 0 && (
+                                            <Widget
+                                                title={tr('Бібліотека Steam')}
+                                            >
+                                                <div className="space-y-1 px-1">
+                                                    {steamLibrary?.map(
+                                                        (game) =>
+                                                            game.href ? (
+                                                                <Link
+                                                                    key={
+                                                                        game.name
+                                                                    }
+                                                                    href={
+                                                                        game.href
+                                                                    }
+                                                                    className="flex justify-between gap-3 text-sm text-white"
+                                                                >
+                                                                    <span className="truncate">
+                                                                        {
+                                                                            game.name
+                                                                        }
+                                                                    </span>
+                                                                    <span className="text-xs text-white/40">
+                                                                        {
+                                                                            game.hours
+                                                                        }
+                                                                        г
+                                                                    </span>
+                                                                </Link>
+                                                            ) : (
+                                                                <div
+                                                                    key={
+                                                                        game.name
+                                                                    }
+                                                                    className="flex justify-between gap-3 text-sm text-white/80"
+                                                                >
+                                                                    <span className="truncate">
+                                                                        {
+                                                                            game.name
+                                                                        }
+                                                                    </span>
+                                                                    <span className="text-xs text-white/40">
+                                                                        {
+                                                                            game.hours
+                                                                        }
+                                                                        г
+                                                                    </span>
+                                                                </div>
+                                                            ),
+                                                    )}
+                                                </div>
+                                            </Widget>
+                                        ),
+                                    steam_achievements: steamAchievements &&
+                                        canSeeContent && (
+                                            <SteamAchievements
+                                                username={profile.username}
+                                            />
+                                        ),
+                                    setup: setup && (
+                                        <MySetup data={setup} isSelf={isSelf} />
+                                    ),
+                                    stream_schedule: streamSchedule && (
+                                        <StreamSchedule
+                                            slots={streamSchedule}
+                                            isSelf={isSelf}
+                                        />
+                                    ),
+                                    about: profile.about && (
+                                        <Widget title={tr('Про себе')}>
+                                            <p className="px-1 text-sm leading-relaxed whitespace-pre-line text-white/75">
+                                                {profile.about}
+                                            </p>
+                                        </Widget>
+                                    ),
+                                    characters: (characters.length > 0 ||
+                                        (isSelf && charactersOn)) && (
+                                        <CharactersWidget
+                                            characters={characters}
+                                            isSelf={isSelf}
+                                        />
+                                    ),
+                                    games: backlog && (
+                                        <BacklogWidget
+                                            data={backlog}
+                                            isSelf={isSelf}
+                                        />
+                                    ),
+                                    achievements: achievements && (
+                                        <AchievementsCard
+                                            data={achievements}
+                                            isSelf={isSelf}
+                                        />
+                                    ),
+                                    audio: audio && (
+                                        <>
+                                            <Deferred
+                                                data="nowPlaying"
+                                                fallback={<span hidden />}
+                                            >
+                                                {nowPlaying ? (
+                                                    <NowPlayingCard
+                                                        track={nowPlaying}
+                                                    />
+                                                ) : null}
+                                            </Deferred>
+                                            {audio.tracks > 0 && (
+                                                <Link
+                                                    href={audio.href}
+                                                    className="gc-solid group flex items-center gap-3 rounded-2xl p-4 transition hover:border-white/15"
+                                                >
+                                                    <span className="flex size-11 items-center justify-center rounded-2xl bg-gradient-to-br from-gc-purple to-gc-blue">
+                                                        <Music2 className="size-5 text-white" />
+                                                    </span>
+                                                    <span className="min-w-0 flex-1">
+                                                        <span className="block text-sm font-semibold text-white">
+                                                            {tr('Аудіозаписи')}
+                                                        </span>
+                                                        <span className="block text-xs text-white/45">
+                                                            {audio.tracks}{' '}
+                                                            {plural(
+                                                                audio.tracks,
+                                                                [
+                                                                    'трек',
+                                                                    'треки',
+                                                                    'треків',
+                                                                ],
+                                                            )}
+                                                        </span>
+                                                    </span>
+                                                    <span className="text-xs text-white/40 transition group-hover:text-white">
+                                                        {tr('Слухати →')}
+                                                    </span>
+                                                </Link>
+                                            )}
+                                        </>
+                                    ),
+                                    friends: (
+                                        <Widget
+                                            title={tr('Друзі')}
+                                            icon={UsersRound}
+                                            action={
+                                                stats.mutual > 0 ? (
+                                                    <span className="text-xs text-white/45">
+                                                        {stats.mutual}{' '}
+                                                        {plural(stats.mutual, [
+                                                            'спільний',
+                                                            'спільні',
+                                                            'спільних',
+                                                        ])}
+                                                    </span>
+                                                ) : undefined
+                                            }
+                                        >
+                                            {friends.length === 0 ? (
+                                                <p className="px-1 text-sm text-white/45">
+                                                    {tr('Поки немає друзів.')}
+                                                </p>
+                                            ) : (
+                                                <div className="grid grid-cols-3 gap-2">
+                                                    {friends.map((friend) => (
+                                                        <Link
+                                                            key={friend.id}
+                                                            href={`/${friend.username}`}
+                                                            className="flex flex-col items-center gap-1.5 rounded-2xl p-2 text-center transition hover:bg-[var(--gc-l3)]"
+                                                        >
+                                                            <UserAvatar
+                                                                user={friend}
+                                                                size="lg"
+                                                            />
+                                                            <span className="w-full truncate text-xs text-white/75">
+                                                                {
+                                                                    friend.first_name
+                                                                }
+                                                            </span>
+                                                        </Link>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </Widget>
+                                    ),
+                                    photos: photos.length > 0 && (
+                                        <Widget
+                                            title={tr('Фото')}
+                                            icon={ImageIcon}
+                                            action={
+                                                photosHref ? (
+                                                    <Link
+                                                        href={photosHref}
+                                                        className="text-xs text-cyan-300/80 transition hover:text-cyan-200"
+                                                    >
+                                                        {tr('Усі')}{' '}
+                                                        {stats.photos}
+                                                    </Link>
+                                                ) : undefined
+                                            }
+                                        >
+                                            <div className="grid grid-cols-3 gap-1.5 overflow-hidden rounded-2xl">
+                                                {photos.map((photo) => (
+                                                    <Link
+                                                        key={photo.id}
+                                                        href={photo.href}
+                                                        className="group aspect-square overflow-hidden bg-white/5"
+                                                    >
+                                                        <img
+                                                            src={photo.url}
+                                                            alt={
+                                                                photo.alt ?? ''
+                                                            }
+                                                            loading="lazy"
+                                                            className={cn(
+                                                                'size-full object-cover transition duration-500',
+                                                                photo.is_sensitive
+                                                                    ? 'scale-110 blur-2xl'
+                                                                    : 'group-hover:scale-110',
+                                                            )}
+                                                        />
+                                                    </Link>
+                                                ))}
+                                            </div>
+                                        </Widget>
+                                    ),
+                                };
+                                const node = widgets[key];
+                                if (!node) return null;
 
-                            return <Fragment key={key}>{node}</Fragment>;
-                        })}
-                    </aside>
+                                return <Fragment key={key}>{node}</Fragment>;
+                            })}
+                        </aside>
 
-                    <div
-                        id="wall"
-                        className="min-w-0 flex-1 scroll-mt-24 space-y-4"
-                    >
-                        {canPost && (
-                            <PostComposer wall={isSelf ? null : profile} />
-                        )}
+                        <div
+                            id="wall"
+                            className="min-w-0 flex-1 scroll-mt-24 space-y-4"
+                        >
+                            {canPost && (
+                                <PostComposer wall={isSelf ? null : profile} />
+                            )}
 
-                        {posts.data.length === 0 ? (
-                            <EmptyState
-                                icon={PenLine}
-                                title={tr('На стіні поки порожньо')}
-                                text={
-                                    isSelf
-                                        ? tr(
-                                              'Розкажіть світу щось цікаве — перший запис завжди найкращий.',
-                                          )
-                                        : tr(
-                                              '{first_name} ще нічого не публікував(-ла).',
-                                              {
-                                                  first_name:
-                                                      profile.first_name,
-                                              },
-                                          )
-                                }
-                            />
-                        ) : (
-                            <InfiniteScroll
-                                data="posts"
-                                preserveUrl
-                                buffer={600}
-                                loading={<PostSkeleton />}
-                                className={cn('space-y-4')}
-                            >
-                                {posts.data.map((post) => (
-                                    <PostCard key={post.id} post={post} />
-                                ))}
-                            </InfiniteScroll>
-                        )}
+                            {posts.data.length === 0 ? (
+                                <EmptyState
+                                    icon={PenLine}
+                                    title={tr('На стіні поки порожньо')}
+                                    text={
+                                        isSelf
+                                            ? tr(
+                                                  'Розкажіть світу щось цікаве — перший запис завжди найкращий.',
+                                              )
+                                            : tr(
+                                                  '{first_name} ще нічого не публікував(-ла).',
+                                                  {
+                                                      first_name:
+                                                          profile.first_name,
+                                                  },
+                                              )
+                                    }
+                                />
+                            ) : (
+                                <InfiniteScroll
+                                    data="posts"
+                                    preserveUrl
+                                    buffer={600}
+                                    loading={<PostSkeleton />}
+                                    className={cn('space-y-4')}
+                                >
+                                    {posts.data.map((post) => (
+                                        <PostCard key={post.id} post={post} />
+                                    ))}
+                                </InfiniteScroll>
+                            )}
+                        </div>
                     </div>
-                </div>
+                </>
             )}
         </>
     );

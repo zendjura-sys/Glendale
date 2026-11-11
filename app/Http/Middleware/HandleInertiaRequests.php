@@ -126,6 +126,7 @@ class HandleInertiaRequests extends Middleware
                     'role' => $user->role,
                     // Свій вибір мережевого статусу (інші бачать «Невидимий» як offline).
                     'presence_choice' => $user->pref('presence', 'online'),
+                    'wishlist_visibility' => $user->pref('wishlist_visibility', 'friends'),
                     'is_admin' => $user->isAdmin(),
                     'cover_url' => $user->cover_url,
                     'nav_tabs' => array_values(array_intersect($this->modules->navTabsFor($user), app(NetworkModes::class)->modulesFor($user))),

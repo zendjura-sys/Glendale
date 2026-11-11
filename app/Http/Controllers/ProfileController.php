@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\FriendMark;
+use App\Models\GameBacklog;
+use App\Models\GameWishlist;
 use App\Models\Photo;
 use App\Models\PhotoAlbum;
 use App\Models\Post;
@@ -32,6 +34,7 @@ use App\Services\Presence\SteamPresence;
 use App\Services\Profile\Affiliations;
 use App\Services\Profile\MySetup;
 use App\Services\Profile\StreamSchedule;
+use App\Services\Profile\TieredBadges;
 use App\Services\Quests\SeasonPass;
 use App\Services\Streams\LiveStreams;
 use App\Services\Thanks;
@@ -251,6 +254,14 @@ class ProfileController extends Controller
                 ? [...app(Backlog::class)->summary($user), 'href' => '/games/backlog/'.$user->username]
                 : null,
             'achievements' => app(Achievements::class)->for($user),
+            // Багаторівневі значки (стаж, ігри, GameCon+, підтримка спільноти…) — рядок у профілі й екран «Значки».
+            'tieredBadges' => $canSeeContent ? app(TieredBadges::class)->for($user) : [],
+            // Очки за завдання — внутрішня «валюта» профілю (тільки показ).
+            'questPoints' => $canSeeContent && $modules->enabled('quests') ? app(TieredBadges::class)->questPoints($user) : null,
+            // Прив’язані акаунти з посиланнями.
+            'linkedAccounts' => $canSeeContent ? $this->linkedAccounts($user) : [],
+            // Вкладки «Активність» і «Вішлист»: чи можна глядачеві бачити вішлист.
+            'wishlistVisible' => $this->wishlistVisible($user, $viewer, $relation),
             'stream' => app(NetworkModes::class)->featuresFor($viewer)['live'] && ($stream = UserStream::query()->where('user_id', $user->id)->first()) ? app(LiveStreams::class)->card($stream, $request->getHost()) : null,
             'characters' => $canSeeContent && $modules->enabled('servers') ? CharacterController::cards(player: $user) : [],
             'photosHref' => $modules->enabled('photos') ? '/photos/u/'.$user->username : null,
@@ -261,6 +272,67 @@ class ProfileController extends Controller
             'nowPlaying' => $modules->enabled('music') && $canSeeContent ? Inertia::defer(fn () => app(MusicService::class)->currentFor($user, $viewer)) : null,
             'posts' => Inertia::scroll(fn () => $posts->setCollection(collect($items))),
         ])->withViewData(PageSeo::profile($user, $canSeeContent));
+    }
+
+    /**
+     * Прив’язані акаунти: Steam, Discord (з посиланнями на профілі).
+     *
+     * @return list<array{kind: string, label: string, href: string|null}>
+     */
+    private function linkedAccounts(User $user): array
+    {
+        return array_values(array_filter([
+            $user->steam_id ? ['kind' => 'steam', 'label' => 'Steam', 'href' => 'https://steamcommunity.com/profiles/'.$user->steam_id] : null,
+            $user->discord_id ? ['kind' => 'discord', 'label' => 'Discord', 'href' => 'https://discord.com/users/'.$user->discord_id] : null,
+        ]));
+    }
+
+    /** Вішлист у профілі: «усім», «друзям» (за замовчуванням) чи «нікому»; власник бачить завжди. */
+    private function wishlistVisible(User $user, ?User $viewer, string $relation): bool
+    {
+        if ($viewer?->is($user)) {
+            return true;
+        }
+        $mode = $user->pref('wishlist_visibility', 'friends');
+
+        return $mode === 'all' || ($mode === 'friends' && $relation === FriendshipService::FRIENDS);
+    }
+
+    /** Хто бачить мій вішлист у профілі: усі, друзі чи ніхто. */
+    public function wishlistVisibility(Request $request): RedirectResponse
+    {
+        $data = $request->validate(['visibility' => ['required', 'in:all,friends,none']]);
+        $request->user()->mergePref(['wishlist_visibility' => $data['visibility']]);
+
+        return back();
+    }
+
+    /**
+     * Вкладки профілю «Активність» і «Вішлист» — підвантажуються при відкритті.
+     */
+    public function tab(Request $request, User $user, string $tab): JsonResponse
+    {
+        $viewer = $request->user();
+        $relation = $this->friendships->status($viewer, $user);
+        $open = ! $user->is_private || in_array($relation, [FriendshipService::SELF, FriendshipService::FRIENDS], true) || $viewer?->isStaff();
+        abort_unless($open && ! $user->isBanned(), 404);
+
+        if ($tab === 'wishlist') {
+            abort_unless($this->wishlistVisible($user, $viewer, $relation), 403);
+
+            return response()->json(['games' => GameWishlist::query()->with('game')->where('user_id', $user->id)->latest('id')->limit(60)->get()
+                ->filter(fn (GameWishlist $w) => $w->game !== null)
+                ->map(fn (GameWishlist $w) => [...$w->game->toCard(), 'added_at' => $w->created_at?->toIso8601String()])->values()]);
+        }
+
+        // Активність: у що грає, останні ігри з беклогу, бібліотека Steam.
+        return response()->json([
+            'playing' => $user->playing(),
+            'recent' => GameBacklog::query()->with('game')->where('user_id', $user->id)->whereIn('status', [GameBacklog::PLAYING, GameBacklog::DONE])
+                ->latest('updated_at')->limit(12)->get()->filter(fn (GameBacklog $b) => $b->game !== null)
+                ->map(fn (GameBacklog $b) => [...$b->game->toCard(), 'status' => $b->status, 'at' => $b->updated_at?->toIso8601String()])->values(),
+            'steam' => app(SteamPresence::class)->library($user),
+        ]);
     }
 
     public function card(User $user): Response
