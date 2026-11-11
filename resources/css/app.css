@@ -6319,3 +6319,25 @@ html[data-theme='dark'] .am.am-in-site {
         opacity: 0.6;
     }
 }
+
+/* Персонаж-аватар: очі кліпають раз на кілька секунд (без анімацій — нерухомі). */
+.character-svg .character-eyes {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: character-blink 5.2s infinite;
+}
+@keyframes character-blink {
+    0%,
+    94%,
+    100% {
+        transform: scaleY(1);
+    }
+    97% {
+        transform: scaleY(0.1);
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .character-svg .character-eyes {
+        animation: none;
+    }
+}

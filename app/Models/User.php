@@ -103,6 +103,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property int $balance Особистий рахунок, копійок (журнал — wallet_transactions)
  * @property array<string, string>|null $plus_style Колір ніку, рамка, акцент профілю
  * @property array<string, string>|null $cosmetics Вдягнута косметика сезонного пропуску (тип → ключ)
+ * @property array<string, int>|null $character Персонаж-аватар (частини → номер варіанта)
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
@@ -188,6 +189,7 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
             'email_social' => 'boolean',
             'nav_tabs' => 'array',
             'preferences' => 'array',
+            'character' => 'array',
             'plus_until' => 'datetime',
             'plus_style' => 'array',
             'cosmetics' => 'array',
@@ -366,6 +368,8 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
             'avatar_url' => $this->avatar_url,
             'is_online' => $this->is_online,
             'presence' => $this->presence(),
+            // Персонаж-аватар (конструктор у налаштуваннях) — у шоу говорить замість фото.
+            'character' => $this->character,
             'is_verified' => $this->is_verified,
             // Команда сайту (адміністратор чи модератор) — значок біля імені.
             'staff' => $this->isStaff() ? $this->role : null,

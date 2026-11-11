@@ -48,6 +48,7 @@ import {
     Video,
     X,
     Settings,
+    Smile,
 } from 'lucide-react';
 import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react';
 import { FriendButton } from '@/components/gc/friend-button';
@@ -465,6 +466,7 @@ export default function ProfileShow({
     const gamerIdsOn = usePlugin('gamer_ids');
     const profileTrackOn = usePlugin('profile_track');
     const pixelOn = usePlugin('pixel_avatar');
+    const characterOn = usePlugin('characters');
     const duelsOn = usePlugin('duels');
     const videoCoverOn = usePlugin('plus_video_cover');
     const dataSaver = useDataSaver();
@@ -1079,6 +1081,15 @@ export default function ProfileShow({
                                         />
                                     )}
                                     {isSelf && <AuthorStatsButton />}
+                                    {isSelf && characterOn && (
+                                        <Link
+                                            href="/settings/character"
+                                            className="inline-flex h-10 items-center gap-2 rounded-xl bg-white/[0.07] px-4 text-sm font-semibold text-white transition hover:bg-white/[0.11]"
+                                        >
+                                            <Smile className="size-4" />
+                                            {tr('Персонаж')}
+                                        </Link>
+                                    )}
                                     {isSelf && pixelOn && (
                                         <Link
                                             href="/settings/pixel-avatar"

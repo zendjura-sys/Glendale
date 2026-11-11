@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\SocialApiController;
 use App\Http\Controllers\Api\SubscriptionStatusController;
 use App\Http\Controllers\Api\WidgetApiController;
 use App\Http\Controllers\ArticleController;
+use App\Http\Controllers\AvatarCharacterController;
 use App\Http\Controllers\BioLinksController;
 use App\Http\Controllers\Bots;
 use App\Http\Controllers\CallController;
@@ -654,6 +655,10 @@ Route::prefix('v1')->group(function () {
             Route::delete('ready', [ReadyToPlayController::class, 'destroy']);
             Route::put('me/status', [StatusController::class, 'update'])->middleware('throttle:30,1');
             Route::put('me/presence', [StatusController::class, 'presence'])->middleware('throttle:30,1');
+            // Персонаж-аватар: той самий конструктор, що й на сайті.
+            Route::get('settings/character', [AvatarCharacterController::class, 'edit']);
+            Route::put('me/character', [AvatarCharacterController::class, 'update'])->middleware('throttle:30,1');
+            Route::delete('me/character', [AvatarCharacterController::class, 'destroy']);
             Route::delete('me/status', [StatusController::class, 'destroy']);
 
             // Запросити друзів (реферальна програма) і вступ за посиланням-запрошенням у клан, сім’ю чи спільноту.

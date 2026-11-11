@@ -10,6 +10,7 @@ use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\Auth\AppLoginController;
 use App\Http\Controllers\Auth\SocialAuthController;
 use App\Http\Controllers\AuthorSubscriptionController;
+use App\Http\Controllers\AvatarCharacterController;
 use App\Http\Controllers\BillingController;
 use App\Http\Controllers\BioLinksController;
 use App\Http\Controllers\Bots;
@@ -322,6 +323,9 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     Route::patch('ideas/{idea}', [IdeaController::class, 'status'])->name('ideas.status');
     Route::get('me/author-stats', [CreatorController::class, 'stats'])->middleware('throttle:30,1')->name('author-stats');
     Route::get('settings/pixel-avatar', [CreatorController::class, 'pixel'])->name('pixel-avatar');
+    Route::get('settings/character', [AvatarCharacterController::class, 'edit'])->name('character.edit');
+    Route::put('me/character', [AvatarCharacterController::class, 'update'])->middleware('throttle:30,1')->name('character.update');
+    Route::delete('me/character', [AvatarCharacterController::class, 'destroy'])->name('character.destroy');
     Route::post('secrets/{key}', [CreatorController::class, 'secret'])->middleware('throttle:10,1')->name('secrets.unlock');
     Route::put('settings/stream-schedule', [SetupController::class, 'schedule'])->middleware('throttle:30,1')->name('stream-schedule.update');
     Route::prefix('crosspost/{type}/{id}')->whereIn('type', ['user', 'server'])->whereNumber('id')->name('crosspost.')->group(function () {

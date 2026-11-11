@@ -841,4 +841,11 @@ class AppSiteParityTest extends TestCase
         $token = $this->app_token(User::factory()->create());
         $this->withToken($token)->postJson("/api/v1/site/posts/{$post->id}/poll", ['option_id' => $post->poll->options[0]->id])->assertOk()->assertJsonPath('total', 1);
     }
+
+    public function test_app_edits_character_through_bridge(): void
+    {
+        $token = $this->app_token(User::factory()->create());
+        $this->withToken($token)->getJson('/api/v1/site/settings/character')->assertOk()->assertJsonPath('parts.hair', 10);
+        $this->withToken($token)->putJson('/api/v1/site/me/character', ['character' => ['hair' => 3, 'bg' => 2]])->assertOk()->assertJsonPath('character.hair', 3)->assertJsonPath('character.skin', 0);
+    }
 }
