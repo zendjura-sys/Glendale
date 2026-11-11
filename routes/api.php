@@ -62,6 +62,7 @@ use App\Http\Controllers\IdeaController;
 use App\Http\Controllers\InviteLinkController;
 use App\Http\Controllers\ListenPartyController;
 use App\Http\Controllers\ListenRoomController;
+use App\Http\Controllers\LiveShowController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\MessengerController;
@@ -655,6 +656,22 @@ Route::prefix('v1')->group(function () {
             Route::delete('ready', [ReadyToPlayController::class, 'destroy']);
             Route::put('me/status', [StatusController::class, 'update'])->middleware('throttle:30,1');
             Route::put('me/presence', [StatusController::class, 'presence'])->middleware('throttle:30,1');
+            // Шоу наживо: сцена, гості з питанням на таймері, слухачі.
+            Route::prefix('shows')->controller(LiveShowController::class)->whereNumber(['show', 'user'])->group(function () {
+                Route::get('/', 'index');
+                Route::post('/', 'store')->middleware('throttle:6,1');
+                Route::get('{show}', 'show');
+                Route::get('{show}/state', 'state')->middleware('throttle:120,1');
+                Route::post('{show}/join', 'join')->middleware('throttle:20,1');
+                Route::post('{show}/leave', 'leave');
+                Route::post('{show}/hand', 'hand')->middleware('throttle:30,1');
+                Route::post('{show}/floor/{user:id}', 'floor')->withoutScopedBindings()->middleware('throttle:60,1');
+                Route::delete('{show}/floor/{user:id}', 'unfloor')->withoutScopedBindings();
+                Route::post('{show}/speakers', 'addSpeaker')->middleware('throttle:30,1');
+                Route::delete('{show}/speakers/{user:id}', 'removeSpeaker')->withoutScopedBindings();
+                Route::post('{show}/start', 'start');
+                Route::post('{show}/end', 'end');
+            });
             // Персонаж-аватар: той самий конструктор, що й на сайті.
             Route::get('settings/character', [AvatarCharacterController::class, 'edit']);
             Route::put('me/character', [AvatarCharacterController::class, 'update'])->middleware('throttle:30,1');

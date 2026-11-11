@@ -1,4 +1,4 @@
-import { Mic2 } from 'lucide-react';
+import { Mic2, Radio } from 'lucide-react';
 import { Head, Link, usePage } from '@inertiajs/react';
 import { Play } from 'lucide-react';
 import {
@@ -94,6 +94,7 @@ function greeting(name: string): string {
 
 export default function MusicHome({ home }: { home: Home }) {
     const podcastsOn = usePlugin('podcasts');
+    const showsOn = usePlugin('live_shows');
     const { auth } = usePage().props;
     const recent = home.recently_played as TrackCard[];
 
@@ -109,15 +110,26 @@ export default function MusicHome({ home }: { home: Home }) {
                 <p className="am-subhead mt-1 text-[var(--am-label2)]">
                     {tr('Твоя музика, мікси й станції — усе в одному місці')}
                 </p>
-                {podcastsOn && (
-                    <Link
-                        href="/podcasts"
-                        className="mt-3 inline-flex h-9 items-center gap-2 rounded-full bg-[var(--am-fill)] px-4 text-sm font-medium text-[var(--am-accent)] transition hover:bg-[var(--am-fill2)]"
-                    >
-                        <Mic2 className="size-4" />
-                        {tr('Подкасти')}
-                    </Link>
-                )}
+                <div className="mt-3 flex flex-wrap gap-2">
+                    {podcastsOn && (
+                        <Link
+                            href="/podcasts"
+                            className="inline-flex h-9 items-center gap-2 rounded-full bg-[var(--am-fill)] px-4 text-sm font-medium text-[var(--am-accent)] transition hover:bg-[var(--am-fill2)]"
+                        >
+                            <Mic2 className="size-4" />
+                            {tr('Подкасти')}
+                        </Link>
+                    )}
+                    {showsOn && (
+                        <Link
+                            href="/shows"
+                            className="inline-flex h-9 items-center gap-2 rounded-full bg-[var(--am-fill)] px-4 text-sm font-medium text-[var(--am-accent)] transition hover:bg-[var(--am-fill2)]"
+                        >
+                            <Radio className="size-4" />
+                            {tr('Шоу наживо')}
+                        </Link>
+                    )}
+                </div>
             </header>
 
             <SectionHeader title={tr('Найкраще для тебе')} />

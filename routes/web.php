@@ -67,6 +67,7 @@ use App\Http\Controllers\InviteLinkController;
 use App\Http\Controllers\LegalController;
 use App\Http\Controllers\ListenPartyController;
 use App\Http\Controllers\ListenRoomController;
+use App\Http\Controllers\LiveShowController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\Mail\UnsubscribeController;
 use App\Http\Controllers\MessageController;
@@ -323,6 +324,22 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     Route::patch('ideas/{idea}', [IdeaController::class, 'status'])->name('ideas.status');
     Route::get('me/author-stats', [CreatorController::class, 'stats'])->middleware('throttle:30,1')->name('author-stats');
     Route::get('settings/pixel-avatar', [CreatorController::class, 'pixel'])->name('pixel-avatar');
+    // Шоу наживо: сцена, гості з питанням на таймері, слухачі.
+    Route::prefix('shows')->name('shows.')->controller(LiveShowController::class)->whereNumber(['show', 'user'])->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('/', 'store')->middleware('throttle:6,1')->name('store');
+        Route::get('{show}', 'show')->name('show');
+        Route::get('{show}/state', 'state')->middleware('throttle:120,1')->name('state');
+        Route::post('{show}/join', 'join')->middleware('throttle:20,1')->name('join');
+        Route::post('{show}/leave', 'leave')->name('leave');
+        Route::post('{show}/hand', 'hand')->middleware('throttle:30,1')->name('hand');
+        Route::post('{show}/floor/{user:id}', 'floor')->withoutScopedBindings()->middleware('throttle:60,1')->name('floor');
+        Route::delete('{show}/floor/{user:id}', 'unfloor')->withoutScopedBindings()->name('unfloor');
+        Route::post('{show}/speakers', 'addSpeaker')->middleware('throttle:30,1')->name('speakers.add');
+        Route::delete('{show}/speakers/{user:id}', 'removeSpeaker')->withoutScopedBindings()->name('speakers.remove');
+        Route::post('{show}/start', 'start')->name('start');
+        Route::post('{show}/end', 'end')->name('end');
+    });
     Route::get('settings/character', [AvatarCharacterController::class, 'edit'])->name('character.edit');
     Route::put('me/character', [AvatarCharacterController::class, 'update'])->middleware('throttle:30,1')->name('character.update');
     Route::delete('me/character', [AvatarCharacterController::class, 'destroy'])->name('character.destroy');

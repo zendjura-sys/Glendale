@@ -30,6 +30,8 @@ export type UserCard = {
     staff_title?: { name: string; color: string } | null;
     /** Власна роль-підпис підписника GameCon+. */
     title?: { name: string; color: string } | null;
+    /** Персонаж-аватар (конструктор у налаштуваннях); у шоу говорить замість фото. */
+    character?: Partial<import('@/lib/character').CharacterConfig> | null;
     /** Ролі-плашки (звичайні, святкові, нагородні, преміум) з Адмінка → Ролі. */
     roles?: UserRoleCard[];
     /** Вид позначки (верифікація 2.0): identity, creator, business, organization. */

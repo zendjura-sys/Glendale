@@ -354,6 +354,22 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
     }
 
     /**
+     * Назва й колір ролі команди. Явний запит, якщо зв’язок не завантажено: картки збирають пачками,
+     * а ролі мають лише кілька людей із команди.
+     *
+     * @return array{name: string, color: string}|null
+     */
+    private function staffTitle(): ?array
+    {
+        if (! $this->isStaff() || $this->staff_role_id === null) {
+            return null;
+        }
+        $role = $this->relationLoaded('staffRole') ? $this->staffRole : StaffRole::query()->find($this->staff_role_id);
+
+        return $role ? ['name' => $role->name, 'color' => $role->color] : null;
+    }
+
+    /**
      * Компактне представлення для карток, коментарів і автора запису.
      *
      * @return array<string, mixed>
@@ -374,7 +390,7 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
             // Команда сайту (адміністратор чи модератор) — значок біля імені.
             'staff' => $this->isStaff() ? $this->role : null,
             // Назва й колір ролі команди, створеної адміністратором («Модератор чатів»).
-            'staff_title' => $this->isStaff() && $this->staff_role_id !== null ? $this->staffRole?->only(['name', 'color']) : null,
+            'staff_title' => $this->staffTitle(),
             // Власна роль-підпис підписника GameCon+ (змінюється раз на тиждень).
             'title' => $this->isPlus() && $this->plus_title !== null ? ['name' => $this->plus_title, 'color' => $this->plus_title_color ?? 'sky'] : null,
             'verified_kind' => $this->is_verified ? $this->verification_kind : null,

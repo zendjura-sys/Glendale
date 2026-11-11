@@ -142,15 +142,15 @@ export type VoiceReading = { level: number; pitch: number };
  * Вимірювач голосу для персонажа: гучність (0…1) відкриває рот, «тембр» (0 — низький, 1 — високий)
  * міняє форму: низький голос — круглий рот, високий — ширший. Згладжено, щоб рот не тремтів.
  */
-export function createVoiceMeter(stream: MediaStream): {
+export function createVoiceMeter(
+    stream: MediaStream,
+    shared?: AudioContext,
+): {
     read: () => VoiceReading;
     stop: () => void;
 } {
-    const Ctx =
-        window.AudioContext ??
-        (window as unknown as { webkitAudioContext: typeof AudioContext })
-            .webkitAudioContext;
-    const ctx = new Ctx();
+    const ctx = shared ?? newAudioContext();
+    void ctx.resume().catch(() => undefined);
     const source = ctx.createMediaStreamSource(stream);
     const analyser = ctx.createAnalyser();
     analyser.fftSize = 1024;
@@ -199,7 +199,16 @@ export function createVoiceMeter(stream: MediaStream): {
         },
         stop() {
             source.disconnect();
-            void ctx.close();
+            if (!shared) void ctx.close();
         },
     };
+}
+
+export function newAudioContext(): AudioContext {
+    const Ctx =
+        window.AudioContext ??
+        (window as unknown as { webkitAudioContext: typeof AudioContext })
+            .webkitAudioContext;
+
+    return new Ctx();
 }

@@ -848,4 +848,18 @@ class AppSiteParityTest extends TestCase
         $this->withToken($token)->getJson('/api/v1/site/settings/character')->assertOk()->assertJsonPath('parts.hair', 10);
         $this->withToken($token)->putJson('/api/v1/site/me/character', ['character' => ['hair' => 3, 'bg' => 2]])->assertOk()->assertJsonPath('character.hair', 3)->assertJsonPath('character.skin', 0);
     }
+
+    public function test_app_hosts_and_joins_live_shows_through_bridge(): void
+    {
+        Http::fake();
+        app(SiteSettings::class)->put(['livekit_url' => 'wss://voice.test', 'livekit_api_key' => 'key']);
+        config(['services.livekit.secret' => str_repeat('s', 32)]);
+        $host = $this->app_token(User::factory()->create());
+        $id = $this->withToken($host)->postJson('/api/v1/site/shows', ['title' => 'Ранкова кава', 'format' => 'double'])->assertCreated()->json('show.id');
+        $this->withToken($host)->getJson('/api/v1/site/shows')->assertOk()->assertJsonPath('live.0.id', $id);
+        $listener = $this->app_token(User::factory()->create());
+        $this->withToken($listener)->postJson("/api/v1/site/shows/{$id}/join")->assertOk()->assertJsonStructure(['url', 'token', 'identity']);
+        $this->withToken($listener)->postJson("/api/v1/site/shows/{$id}/hand", ['raised' => true])->assertOk()->assertJsonPath('me.hand', true);
+        $this->withToken($host)->getJson("/api/v1/site/shows/{$id}")->assertOk()->assertJsonPath('show.guest_seats', 2)->assertJsonCount(1, 'hands');
+    }
 }
