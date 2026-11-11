@@ -1305,6 +1305,8 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::get('families', [Admin\FamilyController::class, 'index'])->name('families.index');
         Route::patch('families/{family:id}', [Admin\FamilyController::class, 'update'])->whereNumber('family')->name('families.update');
         Route::delete('families/{family:id}', [Admin\FamilyController::class, 'destroy'])->whereNumber('family')->name('families.destroy');
+        Route::get('clans', [Admin\ClanController::class, 'index'])->name('clans.index');
+        Route::delete('clans/{clan:id}', [Admin\ClanController::class, 'destroy'])->whereNumber('clan')->name('clans.destroy');
         Route::post('families/voice-rooms', [Admin\VoiceTemplateController::class, 'store'])->name('voice-templates.store');
         Route::patch('families/voice-rooms/{template}', [Admin\VoiceTemplateController::class, 'update'])->name('voice-templates.update');
         Route::delete('families/voice-rooms/{template}', [Admin\VoiceTemplateController::class, 'destroy'])->name('voice-templates.destroy');

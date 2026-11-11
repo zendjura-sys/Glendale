@@ -44,6 +44,7 @@ import {
     BadgeCheck,
     TrendingUp,
     LifeBuoy,
+    Swords,
 } from 'lucide-react';
 import { AnimatePresence, m, useReducedMotion } from 'motion/react';
 import { useEffect, useState } from 'react';
@@ -181,6 +182,7 @@ function groups(): { title: string; items: Item[] }[] {
                 },
                 { label: tr('Ігри'), href: '/admin/games', icon: Gamepad2 },
                 { label: tr('Сім’ї'), href: '/admin/families', icon: Crown },
+                { label: tr('Клани'), href: '/admin/clans', icon: Swords },
                 {
                     label: tr('Стікери'),
                     href: '/admin/stickers',

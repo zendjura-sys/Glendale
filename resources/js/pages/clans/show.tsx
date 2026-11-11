@@ -74,6 +74,7 @@ type Props = {
     me: (Member & { can: Record<string, boolean> }) | null;
     application: { applied_at: string } | null;
     features: Record<string, { label: string; text: string }>;
+    can_staff_delete?: boolean;
     join_modes: Record<string, string>;
     members: Member[];
     applications: Member[];
@@ -455,6 +456,26 @@ export default function ClanShow(props: Props) {
                             className={ghost}
                         >
                             <LogOut className="size-4" /> {tr('Вийти')}
+                        </button>
+                    )}
+                    {props.can_staff_delete && (
+                        <button
+                            type="button"
+                            onClick={() => {
+                                const reason = prompt(
+                                    tr(
+                                        'Видалити «{name}» як персонал? Вкажіть причину (піде в журнал).',
+                                        { name: clan.name },
+                                    ),
+                                );
+                                if (reason === null) return;
+                                router.delete(`/admin/clans/${clan.id}`, {
+                                    data: { reason, from_page: true },
+                                });
+                            }}
+                            className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-red-500/15 px-3.5 text-sm font-semibold text-red-400 transition hover:bg-red-500/25"
+                        >
+                            <Trash2 className="size-4" /> {tr('Видалити клан')}
                         </button>
                     )}
                 </div>

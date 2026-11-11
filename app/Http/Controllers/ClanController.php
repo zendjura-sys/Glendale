@@ -194,6 +194,8 @@ class ClanController extends Controller
                 'questions' => array_values(array_filter((array) $clan->questions, 'is_string')),
             ] : null,
             'allies' => $this->allies($clan),
+            // Персонал: кнопка «Видалити клан» прямо на сторінці (у журнал).
+            'can_staff_delete' => $request->user()?->isAdmin() === true,
             'alliance_requests' => $request->user()?->id === $clan->owner_id
                 ? ClanAlliance::query()->with('clan')->where('ally_id', $clan->id)->where('status', ClanAlliance::PENDING)->latest('id')->get()
                     ->map(fn (ClanAlliance $row) => ['id' => $row->id, 'name' => $row->clan->display_name, 'slug' => $row->clan->slug])->values()
