@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\StaffRole;
 use App\Models\User;
 use App\Support\Staff\StaffRoles;
 use Illuminate\Http\RedirectResponse;
@@ -19,9 +20,11 @@ class TeamController extends Controller
     public function index(): Response
     {
         return Inertia::render('admin/team', [
-            'staff' => User::query()->whereIn('role', [User::ROLE_ADMIN, User::ROLE_MODERATOR])->orderBy('role')->orderBy('name')->get()
-                ->map(fn (User $u) => [...$u->toCard(), 'role' => $u->role, 'sections' => StaffRoles::sections($u)])->values(),
+            'staff' => User::query()->with('staffRole')->whereIn('role', [User::ROLE_ADMIN, User::ROLE_MODERATOR])->orderBy('role')->orderBy('name')->get()
+                ->map(fn (User $u) => [...$u->toCard(), 'role' => $u->role, 'staff_role_id' => $u->staff_role_id, 'own_sections' => (array) $u->staff_sections, 'sections' => StaffRoles::sections($u)])->values(),
             'sections' => StaffRoles::SECTIONS,
+            'roles' => StaffRole::query()->withCount('users')->orderBy('name')->get()->map(fn (StaffRole $r) => $r->toCard())->values(),
+            'colors' => StaffRole::COLORS,
         ]);
     }
 
@@ -31,13 +34,17 @@ class TeamController extends Controller
             'role' => ['required', Rule::in([User::ROLE_USER, User::ROLE_MODERATOR, User::ROLE_ADMIN])],
             'sections' => ['array'],
             'sections.*' => ['string', Rule::in(array_keys(StaffRoles::SECTIONS))],
+            'staff_role_id' => ['nullable', 'integer', Rule::exists('staff_roles', 'id')],
         ]);
         abort_if($user->id === $request->user()->id && $data['role'] !== User::ROLE_ADMIN, 422, 'Свою роль адміністратора зняти не можна.');
+        $staff = $data['role'] !== User::ROLE_USER;
         $user->forceFill([
             'role' => $data['role'],
             'staff_sections' => $data['role'] === User::ROLE_MODERATOR ? array_values(array_unique($data['sections'] ?? [])) : null,
+            // Назва ролі (значок біля ніка) — і в адміністраторів, і в модераторів; людина без ролі команди — без неї.
+            'staff_role_id' => $staff ? ($data['staff_role_id'] ?? null) : null,
         ])->save();
-        Log::info('team: role updated', ['user' => $user->id, 'role' => $data['role'], 'sections' => $user->staff_sections, 'by' => $request->user()->id]);
+        Log::info('team: role updated', ['user' => $user->id, 'role' => $data['role'], 'staff_role' => $user->staff_role_id, 'sections' => $user->staff_sections, 'by' => $request->user()->id]);
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Роль оновлено.']);
 
         return back();
@@ -55,6 +62,50 @@ class TeamController extends Controller
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Додано до команди — оберіть розділи.']);
 
         return back();
+    }
+
+    /** Нова роль команди: назва, колір значка й розділи адмінки. */
+    public function storeRole(Request $request): RedirectResponse
+    {
+        $role = StaffRole::query()->create($this->roleData($request));
+        Log::info('team: staff role created', ['role' => $role->id, 'name' => $role->name, 'sections' => $role->sections, 'by' => $request->user()->id]);
+        Inertia::flash('toast', ['type' => 'success', 'message' => "Роль «{$role->name}» створено."]);
+
+        return back();
+    }
+
+    public function updateRole(Request $request, StaffRole $role): RedirectResponse
+    {
+        $role->update($this->roleData($request));
+        Log::info('team: staff role updated', ['role' => $role->id, 'name' => $role->name, 'sections' => $role->sections, 'by' => $request->user()->id]);
+        Inertia::flash('toast', ['type' => 'success', 'message' => "Роль «{$role->name}» оновлено."]);
+
+        return back();
+    }
+
+    /** Видалити роль: люди лишаються в команді з особистими розділами, лише без назви ролі. */
+    public function destroyRole(Request $request, StaffRole $role): RedirectResponse
+    {
+        $role->delete();
+        Log::info('team: staff role deleted', ['role' => $role->id, 'name' => $role->name, 'by' => $request->user()->id]);
+        Inertia::flash('toast', ['type' => 'success', 'message' => "Роль «{$role->name}» видалено."]);
+
+        return back();
+    }
+
+    /**
+     * @return array{name: string, color: string, sections: list<string>}
+     */
+    private function roleData(Request $request): array
+    {
+        $data = $request->validate([
+            'name' => ['required', 'string', 'min:2', 'max:40'],
+            'color' => ['required', Rule::in(StaffRole::COLORS)],
+            'sections' => ['array'],
+            'sections.*' => ['string', Rule::in(array_keys(StaffRoles::SECTIONS))],
+        ]);
+
+        return ['name' => trim((string) $data['name']), 'color' => (string) $data['color'], 'sections' => array_values(array_unique($data['sections'] ?? []))];
     }
 
     /** Воронка реєстрації: скільки з нових акаунтів пройшли кожен крок. */

@@ -90,6 +90,7 @@ import type {
     UserCard,
 } from '@/types';
 import { AffiliationBadges } from '@/components/gc/affiliation-badges';
+import { UserTitle } from '@/components/gc/user-title';
 import { LOCALE, tr } from '@/lib/i18n';
 import { LiveBadge, ProfileStream } from '@/components/streams/stream';
 import type { StreamInfo } from '@/components/streams/stream';
@@ -407,12 +408,14 @@ export default function ProfileShow({
     const charactersOn = usePlugin('rp_characters');
     const liveOn = useFeature('live');
     const playingOn = useFeature('playing');
+    // Роль команди: назва з Адмінка → Команда → Ролі, інакше — загальна.
     const roleBadge =
-        profile.role === 'admin'
+        profile.staff_title?.name ??
+        (profile.role === 'admin'
             ? tr('Адміністратор')
             : profile.role === 'moderator'
               ? tr('Модератор')
-              : null;
+              : null);
 
     return (
         <>
@@ -565,6 +568,12 @@ export default function ProfileShow({
                                     badges={profile.badges}
                                     size={24}
                                 />
+                                {!roleBadge && profile.title && (
+                                    <UserTitle
+                                        user={{ title: profile.title }}
+                                        className="px-2.5 py-1 text-xs"
+                                    />
+                                )}
                                 {roleBadge && (
                                     <span className="inline-flex items-center gap-1 rounded-chip border-gold/30 bg-gold/10 px-2.5 py-0.5 text-xs font-semibold text-gold">
                                         <ShieldCheck className="size-3" />{' '}

@@ -24,6 +24,10 @@ export type UserCard = {
     badges?: import('@/components/gc/affiliation-badges').AffiliationBadge[];
     /** Команда сайту: 'admin' | 'moderator'. */
     staff?: string | null;
+    /** Назва й колір ролі команди, створеної адміністратором. */
+    staff_title?: { name: string; color: string } | null;
+    /** Власна роль-підпис підписника GameCon+. */
+    title?: { name: string; color: string } | null;
     /** Вид позначки (верифікація 2.0): identity, creator, business, organization. */
     verified_kind?: string | null;
     /** Спеціальний акаунт (стрімер, бізнес…); null — особистий. */

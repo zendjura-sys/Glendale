@@ -206,6 +206,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::get('/', [PlusController::class, 'index'])->name('index');
         Route::post('redeem', [PlusController::class, 'redeem'])->middleware('throttle:10,1')->name('redeem');
         Route::put('style', [PlusController::class, 'style'])->name('style');
+        Route::put('title', [PlusController::class, 'title'])->middleware('throttle:20,1')->name('title');
         Route::put('families/{family:id}/style', [PlusController::class, 'familyStyle'])->whereNumber('family')->name('families.style');
     });
     Route::get('start', [StartController::class, 'index'])->name('start');
@@ -1067,6 +1068,9 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::get('team', [Admin\TeamController::class, 'index'])->name('team.index');
         Route::post('team', [Admin\TeamController::class, 'add'])->name('team.add');
         Route::put('team/{user}', [Admin\TeamController::class, 'update'])->name('team.update');
+        Route::post('team/roles', [Admin\TeamController::class, 'storeRole'])->name('team.roles.store');
+        Route::put('team/roles/{role}', [Admin\TeamController::class, 'updateRole'])->whereNumber('role')->name('team.roles.update');
+        Route::delete('team/roles/{role}', [Admin\TeamController::class, 'destroyRole'])->whereNumber('role')->name('team.roles.destroy');
         Route::get('funnel', [Admin\TeamController::class, 'funnel'])->name('funnel');
         Route::post('view-as/{user}', [Admin\TeamController::class, 'viewAs'])->name('view-as');
         Route::post('system/backups', [Admin\SystemController::class, 'backup'])->middleware('throttle:3,10')->name('system.backup');

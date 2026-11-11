@@ -5,14 +5,19 @@ namespace App\Http\Controllers;
 use App\Models\Family;
 use App\Models\FamilyMember;
 use App\Models\PlusPayment;
+use App\Models\StaffRole;
 use App\Models\User;
 use App\Services\Billing\Shop;
+use App\Services\Moderation\ContentFilter;
 use App\Services\Plus\Plus;
 use App\Services\Plus\PromoCodes;
 use App\Support\PlusStyle;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -30,6 +35,13 @@ class PlusController extends Controller
         return Inertia::render('plus/index', [
             'state' => $this->plus->state($user),
             'style' => $user->plus_style ?? (object) [],
+            // Власна роль-підпис: текст, колір і коли можна змінити знову.
+            'title' => [
+                'name' => $user->plus_title,
+                'color' => $user->plus_title_color ?? 'sky',
+                'next_change' => $user->plus_title !== null && $user->plus_title_at?->gt(now()->subWeek()) ? $user->plus_title_at->copy()->addWeek()->toIso8601String() : null,
+                'colors' => StaffRole::COLORS,
+            ],
             'options' => PlusStyle::options(),
             'products' => Shop::catalog(),
             'families' => self::ledFamilies($user)->map(fn (Family $f) => [
@@ -75,6 +87,51 @@ class PlusController extends Controller
         $user->forceFill(['plus_style' => PlusStyle::clean($data) ?: null])->save();
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Оформлення збережено.']);
+
+        return back();
+    }
+
+    /** Слова, яких не може бути у власній ролі: щоб підпис не видавав себе за команду сайту. */
+    private const TITLE_RESERVED = ['адмін', 'admin', 'модер', 'moder', 'gamecon', 'геймкон', 'підтримк', 'support', 'staff', 'персонал', 'розробник', 'developer', 'офіційн', 'official'];
+
+    /**
+     * Власна роль-підпис біля ніка для підписника GameCon+: текст до 24 символів і колір.
+     * Змінити можна раз на тиждень; прибрати — будь-коли.
+     */
+    public function title(Request $request): RedirectResponse
+    {
+        $user = $request->user();
+        abort_unless($user->isPlus(), 403, 'Власна роль доступна з GameCon+.');
+        $data = $request->validate([
+            'name' => ['nullable', 'string', 'min:2', 'max:24', 'regex:/^[\pL\pN][\pL\pN \-_.!?♥★]*$/u'],
+            'color' => ['nullable', Rule::in(StaffRole::COLORS)],
+        ], ['name.regex' => 'Лише літери, цифри, пробіл і прості знаки.']);
+        $name = trim((string) ($data['name'] ?? ''));
+
+        if ($name === '') {
+            $user->forceFill(['plus_title' => null, 'plus_title_color' => null])->save();
+            Inertia::flash('toast', ['type' => 'success', 'message' => 'Власну роль прибрано.']);
+
+            return back();
+        }
+        $lower = Str::lower($name);
+        foreach (self::TITLE_RESERVED as $word) {
+            if (str_contains($lower, $word)) {
+                throw ValidationException::withMessages(['name' => 'Така роль схожа на роль команди GameCon — оберіть іншу.']);
+            }
+        }
+        $changed = $name !== $user->plus_title;
+        // Текст змінюється раз на тиждень (колір — будь-коли).
+        if ($changed && $user->plus_title !== null && $user->plus_title_at !== null && $user->plus_title_at->gt(now()->subWeek())) {
+            throw ValidationException::withMessages(['name' => 'Роль можна змінити раз на тиждень — наступна зміна '.$user->plus_title_at->copy()->addWeek()->format('d.m о H:i').'.']);
+        }
+        $clean = (string) app(ContentFilter::class)->clean($name);
+        $user->forceFill([
+            'plus_title' => $clean,
+            'plus_title_color' => $data['color'] ?? 'sky',
+            'plus_title_at' => $changed ? now() : $user->plus_title_at,
+        ])->save();
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Власну роль збережено.']);
 
         return back();
     }

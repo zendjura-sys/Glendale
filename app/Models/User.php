@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -56,6 +57,11 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property string|null $city
  * @property string|null $country
  * @property list<string>|null $staff_sections розділи адмінки, доручені модератору
+ * @property int|null $staff_role_id роль команди (StaffRole): назва, колір і розділи адмінки
+ * @property string|null $plus_title власна роль-підпис біля ніка (GameCon+)
+ * @property string|null $plus_title_color колір підпису (StaffRole::COLORS)
+ * @property Carbon|null $plus_title_at коли підпис востаннє змінювали (раз на тиждень)
+ * @property-read StaffRole|null $staffRole
  * @property int $streak_days серія днів поспіль
  * @property int $streak_best
  * @property Carbon|null $streak_on
@@ -161,6 +167,7 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
     {
         return [
             'staff_sections' => 'array',
+            'plus_title_at' => 'datetime',
             'streak_on' => 'date',
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
@@ -295,6 +302,14 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
         return $this->role === self::ROLE_ADMIN;
     }
 
+    /**
+     * @return BelongsTo<StaffRole, $this>
+     */
+    public function staffRole(): BelongsTo
+    {
+        return $this->belongsTo(StaffRole::class);
+    }
+
     public function isStaff(): bool
     {
         return in_array($this->role, [self::ROLE_ADMIN, self::ROLE_MODERATOR], true);
@@ -351,6 +366,10 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
             'is_verified' => $this->is_verified,
             // Команда сайту (адміністратор чи модератор) — значок біля імені.
             'staff' => $this->isStaff() ? $this->role : null,
+            // Назва й колір ролі команди, створеної адміністратором («Модератор чатів»).
+            'staff_title' => $this->isStaff() && $this->staff_role_id !== null ? $this->staffRole?->only(['name', 'color']) : null,
+            // Власна роль-підпис підписника GameCon+ (змінюється раз на тиждень).
+            'title' => $this->isPlus() && $this->plus_title !== null ? ['name' => $this->plus_title, 'color' => $this->plus_title_color ?? 'sky'] : null,
             'verified_kind' => $this->is_verified ? $this->verification_kind : null,
             'account_type' => $this->account_type !== 'personal' ? $this->account_type : null,
             'status' => $this->statusExpired() ? null : $this->status,

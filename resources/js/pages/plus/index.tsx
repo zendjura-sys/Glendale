@@ -9,6 +9,7 @@ import {
     Phone,
     Shield,
     Sparkles,
+    Tag,
     Ticket,
     Users,
     Wallet,
@@ -19,6 +20,7 @@ import type { FormEvent, ReactNode } from 'react';
 import { PlusTabs } from '@/components/billing/plus-tabs';
 import { FamilyLogo } from '@/components/families/family-logo';
 import { PlusBadge, plusNameProps } from '@/components/gc/plus';
+import { titleColor, UserTitle } from '@/components/gc/user-title';
 import { UserAvatar } from '@/components/gc/user-avatar';
 import { perPeriod, periodLabel, useKind } from '@/lib/billing';
 import { formatDate } from '@/lib/format';
@@ -59,6 +61,12 @@ type Props = {
     };
     products: Record<string, { available: boolean }>;
     families: (FamilyCard & { state: State; style: Style })[];
+    title: {
+        name: string | null;
+        color: string;
+        next_change: string | null;
+        colors: string[];
+    };
     payments: {
         id: number;
         product: string;
@@ -119,6 +127,7 @@ export default function PlusPage({
     options,
     families,
     payments,
+    title,
 }: Props) {
     const plans = useKind('plus');
     const user = usePage().props.auth.user;
@@ -253,6 +262,8 @@ export default function PlusPage({
                         preview={user}
                     />
                 )}
+
+                {state.active && <TitleForm title={title} />}
 
                 <div className="grid gap-5 md:grid-cols-2">
                     <GiftForm buy={buy} busy={busy} />
@@ -911,6 +922,108 @@ function OtherPurchases() {
                     </Link>
                 ))}
             </div>
+        </section>
+    );
+}
+
+/** Власна роль-підпис біля ніка (GameCon+): текст до 24 символів і колір; текст — раз на тиждень. */
+function TitleForm({ title }: { title: Props['title'] }) {
+    const form = useForm({ name: title.name ?? '', color: title.color });
+    const locked =
+        title.next_change !== null && form.data.name !== (title.name ?? '');
+
+    return (
+        <section className="gc-solid rounded-2xl p-5">
+            <h2 className="flex items-center gap-2 font-display text-lg font-bold text-white">
+                <Tag className="size-5 text-sky-300" />
+                {tr('Власна роль')}
+            </h2>
+            <p className="mt-1 text-sm text-white/55">
+                {tr(
+                    'Підпис біля вашого ніка в записах, коментарях і профілі. Змінити текст можна раз на тиждень, колір — будь-коли.',
+                )}
+            </p>
+            <form
+                onSubmit={(e) => {
+                    e.preventDefault();
+                    form.put('/plus/title', { preserveScroll: true });
+                }}
+                className="mt-4 space-y-3"
+            >
+                <div className="flex flex-wrap items-center gap-3">
+                    <input
+                        value={form.data.name}
+                        onChange={(e) => form.setData('name', e.target.value)}
+                        maxLength={24}
+                        placeholder={tr('Наприклад: Снайпер клану')}
+                        aria-label={tr('Текст ролі')}
+                        className="h-11 min-w-0 flex-1 rounded-xl bg-white/[0.06] px-3 text-sm text-white placeholder:text-white/40 focus:outline-none"
+                    />
+                    {form.data.name.trim() !== '' && (
+                        <UserTitle
+                            user={{
+                                title: {
+                                    name: form.data.name.trim(),
+                                    color: form.data.color,
+                                },
+                            }}
+                            className="px-2.5 py-1 text-xs"
+                        />
+                    )}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                    {title.colors.map((c) => (
+                        <button
+                            key={c}
+                            type="button"
+                            onClick={() => form.setData('color', c)}
+                            aria-label={c}
+                            aria-pressed={form.data.color === c}
+                            className={cn(
+                                'h-7 rounded-lg px-2.5 text-[11px] font-semibold',
+                                titleColor(c),
+                                form.data.color === c && 'ring-2 ring-white/60',
+                            )}
+                        >
+                            Aa
+                        </button>
+                    ))}
+                </div>
+                {title.next_change && (
+                    <p className="text-xs text-white/45">
+                        {tr('Наступна зміна тексту — {date}', {
+                            date: formatDate(title.next_change),
+                        })}
+                    </p>
+                )}
+                {form.errors.name && (
+                    <p className="text-sm text-rose-400">{form.errors.name}</p>
+                )}
+                <div className="flex gap-2">
+                    <button
+                        type="submit"
+                        disabled={form.processing || locked}
+                        className={cn(primary, 'h-10')}
+                    >
+                        {tr('Зберегти')}
+                    </button>
+                    {title.name && (
+                        <button
+                            type="button"
+                            onClick={() =>
+                                router.put(
+                                    '/plus/title',
+                                    { name: '' },
+                                    { preserveScroll: true },
+                                )
+                            }
+                            className="h-10 rounded-xl px-3 text-sm text-white/60 hover:text-white"
+                        >
+                            {tr('Прибрати')}
+                        </button>
+                    )}
+                </div>
+            </form>
         </section>
     );
 }

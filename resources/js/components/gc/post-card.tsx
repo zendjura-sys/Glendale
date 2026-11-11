@@ -53,6 +53,7 @@ import {
     cosmeticNameStyle,
 } from '@/components/season/cosmetics';
 import { AffiliationBadges } from './affiliation-badges';
+import { UserTitle } from '@/components/gc/user-title';
 import { StaffBadge } from './staff-badge';
 import { VerifiedBadge } from './verified-badge';
 import {
@@ -186,6 +187,9 @@ export function PostCard({
                             )}
                             {!post.publisher && (
                                 <StaffBadge role={post.author.staff} />
+                            )}
+                            {!post.publisher && (
+                                <UserTitle user={post.author} />
                             )}
                             {!post.publisher && post.author.plus && (
                                 <PlusBadge />

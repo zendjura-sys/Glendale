@@ -41,9 +41,10 @@ class StaffRoles
         if (! $user->isStaff()) {
             return [];
         }
-        $saved = $user->staff_sections;
+        // Особисто доручені розділи плюс розділи ролі команди (Адмінка → Команда → Ролі).
+        $saved = array_merge((array) $user->staff_sections, $user->staffRole?->cleanSections() ?? []);
 
-        return is_array($saved) ? array_values(array_filter($saved, fn (string $s) => array_key_exists($s, self::SECTIONS))) : [];
+        return array_values(array_unique(array_filter($saved, fn ($s) => is_string($s) && array_key_exists($s, self::SECTIONS))));
     }
 
     /** Розділ адмінки, до якого веде запит (null — головна /admin). */
