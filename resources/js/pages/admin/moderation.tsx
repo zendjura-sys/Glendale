@@ -33,6 +33,7 @@ import { timeAgo } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import type { UserCard } from '@/types';
 import { LOCALE, tr } from '@/lib/i18n';
+import { MasterDetail } from '@/components/admin/master-detail';
 import { ModerationQueue } from '@/components/admin/moderation-queue';
 import type { QueueItem } from '@/components/admin/moderation-queue';
 
@@ -187,161 +188,174 @@ export default function AdminModeration({
                 <h2 className="mb-3 font-display text-lg font-semibold text-white">
                     {tr('Скарги')}
                 </h2>
-                {reports.length === 0 ? (
-                    <p className="text-sm text-white/45">
-                        {tr('Нових скарг немає.')}
-                    </p>
-                ) : (
-                    <div className="space-y-3">
-                        {reports.map((r) => (
-                            <article
-                                key={r.id}
-                                id={`mod-report-${r.id}`}
-                                className="gc-solid-2 rounded-2xl p-3"
-                            >
-                                <div className="flex flex-wrap items-center gap-2 text-xs text-white/50">
-                                    <span className="rounded-md bg-red-500/15 px-2 py-0.5 text-red-400">
-                                        {r.count}{' '}
-                                        {r.count === 1
-                                            ? tr('скарга')
-                                            : tr('скарг')}
+                <MasterDetail
+                    items={reports}
+                    getKey={(r) => r.id}
+                    empty={tr('Нових скарг немає.')}
+                    renderRow={(r) => (
+                        <>
+                            <span className="flex items-center gap-2 text-xs text-white/50">
+                                <span className="rounded-md bg-red-500/15 px-1.5 py-0.5 font-semibold text-red-400 tabular-nums">
+                                    {r.count}
+                                </span>
+                                {r.ai?.severity === 'high' && (
+                                    <Sparkles className="size-3.5 text-red-400" />
+                                )}
+                                <span className="truncate">
+                                    {r.message?.chat}
+                                </span>
+                                <span className="ml-auto shrink-0">
+                                    {timeAgo(r.created_at)}
+                                </span>
+                            </span>
+                            <span className="mt-1 block truncate text-sm font-semibold text-white">
+                                {r.message?.author?.name ??
+                                    tr('Видалений користувач')}
+                            </span>
+                            <span className="block truncate text-sm text-white/60">
+                                {r.message?.body ?? r.reasons.join(', ')}
+                            </span>
+                        </>
+                    )}
+                    renderDetail={(r) => (
+                        <article
+                            key={r.id}
+                            id={`mod-report-${r.id}`}
+                            className="gc-solid-2 rounded-2xl p-3"
+                        >
+                            <div className="flex flex-wrap items-center gap-2 text-xs text-white/50">
+                                <span className="rounded-md bg-red-500/15 px-2 py-0.5 text-red-400">
+                                    {r.count}{' '}
+                                    {r.count === 1 ? tr('скарга') : tr('скарг')}
+                                </span>
+                                {r.trusted && (
+                                    <span className="rounded-md bg-emerald-500/15 px-2 py-0.5 text-emerald-200">
+                                        {tr('Довірений скаржник')}
                                     </span>
-                                    {r.trusted && (
-                                        <span className="rounded-md bg-emerald-500/15 px-2 py-0.5 text-emerald-200">
-                                            {tr('Довірений скаржник')}
-                                        </span>
+                                )}
+                                {r.reasons.map((reason) => (
+                                    <span
+                                        key={reason}
+                                        className="gc-solid-2 rounded-md px-2 py-0.5"
+                                    >
+                                        {reason}
+                                    </span>
+                                ))}
+                                <span>· {r.message?.chat}</span>
+                                <span className="ml-auto">
+                                    {timeAgo(r.created_at)}
+                                </span>
+                            </div>
+                            {r.message && (
+                                <div className="mt-2 flex items-start gap-2.5">
+                                    {r.message.author && (
+                                        <Link
+                                            href={`/${r.message.author.username}`}
+                                        >
+                                            <UserAvatar
+                                                user={r.message.author}
+                                                size="sm"
+                                            />
+                                        </Link>
                                     )}
-                                    {r.reasons.map((reason) => (
-                                        <span
-                                            key={reason}
-                                            className="gc-solid-2 rounded-md px-2 py-0.5"
-                                        >
-                                            {reason}
-                                        </span>
-                                    ))}
-                                    <span>· {r.message?.chat}</span>
-                                    <span className="ml-auto">
-                                        {timeAgo(r.created_at)}
-                                    </span>
-                                </div>
-                                {r.message && (
-                                    <div className="mt-2 flex items-start gap-2.5">
-                                        {r.message.author && (
-                                            <Link
-                                                href={`/${r.message.author.username}`}
-                                            >
-                                                <UserAvatar
-                                                    user={r.message.author}
-                                                    size="sm"
-                                                />
-                                            </Link>
-                                        )}
-                                        <div className="min-w-0 flex-1">
-                                            <p className="text-sm font-semibold text-white">
-                                                {r.message.author?.name ??
-                                                    tr('Видалений користувач')}
-                                            </p>
-                                            <p
-                                                className={cn(
-                                                    'text-sm whitespace-pre-line',
-                                                    r.message.deleted
-                                                        ? 'text-white/35 line-through'
-                                                        : 'text-white/80',
-                                                )}
-                                            >
-                                                {r.message.body ??
-                                                    `[${r.message.type}]`}
-                                            </p>
-                                        </div>
-                                    </div>
-                                )}
-                                {r.ai && (
-                                    <p className="mt-2 flex items-start gap-2 text-xs text-white/60">
-                                        <span
+                                    <div className="min-w-0 flex-1">
+                                        <p className="text-sm font-semibold text-white">
+                                            {r.message.author?.name ??
+                                                tr('Видалений користувач')}
+                                        </p>
+                                        <p
                                             className={cn(
-                                                'inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 font-semibold',
-                                                r.ai.severity === 'high'
-                                                    ? 'bg-red-500/15 text-red-400'
-                                                    : r.ai.severity === 'medium'
-                                                      ? 'bg-amber-500/15 text-amber-200'
-                                                      : 'gc-solid-2 text-white/60',
+                                                'text-sm whitespace-pre-line',
+                                                r.message.deleted
+                                                    ? 'text-white/35 line-through'
+                                                    : 'text-white/80',
                                             )}
                                         >
-                                            <Sparkles className="size-3" />
-                                            {r.ai.severity === 'high'
-                                                ? tr('ШІ: терміново')
-                                                : r.ai.severity === 'medium'
-                                                  ? tr('ШІ: варто глянути')
-                                                  : tr('ШІ: порушень не видно')}
-                                        </span>
-                                        <span className="pt-0.5">
-                                            {r.ai.reason}
-                                        </span>
-                                    </p>
-                                )}
-                                {r.comments.length > 0 && (
-                                    <p className="mt-2 text-xs text-white/50">
-                                        {tr('Коментарі:')}{' '}
-                                        {r.comments.join(' · ')}
-                                    </p>
-                                )}
-                                <p className="mt-1 text-xs text-white/35">
-                                    {tr('Поскаржилися:')}{' '}
-                                    {r.reporters.join(', ')}
-                                </p>
-                                <div className="mt-3 flex flex-wrap items-center gap-2">
-                                    <button
-                                        type="button"
-                                        onClick={() => resolve(r, 'delete')}
-                                        className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-red-500/15 px-3 text-sm text-red-400 hover:bg-red-500/25"
-                                    >
-                                        <Trash2 className="size-4" />{' '}
-                                        {tr('Видалити')}
-                                    </button>
-                                    <span className="inline-flex items-center gap-1">
-                                        <select
-                                            value={hours[r.id] ?? 24}
-                                            onChange={(e) =>
-                                                setHours({
-                                                    ...hours,
-                                                    [r.id]: Number(
-                                                        e.target.value,
-                                                    ),
-                                                })
-                                            }
-                                            className="input-glass h-9 rounded-xl px-2 text-sm text-white"
-                                            aria-label={tr(
-                                                'На скільки заглушити',
-                                            )}
-                                        >
-                                            {mute_hours.map((h) => (
-                                                <option key={h} value={h}>
-                                                    {hoursLabel(h)}
-                                                </option>
-                                            ))}
-                                        </select>
-                                        <button
-                                            type="button"
-                                            onClick={() => resolve(r, 'mute')}
-                                            className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-amber-500/15 px-3 text-sm text-amber-200 hover:bg-amber-500/25"
-                                        >
-                                            <VolumeX className="size-4" />{' '}
-                                            {tr('Видалити й заглушити')}
-                                        </button>
-                                    </span>
-                                    <button
-                                        type="button"
-                                        onClick={() => resolve(r, 'dismiss')}
-                                        className="inline-flex h-9 items-center gap-1.5 rounded-xl px-3 text-sm text-white/55 hover:bg-[var(--gc-l3)] hover:text-white"
-                                    >
-                                        <Ban className="size-4" />{' '}
-                                        {tr('Відхилити')}
-                                    </button>
+                                            {r.message.body ??
+                                                `[${r.message.type}]`}
+                                        </p>
+                                    </div>
                                 </div>
-                            </article>
-                        ))}
-                    </div>
-                )}
+                            )}
+                            {r.ai && (
+                                <p className="mt-2 flex items-start gap-2 text-xs text-white/60">
+                                    <span
+                                        className={cn(
+                                            'inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 font-semibold',
+                                            r.ai.severity === 'high'
+                                                ? 'bg-red-500/15 text-red-400'
+                                                : r.ai.severity === 'medium'
+                                                  ? 'bg-amber-500/15 text-amber-200'
+                                                  : 'gc-solid-2 text-white/60',
+                                        )}
+                                    >
+                                        <Sparkles className="size-3" />
+                                        {r.ai.severity === 'high'
+                                            ? tr('ШІ: терміново')
+                                            : r.ai.severity === 'medium'
+                                              ? tr('ШІ: варто глянути')
+                                              : tr('ШІ: порушень не видно')}
+                                    </span>
+                                    <span className="pt-0.5">
+                                        {r.ai.reason}
+                                    </span>
+                                </p>
+                            )}
+                            {r.comments.length > 0 && (
+                                <p className="mt-2 text-xs text-white/50">
+                                    {tr('Коментарі:')} {r.comments.join(' · ')}
+                                </p>
+                            )}
+                            <p className="mt-1 text-xs text-white/35">
+                                {tr('Поскаржилися:')} {r.reporters.join(', ')}
+                            </p>
+                            <div className="mt-3 flex flex-wrap items-center gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => resolve(r, 'delete')}
+                                    className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-red-500/15 px-3 text-sm text-red-400 hover:bg-red-500/25"
+                                >
+                                    <Trash2 className="size-4" />{' '}
+                                    {tr('Видалити')}
+                                </button>
+                                <span className="inline-flex items-center gap-1">
+                                    <select
+                                        value={hours[r.id] ?? 24}
+                                        onChange={(e) =>
+                                            setHours({
+                                                ...hours,
+                                                [r.id]: Number(e.target.value),
+                                            })
+                                        }
+                                        className="input-glass h-9 rounded-xl px-2 text-sm text-white"
+                                        aria-label={tr('На скільки заглушити')}
+                                    >
+                                        {mute_hours.map((h) => (
+                                            <option key={h} value={h}>
+                                                {hoursLabel(h)}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <button
+                                        type="button"
+                                        onClick={() => resolve(r, 'mute')}
+                                        className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-amber-500/15 px-3 text-sm text-amber-200 hover:bg-amber-500/25"
+                                    >
+                                        <VolumeX className="size-4" />{' '}
+                                        {tr('Видалити й заглушити')}
+                                    </button>
+                                </span>
+                                <button
+                                    type="button"
+                                    onClick={() => resolve(r, 'dismiss')}
+                                    className="inline-flex h-9 items-center gap-1.5 rounded-xl px-3 text-sm text-white/55 hover:bg-[var(--gc-l3)] hover:text-white"
+                                >
+                                    <Ban className="size-4" /> {tr('Відхилити')}
+                                </button>
+                            </div>
+                        </article>
+                    )}
+                />
             </section>
 
             <PeopleReports

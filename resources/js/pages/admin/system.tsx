@@ -1,3 +1,4 @@
+import { MasterDetail } from '@/components/admin/master-detail';
 import { Head, router } from '@inertiajs/react';
 import {
     Archive,
@@ -60,7 +61,6 @@ export default function AdminSystem({
     stats: { open: number; today: number };
 }) {
     const [busy, setBusy] = useState(false);
-    const [open, setOpen] = useState<number | null>(null);
 
     const backup = () => {
         setBusy(true);
@@ -310,80 +310,80 @@ export default function AdminSystem({
                         </button>
                     )}
                 </div>
-                {errors.length === 0 ? (
-                    <p className="text-sm text-white/45">
-                        {show === 'open'
+                <MasterDetail
+                    items={errors}
+                    getKey={(e) => e.id}
+                    empty={
+                        show === 'open'
                             ? tr('Помилок немає — усе працює.')
-                            : tr('Вирішених помилок немає.')}
-                    </p>
-                ) : (
-                    <ul className="space-y-2">
-                        {errors.map((e) => (
-                            <li
-                                key={e.id}
-                                className="gc-solid-2 rounded-xl p-3"
-                            >
+                            : tr('Вирішених помилок немає.')
+                    }
+                    renderRow={(e) => (
+                        <>
+                            <span className="flex items-center gap-2">
+                                <span className="truncate font-mono text-xs text-sky-400">
+                                    {e.class}
+                                </span>
+                                <span className="ml-auto shrink-0 text-xs font-semibold text-white/70 tabular-nums">
+                                    ×{e.count}
+                                </span>
+                            </span>
+                            <span className="mt-0.5 line-clamp-2 block text-sm text-white/85">
+                                {e.message || tr('(без тексту)')}
+                            </span>
+                            <span className="text-xs text-white/40">
+                                {timeAgo(e.last_seen_at)}
+                            </span>
+                        </>
+                    )}
+                    renderDetail={(e) => (
+                        <div className="gc-solid-2 space-y-3 rounded-2xl p-4">
+                            <p className="font-mono text-xs text-sky-400">
+                                {e.class}
+                            </p>
+                            <p className="text-sm whitespace-pre-line text-white/90">
+                                {e.message || tr('(без тексту)')}
+                            </p>
+                            <dl className="grid gap-1 font-mono text-xs text-white/60">
+                                <div>
+                                    {e.file}:{e.line}
+                                </div>
+                                {e.url && (
+                                    <div>
+                                        {e.method} {e.url}
+                                    </div>
+                                )}
+                                <div>
+                                    {tr('Уперше: {first}', {
+                                        first: formatDate(e.first_seen_at),
+                                    })}
+                                </div>
+                                <div>
+                                    {tr('Востаннє: {last} · разів: {n}', {
+                                        last: formatDate(e.last_seen_at),
+                                        n: e.count,
+                                    })}
+                                </div>
+                            </dl>
+                            {!e.resolved && (
                                 <button
                                     type="button"
                                     onClick={() =>
-                                        setOpen(open === e.id ? null : e.id)
+                                        router.post(
+                                            `/admin/system/errors/${e.id}/resolve`,
+                                            {},
+                                            { preserveScroll: true },
+                                        )
                                     }
-                                    className="flex w-full items-start gap-3 text-left"
+                                    className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-white/[0.08] px-3 text-sm text-white hover:bg-white/[0.12]"
                                 >
-                                    <span className="min-w-0 flex-1">
-                                        <span className="block truncate font-mono text-xs text-sky-400">
-                                            {e.class}
-                                        </span>
-                                        <span className="mt-0.5 line-clamp-2 block text-sm text-white/85">
-                                            {e.message || tr('(без тексту)')}
-                                        </span>
-                                    </span>
-                                    <span className="shrink-0 text-right text-xs text-white/45">
-                                        <span className="block font-semibold text-white/80 tabular-nums">
-                                            ×{e.count}
-                                        </span>
-                                        {timeAgo(e.last_seen_at)}
-                                    </span>
+                                    <Check className="size-4" />
+                                    {tr('Вирішено')}
                                 </button>
-                                {open === e.id && (
-                                    <div className="mt-3 space-y-1 pt-3 font-mono text-xs text-white/60">
-                                        <p>
-                                            {e.file}:{e.line}
-                                        </p>
-                                        <p>
-                                            {e.method} {e.url}
-                                        </p>
-                                        <p>
-                                            {tr('Уперше: {first}', {
-                                                first: formatDate(
-                                                    e.first_seen_at,
-                                                ),
-                                            })}
-                                        </p>
-                                        {!e.resolved && (
-                                            <button
-                                                type="button"
-                                                onClick={() =>
-                                                    router.post(
-                                                        `/admin/system/errors/${e.id}/resolve`,
-                                                        {},
-                                                        {
-                                                            preserveScroll: true,
-                                                        },
-                                                    )
-                                                }
-                                                className="mt-2 inline-flex h-8 items-center gap-1.5 rounded-lg bg-white/[0.08] px-3 font-sans text-white hover:bg-white/[0.12]"
-                                            >
-                                                <Check className="size-3.5" />
-                                                {tr('Вирішено')}
-                                            </button>
-                                        )}
-                                    </div>
-                                )}
-                            </li>
-                        ))}
-                    </ul>
-                )}
+                            )}
+                        </div>
+                    )}
+                />
             </section>
         </>
     );
