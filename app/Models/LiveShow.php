@@ -15,6 +15,7 @@ use Illuminate\Support\Carbon;
  * @property int $host_id
  * @property string $title
  * @property string|null $topic
+ * @property list<string>|null $topics
  * @property string $format duo | double | custom
  * @property int $stage_seats місць на сцені (ведучі й співведучі)
  * @property int $guest_seats скільки гостей можуть питати одночасно
@@ -27,7 +28,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon $created_at
  * @property Carbon $updated_at
  */
-#[Fillable(['host_id', 'title', 'topic', 'format', 'stage_seats', 'guest_seats', 'question_seconds', 'status', 'scheduled_at', 'started_at', 'ended_at', 'peak_listeners'])]
+#[Fillable(['host_id', 'title', 'topic', 'topics', 'format', 'stage_seats', 'guest_seats', 'question_seconds', 'status', 'scheduled_at', 'started_at', 'ended_at', 'peak_listeners'])]
 class LiveShow extends Model
 {
     public const SCHEDULED = 'scheduled';
@@ -46,7 +47,22 @@ class LiveShow extends Model
     /** @return array<string, string> */
     protected function casts(): array
     {
-        return ['scheduled_at' => 'datetime', 'started_at' => 'datetime', 'ended_at' => 'datetime'];
+        return ['topics' => 'array', 'scheduled_at' => 'datetime', 'started_at' => 'datetime', 'ended_at' => 'datetime'];
+    }
+
+    /** Скільки тем можна дати кімнаті. */
+    public const MAX_TOPICS = 5;
+
+    /**
+     * Теми кімнати; у старих записів — одна з колонки topic.
+     *
+     * @return list<string>
+     */
+    public function topicList(): array
+    {
+        $topics = is_array($this->topics) ? $this->topics : ($this->topic ? [$this->topic] : []);
+
+        return array_values(array_filter($topics, 'is_string'));
     }
 
     /** @return BelongsTo<User, $this> */

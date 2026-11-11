@@ -107,4 +107,32 @@ class LiveShowsTest extends TestCase
         $this->actingAs($admin)->postJson("/shows/{$show->id}/end")->assertOk()->assertJsonPath('show.status', 'ended');
         $this->actingAs($b)->postJson("/shows/{$show->id}/join")->assertStatus(422);
     }
+
+    public function test_room_takes_up_to_five_topics_and_popular_ones_trend(): void
+    {
+        [$a, $b, $c] = User::factory()->count(3)->create();
+        $this->actingAs($a)->post('/shows', ['title' => 'Патч', 'format' => 'duo', 'topics' => ['#Ігри', 'patch', 'ігри', 'новини']])->assertRedirect();
+        $first = LiveShow::query()->latest('id')->firstOrFail();
+        // Теми нормалізуються й не повторюються; перша лишається і в старій колонці.
+        $this->assertSame([['ігри', 'patch', 'новини'], 'ігри'], [$first->topics, $first->topic]);
+
+        $this->actingAs($b)->post('/shows', ['title' => 'Забагато', 'format' => 'duo', 'topics' => ['a1', 'b2', 'c3', 'd4', 'e5', 'f6']])->assertSessionHasErrors('topics');
+        $this->actingAs($b)->post('/shows', ['title' => 'Пробіл', 'format' => 'duo', 'topics' => ['два слова']])->assertSessionHasErrors('topics');
+        // Рядком «#a #b» — як у застосунку.
+        $this->actingAs($b)->post('/shows', ['title' => 'Кава', 'format' => 'duo', 'topic' => '#ігри #кава'])->assertRedirect();
+        $second = LiveShow::query()->latest('id')->firstOrFail();
+        $this->assertSame(['ігри', 'кава'], $second->topics);
+
+        // «ігри» — у двох кімнатах, тож у тренді; «кава» й «patch» — ні.
+        $json = $this->actingAs($c)->getJson('/shows')->assertOk()->json();
+        $this->assertSame(['ігри'], array_column($json['trends'], 'tag'));
+        $this->assertSame(2, $json['trends'][0]['shows']);
+        $this->assertSame(5, $json['max_topics']);
+
+        // Фільтр за темою лишає тільки її кімнати.
+        $only = $this->actingAs($c)->getJson('/shows?topic=кава')->assertOk()->json();
+        $this->assertSame([$second->id], array_column($only['live'], 'id'));
+        $this->assertSame('кава', $only['topic']);
+        $this->assertSame(['ігри', 'кава'], $only['live'][0]['topics']);
+    }
 }

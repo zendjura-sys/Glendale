@@ -6,11 +6,13 @@ use App\Jobs\EndShowQuestion;
 use App\Models\LiveShow;
 use App\Models\LiveShowMember;
 use App\Models\User;
+use App\Services\Feed\Topics;
 use App\Services\Moderation\ContentFilter;
 use App\Services\Voice\LiveKit;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -22,10 +24,17 @@ class LiveShows
 {
     public const SEEN_SECONDS = 45;
 
+    private const TRENDS_KEY = 'shows:trends';
+
+    /** Тема в трендах, якщо за тиждень її слухали щонайменше стільки людей (разом з ефіром зараз) або про неї кілька кімнат. */
+    public const TREND_LISTENERS = 5;
+
+    public const TREND_SHOWS = 2;
+
     public function __construct(private readonly LiveKit $livekit) {}
 
     /**
-     * @param  array{title: string, topic?: string|null, format: string, stage_seats?: int|null, guest_seats?: int|null, question_seconds?: int|null, scheduled_at?: string|null}  $data
+     * @param  array{title: string, topic?: string|null, topics?: list<string>|null, format: string, stage_seats?: int|null, guest_seats?: int|null, question_seconds?: int|null, scheduled_at?: string|null}  $data
      */
     public function create(User $host, array $data): LiveShow
     {
@@ -35,8 +44,18 @@ class LiveShows
         $at = isset($data['scheduled_at']) ? Carbon::parse($data['scheduled_at']) : null;
         $later = $at !== null && $at->isAfter(now()->addMinutes(2));
         $title = trim($data['title']);
-        $topic = isset($data['topic']) ? ltrim(trim((string) $data['topic']), '#') : null;
-        foreach (['title' => $title, 'topic' => (string) $topic] as $field => $text) {
+        // Теми: список або один рядок «#a #b» (стара форма й застосунок). До 5 різних.
+        $raw = $data['topics'] ?? preg_split('/[\s,]+/u', (string) ($data['topic'] ?? ''), -1, PREG_SPLIT_NO_EMPTY);
+        $topics = array_values(array_unique(array_filter(array_map(fn ($t) => Topics::normalize((string) $t), is_array($raw) ? $raw : []))));
+        if (count($topics) > LiveShow::MAX_TOPICS) {
+            throw ValidationException::withMessages(['topics' => 'Можна додати щонайбільше '.LiveShow::MAX_TOPICS.' тем.']);
+        }
+        foreach ($topics as $t) {
+            if (! Topics::valid($t) || mb_strlen($t) > 30) {
+                throw ValidationException::withMessages(['topics' => 'Тема — одне слово без пробілів, як хештег.']);
+            }
+        }
+        foreach (['title' => $title, 'topics' => implode(' ', $topics)] as $field => $text) {
             if ($text !== '' && app(ContentFilter::class)->hasProfanity($text)) {
                 throw ValidationException::withMessages([$field => 'Так назвати шоу не можна.']);
             }
@@ -45,7 +64,8 @@ class LiveShows
         $show = LiveShow::query()->create([
             'host_id' => $host->id,
             'title' => $title,
-            'topic' => $topic !== '' ? $topic : null,
+            'topic' => $topics[0] ?? null,
+            'topics' => $topics ?: null,
             'format' => $format,
             'stage_seats' => $custom ? (int) ($data['stage_seats'] ?? $preset['stage']) : $preset['stage'],
             'guest_seats' => $custom ? (int) ($data['guest_seats'] ?? $preset['guests']) : $preset['guests'],
@@ -55,6 +75,7 @@ class LiveShows
             'started_at' => $later ? null : now(),
         ]);
         LiveShowMember::query()->create(['live_show_id' => $show->id, 'user_id' => $host->id, 'role' => 'host']);
+        Cache::forget(self::TRENDS_KEY);
 
         return $show;
     }
@@ -231,6 +252,41 @@ class LiveShows
     }
 
     /**
+     * Тренди тем: кімнати в ефірі й за останній тиждень. Вага теми — слухачі зараз і пік завершених.
+     *
+     * @return list<array{tag: string, shows: int, live: int, listeners: int}>
+     */
+    public function trends(int $limit = 10): array
+    {
+        /** @var list<array{tag: string, shows: int, live: int, listeners: int}> $all */
+        $all = Cache::remember(self::TRENDS_KEY, 60, function () {
+            $rows = [];
+            $shows = LiveShow::query()
+                ->where(fn (Builder $q) => $q->where('status', LiveShow::LIVE)
+                    ->orWhere(fn (Builder $e) => $e->where('status', LiveShow::ENDED)->where('ended_at', '>=', now()->subWeek())))
+                ->latest('id')->limit(500)->get();
+            foreach ($shows as $show) {
+                $live = $show->status === LiveShow::LIVE;
+                $now = $live ? $this->present($show)->count() : 0;
+                $heard = max($now, (int) $show->peak_listeners);
+                foreach ($show->topicList() as $tag) {
+                    $rows[$tag] ??= ['tag' => $tag, 'shows' => 0, 'live' => 0, 'listeners' => 0, 'score' => 0];
+                    $rows[$tag]['shows']++;
+                    $rows[$tag]['live'] += $live ? 1 : 0;
+                    $rows[$tag]['listeners'] += $heard;
+                    $rows[$tag]['score'] += $heard + ($live ? $now * 2 + 1 : 0);
+                }
+            }
+            $popular = array_filter($rows, fn (array $r) => $r['listeners'] >= self::TREND_LISTENERS || $r['shows'] >= self::TREND_SHOWS);
+            usort($popular, fn (array $a, array $b) => [$b['score'], $a['tag']] <=> [$a['score'], $b['tag']]);
+
+            return array_map(fn (array $r) => ['tag' => $r['tag'], 'shows' => $r['shows'], 'live' => $r['live'], 'listeners' => $r['listeners']], array_slice($popular, 0, 20));
+        });
+
+        return array_slice($all, 0, $limit);
+    }
+
+    /**
      * Картка шоу для стрічки «Зараз в ефірі» й розкладу.
      *
      * @return array<string, mixed>
@@ -245,6 +301,7 @@ class LiveShows
             'id' => $show->id,
             'title' => $show->title,
             'topic' => $show->topic,
+            'topics' => $show->topicList(),
             'format' => $show->format,
             'status' => $show->status,
             'scheduled_at' => $show->scheduled_at?->toIso8601String(),

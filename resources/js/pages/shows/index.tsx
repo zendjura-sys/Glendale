@@ -5,6 +5,7 @@ import {
     Mic2,
     Radio,
     SlidersHorizontal,
+    TrendingUp,
     Users,
     X,
 } from 'lucide-react';
@@ -22,6 +23,7 @@ export type ShowCard = {
     id: number;
     title: string;
     topic: string | null;
+    topics: string[];
     format: 'duo' | 'double' | 'custom';
     status: 'scheduled' | 'live' | 'ended';
     scheduled_at: string | null;
@@ -52,25 +54,33 @@ const FORMATS = [
     },
 ] as const;
 
-/** Шоу: «Зараз в ефірі», розклад і кнопка «Вийти в ефір». */
+type Trend = { tag: string; shows: number; live: number; listeners: number };
+
+/** Подкасти наживо: тренди #тем, «Зараз в ефірі», розклад і кнопка «Створити кімнату». */
 export default function ShowsIndex({
     live,
     upcoming,
+    trends,
+    topic,
+    max_topics: maxTopics,
 }: {
     live: ShowCard[];
     upcoming: ShowCard[];
+    trends: Trend[];
+    topic: string | null;
+    max_topics: number;
 }) {
     const [creating, setCreating] = useState(false);
     const reduce = useReducedMotion();
 
     return (
         <>
-            <Head title={tr('Шоу')} />
+            <Head title={tr('Подкасти')} />
             <div className="mx-auto w-full max-w-5xl space-y-6 px-1 py-2">
                 <header className="flex flex-wrap items-end gap-3">
-                    <div className="min-w-0 flex-1">
+                    <div className="min-w-0 flex-1 basis-full sm:basis-0">
                         <h1 className="font-display text-3xl font-bold text-white">
-                            {tr('Шоу')}
+                            {tr('Подкасти')}
                         </h1>
                         <p className="mt-1 text-sm text-white/55">
                             {tr(
@@ -89,7 +99,7 @@ export default function ShowsIndex({
                         ) : (
                             <Radio className="size-4" />
                         )}
-                        {creating ? tr('Скасувати') : tr('Вийти в ефір')}
+                        {creating ? tr('Скасувати') : tr('Створити кімнату')}
                     </button>
                 </header>
 
@@ -113,14 +123,39 @@ export default function ShowsIndex({
                             }
                             className="overflow-hidden"
                         >
-                            <CreateShow />
+                            <CreateShow maxTopics={maxTopics} />
                         </motion.div>
                     )}
                 </AnimatePresence>
 
+                {(trends.length > 0 || topic) && (
+                    <section aria-label={tr('Теми в тренді')}>
+                        <h2 className="mb-2 flex items-center gap-2 text-sm font-semibold text-white/60">
+                            <TrendingUp className="size-4 text-primary" />
+                            {tr('У тренді')}
+                        </h2>
+                        <div className="flex flex-wrap gap-2">
+                            {topic && !trends.some((t) => t.tag === topic) && (
+                                <TrendChip tag={topic} on />
+                            )}
+                            {trends.map((t) => (
+                                <TrendChip
+                                    key={t.tag}
+                                    tag={t.tag}
+                                    on={t.tag === topic}
+                                    listeners={t.listeners}
+                                    live={t.live > 0}
+                                />
+                            ))}
+                        </div>
+                    </section>
+                )}
+
                 <section>
                     <h2 className="mb-3 font-display text-lg font-bold text-white">
-                        {tr('Зараз в ефірі')}
+                        {topic
+                            ? tr('Зараз в ефірі · #{topic}', { topic })
+                            : tr('Зараз в ефірі')}
                     </h2>
                     {live.length === 0 ? (
                         <EmptyState
@@ -167,10 +202,64 @@ export default function ShowsIndex({
     );
 }
 
-function Topic({ topic }: { topic: string | null }) {
-    if (!topic) return null;
+/** Теми кімнати в картці (картка сама є посиланням, тож теми тут — просто текст). */
+function Topics({ topics }: { topics: string[] }) {
+    if (topics.length === 0) return null;
 
-    return <span className="text-primary"> #{topic}</span>;
+    return (
+        <span className="mt-1.5 flex flex-wrap gap-x-2 gap-y-0.5 text-sm font-medium text-primary">
+            {topics.map((t) => (
+                <span key={t}>#{t}</span>
+            ))}
+        </span>
+    );
+}
+
+/** Тема в трендах: дотик — лише кімнати з цією темою, ще раз — усі. */
+function TrendChip({
+    tag,
+    on,
+    listeners,
+    live,
+}: {
+    tag: string;
+    on: boolean;
+    listeners?: number;
+    live?: boolean;
+}) {
+    return (
+        <Link
+            href={on ? '/shows' : `/shows?topic=${encodeURIComponent(tag)}`}
+            preserveScroll
+            aria-current={on ? 'true' : undefined}
+            className={cn(
+                'inline-flex h-9 items-center gap-2 rounded-full px-3.5 text-sm font-semibold transition',
+                on
+                    ? 'bg-primary text-white'
+                    : 'gc-solid text-white/85 hover:text-white',
+            )}
+        >
+            {live && (
+                <span
+                    aria-label={tr('В ефірі')}
+                    className="size-1.5 rounded-full bg-rose-500"
+                />
+            )}
+            #{tag}
+            {listeners !== undefined && listeners > 0 && (
+                <span
+                    className={cn(
+                        'inline-flex items-center gap-1 text-xs font-medium',
+                        on ? 'text-white/80' : 'text-white/45',
+                    )}
+                >
+                    <Headphones className="size-3" />
+                    {listeners}
+                </span>
+            )}
+            {on && <X className="size-3.5" />}
+        </Link>
+    );
 }
 
 function LiveCard({ show }: { show: ShowCard }) {
@@ -190,8 +279,8 @@ function LiveCard({ show }: { show: ShowCard }) {
             </div>
             <p className="mt-2 line-clamp-2 font-display text-lg font-bold text-white">
                 {show.title}
-                <Topic topic={show.topic} />
             </p>
+            <Topics topics={show.topics} />
             <div className="mt-4 flex flex-wrap justify-center gap-4">
                 {show.stage.slice(0, 4).map((person) => (
                     <div
@@ -248,7 +337,12 @@ function UpcomingRow({ show }: { show: ShowCard }) {
             <span className="min-w-0 flex-1">
                 <span className="block truncate font-semibold text-white">
                     {show.title}
-                    <Topic topic={show.topic} />
+                    {show.topics.map((t) => (
+                        <span key={t} className="text-primary">
+                            {' '}
+                            #{t}
+                        </span>
+                    ))}
                 </span>
                 <span className="block truncate text-xs text-white/50">
                     {show.stage.map((p) => p.name).join(' · ')}
@@ -259,7 +353,7 @@ function UpcomingRow({ show }: { show: ShowCard }) {
     );
 }
 
-function CreateShow() {
+function CreateShow({ maxTopics }: { maxTopics: number }) {
     const [later, setLater] = useState(false);
     const form = useForm({
         title: '',
@@ -270,11 +364,23 @@ function CreateShow() {
         question_seconds: 60,
         scheduled_at: '',
     });
+    // «#ігри #патч» → ['ігри', 'патч']: пробіли й коми розділяють теми.
+    const topics = [
+        ...new Set(
+            form.data.topic
+                .split(/[\s,]+/)
+                .map((t) => t.replace(/^#+/, '').toLowerCase())
+                .filter(Boolean),
+        ),
+    ];
+    const tooMany = topics.length > maxTopics;
     const submit = (e: FormEvent) => {
         e.preventDefault();
+        if (tooMany) return;
         form.transform((d) => ({
             ...d,
-            topic: d.topic || null,
+            topic: null,
+            topics,
             scheduled_at:
                 later && d.scheduled_at
                     ? new Date(d.scheduled_at).toISOString()
@@ -286,25 +392,49 @@ function CreateShow() {
 
     return (
         <form onSubmit={submit} className="gc-solid space-y-4 rounded-2xl p-4">
-            <div className="grid gap-2 sm:grid-cols-[1fr_12rem]">
-                <Input
-                    value={form.data.title}
-                    onChange={(e) => form.setData('title', e.target.value)}
-                    maxLength={80}
-                    placeholder={tr(
-                        'Про що шоу? Наприклад, «Розбір патча 2.0»',
-                    )}
-                    aria-label={tr('Назва шоу')}
-                    className="h-11"
-                />
+            <Input
+                value={form.data.title}
+                onChange={(e) => form.setData('title', e.target.value)}
+                maxLength={80}
+                placeholder={tr(
+                    'Про що розмова? Наприклад, «Розбір патча 2.0»',
+                )}
+                aria-label={tr('Назва кімнати')}
+                className="h-11"
+            />
+            <div>
                 <Input
                     value={form.data.topic}
                     onChange={(e) => form.setData('topic', e.target.value)}
-                    maxLength={30}
-                    placeholder={tr('#тема')}
-                    aria-label={tr('Тема')}
+                    maxLength={180}
+                    placeholder={tr('#теми через пробіл: #ігри #патч #новини')}
+                    aria-label={tr('Теми')}
+                    aria-invalid={tooMany}
                     className="h-11"
                 />
+                <p
+                    className={cn(
+                        'mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 px-1 text-xs',
+                        tooMany ? 'text-rose-400' : 'text-white/45',
+                    )}
+                >
+                    <span className="tabular-nums">
+                        {tr('{n} з {max} тем', {
+                            n: topics.length,
+                            max: maxTopics,
+                        })}
+                    </span>
+                    {topics.slice(0, maxTopics).map((t) => (
+                        <span key={t} className="font-medium text-primary">
+                            #{t}
+                        </span>
+                    ))}
+                    {topics.length === 0 && (
+                        <span>
+                            {tr('Популярні теми потрапляють у тренди.')}
+                        </span>
+                    )}
+                </p>
             </div>
             <div className="grid gap-2 sm:grid-cols-3">
                 {FORMATS.map((f) => {

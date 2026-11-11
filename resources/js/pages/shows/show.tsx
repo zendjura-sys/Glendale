@@ -139,10 +139,20 @@ export default function ShowPage(initial: State) {
                 <section className="gc-solid rounded-3xl p-5 sm:p-7">
                     <h1 className="font-display text-2xl font-bold text-white sm:text-3xl">
                         {show.title}
-                        {show.topic && (
-                            <span className="text-primary"> #{show.topic}</span>
-                        )}
                     </h1>
+                    {show.topics.length > 0 && (
+                        <p className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-sm font-semibold">
+                            {show.topics.map((t) => (
+                                <Link
+                                    key={t}
+                                    href={`/shows?topic=${encodeURIComponent(t)}`}
+                                    className="text-primary hover:underline"
+                                >
+                                    #{t}
+                                </Link>
+                            ))}
+                        </p>
+                    )}
                     {show.status === 'scheduled' && (
                         <p className="mt-1 text-sm text-white/55">
                             {tr('Почнеться {date}', {
