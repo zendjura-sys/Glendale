@@ -24,17 +24,30 @@ import { tr } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
 /** Вкладки конструктора: частина й (для кольорів) палітра. */
-const TABS: { part: CharacterPart; label: string; colors?: string[] }[] = [
+const TABS: {
+    part: CharacterPart;
+    label: string;
+    colors?: string[];
+    face?: boolean;
+}[] = [
     { part: 'hair', label: 'Зачіска' },
     { part: 'hairColor', label: 'Колір волосся', colors: HAIR },
-    { part: 'head', label: 'Обличчя' },
+    { part: 'build', label: 'Тілобудова' },
+    { part: 'head', label: 'Форма обличчя' },
     { part: 'skin', label: 'Шкіра', colors: SKIN },
-    { part: 'eyes', label: 'Очі' },
+    { part: 'eyes', label: 'Форма очей', face: true },
+    { part: 'eyeTilt', label: 'Розріз очей', face: true },
     { part: 'eyeColor', label: 'Колір очей', colors: EYE },
-    { part: 'brows', label: 'Брови' },
-    { part: 'nose', label: 'Ніс' },
-    { part: 'mouth', label: 'Рот' },
+    { part: 'lashes', label: 'Вії', face: true },
+    { part: 'brows', label: 'Брови', face: true },
+    { part: 'nose', label: 'Ніс', face: true },
+    { part: 'lips', label: 'Форма губ', face: true },
+    { part: 'lipColor', label: 'Колір губ', face: true },
+    { part: 'mouth', label: 'Вираз', face: true },
+    { part: 'makeup', label: 'Макіяж', face: true },
+    { part: 'tattoo', label: 'Тату' },
     { part: 'beard', label: 'Борода' },
+    { part: 'earrings', label: 'Сережки' },
     { part: 'extra', label: 'Аксесуари' },
     { part: 'outfit', label: 'Одяг' },
     { part: 'outfitColor', label: 'Колір одягу', colors: OUTFIT },
@@ -280,6 +293,11 @@ export default function CharacterEditor({
                                     >
                                         <Character
                                             config={{ ...config, [tab]: i }}
+                                            zoom={
+                                                current.face
+                                                    ? 'face'
+                                                    : undefined
+                                            }
                                             className="size-full"
                                         />
                                     </button>

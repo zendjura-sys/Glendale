@@ -10,20 +10,28 @@ use Illuminate\Validation\ValidationException;
 class Character
 {
     public const PARTS = [
-        'skin' => 8,
-        'head' => 4,
-        'hair' => 10,
-        'hairColor' => 9,
+        'skin' => 10,
+        'build' => 4,
+        'head' => 5,
+        'hair' => 14,
+        'hairColor' => 11,
         'eyes' => 5,
-        'eyeColor' => 5,
-        'brows' => 4,
+        'eyeTilt' => 3,
+        'eyeColor' => 7,
+        'lashes' => 3,
+        'brows' => 5,
         'nose' => 4,
+        'lips' => 5,
+        'lipColor' => 6,
         'mouth' => 5,
+        'makeup' => 6,
         'beard' => 5,
         'extra' => 7,
-        'outfit' => 4,
-        'outfitColor' => 8,
-        'bg' => 8,
+        'earrings' => 3,
+        'tattoo' => 6,
+        'outfit' => 14,
+        'outfitColor' => 9,
+        'bg' => 9,
     ];
 
     /**
