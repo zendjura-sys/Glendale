@@ -11,6 +11,7 @@ use App\Services\CommunityService;
 use App\Services\EventCalendar;
 use App\Services\Families\ReportService;
 use App\Services\Feed\Topics;
+use App\Services\Feed\WhileAway;
 use App\Services\FeedSignals;
 use App\Services\FollowAlerts;
 use App\Services\FriendshipService;
@@ -98,7 +99,12 @@ class FeedController extends Controller
         $posts = $query->orderByDesc('id')->cursorPaginate(self::PER_PAGE)->withQueryString();
         $items = $this->presenter->many(new Collection($posts->items()), $user);
 
+        // «Поки вас не було»: лише на першій сторінці й повному відкритті (не на догрузці).
+        $away = $request->query('cursor') === null && ! $request->header('X-Inertia-Partial-Data')
+            ? app(WhileAway::class)->take($user, true) : null;
+
         return Inertia::render('feed/index', [
+            'whileAway' => $away,
             'newcomer' => app(NewcomerWeek::class)->forUser($user),
             'tab' => $tab,
             'topics' => app(Plugins::class)->on('topic_follows') ? app(Topics::class)->of($user) : null,

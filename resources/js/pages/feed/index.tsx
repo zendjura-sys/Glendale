@@ -40,6 +40,8 @@ import { UserAvatar } from '@/components/gc/user-avatar';
 import { WrappedBanner } from '@/components/gc/wrapped-banner';
 import { HomeWidgetsEditor } from '@/components/gc/engagement';
 import { FeedPulse, FeedSideCards, useHub } from '@/components/gc/feed-pulse';
+import { WhileAway } from '@/components/feed/while-away';
+import type { WhileAwayData } from '@/components/feed/while-away';
 import { EmptyState, Widget, WidgetSkeleton } from '@/components/gc/widget';
 import { formatDate } from '@/lib/format';
 import type { PersonCard, PostItem, ScrollData, UserCard } from '@/types';
@@ -52,6 +54,7 @@ import { cn } from '@/lib/utils';
 import { useFeature } from '@/lib/plugins';
 
 type Props = {
+    whileAway?: WhileAwayData | null;
     newcomer?: NewcomerData | null;
     tab: 'friends' | 'discover' | 'country' | 'topics';
     topics?: string[] | null;
@@ -153,6 +156,7 @@ function FeedTabs({
 }
 
 export default function Feed({
+    whileAway = null,
     newcomer = null,
     tab,
     topics = null,
@@ -198,6 +202,7 @@ export default function Feed({
                     {/* Верх стрічки за макетом: моменти, одна смуга «серія · готовий грати · завдання»,
                         далі — Wrapped, «Завтра» й трансляції друзів (порожні не показуються). */}
                     {storiesOn && <StoriesBar />}
+                    <WhileAway data={whileAway} />
                     <FeedPulse quests={quests ?? []} />
                     <WrappedBanner />
                     <TomorrowCard events={tomorrow ?? []} />
