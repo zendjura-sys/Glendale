@@ -174,20 +174,23 @@ export function Character({
                 <clipPath id={id('head')}>
                     <path d={headShape.head} />
                 </clipPath>
+                <mask id={id('neck')}>
+                    <rect width="300" height="320" fill="#fff" />
+                    <path d={headShape.head} fill="#000" />
+                </mask>
                 <IrisGradient id={id('irisL')} color={leftColor} />
                 <IrisGradient id={id('irisR')} color={rightColor} />
             </defs>
 
             {background && <rect width="300" height="320" fill={url('bg')} />}
 
+            {/* Шар 1–2: тіло одягу, потім шия поверх нього */}
+            {withOutfit && <OutfitBody preset={outfit} color={outfitColor} />}
             {withOutfit && (
-                <>
-                    <path
-                        d="M 116 236 C 120 250, 118 262, 112 280 L 188 280 C 182 262, 180 250, 184 236 Z"
-                        fill={skin.shadow}
-                    />
-                    <Outfit preset={outfit} color={outfitColor} />
-                </>
+                <path
+                    d="M 120 224 C 122 244, 120 258, 115 270 C 130 282, 170 282, 185 270 C 180 258, 178 244, 180 224 Z"
+                    fill={skin.base}
+                />
             )}
 
             <g ref={head}>
@@ -225,6 +228,14 @@ export function Character({
                         />
                     )}
                 </g>
+
+                {withOutfit && (
+                    <path
+                        d="M 116 236 C 126 266, 174 266, 184 236 L 185 270 C 170 282, 130 282, 115 270 Z"
+                        fill={skin.shadow}
+                        mask={url('neck')}
+                    />
+                )}
 
                 {config.blush === 1 && (
                     <g fill="#F472B6" opacity="0.22">
@@ -292,6 +303,9 @@ export function Character({
 
                 <FaceAccessory kind={config.extra} />
             </g>
+
+            {/* Шар 8: комір і зав'язки поверх шиї — шия заходить в одяг */}
+            {withOutfit && <OutfitCollar preset={outfit} color={outfitColor} />}
         </svg>
     );
 }
@@ -809,49 +823,87 @@ function FaceAccessory({ kind }: { kind: number }): ReactNode {
     return null;
 }
 
-function Outfit({ preset, color }: { preset: OutfitPreset; color: string }) {
-    const dark = shade(color, 0.28);
+/** Одяг: колір користувача на тілі й комірі, тіні й зав'язки — на 18 % темніші. */
+function OutfitBody({
+    preset,
+    color,
+}: {
+    preset: OutfitPreset;
+    color: string;
+}) {
+    const dark = shade(color, 0.18);
+
+    return (
+        <g>
+            <path d={preset.body} fill={color} />
+            {/* Тінь плечей з боків і западина під коміром */}
+            <path
+                d="M 32 320 C 38 282, 54 262, 82 252 C 66 270, 60 294, 62 320 Z M 268 320 C 262 282, 246 262, 218 252 C 234 270, 240 294, 238 320 Z"
+                fill={dark}
+            />
+            <path
+                d="M 104 250 C 120 262, 180 262, 196 250 C 182 286, 118 286, 104 250 Z"
+                fill={dark}
+            />
+        </g>
+    );
+}
+
+function OutfitCollar({
+    preset,
+    color,
+}: {
+    preset: OutfitPreset;
+    color: string;
+}) {
+    const dark = shade(color, 0.18);
 
     if (preset.id === 'suit')
         return (
             <g>
-                <path d={preset.body} fill="#252a36" />
+                {/* Біла сорочка у V-вирізі, лацкани — колір костюма з тінню */}
                 <path d={preset.hoodCollar} fill="#F8FAFC" />
                 <path
-                    d="M 145 270 L 155 270 L 158 300 L 150 312 L 142 300 Z"
-                    fill={color}
+                    d="M 96 242 L 150 290 L 126 254 Z M 204 242 L 150 290 L 174 254 Z"
+                    fill={dark}
                 />
                 <path
                     d={preset.strings}
-                    stroke="#11141c"
-                    strokeWidth="3"
-                    fill="none"
-                    strokeLinejoin="round"
+                    stroke={shade(color, 0.45)}
+                    strokeWidth="7"
+                    strokeLinecap="round"
                 />
             </g>
         );
 
     return (
         <g>
-            <path d={preset.body} fill={color} />
-            <path d={preset.hoodCollar} fill={dark} />
-            {preset.strings &&
-                (preset.id === 'tactical' ? (
-                    <path
-                        d={preset.strings}
-                        stroke={dark}
-                        strokeWidth="3"
-                        fill="none"
-                        strokeLinejoin="round"
-                    />
-                ) : (
-                    <path
-                        d={preset.strings}
-                        stroke="#E9EDF2"
-                        strokeWidth="3"
-                        strokeLinecap="round"
-                    />
-                ))}
+            <path d={preset.hoodCollar} fill={color} />
+            {/* Внутрішній край коміра — темніший, щоб був об'єм */}
+            <path
+                d={preset.hoodCollar}
+                fill="none"
+                stroke={dark}
+                strokeWidth="2.5"
+                strokeLinejoin="round"
+            />
+            {preset.hasHood && (
+                <path
+                    d="M 96 262 C 118 282, 182 282, 204 262"
+                    stroke={dark}
+                    strokeWidth="5"
+                    fill="none"
+                    strokeLinecap="round"
+                />
+            )}
+            {preset.strings && (
+                <path
+                    d={preset.strings}
+                    stroke={dark}
+                    strokeWidth={preset.id === 'tactical' ? 5 : 3}
+                    strokeLinecap="round"
+                />
+            )}
         </g>
     );
 }
