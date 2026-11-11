@@ -20,6 +20,7 @@ import {
     X,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { FlyingSendIcon } from '@/components/gc/animated-icons';
 import { toast } from 'sonner';
 import { useVoiceRecorder } from '@/hooks/use-voice-recorder';
 import { api } from '@/lib/api';
@@ -96,6 +97,8 @@ export function Composer({
     const scheduleOn = usePlugin('scheduled_messages');
     const videoNotesPlugin = usePlugin('video_notes');
     const [body, setBody] = useState(draft ?? '');
+    // Лічильник відправок — літачок на кнопці «відлітає» з кожним повідомленням.
+    const [sentCount, setSentCount] = useState(0);
     const draftsOn = usePlugin('local_drafts');
     useDraft(draftsOn && !editing ? draftKey : null, body, setBody);
     const aiWriterOn = usePlugin('ai_writer');
@@ -278,6 +281,7 @@ export function Composer({
                 card,
             });
             setOnce(false);
+            setSentCount((n) => n + 1);
         }
 
         reset();
@@ -995,7 +999,7 @@ export function Composer({
                                         : undefined
                                 }
                             >
-                                <SendHorizonal className="size-5" />
+                                <FlyingSendIcon sent={sentCount} />
                             </button>
                         </div>
                     )}

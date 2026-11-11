@@ -1,5 +1,8 @@
 import { useForm } from '@inertiajs/react';
 import { Trash2 } from 'lucide-react';
+import { useReducedMotion } from 'motion/react';
+import { useState } from 'react';
+import { HungryTrashIcon } from '@/components/gc/animated-icons';
 import { tr } from '@/lib/i18n';
 
 /** Небезпечна зона: видалення спільноти, клану, гільдії чи сім’ї з підтвердженням адресою. */
@@ -15,6 +18,8 @@ export function DeleteZone({
     action: string;
 }) {
     const form = useForm({ confirm: '' });
+    const [eating, setEating] = useState(false);
+    const reduce = useReducedMotion();
 
     return (
         <section className="gc-solid mt-4 rounded-2xl p-4">
@@ -26,7 +31,15 @@ export function DeleteZone({
             <form
                 onSubmit={(event) => {
                     event.preventDefault();
-                    form.delete(action);
+                    // Спершу кошик «з'їдає» аркуш, потім — запит.
+                    setEating(true);
+                    window.setTimeout(
+                        () =>
+                            form.delete(action, {
+                                onFinish: () => setEating(false),
+                            }),
+                        reduce ? 0 : 650,
+                    );
                 }}
                 className="mt-3 flex flex-col gap-3 sm:flex-row"
             >
@@ -42,8 +55,9 @@ export function DeleteZone({
                 <button
                     type="submit"
                     disabled={form.data.confirm !== slug || form.processing}
-                    className="h-11 rounded-xl bg-red-500/80 px-5 text-sm font-semibold text-white transition hover:bg-red-500 disabled:opacity-40"
+                    className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-red-500/80 px-5 text-sm font-semibold text-white transition hover:bg-red-500 disabled:opacity-40"
                 >
+                    <HungryTrashIcon eating={eating} />
                     {tr('Видалити')}
                 </button>
             </form>

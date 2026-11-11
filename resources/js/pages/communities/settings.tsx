@@ -4,6 +4,9 @@ import { ArrowLeft, Globe2, Lock, Megaphone, UsersRound } from 'lucide-react';
 import { AccessCard } from '@/components/communities/access-card';
 import type { CommunityAccess } from '@/components/communities/access-card';
 import { DonationJarForm } from '@/components/gc/donation-jar';
+import { useState } from 'react';
+import { useReducedMotion } from 'motion/react';
+import { HungryTrashIcon } from '@/components/gc/animated-icons';
 import type { FormEvent } from 'react';
 import { selectClass } from '@/components/gc/admin';
 import {
@@ -113,6 +116,8 @@ export default function CommunitySettings({
         city: community.city ?? '',
     });
     const remove = useForm({ confirm: '' });
+    const [eating, setEating] = useState(false);
+    const reduceMotion = useReducedMotion();
     const aiDescriptionOn = usePlugin('ai_community_description');
     const { data, setData, errors } = form;
 
@@ -439,7 +444,14 @@ export default function CommunitySettings({
                         <form
                             onSubmit={(event) => {
                                 event.preventDefault();
-                                remove.delete(`/c/${community.slug}`);
+                                setEating(true);
+                                window.setTimeout(
+                                    () =>
+                                        remove.delete(`/c/${community.slug}`, {
+                                            onFinish: () => setEating(false),
+                                        }),
+                                    reduceMotion ? 0 : 650,
+                                );
                             }}
                             className="flex flex-col gap-3 sm:flex-row"
                         >
@@ -459,8 +471,9 @@ export default function CommunitySettings({
                                 disabled={
                                     remove.data.confirm !== community.slug
                                 }
-                                className="h-11 rounded-xl bg-red-500/80 px-5 text-sm font-semibold text-white transition hover:bg-red-500 disabled:opacity-40"
+                                className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-red-500/80 px-5 text-sm font-semibold text-white transition hover:bg-red-500 disabled:opacity-40"
                             >
+                                <HungryTrashIcon eating={eating} />
                                 {tr('Видалити')}
                             </button>
                         </form>

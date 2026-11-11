@@ -2,6 +2,7 @@ import { Head, Link } from '@inertiajs/react';
 import { ArrowLeft, House, RotateCw } from 'lucide-react';
 import { m, useReducedMotion } from 'motion/react';
 import { LogoMark } from '@/components/gc/logo';
+import { MaintenanceScene } from '@/components/gc/maintenance-scene';
 import { VkProvider } from '@/components/vk/vk-provider';
 import { tr } from '@/lib/i18n';
 import { motionOr, RISE } from '@/lib/motion';
@@ -75,9 +76,13 @@ export default function ErrorPage({
                     <Link href="/" aria-label="GameCon" className="inline-flex">
                         <LogoMark className="size-12" />
                     </Link>
-                    <p className="mt-6 font-display text-6xl font-extrabold tracking-tight text-white tabular-nums">
-                        {status}
-                    </p>
+                    {status === 503 ? (
+                        <MaintenanceScene className="mx-auto mt-6 h-32 w-auto text-white/55" />
+                    ) : (
+                        <p className="mt-6 font-display text-6xl font-extrabold tracking-tight text-white tabular-nums">
+                            {status}
+                        </p>
+                    )}
                     <h1 className="mt-3 font-display text-xl font-bold text-white">
                         {title}
                     </h1>
