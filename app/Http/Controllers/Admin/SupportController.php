@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\SupportMessage;
 use App\Models\SupportTicket;
 use App\Models\User;
 use App\Services\Support\SupportDesk;
@@ -11,6 +12,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -55,8 +57,14 @@ class SupportController extends Controller
             ->orderByRaw("CASE status WHEN 'open' THEN 0 WHEN 'answered' THEN 1 ELSE 2 END")
             ->orderByRaw("CASE priority WHEN 'urgent' THEN 0 WHEN 'high' THEN 1 WHEN 'normal' THEN 2 ELSE 3 END")
             ->orderBy('last_reply_at')
-            ->paginate(30)->withQueryString()
-            ->through(fn (SupportTicket $t) => $this->desk->card($t, true));
+            ->paginate(30)->withQueryString();
+        // Останнє повідомлення кожного звернення (без внутрішніх нотаток) — для картки праворуч.
+        $last = SupportMessage::query()->whereIn('ticket_id', $tickets->pluck('id'))->where('internal', false)
+            ->latest('id')->get(['ticket_id', 'body', 'from_staff'])->unique('ticket_id')->keyBy('ticket_id');
+        $tickets->through(fn (SupportTicket $t) => [
+            ...$this->desk->card($t, true),
+            'excerpt' => ($m = $last->get($t->id)) ? ['body' => Str::limit($m->body, 280), 'from_staff' => $m->from_staff] : null,
+        ]);
 
         $avg = SupportTicket::query()->whereNotNull('first_response_at')->where('created_at', '>=', now()->subDays(30))->get(['created_at', 'first_response_at'])
             ->avg(fn (SupportTicket $t) => $t->created_at->diffInMinutes($t->first_response_at));

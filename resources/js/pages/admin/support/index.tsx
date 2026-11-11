@@ -1,5 +1,5 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { Search } from 'lucide-react';
+import { ChevronRight, Search } from 'lucide-react';
 import { useState } from 'react';
 import { PageHeader, Pagination, selectClass } from '@/components/gc/admin';
 import { UserAvatar } from '@/components/gc/user-avatar';
@@ -20,14 +20,100 @@ const PRIORITY: Record<
     low: { label: () => tr('Низький'), className: 'text-white/35' },
 };
 
-/** Адмінка → «Підтримка»: черга звернень. */
+type AdminTicket = TicketCard & {
+    excerpt: { body: string; from_staff: boolean } | null;
+};
+
+/** Картка обраного звернення праворуч (лише на широкому екрані): хто, про що, останнє повідомлення. */
+function TicketPreview({ ticket }: { ticket: AdminTicket }) {
+    return (
+        <aside className="gc-solid sticky top-20 hidden flex-col gap-5 rounded-2xl p-5 xl:flex">
+            <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                    <p className="text-xs text-white/45 tabular-nums">
+                        #{ticket.id} · {tr(ticket.category_label)}
+                    </p>
+                    <h2 className="mt-1 font-display text-lg font-bold break-words text-white">
+                        {ticket.subject}
+                    </h2>
+                </div>
+                <StatusPill status={ticket.status} staff />
+            </div>
+            <dl className="grid grid-cols-2 gap-3 text-sm">
+                <div>
+                    <dt className="text-xs text-white/45">{tr('Пріоритет')}</dt>
+                    <dd className={PRIORITY[ticket.priority].className}>
+                        {PRIORITY[ticket.priority].label()}
+                    </dd>
+                </div>
+                <div>
+                    <dt className="text-xs text-white/45">{tr('Оновлено')}</dt>
+                    <dd className="text-white/80">
+                        {formatDate(ticket.updated_at)}
+                    </dd>
+                </div>
+            </dl>
+            {ticket.excerpt && (
+                <div className="gc-solid-2 rounded-xl p-3.5">
+                    <p className="text-xs text-white/45">
+                        {ticket.excerpt.from_staff
+                            ? tr('Остання відповідь команди')
+                            : tr('Останнє повідомлення')}
+                    </p>
+                    <p className="mt-1 text-sm leading-relaxed whitespace-pre-wrap text-white/80">
+                        {ticket.excerpt.body}
+                    </p>
+                </div>
+            )}
+            {ticket.user && (
+                <div className="gc-solid-2 flex items-center gap-3 rounded-xl p-3">
+                    <UserAvatar
+                        user={ticket.user}
+                        size="sm"
+                        showOnline={false}
+                    />
+                    <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium text-white">
+                            {ticket.user.name}
+                        </p>
+                        <p className="truncate text-xs text-white/45">
+                            @{ticket.user.username}
+                        </p>
+                    </div>
+                    {ticket.assignee ? (
+                        <span className="text-right text-xs text-white/45">
+                            {tr('Веде')}
+                            <br />
+                            <span className="text-white/75">
+                                {ticket.assignee.name}
+                            </span>
+                        </span>
+                    ) : (
+                        <span className="text-xs text-amber-200">
+                            {tr('Без відповідального')}
+                        </span>
+                    )}
+                </div>
+            )}
+            <Link
+                href={`/admin/support/${ticket.id}`}
+                className="btn-glow inline-flex h-11 items-center justify-center gap-2 rounded-xl text-sm font-semibold"
+            >
+                {tr('Відкрити звернення')}
+                <ChevronRight className="size-4" />
+            </Link>
+        </aside>
+    );
+}
+
+/** Адмінка → «Підтримка»: черга звернень; на широкому екрані — список і картка обраного поруч. */
 export default function AdminSupport({
     tickets,
     filters,
     categories,
     stats,
 }: {
-    tickets: Paginated<TicketCard>;
+    tickets: Paginated<AdminTicket>;
     filters: { status: string; category: string; mine: boolean; q: string };
     categories: Record<string, string>;
     stats: {
@@ -39,6 +125,9 @@ export default function AdminSupport({
     };
 }) {
     const [q, setQ] = useState(filters.q);
+    const [selected, setSelected] = useState<number | null>(null);
+    const current =
+        tickets.data.find((t) => t.id === selected) ?? tickets.data[0] ?? null;
     const apply = (patch: Partial<typeof filters>) =>
         router.get(
             '/admin/support',
@@ -138,68 +227,86 @@ export default function AdminSupport({
                     {tr('Мої')}
                 </button>
             </div>
-            <div className="gc-solid overflow-hidden rounded-2xl">
-                {tickets.data.length === 0 ? (
-                    <p className="px-5 py-10 text-center text-sm text-white/45">
-                        {tr('Черга порожня.')}
-                    </p>
-                ) : (
-                    <ul className="divide-y divide-white/[0.05]">
-                        {tickets.data.map((t) => (
-                            <li key={t.id}>
-                                <Link
-                                    href={`/admin/support/${t.id}`}
-                                    className="flex items-center gap-3 px-4 py-3 transition hover:bg-[var(--gc-l3)]"
-                                >
-                                    <span
+            <div className="grid items-start gap-4 xl:grid-cols-[1.5fr_1fr]">
+                <div className="gc-solid overflow-hidden rounded-2xl">
+                    {tickets.data.length === 0 ? (
+                        <p className="px-5 py-10 text-center text-sm text-white/45">
+                            {tr('Черга порожня.')}
+                        </p>
+                    ) : (
+                        <ul className="divide-y divide-white/[0.05]">
+                            {tickets.data.map((t) => (
+                                <li key={t.id}>
+                                    <Link
+                                        href={`/admin/support/${t.id}`}
+                                        onClick={(e) => {
+                                            // На широкому екрані рядок лише обирає звернення — подробиці праворуч.
+                                            if (
+                                                window.matchMedia(
+                                                    '(min-width: 1280px)',
+                                                ).matches
+                                            ) {
+                                                e.preventDefault();
+                                                setSelected(t.id);
+                                            }
+                                        }}
                                         className={cn(
-                                            'size-2 shrink-0 rounded-full',
-                                            t.unread
-                                                ? 'bg-gc-indigo'
-                                                : 'bg-transparent',
-                                        )}
-                                    />
-                                    {t.user && (
-                                        <UserAvatar
-                                            user={t.user}
-                                            size="sm"
-                                            showOnline={false}
-                                        />
-                                    )}
-                                    <span className="min-w-0 flex-1">
-                                        <span className="block truncate text-sm font-medium text-white">
-                                            #{t.id} · {t.subject}
-                                        </span>
-                                        <span className="block truncate text-xs text-white/45">
-                                            {t.user?.name} ·{' '}
-                                            {tr(t.category_label)} ·{' '}
-                                            {formatDate(t.updated_at)}
-                                        </span>
-                                    </span>
-                                    <span
-                                        className={cn(
-                                            'hidden text-xs sm:inline',
-                                            PRIORITY[t.priority].className,
+                                            'flex items-center gap-3 px-4 py-3 transition hover:bg-[var(--gc-l3)]',
+                                            current?.id === t.id &&
+                                                'xl:bg-[var(--gc-l3)] xl:shadow-[inset_3px_0_0_0_var(--color-sky-400)]',
                                         )}
                                     >
-                                        {PRIORITY[t.priority].label()}
-                                    </span>
-                                    {t.assignee ? (
-                                        <UserAvatar
-                                            user={t.assignee}
-                                            size="xs"
-                                            showOnline={false}
-                                            className="hidden sm:inline-flex"
+                                        <span
+                                            className={cn(
+                                                'size-2 shrink-0 rounded-full',
+                                                t.unread
+                                                    ? 'bg-gc-indigo'
+                                                    : 'bg-transparent',
+                                            )}
                                         />
-                                    ) : (
-                                        <span className="hidden w-7 sm:inline" />
-                                    )}
-                                    <StatusPill status={t.status} staff />
-                                </Link>
-                            </li>
-                        ))}
-                    </ul>
-                )}
+                                        {t.user && (
+                                            <UserAvatar
+                                                user={t.user}
+                                                size="sm"
+                                                showOnline={false}
+                                            />
+                                        )}
+                                        <span className="min-w-0 flex-1">
+                                            <span className="block truncate text-sm font-medium text-white">
+                                                #{t.id} · {t.subject}
+                                            </span>
+                                            <span className="block truncate text-xs text-white/45">
+                                                {t.user?.name} ·{' '}
+                                                {tr(t.category_label)} ·{' '}
+                                                {formatDate(t.updated_at)}
+                                            </span>
+                                        </span>
+                                        <span
+                                            className={cn(
+                                                'hidden text-xs sm:inline',
+                                                PRIORITY[t.priority].className,
+                                            )}
+                                        >
+                                            {PRIORITY[t.priority].label()}
+                                        </span>
+                                        {t.assignee ? (
+                                            <UserAvatar
+                                                user={t.assignee}
+                                                size="xs"
+                                                showOnline={false}
+                                                className="hidden sm:inline-flex"
+                                            />
+                                        ) : (
+                                            <span className="hidden w-7 sm:inline" />
+                                        )}
+                                        <StatusPill status={t.status} staff />
+                                    </Link>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                </div>
+                {current && <TicketPreview ticket={current} />}
             </div>
             <Pagination data={tickets} />
         </>
