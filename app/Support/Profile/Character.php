@@ -14,7 +14,7 @@ class Character
         'freckles' => 2,
         'blush' => 2,
         'head' => 5,
-        'hair' => 18,
+        'hair' => 21,
         'hairColor' => 14,
         'hairOmbre' => 2,
         'eyes' => 11,
@@ -26,7 +26,7 @@ class Character
         'nose' => 5,
         'mouth' => 6,
         'lipTint' => 6,
-        'facialHair' => 10,
+        'facialHair' => 11,
         'extra' => 8,
         'outfit' => 4,
         'outfitColor' => 9,
@@ -34,7 +34,7 @@ class Character
         // 0 — чоловічий, 1 — жіночий (набір зачісок, очей, борода)
         'gender' => 2,
         // Вуса окремо від бороди; колір бороди й вусів (0 — як волосся)
-        'mustache' => 6,
+        'mustache' => 8,
         'beardColor' => 15,
         // Редактор обличчя: зсув від центру (10 — без зсуву)
         'eyeY' => 21,

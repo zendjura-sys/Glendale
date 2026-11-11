@@ -141,7 +141,11 @@ export function Character({
             ? (HAIR_COLORS[config.beardColor - 1] ?? HAIR_COLORS[0]).hex
             : hairColor;
     const beard = FACIAL_HAIR_PRESETS[config.facialHair];
-    const longBeard = beard !== undefined && 'long' in beard && beard.long;
+    const stache = MUSTACHE_PRESETS[config.mustache];
+    // Довга борода чи вуса спадають на одяг — тоді обидва шари малюємо поверх коміра.
+    const longBeard =
+        (beard !== undefined && 'long' in beard && beard.long === true) ||
+        (stache !== undefined && 'long' in stache && stache.long === true);
     const outfit = OUTFIT_PRESETS[config.outfit] ?? OUTFIT_PRESETS[0];
     const outfitColor = OUTFIT_COLORS[config.outfitColor] ?? OUTFIT_COLORS[0];
     const bg = BG_COLORS[config.bg] ?? BG_COLORS[0];
@@ -341,6 +345,14 @@ export function Character({
                         fill={url('hair')}
                     />
                 )}
+                {hair.fade && (
+                    <path
+                        d={hair.fade}
+                        transform={hairFit}
+                        fill={hairColor}
+                        opacity="0.35"
+                    />
+                )}
                 {hair.detail && (
                     <path
                         d={hair.detail}
@@ -362,11 +374,19 @@ export function Character({
             {/* Довга борода спадає на одяг — поверх коміра, хитається разом із головою */}
             {longBeard && (
                 <g ref={beardRef}>
-                    <g transform={`translate(0 ${mouthDy})`}>
-                        <FacialHair
-                            kind={config.facialHair}
-                            color={beardColor}
-                        />
+                    <g
+                        clipPath={
+                            beard && 'long' in beard && beard.long
+                                ? undefined
+                                : url('head')
+                        }
+                    >
+                        <g transform={`translate(0 ${mouthDy})`}>
+                            <FacialHair
+                                kind={config.facialHair}
+                                color={beardColor}
+                            />
+                        </g>
                     </g>
                     <Mustache
                         kind={config.mustache}
