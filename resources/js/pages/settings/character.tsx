@@ -36,7 +36,7 @@ import type {
 import { tr } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
-type Zoom = 'head' | 'face' | undefined;
+type Zoom = 'card' | undefined;
 
 /** Група карток: яка частина, назви варіантів і кадр персонажа в картці. */
 type Group = {
@@ -54,29 +54,29 @@ const TABS: Tab[] = [
     {
         key: 'skin',
         label: 'Шкіра',
-        groups: [{ part: 'skin', names: names(SKIN_PALETTES), zoom: 'head' }],
+        groups: [{ part: 'skin', names: names(SKIN_PALETTES), zoom: 'card' }],
     },
     {
         key: 'head',
         label: 'Голова',
-        groups: [{ part: 'head', names: names(HEAD_SHAPES), zoom: 'head' }],
+        groups: [{ part: 'head', names: names(HEAD_SHAPES), zoom: 'card' }],
     },
     {
         key: 'hair',
         label: 'Зачіска',
-        groups: [{ part: 'hair', names: names(HAIR_PRESETS), zoom: 'head' }],
+        groups: [{ part: 'hair', names: names(HAIR_PRESETS), zoom: 'card' }],
     },
     {
         key: 'hairColor',
         label: 'Колір волосся',
         groups: [
-            { part: 'hairColor', names: names(HAIR_COLORS), zoom: 'head' },
+            { part: 'hairColor', names: names(HAIR_COLORS), zoom: 'card' },
         ],
     },
     {
         key: 'eyes',
         label: 'Очі',
-        groups: [{ part: 'eyes', names: names(EYE_SHAPES), zoom: 'face' }],
+        groups: [{ part: 'eyes', names: names(EYE_SHAPES), zoom: 'card' }],
     },
     {
         key: 'eyeColor',
@@ -85,24 +85,24 @@ const TABS: Tab[] = [
             {
                 part: 'eyeColor',
                 names: names(EYE_COLOR_PALETTES),
-                zoom: 'face',
+                zoom: 'card',
             },
         ],
     },
     {
         key: 'brows',
         label: 'Брови',
-        groups: [{ part: 'brows', names: names(BROW_PRESETS), zoom: 'face' }],
+        groups: [{ part: 'brows', names: names(BROW_PRESETS), zoom: 'card' }],
     },
     {
         key: 'nose',
         label: 'Ніс',
-        groups: [{ part: 'nose', names: names(NOSE_PRESETS), zoom: 'face' }],
+        groups: [{ part: 'nose', names: names(NOSE_PRESETS), zoom: 'card' }],
     },
     {
         key: 'mouth',
         label: 'Рот',
-        groups: [{ part: 'mouth', names: names(MOUTH_PRESETS), zoom: 'face' }],
+        groups: [{ part: 'mouth', names: names(MOUTH_PRESETS), zoom: 'card' }],
     },
     {
         key: 'facialHair',
@@ -111,14 +111,14 @@ const TABS: Tab[] = [
             {
                 part: 'facialHair',
                 names: names(FACIAL_HAIR_PRESETS),
-                zoom: 'head',
+                zoom: 'card',
             },
         ],
     },
     {
         key: 'extra',
         label: 'Аксесуари',
-        groups: [{ part: 'extra', names: names(ACCESSORIES), zoom: 'head' }],
+        groups: [{ part: 'extra', names: names(ACCESSORIES), zoom: 'card' }],
     },
     {
         key: 'outfit',
@@ -428,7 +428,7 @@ export default function CharacterEditor({
                                             }
                                             aria-pressed={config[g.part] === i}
                                             className={cn(
-                                                'relative aspect-square overflow-hidden rounded-2xl bg-[#1c1c20] transition',
+                                                'flex flex-col overflow-hidden rounded-2xl bg-[#1c1c20] transition',
                                                 config[g.part] === i
                                                     ? 'ring-2 ring-white'
                                                     : 'hover:bg-[#232328]',
@@ -440,11 +440,17 @@ export default function CharacterEditor({
                                                     [g.part]: i,
                                                 }}
                                                 background={g.part === 'bg'}
+                                                outfit={!g.zoom}
                                                 zoom={g.zoom}
-                                                className="size-full"
+                                                className={cn(
+                                                    'w-full',
+                                                    g.zoom
+                                                        ? 'aspect-[25/27]'
+                                                        : 'aspect-square',
+                                                )}
                                             />
                                             {!/^\d+$/.test(name) && (
-                                                <span className="absolute inset-x-1 bottom-1 truncate rounded-md bg-black/45 px-1 py-0.5 text-center text-[10px] font-medium text-white/85">
+                                                <span className="truncate px-1.5 pt-0.5 pb-1.5 text-center text-[10px] font-medium text-white/80">
                                                     {tr(name)}
                                                 </span>
                                             )}

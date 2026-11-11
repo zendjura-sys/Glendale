@@ -24,14 +24,23 @@ import {
 } from './geometry';
 import type { EyeColor, EyeShape, OutfitPreset, SkinPalette } from './geometry';
 
-/** Ліве око на голові: центр і масштаб рідної геометрії ока (центр 95, 155). */
-const EYE_FIT = 'translate(92 154) scale(0.72) translate(-95 -155)';
+/** Ліве око на голові: центр рідної геометрії ока (95, 155) стає (114, 156). */
+const EYE_LEFT = 'translate(42 37) scale(0.76)';
+/** Праве — те саме ліве око дзеркально, центр (186, 156). */
+const EYE_RIGHT = 'translate(258 37) scale(-0.76 0.76)';
+/** Брови намальовані в просторі голови під старе око — переводимо в рідні координати ока й ставимо разом з ним. */
+const BROW_TO_EYE = 'translate(95 155) scale(1.3889) translate(-92 -154)';
+/** Волосся обгортає ширшу голову (64..236). */
+const HAIR_FIT = 'translate(-15 -4) scale(1.1 1.03)';
+/** Окуляри над новими очима (114 і 186). */
+const GLASSES_FIT = 'translate(21 22) scale(0.86)';
 
 /** Кадри: уся фігура, голова (картки вибору), обличчя (очі, брови, ніс, рот). */
 const VIEWS = {
     full: '0 0 300 320',
     head: '30 26 240 240',
     face: '50 92 200 180',
+    card: '25 10 250 270',
 } as const;
 
 /**
@@ -44,6 +53,7 @@ export function Character({
     meter,
     background = true,
     zoom,
+    outfit: withOutfit = true,
     className,
     title,
 }: {
@@ -51,7 +61,9 @@ export function Character({
     meter?: (() => VoiceReading | null) | null;
     background?: boolean;
     /** Крупний план: 'head' — голова, 'face' — обличчя. */
-    zoom?: 'head' | 'face';
+    zoom?: 'head' | 'face' | 'card';
+    /** Без одягу — як у мініатюрах вибору. */
+    outfit?: boolean;
     className?: string;
     title?: string;
 }) {
@@ -161,10 +173,16 @@ export function Character({
 
             {background && <rect width="300" height="320" fill={url('bg')} />}
 
-            <Outfit preset={outfit} color={outfitColor} />
+            {withOutfit && <Outfit preset={outfit} color={outfitColor} />}
 
             <g ref={head}>
-                {hair.back && <path d={hair.back} fill={url('hair')} />}
+                {hair.back && (
+                    <path
+                        d={hair.back}
+                        transform={HAIR_FIT}
+                        fill={url('hair')}
+                    />
+                )}
 
                 <Ears skin={skin} />
                 <EarAccessory kind={config.extra} />
@@ -186,7 +204,7 @@ export function Character({
                     {hair.front && (
                         <path
                             d={hair.front}
-                            transform="translate(0 6)"
+                            transform={`translate(0 6) ${HAIR_FIT}`}
                             fill={skin.shadow}
                             opacity="0.6"
                         />
@@ -247,7 +265,13 @@ export function Character({
 
                 <FacialHair kind={config.facialHair} color={hairColor} />
 
-                {hair.front && <path d={hair.front} fill={url('hair')} />}
+                {hair.front && (
+                    <path
+                        d={hair.front}
+                        transform={HAIR_FIT}
+                        fill={url('hair')}
+                    />
+                )}
 
                 <FaceAccessory kind={config.extra} />
             </g>
@@ -296,8 +320,12 @@ function Brows({
 
     return (
         <g className="eyebrows">
-            {one}
-            <g transform="translate(300, 0) scale(-1, 1)">{one}</g>
+            <g transform={EYE_LEFT}>
+                <g transform={BROW_TO_EYE}>{one}</g>
+            </g>
+            <g transform={EYE_RIGHT}>
+                <g transform={BROW_TO_EYE}>{one}</g>
+            </g>
         </g>
     );
 }
@@ -517,7 +545,7 @@ function Eyes({
 
     return (
         <g className="character-eyes">
-            <g className="eye-left" transform={EYE_FIT}>
+            <g className="eye-left" transform={EYE_LEFT}>
                 <Eye
                     shape={shape}
                     pupil={pupil}
@@ -527,18 +555,16 @@ function Eyes({
                 />
                 {glints}
             </g>
-            <g className="eye-right" transform="translate(300, 0) scale(-1, 1)">
-                <g transform={EYE_FIT}>
-                    <Eye
-                        shape={shape}
-                        pupil={pupil}
-                        color={right}
-                        fill={rightUrl}
-                        clipId={`er${uid}`}
-                    />
-                    {/* Відблиски дзеркалимо назад довкола центру ока — світло з того самого боку. */}
-                    <g transform="translate(190 0) scale(-1, 1)">{glints}</g>
-                </g>
+            <g className="eye-right" transform={EYE_RIGHT}>
+                <Eye
+                    shape={shape}
+                    pupil={pupil}
+                    color={right}
+                    fill={rightUrl}
+                    clipId={`er${uid}`}
+                />
+                {/* Відблиски дзеркалимо назад довкола центру ока — світло з того самого боку. */}
+                <g transform="translate(190 0) scale(-1, 1)">{glints}</g>
             </g>
         </g>
     );
@@ -638,15 +664,15 @@ function EarAccessory({ kind }: { kind: number }): ReactNode {
                 fill="none"
                 strokeLinecap="round"
             >
-                <path d="M 64 198 A 7 7 0 1 0 76 200" />
-                <path d="M 236 198 A 7 7 0 1 1 224 200" />
+                <path d="M 54 198 A 7 7 0 1 0 66 200" />
+                <path d="M 246 198 A 7 7 0 1 1 234 200" />
             </g>
         );
     if (id === 'cross_studs')
         return (
             <g stroke="#CBD5E1" strokeWidth="2.2" strokeLinecap="round">
-                <path d="M 67 189 L 67 201 M 62 194 L 72 194" />
-                <path d="M 233 189 L 233 201 M 228 194 L 238 194" />
+                <path d="M 57 189 L 57 201 M 52 194 L 62 194" />
+                <path d="M 243 189 L 243 201 M 238 194 L 248 194" />
             </g>
         );
 
@@ -667,6 +693,7 @@ function FaceAccessory({ kind }: { kind: number }): ReactNode {
         return (
             <path
                 d={a.frame}
+                transform={GLASSES_FIT}
                 fill={a.lensFill}
                 stroke={a.stroke}
                 strokeWidth={a.strokeWidth}
@@ -695,22 +722,22 @@ function FaceAccessory({ kind }: { kind: number }): ReactNode {
         return (
             <g>
                 <path
-                    d="M 72 146 C 64 54, 236 54, 228 146"
+                    d="M 62 146 C 54 48, 246 48, 238 146"
                     stroke="#1F2430"
                     strokeWidth="9"
                     fill="none"
                     strokeLinecap="round"
                 />
                 <path
-                    d="M 58 146 C 58 138, 82 138, 82 146 L 82 184 C 82 192, 58 192, 58 184 Z"
+                    d="M 46 146 C 46 138, 70 138, 70 146 L 70 184 C 70 192, 46 192, 46 184 Z"
                     fill="#1F2430"
                 />
                 <path
-                    d="M 218 146 C 218 138, 242 138, 242 146 L 242 184 C 242 192, 218 192, 218 184 Z"
+                    d="M 230 146 C 230 138, 254 138, 254 146 L 254 184 C 254 192, 230 192, 230 184 Z"
                     fill="#1F2430"
                 />
                 <path
-                    d="M 70 184 C 76 222, 104 236, 124 232"
+                    d="M 58 184 C 66 224, 102 238, 124 232"
                     stroke="#1F2430"
                     strokeWidth="4"
                     fill="none"
