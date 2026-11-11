@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\Billing\Catalog;
+use App\Services\Billing\CommunityPromotion;
 use App\Services\Billing\Shop;
 use App\Support\Settings\SiteSettings;
 use Illuminate\Http\Request;
@@ -62,6 +64,9 @@ class LegalController extends Controller
             'products' => collect(Shop::catalog())->filter(fn (array $p) => $p['available'])
                 ->map(fn (array $p, string $key) => ['key' => $key, ...$p])->values(),
             'reactions' => count((array) config('plus.reactions')),
+            'family_plus_discount' => app(Catalog::class)->familyPlusDiscount(),
+            // Просування спільноти оплачується з балансу (ціна в сотих одиниці → ₴).
+            'community_promo' => ['price' => intdiv(app(CommunityPromotion::class)->price(), 100), 'days' => CommunityPromotion::DAYS],
             'limits' => config('plus.limits'),
         ]);
     }

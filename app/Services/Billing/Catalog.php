@@ -79,12 +79,32 @@ class Catalog
         return (int) ($this->get($key)['price'] ?? 0) * 100;
     }
 
-    /** Ціна для покупця (копійки): номери з GameCon+ — зі знижкою з Адмінка → Номери. */
+    /**
+     * Знижка на GameCon+ для сім’ї, якщо платник (лідер) сам має GameCon+: %, 0 — без знижки.
+     * Типово 50 % — так власний GameCon+ лідера окупається, а сім’я отримує бонуси дешевше.
+     */
+    public function familyPlusDiscount(): int
+    {
+        return max(0, min(90, (int) $this->settings->get('family_plus_discount', 50)));
+    }
+
+    /**
+     * Ціна для покупця (копійки): номери з GameCon+ — зі знижкою з Адмінка → Номери;
+     * GameCon+ для сім’ї лідеру з власним GameCon+ — зі знижкою familyPlusDiscount().
+     */
     public function priceFor(?User $user, string $key): int
     {
         $price = $this->price($key);
-        if ($user !== null && $user->isPlus() && ($this->get($key)['kind'] ?? null) === 'phone') {
-            $discount = app(PhoneNumbers::class)->config()['plus_discount'];
+        $kind = $this->get($key)['kind'] ?? null;
+        $discount = 0;
+        if ($user !== null && $user->isPlus()) {
+            $discount = match ($kind) {
+                'phone' => app(PhoneNumbers::class)->config()['plus_discount'],
+                'family' => $this->familyPlusDiscount(),
+                default => 0,
+            };
+        }
+        if ($discount > 0) {
             $price = (int) (round($price * (100 - $discount) / 100 / 100) * 100);
         }
 

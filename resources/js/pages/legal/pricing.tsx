@@ -9,6 +9,7 @@ import { PRODUCT_LABELS } from '@/lib/plus';
 type Product = {
     key: string;
     kind: 'plus' | 'gift' | 'family' | 'promo' | 'phone' | 'balance';
+    name: string;
     price: number;
     days: number;
     recurring: boolean;
@@ -20,6 +21,10 @@ type Props = {
     locale: string;
     labels: LegalLabels;
     products: Product[];
+    /** Знижка на GameCon+ для сім’ї лідерам із власним GameCon+ (%). */
+    family_plus_discount: number;
+    /** Просування спільноти: ціна в одиницях балансу (=₴) і строк. */
+    community_promo: { price: number; days: number } | null;
     /** Ліміти [без GameCon+, з GameCon+] з config/plus.php. */
     limits: Record<string, Pair>;
     reactions: number;
@@ -84,6 +89,8 @@ export default function Pricing({
     products,
     limits,
     reactions,
+    family_plus_discount,
+    community_promo,
 }: Props) {
     const user = usePage().props.auth?.user;
     const groups = (Object.keys(GROUPS()) as Product['kind'][])
@@ -130,7 +137,7 @@ export default function Pricing({
                                         >
                                             <span className="min-w-0 flex-1 text-white/85">
                                                 {PRODUCT_LABELS()[p.key] ??
-                                                    p.key}
+                                                    p.name}
                                             </span>
                                             <span className="font-semibold text-white tabular-nums">
                                                 {p.price.toLocaleString(
@@ -149,8 +156,43 @@ export default function Pricing({
                                         </li>
                                     ))}
                             </ul>
+                            {group.kind === 'family' &&
+                                family_plus_discount > 0 && (
+                                    <p className="mt-2 text-xs leading-relaxed text-white/55">
+                                        {tr(
+                                            '−{n}% для лідерів із власним GameCon+: якщо лідер сім’ї сам має GameCon+, GameCon+ для сім’ї коштує на {n}% менше — і при першій оплаті, і при автопродовженні, поки його підписка активна.',
+                                            { n: family_plus_discount },
+                                        )}
+                                    </p>
+                                )}
                         </div>
                     ))}
+                    {community_promo && (
+                        <div>
+                            <h2 className="mb-2 font-display text-lg font-bold text-white">
+                                {tr('Просування спільноти')}
+                            </h2>
+                            <ul className="divide-y divide-white/[0.06] rounded-2xl bg-white/[0.03]">
+                                <li className="flex flex-wrap items-center gap-2 px-4 py-3 text-sm">
+                                    <span className="min-w-0 flex-1 text-white/85">
+                                        {tr(
+                                            'Спільнота в блоці рекомендацій · {n} днів',
+                                            { n: community_promo.days },
+                                        )}
+                                    </span>
+                                    <span className="font-semibold text-white tabular-nums">
+                                        {community_promo.price.toLocaleString(
+                                            'uk-UA',
+                                        )}{' '}
+                                        ₴
+                                    </span>
+                                    <span className="w-full text-xs text-white/40 sm:w-auto">
+                                        {tr('разова оплата з балансу')}
+                                    </span>
+                                </li>
+                            </ul>
+                        </div>
+                    )}
                 </div>
 
                 <p className="mt-6 text-xs text-white/45">

@@ -180,7 +180,7 @@ class Shop
         }
 
         // Залишок старого балансу покриває ціну — списуємо з нього.
-        if ((int) $payer->balance >= self::price($renewal->product)) {
+        if ((int) $payer->balance >= app(Catalog::class)->priceFor($payer, $renewal->product)) {
             DB::transaction(function () use ($renewal, $owner, $payer) {
                 $payment = $this->charge($payer, $renewal->product, $owner, 'renewal', 'Автопродовження: '.self::label($renewal->product));
                 $this->apply($payment, $renewal->product, $owner, $payer, 'renewal');

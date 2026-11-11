@@ -68,7 +68,10 @@ export function ServerPromotion({
                 {KINDS().map(({ kind, icon: Icon, title, text }) => {
                     const products = Object.entries(catalog)
                         .filter(
-                            ([, p]) => p.kind === 'promo' && p.promo === kind,
+                            ([, p]) =>
+                                p.kind === 'promo' &&
+                                p.promo === kind &&
+                                p.available,
                         )
                         .map(([key]) => key);
                     const mine = data.active.filter((p) => p.kind === kind);

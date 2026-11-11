@@ -1,14 +1,17 @@
-import { Head, router, useForm, usePage } from '@inertiajs/react';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import {
     Check,
     Gift,
     Image as ImageIcon,
     Layers,
+    Megaphone,
     Palette,
+    Phone,
     Shield,
     Sparkles,
     Ticket,
     Users,
+    Wallet,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useState } from 'react';
@@ -261,7 +264,10 @@ export default function PlusPage({
                     options={options}
                     buy={buy}
                     busy={busy}
+                    plus={state.active}
                 />
+
+                <OtherPurchases />
 
                 {payments.length > 0 && (
                     <section className="gc-solid rounded-2xl p-5">
@@ -663,13 +669,21 @@ function FamilyPlans({
     options,
     buy,
     busy,
+    plus,
 }: {
     families: Props['families'];
     options: Props['options'];
     buy: (product: string, extra?: Record<string, string | number>) => void;
     busy: string | null;
+    plus: boolean;
 }) {
     const plans = useKind('family');
+    const discount = usePage().props.billing?.family_plus_discount ?? 0;
+    // Ціна для цього лідера: з власним GameCon+ — зі знижкою (так само рахує сервер).
+    const priceFor = (price: number) =>
+        plus && discount > 0
+            ? Math.round((price * (100 - discount)) / 100)
+            : price;
     return (
         <section className="gc-solid rounded-2xl p-5">
             <h2 className="flex items-center gap-2 font-display text-lg font-bold text-white">
@@ -685,7 +699,12 @@ function FamilyPlans({
                 {plans.map(([key, plan], i) => (
                     <span key={key}>
                         {i > 0 && <span className="mx-2 text-white/25">·</span>}
-                        {plan.price.toLocaleString('uk-UA')} ₴
+                        {plus && discount > 0 && (
+                            <s className="mr-1.5 text-base font-medium text-white/35">
+                                {plan.price.toLocaleString('uk-UA')} ₴
+                            </s>
+                        )}
+                        {priceFor(plan.price).toLocaleString('uk-UA')} ₴
                         <span className="text-sm font-medium text-white/45">
                             {' '}
                             {perPeriod(plan.days)}
@@ -693,6 +712,32 @@ function FamilyPlans({
                     </span>
                 ))}
             </p>
+            {discount > 0 && (
+                <div
+                    className={cn(
+                        'mt-3 rounded-xl px-3.5 py-3 text-sm leading-relaxed',
+                        plus
+                            ? 'bg-emerald-500/10 text-emerald-200'
+                            : 'bg-sky-500/10 text-sky-200',
+                    )}
+                >
+                    <p className="font-semibold">
+                        {plus
+                            ? tr('Ваша знижка −{n}% уже врахована', {
+                                  n: discount,
+                              })
+                            : tr('−{n}% для підписників GameCon+', {
+                                  n: discount,
+                              })}
+                    </p>
+                    <p className="mt-0.5 text-[13px] opacity-85">
+                        {tr(
+                            'Що це: лідер сім’ї, у якого є власний GameCon+, платить за GameCon+ для сім’ї на {n}% менше — і при першій оплаті, і при автопродовженні, поки його підписка активна. Для чого: щоб лідеру не доводилося платити повну ціну двічі — за себе й за сім’ю.',
+                            { n: discount },
+                        )}
+                    </p>
+                </div>
+            )}
             {families.length === 0 ? (
                 <p className="mt-3 text-sm text-white/40">
                     {tr('Підключити може лише лідер верифікованої сім’ї.')}
@@ -782,5 +827,90 @@ function FamilyRow({
                 </div>
             )}
         </li>
+    );
+}
+
+/**
+ * «Інші покупки»: усе платне, що продається не тут, — з цінами з адмінки й посиланнями,
+ * щоб жодна позиція каталогу не губилася. Показуємо лише те, що в продажу й чий розділ увімкнено.
+ */
+function OtherPurchases() {
+    const modules = usePage().props.modules ?? [];
+    const from = (items: [string, { price: number }][]) =>
+        items.length > 0 ? Math.min(...items.map(([, p]) => p.price)) : null;
+    const balance = from(useKind('balance'));
+    const phone = from(useKind('phone'));
+    const promo = from(useKind('promo'));
+    const cards = [
+        balance !== null && {
+            key: 'balance',
+            icon: Wallet,
+            title: tr('Баланс GameCon'),
+            text: tr(
+                'Передоплата послуг сайту: підписки на авторів, просування спільнот, GameCon+.',
+            ),
+            price: balance,
+            href: '/plus/billing',
+        },
+        phone !== null &&
+            modules.includes('phone') && {
+                key: 'phone',
+                icon: Phone,
+                title: tr('Номер +777'),
+                text: tr(
+                    'Власний внутрішній номер для дзвінків на GameCon; з GameCon+ — дешевше.',
+                ),
+                price: phone,
+                href: '/phone',
+            },
+        promo !== null &&
+            modules.includes('servers') && {
+                key: 'promo',
+                icon: Megaphone,
+                title: tr('Просування сервера'),
+                text: tr(
+                    'Місце в топі, виділена картка чи банер у каталозі. Купується на сторінці вашого сервера.',
+                ),
+                price: promo,
+                href: '/servers',
+            },
+    ].filter(Boolean) as {
+        key: string;
+        icon: LucideIcon;
+        title: string;
+        text: string;
+        price: number;
+        href: string;
+    }[];
+    if (cards.length === 0) return null;
+
+    return (
+        <section className="gc-solid rounded-2xl p-5">
+            <h2 className="font-display text-lg font-bold text-white">
+                {tr('Інші покупки')}
+            </h2>
+            <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                {cards.map((c) => (
+                    <Link
+                        key={c.key}
+                        href={c.href}
+                        className="gc-solid-2 flex flex-col gap-1.5 rounded-xl p-4 transition hover:bg-[var(--gc-l3)]"
+                    >
+                        <c.icon className="size-5 text-sky-400" />
+                        <span className="font-semibold text-white">
+                            {c.title}
+                        </span>
+                        <span className="text-xs leading-relaxed text-white/55">
+                            {c.text}
+                        </span>
+                        <span className="mt-auto pt-1 text-sm font-semibold text-white tabular-nums">
+                            {tr('від {n} ₴', {
+                                n: c.price.toLocaleString('uk-UA'),
+                            })}
+                        </span>
+                    </Link>
+                ))}
+            </div>
+        </section>
     );
 }

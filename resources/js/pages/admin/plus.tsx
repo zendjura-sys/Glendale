@@ -405,6 +405,15 @@ export default function AdminPlus({
 const field = 'space-y-1 text-xs text-white/50';
 
 /** Новий промокод: тип (дні / знижка на підписку / на перший платіж / безкоштовний період) і обмеження. */
+/** Групи платних функцій для вибору в промокоді. */
+const PRODUCT_GROUPS = (): { kind: string; title: string }[] => [
+    { kind: 'plus', title: tr('GameCon+') },
+    { kind: 'family', title: tr('GameCon+ для сім’ї') },
+    { kind: 'gift', title: tr('Подарунок GameCon+') },
+    { kind: 'promo', title: tr('Просування сервера') },
+    { kind: 'phone', title: tr('Номери +777') },
+];
+
 function PromoForm({ products }: { products: Props['products'] }) {
     const form = useForm({
         code: '',
@@ -423,13 +432,27 @@ function PromoForm({ products }: { products: Props['products'] }) {
     });
     const type = form.data.type;
     const isDiscount = type === 'discount' || type === 'first_payment';
+    // Знижка діє на будь-яку платну функцію, крім поповнення балансу; пробний період — лише на GameCon+.
     const choices = products.filter((p) =>
         type === 'trial'
             ? p.kind === 'plus'
             : type === 'days'
               ? false
-              : p.kind !== 'promo',
+              : p.kind !== 'balance',
     );
+    const groups = PRODUCT_GROUPS()
+        .map((g) => ({
+            ...g,
+            items: choices.filter((p) => p.kind === g.kind),
+        }))
+        .filter((g) => g.items.length > 0);
+    const toggleGroup = (keys: string[], on: boolean) =>
+        form.setData(
+            'products',
+            on
+                ? Array.from(new Set([...form.data.products, ...keys]))
+                : form.data.products.filter((k) => !keys.includes(k)),
+        );
 
     const submit = (event: FormEvent) => {
         event.preventDefault();
@@ -638,36 +661,66 @@ function PromoForm({ products }: { products: Props['products'] }) {
                                   'Лише для тарифів (порожньо — для всіх підписок)',
                               )}
                     </p>
-                    <div className="mt-1.5 flex flex-wrap gap-1.5">
-                        {choices.map((p) => {
-                            const on = form.data.products.includes(p.key);
+                    <p className="mt-0.5 text-[11px] text-white/35">
+                        {tr(
+                            'Подарунок, просування сервера й номери +777 — не підписки: знижка діє на них, лише якщо їх обрано тут явно.',
+                        )}
+                    </p>
+                    <div className="mt-2 space-y-2.5">
+                        {groups.map((g) => {
+                            const keys = g.items.map((p) => p.key);
+                            const all = keys.every((k) =>
+                                form.data.products.includes(k),
+                            );
 
                             return (
-                                <button
-                                    key={p.key}
-                                    type="button"
-                                    onClick={() =>
-                                        form.setData(
-                                            'products',
-                                            on
-                                                ? form.data.products.filter(
-                                                      (k) => k !== p.key,
-                                                  )
-                                                : [
-                                                      ...form.data.products,
-                                                      p.key,
-                                                  ],
-                                        )
-                                    }
-                                    className={cn(
-                                        'rounded-lg px-2 py-0.5 text-xs transition',
-                                        on
-                                            ? 'border-indigo-400/50 bg-indigo-500/15 text-white'
-                                            : 'text-white/50 hover:text-white',
-                                    )}
-                                >
-                                    {p.name}
-                                </button>
+                                <div key={g.kind}>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-xs font-semibold text-white/70">
+                                            {g.title}
+                                        </span>
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                toggleGroup(keys, !all)
+                                            }
+                                            className="text-[11px] text-sky-400 hover:underline"
+                                        >
+                                            {all
+                                                ? tr('Зняти всі')
+                                                : tr('Обрати всі')}
+                                        </button>
+                                    </div>
+                                    <div className="mt-1 flex flex-wrap gap-1.5">
+                                        {g.items.map((p) => {
+                                            const on =
+                                                form.data.products.includes(
+                                                    p.key,
+                                                );
+
+                                            return (
+                                                <button
+                                                    key={p.key}
+                                                    type="button"
+                                                    onClick={() =>
+                                                        toggleGroup(
+                                                            [p.key],
+                                                            !on,
+                                                        )
+                                                    }
+                                                    className={cn(
+                                                        'rounded-lg px-2 py-0.5 text-xs transition',
+                                                        on
+                                                            ? 'border-indigo-400/50 bg-indigo-500/15 text-white'
+                                                            : 'text-white/50 hover:text-white',
+                                                    )}
+                                                >
+                                                    {p.name}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
                             );
                         })}
                     </div>

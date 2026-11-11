@@ -143,7 +143,8 @@ class Checkout
     public function chargeSaved(PlusRenewal $renewal, PaymentCard $card): PaymentOrder
     {
         $payer = $renewal->user;
-        $price = $this->catalog->price($renewal->product);
+        // Ціна на момент продовження: якщо лідер досі з GameCon+ — сімейний тариф зі знижкою.
+        $price = $this->catalog->priceFor($payer, $renewal->product);
         $promo = app(PromoCodes::class)->discountFor($payer, $renewal->product, $price);
         $credit = min(max(0, (int) $payer->balance), $price - $promo['amount']);
         $order = PaymentOrder::query()->create([

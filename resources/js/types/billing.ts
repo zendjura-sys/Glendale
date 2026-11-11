@@ -28,6 +28,8 @@ export type SharedBilling = {
     /** Оплата карткою працює (адміністратор підключив еквайринг monobank). */
     card: boolean;
     products: Record<string, BillingProduct>;
+    /** Знижка на GameCon+ для сім’ї лідерам із власним GameCon+ (%). */
+    family_plus_discount: number;
     /** Пропонувати зберегти картку для автопродовження. */
     save_card: boolean;
     google_pay: GooglePayConfig | null;

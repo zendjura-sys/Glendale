@@ -155,6 +155,8 @@ class HandleInertiaRequests extends Middleware
             'billing' => fn () => [
                 'card' => app(Checkout::class)->available(),
                 'products' => Shop::catalog(),
+                // Знижка на GameCon+ для сім’ї лідерам із власним GameCon+ (%).
+                'family_plus_discount' => app(Catalog::class)->familyPlusDiscount(),
                 'save_card' => app(Catalog::class)->rules()['offer_save_card'],
                 'badges' => app(Catalog::class)->rules()['badges'],
                 'google_pay' => $user ? app(GooglePay::class)->clientConfig() : null,
