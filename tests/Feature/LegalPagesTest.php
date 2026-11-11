@@ -44,7 +44,7 @@ class LegalPagesTest extends TestCase
             );
         }
         $this->get('/terms')->assertInertia(fn (Assert $page) => $page->where('html', fn (string $html) => str_contains($html, '/child-safety')));
-        $this->get('/sitemap.xml')->assertOk()->assertSee('/child-safety');
+        $this->get('/sitemaps/pages.xml')->assertOk()->assertSee('/child-safety');
 
         // Скарга з причиною «Загроза дитині» приймається й іде першою в черзі модерації.
         [$reporter, $target] = User::factory()->count(2)->create();

@@ -95,6 +95,7 @@ use App\Http\Controllers\PodcastController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\PostSeriesController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\PublicPageController;
 use App\Http\Controllers\QuestController;
 use App\Http\Controllers\RailController;
 use App\Http\Controllers\ReadingController;
@@ -147,6 +148,7 @@ Route::get('privacy', [LegalController::class, 'privacy'])->name('legal.privacy'
 Route::get('refund-policy', [LegalController::class, 'refund'])->name('legal.refund');
 Route::get('pricing', [LegalController::class, 'pricing'])->name('legal.pricing');
 Route::get('sitemap.xml', SitemapController::class)->middleware('throttle:30,1')->name('sitemap');
+Route::get('sitemaps/{part}.xml', [SitemapController::class, 'part'])->where('part', '[a-z]+')->middleware('throttle:60,1')->name('sitemap.part');
 Route::get('contacts', [LegalController::class, 'contacts'])->name('legal.contacts');
 
 // Сторінка статусу й картки для прев’ю посилань — відкриті без входу.
@@ -727,7 +729,6 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::get('{movie}/reviews', [MovieReviewController::class, 'index'])->middleware('throttle:60,1')->name('reviews.index');
         Route::post('{movie}/reviews', [MovieReviewController::class, 'store'])->middleware('throttle:10,1')->name('reviews.store');
         Route::delete('{movie}/reviews', [MovieReviewController::class, 'destroy'])->name('reviews.destroy');
-        Route::get('{movie}', [CinemaController::class, 'show'])->name('show');
         Route::patch('{movie}/status', [CinemaController::class, 'status'])->middleware('throttle:60,1')->name('status');
         Route::put('{movie}/rating', [CinemaController::class, 'rate'])->middleware('throttle:60,1')->name('rate');
         Route::post('{movie}/started', [CinemaController::class, 'started'])->middleware('throttle:30,1')->name('started');
@@ -799,7 +800,6 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::get('create', [ClanController::class, 'create'])->name('create');
         Route::post('/', [ClanController::class, 'store'])->middleware('throttle:10,1')->name('store');
         Route::prefix('{clan}')->group(function () {
-            Route::get('/', [ClanController::class, 'show'])->name('show');
             Route::post('join', [ClanController::class, 'join'])->middleware('throttle:20,1')->name('join');
             Route::post('invite-link', [InviteLinkController::class, 'clan'])->middleware('throttle:20,1')->name('invite-link');
             Route::post('leave', [ClanController::class, 'leave'])->name('leave');
@@ -881,7 +881,6 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::get('/', [ServerController::class, 'index'])->name('index');
         Route::get('compare', [ServerController::class, 'compare'])->name('compare');
         Route::post('suggest', [ServerController::class, 'suggest'])->middleware('throttle:5,10')->name('suggest');
-        Route::get('{server}', [ServerController::class, 'show'])->name('show');
         Route::post('{server}/invite', [ServerController::class, 'invite'])->middleware('throttle:20,1')->name('invite');
         Route::post('{server}/claim', [ServerController::class, 'claim'])->middleware('throttle:10,1')->name('claim');
         Route::post('{server}/claims/{claim}', [ServerController::class, 'decideClaim'])->name('claims.decide');
@@ -1366,6 +1365,11 @@ Route::get('calendar/{token}.ics', [EventController::class, 'feed'])->middleware
 Route::get('{user}/card', [ProfileController::class, 'card'])
     ->where('user', '[A-Za-z][A-Za-z0-9_.]{1,30}[A-Za-z0-9]')
     ->name('profile.card');
+// Тайтл, сервер і клан — за одним адресом для всіх: учасник бачить сторінку, гість і пошуковик — картку.
+// Після груп за входом, щоб cinema/my, servers/compare тощо зіставлялися раніше.
+Route::get('cinema/{movie}', [PublicPageController::class, 'movie'])->middleware('module:cinema')->name('cinema.show');
+Route::get('servers/{server}', [PublicPageController::class, 'server'])->middleware('module:servers')->name('servers.show');
+Route::get('clans/{clan}', [PublicPageController::class, 'clan'])->middleware('module:clans')->name('clans.show');
 Route::get('id{id}', [ProfileController::class, 'byId'])->whereNumber('id')->name('profile.id');
 Route::get('{user}', [ProfileController::class, 'show'])
     ->where('user', '[A-Za-z][A-Za-z0-9_.]{1,30}[A-Za-z0-9]')

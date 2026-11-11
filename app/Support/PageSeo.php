@@ -2,8 +2,11 @@
 
 namespace App\Support;
 
+use App\Models\Clan;
 use App\Models\Community;
 use App\Models\Game;
+use App\Models\GtaServer;
+use App\Models\Movie;
 use App\Models\User;
 use App\Services\Seo\OgCards;
 use App\Support\Plugins\Plugins;
@@ -102,6 +105,132 @@ class PageSeo
             'seoDescription' => $about !== '' ? Str::limit(preg_replace('/\s+/u', ' ', $about) ?? $about, 200) : $community->name.' — спільнота в GameCon.',
             'seoImage' => $cards ? app(OgCards::class)->communityUrl($community) : $community->avatar_url,
             'seoImageSize' => $cards,
+        ];
+    }
+
+    /** Короткий опис для мета-тегів: без зайвих пробілів, до 200 символів. */
+    private static function brief(?string $text): string
+    {
+        $text = trim((string) $text);
+
+        return $text === '' ? '' : Str::limit(preg_replace('/\s+/u', ' ', $text) ?? $text, 200);
+    }
+
+    /**
+     * Тайтл кіно: Movie / TVSeries для пошуковиків.
+     *
+     * @return array<string, mixed>
+     */
+    public static function movie(Movie $movie): array
+    {
+        $url = url('/cinema/'.$movie->slug);
+        $kind = Movie::TYPES[$movie->type] ?? 'Фільм';
+        $description = self::brief($movie->description) ?: $movie->title.($movie->year ? ' ('.$movie->year.')' : '').' — '.mb_strtolower($kind).' на GameCon: дивіться разом із друзями.';
+        $rating = $movie->rating_imdb ?? $movie->rating_tmdb ?? $movie->rating_kp;
+
+        return [
+            'seoTitle' => $movie->title.($movie->year ? ' ('.$movie->year.')' : ''),
+            'seoDescription' => $description,
+            'seoImage' => $movie->backdrop ?: $movie->poster,
+            'seoType' => 'video.'.($movie->type === 'movie' ? 'movie' : 'tv_show'),
+            'seoEntity' => array_filter([
+                '@type' => $movie->type === 'movie' || $movie->type === 'documentary' ? 'Movie' : 'TVSeries',
+                '@id' => $url.'#title',
+                'name' => $movie->title,
+                'alternateName' => $movie->title_original ?: null,
+                'url' => $url,
+                'description' => $description,
+                'image' => $movie->poster ?: null,
+                'genre' => array_values(array_filter((array) ($movie->genres ?? []), 'is_string')) ?: null,
+                'dateCreated' => $movie->year ? (string) $movie->year : null,
+                'contentRating' => $movie->age_rating ?: null,
+                'numberOfEpisodes' => $movie->type !== 'movie' && $movie->episodes_count ? $movie->episodes_count : null,
+                'aggregateRating' => $rating ? ['@type' => 'AggregateRating', 'ratingValue' => (float) $rating, 'bestRating' => 10, 'worstRating' => 1, 'ratingCount' => 1] : null,
+            ], fn ($value) => $value !== null),
+        ];
+    }
+
+    /**
+     * Ігровий сервер: GameServer (онлайн, статус) для пошуковиків.
+     *
+     * @return array<string, mixed>
+     */
+    public static function server(GtaServer $server): array
+    {
+        $url = url('/servers/'.$server->slug);
+        $description = self::brief($server->description) ?: self::brief($server->tagline) ?: $server->name.' — сервер GTA на GameCon: онлайн, сім’ї, події й відгуки гравців.';
+
+        return [
+            'seoTitle' => $server->name,
+            'seoDescription' => $description,
+            'seoImage' => $server->icon ?: null,
+            'seoEntity' => array_filter([
+                '@type' => 'GameServer',
+                '@id' => $url.'#server',
+                'name' => $server->name,
+                'url' => $url,
+                'description' => $description,
+                'image' => $server->icon ?: null,
+                'game' => ['@type' => 'VideoGame', 'name' => 'Grand Theft Auto V'],
+                'playersOnline' => $server->players_online,
+                'serverStatus' => $server->players_online !== null ? 'Online' : null,
+            ], fn ($value) => $value !== null),
+        ];
+    }
+
+    /**
+     * Клан чи гільдія: Organization для пошуковиків.
+     *
+     * @return array<string, mixed>
+     */
+    public static function clan(Clan $clan): array
+    {
+        $url = url('/clans/'.$clan->slug);
+        $kind = Clan::TYPES[$clan->type] ?? 'Клан';
+        $description = self::brief($clan->description) ?: $kind.' '.$clan->name.' на GameCon: учасники, події, матчі й новини.';
+
+        return [
+            'seoTitle' => $clan->name.($clan->tag ? ' ['.$clan->tag.']' : ''),
+            'seoDescription' => $description,
+            'seoImage' => $clan->logo_url,
+            'seoEntity' => array_filter([
+                '@type' => 'Organization',
+                '@id' => $url.'#clan',
+                'name' => $clan->name,
+                'alternateName' => $clan->tag ?: null,
+                'url' => $url,
+                'description' => $description,
+                'logo' => $clan->logo_url,
+                'numberOfEmployees' => $clan->members_count ? ['@type' => 'QuantitativeValue', 'value' => $clan->members_count] : null,
+            ], fn ($value) => $value !== null),
+        ];
+    }
+
+    /**
+     * Сторінка застосунку: MobileApplication з посиланням на магазин.
+     *
+     * @param  array<string, string>  $links
+     * @return array<string, mixed>
+     */
+    public static function app(array $links, ?string $version): array
+    {
+        $store = $links['google_play'] ?? null;
+
+        return [
+            'seoTitle' => 'Застосунок GameCon для Android',
+            'seoDescription' => 'GameCon у телефоні: чати, голос, музика, кіно, сім’ї й сервери GTA — у застосунку для Android.',
+            'seoEntity' => array_filter([
+                '@type' => 'MobileApplication',
+                '@id' => url('/app').'#app',
+                'name' => 'GameCon',
+                'url' => url('/app'),
+                'operatingSystem' => 'Android',
+                'applicationCategory' => 'SocialNetworkingApplication',
+                'softwareVersion' => $version,
+                'downloadUrl' => $store,
+                'installUrl' => $store,
+                'offers' => ['@type' => 'Offer', 'price' => 0, 'priceCurrency' => 'UAH'],
+            ], fn ($value) => $value !== null),
         ];
     }
 }

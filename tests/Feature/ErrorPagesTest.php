@@ -42,8 +42,15 @@ class ErrorPagesTest extends TestCase
         User::factory()->create(['username' => 'hiddenplayer', 'is_private' => true]);
         User::factory()->create(['username' => 'bannedplayer', 'banned_at' => now()]);
 
-        $xml = $this->get('/sitemap.xml')->assertOk()->assertHeader('Content-Type', 'application/xml; charset=UTF-8')->getContent();
-        $this->assertStringContainsString('<loc>'.url('/contacts').'</loc>', $xml);
+        // /sitemap.xml — індекс частин; сторінки й профілі — у своїх файлах.
+        $index = $this->get('/sitemap.xml')->assertOk()->assertHeader('Content-Type', 'application/xml; charset=UTF-8')->getContent();
+        $this->assertStringContainsString('<loc>'.url('/sitemaps/pages.xml').'</loc>', $index);
+        $this->assertStringContainsString('<loc>'.url('/sitemaps/profiles.xml').'</loc>', $index);
+        $this->assertNotFalse(simplexml_load_string($index));
+        $this->get('/sitemaps/nope.xml')->assertNotFound();
+        $this->assertStringContainsString('<loc>'.url('/contacts').'</loc>', $this->get('/sitemaps/pages.xml')->getContent());
+        $this->assertStringContainsString('<loc>'.url('/app').'</loc>', $this->get('/sitemaps/pages.xml')->getContent());
+        $xml = $this->get('/sitemaps/profiles.xml')->assertOk()->getContent();
         $this->assertStringContainsString('<loc>'.url('/'.$open->username).'</loc>', $xml);
         $this->assertStringNotContainsString('hiddenplayer', $xml);
         $this->assertStringNotContainsString('bannedplayer', $xml);

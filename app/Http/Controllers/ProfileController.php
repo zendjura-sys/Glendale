@@ -77,8 +77,12 @@ class ProfileController extends Controller
         return to_route('profile.show', User::query()->findOrFail($id), 301);
     }
 
-    public function show(Request $request, User $user, Messenger $messenger, ModuleManager $modules, PhotoService $photoService): Response
+    public function show(Request $request, User $user, Messenger $messenger, ModuleManager $modules, PhotoService $photoService): Response|RedirectResponse
     {
+        // Один адреса профілю: /Mark → /mark (як записано нік), щоб пошуковик не бачив дублікатів.
+        if ($request->isMethod('GET') && ! $request->expectsJson() && $request->segment(1) !== $user->username && strcasecmp((string) $request->segment(1), (string) $user->username) === 0) {
+            return redirect('/'.$user->username, 301);
+        }
         $viewer = $request->user();
         if ($user->isFrozen() && ! $viewer?->is($user) && ! $viewer?->isStaff()) {
             return Inertia::render('profile/frozen', ['name' => $user->name]);

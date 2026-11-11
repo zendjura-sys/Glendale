@@ -3,6 +3,7 @@
 use App\Http\Middleware\AuthenticateApiToken;
 use App\Http\Middleware\BlockBannedIps;
 use App\Http\Middleware\BlockCountries;
+use App\Http\Middleware\CanonicalUrl;
 use App\Http\Middleware\EnsureEmailVerifiedWhenRequired;
 use App\Http\Middleware\EnsureModuleEnabled;
 use App\Http\Middleware\EnsureUserIsAdmin;
@@ -33,6 +34,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->web(append: [
+            CanonicalUrl::class,
             'throttle:web-global',
             SetLocale::class,
             BlockCountries::class,

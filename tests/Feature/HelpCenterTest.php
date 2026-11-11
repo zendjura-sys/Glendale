@@ -142,7 +142,7 @@ class HelpCenterTest extends TestCase
 
     public function test_sitemap_includes_help_pages(): void
     {
-        $xml = $this->get('/sitemap.xml')->assertOk()->getContent();
+        $xml = $this->get('/sitemaps/pages.xml')->assertOk()->getContent();
 
         $this->assertStringContainsString('<loc>'.url('/help').'</loc>', $xml);
         $this->assertStringContainsString('<loc>'.url('/help/music').'</loc>', $xml);

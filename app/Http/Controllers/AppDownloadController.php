@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Support\AppFiles;
+use App\Support\PageSeo;
 use App\Support\Settings\SiteSettings;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -18,7 +19,7 @@ class AppDownloadController extends Controller
             'files' => (object) collect(AppFiles::all($settings))->map(fn (array $f) => ['name' => $f['name'], 'size' => $f['size'], 'sha256' => $f['sha256']])->all(),
             'version' => self::version(),
             'screens' => ['01-menu', '02-chats', '05-music', '07-cinema'],
-        ]);
+        ])->withViewData(PageSeo::app($settings->appLinks(), self::version()));
     }
 
     /** Версія застосунку з mobile/pubspec.yaml (без номера збірки). */
