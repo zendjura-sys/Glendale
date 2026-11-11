@@ -7,6 +7,7 @@ import {
     ChevronUp,
     Eye,
     Languages,
+    LayoutGrid,
     Moon,
     UsersRound,
     Youtube,
@@ -116,6 +117,7 @@ type Form = {
     show_visitors: boolean;
     profile_blocks: string[];
     notify: NotifyPrefs;
+    notify_sections: Record<string, boolean>;
     mute_words: string[];
     hide_spoilers: boolean;
     background: SiteBackgroundPreset;
@@ -139,6 +141,7 @@ export default function Appearance({
     friends,
     closeFriends,
     notify,
+    notifySections = [],
     muteWords,
     hideSpoilers,
     background,
@@ -165,6 +168,7 @@ export default function Appearance({
     friends: UserCard[];
     closeFriends: number[];
     notify: NotifyPrefs;
+    notifySections?: { key: string; label: string; on: boolean }[];
     muteWords: string[];
     hideSpoilers: boolean;
     background: SiteBackgroundPrefs;
@@ -199,6 +203,9 @@ export default function Appearance({
         show_visitors,
         profile_blocks,
         notify,
+        notify_sections: Object.fromEntries(
+            notifySections.map((s) => [s.key, s.on]),
+        ),
         mute_words: muteWords,
         hide_spoilers: hideSpoilers,
         background: background.preset,
@@ -887,6 +894,31 @@ export default function Appearance({
                                 }
                             />
                         ))}
+                        {notifySections.length > 0 && (
+                            <>
+                                <p className="-mx-4 flex items-center gap-2 border-[var(--gc-hairline)] px-4 pt-4 pb-1 text-[13px] text-white/50 sm:-mx-5 sm:px-5">
+                                    <LayoutGrid className="size-3.5" />
+                                    {tr('Розділи')}
+                                </p>
+                                {notifySections.map((item) => (
+                                    <SettingsSwitch
+                                        key={item.key}
+                                        label={tr(item.label)}
+                                        checked={
+                                            form.data.notify_sections[
+                                                item.key
+                                            ] ?? true
+                                        }
+                                        onChange={(on) =>
+                                            form.setData('notify_sections', {
+                                                ...form.data.notify_sections,
+                                                [item.key]: on,
+                                            })
+                                        }
+                                    />
+                                ))}
+                            </>
+                        )}
                         <p className="-mx-4 flex items-center gap-2 border-[var(--gc-hairline)] px-4 pt-4 pb-1 text-[13px] text-white/50 sm:-mx-5 sm:px-5">
                             <Bell className="size-3.5" />
                             {tr('Куди надсилати')}

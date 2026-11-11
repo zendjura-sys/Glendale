@@ -58,6 +58,10 @@ class AppearanceController extends Controller
             'friends' => app(FriendshipService::class)->friendsQuery($user)->limit(40)->get()->map->toCard()->values(),
             'closeFriends' => array_map('intval', (array) $user->pref('close_friends', [])),
             'notify' => NotifyPrefs::for($user),
+            // Розділи, сповіщення яких можна вимкнути цілком (лише ті, що є в режимі людини).
+            'notifySections' => collect(NotifyPrefs::sections($user))
+                ->filter(fn (bool $on, string $key) => in_array($key, app(NetworkModes::class)->modulesFor($user), true))
+                ->map(fn (bool $on, string $key) => ['key' => $key, 'label' => NotifyPrefs::SECTIONS[$key], 'on' => $on])->values(),
             'muteWords' => MutedWords::phrases($user),
             'hideSpoilers' => (bool) $user->pref('hide_spoilers'),
             'gameThemeOn' => app(ModuleManager::class)->enabled('games'),
@@ -81,6 +85,8 @@ class AppearanceController extends Controller
             'profile_blocks' => ['sometimes', 'array', 'max:'.count(ProfileBlocks::ORDER)],
             'profile_blocks.*' => ['string'],
             'notify' => ['sometimes', 'array'],
+            'notify_sections' => ['sometimes', 'array'],
+            'notify_sections.*' => ['boolean'],
             'notify.likes' => ['sometimes', 'boolean'],
             'notify.comments' => ['sometimes', 'boolean'],
             'notify.mentions' => ['sometimes', 'boolean'],
@@ -148,6 +154,9 @@ class AppearanceController extends Controller
                     : NotifyPrefs::enabled($request->user(), $key);
             }
             $patch['notify'] = $notify;
+        }
+        if ($plugins->on('notify_switches') && array_key_exists('notify_sections', $data)) {
+            $patch['notify_sections'] = collect($data['notify_sections'])->only(array_keys(NotifyPrefs::SECTIONS))->map(fn ($on) => (bool) $on)->all();
         }
         if (array_key_exists('seasonal', $data)) {
             $patch['seasonal'] = (bool) $data['seasonal'];
