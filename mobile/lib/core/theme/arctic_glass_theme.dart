@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 
-// Дизайн-система застосунку «Smooth Silk Glass»: теми «Неоновий синій» (темна) і «Крижана Арктика» (світла).
-// Картки — гладкий оптичний акрил: молочна вуаль 135° поверх розмиття 42 (насичення ×1.9), без шуму,
-// обводок і тіней; панелі — щільне скло з тим самим розмиттям; акцент — сапфір #0A84FF / #00D2FF.
-// Імена класів лишилися від «Spatial Glass», щоб не чіпати сотні викликів.
+// Дизайн-система «Spatial Glass» (Arctic Ice & Electric Sapphire): токени застосунку.
 // Лише крижані й сапфірові відтінки — без фіолетового й рожевого. Палітра теми (theme.dart)
 // та віджети core/widgets/arctic_glass беруть кольори звідси; відмінності темної й світлої
 // теми — в ArcticGlassThemeExtension.
@@ -11,15 +8,15 @@ import 'package:flutter/material.dart';
 abstract final class AppColors {
   // Тло
   static const bgBase = Color(0xFF04070D);
-  static const bgElevated = Color(0xFF090A0F);
+  static const bgElevated = Color(0xFF080E1A);
 
   // Скло: tier1 — елементи списків, tier2 — картки й поля, tier3 — шторки та поповери.
-  static const glassTier1 = Color(0xFF0F1420);
-  static const glassTier2 = Color(0xFF0F1420);
-  static const glassTier3 = Color(0xFF131926);
+  static const glassTier1 = Color.fromRGBO(255, 255, 255, 0.04);
+  static const glassTier2 = Color.fromRGBO(255, 255, 255, 0.07);
+  static const glassTier3 = Color.fromRGBO(12, 20, 36, 0.78);
 
   // Рамки
-  static const borderHairline = Color.fromRGBO(255, 255, 255, 0.09);
+  static const borderHairline = Color.fromRGBO(255, 255, 255, 0.10);
   static const borderSpecularTop = Color.fromRGBO(255, 255, 255, 0.32);
   static const borderSapphire = Color.fromRGBO(0, 210, 255, 0.40);
 
@@ -29,7 +26,7 @@ abstract final class AppColors {
   static const accentGradient = LinearGradient(colors: [accentPrimary, accentCyan], begin: Alignment.topLeft, end: Alignment.bottomRight);
 
   /// Неоново-кораловий бейдж (лічильники сповіщень).
-  static const badge = Color(0xFFDC2626);
+  static const badge = Color(0xFFFF4D6D);
 
   // Текст темної теми
   static const textPrimary = Color(0xFFF8FAFC);
@@ -37,36 +34,30 @@ abstract final class AppColors {
   static const textMuted = Color(0xFF64748B);
 
   // Текст світлої теми
-  static const lightTitle = Color(0xFF0F172A);
+  static const lightTitle = Color(0xFF0B1528);
   static const lightBody = Color(0xFF334155);
   static const lightMuted = Color(0xFF64748B);
 
   /// Мерехтіння скелетонів: ледь помітне скло → крижаний ціан → скло.
-  static const shimmer = [Color.fromRGBO(255, 255, 255, 0.04), Color.fromRGBO(255, 255, 255, 0.10), Color.fromRGBO(255, 255, 255, 0.04)];
+  static const shimmer = [Color.fromRGBO(255, 255, 255, 0.03), Color.fromRGBO(0, 210, 255, 0.10), Color.fromRGBO(255, 255, 255, 0.03)];
 }
 
-/// Радіуси iOS (концентричні: вкладене = зовнішнє − відступ): картки — 26, нижнє меню й шторки — 30, кнопки й поля — пігулки (24).
+/// Радіуси: картки — 20, док, шапка й шторки — 28, кнопки й поля — 14.
 abstract final class AppRadii {
-  static const card = 26.0;
-
-  /// Плитки всередині картки (метрики «Ранг», «Казна»…).
-  static const tile = 18.0;
-  static const dock = 30.0;
-  static const control = 12.0;
+  static const card = 20.0;
+  static const dock = 28.0;
+  static const control = 14.0;
 }
 
 /// Розмиття «iOS Frosted Material»: картки й блоки — 22, кнопки й поля — 16,
 /// шапка, док і шторки — 28, розгорнуте меню доку — 32.
 abstract final class AppBlur {
-  // Silk Glass: картки й панелі — розмиття 42 з насиченням ×1.9 (великий радіус — без ряби під текстом);
-  // кнопки — 24; вкладені плашки — без власного розмиття.
-  static const card = 42.0;
-  static const control = 0.0;
-  static const button = 24.0;
-  static const fixed = 42.0;
-  static const dock = 42.0;
-  static const sheet = 42.0;
-  static const menu = 48.0;
+  static const card = 22.0;
+  static const control = 16.0;
+  static const fixed = 28.0;
+  static const dock = 28.0;
+  static const sheet = 28.0;
+  static const menu = 32.0;
 }
 
 /// Пляма світла на тлі: центр (Alignment), радіус градієнта, колір і прозорість.
@@ -129,79 +120,60 @@ class ArcticGlassThemeExtension extends ThemeExtension<ArcticGlassThemeExtension
   final Color body;
   final Color muted;
 
-  // Темна «Frosted Ice Glass»: тло #060B14 з блакитними плямами (#0EA5E9 / #1D4ED8, 22%);
-  // картка — безбарвний пласкій матовий лід: крізь сильне розмиття м'яко видно тло; без обводок, тіней і переливів.
   static const dark = ArcticGlassThemeExtension(
     light: false,
-    background: [Color(0xFF060B14), Color(0xFF060B14)],
+    background: [AppColors.bgBase, AppColors.bgBase],
     glows: [
-      ArcticGlow(Alignment(-0.95, -0.75), 0.85, Color(0xFF0EA5E9), 0.22),
-      ArcticGlow(Alignment(1.0, 0.15), 0.8, Color(0xFF1D4ED8), 0.22),
-      ArcticGlow(Alignment(-0.7, 1.0), 0.75, Color(0xFF0EA5E9), 0.16),
+      ArcticGlow(Alignment(-1, -1), 1.1, AppColors.accentPrimary, 0.18),
+      ArcticGlow(Alignment(1, 0), 0.95, AppColors.accentCyan, 0.13),
+      ArcticGlow(Alignment(0, 1.15), 1.0, AppColors.accentPrimary, 0.16),
     ],
-    // Гладка молочна вуаль під кутом 135°: .14 → .05 (55%) → .08; без шуму, обводок і тіней.
+    // Матова тонировка скла: розмите тло під нею лишається видимим.
     glassFill: LinearGradient(
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
-      colors: [Color.fromRGBO(255, 255, 255, 0.14), Color.fromRGBO(255, 255, 255, 0.05), Color.fromRGBO(255, 255, 255, 0.08)],
-      stops: [0, 0.55, 1],
+      colors: [Color.fromRGBO(255, 255, 255, 0.11), Color.fromRGBO(10, 132, 255, 0.04), Color.fromRGBO(255, 255, 255, 0.03)],
     ),
     pressedFill: LinearGradient(
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
-      colors: [Color.fromRGBO(255, 255, 255, 0.19), Color.fromRGBO(255, 255, 255, 0.09), Color.fromRGBO(255, 255, 255, 0.12)],
-      stops: [0, 0.55, 1],
+      colors: [Color.fromRGBO(255, 255, 255, 0.16), Color.fromRGBO(10, 132, 255, 0.07), Color.fromRGBO(255, 255, 255, 0.05)],
     ),
-    innerFill: Color.fromRGBO(255, 255, 255, 0.06),
-    border: Color(0x00000000),
+    innerFill: Color.fromRGBO(255, 255, 255, 0.05),
+    border: Color.fromRGBO(255, 255, 255, 0.14),
     outline: null,
-    specular: Color(0x00000000),
+    specular: Color.fromRGBO(255, 255, 255, 0.38),
+    // Без тіней: глибину дають розмиття, грань і блік.
     shadows: [],
-    // Шапка й док — те саме молочне скло, що й картки (розмиття 42): крізь них м'яко видно вміст.
     barFill: LinearGradient(
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
-      colors: [Color.fromRGBO(255, 255, 255, 0.16), Color.fromRGBO(255, 255, 255, 0.07), Color.fromRGBO(255, 255, 255, 0.10)],
-      stops: [0, 0.55, 1],
+      colors: [Color.fromRGBO(255, 255, 255, 0.11), Color.fromRGBO(10, 132, 255, 0.04), Color.fromRGBO(255, 255, 255, 0.03)],
     ),
-    sheetFill: Color.fromRGBO(10, 17, 30, 0.74),
+    sheetFill: Color.fromRGBO(12, 18, 30, 0.55),
     title: AppColors.textPrimary,
     body: Color(0xFFCBD5E1),
     muted: AppColors.textSecondary,
   );
 
-  // Світла «Крижана Арктика»: та сама формула інею на льодовому тлі — біле матове скло.
   static const daylight = ArcticGlassThemeExtension(
     light: true,
-    background: [Color(0xFFEFF4FA), Color(0xFFE6EEF8)],
+    // Прохолодний льодовиковий градієнт і сфери світла: під білим склом завжди грає крижаний тон.
+    background: [Color(0xFFDFECFA), Color(0xFFEDF4FC), Color(0xFFD6E6F8)],
     glows: [
-      ArcticGlow(Alignment(-0.95, -0.75), 0.85, Color(0xFF0EA5E9), 0.18),
-      ArcticGlow(Alignment(1.0, 0.15), 0.8, Color(0xFF1D4ED8), 0.12),
+      ArcticGlow(Alignment(-1, -0.9), 1.0, AppColors.accentPrimary, 0.12),
+      ArcticGlow(Alignment(1, 0.1), 0.9, AppColors.accentCyan, 0.10),
+      ArcticGlow(Alignment(0, 1.15), 0.8, AppColors.accentPrimary, 0.12),
     ],
-    glassFill: LinearGradient(
-      begin: Alignment.topLeft,
-      end: Alignment.bottomRight,
-      colors: [Color.fromRGBO(255, 255, 255, 0.80), Color.fromRGBO(255, 255, 255, 0.62), Color.fromRGBO(255, 255, 255, 0.70)],
-      stops: [0, 0.55, 1],
-    ),
-    pressedFill: LinearGradient(
-      begin: Alignment.topLeft,
-      end: Alignment.bottomRight,
-      colors: [Color.fromRGBO(255, 255, 255, 0.92), Color.fromRGBO(255, 255, 255, 0.78), Color.fromRGBO(255, 255, 255, 0.84)],
-      stops: [0, 0.55, 1],
-    ),
-    innerFill: Color.fromRGBO(15, 23, 42, 0.04),
-    border: Color(0x00000000),
+    glassFill: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color.fromRGBO(255, 255, 255, 0.65), Color.fromRGBO(232, 242, 255, 0.45)]),
+    pressedFill: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color.fromRGBO(255, 255, 255, 0.80), Color.fromRGBO(232, 242, 255, 0.60)]),
+    innerFill: Color.fromRGBO(255, 255, 255, 0.45),
+    border: Color.fromRGBO(255, 255, 255, 0.88),
     outline: null,
-    specular: Color(0x00000000),
+    specular: Color.fromRGBO(255, 255, 255, 0.95),
     shadows: [],
-    barFill: LinearGradient(
-      begin: Alignment.topLeft,
-      end: Alignment.bottomRight,
-      colors: [Color.fromRGBO(255, 255, 255, 0.62), Color.fromRGBO(255, 255, 255, 0.46), Color.fromRGBO(255, 255, 255, 0.54)],
-      stops: [0, 0.55, 1],
-    ),
-    sheetFill: Color.fromRGBO(244, 248, 253, 0.8),
+    barFill: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color.fromRGBO(255, 255, 255, 0.65), Color.fromRGBO(232, 242, 255, 0.45)]),
+    sheetFill: Color.fromRGBO(246, 250, 255, 0.72),
     title: AppColors.lightTitle,
     body: AppColors.lightBody,
     muted: AppColors.lightMuted,
@@ -221,8 +193,10 @@ class ArcticGlassThemeExtension extends ThemeExtension<ArcticGlassThemeExtension
 }
 
 /// Крижане світіння навколо активного елемента (вкладка доку, кнопка ШІ).
-// One UI без світіння: лишилося ім'я для сумісності.
-List<BoxShadow> iceGlow({double strength = 1}) => const [];
+List<BoxShadow> iceGlow({double strength = 1}) => [BoxShadow(color: AppColors.accentCyan.withValues(alpha: 0.45 * strength), blurRadius: 14, spreadRadius: -2)];
 
 /// М'яке крижане (#00D2FF) світіння індикатора доку.
-List<BoxShadow> sapphireGlow({double strength = 1}) => const [];
+List<BoxShadow> sapphireGlow({double strength = 1}) => [
+  BoxShadow(color: AppColors.accentCyan.withValues(alpha: 0.38 * strength), blurRadius: 16, spreadRadius: -4),
+  BoxShadow(color: AppColors.accentPrimary.withValues(alpha: 0.22 * strength), blurRadius: 8, spreadRadius: -2),
+];

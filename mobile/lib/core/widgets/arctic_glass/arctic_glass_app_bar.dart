@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-
-import 'arctic_fit_text.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../i18n.dart';
@@ -30,12 +28,13 @@ class ArcticGlassAppBar extends StatelessWidget implements PreferredSizeWidget {
       radius: 0,
       specular: false,
       borderRadius: BorderRadius.zero,
-      blur: AppBlur.fixed,
-      // Молочне скло, як шапка-капсула й док; без лінії знизу.
-      fill: ArcticGlassThemeExtension.of(context).barFill,
+      fill: LinearGradient(colors: [AppColors.bgBase.withValues(alpha: 0.55), AppColors.bgBase.withValues(alpha: 0.35)], begin: Alignment.topCenter, end: Alignment.bottomCenter),
       child: Container(
         height: top + height,
         padding: EdgeInsets.only(top: top, left: 4, right: 4),
+        decoration: const BoxDecoration(
+          border: Border(bottom: BorderSide(color: AppColors.borderHairline)),
+        ),
         child: Row(
           children: [
             if (leading != null)
@@ -48,7 +47,7 @@ class ArcticGlassAppBar extends StatelessWidget implements PreferredSizeWidget {
               ),
             if (leading == null && !canPop) const SizedBox(width: 12),
             Expanded(
-              child: title == null ? const SizedBox() : FitText(title!, style: display(17)),
+              child: title == null ? const SizedBox() : Text(title!, maxLines: 1, overflow: TextOverflow.ellipsis, style: display(17)),
             ),
             ...actions,
             IconTheme.merge(

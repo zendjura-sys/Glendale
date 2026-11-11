@@ -77,27 +77,18 @@ class _InsideGlass extends InheritedWidget {
   bool updateShouldNotify(_InsideGlass oldWidget) => false;
 }
 
-/// Матриця насичення [sat] і яскравості [bright] (як CSS saturate() brightness()).
-ColorFilter _frost(double sat, double bright) {
-  const r = 0.2126, g = 0.7152, b = 0.0722;
-  final i = 1 - sat;
-  List<double> row(double rr, double gg, double bb) => [rr * bright, gg * bright, bb * bright, 0, 0];
-  return ColorFilter.matrix(<double>[
-    ...row(r * i + sat, g * i, b * i),
-    ...row(r * i, g * i + sat, b * i),
-    ...row(r * i, g * i, b * i + sat),
-    0, 0, 0, 1, 0,
-  ]);
-}
+/// Підсилення насичення перед розмиттям Гаусса — як у матеріалах iOS.
+const _saturate = ColorFilter.matrix(<double>[
+  1.35, -0.18, -0.18, 0, 0, //
+  -0.09, 1.26, -0.18, 0, 0, //
+  -0.09, -0.18, 1.45, 0, 0, //
+  0, 0, 0, 1, 0,
+]);
 
-// Silk Glass: насичення ×1.9 — крізь гладке скло видно кольори тла, без сірості.
-final _silkFrost = _frost(1.9, 1.04);
-
-/// Фільтр скла: насичення, потім велике розмиття (mirror — без темних ореолів на краях).
-/// Картки й панелі — blur 42 saturate 190%, кнопки — 24; дрібного розмиття немає, тож текст під склом не «рябить».
+/// Фільтр скла: насичення, потім розмиття (mirror — без темних ореолів на краях).
 ImageFilter arcticGlassFilter(double sigma) => ImageFilter.compose(
   outer: ImageFilter.blur(sigmaX: sigma, sigmaY: sigma, tileMode: TileMode.mirror),
-  inner: _silkFrost,
+  inner: _saturate,
 );
 
 class _ArcticGlassContainerState extends State<ArcticGlassContainer> {
@@ -120,16 +111,14 @@ class _ArcticGlassContainerState extends State<ArcticGlassContainer> {
   Widget _surface(BuildContext context, bool nested, double t) {
     final tokens = ArcticGlassThemeExtension.of(context);
     final w = widget;
-    final plainInner = nested && w.fill == null && w.color == null;
-    // Плитки в картці — заокруглення 18 (концентрично до картки 26), якщо радіус не задано явно.
-    final shape = w.borderRadius ?? BorderRadius.circular(plainInner && w.radius == AppRadii.card ? AppRadii.tile : w.radius);
+    final shape = w.borderRadius ?? BorderRadius.circular(w.radius);
     final still = MediaQuery.disableAnimationsOf(context);
     final plain = w.fill == null && w.color == null;
     final inner = nested && plain;
 
     final Gradient? gradient = w.color != null || inner ? null : (w.fill ?? (pressed ? tokens.pressedFill : tokens.glassFill));
     final Color? color = inner ? (pressed ? tokens.innerFill.withValues(alpha: (tokens.innerFill.a * 1.6).clamp(0, 1)) : tokens.innerFill) : w.color;
-    // Явна грань (borderColor) чи сяйво фокусу; інакше — матова фаска теми (ArcticMatteEdgePainter нижче).
+    // Без обводки: грань лише явно задана ([borderColor]) або сяйво фокусу.
     final edge = w.glowing ? AppColors.accentCyan.withValues(alpha: 0.55) : w.borderColor;
 
     Widget body = AnimatedContainer(
@@ -147,27 +136,20 @@ class _ArcticGlassContainerState extends State<ArcticGlassContainer> {
       foregroundDecoration: edge == null ? null : BoxDecoration(borderRadius: shape, border: Border.all(color: edge, width: w.glowing ? 1.2 : 1)),
       child: _InsideGlass(child: w.child),
     );
-    // Матовий акрил: фаска 1px (верх яскравіший, боки тихші, низ ледь видно) і внутрішнє світло
-    // вздовж верхньої грані; від дотику верхня грань трохи світлішає. Вкладені плашки — без фаски.
-    if (!inner && tokens.outline != null) {
-      body = CustomPaint(foregroundPainter: ArcticSpecularBorderPainter(borderRadius: shape, outline: tokens.outline), child: body);
-    }
-    if (!inner && edge == null && tokens.border.a > 0) {
+    if (w.specular || tokens.outline != null) {
       body = CustomPaint(
-        foregroundPainter: ArcticMatteEdgePainter(
+        foregroundPainter: ArcticSpecularBorderPainter(
           borderRadius: shape,
-          edge: tokens.border,
-          inset: w.specular ? tokens.specular : null,
-          pressed: pressed,
+          specular: w.specular ? tokens.specular.withValues(alpha: (tokens.specular.a * (pressed ? 1.25 : 1)).clamp(0, 1)) : null,
+          outline: inner ? null : tokens.outline,
         ),
         child: body,
       );
     }
     if (t < 1) body = Opacity(opacity: t.clamp(0, 1), child: body);
-    if (w.enableBlur && t > 0 && (inner ? AppBlur.control : w.blur) > 0) {
+    if (w.enableBlur && t > 0) {
       final sigma = (inner ? AppBlur.control : w.blur) * t;
-      // Картки екрана ділять одне тло (BackdropGroup у ScreenScroll) — розмиття читає його один раз.
-      body = ClipRRect(borderRadius: shape, child: BackdropFilter.grouped(filter: arcticGlassFilter(sigma), child: body));
+      body = ClipRRect(borderRadius: shape, child: BackdropFilter(filter: arcticGlassFilter(sigma), child: body));
     }
     final shadows = inner ? const <BoxShadow>[] : (w.glowing ? [...?w.shadows, ...iceGlow(strength: 0.6)] : (w.shadows ?? tokens.shadows));
     if (shadows.isNotEmpty && t > 0) {
@@ -200,74 +182,6 @@ class _OuterShadowPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_OuterShadowPainter old) => old.shape != shape || old.shadows != shadows || old.t != t;
-}
-
-/// Кришталева грань і внутрішній іній «Frosted Ice Glass»:
-/// грань 1px [edge] (верх ×2, ліво ×1.4 — як border-top/left-color), внутрішній блік угорі [inset]
-/// (inset 0 1px 1px) і м'яке світіння інею всередині по периметру (inset 0 0 24px / 5%).
-class ArcticMatteEdgePainter extends CustomPainter {
-  const ArcticMatteEdgePainter({required this.borderRadius, required this.edge, this.inset, this.pressed = false});
-  final BorderRadius borderRadius;
-  final Color edge;
-  final Color? inset;
-  final bool pressed;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    if (size.isEmpty) return;
-    final rect = Offset.zero & size;
-    final outer = borderRadius.toRRect(rect);
-    final rrect = outer.deflate(0.5);
-    final boost = pressed ? 1.25 : 1.0;
-    Color a(double k) => edge.withValues(alpha: (edge.a * k * boost).clamp(0, 1));
-    final corner = (borderRadius.topLeft.y + 8).clamp(0.0, size.shortestSide / 2);
-    canvas.save();
-    canvas.clipRRect(outer);
-    // Іній: світла смуга вздовж країв усередині, розмита до 24px.
-    canvas.drawRRect(
-      outer,
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 24
-        ..color = Color.fromRGBO(255, 255, 255, edge.computeLuminance() > 0.5 && edge.a > 0.5 ? 0.0 : 0.05)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10),
-    );
-    // Внутрішній блік під верхньою гранню (inset 0 1px 1px).
-    if (inset case final c?) {
-      canvas.drawRRect(
-        outer.shift(const Offset(0, 1)),
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.2
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 0.6)
-          ..shader = LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [c.withValues(alpha: (c.a * boost).clamp(0, 1)), c.withValues(alpha: 0)], stops: [0, corner / size.height]).createShader(rect),
-      );
-    }
-    canvas.restore();
-    // Базова грань .16 по всьому периметру.
-    final stroke = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1;
-    canvas.drawRRect(rrect, stroke..color = a(1));
-    // Верх яскравіший (≈ .32), ліво — ≈ .22: доливаємо світло градієнтами від цих країв.
-    canvas.drawRRect(
-      rrect,
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1
-        ..shader = LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [a(1), a(1).withValues(alpha: 0)], stops: [0, corner / size.height]).createShader(rect),
-    );
-    canvas.drawRRect(
-      rrect,
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1
-        ..shader = LinearGradient(colors: [a(0.4), a(0.4).withValues(alpha: 0)], stops: [0, corner / size.width]).createShader(rect),
-    );
-  }
-
-  @override
-  bool shouldRepaint(ArcticMatteEdgePainter old) => old.borderRadius != borderRadius || old.edge != edge || old.inset != inset || old.pressed != pressed;
 }
 
 /// Дзеркальний блік 1px по верхній грані (прозорий → [specular] → прозорий) і, у світлій темі,

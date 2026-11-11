@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 
-import '../../../theme.dart' show ink, body;
+import '../../../theme.dart' show palette, ink, body;
 import '../../theme/arctic_glass_theme.dart';
 import 'arctic_glass_container.dart';
 import 'arctic_pressable.dart';
 
 enum ArcticButtonKind { primary, glass, danger }
 
-/// Кнопка «Silk Glass» — капсула. primary — скляний сапфір (ArcticGlassPill), glass — гладке скло,
-/// danger — скляна червона. Вимкнений стан — приглушені кольори, а не Opacity поверх скла.
+/// Кнопка «Spatial Glass» (радіус 14). primary — сапфіровий градієнт, glass — скло з рамкою,
+/// danger — червона. Вимкнений стан — приглушені кольори, а не Opacity поверх скла.
 class ArcticGlassButton extends StatelessWidget {
   const ArcticGlassButton({
     required this.label,
@@ -34,6 +34,8 @@ class ArcticGlassButton extends StatelessWidget {
   /// Колір підпису скляної кнопки.
   final Color? color;
   final Color? iconColor;
+
+  static const _danger = Color(0xFFFF4D6D);
 
   @override
   Widget build(BuildContext context) {
@@ -66,59 +68,37 @@ class ArcticGlassButton extends StatelessWidget {
     );
     final padding = EdgeInsets.symmetric(horizontal: compact ? 12 : 16);
     if (!solid) {
-      return ArcticGlassContainer(radius: height / 2, blur: AppBlur.control, height: height, padding: padding, onTap: enabled ? onPressed : null, child: content);
+      return ArcticGlassContainer(radius: AppRadii.control, blur: AppBlur.control, height: height, padding: padding, onTap: enabled ? onPressed : null, child: content);
     }
-    return ArcticGlassPill(
-      height: height,
-      padding: padding,
-      onTap: enabled ? onPressed : null,
-      tint: kind == ArcticButtonKind.danger ? ArcticPillTint.danger : ArcticPillTint.sapphire,
-      dim: dim,
-      child: content,
-    );
-  }
-}
-
-enum ArcticPillTint { sapphire, danger }
-
-/// Гладка скляна капсула головних кнопок («Пост», «Продовжити», «Я готовий грати»):
-/// напівпрозорий сапфір 135° (.45 → .35) поверх розмиття 24 — без обводки й світіння.
-class ArcticGlassPill extends StatelessWidget {
-  const ArcticGlassPill({required this.child, this.height = 50, this.padding, this.onTap, this.tint = ArcticPillTint.sapphire, this.dim = 1, super.key});
-
-  final Widget child;
-  final double height;
-  final EdgeInsetsGeometry? padding;
-  final VoidCallback? onTap;
-  final ArcticPillTint tint;
-
-  /// Вимкнена кнопка — приглушена заливка.
-  final double dim;
-
-  static const _danger = Color(0xFFFF4D6D);
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = tint == ArcticPillTint.danger
-        ? [_danger.withValues(alpha: 0.55 * dim), _danger.withValues(alpha: 0.42 * dim)]
-        : [Color.fromRGBO(14, 165, 233, 0.45 * dim), Color.fromRGBO(37, 99, 235, 0.35 * dim)];
-    final shape = BorderRadius.circular(height / 2);
+    final gradient = kind == ArcticButtonKind.danger
+        ? LinearGradient(
+            colors: [
+              _danger.withValues(alpha: dim),
+              _danger.withValues(alpha: dim),
+            ],
+          )
+        : LinearGradient(
+            colors: [
+              AppColors.accentPrimary.withValues(alpha: dim),
+              (palette.isLight ? const Color(0xFF00A8E0) : AppColors.accentCyan).withValues(alpha: dim),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          );
+    final shape = BorderRadius.circular(AppRadii.control);
     return ArcticPressable(
-      onTap: onTap,
-      child: ClipRRect(
-        borderRadius: shape,
-        child: BackdropFilter(
-          filter: arcticGlassFilter(AppBlur.button),
-          child: Container(
-            height: height,
-            padding: padding,
-            decoration: BoxDecoration(
-              borderRadius: shape,
-              gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: colors),
-            ),
-            child: child,
+      onTap: enabled ? onPressed : null,
+      child: Container(
+        height: height,
+        padding: padding,
+        decoration: BoxDecoration(
+          gradient: gradient,
+          borderRadius: shape,
+          border: Border(
+            top: BorderSide(color: Colors.white.withValues(alpha: enabled ? 0.32 : 0.1)),
           ),
         ),
+        child: content,
       ),
     );
   }
