@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Services\Profile\Affiliations;
+use App\Services\Profile\UserRoles;
 use App\Services\Quests\SeasonPass;
 use App\Support\Palette;
 use App\Support\Plugins\Plugins;
@@ -383,6 +384,8 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
             'event_frame' => $this->eventFrame(),
             // Логотипи сім'ї, клану, сервера й гри біля ніка (з підказкою при наведенні).
             'badges' => app(Affiliations::class)->of($this),
+            // Ролі-плашки з титулами («old», «Big Sponsor»): видані адміністратором або за правилом.
+            'roles' => app(UserRoles::class)->of($this),
         ];
     }
 

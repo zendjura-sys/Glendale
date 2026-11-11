@@ -1066,6 +1066,15 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::delete('status/{incident}', [Admin\StatusController::class, 'destroy'])->whereNumber('incident')->name('status.destroy');
         Route::get('broadcasts', [Admin\BroadcastController::class, 'index'])->name('broadcasts.index');
         Route::get('system', [Admin\SystemController::class, 'index'])->name('system.index');
+        Route::prefix('roles')->name('roles.')->controller(Admin\UserRoleController::class)->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::post('/', 'store')->name('store');
+            Route::post('sync', 'sync')->middleware('throttle:3,1')->name('sync');
+            Route::put('{role}', 'update')->whereNumber('role')->name('update');
+            Route::delete('{role}', 'destroy')->whereNumber('role')->name('destroy');
+            Route::post('{role}/grant', 'grant')->whereNumber('role')->name('grant');
+            Route::delete('{role}/users/{user:id}', 'revoke')->whereNumber(['role', 'user'])->name('revoke');
+        });
         Route::get('team', [Admin\TeamController::class, 'index'])->name('team.index');
         Route::post('team', [Admin\TeamController::class, 'add'])->name('team.add');
         Route::put('team/{user}', [Admin\TeamController::class, 'update'])->name('team.update');

@@ -30,6 +30,8 @@ export type UserCard = {
     staff_title?: { name: string; color: string } | null;
     /** Власна роль-підпис підписника GameCon+. */
     title?: { name: string; color: string } | null;
+    /** Ролі-плашки (звичайні, святкові, нагородні, преміум) з Адмінка → Ролі. */
+    roles?: UserRoleCard[];
     /** Вид позначки (верифікація 2.0): identity, creator, business, organization. */
     verified_kind?: string | null;
     /** Спеціальний акаунт (стрімер, бізнес…); null — особистий. */
@@ -283,4 +285,14 @@ export type PlusMark = {
     frame: string[] | null;
     /** Анімація ніку: flow — перелив, shine — відблиск. */
     fx?: 'flow' | 'shine' | 'neon' | 'rainbow' | null;
+};
+
+/** Роль-плашка користувача («old», «Big Sponsor»). */
+export type UserRoleCard = {
+    id: number;
+    name: string;
+    kind: string;
+    color: string;
+    icon: string | null;
+    description: string | null;
 };

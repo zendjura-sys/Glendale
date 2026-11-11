@@ -33,7 +33,7 @@ import {
 import { MentionText } from './mention-text';
 import { StickerPicker } from './stickers';
 import { AffiliationBadges } from '@/components/gc/affiliation-badges';
-import { UserTitle } from '@/components/gc/user-title';
+import { UserRoles, UserTitle } from '@/components/gc/user-title';
 import { tr } from '@/lib/i18n';
 
 type CommentSort = 'old' | 'new' | 'reactions';
@@ -291,6 +291,10 @@ export function Comments({
                                             />
                                         </Link>
                                         <UserTitle user={comment.user} />
+                                        <UserRoles
+                                            roles={comment.user.roles}
+                                            limit={1}
+                                        />
                                         <AffiliationBadges
                                             badges={comment.user.badges}
                                             size={15}

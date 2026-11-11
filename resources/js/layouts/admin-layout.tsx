@@ -133,6 +133,11 @@ function groups(): { title: string; items: Item[] }[] {
                     icon: ShieldCheck,
                 },
                 {
+                    label: tr('Ролі'),
+                    href: '/admin/roles',
+                    icon: Crown,
+                },
+                {
                     label: tr('Воронка реєстрації'),
                     href: '/admin/funnel',
                     icon: Filter,

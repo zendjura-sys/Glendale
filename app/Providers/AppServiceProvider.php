@@ -28,6 +28,7 @@ use App\Services\FriendshipService;
 use App\Services\Geo\CountryRestrictions;
 use App\Services\Moderation\NsfwCheck;
 use App\Services\Profile\Affiliations;
+use App\Services\Profile\UserRoles;
 use App\Services\Push\PushNotifier;
 use App\Services\Referrals;
 use App\Support\I18n\CatalogLoader;
@@ -73,6 +74,7 @@ class AppServiceProvider extends ServiceProvider
     {
         // Значки біля ніка збираються раз на запит (і для черги — окремо на кожну задачу).
         $this->app->scoped(Affiliations::class);
+        $this->app->scoped(UserRoles::class);
         $this->app->singleton(ModuleManager::class, fn () => new ModuleManager(config('modules')));
         $this->app->singleton(SiteSettings::class);
         $this->app->scoped(Translations::class);

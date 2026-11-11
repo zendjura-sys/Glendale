@@ -90,7 +90,7 @@ import type {
     UserCard,
 } from '@/types';
 import { AffiliationBadges } from '@/components/gc/affiliation-badges';
-import { UserTitle } from '@/components/gc/user-title';
+import { UserRoles, UserTitle } from '@/components/gc/user-title';
 import { LOCALE, tr } from '@/lib/i18n';
 import { LiveBadge, ProfileStream } from '@/components/streams/stream';
 import type { StreamInfo } from '@/components/streams/stream';
@@ -574,6 +574,10 @@ export default function ProfileShow({
                                         className="px-2.5 py-1 text-xs"
                                     />
                                 )}
+                                <UserRoles
+                                    roles={profile.roles}
+                                    className="px-2.5 py-1 text-xs"
+                                />
                                 {roleBadge && (
                                     <span className="inline-flex items-center gap-1 rounded-chip border-gold/30 bg-gold/10 px-2.5 py-0.5 text-xs font-semibold text-gold">
                                         <ShieldCheck className="size-3" />{' '}

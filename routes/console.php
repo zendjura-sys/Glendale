@@ -3,6 +3,7 @@
 use App\Models\AppLoginRequest;
 use App\Models\SpamBlock;
 use App\Services\Billing\AuthorSubscriptions;
+use App\Services\Profile\UserRoles;
 use App\Services\Support\SupportDesk;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
@@ -76,3 +77,6 @@ Schedule::call(fn () => app(SupportDesk::class)->autoClose())->name('support:aut
 
 // Щоденна резервна копія бази (зберігаються останні 14; стан — Адмінка → Система).
 Schedule::command('gc:backup')->dailyAt('04:10')->timezone('Europe/Kyiv')->withoutOverlapping(120)->runInBackground();
+
+// Ролі-плашки за рівнем, досягненнями й підтримкою — раз на ніч (GameCon+ і стаж перевіряються одразу).
+Schedule::call(fn () => app(UserRoles::class)->sync())->name('user-roles:sync')->dailyAt('04:40')->timezone('Europe/Kyiv')->withoutOverlapping(60);

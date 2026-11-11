@@ -83,6 +83,16 @@ class Achievements
     ];
 
     /**
+     * Перелік досягнень (ключ і назва) — для правил ролей в адмінці.
+     *
+     * @return list<array{key: string, title: string}>
+     */
+    public function catalog(): array
+    {
+        return array_map(fn (array $b) => ['key' => $b['key'], 'title' => $b['title']], self::BADGES);
+    }
+
+    /**
      * Рівень, досвід і бейджі людини.
      *
      * @return array{level: int, title: string, xp: int, level_xp: int, next_xp: int, earned: int, total: int, badges: list<array<string, mixed>>}
