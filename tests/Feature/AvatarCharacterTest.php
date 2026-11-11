@@ -22,12 +22,18 @@ class AvatarCharacterTest extends TestCase
         $full = [...array_map(fn () => 0, Character::PARTS), ...Character::DEFAULTS, ...$set];
         $this->assertEquals($full, $user->fresh()->character);
         $this->assertSame(0, $user->fresh()->character['freckles']);
+        // Редактор обличчя: без передачі — по центру.
+        $this->assertSame(10, $user->fresh()->character['eyeY']);
         $this->assertEquals($full, $user->fresh()->toCard()['character']);
         $set = $full;
 
         $this->actingAs($user)->put('/me/character', ['character' => [...$set, 'hair' => 99]])->assertSessionHasErrors('character');
+        $this->actingAs($user)->put('/me/character', ['character' => [...$set, 'eyeSpread' => 21]])->assertSessionHasErrors('character');
         $this->actingAs($user)->put('/me/character', ['character' => 'oops'])->assertSessionHasErrors('character');
         $this->assertSame($set, $user->fresh()->character);
+
+        $this->actingAs($user)->put('/me/character', ['character' => [...$set, 'eyeY' => 4, 'eyeSpread' => 16, 'noseY' => 12, 'mouthY' => 0]])->assertSessionHasNoErrors();
+        $this->assertSame(16, $user->fresh()->character['eyeSpread']);
 
         $this->actingAs($user)->delete('/me/character')->assertRedirect();
         $this->assertNull($user->fresh()->character);

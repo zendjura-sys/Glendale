@@ -31,10 +31,15 @@ class Character
         'outfit' => 4,
         'outfitColor' => 9,
         'bg' => 9,
+        // Редактор обличчя: зсув від центру (10 — без зсуву)
+        'eyeY' => 21,
+        'eyeSpread' => 21,
+        'noseY' => 21,
+        'mouthY' => 21,
     ];
 
     /** Варіант за замовчуванням, якщо частину не передали (як DEFAULT_CHARACTER на клієнті). */
-    public const DEFAULTS = ['skin' => 5, 'hair' => 1, 'hairColor' => 1];
+    public const DEFAULTS = ['skin' => 5, 'hair' => 1, 'hairColor' => 1, 'eyeY' => 10, 'eyeSpread' => 10, 'noseY' => 10, 'mouthY' => 10];
 
     /**
      * Перевіряє й нормалізує набір: лише відомі частини, цілі числа в межах.

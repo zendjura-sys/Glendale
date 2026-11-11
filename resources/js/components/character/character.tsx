@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef } from 'react';
 import type { ReactNode, RefObject } from 'react';
 import type { CharacterConfig, VoiceReading } from '@/lib/character';
-import { shade } from '@/lib/character';
+import { faceOffset, shade } from '@/lib/character';
 import { cn } from '@/lib/utils';
 import {
     ACCESSORIES,
@@ -30,6 +30,11 @@ const EYE_LEFT = 'translate(42 37) scale(0.76)';
 const EYE_RIGHT = 'translate(258 37) scale(-0.76 0.76)';
 /** Брови намальовані в просторі голови під старе око — переводимо в рідні координати ока й ставимо разом з ним. */
 const BROW_TO_EYE = 'translate(95 155) scale(1.3889) translate(-92 -154)';
+/** Ліве й праве око з ручним зсувом пари: dy — вгору/вниз, gap — ширше/вужче. */
+const eyeLeft = (dy: number, gap: number) =>
+    `translate(${-gap} ${dy}) ${EYE_LEFT}`;
+const eyeRight = (dy: number, gap: number) =>
+    `translate(${gap} ${dy}) ${EYE_RIGHT}`;
 /** Волосся обгортає ширшу голову (64..236). */
 const HAIR_FIT = 'translate(-15 -4) scale(1.1 1.03)';
 /** Окуляри над новими очима (114 і 186). */
@@ -136,6 +141,10 @@ export function Character({
     const rightColor = config.hetero
         ? (EYE_COLOR_PALETTES[config.eyeColorRight] ?? leftColor)
         : leftColor;
+    const eyeDy = faceOffset(config, 'eyeY');
+    const eyeSpread = faceOffset(config, 'eyeSpread');
+    const noseDy = faceOffset(config, 'noseY');
+    const mouthDy = faceOffset(config, 'mouthY');
     // Темна шкіра: тонкий світлий обідок на бровах, переніссі й губах, щоб риси не зливалися.
     const rim = ['deep_bronze', 'espresso', 'ebony'].includes(skin.id);
     const id = (name: string) => `${name}${uid}`;
@@ -267,9 +276,13 @@ export function Character({
                     color={shade(hairColor, 0.08)}
                     skin={skin}
                     rim={rim}
+                    dy={eyeDy}
+                    gap={eyeSpread}
                 />
 
                 <Eyes
+                    dy={eyeDy}
+                    gap={eyeSpread}
                     shape={EYE_SHAPES[config.eyes] ?? EYE_SHAPES[0]}
                     pupil={PUPILS[config.pupil]?.id ?? 'round'}
                     left={leftColor}
@@ -279,17 +292,21 @@ export function Character({
                     uid={uid}
                 />
 
-                <Nose kind={config.nose} skin={skin} rim={rim} />
+                <g transform={`translate(0 ${noseDy})`}>
+                    <Nose kind={config.nose} skin={skin} rim={rim} />
+                </g>
 
-                <Mouth
-                    kind={config.mouth}
-                    lip={lip}
-                    skin={skin}
-                    rim={rim}
-                    upperRef={upper}
-                    lowerRef={lower}
-                    insideRef={inside}
-                />
+                <g transform={`translate(0 ${mouthDy})`}>
+                    <Mouth
+                        kind={config.mouth}
+                        lip={lip}
+                        skin={skin}
+                        rim={rim}
+                        upperRef={upper}
+                        lowerRef={lower}
+                        insideRef={inside}
+                    />
+                </g>
 
                 <FacialHair kind={config.facialHair} color={hairColor} />
 
@@ -301,7 +318,7 @@ export function Character({
                     />
                 )}
 
-                <FaceAccessory kind={config.extra} />
+                <FaceAccessory kind={config.extra} dy={eyeDy} />
             </g>
 
             {/* Шар 8: комір і зав'язки поверх шиї — шия заходить в одяг */}
@@ -339,11 +356,15 @@ function Brows({
     color,
     skin,
     rim,
+    dy,
+    gap,
 }: {
     kind: number;
     color: string;
     skin: SkinPalette;
     rim: boolean;
+    dy: number;
+    gap: number;
 }) {
     const brow = BROW_PRESETS[kind] ?? BROW_PRESETS[0];
     const one = (
@@ -361,10 +382,10 @@ function Brows({
 
     return (
         <g className="eyebrows">
-            <g transform={EYE_LEFT}>
+            <g transform={eyeLeft(dy, gap)}>
                 <g transform={BROW_TO_EYE}>{one}</g>
             </g>
-            <g transform={EYE_RIGHT}>
+            <g transform={eyeRight(dy, gap)}>
                 <g transform={BROW_TO_EYE}>{one}</g>
             </g>
         </g>
@@ -547,6 +568,8 @@ function Eye({
 }
 
 function Eyes({
+    dy,
+    gap,
     shape,
     pupil,
     left,
@@ -555,6 +578,8 @@ function Eyes({
     rightUrl,
     uid,
 }: {
+    dy: number;
+    gap: number;
     shape: EyeShape;
     pupil: string;
     left: EyeColor;
@@ -586,7 +611,7 @@ function Eyes({
 
     return (
         <g className="character-eyes">
-            <g className="eye-left" transform={EYE_LEFT}>
+            <g className="eye-left" transform={eyeLeft(dy, gap)}>
                 <Eye
                     shape={shape}
                     pupil={pupil}
@@ -596,7 +621,7 @@ function Eyes({
                 />
                 {glints}
             </g>
-            <g className="eye-right" transform={EYE_RIGHT}>
+            <g className="eye-right" transform={eyeRight(dy, gap)}>
                 <Eye
                     shape={shape}
                     pupil={pupil}
@@ -750,7 +775,7 @@ function EarAccessory({ kind }: { kind: number }): ReactNode {
 }
 
 /** Окуляри, візор і гарнітура поверх обличчя. */
-function FaceAccessory({ kind }: { kind: number }): ReactNode {
+function FaceAccessory({ kind, dy }: { kind: number; dy: number }): ReactNode {
     const a = ACCESSORIES[kind];
     if (
         !a ||
@@ -763,7 +788,7 @@ function FaceAccessory({ kind }: { kind: number }): ReactNode {
         return (
             <path
                 d={a.frame}
-                transform={GLASSES_FIT}
+                transform={`translate(0 ${dy}) ${GLASSES_FIT}`}
                 fill={a.lensFill}
                 stroke={a.stroke}
                 strokeWidth={a.strokeWidth}
@@ -773,7 +798,7 @@ function FaceAccessory({ kind }: { kind: number }): ReactNode {
         );
     if (a.id === 'cyber_visor')
         return (
-            <g>
+            <g transform={`translate(0 ${dy})`}>
                 <path
                     d="M 52 136 C 90 126, 210 126, 248 136 L 244 168 C 210 176, 90 176, 56 168 Z"
                     fill="rgba(34,211,238,0.3)"

@@ -62,6 +62,11 @@ const TABS: Tab[] = [
         groups: [{ part: 'head', names: names(HEAD_SHAPES), zoom: 'card' }],
     },
     {
+        key: 'face',
+        label: 'Обличчя',
+        groups: [],
+    },
+    {
         key: 'hair',
         label: 'Зачіска',
         groups: [{ part: 'hair', names: names(HAIR_PRESETS), zoom: 'card' }],
@@ -404,6 +409,9 @@ export default function CharacterEditor({
                             eyeSide={eyeSide}
                             setEyeSide={setEyeSide}
                         />
+                        {tab === 'face' && (
+                            <FaceEditor config={config} set={set} />
+                        )}
                         {groups.map((g) => (
                             <div key={g.part}>
                                 {g.title && (
@@ -598,4 +606,68 @@ function Toolbar({
         default:
             return null;
     }
+}
+
+/** Ручне положення рис: очі рухаються парою (висота й відстань), ніс і рот — по висоті. */
+const FACE_SLIDERS: {
+    key: 'eyeY' | 'eyeSpread' | 'noseY' | 'mouthY';
+    label: string;
+    low: string;
+    high: string;
+}[] = [
+    { key: 'eyeY', label: 'Очі — висота', low: 'Вище', high: 'Нижче' },
+    { key: 'eyeSpread', label: 'Очі — відстань', low: 'Ближче', high: 'Ширше' },
+    { key: 'noseY', label: 'Ніс — висота', low: 'Вище', high: 'Нижче' },
+    { key: 'mouthY', label: 'Рот — висота', low: 'Вище', high: 'Нижче' },
+];
+
+function FaceEditor({
+    config,
+    set,
+}: {
+    config: CharacterConfig;
+    set: (patch: Partial<CharacterConfig>) => void;
+}) {
+    const moved = FACE_SLIDERS.some((f) => config[f.key] !== 10);
+
+    return (
+        <div className="space-y-4 rounded-2xl bg-[#1C1C1F] p-4">
+            {FACE_SLIDERS.map((f) => (
+                <label key={f.key} className="block">
+                    <span className="flex items-center justify-between text-sm text-white">
+                        {tr(f.label)}
+                        <span className="text-xs text-white/45 tabular-nums">
+                            {config[f.key] - 10 > 0 ? '+' : ''}
+                            {config[f.key] - 10}
+                        </span>
+                    </span>
+                    <input
+                        type="range"
+                        min={0}
+                        max={20}
+                        step={1}
+                        value={config[f.key]}
+                        onChange={(e) =>
+                            set({ [f.key]: Number(e.target.value) })
+                        }
+                        className="mt-2 w-full accent-white"
+                    />
+                    <span className="flex justify-between text-[11px] text-white/40">
+                        <span>{tr(f.low)}</span>
+                        <span>{tr(f.high)}</span>
+                    </span>
+                </label>
+            ))}
+            <button
+                type="button"
+                disabled={!moved}
+                onClick={() =>
+                    set({ eyeY: 10, eyeSpread: 10, noseY: 10, mouthY: 10 })
+                }
+                className="h-9 w-full rounded-full bg-white/10 text-sm text-white transition hover:bg-white/15 disabled:opacity-40"
+            >
+                {tr('Скинути положення')}
+            </button>
+        </div>
+    );
 }

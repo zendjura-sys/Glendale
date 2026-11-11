@@ -25,6 +25,11 @@ export type CharacterConfig = {
     outfit: number;
     outfitColor: number;
     bg: number;
+    /** Редактор обличчя: 0..20, 10 — без зсуву. Очі рухаються парою. */
+    eyeY: number;
+    eyeSpread: number;
+    noseY: number;
+    mouthY: number;
 };
 
 export type CharacterPart = keyof CharacterConfig;
@@ -51,6 +56,10 @@ export const PARTS: Record<CharacterPart, number> = {
     outfit: 4,
     outfitColor: 9,
     bg: 9,
+    eyeY: 21,
+    eyeSpread: 21,
+    noseY: 21,
+    mouthY: 21,
 };
 
 export const DEFAULT_CHARACTER: CharacterConfig = {
@@ -75,6 +84,10 @@ export const DEFAULT_CHARACTER: CharacterConfig = {
     outfit: 0,
     outfitColor: 0,
     bg: 0,
+    eyeY: 10,
+    eyeSpread: 10,
+    noseY: 10,
+    mouthY: 10,
 };
 
 /** Набір із сервера (може бути порожнім або старим) → повний і в межах. */
@@ -105,6 +118,11 @@ export function randomCharacter(): CharacterConfig {
     if (Math.random() < 0.6) out.freckles = 0;
     if (Math.random() < 0.5) out.lipTint = 0;
     out.eyeColorRight = out.eyeColor;
+    // Положення рис лишаємо за замовчуванням — випадкові зсуви виглядають криво.
+    out.eyeY = 10;
+    out.eyeSpread = 10;
+    out.noseY = 10;
+    out.mouthY = 10;
 
     return out;
 }
@@ -214,4 +232,19 @@ export function newAudioContext(): AudioContext {
             .webkitAudioContext;
 
     return new Ctx();
+}
+
+/** Зсув риси обличчя в пікселях SVG: значення 0..20, 10 — центр. */
+export const FACE_STEPS = {
+    eyeY: 1.5,
+    eyeSpread: 1.2,
+    noseY: 1,
+    mouthY: 1.2,
+} as const;
+
+export function faceOffset(
+    config: CharacterConfig,
+    key: keyof typeof FACE_STEPS,
+): number {
+    return (config[key] - 10) * FACE_STEPS[key];
 }
