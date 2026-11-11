@@ -1,4 +1,5 @@
 import { RpDossier } from '@/components/gc/rp-dossier';
+import { GameCastTile } from '@/components/gc/gamecast-button';
 import type { RailData } from '@/components/gc/rail-widgets';
 import { Link, router, usePage } from '@inertiajs/react';
 import {
@@ -18,7 +19,6 @@ import {
     Package,
     PanelBottom,
     Phone,
-    Podcast,
     Radar,
     Server,
     Settings,
@@ -152,7 +152,6 @@ export function MenuHub({ onClose }: { onClose: () => void }) {
     const { auth, airAlerts, modules, nav } = usePage().props;
     const user = auth.user;
     const supportOn = usePlugin('support_tickets');
-    const showsOn = usePlugin('live_shows');
     const [hub, setHub] = useState<Hub | null>(null);
     const [system, setSystem] = useState(false);
     const [more, setMore] = useState(false);
@@ -445,6 +444,8 @@ export function MenuHub({ onClose }: { onClose: () => void }) {
                             tone="text-cyan-400"
                         />
                     )}
+                    {/* GameCast — жива кнопка на ширину двох плиток */}
+                    <GameCastTile className="col-span-2" />
                 </div>
             </section>
 
@@ -492,18 +493,6 @@ export function MenuHub({ onClose }: { onClose: () => void }) {
                         >
                             <Phone className="size-4 text-emerald-400" />
                             {tr('Телефон')}
-                        </Link>
-                    )}
-                    {showsOn && (
-                        <Link
-                            href="/shows"
-                            className={cn(
-                                inner,
-                                'flex items-center gap-2 px-3 py-2.5 text-[13px] font-medium text-white/85',
-                            )}
-                        >
-                            <Podcast className="size-4 text-rose-400" />
-                            {tr('Подкасти')}
                         </Link>
                     )}
                     <Link

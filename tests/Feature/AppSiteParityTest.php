@@ -857,6 +857,7 @@ class AppSiteParityTest extends TestCase
         $host = $this->app_token(User::factory()->create());
         $id = $this->withToken($host)->postJson('/api/v1/site/shows', ['title' => 'Ранкова кава', 'format' => 'double'])->assertCreated()->json('show.id');
         $this->withToken($host)->getJson('/api/v1/site/shows')->assertOk()->assertJsonPath('live.0.id', $id);
+        $this->withToken($host)->getJson('/api/v1/site/shows/pulse')->assertOk()->assertJsonPath('live', 1);
         $listener = $this->app_token(User::factory()->create());
         $this->withToken($listener)->postJson("/api/v1/site/shows/{$id}/join")->assertOk()->assertJsonStructure(['url', 'token', 'identity']);
         $this->withToken($listener)->postJson("/api/v1/site/shows/{$id}/hand", ['raised' => true])->assertOk()->assertJsonPath('me.hand', true);

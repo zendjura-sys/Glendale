@@ -56,7 +56,7 @@ const FORMATS = [
 
 type Trend = { tag: string; shows: number; live: number; listeners: number };
 
-/** Подкасти наживо: тренди #тем, «Зараз в ефірі», розклад і кнопка «Створити кімнату». */
+/** GameCast — подкасти наживо: тренди #тем, «Зараз в ефірі», розклад і кнопка «Створити кімнату». */
 export default function ShowsIndex({
     live,
     upcoming,
@@ -75,12 +75,12 @@ export default function ShowsIndex({
 
     return (
         <>
-            <Head title={tr('Подкасти')} />
+            <Head title="GameCast" />
             <div className="mx-auto w-full max-w-5xl space-y-6 px-1 py-2">
                 <header className="flex flex-wrap items-end gap-3">
                     <div className="min-w-0 flex-1 basis-full sm:basis-0">
                         <h1 className="font-display text-3xl font-bold text-white">
-                            {tr('Подкасти')}
+                            GameCast
                         </h1>
                         <p className="mt-1 text-sm text-white/55">
                             {tr(

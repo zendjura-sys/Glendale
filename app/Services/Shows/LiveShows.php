@@ -252,6 +252,20 @@ class LiveShows
     }
 
     /**
+     * Пульс ефіру для кнопки GameCast.
+     *
+     * @return array{live: int, listeners: int}
+     */
+    public function pulse(): array
+    {
+        return Cache::remember('shows:pulse', 20, function () {
+            $shows = LiveShow::query()->where('status', LiveShow::LIVE)->limit(200)->get();
+
+            return ['live' => $shows->count(), 'listeners' => (int) $shows->sum(fn (LiveShow $s) => $this->present($s)->count())];
+        });
+    }
+
+    /**
      * Тренди тем: кімнати в ефірі й за останній тиждень. Вага теми — слухачі зараз і пік завершених.
      *
      * @return list<array{tag: string, shows: int, live: int, listeners: int}>

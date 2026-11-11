@@ -3,7 +3,6 @@ import {
     Clapperboard,
     Music,
     Newspaper,
-    Podcast,
     Server,
     ShieldHalf,
     Zap,
@@ -24,7 +23,6 @@ export function HeaderNav({ className }: { className?: string }) {
     const { modules } = usePage().props;
     const { currentUrl } = useCurrentUrl();
     const reduce = useReducedMotion();
-    const showsOn = usePlugin('live_shows');
     const items = [
         {
             key: 'feed',
@@ -61,18 +59,6 @@ export function HeaderNav({ className }: { className?: string }) {
             icon: Music,
             module: 'music',
         },
-        // Подкасти наживо — окремий розділ спілкування для всіх (не частина музики чи спільнот).
-        ...(showsOn
-            ? [
-                  {
-                      key: 'shows',
-                      href: '/shows',
-                      label: tr('Подкасти'),
-                      icon: Podcast,
-                      module: null,
-                  },
-              ]
-            : []),
     ].filter((i) => i.module === null || modules.includes(i.module));
     const active = items.find(
         (i) =>

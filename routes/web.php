@@ -327,6 +327,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     // Шоу наживо: сцена, гості з питанням на таймері, слухачі.
     Route::prefix('shows')->name('shows.')->controller(LiveShowController::class)->whereNumber(['show', 'user'])->group(function () {
         Route::get('/', 'index')->name('index');
+        Route::get('pulse', 'pulse')->middleware('throttle:60,1')->name('pulse');
         Route::post('/', 'store')->middleware('throttle:6,1')->name('store');
         Route::get('{show}', 'show')->name('show');
         Route::get('{show}/state', 'state')->middleware('throttle:120,1')->name('state');

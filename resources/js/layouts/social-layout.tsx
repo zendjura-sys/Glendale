@@ -1,6 +1,7 @@
 import { SideRail } from '@/components/gc/side-rail';
 import { GamerDock } from '@/components/gc/gamer-dock';
 import { MenuHub } from '@/components/gc/menu-hub';
+import { GameCastHeaderButton } from '@/components/gc/gamecast-button';
 import { HeaderNav, ReadyIndicator } from '@/components/gc/header-nav';
 import { AlertMapButton } from '@/components/alerts/alert-map-button';
 import { AlertBanner } from '@/components/alerts/alert-banner';
@@ -265,6 +266,7 @@ function Topbar() {
                 </Link>
                 <QuickSearch className="max-w-[340px] min-w-0 flex-1" />
                 <HeaderNav className="mx-auto hidden xl:flex" />
+                <GameCastHeaderButton className="hidden md:flex" />
                 <div className="ml-auto flex items-center gap-0.5 xl:ml-0">
                     <ReadyIndicator />
                     <Link

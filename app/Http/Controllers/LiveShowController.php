@@ -41,6 +41,14 @@ class LiveShowController extends Controller
         return $request->expectsJson() ? response()->json($data) : Inertia::render('shows/index', $data);
     }
 
+    /** Пульс для живої кнопки GameCast: скільки кімнат в ефірі й слухачів (кеш 20 с). */
+    public function pulse(): JsonResponse
+    {
+        app(Plugins::class)->ensure('live_shows');
+
+        return response()->json($this->shows->pulse());
+    }
+
     public function store(Request $request): RedirectResponse|JsonResponse
     {
         app(Plugins::class)->ensure('live_shows');
