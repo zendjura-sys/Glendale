@@ -183,6 +183,14 @@ export default function CharacterEditor({
     const reduce = useReducedMotion();
     const saved = JSON.stringify(normalizeCharacter(character));
     const dirty = character === null || JSON.stringify(config) !== saved;
+    // Превью «підстрибує» при зміні частини, але не під час руху повзунків обличчя.
+    const previewKey = JSON.stringify({
+        ...config,
+        eyeY: 0,
+        eyeSpread: 0,
+        noseY: 0,
+        mouthY: 0,
+    });
     const set = (patch: Partial<CharacterConfig>) =>
         setConfig((c) => ({ ...c, ...patch }));
 
@@ -314,7 +322,7 @@ export default function CharacterEditor({
                     <div className="relative flex h-[42vh] min-h-72 items-center justify-center">
                         <motion.div
                             ref={previewRef}
-                            key={JSON.stringify(config)}
+                            key={previewKey}
                             initial={
                                 reduce ? false : { scale: 0.97, opacity: 0.85 }
                             }

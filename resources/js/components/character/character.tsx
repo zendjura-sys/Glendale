@@ -144,7 +144,8 @@ export function Character({
     const eyeDy = faceOffset(config, 'eyeY');
     const eyeSpread = faceOffset(config, 'eyeSpread');
     const noseDy = faceOffset(config, 'noseY');
-    const mouthDy = faceOffset(config, 'mouthY');
+    // Рот не заїжджає на ніс: тримаємо щонайменше 8 px від зсунутого носа.
+    const mouthDy = Math.max(faceOffset(config, 'mouthY'), noseDy - 8);
     // Темна шкіра: тонкий світлий обідок на бровах, переніссі й губах, щоб риси не зливалися.
     const rim = ['deep_bronze', 'espresso', 'ebony'].includes(skin.id);
     const id = (name: string) => `${name}${uid}`;
@@ -183,10 +184,6 @@ export function Character({
                 <clipPath id={id('head')}>
                     <path d={headShape.head} />
                 </clipPath>
-                <mask id={id('neck')}>
-                    <rect width="300" height="320" fill="#fff" />
-                    <path d={headShape.head} fill="#000" />
-                </mask>
                 <IrisGradient id={id('irisL')} color={leftColor} />
                 <IrisGradient id={id('irisR')} color={rightColor} />
             </defs>
@@ -199,6 +196,13 @@ export function Character({
                 <path
                     d="M 120 224 C 122 244, 120 258, 115 270 C 130 282, 170 282, 185 270 C 180 258, 178 244, 180 224 Z"
                     fill={skin.base}
+                />
+            )}
+            {/* Тінь від підборіддя на шиї: під головою, тож голова її перекриває й при хитанні */}
+            {withOutfit && (
+                <path
+                    d="M 116 236 C 126 266, 174 266, 184 236 L 185 270 C 170 282, 130 282, 115 270 Z"
+                    fill={skin.shadow}
                 />
             )}
 
@@ -237,14 +241,6 @@ export function Character({
                         />
                     )}
                 </g>
-
-                {withOutfit && (
-                    <path
-                        d="M 116 236 C 126 266, 174 266, 184 236 L 185 270 C 170 282, 130 282, 115 270 Z"
-                        fill={skin.shadow}
-                        mask={url('neck')}
-                    />
-                )}
 
                 {config.blush === 1 && (
                     <g fill="#F472B6" opacity="0.22">
@@ -308,7 +304,10 @@ export function Character({
                     />
                 </g>
 
-                <FacialHair kind={config.facialHair} color={hairColor} />
+                {/* Борода й вуса рухаються разом із ротом */}
+                <g transform={`translate(0 ${mouthDy})`}>
+                    <FacialHair kind={config.facialHair} color={hairColor} />
+                </g>
 
                 {hair.front && (
                     <path
@@ -318,7 +317,7 @@ export function Character({
                     />
                 )}
 
-                <FaceAccessory kind={config.extra} dy={eyeDy} />
+                <FaceAccessory kind={config.extra} dy={eyeDy} gap={eyeSpread} />
             </g>
 
             {/* Шар 8: комір і зав'язки поверх шиї — шия заходить в одяг */}
@@ -775,7 +774,17 @@ function EarAccessory({ kind }: { kind: number }): ReactNode {
 }
 
 /** Окуляри, візор і гарнітура поверх обличчя. */
-function FaceAccessory({ kind, dy }: { kind: number; dy: number }): ReactNode {
+function FaceAccessory({
+    kind,
+    dy,
+    gap,
+}: {
+    kind: number;
+    dy: number;
+    gap: number;
+}): ReactNode {
+    // Окуляри розтягуються від центру разом із відстанню між очима (лінзи на ±36 від центру).
+    const wide = `translate(150 ${dy}) scale(${((36 + gap) / 36).toFixed(3)} 1) translate(-150 0)`;
     const a = ACCESSORIES[kind];
     if (
         !a ||
@@ -788,7 +797,7 @@ function FaceAccessory({ kind, dy }: { kind: number; dy: number }): ReactNode {
         return (
             <path
                 d={a.frame}
-                transform={`translate(0 ${dy}) ${GLASSES_FIT}`}
+                transform={`${wide} ${GLASSES_FIT}`}
                 fill={a.lensFill}
                 stroke={a.stroke}
                 strokeWidth={a.strokeWidth}

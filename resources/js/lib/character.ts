@@ -246,5 +246,9 @@ export function faceOffset(
     config: CharacterConfig,
     key: keyof typeof FACE_STEPS,
 ): number {
-    return (config[key] - 10) * FACE_STEPS[key];
+    const v = config[key] - 10;
+    // Очі: всередину — дрібний крок (між очима лише кілька пікселів), назовні — щоб не вийти за скроні.
+    if (key === 'eyeSpread') return v < 0 ? v * 0.35 : v * 0.8;
+
+    return v * FACE_STEPS[key];
 }
