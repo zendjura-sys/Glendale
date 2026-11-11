@@ -13,6 +13,7 @@ import {
     FACIAL_HAIR_PRESETS,
     HAIR_COLORS,
     HAIR_PRESETS,
+    MUSTACHE_PRESETS,
     HEAD_SHAPES,
     LIP_TINTS,
     MOUTH_PRESETS,
@@ -79,6 +80,7 @@ export function Character({
     const lower = useRef<SVGGElement>(null);
     const upper = useRef<SVGGElement>(null);
     const inside = useRef<SVGPathElement>(null);
+    const beardRef = useRef<SVGGElement>(null);
 
     useEffect(() => {
         if (!meter) return;
@@ -116,10 +118,9 @@ export function Character({
             if (head.current && !reduce) {
                 const bob = speaking ? Math.sin(t / 5) * open * 4 : 0;
                 const tilt = speaking ? (r.pitch - 0.5) * 5 * open : 0;
-                head.current.setAttribute(
-                    'transform',
-                    `translate(0 ${(-bob).toFixed(2)}) rotate(${tilt.toFixed(2)} 150 200)`,
-                );
+                const move = `translate(0 ${(-bob).toFixed(2)}) rotate(${tilt.toFixed(2)} 150 200)`;
+                head.current.setAttribute('transform', move);
+                beardRef.current?.setAttribute('transform', move);
             }
             frame = requestAnimationFrame(tick);
         };
@@ -132,6 +133,15 @@ export function Character({
     const headShape = HEAD_SHAPES[config.head] ?? HEAD_SHAPES[0];
     const hairColor = (HAIR_COLORS[config.hairColor] ?? HAIR_COLORS[0]).hex;
     const hair = HAIR_PRESETS[config.hair] ?? HAIR_PRESETS[0];
+    // Нові зачіски намальовані одразу під нинішню голову — без підгону.
+    const hairFit = hair.native ? undefined : HAIR_FIT;
+    // Борода й вуса: свій колір або як волосся (0).
+    const beardColor =
+        config.beardColor > 0
+            ? (HAIR_COLORS[config.beardColor - 1] ?? HAIR_COLORS[0]).hex
+            : hairColor;
+    const beard = FACIAL_HAIR_PRESETS[config.facialHair];
+    const longBeard = beard !== undefined && 'long' in beard && beard.long;
     const outfit = OUTFIT_PRESETS[config.outfit] ?? OUTFIT_PRESETS[0];
     const outfitColor = OUTFIT_COLORS[config.outfitColor] ?? OUTFIT_COLORS[0];
     const bg = BG_COLORS[config.bg] ?? BG_COLORS[0];
@@ -211,7 +221,7 @@ export function Character({
                 {hair.back && (
                     <path
                         d={hair.back}
-                        transform={HAIR_FIT}
+                        transform={hairFit}
                         fill={url('hair')}
                     />
                 )}
@@ -236,7 +246,7 @@ export function Character({
                     {hair.front && (
                         <path
                             d={hair.front}
-                            transform={`translate(0 6) ${HAIR_FIT}`}
+                            transform={`translate(0 6) ${hairFit ?? ''}`}
                             fill={skin.shadow}
                             opacity="0.6"
                         />
@@ -305,21 +315,41 @@ export function Character({
                     />
                 </g>
 
-                {/* Борода й вуса рухаються разом із ротом */}
-                <g clipPath={url('head')}>
-                    <g transform={`translate(0 ${mouthDy})`}>
-                        <FacialHair
-                            kind={config.facialHair}
-                            color={hairColor}
-                        />
+                {/* Борода й вуса рухаються разом із ротом; коротка борода обрізається контуром голови */}
+                {!longBeard && (
+                    <g clipPath={url('head')}>
+                        <g transform={`translate(0 ${mouthDy})`}>
+                            <FacialHair
+                                kind={config.facialHair}
+                                color={beardColor}
+                            />
+                        </g>
                     </g>
-                </g>
+                )}
+                {!longBeard && (
+                    <Mustache
+                        kind={config.mustache}
+                        color={beardColor}
+                        dy={mouthDy}
+                    />
+                )}
 
                 {hair.front && (
                     <path
                         d={hair.front}
-                        transform={HAIR_FIT}
+                        transform={hairFit}
                         fill={url('hair')}
+                    />
+                )}
+                {hair.detail && (
+                    <path
+                        d={hair.detail}
+                        transform={hairFit}
+                        stroke={shade(hairColor, 0.3)}
+                        strokeWidth="3"
+                        strokeLinecap="round"
+                        fill="none"
+                        opacity="0.7"
                     />
                 )}
 
@@ -328,6 +358,23 @@ export function Character({
 
             {/* Шар 8: комір і зав'язки поверх шиї — шия заходить в одяг */}
             {withOutfit && <OutfitCollar preset={outfit} color={outfitColor} />}
+
+            {/* Довга борода спадає на одяг — поверх коміра, хитається разом із головою */}
+            {longBeard && (
+                <g ref={beardRef}>
+                    <g transform={`translate(0 ${mouthDy})`}>
+                        <FacialHair
+                            kind={config.facialHair}
+                            color={beardColor}
+                        />
+                    </g>
+                    <Mustache
+                        kind={config.mustache}
+                        color={beardColor}
+                        dy={mouthDy}
+                    />
+                </g>
+            )}
         </svg>
     );
 }
@@ -744,13 +791,35 @@ function Mouth({
     );
 }
 
+/** Вуса — окремо від бороди, над верхньою губою; рухаються з ротом. */
+function Mustache({
+    kind,
+    color,
+    dy,
+}: {
+    kind: number;
+    color: string;
+    dy: number;
+}) {
+    const m = MUSTACHE_PRESETS[kind];
+    if (!m || !m.path) return null;
+
+    return (
+        <g transform={`translate(0 ${dy})`}>
+            <path d={m.path} fill={color} />
+        </g>
+    );
+}
+
 function FacialHair({ kind, color }: { kind: number; color: string }) {
     const f = FACIAL_HAIR_PRESETS[kind];
     if (!f || !f.path) return null;
 
     // Бороди малювалися під вужчу голову (74..226): розтягуємо від центру до 64..236, щоб ішли по щелепі
     // до скронь. Вуса й цапина — по центру, як є. Зайве обрізає контур голови.
-    const wide = ['stubble', 'full_beard', 'chin_strap'].includes(f.id);
+    const wide =
+        !('native' in f && f.native) &&
+        ['stubble', 'full_beard', 'chin_strap'].includes(f.id);
 
     return (
         <path

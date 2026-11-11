@@ -29,6 +29,10 @@ export type CharacterConfig = {
     bg: number;
     /** 0 — чоловічий, 1 — жіночий: які зачіски, форми очей і борода доступні. */
     gender: number;
+    /** Вуса окремо від бороди. */
+    mustache: number;
+    /** Колір бороди й вусів: 0 — як волосся, далі HAIR_COLORS[n - 1]. */
+    beardColor: number;
     /** Редактор обличчя: 0..20, 10 — без зсуву. Очі рухаються парою. */
     eyeY: number;
     eyeSpread: number;
@@ -43,7 +47,7 @@ export const PARTS: Record<CharacterPart, number> = {
     freckles: 2,
     blush: 2,
     head: 5,
-    hair: 12,
+    hair: 18,
     hairColor: 14,
     hairOmbre: 2,
     eyes: 11,
@@ -55,12 +59,14 @@ export const PARTS: Record<CharacterPart, number> = {
     nose: 5,
     mouth: 6,
     lipTint: 6,
-    facialHair: 6,
+    facialHair: 10,
     extra: 8,
     outfit: 4,
     outfitColor: 9,
     bg: 9,
     gender: 2,
+    mustache: 6,
+    beardColor: 15,
     eyeY: 21,
     eyeSpread: 21,
     noseY: 21,
@@ -90,6 +96,8 @@ export const DEFAULT_CHARACTER: CharacterConfig = {
     outfitColor: 0,
     bg: 0,
     gender: 0,
+    mustache: 0,
+    beardColor: 0,
     eyeY: 10,
     eyeSpread: 10,
     noseY: 10,
@@ -144,6 +152,7 @@ export function withGender(
         hair: hair.includes(config.hair) ? config.hair : firstHair,
         eyes: eyes.includes(config.eyes) ? config.eyes : eyes[0],
         facialHair: gender === 1 ? 0 : config.facialHair,
+        mustache: gender === 1 ? 0 : config.mustache,
     };
 }
 
@@ -166,7 +175,12 @@ export function randomCharacter(): CharacterConfig {
     // Зачіска й очі — з набору своєї статі, жінкам без бороди.
     out.hair = pick(hairFor(out.gender));
     out.eyes = pick(eyesFor(out.gender));
-    if (out.gender === 1) out.facialHair = 0;
+    if (out.gender === 1) {
+        out.facialHair = 0;
+        out.mustache = 0;
+    }
+    if (Math.random() < 0.6) out.mustache = 0;
+    if (Math.random() < 0.7) out.beardColor = 0;
     // Положення рис лишаємо за замовчуванням — випадкові зсуви виглядають криво.
     out.eyeY = 10;
     out.eyeSpread = 10;

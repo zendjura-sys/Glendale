@@ -12,8 +12,10 @@ import {
     EYE_COLOR_PALETTES,
     EYE_SHAPES,
     FACIAL_HAIR_PRESETS,
+    GENTLEMAN_SETS,
     HAIR_COLORS,
     HAIR_PRESETS,
+    MUSTACHE_PRESETS,
     HEAD_SHAPES,
     LIP_TINTS,
     MOUTH_PRESETS,
@@ -114,12 +116,19 @@ const TABS: Tab[] = [
     },
     {
         key: 'facialHair',
-        label: 'Борода',
+        label: 'Борода й вуса',
         groups: [
             {
                 part: 'facialHair',
                 names: names(FACIAL_HAIR_PRESETS),
                 zoom: 'card',
+                title: 'Борода',
+            },
+            {
+                part: 'mustache',
+                names: names(MUSTACHE_PRESETS),
+                zoom: 'card',
+                title: 'Вуса',
             },
         ],
     },
@@ -480,6 +489,9 @@ export default function CharacterEditor({
                         {tab === 'face' && (
                             <FaceEditor config={config} set={set} />
                         )}
+                        {tab === 'facialHair' && (
+                            <GentlemanSets config={config} set={set} />
+                        )}
                         {groups.map((g) => (
                             <div key={g.part}>
                                 {g.title && (
@@ -606,6 +618,34 @@ function Toolbar({
                     >
                         {tr('Рум’янець')}
                     </Chip>
+                </>,
+            );
+        case 'facialHair':
+            return row(
+                <>
+                    <Chip
+                        on={config.beardColor === 0}
+                        onClick={() => set({ beardColor: 0 })}
+                    >
+                        {tr('Як волосся')}
+                    </Chip>
+                    {HAIR_COLORS.map((c, i) => (
+                        <button
+                            key={c.hex}
+                            type="button"
+                            onClick={() => set({ beardColor: i + 1 })}
+                            aria-pressed={config.beardColor === i + 1}
+                            aria-label={tr(c.name)}
+                            title={tr(c.name)}
+                            className={cn(
+                                'size-8 shrink-0 rounded-full transition',
+                                config.beardColor === i + 1
+                                    ? 'ring-2 ring-white ring-offset-2 ring-offset-[#121214]'
+                                    : 'hover:scale-105',
+                            )}
+                            style={{ backgroundColor: c.hex }}
+                        />
+                    ))}
                 </>,
             );
         case 'hairColor':
@@ -741,6 +781,70 @@ function FaceEditor({
             >
                 {tr('Скинути положення')}
             </button>
+        </div>
+    );
+}
+
+const indexOf = (list: { id: string }[], id: string) =>
+    Math.max(
+        0,
+        list.findIndex((x) => x.id === id),
+    );
+
+/** Набір джентльмена: готовий образ одним дотиком — зачіска, борода й вуса разом. */
+function GentlemanSets({
+    config,
+    set,
+}: {
+    config: CharacterConfig;
+    set: (patch: Partial<CharacterConfig>) => void;
+}) {
+    const looks = GENTLEMAN_SETS.map((g) => ({
+        ...g,
+        patch: {
+            hair: indexOf(HAIR_PRESETS, g.hair),
+            facialHair: indexOf(FACIAL_HAIR_PRESETS, g.beard),
+            mustache: indexOf(MUSTACHE_PRESETS, g.mustache),
+        },
+    }));
+
+    return (
+        <div>
+            <p className="mb-2 px-1 text-xs font-semibold text-white/50">
+                {tr('Набір джентльмена')}
+            </p>
+            <div className="flex [scrollbar-width:none] gap-2 overflow-x-auto pb-1">
+                {looks.map((look) => {
+                    const on =
+                        config.hair === look.patch.hair &&
+                        config.facialHair === look.patch.facialHair &&
+                        config.mustache === look.patch.mustache;
+
+                    return (
+                        <button
+                            key={look.id}
+                            type="button"
+                            onClick={() => set(look.patch)}
+                            aria-pressed={on}
+                            className={cn(
+                                'flex w-24 shrink-0 flex-col items-center rounded-2xl bg-[#1C1C1F] p-1.5 transition',
+                                on ? 'ring-2 ring-white' : 'hover:bg-[#232328]',
+                            )}
+                        >
+                            <Character
+                                config={{ ...config, ...look.patch }}
+                                background={false}
+                                zoom="body"
+                                outfit={false}
+                                className="aspect-square w-full"
+                            />
+                            <span className="mt-0.5 w-full truncate text-center text-xs text-zinc-300">
+                                {tr(look.name)}
+                            </span>
+                        </button>
+                    );
+                })}
+            </div>
         </div>
     );
 }
