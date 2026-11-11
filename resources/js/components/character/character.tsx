@@ -133,8 +133,10 @@ export function Character({
     const headShape = HEAD_SHAPES[config.head] ?? HEAD_SHAPES[0];
     const hairColor = (HAIR_COLORS[config.hairColor] ?? HAIR_COLORS[0]).hex;
     const hair = HAIR_PRESETS[config.hair] ?? HAIR_PRESETS[0];
-    // Нові зачіски намальовані одразу під нинішню голову — без підгону.
-    const hairFit = hair.native ? undefined : HAIR_FIT;
+    // Зачіска під ширину конкретної голови (кругла ширша, гостра вужча), нові — без старого підгону.
+    const widen = headWidth(headShape.head) / 172;
+    const hairFit = `translate(150 0) scale(${widen.toFixed(3)} 1) translate(-150 0) ${hair.native ? '' : HAIR_FIT}`;
+    const cap = hair.cap ?? 'full';
     // Борода й вуса: свій колір або як волосся (0).
     const beardColor =
         config.beardColor > 0
@@ -199,27 +201,22 @@ export function Character({
                 <clipPath id={id('head')}>
                     <path d={headShape.head} />
                 </clipPath>
+                {/* Вище лінії волосся: по центру лоб ~y 92, до скронь нижче */}
+                <clipPath id={id('cap')}>
+                    <path d="M 0 0 L 300 0 L 300 128 C 250 100, 200 92, 150 92 C 100 92, 50 100, 0 128 Z" />
+                </clipPath>
+                {/* Виголені скроні: до верху вух */}
+                <clipPath id={id('capFade')}>
+                    <path d="M 0 0 L 300 0 L 300 162 L 0 162 Z" />
+                </clipPath>
                 <IrisGradient id={id('irisL')} color={leftColor} />
                 <IrisGradient id={id('irisR')} color={rightColor} />
             </defs>
 
             {background && <rect width="300" height="320" fill={url('bg')} />}
 
-            {/* Шар 1–2: тіло одягу, потім шия поверх нього */}
+            {/* Шар 1: тіло одягу (шиї немає — голова «пливе», як у Stereo) */}
             {withOutfit && <OutfitBody preset={outfit} color={outfitColor} />}
-            {withOutfit && (
-                <path
-                    d="M 120 224 C 122 244, 120 258, 115 270 C 130 282, 170 282, 185 270 C 180 258, 178 244, 180 224 Z"
-                    fill={skin.base}
-                />
-            )}
-            {/* Тінь від підборіддя на шиї: під головою, тож голова її перекриває й при хитанні */}
-            {withOutfit && (
-                <path
-                    d="M 116 236 C 126 266, 174 266, 184 236 L 185 270 C 170 282, 130 282, 115 270 Z"
-                    fill={skin.shadow}
-                />
-            )}
 
             <g ref={head}>
                 {hair.back && (
@@ -247,6 +244,15 @@ export function Character({
                         opacity="0.6"
                     />
                     <path d={headShape.chinShadow} fill={skin.shadow} />
+                    {/* Шапочка: сама форма голови вище лінії волосся — без залисин на будь-якій голові */}
+                    {cap !== 'none' && (
+                        <path
+                            d={headShape.head}
+                            clipPath={url(cap === 'fade' ? 'capFade' : 'cap')}
+                            fill={hairColor}
+                            opacity={cap === 'fade' ? 0.35 : 1}
+                        />
+                    )}
                     {hair.front && (
                         <path
                             d={hair.front}
@@ -319,16 +325,15 @@ export function Character({
                     />
                 </g>
 
-                {/* Борода й вуса рухаються разом із ротом; коротка борода обрізається контуром голови */}
+                {/* Борода — з контуру самої голови, тож іде по щелепі будь-якої форми; вуса — з ротом */}
                 {!longBeard && (
-                    <g clipPath={url('head')}>
-                        <g transform={`translate(0 ${mouthDy})`}>
-                            <FacialHair
-                                kind={config.facialHair}
-                                color={beardColor}
-                            />
-                        </g>
-                    </g>
+                    <FacialHair
+                        kind={config.facialHair}
+                        color={beardColor}
+                        head={headShape.head}
+                        headClip={url('head')}
+                        dy={mouthDy}
+                    />
                 )}
                 {!longBeard && (
                     <Mustache
@@ -374,20 +379,13 @@ export function Character({
             {/* Довга борода спадає на одяг — поверх коміра, хитається разом із головою */}
             {longBeard && (
                 <g ref={beardRef}>
-                    <g
-                        clipPath={
-                            beard && 'long' in beard && beard.long
-                                ? undefined
-                                : url('head')
-                        }
-                    >
-                        <g transform={`translate(0 ${mouthDy})`}>
-                            <FacialHair
-                                kind={config.facialHair}
-                                color={beardColor}
-                            />
-                        </g>
-                    </g>
+                    <FacialHair
+                        kind={config.facialHair}
+                        color={beardColor}
+                        head={headShape.head}
+                        headClip={url('head')}
+                        dy={mouthDy}
+                    />
                     <Mustache
                         kind={config.mustache}
                         color={beardColor}
@@ -831,29 +829,114 @@ function Mustache({
     );
 }
 
-function FacialHair({ kind, color }: { kind: number; color: string }) {
+/** Отвір для рота в бороді (рухається разом із ротом). */
+const MOUTH_HOLE =
+    'M 122 207 Q 150 200 178 207 Q 183 222 174 234 Q 150 241 126 234 Q 117 222 122 207 Z';
+
+/**
+ * Борода. fill — форма самої голови в межах області бороди (нижче лінії щік) з отвором для рота;
+ * strap — смуга вздовж контуру голови. Тож борода завжди йде по щелепі, яку б голову не обрали.
+ * Решта (цапина, вуса, ван дайк, кругла) — власні контури по центру.
+ */
+function FacialHair({
+    kind,
+    color,
+    head,
+    headClip,
+    dy,
+}: {
+    kind: number;
+    color: string;
+    head: string;
+    headClip: string;
+    dy: number;
+}) {
+    const uid = useId().replace(/:/g, '');
     const f = FACIAL_HAIR_PRESETS[kind];
     if (!f || !f.path) return null;
+    const style = 'style' in f ? f.style : undefined;
+    const region = 'region' in f ? f.region : undefined;
+    const tail = 'tail' in f ? f.tail : undefined;
+    const chin = 'chin' in f ? f.chin : undefined;
+    const strap = ('strap' in f ? f.strap : undefined) ?? 10;
 
-    // Бороди малювалися під вужчу голову (74..226): розтягуємо від центру до 64..236, щоб ішли по щелепі
-    // до скронь. Вуса й цапина — по центру, як є. Зайве обрізає контур голови.
-    const wide =
-        !('native' in f && f.native) &&
-        ['stubble', 'full_beard', 'chin_strap'].includes(f.id);
+    if (style === 'fill' && region) {
+        return (
+            <g opacity={f.opacity}>
+                <defs>
+                    <clipPath id={`br${uid}`}>
+                        <path d={region} />
+                    </clipPath>
+                    <mask id={`bm${uid}`}>
+                        <rect width="300" height="330" fill="#fff" />
+                        <path
+                            d={MOUTH_HOLE}
+                            transform={`translate(0 ${dy})`}
+                            fill="#000"
+                        />
+                    </mask>
+                </defs>
+                <g mask={`url(#bm${uid})`}>
+                    <g clipPath={headClip}>
+                        <g clipPath={`url(#br${uid})`}>
+                            <path d={head} fill={color} />
+                        </g>
+                    </g>
+                    {tail && <path d={tail} fill={color} />}
+                </g>
+            </g>
+        );
+    }
+
+    if (style === 'strap') {
+        return (
+            <g opacity={f.opacity}>
+                <defs>
+                    <clipPath id={`bs${uid}`}>
+                        <path d="M 0 172 L 300 172 L 300 330 L 0 330 Z" />
+                    </clipPath>
+                </defs>
+                <g clipPath={headClip}>
+                    <g clipPath={`url(#bs${uid})`}>
+                        <path
+                            d={head}
+                            fill="none"
+                            stroke={color}
+                            strokeWidth={strap * 2}
+                        />
+                    </g>
+                    {chin && (
+                        <path
+                            d={chin}
+                            transform={`translate(0 ${dy})`}
+                            fill={color}
+                        />
+                    )}
+                </g>
+            </g>
+        );
+    }
 
     return (
-        <path
-            d={f.path}
-            fill={color}
-            opacity={f.opacity}
-            fillRule="evenodd"
-            transform={
-                wide
-                    ? 'translate(150 0) scale(1.16 1.02) translate(-150 0)'
-                    : undefined
-            }
-        />
+        <g clipPath={headClip}>
+            <path
+                d={f.path}
+                transform={`translate(0 ${dy})`}
+                fill={color}
+                opacity={f.opacity}
+                fillRule="evenodd"
+            />
+        </g>
     );
+}
+
+/** Ширина голови з її контуру (для підгону зачіски). */
+function headWidth(path: string): number {
+    const xs = [
+        ...path.matchAll(/(-?\d+(?:\.\d+)?)[ ,]+(-?\d+(?:\.\d+)?)/g),
+    ].map((m) => Number(m[1]));
+
+    return xs.length ? Math.max(...xs) - Math.min(...xs) : 172;
 }
 
 /** Сережки біля вух. */
