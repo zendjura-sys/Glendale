@@ -1,3 +1,5 @@
+import { EYE_SHAPES, HAIR_PRESETS } from '@/components/character/geometry';
+
 /**
  * Персонаж-аватар у стилі Stereo: номери варіантів частин (геометрія — components/character/geometry.ts).
  * Межі — як у App\Support\Profile\Character::PARTS. Форма й колір незалежні: будь-яка форма очей
@@ -25,6 +27,8 @@ export type CharacterConfig = {
     outfit: number;
     outfitColor: number;
     bg: number;
+    /** 0 — чоловічий, 1 — жіночий: які зачіски, форми очей і борода доступні. */
+    gender: number;
     /** Редактор обличчя: 0..20, 10 — без зсуву. Очі рухаються парою. */
     eyeY: number;
     eyeSpread: number;
@@ -56,6 +60,7 @@ export const PARTS: Record<CharacterPart, number> = {
     outfit: 4,
     outfitColor: 9,
     bg: 9,
+    gender: 2,
     eyeY: 21,
     eyeSpread: 21,
     noseY: 21,
@@ -84,6 +89,7 @@ export const DEFAULT_CHARACTER: CharacterConfig = {
     outfit: 0,
     outfitColor: 0,
     bg: 0,
+    gender: 0,
     eyeY: 10,
     eyeSpread: 10,
     noseY: 10,
@@ -104,6 +110,45 @@ export function normalizeCharacter(
     return out;
 }
 
+/** Номери зачісок, які показуємо для статі (унісекс — обом). */
+export function hairFor(gender: number): number[] {
+    const want = gender === 1 ? 'f' : 'm';
+
+    return HAIR_PRESETS.flatMap((h, i) =>
+        (h.sex ?? 'u') === 'u' || h.sex === want ? [i] : [],
+    );
+}
+
+/** Форми очей для статі: female_* — жіночі, male_* — чоловічі, решта — обом. */
+export function eyesFor(gender: number): number[] {
+    const other = gender === 1 ? 'male_' : 'female_';
+
+    return EYE_SHAPES.flatMap((e, i) => (e.id.startsWith(other) ? [] : [i]));
+}
+
+/** Перемкнути стать: якщо поточна зачіска чи очі не з цього набору — беремо перші доступні, жінкам прибираємо бороду. */
+export function withGender(
+    config: CharacterConfig,
+    gender: number,
+): CharacterConfig {
+    const hair = hairFor(gender);
+    const eyes = eyesFor(gender);
+    const firstHair =
+        gender === 1
+            ? HAIR_PRESETS.findIndex((h) => h.sex === 'f')
+            : (hair[1] ?? hair[0]);
+
+    return {
+        ...config,
+        gender,
+        hair: hair.includes(config.hair) ? config.hair : firstHair,
+        eyes: eyes.includes(config.eyes) ? config.eyes : eyes[0],
+        facialHair: gender === 1 ? 0 : config.facialHair,
+    };
+}
+
+const pick = (list: number[]) => list[Math.floor(Math.random() * list.length)];
+
 /** Випадковий персонаж — кнопка «Перемішати». Борода, аксесуари й незвичні зіниці — не в кожного. */
 export function randomCharacter(): CharacterConfig {
     const out = { ...DEFAULT_CHARACTER };
@@ -118,6 +163,10 @@ export function randomCharacter(): CharacterConfig {
     if (Math.random() < 0.6) out.freckles = 0;
     if (Math.random() < 0.5) out.lipTint = 0;
     out.eyeColorRight = out.eyeColor;
+    // Зачіска й очі — з набору своєї статі, жінкам без бороди.
+    out.hair = pick(hairFor(out.gender));
+    out.eyes = pick(eyesFor(out.gender));
+    if (out.gender === 1) out.facialHair = 0;
     // Положення рис лишаємо за замовчуванням — випадкові зсуви виглядають криво.
     out.eyeY = 10;
     out.eyeSpread = 10;

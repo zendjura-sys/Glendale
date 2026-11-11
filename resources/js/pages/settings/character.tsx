@@ -25,8 +25,11 @@ import {
 } from '@/components/character/geometry';
 import {
     createVoiceMeter,
+    eyesFor,
+    hairFor,
     normalizeCharacter,
     randomCharacter,
+    withGender,
 } from '@/lib/character';
 import type {
     CharacterConfig,
@@ -271,7 +274,17 @@ export default function CharacterEditor({
         img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
     };
 
-    const current = TABS.find((t) => t.key === tab) ?? TABS[0];
+    // Жінкам вкладки «Борода» не показуємо; зачіски й форми очей — зі свого набору.
+    const tabs = TABS.filter(
+        (t) => !(t.key === 'facialHair' && config.gender === 1),
+    );
+    const current = tabs.find((t) => t.key === tab) ?? tabs[0];
+    const allowed = (part: CharacterPart): number[] | null =>
+        part === 'hair'
+            ? hairFor(config.gender)
+            : part === 'eyes'
+              ? eyesFor(config.gender)
+              : null;
     const groups = current.groups.map((g) =>
         g.part === 'eyeColor' && config.hetero && eyeSide === 'right'
             ? { ...g, part: 'eyeColorRight' as CharacterPart }
@@ -320,6 +333,53 @@ export default function CharacterEditor({
                 >
                     {/* Превью: велике живе обличчя */}
                     <div className="relative flex h-[42vh] min-h-72 items-center justify-center">
+                        <div
+                            role="radiogroup"
+                            aria-label={tr('Тип персонажа')}
+                            className="absolute top-3 left-1/2 z-10 flex -translate-x-1/2 rounded-full bg-white/[0.08] p-1"
+                        >
+                            {(
+                                [
+                                    [0, 'Чоловічий'],
+                                    [1, 'Жіночий'],
+                                ] as const
+                            ).map(([g, label]) => (
+                                <button
+                                    key={g}
+                                    type="button"
+                                    role="radio"
+                                    aria-checked={config.gender === g}
+                                    onClick={() =>
+                                        setConfig((c) => withGender(c, g))
+                                    }
+                                    className={cn(
+                                        'relative h-8 rounded-full px-3.5 text-xs font-semibold transition',
+                                        config.gender === g
+                                            ? 'text-[#121214]'
+                                            : 'text-white/70 hover:text-white',
+                                    )}
+                                >
+                                    {config.gender === g && (
+                                        <motion.span
+                                            layoutId="character-gender"
+                                            transition={
+                                                reduce
+                                                    ? { duration: 0 }
+                                                    : {
+                                                          type: 'spring',
+                                                          stiffness: 420,
+                                                          damping: 34,
+                                                      }
+                                            }
+                                            className="absolute inset-0 rounded-full bg-white"
+                                        />
+                                    )}
+                                    <span className="relative">
+                                        {tr(label)}
+                                    </span>
+                                </button>
+                            ))}
+                        </div>
                         <motion.div
                             ref={previewRef}
                             key={previewKey}
@@ -385,7 +445,7 @@ export default function CharacterEditor({
                         aria-label={tr('Частини персонажа')}
                         className="flex [scrollbar-width:none] gap-1 overflow-x-auto px-2"
                     >
-                        {TABS.map((t) => (
+                        {tabs.map((t) => (
                             <button
                                 key={t.key}
                                 type="button"
@@ -428,45 +488,50 @@ export default function CharacterEditor({
                                     </p>
                                 )}
                                 <div className="grid grid-cols-3 gap-2">
-                                    {g.names.map((name, i) => (
-                                        <button
-                                            key={name + i}
-                                            type="button"
-                                            onClick={() =>
-                                                set({
-                                                    [g.part]: i,
-                                                } as Partial<CharacterConfig>)
-                                            }
-                                            aria-label={
-                                                /^\d+$/.test(name)
-                                                    ? `${tr(g.title ?? current.label)} ${name}`
-                                                    : tr(name)
-                                            }
-                                            aria-pressed={config[g.part] === i}
-                                            className={cn(
-                                                'flex aspect-square flex-col items-center justify-between rounded-2xl bg-[#1C1C1F] p-2 transition',
-                                                config[g.part] === i
-                                                    ? 'ring-2 ring-white'
-                                                    : 'hover:bg-[#232328]',
-                                            )}
-                                        >
-                                            <Character
-                                                config={{
-                                                    ...config,
-                                                    [g.part]: i,
-                                                }}
-                                                background={g.part === 'bg'}
-                                                outfit={g.zoom === 'body'}
-                                                zoom={g.zoom}
-                                                className="h-[78%] w-full overflow-visible"
-                                            />
-                                            {!/^\d+$/.test(name) && (
-                                                <span className="mt-1 w-full truncate text-center text-xs text-zinc-300">
-                                                    {tr(name)}
-                                                </span>
-                                            )}
-                                        </button>
-                                    ))}
+                                    {g.names.map((name, i) =>
+                                        allowed(g.part)?.includes(i) ===
+                                        false ? null : (
+                                            <button
+                                                key={name + i}
+                                                type="button"
+                                                onClick={() =>
+                                                    set({
+                                                        [g.part]: i,
+                                                    } as Partial<CharacterConfig>)
+                                                }
+                                                aria-label={
+                                                    /^\d+$/.test(name)
+                                                        ? `${tr(g.title ?? current.label)} ${name}`
+                                                        : tr(name)
+                                                }
+                                                aria-pressed={
+                                                    config[g.part] === i
+                                                }
+                                                className={cn(
+                                                    'flex aspect-square flex-col items-center justify-between rounded-2xl bg-[#1C1C1F] p-2 transition',
+                                                    config[g.part] === i
+                                                        ? 'ring-2 ring-white'
+                                                        : 'hover:bg-[#232328]',
+                                                )}
+                                            >
+                                                <Character
+                                                    config={{
+                                                        ...config,
+                                                        [g.part]: i,
+                                                    }}
+                                                    background={g.part === 'bg'}
+                                                    outfit={g.zoom === 'body'}
+                                                    zoom={g.zoom}
+                                                    className="h-[78%] w-full overflow-visible"
+                                                />
+                                                {!/^\d+$/.test(name) && (
+                                                    <span className="mt-1 w-full truncate text-center text-xs text-zinc-300">
+                                                        {tr(name)}
+                                                    </span>
+                                                )}
+                                            </button>
+                                        ),
+                                    )}
                                 </div>
                             </div>
                         ))}

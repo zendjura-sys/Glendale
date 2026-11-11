@@ -35,8 +35,9 @@ const eyeLeft = (dy: number, gap: number) =>
     `translate(${-gap} ${dy}) ${EYE_LEFT}`;
 const eyeRight = (dy: number, gap: number) =>
     `translate(${gap} ${dy}) ${EYE_RIGHT}`;
-/** Волосся обгортає ширшу голову (64..236). */
-const HAIR_FIT = 'translate(-15 -4) scale(1.1 1.03)';
+/** Волосся обгортає ширшу голову (64..236 і кругла 60..240). */
+// Ширше за голову на кілька пікселів з боків — без «лисих» скронь; верх трохи над маківкою.
+const HAIR_FIT = 'translate(150 40) scale(1.17 1.06) translate(-150 -44)';
 /** Окуляри над новими очима (114 і 186). */
 const GLASSES_FIT = 'translate(21 22) scale(0.86)';
 
