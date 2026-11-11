@@ -36,7 +36,7 @@ import type {
 import { tr } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
-type Zoom = 'card' | undefined;
+type Zoom = 'card' | 'body';
 
 /** Група карток: яка частина, назви варіантів і кадр персонажа в картці. */
 type Group = {
@@ -127,19 +127,19 @@ const TABS: Tab[] = [
             {
                 part: 'outfit',
                 names: names(OUTFIT_PRESETS),
-                zoom: undefined,
+                zoom: 'body',
                 title: 'Одяг',
             },
             {
                 part: 'outfitColor',
                 names: OUTFIT_COLORS.map((_, i) => `${i + 1}`),
-                zoom: undefined,
+                zoom: 'body',
                 title: 'Колір одягу',
             },
             {
                 part: 'bg',
                 names: BG_COLORS.map((_, i) => `${i + 1}`),
-                zoom: undefined,
+                zoom: 'body',
                 title: 'Тло',
             },
         ],
@@ -428,7 +428,7 @@ export default function CharacterEditor({
                                             }
                                             aria-pressed={config[g.part] === i}
                                             className={cn(
-                                                'flex flex-col overflow-hidden rounded-2xl bg-[#1c1c20] transition',
+                                                'flex aspect-square flex-col items-center justify-between rounded-2xl bg-[#1C1C1F] p-2 transition',
                                                 config[g.part] === i
                                                     ? 'ring-2 ring-white'
                                                     : 'hover:bg-[#232328]',
@@ -440,17 +440,12 @@ export default function CharacterEditor({
                                                     [g.part]: i,
                                                 }}
                                                 background={g.part === 'bg'}
-                                                outfit={!g.zoom}
+                                                outfit={g.zoom === 'body'}
                                                 zoom={g.zoom}
-                                                className={cn(
-                                                    'w-full',
-                                                    g.zoom
-                                                        ? 'aspect-[25/27]'
-                                                        : 'aspect-square',
-                                                )}
+                                                className="h-[78%] w-full overflow-visible"
                                             />
                                             {!/^\d+$/.test(name) && (
-                                                <span className="truncate px-1.5 pt-0.5 pb-1.5 text-center text-[10px] font-medium text-white/80">
+                                                <span className="mt-1 w-full truncate text-center text-xs text-zinc-300">
                                                     {tr(name)}
                                                 </span>
                                             )}

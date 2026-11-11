@@ -40,7 +40,8 @@ const VIEWS = {
     full: '0 0 300 320',
     head: '30 26 240 240',
     face: '50 92 200 180',
-    card: '25 10 250 270',
+    card: '20 15 260 265',
+    body: '0 0 300 320',
 } as const;
 
 /**
@@ -61,7 +62,7 @@ export function Character({
     meter?: (() => VoiceReading | null) | null;
     background?: boolean;
     /** Крупний план: 'head' — голова, 'face' — обличчя. */
-    zoom?: 'head' | 'face' | 'card';
+    zoom?: 'head' | 'face' | 'card' | 'body';
     /** Без одягу — як у мініатюрах вибору. */
     outfit?: boolean;
     className?: string;
@@ -135,13 +136,19 @@ export function Character({
     const rightColor = config.hetero
         ? (EYE_COLOR_PALETTES[config.eyeColorRight] ?? leftColor)
         : leftColor;
+    // Темна шкіра: тонкий світлий обідок на бровах, переніссі й губах, щоб риси не зливалися.
+    const rim = ['deep_bronze', 'espresso', 'ebony'].includes(skin.id);
     const id = (name: string) => `${name}${uid}`;
     const url = (name: string) => `url(#${id(name)})`;
 
     return (
         <svg
             viewBox={VIEWS[zoom ?? 'full']}
-            preserveAspectRatio="xMidYMid slice"
+            preserveAspectRatio={
+                zoom === 'card' || zoom === 'body'
+                    ? 'xMidYMid meet'
+                    : 'xMidYMid slice'
+            }
             role="img"
             aria-label={title}
             className={cn('character-svg', className)}
@@ -173,7 +180,15 @@ export function Character({
 
             {background && <rect width="300" height="320" fill={url('bg')} />}
 
-            {withOutfit && <Outfit preset={outfit} color={outfitColor} />}
+            {withOutfit && (
+                <>
+                    <path
+                        d="M 116 236 C 120 250, 118 262, 112 280 L 188 280 C 182 262, 180 250, 184 236 Z"
+                        fill={skin.shadow}
+                    />
+                    <Outfit preset={outfit} color={outfitColor} />
+                </>
+            )}
 
             <g ref={head}>
                 {hair.back && (
@@ -240,6 +255,7 @@ export function Character({
                     kind={config.brows}
                     color={shade(hairColor, 0.08)}
                     skin={skin}
+                    rim={rim}
                 />
 
                 <Eyes
@@ -252,12 +268,13 @@ export function Character({
                     uid={uid}
                 />
 
-                <Nose kind={config.nose} skin={skin} />
+                <Nose kind={config.nose} skin={skin} rim={rim} />
 
                 <Mouth
                     kind={config.mouth}
                     lip={lip}
                     skin={skin}
+                    rim={rim}
                     upperRef={upper}
                     lowerRef={lower}
                     insideRef={inside}
@@ -301,19 +318,29 @@ function Ears({ skin }: { skin: SkinPalette }) {
 }
 
 /** Брова: ліва в просторі голови, права — дзеркально; «насічка» вирізається кольором шкіри. */
+const RIM = 'rgba(255,255,255,0.12)';
+
 function Brows({
     kind,
     color,
     skin,
+    rim,
 }: {
     kind: number;
     color: string;
     skin: SkinPalette;
+    rim: boolean;
 }) {
     const brow = BROW_PRESETS[kind] ?? BROW_PRESETS[0];
     const one = (
         <g>
-            <path d={brow.path} fill={color} />
+            <path
+                d={brow.path}
+                fill={color}
+                stroke={rim ? RIM : 'none'}
+                strokeWidth="1.6"
+                strokeLinejoin="round"
+            />
             {brow.notch && <path d={brow.notch} fill={skin.base} />}
         </g>
     );
@@ -570,13 +597,26 @@ function Eyes({
     );
 }
 
-function Nose({ kind, skin }: { kind: number; skin: SkinPalette }) {
+function Nose({
+    kind,
+    skin,
+    rim,
+}: {
+    kind: number;
+    skin: SkinPalette;
+    rim: boolean;
+}) {
     const n = NOSE_PRESETS[kind] ?? NOSE_PRESETS[0];
 
     return (
         <g>
             <path d={n.bridgeShadow} fill={skin.shadow} />
-            <path d={n.bridgeHighlight} fill={skin.highlight} />
+            <path
+                d={n.bridgeHighlight}
+                fill={skin.highlight}
+                stroke={rim ? RIM : 'none'}
+                strokeWidth="1.4"
+            />
             <path d={n.tipShadow} fill={skin.shadow} />
             <path
                 d={n.nostrils}
@@ -593,6 +633,7 @@ function Mouth({
     kind,
     lip,
     skin,
+    rim,
     upperRef,
     lowerRef,
     insideRef,
@@ -600,6 +641,7 @@ function Mouth({
     kind: number;
     lip: string;
     skin: SkinPalette;
+    rim: boolean;
     upperRef: RefObject<SVGGElement | null>;
     lowerRef: RefObject<SVGGElement | null>;
     insideRef: RefObject<SVGPathElement | null>;
@@ -619,10 +661,24 @@ function Mouth({
             )}
             <path ref={insideRef} d="" fill="#3a1820" />
             <g ref={lowerRef}>
-                {m.lowerLip && <path d={m.lowerLip} fill={lip} />}
+                {m.lowerLip && (
+                    <path
+                        d={m.lowerLip}
+                        fill={lip}
+                        stroke={rim ? RIM : 'none'}
+                        strokeWidth="1.2"
+                    />
+                )}
             </g>
             <g ref={upperRef}>
-                {m.upperLip && <path d={m.upperLip} fill={shade(lip, 0.12)} />}
+                {m.upperLip && (
+                    <path
+                        d={m.upperLip}
+                        fill={shade(lip, 0.12)}
+                        stroke={rim ? RIM : 'none'}
+                        strokeWidth="1.2"
+                    />
+                )}
             </g>
             <path
                 d={m.centerLine}
@@ -664,15 +720,15 @@ function EarAccessory({ kind }: { kind: number }): ReactNode {
                 fill="none"
                 strokeLinecap="round"
             >
-                <path d="M 54 198 A 7 7 0 1 0 66 200" />
-                <path d="M 246 198 A 7 7 0 1 1 234 200" />
+                <path d="M 56 186 A 7 7 0 1 0 68 188" />
+                <path d="M 244 186 A 7 7 0 1 1 232 188" />
             </g>
         );
     if (id === 'cross_studs')
         return (
             <g stroke="#CBD5E1" strokeWidth="2.2" strokeLinecap="round">
-                <path d="M 57 189 L 57 201 M 52 194 L 62 194" />
-                <path d="M 243 189 L 243 201 M 238 194 L 248 194" />
+                <path d="M 60 180 L 60 192 M 55 186 L 65 186" />
+                <path d="M 240 180 L 240 192 M 235 186 L 245 186" />
             </g>
         );
 
