@@ -94,7 +94,8 @@ class Plugins
     {
         $stored = $this->settings->get('plugins');
         if (! is_array($stored) || ! array_key_exists($key, $stored)) {
-            return true;
+            // Поки адміністратор не вирішив — стан із config/plugins.php ('default' => false — вимкнено).
+            return $this->find($key)['default'] ?? true;
         }
 
         return (bool) $stored[$key];
@@ -144,7 +145,7 @@ class Plugins
     }
 
     /**
-     * @return list<array{key: string, group: string, name: string, description: string, module: string|null, feature: string|null}>
+     * @return list<array{key: string, group: string, name: string, description: string, module: string|null, feature: string|null, default: bool}>
      */
     private function items(): array
     {
@@ -157,6 +158,7 @@ class Plugins
                     'key' => $item['key'], 'group' => $item['group'], 'name' => $item['name'], 'description' => $item['description'],
                     'module' => is_string($module) ? $module : null,
                     'feature' => is_string($item['feature'] ?? null) ? $item['feature'] : null,
+                    'default' => (bool) ($item['default'] ?? true),
                 ];
             }
         }
@@ -165,7 +167,7 @@ class Plugins
     }
 
     /**
-     * @return array{key: string, group: string, name: string, description: string, module: string|null, feature: string|null}|null
+     * @return array{key: string, group: string, name: string, description: string, module: string|null, feature: string|null, default: bool}|null
      */
     private function find(string $key): ?array
     {

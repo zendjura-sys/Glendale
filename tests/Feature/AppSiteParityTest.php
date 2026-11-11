@@ -27,6 +27,7 @@ use App\Services\Messenger;
 use App\Services\Phones\PhoneNumbers;
 use App\Services\Quests\SeasonPass;
 use App\Support\Net\PublicUrl;
+use App\Support\Plugins\Plugins;
 use App\Support\Seasons;
 use App\Support\Settings\SiteSettings;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -49,6 +50,7 @@ class AppSiteParityTest extends TestCase
     public function test_app_reaches_air_alerts(): void
     {
         Http::fake(['*' => Http::response(['states' => []])]);
+        app(Plugins::class)->set('air_alerts', true);
         $user = User::factory()->create(['country' => 'UA']);
         $token = $this->app_token($user);
         $this->withToken($token)->getJson('/api/v1/me')->assertOk()->assertJsonPath('user.air_alerts', true);

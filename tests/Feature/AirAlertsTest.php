@@ -8,6 +8,7 @@ use App\Models\AirThreat;
 use App\Models\User;
 use App\Services\Alerts\AirAlertChannel;
 use App\Services\Alerts\AirAlertService;
+use App\Support\Plugins\Plugins;
 use App\Support\Settings\SiteSettings;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -19,6 +20,13 @@ use Tests\TestCase;
 class AirAlertsTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        // Плагін за замовчуванням вимкнений (доробляється) — у тестах вмикаємо.
+        app(Plugins::class)->set('air_alerts', true);
+    }
 
     private function service(): AirAlertService
     {
