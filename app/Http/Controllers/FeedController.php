@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Services\CommunityService;
 use App\Services\EventCalendar;
 use App\Services\Families\ReportService;
+use App\Services\Feed\FriendActivity;
 use App\Services\Feed\Topics;
 use App\Services\Feed\WhileAway;
 use App\Services\FeedSignals;
@@ -26,6 +27,7 @@ use App\Support\NetworkModes;
 use App\Support\Plugins\Plugins;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -55,6 +57,7 @@ class FeedController extends Controller
         $requested = $request->query('tab');
         $tab = match (true) {
             $requested === 'country' => 'country',
+            $requested === 'activity' && $friendIds !== [] => 'activity',
             $requested === 'topics' && app(Plugins::class)->on('topic_follows') => 'topics',
             $requested === 'discover' || ! $hasSources => 'discover',
             default => 'friends',
@@ -76,7 +79,8 @@ class FeedController extends Controller
         } elseif ($tab === 'country' && is_string($user->country) && $user->country !== '') {
             $query->where('visibility', Post::VISIBILITY_PUBLIC)
                 ->whereHas('author', fn (Builder $q) => $q->where('country', $user->country));
-        } elseif ($tab === 'country') {
+        } elseif ($tab === 'country' || $tab === 'activity') {
+            // «Активність» вантажиться окремо (activity()), записи тут не потрібні.
             $query->whereRaw('1 = 0');
         } elseif ($tab === 'topics') {
             $query->where('visibility', Post::VISIBILITY_PUBLIC);
@@ -151,6 +155,14 @@ class FeedController extends Controller
                 ->map(fn (User $u) => [...$u->toCard(), 'birthday' => $u->birthday?->toDateString()])
                 ->all()),
         ]);
+    }
+
+    /** Активність друзів за тиждень (вкладка «Активність»): ігри, відгуки, добірки, нові друзі, спільноти. */
+    public function activity(Request $request): JsonResponse
+    {
+        $before = $request->query('before');
+
+        return response()->json(['items' => app(FriendActivity::class)->for($request->user(), is_string($before) ? $before : null)]);
     }
 
     /**

@@ -192,6 +192,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     Route::post('join/{token}', [InviteLinkController::class, 'accept'])->middleware('throttle:20,1')->name('invites.accept');
 
     Route::get('feed', [FeedController::class, 'index'])->middleware('module:feed')->name('feed');
+    Route::get('feed/activity', [FeedController::class, 'activity'])->middleware(['module:feed', 'throttle:60,1'])->name('feed.activity');
     Route::get('invite', [ReferralController::class, 'index'])->name('referrals.index');
     // Оплата (лише сайт, усередині GameCon+): покупка карткою через monobank, картки, автопродовження, історія.
     Route::prefix('plus/billing')->name('billing.')->controller(BillingController::class)->group(function () {

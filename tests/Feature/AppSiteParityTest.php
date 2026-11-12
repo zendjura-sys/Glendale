@@ -882,4 +882,10 @@ class AppSiteParityTest extends TestCase
         $this->withToken($token)->getJson("/api/v1/site/cinema/lists/{$list->id}/comments")->assertOk()->assertJsonPath('comments.0.body', 'Класна добірка');
         $this->withToken($token)->putJson("/api/v1/site/cinema/lists/{$list->id}/order", ['ids' => []])->assertStatus(422);
     }
+
+    public function test_app_reads_friend_activity_through_bridge(): void
+    {
+        $token = $this->app_token(User::factory()->create());
+        $this->withToken($token)->getJson('/api/v1/site/feed/activity')->assertOk()->assertJsonPath('items', []);
+    }
 }

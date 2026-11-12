@@ -35,6 +35,7 @@ use App\Http\Controllers\CreatorController;
 use App\Http\Controllers\CrosspostController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\Families;
+use App\Http\Controllers\FeedController;
 use App\Http\Controllers\FollowController;
 use App\Http\Controllers\Fun\GameAwardsController;
 use App\Http\Controllers\Fun\GameJournalController;
@@ -598,6 +599,8 @@ Route::prefix('v1')->group(function () {
                 Route::post('gifts/{number}/claim', 'claim')->whereNumber('number');
             });
             Route::middleware('module:feed')->group(function () {
+                // Активність друзів — окрема вкладка стрічки.
+                Route::get('feed/activity', [FeedController::class, 'activity'])->middleware('throttle:60,1');
                 Route::post('posts/{post}/pin', [PostController::class, 'pin'])->whereNumber('post');
                 Route::get('posts/drafts', [PostController::class, 'drafts']);
                 Route::post('posts/{post}/publish', [PostController::class, 'release'])->whereNumber('post');

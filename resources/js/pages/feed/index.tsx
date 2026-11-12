@@ -13,6 +13,7 @@ import {
 import { NewcomerWeek } from '@/components/onboarding/newcomer-week';
 import type { NewcomerData } from '@/components/onboarding/newcomer-week';
 import {
+    Activity,
     Cake,
     Globe,
     Compass,
@@ -40,6 +41,7 @@ import { UserAvatar } from '@/components/gc/user-avatar';
 import { WrappedBanner } from '@/components/gc/wrapped-banner';
 import { HomeWidgetsEditor } from '@/components/gc/engagement';
 import { FeedPulse, FeedSideCards, useHub } from '@/components/gc/feed-pulse';
+import { FriendActivity } from '@/components/feed/friend-activity';
 import { WhileAway } from '@/components/feed/while-away';
 import type { WhileAwayData } from '@/components/feed/while-away';
 import { EmptyState, Widget, WidgetSkeleton } from '@/components/gc/widget';
@@ -56,7 +58,7 @@ import { useFeature } from '@/lib/plugins';
 type Props = {
     whileAway?: WhileAwayData | null;
     newcomer?: NewcomerData | null;
-    tab: 'friends' | 'discover' | 'country' | 'topics';
+    tab: 'friends' | 'activity' | 'discover' | 'country' | 'topics';
     topics?: string[] | null;
     onlyFriends?: boolean;
     lang: string | null;
@@ -96,6 +98,17 @@ function FeedTabs({
             href: '/feed',
             disabled: !hasFriends,
         },
+        ...(hasFriends
+            ? [
+                  {
+                      key: 'activity',
+                      label: tr('Активність'),
+                      icon: Activity,
+                      href: '/feed?tab=activity',
+                      disabled: false,
+                  },
+              ]
+            : []),
         {
             key: 'discover',
             label: tr('Рекомендації'),
@@ -265,16 +278,20 @@ export default function Feed({
                     {newcomer && <NewcomerWeek data={newcomer} />}
                     <PostComposer />
                     <FeedTabs tab={tab} hasFriends={hasFriends} />
-                    <div className="flex flex-wrap items-center gap-2">
-                        <LanguageFilter
-                            tab={tab}
-                            lang={lang}
-                            languages={languages}
-                        />
-                        {tab === 'friends' && (
-                            <ChronoSwitch onlyFriends={onlyFriends ?? false} />
-                        )}
-                    </div>
+                    {tab !== 'activity' && (
+                        <div className="flex flex-wrap items-center gap-2">
+                            <LanguageFilter
+                                tab={tab}
+                                lang={lang}
+                                languages={languages}
+                            />
+                            {tab === 'friends' && (
+                                <ChronoSwitch
+                                    onlyFriends={onlyFriends ?? false}
+                                />
+                            )}
+                        </div>
+                    )}
 
                     {tab === 'discover' && !hasFriends && (
                         <div className="gradient-border gc-solid flex items-center gap-4 rounded-2xl p-5">
@@ -295,7 +312,9 @@ export default function Feed({
                         </div>
                     )}
 
-                    {posts.data.length === 0 ? (
+                    {tab === 'activity' ? (
+                        <FriendActivity />
+                    ) : posts.data.length === 0 ? (
                         <EmptyState
                             icon={
                                 tab === 'country'
