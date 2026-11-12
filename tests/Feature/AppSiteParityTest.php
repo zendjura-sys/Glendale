@@ -911,4 +911,14 @@ class AppSiteParityTest extends TestCase
         $token = $this->app_token(User::factory()->create());
         $this->withToken($token)->getJson('/api/v1/site/promo/slot/feed')->assertOk()->assertJsonPath('banner', null);
     }
+
+    public function test_app_creates_and_votes_chat_poll_through_bridge(): void
+    {
+        $owner = User::factory()->create();
+        $member = User::factory()->create();
+        $chat = app(Messenger::class)->createGroup($owner, 'Рейд', [$member->id]);
+        $token = $this->app_token($member);
+        $poll = $this->withToken($token)->postJson("/api/v1/site/messages/{$chat->id}/polls", ['question' => 'Коли?', 'options' => ['Сьогодні', 'Завтра']])->assertCreated()->json('message.id');
+        $this->withToken($token)->postJson("/api/v1/site/messages/{$chat->id}/messages/{$poll}/vote", ['options' => [1]])->assertOk()->assertJsonPath('message.poll.options.1.count', 1);
+    }
 }

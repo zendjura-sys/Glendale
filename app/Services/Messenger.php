@@ -417,6 +417,52 @@ class Messenger
         ], $replyToId);
     }
 
+    /**
+     * Опитування в груповому чаті.
+     *
+     * @param  list<string>  $options
+     */
+    public function sendPoll(Conversation $conversation, User $sender, string $question, array $options, bool $multiple, bool $anonymous): Message
+    {
+        return $this->deliver($conversation, $sender, [
+            'type' => Message::TYPE_POLL,
+            'body' => $question,
+            'meta' => ['poll' => ['options' => array_values($options), 'multiple' => $multiple, 'anonymous' => $anonymous, 'closed' => false]],
+        ], null);
+    }
+
+    /**
+     * Голос в опитуванні: список обраних варіантів (порожній — забрати голос). Усім — оновлене повідомлення.
+     *
+     * @param  list<int>  $choices
+     */
+    public function votePoll(Message $message, User $user, array $choices): void
+    {
+        $poll = $message->meta['poll'] ?? [];
+        abort_if($poll === [] || ($poll['closed'] ?? false), 422, 'Опитування закрито.');
+        $count = count($poll['options'] ?? []);
+        $choices = array_values(array_unique(array_filter($choices, fn (int $i) => $i >= 0 && $i < $count)));
+        if (! ($poll['multiple'] ?? false)) {
+            $choices = array_slice($choices, 0, 1);
+        }
+        DB::transaction(function () use ($message, $user, $choices) {
+            DB::table('message_poll_votes')->where('message_id', $message->id)->where('user_id', $user->id)->delete();
+            foreach ($choices as $i) {
+                DB::table('message_poll_votes')->insert(['message_id' => $message->id, 'user_id' => $user->id, 'option' => $i, 'created_at' => now()]);
+            }
+        });
+        $this->broadcast(new MessageUpdated($message->conversation_id, $this->presenter->message($this->presenter->load($message))));
+    }
+
+    /** Закрити опитування: голосувати більше не можна, підсумок лишається. */
+    public function closePoll(Message $message): void
+    {
+        $meta = $message->meta ?? [];
+        $meta['poll']['closed'] = true;
+        $message->forceFill(['meta' => $meta])->save();
+        $this->broadcast(new MessageUpdated($message->conversation_id, $this->presenter->message($this->presenter->load($message))));
+    }
+
     public function forward(Conversation $target, User $sender, Message $source): Message
     {
         $source->loadMissing(['user', 'attachments']);

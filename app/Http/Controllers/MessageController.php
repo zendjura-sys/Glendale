@@ -387,6 +387,49 @@ class MessageController extends Controller
         return response()->json(['message' => $this->presenter->message($this->presenter->load($message))]);
     }
 
+    /** Нове опитування — лише в групових бесідах. */
+    public function poll(Request $request, Conversation $conversation): JsonResponse
+    {
+        $user = $request->user();
+        abort_if($conversation->participantFor($user) === null, 404);
+        abort_unless($conversation->type === 'group', 422, 'Опитування — лише в групових чатах.');
+        $data = $request->validate([
+            'question' => ['required', 'string', 'min:2', 'max:200'],
+            'options' => ['required', 'array', 'min:2', 'max:10'],
+            'options.*' => ['required', 'string', 'min:1', 'max:80', 'distinct'],
+            'multiple' => ['boolean'],
+            'anonymous' => ['boolean'],
+        ]);
+        $question = (string) $this->filter->guardMessage($user, $conversation, trim($data['question']));
+        $message = $this->messenger->sendPoll($conversation, $user, $question, array_map(fn ($o) => trim((string) $o), $data['options']), (bool) ($data['multiple'] ?? false), (bool) ($data['anonymous'] ?? false));
+
+        return response()->json(['message' => $this->presenter->message($this->presenter->load($message))], 201);
+    }
+
+    public function vote(Request $request, Conversation $conversation, Message $message): JsonResponse
+    {
+        $user = $request->user();
+        abort_if($conversation->participantFor($user) === null, 404);
+        abort_unless($message->conversation_id === $conversation->id && $message->type === Message::TYPE_POLL && ! $message->trashed(), 404);
+        $data = $request->validate(['options' => ['present', 'array', 'max:10'], 'options.*' => ['integer', 'min:0', 'max:9']]);
+        $this->messenger->votePoll($message, $user, array_map('intval', $data['options']));
+
+        return response()->json(['message' => $this->presenter->message($this->presenter->load($message->refresh()))]);
+    }
+
+    /** Закрити опитування: автор або адміністратор бесіди. */
+    public function closePoll(Request $request, Conversation $conversation, Message $message): JsonResponse
+    {
+        $user = $request->user();
+        $participant = $conversation->participantFor($user);
+        abort_if($participant === null, 404);
+        abort_unless($message->conversation_id === $conversation->id && $message->type === Message::TYPE_POLL, 404);
+        abort_unless($message->user_id === $user->id || $participant->canManage(), 403);
+        $this->messenger->closePoll($message);
+
+        return response()->json(['message' => $this->presenter->message($this->presenter->load($message->refresh()))]);
+    }
+
     public function favorite(Request $request, Conversation $conversation, Message $message): JsonResponse
     {
         app(Plugins::class)->ensure('favorite_messages');

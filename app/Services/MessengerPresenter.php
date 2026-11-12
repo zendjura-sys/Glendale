@@ -82,6 +82,7 @@ class MessengerPresenter
                 'emoji' => $message->meta['sticker']['emoji'] ?? null,
             ] : null,
             'contact' => $message->type === Message::TYPE_CONTACT ? $this->contact($message)?->toCard() : null,
+            'poll' => $message->type === Message::TYPE_POLL ? $this->poll($message) : null,
             'edited_at' => $message->edited_at?->toIso8601String(),
             'publish_at' => $message->publish_at?->isFuture() ? $message->publish_at->toIso8601String() : null,
             'expires_at' => $message->expires_at?->isFuture() ? $message->expires_at->toIso8601String() : null,
@@ -178,9 +179,39 @@ class MessengerPresenter
             Message::TYPE_STICKER => trim(($message->meta['sticker']['emoji'] ?? '').' Стікер'),
             Message::TYPE_VOICE => 'Голосове повідомлення',
             Message::TYPE_VIDEO_NOTE => 'Відеоповідомлення',
+            Message::TYPE_POLL => 'Опитування: '.Str::limit((string) $message->body, 80),
             Message::TYPE_CONTACT => 'Контакт: '.(($contact = $this->contact($message)) instanceof User ? $contact->name : 'видалений акаунт'),
             default => $this->textPreview($message),
         };
+    }
+
+    /**
+     * Стан опитування: варіанти з кількістю голосів, мій вибір і (якщо не анонімне) хто за що.
+     * «Мій вибір» — для того, хто відкрив чат; у трансляції іншим він не потрібен (клієнт тримає свій).
+     *
+     * @return array<string, mixed>
+     */
+    private function poll(Message $message): array
+    {
+        $poll = $message->meta['poll'] ?? [];
+        $votes = DB::table('message_poll_votes')->where('message_id', $message->id)->get(['user_id', 'option']);
+        $anonymous = (bool) ($poll['anonymous'] ?? false);
+        $viewer = auth()->id();
+        $voters = $anonymous ? collect() : User::query()->whereIn('id', $votes->pluck('user_id')->unique()->take(60))->get()->keyBy('id');
+
+        return [
+            'options' => array_values(array_map(fn (string $text, int $i) => [
+                'text' => $text,
+                'count' => $votes->where('option', $i)->count(),
+                'voters' => $anonymous ? [] : $votes->where('option', $i)->take(5)
+                    ->map(fn ($v) => $voters->get((int) $v->user_id)?->toCard())->filter()->values()->all(),
+            ], $poll['options'] ?? [], array_keys($poll['options'] ?? []))),
+            'total' => $votes->pluck('user_id')->unique()->count(),
+            'multiple' => (bool) ($poll['multiple'] ?? false),
+            'anonymous' => $anonymous,
+            'closed' => (bool) ($poll['closed'] ?? false),
+            'mine' => $viewer ? $votes->where('user_id', $viewer)->pluck('option')->map(fn ($o) => (int) $o)->values()->all() : [],
+        ];
     }
 
     private function textPreview(Message $message): string

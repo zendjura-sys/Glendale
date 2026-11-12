@@ -25,6 +25,7 @@ import { RankBadge } from '@/components/families/ui';
 import { UserAvatar } from '@/components/gc/user-avatar';
 import { clockTime } from '@/lib/format';
 import { cn } from '@/lib/utils';
+import { PollCard } from './chat-poll';
 import type { ChatAttachment, ChatMessage } from '@/types';
 import {
     ContactAttachment,
@@ -65,6 +66,10 @@ export type BubbleActions = {
     onBanGuest?: (message: ChatMessage) => void;
     /** Закріпити / відкріпити (кілька закріплених у бесіді). */
     onPin?: (message: ChatMessage) => void;
+    /** Повідомлення змінилось на сервері (голос в опитуванні) — замінити в списку. */
+    onReplace?: (message: ChatMessage) => void;
+    /** Чи може людина закривати опитування (автор або адміністратор бесіди). */
+    canClosePoll?: (message: ChatMessage) => boolean;
     isPinned?: (message: ChatMessage) => boolean;
     /** Відкрити гілку під повідомленням (групи). */
     onThread?: (message: ChatMessage) => void;
@@ -543,7 +548,16 @@ export function MessageBubble({
                                 hasImages && 'px-2 pt-1.5 pb-1.5',
                             )}
                         >
-                            {invite ? (
+                            {message.type === 'poll' && message.poll ? (
+                                <PollCard
+                                    message={message}
+                                    own={own}
+                                    canClose={
+                                        actions.canClosePoll?.(message) ?? own
+                                    }
+                                    onChange={(m) => actions.onReplace?.(m)}
+                                />
+                            ) : invite ? (
                                 <PartyInvite invite={invite} />
                             ) : (
                                 message.body && (

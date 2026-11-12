@@ -1,6 +1,7 @@
 import { usePage } from '@inertiajs/react';
 import { GifPicker } from '@/components/gc/gif-picker';
 import {
+    BarChart3,
     Eye,
     Camera,
     Clock,
@@ -29,6 +30,7 @@ import { usePlayer } from '@/lib/player';
 import { fitTextarea } from '@/lib/textarea';
 import { cn, dockedAboveNav } from '@/lib/utils';
 import type { ChatMessage, OutgoingMessage } from '@/types';
+import { CreatePollDialog } from './chat-poll';
 import { ContactShareDialog } from './contact-share-dialog';
 import { AiWriter } from './ai-writer';
 import { EmojiPanel } from './emoji-panel';
@@ -54,6 +56,9 @@ type Props = {
     draft?: string | null;
     /** Ключ чернетки незакінченого повідомлення (на цьому пристрої). */
     draftKey?: string | null;
+    /** Групова бесіда, де можна створити опитування (null — пункт ховається). */
+    pollConversationId?: number | null;
+    onPollCreated?: (message: ChatMessage) => void;
 };
 
 function useOutsideClose(
@@ -84,6 +89,8 @@ export function Composer({
     onEditLast,
     draft = null,
     draftKey = null,
+    pollConversationId = null,
+    onPollCreated,
 }: Props) {
     const { site, modules } = usePage().props;
     // Картки — лише розділів режиму (гра, фільм, сервер); без жодного пункт ховається.
@@ -129,6 +136,7 @@ export function Composer({
     const sendTimer = useRef<number | null>(null);
     const sendHeld = useRef(false);
     const [contactOpen, setContactOpen] = useState(false);
+    const [pollOpen, setPollOpen] = useState(false);
     const textRef = useRef<HTMLTextAreaElement>(null);
     const imageRef = useRef<HTMLInputElement>(null);
     const docRef = useRef<HTMLInputElement>(null);
@@ -703,6 +711,20 @@ export function Composer({
                                             tone: 'from-gc-indigo to-gc-purple',
                                             run: () => docRef.current?.click(),
                                         },
+                                        ...(pollConversationId
+                                            ? [
+                                                  {
+                                                      label: tr('Опитування'),
+                                                      hint: tr(
+                                                          'Голосування в групі',
+                                                      ),
+                                                      icon: BarChart3,
+                                                      tone: 'from-gc-amber to-gc-coral',
+                                                      run: () =>
+                                                          setPollOpen(true),
+                                                  },
+                                              ]
+                                            : []),
                                         {
                                             label: tr('Контакт'),
                                             hint: tr('Пошук на GameCon'),
@@ -1006,6 +1028,14 @@ export function Composer({
                 </div>
             )}
 
+            {pollConversationId && (
+                <CreatePollDialog
+                    open={pollOpen}
+                    onOpenChange={setPollOpen}
+                    conversationId={pollConversationId}
+                    onCreated={(m) => onPollCreated?.(m)}
+                />
+            )}
             <ContactShareDialog
                 open={contactOpen}
                 onOpenChange={setContactOpen}

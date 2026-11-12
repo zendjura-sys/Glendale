@@ -10,7 +10,8 @@ export type MessageType =
     | 'sticker'
     | 'voice'
     | 'contact'
-    | 'video_note';
+    | 'video_note'
+    | 'poll';
 
 export type ChatAttachment = {
     id: number;
@@ -80,6 +81,15 @@ export type MessageReaction = {
     user_ids: number[];
 };
 
+export type ChatPoll = {
+    options: { text: string; count: number; voters: UserCard[] }[];
+    total: number;
+    multiple: boolean;
+    anonymous: boolean;
+    closed: boolean;
+    mine: number[];
+};
+
 export type ChatMessage = {
     id: number;
     conversation_id: number;
@@ -93,6 +103,7 @@ export type ChatMessage = {
     bot?: { name: string } | null;
     sticker?: StickerItem | null;
     contact?: ContactCard | null;
+    poll?: ChatPoll | null;
     reply_to: {
         id: number;
         body: string | null;

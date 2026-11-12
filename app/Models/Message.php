@@ -40,6 +40,9 @@ class Message extends Model
 
     public const TYPE_CONTACT = 'contact';
 
+    /** Опитування в груповому чаті: питання й варіанти — у meta.poll, голоси — message_poll_votes. */
+    public const TYPE_POLL = 'poll';
+
     /** Відеоповідомлення-кружок (до хвилини). */
     public const TYPE_VIDEO_NOTE = 'video_note';
 

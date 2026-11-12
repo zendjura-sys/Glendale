@@ -299,7 +299,17 @@ export function ChatView({
         },
         'message.updated': ({ message }: { message: ChatMessage }) => {
             setMessages((current) =>
-                current.map((m) => (m.id === message.id ? message : m)),
+                current.map((m) =>
+                    m.id === message.id
+                        ? // У трансляції «мій вибір» в опитуванні — того, хто голосував; свій лишаємо.
+                          message.poll && m.poll
+                            ? {
+                                  ...message,
+                                  poll: { ...message.poll, mine: m.poll.mine },
+                              }
+                            : message
+                        : m,
+                ),
             );
         },
         'message.deleted': ({ id }: { id: number }) => {
@@ -663,6 +673,12 @@ export function ChatView({
     });
 
     const actions: BubbleActions = {
+        onReplace: (message) =>
+            setMessages((current) =>
+                current.map((m) => (m.id === message.id ? message : m)),
+            ),
+        canClosePoll: (message) =>
+            message.user?.id === me.id || !!active.can_pin,
         onThread: threadsOn ? (message) => setThread(message) : undefined,
         onPin:
             pinsOn && (active.can_pin ?? !isGroup)
@@ -1519,6 +1535,8 @@ export function ChatView({
             )}
 
             <Composer
+                pollConversationId={isGroup ? active.id : null}
+                onPollCreated={appendIncoming}
                 canWrite={active.can_write && timeoutText === null}
                 lockedText={timeoutText ?? active.locked_text ?? null}
                 draft={draft}

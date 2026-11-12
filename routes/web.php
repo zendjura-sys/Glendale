@@ -532,6 +532,9 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
             Route::post('{conversation}/messages/{message}/forward', [MessageController::class, 'forward'])->middleware('throttle:30,1')->name('messages.forward');
             Route::post('{conversation}/messages/{message}/favorite', [MessageController::class, 'favorite'])->name('messages.favorite');
             Route::post('{conversation}/messages/{message}/react', [MessageController::class, 'react'])->middleware('throttle:60,1')->name('messages.react');
+            Route::post('{conversation}/polls', [MessageController::class, 'poll'])->middleware('throttle:10,1')->name('messages.poll');
+            Route::post('{conversation}/messages/{message}/vote', [MessageController::class, 'vote'])->middleware('throttle:60,1')->name('messages.vote');
+            Route::post('{conversation}/messages/{message}/close-poll', [MessageController::class, 'closePoll'])->middleware('throttle:20,1')->name('messages.close-poll');
             // Гілки в групах, закріплені повідомлення, особиста нотатка до бесіди.
             Route::get('{conversation}/messages/{message}/thread', [ChatExtrasController::class, 'thread'])->name('thread');
             Route::post('{conversation}/messages/{message}/thread', [ChatExtrasController::class, 'reply'])->middleware('throttle:60,1')->name('thread.reply');
