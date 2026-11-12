@@ -16,18 +16,19 @@ use Illuminate\Support\Carbon;
  * @property string $body
  * @property string|null $url
  * @property string $audience all|plus|app|staff
+ * @property array<string, mixed>|null $filters Сегмент: country, locale, joined, activity, game_id, community_id
  * @property int $sent_count
  * @property Carbon|null $finished_at
  * @property Carbon $created_at
  */
-#[Fillable(['user_id', 'title', 'body', 'url', 'audience', 'sent_count', 'finished_at'])]
+#[Fillable(['user_id', 'title', 'body', 'url', 'audience', 'filters', 'sent_count', 'finished_at'])]
 class Broadcast extends Model
 {
     public const AUDIENCES = ['all', 'plus', 'app', 'staff'];
 
     protected function casts(): array
     {
-        return ['finished_at' => 'datetime'];
+        return ['finished_at' => 'datetime', 'filters' => 'array'];
     }
 
     /** @return BelongsTo<User, $this> */

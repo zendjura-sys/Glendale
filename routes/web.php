@@ -1120,6 +1120,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::post('system/jobs/{uuid}/retry', [Admin\SystemController::class, 'retryJob'])->where('uuid', 'all|[0-9a-f-]{36}')->middleware('throttle:20,1')->name('system.jobs.retry');
         Route::delete('system/jobs/{uuid}', [Admin\SystemController::class, 'forgetJob'])->where('uuid', 'all|[0-9a-f-]{36}')->name('system.jobs.forget');
         Route::post('broadcasts', [Admin\BroadcastController::class, 'store'])->middleware('throttle:5,10')->name('broadcasts.store');
+        Route::get('broadcasts/count', [Admin\BroadcastController::class, 'count'])->middleware('throttle:120,1')->name('broadcasts.count');
         Route::get('users', [Admin\UserController::class, 'index'])->name('users.index');
         Route::post('users/bulk', [Admin\UserController::class, 'bulk'])->name('users.bulk');
         Route::patch('users/{user}', [Admin\UserController::class, 'update'])->name('users.update');
