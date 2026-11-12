@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Services\Profile\Affiliations;
 use App\Services\Profile\UserRoles;
 use App\Services\Quests\SeasonPass;
+use App\Services\Streams\LiveStreams;
 use App\Support\Palette;
 use App\Support\Plugins\Plugins;
 use App\Support\PlusStyle;
@@ -405,6 +406,8 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
             'status_emoji' => $this->statusExpired() ? null : $this->status_emoji,
             'status_until' => $this->statusExpired() ? null : $this->status_until?->toIso8601String(),
             'playing' => $this->playing(),
+            // Зараз у стрімі (Twitch / YouTube) — червона позначка LIVE на аватарі.
+            'live' => isset(LiveStreams::liveIds()[$this->id]),
             'plus' => $this->plusCard(),
             'cosmetics' => SeasonPass::card($this->cosmetics),
             'event_frame' => $this->eventFrame(),

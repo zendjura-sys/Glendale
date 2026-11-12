@@ -69,6 +69,7 @@ use App\Http\Controllers\LegalController;
 use App\Http\Controllers\LevelController;
 use App\Http\Controllers\ListenPartyController;
 use App\Http\Controllers\ListenRoomController;
+use App\Http\Controllers\LiveNowController;
 use App\Http\Controllers\LiveShowController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\LoginRewardController;
@@ -962,6 +963,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     // Сезонний пропуск: рівні з очок сезону, нагороди двох доріжок, інвентар косметики.
     // Рівень профілю: досвід, назви рівнів, нагороди за віхи.
     Route::get('level', [LevelController::class, 'index'])->middleware('throttle:30,1')->name('level');
+    Route::get('streams/live', LiveNowController::class)->middleware('throttle:60,1')->name('streams.live');
 
     // Календар нагород за щоденний вхід.
     Route::get('rewards', [LoginRewardController::class, 'index'])->middleware('module:quests')->name('rewards.index');

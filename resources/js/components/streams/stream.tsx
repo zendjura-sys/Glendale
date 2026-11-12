@@ -111,6 +111,12 @@ export function FriendsLive({ streams }: { streams: StreamInfo[] }) {
             <h2 className="mb-3 flex items-center gap-2 px-1 font-display text-[13px] font-semibold text-white/90">
                 <Radio className="size-4 text-red-400" />
                 {tr('Друзі в ефірі')}
+                <Link
+                    href="/streams/live"
+                    className="ml-auto text-xs font-medium text-sky-400 hover:underline"
+                >
+                    {tr('Усі ефіри')}
+                </Link>
             </h2>
             <div className="-mx-1 scrollbar-none flex gap-2 overflow-x-auto px-1">
                 {streams.map((s) =>
@@ -126,7 +132,6 @@ export function FriendsLive({ streams }: { streams: StreamInfo[] }) {
                                     size="md"
                                     showOnline={false}
                                 />
-                                <LiveBadge className="absolute -bottom-1 left-1/2 -translate-x-1/2 px-1 py-0 text-[8px]" />
                             </span>
                             <span className="min-w-0">
                                 <span className="block truncate text-sm font-semibold text-white">

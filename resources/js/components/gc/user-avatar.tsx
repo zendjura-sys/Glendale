@@ -62,6 +62,8 @@ type Props = {
         cosmetics?: Cosmetics | null;
         /** Рамка свята, яку людина ввімкнула (newyear, halloween…). */
         event_frame?: string | null;
+        /** Зараз у стрімі — червоне кільце й позначка LIVE. */
+        live?: boolean;
         status?: string | null;
         status_emoji?: string | null;
     };
@@ -143,6 +145,14 @@ export function UserAvatar({
                 <span className="flex size-full overflow-hidden rounded-full bg-white/5">
                     {inner}
                 </span>
+            )}
+            {user.live && size !== 'xs' && (
+                <>
+                    <span className="pointer-events-none absolute -inset-[2px] rounded-full ring-2 ring-red-500" />
+                    <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 rounded bg-red-500 px-1 text-[8px] leading-[12px] font-bold text-white uppercase">
+                        Live
+                    </span>
+                </>
             )}
             {user.status_emoji && emojiSizes[size] && (
                 <span

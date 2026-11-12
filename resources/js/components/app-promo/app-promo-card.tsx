@@ -19,10 +19,8 @@ export function AppPromoCard({ className }: { className?: string }) {
                 className,
             )}
         >
-            <span
-                data-on-dark
-                className="relative flex items-center gap-3.5 overflow-hidden rounded-[19px] bg-[linear-gradient(135deg,#123058_0%,#0c1a30_55%,#0a1322_100%)] px-4 py-3.5"
-            >
+            {/* Фон — за темою (gc-app-promo в app.css): темний у темній темі, світлий у світлій. */}
+            <span className="gc-app-promo relative flex items-center gap-3.5 overflow-hidden rounded-[19px] px-4 py-3.5">
                 {/* Іскри довкола логотипа — повільно мерехтять. */}
                 <span className="gc-sparkle pointer-events-none absolute top-2.5 left-14 size-1.5 rounded-full bg-sky-200" />
                 <span className="gc-sparkle pointer-events-none absolute bottom-3 left-3 size-1 rounded-full bg-sky-300 [animation-delay:1.2s]" />

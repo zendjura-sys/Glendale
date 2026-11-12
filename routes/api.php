@@ -65,6 +65,7 @@ use App\Http\Controllers\InviteLinkController;
 use App\Http\Controllers\LevelController;
 use App\Http\Controllers\ListenPartyController;
 use App\Http\Controllers\ListenRoomController;
+use App\Http\Controllers\LiveNowController;
 use App\Http\Controllers\LiveShowController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\LoginRewardController;
@@ -1002,6 +1003,7 @@ Route::prefix('v1')->group(function () {
             });
 
             Route::get('level', [LevelController::class, 'index'])->middleware('throttle:30,1');
+            Route::get('streams/live', LiveNowController::class)->middleware('throttle:60,1');
             Route::get('transparency', TransparencyController::class)->middleware('throttle:60,1');
             Route::get('rewards', [LoginRewardController::class, 'index'])->middleware('module:quests');
             Route::post('rewards/claim', [LoginRewardController::class, 'claim'])->middleware(['module:quests', 'throttle:10,1']);

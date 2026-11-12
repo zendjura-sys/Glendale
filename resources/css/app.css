@@ -6592,3 +6592,14 @@ html[data-theme='dark'] .am.am-in-site {
 .gc-trim-range::-moz-range-track {
     background: transparent;
 }
+
+/* Картка «Офіційний застосунок»: темний градієнт, у світлій темі — світлий із синім відтінком. */
+.gc-app-promo {
+    background: linear-gradient(135deg, #123058 0%, #0c1a30 55%, #0a1322 100%);
+}
+:root[data-theme='light'] .gc-app-promo {
+    background: linear-gradient(135deg, #e0f2fe 0%, #f5f9ff 55%, #eef2ff 100%);
+}
+:root[data-theme='light'] .gc-app-promo .gc-sparkle {
+    background-color: #38bdf8;
+}
