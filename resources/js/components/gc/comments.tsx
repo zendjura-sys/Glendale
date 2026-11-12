@@ -9,11 +9,12 @@ import {
     Smile,
     Trash2,
 } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { api, ApiError } from '@/lib/api';
 import { plural, timeAgo } from '@/lib/format';
 import { fitTextarea } from '@/lib/textarea';
+import { splitQuotes } from '@/components/gc/quote-selection';
 import { cn } from '@/lib/utils';
 import type { CommentItem } from '@/types';
 import { LikeButton } from './like-button';
@@ -46,6 +47,8 @@ type Props = {
     canComment: boolean;
     onCountChange: (count: number) => void;
     autoFocus?: boolean;
+    /** Цитата з тексту запису (новий об’єкт — нова цитата). */
+    quote?: { text: string } | null;
     className?: string;
 };
 
@@ -57,6 +60,7 @@ export function Comments({
     onCountChange,
     autoFocus,
     className,
+    quote = null,
 }: Props) {
     const { auth } = usePage().props;
     const [comments, setComments] = useState(initial);
@@ -72,6 +76,22 @@ export function Comments({
     const [sticker, setSticker] = useState<string | null>(null);
     const [pickingSticker, setPickingSticker] = useState(false);
     const inputRef = useRef<HTMLTextAreaElement>(null);
+    // «Відповісти цитатою» з тексту запису: цитата на початку поля, курсор — під нею.
+    useEffect(() => {
+        if (!quote) return;
+        const quoted = quote.text
+            .split('\n')
+            .map((l) => `> ${l}`)
+            .join('\n');
+        setBody((current) => `${quoted}\n${current}`);
+        window.setTimeout(() => {
+            const el = inputRef.current;
+            if (!el) return;
+            el.focus();
+            el.setSelectionRange(el.value.length, el.value.length);
+            fitTextarea(el, 160);
+        }, 30);
+    }, [quote]);
 
     const loadAll = async (next: CommentSort = sort) => {
         const response = await api<{ comments: CommentItem[] }>(
@@ -505,10 +525,22 @@ function SpoilerText({ text }: { text: string }) {
 /** Текст коментаря з кнопкою «Перекласти». */
 function CommentText({ id, body }: { id: number; body: string }) {
     const translation = useContentTranslation('comment', id);
+    const parts = splitQuotes(translation.text ?? body);
 
     return (
         <>
-            <MentionText text={translation.text ?? body} />
+            {parts.map((part, i) =>
+                part.quote ? (
+                    <span
+                        key={i}
+                        className="my-1 block rounded-r-lg bg-white/[0.04] py-1 pr-2 pl-2.5 text-white/65 italic shadow-[inset_3px_0_0_rgb(56,189,248)]"
+                    >
+                        {part.text}
+                    </span>
+                ) : (
+                    <MentionText key={i} text={part.text.replace(/^\n+/, '')} />
+                ),
+            )}
             {translation.enabled && (
                 <span className="mt-0.5 block">
                     <TranslateToggle state={translation} />

@@ -1,3 +1,4 @@
+import { QuoteSelection } from '@/components/gc/quote-selection';
 import { Link, router, usePage } from '@inertiajs/react';
 import {
     BookmarkPlus,
@@ -86,6 +87,7 @@ export function PostCard({
         expanded || post.comments.length > 0,
     );
     const [focusComment, setFocusComment] = useState(false);
+    const [quote, setQuote] = useState<{ text: string } | null>(null);
     const [fullText, setFullText] = useState(expanded);
     const [deleted, setDeleted] = useState(false);
     const [poll, setPoll] = useState(post.poll ?? null);
@@ -567,40 +569,48 @@ export function PostCard({
                 </button>
             ) : (
                 body && (
-                    <div className="mt-3.5 text-[15px] leading-relaxed break-words whitespace-pre-line text-white/90">
-                        {isLong && !fullText ? (
-                            <MentionText
-                                text={`${body.slice(0, LONG_TEXT).trimEnd()}…`}
-                                games={post.games}
-                            />
-                        ) : (
-                            <MentionText text={body} games={post.games} />
-                        )}
-                        {isLong && !fullText && (
-                            <button
-                                type="button"
-                                onClick={() => setFullText(true)}
-                                className="ml-1 font-medium text-sky-400 hover:text-white"
-                            >
-                                {tr('Показати повністю')}
-                            </button>
-                        )}
-                        {(!post.lang || post.lang !== locale) && (
-                            <div className="mt-1.5 flex flex-wrap items-center gap-x-2 text-xs text-white/40">
-                                {post.lang && translation.enabled && (
-                                    <span>
-                                        {tr('Оригінал: {language}', {
-                                            language: languageName(
-                                                post.lang,
-                                                locale,
-                                            ),
-                                        })}
-                                    </span>
-                                )}
-                                <TranslateToggle state={translation} />
-                            </div>
-                        )}
-                    </div>
+                    <QuoteSelection
+                        enabled={post.can.comment && post.comments_enabled}
+                        onQuote={(text) => {
+                            setQuote({ text });
+                            setShowComments(true);
+                        }}
+                    >
+                        <div className="mt-3.5 text-[15px] leading-relaxed break-words whitespace-pre-line text-white/90">
+                            {isLong && !fullText ? (
+                                <MentionText
+                                    text={`${body.slice(0, LONG_TEXT).trimEnd()}…`}
+                                    games={post.games}
+                                />
+                            ) : (
+                                <MentionText text={body} games={post.games} />
+                            )}
+                            {isLong && !fullText && (
+                                <button
+                                    type="button"
+                                    onClick={() => setFullText(true)}
+                                    className="ml-1 font-medium text-sky-400 hover:text-white"
+                                >
+                                    {tr('Показати повністю')}
+                                </button>
+                            )}
+                            {(!post.lang || post.lang !== locale) && (
+                                <div className="mt-1.5 flex flex-wrap items-center gap-x-2 text-xs text-white/40">
+                                    {post.lang && translation.enabled && (
+                                        <span>
+                                            {tr('Оригінал: {language}', {
+                                                language: languageName(
+                                                    post.lang,
+                                                    locale,
+                                                ),
+                                            })}
+                                        </span>
+                                    )}
+                                    <TranslateToggle state={translation} />
+                                </div>
+                            )}
+                        </div>
+                    </QuoteSelection>
                 )
             )}
 
@@ -864,6 +874,7 @@ export function PostCard({
                         canComment={post.can.comment}
                         onCountChange={setCommentsCount}
                         autoFocus={focusComment}
+                        quote={quote}
                     />
                 </div>
             )}
