@@ -38,8 +38,10 @@ export function ShiftsTab({
     shifts,
     members,
     canManage,
+    selfClaim = true,
 }: {
     base: string;
+    selfClaim?: boolean;
     shifts: ClanShift[];
     members: { user: UserCard | null; nickname: string | null }[];
     canManage: boolean;
@@ -203,18 +205,19 @@ export function ShiftsTab({
                                         )}
                                     </p>
                                     <div className="mt-2 flex flex-wrap gap-1.5">
-                                        {!s.user && (
-                                            <button
-                                                type="button"
-                                                onClick={() =>
-                                                    act(s.id, 'claim')
-                                                }
-                                                className="inline-flex h-8 items-center gap-1 rounded-lg bg-emerald-500/15 px-2.5 text-xs font-semibold text-emerald-300"
-                                            >
-                                                <Hand className="size-3.5" />
-                                                {tr('Взяти')}
-                                            </button>
-                                        )}
+                                        {!s.user &&
+                                            (selfClaim || canManage) && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        act(s.id, 'claim')
+                                                    }
+                                                    className="inline-flex h-8 items-center gap-1 rounded-lg bg-emerald-500/15 px-2.5 text-xs font-semibold text-emerald-300"
+                                                >
+                                                    <Hand className="size-3.5" />
+                                                    {tr('Взяти')}
+                                                </button>
+                                            )}
                                         {s.mine &&
                                             new Date(s.starts_at) >
                                                 new Date() && (

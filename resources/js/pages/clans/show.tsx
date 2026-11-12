@@ -6,6 +6,11 @@ import { Head, Link, router, useForm } from '@inertiajs/react';
 import {
     BellRing,
     CalendarClock,
+    Hand,
+    Headphones,
+    LayoutGrid,
+    Mic,
+    SlidersHorizontal,
     CalendarDays,
     Check,
     Coins,
@@ -37,6 +42,13 @@ import { ClanLogo } from './index';
 import { eventTime } from '@/lib/event-time';
 import { BotsCard } from '@/components/bots/bots-card';
 import { DeleteZone } from '@/components/gc/delete-zone';
+import {
+    FeatureTile,
+    SaveBar,
+    SettingsAnchor,
+    SettingsNav,
+} from '@/components/gc/settings-kit';
+import type { LucideIcon } from 'lucide-react';
 import { LOCALE, tr } from '@/lib/i18n';
 
 type Member = {
@@ -68,6 +80,7 @@ type Props = {
         description: string | null;
         rules: string | null;
         features: string[];
+        options?: Record<string, boolean | number>;
         currency: string;
         treasury: number | null;
         owner: UserCard | null;
@@ -147,6 +160,18 @@ type Props = {
         starts_at: string;
         note: string | null;
     }[];
+};
+
+/** Іконки розділів клану в налаштуваннях. */
+const FEATURE_ICONS: Record<string, LucideIcon> = {
+    news: Newspaper,
+    events: CalendarDays,
+    treasury: Coins,
+    voice: Mic,
+    chat: MessageCircle,
+    rating: Trophy,
+    rules: ScrollText,
+    shifts: CalendarClock,
 };
 
 const input =
@@ -406,7 +431,7 @@ export default function ClanShow(props: Props) {
                             <MessageCircle className="size-4" /> {tr('Чат')}
                         </a>
                     )}
-                    {me && (
+                    {me && clan.options?.listen !== false && (
                         <ListenRoomButton
                             group="clan"
                             id={clan.id}
@@ -705,6 +730,7 @@ export default function ClanShow(props: Props) {
                         base={base}
                         events={events}
                         canManage={!!can['events.manage']}
+                        bracket={clan.options?.bracket !== false}
                     />
                 )}
                 {tab === 'shifts' && (
@@ -712,7 +738,8 @@ export default function ClanShow(props: Props) {
                         base={base}
                         shifts={props.shifts ?? []}
                         members={props.members}
-                        canManage={!!can['events.manage']}
+                        canManage={!!can['shifts.manage']}
+                        selfClaim={clan.options?.shifts_self_claim !== false}
                     />
                 )}
                 {tab === 'treasury' && (
@@ -926,10 +953,12 @@ function EventsTab({
     base,
     events,
     canManage,
+    bracket,
 }: {
     base: string;
     events: Props['events'];
     canManage: boolean;
+    bracket: boolean;
 }) {
     const form = useForm({
         title: '',
@@ -1057,7 +1086,8 @@ function EventsTab({
                             {tr('Іде:')} {e.going_count}
                             {e.repeat === 'weekly' ? ` · ${tr('Щотижня')}` : ''}
                         </p>
-                        {e.bracket &&
+                        {bracket &&
+                            e.bracket &&
                             e.bracket.teams?.some((t) => t.trim() !== '') && (
                                 <LiveBracket
                                     url={`${base}/events/${e.id}/bracket`}
@@ -1065,7 +1095,9 @@ function EventsTab({
                                     startsAt={e.starts_at}
                                 />
                             )}
-                        {canManage && <BracketForm base={base} event={e} />}
+                        {canManage && bracket && (
+                            <BracketForm base={base} event={e} />
+                        )}
                     </div>
                     <button
                         type="button"
@@ -1496,8 +1528,16 @@ function SettingsTab({
         features: clan.features,
         rank_titles: [1, 2, 3, 4, 5].map((r) => clan.rank_titles[r] ?? ''),
         permissions: permissions?.matrix ?? {},
+        settings: { ...clan.options } as Record<string, boolean | number>,
         logo: null as File | null,
     });
+    const opt = (key: string, value: boolean | number) =>
+        form.setData('settings', { ...form.data.settings, [key]: value });
+    const save = () =>
+        form.post(`${base}/settings`, {
+            preserveScroll: true,
+            forceFormData: true,
+        });
     const toggleFeature = (key: string) =>
         form.setData(
             'features',
@@ -1519,256 +1559,383 @@ function SettingsTab({
         <form
             onSubmit={(e) => {
                 e.preventDefault();
-                form.post(`${base}/settings`, {
-                    preserveScroll: true,
-                    forceFormData: true,
-                });
+                save();
             }}
             className="space-y-4"
         >
-            <Card title={tr('Основне')} icon={Settings}>
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_120px_160px]">
-                    <input
-                        value={form.data.name}
-                        maxLength={60}
-                        onChange={(e) => form.setData('name', e.target.value)}
-                        className={input}
-                        aria-label={tr('Назва')}
-                    />
-                    <input
-                        value={form.data.tag}
-                        maxLength={6}
-                        onChange={(e) =>
-                            form.setData('tag', e.target.value.toUpperCase())
-                        }
-                        className={input}
-                        aria-label={tr('Тег')}
-                    />
-                    <input
-                        value={form.data.currency}
-                        maxLength={24}
-                        onChange={(e) =>
-                            form.setData('currency', e.target.value)
-                        }
-                        className={input}
-                        aria-label={tr('Валюта внесків')}
-                        placeholder={tr('Валюта внесків')}
-                    />
-                </div>
-                <textarea
-                    value={form.data.description}
-                    rows={3}
-                    maxLength={1000}
-                    onChange={(e) =>
-                        form.setData('description', e.target.value)
-                    }
-                    placeholder={tr('Опис')}
-                    className={cn(area, 'mt-2')}
-                />
-                <textarea
-                    value={form.data.rules}
-                    rows={4}
-                    maxLength={10000}
-                    onChange={(e) => form.setData('rules', e.target.value)}
-                    placeholder={tr('Статут (розділ «Статут»)')}
-                    className={cn(area, 'mt-2')}
-                />
-                <div className="mt-2 flex flex-wrap items-center gap-2">
-                    {Object.entries(joinModes).map(([key, label]) => (
-                        <button
-                            key={key}
-                            type="button"
-                            onClick={() => form.setData('join_mode', key)}
-                            className={cn(
-                                'rounded-xl px-3 py-1.5 text-sm',
-                                form.data.join_mode === key
-                                    ? 'bg-sky-500 text-white'
-                                    : 'gc-solid-2 text-white/65',
-                            )}
-                        >
-                            {label}
-                        </button>
-                    ))}
-                    <label className="ml-auto inline-flex cursor-pointer items-center gap-2 text-sm text-white/70">
-                        {tr('Логотип')}
+            <SettingsNav
+                items={[
+                    { id: 'clan-main', label: tr('Основне'), icon: Settings },
+                    {
+                        id: 'clan-sections',
+                        label: tr('Розділи'),
+                        icon: LayoutGrid,
+                    },
+                    {
+                        id: 'clan-functions',
+                        label: tr('Функції'),
+                        icon: SlidersHorizontal,
+                    },
+                    {
+                        id: 'clan-ranks',
+                        label: tr('Ранги й права'),
+                        icon: Crown,
+                    },
+                    ...(logs.length > 0
+                        ? [
+                              {
+                                  id: 'clan-log',
+                                  label: tr('Журнал'),
+                                  icon: ScrollText,
+                              },
+                          ]
+                        : []),
+                ]}
+            />
+            <SettingsAnchor id="clan-main">
+                <Card title={tr('Основне')} icon={Settings}>
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_120px_160px]">
                         <input
-                            type="file"
-                            accept="image/*"
-                            className="text-xs"
+                            value={form.data.name}
+                            maxLength={60}
+                            onChange={(e) =>
+                                form.setData('name', e.target.value)
+                            }
+                            className={input}
+                            aria-label={tr('Назва')}
+                        />
+                        <input
+                            value={form.data.tag}
+                            maxLength={6}
                             onChange={(e) =>
                                 form.setData(
-                                    'logo',
-                                    e.target.files?.[0] ?? null,
+                                    'tag',
+                                    e.target.value.toUpperCase(),
                                 )
                             }
-                        />
-                    </label>
-                </div>
-                <div className="mt-3 space-y-2">
-                    <p className="text-xs text-white/45">
-                        {tr('Питання в заявці')}
-                    </p>
-                    {[0, 1, 2].map((index) => (
-                        <input
-                            key={index}
-                            value={form.data.questions[index] ?? ''}
-                            maxLength={80}
-                            onChange={(e) => {
-                                const next = [...form.data.questions];
-                                next[index] = e.target.value;
-                                form.setData('questions', next);
-                            }}
-                            placeholder={tr('Питання {n}', { n: index + 1 })}
                             className={input}
-                            aria-label={tr('Питання {n}', { n: index + 1 })}
+                            aria-label={tr('Тег')}
                         />
-                    ))}
-                </div>
-            </Card>
-
-            <Card title={tr('Розділи клану')} icon={Swords}>
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                    {Object.entries(features).map(([key, f]) => {
-                        const on = form.data.features.includes(key);
-
-                        return (
+                        <input
+                            value={form.data.currency}
+                            maxLength={24}
+                            onChange={(e) =>
+                                form.setData('currency', e.target.value)
+                            }
+                            className={input}
+                            aria-label={tr('Валюта внесків')}
+                            placeholder={tr('Валюта внесків')}
+                        />
+                    </div>
+                    <textarea
+                        value={form.data.description}
+                        rows={3}
+                        maxLength={1000}
+                        onChange={(e) =>
+                            form.setData('description', e.target.value)
+                        }
+                        placeholder={tr('Опис')}
+                        className={cn(area, 'mt-2')}
+                    />
+                    <textarea
+                        value={form.data.rules}
+                        rows={4}
+                        maxLength={10000}
+                        onChange={(e) => form.setData('rules', e.target.value)}
+                        placeholder={tr('Статут (розділ «Статут»)')}
+                        className={cn(area, 'mt-2')}
+                    />
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                        {Object.entries(joinModes).map(([key, label]) => (
                             <button
                                 key={key}
                                 type="button"
-                                onClick={() => toggleFeature(key)}
+                                onClick={() => form.setData('join_mode', key)}
                                 className={cn(
-                                    'flex items-start gap-3 rounded-2xl p-3 text-left',
-                                    on
-                                        ? 'bg-[var(--accent)]/15 ring-[var(--accent)]/60'
-                                        : 'gc-solid-2',
+                                    'rounded-xl px-3 py-1.5 text-sm',
+                                    form.data.join_mode === key
+                                        ? 'bg-sky-500 text-white'
+                                        : 'gc-solid-2 text-white/65',
                                 )}
                             >
-                                <span
-                                    className={cn(
-                                        'mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-md',
-                                        on
-                                            ? 'border-transparent bg-sky-500'
-                                            : '',
-                                    )}
-                                >
-                                    {on && (
-                                        <Check className="size-3.5 text-white" />
-                                    )}
-                                </span>
-                                <span>
-                                    <span className="block text-sm font-semibold text-white">
-                                        {f.label}
-                                    </span>
-                                    <span className="block text-xs text-white/50">
-                                        {f.text}
-                                    </span>
-                                </span>
+                                {label}
                             </button>
-                        );
-                    })}
-                </div>
-            </Card>
-
-            <Card title={tr('Ранги й права')} icon={Crown}>
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
-                    {form.data.rank_titles.map((t, i) => (
-                        <label key={i}>
-                            <span className="mb-1 block text-xs text-white/45">
-                                {tr('Ранг')} {i + 1}
-                            </span>
+                        ))}
+                        <label className="ml-auto inline-flex cursor-pointer items-center gap-2 text-sm text-white/70">
+                            {tr('Логотип')}
                             <input
-                                value={t}
-                                maxLength={24}
+                                type="file"
+                                accept="image/*"
+                                className="text-xs"
                                 onChange={(e) =>
                                     form.setData(
-                                        'rank_titles',
-                                        form.data.rank_titles.map((x, j) =>
-                                            j === i ? e.target.value : x,
-                                        ),
+                                        'logo',
+                                        e.target.files?.[0] ?? null,
                                     )
                                 }
-                                className={cn(input, 'h-9 text-xs')}
                             />
                         </label>
-                    ))}
-                </div>
-                {permissions && (
-                    <div className="mt-4 overflow-x-auto">
-                        <table className="w-full min-w-[480px] text-xs">
-                            <thead>
-                                <tr className="text-white/40">
-                                    <th className="py-2 text-left font-medium">
-                                        {tr('Право')}
-                                    </th>
-                                    {[1, 2, 3, 4].map((r) => (
-                                        <th
-                                            key={r}
-                                            className="w-9 py-2 font-medium"
-                                        >
-                                            {r}
-                                        </th>
-                                    ))}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {Object.entries(permissions.labels).map(
-                                    ([perm, label]) => (
-                                        <tr key={perm} className=" ">
-                                            <td className="py-2 pr-2 text-white/70">
-                                                {label}
-                                            </td>
-                                            {[1, 2, 3, 4].map((r) => {
-                                                const on = (
-                                                    form.data.permissions[
-                                                        perm
-                                                    ] ?? []
-                                                ).includes(r);
-                                                const locked =
-                                                    !isOwner && r >= myRank;
-
-                                                return (
-                                                    <td
-                                                        key={r}
-                                                        className="text-center"
-                                                    >
-                                                        <button
-                                                            type="button"
-                                                            disabled={locked}
-                                                            onClick={() =>
-                                                                togglePerm(
-                                                                    perm,
-                                                                    r,
-                                                                )
-                                                            }
-                                                            className={cn(
-                                                                'size-6 rounded-md disabled:opacity-30',
-                                                                on
-                                                                    ? 'bg-sky-500 text-white'
-                                                                    : 'gc-solid-2',
-                                                            )}
-                                                            aria-label={tr(
-                                                                '{label}: ранг {r}',
-                                                                { label, r },
-                                                            )}
-                                                        >
-                                                            {on && (
-                                                                <Check className="mx-auto size-3.5" />
-                                                            )}
-                                                        </button>
-                                                    </td>
-                                                );
-                                            })}
-                                        </tr>
-                                    ),
-                                )}
-                            </tbody>
-                        </table>
-                        <p className="mt-2 text-xs text-white/40">
-                            {tr('Ранг 5 (лідер) і засновник мають усі права.')}
-                        </p>
                     </div>
-                )}
-            </Card>
+                    <div className="mt-3 space-y-2">
+                        <p className="text-xs text-white/45">
+                            {tr('Питання в заявці')}
+                        </p>
+                        {[0, 1, 2].map((index) => (
+                            <input
+                                key={index}
+                                value={form.data.questions[index] ?? ''}
+                                maxLength={80}
+                                onChange={(e) => {
+                                    const next = [...form.data.questions];
+                                    next[index] = e.target.value;
+                                    form.setData('questions', next);
+                                }}
+                                placeholder={tr('Питання {n}', {
+                                    n: index + 1,
+                                })}
+                                className={input}
+                                aria-label={tr('Питання {n}', { n: index + 1 })}
+                            />
+                        ))}
+                    </div>
+                </Card>
+            </SettingsAnchor>
+
+            <SettingsAnchor id="clan-sections">
+                <Card title={tr('Розділи')} icon={LayoutGrid}>
+                    <p className="mb-3 text-xs text-white/45">
+                        {tr(
+                            'Вимкнений розділ зникає з вкладок для всіх учасників. Дані зберігаються — увімкніть, і все повернеться.',
+                        )}
+                    </p>
+                    <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+                        {Object.entries(features).map(([key, f]) => (
+                            <FeatureTile
+                                key={key}
+                                icon={FEATURE_ICONS[key] ?? LayoutGrid}
+                                label={f.label}
+                                text={f.text}
+                                on={form.data.features.includes(key)}
+                                onChange={() => toggleFeature(key)}
+                            />
+                        ))}
+                    </div>
+                </Card>
+            </SettingsAnchor>
+
+            <SettingsAnchor id="clan-functions">
+                <Card title={tr('Функції')} icon={SlidersHorizontal}>
+                    <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+                        <FeatureTile
+                            icon={Crown}
+                            label={tr('Гравець місяця')}
+                            text={tr(
+                                'Учасники голосують, переможця оголошуємо 1-го числа',
+                            )}
+                            on={form.data.settings.mvp !== false}
+                            onChange={(v) => opt('mvp', v)}
+                        />
+                        <FeatureTile
+                            icon={Trophy}
+                            label={tr('Турнірна сітка')}
+                            text={tr('Жива сітка на 4 команди в заходах клану')}
+                            on={form.data.settings.bracket !== false}
+                            onChange={(v) => opt('bracket', v)}
+                        />
+                        <FeatureTile
+                            icon={BellRing}
+                            label={tr('Нагадування неактивним')}
+                            text={tr(
+                                'Кнопка «Нагадати» біля тих, хто не заходив 2 тижні',
+                            )}
+                            on={form.data.settings.nudge !== false}
+                            onChange={(v) => opt('nudge', v)}
+                        />
+                        <FeatureTile
+                            icon={Headphones}
+                            label={tr('Слухати разом')}
+                            text={tr(
+                                'Спільна музична кімната на сторінці клану',
+                            )}
+                            on={form.data.settings.listen !== false}
+                            onChange={(v) => opt('listen', v)}
+                        />
+                    </div>
+                    {form.data.features.includes('shifts') && (
+                        <div className="mt-4 space-y-2">
+                            <p className="text-xs font-semibold text-white/55">
+                                {tr('Зміни')}
+                            </p>
+                            <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+                                <FeatureTile
+                                    icon={Hand}
+                                    label={tr('Самі беруть вільні зміни')}
+                                    text={tr(
+                                        'Вимкніть, щоб зміни призначало лише керівництво',
+                                    )}
+                                    on={
+                                        form.data.settings.shifts_self_claim !==
+                                        false
+                                    }
+                                    onChange={(v) =>
+                                        opt('shifts_self_claim', v)
+                                    }
+                                />
+                                <FeatureTile
+                                    icon={BellRing}
+                                    label={tr('Нагадування про зміну')}
+                                    text={tr('Сповіщення за годину до початку')}
+                                    on={
+                                        form.data.settings.shifts_remind !==
+                                        false
+                                    }
+                                    onChange={(v) => opt('shifts_remind', v)}
+                                />
+                            </div>
+                            <label className="gc-solid-2 flex items-center justify-between gap-3 rounded-2xl p-3 text-sm text-white/70">
+                                {tr(
+                                    'Ліміт змін на людину за тиждень (0 — без ліміту)',
+                                )}
+                                <input
+                                    type="number"
+                                    min={0}
+                                    max={21}
+                                    value={Number(
+                                        form.data.settings.shifts_week_limit ??
+                                            0,
+                                    )}
+                                    onChange={(e) =>
+                                        opt(
+                                            'shifts_week_limit',
+                                            Math.max(
+                                                0,
+                                                Math.min(
+                                                    21,
+                                                    Number(e.target.value) || 0,
+                                                ),
+                                            ),
+                                        )
+                                    }
+                                    className={cn(
+                                        input,
+                                        'h-9 w-20 text-center',
+                                    )}
+                                />
+                            </label>
+                        </div>
+                    )}
+                </Card>
+            </SettingsAnchor>
+
+            <SettingsAnchor id="clan-ranks">
+                <Card title={tr('Ранги й права')} icon={Crown}>
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+                        {form.data.rank_titles.map((t, i) => (
+                            <label key={i}>
+                                <span className="mb-1 block text-xs text-white/45">
+                                    {tr('Ранг')} {i + 1}
+                                </span>
+                                <input
+                                    value={t}
+                                    maxLength={24}
+                                    onChange={(e) =>
+                                        form.setData(
+                                            'rank_titles',
+                                            form.data.rank_titles.map((x, j) =>
+                                                j === i ? e.target.value : x,
+                                            ),
+                                        )
+                                    }
+                                    className={cn(input, 'h-9 text-xs')}
+                                />
+                            </label>
+                        ))}
+                    </div>
+                    {permissions && (
+                        <div className="mt-4 overflow-x-auto">
+                            <table className="w-full min-w-[480px] text-xs">
+                                <thead>
+                                    <tr className="text-white/40">
+                                        <th className="py-2 text-left font-medium">
+                                            {tr('Право')}
+                                        </th>
+                                        {[1, 2, 3, 4].map((r) => (
+                                            <th
+                                                key={r}
+                                                className="w-9 py-2 font-medium"
+                                            >
+                                                {r}
+                                            </th>
+                                        ))}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {Object.entries(permissions.labels).map(
+                                        ([perm, label]) => (
+                                            <tr key={perm} className=" ">
+                                                <td className="py-2 pr-2 text-white/70">
+                                                    {label}
+                                                </td>
+                                                {[1, 2, 3, 4].map((r) => {
+                                                    const on = (
+                                                        form.data.permissions[
+                                                            perm
+                                                        ] ?? []
+                                                    ).includes(r);
+                                                    const locked =
+                                                        !isOwner && r >= myRank;
+
+                                                    return (
+                                                        <td
+                                                            key={r}
+                                                            className="text-center"
+                                                        >
+                                                            <button
+                                                                type="button"
+                                                                disabled={
+                                                                    locked
+                                                                }
+                                                                onClick={() =>
+                                                                    togglePerm(
+                                                                        perm,
+                                                                        r,
+                                                                    )
+                                                                }
+                                                                className={cn(
+                                                                    'size-6 rounded-md disabled:opacity-30',
+                                                                    on
+                                                                        ? 'bg-sky-500 text-white'
+                                                                        : 'gc-solid-2',
+                                                                )}
+                                                                aria-label={tr(
+                                                                    '{label}: ранг {r}',
+                                                                    {
+                                                                        label,
+                                                                        r,
+                                                                    },
+                                                                )}
+                                                            >
+                                                                {on && (
+                                                                    <Check className="mx-auto size-3.5" />
+                                                                )}
+                                                            </button>
+                                                        </td>
+                                                    );
+                                                })}
+                                            </tr>
+                                        ),
+                                    )}
+                                </tbody>
+                            </table>
+                            <p className="mt-2 text-xs text-white/40">
+                                {tr(
+                                    'Ранг 5 (лідер) і засновник мають усі права.',
+                                )}
+                            </p>
+                        </div>
+                    )}
+                </Card>
+            </SettingsAnchor>
 
             <button
                 type="submit"
@@ -1777,18 +1944,29 @@ function SettingsTab({
             >
                 {tr('Зберегти налаштування')}
             </button>
+            <SaveBar
+                dirty={form.isDirty}
+                processing={form.processing}
+                onSave={save}
+                onReset={() => form.reset()}
+            />
 
             {logs.length > 0 && (
-                <Card title={tr('Журнал дій')} icon={ScrollText}>
-                    {logs.map((l) => (
-                        <p key={l.id} className="py-1 text-xs text-white/60">
-                            <span className="text-white/40">
-                                {timeAgo(l.created_at)}
-                            </span>{' '}
-                            · {l.actor ?? tr('Система')}: {l.text}
-                        </p>
-                    ))}
-                </Card>
+                <SettingsAnchor id="clan-log">
+                    <Card title={tr('Журнал дій')} icon={ScrollText}>
+                        {logs.map((l) => (
+                            <p
+                                key={l.id}
+                                className="py-1 text-xs text-white/60"
+                            >
+                                <span className="text-white/40">
+                                    {timeAgo(l.created_at)}
+                                </span>{' '}
+                                · {l.actor ?? tr('Система')}: {l.text}
+                            </p>
+                        ))}
+                    </Card>
+                </SettingsAnchor>
             )}
         </form>
     );

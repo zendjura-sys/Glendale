@@ -36,7 +36,7 @@ use Illuminate\Support\Facades\Storage;
  * @property-read string|null $logo_url
  * @property-read string $display_name
  */
-#[Fillable(['slug', 'type', 'name', 'tag', 'game_id', 'owner_id', 'description', 'rules', 'logo_path', 'features', 'rank_titles', 'permissions', 'join_mode', 'is_recruiting', 'currency', 'questions'])]
+#[Fillable(['slug', 'type', 'name', 'tag', 'game_id', 'owner_id', 'description', 'rules', 'logo_path', 'features', 'rank_titles', 'permissions', 'settings', 'join_mode', 'is_recruiting', 'currency', 'questions'])]
 class Clan extends Model
 {
     use SoftDeletes;
@@ -56,6 +56,17 @@ class Clan extends Model
     ];
 
     public const DEFAULT_FEATURES = ['news', 'events', 'voice', 'chat'];
+
+    /** Налаштування функцій клану (вкладка «Налаштування» → «Функції»). */
+    public const DEFAULT_SETTINGS = [
+        'mvp' => true,              // голосування «Гравець місяця»
+        'bracket' => true,          // турнірна сітка в заходах
+        'nudge' => true,            // нагадування тим, хто давно не заходив
+        'listen' => true,           // «Слухати разом» на сторінці клану
+        'shifts_self_claim' => true, // учасники самі беруть вільні зміни
+        'shifts_week_limit' => 0,    // 0 — без ліміту змін на тиждень
+        'shifts_remind' => true,     // нагадування за годину до зміни
+    ];
 
     public const JOIN_OPEN = 'open';
 
@@ -77,6 +88,7 @@ class Clan extends Model
         'members.manage' => 'Приймати заявки, змінювати ранги, виключати',
         'news.post' => 'Публікувати новини',
         'events.manage' => 'Створювати заходи',
+        'shifts.manage' => 'Створювати й призначати зміни',
         'treasury.manage' => 'Підтверджувати внески й записувати витрати',
         'voice.manage' => 'Голосові кімнати: створювати, вимикати мікрофон, виключати',
         'settings.manage' => 'Змінювати опис, статут, розділи, ранги й права',
@@ -86,6 +98,7 @@ class Clan extends Model
         'members.manage' => [4],
         'news.post' => [4],
         'events.manage' => [3, 4],
+        'shifts.manage' => [3, 4],
         'treasury.manage' => [4],
         'voice.manage' => [4],
         'settings.manage' => [],
@@ -97,6 +110,7 @@ class Clan extends Model
             'features' => 'array',
             'rank_titles' => 'array',
             'permissions' => 'array',
+            'settings' => 'array',
             'questions' => 'array',
             'is_recruiting' => 'boolean',
             'treasury' => 'integer',
@@ -166,6 +180,22 @@ class Clan extends Model
     /**
      * @return array<string, list<int>>
      */
+    public function setting(string $key): mixed
+    {
+        return ($this->settings ?? [])[$key] ?? self::DEFAULT_SETTINGS[$key] ?? null;
+    }
+
+    /** @return array<string, bool|int> */
+    public function resolvedSettings(): array
+    {
+        $out = [];
+        foreach (self::DEFAULT_SETTINGS as $key => $default) {
+            $out[$key] = is_bool($default) ? (bool) $this->setting($key) : (int) $this->setting($key);
+        }
+
+        return $out;
+    }
+
     public function permissionMatrix(): array
     {
         $matrix = [];

@@ -33,6 +33,7 @@ type Props = FamilyShellProps & {
     shifts: Shift[];
     roster: RosterEntry[];
     my_week: number;
+    rules: { self_claim: boolean; week_limit: number; remind: boolean };
 };
 
 const KYIV = 'Europe/Kyiv';
@@ -47,7 +48,7 @@ const dayKey = (iso: string) =>
 
 /** Сім’я → Зміни: тиждень по днях; вільні зміни можна взяти, свої — віддати. */
 export default function Shifts(props: Props) {
-    const { family, can, week, shifts, roster, my_week } = props;
+    const { family, can, week, shifts, roster, my_week, rules } = props;
     const base = `/f/${family.slug}`;
     const manage = can['events.manage'];
     const [creating, setCreating] = useState(false);
@@ -110,7 +111,12 @@ export default function Shifts(props: Props) {
                     </Link>
                 )}
                 <span className="ml-auto text-sm text-white/55">
-                    {tr('Моїх змін цього тижня: {n}', { n: my_week })}
+                    {rules.week_limit > 0
+                        ? tr('Моїх змін цього тижня: {n} з {max}', {
+                              n: my_week,
+                              max: rules.week_limit,
+                          })
+                        : tr('Моїх змін цього тижня: {n}', { n: my_week })}
                 </span>
                 {manage && (
                     <button
@@ -191,6 +197,8 @@ export default function Shifts(props: Props) {
                                             </p>
                                             <div className="mt-2 flex flex-wrap gap-1.5">
                                                 {!s.member &&
+                                                    (rules.self_claim ||
+                                                        manage) &&
                                                     new Date(s.ends_at) >
                                                         new Date() && (
                                                         <button

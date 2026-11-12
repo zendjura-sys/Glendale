@@ -115,6 +115,7 @@ export type FamilyShellProps = {
         owner_id: number | null;
         rank_titles: Record<string, string>;
         shifts_enabled?: boolean;
+        sections?: Record<string, boolean>;
     };
     me: MemberCard & { balance: number };
     can: FamilyAbilities;

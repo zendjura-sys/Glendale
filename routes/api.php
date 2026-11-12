@@ -1039,19 +1039,19 @@ Route::prefix('v1')->group(function () {
                     Route::post('bank/cashouts', [Families\FamilyBankController::class, 'requestCashout'])->middleware('throttle:10,1');
                     Route::post('bank/deposits', [Families\FamilyBankController::class, 'openDeposit'])->middleware('throttle:10,1');
                     Route::post('bank/manual', [Families\FamilyBankController::class, 'manual'])->middleware('throttle:30,1');
-                    Route::get('warehouse', [Families\FamilyWarehouseController::class, 'index']);
-                    Route::get('warehouse/logs/{log}/proof', [Families\FamilyWarehouseController::class, 'proof'])->whereNumber('log');
+                    Route::get('warehouse', [Families\FamilyWarehouseController::class, 'index'])->middleware('family.section:warehouse');
+                    Route::get('warehouse/logs/{log}/proof', [Families\FamilyWarehouseController::class, 'proof'])->middleware('family.section:warehouse')->whereNumber('log');
                     Route::get('members', [Families\FamilyMemberController::class, 'index']);
                     Route::get('discipline', [Families\FamilyDisciplineController::class, 'index']);
                     Route::post('discipline', [Families\FamilyDisciplineController::class, 'store'])->middleware('throttle:30,1');
-                    Route::get('events', [Families\FamilyEventController::class, 'index']);
-                    Route::get('shifts', [Families\FamilyShiftController::class, 'index']);
-                    Route::post('shifts', [Families\FamilyShiftController::class, 'store'])->middleware('throttle:30,1');
-                    Route::post('shifts/{shift}/assign', [Families\FamilyShiftController::class, 'assign'])->whereNumber('shift');
-                    Route::post('shifts/{shift}/claim', [Families\FamilyShiftController::class, 'claim'])->whereNumber('shift')->middleware('throttle:30,1');
-                    Route::post('shifts/{shift}/release', [Families\FamilyShiftController::class, 'release'])->whereNumber('shift');
-                    Route::delete('shifts/{shift}', [Families\FamilyShiftController::class, 'destroy'])->whereNumber('shift');
-                    Route::get('rating', [Families\FamilyEventController::class, 'rating']);
+                    Route::get('events', [Families\FamilyEventController::class, 'index'])->middleware('family.section:events');
+                    Route::get('shifts', [Families\FamilyShiftController::class, 'index'])->middleware('family.section:shifts');
+                    Route::post('shifts', [Families\FamilyShiftController::class, 'store'])->middleware('family.section:shifts')->middleware('throttle:30,1');
+                    Route::post('shifts/{shift}/assign', [Families\FamilyShiftController::class, 'assign'])->middleware('family.section:shifts')->whereNumber('shift');
+                    Route::post('shifts/{shift}/claim', [Families\FamilyShiftController::class, 'claim'])->middleware('family.section:shifts')->whereNumber('shift')->middleware('throttle:30,1');
+                    Route::post('shifts/{shift}/release', [Families\FamilyShiftController::class, 'release'])->middleware('family.section:shifts')->whereNumber('shift');
+                    Route::delete('shifts/{shift}', [Families\FamilyShiftController::class, 'destroy'])->middleware('family.section:shifts')->whereNumber('shift');
+                    Route::get('rating', [Families\FamilyEventController::class, 'rating'])->middleware('family.section:rating');
                     Route::get('audit', [Families\FamilyAuditController::class, 'index']);
                     Route::get('settings', [Families\FamilySettingsController::class, 'index']);
                     Route::put('settings', [Families\FamilySettingsController::class, 'update']);
@@ -1067,9 +1067,9 @@ Route::prefix('v1')->group(function () {
                         Route::get('bank/cashouts/{cashout}/proof', [Families\FamilyBankController::class, 'cashoutProof']);
                         Route::post('bank/deposits/{deposit}/close', [Families\FamilyBankController::class, 'closeDeposit']);
 
-                        Route::post('warehouse/move', [Families\FamilyWarehouseController::class, 'move'])->middleware('throttle:60,1');
-                        Route::post('warehouse/items', [Families\FamilyWarehouseController::class, 'storeItem']);
-                        Route::patch('warehouse/items/{item}', [Families\FamilyWarehouseController::class, 'updateItem']);
+                        Route::post('warehouse/move', [Families\FamilyWarehouseController::class, 'move'])->middleware('family.section:warehouse')->middleware('throttle:60,1');
+                        Route::post('warehouse/items', [Families\FamilyWarehouseController::class, 'storeItem'])->middleware('family.section:warehouse');
+                        Route::patch('warehouse/items/{item}', [Families\FamilyWarehouseController::class, 'updateItem'])->middleware('family.section:warehouse');
 
                         Route::put('ranks', [Families\FamilyMemberController::class, 'ranks']);
                         Route::post('members/{member}/accept', [Families\FamilyMemberController::class, 'accept']);
@@ -1080,9 +1080,9 @@ Route::prefix('v1')->group(function () {
 
                         Route::post('discipline/{punishment}/revoke', [Families\FamilyDisciplineController::class, 'revoke']);
 
-                        Route::post('events', [Families\FamilyEventController::class, 'store'])->middleware('throttle:20,1');
-                        Route::post('events/{event}/rsvp', [Families\FamilyEventController::class, 'rsvp']);
-                        Route::post('events/{event}/close', [Families\FamilyEventController::class, 'close']);
+                        Route::post('events', [Families\FamilyEventController::class, 'store'])->middleware('family.section:events')->middleware('throttle:20,1');
+                        Route::post('events/{event}/rsvp', [Families\FamilyEventController::class, 'rsvp'])->middleware('family.section:events');
+                        Route::post('events/{event}/close', [Families\FamilyEventController::class, 'close'])->middleware('family.section:events');
                     });
 
                     Route::post('settings/profile', [Families\FamilySettingsController::class, 'profile']);

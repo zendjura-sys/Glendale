@@ -159,10 +159,27 @@ class Family extends Model
             'enabled' => true,
             'chat' => true,
         ],
-        // Календар змін і чергувань — лідер може вимкнути розділ.
+        // Розділи, які лідер може вимкнути (вкладка зникає, маршрути — 404).
+        'sections' => [
+            'events' => true,
+            'warehouse' => true,
+            'rating' => true,
+        ],
+        // Календар змін і чергувань.
         'shifts' => [
             'enabled' => true,
+            'self_claim' => true,
+            'week_limit' => 0,
+            'remind' => true,
         ],
+    ];
+
+    /** Розділи, які можна вимкнути, і де лежить їхній перемикач. */
+    public const TOGGLE_SECTIONS = [
+        'events' => 'sections.events',
+        'warehouse' => 'sections.warehouse',
+        'rating' => 'sections.rating',
+        'shifts' => 'shifts.enabled',
     ];
 
     protected function casts(): array
@@ -310,6 +327,19 @@ class Family extends Model
     /**
      * Налаштування з підставленими значеннями за замовчуванням.
      */
+    public function sectionEnabled(string $section): bool
+    {
+        $key = self::TOGGLE_SECTIONS[$section] ?? null;
+
+        return $key === null || (bool) $this->setting($key, true);
+    }
+
+    /** @return array<string, bool> */
+    public function sections(): array
+    {
+        return array_map(fn (string $key) => (bool) $this->setting($key, true), self::TOGGLE_SECTIONS);
+    }
+
     public function setting(string $key, mixed $default = null): mixed
     {
         return Arr::get($this->settings ?? [], $key, Arr::get(self::DEFAULT_SETTINGS, $key, $default));

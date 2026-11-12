@@ -151,12 +151,14 @@ export default function FamilyOverview(props: Props) {
                         title={tr('Лідери тижня')}
                         icon={BarChart3}
                         actions={
-                            <Link
-                                href={`${base}/rating`}
-                                className="text-xs font-semibold text-sky-400 hover:text-sky-400"
-                            >
-                                {tr('Увесь рейтинг')}
-                            </Link>
+                            family.sections?.rating !== false && (
+                                <Link
+                                    href={`${base}/rating`}
+                                    className="text-xs font-semibold text-sky-400 hover:text-sky-400"
+                                >
+                                    {tr('Увесь рейтинг')}
+                                </Link>
+                            )
                         }
                     >
                         {leaders.length === 0 ? (
@@ -237,12 +239,14 @@ export default function FamilyOverview(props: Props) {
                         title={tr('Найближчі події')}
                         icon={CalendarDays}
                         actions={
-                            <Link
-                                href={`${base}/events`}
-                                className="text-xs font-semibold text-sky-400 hover:text-sky-400"
-                            >
-                                {tr('Усі')}
-                            </Link>
+                            family.sections?.events !== false && (
+                                <Link
+                                    href={`${base}/events`}
+                                    className="text-xs font-semibold text-sky-400 hover:text-sky-400"
+                                >
+                                    {tr('Усі')}
+                                </Link>
+                            )
                         }
                     >
                         {events.length === 0 ? (

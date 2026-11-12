@@ -114,6 +114,7 @@ class ClanController extends Controller
     public function mvp(Request $request, Clan $clan, ClanMvp $mvp): RedirectResponse
     {
         app(Plugins::class)->ensure('clan_mvp');
+        abort_unless((bool) $clan->setting('mvp'), 404, 'Голосування вимкнено в налаштуваннях клану.');
         $data = $request->validate(['user_id' => ['required', 'integer']]);
         $mvp->vote($clan, $this->user($request), User::query()->findOrFail((int) $data['user_id']));
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Голос зараховано. Переможця оголосимо на початку наступного місяця.']);
@@ -151,6 +152,7 @@ class ClanController extends Controller
                 'description' => $clan->description,
                 'rules' => $clan->hasFeature('rules') ? $clan->rules : null,
                 'features' => $clan->features,
+                'options' => $clan->resolvedSettings(),
                 'currency' => $clan->currency,
                 'treasury' => $member && $clan->hasFeature('treasury') ? $clan->treasury : null,
                 'owner' => $clan->owner?->toCard(),
@@ -164,14 +166,14 @@ class ClanController extends Controller
             ],
             'me' => $me ? [...$me->toCard($clan), 'can' => $can] : null,
             // «Гравець місяця»: переможець минулого місяця й голосування за поточний.
-            'mvp' => $member && app(Plugins::class)->on('clan_mvp') ? app(ClanMvp::class)->state($clan, $user) : null,
+            'mvp' => $member && $clan->setting('mvp') && app(Plugins::class)->on('clan_mvp') ? app(ClanMvp::class)->state($clan, $user) : null,
             'application' => $application ? ['applied_at' => $application->created_at->toIso8601String()] : null,
             'features' => Clan::FEATURES,
             'join_modes' => Clan::JOIN_MODES,
             'members' => $member
                 ? $clan->activeMembers()->with('user')->orderByDesc('rank')->orderBy('joined_at')->get()->map(fn (ClanMember $m) => [
                     ...$m->toCard($clan),
-                    'away' => $m->user !== null && ($m->user->last_seen_at === null || $m->user->last_seen_at->lt(now()->subDays(ComeBackNudge::DAYS))),
+                    'away' => $clan->setting('nudge') && $m->user !== null && ($m->user->last_seen_at === null || $m->user->last_seen_at->lt(now()->subDays(ComeBackNudge::DAYS))),
                 ])->values()
                 : [],
             'applications' => $can['members.manage']
@@ -304,6 +306,14 @@ class ClanController extends Controller
             'permissions' => ['sometimes', 'array'],
             'permissions.*' => ['array'],
             'permissions.*.*' => ['integer', 'between:1,4'],
+            'settings' => ['sometimes', 'array'],
+            'settings.mvp' => ['sometimes', 'boolean'],
+            'settings.bracket' => ['sometimes', 'boolean'],
+            'settings.nudge' => ['sometimes', 'boolean'],
+            'settings.listen' => ['sometimes', 'boolean'],
+            'settings.shifts_self_claim' => ['sometimes', 'boolean'],
+            'settings.shifts_week_limit' => ['sometimes', 'integer', 'min:0', 'max:21'],
+            'settings.shifts_remind' => ['sometimes', 'boolean'],
             'logo' => ['nullable', 'image', 'max:5120'],
         ], ['tag.regex' => 'Тег — лише літери й цифри без пробілів.']);
 
@@ -370,7 +380,7 @@ class ClanController extends Controller
     public function shift(Request $request, Clan $clan): RedirectResponse
     {
         $this->feature($clan, 'shifts');
-        $actor = $this->clans->authorize($this->me($request, $clan), $clan, 'events.manage');
+        $actor = $this->clans->authorize($this->me($request, $clan), $clan, 'shifts.manage');
         $data = $request->validate([
             'title' => ['required', 'string', 'min:2', 'max:80'],
             'starts_at' => ['required', 'date'],
@@ -403,6 +413,14 @@ class ClanController extends Controller
         switch ($data['action']) {
             case 'claim':
                 abort_unless($shift->user_id === null && $shift->ends_at->isFuture(), 422, 'Цю зміну вже взяли.');
+                abort_unless($clan->setting('shifts_self_claim') || $this->clans->can($me, $clan, 'shifts.manage'), 403, 'Зміни в цьому клані призначає керівництво.');
+                $limit = (int) $clan->setting('shifts_week_limit');
+                if ($limit > 0) {
+                    $from = $shift->starts_at->copy()->timezone('Europe/Kyiv')->startOfWeek()->utc();
+                    $taken = ClanShift::query()->where('clan_id', $clan->id)->where('user_id', $me->user_id)
+                        ->where('starts_at', '>=', $from)->where('starts_at', '<', $from->copy()->addWeek())->count();
+                    abort_if($taken >= $limit, 422, "Ліміт клану — {$limit} змін на тиждень.");
+                }
                 $shift->update(['user_id' => $me->user_id]);
                 $message = 'Зміну взято.';
                 break;
@@ -412,12 +430,12 @@ class ClanController extends Controller
                 $message = 'Зміну віддано — вона знову вільна.';
                 break;
             case 'assign':
-                $this->clans->authorize($me, $clan, 'events.manage');
+                $this->clans->authorize($me, $clan, 'shifts.manage');
                 $shift->update(['user_id' => $this->shiftUser($clan, $data['user_id'] ?? null)]);
                 $message = 'Призначено.';
                 break;
             default:
-                $this->clans->authorize($me, $clan, 'events.manage');
+                $this->clans->authorize($me, $clan, 'shifts.manage');
                 $shift->delete();
                 $message = 'Зміну видалено.';
         }
@@ -429,6 +447,7 @@ class ClanController extends Controller
     public function bracket(Request $request, Clan $clan, ClanEvent $event): RedirectResponse
     {
         $this->feature($clan, 'events');
+        abort_unless((bool) $clan->setting('bracket'), 404, 'Турнірну сітку вимкнено в налаштуваннях клану.');
         $data = $request->validate([
             'teams' => ['required', 'array', 'size:4'],
             'teams.*' => ['required', 'string', 'max:40'],
@@ -580,6 +599,7 @@ class ClanController extends Controller
     public function nudge(Request $request, Clan $clan, ClanMember $member): RedirectResponse
     {
         abort_unless($member->clan_id === $clan->id && $member->status === ClanMember::STATUS_ACTIVE, 404);
+        abort_unless((bool) $clan->setting('nudge'), 404, 'Нагадування вимкнено в налаштуваннях клану.');
         $actor = $this->clans->authorize($this->me($request, $clan), $clan, 'members.manage');
         $target = User::query()->findOrFail($member->user_id);
         if (! ComeBackNudge::allowed($target, 'clan.'.$clan->id)) {

@@ -97,7 +97,7 @@ export function FamilyShell({
             href: `${base}/warehouse`,
             icon: Package,
             badge: badges?.alerts,
-            visible: true,
+            visible: family.sections?.warehouse !== false,
         },
         {
             section: 'members',
@@ -119,7 +119,7 @@ export function FamilyShell({
             label: tr('Події'),
             href: `${base}/events`,
             icon: CalendarDays,
-            visible: true,
+            visible: family.sections?.events !== false,
         },
         {
             section: 'shifts',
@@ -133,7 +133,7 @@ export function FamilyShell({
             label: tr('Рейтинг'),
             href: `${base}/rating`,
             icon: BarChart3,
-            visible: true,
+            visible: family.sections?.rating !== false,
         },
         {
             section: 'audit',

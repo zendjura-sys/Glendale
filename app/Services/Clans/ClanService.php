@@ -269,6 +269,24 @@ class ClanService
             $fill['permissions'] = $matrix;
         }
 
+        if (isset($data['settings']) && is_array($data['settings'])) {
+            $before = $clan->resolvedSettings();
+            $next = [];
+            foreach (Clan::DEFAULT_SETTINGS as $key => $default) {
+                $value = $data['settings'][$key] ?? $before[$key];
+                $next[$key] = is_bool($default) ? (bool) $value : max(0, min(21, (int) $value));
+            }
+            $fill['settings'] = $next;
+            $changed = array_keys(array_diff_assoc(array_map('intval', $next), array_map('intval', $before)));
+            if ($changed !== []) {
+                $labels = ['mvp' => 'Гравець місяця', 'bracket' => 'Турнірна сітка', 'nudge' => 'Нагадування неактивним', 'listen' => 'Слухати разом',
+                    'shifts_self_claim' => 'Зміни: самі беруть', 'shifts_week_limit' => 'Зміни: ліміт на тиждень', 'shifts_remind' => 'Зміни: нагадування'];
+                $this->log($clan, $actor->user, 'settings', 'Функції: '.implode(', ', array_map(
+                    fn (string $k) => ($labels[$k] ?? $k).' → '.(is_bool($next[$k]) ? ($next[$k] ? 'увімк.' : 'вимк.') : $next[$k]),
+                    $changed,
+                )));
+            }
+        }
         $clan->update($fill);
         if ($logo) {
             $old = $clan->logo_path;

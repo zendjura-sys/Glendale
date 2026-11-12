@@ -22,7 +22,6 @@ class FamilyShiftController extends FamilyBaseController
     public function index(Request $request, Family $family): Response
     {
         $member = $this->member($request, $family);
-        $this->enabled($family);
         $tz = 'Europe/Kyiv';
         $offset = max(-8, min(12, (int) $request->query('week', 0)));
         $start = CarbonImmutable::now($tz)->startOfWeek()->addWeeks($offset);
@@ -45,6 +44,11 @@ class FamilyShiftController extends FamilyBaseController
             'week' => ['offset' => $offset, 'start' => $start->toDateString()],
             'shifts' => $shifts,
             'roster' => $this->roster($family),
+            'rules' => [
+                'self_claim' => (bool) $family->setting('shifts.self_claim', true),
+                'week_limit' => (int) $family->setting('shifts.week_limit', 0),
+                'remind' => (bool) $family->setting('shifts.remind', true),
+            ],
             'my_week' => FamilyShift::query()->where('family_id', $family->id)->where('member_id', $member->id)
                 ->where('starts_at', '>=', $start->utc())->where('starts_at', '<', $end->utc())->count(),
         ]);
@@ -53,7 +57,6 @@ class FamilyShiftController extends FamilyBaseController
     public function store(Request $request, Family $family, FamilyAudit $audit): RedirectResponse
     {
         $actor = $this->member($request, $family, 'events.manage', write: true);
-        $this->enabled($family);
         $data = $request->validate([
             'title' => ['required', 'string', 'min:2', 'max:80'],
             'note' => ['nullable', 'string', 'max:200'],
@@ -90,7 +93,6 @@ class FamilyShiftController extends FamilyBaseController
     public function assign(Request $request, Family $family, FamilyShift $shift, FamilyAudit $audit): RedirectResponse
     {
         $actor = $this->member($request, $family, 'events.manage', write: true);
-        $this->enabled($family);
         abort_unless($shift->family_id === $family->id, 404);
         $assignee = $this->assignee($family, $request->integer('member_id') ?: null);
         $shift->update(['member_id' => $assignee?->id]);
@@ -103,10 +105,17 @@ class FamilyShiftController extends FamilyBaseController
     public function claim(Request $request, Family $family, FamilyShift $shift, FamilyAudit $audit): RedirectResponse
     {
         $member = $this->member($request, $family, write: true);
-        $this->enabled($family);
         abort_unless($shift->family_id === $family->id, 404);
         abort_if($shift->member_id !== null, 422, 'Зміну вже хтось узяв.');
         abort_if($shift->ends_at->isPast(), 422, 'Зміна вже минула.');
+        abort_unless((bool) $family->setting('shifts.self_claim', true) || $this->gate->can($member, $family, 'events.manage'), 403, 'Зміни в цій сім’ї призначає керівництво.');
+        $limit = (int) $family->setting('shifts.week_limit', 0);
+        if ($limit > 0) {
+            $from = $shift->starts_at->copy()->timezone('Europe/Kyiv')->startOfWeek()->utc();
+            $taken = FamilyShift::query()->where('family_id', $family->id)->where('member_id', $member->id)
+                ->where('starts_at', '>=', $from)->where('starts_at', '<', $from->copy()->addWeek())->count();
+            abort_if($taken >= $limit, 422, "Ліміт сім’ї — {$limit} змін на тиждень.");
+        }
         $shift->update(['member_id' => $member->id]);
         $audit->log($family, 'SHIFT_CLAIM', $member, null, ['shift_id' => $shift->id, 'title' => $shift->title]);
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Зміна ваша.']);
@@ -118,7 +127,6 @@ class FamilyShiftController extends FamilyBaseController
     public function release(Request $request, Family $family, FamilyShift $shift, FamilyAudit $audit): RedirectResponse
     {
         $member = $this->member($request, $family, write: true);
-        $this->enabled($family);
         abort_unless($shift->family_id === $family->id && $shift->member_id === $member->id, 403);
         abort_if($shift->starts_at->isPast(), 422, 'Зміна вже почалась — домовтеся з керівництвом.');
         $shift->update(['member_id' => null]);
@@ -130,18 +138,11 @@ class FamilyShiftController extends FamilyBaseController
     public function destroy(Request $request, Family $family, FamilyShift $shift, FamilyAudit $audit): RedirectResponse
     {
         $actor = $this->member($request, $family, 'events.manage', write: true);
-        $this->enabled($family);
         abort_unless($shift->family_id === $family->id, 404);
         $audit->log($family, 'SHIFT_DELETE', $actor, null, ['shift_id' => $shift->id, 'title' => $shift->title, 'starts_at' => $shift->starts_at->toIso8601String()]);
         $shift->delete();
 
         return back();
-    }
-
-    /** Лідер може вимкнути «Зміни» в налаштуваннях сім’ї. */
-    private function enabled(Family $family): void
-    {
-        abort_unless((bool) $family->setting('shifts.enabled', true), 404, 'Розділ «Зміни» в цій сім’ї вимкнено.');
     }
 
     private function assignee(Family $family, ?int $memberId): ?FamilyMember

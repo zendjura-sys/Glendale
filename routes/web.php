@@ -1010,11 +1010,11 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
             Route::post('bank/deposits/{deposit}/close', [Families\FamilyBankController::class, 'closeDeposit'])->whereNumber('deposit')->name('deposits.close');
             Route::post('bank/manual', [Families\FamilyBankController::class, 'manual'])->middleware('throttle:30,1')->name('bank.manual');
 
-            Route::get('warehouse', [Families\FamilyWarehouseController::class, 'index'])->name('warehouse');
-            Route::post('warehouse/move', [Families\FamilyWarehouseController::class, 'move'])->middleware('throttle:60,1')->name('warehouse.move');
-            Route::post('warehouse/items', [Families\FamilyWarehouseController::class, 'storeItem'])->name('warehouse.items.store');
-            Route::patch('warehouse/items/{item}', [Families\FamilyWarehouseController::class, 'updateItem'])->whereNumber('item')->name('warehouse.items.update');
-            Route::get('warehouse/logs/{log}/proof', [Families\FamilyWarehouseController::class, 'proof'])->whereNumber('log')->name('warehouse.proof');
+            Route::get('warehouse', [Families\FamilyWarehouseController::class, 'index'])->middleware('family.section:warehouse')->name('warehouse');
+            Route::post('warehouse/move', [Families\FamilyWarehouseController::class, 'move'])->middleware('family.section:warehouse')->middleware('throttle:60,1')->name('warehouse.move');
+            Route::post('warehouse/items', [Families\FamilyWarehouseController::class, 'storeItem'])->middleware('family.section:warehouse')->name('warehouse.items.store');
+            Route::patch('warehouse/items/{item}', [Families\FamilyWarehouseController::class, 'updateItem'])->middleware('family.section:warehouse')->whereNumber('item')->name('warehouse.items.update');
+            Route::get('warehouse/logs/{log}/proof', [Families\FamilyWarehouseController::class, 'proof'])->middleware('family.section:warehouse')->whereNumber('log')->name('warehouse.proof');
 
             Route::get('members', [Families\FamilyMemberController::class, 'index'])->name('members');
             Route::put('ranks', [Families\FamilyMemberController::class, 'ranks'])->name('ranks.update');
@@ -1031,20 +1031,20 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
             Route::post('discipline', [Families\FamilyDisciplineController::class, 'store'])->middleware('throttle:30,1')->name('discipline.store');
             Route::post('discipline/{punishment}/revoke', [Families\FamilyDisciplineController::class, 'revoke'])->whereNumber('punishment')->name('discipline.revoke');
 
-            Route::get('events', [Families\FamilyEventController::class, 'index'])->name('events');
-            Route::post('events', [Families\FamilyEventController::class, 'store'])->middleware('throttle:20,1')->name('events.store');
-            Route::post('events/{event}/rsvp', [Families\FamilyEventController::class, 'rsvp'])->whereNumber('event')->name('events.rsvp');
-            Route::post('events/{event}/close', [Families\FamilyEventController::class, 'close'])->whereNumber('event')->name('events.close');
-            Route::post('events/{event}/checkin', [Families\FamilyEventController::class, 'checkIn'])->whereNumber('event')->middleware('throttle:10,1')->name('events.checkin');
-            Route::post('events/{event}/album', [Families\FamilyEventController::class, 'album'])->whereNumber('event')->middleware('throttle:10,1')->name('events.album');
-            Route::get('shifts', [Families\FamilyShiftController::class, 'index'])->name('shifts');
-            Route::post('shifts', [Families\FamilyShiftController::class, 'store'])->middleware('throttle:30,1')->name('shifts.store');
-            Route::post('shifts/{shift}/assign', [Families\FamilyShiftController::class, 'assign'])->whereNumber('shift')->name('shifts.assign');
-            Route::post('shifts/{shift}/claim', [Families\FamilyShiftController::class, 'claim'])->whereNumber('shift')->middleware('throttle:30,1')->name('shifts.claim');
-            Route::post('shifts/{shift}/release', [Families\FamilyShiftController::class, 'release'])->whereNumber('shift')->name('shifts.release');
-            Route::delete('shifts/{shift}', [Families\FamilyShiftController::class, 'destroy'])->whereNumber('shift')->name('shifts.destroy');
-            Route::get('rating', [Families\FamilyEventController::class, 'rating'])->name('rating');
-            Route::post('rating/season', [Families\FamilyEventController::class, 'endSeason'])->middleware('throttle:5,1')->name('rating.season');
+            Route::get('events', [Families\FamilyEventController::class, 'index'])->middleware('family.section:events')->name('events');
+            Route::post('events', [Families\FamilyEventController::class, 'store'])->middleware('family.section:events')->middleware('throttle:20,1')->name('events.store');
+            Route::post('events/{event}/rsvp', [Families\FamilyEventController::class, 'rsvp'])->middleware('family.section:events')->whereNumber('event')->name('events.rsvp');
+            Route::post('events/{event}/close', [Families\FamilyEventController::class, 'close'])->middleware('family.section:events')->whereNumber('event')->name('events.close');
+            Route::post('events/{event}/checkin', [Families\FamilyEventController::class, 'checkIn'])->middleware('family.section:events')->whereNumber('event')->middleware('throttle:10,1')->name('events.checkin');
+            Route::post('events/{event}/album', [Families\FamilyEventController::class, 'album'])->middleware('family.section:events')->whereNumber('event')->middleware('throttle:10,1')->name('events.album');
+            Route::get('shifts', [Families\FamilyShiftController::class, 'index'])->middleware('family.section:shifts')->name('shifts');
+            Route::post('shifts', [Families\FamilyShiftController::class, 'store'])->middleware('family.section:shifts')->middleware('throttle:30,1')->name('shifts.store');
+            Route::post('shifts/{shift}/assign', [Families\FamilyShiftController::class, 'assign'])->middleware('family.section:shifts')->whereNumber('shift')->name('shifts.assign');
+            Route::post('shifts/{shift}/claim', [Families\FamilyShiftController::class, 'claim'])->middleware('family.section:shifts')->whereNumber('shift')->middleware('throttle:30,1')->name('shifts.claim');
+            Route::post('shifts/{shift}/release', [Families\FamilyShiftController::class, 'release'])->middleware('family.section:shifts')->whereNumber('shift')->name('shifts.release');
+            Route::delete('shifts/{shift}', [Families\FamilyShiftController::class, 'destroy'])->middleware('family.section:shifts')->whereNumber('shift')->name('shifts.destroy');
+            Route::get('rating', [Families\FamilyEventController::class, 'rating'])->middleware('family.section:rating')->name('rating');
+            Route::post('rating/season', [Families\FamilyEventController::class, 'endSeason'])->middleware('family.section:rating')->middleware('throttle:5,1')->name('rating.season');
 
             Route::get('audit', [Families\FamilyAuditController::class, 'index'])->name('audit');
 
