@@ -47,6 +47,8 @@ type State = {
 type Style = {
     name?: string;
     frame?: string;
+    motion?: string;
+    theme?: string;
     accent?: string;
     fx?: string;
     header?: string;
@@ -61,6 +63,8 @@ type Props = {
         accents: Record<string, string[]>;
         effects: string[];
         headers: string[];
+        motions?: string[];
+        themes?: Record<string, string[]>;
     };
     products: Record<string, { available: boolean }>;
     families: (FamilyCard & { state: State; style: Style })[];
@@ -391,6 +395,8 @@ function StyleEditor({
         accent: style.accent ?? '',
         fx: style.fx ?? '',
         header: style.header ?? '',
+        motion: style.motion ?? '',
+        theme: style.theme ?? '',
     });
     const mark = {
         name: form.data.name ? (options.names[form.data.name] ?? null) : null,
@@ -398,10 +404,16 @@ function StyleEditor({
             ? (options.frames[form.data.frame] ?? null)
             : null,
         fx: (form.data.fx || null) as PlusMark['fx'],
+        motion: (form.data.motion || null) as PlusMark['motion'],
     };
     const nameProps = plusNameProps(mark);
-    const accentColors = (form.data.accent &&
-        options.accents[form.data.accent]) || ['#6366f1', '#a855f7', '#22d3ee'];
+    const accentColors = (form.data.theme &&
+        options.themes?.[form.data.theme]) ||
+        (form.data.accent && options.accents[form.data.accent]) || [
+            '#6366f1',
+            '#a855f7',
+            '#22d3ee',
+        ];
     const submit = (event: FormEvent) => {
         event.preventDefault();
         form.put('/plus/style', { preserveScroll: true });
@@ -469,6 +481,15 @@ function StyleEditor({
                     ))}
                 </div>
             </div>
+            {form.data.frame && (options.motions ?? []).length > 0 && (
+                <EffectPicker
+                    label={tr('Рух рамки')}
+                    value={form.data.motion ?? ''}
+                    options={options.motions ?? []}
+                    names={FRAME_MOTION()}
+                    onChange={(value) => form.setData('motion', value)}
+                />
+            )}
             <EffectPicker
                 label={tr('Анімація ніку')}
                 value={form.data.fx ?? ''}
@@ -476,12 +497,48 @@ function StyleEditor({
                 names={NAME_FX()}
                 onChange={(value) => form.setData('fx', value)}
             />
-            <AccentPicker
-                value={form.data.accent ?? ''}
-                accents={options.accents}
-                onChange={(value) => form.setData('accent', value)}
-                label={tr('Кольори сторінки профілю')}
-            />
+            {options.themes && (
+                <EffectPicker
+                    label={tr('Ексклюзивна тема профілю')}
+                    value={form.data.theme ?? ''}
+                    options={Object.keys(options.themes)}
+                    names={PROFILE_THEMES()}
+                    onChange={(value) => form.setData('theme', value)}
+                    preview={(key) => {
+                        const colors = options.themes?.[key];
+
+                        return (
+                            <span
+                                className={cn(
+                                    'relative block h-12 w-full overflow-hidden rounded-lg',
+                                    !colors && 'gc-solid-2',
+                                )}
+                                style={
+                                    colors
+                                        ? {
+                                              backgroundImage: `radial-gradient(circle at 20% 20%, ${colors[0]} 0%, transparent 55%), radial-gradient(circle at 80% 30%, ${colors[1]} 0%, transparent 55%), radial-gradient(circle at 50% 100%, ${colors[2]} 0%, transparent 60%)`,
+                                          }
+                                        : undefined
+                                }
+                            >
+                                {colors && (
+                                    <span
+                                        className={`profile-pattern profile-pattern-${THEME_PATTERN[key] ?? 'grid'}`}
+                                    />
+                                )}
+                            </span>
+                        );
+                    }}
+                />
+            )}
+            {!form.data.theme && (
+                <AccentPicker
+                    value={form.data.accent ?? ''}
+                    accents={options.accents}
+                    onChange={(value) => form.setData('accent', value)}
+                    label={tr('Кольори сторінки профілю')}
+                />
+            )}
             <EffectPicker
                 label={tr('Ефект шапки профілю')}
                 value={form.data.header ?? ''}
@@ -527,6 +584,33 @@ const NAME_FX = (): Record<string, string> => ({
     neon: tr('Неон'),
     rainbow: tr('Веселка'),
 });
+
+const FRAME_MOTION = (): Record<string, string> => ({
+    '': tr('Статична'),
+    spin: tr('Перелив по колу'),
+    pulse: tr('Дихання світла'),
+    glint: tr('Відблиск'),
+});
+
+const PROFILE_THEMES = (): Record<string, string> => ({
+    '': tr('Без теми'),
+    glacier: tr('Льодовик'),
+    midnight: tr('Північ'),
+    sakura: tr('Сакура'),
+    toxic: tr('Токсик'),
+    ember: tr('Жар'),
+    gold: tr('Золото'),
+});
+
+/** Візерунок теми (як у config/plus.php) — для прев’ю. */
+const THEME_PATTERN: Record<string, string> = {
+    glacier: 'grid',
+    midnight: 'stars',
+    sakura: 'waves',
+    toxic: 'hex',
+    ember: 'waves',
+    gold: 'stars',
+};
 
 const HEADER_FX = (): Record<string, string> => ({
     '': tr('Без ефекту'),

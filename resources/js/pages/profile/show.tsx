@@ -146,6 +146,8 @@ type Profile = UserCard & {
     has_tiers?: boolean;
     /** GameCon+: кольори сторінки. */
     accent?: string[] | null;
+    /** Візерунок ексклюзивної теми GameCon+. */
+    pattern?: 'grid' | 'stars' | 'waves' | 'hex' | null;
     /** GameCon+: ефект шапки — сяйво внизу обкладинки або жива рамка. */
     header_fx?: 'aurora' | 'rim' | null;
     /** GameCon+: відеофон власника (ID YouTube) — фон сторінки й для гостей. */
@@ -581,6 +583,12 @@ export default function ProfileShow({
                             />
                         ) : (
                             <div className="size-full bg-[radial-gradient(circle_at_20%_20%,#4f8bff_0%,transparent_45%),radial-gradient(circle_at_80%_30%,#22d3ee_0%,transparent_45%),radial-gradient(circle_at_50%_100%,#0ea5e9_0%,transparent_50%)] opacity-80" />
+                        )}
+                        {profile.pattern && (
+                            <div
+                                aria-hidden
+                                className={`profile-pattern profile-pattern-${profile.pattern}`}
+                            />
                         )}
                         {profile.header_fx === 'aurora' && (
                             <div

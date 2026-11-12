@@ -120,6 +120,8 @@ class PlusController extends Controller
             'accent' => ['nullable', 'string', 'max:16'],
             'fx' => ['nullable', 'string', 'max:16'],
             'header' => ['nullable', 'string', 'max:16'],
+            'motion' => ['nullable', 'string', 'max:16'],
+            'theme' => ['nullable', 'string', 'max:16'],
         ]);
         $user->forceFill(['plus_style' => PlusStyle::clean($data) ?: null])->save();
 

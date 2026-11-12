@@ -166,7 +166,9 @@ class ProfileController extends Controller
                 'has_tiers' => app(Plugins::class)->on('author_subscriptions') && DB::table('author_tiers')->where('user_id', $user->id)->exists(),
                 'cover_video_url' => $user->cover_video_path && $user->isPlus() && app(Plugins::class)->on('plus_video_cover') ? Storage::disk('public')->url($user->cover_video_path) : null,
                 // GameCon+: власні кольори сторінки (з палітр сайту); інакше — кольори улюбленої гри.
-                'accent' => ($user->isPlus() ? Palette::colors((string) ($user->plus_style['accent'] ?? '')) : null) ?? GameTheme::colors($user),
+                'accent' => ($user->isPlus() ? (PlusStyle::theme($user->plus_style)['colors'] ?? Palette::colors((string) ($user->plus_style['accent'] ?? ''))) : null) ?? GameTheme::colors($user),
+                // GameCon+: ексклюзивна тема — тонкий візерунок на обкладинці.
+                'pattern' => $user->isPlus() ? (PlusStyle::theme($user->plus_style)['pattern'] ?? null) : null,
                 // Ефект шапки: з GameCon+ або вдягнутий із сезонного пропуску.
                 'header_fx' => ($user->isPlus() ? PlusStyle::header($user->plus_style) : null) ?? SeasonPass::header($user->cosmetics),
                 // GameCon+: власний відеофон власника видно й гостям його сторінки.

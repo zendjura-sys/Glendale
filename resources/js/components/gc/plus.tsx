@@ -127,5 +127,7 @@ export function plusFrameStyle(
 
     return {
         backgroundImage: `linear-gradient(135deg, ${colors.join(', ')})`,
+        // Для руху рамки «spin»: конічний перелив тих самих кольорів.
+        ['--gc-frame-conic' as string]: `conic-gradient(from var(--gc-frame-angle, 0deg), ${colors.join(', ')}, ${colors[0]})`,
     };
 }

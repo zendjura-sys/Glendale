@@ -119,7 +119,12 @@ export function UserAvatar({
         >
             {!ring && frame ? (
                 <span
-                    className="flex size-full rounded-full p-[2px]"
+                    className={cn(
+                        'flex size-full rounded-full p-[2px]',
+                        'motion' in frame &&
+                            frame.motion &&
+                            `gc-frame-${frame.motion}`,
+                    )}
                     style={plusFrameStyle(frame)}
                 >
                     <span className="flex size-full overflow-hidden rounded-full bg-void p-[1.5px]">

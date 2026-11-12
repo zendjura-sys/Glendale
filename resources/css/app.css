@@ -6469,3 +6469,95 @@ html[data-theme='dark'] .am.am-in-site {
         animation: none;
     }
 }
+
+/* ---------- GameCon+: рух рамки аватара ---------- */
+@property --gc-frame-angle {
+    syntax: '<angle>';
+    initial-value: 0deg;
+    inherits: false;
+}
+.gc-frame-spin {
+    background-image: var(--gc-frame-conic) !important;
+    animation: gc-frame-spin 6s linear infinite;
+}
+@keyframes gc-frame-spin {
+    to {
+        --gc-frame-angle: 360deg;
+    }
+}
+.gc-frame-pulse {
+    animation: gc-frame-pulse 3.2s ease-in-out infinite;
+}
+@keyframes gc-frame-pulse {
+    0%,
+    100% {
+        box-shadow: 0 0 0 0 color-mix(in oklab, var(--primary) 0%, transparent);
+    }
+    50% {
+        box-shadow: 0 0 10px 1px color-mix(in oklab, var(--primary) 55%, transparent);
+    }
+}
+.gc-frame-glint {
+    position: relative;
+    overflow: hidden;
+}
+.gc-frame-glint::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(115deg, transparent 35%, rgb(255 255 255 / 0.75) 50%, transparent 65%) no-repeat;
+    background-size: 250% 100%;
+    animation: gc-frame-glint 4.5s ease-in-out infinite;
+    pointer-events: none;
+    mix-blend-mode: overlay;
+}
+@keyframes gc-frame-glint {
+    0%,
+    60% {
+        background-position: 150% 0;
+    }
+    100% {
+        background-position: -50% 0;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .gc-frame-spin,
+    .gc-frame-pulse,
+    .gc-frame-glint::after {
+        animation: none;
+    }
+}
+
+/* ---------- GameCon+: візерунки тем профілю (тонко, поверх обкладинки) ---------- */
+.profile-pattern {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    pointer-events: none;
+    opacity: 0.18;
+    mix-blend-mode: overlay;
+}
+.profile-pattern-grid {
+    background-image:
+        linear-gradient(rgb(255 255 255 / 0.6) 1px, transparent 1px),
+        linear-gradient(90deg, rgb(255 255 255 / 0.6) 1px, transparent 1px);
+    background-size: 28px 28px;
+}
+.profile-pattern-stars {
+    background-image:
+        radial-gradient(circle, rgb(255 255 255 / 0.9) 1px, transparent 1.5px),
+        radial-gradient(circle, rgb(255 255 255 / 0.6) 1px, transparent 1.5px);
+    background-size: 46px 46px, 73px 73px;
+    background-position: 0 0, 21px 33px;
+}
+.profile-pattern-waves {
+    background-image: repeating-radial-gradient(circle at 0 100%, transparent 0 18px, rgb(255 255 255 / 0.55) 19px 20px);
+}
+.profile-pattern-hex {
+    background-image:
+        linear-gradient(30deg, rgb(255 255 255 / 0.5) 12%, transparent 12.5%, transparent 87%, rgb(255 255 255 / 0.5) 87.5%),
+        linear-gradient(150deg, rgb(255 255 255 / 0.5) 12%, transparent 12.5%, transparent 87%, rgb(255 255 255 / 0.5) 87.5%);
+    background-size: 40px 70px;
+    opacity: 0.12;
+}

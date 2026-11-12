@@ -291,6 +291,8 @@ export type PlusMark = {
     frame: string[] | null;
     /** Анімація ніку: flow — перелив, shine — відблиск. */
     fx?: 'flow' | 'shine' | 'neon' | 'rainbow' | null;
+    /** Рух рамки аватара (GameCon+). */
+    motion?: 'spin' | 'pulse' | 'glint' | null;
 };
 
 /** Роль-плашка користувача («old», «Big Sponsor»). */

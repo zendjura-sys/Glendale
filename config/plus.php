@@ -97,7 +97,26 @@ return [
         'gold' => ['#f59e0b', '#fde68a'],
         'ice' => ['#38bdf8', '#e0f2fe'],
         'ember' => ['#f43f5e', '#f97316'],
+        // Ексклюзивні рамки GameCon+ (з багатоколірним переливом).
+        'aurora' => ['#22d3ee', '#a855f7', '#f472b6'],
+        'toxic' => ['#a3e635', '#22c55e', '#14b8a6'],
+        'void' => ['#312e81', '#6366f1', '#0f172a'],
+        'sakura' => ['#fbcfe8', '#f472b6', '#fda4af'],
+        'carbon' => ['#cbd5e1', '#475569', '#0f172a'],
         'season' => [],
+    ],
+
+    // Рух рамки аватара: spin — перелив по колу, pulse — м’яке дихання світла, glint — відблиск. З «менше руху» — статично.
+    'frame_motions' => ['spin', 'pulse', 'glint'],
+
+    // Ексклюзивні теми профілю: три кольори сторінки (шапка, відсвіт) і тонкий візерунок на обкладинці.
+    'themes' => [
+        'glacier' => ['colors' => ['#38bdf8', '#e0f2fe', '#0ea5e9'], 'pattern' => 'grid'],
+        'midnight' => ['colors' => ['#6366f1', '#1e1b4b', '#a855f7'], 'pattern' => 'stars'],
+        'sakura' => ['colors' => ['#f472b6', '#fbcfe8', '#c084fc'], 'pattern' => 'waves'],
+        'toxic' => ['colors' => ['#a3e635', '#22c55e', '#0f766e'], 'pattern' => 'hex'],
+        'ember' => ['colors' => ['#f97316', '#ef4444', '#facc15'], 'pattern' => 'waves'],
+        'gold' => ['colors' => ['#f59e0b', '#fde68a', '#b45309'], 'pattern' => 'stars'],
     ],
 
     'season_frames' => [
