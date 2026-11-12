@@ -2,6 +2,7 @@ import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { NavigationSkeleton } from '@/components/gc/navigation-skeleton';
 import { Link, router, usePage } from '@inertiajs/react';
 import {
+    Gauge,
     Activity,
     Filter,
     DatabaseBackup,
@@ -127,6 +128,11 @@ function groups(): { title: string; items: Item[] }[] {
                     label: tr('Система'),
                     href: '/admin/system',
                     icon: DatabaseBackup,
+                },
+                {
+                    label: tr('Швидкість'),
+                    href: '/admin/vitals',
+                    icon: Gauge,
                 },
                 {
                     label: tr('Команда'),

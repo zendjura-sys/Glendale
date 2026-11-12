@@ -193,6 +193,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
 
     Route::get('feed', [FeedController::class, 'index'])->middleware('module:feed')->name('feed');
     Route::get('feed/activity', [FeedController::class, 'activity'])->middleware(['module:feed', 'throttle:60,1'])->name('feed.activity');
+    Route::get('feed/widgets', [FeedController::class, 'widgets'])->middleware('throttle:30,1')->name('feed.widgets');
     Route::get('invite', [ReferralController::class, 'index'])->name('referrals.index');
     // Оплата (лише сайт, усередині GameCon+): покупка карткою через monobank, картки, автопродовження, історія.
     Route::prefix('plus/billing')->name('billing.')->controller(BillingController::class)->group(function () {
@@ -1313,6 +1314,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::patch('families/{family:id}', [Admin\FamilyController::class, 'update'])->whereNumber('family')->name('families.update');
         Route::delete('families/{family:id}', [Admin\FamilyController::class, 'destroy'])->whereNumber('family')->name('families.destroy');
         Route::get('clans', [Admin\ClanController::class, 'index'])->name('clans.index');
+        Route::get('vitals', [Admin\VitalsController::class, 'index'])->name('vitals.index');
         Route::delete('clans/{clan:id}', [Admin\ClanController::class, 'destroy'])->whereNumber('clan')->name('clans.destroy');
         Route::post('families/voice-rooms', [Admin\VoiceTemplateController::class, 'store'])->name('voice-templates.store');
         Route::patch('families/voice-rooms/{template}', [Admin\VoiceTemplateController::class, 'update'])->name('voice-templates.update');

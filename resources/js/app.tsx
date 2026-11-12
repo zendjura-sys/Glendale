@@ -1,5 +1,6 @@
 import type { VisitOptions } from '@inertiajs/core';
 import { createInertiaApp } from '@inertiajs/react';
+import { installVitals } from '@/lib/vitals';
 import { registerOffline } from '@/lib/offline';
 import { SkipLink } from '@/components/gc/skip-link';
 import { CookieConsent } from '@/components/gc/cookie-consent';
@@ -54,6 +55,7 @@ const motionFeatures = () =>
     import('@/lib/motion-features').then((module) => module.default);
 
 installKeyboardGuard();
+installVitals();
 startSmoothScroll();
 
 const appName = import.meta.env.VITE_APP_NAME || 'GameCon';

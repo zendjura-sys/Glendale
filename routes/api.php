@@ -119,6 +119,7 @@ use App\Http\Controllers\TournamentController;
 use App\Http\Controllers\TrackController;
 use App\Http\Controllers\TrackImportController;
 use App\Http\Controllers\TranslateController;
+use App\Http\Controllers\VitalsController;
 use App\Http\Controllers\VoiceController;
 use App\Http\Controllers\WatchPartyController;
 use App\Http\Controllers\WrappedController;
@@ -140,6 +141,9 @@ Route::prefix('oauth')->group(function () {
     Route::get('userinfo', [OAuthTokenController::class, 'userinfo'])->middleware('throttle:300,1');
     Route::post('server/sync', [OAuthTokenController::class, 'sync'])->middleware('throttle:30,1');
 });
+
+// Заміри швидкості сторінок сайту з браузера (sendBeacon): без сесії, cookie й акаунта.
+Route::post('vitals', [VitalsController::class, 'store'])->middleware('throttle:30,1');
 
 Route::prefix('v1')->group(function () {
     // Мова застосунку: словник його рядків (мова — з X-Locale або Accept-Language).
@@ -601,6 +605,7 @@ Route::prefix('v1')->group(function () {
             Route::middleware('module:feed')->group(function () {
                 // Активність друзів — окрема вкладка стрічки.
                 Route::get('feed/activity', [FeedController::class, 'activity'])->middleware('throttle:60,1');
+                Route::get('feed/widgets', [FeedController::class, 'widgets'])->middleware('throttle:30,1');
                 Route::post('posts/{post}/pin', [PostController::class, 'pin'])->whereNumber('post');
                 Route::get('posts/drafts', [PostController::class, 'drafts']);
                 Route::post('posts/{post}/publish', [PostController::class, 'release'])->whereNumber('post');
