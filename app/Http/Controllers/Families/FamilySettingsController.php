@@ -29,6 +29,7 @@ class FamilySettingsController extends FamilyBaseController
 
         return $this->page($family, $member, 'families/settings', 'settings', [
             'settings' => $family->resolvedSettings(),
+            'onboarding' => ['questions' => $family->applicationQuestions(), 'steps' => $family->onboardingSteps()],
             'profile' => [
                 'name' => $family->name,
                 'tag' => $family->tag,

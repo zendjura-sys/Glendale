@@ -3,6 +3,7 @@ import {
     Bot,
     CalendarClock,
     CalendarDays,
+    ClipboardList,
     FileBarChart,
     ImagePlus,
     LayoutGrid,
@@ -22,6 +23,8 @@ import {
     SettingsNav,
 } from '@/components/gc/settings-kit';
 import { DonationJarForm } from '@/components/gc/donation-jar';
+import { OnboardingSettings } from '@/components/families/onboarding-settings';
+import type { Question, Step } from '@/components/families/onboarding-settings';
 import { useRef } from 'react';
 import type { ReactNode } from 'react';
 import { FamilyLogo } from '@/components/families/family-logo';
@@ -59,6 +62,7 @@ type Settings = {
 
 type Props = FamilyShellProps & {
     settings: Settings;
+    onboarding: { questions: Question[]; steps: Step[] };
     jar: { url: string | null; note: string | null };
     can_delete: boolean;
     profile: {
@@ -193,6 +197,11 @@ export default function FamilySettings(props: Props) {
                         label: tr('Правила й ставки'),
                         icon: SlidersHorizontal,
                     },
+                    {
+                        id: 'onboarding',
+                        label: tr('Анкета й новачки'),
+                        icon: ClipboardList,
+                    },
                     { id: 'jar', label: tr('Банка'), icon: PiggyBank },
                     { id: 'bots', label: tr('Боти й звіт'), icon: Bot },
                     ...(props.can_delete
@@ -214,6 +223,12 @@ export default function FamilySettings(props: Props) {
                 />
             </SettingsAnchor>
             <SettingsPanel action={`${base}/settings`} settings={settings} />
+            <SettingsAnchor id="onboarding">
+                <OnboardingSettings
+                    action={`${base}/settings/onboarding`}
+                    initial={props.onboarding}
+                />
+            </SettingsAnchor>
             <SettingsAnchor id="jar">
                 <DonationJarForm
                     action={`${base}/settings/jar`}

@@ -1,3 +1,5 @@
+import { OnboardingCard } from '@/components/families/onboarding-card';
+import type { OnboardingCardData } from '@/components/families/onboarding-card';
 import { Link, router } from '@inertiajs/react';
 import {
     AlertTriangle,
@@ -37,6 +39,7 @@ import type {
 import { tr } from '@/lib/i18n';
 
 type Props = FamilyShellProps & {
+    onboarding?: OnboardingCardData | null;
     stats: {
         week_earned: number;
         week_total: number;
@@ -107,6 +110,10 @@ export default function FamilyOverview(props: Props) {
                     url={`${base}/invite-link`}
                     className="gc-solid inline-flex h-10 w-fit items-center gap-2 rounded-xl px-3.5 text-sm text-white/75 hover:text-white"
                 />
+            )}
+
+            {props.onboarding && (
+                <OnboardingCard base={base} data={props.onboarding} />
             )}
 
             <DonationJarCard

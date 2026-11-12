@@ -64,6 +64,8 @@ class FamilyAuditLog extends Model
         'SHIFT_CLAIM' => 'Зміну взято',
         'SHIFT_RELEASE' => 'Зміну віддано',
         'SHIFT_DELETE' => 'Зміну видалено',
+        'ONBOARDING_UPDATE' => 'Анкету чи чек-лист новачка змінено',
+        'ONBOARDING_DONE' => 'Новачок пройшов чек-лист',
         'EVENT_CLOSE' => 'Підсумок події',
         'WEBHOOKS_UPDATE' => 'Налаштування бота',
         'DIGEST_SENT' => 'Тижневий звіт виплат',

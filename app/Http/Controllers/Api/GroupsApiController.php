@@ -292,7 +292,9 @@ class GroupsApiController extends ApiController
             ])->values();
         $applications = $can['members.manage']
             ? FamilyMember::query()->with('user')->where('family_id', $family->id)->where('status', FamilyMember::STATUS_PENDING)->latest('id')->get()
-                ->map(fn (FamilyMember $m) => [...$m->toCard($family), 'note' => $m->application_note])->values()
+                ->map(fn (FamilyMember $m) => [...$m->toCard($family), 'note' => $m->application_note,
+                    'answers' => collect($family->applicationQuestions())->map(fn (array $q) => ['question' => $q['text'], 'answer' => $m->answers[$q['id']] ?? null])
+                        ->filter(fn (array $a) => $a['answer'] !== null)->values()])->values()
             : [];
 
         return response()->json([

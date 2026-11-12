@@ -27,6 +27,8 @@ type Props = {
     } | null;
     blocked: { username: string; name: string }[];
     can_block: boolean;
+    /** Анкета сім’ї: питання, на які відповідає кандидат. */
+    questions?: { id: string; text: string; required: boolean }[];
     /** Банка Monobank сім’ї (відкладений проп). */
     donation?: DonationJar | null;
 };
@@ -38,8 +40,18 @@ export default function FamilyPublic({
     blocked,
     can_block,
     donation,
+    questions = [],
 }: Props) {
-    const form = useForm({ rp_nickname: '', static_id: '', note: '' });
+    const form = useForm({
+        rp_nickname: '',
+        static_id: '',
+        note: '',
+        answers: {} as Record<string, string>,
+    });
+    const errors = form.errors as Record<string, string>;
+    const unanswered = questions.some(
+        (q) => q.required && !(form.data.answers[q.id] ?? '').trim(),
+    );
     const pending = application?.status === 'pending';
     const canApply =
         family.status === 'verified' &&
@@ -238,6 +250,48 @@ export default function FamilyPublic({
                                         className={cn(inputClass, 'font-mono')}
                                     />
                                 </Field>
+                                {questions.length > 0 && (
+                                    <div className="space-y-3 rounded-2xl bg-white/[0.04] p-3">
+                                        <p className="text-xs font-semibold text-white/55">
+                                            {tr('Анкета сім’ї')}
+                                        </p>
+                                        {questions.map((q) => (
+                                            <Field
+                                                key={q.id}
+                                                label={
+                                                    q.required
+                                                        ? `${q.text} *`
+                                                        : q.text
+                                                }
+                                                error={
+                                                    errors[`answers.${q.id}`]
+                                                }
+                                            >
+                                                <textarea
+                                                    value={
+                                                        form.data.answers[
+                                                            q.id
+                                                        ] ?? ''
+                                                    }
+                                                    onChange={(e) =>
+                                                        form.setData(
+                                                            'answers',
+                                                            {
+                                                                ...form.data
+                                                                    .answers,
+                                                                [q.id]: e.target
+                                                                    .value,
+                                                            },
+                                                        )
+                                                    }
+                                                    rows={2}
+                                                    maxLength={500}
+                                                    className={textareaClass}
+                                                />
+                                            </Field>
+                                        ))}
+                                    </div>
+                                )}
                                 <textarea
                                     value={form.data.note}
                                     onChange={(e) =>
@@ -251,7 +305,7 @@ export default function FamilyPublic({
                                 />
                                 <button
                                     type="button"
-                                    disabled={form.processing}
+                                    disabled={form.processing || unanswered}
                                     onClick={() =>
                                         form.post(`/f/${family.slug}/apply`, {
                                             preserveScroll: true,

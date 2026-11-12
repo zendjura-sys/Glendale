@@ -1045,6 +1045,8 @@ Route::prefix('v1')->group(function () {
                     Route::get('discipline', [Families\FamilyDisciplineController::class, 'index']);
                     Route::post('discipline', [Families\FamilyDisciplineController::class, 'store'])->middleware('throttle:30,1');
                     Route::get('events', [Families\FamilyEventController::class, 'index'])->middleware('family.section:events');
+                    Route::put('settings/onboarding', [Families\FamilyOnboardingController::class, 'update']);
+                    Route::post('onboarding/{step}', [Families\FamilyOnboardingController::class, 'tick'])->where('step', '[a-z0-9]{1,12}')->middleware('throttle:60,1');
                     Route::get('shifts', [Families\FamilyShiftController::class, 'index'])->middleware('family.section:shifts');
                     Route::post('shifts', [Families\FamilyShiftController::class, 'store'])->middleware('family.section:shifts')->middleware('throttle:30,1');
                     Route::post('shifts/{shift}/assign', [Families\FamilyShiftController::class, 'assign'])->middleware('family.section:shifts')->whereNumber('shift');

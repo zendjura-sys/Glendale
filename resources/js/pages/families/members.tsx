@@ -43,7 +43,11 @@ type Member = MemberCard & {
     last_seen_at: string | null;
 };
 
-type Application = MemberCard & { note: string | null; applied_at: string };
+type Application = MemberCard & {
+    note: string | null;
+    applied_at: string;
+    answers?: { question: string; answer: string }[];
+};
 
 type Props = FamilyShellProps & {
     tab: 'members' | 'applications';
@@ -177,6 +181,20 @@ export default function FamilyMembers(props: Props) {
                                                 <p className="mt-1 text-sm break-words text-white/65">
                                                     {a.note}
                                                 </p>
+                                            )}
+                                            {(a.answers ?? []).length > 0 && (
+                                                <dl className="mt-2 space-y-1.5 rounded-xl bg-white/[0.04] p-2.5">
+                                                    {a.answers!.map((qa) => (
+                                                        <div key={qa.question}>
+                                                            <dt className="text-xs text-white/45">
+                                                                {qa.question}
+                                                            </dt>
+                                                            <dd className="text-sm break-words text-white/80">
+                                                                {qa.answer}
+                                                            </dd>
+                                                        </div>
+                                                    ))}
+                                                </dl>
                                             )}
                                         </div>
                                     </div>

@@ -19,13 +19,16 @@ use Illuminate\Support\Carbon;
  * @property int $balance
  * @property string $status
  * @property string|null $application_note
+ * @property array<string, string>|null $answers
+ * @property list<string>|null $onboarding_done
+ * @property Carbon|null $onboarded_at
  * @property Carbon|null $joined_at
  * @property Carbon|null $left_at
  * @property Carbon $created_at
  * @property-read Family $family
  * @property-read User $user
  */
-#[Fillable(['family_id', 'user_id', 'rp_nickname', 'static_id', 'rank', 'duties', 'status', 'application_note', 'joined_at', 'left_at'])]
+#[Fillable(['family_id', 'user_id', 'rp_nickname', 'static_id', 'rank', 'duties', 'status', 'application_note', 'joined_at', 'left_at', 'answers', 'onboarding_done', 'onboarded_at'])]
 class FamilyMember extends Model
 {
     public const STATUS_PENDING = 'pending';
@@ -48,6 +51,9 @@ class FamilyMember extends Model
             'balance' => 'integer',
             'joined_at' => 'datetime',
             'left_at' => 'datetime',
+            'answers' => 'array',
+            'onboarding_done' => 'array',
+            'onboarded_at' => 'datetime',
         ];
     }
 

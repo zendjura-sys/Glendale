@@ -1037,6 +1037,8 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
             Route::post('events/{event}/close', [Families\FamilyEventController::class, 'close'])->middleware('family.section:events')->whereNumber('event')->name('events.close');
             Route::post('events/{event}/checkin', [Families\FamilyEventController::class, 'checkIn'])->middleware('family.section:events')->whereNumber('event')->middleware('throttle:10,1')->name('events.checkin');
             Route::post('events/{event}/album', [Families\FamilyEventController::class, 'album'])->middleware('family.section:events')->whereNumber('event')->middleware('throttle:10,1')->name('events.album');
+            Route::put('settings/onboarding', [Families\FamilyOnboardingController::class, 'update'])->name('settings.onboarding');
+            Route::post('onboarding/{step}', [Families\FamilyOnboardingController::class, 'tick'])->where('step', '[a-z0-9]{1,12}')->middleware('throttle:60,1')->name('onboarding.tick');
             Route::get('shifts', [Families\FamilyShiftController::class, 'index'])->middleware('family.section:shifts')->name('shifts');
             Route::post('shifts', [Families\FamilyShiftController::class, 'store'])->middleware('family.section:shifts')->middleware('throttle:30,1')->name('shifts.store');
             Route::post('shifts/{shift}/assign', [Families\FamilyShiftController::class, 'assign'])->middleware('family.section:shifts')->whereNumber('shift')->name('shifts.assign');

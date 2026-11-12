@@ -126,6 +126,7 @@ class FamilyController extends FamilyBaseController
         $can = $this->gate->abilities($member, $family);
 
         return $this->page($family, $member, 'families/overview', 'overview', [
+            'onboarding' => FamilyOnboardingController::card($family, $member),
             'donation' => Inertia::defer(fn () => app(MonobankJar::class)->card($family->donation_jar, $family->donation_note)),
             // Чат сім'ї на огляді: скільки написали сьогодні, останні повідомлення й ШІ-підсумок.
             'chat' => fn () => $this->chatCard($request->user(), $family),
@@ -183,10 +184,11 @@ class FamilyController extends FamilyBaseController
 
     public function apply(Request $request, Family $family, FamilyService $families): RedirectResponse
     {
-        $data = $request->validate([
-            ...self::nicknameRules(),
-            'note' => ['nullable', 'string', 'max:1000'],
-        ], self::nicknameMessages());
+        $rules = [...self::nicknameRules(), 'note' => ['nullable', 'string', 'max:1000'], 'answers' => ['nullable', 'array']];
+        foreach ($family->applicationQuestions() as $q) {
+            $rules['answers.'.$q['id']] = [$q['required'] ? 'required' : 'nullable', 'string', 'max:500'];
+        }
+        $data = $request->validate($rules, [...self::nicknameMessages(), 'answers.*.required' => 'Дайте відповідь на обов’язкове питання анкети.']);
 
         $families->apply($family, $request->user(), $data);
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Заявку надіслано! Офіцери сім’ї розглянуть її найближчим часом.']);
@@ -271,6 +273,7 @@ class FamilyController extends FamilyBaseController
             'blocked' => $isLeader && app(Plugins::class)->on('family_blacklist')
                 ? User::query()->whereIn('id', DB::table('family_blocks')->where('family_id', $family->id)->pluck('user_id'))->get()->map(fn (User $user) => $user->toCard())->values()
                 : [],
+            'questions' => $family->applicationQuestions(),
             'application' => $application ? [
                 'status' => $application->status,
                 'display' => $application->displayName(),
