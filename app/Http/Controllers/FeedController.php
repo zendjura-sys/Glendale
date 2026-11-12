@@ -11,6 +11,7 @@ use App\Services\CommunityService;
 use App\Services\EventCalendar;
 use App\Services\Families\ReportService;
 use App\Services\Feed\FriendActivity;
+use App\Services\Feed\SideWidgets;
 use App\Services\Feed\Topics;
 use App\Services\Feed\WhileAway;
 use App\Services\FeedSignals;
@@ -163,6 +164,12 @@ class FeedController extends Controller
         $before = $request->query('before');
 
         return response()->json(['items' => app(FriendActivity::class)->for($request->user(), is_string($before) ? $before : null)]);
+    }
+
+    /** Віджети ПК і планшета: музика, «Що подивитися» (ШІ), роздачі, GameCast. */
+    public function widgets(Request $request): JsonResponse
+    {
+        return response()->json(app(SideWidgets::class)->for($request->user()));
     }
 
     /**

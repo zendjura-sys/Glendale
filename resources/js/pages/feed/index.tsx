@@ -42,6 +42,7 @@ import { WrappedBanner } from '@/components/gc/wrapped-banner';
 import { HomeWidgetsEditor } from '@/components/gc/engagement';
 import { FeedPulse, FeedSideCards, useHub } from '@/components/gc/feed-pulse';
 import { FriendActivity } from '@/components/feed/friend-activity';
+import { SideWidgets, useSideWidgets } from '@/components/feed/side-widgets';
 import { WhileAway } from '@/components/feed/while-away';
 import type { WhileAwayData } from '@/components/feed/while-away';
 import { EmptyState, Widget, WidgetSkeleton } from '@/components/gc/widget';
@@ -204,6 +205,7 @@ export default function Feed({
     const liveOn = useFeature('live');
     // Spacepark: праворуч заявки в друзі й контакти (дані /me/rail).
     const { data: rail, reload: reloadRail } = useRail();
+    const widgets = useSideWidgets();
     // Тривоги для картки в стрічці (лише Україна — сервер сам вирішує, чи показувати).
     const hub = useHub();
 
@@ -277,6 +279,11 @@ export default function Feed({
                     )}
                     {newcomer && <NewcomerWeek data={newcomer} />}
                     <PostComposer />
+                    {/* Планшет: ті самі віджети сіткою 2×2 над стрічкою (на ПК вони праворуч). */}
+                    <SideWidgets
+                        data={widgets}
+                        className="hidden grid-cols-2 items-start gap-4 md:grid xl:hidden"
+                    />
                     <FeedTabs tab={tab} hasFriends={hasFriends} />
                     {tab !== 'activity' && (
                         <div className="flex flex-wrap items-center gap-2">
@@ -381,6 +388,7 @@ export default function Feed({
                     )}
                     {/* Голосовий штаб, тривога, топ серверів і сезон — у правій колонці, не між записами. */}
                     <FeedSideCards rail={rail} hub={hub} />
+                    <SideWidgets data={widgets} className="space-y-4" />
                     {homeWidgets.map((key) => {
                         switch (key) {
                             // Серія днів і «Готові грати» — у Bento-сітці стрічки.

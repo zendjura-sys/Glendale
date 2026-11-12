@@ -888,4 +888,10 @@ class AppSiteParityTest extends TestCase
         $token = $this->app_token(User::factory()->create());
         $this->withToken($token)->getJson('/api/v1/site/feed/activity')->assertOk()->assertJsonPath('items', []);
     }
+
+    public function test_app_reads_side_widgets_through_bridge(): void
+    {
+        $token = $this->app_token(User::factory()->create());
+        $this->withToken($token)->getJson('/api/v1/site/feed/widgets')->assertOk()->assertJsonStructure(['music', 'cinema', 'giveaways', 'gamecast']);
+    }
 }
