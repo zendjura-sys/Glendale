@@ -1,5 +1,13 @@
 import { Head, Link } from '@inertiajs/react';
-import { Check, Copy, Gift, Share2, UserPlus } from 'lucide-react';
+import {
+    Check,
+    Copy,
+    Gift,
+    Medal,
+    Share2,
+    Trophy,
+    UserPlus,
+} from 'lucide-react';
 import { useState } from 'react';
 import { UserAvatar } from '@/components/gc/user-avatar';
 import { plural } from '@/lib/format';
@@ -23,7 +31,15 @@ type Props = {
             played: boolean;
         };
     })[];
+    leaderboard?: {
+        period: 'month' | 'all';
+        top: (UserCard & { place: number; count: number })[];
+        me: { place: number | null; count: number };
+    };
 };
+
+/** Медалі для перших трьох місць — без золота «з коробки», у кольорах сайту. */
+const MEDAL = ['text-amber-300', 'text-slate-200', 'text-orange-300'];
 
 const STEPS = () =>
     [
@@ -49,6 +65,7 @@ export default function Invite({
     ladder,
     next,
     people,
+    leaderboard,
 }: Props) {
     const [copied, setCopied] = useState(false);
     const copy = () => {
@@ -213,6 +230,99 @@ export default function Invite({
                         ))}
                     </ol>
                 </section>
+
+                {leaderboard && (
+                    <section className="gc-solid rounded-2xl p-5">
+                        <div className="flex flex-wrap items-center gap-3">
+                            <h2 className="flex flex-1 items-center gap-2 font-display text-lg font-bold text-white">
+                                <Trophy className="size-5 text-amber-300" />
+                                {tr('Лідери запрошень')}
+                            </h2>
+                            <div className="gc-solid-2 flex rounded-xl p-1 text-sm">
+                                {(
+                                    [
+                                        ['month', tr('30 днів')],
+                                        ['all', tr('Увесь час')],
+                                    ] as const
+                                ).map(([key, label]) => (
+                                    <Link
+                                        key={key}
+                                        href={`/invite?period=${key}`}
+                                        preserveScroll
+                                        only={['leaderboard']}
+                                        className={cn(
+                                            'rounded-lg px-3 py-1.5 font-medium transition',
+                                            leaderboard.period === key
+                                                ? 'bg-sky-500 text-white'
+                                                : 'text-white/55 hover:text-white',
+                                        )}
+                                    >
+                                        {label}
+                                    </Link>
+                                ))}
+                            </div>
+                        </div>
+                        <p className="mt-1 text-xs text-white/45">
+                            {tr('Рахуються друзі, які підтвердили пошту.')}{' '}
+                            {leaderboard.me.place
+                                ? tr('Ваше місце: {place} ({n})', {
+                                      place: leaderboard.me.place,
+                                      n: leaderboard.me.count,
+                                  })
+                                : tr(
+                                      'Запросіть першого друга — і ви з’явитесь у рейтингу.',
+                                  )}
+                        </p>
+                        {leaderboard.top.length === 0 ? (
+                            <p className="mt-4 text-sm text-white/50">
+                                {tr(
+                                    'Поки ніхто нікого не запросив — станьте першим.',
+                                )}
+                            </p>
+                        ) : (
+                            <ol className="mt-3 space-y-1">
+                                {leaderboard.top.map((person) => (
+                                    <li key={person.id}>
+                                        <Link
+                                            href={`/${person.username}`}
+                                            className={cn(
+                                                'flex items-center gap-3 rounded-2xl px-2 py-2 transition hover:bg-[var(--gc-l3)]',
+                                                person.place ===
+                                                    leaderboard.me.place &&
+                                                    'bg-primary/10',
+                                            )}
+                                        >
+                                            <span className="grid w-7 shrink-0 place-items-center text-sm font-bold text-white/60 tabular-nums">
+                                                {person.place <= 3 ? (
+                                                    <Medal
+                                                        className={cn(
+                                                            'size-5',
+                                                            MEDAL[
+                                                                person.place - 1
+                                                            ],
+                                                        )}
+                                                    />
+                                                ) : (
+                                                    person.place
+                                                )}
+                                            </span>
+                                            <UserAvatar
+                                                user={person}
+                                                size="sm"
+                                            />
+                                            <span className="min-w-0 flex-1 truncate text-sm font-medium text-white">
+                                                {person.name}
+                                            </span>
+                                            <span className="shrink-0 text-sm font-semibold text-white tabular-nums">
+                                                {person.count}
+                                            </span>
+                                        </Link>
+                                    </li>
+                                ))}
+                            </ol>
+                        )}
+                    </section>
+                )}
 
                 {people.length > 0 && (
                     <section className="gc-solid rounded-2xl p-5">

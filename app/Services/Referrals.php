@@ -5,6 +5,8 @@ namespace App\Services;
 use App\Models\User;
 use App\Notifications\ReferralActivated;
 use App\Notifications\ReferralJoined;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 use Throwable;
@@ -111,6 +113,39 @@ class Referrals
                     'played' => (bool) $p->getAttribute('played'),
                 ],
             ])->all()),
+        ];
+    }
+
+    /**
+     * Таблиця лідерів: хто привів найбільше активних друзів (за місяць або за весь час) і моє місце.
+     * Рахуються лише підтверджені пошти й незаблоковані запрошувачі. Кеш — 10 хвилин.
+     *
+     * @return array{period: string, top: list<array<string, mixed>>, me: array{place: int|null, count: int}}
+     */
+    public function leaderboard(User $user, string $period = 'month'): array
+    {
+        $period = $period === 'all' ? 'all' : 'month';
+        /** @var list<array{id: int, n: int}> $rows */
+        $rows = Cache::remember("referrals:board:{$period}", now()->addMinutes(10), fn () => User::query()
+            ->whereNotNull('invited_by')->whereNotNull('email_verified_at')
+            ->when($period === 'month', fn ($q) => $q->where('created_at', '>=', now()->subDays(30)))
+            ->whereIn('invited_by', User::query()->select('id')->whereNull('banned_at'))
+            ->select('invited_by', DB::raw('count(*) as n'))->groupBy('invited_by')
+            ->orderByDesc('n')->orderBy('invited_by')->get()
+            ->map(fn ($r) => ['id' => (int) $r->invited_by, 'n' => (int) $r->n])->values()->all());
+
+        $top = array_slice($rows, 0, 20);
+        $people = User::query()->whereIn('id', array_column($top, 'id'))->get()->keyBy('id');
+        $index = array_search($user->id, array_column($rows, 'id'), true);
+
+        return [
+            'period' => $period,
+            'top' => array_values(array_filter(array_map(fn (array $r, int $i) => $people->has($r['id']) ? [
+                ...$people[$r['id']]->toCard(),
+                'place' => $i + 1,
+                'count' => $r['n'],
+            ] : null, $top, array_keys($top)))),
+            'me' => ['place' => $index === false ? null : $index + 1, 'count' => $index === false ? 0 : $rows[$index]['n']],
         ];
     }
 }
