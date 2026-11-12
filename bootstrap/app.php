@@ -10,6 +10,7 @@ use App\Http\Middleware\EnsureModuleEnabled;
 use App\Http\Middleware\EnsureUserIsAdmin;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\SetLocale;
+use App\Http\Middleware\ThrottlePerRoute;
 use App\Http\Middleware\TrackUserActivity;
 use App\Http\Middleware\ViewAsUser;
 use App\Models\Community;
@@ -68,6 +69,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'module' => EnsureModuleEnabled::class,
             'family.section' => EnsureFamilySection::class,
+            // Окремий лічильник throttle на кожен маршрут (див. ThrottlePerRoute).
+            'throttle' => ThrottlePerRoute::class,
             'auth.api' => AuthenticateApiToken::class,
             'admin' => EnsureUserIsAdmin::class,
             'verified.site' => EnsureEmailVerifiedWhenRequired::class,
