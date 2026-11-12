@@ -1,7 +1,9 @@
 import { router, usePage } from '@inertiajs/react';
 import { Sk } from '@/components/gc/skeletons';
 import {
+    Check,
     Disc3,
+    Sparkles,
     ExternalLink,
     Info,
     FileText,
@@ -210,6 +212,74 @@ export function artistHref(name: string) {
     return `/music/artist?name=${encodeURIComponent(name)}`;
 }
 
+const MOODS = () =>
+    [
+        ['raid', tr('Рейд')],
+        ['match', tr('Катка')],
+        ['chill', tr('Чіл')],
+        ['focus', tr('Фокус')],
+        ['night', tr('Нічний стрім')],
+    ] as const;
+
+/** «Підходить для…»: голос за настрій треку — з голосів складаються плейлисти під настрій. */
+function MoodSub({ track }: { track: LocalTrack }) {
+    const [mine, setMine] = useState<string[] | null>(null);
+    const load = useCallback(() => {
+        if (mine !== null) return;
+        void api<{ moods: string[] }>('GET', `/music/tracks/${track.id}/moods`)
+            .then((data) => setMine(data.moods))
+            .catch(() => setMine([]));
+    }, [mine, track.id]);
+
+    const vote = async (mood: string) => {
+        try {
+            const res = await api<{ on: boolean; moods: string[] }>(
+                'POST',
+                `/music/tracks/${track.id}/moods`,
+                { mood },
+            );
+            setMine(res.moods);
+        } catch (error) {
+            toast.error(
+                error instanceof ApiError ? error.message : tr('Не вдалося.'),
+            );
+        }
+    };
+
+    return (
+        <DropdownMenuSub onOpenChange={(open) => open && load()}>
+            <DropdownMenuSubTrigger
+                className={cn(item, 'data-[state=open]:bg-[var(--am-fill)]')}
+                onPointerEnter={load}
+                onFocus={load}
+            >
+                <Sparkles /> {tr('Підходить для…')}
+            </DropdownMenuSubTrigger>
+            <DropdownMenuSubContent className="am z-[90] w-52 rounded-2xl border-[var(--am-sep)] bg-[var(--am-elevated)] p-1.5 text-[var(--am-label)]">
+                {MOODS().map(([key, label]) => (
+                    <DropdownMenuItem
+                        key={key}
+                        className={item}
+                        onSelect={(e) => {
+                            e.preventDefault();
+                            void vote(key);
+                        }}
+                    >
+                        <Check
+                            className={cn(
+                                (mine ?? []).includes(key)
+                                    ? 'text-[var(--am-accent)]'
+                                    : 'opacity-0',
+                            )}
+                        />
+                        {label}
+                    </DropdownMenuItem>
+                ))}
+            </DropdownMenuSubContent>
+        </DropdownMenuSub>
+    );
+}
+
 function PlaylistSub({ track }: { track: LocalTrack }) {
     const actions = useTrackActions();
     const [playlists, setPlaylists] = useState<
@@ -366,6 +436,7 @@ export function TrackMenu({
                                 : tr('Улюблене')}
                         </DropdownMenuItem>
                         <PlaylistSub track={local} />
+                        <MoodSub track={local} />
                         <DropdownMenuSeparator className="bg-[var(--am-sep)]" />
                     </>
                 )}

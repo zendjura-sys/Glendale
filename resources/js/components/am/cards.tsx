@@ -40,6 +40,26 @@ export function mixTitle(key: MixCard['key']): {
             title: tr('Мікс для відпочинку'),
             subtitle: tr('Спокійна музика без поспіху'),
         },
+        'mood-raid': {
+            title: tr('Рейд'),
+            subtitle: tr('Важкий і швидкий звук для бою'),
+        },
+        'mood-match': {
+            title: tr('Катка'),
+            subtitle: tr('Ритм, що тримає в грі'),
+        },
+        'mood-chill': {
+            title: tr('Чіл'),
+            subtitle: tr('Після катки — видихнути'),
+        },
+        'mood-focus': {
+            title: tr('Фокус'),
+            subtitle: tr('Без слів і без поспіху — для тренувань'),
+        },
+        'mood-night': {
+            title: tr('Нічний стрім'),
+            subtitle: tr('Синтвейв і нічні вайби'),
+        },
     }[key];
 }
 

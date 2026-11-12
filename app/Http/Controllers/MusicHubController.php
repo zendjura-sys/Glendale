@@ -11,6 +11,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -180,6 +181,39 @@ class MusicHubController extends Controller
         abort_if($mix === null, 404);
 
         return Inertia::render('music/mix', $mix);
+    }
+
+    /** Плейлист під настрій («Рейд», «Катка», «Чіл», «Фокус», «Нічний стрім»). */
+    public function mood(Request $request, string $key): Response
+    {
+        $mood = $this->catalog->mood($request->user(), $key);
+        abort_if($mood === null, 404);
+
+        return Inertia::render('music/mix', $mood);
+    }
+
+    /** «Підходить для…»: позначити настрій треку (повторне натискання — зняти). */
+    public function voteMood(Request $request, Track $track): JsonResponse
+    {
+        $data = $request->validate(['mood' => ['required', Rule::in(array_keys(MusicCatalog::MOODS))]]);
+        $where = ['track_id' => $track->id, 'user_id' => $request->user()->id, 'mood' => $data['mood']];
+        $on = ! DB::table('track_moods')->where($where)->exists();
+        $on ? DB::table('track_moods')->insert([...$where, 'created_at' => now()]) : DB::table('track_moods')->where($where)->delete();
+        Cache::forget("music:mood:{$data['mood']}:{$request->user()->id}:".now()->startOfWeek()->format('oW'));
+
+        return response()->json(['on' => $on, 'moods' => $this->trackMoods($track, $request->user()->id)]);
+    }
+
+    /** Мої позначки настрою для треку (для меню). */
+    public function trackMoodsShow(Request $request, Track $track): JsonResponse
+    {
+        return response()->json(['moods' => $this->trackMoods($track, $request->user()->id)]);
+    }
+
+    /** @return list<string> */
+    private function trackMoods(Track $track, int $userId): array
+    {
+        return DB::table('track_moods')->where('track_id', $track->id)->where('user_id', $userId)->pluck('mood')->map(fn ($m) => (string) $m)->all();
     }
 
     public function genre(Request $request): Response

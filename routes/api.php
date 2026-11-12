@@ -891,6 +891,9 @@ Route::prefix('v1')->group(function () {
                 Route::get('artist/info', [MusicHubController::class, 'artistInfo'])->middleware('throttle:60,1');
                 Route::get('album', [MusicHubController::class, 'album']);
                 Route::get('mix/{key}', [MusicHubController::class, 'mix'])->where('key', '[a-z]+');
+                Route::get('mood/{key}', [MusicHubController::class, 'mood'])->where('key', '[a-z]+');
+                Route::get('tracks/{track}/moods', [MusicHubController::class, 'trackMoodsShow'])->whereNumber('track');
+                Route::post('tracks/{track}/moods', [MusicHubController::class, 'voteMood'])->whereNumber('track')->middleware('throttle:60,1');
                 Route::get('genre', [MusicHubController::class, 'genre']);
                 Route::get('charts', [MusicHubController::class, 'charts']);
                 Route::get('replay/{year?}', [MusicHubController::class, 'replay'])->whereNumber('year');

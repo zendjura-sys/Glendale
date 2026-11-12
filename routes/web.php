@@ -651,6 +651,9 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::get('artist/info', [MusicHubController::class, 'artistInfo'])->middleware('throttle:60,1')->name('music.artist.info');
         Route::get('album', [MusicHubController::class, 'album'])->name('music.album');
         Route::get('mix/{key}', [MusicHubController::class, 'mix'])->where('key', '[a-z]+')->name('music.mix');
+        Route::get('mood/{key}', [MusicHubController::class, 'mood'])->where('key', '[a-z]+')->name('music.mood');
+        Route::get('tracks/{track}/moods', [MusicHubController::class, 'trackMoodsShow'])->whereNumber('track')->name('tracks.moods');
+        Route::post('tracks/{track}/moods', [MusicHubController::class, 'voteMood'])->whereNumber('track')->middleware('throttle:60,1')->name('tracks.moods.vote');
         Route::get('genre', [MusicHubController::class, 'genre'])->name('music.genre');
         Route::get('charts', [MusicHubController::class, 'charts'])->name('music.charts');
         Route::get('replay/{year?}', [MusicHubController::class, 'replay'])->whereNumber('year')->name('music.replay');

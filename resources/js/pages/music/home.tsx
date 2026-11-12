@@ -32,6 +32,8 @@ type Home = {
     top_picks: (StationCard | MixCard)[];
     recently_played: LocalTrack[];
     made_for_you: MixCard[];
+    /** Плейлисти під настрій («Рейд», «Катка», «Чіл»…). */
+    moods?: MixCard[];
     replay: { year: number; tracks: LocalTrack[] };
     friends: { user: UserCard; track: LocalTrack }[];
     stations: StationCard[];
@@ -179,6 +181,22 @@ export default function MusicHome({ home }: { home: Home }) {
                     />
                     <Shelf>
                         {home.made_for_you.map((mix) => (
+                            <MixTile key={mix.key} mix={mix} />
+                        ))}
+                    </Shelf>
+                </>
+            )}
+
+            {(home.moods ?? []).length > 0 && (
+                <>
+                    <SectionHeader
+                        title={tr('Під настрій')}
+                        subtitle={tr(
+                            'Збираються з голосів слухачів «Підходить для…»',
+                        )}
+                    />
+                    <Shelf>
+                        {home.moods!.map((mix) => (
                             <MixTile key={mix.key} mix={mix} />
                         ))}
                     </Shelf>

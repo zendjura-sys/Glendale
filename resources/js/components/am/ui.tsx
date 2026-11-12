@@ -196,6 +196,8 @@ export function MixArt({
 
     return (
         <div
+            // Градієнт завжди темний — підпис лишається білим і у світлій темі.
+            data-on-dark
             className={cn(
                 'am-art relative aspect-square w-full overflow-hidden',
                 className,

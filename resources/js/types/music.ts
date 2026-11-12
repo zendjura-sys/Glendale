@@ -106,7 +106,17 @@ export type SharedMusic = {
 
 export type MixCard = {
     kind: 'mix';
-    key: 'favorites' | 'discovery' | 'new' | 'friends' | 'chill';
+    key:
+        | 'favorites'
+        | 'discovery'
+        | 'new'
+        | 'friends'
+        | 'chill'
+        | 'mood-raid'
+        | 'mood-match'
+        | 'mood-chill'
+        | 'mood-focus'
+        | 'mood-night';
     colors: [string, string];
     covers: string[];
     href: string;

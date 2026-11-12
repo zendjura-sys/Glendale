@@ -39,6 +39,18 @@ class MusicCatalog
         'chill' => ['#a9c8ff', '#2f7bff'],
     ];
 
+    /**
+     * Плейлисти під настрій: кольори обкладинки й жанри-підказки. Головне — голоси слухачів
+     * «Підходить для…» (track_moods), жанри доповнюють, поки голосів мало.
+     */
+    public const MOODS = [
+        'raid' => ['colors' => ['#ef4444', '#3b0a0a'], 'genres' => ['metal', 'rock', 'hard rock', 'metalcore', 'dubstep', 'drum and bass', 'dnb', 'hardstyle', 'phonk', 'industrial']],
+        'match' => ['colors' => ['#2f7bff', '#0b1638'], 'genres' => ['electronic', 'edm', 'house', 'techno', 'hip-hop', 'rap', 'trap', 'synthwave', 'pop', 'dance']],
+        'chill' => ['colors' => ['#22c4f0', '#0b3a4a'], 'genres' => ['lo-fi', 'lofi', 'chill', 'chillout', 'jazz', 'acoustic', 'soul', 'r&b', 'downtempo', 'indie']],
+        'focus' => ['colors' => ['#a3e635', '#14301a'], 'genres' => ['ambient', 'classical', 'instrumental', 'soundtrack', 'post-rock', 'piano', 'lo-fi', 'lofi']],
+        'night' => ['colors' => ['#a855f7', '#1a0b38'], 'genres' => ['synthwave', 'darkwave', 'retrowave', 'trip-hop', 'downtempo', 'deep house', 'chillwave']],
+    ];
+
     /** Жанри, з яких складається «Мікс для відпочинку». */
     private const CHILL_GENRES = ['lo-fi', 'lofi', 'chill', 'ambient', 'jazz', 'acoustic', 'classical', 'soul', 'r&b', 'downtempo'];
 
@@ -61,6 +73,7 @@ class MusicCatalog
             'top_picks' => [$this->myStationCard($user), ...array_slice($mixes, 0, 3)],
             'recently_played' => $this->recentlyPlayed($user, 12),
             'made_for_you' => $mixes,
+            'moods' => $this->moodCards($user),
             'replay' => [
                 'year' => CarbonImmutable::now()->year,
                 'tracks' => $this->cards($this->topPlayed($user, CarbonImmutable::now()->startOfYear(), 5), $user),
@@ -161,6 +174,75 @@ class MusicCatalog
         }
 
         return ['mix' => $card, 'tracks' => $this->cards($this->mixTracks($user, $key, self::MIX_SIZE), $user)];
+    }
+
+    /**
+     * Полиця «Під настрій»: картки з обкладинками (лише ті настрої, де є треки).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function moodCards(User $user): array
+    {
+        $cards = [];
+        foreach (self::MOODS as $key => $mood) {
+            $tracks = $this->moodTracks($user, $key, 4);
+            if ($tracks->isEmpty()) {
+                continue;
+            }
+            $cards[] = [
+                'kind' => 'mix',
+                'key' => 'mood-'.$key,
+                'colors' => $mood['colors'],
+                'covers' => $tracks->pluck('cover_url')->filter()->values()->all(),
+                'href' => '/music/mood/'.$key,
+            ];
+        }
+
+        return $cards;
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function mood(User $user, string $key): ?array
+    {
+        if (! isset(self::MOODS[$key])) {
+            return null;
+        }
+        $card = collect($this->moodCards($user))->firstWhere('key', 'mood-'.$key);
+
+        return $card === null ? null : ['mix' => $card, 'tracks' => $this->cards($this->moodTracks($user, $key, self::MIX_SIZE), $user)];
+    }
+
+    /**
+     * Треки настрою: спершу з голосами слухачів (більше голосів — вище), далі — за жанрами
+     * з перевагою улюблених жанрів людини. Порядок тасується раз на тиждень.
+     *
+     * @return Collection<int, Track>
+     */
+    private function moodTracks(User $user, string $key, int $limit): Collection
+    {
+        $week = CarbonImmutable::now()->startOfWeek()->format('oW');
+        $ids = Cache::remember("music:mood:{$key}:{$user->id}:{$week}", now()->addHours(6), function () use ($user, $key) {
+            $voted = DB::table('track_moods')->where('mood', $key)->groupBy('track_id')
+                ->selectRaw('track_id, COUNT(*) as votes')->orderByDesc('votes')->limit(self::MIX_SIZE)
+                ->pluck('track_id')->map(fn ($id) => (int) $id)->all();
+            $voted = $this->ready()->whereIn('id', $voted)->pluck('id')->map(fn ($id) => (int) $id)->all();
+            $genres = self::MOODS[$key]['genres'];
+            $mine = array_map('mb_strtolower', $this->topGenres($user, 5));
+            $byGenre = $this->ready()->whereIn(DB::raw('LOWER(genre)'), $genres)->whereNotIn('id', $voted)
+                ->limit(self::MIX_SIZE * 2)->get(['id', 'genre', 'plays_count'])
+                ->sortByDesc(fn ($t) => (in_array(mb_strtolower((string) $t->genre), $mine, true) ? 1000000 : 0) + (int) $t->plays_count)
+                ->pluck('id')->map(fn ($id) => (int) $id)->all();
+            $all = array_slice([...$voted, ...$byGenre], 0, self::MIX_SIZE);
+            mt_srand(crc32($user->id.$key.date('oW')));
+            shuffle($all);
+            mt_srand();
+
+            return $all;
+        });
+
+        return $this->ordered(array_slice($ids, 0, $limit));
     }
 
     /**
