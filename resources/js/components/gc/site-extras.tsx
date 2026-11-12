@@ -1,5 +1,5 @@
 import { ModuleIcon } from '@/components/gc/module-icon';
-import { Link, router, useForm } from '@inertiajs/react';
+import { Link, router, useForm, usePage } from '@inertiajs/react';
 import {
     Bell,
     Clapperboard,
@@ -509,18 +509,70 @@ export function FeedbackDialog() {
     );
 }
 
-const SHORTCUTS = () => [
-    { keys: ['/'], label: tr('Пошук') },
-    { keys: ['J'], label: tr('Наступний запис у стрічці') },
-    { keys: ['K'], label: tr('Попередній запис') },
-    { keys: ['L'], label: tr('Вподобати вибраний запис') },
-    { keys: ['G', 'F'], label: tr('Новини') },
-    { keys: ['G', 'M'], label: tr('Повідомлення') },
-    { keys: ['G', 'P'], label: tr('Моя сторінка') },
-    { keys: ['G', 'N'], label: tr('Сповіщення') },
-    { keys: ['G', 'S'], label: tr('Налаштування') },
-    { keys: ['?'], label: tr('Ця підказка') },
+type Shortcut = { keys: string[]; label: string };
+type ShortcutGroup = {
+    id: string;
+    title: string;
+    paths: string[];
+    items: Shortcut[];
+};
+
+/** Групи гарячих клавіш; група поточного розділу показується першою. */
+const SHORTCUT_GROUPS = (): ShortcutGroup[] => [
+    {
+        id: 'nav',
+        title: tr('Навігація'),
+        paths: [],
+        items: [
+            { keys: ['/'], label: tr('Пошук') },
+            { keys: ['Ctrl', 'K'], label: tr('Командна палітра') },
+            { keys: ['G', 'F'], label: tr('Новини') },
+            { keys: ['G', 'M'], label: tr('Повідомлення') },
+            { keys: ['G', 'P'], label: tr('Моя сторінка') },
+            { keys: ['G', 'N'], label: tr('Сповіщення') },
+            { keys: ['G', 'C'], label: tr('Кіно') },
+            { keys: ['G', 'U'], label: tr('Музика') },
+            { keys: ['G', 'I'], label: tr('Ігри') },
+            { keys: ['G', 'S'], label: tr('Налаштування') },
+            { keys: ['?'], label: tr('Ця підказка') },
+        ],
+    },
+    {
+        id: 'feed',
+        title: tr('Стрічка'),
+        paths: ['/feed', '/posts'],
+        items: [
+            { keys: ['J'], label: tr('Наступний запис у стрічці') },
+            { keys: ['K'], label: tr('Попередній запис') },
+            { keys: ['L'], label: tr('Вподобати вибраний запис') },
+        ],
+    },
+    {
+        id: 'chat',
+        title: tr('Чат'),
+        paths: ['/messages'],
+        items: [
+            { keys: ['Enter'], label: tr('Надіслати повідомлення') },
+            { keys: ['Shift', 'Enter'], label: tr('Новий рядок') },
+            { keys: ['↑'], label: tr('Змінити останнє своє повідомлення') },
+            { keys: ['Esc'], label: tr('Скасувати відповідь чи зміну') },
+        ],
+    },
+    {
+        id: 'player',
+        title: tr('Плеєр'),
+        paths: ['/music'],
+        items: [
+            {
+                keys: ['Space'],
+                label: tr('Пауза / грати (на сторінці музики)'),
+            },
+            { keys: ['Esc'], label: tr('Згорнути повноекранний плеєр') },
+        ],
+    },
 ];
+
+const SHORTCUTS = (): Shortcut[] => SHORTCUT_GROUPS().flatMap((g) => g.items);
 
 const GO: Record<string, (username: string) => string> = {
     f: () => '/feed',
@@ -528,6 +580,9 @@ const GO: Record<string, (username: string) => string> = {
     p: (username) => `/${username}`,
     n: () => '/notifications',
     s: () => '/settings/profile',
+    c: () => '/cinema',
+    u: () => '/music',
+    i: () => '/games',
 };
 
 /** J/K: перейти до наступного чи попереднього запису стрічки й позначити його для L. */
@@ -568,6 +623,26 @@ function typing(target: EventTarget | null): boolean {
 /** Гарячі клавіші сайту й підказка до них (клавіша «?»). */
 export function KeyboardShortcuts({ username }: { username: string }) {
     const [open, setOpen] = useState(false);
+    const [filter, setFilter] = useState('');
+    const { url } = usePage();
+    const q = filter.trim().toLowerCase();
+    const groups = SHORTCUT_GROUPS()
+        .map((g) => ({
+            ...g,
+            items: q
+                ? g.items.filter(
+                      (i) =>
+                          i.label.toLowerCase().includes(q) ||
+                          i.keys.join(' ').toLowerCase().includes(q),
+                  )
+                : g.items,
+        }))
+        .filter((g) => g.items.length > 0)
+        .sort(
+            (a, b) =>
+                Number(b.paths.some((p) => url.startsWith(p))) -
+                Number(a.paths.some((p) => url.startsWith(p))),
+        );
 
     useEffect(() => {
         let pendingG = 0;
@@ -583,6 +658,7 @@ export function KeyboardShortcuts({ username }: { username: string }) {
             const key = event.key.toLowerCase();
             if (event.key === '?') {
                 event.preventDefault();
+                setFilter('');
                 setOpen(true);
 
                 return;
@@ -619,7 +695,10 @@ export function KeyboardShortcuts({ username }: { username: string }) {
                 router.visit(GO[key](username));
             }
         };
-        const onOpen = () => setOpen(true);
+        const onOpen = () => {
+            setFilter('');
+            setOpen(true);
+        };
         window.addEventListener('keydown', onKey);
         window.addEventListener(SHORTCUTS_EVENT, onOpen);
 
@@ -631,34 +710,57 @@ export function KeyboardShortcuts({ username }: { username: string }) {
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
-            <DialogContent className="glass-strong rounded-dialog p-6 text-white sm:max-w-sm">
+            <DialogContent className="glass-strong rounded-dialog p-6 text-white sm:max-w-md">
                 <DialogTitle className="flex items-center gap-2 font-display text-lg">
                     <Keyboard className="size-5 text-sky-400" />
                     {tr('Гарячі клавіші')}
                 </DialogTitle>
                 <DialogDescription className="text-sm text-white/50">
-                    {tr('Працюють, коли курсор не в полі введення.')}
+                    {tr(
+                        'Працюють, коли курсор не в полі введення. Клавіші цього розділу — першими.',
+                    )}
                 </DialogDescription>
-                <ul className="space-y-1.5">
-                    {SHORTCUTS().map((item) => (
-                        <li
-                            key={item.label}
-                            className="gc-solid-2 flex items-center justify-between rounded-xl px-3 py-2 text-sm text-white/80"
-                        >
-                            {item.label}
-                            <span className="flex gap-1">
-                                {item.keys.map((key) => (
-                                    <kbd
-                                        key={key}
-                                        className="gc-solid-2 min-w-7 rounded-md px-1.5 py-0.5 text-center font-sans text-xs text-white"
+                <input
+                    value={filter}
+                    onChange={(e) => setFilter(e.target.value)}
+                    placeholder={tr('Знайти дію…')}
+                    autoFocus
+                    className="input-glass h-10 w-full rounded-xl px-3 text-sm text-white placeholder:text-white/35"
+                />
+                <div className="-mr-2 max-h-[60vh] space-y-4 overflow-y-auto pr-2">
+                    {groups.map((group) => (
+                        <section key={group.id}>
+                            <h3 className="mb-1.5 text-xs font-semibold text-white/45">
+                                {group.title}
+                            </h3>
+                            <ul className="space-y-1.5">
+                                {group.items.map((item) => (
+                                    <li
+                                        key={item.label}
+                                        className="gc-solid-2 flex items-center justify-between gap-3 rounded-xl px-3 py-2 text-sm text-white/80"
                                     >
-                                        {key}
-                                    </kbd>
+                                        {item.label}
+                                        <span className="flex shrink-0 gap-1">
+                                            {item.keys.map((key) => (
+                                                <kbd
+                                                    key={key}
+                                                    className="gc-solid-2 min-w-7 rounded-md px-1.5 py-0.5 text-center font-sans text-xs text-white"
+                                                >
+                                                    {key}
+                                                </kbd>
+                                            ))}
+                                        </span>
+                                    </li>
                                 ))}
-                            </span>
-                        </li>
+                            </ul>
+                        </section>
                     ))}
-                </ul>
+                    {groups.length === 0 && (
+                        <p className="py-4 text-center text-sm text-white/45">
+                            {tr('Нічого не знайшли')}
+                        </p>
+                    )}
+                </div>
             </DialogContent>
         </Dialog>
     );
