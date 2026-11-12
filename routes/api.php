@@ -548,6 +548,9 @@ Route::prefix('v1')->group(function () {
             Route::get('settings/account', [SettingsAccountController::class, 'edit']);
             Route::delete('settings/account/connections/{client}', [SettingsAccountController::class, 'disconnect'])->whereNumber('client');
             Route::get('settings/account/export', [SettingsAccountController::class, 'export'])->middleware('throttle:3,60');
+            Route::post('settings/account/exports', [SettingsAccountController::class, 'requestArchive'])->middleware('throttle:3,60');
+            Route::get('settings/account/exports/{export}', [SettingsAccountController::class, 'downloadArchive'])->whereNumber('export')->middleware('throttle:10,1');
+            Route::put('settings/account/login-alerts', [SettingsAccountController::class, 'loginAlerts']);
             Route::post('bots/telegram/account', [Bots\BotLinkController::class, 'telegramAccount'])->middleware('throttle:10,1');
             Route::delete('bots/telegram/account', [Bots\BotLinkController::class, 'telegramUnlink']);
             // «Вигляд профілю»: тема за грою (порядок блоків — у settings/appearance).

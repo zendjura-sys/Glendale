@@ -55,6 +55,8 @@ Route::middleware(['auth'])->group(function () {
     Route::put('settings/account/login-alerts', [AccountController::class, 'loginAlerts'])->name('account.login-alerts');
     Route::put('settings/account/teen-mode', [AccountController::class, 'teenMode'])->name('account.teen-mode');
     Route::get('settings/account/export', [AccountController::class, 'export'])->middleware('throttle:3,60')->name('account.export');
+    Route::post('settings/account/exports', [AccountController::class, 'requestArchive'])->middleware('throttle:3,60')->name('account.exports.store');
+    Route::get('settings/account/exports/{export}', [AccountController::class, 'downloadArchive'])->whereNumber('export')->middleware('throttle:10,1')->name('account.exports.download');
     Route::post('settings/account/freeze', [AccountController::class, 'freeze'])->middleware('throttle:6,1')->name('account.freeze');
     Route::post('settings/account/appeals', [AccountController::class, 'appeal'])->middleware('throttle:5,60')->name('account.appeals.store');
 });

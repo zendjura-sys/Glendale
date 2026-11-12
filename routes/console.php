@@ -2,6 +2,7 @@
 
 use App\Models\AppLoginRequest;
 use App\Models\SpamBlock;
+use App\Services\Account\DataExporter;
 use App\Services\Billing\AuthorSubscriptions;
 use App\Services\Profile\UserRoles;
 use App\Services\Quality\PageVitals;
@@ -89,3 +90,6 @@ Schedule::call(fn () => app(PageVitals::class)->prune())->name('vitals:prune')->
 
 // Нічна перевірка битих посилань і картинок — лише звіт, нічого не видаляє.
 Schedule::command('gc:check-links')->dailyAt('03:25')->timezone('Europe/Kyiv')->withoutOverlapping(60)->runInBackground();
+
+// Прострочені архіви «Мої дані» (копії) — геть з диска.
+Schedule::call(fn () => app(DataExporter::class)->prune())->name('data-exports:prune')->dailyAt('05:50')->withoutOverlapping();

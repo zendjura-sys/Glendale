@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Jobs\BuildDataExport;
 use App\Models\Community;
 use App\Models\Friendship;
 use App\Models\Game;
@@ -35,6 +36,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -893,5 +895,14 @@ class AppSiteParityTest extends TestCase
     {
         $token = $this->app_token(User::factory()->create());
         $this->withToken($token)->getJson('/api/v1/site/feed/widgets')->assertOk()->assertJsonStructure(['music', 'cinema', 'giveaways', 'gamecast']);
+    }
+
+    public function test_app_requests_data_archive_through_bridge(): void
+    {
+        Queue::fake();
+        $token = $this->app_token(User::factory()->create());
+        $this->withToken($token)->postJson('/api/v1/site/settings/account/exports')->assertSuccessful();
+        Queue::assertPushed(BuildDataExport::class);
+        $this->withToken($token)->putJson('/api/v1/site/settings/account/login-alerts', ['on' => false])->assertSuccessful();
     }
 }

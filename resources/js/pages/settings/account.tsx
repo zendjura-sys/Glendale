@@ -1,5 +1,6 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import {
+    Archive,
     CircleCheck,
     CircleX,
     Download,
@@ -64,6 +65,14 @@ type Props = {
     appealKinds: Record<string, string>;
     mute: { until: string | null; reason: string | null } | null;
     hideProfanity: boolean;
+    exports?: {
+        id: number;
+        status: 'pending' | 'ready' | 'expired' | 'failed';
+        size: number;
+        created_at: string;
+        expires_at: string | null;
+        url: string | null;
+    }[];
     loginAlerts?: boolean;
     teenMode: { on: boolean; locked: boolean };
 };
@@ -104,6 +113,7 @@ export default function Account({
     appealKinds,
     mute,
     hideProfanity,
+    exports = [],
     loginAlerts = true,
     teenMode,
     strikes = [],
@@ -587,17 +597,87 @@ export default function Account({
                 <SettingsCard
                     title={tr('Мої дані')}
                     description={tr(
-                        'Профіль, друзі, записи, коментарі, фото й повідомлення одним файлом JSON',
+                        'Повний архів ZIP: усі розділи окремими файлами плюс ваші фото, аватар і завантажені треки. Готується у фоні, посилання діє 7 днів.',
                     )}
                 >
-                    <a
-                        href="/settings/account/export"
-                        download
-                        className="gc-solid-2 inline-flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-semibold text-white transition hover:bg-white/[0.1]"
-                    >
-                        <Download className="size-4" />
-                        {tr('Завантажити свої дані')}
-                    </a>
+                    <div className="flex flex-wrap gap-2">
+                        <button
+                            type="button"
+                            disabled={exports.some(
+                                (e) => e.status === 'pending',
+                            )}
+                            onClick={() =>
+                                router.post(
+                                    '/settings/account/exports',
+                                    {},
+                                    options,
+                                )
+                            }
+                            className="btn-glow inline-flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-semibold disabled:opacity-50"
+                        >
+                            <Archive className="size-4" />
+                            {tr('Підготувати архів')}
+                        </button>
+                        <a
+                            href="/settings/account/export"
+                            download
+                            className="gc-solid-2 inline-flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-semibold text-white transition hover:bg-white/[0.1]"
+                        >
+                            <Download className="size-4" />
+                            {tr('Швидко: лише текст (JSON)')}
+                        </a>
+                    </div>
+                    {exports.length > 0 && (
+                        <ul className="mt-3 space-y-2">
+                            {exports.map((e) => (
+                                <li
+                                    key={e.id}
+                                    className="gc-solid-2 flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm"
+                                >
+                                    <Archive className="size-4 shrink-0 text-white/50" />
+                                    <span className="min-w-0 flex-1">
+                                        <span className="block font-medium text-white">
+                                            {formatDate(e.created_at)}
+                                        </span>
+                                        <span className="block text-xs text-white/45">
+                                            {e.status === 'pending'
+                                                ? tr(
+                                                      'Готуємо… повідомимо, коли буде готово',
+                                                  )
+                                                : e.status === 'failed'
+                                                  ? tr(
+                                                        'Не вдалося — спробуйте ще раз',
+                                                    )
+                                                  : e.status === 'expired'
+                                                    ? tr('Посилання вже не діє')
+                                                    : tr(
+                                                          '{size} МБ · діє до {date}',
+                                                          {
+                                                              size: (
+                                                                  e.size /
+                                                                  1048576
+                                                              ).toFixed(1),
+                                                              date: formatDate(
+                                                                  e.expires_at ??
+                                                                      e.created_at,
+                                                              ),
+                                                          },
+                                                      )}
+                                        </span>
+                                    </span>
+                                    {e.url && (
+                                        <a
+                                            href={e.url}
+                                            className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-sky-500 px-3 text-sm font-semibold text-white"
+                                        >
+                                            <Download className="size-4" />
+                                            {tr('Завантажити')}
+                                        </a>
+                                    )}
+                                </li>
+                            ))}
+                        </ul>
+                    )}
                 </SettingsCard>
 
                 <SettingsCard

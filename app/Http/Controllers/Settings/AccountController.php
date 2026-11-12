@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Settings;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\BuildDataExport;
 use App\Models\ApiToken;
 use App\Models\Appeal;
 use App\Models\Comment;
 use App\Models\CommunityMember;
+use App\Models\DataExport;
 use App\Models\LoginEvent;
 use App\Models\Message;
 use App\Models\Photo;
@@ -24,10 +26,12 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
@@ -87,6 +91,7 @@ class AccountController extends Controller
             'appealKinds' => Appeal::KINDS,
             'mute' => $user->isMuted() ? ['until' => $user->muted_until?->toIso8601String(), 'reason' => $user->mute_reason] : null,
             'hideProfanity' => (bool) $user->pref('hide_profanity', false),
+            'exports' => DataExport::query()->where('user_id', $user->id)->latest('id')->limit(3)->get()->map(fn (DataExport $e) => $e->toCard())->values(),
             'loginAlerts' => $user->pref('notify_new_login') !== false,
             'teenMode' => TeenMode::state($user),
         ]);
@@ -231,6 +236,27 @@ class AccountController extends Controller
             }
             echo "\n}\n";
         }, $name, ['Content-Type' => 'application/json; charset=utf-8']);
+    }
+
+    /** Замовити повний архів (ZIP із файлами): не частіше разу на добу. */
+    public function requestArchive(Request $request): RedirectResponse
+    {
+        $user = $this->user($request);
+        $recent = DataExport::query()->where('user_id', $user->id)->where('created_at', '>=', now()->subDay())->whereIn('status', ['pending', 'ready'])->exists();
+        abort_if($recent, 429, 'Архів можна замовити раз на добу.');
+        $export = DataExport::query()->create(['user_id' => $user->id, 'status' => 'pending']);
+        BuildDataExport::dispatch($export->id);
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Готуємо архів — повідомимо, коли можна завантажити.']);
+
+        return back();
+    }
+
+    /** Завантажити готовий архів — лише власник і лише поки діє посилання. */
+    public function downloadArchive(Request $request, DataExport $export): BinaryFileResponse
+    {
+        abort_unless($export->user_id === $this->user($request)->id && $export->downloadable(), 404);
+
+        return response()->download(Storage::disk('local')->path((string) $export->path), 'gamecon-'.$this->user($request)->username.'-'.$export->created_at->format('Y-m-d').'.zip');
     }
 
     /**
