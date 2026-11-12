@@ -1314,6 +1314,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::patch('families/{family:id}', [Admin\FamilyController::class, 'update'])->whereNumber('family')->name('families.update');
         Route::delete('families/{family:id}', [Admin\FamilyController::class, 'destroy'])->whereNumber('family')->name('families.destroy');
         Route::get('clans', [Admin\ClanController::class, 'index'])->name('clans.index');
+        Route::get('metrics', Admin\MetricsController::class)->name('metrics');
         Route::get('vitals', [Admin\VitalsController::class, 'index'])->name('vitals.index');
         Route::get('links', [Admin\LinkCheckController::class, 'index'])->name('links.index');
         Route::post('links/{check}/ignore', [Admin\LinkCheckController::class, 'ignore'])->whereNumber('check')->name('links.ignore');

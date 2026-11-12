@@ -2,6 +2,7 @@ import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { NavigationSkeleton } from '@/components/gc/navigation-skeleton';
 import { Link, router, usePage } from '@inertiajs/react';
 import {
+    ChartLine,
     Unlink,
     Gauge,
     Activity,
@@ -129,6 +130,11 @@ function groups(): { title: string; items: Item[] }[] {
                     label: tr('Система'),
                     href: '/admin/system',
                     icon: DatabaseBackup,
+                },
+                {
+                    label: tr('Метрики'),
+                    href: '/admin/metrics',
+                    icon: ChartLine,
                 },
                 {
                     label: tr('Швидкість'),

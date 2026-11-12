@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Services\Analytics\ActivityMetrics;
 use App\Services\Auth\AccountSecurity;
 use App\Services\Engagement\Streaks;
 use Closure;
@@ -36,6 +37,7 @@ class TrackUserActivity
 
         if ($user) {
             $security->touch($request, $user);
+            app(ActivityMetrics::class)->touch($user, 'web', $request);
         }
 
         if ($user && (! $user->last_seen_at || $user->last_seen_at->lt(now()->subMinute()))) {

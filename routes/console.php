@@ -3,6 +3,7 @@
 use App\Models\AppLoginRequest;
 use App\Models\SpamBlock;
 use App\Services\Account\DataExporter;
+use App\Services\Analytics\ActivityMetrics;
 use App\Services\Billing\AuthorSubscriptions;
 use App\Services\Profile\UserRoles;
 use App\Services\Quality\PageVitals;
@@ -93,3 +94,6 @@ Schedule::command('gc:check-links')->dailyAt('03:25')->timezone('Europe/Kyiv')->
 
 // Прострочені архіви «Мої дані» (копії) — геть з диска.
 Schedule::call(fn () => app(DataExporter::class)->prune())->name('data-exports:prune')->dailyAt('05:50')->withoutOverlapping();
+
+// Відвідини розділів старші за 120 днів не потрібні (DAU-дні лишаються для утримання).
+Schedule::call(fn () => app(ActivityMetrics::class)->prune())->name('metrics:prune')->dailyAt('05:05')->withoutOverlapping();

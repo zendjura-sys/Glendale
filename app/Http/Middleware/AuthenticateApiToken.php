@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Models\ApiToken;
+use App\Services\Analytics\ActivityMetrics;
 use App\Services\Engagement\Streaks;
 use Closure;
 use Illuminate\Http\Request;
@@ -44,6 +45,8 @@ class AuthenticateApiToken
             $record->forceFill(['last_used_at' => now()])->saveQuietly();
         }
 
+        // Активність у застосунку — платформа «app» (для DAU і утримання).
+        app(ActivityMetrics::class)->touch($user, 'app');
         Auth::setUser($user);
         $request->attributes->set('api_token_id', $record->id);
 
