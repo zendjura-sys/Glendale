@@ -794,6 +794,8 @@ Route::prefix('v1')->group(function () {
                     Route::delete('news/{news}', [ClanController::class, 'deleteNews'])->whereNumber('news');
                     Route::post('events', [ClanController::class, 'event'])->middleware('throttle:20,1');
                     Route::post('events/{event}/rsvp', [ClanController::class, 'rsvp'])->whereNumber('event');
+                    Route::post('events/{event}/bracket', [ClanController::class, 'bracket'])->whereNumber('event')->middleware('throttle:30,1');
+                    Route::get('events/{event}/bracket', [ClanController::class, 'bracketState'])->whereNumber('event')->middleware('throttle:120,1');
                     Route::delete('events/{event}', [ClanController::class, 'deleteEvent'])->whereNumber('event');
                     Route::post('contributions', [ClanController::class, 'contribute'])->middleware('throttle:30,1');
                     Route::post('contributions/{contribution}', [ClanController::class, 'review'])->whereNumber('contribution');

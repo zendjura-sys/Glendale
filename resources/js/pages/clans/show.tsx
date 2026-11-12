@@ -1,3 +1,5 @@
+import { LiveBracket } from '@/components/clans/live-bracket';
+import type { BracketData } from '@/components/clans/live-bracket';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import {
     BellRing,
@@ -1042,6 +1044,14 @@ function EventsTab({
                             {tr('Іде:')} {e.going_count}
                             {e.repeat === 'weekly' ? ` · ${tr('Щотижня')}` : ''}
                         </p>
+                        {e.bracket &&
+                            e.bracket.teams?.some((t) => t.trim() !== '') && (
+                                <LiveBracket
+                                    url={`${base}/events/${e.id}/bracket`}
+                                    initial={e.bracket as BracketData}
+                                    startsAt={e.starts_at}
+                                />
+                            )}
                         {canManage && <BracketForm base={base} event={e} />}
                     </div>
                     <button

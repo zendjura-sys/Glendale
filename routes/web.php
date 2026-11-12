@@ -828,6 +828,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
             Route::delete('news/{news}', [ClanController::class, 'deleteNews'])->whereNumber('news')->name('news.destroy');
             Route::post('events', [ClanController::class, 'event'])->middleware('throttle:20,1')->name('events.store');
             Route::post('events/{event}/bracket', [ClanController::class, 'bracket'])->whereNumber('event')->middleware('throttle:30,1')->name('events.bracket');
+            Route::get('events/{event}/bracket', [ClanController::class, 'bracketState'])->whereNumber('event')->middleware('throttle:120,1')->name('events.bracket.show');
             Route::post('events/{event}/rsvp', [ClanController::class, 'rsvp'])->whereNumber('event')->name('events.rsvp');
             Route::delete('events/{event}', [ClanController::class, 'deleteEvent'])->whereNumber('event')->name('events.destroy');
             Route::post('contributions', [ClanController::class, 'contribute'])->middleware('throttle:30,1')->name('contributions.store');

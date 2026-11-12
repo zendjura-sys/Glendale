@@ -17,6 +17,7 @@ use App\Services\Clans\ClanMvp;
 use App\Services\Clans\ClanService;
 use App\Support\Plugins\Plugins;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -379,6 +380,16 @@ class ClanController extends Controller
         ]);
 
         return $this->done('Сітку збережено.');
+    }
+
+    /** Жива сітка заходу: учасники клану опитують її, поки йде турнір. */
+    public function bracketState(Request $request, Clan $clan, ClanEvent $event): JsonResponse
+    {
+        $this->feature($clan, 'events');
+        $this->me($request, $clan);
+        abort_unless($event->clan_id === $clan->id, 404);
+
+        return response()->json(['bracket' => $event->bracket, 'updated_at' => $event->updated_at?->toIso8601String()]);
     }
 
     public function contribute(Request $request, Clan $clan): RedirectResponse
