@@ -3,6 +3,12 @@ import { ThumbsDown, ThumbsUp, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { toast } from 'sonner';
+import {
+    CriteriaBars,
+    CriteriaChips,
+    CriteriaInput,
+} from '@/components/gc/review-criteria';
+import type { Criteria } from '@/components/gc/review-criteria';
 import { UserAvatar } from '@/components/gc/user-avatar';
 import { api } from '@/lib/api';
 import { formatDate, plural } from '@/lib/format';
@@ -14,6 +20,7 @@ type Review = {
     id: number;
     body: string;
     score: number;
+    criteria?: Criteria | null;
     recommended: boolean;
     hours: number | null;
     helpful_count: number;
@@ -25,7 +32,12 @@ type Review = {
 
 type Data = {
     reviews: { data: Review[]; next_page_url: string | null };
-    summary: { count: number; recommended: number; average: number };
+    summary: {
+        count: number;
+        recommended: number;
+        average: number;
+        criteria?: Record<string, number | null>;
+    };
     mine: Review | null;
 };
 
@@ -44,6 +56,7 @@ export function GameReviews({
     const [score, setScore] = useState(8);
     const [recommended, setRecommended] = useState(true);
     const [hours, setHours] = useState('');
+    const [criteria, setCriteria] = useState<Criteria>({});
     const [busy, setBusy] = useState(false);
 
     const load = () =>
@@ -55,6 +68,7 @@ export function GameReviews({
                     setScore(d.mine.score);
                     setRecommended(d.mine.recommended);
                     setHours(d.mine.hours ? String(d.mine.hours) : '');
+                    setCriteria(d.mine.criteria ?? {});
                 }
             })
             .catch(() => undefined);
@@ -72,6 +86,7 @@ export function GameReviews({
             score,
             recommended,
             hours: hours ? Number(hours) : null,
+            criteria,
         })
             .then(() => {
                 toast.success(tr('Огляд опубліковано.'));
@@ -164,6 +179,8 @@ export function GameReviews({
                 </div>
             </div>
 
+            <CriteriaBars kind="game" averages={summary.criteria} />
+
             {signedIn &&
                 (writing ? (
                     <form
@@ -218,6 +235,11 @@ export function GameReviews({
                                 className="input-glass h-9 w-32 rounded-xl px-3 text-sm text-white"
                             />
                         </div>
+                        <CriteriaInput
+                            kind="game"
+                            value={criteria}
+                            onChange={setCriteria}
+                        />
                         <textarea
                             value={body}
                             onChange={(e) => setBody(e.target.value)}
@@ -293,6 +315,7 @@ export function GameReviews({
                             {r.score}/10
                         </span>
                     </div>
+                    <CriteriaChips kind="game" criteria={r.criteria} />
                     <p className="mt-2 text-sm leading-relaxed whitespace-pre-line text-white/85">
                         {r.body}
                     </p>

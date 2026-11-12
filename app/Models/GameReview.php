@@ -15,18 +15,20 @@ use Illuminate\Support\Carbon;
  * @property int $game_id
  * @property string $body
  * @property int $score 1–10
+ * @property array<string, int>|null $criteria Оцінки за критеріями (ReviewCriteria)
  * @property bool $recommended
  * @property int|null $hours
  * @property int $helpful_count
  * @property Carbon $created_at
  * @property-read User|null $user
  */
-#[Fillable(['user_id', 'game_id', 'body', 'score', 'recommended', 'hours', 'helpful_count'])]
+#[Fillable(['user_id', 'game_id', 'body', 'score', 'recommended', 'hours', 'helpful_count', 'criteria'])]
 class GameReview extends Model
 {
     protected function casts(): array
     {
-        return ['recommended' => 'boolean'];
+        return [
+            'criteria' => 'array', 'recommended' => 'boolean'];
     }
 
     /** @return BelongsTo<User, $this> */
@@ -50,6 +52,7 @@ class GameReview extends Model
             'id' => $this->id,
             'body' => $this->body,
             'score' => $this->score,
+            'criteria' => $this->criteria,
             'recommended' => $this->recommended,
             'hours' => $this->hours,
             'helpful_count' => $this->helpful_count,

@@ -15,18 +15,20 @@ use Illuminate\Support\Carbon;
  * @property int $movie_id
  * @property string $body
  * @property int $score 1–10
+ * @property array<string, int>|null $criteria Оцінки за критеріями (ReviewCriteria)
  * @property bool $spoiler
  * @property int $likes_count
  * @property Carbon $created_at
  * @property-read User|null $user
  * @property-read Movie|null $movie
  */
-#[Fillable(['user_id', 'movie_id', 'body', 'score', 'spoiler', 'likes_count'])]
+#[Fillable(['user_id', 'movie_id', 'body', 'score', 'spoiler', 'likes_count', 'criteria'])]
 class MovieReview extends Model
 {
     protected function casts(): array
     {
-        return ['spoiler' => 'boolean'];
+        return [
+            'criteria' => 'array', 'spoiler' => 'boolean'];
     }
 
     /** @return BelongsTo<User, $this> */
@@ -50,6 +52,7 @@ class MovieReview extends Model
             'id' => $this->id,
             'body' => $this->body,
             'score' => $this->score,
+            'criteria' => $this->criteria,
             'spoiler' => $this->spoiler,
             'likes_count' => $this->likes_count,
             'liked' => $liked,

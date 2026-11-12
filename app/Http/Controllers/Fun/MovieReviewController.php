@@ -9,6 +9,7 @@ use App\Services\Cinema\CinemaService;
 use App\Services\FriendshipService;
 use App\Services\Moderation\ContentFilter;
 use App\Support\Plugins\Plugins;
+use App\Support\ReviewCriteria;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -30,7 +31,7 @@ class MovieReviewController extends Controller
 
         return response()->json([
             'reviews' => $reviews->through(fn (MovieReview $r) => $r->toCard(in_array($r->id, $liked, true), $viewer->id)),
-            'summary' => ['count' => (clone $all)->count(), 'average' => round((float) (clone $all)->avg('score'), 1)],
+            'summary' => ['count' => (clone $all)->count(), 'average' => round((float) (clone $all)->avg('score'), 1), 'criteria' => ReviewCriteria::averages(clone $all, ReviewCriteria::MOVIE)],
             'mine' => MovieReview::query()->where('movie_id', $movie->id)->where('user_id', $viewer->id)->first()?->toCard(false, $viewer->id),
         ]);
     }
@@ -44,11 +45,12 @@ class MovieReviewController extends Controller
             'body' => ['required', 'string', 'min:20', 'max:5000'],
             'score' => ['required', 'integer', 'min:1', 'max:10'],
             'spoiler' => ['required', 'boolean'],
+            ...ReviewCriteria::rules(ReviewCriteria::MOVIE),
         ], ['body.min' => 'Рецензія — хоча б кілька речень (від 20 символів).']);
         $filter->ensureCanPost($user);
         $review = MovieReview::query()->updateOrCreate(
             ['user_id' => $user->id, 'movie_id' => $movie->id],
-            [...$data, 'body' => (string) $filter->clean(trim($data['body']))],
+            [...$data, 'body' => (string) $filter->clean(trim($data['body'])), 'criteria' => ReviewCriteria::clean($data['criteria'] ?? null, ReviewCriteria::MOVIE)],
         );
         // Оцінка рецензії — це й оцінка людини в «Кіно».
         $cinema->rate($user, $movie, (int) $data['score']);

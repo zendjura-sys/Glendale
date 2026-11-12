@@ -15,6 +15,12 @@ import { api } from '@/lib/api';
 import { formatDate } from '@/lib/format';
 import { tr } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
+import {
+    CriteriaBars,
+    CriteriaChips,
+    CriteriaInput,
+} from '@/components/gc/review-criteria';
+import type { Criteria } from '@/components/gc/review-criteria';
 import type { MovieCard } from '@/types/cinema';
 import type { UserCard } from '@/types';
 
@@ -22,6 +28,7 @@ export type MovieReview = {
     id: number;
     body: string;
     score: number;
+    criteria?: Criteria | null;
     spoiler: boolean;
     likes_count: number;
     liked: boolean;
@@ -95,6 +102,7 @@ export function ReviewCard({
                             {review.score}/10
                         </span>
                     </div>
+                    <CriteriaChips kind="movie" criteria={review.criteria} />
                     <div className="relative mt-3">
                         <p
                             className={cn(
@@ -157,7 +165,11 @@ export function ReviewCard({
 
 type ReviewsData = {
     reviews: { data: MovieReview[] };
-    summary: { count: number; average: number };
+    summary: {
+        count: number;
+        average: number;
+        criteria?: Record<string, number | null>;
+    };
     mine: MovieReview | null;
 };
 
@@ -168,6 +180,7 @@ export function MovieReviews({ slug }: { slug: string }) {
     const [body, setBody] = useState('');
     const [score, setScore] = useState(8);
     const [spoiler, setSpoiler] = useState(false);
+    const [criteria, setCriteria] = useState<Criteria>({});
     const [busy, setBusy] = useState(false);
 
     const load = () =>
@@ -178,6 +191,7 @@ export function MovieReviews({ slug }: { slug: string }) {
                     setBody(d.mine.body);
                     setScore(d.mine.score);
                     setSpoiler(d.mine.spoiler);
+                    setCriteria(d.mine.criteria ?? {});
                 }
             })
             .catch(() => undefined);
@@ -190,7 +204,12 @@ export function MovieReviews({ slug }: { slug: string }) {
     const submit = (e: FormEvent) => {
         e.preventDefault();
         setBusy(true);
-        api('POST', `/cinema/${slug}/reviews`, { body, score, spoiler })
+        api('POST', `/cinema/${slug}/reviews`, {
+            body,
+            score,
+            spoiler,
+            criteria,
+        })
             .then(() => {
                 toast.success(tr('Рецензію опубліковано.'));
                 setWriting(false);
@@ -228,6 +247,14 @@ export function MovieReviews({ slug }: { slug: string }) {
                     {data?.mine ? tr('Змінити мою') : tr('Написати рецензію')}
                 </button>
             </div>
+            {data?.summary.criteria && (
+                <div className="mb-4">
+                    <CriteriaBars
+                        kind="movie"
+                        averages={data.summary.criteria}
+                    />
+                </div>
+            )}
             {writing && (
                 <form onSubmit={submit} className="mb-4 space-y-3">
                     <div className="flex flex-wrap gap-1.5">
@@ -249,6 +276,11 @@ export function MovieReviews({ slug }: { slug: string }) {
                             ),
                         )}
                     </div>
+                    <CriteriaInput
+                        kind="movie"
+                        value={criteria}
+                        onChange={setCriteria}
+                    />
                     <textarea
                         value={body}
                         onChange={(e) => setBody(e.target.value)}

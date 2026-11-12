@@ -8,6 +8,7 @@ use App\Models\GameReview;
 use App\Services\Games\CommunityRatings;
 use App\Services\Moderation\ContentFilter;
 use App\Support\Plugins\Plugins;
+use App\Support\ReviewCriteria;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -35,6 +36,7 @@ class GameReviewController extends Controller
                 'count' => (clone $all)->count(),
                 'recommended' => (clone $all)->where('recommended', true)->count(),
                 'average' => round((float) (clone $all)->avg('score'), 1),
+                'criteria' => ReviewCriteria::averages(clone $all, ReviewCriteria::GAME),
             ],
             'mine' => $viewer ? GameReview::query()->where('game_id', $game->id)->where('user_id', $viewer->id)->first()?->toCard(false, $viewer->id) : null,
         ]);
@@ -49,11 +51,12 @@ class GameReviewController extends Controller
             'score' => ['required', 'integer', 'min:1', 'max:10'],
             'recommended' => ['required', 'boolean'],
             'hours' => ['nullable', 'integer', 'min:0', 'max:20000'],
+            ...ReviewCriteria::rules(ReviewCriteria::GAME),
         ], ['body.min' => 'Огляд — хоча б кілька речень (від 20 символів).']);
         $filter->ensureCanPost($user);
         $review = GameReview::query()->updateOrCreate(
             ['user_id' => $user->id, 'game_id' => $game->id],
-            [...$data, 'body' => (string) $filter->clean(trim($data['body']))],
+            [...$data, 'body' => (string) $filter->clean(trim($data['body'])), 'criteria' => ReviewCriteria::clean($data['criteria'] ?? null, ReviewCriteria::GAME)],
         );
         // Оцінка огляду — це й оцінка гравця в рейтингу GameCon.
         app(CommunityRatings::class)->rate($user, $game, (int) $data['score']);
