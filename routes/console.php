@@ -86,3 +86,6 @@ Schedule::call(fn () => app(UserRoles::class)->sync())->name('user-roles:sync')-
 
 // Заміри швидкості старші за 30 днів не потрібні.
 Schedule::call(fn () => app(PageVitals::class)->prune())->name('vitals:prune')->dailyAt('05:35')->withoutOverlapping();
+
+// Нічна перевірка битих посилань і картинок — лише звіт, нічого не видаляє.
+Schedule::command('gc:check-links')->dailyAt('03:25')->timezone('Europe/Kyiv')->withoutOverlapping(60)->runInBackground();
