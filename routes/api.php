@@ -19,6 +19,7 @@ use App\Http\Controllers\AvatarCharacterController;
 use App\Http\Controllers\BioLinksController;
 use App\Http\Controllers\Bots;
 use App\Http\Controllers\CallController;
+use App\Http\Controllers\CardController;
 use App\Http\Controllers\CharacterController;
 use App\Http\Controllers\ChatBotController;
 use App\Http\Controllers\ChatExtrasController;
@@ -991,6 +992,13 @@ Route::prefix('v1')->group(function () {
                 Route::post('{quest}/claim', [QuestController::class, 'claim'])->where('quest', '[a-z]{2,24}')->middleware('throttle:30,1');
             });
 
+            Route::prefix('cards')->middleware('module:quests')->group(function () {
+                Route::get('/', [CardController::class, 'index']);
+                Route::post('open', [CardController::class, 'open'])->middleware('throttle:10,1');
+                Route::post('dust', [CardController::class, 'dust'])->middleware('throttle:10,1');
+                Route::post('{game}/craft', [CardController::class, 'craft'])->whereNumber('game')->middleware('throttle:20,1');
+                Route::post('{game}/showcase', [CardController::class, 'showcase'])->whereNumber('game')->middleware('throttle:30,1');
+            });
             Route::prefix('season-events')->middleware('module:quests')->group(function () {
                 Route::get('/', [SiteEventController::class, 'index']);
                 Route::get('{slug}', [SiteEventController::class, 'show'])->where('slug', '[a-z0-9-]+');

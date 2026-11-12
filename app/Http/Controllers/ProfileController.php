@@ -16,6 +16,7 @@ use App\Models\UserReport;
 use App\Models\UserStream;
 use App\Services\Accounts\AccountTypes;
 use App\Services\Achievements;
+use App\Services\Cards\CardCollection;
 use App\Services\FriendshipService;
 use App\Services\GameCard;
 use App\Services\Games\Backlog;
@@ -152,6 +153,7 @@ class ProfileController extends Controller
 
         return Inertia::render('profile/show', [
             'compatibility' => $compatibility,
+            'cardShowcase' => $canSeeContent && app(ModuleManager::class)->enabled('quests') ? app(CardCollection::class)->showcase($user) : null,
             'setup' => app(Plugins::class)->on('my_setup') ? app(MySetup::class)->visibleFor($user, $viewer) : null,
             'profileTrack' => app(Plugins::class)->on('profile_track') && $canSeeContent ? ProfileTrack::of($user) : null,
             'account' => app(Plugins::class)->on('account_types') ? $this->accountCard($user) : null,

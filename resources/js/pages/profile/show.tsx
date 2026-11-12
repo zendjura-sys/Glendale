@@ -16,6 +16,8 @@ import { GamerIds } from '@/components/profile/gamer-ids';
 import type { GamerId } from '@/components/profile/gamer-ids';
 import { MySetup } from '@/components/profile/my-setup';
 import { ProfileTrack } from '@/components/profile/profile-track';
+import { CardShowcase } from '@/components/cards/game-card';
+import type { ShowcaseData } from '@/components/cards/game-card';
 import type { TrackCard } from '@/types/music';
 import type { SetupData } from '@/components/profile/my-setup';
 import { StreamSchedule } from '@/components/profile/stream-schedule';
@@ -117,6 +119,7 @@ const PROFILE_BLOCKS = [
     'steam_achievements',
     'setup',
     'stream_schedule',
+    'cards',
     'games',
     'about',
     'achievements',
@@ -182,6 +185,7 @@ type Profile = UserCard & {
 type Props = {
     compatibility?: Compatibility | null;
     setup?: SetupData | null;
+    cardShowcase?: ShowcaseData | null;
     profileTrack?: TrackCard | null;
     streamSchedule?: StreamSlot[] | null;
     account?: AccountCardData | null;
@@ -441,6 +445,7 @@ function Uploader({
 export default function ProfileShow({
     compatibility = null,
     setup = null,
+    cardShowcase = null,
     profileTrack = null,
     streamSchedule = null,
     account = null,
@@ -1379,6 +1384,12 @@ export default function ProfileShow({
                                     stream_schedule: streamSchedule && (
                                         <StreamSchedule
                                             slots={streamSchedule}
+                                            isSelf={isSelf}
+                                        />
+                                    ),
+                                    cards: cardShowcase && (
+                                        <CardShowcase
+                                            data={cardShowcase}
                                             isSelf={isSelf}
                                         />
                                     ),

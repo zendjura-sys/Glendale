@@ -201,9 +201,21 @@ export default function SeasonPass({
                                 'Очки сезону дають щоденні завдання: щодня три нові, кожне — від 10 до 25 очок. Очки рахуються лише в цьому місяці.',
                             )}
                         </p>
-                        <Button asChild variant="secondary" className="mt-4">
-                            <Link href="/quests">{tr('Завдання дня')}</Link>
-                        </Button>
+                        <div className="mt-4 flex flex-wrap gap-2">
+                            <Button asChild variant="secondary">
+                                <Link href="/quests">{tr('Завдання дня')}</Link>
+                            </Button>
+                            <Button asChild variant="secondary">
+                                <Link href="/cards">
+                                    {tr('Колекційні картки')}
+                                </Link>
+                            </Button>
+                            <Button asChild variant="secondary">
+                                <Link href="/season-events">
+                                    {tr('Сезонні події')}
+                                </Link>
+                            </Button>
+                        </div>
                     </section>
 
                     <section className="gc-solid rounded-xl p-4 sm:p-5">
