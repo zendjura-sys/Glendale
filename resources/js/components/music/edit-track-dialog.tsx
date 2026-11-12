@@ -1,11 +1,13 @@
-import { ImagePlus, Loader2, Undo2, WandSparkles } from 'lucide-react';
+import { ImagePlus, Loader2, Timer, Undo2, WandSparkles } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
+import { LyricsSync } from '@/components/music/lyrics-sync';
 import { TrackCover } from '@/components/music/track-cover';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { api, ApiError } from '@/lib/api';
 import type { LocalTrack } from '@/types';
 import { tr } from '@/lib/i18n';
+import { parseLyrics } from '@/lib/lyrics';
 import { usePlugin } from '@/lib/plugins';
 
 /** Назви джерел метаданих для підпису «Знайдено в: …». */
@@ -54,6 +56,7 @@ export function EditTrackDialog({
     onSaved: (track: LocalTrack) => void;
 }) {
     const lyricsOn = usePlugin('lyrics');
+    const [syncing, setSyncing] = useState(false);
     const [data, setData] = useState({
         title: '',
         artist: '',
@@ -346,6 +349,18 @@ export function EditTrackDialog({
                                     'Вставте текст у форматі LRC ([01:23.45] рядок) — у плеєрі рядки підсвічуватимуться в такт пісні.',
                                 )}
                             </span>
+                            {track &&
+                                data.lyrics.trim() !== '' &&
+                                !parseLyrics(data.lyrics).timed && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setSyncing(true)}
+                                        className="mt-2 inline-flex h-9 items-center gap-2 rounded-xl bg-white/[0.06] px-3 text-sm font-medium text-white/85 transition hover:bg-white/[0.1] hover:text-white"
+                                    >
+                                        <Timer className="size-4" />
+                                        {tr('Синхронізувати з піснею')}
+                                    </button>
+                                )}
                         </label>
                     )}
                 </div>
@@ -372,6 +387,15 @@ export function EditTrackDialog({
                     </button>
                 </div>
             </DialogContent>
+            {track && (
+                <LyricsSync
+                    open={syncing}
+                    onOpenChange={setSyncing}
+                    track={track}
+                    text={data.lyrics}
+                    onDone={(lrc) => setData({ ...data, lyrics: lrc })}
+                />
+            )}
         </Dialog>
     );
 }
