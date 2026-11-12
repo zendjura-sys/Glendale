@@ -59,7 +59,15 @@ export default function CinemaMy({
             <Head title={tr('Закладки')} />
             <CinemaShell side={side}>
                 <CinemaNav active="my" />
-                <UnderlineTabs tabs={tabs} active={status} />
+                <div className="flex flex-wrap items-center gap-2">
+                    <UnderlineTabs tabs={tabs} active={status} />
+                    <Link
+                        href="/cinema/import"
+                        className="ml-auto rounded-xl bg-white/[0.07] px-3 py-1.5 text-sm font-medium text-white hover:bg-white/[0.11]"
+                    >
+                        {tr('Імпорт з Shikimori / MyAnimeList')}
+                    </Link>
+                </div>
 
                 {status === 'lists' ? (
                     lists && lists.length > 0 ? (

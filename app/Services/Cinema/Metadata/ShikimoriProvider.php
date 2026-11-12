@@ -93,6 +93,32 @@ class ShikimoriProvider extends MetadataProvider
     }
 
     /**
+     * Список аніме людини на Shikimori (публічний профіль): id (= MyAnimeList), статус, оцінка, серії.
+     *
+     * @return list<array{id: string, status: string, score: int, episodes: int, title: string}>
+     */
+    public function userRates(string $nickname): array
+    {
+        $rows = $this->fetch($this->http(), $this->baseUrl().'/api/users/'.rawurlencode($nickname).'/anime_rates', ['limit' => 5000]);
+        $out = [];
+        foreach (is_array($rows) ? $rows : [] as $row) {
+            $anime = is_array($row) ? ($row['anime'] ?? null) : null;
+            if (! is_array($anime) || ! isset($anime['id'])) {
+                continue;
+            }
+            $out[] = [
+                'id' => (string) $anime['id'],
+                'status' => (string) ($row['status'] ?? ''),
+                'score' => (int) ($row['score'] ?? 0),
+                'episodes' => (int) ($row['episodes'] ?? 0),
+                'title' => (string) (self::str($anime['russian'] ?? null) ?: self::str($anime['name'] ?? null) ?: ''),
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
      * Персонажі аніме для колекційних карток: головні й найпомітніші другорядні.
      *
      * @return list<array{source_id: string, name: string, image_url: string|null, role: string, popularity: int}>

@@ -4,6 +4,7 @@ use App\Http\Controllers\AccountSwitchController;
 use App\Http\Controllers\Admin;
 use App\Http\Controllers\AiController;
 use App\Http\Controllers\AirAlertController;
+use App\Http\Controllers\AnimeImportController;
 use App\Http\Controllers\AppDownloadController;
 use App\Http\Controllers\AppLinksController;
 use App\Http\Controllers\ArticleController;
@@ -732,6 +733,9 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::get('week', [CinemaController::class, 'week'])->name('week');
         Route::post('week/{movie}', [CinemaController::class, 'voteWeek'])->middleware('throttle:20,1')->name('week.vote');
         Route::get('my', [CinemaController::class, 'my'])->name('my');
+        Route::get('import', [AnimeImportController::class, 'show'])->name('import');
+        Route::post('import/preview', [AnimeImportController::class, 'preview'])->middleware('throttle:10,1')->name('import.preview');
+        Route::post('import', [AnimeImportController::class, 'store'])->middleware('throttle:10,1')->name('import.store');
         Route::get('overview', [CinemaController::class, 'overview'])->name('overview');
         Route::get('schedule', [CinemaController::class, 'schedule'])->name('schedule');
         Route::get('random', [CinemaController::class, 'random'])->middleware('throttle:60,1')->name('random');
