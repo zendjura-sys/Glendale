@@ -126,6 +126,7 @@ use App\Http\Controllers\TournamentController;
 use App\Http\Controllers\TrackController;
 use App\Http\Controllers\TrackImportController;
 use App\Http\Controllers\TranslateController;
+use App\Http\Controllers\TransparencyController;
 use App\Http\Controllers\VitalsController;
 use App\Http\Controllers\VoiceController;
 use App\Http\Controllers\WatchPartyController;
@@ -997,6 +998,7 @@ Route::prefix('v1')->group(function () {
             });
 
             Route::get('level', [LevelController::class, 'index'])->middleware('throttle:30,1');
+            Route::get('transparency', TransparencyController::class)->middleware('throttle:60,1');
             Route::get('rewards', [LoginRewardController::class, 'index'])->middleware('module:quests');
             Route::post('rewards/claim', [LoginRewardController::class, 'claim'])->middleware(['module:quests', 'throttle:10,1']);
             Route::prefix('cards')->middleware('module:quests')->group(function () {

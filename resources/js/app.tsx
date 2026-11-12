@@ -127,6 +127,7 @@ const PUBLIC_PAGES = new Set([
     'communities/index',
     'communities/guest',
     'status',
+    'transparency',
     'app/index',
     'public/entity',
 ]);

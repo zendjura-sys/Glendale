@@ -129,6 +129,7 @@ use App\Http\Controllers\TournamentController;
 use App\Http\Controllers\TrackController;
 use App\Http\Controllers\TrackImportController;
 use App\Http\Controllers\TranslateController;
+use App\Http\Controllers\TransparencyController;
 use App\Http\Controllers\VoiceController;
 use App\Http\Controllers\WatchPartyController;
 use App\Http\Controllers\WebPushController;
@@ -160,6 +161,7 @@ Route::get('contacts', [LegalController::class, 'contacts'])->name('legal.contac
 
 // Сторінка статусу й картки для прев’ю посилань — відкриті без входу.
 Route::get('status', StatusPageController::class)->middleware('throttle:60,1')->name('status.page');
+Route::get('transparency', TransparencyController::class)->middleware('throttle:60,1')->name('transparency');
 Route::get('app', AppDownloadController::class)->name('app.download');
 Route::get('og/u/{username}.png', [OgImageController::class, 'profile'])->where('username', '[A-Za-z0-9_.]{3,32}')->middleware('throttle:120,1')->name('og.profile');
 Route::get('og/c/{slug}.png', [OgImageController::class, 'community'])->where('slug', '[A-Za-z0-9_-]{2,64}')->middleware('throttle:120,1')->name('og.community');
