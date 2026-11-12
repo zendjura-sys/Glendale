@@ -35,7 +35,7 @@ function rewardText(kind: Cell['kind'], amount: number): string {
         case 'frame':
             return tr('Рамка «Постійний гість»');
         default:
-            return tr('{n} уламків', { n: amount });
+            return tr('{n} кристалів', { n: amount });
     }
 }
 
@@ -109,7 +109,7 @@ export default function RewardsCalendar({
                         </p>
                         {plus && (
                             <p className="mt-1 text-xs text-primary">
-                                {tr('З GameCon+ уламків удвічі більше')}
+                                {tr('З GameCon+ кристалів удвічі більше')}
                             </p>
                         )}
                     </div>
@@ -157,7 +157,7 @@ export default function RewardsCalendar({
                 </ol>
 
                 <p className="text-sm text-white/55">
-                    {tr('Уламки й набори — для')}{' '}
+                    {tr('Кристали й набори — для')}{' '}
                     <Link
                         href="/cards"
                         className="text-primary hover:underline"

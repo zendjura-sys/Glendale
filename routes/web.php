@@ -969,6 +969,10 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::get('/', [CardController::class, 'index'])->name('index');
         Route::post('open', [CardController::class, 'open'])->middleware('throttle:10,1')->name('open');
         Route::post('dust', [CardController::class, 'dust'])->middleware('throttle:10,1')->name('dust');
+        Route::get('chance', [CardController::class, 'chance'])->middleware('throttle:120,1')->name('chance');
+        Route::post('drops/{drop}/open', [CardController::class, 'openDrop'])->whereNumber('drop')->middleware('throttle:30,1')->name('drops.open');
+        Route::post('{card}/split', [CardController::class, 'split'])->where('card', '[gc]\d{1,10}')->middleware('throttle:60,1')->name('split');
+        Route::post('{card}/gift', [CardController::class, 'gift'])->where('card', '[gc]\d{1,10}')->middleware('throttle:20,1')->name('gift');
         Route::post('{card}/craft', [CardController::class, 'craft'])->where('card', '[gc]\d{1,10}')->middleware('throttle:20,1')->name('craft');
         Route::post('{card}/showcase', [CardController::class, 'showcase'])->where('card', '[gc]\d{1,10}')->middleware('throttle:30,1')->name('showcase');
     });
@@ -1270,6 +1274,8 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::get('card-characters', [Admin\CardCharacterController::class, 'index'])->name('card-characters.index');
         Route::post('card-characters', [Admin\CardCharacterController::class, 'store'])->name('card-characters.store');
         Route::post('card-characters/sync', [Admin\CardCharacterController::class, 'sync'])->middleware('throttle:5,1')->name('card-characters.sync');
+        Route::post('card-characters/ai-rank', [Admin\CardCharacterController::class, 'aiRank'])->middleware('throttle:5,1')->name('card-characters.ai-rank');
+        Route::post('card-characters/{character}/rank', [Admin\CardCharacterController::class, 'rank'])->whereNumber('character')->name('card-characters.rank');
         Route::post('card-characters/{character}/toggle', [Admin\CardCharacterController::class, 'toggle'])->whereNumber('character')->name('card-characters.toggle');
         Route::get('site-events', [Admin\SiteEventController::class, 'index'])->name('site-events.index');
         Route::post('site-events', [Admin\SiteEventController::class, 'store'])->name('site-events.store');

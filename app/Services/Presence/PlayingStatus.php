@@ -6,6 +6,7 @@ use App\Models\Game;
 use App\Models\GtaServer;
 use App\Models\PlayedPlace;
 use App\Models\User;
+use App\Services\Cards\CardDrops;
 use App\Services\FollowAlerts;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -70,6 +71,10 @@ class PlayingStatus
             'playing_since' => $changedTarget || $user->playing_since === null || $user->playing_until?->isPast() ? now() : $user->playing_since,
         ])->save();
 
+        // Гра з автоматичного статусу (Steam/Discord, не вручну) — колекційна картка цієї гри раз на тиждень.
+        if ($target['kind'] === PlayedPlace::GAME && $target['id'] !== null && $source !== self::SOURCE_MANUAL) {
+            app(CardDrops::class)->playing($user, (int) $target['id']);
+        }
         if (in_array($target['kind'], [PlayedPlace::GAME, PlayedPlace::SERVER], true) && $target['id'] !== null) {
             PlayedPlace::query()->firstOrCreate([
                 'user_id' => $user->id,

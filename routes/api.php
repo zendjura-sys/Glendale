@@ -1006,6 +1006,10 @@ Route::prefix('v1')->group(function () {
                 Route::get('/', [CardController::class, 'index']);
                 Route::post('open', [CardController::class, 'open'])->middleware('throttle:10,1');
                 Route::post('dust', [CardController::class, 'dust'])->middleware('throttle:10,1');
+                Route::get('chance', [CardController::class, 'chance'])->middleware('throttle:120,1');
+                Route::post('drops/{drop}/open', [CardController::class, 'openDrop'])->whereNumber('drop')->middleware('throttle:30,1');
+                Route::post('{card}/split', [CardController::class, 'split'])->where('card', '[gc]\d{1,10}')->middleware('throttle:60,1');
+                Route::post('{card}/gift', [CardController::class, 'gift'])->where('card', '[gc]\d{1,10}')->middleware('throttle:20,1');
                 Route::post('{card}/craft', [CardController::class, 'craft'])->where('card', '[gc]\d{1,10}')->middleware('throttle:20,1');
                 Route::post('{card}/showcase', [CardController::class, 'showcase'])->where('card', '[gc]\d{1,10}')->middleware('throttle:30,1');
             });

@@ -8,6 +8,7 @@ use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\MessageReport;
 use App\Models\User;
+use App\Services\Cards\CardCollection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Storage;
@@ -140,6 +141,39 @@ class AiAssistant
         }
 
         return ['score' => max(0, min(100, (int) $json['score'])), 'reason' => Str::limit((string) ($json['reason'] ?? ''), 80)];
+    }
+
+    /**
+     * Ранги персонажів для колекційних карток: чим сильніший, впливовіший і культовіший персонаж — тим вищий ранг.
+     *
+     * @param  list<array{id: int, name: string, title: string, role: string}>  $characters
+     * @return array<int, array{rank: string, reason: string}>
+     */
+    public function cardRanks(array $characters): array
+    {
+        if ($characters === []) {
+            return [];
+        }
+        $list = implode("\n", array_map(fn (array $c) => "{$c['id']}. {$c['name']} — «{$c['title']}» (".($c['role'] === 'main' ? 'головний' : 'другорядний').')', $characters));
+        try {
+            $raw = $this->ai->complete(
+                'Ти експерт з аніме, фільмів і серіалів. Признач кожному персонажу ранг колекційної картки за шкалою від найнижчого до найвищого: N, G, F, E, D, C, B, A, R, SR, SSR, S, SS, SSS, EX, U. Враховуй силу, вплив на сюжет, культовість і популярність: масовка й епізодичні — N–D, помітні другорядні — C–A, сильні й улюблені — R–SSR, головні герої й легенди жанру — S–SSS, надзвичайні — EX, абсолютні ікони світового рівня — U (дуже рідко). Відповідай лише JSON: {"id": {"rank": "…", "reason": "до 80 символів українською"}, …}.',
+                [['role' => 'user', 'content' => $list]],
+                1500,
+            );
+        } catch (AiException) {
+            return [];
+        }
+        $json = json_decode((string) Str::of($raw)->after('{')->beforeLast('}')->prepend('{')->append('}'), true);
+        $out = [];
+        foreach (is_array($json) ? $json : [] as $id => $row) {
+            $rank = is_array($row) ? strtoupper((string) ($row['rank'] ?? '')) : '';
+            if (in_array($rank, CardCollection::RARITIES, true)) {
+                $out[(int) $id] = ['rank' => $rank, 'reason' => Str::limit((string) ($row['reason'] ?? ''), 190)];
+            }
+        }
+
+        return $out;
     }
 
     /** Ймовірність відвертого вмісту на фото 0..1 (запасний варіант до Sightengine). */

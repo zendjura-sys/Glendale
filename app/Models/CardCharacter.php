@@ -19,7 +19,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $popularity
  * @property bool $is_hidden
  */
-#[Fillable(['movie_id', 'source', 'source_id', 'name', 'image_url', 'role', 'popularity', 'is_hidden'])]
+#[Fillable(['movie_id', 'source', 'source_id', 'name', 'image_url', 'role', 'popularity', 'is_hidden', 'ai_rank', 'ai_reason', 'manual_rank'])]
 class CardCharacter extends Model
 {
     protected function casts(): array

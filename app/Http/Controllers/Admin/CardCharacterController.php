@@ -5,12 +5,14 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\CardCharacter;
 use App\Models\Movie;
+use App\Services\Cards\CardCollection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -28,6 +30,7 @@ class CardCharacterController extends Controller
                 ->through(fn (CardCharacter $c) => [
                     'id' => $c->id, 'name' => $c->name, 'image_url' => $c->image_url, 'role' => $c->role,
                     'source' => $c->source, 'is_hidden' => $c->is_hidden, 'movie' => $c->movie?->title,
+                    'ai_rank' => $c->ai_rank, 'ai_reason' => $c->ai_reason, 'manual_rank' => $c->manual_rank,
                 ]),
             'movies' => Movie::query()->where('is_published', true)->orderBy('title')->limit(500)->get(['id', 'title'])
                 ->map(fn (Movie $m) => ['id' => $m->id, 'title' => $m->title]),
@@ -58,6 +61,25 @@ class CardCharacterController extends Controller
         Log::info('admin: card character '.($character->is_hidden ? 'hidden' : 'shown'), ['admin' => $request->user()->id, 'character' => $character->id]);
 
         return back();
+    }
+
+    /** Ранг вручну (перекриває оцінку ІІ); порожньо — знову за ІІ чи популярністю. */
+    public function rank(Request $request, CardCharacter $character): RedirectResponse
+    {
+        $data = $request->validate(['rank' => ['nullable', Rule::in(CardCollection::RARITIES)]]);
+        $character->update(['manual_rank' => $data['rank'] ?? null]);
+        Cache::forget('cards.catalog');
+        Log::info('admin: card character rank', ['admin' => $request->user()->id, 'character' => $character->id, 'rank' => $data['rank'] ?? null]);
+
+        return back();
+    }
+
+    public function aiRank(Request $request): RedirectResponse
+    {
+        Artisan::call('cards:ai-rank', ['--batches' => 3]);
+        Log::info('admin: card characters ai rank', ['admin' => $request->user()->id]);
+
+        return back()->with('success', trim(Artisan::output()));
     }
 
     public function sync(Request $request): RedirectResponse

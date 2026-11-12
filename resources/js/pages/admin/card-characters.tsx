@@ -1,10 +1,11 @@
 import { Head, router } from '@inertiajs/react';
-import { Eye, EyeOff, Plus, RefreshCw } from 'lucide-react';
+import { Eye, EyeOff, Plus, RefreshCw, Sparkles } from 'lucide-react';
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { PageHeader, Pill, selectClass } from '@/components/gc/admin';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { RANKS } from '@/components/cards/game-card';
 import { tr } from '@/lib/i18n';
 
 type Row = {
@@ -15,6 +16,9 @@ type Row = {
     source: string;
     is_hidden: boolean;
     movie: string | null;
+    ai_rank: string | null;
+    ai_reason: string | null;
+    manual_rank: string | null;
 };
 
 type Props = {
@@ -53,19 +57,34 @@ export default function AdminCardCharacters({ characters, movies, q }: Props) {
                     'Персонажі аніме (Shikimori), фільмів і серіалів (TMDB) для колекційних карток. Приховані не випадають у наборах, але лишаються в альбомах тих, хто їх уже має.',
                 )}
                 actions={
-                    <Button
-                        variant="secondary"
-                        onClick={() =>
-                            router.post(
-                                '/admin/card-characters/sync',
-                                {},
-                                { preserveScroll: true },
-                            )
-                        }
-                    >
-                        <RefreshCw className="size-4" />
-                        {tr('Підтягнути зараз')}
-                    </Button>
+                    <div className="flex flex-wrap gap-2">
+                        <Button
+                            variant="secondary"
+                            onClick={() =>
+                                router.post(
+                                    '/admin/card-characters/ai-rank',
+                                    {},
+                                    { preserveScroll: true },
+                                )
+                            }
+                        >
+                            <Sparkles className="size-4" />
+                            {tr('Ранги від ІІ')}
+                        </Button>
+                        <Button
+                            variant="secondary"
+                            onClick={() =>
+                                router.post(
+                                    '/admin/card-characters/sync',
+                                    {},
+                                    { preserveScroll: true },
+                                )
+                            }
+                        >
+                            <RefreshCw className="size-4" />
+                            {tr('Підтягнути зараз')}
+                        </Button>
+                    </div>
                 }
             />
 
@@ -163,8 +182,40 @@ export default function AdminCardCharacters({ characters, movies, q }: Props) {
                                 <div className="truncate text-xs text-white/50">
                                     {c.movie} · {c.source}
                                 </div>
+                                {c.ai_rank && (
+                                    <div
+                                        className="truncate text-[11px] text-white/40"
+                                        title={c.ai_reason ?? undefined}
+                                    >
+                                        {tr('ІІ')}: {c.ai_rank}
+                                        {c.ai_reason && ` · ${c.ai_reason}`}
+                                    </div>
+                                )}
                             </div>
                             {c.is_hidden && <Pill>{tr('Приховано')}</Pill>}
+                            <select
+                                aria-label={tr('Ранг вручну')}
+                                className="rounded-lg bg-white/10 px-1.5 py-1 text-xs text-white"
+                                value={c.manual_rank ?? ''}
+                                onChange={(e) =>
+                                    router.post(
+                                        `/admin/card-characters/${c.id}/rank`,
+                                        { rank: e.target.value || null },
+                                        { preserveScroll: true },
+                                    )
+                                }
+                            >
+                                <option value="">
+                                    {c.ai_rank
+                                        ? tr('ІІ: {r}', { r: c.ai_rank })
+                                        : tr('Авто')}
+                                </option>
+                                {RANKS.map((r) => (
+                                    <option key={r} value={r}>
+                                        {r}
+                                    </option>
+                                ))}
+                            </select>
                             <Button
                                 size="icon"
                                 variant="ghost"

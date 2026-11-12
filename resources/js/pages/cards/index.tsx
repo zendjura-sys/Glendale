@@ -1,5 +1,15 @@
 import { Head, router } from '@inertiajs/react';
-import { Gem, Layers, Package, Pin, Sparkles, Wand2, X } from 'lucide-react';
+import {
+    Gem,
+    Gift,
+    Layers,
+    Package,
+    Pin,
+    Sparkles,
+    Wand2,
+    X,
+} from 'lucide-react';
+import { toast } from 'sonner';
 import { AnimatePresence, m, useReducedMotion } from 'motion/react';
 import { useEffect, useMemo, useState } from 'react';
 import {
@@ -9,6 +19,10 @@ import {
     rarityLabel,
 } from '@/components/cards/game-card';
 import type { CardData, CardKind, Rarity } from '@/components/cards/game-card';
+import { CardReveal, CrystalPicker } from '@/components/cards/card-open';
+import type { DrawnCard } from '@/components/cards/card-open';
+import { api, ApiError } from '@/lib/api';
+import type { UserCard } from '@/types';
 import { Button } from '@/components/ui/button';
 import { tr } from '@/lib/i18n';
 import { motionOr, RISE } from '@/lib/motion';
@@ -25,7 +39,8 @@ type Props = {
     pack_size: number;
     duplicates: number;
     ranks: { rank: Rarity; drop: number; dust: number; craft: number }[];
-    opened: (CardData & { new: boolean })[] | null;
+    drops: { id: number; source: string; title: string; created_at: string }[];
+    friends?: UserCard[];
 };
 
 function useLeft(until: string | null): string | null {
@@ -54,7 +69,8 @@ export default function CardsAlbum({
     pack_size,
     duplicates,
     ranks,
-    opened,
+    drops,
+    friends,
 }: Props) {
     const reduce = useReducedMotion();
     const [kind, setKind] = useState<CardKind | null>(null);
@@ -63,12 +79,40 @@ export default function CardsAlbum({
     const craftOf = (r: Rarity) => ranks.find((x) => x.rank === r)?.craft ?? 0;
     const [onlyMissing, setOnlyMissing] = useState(false);
     const [picked, setPicked] = useState<OwnedCard | null>(null);
-    const [reveal, setReveal] = useState(opened);
+    const [reveal, setReveal] = useState<DrawnCard[] | null>(null);
+    // Що відкриваємо: набір або зароблену картку (спершу — вибір кристалів).
+    const [opening, setOpening] = useState<
+        { kind: 'pack' } | { kind: 'drop'; id: number; title: string } | null
+    >(null);
+    const [giftTo, setGiftTo] = useState<number | ''>('');
+
+    const doOpen = async (crystals: number) => {
+        if (!opening) return;
+        const target = opening;
+        setOpening(null);
+        setBusy(true);
+        try {
+            const response = await api<{ cards: DrawnCard[] }>(
+                'POST',
+                target.kind === 'pack'
+                    ? '/cards/open'
+                    : `/cards/drops/${target.id}/open`,
+                { crystals },
+            );
+            setReveal(response.cards);
+        } catch (error) {
+            toast.error(
+                error instanceof ApiError
+                    ? error.message
+                    : tr('Не вдалося відкрити.'),
+            );
+        } finally {
+            setBusy(false);
+        }
+    };
     const [busy, setBusy] = useState(false);
     const left = useLeft(next_pack_at);
     const owned = cards.filter((c) => c.copies > 0).length;
-
-    useEffect(() => setReveal(opened), [opened]);
 
     const list = useMemo(
         () =>
@@ -110,7 +154,7 @@ export default function CardsAlbum({
                         </h1>
                         <p className="mt-1 text-sm text-white/60">
                             {tr(
-                                'Ігри, персонажі аніме, фільмів і серіалів — 16 рангів від N до U. Щодня безкоштовний набір, дублікати — в уламки, з уламків — картки, яких бракує.',
+                                'Ігри, персонажі аніме, фільмів і серіалів — 16 рангів від N до U. Щодня безкоштовний набір, дублікати — в кристали, з кристалів — картки, яких бракує.',
                             )}
                         </p>
                         <div className="mt-3 flex flex-wrap gap-4 text-sm">
@@ -125,7 +169,7 @@ export default function CardsAlbum({
                                 <Gem className="size-4 text-violet-400" />
                                 <b className="tabular-nums">{shards}</b>
                                 <span className="text-white/55">
-                                    {tr('уламків')}
+                                    {tr('кристалів')}
                                 </span>
                             </span>
                         </div>
@@ -133,7 +177,7 @@ export default function CardsAlbum({
                     <div className="flex flex-wrap gap-2">
                         <Button
                             disabled={busy || left !== null}
-                            onClick={() => post('/cards/open')}
+                            onClick={() => setOpening({ kind: 'pack' })}
                         >
                             <Package className="size-4" />
                             {left
@@ -152,6 +196,52 @@ export default function CardsAlbum({
                         </Button>
                     </div>
                 </section>
+
+                {drops.length > 0 && (
+                    <section className="gc-solid space-y-3 rounded-xl p-4">
+                        <h2 className="flex items-center gap-2 font-display text-lg font-bold text-white">
+                            <Gift className="size-5 text-primary" />
+                            {tr('Отримані картки')}
+                            <span className="rounded-full bg-primary px-2 text-xs text-white">
+                                {drops.length}
+                            </span>
+                        </h2>
+                        <ul className="grid gap-2 sm:grid-cols-2">
+                            {drops.map((d) => (
+                                <li
+                                    key={d.id}
+                                    className="flex items-center gap-3 rounded-xl bg-white/5 px-3 py-2"
+                                >
+                                    <span className="min-w-0 flex-1">
+                                        <span className="block truncate text-sm font-semibold text-white">
+                                            {d.title}
+                                        </span>
+                                        <span className="block text-xs text-white/50">
+                                            {d.source === 'game'
+                                                ? tr('За гру')
+                                                : d.source === 'episodes'
+                                                  ? tr('За 10 серій')
+                                                  : tr('За перегляд')}
+                                        </span>
+                                    </span>
+                                    <Button
+                                        size="sm"
+                                        disabled={busy}
+                                        onClick={() =>
+                                            setOpening({
+                                                kind: 'drop',
+                                                id: d.id,
+                                                title: d.title,
+                                            })
+                                        }
+                                    >
+                                        {tr('Відкрити')}
+                                    </Button>
+                                </li>
+                            ))}
+                        </ul>
+                    </section>
+                )}
 
                 {kinds.length > 1 && (
                     <div className="flex flex-wrap gap-2">
@@ -315,25 +405,124 @@ export default function CardsAlbum({
                                         }
                                     >
                                         <Wand2 className="size-4" />
-                                        {tr('Створити за {n} уламків', {
+                                        {tr('Створити за {n} кристалів', {
                                             n: craftOf(current.rarity),
                                         })}
                                     </Button>
                                 ) : (
-                                    <Button
-                                        variant="secondary"
-                                        disabled={busy}
-                                        onClick={() =>
-                                            post(
-                                                `/cards/${current.key}/showcase`,
-                                            )
-                                        }
-                                    >
-                                        <Pin className="size-4" />
-                                        {current.showcase
-                                            ? tr('Прибрати з вітрини профілю')
-                                            : tr('На вітрину профілю')}
-                                    </Button>
+                                    <>
+                                        {current.copies > 1 && (
+                                            <>
+                                                <Button
+                                                    variant="secondary"
+                                                    disabled={busy}
+                                                    onClick={() =>
+                                                        void api(
+                                                            'POST',
+                                                            `/cards/${current.key}/split`,
+                                                            { count: 1 },
+                                                        ).then(() =>
+                                                            router.reload(),
+                                                        )
+                                                    }
+                                                >
+                                                    <Gem className="size-4" />
+                                                    {tr(
+                                                        'Розщепити дублікат (+{n})',
+                                                        {
+                                                            n:
+                                                                ranks.find(
+                                                                    (r) =>
+                                                                        r.rank ===
+                                                                        current.rarity,
+                                                                )?.dust ?? 0,
+                                                        },
+                                                    )}
+                                                </Button>
+                                                <div className="flex gap-2">
+                                                    <select
+                                                        aria-label={tr(
+                                                            'Кому подарувати',
+                                                        )}
+                                                        value={giftTo}
+                                                        onChange={(e) =>
+                                                            setGiftTo(
+                                                                e.target.value
+                                                                    ? Number(
+                                                                          e
+                                                                              .target
+                                                                              .value,
+                                                                      )
+                                                                    : '',
+                                                            )
+                                                        }
+                                                        className="input-glass h-9 min-w-0 flex-1 rounded-xl px-2 text-sm text-white"
+                                                    >
+                                                        <option value="">
+                                                            {friends
+                                                                ? tr(
+                                                                      'Подарувати другу…',
+                                                                  )
+                                                                : tr(
+                                                                      'Завантаження…',
+                                                                  )}
+                                                        </option>
+                                                        {(friends ?? []).map(
+                                                            (f) => (
+                                                                <option
+                                                                    key={f.id}
+                                                                    value={f.id}
+                                                                >
+                                                                    {f.name}
+                                                                </option>
+                                                            ),
+                                                        )}
+                                                    </select>
+                                                    <Button
+                                                        size="sm"
+                                                        disabled={
+                                                            busy || !giftTo
+                                                        }
+                                                        onClick={() =>
+                                                            router.post(
+                                                                `/cards/${current.key}/gift`,
+                                                                {
+                                                                    user_id:
+                                                                        giftTo,
+                                                                },
+                                                                {
+                                                                    preserveScroll: true,
+                                                                    onSuccess:
+                                                                        () =>
+                                                                            setGiftTo(
+                                                                                '',
+                                                                            ),
+                                                                },
+                                                            )
+                                                        }
+                                                    >
+                                                        <Gift className="size-4" />
+                                                    </Button>
+                                                </div>
+                                            </>
+                                        )}
+                                        <Button
+                                            variant="secondary"
+                                            disabled={busy}
+                                            onClick={() =>
+                                                post(
+                                                    `/cards/${current.key}/showcase`,
+                                                )
+                                            }
+                                        >
+                                            <Pin className="size-4" />
+                                            {current.showcase
+                                                ? tr(
+                                                      'Прибрати з вітрини профілю',
+                                                  )
+                                                : tr('На вітрину профілю')}
+                                        </Button>
+                                    </>
                                 )}
                             </div>
                         </m.div>
@@ -342,50 +531,26 @@ export default function CardsAlbum({
             </AnimatePresence>
 
             <AnimatePresence>
+                {opening && (
+                    <CrystalPicker
+                        title={
+                            opening.kind === 'pack'
+                                ? tr('Відкрити набір ({n})', { n: pack_size })
+                                : tr('Картка за «{t}»', { t: opening.title })
+                        }
+                        shards={shards}
+                        ranks={ranks}
+                        onOpen={(c) => void doOpen(c)}
+                        onClose={() => setOpening(null)}
+                    />
+                )}
+            </AnimatePresence>
+            <AnimatePresence>
                 {reveal && reveal.length > 0 && (
-                    <m.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-6 bg-black/80 p-4"
-                    >
-                        <h2 className="font-display text-2xl font-bold text-white">
-                            {tr('Ваш набір')}
-                        </h2>
-                        <div className="flex flex-wrap justify-center gap-4">
-                            {reveal.map((c, i) => (
-                                <m.div
-                                    key={`${c.key}-${i}`}
-                                    initial={
-                                        reduce
-                                            ? false
-                                            : {
-                                                  rotateY: 180,
-                                                  opacity: 0,
-                                                  y: 20,
-                                              }
-                                    }
-                                    animate={{ rotateY: 0, opacity: 1, y: 0 }}
-                                    transition={motionOr(reduce, {
-                                        delay: 0.25 + i * 0.35,
-                                        duration: 0.55,
-                                        ease: 'easeOut',
-                                    })}
-                                    className="relative w-36 sm:w-44"
-                                >
-                                    <GameCardArt card={c} />
-                                    {c.new && (
-                                        <span className="absolute -top-2 -left-2 rounded-full bg-emerald-500 px-2 py-0.5 text-xs font-bold text-white">
-                                            {tr('Нова')}
-                                        </span>
-                                    )}
-                                </m.div>
-                            ))}
-                        </div>
-                        <Button onClick={() => setReveal(null)}>
-                            {tr('До альбому')}
-                        </Button>
-                    </m.div>
+                    <CardReveal
+                        cards={reveal}
+                        onClose={() => setReveal(null)}
+                    />
                 )}
             </AnimatePresence>
         </>

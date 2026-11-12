@@ -7,6 +7,7 @@ use App\Models\Movie;
 use App\Models\MovieSource;
 use App\Models\User;
 use App\Notifications\MovieRatingNotice;
+use App\Services\Cards\CardDrops;
 use App\Support\Plugins\Plugins;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -508,6 +509,10 @@ class CinemaService
             'status' => $status,
             'watched_at' => $status === 'watched' ? now() : null,
         ]);
+        // Переглянуто — колекційна картка з персонажів тайтлу.
+        if ($status === 'watched') {
+            app(CardDrops::class)->watched($user, $movie);
+        }
     }
 
     public function rate(User $user, Movie $movie, ?int $rating): void
