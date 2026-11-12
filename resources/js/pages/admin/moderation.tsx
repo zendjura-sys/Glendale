@@ -63,6 +63,7 @@ type Settings = {
     flood_limit: number;
     repeat_limit: number;
     new_account_link_hours: number;
+    toxic: 'off' | 'soft' | 'strict';
 };
 
 type Props = {
@@ -452,6 +453,29 @@ export default function AdminModeration({
                                     {label}
                                 </option>
                             ))}
+                        </select>
+                    </label>
+                    <label className="block">
+                        <span className="mb-1 block text-xs text-white/50">
+                            {tr('Токсичні коментарі')}
+                        </span>
+                        <select
+                            value={form.data.toxic}
+                            onChange={(e) =>
+                                form.setData(
+                                    'toxic',
+                                    e.target.value as Settings['toxic'],
+                                )
+                            }
+                            className="input-glass h-10 w-full rounded-xl px-3 text-sm text-white"
+                        >
+                            <option value="off">{tr('Не приховувати')}</option>
+                            <option value="soft">
+                                {tr('Приховувати образи й погрози')}
+                            </option>
+                            <option value="strict">
+                                {tr('Суворо: і грубість теж')}
+                            </option>
                         </select>
                     </label>
                     <label className="block">

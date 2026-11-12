@@ -32,6 +32,8 @@ class ContentFilter
         'repeat_limit' => 3,
         // Посилання від акаунтів, молодших за стільки годин, не пропускаємо (0 — вимкнено).
         'new_account_link_hours' => 24,
+        // Токсичні коментарі: off — не чіпати, soft — ховати явні образи й погрози, strict — суворіше.
+        'toxic' => 'soft',
     ];
 
     /**
@@ -49,7 +51,7 @@ class ContentFilter
     public function __construct(private readonly SiteSettings $settings) {}
 
     /**
-     * @return array{profanity: string, extra_words: list<string>, flood_limit: int, repeat_limit: int, new_account_link_hours: int}
+     * @return array{profanity: string, extra_words: list<string>, flood_limit: int, repeat_limit: int, new_account_link_hours: int, toxic: string}
      */
     public function config(): array
     {
@@ -63,6 +65,7 @@ class ContentFilter
             'flood_limit' => max(0, (int) ($stored['flood_limit'] ?? self::DEFAULTS['flood_limit'])),
             'repeat_limit' => max(0, (int) ($stored['repeat_limit'] ?? self::DEFAULTS['repeat_limit'])),
             'new_account_link_hours' => max(0, (int) ($stored['new_account_link_hours'] ?? self::DEFAULTS['new_account_link_hours'])),
+            'toxic' => in_array($stored['toxic'] ?? null, ['off', 'soft', 'strict'], true) ? (string) $stored['toxic'] : self::DEFAULTS['toxic'],
         ];
     }
 

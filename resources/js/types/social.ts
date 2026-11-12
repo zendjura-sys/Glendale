@@ -96,6 +96,9 @@ export type CommentItem = {
     can_thank?: boolean;
     thanked?: boolean;
     badge?: { title: string; color: string | null } | null;
+    /** Приховано (токсичність або вручну) — показуємо згорнутим. */
+    hidden?: { reason: string | null } | null;
+    can_moderate?: boolean;
 };
 
 export type Visibility = 'public' | 'friends' | 'private';

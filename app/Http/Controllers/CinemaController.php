@@ -25,6 +25,7 @@ use App\Services\Cinema\MovieOfWeek;
 use App\Services\Cinema\TmdbAutoParse;
 use App\Services\Cinema\VideoseedClient;
 use App\Services\FriendshipService;
+use App\Services\Moderation\ToxicComments;
 use App\Services\PostPresenter;
 use App\Services\SavedItems;
 use App\Support\CommentOrder;
@@ -771,6 +772,7 @@ class CinemaController extends Controller
 
             return $comment;
         });
+        app(ToxicComments::class)->check($comment);
 
         return response()->json([
             'comment' => $this->presenter->comment($comment->load('user'), $user, false, $user->isStaff()),

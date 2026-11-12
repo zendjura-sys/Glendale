@@ -172,6 +172,24 @@ export function Comments({
         );
     };
 
+    // Приховані коментарі, які людина розгорнула.
+    const [shown, setShown] = useState<Set<number>>(() => new Set());
+
+    const setHidden = async (comment: CommentItem, hidden: boolean) => {
+        const response = await api<{ comment: CommentItem }>(
+            'POST',
+            `/comments/${comment.id}/visibility`,
+            { hidden },
+        );
+        setComments((list) =>
+            list.map((item) =>
+                item.id === comment.id
+                    ? { ...item, ...response.comment }
+                    : item,
+            ),
+        );
+    };
+
     const toggleLike = async (comment: CommentItem) => {
         setComments((list) =>
             list.map((item) =>
@@ -320,28 +338,56 @@ export function Comments({
                                             size={15}
                                         />
                                     </div>
-                                    <p className="text-[14px] leading-snug break-words whitespace-pre-line text-white/85">
-                                        {parent && (
-                                            <span className="mr-1 text-sky-400">
-                                                {parent.user.first_name},
-                                            </span>
-                                        )}
-                                        {comment.sticker && (
-                                            <span className="mr-1 text-2xl leading-none">
-                                                {comment.sticker}
-                                            </span>
-                                        )}
-                                        {comment.spoiler ? (
-                                            <SpoilerText text={comment.body} />
-                                        ) : (
-                                            comment.body && (
-                                                <CommentText
-                                                    id={comment.id}
-                                                    body={comment.body}
+                                    {comment.hidden &&
+                                    !shown.has(comment.id) ? (
+                                        <p className="flex flex-wrap items-center gap-x-2 text-[13px] text-white/50">
+                                            <EyeOff className="size-3.5" />
+                                            {tr('Коментар приховано')}
+                                            {comment.hidden.reason && (
+                                                <span className="text-white/35">
+                                                    · {comment.hidden.reason}
+                                                </span>
+                                            )}
+                                            <button
+                                                type="button"
+                                                className="font-medium text-sky-400 hover:underline"
+                                                onClick={() =>
+                                                    setShown((set) =>
+                                                        new Set(set).add(
+                                                            comment.id,
+                                                        ),
+                                                    )
+                                                }
+                                            >
+                                                {tr('Показати')}
+                                            </button>
+                                        </p>
+                                    ) : (
+                                        <p className="text-[14px] leading-snug break-words whitespace-pre-line text-white/85">
+                                            {parent && (
+                                                <span className="mr-1 text-sky-400">
+                                                    {parent.user.first_name},
+                                                </span>
+                                            )}
+                                            {comment.sticker && (
+                                                <span className="mr-1 text-2xl leading-none">
+                                                    {comment.sticker}
+                                                </span>
+                                            )}
+                                            {comment.spoiler ? (
+                                                <SpoilerText
+                                                    text={comment.body}
                                                 />
-                                            )
-                                        )}
-                                    </p>
+                                            ) : (
+                                                comment.body && (
+                                                    <CommentText
+                                                        id={comment.id}
+                                                        body={comment.body}
+                                                    />
+                                                )
+                                            )}
+                                        </p>
+                                    )}
                                 </div>
                                 <div className="mt-1 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 pl-2 text-xs text-white/40">
                                     <span className="whitespace-nowrap">
@@ -368,6 +414,22 @@ export function Comments({
                                             {comment.is_pinned
                                                 ? tr('Відкріпити')
                                                 : tr('Закріпити')}
+                                        </button>
+                                    )}
+                                    {comment.can_moderate && (
+                                        <button
+                                            type="button"
+                                            className="font-medium hover:text-white"
+                                            onClick={() =>
+                                                void setHidden(
+                                                    comment,
+                                                    !comment.hidden,
+                                                )
+                                            }
+                                        >
+                                            {comment.hidden
+                                                ? tr('Повернути')
+                                                : tr('Приховати')}
                                         </button>
                                     )}
                                     {comment.can_thank && (

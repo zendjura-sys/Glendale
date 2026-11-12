@@ -9,6 +9,7 @@ use App\Models\Photo;
 use App\Models\PhotoAlbum;
 use App\Models\User;
 use App\Notifications\PhotoInteraction;
+use App\Services\Moderation\ToxicComments;
 use App\Services\PhotoService;
 use App\Services\PostPresenter;
 use App\Services\ReactionDigest;
@@ -227,8 +228,9 @@ class PhotoController extends Controller
             'sticker' => $data['sticker'] ?? null,
         ]);
         $photo->increment('comments_count');
+        app(ToxicComments::class)->check($comment);
 
-        if ($photo->user && $photo->user_id !== $user->id) {
+        if ($photo->user && $photo->user_id !== $user->id && $comment->hidden_at === null) {
             $excerpt = $comment->body !== '' ? Str::limit($comment->body, 80) : Stickers::emoji($comment->sticker);
             $photo->user->notify(new PhotoInteraction(PhotoInteraction::COMMENT, $user, $photo, $excerpt));
         }

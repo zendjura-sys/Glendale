@@ -330,6 +330,7 @@ class ModerationController extends Controller
             'flood_limit' => ['required', 'integer', 'min:0', 'max:200'],
             'repeat_limit' => ['required', 'integer', 'min:0', 'max:50'],
             'new_account_link_hours' => ['required', 'integer', 'min:0', 'max:720'],
+            'toxic' => ['required', Rule::in(['off', 'soft', 'strict'])],
         ]);
         $words = array_values(array_unique(array_filter(array_map(fn ($w) => mb_strtolower(trim($w)), preg_split('/[\n,]+/', (string) ($data['extra_words'] ?? '')) ?: []))));
         $this->settings->put(['moderation' => [
@@ -338,7 +339,9 @@ class ModerationController extends Controller
             'flood_limit' => (int) $data['flood_limit'],
             'repeat_limit' => (int) $data['repeat_limit'],
             'new_account_link_hours' => (int) $data['new_account_link_hours'],
+            'toxic' => $data['toxic'],
         ]]);
+        Log::info('admin: moderation settings', ['admin' => $request->user()->id, 'toxic' => $data['toxic'], 'profanity' => $data['profanity']]);
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Налаштування автомодерації збережено.']);
 
         return back();

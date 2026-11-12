@@ -118,6 +118,30 @@ class AiAssistant
         return ['severity' => (string) $json['severity'], 'reason' => Str::limit((string) ($json['reason'] ?? ''), 160)];
     }
 
+    /**
+     * Токсичність коментаря 0–100 (образи, погрози, цькування; ігровий сленг і жарти — ні).
+     *
+     * @return array{score: int, reason: string}|null
+     */
+    public function toxicity(string $text): ?array
+    {
+        try {
+            $raw = $this->ai->complete(
+                'Ти модератор коментарів соцмережі геймерів. Оціни токсичність коментаря від 0 до 100: образи людей, погрози, цькування, мова ворожнечі — високо; ігровий сленг, сарказм без образ, критика гри — низько. Відповідай лише JSON: {"score":0-100,"reason":"до 80 символів українською"}.',
+                [['role' => 'user', 'content' => Str::limit($text, 1500)]],
+                150,
+            );
+        } catch (AiException) {
+            return null;
+        }
+        $json = json_decode((string) Str::of($raw)->after('{')->beforeLast('}')->prepend('{')->append('}'), true);
+        if (! is_array($json) || ! is_numeric($json['score'] ?? null)) {
+            return null;
+        }
+
+        return ['score' => max(0, min(100, (int) $json['score'])), 'reason' => Str::limit((string) ($json['reason'] ?? ''), 80)];
+    }
+
     /** Ймовірність відвертого вмісту на фото 0..1 (запасний варіант до Sightengine). */
     public function imageScore(string $path): ?float
     {

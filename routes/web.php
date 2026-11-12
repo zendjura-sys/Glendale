@@ -427,6 +427,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     Route::delete('comments/{comment}', [CommentController::class, 'destroy'])->name('comments.destroy');
     Route::post('comments/{comment}/like', [CommentController::class, 'like'])->middleware('throttle:120,1')->name('comments.like');
     Route::post('comments/{comment}/pin', [CommentController::class, 'pin'])->name('comments.pin');
+    Route::post('comments/{comment}/visibility', [CommentController::class, 'visibility'])->middleware('throttle:60,1')->name('comments.visibility');
 
     Route::post('block/{user}', [ProfileController::class, 'block'])->name('blocks.toggle');
     Route::post('report/{user}', [ProfileController::class, 'report'])->middleware('throttle:10,10')->name('users.report');

@@ -419,6 +419,9 @@ class PostPresenter
             'can_thank' => $viewer !== null && $viewer->id !== $comment->user_id && app(Plugins::class)->on('thanks'),
             'thanked' => $viewer !== null && $viewer->id !== $comment->user_id && app(Thanks::class)->has($viewer, 'comment', $comment->id),
             'badge' => $this->commentBadge($comment),
+            // Приховано автоматикою (токсичність) або вручну: показуємо згорнутим.
+            'hidden' => $comment->hidden_at ? ['reason' => $comment->hidden_reason] : null,
+            'can_moderate' => $canPin || ($viewer?->isStaff() ?? false),
         ];
     }
 

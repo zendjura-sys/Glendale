@@ -12,6 +12,7 @@ use App\Services\CommunityWall;
 use App\Services\FriendshipService;
 use App\Services\Mentions;
 use App\Services\Moderation\ContentFilter;
+use App\Services\Moderation\ToxicComments;
 use App\Services\PhotoService;
 use App\Services\PostPresenter;
 use App\Support\CommentOrder;
@@ -90,7 +91,9 @@ class CommentController extends Controller
             return $comment;
         });
 
-        if ($post->author_id !== $user->id) {
+        app(ToxicComments::class)->check($comment);
+
+        if ($post->author_id !== $user->id && $comment->hidden_at === null) {
             $excerpt = $comment->spoiler ? 'Спойлер' : ($comment->body !== '' ? Str::limit($comment->body, 80) : Stickers::emoji($comment->sticker));
             $post->author->notify(new PostInteraction(PostInteraction::COMMENT, $user, $post, $excerpt));
         }
@@ -101,6 +104,20 @@ class CommentController extends Controller
             'comment' => $this->presenter->comment($comment->load('user'), $user, false, $user->id === $post->author_id || $user->isStaff()),
             'comments_count' => $post->fresh()->comments_count,
         ], 201);
+    }
+
+    /** Приховати або повернути коментар: автор запису (до свого запису) чи персонал. */
+    public function visibility(Request $request, Comment $comment): JsonResponse
+    {
+        $user = $request->user();
+        $data = $request->validate(['hidden' => ['required', 'boolean']]);
+        $comment->loadMissing('post');
+        $owner = $comment->post instanceof Post && $comment->post->author_id === $user->id;
+        abort_unless($owner || $user->isStaff(), 403);
+        $toxic = app(ToxicComments::class);
+        $data['hidden'] ? $toxic->hideManually($comment, $user) : $toxic->restore($comment, $user);
+
+        return response()->json(['comment' => $this->presenter->comment($comment->fresh('user'), $user, false, $owner || $user->isStaff())]);
     }
 
     public function pin(Request $request, Comment $comment): JsonResponse
