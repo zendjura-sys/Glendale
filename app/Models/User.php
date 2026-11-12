@@ -92,6 +92,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property string|null $playing_note
  * @property Carbon|null $playing_until
  * @property string|null $playing_source manual | discord | steam
+ * @property Carbon|null $playing_since
  * @property bool $playing_auto Ставити статус автоматично з Discord і Steam
  * @property string|null $steam_id
  * @property Carbon|null $muted_until Тимчасовий мут на всьому сайті
@@ -177,6 +178,7 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
             'birthday' => 'date',
             'last_seen_at' => 'datetime',
             'playing_until' => 'datetime',
+            'playing_since' => 'datetime',
             'status_until' => 'datetime',
             'playing_auto' => 'boolean',
             'muted_until' => 'datetime',
@@ -479,7 +481,7 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
     /**
      * «Граю в…»: де людина зараз, поки статус не сплив.
      *
-     * @return array{kind: string, id: int|null, label: string, icon: string|null, url: string|null, note: string|null, until: string, auto: bool}|null
+     * @return array{kind: string, id: int|null, label: string, icon: string|null, url: string|null, note: string|null, until: string, auto: bool, source: string|null, since: string|null}|null
      */
     public function playing(): ?array
     {
@@ -496,6 +498,8 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
             'note' => $this->playing_note,
             'until' => $this->playing_until->toIso8601String(),
             'auto' => $this->playing_source !== null && $this->playing_source !== 'manual',
+            'source' => $this->playing_source,
+            'since' => $this->playing_since?->toIso8601String(),
         ];
     }
 

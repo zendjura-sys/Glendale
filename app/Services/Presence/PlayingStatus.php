@@ -66,6 +66,8 @@ class PlayingStatus
             'playing_note' => $target['note'] !== null ? Str::limit($target['note'], 60, '') : null,
             'playing_until' => now()->addMinutes($minutes),
             'playing_source' => $source,
+            // Нова гра — відлік з нуля; та сама — лишаємо, коли почали.
+            'playing_since' => $changedTarget || $user->playing_since === null || $user->playing_until?->isPast() ? now() : $user->playing_since,
         ])->save();
 
         if (in_array($target['kind'], [PlayedPlace::GAME, PlayedPlace::SERVER], true) && $target['id'] !== null) {
@@ -92,7 +94,7 @@ class PlayingStatus
     {
         $user->forceFill([
             'playing_kind' => null, 'playing_ref_id' => null, 'playing_label' => null, 'playing_icon' => null,
-            'playing_url' => null, 'playing_note' => null, 'playing_until' => null, 'playing_source' => null,
+            'playing_url' => null, 'playing_note' => null, 'playing_until' => null, 'playing_source' => null, 'playing_since' => null,
         ])->save();
     }
 

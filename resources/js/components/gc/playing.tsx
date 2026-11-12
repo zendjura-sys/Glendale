@@ -15,6 +15,18 @@ import { UserAvatar } from './user-avatar';
 import { tr } from '@/lib/i18n';
 
 /** «Грає в…»: сервер GTA або гра, з іконкою й посиланням. */
+/** «12 хв», «1 год 20 хв» — скільки вже в грі (до хвилини не показуємо). */
+export function playingFor(since?: string | null): string | null {
+    if (!since) return null;
+    const minutes = Math.floor((Date.now() - Date.parse(since)) / 60000);
+    if (!Number.isFinite(minutes) || minutes < 1) return null;
+    if (minutes < 60) return tr('{m} хв', { m: minutes });
+    const h = Math.floor(minutes / 60);
+    const m = minutes % 60;
+
+    return m > 0 ? tr('{h} год {m} хв', { h, m }) : tr('{h} год', { h });
+}
+
 export function PlayingBadge({
     playing,
     className,
@@ -23,6 +35,13 @@ export function PlayingBadge({
     className?: string;
 }) {
     const Icon = playing.kind === 'server' ? Server : Gamepad2;
+    const elapsed = playingFor(playing.since);
+    const source =
+        playing.source === 'steam'
+            ? 'Steam'
+            : playing.source === 'discord'
+              ? 'Discord'
+              : null;
     const content = (
         <>
             {playing.icon ? (
@@ -44,7 +63,15 @@ export function PlayingBadge({
                         · {playing.note}
                     </span>
                 )}
+                {elapsed && (
+                    <span className="text-emerald-200/70"> · {elapsed}</span>
+                )}
             </span>
+            {source && (
+                <span className="shrink-0 rounded-md bg-black/20 px-1.5 text-[10px] font-semibold text-emerald-100/80">
+                    {source}
+                </span>
+            )}
         </>
     );
     const style = cn(

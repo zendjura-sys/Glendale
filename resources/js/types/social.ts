@@ -10,6 +10,10 @@ export type PlayingInfo = {
     note: string | null;
     until: string;
     auto: boolean;
+    /** manual | steam | discord */
+    source?: string | null;
+    /** З якого часу в цій грі. */
+    since?: string | null;
 };
 
 export type UserCard = {
