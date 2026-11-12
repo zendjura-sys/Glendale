@@ -170,7 +170,13 @@ export default function PlusPage({
                     <p className="mt-2 max-w-2xl text-sm text-white/60">
                         {tr(
                             'Підтримайте GameCon і отримайте оформлення, більше місця й зручності. Усе, що вже безкоштовне, лишається безкоштовним.',
-                        )}
+                        )}{' '}
+                        <Link
+                            href="/plus/compare"
+                            className="font-semibold text-sky-400 hover:underline"
+                        >
+                            {tr('Порівняти тарифи й часті питання')}
+                        </Link>
                     </p>
                     {state.active && (
                         <div className="gc-solid-2 mt-3 flex flex-wrap items-center gap-3 rounded-2xl px-4 py-3">

@@ -563,6 +563,7 @@ Route::prefix('v1')->group(function () {
             // Купівля в застосунку — лише Google Play (BillingController), ціни сайту тут не показуються.
             Route::get('plus', [PlusController::class, 'index']);
             Route::get('plus/gifts/{gift}', [PlusController::class, 'gift'])->whereNumber('gift');
+            Route::get('plus/compare', [PlusController::class, 'compare']);
             Route::put('plus/style', [PlusController::class, 'style'])->middleware('throttle:30,1');
             Route::put('plus/title', [PlusController::class, 'title'])->middleware('throttle:20,1');
             // Перші кроки новачка: номер → режим → ігри й сервери.

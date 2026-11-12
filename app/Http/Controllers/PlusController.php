@@ -8,6 +8,7 @@ use App\Models\PlusGift;
 use App\Models\PlusPayment;
 use App\Models\StaffRole;
 use App\Models\User;
+use App\Services\Billing\Catalog;
 use App\Services\Billing\Shop;
 use App\Services\FriendshipService;
 use App\Services\Moderation\ContentFilter;
@@ -69,6 +70,24 @@ class PlusController extends Controller
                     'receipt_url' => $p->receipt_url,
                     'created_at' => $p->created_at->toIso8601String(),
                 ]),
+        ]);
+    }
+
+    /** Порівняння тарифів: безкоштовно, GameCon+ (місяць/рік), GameCon+ для сім’ї — і часті питання. */
+    public function compare(Request $request, PlusTrial $trial): Response
+    {
+        $user = $request->user();
+
+        return Inertia::render('plus/compare', [
+            'products' => collect(Shop::catalog())->filter(fn (array $p) => $p['available'] && in_array($p['kind'], ['plus', 'family'], true))
+                ->map(fn (array $p, string $key) => ['key' => $key, ...$p])->values(),
+            'limits' => config('plus.limits'),
+            'reactions' => count((array) config('plus.reactions')),
+            'frames' => count((array) config('plus.frames')),
+            'themes' => count((array) config('plus.themes')),
+            'family_discount' => app(Catalog::class)->familyPlusDiscount(),
+            'trial_days' => $trial->days(),
+            'state' => ['active' => $user->isPlus(), 'trial' => $trial->eligible($user)],
         ]);
     }
 
