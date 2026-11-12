@@ -27,6 +27,8 @@ import { formatDate } from '@/lib/format';
 import { tr } from '@/lib/i18n';
 import { buyProduct, PRODUCT_LABELS } from '@/lib/plus';
 import { cn } from '@/lib/utils';
+import { GiftCardArt, GIFT_THEMES } from '@/components/plus/gift-card';
+import type { GiftTheme } from '@/components/plus/gift-card';
 import type { FamilyCard, PlusMark } from '@/types';
 
 type State = {
@@ -67,6 +69,15 @@ type Props = {
         next_change: string | null;
         colors: string[];
     };
+    friends?: { username: string; name: string; avatar_url: string | null }[];
+    sent_gifts?: {
+        id: number;
+        days: number;
+        status: 'scheduled' | 'delivered';
+        deliver_at: string | null;
+        delivered_at: string | null;
+        recipient: { name: string; username: string } | null;
+    }[];
     payments: {
         id: number;
         product: string;
@@ -128,6 +139,8 @@ export default function PlusPage({
     families,
     payments,
     title,
+    friends,
+    sent_gifts,
 }: Props) {
     const plans = useKind('plus');
     const user = usePage().props.auth.user;
@@ -265,10 +278,13 @@ export default function PlusPage({
 
                 {state.active && <TitleForm title={title} />}
 
-                <div className="grid gap-5 md:grid-cols-2">
-                    <GiftForm buy={buy} busy={busy} />
-                    <RedeemForm />
-                </div>
+                <GiftForm
+                    buy={buy}
+                    busy={busy}
+                    friends={friends ?? []}
+                    sent={sent_gifts ?? []}
+                />
+                <RedeemForm />
 
                 <FamilyPlans
                     families={families}
@@ -591,45 +607,228 @@ function AccentPicker({
 function GiftForm({
     buy,
     busy,
+    friends,
+    sent,
 }: {
     buy: (product: string, extra?: Record<string, string | number>) => void;
     busy: string | null;
+    friends: NonNullable<Props['friends']>;
+    sent: NonNullable<Props['sent_gifts']>;
 }) {
+    const me = usePage().props.auth.user;
     const gifts = useKind('gift');
     const [username, setUsername] = useState('');
-    const ready = username.trim().length > 1 && busy === null;
+    const [message, setMessage] = useState('');
+    const [theme, setTheme] = useState<GiftTheme>('ice');
+    const [later, setLater] = useState(false);
+    const [date, setDate] = useState('');
+    const query = username.trim().replace(/^@/, '').toLowerCase();
+    const picked = friends.find((f) => f.username.toLowerCase() === query);
+    const matches =
+        query && !picked
+            ? friends
+                  .filter(
+                      (f) =>
+                          f.username.toLowerCase().includes(query) ||
+                          f.name.toLowerCase().includes(query),
+                  )
+                  .slice(0, 5)
+            : [];
+    const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+    const ready =
+        username.trim().length > 1 && busy === null && (!later || !!date);
+    const days = (gifts[0]?.[1] as { days?: number } | undefined)?.days ?? 30;
 
     return (
-        <section className="gc-solid flex flex-col gap-3 rounded-2xl p-5">
+        <section className="gc-solid flex flex-col gap-4 rounded-2xl p-5">
             <h2 className="flex items-center gap-2 font-display text-lg font-bold text-white">
                 <Gift className="size-5 text-indigo-300" />
                 {tr('Подарувати другу')}
             </h2>
-            <p className="text-sm text-white/55">
-                {tr('Разова оплата без підписки. Друг отримає сповіщення.')}
-            </p>
-            <input
-                value={username}
-                onChange={(event) => setUsername(event.target.value)}
-                placeholder={tr('Нік друга, напр. @olena')}
-                className="input-glass h-10 rounded-xl px-3 text-sm"
-            />
-            <div className="flex flex-wrap gap-2">
-                {gifts.map(([product, plan]) => (
-                    <button
-                        key={product}
-                        type="button"
-                        className={secondary}
-                        disabled={!ready}
-                        onClick={() =>
-                            buy(product, { username: username.trim() })
-                        }
-                    >
-                        {periodLabel(plan)} ·{' '}
-                        {plan.price.toLocaleString('uk-UA')} ₴
-                    </button>
-                ))}
+            <div className="grid gap-4 lg:grid-cols-[1fr_280px]">
+                <div className="flex flex-col gap-3">
+                    <div className="relative">
+                        <input
+                            value={username}
+                            onChange={(event) =>
+                                setUsername(event.target.value)
+                            }
+                            placeholder={tr('Нік друга, напр. @olena')}
+                            aria-label={tr('Кому')}
+                            className="input-glass h-10 w-full rounded-xl px-3 text-sm"
+                        />
+                        {matches.length > 0 && (
+                            <ul className="gc-solid absolute inset-x-0 top-11 z-10 overflow-hidden rounded-xl p-1 shadow-xl">
+                                {matches.map((f) => (
+                                    <li key={f.username}>
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setUsername(f.username)
+                                            }
+                                            className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm text-white hover:bg-white/[0.06]"
+                                        >
+                                            <span className="min-w-0 flex-1 truncate">
+                                                {f.name}
+                                            </span>
+                                            <span className="text-xs text-white/45">
+                                                @{f.username}
+                                            </span>
+                                        </button>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                    </div>
+                    <textarea
+                        value={message}
+                        maxLength={200}
+                        rows={3}
+                        onChange={(event) => setMessage(event.target.value)}
+                        placeholder={tr(
+                            'Побажання на листівці (необов’язково)',
+                        )}
+                        className="input-glass rounded-xl px-3 py-2 text-sm"
+                    />
+                    <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-xs text-white/50">
+                            {tr('Оформлення')}
+                        </span>
+                        {GIFT_THEMES().map((t) => (
+                            <button
+                                key={t.value}
+                                type="button"
+                                onClick={() => setTheme(t.value)}
+                                aria-pressed={theme === t.value}
+                                className={cn(
+                                    'h-8 rounded-lg px-3 text-xs font-semibold',
+                                    theme === t.value
+                                        ? 'bg-primary text-primary-foreground'
+                                        : 'bg-white/[0.06] text-white/70',
+                                )}
+                            >
+                                {t.label}
+                            </button>
+                        ))}
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-xs text-white/50">
+                            {tr('Коли вручити')}
+                        </span>
+                        <button
+                            type="button"
+                            onClick={() => setLater(false)}
+                            aria-pressed={!later}
+                            className={cn(
+                                'h-8 rounded-lg px-3 text-xs font-semibold',
+                                !later
+                                    ? 'bg-primary text-primary-foreground'
+                                    : 'bg-white/[0.06] text-white/70',
+                            )}
+                        >
+                            {tr('Одразу')}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setLater(true)}
+                            aria-pressed={later}
+                            className={cn(
+                                'h-8 rounded-lg px-3 text-xs font-semibold',
+                                later
+                                    ? 'bg-primary text-primary-foreground'
+                                    : 'bg-white/[0.06] text-white/70',
+                            )}
+                        >
+                            {tr('У день…')}
+                        </button>
+                        {later && (
+                            <input
+                                type="date"
+                                min={tomorrow}
+                                value={date}
+                                onChange={(event) =>
+                                    setDate(event.target.value)
+                                }
+                                aria-label={tr('Дата вручення')}
+                                className="input-glass h-8 rounded-lg px-2 text-xs"
+                            />
+                        )}
+                    </div>
+                    <p className="text-xs text-white/45">
+                        {tr(
+                            'Разова оплата без підписки. Друг отримає сповіщення й листівку в день вручення.',
+                        )}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                        {gifts.map(([product, plan]) => (
+                            <button
+                                key={product}
+                                type="button"
+                                className={secondary}
+                                disabled={!ready}
+                                onClick={() =>
+                                    buy(product, {
+                                        username: username.trim(),
+                                        gift_message: message.trim(),
+                                        gift_theme: theme,
+                                        ...(later && date
+                                            ? { gift_at: date }
+                                            : {}),
+                                    })
+                                }
+                            >
+                                {periodLabel(plan)} ·{' '}
+                                {plan.price.toLocaleString('uk-UA')} ₴
+                            </button>
+                        ))}
+                    </div>
+                </div>
+                <GiftCardArt
+                    theme={theme}
+                    from={me?.name ?? ''}
+                    to={picked?.name ?? username.trim().replace(/^@/, '')}
+                    days={days}
+                    message={message.trim() || null}
+                />
             </div>
+            {sent.length > 0 && (
+                <div>
+                    <p className="mb-1.5 text-xs font-semibold text-white/55">
+                        {tr('Надіслані подарунки')}
+                    </p>
+                    <ul className="space-y-1">
+                        {sent.map((g) => (
+                            <li key={g.id}>
+                                <Link
+                                    href={`/plus/gifts/${g.id}`}
+                                    className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-white/[0.05]"
+                                >
+                                    <Gift className="size-4 text-indigo-300" />
+                                    <span className="min-w-0 flex-1 truncate text-white">
+                                        {g.recipient?.name ?? '—'}
+                                    </span>
+                                    <span
+                                        className={cn(
+                                            'text-xs',
+                                            g.status === 'delivered'
+                                                ? 'text-emerald-400'
+                                                : 'text-amber-300',
+                                        )}
+                                    >
+                                        {g.status === 'delivered'
+                                            ? tr('вручено')
+                                            : tr('буде {date}', {
+                                                  date: new Date(
+                                                      g.deliver_at ?? '',
+                                                  ).toLocaleDateString('uk-UA'),
+                                              })}
+                                    </span>
+                                </Link>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            )}
         </section>
     );
 }

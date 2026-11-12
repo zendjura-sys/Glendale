@@ -217,6 +217,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     Route::prefix('plus')->name('plus.')->group(function () {
         Route::get('/', [PlusController::class, 'index'])->name('index');
         Route::post('redeem', [PlusController::class, 'redeem'])->middleware('throttle:10,1')->name('redeem');
+        Route::get('gifts/{gift}', [PlusController::class, 'gift'])->whereNumber('gift')->name('gifts.show');
         Route::put('style', [PlusController::class, 'style'])->name('style');
         Route::put('title', [PlusController::class, 'title'])->middleware('throttle:20,1')->name('title');
         Route::put('families/{family:id}/style', [PlusController::class, 'familyStyle'])->whereNumber('family')->name('families.style');

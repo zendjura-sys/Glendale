@@ -14,9 +14,9 @@ use App\Models\ServerPromotion;
 use App\Models\User;
 use App\Models\WalletTransaction;
 use App\Notifications\BillingNotice;
-use App\Notifications\PlusGifted;
 use App\Services\Phones\PhoneNumbers;
 use App\Services\Plus\Plus;
+use App\Services\Plus\PlusGifts;
 use App\Services\Plus\ServerPromotions;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -86,7 +86,11 @@ class Shop
 
         return match ($kind) {
             'plus', 'balance' => $payer,
-            'gift' => $this->recipient($payer, (string) ($input['username'] ?? '')),
+            'gift' => tap($this->recipient($payer, (string) ($input['username'] ?? '')), function (User $to) use ($payer, $product, $input) {
+                if (filled($input['gift_message'] ?? null) || filled($input['gift_theme'] ?? null) || filled($input['gift_at'] ?? null)) {
+                    app(PlusGifts::class)->draft($payer, $to, $product, (int) (app(Catalog::class)->get($product)['days'] ?? 0), $input);
+                }
+            }),
             'family' => PlusController::ledFamilies($payer)->firstWhere('id', (int) ($input['family_id'] ?? 0))
                 ?? throw ValidationException::withMessages(['family_id' => 'Підключити GameCon+ для сім’ї може лише її лідер.']),
             'promo' => $this->ownServer($payer, (int) ($input['server_id'] ?? 0)),
@@ -377,8 +381,8 @@ class Shop
             return;
         }
         if (($meta['kind'] ?? null) === 'gift' && $target instanceof User) {
-            $this->plus->grant($target, $days, 'gift', $payer, $payer->name, $payment->id);
-            $target->notify(new PlusGifted($payer, $days));
+            // Листівка: вручити зараз або в обраний день (PlusGifts).
+            app(PlusGifts::class)->paid($payment, $payer, $target, $product, $days);
 
             return;
         }

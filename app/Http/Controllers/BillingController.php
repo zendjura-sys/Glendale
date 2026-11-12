@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Family;
 use App\Models\PaymentCard;
 use App\Models\PaymentOrder;
+use App\Models\PlusGift;
 use App\Models\PlusRenewal;
 use App\Services\Billing\Catalog;
 use App\Services\Billing\Checkout;
@@ -66,6 +67,9 @@ class BillingController extends Controller
             'phone_operator' => ['nullable', 'string', 'size:2'],
             'phone_digits' => ['nullable', 'string', 'size:7'],
             'gift_to' => ['nullable', 'integer'],
+            'gift_message' => ['nullable', 'string', 'max:200'],
+            'gift_theme' => ['nullable', Rule::in(PlusGift::THEMES)],
+            'gift_at' => ['nullable', 'date_format:Y-m-d'],
             'renew' => ['boolean'],
             'save_card' => ['boolean'],
         ]);

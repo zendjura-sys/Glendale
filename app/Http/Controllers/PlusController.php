@@ -4,10 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Models\Family;
 use App\Models\FamilyMember;
+use App\Models\PlusGift;
 use App\Models\PlusPayment;
 use App\Models\StaffRole;
 use App\Models\User;
 use App\Services\Billing\Shop;
+use App\Services\FriendshipService;
 use App\Services\Moderation\ContentFilter;
 use App\Services\Plus\Plus;
 use App\Services\Plus\PromoCodes;
@@ -49,6 +51,11 @@ class PlusController extends Controller
                 'state' => $this->plus->state($f),
                 'style' => $f->plus_style ?? (object) [],
             ])->values(),
+            // Друзі для вибору в «Подарувати»; надіслані подарунки зі статусом.
+            'friends' => app(FriendshipService::class)->friendsQuery($user)->orderBy('name')->limit(200)->get()
+                ->map(fn (User $f) => ['username' => $f->username, 'name' => $f->name, 'avatar_url' => $f->toCard()['avatar_url'] ?? null])->values(),
+            'sent_gifts' => PlusGift::query()->with('recipient')->where('payer_id', $user->id)->where('status', '!=', 'draft')
+                ->latest('id')->limit(10)->get()->map(fn (PlusGift $g) => $g->toCard())->values(),
             'payments' => PlusPayment::query()->where('user_id', $user->id)->latest('id')->limit(20)->get()
                 ->map(fn (PlusPayment $p) => [
                     'id' => $p->id,
@@ -59,6 +66,24 @@ class PlusController extends Controller
                     'receipt_url' => $p->receipt_url,
                     'created_at' => $p->created_at->toIso8601String(),
                 ]),
+        ]);
+    }
+
+    /** Листівка подарунка: бачать отримувач і дарувальник (отримувач — лише після вручення). */
+    public function gift(Request $request, PlusGift $gift): Response
+    {
+        $user = $request->user();
+        $isRecipient = $gift->recipient_id === $user->id;
+        abort_unless(($isRecipient && $gift->status === 'delivered') || $gift->payer_id === $user->id, 404);
+        if ($isRecipient && $gift->seen_at === null) {
+            $gift->update(['seen_at' => now()]);
+        }
+        $gift->load('payer', 'recipient');
+
+        return Inertia::render('plus/gift', [
+            'gift' => $gift->toCard(),
+            'mine' => $isRecipient,
+            'plus_until' => $isRecipient ? $user->fresh()?->plus_until?->toIso8601String() : null,
         ]);
     }
 

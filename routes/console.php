@@ -54,6 +54,7 @@ Schedule::command('billing:tick')->hourly()->withoutOverlapping(30);
 Schedule::command('posts:publish')->everyMinute()->withoutOverlapping(5);
 Schedule::command('messages:tick')->everyMinute()->withoutOverlapping(5);
 Schedule::command('events:remind')->everyFiveMinutes()->withoutOverlapping(10);
+Schedule::command('plus:deliver-gifts')->everyFifteenMinutes()->withoutOverlapping(10);
 // Події серверів із Discord — що 15 хвилин, події й виходи ігор з IGDB — щогодини.
 Schedule::command('events:sync --servers')->everyFifteenMinutes()->withoutOverlapping(15);
 Schedule::command('events:sync --games')->hourlyAt(25)->withoutOverlapping(30);
