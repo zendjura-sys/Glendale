@@ -426,6 +426,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
 
     Route::get('posts/{post}/comments', [CommentController::class, 'index'])->name('comments.index');
     Route::post('posts/{post}/comments', [CommentController::class, 'store'])->middleware('throttle:30,1')->name('comments.store');
+    Route::post('posts/{post}/slow-mode', [CommentController::class, 'slowMode'])->middleware('throttle:20,1')->name('posts.slow-mode');
     Route::delete('comments/{comment}', [CommentController::class, 'destroy'])->name('comments.destroy');
     Route::post('comments/{comment}/like', [CommentController::class, 'like'])->middleware('throttle:120,1')->name('comments.like');
     Route::post('comments/{comment}/pin', [CommentController::class, 'pin'])->name('comments.pin');

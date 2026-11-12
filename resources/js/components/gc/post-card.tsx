@@ -875,6 +875,12 @@ export function PostCard({
                         onCountChange={setCommentsCount}
                         autoFocus={focusComment}
                         quote={quote}
+                        slowMode={post.slow_mode ?? null}
+                        slowModeEndpoint={
+                            post.can.slow_mode
+                                ? `/posts/${post.id}/slow-mode`
+                                : null
+                        }
                     />
                 </div>
             )}

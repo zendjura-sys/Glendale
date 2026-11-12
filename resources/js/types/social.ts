@@ -116,6 +116,8 @@ export type PostItem = {
     visibility: Visibility;
     is_pinned: boolean;
     comments_enabled: boolean;
+    /** Повільний режим коментарів (гарячий запис). */
+    slow_mode?: { seconds: number; until: string; auto: boolean } | null;
     likes_count: number;
     comments_count: number;
     views_count: number;
@@ -218,6 +220,7 @@ export type PostItem = {
         share?: boolean;
         quote?: boolean;
         series?: boolean;
+        slow_mode?: boolean;
     };
 };
 

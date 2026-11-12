@@ -19,6 +19,7 @@ use App\Models\Track;
 use App\Models\User;
 use App\Models\UserMute;
 use App\Services\Billing\AuthorSubscriptions;
+use App\Services\Feed\SlowMode;
 use App\Services\Games\GameTags;
 use App\Services\Profile\Affiliations;
 use App\Services\Profile\UserRoles;
@@ -253,6 +254,7 @@ class PostPresenter
             'visibility' => $post->visibility,
             'is_pinned' => $post->is_pinned,
             'comments_enabled' => $post->comments_enabled,
+            'slow_mode' => app(SlowMode::class)->card($post),
             'likes_count' => $post->likes_count,
             'comments_count' => $post->comments_count,
             'views_count' => $post->views_count,
@@ -294,6 +296,7 @@ class PostPresenter
                 'edit' => $viewer !== null && $post->author_id === $viewer->id && ($post->is_draft || $post->publish_at?->isFuture() || $post->created_at->greaterThan(now()->subMinutes(Post::EDIT_MINUTES))),
                 'pin' => $ownWall || $managesWall,
                 'comment' => $viewer !== null && $post->comments_enabled,
+                'slow_mode' => $viewer !== null && ($post->author_id === $viewer->id || $viewer->isStaff()),
                 'hide' => $viewer !== null && $post->author_id !== $viewer->id && ! $post->is_draft && ! $post->publish_at?->isFuture(),
                 'mute' => $viewer !== null && $post->author_id !== $viewer->id && ! $post->is_draft && ! $post->publish_at?->isFuture(),
                 'share' => $shareable,

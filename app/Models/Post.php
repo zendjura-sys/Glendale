@@ -49,7 +49,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon $created_at
  * @property Carbon $updated_at
  */
-#[Fillable(['author_id', 'wall_type', 'wall_id', 'as_community', 'body', 'music', 'movie_id', 'link', 'card', 'visibility', 'is_pinned', 'is_draft', 'comments_enabled', 'spoiler', 'edited_at', 'publish_at', 'shared_post_id', 'quoted_post_id', 'sticker', 'is_pending', 'tag', 'lang', 'subscribers_only', 'series_id', 'series_position'])]
+#[Fillable(['author_id', 'wall_type', 'wall_id', 'as_community', 'body', 'music', 'movie_id', 'link', 'card', 'visibility', 'is_pinned', 'is_draft', 'comments_enabled', 'spoiler', 'edited_at', 'publish_at', 'shared_post_id', 'quoted_post_id', 'sticker', 'is_pending', 'tag', 'lang', 'subscribers_only', 'series_id', 'series_position', 'slow_mode_seconds', 'slow_mode_until', 'slow_mode_auto'])]
 class Post extends Model
 {
     /** @use HasFactory<PostFactory> */
@@ -79,6 +79,8 @@ class Post extends Model
     protected function casts(): array
     {
         return [
+            'slow_mode_until' => 'datetime',
+            'slow_mode_auto' => 'boolean',
             'is_pinned' => 'boolean',
             'is_draft' => 'boolean',
             'is_pending' => 'boolean',

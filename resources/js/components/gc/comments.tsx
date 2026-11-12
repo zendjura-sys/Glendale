@@ -6,6 +6,7 @@ import {
     EyeOff,
     Pin,
     SendHorizontal,
+    Timer,
     Smile,
     Trash2,
 } from 'lucide-react';
@@ -50,6 +51,9 @@ type Props = {
     /** Цитата з тексту запису (новий об’єкт — нова цитата). */
     quote?: { text: string } | null;
     className?: string;
+    /** Повільний режим (гарячий запис) і адреса, щоб автор чи персонал його змінили. */
+    slowMode?: { seconds: number; until: string; auto: boolean } | null;
+    slowModeEndpoint?: string | null;
 };
 
 export function Comments({
@@ -61,6 +65,8 @@ export function Comments({
     autoFocus,
     className,
     quote = null,
+    slowMode: initialSlow = null,
+    slowModeEndpoint = null,
 }: Props) {
     const { auth } = usePage().props;
     const [comments, setComments] = useState(initial);
@@ -115,6 +121,7 @@ export function Comments({
             const response = await api<{
                 comment: CommentItem;
                 comments_count: number;
+                slow_mode?: typeof slow;
             }>('POST', endpoint, {
                 body,
                 parent_id: replyTo?.id ?? null,
@@ -123,6 +130,12 @@ export function Comments({
             });
             setComments((list) => [...list, response.comment]);
             onCountChange(response.comments_count);
+            if (response.slow_mode !== undefined) {
+                setSlow(response.slow_mode);
+                if (response.slow_mode && !slowModeEndpoint) {
+                    setCooldown(response.slow_mode.seconds);
+                }
+            }
             setBody('');
             writeDraft(`comment:${endpoint}`, '');
             setSpoiler(false);
@@ -170,6 +183,25 @@ export function Comments({
                           : item.is_pinned,
             })),
         );
+    };
+
+    // Повільний режим: стан і зворотний відлік до наступного коментаря.
+    const [slow, setSlow] = useState(initialSlow);
+    const [cooldown, setCooldown] = useState(0);
+    useEffect(() => {
+        if (cooldown <= 0) return;
+        const id = window.setTimeout(() => setCooldown((c) => c - 1), 1000);
+
+        return () => window.clearTimeout(id);
+    }, [cooldown]);
+    const changeSlow = async (seconds: number) => {
+        if (!slowModeEndpoint) return;
+        const response = await api<{ slow_mode: typeof slow }>(
+            'POST',
+            slowModeEndpoint,
+            { seconds, minutes: 60 },
+        );
+        setSlow(response.slow_mode);
     };
 
     // Приховані коментарі, які людина розгорнула.
@@ -463,6 +495,48 @@ export function Comments({
                     );
                 })}
 
+            {(slow || slowModeEndpoint) && (
+                <div
+                    className={cn(
+                        'flex flex-wrap items-center gap-2 rounded-xl px-3 py-2 text-xs',
+                        slow
+                            ? 'bg-amber-400/10 text-amber-300'
+                            : 'text-white/45',
+                    )}
+                >
+                    <Timer className="size-3.5 shrink-0" />
+                    <span className="min-w-0 flex-1">
+                        {slow
+                            ? slow.auto
+                                ? tr(
+                                      'Гаряче обговорення — повільний режим: один коментар на {s} с.',
+                                      { s: slow.seconds },
+                                  )
+                                : tr(
+                                      'Повільний режим: один коментар на {s} с.',
+                                      { s: slow.seconds },
+                                  )
+                            : tr('Повільний режим вимкнено')}
+                    </span>
+                    {slowModeEndpoint && (
+                        <select
+                            aria-label={tr('Повільний режим')}
+                            value={slow?.seconds ?? 0}
+                            onChange={(e) =>
+                                void changeSlow(Number(e.target.value))
+                            }
+                            className="rounded-lg bg-white/10 px-2 py-1 text-xs text-white"
+                        >
+                            <option value={0}>{tr('Вимкнено')}</option>
+                            <option value={15}>{tr('15 с')}</option>
+                            <option value={30}>{tr('30 с')}</option>
+                            <option value={60}>{tr('1 хв')}</option>
+                            <option value={120}>{tr('2 хв')}</option>
+                            <option value={300}>{tr('5 хв')}</option>
+                        </select>
+                    )}
+                </div>
+            )}
             {canComment && (
                 <div className="flex items-end gap-2.5 pt-1">
                     <UserAvatar user={auth.user} size="sm" showOnline={false} />
@@ -546,11 +620,21 @@ export function Comments({
                             <button
                                 type="button"
                                 onClick={submit}
-                                disabled={(!body.trim() && !sticker) || sending}
-                                className="mb-1 flex size-8 shrink-0 items-center justify-center rounded-xl text-sky-400 transition hover:bg-[var(--gc-l3)] disabled:opacity-30"
+                                disabled={
+                                    (!body.trim() && !sticker) ||
+                                    sending ||
+                                    cooldown > 0
+                                }
+                                className="mb-1 flex h-8 min-w-8 shrink-0 items-center justify-center rounded-xl px-1 text-sky-400 transition hover:bg-[var(--gc-l3)] disabled:opacity-30"
                                 aria-label={tr('Надіслати')}
                             >
-                                <SendHorizontal className="size-[18px]" />
+                                {cooldown > 0 ? (
+                                    <span className="text-xs font-semibold tabular-nums">
+                                        {cooldown}
+                                    </span>
+                                ) : (
+                                    <SendHorizontal className="size-[18px]" />
+                                )}
                             </button>
                         </div>
                     </div>

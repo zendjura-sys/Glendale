@@ -9,6 +9,7 @@ use App\Models\Photo;
 use App\Models\Post;
 use App\Notifications\PostInteraction;
 use App\Services\CommunityWall;
+use App\Services\Feed\SlowMode;
 use App\Services\FriendshipService;
 use App\Services\Mentions;
 use App\Services\Moderation\ContentFilter;
@@ -70,6 +71,7 @@ class CommentController extends Controller
         $filter->ensureCanPost($user);
         $data['body'] = trim((string) ($data['body'] ?? ''));
         app(CommunityWall::class)->guardComment($post, $user, $data['body']);
+        app(SlowMode::class)->guard($post, $user);
         if ($data['body'] !== '') {
             $data['body'] = (string) $filter->clean($data['body']);
         }
@@ -92,6 +94,7 @@ class CommentController extends Controller
         });
 
         app(ToxicComments::class)->check($comment);
+        app(SlowMode::class)->afterComment($post);
 
         if ($post->author_id !== $user->id && $comment->hidden_at === null) {
             $excerpt = $comment->spoiler ? 'Спойлер' : ($comment->body !== '' ? Str::limit($comment->body, 80) : Stickers::emoji($comment->sticker));
@@ -103,7 +106,23 @@ class CommentController extends Controller
         return response()->json([
             'comment' => $this->presenter->comment($comment->load('user'), $user, false, $user->id === $post->author_id || $user->isStaff()),
             'comments_count' => $post->fresh()->comments_count,
+            'slow_mode' => app(SlowMode::class)->card($post->fresh()),
         ], 201);
+    }
+
+    /** Повільний режим коментарів запису: автор запису або персонал. */
+    public function slowMode(Request $request, Post $post): JsonResponse
+    {
+        $user = $request->user();
+        abort_unless($post->author_id === $user->id || $user->isStaff(), 403);
+        $data = $request->validate([
+            'seconds' => ['required', 'integer', Rule::in(SlowMode::CHOICES)],
+            'minutes' => ['nullable', 'integer', 'min:10', 'max:10080'],
+        ]);
+        $slow = app(SlowMode::class);
+        $slow->set($post, $user, (int) $data['seconds'], (int) ($data['minutes'] ?? 60));
+
+        return response()->json(['slow_mode' => $slow->card($post->fresh())]);
     }
 
     /** Приховати або повернути коментар: автор запису (до свого запису) чи персонал. */

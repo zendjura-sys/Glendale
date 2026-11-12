@@ -244,6 +244,7 @@ Route::prefix('v1')->group(function () {
             Route::post('posts/{post}/like', [FeedApiController::class, 'like'])->whereNumber('post')->middleware('throttle:120,1');
             Route::get('posts/{post}/comments', [FeedApiController::class, 'comments'])->whereNumber('post');
             Route::post('posts/{post}/comments', [FeedApiController::class, 'comment'])->whereNumber('post')->middleware('throttle:30,1');
+            Route::post('posts/{post}/slow-mode', [CommentController::class, 'slowMode'])->whereNumber('post')->middleware('throttle:20,1');
         });
 
         Route::middleware('module:friends')->group(function () {
