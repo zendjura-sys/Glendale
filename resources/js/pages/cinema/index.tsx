@@ -12,6 +12,7 @@ import { useEffect, useState } from 'react';
 import { MovieTile, movieGridClass } from '@/components/cinema/movie-tile';
 import { CinemaNav } from '@/components/cinema/cinema-nav';
 import { CinemaShell } from '@/components/cinema/cinema-side';
+import { MovieOfWeek } from '@/components/cinema/movie-of-week';
 import type { CinemaSideData } from '@/components/cinema/cinema-side';
 import { ContinueRow, Hero } from '@/components/cinema/hero';
 import {
@@ -202,6 +203,7 @@ export default function CinemaIndex({
                 {!filtered && byType.length > 0 && (
                     <TypeCarousel groups={byType} />
                 )}
+                {!filtered && <MovieOfWeek />}
 
                 <UnderlineTabs
                     active={filters.type ?? 'all'}

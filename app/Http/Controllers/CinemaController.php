@@ -21,6 +21,7 @@ use App\Services\Cinema\FlixcdnPlayer;
 use App\Services\Cinema\KodikClient;
 use App\Services\Cinema\Metadata\MetadataEnricher;
 use App\Services\Cinema\Metadata\TmdbProvider;
+use App\Services\Cinema\MovieOfWeek;
 use App\Services\Cinema\TmdbAutoParse;
 use App\Services\Cinema\VideoseedClient;
 use App\Services\FriendshipService;
@@ -525,6 +526,20 @@ class CinemaController extends Controller
     /**
      * Розклад: онгоінги з серіями, що виходили останні три тижні, за днем тижня останнього оновлення.
      */
+    /** «Тайтл тижня»: кандидати, голоси й переможець минулого тижня. */
+    public function week(Request $request): JsonResponse
+    {
+        return response()->json(app(MovieOfWeek::class)->board($request->user()));
+    }
+
+    /** Голос за «Тайтл тижня» (можна перенести на інший тайтл до кінця тижня). */
+    public function voteWeek(Request $request, Movie $movie): JsonResponse
+    {
+        app(MovieOfWeek::class)->vote($request->user(), $movie);
+
+        return response()->json(app(MovieOfWeek::class)->board($request->user()));
+    }
+
     public function schedule(): Response
     {
         $rows = DB::table('movie_sources')

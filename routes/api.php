@@ -717,6 +717,9 @@ Route::prefix('v1')->group(function () {
             });
 
             Route::prefix('cinema')->middleware('module:cinema')->group(function () {
+                // «Тайтл тижня» — те саме, що на сайті.
+                Route::get('week', [CinemaController::class, 'week']);
+                Route::post('week/{movie}', [CinemaController::class, 'voteWeek'])->middleware('throttle:20,1');
                 Route::get('lists', [MovieListController::class, 'index']);
                 Route::post('lists', [MovieListController::class, 'store'])->middleware('throttle:20,1');
                 Route::get('lists/{list}', [MovieListController::class, 'show'])->whereNumber('list');

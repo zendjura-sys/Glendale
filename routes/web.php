@@ -700,6 +700,8 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
 
     Route::prefix('cinema')->name('cinema.')->middleware('module:cinema')->group(function () {
         Route::get('/', [CinemaController::class, 'index'])->name('index');
+        Route::get('week', [CinemaController::class, 'week'])->name('week');
+        Route::post('week/{movie}', [CinemaController::class, 'voteWeek'])->middleware('throttle:20,1')->name('week.vote');
         Route::get('my', [CinemaController::class, 'my'])->name('my');
         Route::get('overview', [CinemaController::class, 'overview'])->name('overview');
         Route::get('schedule', [CinemaController::class, 'schedule'])->name('schedule');

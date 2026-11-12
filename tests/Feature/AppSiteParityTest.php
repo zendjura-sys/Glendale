@@ -863,4 +863,12 @@ class AppSiteParityTest extends TestCase
         $this->withToken($listener)->postJson("/api/v1/site/shows/{$id}/hand", ['raised' => true])->assertOk()->assertJsonPath('me.hand', true);
         $this->withToken($host)->getJson("/api/v1/site/shows/{$id}")->assertOk()->assertJsonPath('show.guest_seats', 2)->assertJsonCount(1, 'hands');
     }
+
+    public function test_app_votes_for_movie_of_week_through_bridge(): void
+    {
+        $token = $this->app_token(User::factory()->create());
+        $movie = Movie::query()->create(['slug' => 'week-pick', 'type' => 'movie', 'title' => 'Вибір тижня', 'is_published' => true]);
+        $this->withToken($token)->getJson('/api/v1/site/cinema/week')->assertOk()->assertJsonPath('candidates.0.id', $movie->id);
+        $this->withToken($token)->postJson("/api/v1/site/cinema/week/{$movie->slug}")->assertOk()->assertJsonPath('mine', $movie->id)->assertJsonPath('total', 1);
+    }
 }
