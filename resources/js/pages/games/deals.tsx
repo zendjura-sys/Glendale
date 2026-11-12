@@ -123,35 +123,28 @@ export default function GameDeals({ giveaways, subscribed, wishlist }: Props) {
                                             ? 0
                                             : Math.min(i, 8) * 0.03,
                                     }}
-                                    className="gc-solid flex flex-col overflow-hidden rounded-2xl"
+                                    className="gc-solid group flex flex-col overflow-hidden rounded-2xl"
                                 >
-                                    {g.image && (
-                                        <img
-                                            src={g.image}
-                                            alt=""
-                                            loading="lazy"
-                                            className="aspect-[16/9] w-full object-cover"
-                                        />
-                                    )}
+                                    <div className="relative aspect-[16/9] overflow-hidden bg-white/[0.04]">
+                                        {g.image ? (
+                                            <img
+                                                src={g.image}
+                                                alt=""
+                                                loading="lazy"
+                                                className="size-full object-cover transition duration-300 group-hover:scale-[1.03]"
+                                            />
+                                        ) : (
+                                            <Gift className="absolute inset-0 m-auto size-10 text-white/25" />
+                                        )}
+                                        <span className="absolute top-2 left-2 rounded-lg bg-black/65 px-2 py-1 text-[11px] font-semibold text-white">
+                                            {g.store_label}
+                                        </span>
+                                        <span className="absolute top-2 right-2 rounded-lg bg-emerald-500 px-2 py-1 text-[11px] font-bold text-white">
+                                            −100%
+                                        </span>
+                                    </div>
                                     <div className="flex flex-1 flex-col gap-2 p-4">
-                                        <div className="flex flex-wrap items-center gap-1.5 text-xs">
-                                            <span className="rounded-chip bg-white/10 px-2 py-0.5 font-semibold text-white/85">
-                                                {g.store_label}
-                                            </span>
-                                            {g.ends_at && (
-                                                <span className="inline-flex items-center gap-1 rounded-chip bg-amber-500/12 px-2 py-0.5 text-amber-200">
-                                                    <Clock3 className="size-3" />
-                                                    {timeLeft(g.ends_at)} ·{' '}
-                                                    {tr('до {date}', {
-                                                        date: formatDate(
-                                                            g.ends_at,
-                                                            false,
-                                                        ),
-                                                    })}
-                                                </span>
-                                            )}
-                                        </div>
-                                        <h2 className="font-display text-base font-semibold break-words text-white">
+                                        <h2 className="line-clamp-2 font-display text-base leading-snug font-semibold break-words text-white">
                                             {g.game ? (
                                                 <Link
                                                     href={`/games/${g.game.slug}`}
@@ -164,29 +157,45 @@ export default function GameDeals({ giveaways, subscribed, wishlist }: Props) {
                                             )}
                                         </h2>
                                         {g.description && (
-                                            <p className="line-clamp-3 text-sm text-white/55">
+                                            <p className="line-clamp-2 text-sm text-white/55">
                                                 {g.description}
                                             </p>
                                         )}
-                                        <div className="mt-auto flex items-center gap-2 pt-2">
-                                            {g.worth && (
-                                                <span className="text-sm text-white/40 line-through">
-                                                    {g.worth}
+                                        <div className="mt-auto flex items-end justify-between gap-2 pt-2">
+                                            <div>
+                                                {g.worth && (
+                                                    <p className="text-xs text-white/40 line-through">
+                                                        {g.worth}
+                                                    </p>
+                                                )}
+                                                <p className="font-display text-2xl leading-none font-bold text-emerald-300">
+                                                    {tr('0 ₴')}
+                                                </p>
+                                            </div>
+                                            {g.ends_at && (
+                                                <span
+                                                    title={tr('до {date}', {
+                                                        date: formatDate(
+                                                            g.ends_at,
+                                                            false,
+                                                        ),
+                                                    })}
+                                                    className="inline-flex items-center gap-1 rounded-lg bg-amber-500/12 px-2 py-1 text-xs font-medium text-amber-200"
+                                                >
+                                                    <Clock3 className="size-3.5" />
+                                                    {timeLeft(g.ends_at)}
                                                 </span>
                                             )}
-                                            <span className="text-sm font-semibold text-emerald-300">
-                                                {tr('Безкоштовно')}
-                                            </span>
-                                            <a
-                                                href={g.url}
-                                                target="_blank"
-                                                rel="noopener noreferrer nofollow"
-                                                className="btn-glow ml-auto inline-flex h-9 items-center gap-1.5 rounded-xl px-3.5 text-sm font-semibold"
-                                            >
-                                                {tr('Забрати')}{' '}
-                                                <ExternalLink className="size-3.5" />
-                                            </a>
                                         </div>
+                                        <a
+                                            href={g.url}
+                                            target="_blank"
+                                            rel="noopener noreferrer nofollow"
+                                            className="btn-glow mt-1 inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-xl text-sm font-semibold"
+                                        >
+                                            {tr('Забрати безкоштовно')}
+                                            <ExternalLink className="size-3.5" />
+                                        </a>
                                     </div>
                                 </motion.article>
                             ))}
@@ -213,66 +222,119 @@ export default function GameDeals({ giveaways, subscribed, wishlist }: Props) {
                             )}
                         </p>
                     ) : (
-                        <ul className="divide-y divide-white/[0.06]">
-                            {wishlist.map((w) => (
-                                <li
-                                    key={w.game.id}
-                                    className="flex items-center gap-3 py-2.5"
-                                >
-                                    <Link
-                                        href={`/games/${w.game.slug}`}
-                                        className="size-12 shrink-0 overflow-hidden rounded-control"
+                        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+                            {wishlist.map((w) => {
+                                const hit =
+                                    w.best !== null &&
+                                    w.target_price !== null &&
+                                    w.best.price <= w.target_price;
+
+                                return (
+                                    <article
+                                        key={w.game.id}
+                                        className="group flex flex-col overflow-hidden rounded-2xl bg-white/[0.04]"
                                     >
-                                        <GameCover game={w.game} />
-                                    </Link>
-                                    <div className="min-w-0 flex-1">
                                         <Link
                                             href={`/games/${w.game.slug}`}
-                                            className="block text-sm font-semibold break-words text-white hover:underline"
+                                            className="relative block aspect-[3/4] overflow-hidden"
                                         >
-                                            {w.game.name}
+                                            <GameCover game={w.game} />
+                                            {w.best && w.best.savings > 0 && (
+                                                <span className="absolute top-2 right-2 rounded-lg bg-emerald-500 px-2 py-1 text-[11px] font-bold text-white">
+                                                    −{w.best.savings}%
+                                                </span>
+                                            )}
+                                            {hit && (
+                                                <span className="absolute top-2 left-2 rounded-lg bg-sky-500 px-2 py-1 text-[11px] font-bold text-white">
+                                                    {tr('Ваша ціна')}
+                                                </span>
+                                            )}
                                         </Link>
-                                        <p className="text-xs break-words text-white/50">
-                                            {[
-                                                w.best
-                                                    ? `${usd(w.best.price)} · ${w.best.store}${w.best.savings > 0 ? ` · −${w.best.savings}%` : ''}`
-                                                    : tr(
-                                                          'Ціну перевіримо найближчим часом',
-                                                      ),
-                                                w.target_price !== null
-                                                    ? tr('чекаємо {price}', {
-                                                          price: usd(
-                                                              w.target_price,
-                                                          ),
-                                                      })
-                                                    : null,
-                                            ]
-                                                .filter(Boolean)
-                                                .join(' · ')}
-                                        </p>
-                                    </div>
-                                    <button
-                                        type="button"
-                                        onClick={() =>
-                                            api(
-                                                'POST',
-                                                `/games/${w.game.slug}/wish`,
-                                                { on: false },
-                                            ).then(() =>
-                                                router.reload({
-                                                    only: ['wishlist'],
-                                                }),
-                                            )
-                                        }
-                                        className="rounded-lg p-2 text-white/40 transition hover:bg-white/10 hover:text-white"
-                                        aria-label={tr('Прибрати з бажаного')}
-                                        title={tr('Прибрати з бажаного')}
-                                    >
-                                        <Trash2 className="size-4" />
-                                    </button>
-                                </li>
-                            ))}
-                        </ul>
+                                        <div className="flex flex-1 flex-col gap-1.5 p-3">
+                                            <Link
+                                                href={`/games/${w.game.slug}`}
+                                                className="line-clamp-2 text-sm font-semibold break-words text-white hover:underline"
+                                            >
+                                                {w.game.name}
+                                            </Link>
+                                            {w.best ? (
+                                                <div className="flex items-baseline gap-1.5">
+                                                    <span className="font-display text-lg font-bold text-white">
+                                                        {usd(w.best.price)}
+                                                    </span>
+                                                    {w.best.savings > 0 && (
+                                                        <span className="text-xs text-white/40 line-through">
+                                                            {usd(w.best.retail)}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <p className="text-xs text-white/45">
+                                                    {tr(
+                                                        'Ціну перевіримо найближчим часом',
+                                                    )}
+                                                </p>
+                                            )}
+                                            <p className="text-[11px] text-white/45">
+                                                {[
+                                                    w.best?.store,
+                                                    w.target_price !== null
+                                                        ? tr(
+                                                              'чекаємо {price}',
+                                                              {
+                                                                  price: usd(
+                                                                      w.target_price,
+                                                                  ),
+                                                              },
+                                                          )
+                                                        : null,
+                                                ]
+                                                    .filter(Boolean)
+                                                    .join(' · ')}
+                                            </p>
+                                            <div className="mt-auto flex gap-1.5 pt-1.5">
+                                                {w.best && (
+                                                    <a
+                                                        href={w.best.url}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer nofollow"
+                                                        className="inline-flex h-9 flex-1 items-center justify-center gap-1 rounded-xl bg-primary text-xs font-semibold text-white"
+                                                    >
+                                                        {tr('До магазину')}
+                                                        <ExternalLink className="size-3" />
+                                                    </a>
+                                                )}
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        api(
+                                                            'POST',
+                                                            `/games/${w.game.slug}/wish`,
+                                                            { on: false },
+                                                        ).then(() =>
+                                                            router.reload({
+                                                                only: [
+                                                                    'wishlist',
+                                                                ],
+                                                            }),
+                                                        )
+                                                    }
+                                                    className="grid size-9 place-items-center rounded-xl bg-white/[0.06] text-white/50 transition hover:bg-white/10 hover:text-white"
+                                                    aria-label={tr(
+                                                        'Прибрати з бажаного',
+                                                    )}
+                                                    title={tr(
+                                                        'Прибрати з бажаного',
+                                                    )}
+                                                >
+                                                    <Trash2 className="size-4" />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </article>
+                                );
+                            })}
+                        </div>
                     )}
                 </section>
             )}
