@@ -1,4 +1,14 @@
-import { Crown, Flame, Gem, Shield, Star, Zap } from 'lucide-react';
+import {
+    Crown,
+    Flame,
+    Gem,
+    Ghost,
+    Shield,
+    Snowflake,
+    Star,
+    Swords,
+    Zap,
+} from 'lucide-react';
 import type { CSSProperties } from 'react';
 import { cn } from '@/lib/utils';
 import type { Cosmetics } from '@/types';
@@ -11,6 +21,9 @@ export const BADGE_ICONS = {
     shield: Shield,
     crown: Crown,
     gem: Gem,
+    snowflake: Snowflake,
+    ghost: Ghost,
+    swords: Swords,
 } as const;
 
 /** Колір ніку з пропуску (лише якщо немає оформлення GameCon+). */

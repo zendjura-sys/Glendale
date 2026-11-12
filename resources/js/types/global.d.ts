@@ -79,6 +79,13 @@ declare module '@inertiajs/core' {
             features?: Record<string, boolean>;
             /** Сезонні прикраси (App\\Support\\Seasons): newyear, valentine, easter, independence, halloween. */
             season?: string | null;
+            /** Поточна сезонна подія сайту (банер у стрічці). */
+            siteEvent?: {
+                slug: string;
+                title: string;
+                theme: string;
+                ends_at: string;
+            } | null;
             /** Показати вікно «Отримайте номер» (акаунт без внутрішнього номера). */
             phonePrompt?: boolean;
             /** Фірмовий фон з адмінки: картинки для ПК і телефона; default — типовий фон сайту. */

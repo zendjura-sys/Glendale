@@ -110,6 +110,7 @@ use App\Http\Controllers\ServerController;
 use App\Http\Controllers\ServerFamiliesController;
 use App\Http\Controllers\Settings\BadgeOrderController;
 use App\Http\Controllers\SetupController;
+use App\Http\Controllers\SiteEventController;
 use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\SpotifyController;
 use App\Http\Controllers\StartController;
@@ -948,6 +949,13 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     });
 
     // Сезонний пропуск: рівні з очок сезону, нагороди двох доріжок, інвентар косметики.
+    // Сезонні події сайту: завдання на час події, спільна мета, нагорода в інвентар.
+    Route::prefix('season-events')->name('events.site.')->middleware('module:quests')->group(function () {
+        Route::get('/', [SiteEventController::class, 'index'])->name('index');
+        Route::get('{slug}', [SiteEventController::class, 'show'])->where('slug', '[a-z0-9-]+')->name('show');
+        Route::post('{slug}/claim', [SiteEventController::class, 'claim'])->where('slug', '[a-z0-9-]+')->middleware('throttle:20,1')->name('claim');
+    });
+
     Route::prefix('season')->name('season.')->middleware('module:quests')->group(function () {
         Route::get('/', [SeasonController::class, 'index'])->name('index');
         Route::post('levels/{level}/{track}/claim', [SeasonController::class, 'claim'])->whereNumber('level')->whereIn('track', ['free', 'plus'])->middleware('throttle:60,1')->name('claim');
@@ -1235,6 +1243,10 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
             Route::put('google-pay', 'googlePay')->name('google-pay');
         });
         Route::get('seasons', [Admin\SeasonController::class, 'index'])->name('seasons.index');
+        Route::get('site-events', [Admin\SiteEventController::class, 'index'])->name('site-events.index');
+        Route::post('site-events', [Admin\SiteEventController::class, 'store'])->name('site-events.store');
+        Route::put('site-events/{event}', [Admin\SiteEventController::class, 'update'])->whereNumber('event')->name('site-events.update');
+        Route::delete('site-events/{event}', [Admin\SiteEventController::class, 'destroy'])->whereNumber('event')->name('site-events.destroy');
         Route::put('seasons/{key}', [Admin\SeasonController::class, 'update'])->where('key', '\d{4}-\d{2}')->name('seasons.update');
         Route::get('stickers', [Admin\StickerController::class, 'index'])->name('stickers.index');
         Route::post('stickers', [Admin\StickerController::class, 'store'])->name('stickers.store');

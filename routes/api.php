@@ -109,6 +109,7 @@ use App\Http\Controllers\Settings\NavigationController;
 use App\Http\Controllers\Settings\ProfileController as SettingsProfileController;
 use App\Http\Controllers\Settings\StreamController;
 use App\Http\Controllers\SetupController;
+use App\Http\Controllers\SiteEventController;
 use App\Http\Controllers\SpotifyController;
 use App\Http\Controllers\StartController;
 use App\Http\Controllers\StatusController;
@@ -990,6 +991,11 @@ Route::prefix('v1')->group(function () {
                 Route::post('{quest}/claim', [QuestController::class, 'claim'])->where('quest', '[a-z]{2,24}')->middleware('throttle:30,1');
             });
 
+            Route::prefix('season-events')->middleware('module:quests')->group(function () {
+                Route::get('/', [SiteEventController::class, 'index']);
+                Route::get('{slug}', [SiteEventController::class, 'show'])->where('slug', '[a-z0-9-]+');
+                Route::post('{slug}/claim', [SiteEventController::class, 'claim'])->where('slug', '[a-z0-9-]+')->middleware('throttle:20,1');
+            });
             Route::prefix('season')->middleware('module:quests')->group(function () {
                 Route::get('/', [SeasonController::class, 'index']);
                 Route::post('levels/{level}/{track}/claim', [SeasonController::class, 'claim'])->whereNumber('level')->whereIn('track', ['free', 'plus'])->middleware('throttle:60,1');

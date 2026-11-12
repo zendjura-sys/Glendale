@@ -33,6 +33,12 @@ return [
             'pass_gold' => ['name' => 'Золото сезону', 'colors' => ['#f59e0b', '#fde68a']],
             'pass_ember' => ['name' => 'Жар', 'colors' => ['#f43f5e', '#f97316']],
             'pass_ice' => ['name' => 'Лід', 'colors' => ['#38bdf8', '#e0f2fe']],
+            // Нагороди сезонних подій (не з пропуску — лише за подію).
+            'ev_frost' => ['name' => 'Зимовий фест', 'colors' => ['#e0f2fe', '#38bdf8', '#6366f1']],
+            'ev_pumpkin' => ['name' => 'Хелловін', 'colors' => ['#f97316', '#7c2d12', '#a855f7']],
+            'ev_heart' => ['name' => 'День закоханих', 'colors' => ['#fb7185', '#f472b6']],
+            'ev_flag' => ['name' => 'Незалежність', 'colors' => ['#0057b7', '#ffd700']],
+            'ev_raid' => ['name' => 'Осінній рейд', 'colors' => ['#f59e0b', '#ef4444', '#7c3aed']],
         ],
         // Колір ніку.
         'name' => [
@@ -50,6 +56,9 @@ return [
             'pass_shield' => ['name' => 'Щит', 'icon' => 'shield', 'color' => '#34d399'],
             'pass_crown' => ['name' => 'Корона сезону', 'icon' => 'crown', 'color' => '#f59e0b'],
             'pass_gem' => ['name' => 'Самоцвіт', 'icon' => 'gem', 'color' => '#a78bfa'],
+            'ev_snow' => ['name' => 'Сніжинка фесту', 'icon' => 'snowflake', 'color' => '#7dd3fc'],
+            'ev_ghost' => ['name' => 'Привид', 'icon' => 'ghost', 'color' => '#c084fc'],
+            'ev_swords' => ['name' => 'Учасник рейду', 'icon' => 'swords', 'color' => '#f59e0b'],
         ],
         // Ефект шапки профілю (ті самі, що в GameCon+).
         'header' => [

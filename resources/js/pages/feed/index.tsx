@@ -39,6 +39,7 @@ import { PostSkeleton } from '@/components/gc/post-skeleton';
 import { StoriesBar } from '@/components/gc/stories';
 import { UserAvatar } from '@/components/gc/user-avatar';
 import { WrappedBanner } from '@/components/gc/wrapped-banner';
+import { SiteEventBanner } from '@/components/season/site-event-banner';
 import { HomeWidgetsEditor } from '@/components/gc/engagement';
 import { FeedPulse, FeedSideCards, useHub } from '@/components/gc/feed-pulse';
 import { FriendActivity } from '@/components/feed/friend-activity';
@@ -226,6 +227,7 @@ export default function Feed({
                     <WhileAway data={whileAway} />
                     <FeedPulse quests={quests ?? []} />
                     <WrappedBanner />
+                    <SiteEventBanner />
                     <TomorrowCard events={tomorrow ?? []} />
                     {liveOn && <FriendsLive streams={streaming ?? []} />}
                     {(picks?.length ?? 0) > 0 && (

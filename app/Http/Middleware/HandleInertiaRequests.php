@@ -15,6 +15,7 @@ use App\Services\Billing\Checkout;
 use App\Services\Billing\GooglePay;
 use App\Services\Billing\Shop;
 use App\Services\Engagement\Streaks;
+use App\Services\Events\SiteEvents;
 use App\Services\FriendshipService;
 use App\Services\I18n\ContentTranslator;
 use App\Services\Messenger;
@@ -172,6 +173,8 @@ class HandleInertiaRequests extends Middleware
             'features' => fn () => app(NetworkModes::class)->featuresFor($user),
             // Сезонні прикраси (Новий рік, Великдень…) або null.
             'season' => fn () => app(Seasons::class)->for($user),
+            // Поточна сезонна подія сайту (банер у стрічці) або null.
+            'siteEvent' => fn () => $user ? app(SiteEvents::class)->banner() : null,
             // Вікно «Отримайте номер» для акаунтів без номера (після онбордингу; «Пізніше» — більше не показуємо).
             'phonePrompt' => fn () => $user !== null && $this->modules->enabled('phone') && $user->pref('onboarded') !== false
                 && $user->pref('phone_prompt') !== false && app(PhoneNumbers::class)->current($user) === null,
