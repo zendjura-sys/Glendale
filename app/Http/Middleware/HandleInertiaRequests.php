@@ -142,6 +142,7 @@ class HandleInertiaRequests extends Middleware
                     // «Показувати, що я слухаю» (усі джерела музики; Spotify — ще й своїм перемикачем).
                     'show_listening' => $user->showsListening(),
                     'morning_digest' => $user->wantsDigest(),
+                    'weekly_digest' => $user->pref('weekly_digest', true) !== false,
                     // Економія трафіку: фото по дотику, відео не грає саме.
                     'data_saver' => $user->pref('data_saver') === true,
                     // Режим стримера: особисте на екрані розмите.

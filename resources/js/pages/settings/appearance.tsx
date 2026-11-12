@@ -19,7 +19,10 @@ import { Character } from '@/components/character/character';
 import { PlusBadge } from '@/components/gc/plus';
 import { DataSaverSwitch } from '@/components/settings/data-saver-switch';
 import { StreamerModeSwitch } from '@/components/settings/streamer-mode-switch';
-import { DigestSwitch } from '@/components/settings/digest-switch';
+import {
+    DigestSwitch,
+    WeeklyDigestSwitch,
+} from '@/components/settings/digest-switch';
 import { GameThemePicker } from '@/components/settings/game-theme-picker';
 import type { GameThemeValue } from '@/components/settings/game-theme-picker';
 import { NotifySoundPicker } from '@/components/settings/notify-sound-picker';
@@ -859,6 +862,7 @@ export default function Appearance({
 
                 <SettingsCard list title={tr('Дайджест і трафік')}>
                     <DigestSwitch />
+                    <WeeklyDigestSwitch />
                     <DataSaverSwitch />
                     <StreamerModeSwitch />
                 </SettingsCard>

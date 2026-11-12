@@ -1963,7 +1963,11 @@ html[data-text='xl'] {
 .gc-capsule-range::-webkit-slider-runnable-track {
     transition: height 0.18s ease;
 }
-.am-np-range:is(:hover, :active, :focus-visible)::-webkit-slider-runnable-track {
+.am-np-range:is(
+        :hover,
+        :active,
+        :focus-visible
+    )::-webkit-slider-runnable-track {
     height: 10px;
 }
 .am-np-range::-webkit-slider-thumb {

@@ -42,6 +42,8 @@ Schedule::command('alerts:sync')->everyMinute()->withoutOverlapping(5)->runInBac
 Schedule::command('games:release-alerts')->dailyAt('10:10')->timezone('Europe/Kyiv')->withoutOverlapping(30);
 Schedule::command('games:wishlist-alerts')->cron('40 */6 * * *')->withoutOverlapping(120)->runInBackground();
 Schedule::command('digest:morning')->dailyAt('09:00')->timezone('Europe/Kyiv')->withoutOverlapping(60)->runInBackground();
+// Щотижневий дайджест: найкраще в друзів, нові серії, роздачі.
+Schedule::command('digest:weekly')->weeklyOn(0, '17:47')->timezone('Europe/Kyiv')->withoutOverlapping(60)->runInBackground();
 
 // Білінг: донати Donatello → поповнення; автопродовження GameCon+ з рахунку.
 Schedule::command('billing:tick')->hourly()->withoutOverlapping(30);

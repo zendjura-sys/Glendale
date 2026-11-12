@@ -8,16 +8,19 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 /**
- * Ранковий дайджест — одне налаштування для сайту й застосунку.
+ * Ранковий і щотижневий дайджести — налаштування для сайту й застосунку.
  */
 class DigestController extends Controller
 {
     public function update(Request $request): RedirectResponse
     {
-        $data = $request->validate(['morning_digest' => ['required', 'boolean']]);
+        $data = $request->validate([
+            'morning_digest' => ['sometimes', 'boolean'],
+            'weekly_digest' => ['sometimes', 'boolean'],
+        ]);
         $user = $request->user();
         abort_unless($user instanceof User, 401);
-        $user->mergePref(['morning_digest' => (bool) $data['morning_digest']]);
+        $user->mergePref(array_map(fn ($on) => (bool) $on, $data));
 
         return back();
     }
