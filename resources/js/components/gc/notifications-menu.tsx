@@ -1,6 +1,7 @@
 import { ModuleIcon } from '@/components/gc/module-icon';
 import { Link, usePage } from '@inertiajs/react';
 import {
+    Clapperboard,
     Archive,
     ShieldAlert,
     BadgePercent,
@@ -77,6 +78,7 @@ const kindIcon: Record<string, { icon: typeof Bell; className: string }> = {
     weekly_digest: { icon: CalendarRange, className: 'bg-primary' },
     new_login: { icon: ShieldAlert, className: 'bg-amber-500' },
     data_export: { icon: Archive, className: 'bg-primary' },
+    episode_new: { icon: Clapperboard, className: 'bg-rose-500' },
     referral_joined: { icon: UserPlus, className: 'bg-emerald-500' },
     plus_gifted: { icon: Gift, className: 'bg-indigo-500' },
     wallet_topup: { icon: Wallet, className: 'bg-emerald-500' },

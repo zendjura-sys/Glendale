@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Jobs\CheckImage;
+use App\Jobs\NotifyNewEpisodes;
 use App\Jobs\RelayToBots;
 use App\Models\ClanEvent;
 use App\Models\Comment;
@@ -167,6 +168,12 @@ class AppServiceProvider extends ServiceProvider
 
         // Бали учасника спільноти: запис (одразу чи після перевірки) і коментар.
         Post::created(fn (Post $post) => app(CommunityPoints::class)->forPost($post));
+        // Нові серії: лічильник серій зріс після імпорту — сповістити тих, хто дивиться.
+        Movie::updated(function (Movie $movie) {
+            if ($movie->wasChanged('episodes_count') && (int) $movie->episodes_count > (int) $movie->getOriginal('episodes_count') && (int) $movie->getOriginal('episodes_count') > 0) {
+                NotifyNewEpisodes::dispatch($movie->id, (int) $movie->getOriginal('episodes_count'), (int) $movie->episodes_count);
+            }
+        });
         // Сповіщення за ключовими словами — після відповіді, щоб не гальмувати публікацію.
         Post::created(function (Post $post) {
             if (app(Plugins::class)->on('keyword_alerts')) {
