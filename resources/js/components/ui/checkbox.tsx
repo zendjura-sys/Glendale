@@ -1,5 +1,5 @@
 import * as CheckboxPrimitive from "@radix-ui/react-checkbox"
-import { CheckIcon } from "lucide-react"
+import { motion, useReducedMotion } from "motion/react"
 import * as React from "react"
 
 import { cn } from "@/lib/utils"
@@ -21,9 +21,25 @@ function Checkbox({
         data-slot="checkbox-indicator"
         className="flex items-center justify-center text-current transition-none"
       >
-        <CheckIcon className="size-3.5" />
+        <CheckDraw />
       </CheckboxPrimitive.Indicator>
     </CheckboxPrimitive.Root>
+  )
+}
+
+/** Галочка, що прорисовується штрихом (без руху — одразу намальована). */
+function CheckDraw() {
+  const reduce = useReducedMotion()
+
+  return (
+    <svg viewBox="0 0 24 24" className="size-3.5" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <motion.path
+        d="M20 6 9 17l-5-5"
+        initial={reduce ? false : { pathLength: 0 }}
+        animate={{ pathLength: 1 }}
+        transition={{ duration: 0.22, ease: "easeOut" }}
+      />
+    </svg>
   )
 }
 

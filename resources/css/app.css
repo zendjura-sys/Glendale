@@ -1921,8 +1921,84 @@ html[data-text='xl'] {
     opacity: 0.45;
     cursor: not-allowed;
 }
+/* Живий перемикач: ручка «тягнеться» під пальцем, у ввімкненому стані в ній прорисовується галочка. */
+.gc-switch::after {
+    content: '';
+    position: absolute;
+    top: 9px;
+    left: 30px;
+    width: 5px;
+    height: 9px;
+    border: solid var(--primary-foreground, #fff);
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg) scale(0);
+    transform-origin: 60% 60%;
+    opacity: 0;
+    transition:
+        transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) 0.08s,
+        opacity 0.15s ease 0.08s;
+}
+.gc-switch:checked::after {
+    transform: rotate(45deg) scale(1);
+    opacity: 1;
+}
+.gc-switch:active:not(:disabled)::before {
+    width: 25px;
+}
+.gc-switch:checked:active:not(:disabled)::before {
+    transform: translateX(15px);
+}
 @media (prefers-reduced-motion: reduce) {
-    .gc-switch::before {
+    .gc-switch::before,
+    .gc-switch::after {
+        transition: none;
+    }
+}
+
+/*
+ * Повзунки плеєра (прогрес, гучність): під курсором і під час перетягування доріжка товщає
+ * й з’являється ручка — видно, що повзунок «живий».
+ */
+.am-np-range::-webkit-slider-runnable-track,
+.gc-capsule-range::-webkit-slider-runnable-track {
+    transition: height 0.18s ease;
+}
+.am-np-range:is(:hover, :active, :focus-visible)::-webkit-slider-runnable-track {
+    height: 10px;
+}
+.am-np-range::-webkit-slider-thumb {
+    width: 16px;
+    height: 16px;
+    margin-top: -4.5px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 2px 8px rgb(0 0 0 / 0.45);
+    transform: scale(0);
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.am-np-range:is(:hover, :active, :focus-visible)::-webkit-slider-thumb {
+    transform: scale(1);
+}
+.am-np-range:active::-webkit-slider-thumb {
+    transform: scale(1.2);
+}
+.am-np-range::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border: 0;
+    border-radius: 50%;
+    background: #fff;
+    transform: scale(0);
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.am-np-range:is(:hover, :active, :focus-visible)::-moz-range-thumb {
+    transform: scale(1);
+}
+@media (prefers-reduced-motion: reduce) {
+    .am-np-range::-webkit-slider-runnable-track,
+    .gc-capsule-range::-webkit-slider-runnable-track,
+    .am-np-range::-webkit-slider-thumb,
+    .am-np-range::-moz-range-thumb {
         transition: none;
     }
 }
@@ -4216,14 +4292,15 @@ html:has(.am:not(.am-in-site)) body {
         rgb(255 255 255 / 0.25) var(--value)
     );
 }
-.am-volume::-webkit-slider-thumb,
-.am-np-range::-webkit-slider-thumb {
+.am-volume::-webkit-slider-thumb {
     appearance: none;
     width: 0;
     height: 0;
 }
-.am-volume::-moz-range-thumb,
-.am-np-range::-moz-range-thumb {
+.am-np-range::-webkit-slider-thumb {
+    appearance: none;
+}
+.am-volume::-moz-range-thumb {
     width: 0;
     height: 0;
     border: 0;
