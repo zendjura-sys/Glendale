@@ -551,6 +551,14 @@ export default function ServerShow({
                         <span className="text-xs text-white/40">
                             {tr('бали за поточний місяць')}
                         </span>
+                        {families.length > 0 && (
+                            <Link
+                                href={`/servers/${server.slug}/families`}
+                                className="text-sm font-semibold text-sky-400 hover:underline"
+                            >
+                                {tr('Увесь рейтинг')}
+                            </Link>
+                        )}
                         <Link
                             href={`/families/create?server=${server.slug}`}
                             className="btn-glow ml-auto inline-flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-semibold"
@@ -569,7 +577,7 @@ export default function ServerShow({
                         />
                     ) : (
                         <div className="divide-y divide-white/[0.05]">
-                            {families.map((family, i) => (
+                            {families.slice(0, 10).map((family, i) => (
                                 <Link
                                     key={family.id}
                                     href={`/f/${family.slug}`}

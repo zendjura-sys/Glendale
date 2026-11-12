@@ -96,6 +96,7 @@ use App\Http\Controllers\ReferralController;
 use App\Http\Controllers\SavedController;
 use App\Http\Controllers\SeasonController;
 use App\Http\Controllers\ServerController;
+use App\Http\Controllers\ServerFamiliesController;
 use App\Http\Controllers\Settings\AccountController as SettingsAccountController;
 use App\Http\Controllers\Settings\AccountTypeController;
 use App\Http\Controllers\Settings\AppearanceController;
@@ -958,6 +959,7 @@ Route::prefix('v1')->group(function () {
                 Route::get('compare', [ServerController::class, 'compare']);
                 Route::post('suggest', [ServerController::class, 'suggest'])->middleware('throttle:5,10');
                 Route::get('{server}', [ServerController::class, 'show']);
+                Route::get('{server}/families', [ServerFamiliesController::class, 'index']);
             });
 
             Route::post('servers/{server}/tournaments', [TournamentController::class, 'store'])->middleware(['module:servers', 'throttle:10,10']);
