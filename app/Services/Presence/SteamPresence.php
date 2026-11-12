@@ -116,6 +116,40 @@ class SteamPresence
     }
 
     /**
+     * Уся бібліотека Steam: appid, хвилини загалом і за два тижні (кеш на годину).
+     *
+     * @return list<array{app_id: string, name: string, minutes: int, recent: int}>
+     */
+    public function owned(User $user): array
+    {
+        if ($user->steam_id === null || ! $this->configured()) {
+            return [];
+        }
+
+        return Cache::remember('steam.owned.'.$user->steam_id, now()->addHour(), function () use ($user) {
+            $data = $this->get('IPlayerService/GetOwnedGames/v1/', [
+                'steamid' => (string) $user->steam_id,
+                'include_appinfo' => '1',
+                'include_played_free_games' => '1',
+            ]);
+            $games = is_array($data['response'] ?? null) ? ($data['response']['games'] ?? []) : [];
+            $out = [];
+            foreach (is_array($games) ? $games : [] as $g) {
+                if (is_array($g) && isset($g['appid'])) {
+                    $out[] = [
+                        'app_id' => (string) $g['appid'],
+                        'name' => (string) ($g['name'] ?? ''),
+                        'minutes' => (int) ($g['playtime_forever'] ?? 0),
+                        'recent' => (int) ($g['playtime_2weeks'] ?? 0),
+                    ];
+                }
+            }
+
+            return $out;
+        });
+    }
+
+    /**
      * Ігри з бібліотеки Steam, найдовше зіграні зверху. Порожньо, якщо ключа або профілю немає.
      *
      * @return list<array{name: string, app_id?: string, hours: int, href: string|null}>

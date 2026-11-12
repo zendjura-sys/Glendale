@@ -117,6 +117,7 @@ use App\Http\Controllers\SpotifyController;
 use App\Http\Controllers\StartController;
 use App\Http\Controllers\StatusController;
 use App\Http\Controllers\StatusPageController;
+use App\Http\Controllers\SteamImportController;
 use App\Http\Controllers\StoryController;
 use App\Http\Controllers\SupportController;
 use App\Http\Controllers\TeammateController;
@@ -409,6 +410,8 @@ Route::prefix('v1')->group(function () {
             Route::get('search/quick', [PeopleController::class, 'quick'])->middleware('throttle:120,1');
             Route::post('search/recent', [PeopleController::class, 'remember'])->middleware('throttle:60,1');
             Route::delete('search/recent', [PeopleController::class, 'forgetSearch'])->middleware('throttle:60,1');
+            Route::get('games/steam-import', [SteamImportController::class, 'show'])->middleware(['module:games', 'throttle:20,1']);
+            Route::post('games/steam-import', [SteamImportController::class, 'store'])->middleware(['module:games', 'throttle:10,1']);
             // Беклог ігор — ті самі дії, що й на сайті.
             Route::prefix('games')->middleware('module:games')->controller(GameBacklogController::class)->group(function () {
                 Route::get('backlog', 'mine');

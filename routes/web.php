@@ -119,6 +119,7 @@ use App\Http\Controllers\SpotifyController;
 use App\Http\Controllers\StartController;
 use App\Http\Controllers\StatusController;
 use App\Http\Controllers\StatusPageController;
+use App\Http\Controllers\SteamImportController;
 use App\Http\Controllers\StoryController;
 use App\Http\Controllers\SupportController;
 use App\Http\Controllers\TeammateController;
@@ -810,6 +811,8 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::post('deals/subscribe', [GameDealsController::class, 'subscribe'])->name('deals.subscribe');
         Route::get('pc', [GameDealsController::class, 'pcShow'])->name('pc.show');
         // Беклог: «хочу — граю — пройшов — кинув».
+        Route::get('steam-import', [SteamImportController::class, 'show'])->middleware('throttle:20,1')->name('steam-import');
+        Route::post('steam-import', [SteamImportController::class, 'store'])->middleware('throttle:10,1')->name('steam-import.store');
         Route::get('backlog', [GameBacklogController::class, 'mine'])->name('backlog');
         Route::get('backlog/{user:username}', [GameBacklogController::class, 'show'])->name('backlog.user');
         Route::put('pc', [GameDealsController::class, 'pcSave'])->middleware('throttle:30,1')->name('pc.update');

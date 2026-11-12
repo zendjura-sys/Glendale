@@ -101,6 +101,14 @@ export default function GameBacklog({ owner, mine, board, friends }: Props) {
                             : tr('{n} ігор у беклозі', { n: total })}
                     </p>
                 </div>
+                {mine && (
+                    <Link
+                        href="/games/steam-import"
+                        className="gc-solid-2 ml-auto shrink-0 rounded-xl px-3 py-2 text-sm font-medium text-white hover:bg-white/10"
+                    >
+                        {tr('Імпорт зі Steam')}
+                    </Link>
+                )}
             </div>
 
             {mine && friends.length > 0 && (

@@ -291,7 +291,7 @@ class PlayingStatus
      *
      * @return array<string, int>
      */
-    private function steamApps(): array
+    public function steamApps(): array
     {
         /** @var array<string, int> */
         return Cache::remember('presence.steam', now()->addMinutes(30), function () {
