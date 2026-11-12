@@ -11,6 +11,7 @@ export type RailData = {
     me?: {
         level: number | null;
         streak: number | null;
+        reward?: boolean;
         family: {
             name: string;
             href: string;

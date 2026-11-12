@@ -3,6 +3,7 @@ import {
     ChevronDown,
     Flame,
     Gamepad2,
+    Gift,
     Headphones,
     Music2,
     ShieldCheck,
@@ -169,6 +170,17 @@ function PlayerCard({ me }: { me: RailData['me'] }) {
                     </Link>
                 )}
             </div>
+            {me?.reward && (
+                <Link
+                    href="/rewards"
+                    className="mt-2 flex items-center gap-2 rounded-xl bg-primary/15 px-3 py-2 text-[13px] font-medium text-white hover:bg-primary/25"
+                >
+                    <Gift className="size-4 shrink-0 text-primary" />
+                    <span className="min-w-0 flex-1 truncate">
+                        {tr('Нагорода дня чекає')}
+                    </span>
+                </Link>
+            )}
         </DockCard>
     );
 }

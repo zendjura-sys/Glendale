@@ -262,7 +262,7 @@ export default function CardsAlbum({
                                 locked={current.copies === 0}
                                 className="mx-auto w-48"
                             />
-                            <p className="mt-3 text-center text-sm text-white/60">
+                            <p className="mt-3 text-center text-sm text-muted-foreground">
                                 {current.set}
                                 {current.copies > 0 &&
                                     ` · ${tr('копій: {n}', { n: current.copies })}`}

@@ -67,6 +67,7 @@ use App\Http\Controllers\ListenPartyController;
 use App\Http\Controllers\ListenRoomController;
 use App\Http\Controllers\LiveShowController;
 use App\Http\Controllers\LocaleController;
+use App\Http\Controllers\LoginRewardController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\MessengerController;
 use App\Http\Controllers\MomentController;
@@ -994,6 +995,8 @@ Route::prefix('v1')->group(function () {
             });
 
             Route::get('level', [LevelController::class, 'index'])->middleware('throttle:30,1');
+            Route::get('rewards', [LoginRewardController::class, 'index'])->middleware('module:quests');
+            Route::post('rewards/claim', [LoginRewardController::class, 'claim'])->middleware(['module:quests', 'throttle:10,1']);
             Route::prefix('cards')->middleware('module:quests')->group(function () {
                 Route::get('/', [CardController::class, 'index']);
                 Route::post('open', [CardController::class, 'open'])->middleware('throttle:10,1');

@@ -62,6 +62,16 @@ class CardCollection
         return collect($rows);
     }
 
+    /** Скинути очікування набору (бонус календаря входу): наступний набір можна відкрити одразу. */
+    public function grantPack(User $user): void
+    {
+        DB::table('card_wallets')->upsert(
+            [['user_id' => $user->id, 'pack_at' => null, 'shards' => 0, 'packs_opened' => 0, 'created_at' => now(), 'updated_at' => now()]],
+            ['user_id'],
+            ['pack_at' => null, 'updated_at' => now()],
+        );
+    }
+
     public function packSize(User $user): int
     {
         return self::PACK_SIZE + ($user->isPlus() ? 1 : 0);
@@ -187,7 +197,7 @@ class CardCollection
         DB::table('user_cards')->where('id', $row->id)->update(['showcase' => ! $row->showcase, 'updated_at' => now()]);
     }
 
-    private function addShards(User $user, int $amount): void
+    public function addShards(User $user, int $amount): void
     {
         DB::table('card_wallets')->upsert(
             [['user_id' => $user->id, 'shards' => $amount, 'packs_opened' => 0, 'created_at' => now(), 'updated_at' => now()]],

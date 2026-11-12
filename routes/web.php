@@ -71,6 +71,7 @@ use App\Http\Controllers\ListenPartyController;
 use App\Http\Controllers\ListenRoomController;
 use App\Http\Controllers\LiveShowController;
 use App\Http\Controllers\LocaleController;
+use App\Http\Controllers\LoginRewardController;
 use App\Http\Controllers\Mail\UnsubscribeController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\MessengerController;
@@ -953,6 +954,10 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     // Сезонний пропуск: рівні з очок сезону, нагороди двох доріжок, інвентар косметики.
     // Рівень профілю: досвід, назви рівнів, нагороди за віхи.
     Route::get('level', [LevelController::class, 'index'])->middleware('throttle:30,1')->name('level');
+
+    // Календар нагород за щоденний вхід.
+    Route::get('rewards', [LoginRewardController::class, 'index'])->middleware('module:quests')->name('rewards.index');
+    Route::post('rewards/claim', [LoginRewardController::class, 'claim'])->middleware(['module:quests', 'throttle:10,1'])->name('rewards.claim');
 
     // Колекційні картки ігор: альбом, щоденний набір, уламки, вітрина.
     Route::prefix('cards')->name('cards.')->middleware('module:quests')->group(function () {

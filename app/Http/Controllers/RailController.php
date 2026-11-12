@@ -7,6 +7,7 @@ use App\Models\GtaServer;
 use App\Models\User;
 use App\Models\VoiceRoom;
 use App\Services\Achievements;
+use App\Services\Engagement\LoginRewards;
 use App\Services\Engagement\Streaks;
 use App\Services\FriendshipService;
 use App\Services\Messenger;
@@ -94,6 +95,8 @@ class RailController extends Controller
         return [
             'level' => $level,
             'streak' => app(Streaks::class)->state($user)['days'] ?? null,
+            // Нагорода дня з календаря входу ще не забрана.
+            'reward' => $modules->enabled('quests') && ! app(LoginRewards::class)->claimedToday($user),
             'family' => $membership?->family ? $membership->dossier() : null,
             'track' => app(Plugins::class)->on('profile_track') ? ProfileTrack::of($user) : null,
             'playing' => $user->playing(),

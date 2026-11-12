@@ -40,6 +40,7 @@ return [
             'ev_flag' => ['name' => 'Незалежність', 'colors' => ['#0057b7', '#ffd700']],
             'ev_raid' => ['name' => 'Осінній рейд', 'colors' => ['#f59e0b', '#ef4444', '#7c3aed']],
             // Нагороди за рівень профілю.
+            'login_month' => ['name' => 'Постійний гість', 'colors' => ['#22d3ee', '#6366f1', '#22d3ee']],
             'lvl_bronze' => ['name' => 'Бронза рівня', 'colors' => ['#b45309', '#fbbf24']],
             'lvl_veteran' => ['name' => 'Ветеран', 'colors' => ['#64748b', '#e2e8f0', '#64748b']],
             'lvl_legend' => ['name' => 'Легенда', 'colors' => ['#f59e0b', '#a855f7', '#22d3ee']],
