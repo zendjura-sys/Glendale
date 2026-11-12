@@ -87,6 +87,7 @@ class PeopleController extends Controller
                 'hits' => [],
                 'recent' => $recent,
                 'popular' => app(SiteSearch::class)->popular(),
+                'trending' => RecentSearches::trending(),
             ]);
         }
 
@@ -97,7 +98,17 @@ class PeopleController extends Controller
                 : [],
             'hits' => app(SiteSearch::class)->hits($q),
             'recent' => $recent,
+            'suggest' => RecentSearches::trending($q, 4),
         ]);
+    }
+
+    /** Прибрати запит з історії пошуку (без q — очистити всю). */
+    public function forgetSearch(Request $request): JsonResponse
+    {
+        $q = $request->input('q');
+        RecentSearches::forget($request->user(), is_string($q) ? $q : null);
+
+        return response()->json(['recent' => RecentSearches::list($request->user())]);
     }
 
     public function saveSearch(Request $request): RedirectResponse

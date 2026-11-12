@@ -1,5 +1,5 @@
 import { Link, router, usePage } from '@inertiajs/react';
-import { Search, X } from 'lucide-react';
+import { History, TrendingUp, Search, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
@@ -50,6 +50,8 @@ export function QuickSearch({ className }: { className?: string }) {
     const [results, setResults] = useState<Result[]>([]);
     const [recent, setRecent] = useState<string[]>([]);
     const [popular, setPopular] = useState<Hit[]>([]);
+    const [trending, setTrending] = useState<string[]>([]);
+    const [suggest, setSuggest] = useState<string[]>([]);
     const [open, setOpen] = useState(false);
     const [active, setActive] = useState(0);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -81,6 +83,16 @@ export function QuickSearch({ className }: { className?: string }) {
         };
     }, []);
 
+    // Прибрати один запит з історії (або всю історію без аргументу).
+    const forget = (value?: string) =>
+        api<{ recent: string[] }>(
+            'DELETE',
+            '/search/recent',
+            value ? { q: value } : {},
+        )
+            .then((response) => setRecent(response.recent))
+            .catch(() => undefined);
+
     const remember = (value: string) => {
         const text = value.trim();
         if (text.length < 2) {
@@ -95,10 +107,14 @@ export function QuickSearch({ className }: { className?: string }) {
         if (!open || query.trim().length >= 2) {
             return;
         }
-        api<{ recent?: string[]; popular?: Hit[] }>('GET', '/search/quick?q=')
+        api<{ recent?: string[]; popular?: Hit[]; trending?: string[] }>(
+            'GET',
+            '/search/quick?q=',
+        )
             .then((response) => {
                 setRecent(response.recent ?? []);
                 setPopular(response.popular ?? []);
+                setTrending(response.trending ?? []);
             })
             .catch(() => {
                 setRecent([]);
@@ -118,8 +134,10 @@ export function QuickSearch({ className }: { className?: string }) {
                 users: UserCard[];
                 communities: CommunityCard[];
                 hits?: Hit[];
+                suggest?: string[];
             }>('GET', `/search/quick?q=${encodeURIComponent(query.trim())}`)
                 .then((response) => {
+                    setSuggest(response.suggest ?? []);
                     const hits = response.hits ?? [];
                     setResults(
                         hits.length > 0
@@ -221,26 +239,73 @@ export function QuickSearch({ className }: { className?: string }) {
 
             {open &&
                 query.trim().length < 2 &&
-                (recent.length > 0 || popular.length > 0) && (
-                    <div className="glass-strong absolute top-12 right-0 left-0 z-50 animate-rise overflow-hidden rounded-2xl p-1.5">
+                (recent.length > 0 ||
+                    popular.length > 0 ||
+                    trending.length > 0) && (
+                    <div className="glass-strong absolute top-12 right-0 left-0 z-50 animate-rise overflow-hidden rounded-2xl p-1.5 sm:right-auto sm:w-[max(100%,360px)]">
                         {recent.length > 0 && (
-                            <p className="px-2.5 py-1.5 text-xs text-white/40">
+                            <div className="flex items-center justify-between px-2.5 py-1.5 text-xs text-white/40">
                                 {tr('Недавні запити')}
-                            </p>
+                                <button
+                                    type="button"
+                                    onMouseDown={(e) => e.preventDefault()}
+                                    onClick={() => void forget()}
+                                    className="font-medium text-white/50 hover:text-white"
+                                >
+                                    {tr('Очистити')}
+                                </button>
+                            </div>
                         )}
                         {recent.map((item) => (
-                            <button
+                            <div
                                 key={item}
-                                type="button"
-                                onClick={() => {
-                                    setQuery(item);
-                                    setOpen(true);
-                                }}
-                                className="flex w-full rounded-xl px-2.5 py-2 text-left text-sm text-white/80 hover:bg-white/5"
+                                className="group flex items-center rounded-xl hover:bg-white/5"
                             >
-                                {item}
-                            </button>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setQuery(item);
+                                        setOpen(true);
+                                    }}
+                                    className="flex min-w-0 flex-1 items-center gap-2 px-2.5 py-2 text-left text-sm text-white/80"
+                                >
+                                    <History className="size-4 shrink-0 text-white/35" />
+                                    <span className="truncate">{item}</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onMouseDown={(e) => e.preventDefault()}
+                                    onClick={() => void forget(item)}
+                                    aria-label={tr('Прибрати з історії')}
+                                    className="mr-1 grid size-7 place-items-center rounded-lg text-white/35 opacity-0 transition group-hover:opacity-100 hover:text-white focus:opacity-100"
+                                >
+                                    <X className="size-3.5" />
+                                </button>
+                            </div>
                         ))}
+                        {trending.length > 0 && (
+                            <>
+                                <p className="px-2.5 py-1.5 text-xs text-white/40">
+                                    {tr('Часто шукають')}
+                                </p>
+                                <div className="flex flex-wrap gap-1.5 px-2 pb-1.5">
+                                    {trending.map((item) => (
+                                        <button
+                                            key={item}
+                                            type="button"
+                                            onClick={() => {
+                                                setQuery(item);
+                                                setOpen(true);
+                                            }}
+                                            className="inline-flex h-8 items-center gap-1 rounded-full bg-white/[0.06] px-3 text-sm text-white/80 hover:bg-white/[0.1] hover:text-white"
+                                        >
+                                            <TrendingUp className="size-3.5 text-primary" />
+                                            {item}
+                                        </button>
+                                    ))}
+                                </div>
+                            </>
+                        )}
                         {popular.length > 0 && (
                             <p className="px-2.5 py-1.5 text-xs text-white/40">
                                 {tr('Зараз популярне')}
@@ -262,7 +327,22 @@ export function QuickSearch({ className }: { className?: string }) {
                 )}
 
             {open && query.trim().length >= 2 && (
-                <div className="glass-strong absolute top-12 right-0 left-0 z-50 animate-rise overflow-hidden rounded-2xl p-1.5">
+                <div className="glass-strong absolute top-12 right-0 left-0 z-50 animate-rise overflow-hidden rounded-2xl p-1.5 sm:right-auto sm:w-[max(100%,360px)]">
+                    {suggest.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 px-1.5 pt-1 pb-2">
+                            {suggest.map((item) => (
+                                <button
+                                    key={item}
+                                    type="button"
+                                    onClick={() => setQuery(item)}
+                                    className="inline-flex h-7 items-center gap-1 rounded-full bg-white/[0.06] px-2.5 text-xs text-white/75 hover:bg-white/[0.1] hover:text-white"
+                                >
+                                    <Search className="size-3" />
+                                    {item}
+                                </button>
+                            ))}
+                        </div>
+                    )}
                     {results.length === 0 ? (
                         <div className="px-3 py-6 text-center text-sm text-white/50">
                             {tr('Нікого не знайдено')}

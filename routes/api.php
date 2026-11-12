@@ -399,6 +399,8 @@ Route::prefix('v1')->group(function () {
         Route::prefix('site')->middleware(BridgeSiteAction::class)->group(function () {
             // Один пошук на весь сайт: люди, кіно, музика, ігри, сервери, спільноти, клани, сім'ї.
             Route::get('search/quick', [PeopleController::class, 'quick'])->middleware('throttle:120,1');
+            Route::post('search/recent', [PeopleController::class, 'remember'])->middleware('throttle:60,1');
+            Route::delete('search/recent', [PeopleController::class, 'forgetSearch'])->middleware('throttle:60,1');
             // Беклог ігор — ті самі дії, що й на сайті.
             Route::prefix('games')->middleware('module:games')->controller(GameBacklogController::class)->group(function () {
                 Route::get('backlog', 'mine');

@@ -1055,6 +1055,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     Route::post('people/saved', [PeopleController::class, 'saveSearch'])->name('people.saved');
     Route::get('search/quick', [PeopleController::class, 'quick'])->middleware('throttle:120,1')->name('search.quick');
     Route::post('search/recent', [PeopleController::class, 'remember'])->middleware('throttle:60,1')->name('search.recent');
+    Route::delete('search/recent', [PeopleController::class, 'forgetSearch'])->middleware('throttle:60,1')->name('search.recent.forget');
 
     Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::post('notifications/read', [NotificationController::class, 'markAllRead'])->name('notifications.read');

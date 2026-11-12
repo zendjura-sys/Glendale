@@ -8,6 +8,7 @@ use App\Services\Billing\AuthorSubscriptions;
 use App\Services\Profile\UserRoles;
 use App\Services\Quality\PageVitals;
 use App\Services\Support\SupportDesk;
+use App\Support\RecentSearches;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -97,3 +98,6 @@ Schedule::call(fn () => app(DataExporter::class)->prune())->name('data-exports:p
 
 // Відвідини розділів старші за 120 днів не потрібні (DAU-дні лишаються для утримання).
 Schedule::call(fn () => app(ActivityMetrics::class)->prune())->name('metrics:prune')->dailyAt('05:05')->withoutOverlapping();
+
+// Лічильники запитів пошуку старші за 30 днів не потрібні.
+Schedule::call(fn () => RecentSearches::prune())->name('search-queries:prune')->dailyAt('05:12')->withoutOverlapping();
