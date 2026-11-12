@@ -94,6 +94,7 @@ use App\Http\Controllers\ReadingController;
 use App\Http\Controllers\ReadyToPlayController;
 use App\Http\Controllers\ReferralController;
 use App\Http\Controllers\SavedController;
+use App\Http\Controllers\ScreenshotController;
 use App\Http\Controllers\SeasonController;
 use App\Http\Controllers\ServerController;
 use App\Http\Controllers\ServerFamiliesController;
@@ -859,6 +860,7 @@ Route::prefix('v1')->group(function () {
             Route::middleware('module:photos')->group(function () {
                 Route::get('photos', [PhotoController::class, 'index']);
                 Route::get('photos/u/{user}', [PhotoController::class, 'user']);
+                Route::get('screenshots', [ScreenshotController::class, 'index']);
                 Route::post('albums', [PhotoAlbumController::class, 'store'])->middleware('throttle:20,1');
             });
 

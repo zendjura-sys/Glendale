@@ -173,6 +173,8 @@ type Props = {
         can_thank?: boolean;
     }[];
     moments?: MomentCardData[];
+    /** Скільки публічних скриншотів гри в «Скриншотах». */
+    screenshots?: number;
 };
 
 const STORE_STYLE: Record<string, string> = {
@@ -340,6 +342,7 @@ export default function GameShow({
     soundtracks = null,
     can_curate,
     moments = [],
+    screenshots = 0,
 }: Props) {
     const d = game.details ?? {};
     // Гість бачить сторінку гри (відкрита пошуковикам), але без дій — лише запрошення увійти.
@@ -1136,6 +1139,21 @@ export default function GameShow({
                         </table>
                     </div>
                 </Section>
+            )}
+
+            {screenshots > 0 && (
+                <Link
+                    href={`/screenshots?game=${game.slug}`}
+                    className="gc-solid flex items-center gap-3 rounded-2xl p-4 hover:bg-[var(--gc-l3)]"
+                >
+                    <Images className="size-5 text-sky-400" />
+                    <span className="flex-1 font-semibold text-white">
+                        {tr('Скриншоти гравців')}
+                    </span>
+                    <span className="text-sm text-white/55 tabular-nums">
+                        {screenshots}
+                    </span>
+                </Link>
             )}
 
             {moments.length > 0 && (

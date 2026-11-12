@@ -134,6 +134,10 @@ class PhotoAlbumController extends Controller
         ]);
 
         $created = $this->photos->upload($album, $request->user(), array_values($request->file('photos', [])));
+        // Альбом скриншотів гри — нові фото отримують ту саму гру.
+        if ($album->game_id !== null && $created !== []) {
+            Photo::query()->whereIn('id', collect($created)->pluck('id'))->update(['game_id' => $album->game_id]);
+        }
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Завантажено фото: '.count($created).'.']);
 
@@ -150,12 +154,13 @@ class PhotoAlbumController extends Controller
             'description' => ['nullable', 'string', 'max:500'],
             'privacy' => ['required', Rule::in(PhotoAlbum::PRIVACIES)],
             'comments_enabled' => ['sometimes', 'boolean'],
+            'game_id' => ['nullable', 'integer', 'exists:games,id'],
         ];
     }
 
     /**
      * @param  array<string, mixed>  $data
-     * @return array{title: string, description: string|null, privacy: string, comments_enabled: bool}
+     * @return array{title: string, description: string|null, privacy: string, comments_enabled: bool, game_id: int|null}
      */
     private function clean(array $data, mixed $owner): array
     {
@@ -169,6 +174,7 @@ class PhotoAlbumController extends Controller
             'description' => isset($data['description']) ? trim($data['description']) ?: null : null,
             'privacy' => $privacy,
             'comments_enabled' => (bool) ($data['comments_enabled'] ?? true),
+            'game_id' => isset($data['game_id']) ? (int) $data['game_id'] : null,
         ];
     }
 }

@@ -108,8 +108,12 @@ class PhotoController extends Controller
             'caption' => ['sometimes', 'nullable', 'string', 'max:500'],
             'alt' => ['sometimes', 'nullable', 'string', 'max:200'],
             'is_sensitive' => ['sometimes', 'boolean'],
+            'game_id' => ['sometimes', 'nullable', 'integer', 'exists:games,id'],
         ]);
         $changes = [];
+        if (array_key_exists('game_id', $data)) {
+            $changes['game_id'] = $data['game_id'] !== null ? (int) $data['game_id'] : null;
+        }
         if (array_key_exists('caption', $data)) {
             $changes['caption'] = trim((string) $data['caption']) ?: null;
         }

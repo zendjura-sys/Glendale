@@ -103,6 +103,7 @@ use App\Http\Controllers\ReadingController;
 use App\Http\Controllers\ReadyToPlayController;
 use App\Http\Controllers\ReferralController;
 use App\Http\Controllers\SavedController;
+use App\Http\Controllers\ScreenshotController;
 use App\Http\Controllers\SeasonController;
 use App\Http\Controllers\ServerAppController;
 use App\Http\Controllers\ServerController;
@@ -611,6 +612,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     Route::middleware('module:photos')->group(function () {
         Route::get('photos', [PhotoController::class, 'index'])->name('photos.index');
         Route::get('photos/u/{user}', [PhotoController::class, 'user'])->name('photos.user');
+        Route::get('screenshots', [ScreenshotController::class, 'index'])->name('screenshots');
         Route::post('albums', [PhotoAlbumController::class, 'store'])->middleware('throttle:20,1')->name('albums.store');
 
         Route::whereNumber(['album', 'photo'])->group(function () {

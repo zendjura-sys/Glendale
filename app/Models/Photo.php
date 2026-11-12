@@ -27,12 +27,13 @@ use Illuminate\Support\Facades\Storage;
  * @property int $likes_count
  * @property int $comments_count
  * @property int $views_count
+ * @property int|null $game_id Гра скриншота
  * @property Carbon $created_at
  * @property-read string $url
  * @property-read PhotoAlbum $album
  * @property-read User|null $user
  */
-#[Fillable(['user_id', 'path', 'width', 'height', 'size', 'caption', 'alt', 'is_sensitive'])]
+#[Fillable(['user_id', 'path', 'width', 'height', 'size', 'caption', 'alt', 'is_sensitive', 'game_id'])]
 class Photo extends Model
 {
     use SoftDeletes;
@@ -108,6 +109,15 @@ class Photo extends Model
             'comments_count' => $this->comments_count,
             'alt' => $this->alt,
             'is_sensitive' => $this->is_sensitive,
+            'game_id' => $this->game_id,
         ];
+    }
+
+    /**
+     * @return BelongsTo<Game, $this>
+     */
+    public function game(): BelongsTo
+    {
+        return $this->belongsTo(Game::class);
     }
 }

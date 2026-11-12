@@ -6,8 +6,10 @@ import {
     DialogDescription,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { useState } from 'react';
+import { GameSearch } from '@/components/gc/game-search';
 import { cn } from '@/lib/utils';
-import type { AlbumPrivacy, PhotoAlbumCard } from '@/types';
+import type { AlbumPrivacy, GameCard, PhotoAlbumCard } from '@/types';
 import { tr } from '@/lib/i18n';
 
 export const privacyMeta: Record<
@@ -50,7 +52,11 @@ export function AlbumDialog({
         privacy: album?.privacy ?? ('public' as AlbumPrivacy),
         comments_enabled: album?.comments_enabled ?? true,
         community: community ?? null,
+        game_id: album?.game?.id ?? (null as number | null),
     });
+    const [game, setGame] = useState<GameCard | null>(
+        (album?.game as GameCard | undefined) ?? null,
+    );
 
     const submit = () => {
         const options = {
@@ -165,6 +171,22 @@ export function AlbumDialog({
                         className="size-4 accent-[#7c5cff]"
                     />
                 </label>
+
+                <div className="mt-4">
+                    <p className="mb-1.5 text-sm text-white/60">
+                        {tr('Гра (альбом скриншотів)')}
+                    </p>
+                    <GameSearch
+                        value={game}
+                        onChange={(g) => {
+                            setGame(g);
+                            form.setData('game_id', g?.id ?? null);
+                        }}
+                        placeholder={tr(
+                            'Необов’язково — фото потраплять у «Скриншоти» гри',
+                        )}
+                    />
+                </div>
 
                 <div className="mt-6 flex justify-end gap-2">
                     <button

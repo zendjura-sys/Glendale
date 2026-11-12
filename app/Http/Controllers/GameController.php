@@ -221,6 +221,9 @@ class GameController extends Controller
                 : [],
         ];
 
+        // Скриншоти гравців цієї гри (публічні альбоми) — кількість для посилання на галерею.
+        $props['screenshots'] = $request->user() && app(ModuleManager::class)->enabled('photos') ? ScreenshotController::countFor($game) : 0;
+
         $props['moments'] = $request->user() && app(ModuleManager::class)->enabled('moments')
             ? MomentController::forGame($game, $request->user(), $request)
             : [];
