@@ -1,5 +1,12 @@
 import { router } from '@inertiajs/react';
-import { BarChart3, Flag, Trophy } from 'lucide-react';
+import {
+    BarChart3,
+    Download,
+    Flag,
+    ImageIcon,
+    Send,
+    Trophy,
+} from 'lucide-react';
 import { FamilyShell } from '@/components/families/family-shell';
 import { Empty, Panel, RankBadge, Segmented } from '@/components/families/ui';
 import { uah } from '@/lib/money';
@@ -14,6 +21,8 @@ type Season = {
     started_at: string | null;
     ended_at: string;
     top: { place: number; name: string; points: number }[];
+    /** Картинка підсумків для Discord/Telegram. */
+    image: string;
 };
 
 type Props = FamilyShellProps & {
@@ -21,6 +30,8 @@ type Props = FamilyShellProps & {
     periods: Record<Period, string>;
     season: { number: number; started_at: string | null; can_end: boolean };
     seasons: Season[];
+    /** Чи можна надіслати підсумки в підключені Discord/Telegram. */
+    can_share?: boolean;
     leaderboard: LeaderboardRow[];
     config: {
         bizwar: boolean;
@@ -176,6 +187,45 @@ export default function FamilyRating(props: Props) {
                                                 </li>
                                             ))}
                                         </ol>
+                                    )}
+                                    {s.top.length > 0 && (
+                                        <div className="mt-2.5 flex flex-wrap gap-1.5">
+                                            <a
+                                                href={s.image}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-white/[0.06] px-2.5 text-xs font-medium text-white/75 hover:text-white"
+                                            >
+                                                <ImageIcon className="size-3.5" />
+                                                {tr('Картинка')}
+                                            </a>
+                                            <a
+                                                href={s.image}
+                                                download={`season-${s.number}.png`}
+                                                className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-white/[0.06] px-2.5 text-xs font-medium text-white/75 hover:text-white"
+                                            >
+                                                <Download className="size-3.5" />
+                                                {tr('Завантажити')}
+                                            </a>
+                                            {props.can_share && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        router.post(
+                                                            `/f/${family.slug}/rating/seasons/${s.number}/share`,
+                                                            {},
+                                                            {
+                                                                preserveScroll: true,
+                                                            },
+                                                        )
+                                                    }
+                                                    className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-indigo-500/15 px-2.5 text-xs font-semibold text-indigo-300"
+                                                >
+                                                    <Send className="size-3.5" />
+                                                    {tr('У Discord / Telegram')}
+                                                </button>
+                                            )}
+                                        </div>
                                     )}
                                 </li>
                             ))}

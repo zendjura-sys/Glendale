@@ -1054,6 +1054,7 @@ Route::prefix('v1')->group(function () {
                     Route::post('shifts/{shift}/release', [Families\FamilyShiftController::class, 'release'])->middleware('family.section:shifts')->whereNumber('shift');
                     Route::delete('shifts/{shift}', [Families\FamilyShiftController::class, 'destroy'])->middleware('family.section:shifts')->whereNumber('shift');
                     Route::get('rating', [Families\FamilyEventController::class, 'rating'])->middleware('family.section:rating');
+                    Route::get('rating/seasons/{number}.png', [Families\FamilyEventController::class, 'seasonImage'])->whereNumber('number')->middleware('family.section:rating');
                     Route::get('audit', [Families\FamilyAuditController::class, 'index']);
                     Route::get('settings', [Families\FamilySettingsController::class, 'index']);
                     Route::put('settings', [Families\FamilySettingsController::class, 'update']);
@@ -1083,6 +1084,7 @@ Route::prefix('v1')->group(function () {
                         Route::post('discipline/{punishment}/revoke', [Families\FamilyDisciplineController::class, 'revoke']);
 
                         Route::post('events', [Families\FamilyEventController::class, 'store'])->middleware('family.section:events')->middleware('throttle:20,1');
+                        Route::post('rating/seasons/{number}/share', [Families\FamilyEventController::class, 'shareSeason'])->whereNumber('number')->middleware(['family.section:rating', 'throttle:6,1']);
                         Route::post('events/{event}/rsvp', [Families\FamilyEventController::class, 'rsvp'])->middleware('family.section:events');
                         Route::post('events/{event}/close', [Families\FamilyEventController::class, 'close'])->middleware('family.section:events');
                     });

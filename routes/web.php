@@ -1046,6 +1046,8 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
             Route::post('shifts/{shift}/release', [Families\FamilyShiftController::class, 'release'])->middleware('family.section:shifts')->whereNumber('shift')->name('shifts.release');
             Route::delete('shifts/{shift}', [Families\FamilyShiftController::class, 'destroy'])->middleware('family.section:shifts')->whereNumber('shift')->name('shifts.destroy');
             Route::get('rating', [Families\FamilyEventController::class, 'rating'])->middleware('family.section:rating')->name('rating');
+            Route::get('rating/seasons/{number}.png', [Families\FamilyEventController::class, 'seasonImage'])->whereNumber('number')->middleware('family.section:rating')->name('rating.season.image');
+            Route::post('rating/seasons/{number}/share', [Families\FamilyEventController::class, 'shareSeason'])->whereNumber('number')->middleware(['family.section:rating', 'throttle:6,1'])->name('rating.season.share');
             Route::post('rating/season', [Families\FamilyEventController::class, 'endSeason'])->middleware('family.section:rating')->middleware('throttle:5,1')->name('rating.season');
 
             Route::get('audit', [Families\FamilyAuditController::class, 'index'])->name('audit');

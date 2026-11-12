@@ -149,6 +149,8 @@ class FamilyRating
         app(FamilyAudit::class)->log($family, 'SEASON_END', $actor, null, ['season' => $season->number]);
         $podium = implode(', ', array_map(fn (array $r) => "{$r['place']}. {$r['name']} ({$r['points']})", array_slice($top, 0, 3)));
         app(FamilyChat::class)->announce($family, "🏆 Сезон {$season->number} завершено".($podium !== '' ? ": {$podium}" : '').'. Новий сезон уже почався!');
+        // Картинка з підсумками — у підключені Discord і Telegram (після відповіді, щоб не гальмувати кнопку).
+        dispatch(fn () => app(SeasonCard::class)->share($family->fresh() ?? $family, $season))->afterResponse();
 
         return $season;
     }
