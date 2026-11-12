@@ -118,8 +118,11 @@ class Achievements
     {
         $stats = $this->stats($user);
         $xp = 0;
+        $sources = [];
         foreach (self::XP as $stat => $points) {
-            $xp += ($stats[$stat] ?? 0) * $points;
+            $gain = ($stats[$stat] ?? 0) * $points;
+            $xp += $gain;
+            $sources[] = ['key' => $stat, 'count' => (int) ($stats[$stat] ?? 0), 'per' => $points, 'xp' => $gain];
         }
         $level = $this->level($xp);
 
@@ -163,7 +166,18 @@ class Achievements
             'earned' => count(array_filter($badges, fn (array $b) => $b['earned'])),
             'total' => count($badges),
             'badges' => $badges,
+            'sources' => $sources,
         ];
+    }
+
+    /**
+     * Назви рівнів: з якого рівня яка.
+     *
+     * @return array<int, string>
+     */
+    public function titles(): array
+    {
+        return self::TITLES;
     }
 
     /** Менше скількох активних людей — рідкість не показуємо (замало даних). */

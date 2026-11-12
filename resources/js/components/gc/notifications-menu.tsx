@@ -81,6 +81,7 @@ const kindIcon: Record<string, { icon: typeof Bell; className: string }> = {
     episode_new: { icon: Clapperboard, className: 'bg-rose-500' },
     referral_joined: { icon: UserPlus, className: 'bg-emerald-500' },
     plus_gifted: { icon: Gift, className: 'bg-indigo-500' },
+    level_up: { icon: Trophy, className: 'bg-amber-500' },
     wallet_topup: { icon: Wallet, className: 'bg-emerald-500' },
     plus_renewed: { icon: RefreshCw, className: 'bg-indigo-500' },
     plus_renewal_failed: { icon: Wallet, className: 'bg-amber-500' },

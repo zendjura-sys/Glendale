@@ -62,6 +62,7 @@ use App\Http\Controllers\HelpController;
 use App\Http\Controllers\HubController;
 use App\Http\Controllers\IdeaController;
 use App\Http\Controllers\InviteLinkController;
+use App\Http\Controllers\LevelController;
 use App\Http\Controllers\ListenPartyController;
 use App\Http\Controllers\ListenRoomController;
 use App\Http\Controllers\LiveShowController;
@@ -992,6 +993,7 @@ Route::prefix('v1')->group(function () {
                 Route::post('{quest}/claim', [QuestController::class, 'claim'])->where('quest', '[a-z]{2,24}')->middleware('throttle:30,1');
             });
 
+            Route::get('level', [LevelController::class, 'index'])->middleware('throttle:30,1');
             Route::prefix('cards')->middleware('module:quests')->group(function () {
                 Route::get('/', [CardController::class, 'index']);
                 Route::post('open', [CardController::class, 'open'])->middleware('throttle:10,1');

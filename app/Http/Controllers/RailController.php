@@ -6,6 +6,7 @@ use App\Models\FamilyMember;
 use App\Models\GtaServer;
 use App\Models\User;
 use App\Models\VoiceRoom;
+use App\Services\Achievements;
 use App\Services\Engagement\Streaks;
 use App\Services\FriendshipService;
 use App\Services\Messenger;
@@ -82,13 +83,12 @@ class RailController extends Controller
         $membership = $modules->enabled('families')
             ? FamilyMember::query()->with('family.server')->where('user_id', $user->id)->where('status', FamilyMember::STATUS_ACTIVE)->first()
             : null;
+        // Рівень профілю (з досвіду за активність), а не рівень сезонного пропуску.
         $level = null;
-        if ($modules->enabled('quests')) {
-            try {
-                $level = app(SeasonPass::class)->board($user)['level'] ?? null;
-            } catch (\Throwable $e) {
-                report($e);
-            }
+        try {
+            $level = app(Achievements::class)->for($user)['level'];
+        } catch (\Throwable $e) {
+            report($e);
         }
 
         return [

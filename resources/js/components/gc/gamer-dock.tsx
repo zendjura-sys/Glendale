@@ -139,11 +139,13 @@ function PlayerCard({ me }: { me: RailData['me'] }) {
             )}
             {me?.family && <RpDossier family={me.family} />}
             <div className="mt-3 grid grid-cols-3 gap-2">
-                <Stat
-                    icon={<Trophy className="text-amber-400" />}
-                    value={me?.level ?? '—'}
-                    label={tr('Рівень')}
-                />
+                <Link href="/level" className="min-w-0">
+                    <Stat
+                        icon={<Trophy className="text-amber-400" />}
+                        value={me?.level ?? '—'}
+                        label={tr('Рівень')}
+                    />
+                </Link>
                 <Stat
                     icon={<Flame className="text-orange-400" />}
                     value={me?.streak ?? 0}

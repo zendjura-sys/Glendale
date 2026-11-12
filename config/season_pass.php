@@ -39,6 +39,10 @@ return [
             'ev_heart' => ['name' => 'День закоханих', 'colors' => ['#fb7185', '#f472b6']],
             'ev_flag' => ['name' => 'Незалежність', 'colors' => ['#0057b7', '#ffd700']],
             'ev_raid' => ['name' => 'Осінній рейд', 'colors' => ['#f59e0b', '#ef4444', '#7c3aed']],
+            // Нагороди за рівень профілю.
+            'lvl_bronze' => ['name' => 'Бронза рівня', 'colors' => ['#b45309', '#fbbf24']],
+            'lvl_veteran' => ['name' => 'Ветеран', 'colors' => ['#64748b', '#e2e8f0', '#64748b']],
+            'lvl_legend' => ['name' => 'Легенда', 'colors' => ['#f59e0b', '#a855f7', '#22d3ee']],
         ],
         // Колір ніку.
         'name' => [
@@ -59,6 +63,7 @@ return [
             'ev_snow' => ['name' => 'Сніжинка фесту', 'icon' => 'snowflake', 'color' => '#7dd3fc'],
             'ev_ghost' => ['name' => 'Привид', 'icon' => 'ghost', 'color' => '#c084fc'],
             'ev_swords' => ['name' => 'Учасник рейду', 'icon' => 'swords', 'color' => '#f59e0b'],
+            'lvl_myth' => ['name' => 'Міф GameCon', 'icon' => 'crown', 'color' => '#f472b6'],
         ],
         // Ефект шапки профілю (ті самі, що в GameCon+).
         'header' => [
