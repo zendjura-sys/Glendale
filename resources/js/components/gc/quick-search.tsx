@@ -187,7 +187,7 @@ export function QuickSearch({ className }: { className?: string }) {
             data-quick-search
             className={cn('relative min-w-0', className)}
         >
-            <label className="ios-header-search">
+            <label className="ios-glass-panel ios-header-search">
                 <Search className="size-4 text-white/45" />
                 <input
                     ref={inputRef}

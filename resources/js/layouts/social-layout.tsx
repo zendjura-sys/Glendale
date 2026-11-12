@@ -260,7 +260,7 @@ function Topbar() {
         <header className="app-header-wrapper">
             {/* Шапка — плаваюча капсула з безбарвного матового скла (як острів-меню знизу); обгортка прозора. */}
             {/* Шапка — парящий скляний острів (одне з трьох місць зі склом: шапка, навбар, плеєр). */}
-            <div className="ios-glass-bar ios-header-pill gc-glass-island [view-transition-name:gc-topbar]">
+            <div className="ios-glass-panel ios-glass-bar ios-header-pill gc-glass-island [view-transition-name:gc-topbar]">
                 <Link href="/feed" className="shrink-0 md:w-[264px]">
                     <Logo className="hidden sm:inline-flex" />
                     <LogoMark className="sm:hidden" />
@@ -420,7 +420,7 @@ function MobileNav() {
             </AnimatePresence>
             <Tabbar
                 aria-label={tr('Розділи')}
-                className="gc-vk-tabbar z-[56] [view-transition-name:gc-tabbar]"
+                className="ios-glass-panel gc-vk-tabbar z-[56] [view-transition-name:gc-tabbar]"
             >
                 {primary.map((item) => (
                     <TabbarItem

@@ -6141,6 +6141,7 @@ html:root.gc-vk[data-theme]
         .gc-player-glass *,
         .gc-vk-tabbar,
         .gc-vk-tabbar *,
+        .ios-glass-panel,
         [data-slot='dialog-overlay'],
         [data-slot='sheet-overlay']
     ) {
@@ -6184,41 +6185,46 @@ html:root.gc-vk[data-theme] .gc-vk-shell {
 
 /* ---------- Скло №2: навбар (нижня панель на телефоні) ---------- */
 /*
- * Матове скло як в iOS: сильне розмиття з насиченістю (кольори під панеллю «світяться»,
- * текст не читається), ледь помітне зерно, тонкий блик по верхньому краю й волосяна межа.
- * Однаково для шапки-острова й навбару.
+ * .ios-glass-panel — «дороге» матове скло Arctic Glass для фіксованих елементів:
+ * шапка-острів, поле пошуку в ній і нижній навбар. Щільний градієнт (≈80 %) + розмиття
+ * з насиченістю: текст під панеллю не прочитується й не рябить під час скролу.
+ * Тонка рамка, верхній мікроблиск і глибока тінь. Картки контенту лишаються суцільними (--gc-l1).
  */
-html:root.gc-vk[data-theme] :is(.ios-glass-bar.ios-header-pill.gc-glass-island, .gc-vk-tabbar) {
-    background-color: var(--gc-matte-bg) !important;
-    background-image: var(--gc-matte-grain) !important;
-    background-size: 160px 160px !important;
-    -webkit-backdrop-filter: blur(30px) saturate(1.9) brightness(var(--gc-matte-bright)) !important;
-    backdrop-filter: blur(30px) saturate(1.9) brightness(var(--gc-matte-bright)) !important;
-    border: 0 !important;
+html:root.gc-vk[data-theme] .ios-glass-panel {
+    background: linear-gradient(
+        180deg,
+        var(--gc-panel-top) 0%,
+        var(--gc-panel-bottom) 100%
+    ) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
+    backdrop-filter: blur(24px) saturate(180%) !important;
+    border: 1px solid var(--gc-panel-border) !important;
     box-shadow:
-        inset 0 0.5px 0 var(--gc-matte-hi),
-        0 0 0 0.5px var(--gc-matte-edge),
-        var(--gc-matte-shadow) !important;
+        inset 0 1px 0 0 var(--gc-panel-hi),
+        var(--gc-panel-shadow) !important;
+}
+/* Пошук усередині шапки — те саме скло, але без зовнішньої тіні (вона вже в шапки). */
+html:root.gc-vk[data-theme] .ios-glass-panel .ios-glass-panel {
+    box-shadow: inset 0 1px 0 0 var(--gc-panel-hi) !important;
 }
 html:root.gc-vk[data-theme] {
-    --gc-matte-bg: rgb(28 32 42 / 0.55);
-    --gc-matte-bright: 0.9;
-    --gc-matte-hi: rgb(255 255 255 / 0.14);
-    --gc-matte-edge: rgb(255 255 255 / 0.08);
-    --gc-matte-shadow: 0 10px 30px -12px rgb(0 0 0 / 0.55);
-    --gc-matte-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .5 0 0 0 0 .5 0 0 0 0 .5 0 0 0 .05 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    --gc-panel-top: rgb(17 26 44 / 0.82);
+    --gc-panel-bottom: rgb(11 18 32 / 0.8);
+    --gc-panel-border: rgb(255 255 255 / 0.08);
+    --gc-panel-hi: rgb(255 255 255 / 0.15);
+    --gc-panel-shadow: 0 10px 30px rgb(0 0 0 / 0.5);
 }
 html:root.gc-vk[data-theme='light'] {
-    --gc-matte-bg: rgb(250 251 253 / 0.6);
-    --gc-matte-bright: 1.06;
-    --gc-matte-hi: rgb(255 255 255 / 0.9);
-    --gc-matte-edge: rgb(13 27 46 / 0.07);
-    --gc-matte-shadow: 0 10px 30px -14px rgb(16 42 80 / 0.25);
+    --gc-panel-top: rgb(255 255 255 / 0.86);
+    --gc-panel-bottom: rgb(246 249 252 / 0.82);
+    --gc-panel-border: rgb(13 27 46 / 0.08);
+    --gc-panel-hi: rgb(255 255 255 / 0.95);
+    --gc-panel-shadow: 0 10px 30px rgb(16 42 80 / 0.16);
 }
 /* «Зменшити прозорість» у системі — суцільна підкладка без розмиття. */
 @media (prefers-reduced-transparency: reduce) {
-    html:root.gc-vk[data-theme] :is(.ios-glass-bar.ios-header-pill.gc-glass-island, .gc-vk-tabbar) {
-        background-color: var(--gc-l2) !important;
+    html:root.gc-vk[data-theme] .ios-glass-panel {
+        background: var(--gc-l1) !important;
         -webkit-backdrop-filter: none !important;
         backdrop-filter: none !important;
     }
