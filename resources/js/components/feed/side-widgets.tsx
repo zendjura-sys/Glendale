@@ -1,5 +1,16 @@
-import { Link } from '@inertiajs/react';
-import { Gift, ListMusic, Play, Podcast, Sparkles, Ticket } from 'lucide-react';
+import { Link, usePage } from '@inertiajs/react';
+import {
+    History,
+    Clapperboard,
+    Gamepad2,
+    PenLine,
+    Gift,
+    ListMusic,
+    Play,
+    Podcast,
+    Sparkles,
+    Ticket,
+} from 'lucide-react';
 import { motion, useReducedMotion } from 'motion/react';
 import { useEffect, useState } from 'react';
 import { UserAvatar } from '@/components/gc/user-avatar';
@@ -29,7 +40,17 @@ type Show = {
     host: UserCard | null;
 };
 
+export type ContinueItem = {
+    kind: 'movie' | 'track' | 'game' | 'draft';
+    title: string;
+    hint: string;
+    href: string;
+    image: string | null;
+    track?: TrackCard | null;
+};
+
 export type SideWidgetsData = {
+    continue?: ContinueItem[];
     music: { mode: 'recent' | 'new'; tracks: TrackCard[] } | null;
     cinema: {
         ai: boolean;
@@ -40,20 +61,52 @@ export type SideWidgetsData = {
 };
 
 let cache: SideWidgetsData | null = null;
+let pending: Promise<SideWidgetsData> | null = null;
+let loadedAt = 0;
 
-/** Дані віджетів (один запит на сторінку; між переходами — з пам’яті). */
-export function useSideWidgets(): SideWidgetsData | null {
+/**
+ * Дані віджетів: один спільний запит для всіх колонок (дані живуть хвилину між переходами).
+ * enabled=false — не вантажимо, поки місце для віджетів не видно на цьому екрані.
+ */
+export function useSideWidgets(enabled = true): SideWidgetsData | null {
     const [data, setData] = useState<SideWidgetsData | null>(cache);
     useEffect(() => {
-        api<SideWidgetsData>('GET', '/feed/widgets')
-            .then((d) => {
+        if (!enabled) return;
+        if (!pending || Date.now() - loadedAt > 60_000) {
+            loadedAt = Date.now();
+            pending = api<SideWidgetsData>('GET', '/feed/widgets').then((d) => {
                 cache = d;
-                setData(d);
-            })
-            .catch(() => undefined);
-    }, []);
+
+                return d;
+            });
+            pending.catch(() => {
+                pending = null;
+            });
+        }
+        let alive = true;
+        pending.then((d) => alive && setData(d)).catch(() => undefined);
+
+        return () => {
+            alive = false;
+        };
+    }, [enabled]);
 
     return data;
+}
+
+/** Чи підходить ширина екрана (для колонок віджетів, що видно лише на певних ширинах). */
+export function useMedia(query: string): boolean {
+    const [match, setMatch] = useState(false);
+    useEffect(() => {
+        const mq = window.matchMedia(query);
+        const sync = () => setMatch(mq.matches);
+        sync();
+        mq.addEventListener('change', sync);
+
+        return () => mq.removeEventListener('change', sync);
+    }, [query]);
+
+    return match;
 }
 
 function Card({
@@ -351,28 +404,239 @@ function GameCastCard({
     );
 }
 
+/** Порядок віджетів; нові додаються сюди — і самі заповнюють вільні колонки. */
+export const WIDGET_ORDER = [
+    'continue',
+    'gamecast',
+    'music',
+    'cinema',
+    'giveaways',
+] as const;
+export type WidgetKey = (typeof WIDGET_ORDER)[number];
+
+function ContinueCard({
+    items,
+    index,
+}: {
+    items: ContinueItem[];
+    index: number;
+}) {
+    if (items.length === 0) return null;
+
+    return (
+        <Card
+            icon={History}
+            tone="text-sky-400"
+            title={tr('Продовжити')}
+            href="/feed"
+            index={index}
+        >
+            <ContinueList items={items} />
+        </Card>
+    );
+}
+
+const KIND_ICON = {
+    movie: Clapperboard,
+    track: ListMusic,
+    game: Gamepad2,
+    draft: PenLine,
+} as const;
+
+/** Пункти «Продовжити»: обкладинка, назва й де зупинились; пісня вмикається одразу. */
+export function ContinueList({
+    items,
+    horizontal = false,
+}: {
+    items: ContinueItem[];
+    horizontal?: boolean;
+}) {
+    return (
+        <ul
+            className={
+                horizontal
+                    ? 'flex [scrollbar-width:none] gap-2.5 overflow-x-auto'
+                    : 'space-y-1'
+            }
+        >
+            {items.map((item, i) => {
+                const Icon = KIND_ICON[item.kind];
+                const body = (
+                    <>
+                        <span className="relative grid size-11 shrink-0 place-items-center overflow-hidden rounded-xl bg-white/[0.06] text-white/50">
+                            {item.image ? (
+                                <img
+                                    src={item.image}
+                                    alt=""
+                                    loading="lazy"
+                                    onError={(e) => {
+                                        e.currentTarget.style.display = 'none';
+                                    }}
+                                    className="absolute inset-0 size-full object-cover"
+                                />
+                            ) : null}
+                            <Icon className="size-5" />
+                        </span>
+                        <span className="min-w-0 flex-1">
+                            <span className="block truncate text-sm font-semibold text-white">
+                                {item.title}
+                            </span>
+                            <span className="block truncate text-xs text-white/50">
+                                {tr(item.hint)}
+                            </span>
+                        </span>
+                    </>
+                );
+                const cls = cn(
+                    'flex items-center gap-3 rounded-xl p-1.5 text-left transition hover:bg-white/[0.05]',
+                    horizontal && 'gc-solid w-60 shrink-0 p-2.5',
+                );
+
+                return (
+                    <li key={`${item.kind}-${i}`}>
+                        {item.kind === 'track' && item.track ? (
+                            <button
+                                type="button"
+                                onClick={() =>
+                                    playQueue([item.track!], 0, {
+                                        label: tr('Продовжити'),
+                                        href: '/music',
+                                    })
+                                }
+                                className={cn(cls, 'w-full')}
+                            >
+                                {body}
+                            </button>
+                        ) : (
+                            <Link href={item.href} className={cls}>
+                                {body}
+                            </Link>
+                        )}
+                    </li>
+                );
+            })}
+        </ul>
+    );
+}
+
 /**
- * Віджети ПК і планшета: музика, «Що подивитися» (ШІ або за смаком), роздачі ігор і GameCast.
- * На ПК — у правій колонці стопкою, на планшеті — сіткою 2×2 над стрічкою.
+ * Віджети ПК: «Продовжити», GameCast, музика, «Що подивитися» (ШІ або за смаком), роздачі.
+ * only — які саме показати (щоб розкласти по колонках); без нього — усі по порядку.
  */
 export function SideWidgets({
     data,
     className,
+    only,
 }: {
     data: SideWidgetsData | null;
     className?: string;
+    only?: readonly WidgetKey[];
 }) {
     if (!data) return null;
-    let i = 0;
+    const keys = only ?? WIDGET_ORDER;
 
     return (
         <div className={className}>
-            {data.gamecast && <GameCastCard data={data.gamecast} index={i++} />}
-            {data.music && <MusicCard data={data.music} index={i++} />}
-            {data.cinema && <CinemaCard data={data.cinema} index={i++} />}
-            {data.giveaways && (
-                <GiveawaysCard items={data.giveaways} index={i++} />
-            )}
+            {keys.map((key, i) => {
+                switch (key) {
+                    case 'continue':
+                        return data.continue && data.continue.length > 0 ? (
+                            <ContinueCard
+                                key={key}
+                                items={data.continue}
+                                index={i}
+                            />
+                        ) : null;
+                    case 'gamecast':
+                        return data.gamecast ? (
+                            <GameCastCard
+                                key={key}
+                                data={data.gamecast}
+                                index={i}
+                            />
+                        ) : null;
+                    case 'music':
+                        return data.music ? (
+                            <MusicCard key={key} data={data.music} index={i} />
+                        ) : null;
+                    case 'cinema':
+                        return data.cinema ? (
+                            <CinemaCard
+                                key={key}
+                                data={data.cinema}
+                                index={i}
+                            />
+                        ) : null;
+                    case 'giveaways':
+                        return data.giveaways ? (
+                            <GiveawaysCard
+                                key={key}
+                                items={data.giveaways}
+                                index={i}
+                            />
+                        ) : null;
+                    default:
+                        return null;
+                }
+            })}
         </div>
+    );
+}
+
+/** Без «Продовжити» — у стрічці воно вже стоїть угорі окремим блоком. */
+const exceptContinue = (onFeed: boolean): readonly WidgetKey[] =>
+    onFeed ? WIDGET_ORDER.filter((k) => k !== 'continue') : WIDGET_ORDER;
+
+/**
+ * Дві колонки (планшет і невеликий ПК, 768–1279): віджети в лівій колонці під «Офіційним застосунком».
+ * На ширших екранах тут нічого — віджети в третій (і четвертій) колонці.
+ */
+export function DockWidgets() {
+    const { url } = usePage();
+    const on = useMedia('(min-width: 768px) and (max-width: 1279px)');
+    const data = useSideWidgets(on);
+    if (!on) return null;
+
+    return (
+        <SideWidgets
+            data={data}
+            only={exceptContinue(url.startsWith('/feed'))}
+            className="mt-1 space-y-3"
+        />
+    );
+}
+
+/**
+ * Четверта колонка (2400+): у стрічці — друга половина віджетів (перша — у третій колонці),
+ * на інших сторінках третьої колонки немає, тож тут усі віджети.
+ */
+export function RailWidgets() {
+    const { url } = usePage();
+    const on = useMedia('(min-width: 2400px)');
+    const data = useSideWidgets(on);
+    if (!on) return null;
+    const onFeed = url.startsWith('/feed');
+
+    return (
+        <SideWidgets
+            data={data}
+            only={onFeed ? (['cinema', 'giveaways'] as const) : WIDGET_ORDER}
+            className="space-y-4"
+        />
+    );
+}
+
+/** Третя колонка стрічки: на 3 колонках — усі віджети, на 4 — перша половина. */
+export function FeedColumnWidgets({ data }: { data: SideWidgetsData | null }) {
+    const four = useMedia('(min-width: 2400px)');
+
+    return (
+        <SideWidgets
+            data={data}
+            only={
+                four ? (['gamecast', 'music'] as const) : exceptContinue(true)
+            }
+            className="space-y-4"
+        />
     );
 }

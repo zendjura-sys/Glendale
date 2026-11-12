@@ -3,6 +3,7 @@ import { MessageCircle, Radio } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { UserAvatar } from '@/components/gc/user-avatar';
 import { Widget } from '@/components/gc/widget';
+import { RailWidgets } from '@/components/feed/side-widgets';
 import { api } from '@/lib/api';
 import { tr } from '@/lib/i18n';
 import type { UserCard } from '@/types';
@@ -21,7 +22,7 @@ type Rail = {
 const WIDE = '(min-width: 2400px)';
 
 /**
- * Четверта колонка на великих екранах (2K і більше): друзі онлайн і останні бесіди.
+ * Четверта колонка на великих екранах (2K і більше): друзі онлайн, останні бесіди й віджети.
  * Дані підтягуються лише тоді, коли колонку справді видно, й оновлюються раз на хвилину.
  */
 export function SideRail() {
@@ -115,6 +116,7 @@ export function SideRail() {
                     </div>
                 </Widget>
             )}
+            <RailWidgets />
         </aside>
     );
 }

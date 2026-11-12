@@ -61,6 +61,7 @@ import { cn } from '@/lib/utils';
 import { NavigationSkeleton } from '@/components/gc/navigation-skeleton';
 import { PageTransition } from '@/components/gc/page-transition';
 import { AppPromoCard } from '@/components/app-promo/app-promo-card';
+import { DockWidgets } from '@/components/feed/side-widgets';
 import { LanguageMenu } from '@/components/gc/language-switcher';
 import { tr } from '@/lib/i18n';
 import { CommandPalette } from '@/components/gc/command-palette';
@@ -599,6 +600,7 @@ export default function SocialLayout({ children }: PropsWithChildren) {
                                     />
                                 )}
                                 <AppPromoCard className="mt-1" />
+                                <DockWidgets />
                                 <KeyboardHint />
                             </>
                         }

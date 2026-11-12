@@ -611,7 +611,7 @@ Route::prefix('v1')->group(function () {
             Route::middleware('module:feed')->group(function () {
                 // Активність друзів — окрема вкладка стрічки.
                 Route::get('feed/activity', [FeedController::class, 'activity'])->middleware('throttle:60,1');
-                Route::get('feed/widgets', [FeedController::class, 'widgets'])->middleware('throttle:30,1');
+                Route::get('feed/widgets', [FeedController::class, 'widgets'])->middleware('throttle:60,1');
                 Route::get('promo/slot/{placement}', [PromoController::class, 'show'])->where('placement', '[a-z]+')->middleware('throttle:60,1');
                 Route::post('promo/dismiss/{banner}', [PromoController::class, 'dismiss'])->whereNumber('banner')->middleware('throttle:30,1');
                 Route::post('posts/{post}/pin', [PostController::class, 'pin'])->whereNumber('post');

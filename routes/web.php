@@ -194,7 +194,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
 
     Route::get('feed', [FeedController::class, 'index'])->middleware('module:feed')->name('feed');
     Route::get('feed/activity', [FeedController::class, 'activity'])->middleware(['module:feed', 'throttle:60,1'])->name('feed.activity');
-    Route::get('feed/widgets', [FeedController::class, 'widgets'])->middleware('throttle:30,1')->name('feed.widgets');
+    Route::get('feed/widgets', [FeedController::class, 'widgets'])->middleware('throttle:60,1')->name('feed.widgets');
     // Банери з A/B-тестами: показ, перехід (рахує клік), закрити.
     Route::get('promo/slot/{placement}', [PromoController::class, 'show'])->where('placement', '[a-z]+')->middleware('throttle:60,1')->name('promo.show');
     Route::get('promo/{variant}', [PromoController::class, 'click'])->whereNumber('variant')->middleware('throttle:30,1')->name('promo.click');
