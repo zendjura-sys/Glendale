@@ -4,37 +4,99 @@ import { Widget } from '@/components/gc/widget';
 import { tr } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
-export type Rarity = 'common' | 'rare' | 'epic' | 'legendary';
+/** Ранги від найнижчого до найвищого. */
+export const RANKS = [
+    'N',
+    'G',
+    'F',
+    'E',
+    'D',
+    'C',
+    'B',
+    'A',
+    'R',
+    'SR',
+    'SSR',
+    'S',
+    'SS',
+    'SSS',
+    'EX',
+    'U',
+] as const;
+
+export type Rarity = (typeof RANKS)[number];
+
+export type CardKind = 'game' | 'anime' | 'movie' | 'serial';
 
 export type CardData = {
-    id: number;
-    slug: string;
+    key: string;
+    kind: CardKind;
     name: string;
     cover: string | null;
     rarity: Rarity;
     set: string;
+    href: string | null;
 };
 
 export type ShowcaseData = { cards: CardData[]; owned: number; total: number };
 
-/** Колір рамки й підпис рідкості. */
-export const RARITY: Record<Rarity, { ring: string; glow: string }> = {
-    common: { ring: '#94a3b8', glow: 'rgba(148,163,184,0.25)' },
-    rare: { ring: '#38bdf8', glow: 'rgba(56,189,248,0.35)' },
-    epic: { ring: '#a855f7', glow: 'rgba(168,85,247,0.4)' },
-    legendary: { ring: '#f59e0b', glow: 'rgba(245,158,11,0.45)' },
+/** Колір рамки рангу: від сірого через синій і фіолетовий до золота й веселки. */
+export const RARITY: Record<
+    Rarity,
+    { ring: string; glow: string; ring2?: string }
+> = {
+    N: { ring: '#64748b', glow: 'rgba(100,116,139,0.18)' },
+    G: { ring: '#78716c', glow: 'rgba(120,113,108,0.18)' },
+    F: { ring: '#94a3b8', glow: 'rgba(148,163,184,0.2)' },
+    E: { ring: '#a3e635', glow: 'rgba(163,230,53,0.22)' },
+    D: { ring: '#4ade80', glow: 'rgba(74,222,128,0.25)' },
+    C: { ring: '#2dd4bf', glow: 'rgba(45,212,191,0.28)' },
+    B: { ring: '#38bdf8', glow: 'rgba(56,189,248,0.3)' },
+    A: { ring: '#3b82f6', glow: 'rgba(59,130,246,0.35)' },
+    R: { ring: '#6366f1', glow: 'rgba(99,102,241,0.38)' },
+    SR: { ring: '#a855f7', glow: 'rgba(168,85,247,0.4)' },
+    SSR: { ring: '#d946ef', glow: 'rgba(217,70,239,0.42)' },
+    S: { ring: '#f59e0b', glow: 'rgba(245,158,11,0.45)' },
+    SS: { ring: '#f97316', glow: 'rgba(249,115,22,0.48)', ring2: '#fbbf24' },
+    SSS: { ring: '#ef4444', glow: 'rgba(239,68,68,0.5)', ring2: '#f59e0b' },
+    EX: { ring: '#22d3ee', glow: 'rgba(34,211,238,0.55)', ring2: '#e879f9' },
+    U: { ring: '#fde047', glow: 'rgba(253,224,71,0.6)', ring2: '#a855f7' },
 };
 
+/** Назва рангу: літера й розшифровка. */
 export function rarityLabel(r: Rarity): string {
-    switch (r) {
-        case 'legendary':
-            return tr('Легендарна');
-        case 'epic':
-            return tr('Епічна');
-        case 'rare':
-            return tr('Рідкісна');
+    const names: Record<Rarity, string> = {
+        N: tr('Звичайна'),
+        G: tr('Брак'),
+        F: tr('Слабка'),
+        E: tr('Новачок'),
+        D: tr('Посередня'),
+        C: tr('Середній клас'),
+        B: tr('Профі'),
+        A: tr('Еліта'),
+        R: tr('Рідкісна'),
+        SR: tr('Суперрідкісна'),
+        SSR: tr('Надрідкісна'),
+        S: tr('Вища еліта'),
+        SS: tr('Катастрофічна'),
+        SSS: tr('Легенда'),
+        EX: tr('Аномалія'),
+        U: tr('Унікальна'),
+    };
+
+    return `${r} · ${names[r]}`;
+}
+
+export function kindLabel(kind: CardKind): string {
+    switch (kind) {
+        case 'anime':
+            return tr('Аніме');
+        case 'movie':
+            return tr('Фільм');
+        case 'serial':
+            return tr('Серіал');
         default:
-            return tr('Звичайна');
+            return tr('Гра');
     }
 }
 
@@ -64,7 +126,7 @@ export function GameCardArt({
             style={{
                 backgroundImage: locked
                     ? undefined
-                    : `linear-gradient(160deg, ${tone.ring}, #0B1220 55%, ${tone.ring})`,
+                    : `linear-gradient(160deg, ${tone.ring}, #0B1220 55%, ${tone.ring2 ?? tone.ring})`,
                 boxShadow: locked ? undefined : `0 6px 18px ${tone.glow}`,
             }}
         >
@@ -87,6 +149,14 @@ export function GameCardArt({
                         </div>
                     )}
                     <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-[#0B1220] to-transparent" />
+                    {!locked && (
+                        <span
+                            className="absolute top-1.5 left-1.5 rounded-md bg-black/65 px-1.5 text-[11px] font-black tracking-tight"
+                            style={{ color: tone.ring }}
+                        >
+                            {card.rarity}
+                        </span>
+                    )}
                     {copies !== undefined && copies > 1 && (
                         <span className="absolute top-1.5 right-1.5 rounded-full bg-black/60 px-1.5 text-[11px] font-semibold tabular-nums">
                             ×{copies}
@@ -97,11 +167,14 @@ export function GameCardArt({
                     <div className="line-clamp-2 text-xs leading-tight font-semibold">
                         {locked ? '???' : card.name}
                     </div>
-                    <div
-                        className="mt-0.5 text-[10px] font-medium"
-                        style={{ color: tone.ring }}
-                    >
-                        {rarityLabel(card.rarity)}
+                    <div className="mt-0.5 truncate text-[10px] text-white/55">
+                        {card.kind === 'game' ? (
+                            <span style={{ color: tone.ring }}>
+                                {rarityLabel(card.rarity)}
+                            </span>
+                        ) : (
+                            card.set
+                        )}
                     </div>
                 </div>
             </div>
@@ -125,7 +198,7 @@ export function CardShowcase({
         >
             <div className="grid grid-cols-3 gap-2 px-1">
                 {data.cards.map((c) => (
-                    <GameCardArt key={c.id} card={c} />
+                    <GameCardArt key={c.key} card={c} />
                 ))}
             </div>
             <p className="mt-2 px-1 text-xs text-white/55">

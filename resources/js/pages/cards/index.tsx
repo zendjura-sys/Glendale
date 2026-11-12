@@ -2,8 +2,13 @@ import { Head, router } from '@inertiajs/react';
 import { Gem, Layers, Package, Pin, Sparkles, Wand2, X } from 'lucide-react';
 import { AnimatePresence, m, useReducedMotion } from 'motion/react';
 import { useEffect, useMemo, useState } from 'react';
-import { GameCardArt, rarityLabel } from '@/components/cards/game-card';
-import type { CardData, Rarity } from '@/components/cards/game-card';
+import {
+    GameCardArt,
+    kindLabel,
+    RARITY,
+    rarityLabel,
+} from '@/components/cards/game-card';
+import type { CardData, CardKind, Rarity } from '@/components/cards/game-card';
 import { Button } from '@/components/ui/button';
 import { tr } from '@/lib/i18n';
 import { motionOr, RISE } from '@/lib/motion';
@@ -13,15 +18,13 @@ type OwnedCard = CardData & { copies: number; showcase: boolean };
 
 type Props = {
     cards: OwnedCard[];
-    sets: { name: string; total: number; owned: number }[];
+    sets: { kind: CardKind; name: string; total: number; owned: number }[];
     shards: number;
     packs_opened: number;
     next_pack_at: string | null;
     pack_size: number;
     duplicates: number;
-    dust: Record<Rarity, number>;
-    craft: Record<Rarity, number>;
-    drop: Record<Rarity, number>;
+    ranks: { rank: Rarity; drop: number; dust: number; craft: number }[];
     opened: (CardData & { new: boolean })[] | null;
 };
 
@@ -50,13 +53,14 @@ export default function CardsAlbum({
     next_pack_at,
     pack_size,
     duplicates,
-    dust,
-    craft,
-    drop,
+    ranks,
     opened,
 }: Props) {
     const reduce = useReducedMotion();
+    const [kind, setKind] = useState<CardKind | null>(null);
     const [set, setSet] = useState<string | null>(null);
+    const kinds = Array.from(new Set(cards.map((c) => c.kind)));
+    const craftOf = (r: Rarity) => ranks.find((x) => x.rank === r)?.craft ?? 0;
     const [onlyMissing, setOnlyMissing] = useState(false);
     const [picked, setPicked] = useState<OwnedCard | null>(null);
     const [reveal, setReveal] = useState(opened);
@@ -70,9 +74,11 @@ export default function CardsAlbum({
         () =>
             cards.filter(
                 (c) =>
-                    (!set || c.set === set) && (!onlyMissing || c.copies === 0),
+                    (!kind || c.kind === kind) &&
+                    (!set || c.set === set) &&
+                    (!onlyMissing || c.copies === 0),
             ),
-        [cards, set, onlyMissing],
+        [cards, kind, set, onlyMissing],
     );
 
     const post = (url: string, after?: () => void) => {
@@ -89,7 +95,7 @@ export default function CardsAlbum({
     };
 
     const current = picked
-        ? (cards.find((c) => c.id === picked.id) ?? picked)
+        ? (cards.find((c) => c.key === picked.key) ?? picked)
         : null;
 
     return (
@@ -104,7 +110,7 @@ export default function CardsAlbum({
                         </h1>
                         <p className="mt-1 text-sm text-white/60">
                             {tr(
-                                'Кожна гра каталогу — картка. Щодня безкоштовний набір, дублікати — в уламки, з уламків — картки, яких бракує.',
+                                'Ігри, персонажі аніме, фільмів і серіалів — 16 рангів від N до U. Щодня безкоштовний набір, дублікати — в уламки, з уламків — картки, яких бракує.',
                             )}
                         </p>
                         <div className="mt-3 flex flex-wrap gap-4 text-sm">
@@ -147,6 +153,29 @@ export default function CardsAlbum({
                     </div>
                 </section>
 
+                {kinds.length > 1 && (
+                    <div className="flex flex-wrap gap-2">
+                        {[null, ...kinds].map((k) => (
+                            <button
+                                key={k ?? 'all'}
+                                type="button"
+                                onClick={() => {
+                                    setKind(k);
+                                    setSet(null);
+                                }}
+                                className={cn(
+                                    'rounded-xl px-4 py-2 text-sm font-semibold',
+                                    kind === k
+                                        ? 'bg-primary text-white'
+                                        : 'gc-solid text-white/70',
+                                )}
+                            >
+                                {k ? kindLabel(k) : tr('Усі картки')}
+                            </button>
+                        ))}
+                    </div>
+                )}
+
                 <div className="flex flex-wrap items-center gap-2">
                     <button
                         type="button"
@@ -160,24 +189,27 @@ export default function CardsAlbum({
                     >
                         {tr('Усі')}
                     </button>
-                    {sets.map((s) => (
-                        <button
-                            key={s.name}
-                            type="button"
-                            onClick={() => setSet(s.name)}
-                            className={cn(
-                                'rounded-full px-3 py-1.5 text-sm',
-                                set === s.name
-                                    ? 'bg-primary text-white'
-                                    : 'gc-solid text-white/70',
-                            )}
-                        >
-                            {s.name}{' '}
-                            <span className="tabular-nums opacity-70">
-                                {s.owned}/{s.total}
-                            </span>
-                        </button>
-                    ))}
+                    {sets
+                        .filter((s) => !kind || s.kind === kind)
+                        .slice(0, 24)
+                        .map((s) => (
+                            <button
+                                key={`${s.kind}:${s.name}`}
+                                type="button"
+                                onClick={() => setSet(s.name)}
+                                className={cn(
+                                    'rounded-full px-3 py-1.5 text-sm',
+                                    set === s.name
+                                        ? 'bg-primary text-white'
+                                        : 'gc-solid text-white/70',
+                                )}
+                            >
+                                {s.name}{' '}
+                                <span className="tabular-nums opacity-70">
+                                    {s.owned}/{s.total}
+                                </span>
+                            </button>
+                        ))}
                     <label className="ml-auto flex items-center gap-2 text-sm text-white/70">
                         <input
                             type="checkbox"
@@ -191,7 +223,7 @@ export default function CardsAlbum({
                 <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6 xl:grid-cols-8">
                     {list.map((c) => (
                         <button
-                            key={c.id}
+                            key={c.key}
                             type="button"
                             onClick={() => setPicked(c)}
                             className="text-left transition-transform hover:-translate-y-0.5"
@@ -209,21 +241,24 @@ export default function CardsAlbum({
                     <h2 className="mb-2 font-display text-base font-bold text-white">
                         {tr('Шанси й ціни')}
                     </h2>
-                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                        {(Object.keys(drop) as Rarity[]).map((r) => (
+                    <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4 lg:grid-cols-8">
+                        {ranks.map((r) => (
                             <div
-                                key={r}
-                                className="rounded-lg bg-white/5 px-3 py-2"
+                                key={r.rank}
+                                className="rounded-lg bg-white/5 px-2.5 py-1.5"
                             >
-                                <div className="font-semibold text-white">
-                                    {rarityLabel(r)}
+                                <div
+                                    className="font-black"
+                                    style={{ color: RARITY[r.rank].ring }}
+                                >
+                                    {r.rank}
                                 </div>
-                                <div>{tr('Шанс: {n}%', { n: drop[r] })}</div>
-                                <div>
-                                    {tr('Дублікат: +{n}', { n: dust[r] })}
-                                </div>
-                                <div>
-                                    {tr('Створити: {n}', { n: craft[r] })}
+                                <div className="text-[11px] leading-snug">
+                                    {tr('Шанс: {n}%', { n: r.drop })}
+                                    <br />
+                                    {tr('Дублікат: +{n}', { n: r.dust })}
+                                    <br />
+                                    {tr('Створити: {n}', { n: r.craft })}
                                 </div>
                             </div>
                         ))}
@@ -263,7 +298,8 @@ export default function CardsAlbum({
                                 className="mx-auto w-48"
                             />
                             <p className="mt-3 text-center text-sm text-muted-foreground">
-                                {current.set}
+                                {rarityLabel(current.rarity)} ·{' '}
+                                {kindLabel(current.kind)} · {current.set}
                                 {current.copies > 0 &&
                                     ` · ${tr('копій: {n}', { n: current.copies })}`}
                             </p>
@@ -272,15 +308,15 @@ export default function CardsAlbum({
                                     <Button
                                         disabled={
                                             busy ||
-                                            shards < craft[current.rarity]
+                                            shards < craftOf(current.rarity)
                                         }
                                         onClick={() =>
-                                            post(`/cards/${current.id}/craft`)
+                                            post(`/cards/${current.key}/craft`)
                                         }
                                     >
                                         <Wand2 className="size-4" />
                                         {tr('Створити за {n} уламків', {
-                                            n: craft[current.rarity],
+                                            n: craftOf(current.rarity),
                                         })}
                                     </Button>
                                 ) : (
@@ -289,7 +325,7 @@ export default function CardsAlbum({
                                         disabled={busy}
                                         onClick={() =>
                                             post(
-                                                `/cards/${current.id}/showcase`,
+                                                `/cards/${current.key}/showcase`,
                                             )
                                         }
                                     >
@@ -319,7 +355,7 @@ export default function CardsAlbum({
                         <div className="flex flex-wrap justify-center gap-4">
                             {reveal.map((c, i) => (
                                 <m.div
-                                    key={`${c.id}-${i}`}
+                                    key={`${c.key}-${i}`}
                                     initial={
                                         reduce
                                             ? false

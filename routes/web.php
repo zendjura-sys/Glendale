@@ -966,8 +966,8 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::get('/', [CardController::class, 'index'])->name('index');
         Route::post('open', [CardController::class, 'open'])->middleware('throttle:10,1')->name('open');
         Route::post('dust', [CardController::class, 'dust'])->middleware('throttle:10,1')->name('dust');
-        Route::post('{game}/craft', [CardController::class, 'craft'])->whereNumber('game')->middleware('throttle:20,1')->name('craft');
-        Route::post('{game}/showcase', [CardController::class, 'showcase'])->whereNumber('game')->middleware('throttle:30,1')->name('showcase');
+        Route::post('{card}/craft', [CardController::class, 'craft'])->where('card', '[gc]\d{1,10}')->middleware('throttle:20,1')->name('craft');
+        Route::post('{card}/showcase', [CardController::class, 'showcase'])->where('card', '[gc]\d{1,10}')->middleware('throttle:30,1')->name('showcase');
     });
 
     // Сезонні події сайту: завдання на час події, спільна мета, нагорода в інвентар.
@@ -1264,6 +1264,10 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
             Route::put('google-pay', 'googlePay')->name('google-pay');
         });
         Route::get('seasons', [Admin\SeasonController::class, 'index'])->name('seasons.index');
+        Route::get('card-characters', [Admin\CardCharacterController::class, 'index'])->name('card-characters.index');
+        Route::post('card-characters', [Admin\CardCharacterController::class, 'store'])->name('card-characters.store');
+        Route::post('card-characters/sync', [Admin\CardCharacterController::class, 'sync'])->middleware('throttle:5,1')->name('card-characters.sync');
+        Route::post('card-characters/{character}/toggle', [Admin\CardCharacterController::class, 'toggle'])->whereNumber('character')->name('card-characters.toggle');
         Route::get('site-events', [Admin\SiteEventController::class, 'index'])->name('site-events.index');
         Route::post('site-events', [Admin\SiteEventController::class, 'store'])->name('site-events.store');
         Route::put('site-events/{event}', [Admin\SiteEventController::class, 'update'])->whereNumber('event')->name('site-events.update');

@@ -35,16 +35,16 @@ class CardController extends Controller
         return back()->with('success', $gain > 0 ? "Отримано уламків: {$gain}." : 'Дублікатів немає.');
     }
 
-    public function craft(Request $request, int $game): RedirectResponse
+    public function craft(Request $request, string $card): RedirectResponse
     {
-        $this->cards->craft($request->user(), $game);
+        $this->cards->craft($request->user(), $card);
 
         return back()->with('success', 'Картку створено.');
     }
 
-    public function showcase(Request $request, int $game): RedirectResponse
+    public function showcase(Request $request, string $card): RedirectResponse
     {
-        $this->cards->toggleShowcase($request->user(), $game);
+        $this->cards->toggleShowcase($request->user(), $card);
 
         return back();
     }

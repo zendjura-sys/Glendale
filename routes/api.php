@@ -1003,8 +1003,8 @@ Route::prefix('v1')->group(function () {
                 Route::get('/', [CardController::class, 'index']);
                 Route::post('open', [CardController::class, 'open'])->middleware('throttle:10,1');
                 Route::post('dust', [CardController::class, 'dust'])->middleware('throttle:10,1');
-                Route::post('{game}/craft', [CardController::class, 'craft'])->whereNumber('game')->middleware('throttle:20,1');
-                Route::post('{game}/showcase', [CardController::class, 'showcase'])->whereNumber('game')->middleware('throttle:30,1');
+                Route::post('{card}/craft', [CardController::class, 'craft'])->where('card', '[gc]\d{1,10}')->middleware('throttle:20,1');
+                Route::post('{card}/showcase', [CardController::class, 'showcase'])->where('card', '[gc]\d{1,10}')->middleware('throttle:30,1');
             });
             Route::prefix('season-events')->middleware('module:quests')->group(function () {
                 Route::get('/', [SiteEventController::class, 'index']);
