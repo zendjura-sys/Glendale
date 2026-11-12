@@ -159,6 +159,10 @@ class Family extends Model
             'enabled' => true,
             'chat' => true,
         ],
+        // Календар змін і чергувань — лідер може вимкнути розділ.
+        'shifts' => [
+            'enabled' => true,
+        ],
     ];
 
     protected function casts(): array

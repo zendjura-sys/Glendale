@@ -802,6 +802,8 @@ Route::prefix('v1')->group(function () {
                     Route::post('events/{event}/bracket', [ClanController::class, 'bracket'])->whereNumber('event')->middleware('throttle:30,1');
                     Route::get('events/{event}/bracket', [ClanController::class, 'bracketState'])->whereNumber('event')->middleware('throttle:120,1');
                     Route::delete('events/{event}', [ClanController::class, 'deleteEvent'])->whereNumber('event');
+                    Route::post('shifts', [ClanController::class, 'shift'])->middleware('throttle:20,1');
+                    Route::post('shifts/{shift}', [ClanController::class, 'shiftAction'])->whereNumber('shift')->middleware('throttle:60,1');
                     Route::post('contributions', [ClanController::class, 'contribute'])->middleware('throttle:30,1');
                     Route::post('contributions/{contribution}', [ClanController::class, 'review'])->whereNumber('contribution');
                     Route::post('spend', [ClanController::class, 'spend'])->middleware('throttle:30,1');
@@ -1043,6 +1045,12 @@ Route::prefix('v1')->group(function () {
                     Route::get('discipline', [Families\FamilyDisciplineController::class, 'index']);
                     Route::post('discipline', [Families\FamilyDisciplineController::class, 'store'])->middleware('throttle:30,1');
                     Route::get('events', [Families\FamilyEventController::class, 'index']);
+                    Route::get('shifts', [Families\FamilyShiftController::class, 'index']);
+                    Route::post('shifts', [Families\FamilyShiftController::class, 'store'])->middleware('throttle:30,1');
+                    Route::post('shifts/{shift}/assign', [Families\FamilyShiftController::class, 'assign'])->whereNumber('shift');
+                    Route::post('shifts/{shift}/claim', [Families\FamilyShiftController::class, 'claim'])->whereNumber('shift')->middleware('throttle:30,1');
+                    Route::post('shifts/{shift}/release', [Families\FamilyShiftController::class, 'release'])->whereNumber('shift');
+                    Route::delete('shifts/{shift}', [Families\FamilyShiftController::class, 'destroy'])->whereNumber('shift');
                     Route::get('rating', [Families\FamilyEventController::class, 'rating']);
                     Route::get('audit', [Families\FamilyAuditController::class, 'index']);
                     Route::get('settings', [Families\FamilySettingsController::class, 'index']);

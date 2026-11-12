@@ -1,8 +1,11 @@
 import { LiveBracket } from '@/components/clans/live-bracket';
 import type { BracketData } from '@/components/clans/live-bracket';
+import { ShiftsTab } from '@/components/clans/shifts-tab';
+import type { ClanShift } from '@/components/clans/shifts-tab';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import {
     BellRing,
+    CalendarClock,
     CalendarDays,
     Check,
     Coins,
@@ -89,6 +92,7 @@ type Props = {
         created_at: string;
         mine: boolean;
     }[];
+    shifts?: ClanShift[];
     events: {
         id: number;
         title: string;
@@ -349,6 +353,7 @@ export default function ClanShow(props: Props) {
         ['overview', tr('Огляд'), Swords, true],
         ['news', tr('Новини'), Newspaper, me && has('news')],
         ['events', tr('Заходи'), CalendarDays, me && has('events')],
+        ['shifts', tr('Зміни'), CalendarClock, me && has('shifts')],
         ['treasury', tr('Внески'), Coins, me && has('treasury')],
         ['rating', tr('Рейтинг'), Trophy, me && has('rating')],
         ['rules', tr('Статут'), ScrollText, has('rules') && clan.rules],
@@ -699,6 +704,14 @@ export default function ClanShow(props: Props) {
                     <EventsTab
                         base={base}
                         events={events}
+                        canManage={!!can['events.manage']}
+                    />
+                )}
+                {tab === 'shifts' && (
+                    <ShiftsTab
+                        base={base}
+                        shifts={props.shifts ?? []}
+                        members={props.members}
                         canManage={!!can['events.manage']}
                     />
                 )}

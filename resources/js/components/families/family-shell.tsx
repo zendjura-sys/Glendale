@@ -1,5 +1,6 @@
 import { Head, Link, router } from '@inertiajs/react';
 import {
+    CalendarClock,
     AlertTriangle,
     BarChart3,
     CalendarDays,
@@ -119,6 +120,13 @@ export function FamilyShell({
             href: `${base}/events`,
             icon: CalendarDays,
             visible: true,
+        },
+        {
+            section: 'shifts',
+            label: tr('Зміни'),
+            href: `${base}/shifts`,
+            icon: CalendarClock,
+            visible: family.shifts_enabled !== false,
         },
         {
             section: 'rating',

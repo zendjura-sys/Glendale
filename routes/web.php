@@ -834,6 +834,8 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
             Route::get('events/{event}/bracket', [ClanController::class, 'bracketState'])->whereNumber('event')->middleware('throttle:120,1')->name('events.bracket.show');
             Route::post('events/{event}/rsvp', [ClanController::class, 'rsvp'])->whereNumber('event')->name('events.rsvp');
             Route::delete('events/{event}', [ClanController::class, 'deleteEvent'])->whereNumber('event')->name('events.destroy');
+            Route::post('shifts', [ClanController::class, 'shift'])->middleware('throttle:20,1')->name('shifts.store');
+            Route::post('shifts/{shift}', [ClanController::class, 'shiftAction'])->whereNumber('shift')->middleware('throttle:60,1')->name('shifts.action');
             Route::post('contributions', [ClanController::class, 'contribute'])->middleware('throttle:30,1')->name('contributions.store');
             Route::post('contributions/{contribution}', [ClanController::class, 'review'])->whereNumber('contribution')->name('contributions.review');
             Route::post('spend', [ClanController::class, 'spend'])->middleware('throttle:30,1')->name('spend');
@@ -1035,6 +1037,12 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
             Route::post('events/{event}/close', [Families\FamilyEventController::class, 'close'])->whereNumber('event')->name('events.close');
             Route::post('events/{event}/checkin', [Families\FamilyEventController::class, 'checkIn'])->whereNumber('event')->middleware('throttle:10,1')->name('events.checkin');
             Route::post('events/{event}/album', [Families\FamilyEventController::class, 'album'])->whereNumber('event')->middleware('throttle:10,1')->name('events.album');
+            Route::get('shifts', [Families\FamilyShiftController::class, 'index'])->name('shifts');
+            Route::post('shifts', [Families\FamilyShiftController::class, 'store'])->middleware('throttle:30,1')->name('shifts.store');
+            Route::post('shifts/{shift}/assign', [Families\FamilyShiftController::class, 'assign'])->whereNumber('shift')->name('shifts.assign');
+            Route::post('shifts/{shift}/claim', [Families\FamilyShiftController::class, 'claim'])->whereNumber('shift')->middleware('throttle:30,1')->name('shifts.claim');
+            Route::post('shifts/{shift}/release', [Families\FamilyShiftController::class, 'release'])->whereNumber('shift')->name('shifts.release');
+            Route::delete('shifts/{shift}', [Families\FamilyShiftController::class, 'destroy'])->whereNumber('shift')->name('shifts.destroy');
             Route::get('rating', [Families\FamilyEventController::class, 'rating'])->name('rating');
             Route::post('rating/season', [Families\FamilyEventController::class, 'endSeason'])->middleware('throttle:5,1')->name('rating.season');
 

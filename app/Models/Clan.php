@@ -52,6 +52,7 @@ class Clan extends Model
         'chat' => ['label' => 'Чат', 'text' => 'Спільна бесіда учасників у месенджері'],
         'rating' => ['label' => 'Рейтинг', 'text' => 'Таблиця учасників за внесками й участю в заходах'],
         'rules' => ['label' => 'Статут', 'text' => 'Правила клану на окремій вкладці'],
+        'shifts' => ['label' => 'Зміни', 'text' => 'Чергування й зміни: хто й коли, вільні можна взяти'],
     ];
 
     public const DEFAULT_FEATURES = ['news', 'events', 'voice', 'chat'];

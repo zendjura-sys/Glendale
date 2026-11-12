@@ -39,6 +39,7 @@ type Settings = {
     discipline: Record<string, number | string>;
     cashout: Record<string, number>;
     digest: Record<string, boolean>;
+    shifts: Record<string, boolean>;
 };
 
 type Props = FamilyShellProps & {
@@ -110,6 +111,7 @@ const labels: Record<string, Record<string, string>> = {
         enabled: tr('Щотижневий звіт (нд 23:59)'),
         chat: tr('Публікувати в чат сім’ї'),
     },
+    shifts: { enabled: tr('Розділ «Зміни» (календар чергувань)') },
 };
 
 const groups: { key: keyof Settings; title: string }[] = [
@@ -120,6 +122,7 @@ const groups: { key: keyof Settings; title: string }[] = [
     { key: 'discipline', title: tr('Дисципліна') },
     { key: 'cashout', title: tr('Виплати') },
     { key: 'digest', title: tr('Тижневий звіт') },
+    { key: 'shifts', title: tr('Зміни') },
 ];
 
 export default function FamilySettings(props: Props) {

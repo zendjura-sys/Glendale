@@ -101,6 +101,7 @@ export type FamilySection =
     | 'members'
     | 'discipline'
     | 'events'
+    | 'shifts'
     | 'rating'
     | 'audit'
     | 'settings';
@@ -113,6 +114,7 @@ export type FamilyShellProps = {
         conversation_id: number | null;
         owner_id: number | null;
         rank_titles: Record<string, string>;
+        shifts_enabled?: boolean;
     };
     me: MemberCard & { balance: number };
     can: FamilyAbilities;

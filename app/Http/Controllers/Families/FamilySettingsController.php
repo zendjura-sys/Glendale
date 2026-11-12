@@ -165,6 +165,7 @@ class FamilySettingsController extends FamilyBaseController
             'cashout.min_amount' => $money,
             'digest.enabled' => ['required', 'boolean'],
             'digest.chat' => ['required', 'boolean'],
+            'shifts.enabled' => ['required', 'boolean'],
         ]);
 
         $before = $family->resolvedSettings();
