@@ -132,7 +132,8 @@ export type ChatMessage = {
         image: string | null;
     } | null;
     /** Локальний стан оптимістичної відправки. */
-    pending?: 'sending' | 'failed';
+    /** sending — іде; failed — не вийшло; queued — чекає мережі (у черзі браузера). */
+    pending?: 'sending' | 'failed' | 'queued';
     local_id?: string;
 };
 

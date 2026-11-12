@@ -1,3 +1,4 @@
+import { SectionMap } from '@/components/help/section-map';
 import { Head, Link } from '@inertiajs/react';
 import { openFeedback } from '@/components/gc/site-extras';
 import {
@@ -43,6 +44,7 @@ export default function HelpCategory({ category, categories }: Props) {
                     </p>
                 </div>
             </header>
+            <SectionMap slug={category.slug} />
 
             <div className="gc-group overflow-hidden">
                 {category.articles.map((article) => (

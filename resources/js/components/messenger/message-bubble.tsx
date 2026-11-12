@@ -1,6 +1,7 @@
 import { Link, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import {
+    CloudOff,
     MessagesSquare,
     Pin,
     SmilePlus,
@@ -223,6 +224,8 @@ export function MessageBubble({
             {own &&
                 (pending === 'sending' ? (
                     <Clock3 className="size-3" />
+                ) : pending === 'queued' ? (
+                    <CloudOff className="size-3.5 text-amber-300" />
                 ) : pending === 'failed' ? (
                     <AlertCircle className="size-3.5 text-red-400" />
                 ) : read ? (
@@ -628,6 +631,12 @@ export function MessageBubble({
                     </div>
                 )}
 
+                {pending === 'queued' && (
+                    <span className="mt-1 inline-flex items-center gap-1 text-xs text-amber-300">
+                        <CloudOff className="size-3" />{' '}
+                        {tr('Чекає мережі — надішлеться саме')}
+                    </span>
+                )}
                 {pending === 'failed' && (
                     <button
                         type="button"

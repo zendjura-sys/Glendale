@@ -1,6 +1,13 @@
+import {
+    addToOutbox,
+    outboxMessage,
+    readOutbox,
+    removeFromOutbox,
+} from '@/lib/chat-outbox';
 import { Link, router, usePage } from '@inertiajs/react';
 import { BubblesSkeleton } from '@/components/gc/skeletons';
 import {
+    CloudOff,
     ArrowDown,
     Bell,
     BellOff,
@@ -99,6 +106,26 @@ type Props = {
 };
 
 type Pending = { message: OutgoingMessage; replyTo: number | null };
+
+/** Чи є мережа (оновлюється подіями online/offline). */
+function useOnline(): boolean {
+    const [online, setOnline] = useState(
+        typeof navigator === 'undefined' ? true : navigator.onLine,
+    );
+    useEffect(() => {
+        const on = () => setOnline(true);
+        const off = () => setOnline(false);
+        window.addEventListener('online', on);
+        window.addEventListener('offline', off);
+
+        return () => {
+            window.removeEventListener('online', on);
+            window.removeEventListener('offline', off);
+        };
+    }, []);
+
+    return online;
+}
 
 function TypingDots() {
     return (
@@ -406,6 +433,16 @@ export function ChatView({
     const deliver = (localId: string) => {
         const payload = pendingRef.current.get(localId);
         if (!payload) return;
+        // Немає мережі — не смикаємо сервер: повідомлення чекає в черзі й піде саме.
+        if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+            setMessages((current) =>
+                current.map((m) =>
+                    m.local_id === localId ? { ...m, pending: 'queued' } : m,
+                ),
+            );
+
+            return;
+        }
 
         const form = new FormData();
         const outgoing = payload.message;
@@ -471,6 +508,7 @@ export function ChatView({
         )
             .then(({ message }) => {
                 pendingRef.current.delete(localId);
+                removeFromOutbox(active.id, localId);
                 setMessages((current) => {
                     const withoutLocal = current.filter(
                         (m) => m.local_id !== localId,
@@ -503,6 +541,12 @@ export function ChatView({
         pendingRef.current.set(localId, {
             message: outgoing,
             replyTo: reply?.id ?? null,
+        });
+        addToOutbox(active.id, {
+            localId,
+            message: outgoing,
+            replyTo: reply?.id ?? null,
+            createdAt: new Date().toISOString(),
         });
 
         let attachmentIndex = 0;
@@ -658,6 +702,31 @@ export function ChatView({
               })(),
           })
         : null;
+    // Черга з минулого візиту (сторінку закрили без мережі): показуємо й надсилаємо, коли можна.
+    useEffect(() => {
+        const queued = readOutbox(active.id);
+        if (queued.length === 0) return;
+        queued.forEach((item) =>
+            pendingRef.current.set(item.localId, {
+                message: item.message,
+                replyTo: item.replyTo,
+            }),
+        );
+        setMessages((current) => [
+            ...current,
+            ...queued
+                .filter(
+                    (item) => !current.some((m) => m.local_id === item.localId),
+                )
+                .map((item) => outboxMessage(item, active.id, me)),
+        ]);
+        window.setTimeout(
+            () => queued.forEach((item) => deliver(item.localId)),
+            300,
+        );
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [active.id]);
+    const online = useOnline();
     const [forwarding, setForwarding] = useState<ChatMessage | null>(null);
     const [folderOpen, setFolderOpen] = useState(false);
     const [folderName, setFolderName] = useState(active.folder ?? '');
@@ -665,7 +734,11 @@ export function ChatView({
     useEffect(() => {
         const retry = () =>
             messages
-                .filter((m) => m.pending === 'failed' && m.local_id)
+                .filter(
+                    (m) =>
+                        (m.pending === 'failed' || m.pending === 'queued') &&
+                        m.local_id,
+                )
                 .forEach((m) => deliver(m.local_id as string));
         window.addEventListener('online', retry);
 
@@ -1534,6 +1607,17 @@ export function ChatView({
                 </div>
             )}
 
+            {!online && (
+                <div
+                    role="status"
+                    className="mx-3 mb-2 flex items-center gap-2 rounded-xl bg-amber-500/12 px-3 py-2 text-xs text-amber-200"
+                >
+                    <CloudOff className="size-4 shrink-0" />
+                    {tr(
+                        'Немає з’єднання. Пишіть далі — повідомлення надішлються, щойно мережа повернеться.',
+                    )}
+                </div>
+            )}
             <Composer
                 pollConversationId={isGroup ? active.id : null}
                 onPollCreated={appendIncoming}
