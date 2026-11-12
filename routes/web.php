@@ -1463,6 +1463,9 @@ Route::middleware('module:communities')->group(function () {
     Route::get('widget/u/{user:username}/card.js', [EmbedWidgetController::class, 'userScript'])->name('widget.user.script');
     Route::get('widget/s/{server:slug}', [EmbedWidgetController::class, 'server'])->middleware('throttle:120,1')->name('widget.server');
     Route::get('widget/s/{server:slug}/card.js', [EmbedWidgetController::class, 'serverScript'])->name('widget.server.script');
+    Route::get('widget/s/{server:slug}/data', [EmbedWidgetController::class, 'serverData'])->middleware('throttle:240,1')->name('widget.server.data');
+    Route::get('widget/s/{server:slug}/widget.js', [EmbedWidgetController::class, 'serverWidget'])->name('widget.server.widget');
+    Route::get('widget/s/{server:slug}/preview', [EmbedWidgetController::class, 'serverPreview'])->middleware('throttle:60,1')->name('widget.server.preview');
     Route::get('widget/{community}', [CommunityWidgetController::class, 'show'])->name('communities.widget');
     Route::get('widget/{community}/card.js', [CommunityWidgetController::class, 'script'])->name('communities.widget.script');
 });

@@ -1,4 +1,5 @@
 import { Head, Link, router } from '@inertiajs/react';
+import { ServerWidgetBuilder } from '@/components/servers/server-widget-builder';
 import {
     ServerVerificationPanel,
     ServerVerifiedBadge,
@@ -789,6 +790,7 @@ export default function ServerShow({
                                 <EmbedButton
                                     path={`/widget/s/${server.slug}`}
                                 />
+                                <ServerWidgetBuilder slug={server.slug} />
                                 <CrosspostButton
                                     owner={{ type: 'server', id: server.id }}
                                 />

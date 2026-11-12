@@ -4,8 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\GtaServer;
 use App\Models\User;
+use App\Services\Servers\ServerFamilyRanking;
+use App\Services\Servers\ServerVotes;
 use App\Support\Plugins\Plugins;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
 /**
@@ -48,6 +51,65 @@ class EmbedWidgetController extends Controller
             'href' => url('/servers/'.$server->slug),
             'cta' => 'Сторінка сервера на GameCon',
         ]);
+    }
+
+    /** Дані розширеного віджета сервера: онлайн, топ сімей, голоси місяця, Discord. */
+    public function serverData(GtaServer $server): JsonResponse
+    {
+        $this->ensureServer($server);
+        $families = array_slice(app(ServerFamilyRanking::class)->rows($server, 'month'), 0, 3);
+        $votes = app(Plugins::class)->on('server_votes') ? (app(ServerVotes::class)->monthCounts()[$server->id] ?? 0) : 0;
+
+        return $this->json([
+            'name' => $server->name,
+            'tagline' => $server->tagline,
+            'icon' => $server->icon,
+            'verified' => $server->verified_at !== null,
+            'online' => $server->players_online,
+            'max' => $server->players_max,
+            'peak' => $server->players_peak,
+            'families' => array_map(fn (array $f) => ['name' => (string) $f['name'], 'points' => (int) $f['points']], $families),
+            'votes' => (int) $votes,
+            'discord' => $server->discordUrl(),
+            'href' => url('/servers/'.$server->slug),
+            'vote_url' => url('/servers/'.$server->slug.'#vote'),
+            // Підписи українською (віджет — частина інтерфейсу GameCon).
+            'labels' => ['online' => 'Онлайн', 'peak' => 'пік', 'families' => 'Топ сімей місяця', 'points' => 'очок', 'vote' => 'Голосувати', 'on_gamecon' => 'Сервер на GameCon'],
+        ]);
+    }
+
+    /** Скрипт розширеного віджета: статичний файл + адреса даних цього сервера. */
+    public function serverWidget(GtaServer $server): Response
+    {
+        $this->ensureServer($server);
+        $endpoint = json_encode(url('/widget/s/'.$server->slug.'/data'), JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
+        $code = (string) file_get_contents(public_path('widgets/server-widget.js'));
+        // Адресу даних підставляємо в document.currentScript, щоб власнику вистачило одного тегу.
+        $code = str_replace("var endpoint = current.getAttribute('data-endpoint');", "var endpoint = current.getAttribute('data-endpoint') || {$endpoint};", $code);
+
+        return response($code, 200, [
+            'Content-Type' => 'application/javascript; charset=UTF-8',
+            'Access-Control-Allow-Origin' => '*',
+            'Cache-Control' => 'public, max-age=300',
+        ]);
+    }
+
+    /** Попередній перегляд для конструктора (той самий скрипт з обраними параметрами). */
+    public function serverPreview(Request $request, GtaServer $server): Response
+    {
+        $this->ensureServer($server);
+        $theme = $request->query('theme') === 'light' ? 'light' : 'dark';
+        $show = implode(',', array_intersect(explode(',', (string) $request->query('show', 'online,families,vote,discord')), ['online', 'families', 'vote', 'discord']));
+        $accent = preg_match('/^#[0-9a-f]{6}$/i', (string) $request->query('accent')) === 1 ? (string) $request->query('accent') : '#6366f1';
+        $src = e(url('/widget/s/'.$server->slug.'/widget.js'));
+        $bg = $theme === 'light' ? '#eef2f7' : '#05080f';
+
+        return response("<!doctype html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width\"><style>body{margin:0;padding:16px;background:{$bg}}</style></head><body><script src=\"{$src}\" data-theme=\"{$theme}\" data-show=\"".e($show).'" data-accent="'.e($accent).'"></script></body></html>', 200, ['Content-Type' => 'text/html; charset=UTF-8']);
+    }
+
+    private function ensureServer(GtaServer $server): void
+    {
+        abort_unless(app(Plugins::class)->on('embed_widgets') && $server->status === GtaServer::STATUS_PUBLISHED, 404);
     }
 
     public function userScript(User $user): Response
