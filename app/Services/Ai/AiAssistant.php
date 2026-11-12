@@ -176,6 +176,39 @@ class AiAssistant
         return $out;
     }
 
+    /**
+     * Тематичні набори колекційних карток: до якого набору з переліку належить кожна картка.
+     *
+     * @param  list<array{key: string, name: string, about: string}>  $cards
+     * @param  list<string>  $themes
+     * @return array<string, string>
+     */
+    public function cardThemes(array $cards, array $themes): array
+    {
+        if ($cards === []) {
+            return [];
+        }
+        $list = implode("\n", array_map(fn (array $c) => "{$c['key']}: {$c['name']} ({$c['about']})", $cards));
+        try {
+            $raw = $this->ai->complete(
+                'Розклади колекційні картки (ігри й персонажі аніме, фільмів, серіалів) за тематичними наборами. Обирай рівно одну назву з переліку: '.implode(', ', $themes).'. «Круті хлопці» — харизматичні круті герої, «Лиходії» — антагоністи, «Меха» — роботи й пілоти, «Супергерої» — герої з надздібностями. Відповідай лише JSON: {"ключ": "набір", …}.',
+                [['role' => 'user', 'content' => $list]],
+                1500,
+            );
+        } catch (AiException) {
+            return [];
+        }
+        $json = json_decode((string) Str::of($raw)->after('{')->beforeLast('}')->prepend('{')->append('}'), true);
+        $out = [];
+        foreach (is_array($json) ? $json : [] as $key => $theme) {
+            if (is_string($theme) && in_array($theme, $themes, true)) {
+                $out[(string) $key] = $theme;
+            }
+        }
+
+        return $out;
+    }
+
     /** Ймовірність відвертого вмісту на фото 0..1 (запасний варіант до Sightengine). */
     public function imageScore(string $path): ?float
     {

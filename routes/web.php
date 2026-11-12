@@ -1280,6 +1280,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::post('card-characters', [Admin\CardCharacterController::class, 'store'])->name('card-characters.store');
         Route::post('card-characters/sync', [Admin\CardCharacterController::class, 'sync'])->middleware('throttle:5,1')->name('card-characters.sync');
         Route::post('card-characters/ai-rank', [Admin\CardCharacterController::class, 'aiRank'])->middleware('throttle:5,1')->name('card-characters.ai-rank');
+        Route::post('card-characters/ai-themes', [Admin\CardCharacterController::class, 'aiThemes'])->middleware('throttle:5,1')->name('card-characters.ai-themes');
         Route::post('card-characters/{character}/rank', [Admin\CardCharacterController::class, 'rank'])->whereNumber('character')->name('card-characters.rank');
         Route::post('card-characters/{character}/toggle', [Admin\CardCharacterController::class, 'toggle'])->whereNumber('character')->name('card-characters.toggle');
         Route::get('site-events', [Admin\SiteEventController::class, 'index'])->name('site-events.index');

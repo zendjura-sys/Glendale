@@ -82,6 +82,14 @@ class CardCharacterController extends Controller
         return back()->with('success', trim(Artisan::output()));
     }
 
+    public function aiThemes(Request $request): RedirectResponse
+    {
+        Artisan::call('cards:ai-themes', ['--batches' => 3]);
+        Log::info('admin: card themes ai', ['admin' => $request->user()->id]);
+
+        return back()->with('success', trim(Artisan::output()));
+    }
+
     public function sync(Request $request): RedirectResponse
     {
         Artisan::call('cards:characters', ['--limit' => 20]);

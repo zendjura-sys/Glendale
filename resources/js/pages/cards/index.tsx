@@ -15,6 +15,7 @@ import { useEffect, useMemo, useState } from 'react';
 import {
     GameCardArt,
     kindLabel,
+    RANKS,
     RARITY,
     rarityLabel,
 } from '@/components/cards/game-card';
@@ -28,7 +29,11 @@ import { tr } from '@/lib/i18n';
 import { motionOr, RISE } from '@/lib/motion';
 import { cn } from '@/lib/utils';
 
-type OwnedCard = CardData & { copies: number; showcase: boolean };
+type OwnedCard = CardData & {
+    copies: number;
+    showcase: boolean;
+    theme?: string | null;
+};
 
 type Props = {
     cards: OwnedCard[];
@@ -40,6 +45,12 @@ type Props = {
     duplicates: number;
     ranks: { rank: Rarity; drop: number; dust: number; craft: number }[];
     drops: { id: number; source: string; title: string; created_at: string }[];
+    collections: {
+        name: string;
+        total: number;
+        owned: number;
+        cover: CardData | null;
+    }[];
     friends?: UserCard[];
 };
 
@@ -70,9 +81,14 @@ export default function CardsAlbum({
     duplicates,
     ranks,
     drops,
+    collections,
     friends,
 }: Props) {
     const reduce = useReducedMotion();
+    const [view, setView] = useState<'collections' | 'album'>(
+        collections.length > 0 ? 'collections' : 'album',
+    );
+    const [theme, setTheme] = useState<string | null>(null);
     const [kind, setKind] = useState<CardKind | null>(null);
     const [set, setSet] = useState<string | null>(null);
     const kinds = Array.from(new Set(cards.map((c) => c.kind)));
@@ -113,16 +129,33 @@ export default function CardsAlbum({
     const [busy, setBusy] = useState(false);
     const left = useLeft(next_pack_at);
     const owned = cards.filter((c) => c.copies > 0).length;
+    // Три найрідкісніші картки людини — віялом у шапці.
+    const topOwned = useMemo(
+        () =>
+            cards
+                .filter((c) => c.copies > 0)
+                .sort(
+                    (a, b) => RANKS.indexOf(b.rarity) - RANKS.indexOf(a.rarity),
+                )
+                .slice(0, 3),
+        [cards],
+    );
+    const best = topOwned[0] ?? null;
+    const heroOrder =
+        topOwned.length === 3
+            ? [topOwned[1], topOwned[0], topOwned[2]]
+            : topOwned;
 
     const list = useMemo(
         () =>
             cards.filter(
                 (c) =>
+                    (!theme || c.theme === theme) &&
                     (!kind || c.kind === kind) &&
                     (!set || c.set === set) &&
                     (!onlyMissing || c.copies === 0),
             ),
-        [cards, kind, set, onlyMissing],
+        [cards, theme, kind, set, onlyMissing],
     );
 
     const post = (url: string, after?: () => void) => {
@@ -146,56 +179,157 @@ export default function CardsAlbum({
         <>
             <Head title={tr('Колекційні картки')} />
             <div className="mx-auto max-w-5xl space-y-5">
-                <section className="gc-solid flex flex-wrap items-center gap-4 rounded-xl p-4 sm:p-5">
-                    <div className="min-w-0 flex-1">
-                        <h1 className="flex items-center gap-2 font-display text-2xl font-bold text-white">
-                            <Layers className="size-6 text-primary" />
-                            {tr('Колекційні картки')}
-                        </h1>
-                        <p className="mt-1 text-sm text-white/60">
-                            {tr(
-                                'Ігри, персонажі аніме, фільмів і серіалів — 16 рангів від N до U. Щодня безкоштовний набір, дублікати — в кристали, з кристалів — картки, яких бракує.',
-                            )}
-                        </p>
-                        <div className="mt-3 flex flex-wrap gap-4 text-sm">
-                            <span className="text-white">
-                                <b className="tabular-nums">{owned}</b>
-                                <span className="text-white/55">
-                                    {' '}
-                                    / {cards.length}
-                                </span>
-                            </span>
-                            <span className="flex items-center gap-1 text-white">
-                                <Gem className="size-4 text-violet-400" />
-                                <b className="tabular-nums">{shards}</b>
-                                <span className="text-white/55">
-                                    {tr('кристалів')}
-                                </span>
-                            </span>
+                <m.section
+                    initial={reduce ? false : { opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={motionOr(reduce, RISE)}
+                    data-on-dark
+                    className="relative overflow-hidden rounded-2xl p-5 text-white sm:p-7"
+                    style={{
+                        background:
+                            'radial-gradient(120% 140% at 0% 0%, #4338ca 0%, transparent 55%), radial-gradient(90% 120% at 100% 100%, #7c3aed 0%, transparent 60%), #0b1220',
+                    }}
+                >
+                    <div className="relative flex flex-wrap items-center gap-6">
+                        <div className="min-w-0 flex-1">
+                            <h1 className="flex items-center gap-2 font-display text-3xl font-bold">
+                                <Layers className="size-7 text-indigo-300" />
+                                {tr('Колекційні картки')}
+                            </h1>
+                            <p className="mt-1 max-w-xl text-sm text-white/70">
+                                {tr(
+                                    'Ігри, персонажі аніме, фільмів і серіалів — 16 рангів від N до U. Набір щодня, картки за перегляд і гру, дублікати — в кристали.',
+                                )}
+                            </p>
+                            <div className="mt-4 flex flex-wrap items-center gap-5">
+                                <div className="flex items-center gap-3">
+                                    <svg
+                                        viewBox="0 0 44 44"
+                                        className="size-12 -rotate-90"
+                                        aria-hidden
+                                    >
+                                        <circle
+                                            cx="22"
+                                            cy="22"
+                                            r="19"
+                                            fill="none"
+                                            strokeWidth="4"
+                                            className="stroke-white/15"
+                                        />
+                                        <circle
+                                            cx="22"
+                                            cy="22"
+                                            r="19"
+                                            fill="none"
+                                            strokeWidth="4"
+                                            strokeLinecap="round"
+                                            className="stroke-indigo-300"
+                                            strokeDasharray={2 * Math.PI * 19}
+                                            strokeDashoffset={
+                                                2 *
+                                                Math.PI *
+                                                19 *
+                                                (1 -
+                                                    owned /
+                                                        Math.max(
+                                                            1,
+                                                            cards.length,
+                                                        ))
+                                            }
+                                        />
+                                    </svg>
+                                    <div>
+                                        <div className="font-display text-xl font-bold tabular-nums">
+                                            {owned}
+                                            <span className="text-sm text-white/55">
+                                                {' '}
+                                                / {cards.length}
+                                            </span>
+                                        </div>
+                                        <div className="text-xs text-white/60">
+                                            {tr('зібрано')}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div className="flex items-center gap-1 font-display text-xl font-bold tabular-nums">
+                                        <Gem className="size-4 text-violet-300" />
+                                        {shards}
+                                    </div>
+                                    <div className="text-xs text-white/60">
+                                        {tr('кристалів')}
+                                    </div>
+                                </div>
+                                {best && (
+                                    <div>
+                                        <div
+                                            className="font-display text-xl font-bold"
+                                            style={{
+                                                color: RARITY[best.rarity].ring,
+                                            }}
+                                        >
+                                            {best.rarity}
+                                        </div>
+                                        <div className="text-xs text-white/60">
+                                            {tr('найрідкісніша')}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                            <div className="mt-5 flex flex-wrap gap-2">
+                                <Button
+                                    disabled={busy || left !== null}
+                                    onClick={() => setOpening({ kind: 'pack' })}
+                                    className="bg-white text-[#0b1220] hover:bg-white/90"
+                                >
+                                    <Package className="size-4" />
+                                    {left
+                                        ? tr('Набір через {t}', { t: left })
+                                        : tr('Відкрити набір ({n})', {
+                                              n: pack_size,
+                                          })}
+                                </Button>
+                                <Button
+                                    variant="secondary"
+                                    disabled={busy || duplicates === 0}
+                                    onClick={() => post('/cards/dust')}
+                                    className="bg-white/10 text-white hover:bg-white/20"
+                                >
+                                    <Sparkles className="size-4" />
+                                    {tr('Розщепити дублікати ({n})', {
+                                        n: duplicates,
+                                    })}
+                                </Button>
+                            </div>
                         </div>
+                        {topOwned.length > 0 && (
+                            <div className="hidden shrink-0 items-end sm:flex">
+                                {heroOrder.map((c, i) => (
+                                    <m.div
+                                        key={c.key}
+                                        initial={
+                                            reduce
+                                                ? false
+                                                : { opacity: 0, y: 16 }
+                                        }
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={motionOr(reduce, {
+                                            ...RISE,
+                                            delay: 0.1 + i * 0.08,
+                                        })}
+                                        className={cn(
+                                            'w-24 lg:w-28',
+                                            i > 0 && '-ml-8',
+                                            i === 1 && 'z-10 mb-3 w-28 lg:w-32',
+                                        )}
+                                    >
+                                        <GameCardArt card={c} />
+                                    </m.div>
+                                ))}
+                            </div>
+                        )}
                     </div>
-                    <div className="flex flex-wrap gap-2">
-                        <Button
-                            disabled={busy || left !== null}
-                            onClick={() => setOpening({ kind: 'pack' })}
-                        >
-                            <Package className="size-4" />
-                            {left
-                                ? tr('Набір через {t}', { t: left })
-                                : tr('Відкрити набір ({n})', { n: pack_size })}
-                        </Button>
-                        <Button
-                            variant="secondary"
-                            disabled={busy || duplicates === 0}
-                            onClick={() => post('/cards/dust')}
-                        >
-                            <Sparkles className="size-4" />
-                            {tr('Розібрати дублікати ({n})', {
-                                n: duplicates,
-                            })}
-                        </Button>
-                    </div>
-                </section>
+                </m.section>
 
                 {drops.length > 0 && (
                     <section className="gc-solid space-y-3 rounded-xl p-4">
@@ -243,89 +377,194 @@ export default function CardsAlbum({
                     </section>
                 )}
 
-                {kinds.length > 1 && (
-                    <div className="flex flex-wrap gap-2">
-                        {[null, ...kinds].map((k) => (
-                            <button
-                                key={k ?? 'all'}
-                                type="button"
-                                onClick={() => {
-                                    setKind(k);
-                                    setSet(null);
-                                }}
-                                className={cn(
-                                    'rounded-xl px-4 py-2 text-sm font-semibold',
-                                    kind === k
-                                        ? 'bg-primary text-white'
-                                        : 'gc-solid text-white/70',
-                                )}
-                            >
-                                {k ? kindLabel(k) : tr('Усі картки')}
-                            </button>
-                        ))}
-                    </div>
-                )}
-
-                <div className="flex flex-wrap items-center gap-2">
-                    <button
-                        type="button"
-                        onClick={() => setSet(null)}
-                        className={cn(
-                            'rounded-full px-3 py-1.5 text-sm',
-                            set === null
-                                ? 'bg-primary text-white'
-                                : 'gc-solid text-white/70',
-                        )}
-                    >
-                        {tr('Усі')}
-                    </button>
-                    {sets
-                        .filter((s) => !kind || s.kind === kind)
-                        .slice(0, 24)
-                        .map((s) => (
-                            <button
-                                key={`${s.kind}:${s.name}`}
-                                type="button"
-                                onClick={() => setSet(s.name)}
-                                className={cn(
-                                    'rounded-full px-3 py-1.5 text-sm',
-                                    set === s.name
-                                        ? 'bg-primary text-white'
-                                        : 'gc-solid text-white/70',
-                                )}
-                            >
-                                {s.name}{' '}
-                                <span className="tabular-nums opacity-70">
-                                    {s.owned}/{s.total}
-                                </span>
-                            </button>
-                        ))}
-                    <label className="ml-auto flex items-center gap-2 text-sm text-white/70">
-                        <input
-                            type="checkbox"
-                            checked={onlyMissing}
-                            onChange={(e) => setOnlyMissing(e.target.checked)}
-                        />
-                        {tr('Лише яких бракує')}
-                    </label>
-                </div>
-
-                <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6 xl:grid-cols-8">
-                    {list.map((c) => (
+                <div className="flex gap-2">
+                    {(
+                        [
+                            ['collections', tr('Колекції')],
+                            ['album', tr('Альбом')],
+                        ] as const
+                    ).map(([key, label]) => (
                         <button
-                            key={c.key}
+                            key={key}
                             type="button"
-                            onClick={() => setPicked(c)}
-                            className="text-left transition-transform hover:-translate-y-0.5"
+                            onClick={() => setView(key)}
+                            className={cn(
+                                'rounded-xl px-4 py-2 font-display text-sm font-semibold',
+                                view === key
+                                    ? 'bg-primary text-white'
+                                    : 'gc-solid text-white/70',
+                            )}
                         >
-                            <GameCardArt
-                                card={c}
-                                locked={c.copies === 0}
-                                copies={c.copies}
-                            />
+                            {label}
                         </button>
                     ))}
+                    {theme && (
+                        <button
+                            type="button"
+                            onClick={() => setTheme(null)}
+                            className="ml-auto flex items-center gap-1 rounded-xl bg-white/5 px-3 py-2 text-sm text-white/70"
+                        >
+                            {theme}
+                            <X className="size-3.5" />
+                        </button>
+                    )}
                 </div>
+
+                {view === 'collections' ? (
+                    collections.length === 0 ? (
+                        <p className="gc-solid rounded-xl p-5 text-sm text-white/60">
+                            {tr(
+                                'Тематичні колекції ще формуються — ІІ розкладає картки за наборами (фентезі, меха, супергерої…).',
+                            )}
+                        </p>
+                    ) : (
+                        <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                            {collections.map((col, i) => (
+                                <m.li
+                                    key={col.name}
+                                    initial={
+                                        reduce ? false : { opacity: 0, y: 10 }
+                                    }
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={motionOr(reduce, {
+                                        ...RISE,
+                                        delay: Math.min(i, 8) * 0.04,
+                                    })}
+                                >
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setTheme(col.name);
+                                            setView('album');
+                                        }}
+                                        className="gc-solid flex w-full items-center gap-4 rounded-2xl p-3 text-left transition hover:bg-white/5"
+                                    >
+                                        {col.cover && (
+                                            <GameCardArt
+                                                card={col.cover}
+                                                locked={
+                                                    !cards.find(
+                                                        (c) =>
+                                                            c.key ===
+                                                            col.cover?.key,
+                                                    )?.copies
+                                                }
+                                                className="w-16 shrink-0"
+                                            />
+                                        )}
+                                        <span className="min-w-0 flex-1">
+                                            <span className="block truncate font-display text-base font-bold text-white">
+                                                {col.name}
+                                            </span>
+                                            <span className="block text-xs text-white/55">
+                                                {tr('{o} з {t} карток', {
+                                                    o: col.owned,
+                                                    t: col.total,
+                                                })}
+                                            </span>
+                                            <span className="mt-2 block h-1.5 overflow-hidden rounded-full bg-white/10">
+                                                <span
+                                                    className="block h-full rounded-full bg-gradient-to-r from-indigo-400 to-violet-400"
+                                                    style={{
+                                                        width: `${(col.owned / Math.max(1, col.total)) * 100}%`,
+                                                    }}
+                                                />
+                                            </span>
+                                        </span>
+                                    </button>
+                                </m.li>
+                            ))}
+                        </ul>
+                    )
+                ) : (
+                    <>
+                        {kinds.length > 1 && (
+                            <div className="flex flex-wrap gap-2">
+                                {[null, ...kinds].map((k) => (
+                                    <button
+                                        key={k ?? 'all'}
+                                        type="button"
+                                        onClick={() => {
+                                            setKind(k);
+                                            setSet(null);
+                                        }}
+                                        className={cn(
+                                            'rounded-xl px-4 py-2 text-sm font-semibold',
+                                            kind === k
+                                                ? 'bg-primary text-white'
+                                                : 'gc-solid text-white/70',
+                                        )}
+                                    >
+                                        {k ? kindLabel(k) : tr('Усі картки')}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+
+                        <div className="flex flex-wrap items-center gap-2">
+                            <button
+                                type="button"
+                                onClick={() => setSet(null)}
+                                className={cn(
+                                    'rounded-full px-3 py-1.5 text-sm',
+                                    set === null
+                                        ? 'bg-primary text-white'
+                                        : 'gc-solid text-white/70',
+                                )}
+                            >
+                                {tr('Усі')}
+                            </button>
+                            {sets
+                                .filter((s) => !kind || s.kind === kind)
+                                .slice(0, 24)
+                                .map((s) => (
+                                    <button
+                                        key={`${s.kind}:${s.name}`}
+                                        type="button"
+                                        onClick={() => setSet(s.name)}
+                                        className={cn(
+                                            'rounded-full px-3 py-1.5 text-sm',
+                                            set === s.name
+                                                ? 'bg-primary text-white'
+                                                : 'gc-solid text-white/70',
+                                        )}
+                                    >
+                                        {s.name}{' '}
+                                        <span className="tabular-nums opacity-70">
+                                            {s.owned}/{s.total}
+                                        </span>
+                                    </button>
+                                ))}
+                            <label className="ml-auto flex items-center gap-2 text-sm text-white/70">
+                                <input
+                                    type="checkbox"
+                                    checked={onlyMissing}
+                                    onChange={(e) =>
+                                        setOnlyMissing(e.target.checked)
+                                    }
+                                />
+                                {tr('Лише яких бракує')}
+                            </label>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6 xl:grid-cols-8">
+                            {list.map((c) => (
+                                <button
+                                    key={c.key}
+                                    type="button"
+                                    onClick={() => setPicked(c)}
+                                    className="text-left transition-transform hover:-translate-y-0.5"
+                                >
+                                    <GameCardArt
+                                        card={c}
+                                        locked={c.copies === 0}
+                                        copies={c.copies}
+                                    />
+                                </button>
+                            ))}
+                        </div>
+                    </>
+                )}
 
                 <section className="gc-solid rounded-xl p-4 text-sm text-white/65">
                     <h2 className="mb-2 font-display text-base font-bold text-white">

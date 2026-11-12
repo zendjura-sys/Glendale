@@ -230,10 +230,18 @@ class HandleInertiaRequests extends Middleware
     private function visibleNav(User $user): array
     {
         $visible = app(NetworkModes::class)->modulesFor($user);
+        $items = [];
+        foreach ($this->modules->navigation() as $item) {
+            if (! in_array($item['key'], $visible, true)) {
+                continue;
+            }
+            $items[] = $item;
+            // Колекційні картки — окремий пункт поруч із завданнями (частина розділу «Завдання й сезони»).
+            if ($item['key'] === 'quests') {
+                $items[] = ['key' => 'cards', 'label' => 'Картки', 'icon' => 'layers', 'href' => '/cards'];
+            }
+        }
 
-        return array_values(array_filter(
-            $this->modules->navigation(),
-            fn (array $item) => in_array($item['key'], $visible, true),
-        ));
+        return $items;
     }
 }

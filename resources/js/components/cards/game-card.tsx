@@ -106,11 +106,14 @@ export function GameCardArt({
     locked = false,
     copies,
     className,
+    compact = false,
 }: {
     card: CardData;
     locked?: boolean;
     copies?: number;
     className?: string;
+    /** Без підпису внизу (маленькі картки у вітрині профілю). */
+    compact?: boolean;
 }) {
     const tone = RARITY[card.rarity];
     // Обкладинка не завантажилась — показуємо літеру гри.
@@ -163,7 +166,7 @@ export function GameCardArt({
                         </span>
                     )}
                 </div>
-                <div className="px-2 pt-1 pb-2">
+                <div className={cn('px-2 pt-1 pb-2', compact && 'hidden')}>
                     <div className="line-clamp-2 text-xs leading-tight font-semibold">
                         {locked ? '???' : card.name}
                     </div>
@@ -192,13 +195,18 @@ export function CardShowcase({
 }) {
     return (
         <Widget
-            title={tr('Колекційні картки')}
+            title={tr('Найдорожчі картки')}
             icon={Layers}
             href={isSelf ? '/cards' : undefined}
         >
-            <div className="grid grid-cols-3 gap-2 px-1">
+            <div className="grid grid-cols-5 gap-1.5 px-1">
                 {data.cards.map((c) => (
-                    <GameCardArt key={c.key} card={c} />
+                    <div
+                        key={c.key}
+                        title={`${c.name} · ${rarityLabel(c.rarity)}`}
+                    >
+                        <GameCardArt card={c} compact />
+                    </div>
                 ))}
             </div>
             <p className="mt-2 px-1 text-xs text-white/55">

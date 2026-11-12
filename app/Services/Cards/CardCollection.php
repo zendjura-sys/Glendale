@@ -35,9 +35,16 @@ class CardCollection
         'R' => 35, 'SR' => 25, 'SSR' => 15, 'S' => 9, 'SS' => 5, 'SSS' => 3, 'EX' => 2, 'U' => 1,
     ];
 
+    /** Тематичні набори, до яких ІІ відносить картки. */
+    public const THEMES = [
+        'Фентезі', 'Меха', 'Супергерої', 'Круті хлопці', 'Кіберпанк', 'Магія й чаклунство', 'Ніндзя й самураї',
+        'Космос', 'Жахи', 'Мілітарі', 'Лиходії', 'Милі й кумедні', 'Детективи', 'Спорт і гонки', 'Виживання',
+        'Стратегії', 'Шутери', 'Романтика', 'Пригоди', 'Інше',
+    ];
+
     public const PACK_SIZE = 3;
 
-    public const SHOWCASE_MAX = 3;
+    public const SHOWCASE_MAX = 5;
 
     /** Кристали за розщеплену картку рангу: від 1 (N) до 10 000 (U), рівномірно за рангами. */
     public function dust(string $rarity): int
@@ -124,6 +131,11 @@ class CardCollection
                     'name' => $c->name, 'cover' => $c->image_url ?: $c->movie->poster, 'rarity' => in_array($rank, self::RARITIES, true) ? $rank : 'N',
                     'movie_id' => $c->movie_id,
                     'set' => $c->movie->title, 'href' => '/cinema/'.$c->movie->slug];
+            }
+
+            $themes = DB::table('card_themes')->pluck('theme', 'card_key');
+            foreach ($out as $key => $card) {
+                $out[$key]['theme'] = $themes[$key] ?? null;
             }
 
             return $out;
@@ -375,7 +387,7 @@ class CardCollection
         $row = DB::table('user_cards')->where('user_id', $user->id)->where('card_key', $key)->first(['id', 'showcase']);
         abort_unless($row !== null, 404);
         if (! $row->showcase && DB::table('user_cards')->where('user_id', $user->id)->where('showcase', true)->count() >= self::SHOWCASE_MAX) {
-            throw ValidationException::withMessages(['card' => 'На вітрині вже три картки — спершу приберіть одну.']);
+            throw ValidationException::withMessages(['card' => 'На вітрині вже п’ять карток — спершу приберіть одну.']);
         }
         DB::table('user_cards')->where('id', $row->id)->update(['showcase' => ! $row->showcase, 'updated_at' => now()]);
     }
@@ -417,6 +429,13 @@ class CardCollection
             'duplicates' => (int) $cards->sum(fn ($c) => max(0, $c['copies'] - 1)),
             'ranks' => array_map(fn (string $r) => ['rank' => $r, 'drop' => self::DROP[$r] / 10, 'dust' => $this->dust($r), 'craft' => $this->craftCost($r)], self::RARITIES),
             'base_high' => $this->highChance(0),
+            // Колекції за темами (від ІІ): прогрес і найрідкісніша картка набору для обкладинки.
+            'collections' => $cards->filter(fn ($c) => $c['theme'] !== null)->groupBy('theme')->map(function (Collection $g, string $theme) {
+                $order = array_flip(self::RARITIES);
+                $top = $g->sortByDesc(fn ($c) => $order[$c['rarity']] ?? 0)->first();
+
+                return ['name' => $theme, 'total' => $g->count(), 'owned' => $g->where('copies', '>', 0)->count(), 'cover' => $top];
+            })->sortByDesc('total')->values()->all(),
         ];
     }
 
@@ -433,10 +452,9 @@ class CardCollection
         }
         $catalog = $this->catalog();
         $order = array_flip(self::RARITIES);
-        $picked = $rows->where('showcase', true)->pluck('card_key');
-        if ($picked->isEmpty()) {
-            $picked = $rows->pluck('card_key')->sortByDesc(fn ($key) => $order[$catalog->get($key)['rarity'] ?? 'N'])->take(self::SHOWCASE_MAX);
-        }
+        // Вітрина: обрані вручну, далі — найдорожчі (за рангом) до п'яти.
+        $byRank = $rows->pluck('card_key')->sortByDesc(fn ($key) => $order[$catalog->get($key)['rarity'] ?? 'N'] ?? 0);
+        $picked = $rows->where('showcase', true)->pluck('card_key')->merge($byRank)->unique()->take(self::SHOWCASE_MAX)->values();
 
         return [
             'cards' => $picked->map(fn ($key) => $catalog->get($key))->filter()->values()->all(),
