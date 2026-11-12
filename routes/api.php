@@ -87,6 +87,7 @@ use App\Http\Controllers\PodcastController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\PostSeriesController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\PromoController;
 use App\Http\Controllers\QuestController;
 use App\Http\Controllers\RailController;
 use App\Http\Controllers\ReadingController;
@@ -609,6 +610,8 @@ Route::prefix('v1')->group(function () {
                 // Активність друзів — окрема вкладка стрічки.
                 Route::get('feed/activity', [FeedController::class, 'activity'])->middleware('throttle:60,1');
                 Route::get('feed/widgets', [FeedController::class, 'widgets'])->middleware('throttle:30,1');
+                Route::get('promo/slot/{placement}', [PromoController::class, 'show'])->where('placement', '[a-z]+')->middleware('throttle:60,1');
+                Route::post('promo/dismiss/{banner}', [PromoController::class, 'dismiss'])->whereNumber('banner')->middleware('throttle:30,1');
                 Route::post('posts/{post}/pin', [PostController::class, 'pin'])->whereNumber('post');
                 Route::get('posts/drafts', [PostController::class, 'drafts']);
                 Route::post('posts/{post}/publish', [PostController::class, 'release'])->whereNumber('post');

@@ -905,4 +905,10 @@ class AppSiteParityTest extends TestCase
         Queue::assertPushed(BuildDataExport::class);
         $this->withToken($token)->putJson('/api/v1/site/settings/account/login-alerts', ['on' => false])->assertSuccessful();
     }
+
+    public function test_app_reads_promo_banner_through_bridge(): void
+    {
+        $token = $this->app_token(User::factory()->create());
+        $this->withToken($token)->getJson('/api/v1/site/promo/slot/feed')->assertOk()->assertJsonPath('banner', null);
+    }
 }

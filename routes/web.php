@@ -95,6 +95,7 @@ use App\Http\Controllers\PodcastController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\PostSeriesController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\PromoController;
 use App\Http\Controllers\PublicPageController;
 use App\Http\Controllers\QuestController;
 use App\Http\Controllers\RailController;
@@ -194,6 +195,10 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     Route::get('feed', [FeedController::class, 'index'])->middleware('module:feed')->name('feed');
     Route::get('feed/activity', [FeedController::class, 'activity'])->middleware(['module:feed', 'throttle:60,1'])->name('feed.activity');
     Route::get('feed/widgets', [FeedController::class, 'widgets'])->middleware('throttle:30,1')->name('feed.widgets');
+    // Банери з A/B-тестами: показ, перехід (рахує клік), закрити.
+    Route::get('promo/slot/{placement}', [PromoController::class, 'show'])->where('placement', '[a-z]+')->middleware('throttle:60,1')->name('promo.show');
+    Route::get('promo/{variant}', [PromoController::class, 'click'])->whereNumber('variant')->middleware('throttle:30,1')->name('promo.click');
+    Route::post('promo/dismiss/{banner}', [PromoController::class, 'dismiss'])->whereNumber('banner')->middleware('throttle:30,1')->name('promo.dismiss');
     Route::get('invite', [ReferralController::class, 'index'])->name('referrals.index');
     // Оплата (лише сайт, усередині GameCon+): покупка карткою через monobank, картки, автопродовження, історія.
     Route::prefix('plus/billing')->name('billing.')->controller(BillingController::class)->group(function () {
@@ -1316,6 +1321,11 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::delete('families/{family:id}', [Admin\FamilyController::class, 'destroy'])->whereNumber('family')->name('families.destroy');
         Route::get('clans', [Admin\ClanController::class, 'index'])->name('clans.index');
         Route::get('metrics', Admin\MetricsController::class)->name('metrics');
+        Route::get('banners', [Admin\PromoBannerController::class, 'index'])->name('banners.index');
+        Route::post('banners', [Admin\PromoBannerController::class, 'store'])->name('banners.store');
+        Route::put('banners/{banner}/status', [Admin\PromoBannerController::class, 'status'])->whereNumber('banner')->name('banners.status');
+        Route::put('banners/{banner}/winner/{variant}', [Admin\PromoBannerController::class, 'winner'])->whereNumber(['banner', 'variant'])->name('banners.winner');
+        Route::delete('banners/{banner}', [Admin\PromoBannerController::class, 'destroy'])->whereNumber('banner')->name('banners.destroy');
         Route::get('vitals', [Admin\VitalsController::class, 'index'])->name('vitals.index');
         Route::get('links', [Admin\LinkCheckController::class, 'index'])->name('links.index');
         Route::post('links/{check}/ignore', [Admin\LinkCheckController::class, 'ignore'])->whereNumber('check')->name('links.ignore');

@@ -42,6 +42,7 @@ import { WrappedBanner } from '@/components/gc/wrapped-banner';
 import { HomeWidgetsEditor } from '@/components/gc/engagement';
 import { FeedPulse, FeedSideCards, useHub } from '@/components/gc/feed-pulse';
 import { FriendActivity } from '@/components/feed/friend-activity';
+import { PromoBanner } from '@/components/feed/promo-banner';
 import { SideWidgets, useSideWidgets } from '@/components/feed/side-widgets';
 import { WhileAway } from '@/components/feed/while-away';
 import type { WhileAwayData } from '@/components/feed/while-away';
@@ -279,6 +280,7 @@ export default function Feed({
                     )}
                     {newcomer && <NewcomerWeek data={newcomer} />}
                     <PostComposer />
+                    <PromoBanner />
                     {/* Планшет: ті самі віджети сіткою 2×2 над стрічкою (на ПК вони праворуч). */}
                     <SideWidgets
                         data={widgets}
