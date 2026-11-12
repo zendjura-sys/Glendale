@@ -476,11 +476,13 @@ class PostController extends Controller
         $user = $request->user();
         abort_unless(($post->wall_type === $user->getMorphClass() && $post->wall_id === $user->id) || $this->managesWall($user, $post), 403);
 
-        // На своїй стіні з GameCon+ можна закріпити до трьох записів; інакше — один (новий замінює старий).
+        // На своїй стіні — до трьох записів (з GameCon+ — до п’яти); на інших стінах — один.
+        // Понад ліміт новий запис замінює найстаріший закріплений — про це кажемо тостом.
         $limit = $post->wall_type === $user->getMorphClass() && $post->wall_id === $user->id
             ? (int) app(Plus::class)->limit($user, 'pinned_posts')
             : 1;
-        DB::transaction(function () use ($post, $limit) {
+        $replaced = false;
+        DB::transaction(function () use ($post, $limit, &$replaced) {
             if ($post->is_pinned) {
                 $post->update(['is_pinned' => false]);
 
@@ -494,9 +496,13 @@ class PostController extends Controller
                 ->pluck('id');
             if ($pinned->count() >= $limit) {
                 Post::query()->whereIn('id', $pinned->take($pinned->count() - $limit + 1))->update(['is_pinned' => false]);
+                $replaced = $limit > 1;
             }
             $post->update(['is_pinned' => true]);
         });
+        if ($replaced) {
+            Inertia::flash('toast', ['type' => 'info', 'message' => "Закріплено. Можна до {$limit} записів — найстаріший закріплений відкріплено."]);
+        }
 
         return back();
     }

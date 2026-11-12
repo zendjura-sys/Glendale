@@ -47,7 +47,7 @@ const perks = (limits: Props['limits'], reactions: number): string[] => {
     }
     if (plus('pinned_posts') !== null) {
         list.push(
-            tr('{n} закріплені записи', { n: plus('pinned_posts') ?? 0 }),
+            tr('До {n} закріплених записів', { n: plus('pinned_posts') ?? 0 }),
         );
     }
     if (plus('message_file_mb') !== null) {

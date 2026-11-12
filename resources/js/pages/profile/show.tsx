@@ -32,6 +32,7 @@ import { EmbedButton } from '@/components/gc/embed-button';
 import { CompatibilityChip } from '@/components/games/compatibility-chip';
 import type { Compatibility } from '@/components/games/compatibility-chip';
 import {
+    Pin,
     Ban,
     CalendarDays,
     HeartHandshake,
@@ -1569,8 +1570,24 @@ export default function ProfileShow({
                                     loading={<PostSkeleton />}
                                     className={cn('space-y-4')}
                                 >
-                                    {posts.data.map((post) => (
-                                        <PostCard key={post.id} post={post} />
+                                    {posts.data.some((p) => p.is_pinned) && (
+                                        <p className="flex items-center gap-1.5 px-1 text-xs font-semibold text-white/50">
+                                            <Pin className="size-3.5" />
+                                            {tr('Закріплене')}
+                                        </p>
+                                    )}
+                                    {posts.data.map((post, i) => (
+                                        <Fragment key={post.id}>
+                                            {/* Межа між закріпленими й рештою стрічки. */}
+                                            {i > 0 &&
+                                                !post.is_pinned &&
+                                                posts.data[i - 1].is_pinned && (
+                                                    <p className="px-1 pt-2 text-xs font-semibold text-white/50">
+                                                        {tr('Усі записи')}
+                                                    </p>
+                                                )}
+                                            <PostCard post={post} />
+                                        </Fragment>
                                     ))}
                                 </InfiniteScroll>
                             )}

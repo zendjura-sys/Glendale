@@ -63,7 +63,7 @@ return [
     'limits' => [
         'characters' => [10, 25],
         'character_photos' => [6, 20],
-        'pinned_posts' => [1, 3],
+        'pinned_posts' => [3, 5],
         'party_open' => [3, 5],
         'message_file_mb' => [null, 200],
         'family_voice_rooms' => [10, 20],
