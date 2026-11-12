@@ -52,6 +52,7 @@ Route::middleware(['auth'])->group(function () {
     Route::patch('settings/data-saver', [GameThemeController::class, 'dataSaver'])->middleware('throttle:30,1')->name('data-saver.update');
     Route::patch('settings/listening', [ListeningController::class, 'update'])->middleware('throttle:30,1')->name('listening.update');
     Route::put('settings/account/profanity', [AccountController::class, 'profanity'])->name('account.profanity');
+    Route::put('settings/account/login-alerts', [AccountController::class, 'loginAlerts'])->name('account.login-alerts');
     Route::put('settings/account/teen-mode', [AccountController::class, 'teenMode'])->name('account.teen-mode');
     Route::get('settings/account/export', [AccountController::class, 'export'])->middleware('throttle:3,60')->name('account.export');
     Route::post('settings/account/freeze', [AccountController::class, 'freeze'])->middleware('throttle:6,1')->name('account.freeze');

@@ -42,7 +42,7 @@ class AccountMail
         });
     }
 
-    private static function message(string $subject, string $intro, string $action, string $url, string $outro): MailMessage
+    public static function message(string $subject, string $intro, string $action, string $url, string $outro): MailMessage
     {
         // Лист будується вже з мовою отримувача (Laravel бере її з preferredLocale).
         return (new MailMessage)

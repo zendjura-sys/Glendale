@@ -64,6 +64,7 @@ type Props = {
     appealKinds: Record<string, string>;
     mute: { until: string | null; reason: string | null } | null;
     hideProfanity: boolean;
+    loginAlerts?: boolean;
     teenMode: { on: boolean; locked: boolean };
 };
 
@@ -103,6 +104,7 @@ export default function Account({
     appealKinds,
     mute,
     hideProfanity,
+    loginAlerts = true,
     teenMode,
     strikes = [],
 }: Props) {
@@ -323,6 +325,17 @@ export default function Account({
                             {tr('Завершити всі інші сесії')}
                         </button>
                     )}
+                    <SettingsSwitch
+                        label={tr('Лист про вхід з нового пристрою')}
+                        checked={loginAlerts}
+                        onChange={(on) =>
+                            router.put(
+                                '/settings/account/login-alerts',
+                                { on },
+                                options,
+                            )
+                        }
+                    />
                 </SettingsCard>
 
                 <SettingsCard

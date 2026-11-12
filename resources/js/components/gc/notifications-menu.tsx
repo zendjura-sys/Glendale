@@ -1,6 +1,7 @@
 import { ModuleIcon } from '@/components/gc/module-icon';
 import { Link, usePage } from '@inertiajs/react';
 import {
+    ShieldAlert,
     BadgePercent,
     Headphones,
     Radio,
@@ -73,6 +74,7 @@ const kindIcon: Record<string, { icon: typeof Bell; className: string }> = {
     game_release: { icon: Rocket, className: 'bg-primary' },
     morning_digest: { icon: Sunrise, className: 'bg-primary' },
     weekly_digest: { icon: CalendarRange, className: 'bg-primary' },
+    new_login: { icon: ShieldAlert, className: 'bg-amber-500' },
     referral_joined: { icon: UserPlus, className: 'bg-emerald-500' },
     plus_gifted: { icon: Gift, className: 'bg-indigo-500' },
     wallet_topup: { icon: Wallet, className: 'bg-emerald-500' },

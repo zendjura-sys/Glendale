@@ -87,6 +87,7 @@ class AccountController extends Controller
             'appealKinds' => Appeal::KINDS,
             'mute' => $user->isMuted() ? ['until' => $user->muted_until?->toIso8601String(), 'reason' => $user->mute_reason] : null,
             'hideProfanity' => (bool) $user->pref('hide_profanity', false),
+            'loginAlerts' => $user->pref('notify_new_login') !== false,
             'teenMode' => TeenMode::state($user),
         ]);
     }
@@ -134,6 +135,15 @@ class AccountController extends Controller
     {
         $data = $request->validate(['hide' => ['required', 'boolean']]);
         $this->user($request)->mergePref(['hide_profanity' => (bool) $data['hide']]);
+
+        return back();
+    }
+
+    /** Лист про вхід з нового пристрою (у дзвіночку сповіщення приходить завжди). */
+    public function loginAlerts(Request $request): RedirectResponse
+    {
+        $data = $request->validate(['on' => ['required', 'boolean']]);
+        $this->user($request)->mergePref(['notify_new_login' => (bool) $data['on']]);
 
         return back();
     }
