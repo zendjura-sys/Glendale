@@ -101,6 +101,8 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property Carbon|null $frozen_at Заморожено власником: сторінку не видно, вхід розморожує
  * @property array<string, mixed>|null $preferences
  * @property Carbon|null $plus_until GameCon+ активний до (кеш plus_grants)
+ * @property Carbon|null $plus_trial_at Коли взято пробний період GameCon+
+ * @property Carbon|null $plus_trial_reminded_at
  * @property int $balance Особистий рахунок, копійок (журнал — wallet_transactions)
  * @property array<string, string>|null $plus_style Колір ніку, рамка, акцент профілю
  * @property array<string, string>|null $cosmetics Вдягнута косметика сезонного пропуску (тип → ключ)
@@ -193,6 +195,8 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
             'preferences' => 'array',
             'character' => 'array',
             'plus_until' => 'datetime',
+            'plus_trial_at' => 'datetime',
+            'plus_trial_reminded_at' => 'datetime',
             'plus_style' => 'array',
             'cosmetics' => 'array',
             'balance' => 'integer',

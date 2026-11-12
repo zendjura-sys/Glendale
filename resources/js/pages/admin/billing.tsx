@@ -46,6 +46,7 @@ type Rules = {
     order_hours: number;
     card_renewals: boolean;
     offer_save_card: boolean;
+    trial_days: number;
     badges: PaymentBadge[];
 };
 
@@ -623,19 +624,21 @@ function NumberField({
     value,
     onChange,
     max,
+    min = 1,
 }: {
     label: string;
     hint?: string;
     value: number;
     onChange: (value: number) => void;
     max: number;
+    min?: number;
 }) {
     return (
         <label className="block text-sm text-white/80">
             {label}
             <input
                 type="number"
-                min={1}
+                min={min}
                 max={max}
                 className={cn(field, 'mt-1')}
                 value={value}
@@ -694,6 +697,14 @@ function RulesForm({ rules }: { rules: Rules }) {
                     value={form.data.order_hours}
                     onChange={(v) => form.setData('order_hours', v)}
                     max={72}
+                />
+                <NumberField
+                    label={tr('Пробний період, днів')}
+                    hint={tr('один раз на акаунт; 0 — вимкнено')}
+                    value={form.data.trial_days}
+                    onChange={(v) => form.setData('trial_days', v)}
+                    min={0}
+                    max={30}
                 />
             </div>
             <label className="flex items-center gap-3 text-sm text-white/80">

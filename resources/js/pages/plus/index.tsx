@@ -1,4 +1,5 @@
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
+import { m, useReducedMotion } from 'motion/react';
 import {
     Check,
     Gift,
@@ -69,6 +70,7 @@ type Props = {
         next_change: string | null;
         colors: string[];
     };
+    trial?: { days: number; available: boolean; used: boolean };
     friends?: { username: string; name: string; avatar_url: string | null }[];
     sent_gifts?: {
         id: number;
@@ -141,6 +143,7 @@ export default function PlusPage({
     title,
     friends,
     sent_gifts,
+    trial,
 }: Props) {
     const plans = useKind('plus');
     const user = usePage().props.auth.user;
@@ -192,6 +195,10 @@ export default function PlusPage({
                                 </span>
                             </span>
                         </div>
+                    )}
+
+                    {trial?.available && !state.active && (
+                        <TrialOffer days={trial.days} />
                     )}
 
                     <div className="mt-5 grid gap-3 sm:grid-cols-2">
@@ -830,6 +837,52 @@ function GiftForm({
                 </div>
             )}
         </section>
+    );
+}
+
+/** Пробний період: один раз на акаунт, без картки й без автосписання. */
+function TrialOffer({ days }: { days: number }) {
+    const reduce = useReducedMotion();
+    const [busy, setBusy] = useState(false);
+
+    return (
+        <m.div
+            initial={reduce ? false : { opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-4 flex flex-wrap items-center gap-4 rounded-2xl bg-primary/10 p-4"
+        >
+            <div className="grid size-11 shrink-0 place-items-center rounded-xl bg-primary/20 text-primary">
+                <Sparkles className="size-5" />
+            </div>
+            <div className="min-w-0 flex-1">
+                <p className="font-semibold text-white">
+                    {tr('{n} днів GameCon+ безкоштовно', { n: days })}
+                </p>
+                <p className="text-sm text-white/60">
+                    {tr(
+                        'Без картки й без автоматичного списання. Наприкінці нагадаємо — продовжите, лише якщо сподобається.',
+                    )}
+                </p>
+            </div>
+            <button
+                type="button"
+                disabled={busy}
+                onClick={() =>
+                    router.post(
+                        '/plus/trial',
+                        {},
+                        {
+                            preserveScroll: true,
+                            onStart: () => setBusy(true),
+                            onFinish: () => setBusy(false),
+                        },
+                    )
+                }
+                className="h-11 rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground disabled:opacity-60"
+            >
+                {tr('Спробувати')}
+            </button>
+        </m.div>
     );
 }
 

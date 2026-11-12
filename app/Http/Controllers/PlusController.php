@@ -12,6 +12,7 @@ use App\Services\Billing\Shop;
 use App\Services\FriendshipService;
 use App\Services\Moderation\ContentFilter;
 use App\Services\Plus\Plus;
+use App\Services\Plus\PlusTrial;
 use App\Services\Plus\PromoCodes;
 use App\Support\PlusStyle;
 use Illuminate\Http\RedirectResponse;
@@ -46,6 +47,8 @@ class PlusController extends Controller
             ],
             'options' => PlusStyle::options(),
             'products' => Shop::catalog(),
+            // Пробний період (лише на сайті: у застосунку — тільки Google Play).
+            'trial' => ['days' => app(PlusTrial::class)->days(), 'available' => app(PlusTrial::class)->eligible($user), 'used' => $user->plus_trial_at !== null],
             'families' => self::ledFamilies($user)->map(fn (Family $f) => [
                 ...$f->toCard(),
                 'state' => $this->plus->state($f),
@@ -67,6 +70,15 @@ class PlusController extends Controller
                     'created_at' => $p->created_at->toIso8601String(),
                 ]),
         ]);
+    }
+
+    /** Увімкнути пробний період GameCon+ (один раз на акаунт). */
+    public function trial(Request $request, PlusTrial $trial): RedirectResponse
+    {
+        $grant = $trial->start($request->user());
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'GameCon+ увімкнено до '.$grant->ends_at->format('d.m.Y').'. Оберіть рамку, колір ніку й тему нижче.']);
+
+        return back();
     }
 
     /** Листівка подарунка: бачать отримувач і дарувальник (отримувач — лише після вручення). */
