@@ -11,10 +11,14 @@ import type { UserCard } from '@/types';
 export type MomentCardData = {
     id: number;
     title: string;
-    provider: 'youtube' | 'twitch' | 'medal';
+    provider: 'youtube' | 'twitch' | 'medal' | 'upload';
     provider_label: string;
     url: string;
     player: string | null;
+    /** Власний кліп: пряме відео й стан обробки. */
+    video?: string | null;
+    status?: 'ready' | 'processing' | 'failed';
+    duration?: number | null;
     thumbnail: string | null;
     likes: number;
     liked: boolean;
@@ -29,6 +33,7 @@ const PROVIDER_TONE: Record<string, string> = {
     youtube: 'bg-red-500/85',
     twitch: 'bg-sky-500/85',
     medal: 'bg-amber-500/85',
+    upload: 'bg-indigo-500/85',
 };
 
 /** Кліп: обкладинка → плеєр по натисканню, автор, гра й «подобається». */
@@ -57,7 +62,28 @@ export function MomentCard({ moment }: { moment: MomentCardData }) {
     return (
         <article className="gc-solid flex min-w-0 flex-col overflow-hidden rounded-2xl">
             <div className="relative aspect-video w-full bg-black/40">
-                {playing && moment.player ? (
+                {moment.status === 'processing' ||
+                moment.status === 'failed' ? (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/50 text-center text-sm text-white/80">
+                        {moment.status === 'processing' ? (
+                            <>
+                                <span className="size-6 animate-spin rounded-full border-2 border-white/30 border-t-white motion-reduce:animate-none" />
+                                {tr('Обрізаємо й стискаємо…')}
+                            </>
+                        ) : (
+                            tr('Не вдалося обробити відео')
+                        )}
+                    </div>
+                ) : playing && moment.video ? (
+                    <video
+                        src={moment.video}
+                        poster={moment.thumbnail ?? undefined}
+                        controls
+                        autoPlay
+                        playsInline
+                        className="absolute inset-0 size-full bg-black object-contain"
+                    />
+                ) : playing && moment.player ? (
                     <iframe
                         src={moment.player}
                         title={moment.title}
@@ -69,7 +95,7 @@ export function MomentCard({ moment }: { moment: MomentCardData }) {
                     <button
                         type="button"
                         onClick={() =>
-                            moment.player
+                            moment.player || moment.video
                                 ? setPlaying(true)
                                 : window.open(moment.url, '_blank', 'noopener')
                         }
@@ -90,7 +116,7 @@ export function MomentCard({ moment }: { moment: MomentCardData }) {
                         )}
                         <span className="absolute inset-0 flex items-center justify-center">
                             <span className="flex size-14 items-center justify-center rounded-full bg-black/55 text-white backdrop-blur transition group-hover:scale-105">
-                                {moment.player ? (
+                                {moment.player || moment.video ? (
                                     <Play className="ml-0.5 size-6 fill-white" />
                                 ) : (
                                     <ExternalLink className="size-6" />
@@ -105,6 +131,12 @@ export function MomentCard({ moment }: { moment: MomentCardData }) {
                         >
                             {moment.provider_label}
                         </span>
+                        {moment.duration ? (
+                            <span className="absolute right-2.5 bottom-2.5 rounded-md bg-black/65 px-1.5 py-0.5 text-[11px] font-semibold text-white tabular-nums">
+                                {Math.floor(moment.duration / 60)}:
+                                {String(moment.duration % 60).padStart(2, '0')}
+                            </span>
+                        ) : null}
                     </button>
                 )}
             </div>

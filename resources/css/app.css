@@ -6561,3 +6561,34 @@ html[data-theme='dark'] .am.am-in-site {
     background-size: 40px 70px;
     opacity: 0.12;
 }
+
+/* ---------- Обрізка кліпу: два повзунки поверх смуги, тягнуться лише ручки ---------- */
+.gc-trim-range {
+    appearance: none;
+    background: transparent;
+    pointer-events: none;
+}
+.gc-trim-range::-webkit-slider-thumb {
+    appearance: none;
+    pointer-events: auto;
+    width: 14px;
+    height: 40px;
+    border-radius: 6px;
+    background: var(--primary);
+    cursor: ew-resize;
+    box-shadow: 0 0 0 2px rgb(255 255 255 / 0.9);
+}
+.gc-trim-range::-moz-range-thumb {
+    pointer-events: auto;
+    width: 14px;
+    height: 40px;
+    border: 0;
+    border-radius: 6px;
+    background: var(--primary);
+    cursor: ew-resize;
+    box-shadow: 0 0 0 2px rgb(255 255 255 / 0.9);
+}
+.gc-trim-range::-webkit-slider-runnable-track,
+.gc-trim-range::-moz-range-track {
+    background: transparent;
+}

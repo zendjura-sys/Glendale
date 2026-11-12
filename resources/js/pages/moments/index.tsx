@@ -5,6 +5,7 @@ import { selectClass } from '@/components/gc/admin';
 import { EmptyState } from '@/components/gc/widget';
 import { ClipOfWeekSection } from '@/components/moments/clip-of-week';
 import type { ClipOfWeekData } from '@/components/moments/clip-of-week';
+import { ClipUploader } from '@/components/moments/clip-uploader';
 import { MomentCard } from '@/components/moments/moment-card';
 import type { MomentCardData } from '@/components/moments/moment-card';
 import {
@@ -52,6 +53,7 @@ export default function Moments({
     options,
 }: Props) {
     const [adding, setAdding] = useState(false);
+    const [mode, setMode] = useState<'link' | 'upload'>('link');
     const form = useForm({
         url: '',
         title: '',
@@ -95,7 +97,7 @@ export default function Moments({
                             </h1>
                             <p className="mt-1 text-sm text-white/50">
                                 {tr(
-                                    'Найкращі кліпи гравців: вставте посилання YouTube, Twitch чи Medal — обкладинка й назва підтягнуться самі.',
+                                    'Найкращі кліпи гравців: посилання YouTube, Twitch чи Medal — або свій запис, обрізаний прямо тут.',
                                 )}
                             </p>
                         </div>
@@ -211,121 +213,162 @@ export default function Moments({
             </div>
 
             <Dialog open={adding} onOpenChange={setAdding}>
-                <DialogContent className="glass-strong max-h-[92dvh] overflow-y-auto rounded-dialog p-6 text-white sm:max-w-lg">
+                <DialogContent
+                    className={cn(
+                        'glass-strong max-h-[92dvh] overflow-y-auto rounded-dialog p-6 text-white',
+                        mode === 'upload' ? 'sm:max-w-2xl' : 'sm:max-w-lg',
+                    )}
+                >
                     <DialogTitle className="font-display text-xl">
                         {tr('Додати момент')}
                     </DialogTitle>
                     <DialogDescription className="text-sm text-white/50">
-                        {tr(
-                            'Посилання на кліп YouTube (і Shorts), Twitch або Medal.',
-                        )}
+                        {mode === 'link'
+                            ? tr(
+                                  'Посилання на кліп YouTube (і Shorts), Twitch або Medal.',
+                              )
+                            : tr(
+                                  'Свій запис гри: оберіть файл, обріжте початок і кінець, виберіть кадр на обкладинку.',
+                              )}
                     </DialogDescription>
-                    <form
-                        onSubmit={(event) => {
-                            event.preventDefault();
-                            form.transform((data) => ({
-                                ...data,
-                                game: data.game || null,
-                                server: data.server || null,
-                            }));
-                            form.post('/moments', {
-                                onSuccess: () => {
-                                    setAdding(false);
-                                    form.reset();
-                                },
-                            });
-                        }}
-                        className="space-y-3"
-                    >
-                        <input
-                            value={form.data.url}
-                            onChange={(e) =>
-                                form.setData('url', e.target.value)
-                            }
-                            inputMode="url"
-                            required
-                            placeholder="https://youtu.be/…"
-                            className={fieldClass}
-                        />
-                        <input
-                            value={form.data.title}
-                            onChange={(e) =>
-                                form.setData('title', e.target.value)
-                            }
-                            maxLength={140}
-                            placeholder={tr(
-                                'Назва (необов’язково — візьмемо з кліпу)',
-                            )}
-                            className={fieldClass}
-                        />
-                        <div className="grid gap-2 sm:grid-cols-2">
-                            <select
-                                value={form.data.game}
-                                onChange={(e) =>
-                                    form.setData('game', e.target.value)
-                                }
-                                className={cn(
-                                    selectClass,
-                                    'h-11 w-full min-w-0',
-                                )}
-                                aria-label={tr('Гра')}
-                            >
-                                <option value="">
-                                    {tr('Гра (необов’язково)')}
-                                </option>
-                                {options.games.map((g) => (
-                                    <option key={g.slug} value={g.slug}>
-                                        {g.name}
-                                    </option>
-                                ))}
-                            </select>
-                            <select
-                                value={form.data.server}
-                                onChange={(e) =>
-                                    form.setData('server', e.target.value)
-                                }
-                                className={cn(
-                                    selectClass,
-                                    'h-11 w-full min-w-0',
-                                )}
-                                aria-label={tr('Сервер')}
-                            >
-                                <option value="">
-                                    {tr('Сервер (необов’язково)')}
-                                </option>
-                                {options.servers.map((s) => (
-                                    <option key={s.slug} value={s.slug}>
-                                        {s.name}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                        {(form.errors.url || form.errors.title) && (
-                            <p className="text-xs text-red-400">
-                                {form.errors.url ?? form.errors.title}
-                            </p>
-                        )}
-                        <div className="flex justify-end gap-2">
+                    <div className="gc-solid-2 flex gap-1 rounded-xl p-1">
+                        {(
+                            [
+                                ['link', tr('Посилання')],
+                                ['upload', tr('Свій файл')],
+                            ] as const
+                        ).map(([key, label]) => (
                             <button
+                                key={key}
                                 type="button"
-                                onClick={() => setAdding(false)}
-                                className="h-11 rounded-xl px-4 text-sm font-medium text-white/60 hover:text-white"
+                                aria-pressed={mode === key}
+                                onClick={() => setMode(key)}
+                                className={cn(
+                                    'h-9 flex-1 rounded-lg text-sm font-medium',
+                                    mode === key
+                                        ? 'bg-white/10 text-white'
+                                        : 'text-white/55 hover:text-white',
+                                )}
                             >
-                                {tr('Скасувати')}
+                                {label}
                             </button>
-                            <button
-                                type="submit"
-                                disabled={
-                                    form.processing || !form.data.url.trim()
+                        ))}
+                    </div>
+                    {mode === 'upload' ? (
+                        <ClipUploader
+                            games={options.games}
+                            servers={options.servers}
+                            defaultGame={filters.game}
+                            onDone={() => setAdding(false)}
+                        />
+                    ) : (
+                        <form
+                            onSubmit={(event) => {
+                                event.preventDefault();
+                                form.transform((data) => ({
+                                    ...data,
+                                    game: data.game || null,
+                                    server: data.server || null,
+                                }));
+                                form.post('/moments', {
+                                    onSuccess: () => {
+                                        setAdding(false);
+                                        form.reset();
+                                    },
+                                });
+                            }}
+                            className="space-y-3"
+                        >
+                            <input
+                                value={form.data.url}
+                                onChange={(e) =>
+                                    form.setData('url', e.target.value)
                                 }
-                                className="btn-glow h-11 rounded-xl px-6 text-sm font-semibold disabled:opacity-50"
-                            >
-                                {form.processing
-                                    ? tr('Додаємо…')
-                                    : tr('Додати')}
-                            </button>
-                        </div>
-                    </form>
+                                inputMode="url"
+                                required
+                                placeholder="https://youtu.be/…"
+                                className={fieldClass}
+                            />
+                            <input
+                                value={form.data.title}
+                                onChange={(e) =>
+                                    form.setData('title', e.target.value)
+                                }
+                                maxLength={140}
+                                placeholder={tr(
+                                    'Назва (необов’язково — візьмемо з кліпу)',
+                                )}
+                                className={fieldClass}
+                            />
+                            <div className="grid gap-2 sm:grid-cols-2">
+                                <select
+                                    value={form.data.game}
+                                    onChange={(e) =>
+                                        form.setData('game', e.target.value)
+                                    }
+                                    className={cn(
+                                        selectClass,
+                                        'h-11 w-full min-w-0',
+                                    )}
+                                    aria-label={tr('Гра')}
+                                >
+                                    <option value="">
+                                        {tr('Гра (необов’язково)')}
+                                    </option>
+                                    {options.games.map((g) => (
+                                        <option key={g.slug} value={g.slug}>
+                                            {g.name}
+                                        </option>
+                                    ))}
+                                </select>
+                                <select
+                                    value={form.data.server}
+                                    onChange={(e) =>
+                                        form.setData('server', e.target.value)
+                                    }
+                                    className={cn(
+                                        selectClass,
+                                        'h-11 w-full min-w-0',
+                                    )}
+                                    aria-label={tr('Сервер')}
+                                >
+                                    <option value="">
+                                        {tr('Сервер (необов’язково)')}
+                                    </option>
+                                    {options.servers.map((s) => (
+                                        <option key={s.slug} value={s.slug}>
+                                            {s.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            {(form.errors.url || form.errors.title) && (
+                                <p className="text-xs text-red-400">
+                                    {form.errors.url ?? form.errors.title}
+                                </p>
+                            )}
+                            <div className="flex justify-end gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setAdding(false)}
+                                    className="h-11 rounded-xl px-4 text-sm font-medium text-white/60 hover:text-white"
+                                >
+                                    {tr('Скасувати')}
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={
+                                        form.processing || !form.data.url.trim()
+                                    }
+                                    className="btn-glow h-11 rounded-xl px-6 text-sm font-semibold disabled:opacity-50"
+                                >
+                                    {form.processing
+                                        ? tr('Додаємо…')
+                                        : tr('Додати')}
+                                </button>
+                            </div>
+                        </form>
+                    )}
                 </DialogContent>
             </Dialog>
         </>

@@ -994,6 +994,7 @@ Route::prefix('v1')->group(function () {
             Route::prefix('moments')->middleware('module:moments')->whereNumber('moment')->group(function () {
                 Route::get('/', [MomentController::class, 'index']);
                 Route::post('/', [MomentController::class, 'store'])->middleware('throttle:10,60');
+                Route::post('upload', [MomentController::class, 'upload'])->middleware('throttle:10,60');
                 Route::post('{moment}/like', [MomentController::class, 'like'])->middleware('throttle:120,1');
                 Route::delete('{moment}', [MomentController::class, 'destroy']);
             });

@@ -952,6 +952,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     Route::prefix('moments')->name('moments.')->middleware('module:moments')->whereNumber('moment')->group(function () {
         Route::get('/', [MomentController::class, 'index'])->name('index');
         Route::post('/', [MomentController::class, 'store'])->middleware('throttle:10,60')->name('store');
+        Route::post('upload', [MomentController::class, 'upload'])->middleware('throttle:10,60')->name('upload');
         Route::post('{moment}/like', [MomentController::class, 'like'])->middleware('throttle:120,1')->name('like');
         Route::delete('{moment}', [MomentController::class, 'destroy'])->name('destroy');
     });

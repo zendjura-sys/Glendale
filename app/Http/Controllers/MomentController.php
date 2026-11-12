@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\ProcessMomentClip;
 use App\Models\Game;
 use App\Models\GtaServer;
 use App\Models\Moment;
@@ -16,6 +17,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -37,6 +39,8 @@ class MomentController extends Controller
         $game = ($filters['game'] ?? null) ? Game::query()->where('slug', $filters['game'])->first() : null;
 
         $query = Moment::query()->with(['user', 'game', 'server'])
+            // Кліп у обробці чи з помилкою бачить лише автор.
+            ->where(fn (Builder $q) => $q->where('status', 'ready')->orWhere('user_id', $request->user()->id))
             ->when($game, fn (Builder $q, Game $g) => $q->where('game_id', $g->id))
             ->when($tab === 'week', fn (Builder $q) => $q->where('created_at', '>=', now()->subDays(7))->orderByDesc('likes_count'))
             ->when($tab === 'friends', fn (Builder $q) => $q->whereIn('user_id', $friendships->friendIds($user) ?: [0]))
@@ -94,6 +98,43 @@ class MomentController extends Controller
         return redirect('/moments');
     }
 
+    /**
+     * Власний кліп: файл + початок і кінець (обрані в браузері) + обкладинка-кадр (необов’язково).
+     * Обрізка й стиснення — у черзі (ProcessMomentClip); до готовності кліп бачить лише автор.
+     */
+    public function upload(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'video' => ['required', 'file', 'mimetypes:video/mp4,video/webm,video/quicktime,video/x-matroska', 'max:307200'],
+            'start' => ['required', 'numeric', 'min:0'],
+            'end' => ['required', 'numeric', 'gt:start'],
+            'poster' => ['nullable', 'image', 'max:2048'],
+            'title' => ['required', 'string', 'min:2', 'max:140'],
+            'game' => ['nullable', 'string', 'max:120'],
+            'server' => ['nullable', 'string', 'max:80'],
+        ], ['video.max' => 'Файл до 300 МБ.', 'video.mimetypes' => 'Підтримуються MP4, WebM, MOV і MKV.']);
+        abort_if((float) $data['end'] - (float) $data['start'] > Moment::MAX_CLIP_SECONDS + 0.5, 422, 'Кліп — до '.Moment::MAX_CLIP_SECONDS.' секунд. Обріжте довше відео.');
+
+        $source = $request->file('video')->store('moments/incoming', 'public');
+        $poster = $request->file('poster')?->store('moments', 'public');
+        $moment = Moment::query()->create([
+            'user_id' => $request->user()->id,
+            'game_id' => ($data['game'] ?? null) ? Game::query()->where('slug', $data['game'])->value('id') : null,
+            'gta_server_id' => ($data['server'] ?? null) ? GtaServer::query()->published()->where('slug', $data['server'])->value('id') : null,
+            'provider' => 'upload',
+            'external_id' => (string) Str::uuid(),
+            'url' => '',
+            'embed_url' => null,
+            'title' => Str::limit(trim($data['title']), 140, ''),
+            'thumbnail' => $poster ? Storage::disk('public')->url($poster) : null,
+            'status' => 'processing',
+        ]);
+        ProcessMomentClip::dispatch($moment->id, (string) $source, (float) $data['start'], (float) $data['end']);
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Кліп завантажено — обрізаємо й стискаємо, за хвилину з’явиться в Моментах.']);
+
+        return redirect('/moments');
+    }
+
     public function like(Request $request, Moment $moment): JsonResponse
     {
         $userId = $request->user()->id;
@@ -113,6 +154,9 @@ class MomentController extends Controller
     public function destroy(Request $request, Moment $moment): RedirectResponse
     {
         abort_unless($moment->user_id === $request->user()->id || $request->user()->isStaff(), 403);
+        if ($moment->video_path !== null) {
+            Storage::disk('public')->delete($moment->video_path);
+        }
         $moment->delete();
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Момент видалено.']);
 
@@ -177,6 +221,10 @@ class MomentController extends Controller
             'provider_label' => Moment::PROVIDERS[$m->provider] ?? $m->provider,
             'url' => $m->url,
             'player' => ClipLinks::player($m->embed_url, $host),
+            // Власний кліп: пряме відео (MP4) і стан обробки.
+            'video' => $m->provider === 'upload' && $m->status === 'ready' ? $m->url : null,
+            'status' => $m->status,
+            'duration' => $m->duration_ms ? (int) round($m->duration_ms / 1000) : null,
             'thumbnail' => $m->thumbnail,
             'likes' => $m->likes_count,
             'liked' => in_array($m->id, $liked, true),
