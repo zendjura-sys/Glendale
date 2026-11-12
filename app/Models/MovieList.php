@@ -16,13 +16,15 @@ use Illuminate\Support\Carbon;
  * @property string $title
  * @property string|null $description
  * @property bool $is_public
+ * @property bool $is_ranked
+ * @property int $comments_count
  * @property int $items_count
  * @property int $likes_count
  * @property int $followers_count
  * @property Carbon $updated_at
  * @property-read User|null $user
  */
-#[Fillable(['user_id', 'title', 'description', 'is_public', 'items_count', 'likes_count', 'followers_count'])]
+#[Fillable(['user_id', 'title', 'description', 'is_public', 'is_ranked', 'items_count', 'likes_count', 'followers_count', 'comments_count'])]
 class MovieList extends Model
 {
     public const MAX_ITEMS = 100;
@@ -31,7 +33,7 @@ class MovieList extends Model
 
     protected function casts(): array
     {
-        return ['is_public' => 'boolean'];
+        return ['is_public' => 'boolean', 'is_ranked' => 'boolean'];
     }
 
     /** @return BelongsTo<User, $this> */
@@ -63,6 +65,8 @@ class MovieList extends Model
             'title' => $this->title,
             'description' => $this->description,
             'is_public' => $this->is_public,
+            'is_ranked' => $this->is_ranked,
+            'comments_count' => $this->comments_count,
             'items_count' => $this->items_count,
             'likes_count' => $this->likes_count,
             'followers_count' => $this->followers_count,

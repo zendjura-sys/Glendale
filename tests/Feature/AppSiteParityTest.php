@@ -9,6 +9,7 @@ use App\Models\GameConfig;
 use App\Models\GameNightOption;
 use App\Models\GtaServer;
 use App\Models\Movie;
+use App\Models\MovieList;
 use App\Models\MovieSource;
 use App\Models\PartyPost;
 use App\Models\PartyTimeSlot;
@@ -870,5 +871,15 @@ class AppSiteParityTest extends TestCase
         $movie = Movie::query()->create(['slug' => 'week-pick', 'type' => 'movie', 'title' => 'Вибір тижня', 'is_published' => true]);
         $this->withToken($token)->getJson('/api/v1/site/cinema/week')->assertOk()->assertJsonPath('candidates.0.id', $movie->id);
         $this->withToken($token)->postJson("/api/v1/site/cinema/week/{$movie->slug}")->assertOk()->assertJsonPath('mine', $movie->id)->assertJsonPath('total', 1);
+    }
+
+    public function test_app_comments_and_ranks_movie_lists_through_bridge(): void
+    {
+        $owner = User::factory()->create();
+        $token = $this->app_token(User::factory()->create());
+        $list = MovieList::query()->create(['user_id' => $owner->id, 'title' => 'Топ-3', 'is_public' => true, 'is_ranked' => true]);
+        $this->withToken($token)->postJson("/api/v1/site/cinema/lists/{$list->id}/comments", ['body' => 'Класна добірка'])->assertOk()->assertJsonPath('comments_count', 1);
+        $this->withToken($token)->getJson("/api/v1/site/cinema/lists/{$list->id}/comments")->assertOk()->assertJsonPath('comments.0.body', 'Класна добірка');
+        $this->withToken($token)->putJson("/api/v1/site/cinema/lists/{$list->id}/order", ['ids' => []])->assertStatus(422);
     }
 }

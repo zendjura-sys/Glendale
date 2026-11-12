@@ -728,6 +728,10 @@ Route::prefix('v1')->group(function () {
                 Route::post('lists/{list}/items', [MovieListController::class, 'item'])->whereNumber('list')->middleware('throttle:60,1');
                 Route::post('lists/{list}/like', [MovieListController::class, 'like'])->whereNumber('list')->middleware('throttle:60,1');
                 Route::post('lists/{list}/follow', [MovieListController::class, 'follow'])->whereNumber('list')->middleware('throttle:60,1');
+                Route::get('lists/{list}/comments', [MovieListController::class, 'comments'])->whereNumber('list');
+                Route::post('lists/{list}/comments', [MovieListController::class, 'comment'])->whereNumber('list')->middleware('throttle:20,1');
+                Route::delete('lists/{list}/comments/{comment}', [MovieListController::class, 'destroyComment'])->whereNumber(['list', 'comment']);
+                Route::put('lists/{list}/order', [MovieListController::class, 'reorder'])->whereNumber('list')->middleware('throttle:30,1');
                 Route::get('reviews', [MovieReviewController::class, 'feed']);
                 Route::post('reviews/{review}/like', [MovieReviewController::class, 'like'])->whereNumber('review')->middleware('throttle:60,1');
                 Route::get('{movie}/lists', [MovieListController::class, 'forMovie']);

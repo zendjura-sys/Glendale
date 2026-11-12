@@ -8,16 +8,17 @@ import { tr } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import type { ScrollData } from '@/types';
 
-/** Добірки фільмів: популярні, мої й ті, за якими стежу. */
+/** Добірки фільмів від спільноти: популярні, нові, мої й ті, за якими стежу. */
 export default function Lists({
     tab,
     lists,
 }: {
-    tab: 'popular' | 'mine' | 'following';
+    tab: 'popular' | 'new' | 'mine' | 'following';
     lists: ScrollData<MovieListCard>;
 }) {
     const tabs = [
         ['popular', tr('Популярні')],
+        ['new', tr('Нові')],
         ['mine', tr('Мої')],
         ['following', tr('Стежу')],
     ] as const;

@@ -1,5 +1,5 @@
 import { Link } from '@inertiajs/react';
-import { Heart, Lock, Users } from 'lucide-react';
+import { Heart, ListOrdered, Lock, MessageCircle, Users } from 'lucide-react';
 import { tr } from '@/lib/i18n';
 import type { UserCard } from '@/types';
 
@@ -8,6 +8,8 @@ export type MovieListCard = {
     title: string;
     description: string | null;
     is_public: boolean;
+    is_ranked?: boolean;
+    comments_count?: number;
     items_count: number;
     likes_count: number;
     followers_count: number;
@@ -45,6 +47,21 @@ export function ListCard({ list }: { list: MovieListCard }) {
                 )}
                 <span className="absolute inset-0 -z-10 bg-gradient-to-t from-black/85 via-black/25 to-black/10" />
                 <span className="flex justify-end gap-2">
+                    {list.is_ranked && (
+                        <span
+                            title={tr('Рейтинг')}
+                            className="mr-auto inline-flex h-9 items-center gap-1.5 rounded-xl bg-black/45 px-3 text-sm font-semibold text-white/85 backdrop-blur"
+                        >
+                            <ListOrdered className="size-4" />
+                            {tr('Топ-{n}', { n: list.items_count })}
+                        </span>
+                    )}
+                    {(list.comments_count ?? 0) > 0 && (
+                        <span className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-black/45 px-3 text-sm font-semibold text-white/80 tabular-nums backdrop-blur">
+                            {list.comments_count}
+                            <MessageCircle className="size-4" />
+                        </span>
+                    )}
                     <span className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-black/45 px-3 text-sm font-semibold text-white/80 tabular-nums backdrop-blur">
                         {list.followers_count}
                         <Users className="size-4" />

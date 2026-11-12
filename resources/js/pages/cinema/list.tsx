@@ -1,6 +1,9 @@
 import { Head, Link, router } from '@inertiajs/react';
 import {
+    ChevronDown,
+    ChevronUp,
     Heart,
+    ListOrdered,
     ListVideo,
     Lock,
     Pencil,
@@ -8,10 +11,11 @@ import {
     UserPlus,
     X,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { toast } from 'sonner';
 import type { MovieListCard } from '@/components/cinema/list-card';
+import { ListComments } from '@/components/cinema/list-comments';
 import { Toggle } from '@/components/gc/admin';
 import { UserAvatar } from '@/components/gc/user-avatar';
 import { EmptyState } from '@/components/gc/widget';
@@ -31,8 +35,13 @@ type Props = {
     movies: (MovieCard & { note: string | null })[];
 };
 
-/** Добірка: постери тайтлів; власник редагує й прибирає, інші — лайк і «Стежити». */
-export default function List({ list, movies }: Props) {
+/**
+ * Добірка: постери тайтлів; власник редагує, прибирає й (для рейтингу) змінює порядок,
+ * інші — лайк і «Стежити». Унизу — обговорення.
+ */
+export default function List({ list, movies: initial }: Props) {
+    const [movies, setMovies] = useState(initial);
+    useEffect(() => setMovies(initial), [initial]);
     const [liked, setLiked] = useState(list.liked);
     const [likes, setLikes] = useState(list.likes_count);
     const [following, setFollowing] = useState(list.following);
@@ -42,7 +51,24 @@ export default function List({ list, movies }: Props) {
         title: list.title,
         description: list.description ?? '',
         is_public: list.is_public,
+        is_ranked: list.is_ranked ?? false,
     });
+    const ranked = list.is_ranked ?? false;
+
+    // Зсунути тайтл у рейтингу на крок вгору чи вниз і зберегти порядок.
+    const move = (index: number, dir: -1 | 1) => {
+        const target = index + dir;
+        if (target < 0 || target >= movies.length) return;
+        const next = [...movies];
+        [next[index], next[target]] = [next[target], next[index]];
+        setMovies(next);
+        api('PUT', `/cinema/lists/${list.id}/order`, {
+            ids: next.map((m) => m.id),
+        }).catch((e: Error) => {
+            toast.error(e.message);
+            setMovies(movies);
+        });
+    };
 
     const like = () =>
         api<{ liked: boolean; likes_count: number }>(
@@ -100,6 +126,14 @@ export default function List({ list, movies }: Props) {
                                 )}
                                 {list.title}
                             </h1>
+                            {ranked && (
+                                <p className="mt-1 inline-flex items-center gap-1.5 text-sm font-medium text-primary">
+                                    <ListOrdered className="size-4" />
+                                    {tr('Рейтинг · топ-{n}', {
+                                        n: movies.length,
+                                    })}
+                                </p>
+                            )}
                             {list.description && (
                                 <p className="mt-1 text-sm whitespace-pre-line text-white/60">
                                     {list.description}
@@ -188,8 +222,20 @@ export default function List({ list, movies }: Props) {
                     />
                 ) : (
                     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-                        {movies.map((movie) => (
+                        {movies.map((movie, index) => (
                             <div key={movie.id} className="group relative">
+                                {ranked && (
+                                    <span
+                                        className={cn(
+                                            'pointer-events-none absolute top-2 left-2 z-10 grid size-9 place-items-center rounded-xl font-display text-base font-bold tabular-nums shadow-lg',
+                                            index < 3
+                                                ? 'bg-primary text-white'
+                                                : 'bg-black/65 text-white backdrop-blur',
+                                        )}
+                                    >
+                                        {index + 1}
+                                    </span>
+                                )}
                                 <Link href={movie.href} className="block">
                                     <div className="aspect-[2/3] overflow-hidden rounded-2xl bg-white/[0.05]">
                                         {movie.poster && (
@@ -210,6 +256,30 @@ export default function List({ list, movies }: Props) {
                                             .join(' · ')}
                                     </p>
                                 </Link>
+                                {list.mine && ranked && (
+                                    <div className="absolute bottom-16 left-2 flex flex-col gap-1 opacity-0 transition group-hover:opacity-100 focus-within:opacity-100">
+                                        <button
+                                            type="button"
+                                            onClick={() => move(index, -1)}
+                                            disabled={index === 0}
+                                            className="rounded-full bg-black/60 p-1.5 text-white disabled:opacity-30"
+                                            aria-label={tr('Вище')}
+                                        >
+                                            <ChevronUp className="size-4" />
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => move(index, 1)}
+                                            disabled={
+                                                index === movies.length - 1
+                                            }
+                                            className="rounded-full bg-black/60 p-1.5 text-white disabled:opacity-30"
+                                            aria-label={tr('Нижче')}
+                                        >
+                                            <ChevronDown className="size-4" />
+                                        </button>
+                                    </div>
+                                )}
                                 {list.mine && (
                                     <button
                                         type="button"
@@ -223,6 +293,13 @@ export default function List({ list, movies }: Props) {
                             </div>
                         ))}
                     </div>
+                )}
+
+                {(list.is_public || list.mine) && (
+                    <ListComments
+                        listId={list.id}
+                        initialCount={list.comments_count ?? 0}
+                    />
                 )}
             </div>
             <Dialog open={editing} onOpenChange={setEditing}>
@@ -263,6 +340,21 @@ export default function List({ list, movies }: Props) {
                                     setForm({ ...form, is_public: v })
                                 }
                                 label={tr('Видно всім')}
+                            />
+                        </label>
+                        <label className="flex items-center justify-between gap-3 text-sm text-white/70">
+                            <span>
+                                {tr('Рейтинг')}
+                                <span className="block text-xs text-white/40">
+                                    {tr('Нумерувати тайтли: топ-10, топ-50…')}
+                                </span>
+                            </span>
+                            <Toggle
+                                checked={form.is_ranked}
+                                onChange={(v) =>
+                                    setForm({ ...form, is_ranked: v })
+                                }
+                                label={tr('Рейтинг')}
                             />
                         </label>
                         <button

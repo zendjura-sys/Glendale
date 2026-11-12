@@ -726,6 +726,10 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::post('lists/{list}/items', [MovieListController::class, 'item'])->whereNumber('list')->middleware('throttle:60,1')->name('lists.items');
         Route::post('lists/{list}/like', [MovieListController::class, 'like'])->whereNumber('list')->middleware('throttle:60,1')->name('lists.like');
         Route::post('lists/{list}/follow', [MovieListController::class, 'follow'])->whereNumber('list')->middleware('throttle:60,1')->name('lists.follow');
+        Route::get('lists/{list}/comments', [MovieListController::class, 'comments'])->whereNumber('list')->name('lists.comments');
+        Route::post('lists/{list}/comments', [MovieListController::class, 'comment'])->whereNumber('list')->middleware('throttle:20,1')->name('lists.comment');
+        Route::delete('lists/{list}/comments/{comment}', [MovieListController::class, 'destroyComment'])->whereNumber(['list', 'comment'])->name('lists.comments.destroy');
+        Route::put('lists/{list}/order', [MovieListController::class, 'reorder'])->whereNumber('list')->middleware('throttle:30,1')->name('lists.order');
         Route::get('reviews', [MovieReviewController::class, 'feed'])->name('reviews.feed');
         Route::post('reviews/{review}/like', [MovieReviewController::class, 'like'])->whereNumber('review')->middleware('throttle:60,1')->name('reviews.like');
         Route::get('{movie}/lists', [MovieListController::class, 'forMovie'])->name('lists.for-movie');
