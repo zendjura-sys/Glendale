@@ -7,6 +7,7 @@ use App\Models\GameGiveaway;
 use App\Models\GameWishlist;
 use App\Models\User;
 use App\Services\Games\CheapShark;
+use App\Services\Games\GamePrices;
 use App\Services\Games\Giveaways;
 use App\Services\Games\Hardware;
 use App\Services\Games\SteamStore;
@@ -69,6 +70,8 @@ class GameDealsController extends Controller
         $app = $appId !== null ? $steam->app($appId) : null;
         $deals = $appId !== null ? $cheapShark->forSteam($appId) : null;
         $wish = GameWishlist::query()->where('user_id', $this->user($request)->id)->where('game_id', $game->id)->first();
+        $history = app(GamePrices::class);
+        $history->record($game, $deals['deals'][0] ?? null);
 
         return response()->json([
             'free' => $app['free'] ?? false,
@@ -76,6 +79,7 @@ class GameDealsController extends Controller
             'steam_url' => $appId !== null ? 'https://store.steampowered.com/app/'.$appId : null,
             'deals' => $deals['deals'] ?? [],
             'lowest_ever' => $deals['lowest_ever'] ?? null,
+            'history' => $history->history($game),
             'giveaway' => GameGiveaway::query()->where('game_id', $game->id)->where('active', true)->first()?->toCard(),
             'wished' => $wish !== null,
             'target_price' => $wish?->target_price !== null ? (float) $wish->target_price : null,

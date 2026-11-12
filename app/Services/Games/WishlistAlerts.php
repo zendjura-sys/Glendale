@@ -27,6 +27,8 @@ class WishlistAlerts
                 continue;
             }
             $best = $this->prices->best($appId);
+            // Заодно — точка в історії ціни для сторінки гри.
+            app(GamePrices::class)->record($game, $best);
             Sleep::for(300)->milliseconds();
             foreach (GameWishlist::query()->with('user')->where('game_id', $game->id)->get() as $wish) {
                 $notified += $this->check($wish, $game, $best) ? 1 : 0;

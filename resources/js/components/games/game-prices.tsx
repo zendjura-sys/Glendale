@@ -36,7 +36,129 @@ type Prices = {
     } | null;
     wished: boolean;
     target_price: number | null;
+    history?: { points: { day: string; price: number }[]; low: number | null };
 };
+
+/**
+ * Графік найкращої ціни по днях (сходинками, як змінюється ціна в магазині) з лінією мінімуму.
+ * Наведення показує ціну й дату.
+ */
+function PriceHistory({
+    points,
+    low,
+}: {
+    points: { day: string; price: number }[];
+    low: number | null;
+}) {
+    const [hover, setHover] = useState<number | null>(null);
+    if (points.length < 2) {
+        return (
+            <p className="text-xs text-white/45">
+                {tr(
+                    'Історію ціни почали збирати — графік з’явиться за кілька днів.',
+                )}
+            </p>
+        );
+    }
+    const W = 600;
+    const H = 120;
+    const max = Math.max(...points.map((p) => p.price));
+    const min = Math.min(...points.map((p) => p.price));
+    const span = Math.max(0.01, max - min);
+    const x = (i: number) => (i / (points.length - 1)) * W;
+    const y = (v: number) => 10 + (1 - (v - min) / span) * (H - 20);
+    let path = `M0 ${y(points[0].price)}`;
+    points.forEach((p, i) => {
+        if (i > 0) path += ` H${x(i)} V${y(p.price)}`;
+    });
+    const area = `${path} V${H} H0 Z`;
+    const active = hover !== null ? points[hover] : points[points.length - 1];
+
+    return (
+        <div>
+            <div className="mb-1 flex items-baseline justify-between text-xs">
+                <span className="text-white/55">
+                    {tr('Історія найкращої ціни')}
+                </span>
+                <span className="text-white/70 tabular-nums">
+                    {usd(active.price)} · {formatDate(active.day, false)}
+                </span>
+            </div>
+            <svg
+                viewBox={`0 0 ${W} ${H}`}
+                preserveAspectRatio="none"
+                className="h-28 w-full touch-none"
+                role="img"
+                aria-label={tr('Графік ціни')}
+                onPointerMove={(e) => {
+                    const r = e.currentTarget.getBoundingClientRect();
+                    setHover(
+                        Math.round(
+                            ((e.clientX - r.left) / r.width) *
+                                (points.length - 1),
+                        ),
+                    );
+                }}
+                onPointerLeave={() => setHover(null)}
+            >
+                <defs>
+                    <linearGradient id="price-fill" x1="0" x2="0" y1="0" y2="1">
+                        <stop
+                            offset="0"
+                            stopColor="rgb(56 189 248)"
+                            stopOpacity="0.28"
+                        />
+                        <stop
+                            offset="1"
+                            stopColor="rgb(56 189 248)"
+                            stopOpacity="0"
+                        />
+                    </linearGradient>
+                </defs>
+                <path d={area} fill="url(#price-fill)" />
+                <path
+                    d={path}
+                    fill="none"
+                    stroke="rgb(56 189 248)"
+                    strokeWidth="2"
+                    vectorEffect="non-scaling-stroke"
+                />
+                {low !== null && (
+                    <line
+                        x1="0"
+                        x2={W}
+                        y1={y(low)}
+                        y2={y(low)}
+                        stroke="rgb(52 211 153)"
+                        strokeDasharray="4 4"
+                        strokeWidth="1"
+                        vectorEffect="non-scaling-stroke"
+                    />
+                )}
+                {hover !== null && (
+                    <line
+                        x1={x(hover)}
+                        x2={x(hover)}
+                        y1="0"
+                        y2={H}
+                        stroke="white"
+                        strokeOpacity="0.25"
+                        vectorEffect="non-scaling-stroke"
+                    />
+                )}
+            </svg>
+            <div className="mt-1 flex justify-between text-[11px] text-white/40">
+                <span>{formatDate(points[0].day, false)}</span>
+                {low !== null && (
+                    <span className="text-emerald-300">
+                        {tr('Мінімум за рік: {price}', { price: usd(low) })}
+                    </span>
+                )}
+                <span>{tr('сьогодні')}</span>
+            </div>
+        </div>
+    );
+}
 
 export const usd = (value: number) =>
     value === 0 ? tr('Безкоштовно') : `$${value.toFixed(2)}`;
@@ -176,6 +298,13 @@ export function GamePrices({
                             />
                         ))}
                 </div>
+            )}
+
+            {data.history && !data.free && known && (
+                <PriceHistory
+                    points={data.history.points}
+                    low={data.history.low}
+                />
             )}
 
             {data.lowest_ever !== null && (
