@@ -244,7 +244,7 @@ export function QuickSearch({ className }: { className?: string }) {
                     trending.length > 0) && (
                     <div className="glass-strong absolute top-12 right-0 left-0 z-50 animate-rise overflow-hidden rounded-2xl p-1.5 sm:right-auto sm:w-[max(100%,360px)]">
                         {recent.length > 0 && (
-                            <div className="flex items-center justify-between px-2.5 py-1.5 text-xs text-white/40">
+                            <div className="flex items-center justify-between gap-3 px-2.5 py-1.5 text-xs whitespace-nowrap text-white/40">
                                 {tr('Недавні запити')}
                                 <button
                                     type="button"
@@ -297,7 +297,7 @@ export function QuickSearch({ className }: { className?: string }) {
                                                 setQuery(item);
                                                 setOpen(true);
                                             }}
-                                            className="inline-flex h-8 items-center gap-1 rounded-full bg-white/[0.06] px-3 text-sm text-white/80 hover:bg-white/[0.1] hover:text-white"
+                                            className="inline-flex h-8 max-w-full items-center gap-1 rounded-full bg-white/[0.06] px-3 text-sm whitespace-nowrap text-white/80 hover:bg-white/[0.1] hover:text-white"
                                         >
                                             <TrendingUp className="size-3.5 text-primary" />
                                             {item}
@@ -335,7 +335,7 @@ export function QuickSearch({ className }: { className?: string }) {
                                     key={item}
                                     type="button"
                                     onClick={() => setQuery(item)}
-                                    className="inline-flex h-7 items-center gap-1 rounded-full bg-white/[0.06] px-2.5 text-xs text-white/75 hover:bg-white/[0.1] hover:text-white"
+                                    className="inline-flex h-7 max-w-full items-center gap-1 rounded-full bg-white/[0.06] px-2.5 text-xs whitespace-nowrap text-white/75 hover:bg-white/[0.1] hover:text-white"
                                 >
                                     <Search className="size-3" />
                                     {item}
