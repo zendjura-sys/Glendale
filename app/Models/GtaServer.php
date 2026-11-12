@@ -53,6 +53,7 @@ use Illuminate\Support\Facades\Storage;
     'slug', 'name', 'platform', 'multiplayer', 'tagline', 'description', 'website', 'discord_invite', 'telegram',
     'connect', 'icon_url', 'status', 'origin', 'review_note', 'suggested_by', 'is_featured', 'position',
     'discord_guild_id', 'discord_events_at', 'language',
+    'verified_at', 'verified_by', 'verify_token', 'verify_requested_at',
 ])]
 class GtaServer extends Model
 {
@@ -137,6 +138,8 @@ class GtaServer extends Model
             'icon_fetched_at' => 'datetime',
             'stats_updated_at' => 'datetime',
             'discord_events_at' => 'datetime',
+            'verified_at' => 'datetime',
+            'verify_requested_at' => 'datetime',
             'tags' => 'array',
         ];
     }
@@ -218,6 +221,7 @@ class GtaServer extends Model
             'discord_online' => $this->discord_online,
             'stats_updated_at' => $this->stats_updated_at?->toIso8601String(),
             'is_featured' => $this->is_featured,
+            'is_verified' => $this->verified_at !== null,
             'families_count' => (int) ($this->families_count ?? 0),
             'tags' => [
                 'mode' => is_array($this->tags) ? ($this->tags['mode'] ?? null) : null,

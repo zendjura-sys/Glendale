@@ -1,4 +1,9 @@
 import { Head, Link, router } from '@inertiajs/react';
+import {
+    ServerVerificationPanel,
+    ServerVerifiedBadge,
+} from '@/components/servers/server-verified';
+import type { VerificationData } from '@/components/servers/server-verified';
 import { CrosspostButton } from '@/components/gc/crosspost-button';
 import { EmbedButton } from '@/components/gc/embed-button';
 import {
@@ -76,6 +81,7 @@ type Props = {
             body: string;
         }[];
     };
+    verification?: VerificationData;
     ownership: {
         owner: UserCard | null;
         is_owner: boolean;
@@ -119,6 +125,7 @@ export default function ServerShow({
     invites,
     reviews,
     ownership,
+    verification,
     online,
     similar,
     votes,
@@ -192,8 +199,11 @@ export default function ServerShow({
                                         : server.language.toUpperCase()}
                                 </span>
                             </div>
-                            <h1 className="mt-2 font-display text-3xl font-bold text-white sm:text-4xl">
+                            <h1 className="mt-2 flex items-center gap-2 font-display text-3xl font-bold text-white sm:text-4xl">
                                 {server.name}
+                                {server.is_verified && (
+                                    <ServerVerifiedBadge className="size-7" />
+                                )}
                             </h1>
                             {server.tagline && (
                                 <p className="mt-1.5 text-sm text-white/55">
@@ -737,6 +747,12 @@ export default function ServerShow({
                     </section>
                 )}
 
+                {verification && (
+                    <ServerVerificationPanel
+                        slug={server.slug}
+                        data={verification}
+                    />
+                )}
                 {(newsOn || claimOn) && (
                     <section className="gc-solid space-y-4 rounded-2xl p-5">
                         {newsOn && (

@@ -917,6 +917,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::post('suggest', [ServerController::class, 'suggest'])->middleware('throttle:5,10')->name('suggest');
         Route::post('{server}/invite', [ServerController::class, 'invite'])->middleware('throttle:20,1')->name('invite');
         Route::post('{server}/claim', [ServerController::class, 'claim'])->middleware('throttle:10,1')->name('claim');
+        Route::post('{server}/verify', [ServerController::class, 'verify'])->middleware('throttle:10,1')->name('verify');
         Route::post('{server}/claims/{claim}', [ServerController::class, 'decideClaim'])->name('claims.decide');
         Route::post('{server}/news', [ServerController::class, 'news'])->middleware('throttle:20,1')->name('news.store');
         Route::post('{server}/tags', [ServerController::class, 'tags'])->name('tags');

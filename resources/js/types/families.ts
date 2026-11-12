@@ -20,6 +20,7 @@ export type GtaServerCard = {
     discord_online: number | null;
     stats_updated_at: string | null;
     is_featured: boolean;
+    is_verified?: boolean;
     families_count: number;
     votes_month?: number;
     /** Платне просування: top, highlight, banner. */

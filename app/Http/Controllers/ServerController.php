@@ -33,6 +33,7 @@ use App\Services\Servers\DiscordInvites;
 use App\Services\Servers\ServerAnalytics;
 use App\Services\Servers\ServerDirectory;
 use App\Services\Servers\ServerIconFetcher;
+use App\Services\Servers\ServerVerification;
 use App\Services\Servers\ServerVotes;
 use App\Services\Servers\Tournaments;
 use App\Support\I18n\Locales;
@@ -226,12 +227,32 @@ class ServerController extends Controller
                 'free_at' => collect(ServerPromotion::KINDS)->mapWithKeys(fn (string $kind) => [$kind => app(ServerPromotions::class)->freeAt($kind)->toIso8601String()]),
                 'available' => collect(Shop::catalog())->filter(fn (array $p) => $p['kind'] === 'promo' && $p['available'])->keys()->values(),
             ] : null,
+            'verification' => app(ServerVerification::class)->card($server, $request->user()),
             'verified' => [
                 'players' => ServerPlayer::query()->where('gta_server_id', $server->id)->count(),
                 'online' => ServerPlayer::query()->where('gta_server_id', $server->id)->where('online', true)->count(),
                 'me' => ($mine = ServerPlayer::query()->where('gta_server_id', $server->id)->where('user_id', $request->user()->id)->first()) ? ['nickname' => $mine->nickname] : null,
             ],
         ]);
+    }
+
+    /** Значок перевіреного сервера: check — власник перевіряє метатег на сайті, request — ручна перевірка, grant/revoke — персонал. */
+    public function verify(Request $request, GtaServer $server): RedirectResponse
+    {
+        $data = $request->validate(['action' => ['required', Rule::in(['check', 'request', 'grant', 'revoke'])]]);
+        $user = $request->user();
+        $service = app(ServerVerification::class);
+        match ($data['action']) {
+            'check' => $service->check($server, $user),
+            'request' => $service->request($server, $user),
+            default => (function () use ($service, $server, $user, $data) {
+                abort_unless($user->isStaff(), 403);
+                $service->set($server, $user, $data['action'] === 'grant');
+            })(),
+        };
+        $messages = ['check' => 'Сервер перевірено — значок уже на сторінці.', 'request' => 'Запит надіслано команді GameCon.', 'grant' => 'Значок видано.', 'revoke' => 'Значок знято.'];
+
+        return back()->with('success', $messages[$data['action']]);
     }
 
     public function tags(Request $request, GtaServer $server): RedirectResponse

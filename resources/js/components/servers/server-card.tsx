@@ -1,4 +1,5 @@
 import { Link } from '@inertiajs/react';
+import { ServerVerifiedBadge } from '@/components/servers/server-verified';
 import {
     Check,
     Copy,
@@ -142,6 +143,7 @@ export function ServerCard({
                         <h3 className="truncate font-display text-[17px] font-bold text-white">
                             {server.name}
                         </h3>
+                        {server.is_verified && <ServerVerifiedBadge />}
                         {server.is_featured && (
                             <Sparkles className="size-4 shrink-0 text-amber-300" />
                         )}
@@ -255,6 +257,9 @@ export function ServerRow({ server }: { server: GtaServerCard }) {
                     className="flex items-center gap-1.5 font-display text-[15px] font-semibold text-white hover:underline"
                 >
                     <span className="break-words">{server.name}</span>
+                    {server.is_verified && (
+                        <ServerVerifiedBadge className="size-3.5" />
+                    )}
                     {server.is_featured && (
                         <Sparkles className="size-3.5 shrink-0 text-amber-300" />
                     )}

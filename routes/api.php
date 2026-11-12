@@ -972,6 +972,7 @@ Route::prefix('v1')->group(function () {
                 Route::post('suggest', [ServerController::class, 'suggest'])->middleware('throttle:5,10');
                 Route::get('{server}', [ServerController::class, 'show']);
                 Route::get('{server}/families', [ServerFamiliesController::class, 'index']);
+                Route::post('{server}/verify', [ServerController::class, 'verify'])->middleware('throttle:10,1');
             });
 
             Route::post('servers/{server}/tournaments', [TournamentController::class, 'store'])->middleware(['module:servers', 'throttle:10,10']);
