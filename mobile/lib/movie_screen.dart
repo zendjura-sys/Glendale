@@ -316,35 +316,6 @@ class _MovieScreenState extends State<MovieScreen> {
     } catch (_) {}
   }
 
-  Future<void> _statusDialog() async {
-    final statuses = maps(data?['statuses']);
-    final current = text(mapOf(data?['state'])['status']);
-    final picked = await showDialog<String>(
-      context: context,
-      builder: (dialog) => AlertDialog(
-        backgroundColor: popover,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: Text(tr('Статус перегляду'), style: display(19)),
-        contentPadding: const EdgeInsets.fromLTRB(8, 12, 8, 0),
-        content: Column(mainAxisSize: MainAxisSize.min, children: [
-          for (final option in [{'key': '', 'label': tr('Не в списку')}, ...statuses])
-            ListTile(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-              leading: Icon(
-                (text(option['key']) ?? '') == (current ?? '') ? LucideIcons.circleDot : LucideIcons.circle,
-                color: (text(option['key']) ?? '') == (current ?? '') ? (_statusColors[option['key']] ?? cinemaAccent) : muted,
-              ),
-              title: Text('${option['label']}', style: body(15.5)),
-              onTap: () => Navigator.pop(dialog, '${option['key']}'),
-            ),
-        ]),
-        actions: [TextButton(onPressed: () => Navigator.pop(dialog), child: Text(tr('Скасувати'), style: body(14, color: cinemaAccent, weight: FontWeight.w600)))],
-      ),
-    );
-    if (picked == null) return;
-    await _status(picked.isEmpty ? null : picked);
-  }
-
   Future<void> _watchTogether() async {
     try {
       final result = await api.post('/api/v1/cinema/${widget.slug}/watch', {'player_key': text(voice?['key'])});
@@ -392,7 +363,6 @@ class _MovieScreenState extends State<MovieScreen> {
       builder: (sheet) => Padding(
         padding: const EdgeInsets.fromLTRB(12, 0, 12, 20),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          if (players.isNotEmpty) SheetAction(icon: LucideIcons.languages, label: tr('Обрати озвучку й серію'), onTap: () => Navigator.pop(sheet, 'voice')),
           if (players.isNotEmpty) SheetAction(icon: LucideIcons.popcorn, label: tr('Дивитися разом'), onTap: () => Navigator.pop(sheet, 'together')),
           SheetAction(
             icon: data?['saved'] == true ? LucideIcons.bookmarkCheck : LucideIcons.bookmark,
@@ -447,7 +417,6 @@ class _MovieScreenState extends State<MovieScreen> {
     final genres = [for (final g in (movie['genres'] as List? ?? const [])) '$g'];
     final countries = [for (final c in (movie['countries'] as List? ?? const [])) '$c'];
     final status = text(state['status']);
-    final statusLabel = statuses.firstWhere((s) => s['key'] == status, orElse: () => const {})['label'];
     final current = voice;
     final added = current == null
         ? null
@@ -532,25 +501,16 @@ class _MovieScreenState extends State<MovieScreen> {
           ]),
         ),
         const SizedBox(height: 12),
+        // Статус задається рядом чипів вище; тут — лише списки й коментарі (без дублів статусу й «Зберегти»).
         Row(children: [
-          Expanded(
-            child: _TonalAction(
-              icon: status == null ? LucideIcons.plus : LucideIcons.chevronDown,
-              label: status == null ? tr('Додати до списку') : '$statusLabel',
-              color: _statusColors[status] ?? cinemaAccent,
-              onTap: _statusDialog,
-            ),
-          ),
-          const SizedBox(width: 8),
-          _TonalAction(icon: LucideIcons.bookmark, label: compact(movie['watchers_count']), color: cinemaAccent, onTap: _statusDialog),
           if (AppScope.of(context).session.pluginOn('movie_lists')) ...[
-            const SizedBox(width: 8),
-            _TonalAction(icon: LucideIcons.listPlus, label: null, color: cinemaAccent, onTap: () => showAddToList(context, intOf(movie['id']), widget.slug)),
+            Expanded(child: _TonalAction(icon: LucideIcons.listPlus, label: tr('До добірки'), color: cinemaAccent, onTap: () => showAddToList(context, intOf(movie['id']), widget.slug))),
           ],
-          const SizedBox(width: 8),
-          _TonalAction(
+          if (AppScope.of(context).session.pluginOn('movie_lists')) const SizedBox(width: 8),
+          Expanded(
+           child: _TonalAction(
             icon: LucideIcons.messageSquare,
-            label: intOf(movie['comments_count']) > 0 ? compact(movie['comments_count']) : null,
+            label: intOf(movie['comments_count']) > 0 ? tr('Коментарі · {n}', {'n': compact(movie['comments_count'])}) : tr('Коментарі'),
             color: cinemaAccent,
             onTap: () {
               // Список будується ліниво: коментарі ще можуть бути не створені — їдемо в самий низ.
@@ -562,6 +522,7 @@ class _MovieScreenState extends State<MovieScreen> {
                 unawaited(scroll.animateTo(scroll.position.maxScrollExtent, duration: const Duration(milliseconds: 600), curve: Curves.easeOutCubic));
               }
             },
+           ),
           ),
         ]),
         if (players.isNotEmpty) ...[
@@ -584,7 +545,8 @@ class _MovieScreenState extends State<MovieScreen> {
             SizedBox(
               width: 44,
               height: 54,
-              child: IconButton(onPressed: _menu, tooltip: tr('Ще'), icon: Icon(LucideIcons.ellipsisVertical, color: soft)),
+              // Поруч із «Дивитися» — лише вибір озвучки й серії; решта дій — у меню на постері.
+              child: IconButton(onPressed: _chooseVoice, tooltip: tr('Обрати озвучку й серію'), icon: Icon(LucideIcons.listVideo, color: soft)),
             ),
           ]),
         ],
