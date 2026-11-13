@@ -166,7 +166,8 @@ class ArcticGlassThemeExtension extends ThemeExtension<ArcticGlassThemeExtension
     innerFill: Color.fromRGBO(255, 255, 255, 0.06),
     border: Color.fromRGBO(255, 255, 255, 0.12),
     outline: null,
-    specular: Color.fromRGBO(255, 255, 255, 0.22),
+    // Плоский стиль: без бліку, канта й тіней — лише матове розмиття з димкою.
+    specular: Color.fromRGBO(255, 255, 255, 0),
     // Без тіні: глибину дають розмиття, кант-блік і внутрішнє світіння.
     shadows: [],
     // Безбарвне матове скло панелей: rgba(18, 20, 26, .86).
@@ -175,10 +176,6 @@ class ArcticGlassThemeExtension extends ThemeExtension<ArcticGlassThemeExtension
     title: AppColors.textPrimary,
     body: Color(0xFFCBD5E1),
     muted: AppColors.textSecondary,
-    barBorder: Color.fromRGBO(255, 255, 255, 0.12),
-    barShadows: [BoxShadow(color: Color.fromRGBO(0, 0, 0, 0.75), blurRadius: 36, offset: Offset(0, 14), spreadRadius: -6)],
-    rim: Color.fromRGBO(255, 255, 255, 0.34),
-    innerGlow: Color.fromRGBO(255, 255, 255, 0.07),
   );
 
   static const daylight = ArcticGlassThemeExtension(
@@ -195,15 +192,13 @@ class ArcticGlassThemeExtension extends ThemeExtension<ArcticGlassThemeExtension
     innerFill: Color.fromRGBO(255, 255, 255, 0.45),
     border: Color.fromRGBO(255, 255, 255, 0.88),
     outline: null,
-    specular: Color.fromRGBO(255, 255, 255, 0.95),
+    specular: Color.fromRGBO(255, 255, 255, 0),
     shadows: [],
     barFill: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color.fromRGBO(255, 255, 255, 0.65), Color.fromRGBO(232, 242, 255, 0.45)]),
     sheetFill: Color.fromRGBO(246, 250, 255, 0.72),
     title: AppColors.lightTitle,
     body: AppColors.lightBody,
     muted: AppColors.lightMuted,
-    rim: Color.fromRGBO(255, 255, 255, 0.95),
-    innerGlow: Color.fromRGBO(255, 255, 255, 0.45),
   );
 
   /// Токени з теми; без теми (напр. у тестах окремих віджетів) — за яскравістю.

@@ -139,9 +139,10 @@ class _ArcticGlassContainerState extends State<ArcticGlassContainer> {
       child: _InsideGlass(child: w.child),
     );
     // Кант-блік і внутрішнє світіння Liquid Glass — лише в карток (не в плашок усередині й не в панелей).
-    final rim = !inner && !solid && w.fill == null && w.color == null && w.borderColor == null ? tokens.rim : null;
-    final glow = rim != null ? tokens.innerGlow : null;
-    if ((w.specular && !solid) || tokens.outline != null || rim != null) {
+    final plainCard = !inner && !solid && w.fill == null && w.color == null && w.borderColor == null;
+    final rim = plainCard ? tokens.rim : null;
+    final glow = plainCard ? tokens.innerGlow : null;
+    if ((w.specular && !solid) || tokens.outline != null || rim != null || glow != null) {
       body = CustomPaint(
         foregroundPainter: ArcticSpecularBorderPainter(
           rim: rim,
