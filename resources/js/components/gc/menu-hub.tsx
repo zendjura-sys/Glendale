@@ -38,6 +38,7 @@ import { LanguageSelect } from '@/components/gc/language-switcher';
 import { ModuleIcon } from '@/components/gc/module-icon';
 import { PlusBadge, plusNameProps } from '@/components/gc/plus';
 import { StatusDialog } from '@/components/gc/status-dialog';
+import { SoundRow } from '@/components/gc/sound-toggle';
 import { ThemeRow } from '@/components/gc/theme-toggle';
 import { UserAvatar } from '@/components/gc/user-avatar';
 import { VerifiedBadge } from '@/components/gc/verified-badge';
@@ -95,7 +96,11 @@ function Tile({
     tone: string;
 }) {
     return (
-        <Link href={href} className={cn(inner, 'flex flex-col gap-2 p-3')}>
+        <Link
+            prefetch
+            href={href}
+            className={cn(inner, 'flex flex-col gap-2 p-3')}
+        >
             <Icon className={cn('size-5', tone)} />
             <span className="min-w-0">
                 <span className="block truncate text-[13px] font-semibold text-white">
@@ -134,7 +139,7 @@ function Row({
     );
 
     return href ? (
-        <Link href={href} className={cls}>
+        <Link prefetch href={href} className={cls}>
             {content}
         </Link>
     ) : (
@@ -211,6 +216,7 @@ export function MenuHub({ onClose }: { onClose: () => void }) {
                         </div>
                     ) : (
                         <Link
+                            prefetch
                             href={`/${user.username}`}
                             className="flex min-w-0 flex-1 items-center gap-3"
                         >
@@ -285,6 +291,7 @@ export function MenuHub({ onClose }: { onClose: () => void }) {
                                 : tr('Рамки, ник, теми й більше')}
                         </span>
                         <Link
+                            prefetch
                             href="/plus"
                             className="shrink-0 rounded-lg bg-[var(--gc-active)] px-4 py-2 text-xs font-semibold text-sky-400"
                         >
@@ -297,6 +304,7 @@ export function MenuHub({ onClose }: { onClose: () => void }) {
             {/* 2. Інформер тривог (лише для України) */}
             {airAlerts && (
                 <Link
+                    prefetch
                     href="/alerts"
                     className={cn(block, 'flex items-center gap-3')}
                 >
@@ -339,6 +347,7 @@ export function MenuHub({ onClose }: { onClose: () => void }) {
                 {on('families') &&
                     (family ? (
                         <Link
+                            prefetch
                             href={`/f/${family.slug}`}
                             className={cn(inner, 'block p-3')}
                         >
@@ -392,6 +401,7 @@ export function MenuHub({ onClose }: { onClose: () => void }) {
                         </Link>
                     ) : (
                         <Link
+                            prefetch
                             href="/families"
                             className={cn(inner, 'flex items-center gap-3 p-3')}
                         >
@@ -468,6 +478,7 @@ export function MenuHub({ onClose }: { onClose: () => void }) {
                         .filter(([key]) => on(key))
                         .map(([key, href, Icon, label]) => (
                             <Link
+                                prefetch
                                 key={key}
                                 href={href}
                                 className={cn(
@@ -485,6 +496,7 @@ export function MenuHub({ onClose }: { onClose: () => void }) {
                 <div className="grid grid-cols-2 gap-2">
                     {on('phone') && (
                         <Link
+                            prefetch
                             href="/phone"
                             className={cn(
                                 inner,
@@ -496,6 +508,7 @@ export function MenuHub({ onClose }: { onClose: () => void }) {
                         </Link>
                     )}
                     <Link
+                        prefetch
                         href="/saved"
                         className={cn(
                             inner,
@@ -526,6 +539,7 @@ export function MenuHub({ onClose }: { onClose: () => void }) {
                             <div className="grid grid-cols-2 gap-1.5">
                                 {rest.map((item) => (
                                     <Link
+                                        prefetch
                                         key={item.key}
                                         href={item.href}
                                         className={cn(
@@ -579,6 +593,7 @@ export function MenuHub({ onClose }: { onClose: () => void }) {
                         </Row>
                         <LanguageSelect className="mx-2.5 my-1.5" />
                         <ThemeRow />
+                        <SoundRow />
                         <Row href="/help" icon={LifeBuoy}>
                             {tr('Довідка')}
                         </Row>

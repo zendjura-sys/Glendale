@@ -1,4 +1,5 @@
 import { SideRail } from '@/components/gc/side-rail';
+import { playNavTick } from '@/lib/sound-fx';
 import { GamerDock } from '@/components/gc/gamer-dock';
 import { MenuHub } from '@/components/gc/menu-hub';
 import { GameCastHeaderButton } from '@/components/gc/gamecast-button';
@@ -427,6 +428,9 @@ function MobileNav() {
                         key={item.key}
                         Component={Link}
                         href={item.href}
+                        // Дані сторінки підтягуються при наведенні/дотику — перехід без очікування.
+                        {...({ prefetch: true } as object)}
+                        onClick={() => playNavTick()}
                         selected={!open && isActive(item.href, item.key)}
                         aria-current={
                             !open && isActive(item.href, item.key)

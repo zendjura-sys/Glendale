@@ -145,6 +145,40 @@
         </x-inertia::head>
     </head>
     <body class="font-sans antialiased">
+        {{-- Перший екран до завантаження JS/CSS: інлайн-стилі, щоб показатися миттєво. Ховає app.tsx після першого рендеру. --}}
+        <noscript><style>#gc-splash-loader{display:none!important}</style></noscript>
+        <div id="gc-splash-loader" role="status" aria-live="polite" style="position:fixed;inset:0;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#04070D;transition:opacity .35s cubic-bezier(.22,1,.36,1),visibility .35s">
+            <style>
+                @keyframes gcSplashPulse{0%,100%{transform:scale(.98)}50%{transform:scale(1.02)}}
+                @keyframes gcSplashBeam{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+                #gc-splash-loader .gc-sq{width:88px;height:88px;border-radius:24px;padding:2px;background:linear-gradient(45deg,#1D4ED8,#00D2FF);box-shadow:0 0 35px rgba(0,210,255,.28);animation:gcSplashPulse 2s ease-in-out infinite}
+                #gc-splash-loader .gc-sq>div{width:100%;height:100%;border-radius:22px;background:#070D19;box-shadow:inset 0 0 18px rgba(0,210,255,.15);display:flex;align-items:center;justify-content:center}
+                #gc-splash-loader img{width:58px;height:58px;filter:drop-shadow(0 0 12px rgba(0,210,255,.6))}
+                #gc-splash-loader .gc-bar{width:140px;height:3px;border-radius:999px;background:rgba(255,255,255,.06);overflow:hidden;margin-top:24px}
+                #gc-splash-loader .gc-bar>i{display:block;width:100%;height:100%;background:linear-gradient(90deg,transparent,#2563EB,#00D2FF,transparent);animation:gcSplashBeam 1.1s ease-in-out infinite}
+                #gc-splash-loader .gc-st{font:500 12px/1.4 Montserrat,system-ui,sans-serif;color:#94A3B8;letter-spacing:.04em;margin-top:10px;min-height:17px}
+                @media (prefers-reduced-motion:reduce){#gc-splash-loader .gc-sq,#gc-splash-loader .gc-bar>i{animation:none}}
+            </style>
+            <div class="gc-sq"><div><img src="/images/brand/logo-mark.png" alt="GameCon" width="58" height="58" onerror="this.outerHTML='<svg width=&quot;52&quot; height=&quot;52&quot; viewBox=&quot;0 0 52 52&quot;><defs><linearGradient id=&quot;gcG&quot; x1=&quot;0&quot; y1=&quot;1&quot; x2=&quot;1&quot; y2=&quot;0&quot;><stop offset=&quot;0&quot; stop-color=&quot;#2563EB&quot;/><stop offset=&quot;1&quot; stop-color=&quot;#00D2FF&quot;/></linearGradient></defs><path d=&quot;M40 14a17 17 0 1 0 2 20H27&quot; fill=&quot;none&quot; stroke=&quot;url(#gcG)&quot; stroke-width=&quot;5&quot; stroke-linecap=&quot;round&quot;/></svg>'"></div></div>
+            <div class="gc-bar"><i></i></div>
+            <div class="gc-st" id="gc-splash-status">Ініціалізація GameCon OS...</div>
+            <script>
+                (function () {
+                    var lines = ['Ініціалізація GameCon OS...', 'Синхронізація ігрового профілю...', 'Підключення до серверів та штабу...'];
+                    var i = 0, el = document.getElementById('gc-splash-status');
+                    var timer = setInterval(function () { i = (i + 1) % lines.length; if (el) el.textContent = lines[i]; }, 900);
+                    window.gcHideSplash = function () {
+                        var s = document.getElementById('gc-splash-loader');
+                        if (!s) return;
+                        clearInterval(timer);
+                        s.style.opacity = '0'; s.style.pointerEvents = 'none'; s.style.visibility = 'hidden';
+                        setTimeout(function () { if (s.parentNode) s.parentNode.removeChild(s); }, 350);
+                    };
+                    // Страховка: навіть на повільній мережі сплеш зникне за 2,5 с після завантаження сторінки.
+                    window.addEventListener('load', function () { setTimeout(window.gcHideSplash, 2500); });
+                })();
+            </script>
+        </div>
         <x-inertia::app />
         @if (($page['component'] ?? null) === 'welcome')
             @include('seo.home', ['name' => $seoName, 'description' => $seoDescription, 'email' => $seoEmail])

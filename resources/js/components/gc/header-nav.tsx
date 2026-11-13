@@ -134,6 +134,7 @@ export function ReadyIndicator() {
 
     return (
         <Link
+            prefetch
             href="/feed#ready"
             title={tr('Готові грати зараз')}
             className="gc-icon-button hidden h-9 items-center gap-1.5 rounded-full px-2.5 text-xs font-semibold sm:flex"

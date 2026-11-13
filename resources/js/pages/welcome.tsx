@@ -344,8 +344,8 @@ export default function Welcome({
                             >
                                 {tr('У мене вже є акаунт')}
                             </Link>
+                            <AppPageButton className="justify-center sm:justify-start" />
                         </div>
-                        <AppPageButton className="mt-4" />
 
                         <div className="mt-9 flex items-center gap-4">
                             <div className="flex -space-x-2.5">
@@ -549,7 +549,7 @@ export default function Welcome({
                                         {tr('Приєднатися безкоштовно')}
                                     </Link>
                                 )}
-                                <AppPageButton />
+                                <AppPageButton onDark />
                             </div>
                         </div>
                     </Reveal>

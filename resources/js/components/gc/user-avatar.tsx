@@ -1,4 +1,5 @@
 import { usePage } from '@inertiajs/react';
+import { useState } from 'react';
 import { initials } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { tr } from '@/lib/i18n';
@@ -93,23 +94,27 @@ export function UserAvatar({
                 ? { name: null, frame: user.cosmetics.frame }
                 : null;
 
-    const inner = user.avatar_url ? (
-        <img
-            src={user.avatar_url}
-            alt={user.name}
-            loading="lazy"
-            className="size-full rounded-full object-cover"
-        />
-    ) : (
-        <span
-            className={cn(
-                'flex size-full items-center justify-center rounded-full bg-gradient-to-br font-display font-semibold text-white',
-                palette,
-            )}
-        >
-            {initials(user.name)}
-        </span>
-    );
+    // Бита картинка (видалений файл) — показуємо ініціали замість alt-тексту.
+    const [broken, setBroken] = useState(false);
+    const inner =
+        user.avatar_url && !broken ? (
+            <img
+                src={user.avatar_url}
+                alt={user.name}
+                loading="lazy"
+                onError={() => setBroken(true)}
+                className="size-full rounded-full object-cover"
+            />
+        ) : (
+            <span
+                className={cn(
+                    'flex size-full items-center justify-center rounded-full bg-gradient-to-br font-display font-semibold text-white',
+                    palette,
+                )}
+            >
+                {initials(user.name)}
+            </span>
+        );
 
     return (
         <span

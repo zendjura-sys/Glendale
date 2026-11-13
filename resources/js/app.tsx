@@ -1,5 +1,5 @@
 import type { VisitOptions } from '@inertiajs/core';
-import { createInertiaApp } from '@inertiajs/react';
+import { createInertiaApp, router } from '@inertiajs/react';
 import { installVitals } from '@/lib/vitals';
 import { registerOffline } from '@/lib/offline';
 import { SkipLink } from '@/components/gc/skip-link';
@@ -10,7 +10,8 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { installKeyboardGuard } from '@/lib/keyboard';
 import { startSmoothScroll } from '@/lib/smooth-scroll';
 import { LazyMotion } from 'motion/react';
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
+import { bootChimeOnce } from '@/lib/sound-fx';
 import { PageSkeleton, skeletonFor } from '@/components/gc/skeletons';
 
 // Швидкий перший кадр: стартовий файл без макетів. Кожен макет (соцмережа, адмінка, вхід, налаштування) —
@@ -78,6 +79,30 @@ if (
 
         return transition;
     };
+}
+
+/**
+ * Перший рендер готовий: ховаємо сплеш з app.blade.php, тихо підтягуємо найчастіші сторінки
+ * (стрічка, чати, профіль) і граємо привітальний акорд — раз за сесію вкладки.
+ */
+function SplashDone({ user }: { user: { username?: string } | null }) {
+    useEffect(() => {
+        const frame = requestAnimationFrame(() => {
+            (
+                window as unknown as { gcHideSplash?: () => void }
+            ).gcHideSplash?.();
+            bootChimeOnce();
+            if (user) {
+                for (const url of ['/feed', '/messages', `/${user.username}`]) {
+                    router.prefetch(url, { method: 'get' }, { cacheFor: '1m' });
+                }
+            }
+        });
+
+        return () => cancelAnimationFrame(frame);
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+    return null;
 }
 
 function shouldViewTransition(options: VisitOptions): boolean {
@@ -183,6 +208,17 @@ void createInertiaApp({
         return (
             <LazyMotion features={motionFeatures} strict>
                 <TooltipProvider delayDuration={0}>
+                    <SplashDone
+                        user={
+                            (
+                                page.props as {
+                                    auth?: {
+                                        user?: { username?: string } | null;
+                                    };
+                                }
+                            ).auth?.user ?? null
+                        }
+                    />
                     <SkipLink />
                     {/* Збій сторінки — картка з кнопкою оновлення; збій тостів чи банера — лише вони зникають. */}
                     <ErrorBoundary>
@@ -200,7 +236,10 @@ void createInertiaApp({
             </LazyMotion>
         );
     },
+    // Тонка сапфірова смужка, лише якщо запит довший за 250 мс.
     progress: {
-        color: '#8b6bff',
+        color: '#00D2FF',
+        delay: 250,
+        showSpinner: false,
     },
 });
