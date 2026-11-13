@@ -108,7 +108,7 @@ export default function Login({ status, canResetPassword }: Props) {
                                 )}
                             </div>
 
-                            <div className="mt-2 flex flex-wrap items-center gap-x-6 gap-y-3">
+                            <div className="mt-3 flex flex-col items-center gap-4">
                                 <AuthSubmit
                                     tabIndex={4}
                                     disabled={processing}

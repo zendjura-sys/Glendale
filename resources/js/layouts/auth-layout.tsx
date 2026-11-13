@@ -1,8 +1,7 @@
-import { Link, usePage } from '@inertiajs/react';
+import { usePage } from '@inertiajs/react';
 import { AnimatePresence, m, useReducedMotion } from 'motion/react';
 import type { ReactNode } from 'react';
 import { SiteBackground } from '@/components/backgrounds/site-background';
-import { LanguageSelect } from '@/components/gc/language-switcher';
 import { PaletteSync } from '@/components/gc/palette-sync';
 import { Seasonal } from '@/components/gc/seasonal';
 import { SiteFooter } from '@/components/gc/site-footer';
@@ -91,7 +90,7 @@ export default function AuthLayout({
 
             <main
                 id="main-content"
-                className="relative mx-auto grid min-h-dvh max-w-[1240px] items-center gap-10 px-5 pt-28 pb-12 lg:grid-cols-[1fr_minmax(0,460px)] lg:gap-16 lg:pt-32"
+                className="relative mx-auto grid max-w-[1240px] items-start gap-10 px-4 pt-24 pb-12 sm:px-5 lg:min-h-dvh lg:grid-cols-[1fr_minmax(0,460px)] lg:items-center lg:gap-16 lg:pt-32"
             >
                 <section className="hidden lg:block">
                     <AnimatePresence mode="wait" initial={false}>
@@ -107,35 +106,25 @@ export default function AuthLayout({
                     <AuthArt />
                 </section>
 
-                <section className="auth-form glass-strong w-full rounded-3xl p-6 sm:p-8">
+                <section className="auth-form auth-card relative mx-auto w-full max-w-[440px] rounded-[28px] p-7 sm:p-9">
+                    {/* Тонкий акцентний відблиск по верхньому краю картки. */}
+                    <span
+                        aria-hidden
+                        className="pointer-events-none absolute inset-x-10 top-0 h-px bg-[linear-gradient(90deg,transparent,rgb(56_189_248/0.7),transparent)]"
+                    />
                     <AnimatePresence mode="wait" initial={false}>
                         <m.div key={component} {...fade}>
-                            <h1 className="font-display text-3xl font-bold tracking-tight text-white">
+                            <h1 className="font-display text-[28px] leading-tight font-bold tracking-tight text-white">
                                 {title}
                             </h1>
                             {description && (
-                                <p className="mt-2 text-sm leading-relaxed text-white/60">
+                                <p className="mt-2 text-[14px] leading-relaxed text-white/55">
                                     {description}
                                 </p>
                             )}
-                            <div className="mt-7">{children}</div>
+                            <div className="mt-8">{children}</div>
                         </m.div>
                     </AnimatePresence>
-                    <div className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-white/10 pt-5 text-sm text-white/55">
-                        <LanguageSelect />
-                        <Link
-                            href="/help/start"
-                            className="transition hover:text-white"
-                        >
-                            {tr('Довідка')}
-                        </Link>
-                        <Link
-                            href="/app"
-                            className="transition hover:text-white"
-                        >
-                            {tr('Застосунок')}
-                        </Link>
-                    </div>
                 </section>
             </main>
             <SiteFooter className="py-8" />

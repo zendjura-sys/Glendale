@@ -41,8 +41,8 @@ export default function Register({ passwordRules }: Props) {
                             aria-hidden
                             className="pointer-events-none absolute -left-[9999px] size-px opacity-0"
                         />
-                        <div className="grid gap-6">
-                            <div className="grid grid-cols-2 gap-5">
+                        <div className="grid gap-4">
+                            <div className="grid grid-cols-2 gap-3">
                                 <div className="grid gap-1.5">
                                     <AuthField
                                         icon={User}
@@ -123,7 +123,7 @@ export default function Register({ passwordRules }: Props) {
                                 />
                             </div>
 
-                            <div className="mt-2 flex flex-wrap items-center gap-x-6 gap-y-3">
+                            <div className="mt-3 flex flex-col items-center gap-4">
                                 <AuthSubmit
                                     tabIndex={6}
                                     disabled={processing}

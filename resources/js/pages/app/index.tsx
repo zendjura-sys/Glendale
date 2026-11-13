@@ -83,13 +83,14 @@ function StoreGroup({
             <p className="mb-2.5 text-xs font-semibold text-white/50">
                 {title}
             </p>
-            <div className="flex flex-wrap gap-3">
+            <div className="grid gap-2.5 sm:grid-cols-2">
                 {sorted.map((key) => (
                     <StoreButton
                         key={key}
                         store={key}
                         url={links[key] as string}
                         highlight={key === preferred}
+                        className="w-full"
                     />
                 ))}
             </div>

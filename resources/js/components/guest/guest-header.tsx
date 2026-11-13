@@ -1,4 +1,6 @@
 import { Link, usePage } from '@inertiajs/react';
+import { CircleHelp } from 'lucide-react';
+import { LanguageButton } from '@/components/gc/language-switcher';
 import { Logo } from '@/components/gc/logo';
 import { ThemeButton } from '@/components/gc/theme-toggle';
 import { tr } from '@/lib/i18n';
@@ -21,7 +23,18 @@ export function GuestHeader() {
                     <Logo compact className="min-[420px]:hidden" />
                     <Logo className="max-[419px]:hidden" />
                 </Link>
-                <nav className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
+                <nav className="ml-auto flex shrink-0 items-center gap-0.5 sm:gap-1.5">
+                    {/* Довідка, мова й тема — тихі іконки поруч; на вузьких екранах лишаються лише іконки. */}
+                    <Link
+                        href="/help"
+                        aria-label={tr('Довідка')}
+                        title={tr('Довідка')}
+                        className="gc-icon-button flex h-10 items-center justify-center gap-1.5 rounded-xl px-2.5 text-[13px] font-medium transition"
+                    >
+                        <CircleHelp className="size-[18px]" />
+                        <span className="max-lg:hidden">{tr('Довідка')}</span>
+                    </Link>
+                    <LanguageButton className="flex" />
                     <ThemeButton className="flex" />
                     <Link
                         href="/login"

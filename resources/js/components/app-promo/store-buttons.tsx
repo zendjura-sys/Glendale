@@ -36,7 +36,7 @@ export const DESKTOP_STORES: StoreKey[] = [
 /** Значок Google Play: чотирикольоровий трикутник. */
 function PlayMark() {
     return (
-        <svg viewBox="0 0 24 24" className="size-6" aria-hidden>
+        <svg viewBox="0 0 24 24" className="size-5" aria-hidden>
             <path
                 d="M3.6 2.3 13.4 12 3.6 21.7c-.4-.2-.6-.6-.6-1.1V3.4c0-.5.2-.9.6-1.1Z"
                 fill="#00d7fe"
@@ -62,7 +62,7 @@ function AppleMark() {
     return (
         <svg
             viewBox="0 0 24 24"
-            className="size-6"
+            className="size-5"
             fill="currentColor"
             aria-hidden
         >
@@ -75,7 +75,7 @@ function AppleMark() {
 function GalleryMark() {
     return (
         <span
-            className="grid size-6 place-items-center rounded-[7px] bg-[#e5133a] text-[10px] font-black text-white"
+            className="grid size-5 place-items-center rounded-[7px] bg-[#e5133a] text-[10px] font-black text-white"
             aria-hidden
         >
             AG
@@ -87,7 +87,7 @@ function GalleryMark() {
 function GalaxyMark() {
     return (
         <span
-            className="grid size-6 place-items-center rounded-[7px] bg-white/90 text-[10px] font-black text-[#1428a0]"
+            className="grid size-5 place-items-center rounded-[7px] bg-white/90 text-[10px] font-black text-[#1428a0]"
             aria-hidden
         >
             GS
@@ -102,7 +102,7 @@ function WindowsMark({ brand = false }: { brand?: boolean }) {
         : ['#38bdf8', '#38bdf8', '#38bdf8', '#38bdf8'];
 
     return (
-        <svg viewBox="0 0 24 24" className="size-6" aria-hidden>
+        <svg viewBox="0 0 24 24" className="size-5" aria-hidden>
             <rect x="2" y="2" width="9.5" height="9.5" fill={c[0]} />
             <rect x="12.5" y="2" width="9.5" height="9.5" fill={c[1]} />
             <rect x="2" y="12.5" width="9.5" height="9.5" fill={c[2]} />
@@ -123,7 +123,7 @@ function LetterMark({
 }) {
     return (
         <span
-            className="grid size-6 place-items-center rounded-[7px] text-[10px] font-black"
+            className="grid size-5 place-items-center rounded-[7px] text-[10px] font-black"
             style={{ background: bg, color: fg }}
             aria-hidden
         >
@@ -135,7 +135,7 @@ function LetterMark({
 /** Значок Linux / Ubuntu: помаранчеве коло з трьома точками. */
 function LinuxMark() {
     return (
-        <svg viewBox="0 0 24 24" className="size-6" aria-hidden>
+        <svg viewBox="0 0 24 24" className="size-5" aria-hidden>
             <circle cx="12" cy="12" r="11" fill="#e95420" />
             <circle
                 cx="12"
@@ -188,7 +188,7 @@ export const STORES: Record<
     apk: {
         top: () => tr('Пряме завантаження'),
         name: 'APK для Android',
-        mark: () => <Download className="size-6 text-sky-300" />,
+        mark: () => <Download className="size-5 text-sky-300" />,
         external: false,
     },
     amazon: {
@@ -250,20 +250,33 @@ export function StoreButton({
             rel={s.external ? 'noopener noreferrer' : undefined}
             download={s.external ? undefined : true}
             className={cn(
-                'gc-live-edge group relative inline-flex min-h-14 items-center rounded-2xl p-px transition-transform focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400 active:scale-[0.98]',
-                highlight && 'gc-live-edge-strong',
+                'group relative inline-flex h-14 items-center gap-3 rounded-2xl pr-5 pl-3.5 text-left transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400 active:scale-[0.98]',
+                // Рекомендована для пристрою — суцільна акцентна; решта — скло, як інші кнопки сайту.
+                highlight
+                    ? 'bg-[linear-gradient(135deg,#1d4ed8,#0ea5e9)] text-white shadow-[0_12px_32px_-12px_rgb(14_165_233/0.7)] hover:brightness-110'
+                    : 'glass text-white hover:bg-white/[0.08]',
                 className,
             )}
         >
-            <span className="flex h-full w-full items-center gap-3 rounded-[15px] bg-[#0a1424] px-4 py-2.5 text-white">
+            <span
+                className={cn(
+                    'flex size-9 shrink-0 items-center justify-center rounded-xl',
+                    highlight ? 'bg-white/15' : 'bg-white/[0.06]',
+                )}
+            >
                 {s.mark()}
-                <span className="text-left leading-tight">
-                    <span className="block text-[11px] text-white/60">
-                        {s.top()}
-                    </span>
-                    <span className="block text-[17px] font-bold tracking-tight">
-                        {s.name}
-                    </span>
+            </span>
+            <span className="leading-tight">
+                <span
+                    className={cn(
+                        'block text-[11px]',
+                        highlight ? 'text-white/75' : 'text-white/55',
+                    )}
+                >
+                    {s.top()}
+                </span>
+                <span className="block text-[15px] font-semibold tracking-tight">
+                    {s.name}
                 </span>
             </span>
         </a>

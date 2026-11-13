@@ -1,12 +1,11 @@
 import { Link } from '@inertiajs/react';
-import { ChevronRight } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { ComponentProps, ReactNode } from 'react';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 
 /**
- * Поле входу/реєстрації: прозоре, лише нижня лінія (біла при фокусі), монохромна іконка праворуч.
+ * Поле входу/реєстрації: м'яка заливка, тонка рамка, акцентне кільце при фокусі; іконка ліворуч.
  * Підпис — для читачів екрана (sr-only), видимий — плейсхолдер.
  */
 export function AuthField({
@@ -20,18 +19,19 @@ export function AuthField({
             <span className="sr-only">{label}</span>
             <Input
                 {...props}
+                data-icon=""
                 placeholder={props.placeholder ?? label}
-                className={cn('pr-9', className)}
+                className={className}
             />
             <Icon
                 aria-hidden
-                className="pointer-events-none absolute top-1/2 right-1 size-4 -translate-y-1/2 text-white/60"
+                className="pointer-events-none absolute top-1/2 left-4 size-[17px] -translate-y-1/2 text-white/45"
             />
         </label>
     );
 }
 
-/** Кнопка форми: прозора пігулка зі стрілкою. */
+/** Кнопка форми: на всю ширину, суцільна акцентна. */
 export function AuthSubmit({
     children,
     disabled,
@@ -42,15 +42,14 @@ export function AuthSubmit({
             type="submit"
             disabled={disabled}
             {...props}
-            className="auth-pill inline-flex h-11 shrink-0 items-center gap-2 rounded-full border border-white/60 bg-transparent px-6 text-sm font-medium text-white transition hover:bg-white/[0.12] focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:outline-none disabled:opacity-50"
+            className="btn-glow inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl px-6 text-[15px] font-semibold transition focus-visible:ring-2 focus-visible:ring-sky-400/60 focus-visible:outline-none disabled:opacity-60"
         >
             {children}
-            <ChevronRight className="size-4" />
         </button>
     );
 }
 
-/** Підкреслене посилання поруч із кнопкою (перехід між входом і реєстрацією). */
+/** Перехід між входом і реєстрацією — тихий рядок під кнопкою. */
 export function AuthSwitch({
     href,
     children,
@@ -61,7 +60,7 @@ export function AuthSwitch({
     return (
         <Link
             href={href}
-            className="text-sm text-white/80 underline decoration-white/40 underline-offset-4 transition hover:text-white hover:decoration-white"
+            className="w-full text-center text-sm font-medium text-white/60 transition hover:text-white"
         >
             {children}
         </Link>
