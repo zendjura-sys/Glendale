@@ -1422,6 +1422,9 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::put('banners/{banner}/winner/{variant}', [Admin\PromoBannerController::class, 'winner'])->whereNumber(['banner', 'variant'])->name('banners.winner');
         Route::delete('banners/{banner}', [Admin\PromoBannerController::class, 'destroy'])->whereNumber('banner')->name('banners.destroy');
         Route::get('vitals', [Admin\VitalsController::class, 'index'])->name('vitals.index');
+        Route::get('alerts', [Admin\AlertsController::class, 'index'])->name('alerts.index');
+        Route::post('alerts/check', [Admin\AlertsController::class, 'check'])->middleware('throttle:10,1')->name('alerts.check');
+        Route::post('alerts/webhook', [Admin\AlertsController::class, 'webhook'])->middleware('throttle:10,1')->name('alerts.webhook');
         Route::get('links', [Admin\LinkCheckController::class, 'index'])->name('links.index');
         Route::post('links/{check}/ignore', [Admin\LinkCheckController::class, 'ignore'])->whereNumber('check')->name('links.ignore');
         Route::post('links/{check}/recheck', [Admin\LinkCheckController::class, 'recheck'])->whereNumber('check')->middleware('throttle:30,1')->name('links.recheck');

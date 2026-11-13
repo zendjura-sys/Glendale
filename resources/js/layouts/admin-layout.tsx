@@ -51,6 +51,7 @@ import {
     TrendingUp,
     LifeBuoy,
     Swords,
+    Siren,
 } from 'lucide-react';
 import { AnimatePresence, m, useReducedMotion } from 'motion/react';
 import { useEffect, useState } from 'react';
@@ -256,6 +257,11 @@ function groups(): { title: string; items: Item[] }[] {
                     label: tr('Журнали й копії'),
                     href: '/admin/system',
                     icon: DatabaseBackup,
+                },
+                {
+                    label: tr('Тривоги'),
+                    href: '/admin/alerts',
+                    icon: Siren,
                 },
                 {
                     label: tr('Швидкість'),

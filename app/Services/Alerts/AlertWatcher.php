@@ -32,7 +32,7 @@ class AlertWatcher
     /** Пуш лише про свіжу подію: не пізніше ніж 30 с від початку (lastUpdate з API) чи відбою. */
     public const FRESH = 30;
 
-    private const INDEX = 'ua_alarm:last_action_index';
+    public const INDEX = 'ua_alarm:last_action_index';
 
     private const AT = 'ua_alarm_at';
 

@@ -16,6 +16,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
@@ -679,5 +680,40 @@ class AirAlertsTest extends TestCase
         $this->assertSame('BALLISTIC', $regions['kharkiv']['alert']);
         $this->assertSame(['BALLISTIC'], $regions['kharkiv']['threat_levels']);
         $this->assertSame('CLEAR', $regions['lviv']['alert']);
+    }
+
+    public function test_admin_alerts_dashboard_shows_health_now_and_recent(): void
+    {
+        $alerts = [];
+        $index = 1;
+        $this->fakeUkraineAlarm($this->zhytomyrTree(), $alerts, $index);
+        $user = User::factory()->create(['country' => 'UA']);
+        $this->actingAs($user)->putJson('/alerts/preferences', ['unit' => '1001'])->assertOk();
+        $watcher = app(AlertWatcher::class);
+        $watcher->run();
+        [$alerts, $index] = [[$this->row('100', 'District', 'AIR')], 2];
+        $this->assertSame(1, $watcher->run());
+
+        $this->withoutVite();
+        $admin = User::factory()->admin()->create();
+        $this->actingAs($user)->get('/admin/alerts')->assertForbidden();
+        $this->actingAs($admin)->get('/admin/alerts')->assertOk()->assertInertia(fn ($page) => $page
+            ->component('admin/alerts')
+            ->where('enabled', true)
+            ->where('health.tick_fresh', true)
+            ->where('health.index', 2)
+            ->where('now_total', 1)
+            ->where('now.0.name', 'Житомирський район')
+            ->where('now.0.alerts.0.type', 'AIR')
+            ->where('subscribers.total', 1)
+            ->where('subscribers.top.0.name', 'Житомирська територіальна громада')
+            ->where('sent.day', 1)
+            ->where('recent.0.users', 1));
+
+        // Дії пишуться в журнал.
+        Log::spy();
+        $this->actingAs($admin)->post('/admin/alerts/check')->assertRedirect();
+        Log::shouldHaveReceived('info')->withArgs(fn ($msg) => $msg === 'admin.alerts.check')->once();
+        $this->actingAs($admin)->post('/admin/alerts/webhook', ['action' => 'nope'])->assertSessionHasErrors('action');
     }
 }
