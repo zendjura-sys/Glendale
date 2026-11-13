@@ -1,7 +1,7 @@
 import { Head } from '@inertiajs/react';
 import {
     BellRing,
-    Clapperboard,
+    Layers,
     MessageCircle,
     QrCode as QrIcon,
     Shield,
@@ -202,10 +202,10 @@ const FEATURES = [
         text: () => tr('Групи, канали, дзвінки й голосові кімнати для рейдів.'),
     },
     {
-        icon: Clapperboard,
+        icon: Layers,
         tone: 'text-emerald-400',
-        title: () => tr('Музика й кіно'),
-        text: () => tr('Свої треки, радіо, фільми й аніме з розкладом серій.'),
+        title: () => tr('Колекційні картки'),
+        text: () => tr('Набір щодня, картки за гру, кристали й обмін з друзями.'),
     },
     {
         icon: BellRing,
@@ -261,7 +261,7 @@ export default function AppDownload({ links, version, screens, files }: Props) {
                             </h1>
                             <p className="mt-3 max-w-xl text-[15px] leading-relaxed text-white/70">
                                 {tr(
-                                    'Один акаунт для сайту й телефона: стрічка, сім’ї, клани, чати, музика й кіно — усе, що ви робите тут, одразу видно в застосунку.',
+                                    'Один акаунт для сайту й телефона: стрічка, сім’ї, клани, сервери й чати — усе, що ви робите тут, одразу видно в застосунку.',
                                 )}
                             </p>
 

@@ -1161,48 +1161,26 @@ label:has(
  * Вхід і реєстрація (layouts/auth-layout.tsx). Поза шарами — щоб перекрити утиліти Input:
  * матова панель форми й прозорі поля лише з нижньою лінією (біла при фокусі).
  */
-/* Вхід завжди поверх фото: білий текст і темні токени навіть у світлій темі сайту. */
-.auth-screen {
-    --color-white: #fff;
-    --foreground: #fff;
-    --card-foreground: #fff;
-    --muted-foreground: rgb(255 255 255 / 0.65);
-    --secondary: rgb(255 255 255 / 0.08);
-    --secondary-foreground: #fff;
-    --accent: rgb(255 255 255 / 0.1);
-    --accent-foreground: #fff;
-    --border: rgb(255 255 255 / 0.18);
-    --input: rgb(255 255 255 / 0.18);
-    --background: rgb(15 20 28 / 0.35);
-    --popover: #121826;
-    --popover-foreground: #fff;
-    color: #fff;
-    color-scheme: dark;
-}
-.auth-panel {
-    background: rgba(15, 20, 28, 0.45);
-    -webkit-backdrop-filter: blur(20px);
-    backdrop-filter: blur(20px);
-}
+/* Вхід і реєстрація — в темі сайту (як головна): поля лише з нижньою лінією кольору тексту. */
 .auth-form [data-slot='input'] {
     height: 2.75rem;
     padding-left: 0;
-    color: #fff;
+    color: var(--foreground);
     border: 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.35);
+    border-bottom: 1px solid color-mix(in srgb, var(--foreground) 28%, transparent);
     border-radius: 0;
     background: transparent !important;
     box-shadow: none;
     transition: border-color 0.25s;
 }
 .auth-form [data-slot='input']::placeholder {
-    color: rgba(255, 255, 255, 0.6);
+    color: color-mix(in srgb, var(--foreground) 55%, transparent);
 }
 .auth-form [data-slot='input']:focus,
 .auth-form [data-slot='input']:focus-visible {
     outline: none;
     border-width: 0 0 1px;
-    border-bottom-color: #fff;
+    border-bottom-color: var(--primary);
     box-shadow: none !important;
 }
 .auth-form [data-slot='input'][aria-invalid='true'] {
@@ -1210,13 +1188,13 @@ label:has(
 }
 /* Автозаповнення браузера не має фарбувати поле в жовтий/білий прямокутник. */
 .auth-form [data-slot='input']:-webkit-autofill {
-    -webkit-text-fill-color: #fff;
+    -webkit-text-fill-color: var(--foreground);
     transition: background-color 9999s;
 }
 /* Кнопка-«око» пароля — така ж монохромна іконка праворуч, як в інших полях. */
 .auth-form [data-slot='input'] + button {
     padding-right: 0.25rem;
-    color: rgba(255, 255, 255, 0.6);
+    color: color-mix(in srgb, var(--foreground) 55%, transparent);
 }
 
 /*
@@ -6602,4 +6580,8 @@ html[data-theme='dark'] .am.am-in-site {
 }
 :root[data-theme='light'] .gc-app-promo .gc-sparkle {
     background-color: #38bdf8;
+}
+/* На темному тлі (data-on-dark) картка застосунку лишається темною й у світлій темі. */
+:root[data-theme='light'] [data-on-dark] .gc-app-promo {
+    background: linear-gradient(135deg, #123058 0%, #0c1a30 55%, #0a1322 100%);
 }

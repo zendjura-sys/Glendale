@@ -33,9 +33,13 @@ class HelpCatalog
      */
     public function categories(): array
     {
+        // Гостям (і пошуковикам) довідку про кіно й музику не показуємо — вона для учасників.
+        $guest = auth()->guest();
+
         return array_values(array_filter(
             self::all(),
-            fn (array $category) => $category['module'] === null || $this->modules->enabled($category['module']),
+            fn (array $category) => ($category['module'] === null || $this->modules->enabled($category['module']))
+                && ! ($guest && in_array($category['module'], ['cinema', 'music'], true)),
         ));
     }
 

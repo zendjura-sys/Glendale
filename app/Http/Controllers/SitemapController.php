@@ -28,7 +28,8 @@ class SitemapController extends Controller
     private const GAMES = 5000;
 
     /** Частини карти сайту: кожна — окремий файл (до 50 000 адрес у кожному). */
-    private const PARTS = ['pages', 'games', 'cinema', 'servers', 'clans', 'communities', 'profiles'];
+    // Кіно й музика в карту не потрапляють: публічна частина сайту — про ігри й спільноти.
+    private const PARTS = ['pages', 'games', 'servers', 'clans', 'communities', 'profiles'];
 
     /** Скільки тайтлів кіно, серверів і кланів у карті. */
     private const TITLES = 20000;
@@ -91,6 +92,9 @@ class SitemapController extends Controller
         // Довідка: головна, розділи й статті (лише розділи з увімкненими модулями).
         $urls[] = ['loc' => url('/help'), 'lastmod' => HelpCatalog::UPDATED, 'changefreq' => 'weekly', 'priority' => '0.7'];
         foreach (app(HelpCatalog::class)->categories() as $category) {
+            if (in_array($category['slug'], ['cinema', 'music', 'kino'], true)) {
+                continue;
+            }
             $urls[] = ['loc' => url('/help/'.$category['slug']), 'lastmod' => HelpCatalog::UPDATED, 'changefreq' => 'monthly', 'priority' => '0.5'];
             foreach ($category['articles'] as $article) {
                 $urls[] = ['loc' => url('/help/'.$category['slug'].'/'.$article['slug']), 'lastmod' => HelpCatalog::UPDATED, 'changefreq' => 'monthly', 'priority' => '0.5'];

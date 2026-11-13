@@ -147,6 +147,6 @@ export default function Register({ passwordRules }: Props) {
 Register.layout = {
     title: tr('Реєстрація'),
     description: tr(
-        'Створи акаунт за хвилину — і знаходь друзів, ігри та кіно',
+        'Створи акаунт за хвилину — і знаходь друзів, команду й сервер',
     ),
 };

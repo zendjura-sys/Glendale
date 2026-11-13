@@ -2,6 +2,10 @@
 User-agent: *
 Allow: /
 Disallow: /admin
+Disallow: /cinema
+Disallow: /music
+Disallow: /help/cinema
+Disallow: /help/music
 Disallow: /api/
 Disallow: /settings
 Disallow: /messages

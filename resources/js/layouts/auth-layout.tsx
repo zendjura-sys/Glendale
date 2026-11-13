@@ -1,16 +1,19 @@
 import { Link, usePage } from '@inertiajs/react';
 import { AnimatePresence, m, useReducedMotion } from 'motion/react';
 import type { ReactNode } from 'react';
+import { SiteBackground } from '@/components/backgrounds/site-background';
 import { LanguageSelect } from '@/components/gc/language-switcher';
-import { Logo } from '@/components/gc/logo';
 import { PaletteSync } from '@/components/gc/palette-sync';
+import { Seasonal } from '@/components/gc/seasonal';
+import { SiteFooter } from '@/components/gc/site-footer';
+import { GuestHeader } from '@/components/guest/guest-header';
 import { tr } from '@/lib/i18n';
 import { blurSwap } from '@/lib/motion';
 
 /**
- * Вхід і реєстрація — Frosted Glass Split-Screen: фото з адмінки на весь екран (Адмінка → Дизайн),
- * ліва половина прозора з великим заголовком, права — матове скло на всю висоту з формою.
- * На телефоні форма на весь екран поверх того самого фото. Інші сторінки (пароль, 2FA) — той самий макет.
+ * Вхід і реєстрація — у стилі головної: та сама шапка зі значком теми, фон і футер;
+ * ліворуч великий заголовок (і картинка з адмінки, якщо є), праворуч — скляна картка з формою.
+ * Світла й темна теми — як на всьому сайті. Інші сторінки (пароль, 2FA) — той самий макет.
  */
 
 type Mode = 'login' | 'register' | 'other';
@@ -31,7 +34,7 @@ function hero(mode: Mode): { title: string; text: string } {
         return {
             title: tr('Ще немає акаунта?'),
             text: tr(
-                'Зареєструйтеся — друзі, кіно разом і ваші ігрові сервери в одному місці. Це безкоштовно.',
+                'Зареєструйтеся — друзі, команда, ваші сервери й сім’ї в одному місці. Це безкоштовно.',
             ),
         };
     }
@@ -44,35 +47,22 @@ function hero(mode: Mode): { title: string; text: string } {
 
     return {
         title: 'GameCon',
-        text: tr('Соцмережа для гравців і кіноманів.'),
+        text: tr('Соцмережа для гравців.'),
     };
 }
 
-/** Фон з адмінки на весь екран (телефон — вертикальне фото) і затемнення для читабельності тексту. */
-function AuthBackground() {
+/** Картинка з адмінки (Адмінка → Дизайн) — у лівій половині як ілюстрація, не на весь екран. */
+function AuthArt() {
     const images = usePage().props.site?.auth_images;
-    const desktop = images?.site_desktop ?? images?.site_mobile ?? null;
-    const mobile = images?.site_mobile ?? images?.site_desktop ?? null;
+    const src = images?.site_desktop ?? images?.site_mobile ?? null;
+    if (!src) return null;
 
     return (
-        <div aria-hidden className="fixed inset-0 h-dvh w-screen">
-            {desktop || mobile ? (
-                <>
-                    <div
-                        className="absolute inset-0 hidden bg-cover bg-center md:block"
-                        style={{ backgroundImage: `url(${desktop})` }}
-                    />
-                    <div
-                        className="absolute inset-0 bg-cover bg-center md:hidden"
-                        style={{ backgroundImage: `url(${mobile})` }}
-                    />
-                </>
-            ) : (
-                // Без фото — темне фірмове тло.
-                <div className="absolute inset-0 bg-[#070b14] bg-[radial-gradient(90%_70%_at_15%_85%,rgb(10_132_255/0.28),transparent_60%),radial-gradient(70%_60%_at_85%_15%,rgb(0_200_255/0.16),transparent_60%)]" />
-            )}
-            <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(0,0,0,0.45),rgba(0,0,0,0.2))]" />
-        </div>
+        <div
+            aria-hidden
+            className="mt-10 aspect-[16/10] w-full max-w-[30rem] rounded-3xl bg-cover bg-center shadow-[0_30px_80px_-30px_rgb(10_132_255/0.55)]"
+            style={{ backgroundImage: `url(${src})` }}
+        />
     );
 }
 
@@ -91,69 +81,47 @@ export default function AuthLayout({
     const fade = blurSwap(reduce);
     const intro = hero(mode);
 
+    // Той самий фон, шапка й футер, що на головній — переходи між ними без стрибків.
     return (
-        <div className="auth-screen relative min-h-dvh text-white">
+        <div className="relative min-h-dvh">
             <PaletteSync />
-            <AuthBackground />
+            <SiteBackground />
+            <Seasonal />
+            <GuestHeader />
 
             <main
                 id="main-content"
-                className="relative z-10 grid min-h-dvh md:grid-cols-2"
+                className="relative mx-auto grid min-h-dvh max-w-[1240px] items-center gap-10 px-5 pt-28 pb-12 lg:grid-cols-[1fr_minmax(0,460px)] lg:gap-16 lg:pt-32"
             >
-                {/* Ліва половина: прозора, заголовок по центру висоти, вирівняний ліворуч. */}
-                <section className="relative hidden flex-col justify-center px-10 py-12 md:flex lg:px-16">
-                    <Link
-                        href="/"
-                        className="absolute top-8 left-10 w-fit lg:left-16"
-                        aria-label="GameCon"
-                    >
-                        <Logo />
-                    </Link>
+                <section className="hidden lg:block">
                     <AnimatePresence mode="wait" initial={false}>
-                        <m.div
-                            key={`hero-${mode}`}
-                            className="max-w-[32rem]"
-                            {...fade}
-                        >
-                            <h2 className="font-display text-[clamp(2.4rem,4.2vw,4rem)] leading-[1.05] font-bold tracking-tight text-balance">
+                        <m.div key={`hero-${mode}`} {...fade}>
+                            <h2 className="font-display text-[clamp(2.4rem,4.2vw,4rem)] leading-[1.04] font-extrabold tracking-tight text-balance text-white">
                                 {intro.title}
                             </h2>
-                            <p className="mt-4 max-w-[36ch] text-base leading-relaxed text-white/80">
+                            <p className="mt-4 max-w-[36ch] text-[17px] leading-relaxed text-white/60">
                                 {intro.text}
                             </p>
                         </m.div>
                     </AnimatePresence>
+                    <AuthArt />
                 </section>
 
-                {/* Права половина: матове скло на всю висоту, впритик до країв. */}
-                <section className="auth-form auth-panel flex min-h-dvh flex-col px-7 pt-[calc(env(safe-area-inset-top)+2rem)] pb-8 sm:px-12 lg:px-16">
-                    <Link
-                        href="/"
-                        className="mb-10 w-fit md:hidden"
-                        aria-label="GameCon"
-                    >
-                        <Logo />
-                    </Link>
-                    <div className="flex flex-1 flex-col justify-center">
-                        <AnimatePresence mode="wait" initial={false}>
-                            <m.div
-                                key={component}
-                                className="w-full max-w-[420px]"
-                                {...fade}
-                            >
-                                <h1 className="font-display text-3xl font-semibold tracking-tight">
-                                    {title}
-                                </h1>
-                                {description && (
-                                    <p className="mt-2 text-sm leading-relaxed text-white/65">
-                                        {description}
-                                    </p>
-                                )}
-                                <div className="mt-8">{children}</div>
-                            </m.div>
-                        </AnimatePresence>
-                    </div>
-                    <div className="mt-10 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-white/60">
+                <section className="auth-form glass-strong w-full rounded-3xl p-6 sm:p-8">
+                    <AnimatePresence mode="wait" initial={false}>
+                        <m.div key={component} {...fade}>
+                            <h1 className="font-display text-3xl font-bold tracking-tight text-white">
+                                {title}
+                            </h1>
+                            {description && (
+                                <p className="mt-2 text-sm leading-relaxed text-white/60">
+                                    {description}
+                                </p>
+                            )}
+                            <div className="mt-7">{children}</div>
+                        </m.div>
+                    </AnimatePresence>
+                    <div className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-white/10 pt-5 text-sm text-white/55">
                         <LanguageSelect />
                         <Link
                             href="/help/start"
@@ -162,20 +130,15 @@ export default function AuthLayout({
                             {tr('Довідка')}
                         </Link>
                         <Link
-                            href="/privacy"
+                            href="/app"
                             className="transition hover:text-white"
                         >
-                            {tr('Конфіденційність')}
-                        </Link>
-                        <Link
-                            href="/terms"
-                            className="transition hover:text-white"
-                        >
-                            {tr('Умови')}
+                            {tr('Застосунок')}
                         </Link>
                     </div>
                 </section>
             </main>
+            <SiteFooter className="py-8" />
         </div>
     );
 }
