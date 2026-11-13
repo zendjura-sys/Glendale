@@ -167,7 +167,8 @@ class ArcticGlassThemeExtension extends ThemeExtension<ArcticGlassThemeExtension
     border: Color.fromRGBO(255, 255, 255, 0.12),
     outline: null,
     specular: Color.fromRGBO(255, 255, 255, 0.22),
-    shadows: [BoxShadow(color: Color.fromRGBO(0, 0, 0, 0.22), blurRadius: 32, offset: Offset(0, 4))],
+    // Без тіні: глибину дають розмиття, кант-блік і внутрішнє світіння.
+    shadows: [],
     // Безбарвне матове скло панелей: rgba(18, 20, 26, .86).
     barFill: LinearGradient(colors: [Color.fromRGBO(18, 20, 26, 0.86), Color.fromRGBO(18, 20, 26, 0.86)]),
     sheetFill: Color.fromRGBO(18, 20, 26, 0.94),
@@ -195,7 +196,7 @@ class ArcticGlassThemeExtension extends ThemeExtension<ArcticGlassThemeExtension
     border: Color.fromRGBO(255, 255, 255, 0.88),
     outline: null,
     specular: Color.fromRGBO(255, 255, 255, 0.95),
-    shadows: [BoxShadow(color: Color.fromRGBO(30, 50, 80, 0.08), blurRadius: 32, offset: Offset(0, 4))],
+    shadows: [],
     barFill: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color.fromRGBO(255, 255, 255, 0.65), Color.fromRGBO(232, 242, 255, 0.45)]),
     sheetFill: Color.fromRGBO(246, 250, 255, 0.72),
     title: AppColors.lightTitle,
