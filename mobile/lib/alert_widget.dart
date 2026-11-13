@@ -19,6 +19,13 @@ class AlertWidget {
     await _save(lines(mapOf(data['prefs']), DateTime.now()));
   }
 
+  /// «Я в укритті» з плитки чи ярлика: ставимо або знімаємо статус і оновлюємо віджет (у ньому ж стан плитки).
+  static Future<void> shelter(Api? api, bool on) async {
+    if (api == null) return;
+    final data = await api.put(Api.site('/alerts/preferences'), {'shelter': on});
+    await _save(lines(mapOf(data['prefs']), DateTime.now()));
+  }
+
   /// Рядки віджета з налаштувань тривог (окремо — щоб перевіряти без мережі).
   static Map<String, String> lines(Map<String, dynamic> prefs, DateTime now) {
     final unit = mapOf(prefs['unit']);
@@ -33,6 +40,7 @@ class AlertWidget {
         'aw_since': '',
         'aw_updated': tr('Оновлено {v}:{v2}', {'v': two(now.hour), 'v2': two(now.minute)}),
         'aw_ts': '${now.millisecondsSinceEpoch}',
+        'aw_shelter': prefs['shelter'] == true ? '1' : '0',
       };
     }
     final main = status.first;
@@ -46,6 +54,7 @@ class AlertWidget {
       'aw_since': minutes == null ? '' : (minutes >= 60 ? tr('Триває {h} год {m} хв', {'h': minutes ~/ 60, 'm': two(minutes % 60)}) : tr('Триває {m} хв', {'m': minutes})),
       'aw_updated': tr('Оновлено {v}:{v2}', {'v': two(now.hour), 'v2': two(now.minute)}),
       'aw_ts': '${now.millisecondsSinceEpoch}',
+      'aw_shelter': prefs['shelter'] == true ? '1' : '0',
     };
   }
 

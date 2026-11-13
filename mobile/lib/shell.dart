@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -9,6 +10,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'account.dart';
 import 'chrome.dart';
 import 'connect.dart';
+import 'alert_widget.dart';
 import 'api.dart';
 import 'app_login.dart' show appLoginIdFrom;
 import 'family_widget.dart';
@@ -202,6 +204,14 @@ class _AppShellState extends State<AppShell> {
     if (login != null) {
       widget.session.consumeLink();
       context.push('/app-login/$login');
+      return;
+    }
+    // Ярлик іконки «Я в укритті»: ставимо статус і показуємо тривоги.
+    if (uri.host == 'widget' && uri.path == '/shelter') {
+      widget.session.consumeLink();
+      unawaited(AlertWidget.shelter(widget.session.api, true)
+          .then((_) => mounted ? toast(context, tr('Статус «В укритті» встановлено.')) : null, onError: (_) => null));
+      context.push('/alerts');
       return;
     }
     final fromWidget = FamilyWidget.routeFor(uri) ?? PulseWidget.routeFor(uri);

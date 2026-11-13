@@ -76,6 +76,10 @@
                 <category android:name="android.intent.category.BROWSABLE"/>
                 <data android:scheme="https" android:host="gamecon.online" android:pathPrefix="/app-login/"/>
             </intent-filter>
+            <!-- Ярлики на іконці: «Я в укритті» й «Мапа тривог» (довге натискання на іконку). -->
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
             <!-- Натискання на push, надісланий із click_action (старі версії сервера). -->
             <intent-filter>
                 <action android:name="FLUTTER_NOTIFICATION_CLICK"/>
@@ -116,6 +120,20 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/family_widget_info"/>
         </receiver>
+        <!-- Плитка швидких налаштувань «Я в укритті»: ставить чи знімає статус без відкриття застосунку. -->
+        <service
+            android:name=".ShelterTileService"
+            android:exported="true"
+            android:icon="@drawable/ic_shelter"
+            android:label="@string/tile_shelter"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE"/>
+            </intent-filter>
+            <meta-data
+                android:name="android.service.quicksettings.TOGGLEABLE_TILE"
+                android:value="true" />
+        </service>
         <!-- Віджет «Тривога в моєму місці» на головному екрані. -->
         <receiver
             android:name=".AlertWidgetProvider"

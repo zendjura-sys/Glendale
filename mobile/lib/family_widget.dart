@@ -141,11 +141,14 @@ Future<void> familyWidgetBackground(Uri? uri) async {
   final token = prefs.getString('token');
   final api = token == null ? null : Api(() => token);
   try {
-    // Один фоновий обробник на всі віджети: pulse-refresh — «Пульс», alert-refresh — «Тривога», інше — «Моя сім’я».
+    // Один фоновий обробник на всі віджети: pulse-refresh — «Пульс», alert-refresh — «Тривога», shelter-set — плитка «Я в укритті», інше — «Моя сім’я».
     if (uri?.path == '/pulse-refresh') {
       await PulseWidget.refresh(api);
     } else if (uri?.path == '/alert-refresh') {
       await AlertWidget.refresh(api);
+    } else if (uri?.path == '/shelter-set') {
+      // Плитка «Я в укритті» у шторці.
+      await AlertWidget.shelter(api, uri?.queryParameters['on'] == '1');
     } else {
       await FamilyWidget.refresh(api, prefs);
     }

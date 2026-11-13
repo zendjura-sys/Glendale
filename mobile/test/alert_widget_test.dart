@@ -26,4 +26,9 @@ void main() {
     expect(lines['aw_color'], '#F59E0B');
     expect(lines['aw_since'], 'Триває 1 год 15 хв');
   });
+
+  test('стан плитки «Я в укритті» йде разом з даними віджета', () {
+    expect(AlertWidget.lines({'shelter': true, 'status': []}, now)['aw_shelter'], '1');
+    expect(AlertWidget.lines({'status': []}, now)['aw_shelter'], '0');
+  });
 }
