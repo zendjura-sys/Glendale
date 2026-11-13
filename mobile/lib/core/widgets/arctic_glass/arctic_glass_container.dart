@@ -138,9 +138,14 @@ class _ArcticGlassContainerState extends State<ArcticGlassContainer> {
       foregroundDecoration: edge == null ? null : BoxDecoration(borderRadius: shape, border: Border.all(color: edge, width: w.glowing ? 1.2 : 1)),
       child: _InsideGlass(child: w.child),
     );
-    if ((w.specular && !solid) || tokens.outline != null) {
+    // Кант-блік і внутрішнє світіння Liquid Glass — лише в карток (не в плашок усередині й не в панелей).
+    final rim = !inner && !solid && w.fill == null && w.color == null && w.borderColor == null ? tokens.rim : null;
+    final glow = rim != null ? tokens.innerGlow : null;
+    if ((w.specular && !solid) || tokens.outline != null || rim != null) {
       body = CustomPaint(
         foregroundPainter: ArcticSpecularBorderPainter(
+          rim: rim,
+          glow: glow,
           borderRadius: shape,
           specular: w.specular && !solid ? tokens.specular.withValues(alpha: (tokens.specular.a * (pressed ? 1.25 : 1)).clamp(0, 1)) : null,
           outline: inner ? null : tokens.outline,
@@ -189,14 +194,45 @@ class _OuterShadowPainter extends CustomPainter {
 /// Дзеркальний блік 1px по верхній грані (прозорий → [specular] → прозорий) і, у світлій темі,
 /// найтонший зовнішній контур 0.5px, щоб край картки читався на світлому тлі.
 class ArcticSpecularBorderPainter extends CustomPainter {
-  const ArcticSpecularBorderPainter({required this.borderRadius, this.specular, this.outline});
+  const ArcticSpecularBorderPainter({required this.borderRadius, this.specular, this.outline, this.rim, this.glow});
   final BorderRadius borderRadius;
   final Color? specular;
   final Color? outline;
+  final Color? rim;
+  final Color? glow;
 
   @override
   void paint(Canvas canvas, Size size) {
     final rrect = borderRadius.toRRect(Offset.zero & size);
+    if (glow case final g?) {
+      // Внутрішнє світіння: розмита світла смуга вздовж країв, обрізана формою скла.
+      canvas.save();
+      canvas.clipRRect(rrect);
+      canvas.drawRRect(
+        rrect,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 10
+          ..color = g
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8),
+      );
+      canvas.restore();
+    }
+    if (rim case final r?) {
+      // Кант-блік 1px: яскравіший угорі ліворуч, тьмяніший унизу праворуч.
+      canvas.drawRRect(
+        rrect.deflate(0.5),
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1
+          ..shader = LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [r, r.withValues(alpha: r.a * 0.35), r.withValues(alpha: r.a * 0.6)],
+            stops: const [0, 0.55, 1],
+          ).createShader(Offset.zero & size),
+      );
+    }
     if (outline case final o?) {
       canvas.drawRRect(
         rrect.deflate(0.25),
@@ -216,5 +252,5 @@ class ArcticSpecularBorderPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(ArcticSpecularBorderPainter old) => old.borderRadius != borderRadius || old.specular != specular || old.outline != outline;
+  bool shouldRepaint(ArcticSpecularBorderPainter old) => old.borderRadius != borderRadius || old.specular != specular || old.outline != outline || old.rim != rim || old.glow != glow;
 }

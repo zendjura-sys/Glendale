@@ -462,10 +462,15 @@ Future<void> showFeedbackSheet(BuildContext context, {String screen = 'menu'}) a
 
 
 /// Що нового в цій версії застосунку — один раз після оновлення.
-const whatsNewVersion = '1.1.119';
+const whatsNewVersion = '1.1.120';
 
 /// Нове саме в цій версії — зверху, окремим блоком.
 List<String> _whatsNewCurrent() => [
+      tr('Блоки з матеріалу Liquid Glass: густе матове скло з молочною димкою, тонкий світлий кант-блік і м’яке світіння по краях.'),
+    ];
+
+/// Версія 1.1.119.
+List<String> _whatsNew119() => [
       tr('Налаштування → «Меню розділів у нижній панелі»: язичок над вкладками (свайп угору) або окрема кнопка «Меню» — як вам зручніше.'),
     ];
 
@@ -689,7 +694,7 @@ Future<void> showWhatsNew(BuildContext context, SharedPreferences prefs, {bool f
   await prefs.setString('whats_new', whatsNewVersion);
   if (!context.mounted) return;
   final current = _whatsNewCurrent();
-  final earlier = [..._whatsNew118(), ..._whatsNew117(), ..._whatsNew116(), ..._whatsNew115(), ..._whatsNew113(), ..._whatsNew112(), ..._whatsNew111(), ..._whatsNewPrev(), ..._whatsNew()];
+  final earlier = [..._whatsNew119(), ..._whatsNew118(), ..._whatsNew117(), ..._whatsNew116(), ..._whatsNew115(), ..._whatsNew113(), ..._whatsNew112(), ..._whatsNew111(), ..._whatsNewPrev(), ..._whatsNew()];
   Widget card(String item, {bool fresh = false}) => Container(
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.fromLTRB(12, 12, 14, 12),
