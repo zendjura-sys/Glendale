@@ -187,7 +187,11 @@ export default function Alerts(props: {
     useEffect(() => {
         const poll = window.setInterval(() => {
             api<AlertState & { prefs: AlertPrefs }>('GET', '/alerts/state')
-                .then((d) => setState(d))
+                .then((d) => {
+                    setState(d);
+                    // Статус обраного місця теж оновлюється.
+                    setPrefs(d.prefs);
+                })
                 .catch(() => undefined);
         }, 15_000);
         const tick = window.setInterval(() => setNow(Date.now()), 1000);

@@ -109,8 +109,14 @@ class UkraineAlarm
      *
      * @return array<string, array<string, string|null>>|null
      */
-    public function active(): ?array
+    public function active(bool $fresh = true): ?array
     {
+        // Для показу людям (статус обраного місця) — короткий кеш, щоб сторінки не смикали API.
+        if (! $fresh && is_array($cached = Cache::get('ua_alarm:active'))) {
+            $this->levels = $cached['levels'];
+
+            return $cached['active'];
+        }
         $json = $this->get('/alerts');
         if (! is_array($json)) {
             return null;
@@ -137,6 +143,7 @@ class UkraineAlarm
                 }
             }
         }
+        Cache::put('ua_alarm:active', ['active' => $out, 'levels' => $this->levels], 15);
 
         return $out;
     }
@@ -294,6 +301,134 @@ class UkraineAlarm
             $out[] = ['id' => $id, 'name' => $district['name'], 'communities' => $list];
         }
         usort($out, fn ($a, $b) => strcmp($a['name'], $b['name']));
+
+        return $out;
+    }
+
+    /** Назва рівня регіону для людей. */
+    public static function typeLabel(string $type): string
+    {
+        return match ($type) {
+            'State' => 'Область',
+            'District' => 'Район',
+            'Community' => 'Територіальна громада',
+            'CityOrVillage' => 'Населений пункт',
+            'CityDistrict' => 'Район міста',
+            default => 'Місце',
+        };
+    }
+
+    /**
+     * Дерево області будь-якої глибини (як у застосунку «Тривога»): район → громада → місто/село → район міста.
+     *
+     * @return list<array{id: string, name: string, type: string, children: list<array<string, mixed>>}>
+     */
+    public function treeOf(string $slug): array
+    {
+        $state = $this->stateIdFor($slug);
+        if ($state === null) {
+            return [];
+        }
+        $children = [];
+        foreach ($this->regions() as $region) {
+            if ($region['state'] === $state && $region['parent'] !== null) {
+                $children[$region['parent']][] = $region;
+            }
+        }
+        $build = function (string $parent) use (&$build, $children): array {
+            $out = [];
+            foreach ($children[$parent] ?? [] as $node) {
+                $out[] = ['id' => $node['id'], 'name' => $node['name'], 'type' => $node['type'], 'children' => $build($node['id'])];
+            }
+            usort($out, fn ($a, $b) => strcmp($a['name'], $b['name']));
+
+            return $out;
+        };
+
+        return $build($state);
+    }
+
+    /**
+     * Пошук місця за назвою по всій Україні: «Коростень», «Бердичівська громада»…
+     *
+     * @return list<array{id: string, name: string, type: string, type_label: string, path: string}>
+     */
+    public function search(string $query, int $limit = 30): array
+    {
+        $q = mb_strtolower(trim($query));
+        if (mb_strlen($q) < 2) {
+            return [];
+        }
+        $tree = $this->regions();
+        // Як у «Тривозі»: спершу точний збіг назви (без «м.», «с.», «смт»), потім початок назви, потім будь-де;
+        // за рівних — місто/село, громада, район, область.
+        $order = ['CityOrVillage' => 0, 'Community' => 1, 'District' => 2, 'State' => 3, 'CityDistrict' => 4];
+        $hits = [];
+        foreach ($tree as $region) {
+            $name = mb_strtolower($region['name']);
+            $bare = preg_replace('/^(м\.|с\.|смт\.?|селище|село|місто)\s*/u', '', $name) ?? $name;
+            $rank = match (true) {
+                $bare === $q => 0,
+                str_starts_with($bare, $q) => 1,
+                mb_strpos($name, $q) !== false => 2,
+                default => null,
+            };
+            if ($rank !== null) {
+                $hits[] = [$rank, $order[$region['type']] ?? 5, $region];
+            }
+        }
+        usort($hits, fn ($a, $b) => [$a[0], $a[1], mb_strlen($a[2]['name'])] <=> [$b[0], $b[1], mb_strlen($b[2]['name'])]);
+
+        return array_map(fn ($hit) => [
+            'id' => $hit[2]['id'],
+            'name' => $hit[2]['name'],
+            'type' => $hit[2]['type'],
+            'type_label' => self::typeLabel($hit[2]['type']),
+            'path' => $this->pathLabel($hit[2]['id']),
+        ], array_slice($hits, 0, $limit));
+    }
+
+    /** «Житомирська область · Коростенський район» — над місцем, без нього самого. */
+    public function pathLabel(string $id): string
+    {
+        $tree = $this->regions();
+        $names = [];
+        foreach (array_slice($this->lineage($id), 1) as $node) {
+            $names[] = $tree[$node]['name'] ?? '';
+        }
+
+        return implode(' · ', array_reverse(array_filter($names)));
+    }
+
+    /** ID від області вниз до місця (для каскаду виборів). @return list<string> */
+    public function pathIds(string $id): array
+    {
+        return array_reverse($this->lineage($id));
+    }
+
+    /**
+     * Чи зараз тривога в місці (з урахуванням району й області над ним) — для картки «Моє місце».
+     *
+     * @return list<array{type: string, name: string, since: string|null, level: string|null, accent: string, severity: string}>
+     */
+    public function statusOf(string $id): array
+    {
+        $active = $this->active(false);
+        if ($active === null) {
+            return [];
+        }
+        $out = [];
+        foreach ($this->typesFor($id, $active) as $type => $since) {
+            $level = $type === 'AIR' ? ($this->levelFor($id, 'AIR') ?? 'red') : null;
+            $out[] = [
+                'type' => $type,
+                'name' => self::TYPES[$type][0],
+                'since' => $since,
+                'level' => $level,
+                'accent' => self::accent($type, $level ?? 'red'),
+                'severity' => self::severity($type, false, $level ?? 'red'),
+            ];
+        }
 
         return $out;
     }

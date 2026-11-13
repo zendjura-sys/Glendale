@@ -42,7 +42,19 @@ class AirAlertController extends Controller
         $this->ensure($request);
         $data = $request->validate(['region' => ['required', Rule::in(array_keys(AirAlertService::REGIONS))]]);
 
-        return response()->json(['enabled' => $this->api->enabled(), 'districts' => $this->api->enabled() ? $this->api->unitsOf($data['region']) : []]);
+        $on = $this->api->enabled();
+
+        // tree — повне дерево (район → громада → місто/село → район міста); districts — для застосунку 1.1.122.
+        return response()->json(['enabled' => $on, 'tree' => $on ? $this->api->treeOf($data['region']) : [], 'districts' => $on ? $this->api->unitsOf($data['region']) : []]);
+    }
+
+    /** Пошук місця за назвою (як у «Тривозі»): район, громада, місто чи село. */
+    public function search(Request $request): JsonResponse
+    {
+        $this->ensure($request);
+        $data = $request->validate(['q' => ['required', 'string', 'min:2', 'max:60']]);
+
+        return response()->json(['places' => $this->api->enabled() ? $this->api->search($data['q']) : []]);
     }
 
     /** @return list<array{slug: string, name: string}> */
@@ -134,7 +146,7 @@ class AirAlertController extends Controller
     }
 
     /**
-     * @return array{region: string|null, unit: array{id: string, name: string, type: string}|null, units_enabled: bool, push: bool, start: bool, end: bool, red: bool, yellow: bool, silent: bool, shelter: bool}
+     * @return array{region: string|null, unit: array<string, mixed>|null, status: list<array<string, mixed>>, units_enabled: bool, push: bool, start: bool, end: bool, red: bool, yellow: bool, silent: bool, shelter: bool}
      */
     private function prefs(Request $request): array
     {
@@ -145,7 +157,16 @@ class AirAlertController extends Controller
 
         return [
             'region' => is_string($region) ? $region : null,
-            'unit' => $known !== null ? ['id' => $known['id'], 'name' => $known['name'], 'type' => $known['type']] : null,
+            'unit' => $known !== null ? [
+                'id' => $known['id'],
+                'name' => $known['name'],
+                'type' => $known['type'],
+                'type_label' => UkraineAlarm::typeLabel($known['type']),
+                'path' => $this->api->pathLabel($known['id']),
+                'path_ids' => $this->api->pathIds($known['id']),
+            ] : null,
+            // Тривоги просто зараз саме в обраному місці (або в області, якщо місце не обране).
+            'status' => ($place = $known['id'] ?? (is_string($region) ? $this->api->stateIdFor($region) : null)) !== null && $this->api->enabled() ? $this->api->statusOf($place) : [],
             'units_enabled' => $this->api->enabled(),
             ...AlertWatcher::prefsOf($user),
             'shelter' => $user->status_emoji === '🛡️' && ($user->status_until === null || $user->status_until->isFuture()),

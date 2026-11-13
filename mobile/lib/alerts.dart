@@ -793,7 +793,8 @@ class _FlagMapPainter extends CustomPainter {
   bool shouldRepaint(_FlagMapPainter old) => old.active != active;
 }
 
-/// Район і громада для сповіщень (довідник UkraineAlarm): тривога в області чи районі діє й на громаду в ньому.
+/// Місце для сповіщень, як у застосунку «Тривога»: пошук за назвою або крок за кроком —
+/// район → громада → місто/село → район міста. Тривога в районі чи області над місцем діє й на нього.
 class _AlertPlace extends StatefulWidget {
   const _AlertPlace({required this.region, required this.prefs, required this.onSave, super.key});
   final String region;
@@ -805,7 +806,10 @@ class _AlertPlace extends StatefulWidget {
 }
 
 class _AlertPlaceState extends State<_AlertPlace> {
-  List<Map<String, dynamic>> districts = [];
+  List<Map<String, dynamic>> tree = [];
+  List<Map<String, dynamic>> hits = [];
+  final query = TextEditingController();
+  Timer? debounce;
 
   @override
   void initState() {
@@ -813,41 +817,128 @@ class _AlertPlaceState extends State<_AlertPlace> {
     _load();
   }
 
+  @override
+  void dispose() {
+    debounce?.cancel();
+    query.dispose();
+    super.dispose();
+  }
+
   Future<void> _load() async {
     try {
       final d = await AppScope.read(context).session.api.get(Api.site('/alerts/units?region=${Uri.encodeQueryComponent(widget.region)}'));
-      if (mounted) setState(() => districts = maps(d['districts']));
+      if (mounted) setState(() => tree = maps(d['tree']));
     } catch (_) {}
+  }
+
+  void _search(String q) {
+    debounce?.cancel();
+    if (q.trim().length < 2) {
+      setState(() => hits = []);
+      return;
+    }
+    debounce = Timer(const Duration(milliseconds: 250), () async {
+      try {
+        final d = await AppScope.read(context).session.api.get(Api.site('/alerts/search?q=${Uri.encodeQueryComponent(q.trim())}'));
+        if (mounted) setState(() => hits = maps(d['places']));
+      } catch (_) {}
+    });
+  }
+
+  static String _levelLabel(Object? type) => switch (type) {
+        'District' => tr('Район'),
+        'Community' => tr('Територіальна громада'),
+        'CityOrVillage' => tr('Населений пункт'),
+        'CityDistrict' => tr('Район міста'),
+        _ => tr('Місце'),
+      };
+
+  Color _hex(Object? v, Color fallback) {
+    final n = int.tryParse('${v ?? ''}'.replaceFirst('#', ''), radix: 16);
+    return n == null ? fallback : Color(0xFF000000 | n);
   }
 
   @override
   Widget build(BuildContext context) {
-    if (districts.isEmpty) return const SizedBox.shrink();
     final unit = mapOf(widget.prefs['unit']);
-    final unitId = text(unit['id']);
-    final district = unit['type'] == 'District'
-        ? unitId
-        : text(districts.where((d) => maps(d['communities']).any((c) => c['id'] == unitId)).firstOrNull?['id']);
-    final communities = maps(districts.where((d) => d['id'] == district).firstOrNull?['communities']);
+    final status = maps(widget.prefs['status']);
+    final path = [for (final id in (unit['path_ids'] is List ? unit['path_ids'] as List : const [])) '$id'].skip(1).toList();
+    // Каскад: на кожному рівні — діти обраного вище вузла.
+    final levels = <({List<Map<String, dynamic>> options, String value, String? parent})>[];
+    var options = tree;
+    String? parent;
+    for (var depth = 0; options.isNotEmpty; depth++) {
+      final value = depth < path.length ? path[depth] : '';
+      levels.add((options: options, value: value, parent: parent));
+      final picked = options.where((o) => o['id'] == value).firstOrNull;
+      if (picked == null) break;
+      parent = '${picked['id']}';
+      options = maps(picked['children']);
+    }
     return Padding(
-      padding: const EdgeInsets.only(top: 8),
+      padding: const EdgeInsets.only(top: 10),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        GcSelect<String>(
-          value: district ?? '',
-          expand: true,
-          items: [('', tr('Уся область')), for (final d in districts) (text(d['id'])!, text(d['name']) ?? '')],
-          onChanged: (v) => widget.onSave({'unit': (v == null || v.isEmpty) ? null : v}),
+        // Моє місце: точний статус саме тут.
+        Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.04), borderRadius: BorderRadius.circular(8)),
+          child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Icon(LucideIcons.mapPin, size: 16, color: muted),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(text(unit['name']) ?? tr('Уся область'), style: body(14, weight: FontWeight.w700)),
+                if (unit.isNotEmpty) Text('${unit['type_label'] ?? ''} · ${unit['path'] ?? ''}', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: muted)),
+                const SizedBox(height: 6),
+                Wrap(spacing: 6, runSpacing: 6, children: [
+                  if (status.isEmpty)
+                    _chip(tr('Тривоги немає'), const Color(0xFF10B981))
+                  else
+                    for (final st in status)
+                      _chip(
+                        '${st['name']}${st['level'] == 'yellow' ? ' · ${tr('жовтий рівень')}' : st['level'] == 'red' ? ' · ${tr('червоний рівень')}' : ''}',
+                        _hex(st['accent'], const Color(0xFFEF4444)),
+                      ),
+                ]),
+              ]),
+            ),
+            if (unit.isNotEmpty) IconButton(icon: const Icon(LucideIcons.x, size: 16), tooltip: tr('Уся область'), onPressed: () => widget.onSave({'unit': null})),
+          ]),
         ),
-        if (district != null && communities.isNotEmpty) ...[
+        const SizedBox(height: 8),
+        // Пошук: місто, село, громада чи район по всій Україні.
+        GcField(controller: query, label: tr('Знайти місто, село, громаду чи район'), icon: LucideIcons.search, dense: true, onChanged: _search),
+        for (final hit in hits)
+          ListTile(
+            dense: true,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+            title: Text(text(hit['name']) ?? '', style: body(14, weight: FontWeight.w600)),
+            subtitle: Text('${hit['type_label'] ?? ''}${text(hit['path']) != null && text(hit['path'])!.isNotEmpty ? ' · ${hit['path']}' : ''}', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: muted)),
+            onTap: () {
+              widget.onSave({'unit': hit['id']});
+              query.clear();
+              setState(() => hits = []);
+            },
+          ),
+        // Або крок за кроком.
+        for (final (i, level) in levels.indexed) ...[
           const SizedBox(height: 8),
+          Text(_levelLabel(level.options.first['type']), style: body(12, color: muted)),
+          const SizedBox(height: 4),
           GcSelect<String>(
-            value: unit['type'] == 'Community' ? unitId : '',
+            value: level.value,
             expand: true,
-            items: [('', tr('Увесь район')), for (final c in communities) (text(c['id'])!, text(c['name']) ?? '')],
-            onChanged: (v) => widget.onSave({'unit': (v == null || v.isEmpty) ? district : v}),
+            items: [('', i == 0 ? tr('Уся область') : tr('Усе вище обране')), for (final o in level.options) (text(o['id'])!, text(o['name']) ?? '')],
+            onChanged: (v) => widget.onSave({'unit': (v == null || v.isEmpty) ? level.parent : v}),
           ),
         ],
       ]),
     );
   }
+
+  Widget _chip(String label, Color color) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        decoration: BoxDecoration(color: color.withValues(alpha: 0.16), borderRadius: BorderRadius.circular(6)),
+        child: Text(label, style: body(12, color: color, weight: FontWeight.w700)),
+      );
 }

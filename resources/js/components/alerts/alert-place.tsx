@@ -1,6 +1,8 @@
-import { useEffect, useState } from 'react';
+import { MapPin, Search, X } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 import type {
-    AlertDistrict,
+    AlertPlaceHit,
+    AlertPlaceNode,
     AlertPrefs,
     AlertPrefsPatch,
 } from '@/components/alerts/alert-utils';
@@ -9,9 +11,26 @@ import { api } from '@/lib/api';
 import { tr } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
+/** Назва рівня для підпису поля каскаду. */
+function levelLabel(type: string | undefined): string {
+    switch (type) {
+        case 'District':
+            return tr('Район');
+        case 'Community':
+            return tr('Територіальна громада');
+        case 'CityOrVillage':
+            return tr('Населений пункт');
+        case 'CityDistrict':
+            return tr('Район міста');
+        default:
+            return tr('Місце');
+    }
+}
+
 /**
- * «Налаштування сповіщень тривог»: регіон з довідника UkraineAlarm (область → район → громада)
- * і фільтри подій. Сповіщення — один раз на початку й один раз на відбій.
+ * «Налаштування сповіщень тривог», як у застосунку «Тривога»: пошук місця за назвою або вибір
+ * крок за кроком — район → громада → місто/село → район міста (довідник UkraineAlarm).
+ * Тривога в районі чи області над обраним місцем діє й на нього; сусідні громади — ні.
  */
 export function AlertPlacePicker({
     prefs,
@@ -20,17 +39,19 @@ export function AlertPlacePicker({
     prefs: AlertPrefs;
     onSave: (patch: AlertPrefsPatch) => void;
 }) {
-    const [districts, setDistricts] = useState<AlertDistrict[]>([]);
+    const [tree, setTree] = useState<AlertPlaceNode[]>([]);
+    const [query, setQuery] = useState('');
+    const [hits, setHits] = useState<AlertPlaceHit[]>([]);
     const region = prefs.region;
 
     useEffect(() => {
         if (!region || !prefs.units_enabled) return;
         let alive = true;
-        api<{ districts: AlertDistrict[] }>(
+        api<{ tree?: AlertPlaceNode[] }>(
             'GET',
             `/alerts/units?region=${encodeURIComponent(region)}`,
         )
-            .then((d) => alive && setDistricts(d.districts))
+            .then((d) => alive && setTree(d.tree ?? []))
             .catch(() => undefined);
 
         return () => {
@@ -38,15 +59,46 @@ export function AlertPlacePicker({
         };
     }, [region, prefs.units_enabled]);
 
-    const unit = prefs.unit;
-    const district =
-        unit?.type === 'District'
-            ? unit.id
-            : (districts.find((d) =>
-                  d.communities.some((c) => c.id === unit?.id),
-              )?.id ?? '');
-    const communities =
-        districts.find((d) => d.id === district)?.communities ?? [];
+    useEffect(() => {
+        const q = query.trim();
+        if (q.length < 2 || !prefs.units_enabled) {
+            setHits([]);
+            return;
+        }
+        const timer = window.setTimeout(() => {
+            api<{ places: AlertPlaceHit[] }>(
+                'GET',
+                `/alerts/search?q=${encodeURIComponent(q)}`,
+            )
+                .then((d) => setHits(d.places))
+                .catch(() => undefined);
+        }, 250);
+
+        return () => window.clearTimeout(timer);
+    }, [query, prefs.units_enabled]);
+
+    // Каскад: на кожному рівні — діти обраного вище вузла; path_ids[0] — область.
+    const levels = useMemo(() => {
+        const path = prefs.unit?.path_ids.slice(1) ?? [];
+        const out: {
+            options: AlertPlaceNode[];
+            value: string;
+            parent: string | null;
+        }[] = [];
+        let options = tree;
+        let parent: string | null = null;
+        for (let depth = 0; options.length > 0; depth++) {
+            const value = path[depth] ?? '';
+            out.push({ options, value, parent });
+            const picked = options.find((o) => o.id === value);
+            if (!picked) break;
+            parent = picked.id;
+            options = picked.children;
+        }
+
+        return out;
+    }, [tree, prefs.unit]);
+
     const filters: {
         key: 'start' | 'end' | 'red' | 'yellow' | 'silent';
         label: string;
@@ -96,45 +148,139 @@ export function AlertPlacePicker({
                     )}
                 </p>
             )}
-            {region && prefs.units_enabled && districts.length > 0 && (
-                <div className="grid gap-2 sm:grid-cols-2">
-                    <label className="text-xs text-white/50">
-                        {tr('Район')}
-                        <select
-                            value={district}
-                            onChange={(e) =>
-                                onSave({ unit: e.target.value || null })
-                            }
-                            className="input-glass mt-1 h-10 w-full rounded-lg px-3 text-sm text-white"
-                        >
-                            <option value="">{tr('Уся область')}</option>
-                            {districts.map((d) => (
-                                <option key={d.id} value={d.id}>
-                                    {d.name}
-                                </option>
+
+            {prefs.units_enabled && (
+                <>
+                    {/* Моє місце: точний статус саме тут. */}
+                    <div className="flex items-start gap-3 rounded-lg bg-white/[0.04] p-3">
+                        <MapPin className="mt-0.5 size-4 shrink-0 text-white/60" />
+                        <div className="min-w-0 flex-1">
+                            <p className="text-sm font-semibold text-white">
+                                {prefs.unit?.name ?? tr('Уся область')}
+                            </p>
+                            {prefs.unit && (
+                                <p className="truncate text-xs text-white/45">
+                                    {prefs.unit.type_label} · {prefs.unit.path}
+                                </p>
+                            )}
+                            <div className="mt-2 flex flex-wrap gap-1.5">
+                                {prefs.status.length === 0 ? (
+                                    <span className="rounded-md bg-[#10B981]/15 px-2 py-0.5 text-xs font-semibold text-[#10B981]">
+                                        {tr('Тривоги немає')}
+                                    </span>
+                                ) : (
+                                    prefs.status.map((s) => (
+                                        <span
+                                            key={s.type}
+                                            className="rounded-md px-2 py-0.5 text-xs font-semibold"
+                                            style={{
+                                                color: s.accent,
+                                                background: `color-mix(in srgb, ${s.accent} 16%, transparent)`,
+                                            }}
+                                        >
+                                            {s.name}
+                                            {s.level === 'yellow'
+                                                ? ` · ${tr('жовтий рівень')}`
+                                                : s.level === 'red'
+                                                  ? ` · ${tr('червоний рівень')}`
+                                                  : ''}
+                                        </span>
+                                    ))
+                                )}
+                            </div>
+                        </div>
+                        {prefs.unit && (
+                            <button
+                                type="button"
+                                onClick={() => onSave({ unit: null })}
+                                aria-label={tr('Уся область')}
+                                className="flex size-8 items-center justify-center rounded-lg text-white/50 transition hover:bg-white/10 hover:text-white"
+                            >
+                                <X className="size-4" />
+                            </button>
+                        )}
+                    </div>
+
+                    {/* Пошук: місто, село, громада чи район по всій Україні. */}
+                    <div className="relative">
+                        <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-white/40" />
+                        <input
+                            type="search"
+                            value={query}
+                            onChange={(e) => setQuery(e.target.value)}
+                            placeholder={tr(
+                                'Знайти місто, село, громаду чи район',
+                            )}
+                            aria-label={tr('Пошук місця')}
+                            className="input-glass h-10 w-full rounded-lg pr-3 pl-9 text-sm text-white placeholder:text-white/35"
+                        />
+                        {hits.length > 0 && (
+                            <ul className="gc-solid absolute inset-x-0 top-11 z-20 max-h-72 overflow-auto rounded-lg p-1">
+                                {hits.map((hit) => (
+                                    <li key={hit.id}>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                onSave({ unit: hit.id });
+                                                setQuery('');
+                                                setHits([]);
+                                            }}
+                                            className="block w-full rounded-md px-3 py-2 text-left transition hover:bg-white/10"
+                                        >
+                                            <span className="block text-sm text-white">
+                                                {hit.name}
+                                            </span>
+                                            <span className="block truncate text-xs text-white/45">
+                                                {hit.type_label}
+                                                {hit.path
+                                                    ? ` · ${hit.path}`
+                                                    : ''}
+                                            </span>
+                                        </button>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                    </div>
+
+                    {/* Або крок за кроком: район → громада → місто/село → район міста. */}
+                    {region && levels.length > 0 && (
+                        <div className="grid gap-2 sm:grid-cols-2">
+                            {levels.map((level, depth) => (
+                                <label
+                                    key={depth}
+                                    className="text-xs text-white/50"
+                                >
+                                    {levelLabel(level.options[0]?.type)}
+                                    <select
+                                        value={level.value}
+                                        onChange={(e) =>
+                                            onSave({
+                                                unit:
+                                                    e.target.value ||
+                                                    level.parent,
+                                            })
+                                        }
+                                        className="input-glass mt-1 h-10 w-full rounded-lg px-3 text-sm text-white"
+                                    >
+                                        <option value="">
+                                            {depth === 0
+                                                ? tr('Уся область')
+                                                : tr('Усе вище обране')}
+                                        </option>
+                                        {level.options.map((o) => (
+                                            <option key={o.id} value={o.id}>
+                                                {o.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </label>
                             ))}
-                        </select>
-                    </label>
-                    <label className="text-xs text-white/50">
-                        {tr('Громада')}
-                        <select
-                            value={unit?.type === 'Community' ? unit.id : ''}
-                            disabled={!district || communities.length === 0}
-                            onChange={(e) =>
-                                onSave({ unit: e.target.value || district })
-                            }
-                            className="input-glass mt-1 h-10 w-full rounded-lg px-3 text-sm text-white disabled:opacity-50"
-                        >
-                            <option value="">{tr('Увесь район')}</option>
-                            {communities.map((c) => (
-                                <option key={c.id} value={c.id}>
-                                    {c.name}
-                                </option>
-                            ))}
-                        </select>
-                    </label>
-                </div>
+                        </div>
+                    )}
+                </>
             )}
+
             <div
                 className={cn(
                     'grid gap-1 sm:grid-cols-2',

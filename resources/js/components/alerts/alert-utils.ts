@@ -28,8 +28,26 @@ export type AlertState = {
 
 export type AlertPrefs = {
     region: string | null;
-    /** Район чи громада з довідника UkraineAlarm; null — уся область. */
-    unit: { id: string; name: string; type: string } | null;
+    /** Місце з довідника UkraineAlarm (район, громада, місто/село, район міста); null — уся область. */
+    unit: {
+        id: string;
+        name: string;
+        type: string;
+        type_label: string;
+        /** «Область · Район · Громада» — над місцем. */
+        path: string;
+        /** Від області до місця — для каскаду виборів. */
+        path_ids: string[];
+    } | null;
+    /** Тривоги просто зараз саме в обраному місці. */
+    status: {
+        type: string;
+        name: string;
+        since: string | null;
+        level: 'red' | 'yellow' | null;
+        accent: string;
+        severity: string;
+    }[];
     /** Чи є ключ UkraineAlarm — без нього тривог і сповіщень немає. */
     units_enabled: boolean;
     /** Отримувати сповіщення про тривоги взагалі. */
@@ -54,6 +72,22 @@ export type AlertPrefsPatch = {
     yellow?: boolean;
     silent?: boolean;
     shelter?: boolean;
+};
+
+/** Вузол дерева місць: район → громада → місто/село → район міста. */
+export type AlertPlaceNode = {
+    id: string;
+    name: string;
+    type: string;
+    children: AlertPlaceNode[];
+};
+
+export type AlertPlaceHit = {
+    id: string;
+    name: string;
+    type: string;
+    type_label: string;
+    path: string;
 };
 
 export type AlertDistrict = {

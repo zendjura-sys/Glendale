@@ -95,7 +95,9 @@ class AirAlertsTest extends TestCase
             'regionId' => '10', 'regionName' => 'Житомирська область', 'regionType' => 'State',
             'regionChildIds' => [[
                 'regionId' => '100', 'regionName' => 'Житомирський район', 'regionType' => 'District',
-                'regionChildIds' => [['regionId' => '1001', 'regionName' => 'Житомирська територіальна громада', 'regionType' => 'Community', 'regionChildIds' => []]],
+                'regionChildIds' => [['regionId' => '1001', 'regionName' => 'Житомирська територіальна громада', 'regionType' => 'Community', 'regionChildIds' => [
+                    ['regionId' => '10011', 'regionName' => 'м. Житомир', 'regionType' => 'CityOrVillage', 'regionChildIds' => []],
+                ]]],
             ], [
                 'regionId' => '200', 'regionName' => 'Коростенський район', 'regionType' => 'District', 'regionChildIds' => [],
             ]],
@@ -266,6 +268,38 @@ class AirAlertsTest extends TestCase
         Cache::forget('alerts.state');
         $region = collect($this->service()->state()['regions'])->firstWhere('slug', 'zhytomyr');
         $this->assertSame(['UAV', 'yellow'], [$region['alert'], $region['air_level']]);
+    }
+
+    public function test_place_tree_search_and_exact_status_like_tryvoga_app(): void
+    {
+        $alerts = [];
+        $index = 1;
+        $this->fakeUkraineAlarm($this->zhytomyrTree(), $alerts, $index);
+        $user = User::factory()->create(['country' => 'UA']);
+
+        // Повне дерево: район → громада → місто.
+        $this->actingAs($user)->getJson('/alerts/units?region=zhytomyr')->assertOk()
+            ->assertJsonPath('tree.0.name', 'Житомирський район')
+            ->assertJsonPath('tree.0.children.0.children.0.name', 'м. Житомир')
+            ->assertJsonPath('tree.0.children.0.children.0.type', 'CityOrVillage');
+        // Пошук за назвою — з шляхом.
+        $this->actingAs($user)->getJson('/alerts/search?q=житомир')->assertOk()
+            ->assertJsonPath('places.0.name', 'м. Житомир')
+            ->assertJsonPath('places.0.path', 'Житомирська область · Житомирський район · Житомирська територіальна громада');
+
+        // Обрали місто; тривога лише в Коростенському районі — у місті спокійно.
+        $this->actingAs($user)->putJson('/alerts/preferences', ['unit' => '10011'])->assertOk()
+            ->assertJsonPath('prefs.region', 'zhytomyr')
+            ->assertJsonPath('prefs.unit.type_label', 'Населений пункт')
+            ->assertJsonPath('prefs.unit.path_ids', ['10', '100', '1001', '10011']);
+        [$alerts, $index] = [[$this->row('200', 'District', 'AIR')], 2];
+        app(UkraineAlarm::class)->active();
+        $this->actingAs($user)->getJson('/alerts/state')->assertJsonPath('prefs.status', []);
+        // Тривога в Житомирському районі — діє й на місто.
+        [$alerts, $index] = [[$this->row('100', 'District', 'AIR')], 3];
+        app(UkraineAlarm::class)->active();
+        $this->actingAs($user)->getJson('/alerts/state')->assertJsonPath('prefs.status.0.type', 'AIR')
+            ->assertJsonPath('prefs.status.0.accent', '#EF4444');
     }
 
     public function test_official_alert_level_yellow_then_raised_to_red(): void
