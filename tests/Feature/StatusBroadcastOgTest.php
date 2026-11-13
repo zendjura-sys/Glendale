@@ -65,13 +65,14 @@ class StatusBroadcastOgTest extends TestCase
     {
         Queue::fake();
         $admin = User::factory()->create(['role' => 'admin']);
+        // Сегмент «GameCon+» не порожній — інакше розсилку відхиляє перевірка аудиторії.
+        $plus = User::factory()->create(['plus_until' => now()->addMonth()]);
         $this->actingAs($admin)->get('/admin/broadcasts')->assertInertia(fn (Assert $page) => $page->component('admin/broadcasts'));
         $this->actingAs($admin)->post('/admin/broadcasts', ['title' => 'Оновлення', 'body' => 'Нові функції', 'url' => '/changelog', 'audience' => 'plus'])->assertRedirect();
         $this->actingAs($admin)->post('/admin/broadcasts', ['title' => 'Погано', 'body' => 'Посилання', 'url' => 'javascript:alert(1)', 'audience' => 'all'])->assertSessionHasErrors('url');
         Queue::assertPushed(SendBroadcast::class);
 
         Notification::fake();
-        $plus = User::factory()->create(['plus_until' => now()->addMonth()]);
         $free = User::factory()->create();
         $banned = User::factory()->create(['plus_until' => now()->addMonth(), 'banned_at' => now()]);
         (new SendBroadcast(Broadcast::query()->sole()->id))->handle();

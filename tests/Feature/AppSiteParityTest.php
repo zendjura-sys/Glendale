@@ -33,6 +33,7 @@ use App\Support\Plugins\Plugins;
 use App\Support\Seasons;
 use App\Support\Settings\SiteSettings;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
@@ -882,7 +883,7 @@ class AppSiteParityTest extends TestCase
         $list = MovieList::query()->create(['user_id' => $owner->id, 'title' => 'Топ-3', 'is_public' => true, 'is_ranked' => true]);
         $this->withToken($token)->postJson("/api/v1/site/cinema/lists/{$list->id}/comments", ['body' => 'Класна добірка'])->assertOk()->assertJsonPath('comments_count', 1);
         $this->withToken($token)->getJson("/api/v1/site/cinema/lists/{$list->id}/comments")->assertOk()->assertJsonPath('comments.0.body', 'Класна добірка');
-        $this->withToken($token)->putJson("/api/v1/site/cinema/lists/{$list->id}/order", ['ids' => []])->assertStatus(422);
+        $this->withToken($token)->putJson("/api/v1/site/cinema/lists/{$list->id}/order", ['ids' => []])->assertForbidden();
     }
 
     public function test_app_reads_friend_activity_through_bridge(): void
@@ -916,9 +917,46 @@ class AppSiteParityTest extends TestCase
     {
         $owner = User::factory()->create();
         $member = User::factory()->create();
+        app(FriendshipService::class)->request($owner, $member);
+        app(FriendshipService::class)->accept($member, $owner);
         $chat = app(Messenger::class)->createGroup($owner, 'Рейд', [$member->id]);
         $token = $this->app_token($member);
         $poll = $this->withToken($token)->postJson("/api/v1/site/messages/{$chat->id}/polls", ['question' => 'Коли?', 'options' => ['Сьогодні', 'Завтра']])->assertCreated()->json('message.id');
         $this->withToken($token)->postJson("/api/v1/site/messages/{$chat->id}/messages/{$poll}/vote", ['options' => [1]])->assertOk()->assertJsonPath('message.poll.options.1.count', 1);
+    }
+
+    public function test_app_reads_gamification_sections_through_bridge(): void
+    {
+        $token = $this->app_token(User::factory()->create());
+        $this->withToken($token)->getJson('/api/v1/site/level')->assertOk();
+        $this->withToken($token)->getJson('/api/v1/site/rewards')->assertOk();
+        $this->withToken($token)->getJson('/api/v1/site/cards')->assertOk();
+        $this->withToken($token)->getJson('/api/v1/site/cards/chance?crystals=0')->assertOk();
+        $this->withToken($token)->getJson('/api/v1/site/season-events')->assertOk();
+    }
+
+    public function test_app_reads_live_transparency_and_imports_through_bridge(): void
+    {
+        $token = $this->app_token(User::factory()->create());
+        $this->withToken($token)->getJson('/api/v1/site/streams/live')->assertOk();
+        $this->withToken($token)->getJson('/api/v1/site/transparency')->assertOk();
+        $this->withToken($token)->getJson('/api/v1/site/games/steam-import')->assertOk();
+        $this->withToken($token)->getJson('/api/v1/site/cinema/import')->assertOk();
+    }
+
+    public function test_app_sets_slow_mode_through_bridge(): void
+    {
+        $user = User::factory()->create();
+        $post = Post::factory()->create(['author_id' => $user->id]);
+        $token = $this->app_token($user);
+        $this->withToken($token)->postJson("/api/v1/site/posts/{$post->id}/slow-mode", ['seconds' => 60])->assertSuccessful();
+    }
+
+    public function test_app_previews_anime_list_import_through_bridge(): void
+    {
+        $token = $this->app_token(User::factory()->create());
+        $csv = UploadedFile::fake()->createWithContent('anixart.csv', "#,Название,Оригинал,Альтернативные,Год,Статус\n1,Невідомий тайтл,Unknown,Не указаны,2020,Смотрю\n");
+        $this->withToken($token)->post('/api/v1/site/cinema/import/preview', ['source' => 'anixart', 'file' => $csv], ['Accept' => 'application/json'])
+            ->assertOk()->assertJsonPath('source', 'anixart')->assertJsonStructure(['preview' => ['matched', 'missing', 'total']]);
     }
 }

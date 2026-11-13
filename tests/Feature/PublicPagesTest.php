@@ -128,10 +128,9 @@ class PublicPagesTest extends TestCase
         $this->actingAs($owner)->get('/clans/navi')->assertOk()->assertInertia(fn (Assert $page) => $page->component('clans/show'));
         $this->actingAs($owner)->get('/servers/quant-rp')->assertOk()->assertInertia(fn (Assert $page) => $page->component('servers/show'));
 
-        // Карта сайту: окремі частини для кіно, серверів і кланів.
+        // Карта сайту: окремі частини для серверів і кланів; кіно в публічній карті немає.
         auth()->logout();
-        $this->assertStringContainsString('<loc>'.url('/cinema/matrix').'</loc>', $cinema = $this->get('/sitemaps/cinema.xml')->assertOk()->getContent());
-        $this->assertStringNotContainsString('/cinema/draft', $cinema);
+        $this->get('/sitemaps/cinema.xml')->assertNotFound();
         $this->assertStringContainsString('<loc>'.url('/servers/quant-rp').'</loc>', $this->get('/sitemaps/servers.xml')->getContent());
         $this->assertStringContainsString('<loc>'.url('/clans/navi').'</loc>', $this->get('/sitemaps/clans.xml')->getContent());
         $this->assertStringContainsString('"@type":"MobileApplication"', $this->get('/app')->assertOk()->getContent());

@@ -267,7 +267,7 @@ class BillingTest extends TestCase
             'old_price' => $p['key'] === 'plus_month' ? 149 : null, 'days' => $p['days'], 'recurring' => true, 'enabled' => $p['key'] !== 'gift_year', 'badge' => null,
         ])->values()->push(['key' => 'plus_quarter', 'kind' => 'plus', 'promo' => null, 'name' => 'GameCon+ · 3 місяці', 'price' => 399, 'old_price' => null, 'days' => 90, 'recurring' => true, 'enabled' => true, 'badge' => 'Вигідно'])->all();
         $this->actingAs($admin)->put('/admin/billing/products', ['products' => $plans])->assertSessionHasNoErrors();
-        $this->actingAs($admin)->put('/admin/billing/rules', ['renew_before_hours' => 48, 'retry_hours' => 12, 'retry_max' => 4, 'order_hours' => 2, 'card_renewals' => true, 'offer_save_card' => true, 'badges' => ['visa', 'mastercard', 'prostir']])->assertSessionHasNoErrors();
+        $this->actingAs($admin)->put('/admin/billing/rules', ['renew_before_hours' => 48, 'retry_hours' => 12, 'retry_max' => 4, 'order_hours' => 2, 'trial_days' => 7, 'card_renewals' => true, 'offer_save_card' => true, 'badges' => ['visa', 'mastercard', 'prostir']])->assertSessionHasNoErrors();
         $this->actingAs($admin)->put('/admin/billing/google-pay', ['enabled' => true, 'environment' => 'TEST', 'merchant_name' => 'GameCon', 'gateway' => 'monobank', 'gateway_merchant_id' => 'mono-123'])->assertSessionHasNoErrors();
 
         $this->actingAs($user)->get('/plus/billing')->assertInertia(fn (Assert $page) => $page

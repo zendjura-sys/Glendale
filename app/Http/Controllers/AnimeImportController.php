@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\MovieRequest;
 use App\Services\Cinema\AnimeListImport;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -22,7 +23,7 @@ class AnimeImportController extends Controller
         ]);
     }
 
-    public function preview(Request $request): RedirectResponse
+    public function preview(Request $request): RedirectResponse|JsonResponse
     {
         $data = $request->validate([
             'source' => ['required', 'in:shikimori,mal,anixart'],
@@ -36,6 +37,10 @@ class AnimeImportController extends Controller
         };
         $preview = $this->import->preview($request->user(), $rows);
         $this->import->remember($request->user(), $preview);
+        // Застосунок (міст /api/v1/site) не має сесії — йому передперегляд одразу у відповіді.
+        if ($request->is('api/*')) {
+            return response()->json(['preview' => $preview, 'source' => $data['source']]);
+        }
 
         return redirect()->route('cinema.import')->with('anime_preview', $preview)->with('anime_source', $data['source']);
     }

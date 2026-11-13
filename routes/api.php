@@ -641,6 +641,7 @@ Route::prefix('v1')->group(function () {
                 Route::delete('comments/{comment}', [CommentController::class, 'destroy'])->whereNumber('comment');
                 Route::post('comments/{comment}/like', [CommentController::class, 'like'])->whereNumber('comment')->middleware('throttle:120,1');
                 Route::post('comments/{comment}/visibility', [CommentController::class, 'visibility'])->whereNumber('comment')->middleware('throttle:60,1');
+                Route::post('posts/{post}/slow-mode', [CommentController::class, 'slowMode'])->whereNumber('post')->middleware('throttle:20,1');
             });
 
             // Шапка профілю як на сайті: статистика, друзі, фото, аудіо, права (canPost, canMessage).

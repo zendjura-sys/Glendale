@@ -29,7 +29,7 @@ class SeoHomeTest extends TestCase
 
         $this->assertStringContainsString('<main class="seo-static"', $html);
         $this->assertSame(1, substr_count($html, '<h1>'));
-        $this->assertStringContainsString('<h2>Усе, що ти любиш, в одному місці</h2>', $html);
+        $this->assertStringContainsString('<h2>Усе для гри разом — в одному місці</h2>', $html);
         $this->assertStringContainsString('href="mailto:support@gamecon.online"', $html);
 
         preg_match('#<script type="application/ld\+json">\s*(.+?)\s*</script>#s', $html, $m);

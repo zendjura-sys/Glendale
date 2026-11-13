@@ -60,6 +60,8 @@ class HelpCenterTest extends TestCase
 
     public function test_catalog_is_consistent(): void
     {
+        // Учасник бачить усі розділи (гостям кіно й музику не показуємо).
+        $this->actingAs(User::factory()->create());
         $help = app(HelpCatalog::class);
         $categories = HelpCatalog::all();
         $this->assertGreaterThanOrEqual(12, count($categories));
@@ -145,7 +147,9 @@ class HelpCenterTest extends TestCase
         $xml = $this->get('/sitemaps/pages.xml')->assertOk()->getContent();
 
         $this->assertStringContainsString('<loc>'.url('/help').'</loc>', $xml);
-        $this->assertStringContainsString('<loc>'.url('/help/music').'</loc>', $xml);
+        $this->assertStringContainsString('<loc>'.url('/help/start').'</loc>', $xml);
+        // Кіно й музика — лише для учасників: у публічній карті сайту їх немає.
+        $this->assertStringNotContainsString('<loc>'.url('/help/music').'</loc>', $xml);
         $this->assertStringContainsString('<loc>'.url('/help/start/app-login').'</loc>', $xml);
         $this->assertNotFalse(simplexml_load_string($xml));
     }

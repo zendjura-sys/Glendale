@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Http\Middleware\ThrottlePerRoute;
 use App\Models\Track;
 use App\Models\TrackImport;
 use App\Models\User;
@@ -259,6 +260,8 @@ class MusicImportTest extends TestCase
 
     public function test_streaming_pages_and_terabox_are_refused_upfront(): void
     {
+        // 12 посилань поспіль — більше за ліміт 10/хв; тут перевіряємо саму відмову, не ліміт.
+        $this->withoutMiddleware(ThrottlePerRoute::class);
         Http::fake();
         $user = User::factory()->create();
 
