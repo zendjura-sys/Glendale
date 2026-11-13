@@ -799,6 +799,8 @@ Route::prefix('v1')->group(function () {
                 Route::post('steam', [PlayingController::class, 'linkSteam'])->middleware('throttle:10,1');
                 Route::delete('steam', [PlayingController::class, 'unlinkSteam']);
                 Route::put('consoles', [PlayingController::class, 'consoles'])->middleware('throttle:20,1');
+                Route::get('friends', [PlayingController::class, 'friends'])->middleware('throttle:60,1');
+                Route::post('voice', [PlayingController::class, 'voice'])->middleware(['throttle:6,1', 'module:party']);
             });
 
             // Календар подій.

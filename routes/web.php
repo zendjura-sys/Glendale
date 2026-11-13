@@ -1159,6 +1159,9 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::put('/', [PlayingController::class, 'update'])->middleware('throttle:30,1')->name('update');
         Route::delete('/', [PlayingController::class, 'destroy'])->name('destroy');
         Route::put('auto', [PlayingController::class, 'auto'])->name('auto');
+        // «Граємо зараз»: друзі в тій самій грі й голосова з ними.
+        Route::get('friends', [PlayingController::class, 'friends'])->middleware('throttle:60,1')->name('friends');
+        Route::post('voice', [PlayingController::class, 'voice'])->middleware(['throttle:6,1', 'module:party'])->name('voice');
         Route::post('steam', [PlayingController::class, 'linkSteam'])->middleware('throttle:10,1')->name('steam');
         Route::put('consoles', [PlayingController::class, 'consoles'])->middleware('throttle:20,1')->name('consoles');
         Route::delete('steam', [PlayingController::class, 'unlinkSteam'])->name('steam.destroy');

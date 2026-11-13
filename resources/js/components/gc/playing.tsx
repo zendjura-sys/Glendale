@@ -1,5 +1,14 @@
 import { Link, router } from '@inertiajs/react';
-import { Gamepad2, Loader2, Search, Server, Unplug, X } from 'lucide-react';
+import {
+    Gamepad2,
+    Loader2,
+    Mic,
+    Search,
+    Server,
+    Unplug,
+    Users,
+    X,
+} from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import {
@@ -228,6 +237,10 @@ export function PlayingDialog({
                                     <X className="size-4" />
                                 </button>
                             </div>
+                        )}
+
+                        {settings.playing?.id != null && (
+                            <PlayingTogether key={settings.playing.label} />
                         )}
 
                         <section className="gc-solid-2 space-y-2 rounded-2xl p-3">
@@ -506,5 +519,104 @@ export function PlayingSettingsCard() {
                 }}
             />
         </div>
+    );
+}
+
+type Buddy = {
+    id: number;
+    name: string;
+    username: string;
+    avatar_url: string | null;
+};
+
+/**
+ * «Граємо зараз»: друзі в тій самій грі й одна кнопка — голосова з ними (паті з голосовою кімнатою,
+ * друзям приходить запрошення).
+ */
+export function PlayingTogether() {
+    const [friends, setFriends] = useState<Buddy[] | null>(null);
+    const [busy, setBusy] = useState(false);
+
+    useEffect(() => {
+        void api<{ friends: Buddy[] }>('GET', '/me/playing/friends')
+            .then((d) => setFriends(d.friends))
+            .catch(() => setFriends([]));
+    }, []);
+
+    const voice = () => {
+        setBusy(true);
+        router.post(
+            '/me/playing/voice',
+            {},
+            {
+                onError: (errors) =>
+                    toast.error(
+                        Object.values(errors)[0] ??
+                            tr('Не вдалося створити голосову.'),
+                    ),
+                onFinish: () => setBusy(false),
+            },
+        );
+    };
+
+    return (
+        <section className="gc-solid-2 space-y-2 rounded-2xl p-3">
+            <div className="flex items-center gap-2">
+                <Users className="size-4 text-white/60" />
+                <h3 className="flex-1 text-sm font-semibold text-white">
+                    {tr('Граємо зараз')}
+                </h3>
+                {friends !== null && friends.length > 0 && (
+                    <span className="text-xs text-white/45">
+                        {tr('{n} друзів у грі', { n: friends.length })}
+                    </span>
+                )}
+            </div>
+            {friends === null ? (
+                <Loader2 className="size-4 animate-spin text-white/40" />
+            ) : friends.length === 0 ? (
+                <p className="text-xs text-white/50">
+                    {tr(
+                        'Друзів у цій грі зараз немає. Голосову все одно можна створити й поділитися посиланням.',
+                    )}
+                </p>
+            ) : (
+                <div className="flex -space-x-2">
+                    {friends.slice(0, 8).map((f) => (
+                        <Link
+                            key={f.id}
+                            href={`/u/${f.username}`}
+                            title={f.name}
+                            className="rounded-full ring-2 ring-[var(--gc-surface,#0b1020)]"
+                        >
+                            <UserAvatar
+                                user={{
+                                    id: f.id,
+                                    name: f.name,
+                                    avatar_url: f.avatar_url,
+                                }}
+                                size="sm"
+                                showOnline={false}
+                            />
+                        </Link>
+                    ))}
+                </div>
+            )}
+            <button
+                type="button"
+                onClick={voice}
+                disabled={busy}
+                className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-primary text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
+            >
+                {busy ? (
+                    <Loader2 className="size-4 animate-spin" />
+                ) : (
+                    <Mic className="size-4" />
+                )}
+                {friends && friends.length > 0
+                    ? tr('Голосова з друзями')
+                    : tr('Створити голосову')}
+            </button>
+        </section>
     );
 }

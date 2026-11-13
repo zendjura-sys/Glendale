@@ -4,7 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Models\Game;
 use App\Models\GtaServer;
+use App\Models\PartyPost;
 use App\Models\User;
+use App\Models\UserBlock;
+use App\Notifications\PartyInvite;
+use App\Services\FriendshipService;
+use App\Services\Party\PartyBoard;
 use App\Services\Presence\DiscordPresence;
 use App\Services\Presence\PlayingStatus;
 use App\Services\Presence\SteamPresence;
@@ -12,6 +17,8 @@ use App\Support\Profile\GamerIds;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
@@ -68,6 +75,74 @@ class PlayingController extends Controller
         $this->status->manual($this->user($request), (string) $data['kind'], (int) $data['id'], $data['note'] ?? null, (int) $data['hours']);
 
         return $this->done('Статус «Граю в…» оновлено.');
+    }
+
+    /**
+     * «Граємо зараз»: друзі, що саме зараз у тій самій грі чи на тому самому сервері.
+     */
+    public function friends(Request $request, FriendshipService $friendships): JsonResponse
+    {
+        $user = $this->user($request);
+        $mine = $user->playing();
+
+        return response()->json([
+            'playing' => $mine,
+            'friends' => $mine === null ? [] : $this->sameGame($user, $mine, $friendships)
+                ->map(fn (User $f) => ['id' => $f->id, 'name' => $f->name, 'username' => $f->username, 'avatar_url' => $f->avatar_url])->values(),
+        ]);
+    }
+
+    /**
+     * Голосова з друзями в одній грі: паті «Граємо зараз» з голосовою кімнатою (або вже відкрита своя)
+     * і запрошення друзям, які зараз у тій самій грі.
+     */
+    public function voice(Request $request, FriendshipService $friendships, PartyBoard $board): RedirectResponse|JsonResponse
+    {
+        $user = $this->user($request);
+        $mine = $user->playing();
+        abort_if($mine === null || $mine['id'] === null, 422, 'Спершу вкажіть, у що граєте.');
+        $column = $mine['kind'] === 'server' ? 'gta_server_id' : 'game_id';
+        $party = PartyPost::query()->open()->where('user_id', $user->id)->where($column, $mine['id'])
+            ->where('created_at', '>=', now()->subHours(6))->latest('id')->first()
+            ?? $board->create($user, [
+                'title' => 'Граємо зараз: '.$mine['label'],
+                'note' => 'Голосова для друзів, що зараз у грі.',
+                'slots' => 10,
+                $column => (int) $mine['id'],
+                'mic_required' => false,
+            ]);
+        $invited = 0;
+        foreach ($this->sameGame($user, $mine, $friendships)->take(9) as $friend) {
+            if ($party->hasMember($friend) || UserBlock::either($user, $friend)) {
+                continue;
+            }
+            // Одне запрошення в це паті на людину.
+            if (RateLimiter::tooManyAttempts($key = 'party-invite:'.$party->id.':'.$friend->id, 1)) {
+                continue;
+            }
+            RateLimiter::hit($key, 86400);
+            $friend->notify(new PartyInvite($user, $party));
+            $invited++;
+        }
+        $url = '/party/'.$party->id;
+        if ($request->wantsJson()) {
+            return response()->json(['party_id' => $party->id, 'url' => $url, 'invited' => $invited]);
+        }
+        Inertia::flash('toast', ['type' => 'success', 'message' => $invited > 0 ? "Голосову створено, запрошено друзів: {$invited}." : 'Голосову створено. Друзів у цій грі зараз немає — поділіться посиланням.']);
+
+        return redirect($url);
+    }
+
+    /**
+     * @param  array<string, mixed>  $mine
+     * @return Collection<int, User>
+     */
+    private function sameGame(User $user, array $mine, FriendshipService $friendships): Collection
+    {
+        return User::query()->whereKey($friendships->friendIds($user))
+            ->where('playing_kind', $mine['kind'])->where('playing_ref_id', $mine['id'])
+            ->where('playing_until', '>', now())
+            ->limit(30)->get();
     }
 
     public function destroy(Request $request): RedirectResponse
