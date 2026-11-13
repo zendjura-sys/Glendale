@@ -462,10 +462,19 @@ Future<void> showFeedbackSheet(BuildContext context, {String screen = 'menu'}) a
 
 
 /// Що нового в цій версії застосунку — один раз після оновлення.
-const whatsNewVersion = '1.1.124';
+const whatsNewVersion = '1.2611.0.0';
 
 /// Нове саме в цій версії — зверху, окремим блоком.
 List<String> _whatsNewCurrent() => [
+      tr('Нова нумерація версій: рік і місяць у номері — 1.2611.0.0 означає першу збірку листопада 2026.'),
+      tr('«Я в укритті» прямо з пушу про тривогу; після відбою статус знімається сам.'),
+      tr('Кілька місць для тривог — дім, робота, рідні — з власними підписами в сповіщеннях.'),
+      tr('Історія тривог вашого місця: останні тривоги й підсумок за тиждень.'),
+      tr('Віджет «Тривога в моєму місці» на головний екран Android: тип, колір і скільки триває; оновлюється одразу з пушу.'),
+    ];
+
+/// Версія 1.1.124.
+List<String> _whatsNew124() => [
       tr('Вибір місця для тривог, як у застосунку «Тривога»: області → райони → громади → міста й села, «Обрати всю область» чи «весь район» і пошук зверху.'),
     ];
 
@@ -717,7 +726,7 @@ Future<void> showWhatsNew(BuildContext context, SharedPreferences prefs, {bool f
   await prefs.setString('whats_new', whatsNewVersion);
   if (!context.mounted) return;
   final current = _whatsNewCurrent();
-  final earlier = [..._whatsNew123(), ..._whatsNew122(), ..._whatsNew121(), ..._whatsNew119(), ..._whatsNew118(), ..._whatsNew117(), ..._whatsNew116(), ..._whatsNew115(), ..._whatsNew113(), ..._whatsNew112(), ..._whatsNew111(), ..._whatsNewPrev(), ..._whatsNew()];
+  final earlier = [..._whatsNew124(), ..._whatsNew123(), ..._whatsNew122(), ..._whatsNew121(), ..._whatsNew119(), ..._whatsNew118(), ..._whatsNew117(), ..._whatsNew116(), ..._whatsNew115(), ..._whatsNew113(), ..._whatsNew112(), ..._whatsNew111(), ..._whatsNewPrev(), ..._whatsNew()];
   Widget card(String item, {bool fresh = false}) => Container(
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.fromLTRB(12, 12, 14, 12),
@@ -755,8 +764,8 @@ Future<void> showWhatsNew(BuildContext context, SharedPreferences prefs, {bool f
               child: Row(children: [
                 const Icon(LucideIcons.sparkles, color: Color(0xFF9DD8FF)),
                 const SizedBox(width: 8),
-                Text(tr('Що нового'), style: display(20)),
-                const Spacer(),
+                Expanded(child: Text(tr('Що нового'), style: display(20), maxLines: 1, overflow: TextOverflow.ellipsis)),
+                const SizedBox(width: 8),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(color: fg.withValues(alpha: 0.07), borderRadius: BorderRadius.circular(99)),

@@ -48,8 +48,11 @@ Android‑приложение (Flutter, папка `mobile/`) на **одном
    `ModuleManager::enabled()` / `Plugins::on()` (уже учитывают режим зрителя), в фоне —
    `NetworkModes::modulesFor($user)`; на клиенте — `modules.includes()`, `useFeature()`, `listWords()`.
    Проверка — `tests/Feature/ModesGatingTest.php`.
-6. Приложение: повышай `version` в `mobile/pubspec.yaml` (оба числа) и `whatsNewVersion` +
-   `_whatsNew()` в `mobile/lib/account.dart`, когда меняешь приложение.
+6. Приложение: версия — **Г.ГГММ.X.Y** (`gamecon_version` в `mobile/pubspec.yaml`, её же `whatsNewVersion`
+   и `_whatsNewCurrent()` в `mobile/lib/account.dart`). Г — глобальная (например, полная перерисовка);
+   ГГММ — год и месяц (2611 = ноябрь 2026); Y — 0–10, после 10 растёт X (без предела); первая сборка нового
+   месяца — X.Y = 0.0 (пример: 1.2611.0.0). Semver `version` держи в лад (`1.ГГММ.X+N`) и всегда повышай
+   номер сборки после `+`. Сборка передаёт `gamecon_version` как `--build-name`.
 7. Перед коммитом — проверки (§ «Проверки»). Красное не коммитить.
 8. Коммиты — маленькие, с понятным сообщением: что и зачем.
 
