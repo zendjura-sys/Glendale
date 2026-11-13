@@ -42,10 +42,10 @@ abstract final class AppColors {
   static const shimmer = [Color.fromRGBO(255, 255, 255, 0.03), Color.fromRGBO(0, 210, 255, 0.10), Color.fromRGBO(255, 255, 255, 0.03)];
 }
 
-/// Радіуси: картки — 24, вкладені — 16, док, шапка й шторки — 28, кнопки й поля — 14.
+/// Радіуси: картки — 12 (майже квадратні), вкладені — 10, док, шапка й шторки — 28, кнопки й поля — 14.
 abstract final class AppRadii {
-  static const card = 24.0;
-  static const inner = 16.0;
+  static const card = 12.0;
+  static const inner = 10.0;
   static const dock = 28.0;
   static const control = 14.0;
 }

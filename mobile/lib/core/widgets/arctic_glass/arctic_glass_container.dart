@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
@@ -111,10 +112,13 @@ class _ArcticGlassContainerState extends State<ArcticGlassContainer> {
   Widget _surface(BuildContext context, bool nested, double t) {
     final tokens = ArcticGlassThemeExtension.of(context);
     final w = widget;
-    final shape = w.borderRadius ?? BorderRadius.circular(w.radius);
     final still = MediaQuery.disableAnimationsOf(context);
     final plain = w.fill == null && w.color == null;
     final inner = nested && plain;
+    // Блоки майже квадратні: радіус не більший за 12 (вкладені — 10), хоч би що задав екран.
+    // Панелі (шапка, док, шторки — зі своєю заливкою) лишаються капсулами.
+    final radius = plain ? math.min(w.radius, inner ? AppRadii.inner : AppRadii.card) : w.radius;
+    final shape = w.borderRadius ?? BorderRadius.circular(radius);
     // Суцільні картки (темна iOS 27): без розмиття й бліку, лише кант; панелі (з fill) — скло.
     final solid = tokens.solidCards && w.fill == null;
 
