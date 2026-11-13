@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -20,6 +21,7 @@ import 'theme.dart';
 import 'theme_controller.dart';
 import 'rp_dossier.dart';
 import 'widgets.dart';
+import 'sound_fx.dart';
 
 // Хром застосунку — той самий, що на сайті (layouts/social-layout.tsx):
 //  - шапка на всю ширину з матового скла: логотип, пошук і кнопки;
@@ -605,7 +607,7 @@ class _IslandNavState extends State<IslandNav> {
         // тож меню не сіре, а плитки на ньому — той самий безбарвний матовий лід, що й картки.
         builder: (context, blur, child) => ArcticDockSurface(
           blur: blur,
-          fill: open ? LinearGradient(colors: palette.isLight ? const [Color.fromRGBO(255, 255, 255, 0.55), Color.fromRGBO(255, 255, 255, 0.55)] : const [Color.fromRGBO(8, 14, 26, 0.5), Color.fromRGBO(8, 14, 26, 0.5)]) : null,
+          fill: open ? LinearGradient(colors: palette.isLight ? const [Color.fromRGBO(255, 255, 255, 0.55), Color.fromRGBO(255, 255, 255, 0.55)] : const [Color.fromRGBO(18, 20, 26, 0.94), Color.fromRGBO(18, 20, 26, 0.94)]) : null,
           child: child!,
         ),
         child: Column(
@@ -672,11 +674,20 @@ class _IslandNavState extends State<IslandNav> {
               child: ArcticDockTabs(
                 // Язичок 12 + вкладки 48 + відступ 4 = висота доку 64.
                 height: 48,
+                // Рівно 5 пунктів: 4 вкладки + «Меню» (завжди останнє, ніколи не витісняється).
                 items: [
-                  for (final item in tabItems) ArcticDockItem(icon: item.icon, activeIcon: item.activeIcon, label: item.label, badge: item.path == '/messages' && session.unreadChats > 0 ? _Badge(session.unreadChats) : null),
+                  for (final item in tabItems.take(4)) ArcticDockItem(icon: item.icon, activeIcon: item.activeIcon, label: item.label, badge: item.path == '/messages' && session.unreadChats > 0 ? _Badge(session.unreadChats) : null),
+                  ArcticDockItem(icon: navMenu.icon, activeIcon: navMenu.activeIcon, label: navMenu.label, badge: restBadge > 0 && !open ? _Badge(restBadge) : null),
                 ],
-                current: open || activeTab < 0 ? null : activeTab,
-                onTap: (i) => _go(tabItems[i].path),
+                current: open || (activeTab < 0 || activeTab >= 4) && restActive ? math.min(tabItems.length, 4) : (activeTab < 0 || activeTab >= 4 ? null : activeTab),
+                onTap: (i) {
+                  GcSoundEngine.instance.navTick();
+                  if (i >= math.min(tabItems.length, 4)) {
+                    _set(!open);
+                    return;
+                  }
+                  _go(tabItems[i].path);
+                },
               ),
             ),
           ],

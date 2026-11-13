@@ -280,6 +280,23 @@ class _AppShellState extends State<AppShell> {
                       )
                     else
                       widget.child,
+                    // Маски-скрими під шапкою й доком: текст розчиняється ДО входу під скляні капсули,
+                    // а не просвічує навколо них.
+                    Positioned(
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      height: topInset + headerTopGap + headerCapsuleHeight + 22,
+                      child: IgnorePointer(child: _Scrim(top: true)),
+                    ),
+                    if (!wide && !hideChrome)
+                      Positioned(
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        height: systemBottom + 96,
+                        child: IgnorePointer(child: _Scrim(top: false)),
+                      ),
                     Positioned(
                       top: 0,
                       left: 0,
@@ -504,6 +521,27 @@ class NotificationRow extends StatelessWidget {
             ),
             if (!read) Container(margin: EdgeInsets.only(top: 6, left: 6), width: 8, height: 8, decoration: BoxDecoration(color: primary, shape: BoxShape.circle)),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Градієнтна маска під нерухомою панеллю: колір тла → прозорість (iOS 27, без «ряби» під склом).
+class _Scrim extends StatelessWidget {
+  const _Scrim({required this.top});
+  final bool top;
+
+  @override
+  Widget build(BuildContext context) {
+    final base = palette.voidColor;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: top ? Alignment.topCenter : Alignment.bottomCenter,
+          end: top ? Alignment.bottomCenter : Alignment.topCenter,
+          colors: [base, base.withValues(alpha: top ? 0.82 : 0.88), base.withValues(alpha: 0)],
+          stops: top ? const [0.35, 0.7, 1] : const [0.45, 0.75, 1],
         ),
       ),
     );

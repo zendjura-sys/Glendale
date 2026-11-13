@@ -42,9 +42,10 @@ abstract final class AppColors {
   static const shimmer = [Color.fromRGBO(255, 255, 255, 0.03), Color.fromRGBO(0, 210, 255, 0.10), Color.fromRGBO(255, 255, 255, 0.03)];
 }
 
-/// Радіуси: картки — 20, док, шапка й шторки — 28, кнопки й поля — 14.
+/// Радіуси: картки — 24, вкладені — 16, док, шапка й шторки — 28, кнопки й поля — 14.
 abstract final class AppRadii {
-  static const card = 20.0;
+  static const card = 24.0;
+  static const inner = 16.0;
   static const dock = 28.0;
   static const control = 14.0;
 }
@@ -54,8 +55,8 @@ abstract final class AppRadii {
 abstract final class AppBlur {
   static const card = 22.0;
   static const control = 16.0;
-  static const fixed = 28.0;
-  static const dock = 28.0;
+  static const fixed = 20.0;
+  static const dock = 20.0;
   static const sheet = 28.0;
   static const menu = 32.0;
 }
@@ -88,7 +89,21 @@ class ArcticGlassThemeExtension extends ThemeExtension<ArcticGlassThemeExtension
     required this.title,
     required this.body,
     required this.muted,
+    this.solidCards = false,
+    this.cardBorder,
+    this.barBorder,
+    this.barShadows = const [],
   });
+
+  /// Картки суцільні, без розмиття (темна iOS 27: читабельність без просвічування).
+  final bool solidCards;
+
+  /// Тонкий кант карток (1px).
+  final Color? cardBorder;
+
+  /// Грань нерухомих панелей (шапка, док, міні-плеєр).
+  final Color? barBorder;
+  final List<BoxShadow> barShadows;
 
   final bool light;
 
@@ -120,40 +135,29 @@ class ArcticGlassThemeExtension extends ThemeExtension<ArcticGlassThemeExtension
   final Color body;
   final Color muted;
 
+  // Темна «iOS 27 Achromatic»: тло #07090E без кольорових плям; картки суцільні #0D1017 з кантом;
+  // скло (розмиття) — лише в нерухомих панелей: шапки, доку, міні-плеєра й шторок.
   static const dark = ArcticGlassThemeExtension(
     light: false,
-    background: [AppColors.bgBase, AppColors.bgBase],
-    glows: [
-      ArcticGlow(Alignment(-1, -1), 1.1, AppColors.accentPrimary, 0.18),
-      ArcticGlow(Alignment(1, 0), 0.95, AppColors.accentCyan, 0.13),
-      ArcticGlow(Alignment(0, 1.15), 1.0, AppColors.accentPrimary, 0.16),
-    ],
-    // Матова тонировка скла: розмите тло під нею лишається видимим.
-    glassFill: LinearGradient(
-      begin: Alignment.topLeft,
-      end: Alignment.bottomRight,
-      colors: [Color.fromRGBO(255, 255, 255, 0.11), Color.fromRGBO(10, 132, 255, 0.04), Color.fromRGBO(255, 255, 255, 0.03)],
-    ),
-    pressedFill: LinearGradient(
-      begin: Alignment.topLeft,
-      end: Alignment.bottomRight,
-      colors: [Color.fromRGBO(255, 255, 255, 0.16), Color.fromRGBO(10, 132, 255, 0.07), Color.fromRGBO(255, 255, 255, 0.05)],
-    ),
-    innerFill: Color.fromRGBO(255, 255, 255, 0.05),
-    border: Color.fromRGBO(255, 255, 255, 0.14),
+    background: [Color(0xFF07090E), Color(0xFF07090E)],
+    glows: [],
+    glassFill: LinearGradient(colors: [Color(0xFF0D1017), Color(0xFF0D1017)]),
+    pressedFill: LinearGradient(colors: [Color(0xFF131720), Color(0xFF131720)]),
+    innerFill: Color(0xFF151922),
+    border: Color.fromRGBO(255, 255, 255, 0.07),
     outline: null,
-    specular: Color.fromRGBO(255, 255, 255, 0.38),
-    // Без тіней: глибину дають розмиття, грань і блік.
+    specular: Color.fromRGBO(255, 255, 255, 0.22),
     shadows: [],
-    barFill: LinearGradient(
-      begin: Alignment.topLeft,
-      end: Alignment.bottomRight,
-      colors: [Color.fromRGBO(255, 255, 255, 0.11), Color.fromRGBO(10, 132, 255, 0.04), Color.fromRGBO(255, 255, 255, 0.03)],
-    ),
-    sheetFill: Color.fromRGBO(12, 18, 30, 0.55),
+    // Безбарвне матове скло панелей: rgba(18, 20, 26, .86).
+    barFill: LinearGradient(colors: [Color.fromRGBO(18, 20, 26, 0.86), Color.fromRGBO(18, 20, 26, 0.86)]),
+    sheetFill: Color.fromRGBO(18, 20, 26, 0.94),
     title: AppColors.textPrimary,
     body: Color(0xFFCBD5E1),
     muted: AppColors.textSecondary,
+    solidCards: true,
+    cardBorder: Color.fromRGBO(255, 255, 255, 0.07),
+    barBorder: Color.fromRGBO(255, 255, 255, 0.12),
+    barShadows: [BoxShadow(color: Color.fromRGBO(0, 0, 0, 0.75), blurRadius: 36, offset: Offset(0, 14), spreadRadius: -6)],
   );
 
   static const daylight = ArcticGlassThemeExtension(

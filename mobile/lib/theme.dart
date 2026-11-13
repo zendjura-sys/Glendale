@@ -41,27 +41,27 @@ class GcPalette {
   bool get isLight => brightness == Brightness.light;
 }
 
-/// «Неоновий синій» (темна, Frosted Ice Glass): тло #060B14 з блакитними плямами, картки — матовий лід
+/// «Неоновий синій» (темна, iOS 27 Achromatic): тло #07090E без кольорових плям, картки суцільні
 /// (див. ArcticGlassThemeExtension.dark); текст #F8FAFC / #94A3B8 / #64748B; акцент #0A84FF / #00D2FF.
 const neonPalette = GcPalette(
   brightness: Brightness.dark,
-  voidColor: AppColors.bgBase,
-  abyss: AppColors.bgElevated,
-  deep: Color(0xFF0A1222),
-  // Непрозорий відповідник glassTier3 — діалоги, снекбари, меню без розмиття.
-  popover: Color(0xFF0C1424),
+  // iOS 27 Achromatic: нейтральне тло #07090E, суцільні картки #0D1017, вкладене #151922.
+  voidColor: Color(0xFF07090E),
+  abyss: Color(0xFF0A0C12),
+  deep: Color(0xFF0D1017),
+  // Діалоги, снекбари, меню без розмиття.
+  popover: Color(0xFF12141A),
   ink: AppColors.textPrimary,
   soft: Color(0xFFCBD5E1),
   muted: AppColors.textSecondary,
   faint: AppColors.textMuted,
   primary: AppColors.accentPrimary,
-  // Скло: tier2 (.07) з бліком угорі (.09).
-  card: AppColors.glassTier2,
-  cardTop: Color.fromRGBO(255, 255, 255, 0.09),
-  raised: Color.fromRGBO(255, 255, 255, 0.10),
-  field: AppColors.glassTier2,
-  bar: Color.fromRGBO(20, 20, 22, 0.55),
-  line: AppColors.borderHairline,
+  card: Color(0xFF0D1017),
+  cardTop: Color(0xFF12151C),
+  raised: Color(0xFF151922),
+  field: Color(0xFF151922),
+  bar: Color.fromRGBO(18, 20, 26, 0.86),
+  line: Color.fromRGBO(255, 255, 255, 0.07),
   lineStrong: Color.fromRGBO(255, 255, 255, 0.12),
   fg: Colors.white,
   brand: [AppColors.accentPrimary, Color(0xFF05ABFF), AppColors.accentCyan],
@@ -219,17 +219,23 @@ class _FadeThrough extends PageTransitionsBuilder {
 
   @override
   Widget buildTransitions<T>(PageRoute<T> route, BuildContext context, Animation<double> animation, Animation<double> secondaryAnimation, Widget child) {
-    final enter = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic, reverseCurve: Curves.easeInCubic);
+    // Пружна крива Apple: cubic-bezier(0.32, 0.72, 0, 1).
+    const apple = Cubic(0.32, 0.72, 0, 1);
+    final enter = CurvedAnimation(parent: animation, curve: apple, reverseCurve: Curves.easeInCubic);
     final leave = CurvedAnimation(parent: secondaryAnimation, curve: Curves.easeOutCubic);
     // Opacity замість FadeTransition: у спокої (повна видимість) сторінка без шару прозорості,
     // тож скло на ній розмиває спільне тло й сезонні прикраси під нею.
     return AnimatedBuilder(
       animation: Listenable.merge([enter, leave]),
-      child: SlideTransition(
-        position: Tween(begin: const Offset(0, 0.025), end: Offset.zero).animate(enter),
-        child: child,
+      child: child,
+      // Нова сторінка: прозорість 0 → 1, масштаб 0.985 → 1 і підйом на 6 px.
+      builder: (context, child) => Opacity(
+        opacity: (enter.value * (1 - leave.value)).clamp(0, 1),
+        child: Transform.translate(
+          offset: Offset(0, 6 * (1 - enter.value)),
+          child: Transform.scale(scale: 0.985 + 0.015 * enter.value, child: child),
+        ),
       ),
-      builder: (context, child) => Opacity(opacity: (enter.value * (1 - leave.value)).clamp(0, 1), child: child),
     );
   }
 }

@@ -115,11 +115,13 @@ class _ArcticGlassContainerState extends State<ArcticGlassContainer> {
     final still = MediaQuery.disableAnimationsOf(context);
     final plain = w.fill == null && w.color == null;
     final inner = nested && plain;
+    // Суцільні картки (темна iOS 27): без розмиття й бліку, лише кант; панелі (з fill) — скло.
+    final solid = tokens.solidCards && w.fill == null;
 
     final Gradient? gradient = w.color != null || inner ? null : (w.fill ?? (pressed ? tokens.pressedFill : tokens.glassFill));
     final Color? color = inner ? (pressed ? tokens.innerFill.withValues(alpha: (tokens.innerFill.a * 1.6).clamp(0, 1)) : tokens.innerFill) : w.color;
     // Без обводки: грань лише явно задана ([borderColor]) або сяйво фокусу.
-    final edge = w.glowing ? AppColors.accentCyan.withValues(alpha: 0.55) : w.borderColor;
+    final edge = w.glowing ? AppColors.accentCyan.withValues(alpha: 0.55) : (w.borderColor ?? (solid && !inner && w.color == null ? tokens.cardBorder : null));
 
     Widget body = AnimatedContainer(
       duration: still ? Duration.zero : const Duration(milliseconds: 180),
@@ -136,18 +138,18 @@ class _ArcticGlassContainerState extends State<ArcticGlassContainer> {
       foregroundDecoration: edge == null ? null : BoxDecoration(borderRadius: shape, border: Border.all(color: edge, width: w.glowing ? 1.2 : 1)),
       child: _InsideGlass(child: w.child),
     );
-    if (w.specular || tokens.outline != null) {
+    if ((w.specular && !solid) || tokens.outline != null) {
       body = CustomPaint(
         foregroundPainter: ArcticSpecularBorderPainter(
           borderRadius: shape,
-          specular: w.specular ? tokens.specular.withValues(alpha: (tokens.specular.a * (pressed ? 1.25 : 1)).clamp(0, 1)) : null,
+          specular: w.specular && !solid ? tokens.specular.withValues(alpha: (tokens.specular.a * (pressed ? 1.25 : 1)).clamp(0, 1)) : null,
           outline: inner ? null : tokens.outline,
         ),
         child: body,
       );
     }
     if (t < 1) body = Opacity(opacity: t.clamp(0, 1), child: body);
-    if (w.enableBlur && t > 0) {
+    if (w.enableBlur && !solid && t > 0) {
       final sigma = (inner ? AppBlur.control : w.blur) * t;
       body = ClipRRect(borderRadius: shape, child: BackdropFilter(filter: arcticGlassFilter(sigma), child: body));
     }

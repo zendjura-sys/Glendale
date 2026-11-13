@@ -55,7 +55,9 @@ import 'prefs.dart';
 import 'start.dart';
 import 'playing.dart';
 import 'push.dart';
+import 'boot_splash.dart';
 import 'gamify.dart';
+import 'sound_fx.dart';
 import 'season.dart';
 import 'teammates.dart';
 import 'tournaments.dart';
@@ -362,6 +364,7 @@ Future<void> main() async {
     if (!clicked || context == null || player.current == null || fullPlayerOpen) return;
     unawaited(showFullPlayer(context, player, session: session));
   });
+  await GcSoundEngine.instance.init();
   // Зміна мови перебудовує весь застосунок.
   runApp(ValueListenableBuilder<int>(
     valueListenable: I18n.revision,
@@ -411,6 +414,7 @@ class GameConApp extends StatelessWidget {
       theme: gameConTheme(),
       scrollBehavior: const ArcticScrollBehavior(),
       routerConfig: router,
+      builder: (context, child) => BootSplash(child: child ?? const SizedBox.shrink()),
     );
   }
 }

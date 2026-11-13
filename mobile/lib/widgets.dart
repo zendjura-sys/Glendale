@@ -555,7 +555,8 @@ class Segmented extends StatelessWidget {
                   child: AnimatedContainer(
                     duration: _motion,
                     curve: Curves.easeOutCubic,
-                    padding: EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                    // Компактні пігулки: фільтри вміщуються без обрізань на півслові.
+                    padding: EdgeInsets.symmetric(horizontal: 11, vertical: 10),
                     decoration: option.id == selected ? _pill : _pill.copyWith(color: Colors.transparent),
                     child: content(option, option.id == selected),
                   ),

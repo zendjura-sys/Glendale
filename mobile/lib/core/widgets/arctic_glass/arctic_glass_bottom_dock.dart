@@ -52,6 +52,8 @@ class ArcticDockSurface extends StatelessWidget {
       height: height,
       glowing: glowing,
       fill: fill ?? tokens.barFill,
+      borderColor: tokens.barBorder,
+      shadows: tokens.barShadows,
       child: child,
     );
   }
@@ -129,12 +131,10 @@ class ArcticDockTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final still = MediaQuery.disableAnimationsOf(context);
     final idle = palette.isLight ? ink.withValues(alpha: 0.55) : muted;
-    // Активна вкладка — неоновий ціан зі світінням тексту й іконки, без плашки.
-    final on = palette.isLight ? AppColors.accentPrimary : AppColors.accentCyan;
+    // Активна вкладка (iOS 27): білий текст і іконка, без кольорового неону; над нею — срібляста риска.
+    final on = palette.isLight ? AppColors.accentPrimary : Colors.white;
     final color = active ? on : idle;
-    final glow = active
-        ? [Shadow(color: on.withValues(alpha: 0.85), blurRadius: 8), Shadow(color: on.withValues(alpha: 0.45), blurRadius: 18)]
-        : const <Shadow>[];
+    const glow = <Shadow>[];
     return Semantics(
       selected: active,
       button: true,
@@ -145,6 +145,21 @@ class ArcticDockTab extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            // Індикатор активної вкладки: 22×3, срібно-біла риска з м'яким світінням.
+            AnimatedOpacity(
+              duration: still ? Duration.zero : const Duration(milliseconds: 220),
+              opacity: active ? 1 : 0,
+              child: Container(
+                width: 22,
+                height: 3,
+                margin: const EdgeInsets.only(bottom: 5),
+                decoration: BoxDecoration(
+                  color: palette.isLight ? AppColors.accentPrimary : const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(999),
+                  boxShadow: [BoxShadow(color: (palette.isLight ? AppColors.accentPrimary : Colors.white).withValues(alpha: 0.45), blurRadius: 10)],
+                ),
+              ),
+            ),
             Stack(
               clipBehavior: Clip.none,
               children: [
