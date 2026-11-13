@@ -99,10 +99,19 @@ export type SiteBackgroundPreset =
     | 'mesh'
     | 'none';
 
+/** Відеофон з бібліотеки адміністрації (GameCon+): окремі файли для смартфона й ПК/планшета. */
+export type VideoBackground = {
+    id: number;
+    title: string;
+    mobile: string | null;
+    desktop: string | null;
+    poster: string | null;
+};
+
 export type SiteBackgroundPrefs = {
     preset: SiteBackgroundPreset;
     motion: boolean;
-    video: string | null;
+    video: VideoBackground | null;
 };
 
 export type PhoneTier =

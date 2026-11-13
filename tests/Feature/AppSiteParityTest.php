@@ -22,6 +22,7 @@ use App\Models\TierList;
 use App\Models\Tournament;
 use App\Models\Track;
 use App\Models\User;
+use App\Models\VideoBackground;
 use App\Services\Auth\ApiTokens;
 use App\Services\CommunityService;
 use App\Services\Families\FamilyService;
@@ -29,6 +30,7 @@ use App\Services\FriendshipService;
 use App\Services\Messenger;
 use App\Services\Phones\PhoneNumbers;
 use App\Services\Quests\SeasonPass;
+use App\Support\Backgrounds;
 use App\Support\Net\PublicUrl;
 use App\Support\Plugins\Plugins;
 use App\Support\Seasons;
@@ -971,5 +973,37 @@ class AppSiteParityTest extends TestCase
         $this->withToken($token)->getJson("/api/v1/site/f/{$family->slug}/settings")->assertOk()->assertJsonPath('server.can_change', true);
         $this->withToken($token)->putJson("/api/v1/site/f/{$family->slug}/settings/server", ['server_id' => $servers[1]->id])->assertSuccessful();
         $this->assertSame($servers[1]->id, $family->fresh()->server_id);
+    }
+
+    public function test_app_reads_and_sets_background_like_site(): void
+    {
+        $token = $this->app_token(User::factory()->create());
+        $this->withToken($token)->getJson('/api/v1/me')->assertOk()->assertJsonPath('user.background.preset', 'aurora')->assertJsonPath('user.background.image', null);
+
+        // Фірмовий фон з Адмінка → Дизайн з'являється серед сцен і стає типовим, якщо адмін так вирішив.
+        app(SiteSettings::class)->put([Backgrounds::SETTING => ['desktop' => null, 'mobile' => 'backgrounds/m.webp', 'default' => true]]);
+        $this->withToken($token)->getJson('/api/v1/me')->assertJsonPath('user.background.preset', 'custom')->assertJsonPath('user.background.presets.0', 'custom');
+
+        $this->withToken($token)->putJson('/api/v1/site/settings/appearance/background', ['background' => 'ocean'])->assertSuccessful();
+        $this->withToken($token)->getJson('/api/v1/me')->assertJsonPath('user.background.preset', 'ocean');
+
+        // Відеофон з бібліотеки адмінки — лише з GameCon+; посилання YouTube більше не приймаються.
+        $video = VideoBackground::create(['title' => 'Неон', 'mobile_path' => 'backgrounds/videos/m.mp4', 'desktop_path' => 'backgrounds/videos/d.mp4']);
+        Backgrounds::forgetVideos();
+        $this->withToken($token)->getJson('/api/v1/me')->assertJsonPath('user.background.videos.0.id', $video->id);
+        $this->withToken($token)->putJson('/api/v1/site/settings/appearance/background', ['background_video' => $video->id])->assertStatus(422);
+        $this->withToken($token)->putJson('/api/v1/site/settings/appearance/background', ['background_video' => 'https://youtu.be/dQw4w9WgXcQ'])->assertStatus(422);
+
+        $plus = User::factory()->create(['plus_until' => now()->addMonth()]);
+        $plusToken = $this->app_token($plus);
+        $this->withToken($plusToken)->putJson('/api/v1/site/settings/appearance/background', ['background_video' => $video->id])->assertSuccessful();
+        $this->withToken($plusToken)->getJson('/api/v1/me')
+            ->assertJsonPath('user.background.video.id', $video->id)
+            ->assertJsonPath('user.background.video.mobile', Storage::disk('public')->url('backgrounds/videos/m.mp4'));
+
+        // Адмін сховав відеофон — у людини повертається сцена.
+        $video->update(['is_active' => false]);
+        Backgrounds::forgetVideos();
+        $this->withToken($plusToken)->getJson('/api/v1/me')->assertJsonPath('user.background.video', null);
     }
 }

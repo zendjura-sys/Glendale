@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\SiteTheme;
+use App\Models\VideoBackground;
 use App\Services\Design\SiteThemes;
 use App\Services\ImageStorage;
 use App\Support\AppFiles;
@@ -16,6 +17,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -50,6 +52,8 @@ class DesignController extends Controller
             'seasonal' => app(Seasons::class)->setting(),
             'seasons' => Seasons::ALL,
             'background' => Backgrounds::image(),
+            'videos' => VideoBackground::query()->orderBy('position')->orderBy('id')->get()
+                ->map(fn (VideoBackground $video) => [...$video->card(), 'is_active' => $video->is_active]),
             'authImages' => AuthImages::urls(),
             // Разом зі старим посиланням Google Play із загальних налаштувань (якщо нове ще не задане).
             'appLinks' => (object) app(SiteSettings::class)->appLinks(),
@@ -245,6 +249,61 @@ class DesignController extends Controller
         app(SiteSettings::class)->put([Backgrounds::SETTING => $stored]);
         Log::info('design: background removed', ['kind' => $kind, 'by' => $request->user()->id]);
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Картинку фону видалено.']);
+
+        return back();
+    }
+
+    /**
+     * Новий відеофон для учасників GameCon+: файл для смартфона (вертикальний) та/або для ПК і планшета,
+     * обкладинка — для слабких пристроїв і режиму без руху.
+     */
+    public function storeVideo(Request $request): RedirectResponse
+    {
+        $video = ['nullable', 'file', 'mimetypes:video/mp4,video/webm', 'max:'.(60 * 1024)];
+        $data = $request->validate([
+            'title' => ['required', 'string', 'max:60'],
+            'mobile' => $video,
+            'desktop' => $video,
+            'poster' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
+        ]);
+        if (! $request->hasFile('mobile') && ! $request->hasFile('desktop')) {
+            throw ValidationException::withMessages(['mobile' => 'Додайте відео для смартфона або для ПК/планшета.']);
+        }
+        $paths = [];
+        foreach (['mobile', 'desktop', 'poster'] as $kind) {
+            $file = $request->file($kind);
+            $paths[$kind.'_path'] = $file instanceof UploadedFile ? $file->store('backgrounds/videos', 'public') : null;
+        }
+        $created = VideoBackground::create([
+            'title' => $data['title'],
+            ...$paths,
+            'position' => (int) VideoBackground::query()->max('position') + 1,
+            'created_by' => $request->user()->id,
+        ]);
+        Backgrounds::forgetVideos();
+        Log::info('design: video background added', ['id' => $created->id, 'title' => $created->title, 'mobile' => $paths['mobile_path'] !== null, 'desktop' => $paths['desktop_path'] !== null, 'by' => $request->user()->id]);
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Відеофон додано.']);
+
+        return back();
+    }
+
+    /** Показати чи сховати відеофон у виборі (вибір людей зберігається, поки фон знову не ввімкнуть). */
+    public function toggleVideo(Request $request, VideoBackground $video): RedirectResponse
+    {
+        $video->update(['is_active' => ! $video->is_active]);
+        Backgrounds::forgetVideos();
+        Log::info('design: video background toggled', ['id' => $video->id, 'active' => $video->is_active, 'by' => $request->user()->id]);
+
+        return back();
+    }
+
+    public function destroyVideo(Request $request, VideoBackground $video): RedirectResponse
+    {
+        Storage::disk('public')->delete(array_values(array_filter([$video->mobile_path, $video->desktop_path, $video->poster_path])));
+        $video->delete();
+        Backgrounds::forgetVideos();
+        Log::info('design: video background deleted', ['id' => $video->id, 'title' => $video->title, 'by' => $request->user()->id]);
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Відеофон видалено.']);
 
         return back();
     }

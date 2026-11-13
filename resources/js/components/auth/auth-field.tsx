@@ -2,7 +2,6 @@ import { Link } from '@inertiajs/react';
 import type { LucideIcon } from 'lucide-react';
 import type { ComponentProps, ReactNode } from 'react';
 import { Input } from '@/components/ui/input';
-import { cn } from '@/lib/utils';
 
 /**
  * Поле входу/реєстрації: м'яка заливка, тонка рамка, акцентне кільце при фокусі; іконка ліворуч.

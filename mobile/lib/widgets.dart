@@ -497,7 +497,7 @@ class Segmented extends StatelessWidget {
   final bool scroll;
 
   static const _motion = Duration(milliseconds: 260);
-  static BoxDecoration get _pill => BoxDecoration(color: palette.isLight ? card : fg.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(14));
+  static BoxDecoration get _pill => BoxDecoration(color: palette.isLight ? card : fg.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(8));
 
   @override
   Widget build(BuildContext context) {
@@ -525,7 +525,7 @@ class Segmented extends StatelessWidget {
             SizedBox(width: 6),
             Container(
               padding: EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-              decoration: BoxDecoration(color: fg.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(10)),
+              decoration: BoxDecoration(color: fg.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(5)),
               child: Text('${option.count}', maxLines: 1, softWrap: false, style: body(11, color: muted, weight: FontWeight.w600)),
             ),
           ],
@@ -533,7 +533,7 @@ class Segmented extends StatelessWidget {
       );
     }
 
-    final frame = BoxDecoration(color: fg.withValues(alpha: palette.isLight ? 0.05 : 0.04), borderRadius: BorderRadius.circular(18));
+    final frame = BoxDecoration(color: fg.withValues(alpha: palette.isLight ? 0.05 : 0.04), borderRadius: BorderRadius.circular(10));
 
     if (scroll) {
       return Container(
@@ -667,7 +667,7 @@ class SelectPill extends StatelessWidget {
         decoration: BoxDecoration(
           gradient: selected ? buttonGradient : null,
           color: selected ? null : fg.withValues(alpha: 0.04),
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(8),
           border: Border.all(color: selected ? Colors.transparent : lineStrong),
         ),
         child: Row(
@@ -697,7 +697,7 @@ class Pill extends StatelessWidget {
       padding: EdgeInsets.symmetric(horizontal: 9, vertical: 4),
       decoration: BoxDecoration(
         color: background ?? color.withValues(alpha: 0.14),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(6),
         // Без обводки — лише м'яка заливка кольору (обводка тільки якщо задана явно).
         border: border == null ? null : Border.all(color: border!),
       ),

@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'sound_fx.dart';
+import 'backgrounds.dart';
 import 'chrome.dart' show dockMenuButton, setDockMenuStyle;
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -258,7 +259,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: switch (tab) {
             'security' => _security(),
             'account' => [AccountSettings()],
-            'appearance' => [ThemePicker(selected: theme, onSelect: _pickTheme), const SizedBox(height: 12), const ModePicker()],
+            'appearance' => [ThemePicker(selected: theme, onSelect: _pickTheme), const SizedBox(height: 12), const BackgroundPicker(), const SizedBox(height: 12), const ModePicker()],
             'app' => const [NavEditor(), SizedBox(height: 12), FamilyWidgetSettings()],
             _ => _profile(),
           }),

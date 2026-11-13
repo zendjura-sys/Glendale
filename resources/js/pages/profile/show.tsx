@@ -102,6 +102,7 @@ import type {
     Relation,
     ScrollData,
     UserCard,
+    VideoBackground,
 } from '@/types';
 import { AffiliationBadges } from '@/components/gc/affiliation-badges';
 import { UserRoles, UserTitle } from '@/components/gc/user-title';
@@ -153,8 +154,8 @@ type Profile = UserCard & {
     pattern?: 'grid' | 'stars' | 'waves' | 'hex' | null;
     /** GameCon+: ефект шапки — сяйво внизу обкладинки або жива рамка. */
     header_fx?: 'aurora' | 'rim' | null;
-    /** GameCon+: відеофон власника (ID YouTube) — фон сторінки й для гостей. */
-    background_video?: string | null;
+    /** GameCon+: відеофон власника з бібліотеки — фон сторінки й для гостей. */
+    background_video?: VideoBackground | null;
     /** Внутрішній номер (якщо власник показує його в профілі). */
     phone?: (PhoneCard & { can_call: boolean }) | null;
     about: string | null;

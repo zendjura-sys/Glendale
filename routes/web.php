@@ -1323,6 +1323,9 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
             Route::delete('app-files/{platform}', 'deleteAppFile')->whereIn('platform', ['apk', 'windows', 'macos', 'linux'])->name('app-files.destroy');
             Route::post('background', 'background')->middleware('throttle:30,1')->name('background');
             Route::delete('background/{kind}', 'deleteBackground')->whereIn('kind', ['desktop', 'mobile'])->name('background.destroy');
+            Route::post('videos', 'storeVideo')->middleware('throttle:30,1')->name('videos.store');
+            Route::post('videos/{video}/toggle', 'toggleVideo')->whereNumber('video')->name('videos.toggle');
+            Route::delete('videos/{video}', 'destroyVideo')->whereNumber('video')->name('videos.destroy');
             Route::post('auth-images', 'authImages')->middleware('throttle:30,1')->name('auth-images');
             Route::delete('auth-images/{kind}', 'deleteAuthImage')->whereIn('kind', ['site_desktop', 'site_mobile', 'app_phone', 'app_tablet'])->name('auth-images.destroy');
             Route::whereNumber('theme')->group(function () {

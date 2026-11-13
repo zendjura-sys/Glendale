@@ -47,7 +47,7 @@ abstract final class AppRadii {
   static const card = 12.0;
   static const inner = 10.0;
   static const dock = 28.0;
-  static const control = 14.0;
+  static const control = 8.0;
 }
 
 /// Розмиття «iOS Frosted Material»: картки й блоки — 22, кнопки й поля — 16,

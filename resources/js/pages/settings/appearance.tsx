@@ -10,7 +10,7 @@ import {
     LayoutGrid,
     Moon,
     UsersRound,
-    Youtube,
+    Video,
 } from 'lucide-react';
 import { m, useReducedMotion } from 'motion/react';
 import { type FormEvent, useEffect, useRef, useState } from 'react';
@@ -47,7 +47,8 @@ import {
 import {
     BACKGROUNDS,
     setBackgroundPreview,
-    youtubeId,
+    useIsPhone,
+    videoSource,
 } from '@/lib/backgrounds';
 import { tr } from '@/lib/i18n';
 import { EventFrameSwitch } from '@/components/gc/engagement';
@@ -61,6 +62,7 @@ import { cn } from '@/lib/utils';
 import type {
     SiteBackgroundPreset,
     SiteBackgroundPrefs,
+    VideoBackground,
     UserCard,
 } from '@/types';
 
@@ -126,7 +128,7 @@ type Form = {
     hide_spoilers: boolean;
     background: SiteBackgroundPreset;
     background_motion: boolean;
-    background_video: string;
+    background_video: number | null;
     network_mode: string;
     skin: string;
     theme: ThemePref;
@@ -149,6 +151,7 @@ export default function Appearance({
     muteWords,
     hideSpoilers,
     background,
+    videos = [],
     isPlus,
     modes,
     networkMode,
@@ -176,6 +179,7 @@ export default function Appearance({
     muteWords: string[];
     hideSpoilers: boolean;
     background: SiteBackgroundPrefs;
+    videos?: VideoBackground[];
     isPlus: boolean;
     modes: NetworkMode[];
     networkMode: string;
@@ -214,9 +218,7 @@ export default function Appearance({
         hide_spoilers: hideSpoilers,
         background: background.preset,
         background_motion: background.motion,
-        background_video: background.video
-            ? `https://youtu.be/${background.video}`
-            : '',
+        background_video: background.video?.id ?? null,
         network_mode: networkMode,
         skin,
         theme,
@@ -252,13 +254,17 @@ export default function Appearance({
         setBackgroundPreview({
             preset: form.data.background,
             motion: form.data.background_motion,
-            video: isPlus ? youtubeId(form.data.background_video) : null,
+            video: isPlus
+                ? (videos.find((v) => v.id === form.data.background_video) ??
+                  null)
+                : null,
         });
     }, [
         form.data.background,
         form.data.background_motion,
         form.data.background_video,
         isPlus,
+        videos,
     ]);
     useEffect(() => () => setBackgroundPreview(null), []);
     // Пішли без «Зберегти» — повертається збережений стиль.
@@ -283,7 +289,7 @@ export default function Appearance({
             skin: id,
             // Material іде в парі з «Авророю» (як у задумі стилю); фон можна змінити окремо.
             background:
-                id === 'material' && !youtubeId(data.background_video)
+                id === 'material' && data.background_video === null
                     ? 'aurora'
                     : data.background,
         }));
@@ -572,7 +578,7 @@ export default function Appearance({
                         {BACKGROUNDS(Boolean(siteBackground)).map((item) => {
                             const active =
                                 form.data.background === item.id &&
-                                !youtubeId(form.data.background_video);
+                                form.data.background_video === null;
 
                             return (
                                 <button
@@ -580,12 +586,12 @@ export default function Appearance({
                                     type="button"
                                     role="radio"
                                     aria-checked={active}
-                                    // Вибір сцени замінює відеофон (порожнє поле посилання).
+                                    // Вибір сцени замінює відеофон.
                                     onClick={() =>
                                         form.setData((data) => ({
                                             ...data,
                                             background: item.id,
-                                            background_video: '',
+                                            background_video: null,
                                         }))
                                     }
                                     className="group flex flex-col justify-start text-left"
@@ -661,45 +667,13 @@ export default function Appearance({
                         <EventFrameSwitch />
                     </SettingsRows>
 
-                    <div className="-mx-4 border-[var(--gc-hairline)] px-4 pt-4 sm:-mx-5 sm:px-5">
-                        <div className="flex items-center gap-2 text-sm font-medium text-white">
-                            <Youtube className="size-4 text-[#ff4e45]" />
-                            {tr('Відео з YouTube як фон')}
-                            <PlusBadge className="size-4" />
-                        </div>
-                        <p className="mt-1 text-xs text-white/45">
-                            {isPlus
-                                ? tr(
-                                      'Вставте посилання — відео гратиме без звуку по колу замість сцени. Порожнє поле — повернути сцену.',
-                                  )
-                                : tr('Власний відеофон — привілей GameCon+.')}
-                        </p>
-                        <input
-                            type="url"
-                            inputMode="url"
-                            value={form.data.background_video}
-                            onChange={(e) =>
-                                form.setData('background_video', e.target.value)
-                            }
-                            disabled={!isPlus && !form.data.background_video}
-                            placeholder="https://youtu.be/…"
-                            aria-label={tr('Посилання на відео YouTube')}
-                            className="input-glass mt-3 h-11 w-full rounded-xl px-3.5 text-sm text-white placeholder:text-white/30 focus:outline-none disabled:opacity-50"
-                        />
-                        {form.errors.background_video && (
-                            <p className="mt-2 text-xs text-red-400">
-                                {form.errors.background_video}
-                            </p>
-                        )}
-                        {!isPlus && (
-                            <a
-                                href="/plus"
-                                className="mt-3 inline-flex text-xs font-medium text-primary hover:underline"
-                            >
-                                {tr('Дізнатися про GameCon+')}
-                            </a>
-                        )}
-                    </div>
+                    <VideoPicker
+                        videos={videos}
+                        value={form.data.background_video}
+                        isPlus={isPlus}
+                        error={form.errors.background_video}
+                        onChange={(id) => form.setData('background_video', id)}
+                    />
                 </SettingsCard>
 
                 <SettingsCard
@@ -1255,5 +1229,112 @@ export default function Appearance({
                 form="appearance-form"
             />
         </>
+    );
+}
+
+/**
+ * Відеофони з бібліотеки адміністрації (GameCon+): відео без звуку по колу замість сцени.
+ * На смартфоні грає вертикальна версія, на ПК і планшеті — горизонтальна.
+ */
+function VideoPicker({
+    videos,
+    value,
+    isPlus,
+    error,
+    onChange,
+}: {
+    videos: VideoBackground[];
+    value: number | null;
+    isPlus: boolean;
+    error?: string;
+    onChange: (id: number | null) => void;
+}) {
+    const phone = useIsPhone();
+    if (videos.length === 0) return null;
+
+    return (
+        <div className="pt-4">
+            <div className="flex items-center gap-2 text-sm font-medium text-white">
+                <Video className="size-4 text-white/60" />
+                {tr('Відеофон')}
+                <PlusBadge className="size-4" />
+            </div>
+            <p className="mt-1 text-xs text-white/45">
+                {isPlus
+                    ? tr(
+                          'Відео без звуку грає по колу замість сцени. На смартфоні — вертикальна версія, на ПК і планшеті — горизонтальна.',
+                      )
+                    : tr('Відеофони — привілей GameCon+.')}
+            </p>
+            <div
+                className="mt-3 grid grid-cols-2 gap-2.5 sm:grid-cols-3"
+                role="radiogroup"
+                aria-label={tr('Відеофон')}
+            >
+                {videos.map((video) => {
+                    const active = value === video.id;
+                    const src = videoSource(video, phone);
+
+                    return (
+                        <button
+                            key={video.id}
+                            type="button"
+                            role="radio"
+                            aria-checked={active}
+                            disabled={!isPlus}
+                            onClick={() => onChange(active ? null : video.id)}
+                            className="group flex flex-col text-left disabled:cursor-not-allowed"
+                        >
+                            <span
+                                className={cn(
+                                    'relative block aspect-[16/10] overflow-hidden rounded-lg bg-black transition',
+                                    active
+                                        ? 'ring-2 ring-primary'
+                                        : 'group-hover:ring-1 group-hover:ring-white/30',
+                                    !isPlus && 'opacity-50',
+                                )}
+                            >
+                                {src && (
+                                    <video
+                                        src={src}
+                                        poster={video.poster ?? undefined}
+                                        muted
+                                        loop
+                                        playsInline
+                                        preload="metadata"
+                                        onMouseEnter={(e) =>
+                                            void e.currentTarget
+                                                .play()
+                                                .catch(() => {})
+                                        }
+                                        onMouseLeave={(e) =>
+                                            e.currentTarget.pause()
+                                        }
+                                        className="size-full object-cover"
+                                    />
+                                )}
+                                {active && (
+                                    <span className="absolute top-2 right-2 flex size-6 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                                        <Check className="size-3.5" />
+                                    </span>
+                                )}
+                            </span>
+                            <span className="mt-2 block truncate text-sm font-medium text-white">
+                                {video.title}
+                            </span>
+                        </button>
+                    );
+                })}
+            </div>
+            {error && <p className="mt-2 text-xs text-red-400">{error}</p>}
+            {!isPlus && (
+                <a
+                    href="/plus"
+                    className="mt-3 inline-flex text-xs font-medium text-primary hover:underline"
+                >
+                    {tr('Дізнатися про GameCon+')}
+                </a>
+            )}
+        </div>
     );
 }

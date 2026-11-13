@@ -16,6 +16,7 @@ import 'pulse_widget.dart';
 import 'seasonal.dart';
 import 'player_view.dart';
 import 'state.dart';
+import 'backgrounds.dart';
 import 'theme.dart';
 import 'voice_room.dart';
 import 'rail.dart';
@@ -265,6 +266,8 @@ class _AppShellState extends State<AppShell> {
                 resizeToAvoidBottomInset: true,
                 body: Stack(
                   children: [
+                    // Фон, обраний у Налаштування → Вигляд (або фірмовий з Адмінка → Дизайн).
+                    Positioned.fill(child: UserBackdrop(session: widget.session)),
                     Positioned.fill(child: SeasonBackdrop(season: season)),
                     // Сніг, листя, кажани — під вмістом: скло карток м'яко їх розмиває.
                     Positioned.fill(child: SeasonOverlay(season: season)),

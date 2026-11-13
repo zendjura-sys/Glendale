@@ -9,6 +9,7 @@ use App\Services\Alerts\AirAlertService;
 use App\Services\Engagement\Streaks;
 use App\Services\Moderation\ContentFilter;
 use App\Services\Wrapped\YearInReview;
+use App\Support\Backgrounds;
 use App\Support\Modules\ModuleManager;
 use App\Support\NetworkModes;
 use App\Support\Onboarding;
@@ -92,6 +93,14 @@ class AccountPresenter
             // «Показувати, що я слухаю»: одне налаштування для сайту й застосунку.
             'show_listening' => $user->showsListening(),
             'morning_digest' => $user->wantsDigest(),
+            // Фон (Налаштування → Вигляд) і фірмовий фон з Адмінка → Дизайн — застосунок малює їх так само, як сайт.
+            'background' => [
+                ...Backgrounds::for($user),
+                'presets' => Backgrounds::presets(),
+                'image' => Backgrounds::image(),
+                // Бібліотека відеофонів GameCon+ (Адмінка → Дизайн).
+                'videos' => Backgrounds::videos(),
+            ],
         ];
     }
 }

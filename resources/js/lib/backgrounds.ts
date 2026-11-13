@@ -1,6 +1,10 @@
 import { useSyncExternalStore } from 'react';
 import { tr } from '@/lib/i18n';
-import type { SiteBackgroundPrefs, SiteBackgroundPreset } from '@/types';
+import type {
+    SiteBackgroundPrefs,
+    SiteBackgroundPreset,
+    VideoBackground,
+} from '@/types';
 
 /** Сцени фону в порядку показу (як Backgrounds::presets() на сервері); фірмовий — якщо завантажений. */
 export function BACKGROUNDS(custom = false): {
@@ -47,7 +51,7 @@ export const DEFAULT_BACKGROUND: SiteBackgroundPrefs = {
  */
 let preview: SiteBackgroundPrefs | null = null;
 /** Відеофон сторінки (профіль учасника GameCon+): показується поверх власного вибору гостя. */
-let pageVideo: string | null = null;
+let pageVideo: VideoBackground | null = null;
 const listeners = new Set<() => void>();
 const notify = () => listeners.forEach((listener) => listener());
 const subscribe = (listener: () => void) => {
@@ -69,12 +73,12 @@ export function useBackgroundPreview(): SiteBackgroundPrefs | null {
     );
 }
 
-export function setPageBackgroundVideo(id: string | null) {
-    pageVideo = id;
+export function setPageBackgroundVideo(video: VideoBackground | null) {
+    pageVideo = video;
     notify();
 }
 
-export function usePageBackgroundVideo(): string | null {
+export function usePageBackgroundVideo(): VideoBackground | null {
     return useSyncExternalStore(
         subscribe,
         () => pageVideo,
@@ -82,28 +86,28 @@ export function usePageBackgroundVideo(): string | null {
     );
 }
 
-/** ID відео з посилання YouTube (дзеркало Backgrounds::youtubeId) — для миттєвого перегляду. */
-export function youtubeId(url: string): string | null {
-    const value = url.trim();
-    if (/^[\w-]{11}$/.test(value)) return value;
-    try {
-        const link = new URL(
-            value.includes('://') ? value : `https://${value}`,
-        );
-        const host = link.hostname.replace(/^(www\.|m\.|music\.)/, '');
-        let id: string | null = null;
-        if (host === 'youtu.be') id = link.pathname.split('/')[1] ?? null;
-        else if (host === 'youtube.com' || host === 'youtube-nocookie.com') {
-            id =
-                link.searchParams.get('v') ??
-                link.pathname.match(
-                    /^\/(?:shorts|embed|live|v)\/([^/?]+)/,
-                )?.[1] ??
-                null;
-        }
+const PHONE = '(max-width: 767px)';
 
-        return id && /^[\w-]{11}$/.test(id) ? id : null;
-    } catch {
-        return null;
-    }
+/** Смартфон чи ПК/планшет — який файл відеофону показувати. */
+export function useIsPhone(): boolean {
+    return useSyncExternalStore(
+        (listener) => {
+            const query = window.matchMedia(PHONE);
+            query.addEventListener('change', listener);
+
+            return () => query.removeEventListener('change', listener);
+        },
+        () => window.matchMedia(PHONE).matches,
+        () => false,
+    );
+}
+
+/** Файл відеофону під екран: вертикальний для смартфона, горизонтальний для ПК і планшета. */
+export function videoSource(
+    video: VideoBackground,
+    phone: boolean,
+): string | null {
+    return phone
+        ? (video.mobile ?? video.desktop)
+        : (video.desktop ?? video.mobile);
 }

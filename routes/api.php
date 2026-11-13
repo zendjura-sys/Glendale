@@ -555,6 +555,7 @@ Route::prefix('v1')->group(function () {
             // Сповіщення, тихі години, близькі, заглушені слова, спойлери, прикраси — ті самі, що на сайті.
             Route::get('settings/appearance', [AppearanceController::class, 'edit']);
             Route::put('settings/appearance', [AppearanceController::class, 'update']);
+            Route::put('settings/appearance/background', [AppearanceController::class, 'background'])->middleware('throttle:30,1');
             Route::patch('settings/notify-sound', [GameThemeController::class, 'sound'])->middleware('throttle:30,1');
             Route::patch('settings/streamer-mode', [GameThemeController::class, 'streamerMode'])->middleware('throttle:30,1');
             Route::patch('settings/data-saver', [GameThemeController::class, 'dataSaver'])->middleware('throttle:30,1');

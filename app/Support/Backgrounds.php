@@ -3,12 +3,15 @@
 namespace App\Support;
 
 use App\Models\User;
+use App\Models\VideoBackground;
 use App\Support\Settings\SiteSettings;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 
 /**
  * Фон сайту (Налаштування → Вигляд): жива сцена за інтерфейсом, вимикач руху й — для GameCon+ —
- * власне відео з YouTube. Зберігаємо лише ID відео, не посилання. Фірмовий фон (`custom`) —
+ * відеофон з бібліотеки, яку наповнює адміністрація (окремі файли для смартфона й ПК/планшета).
+ * У налаштуваннях людини зберігаємо лише ID відеофону. Фірмовий фон (`custom`) —
  * картинки, завантажені в Адмінка → Дизайн: окремо для комп'ютера й для телефона.
  */
 class Backgrounds
@@ -69,35 +72,42 @@ class Backgrounds
     }
 
     /**
-     * ID відео з посилання YouTube (watch, youtu.be, shorts, embed, live) або null.
+     * Активні відеофони бібліотеки (кеш — масиви, не моделі).
+     *
+     * @return list<array{id: int, title: string, mobile: string|null, desktop: string|null, poster: string|null}>
      */
-    public static function youtubeId(?string $url): ?string
+    public static function videos(): array
     {
-        $url = trim((string) $url);
-        if ($url === '') {
-            return null;
-        }
-        if (preg_match('/^[A-Za-z0-9_-]{11}$/', $url) === 1) {
-            return $url;
-        }
-        $parts = parse_url(str_contains($url, '://') ? $url : 'https://'.$url);
-        $host = strtolower(preg_replace('/^(www\.|m\.|music\.)/', '', $parts['host'] ?? ''));
-        $path = $parts['path'] ?? '';
-        $id = null;
-        if ($host === 'youtu.be') {
-            $id = explode('/', trim($path, '/'))[0];
-        } elseif (in_array($host, ['youtube.com', 'youtube-nocookie.com'], true)) {
-            parse_str($parts['query'] ?? '', $query);
-            $id = is_string($query['v'] ?? null)
-                ? $query['v']
-                : (preg_match('#^/(?:shorts|embed|live|v)/([^/?]+)#', $path, $m) === 1 ? $m[1] : null);
-        }
+        return Cache::remember('backgrounds.videos', 600, fn () => VideoBackground::query()->where('is_active', true)
+            ->orderBy('position')->orderBy('id')->get()->map->card()->values()->all());
+    }
 
-        return is_string($id) && preg_match('/^[A-Za-z0-9_-]{11}$/', $id) === 1 ? $id : null;
+    public static function forgetVideos(): void
+    {
+        Cache::forget('backgrounds.videos');
     }
 
     /**
-     * @return array{preset: string, motion: bool, video: string|null}
+     * Відеофон бібліотеки за ID з налаштувань (старі ID YouTube — рядки — більше не діють).
+     *
+     * @return array{id: int, title: string, mobile: string|null, desktop: string|null, poster: string|null}|null
+     */
+    public static function video(mixed $id): ?array
+    {
+        if (! is_numeric($id)) {
+            return null;
+        }
+        foreach (self::videos() as $video) {
+            if ($video['id'] === (int) $id) {
+                return $video;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @return array{preset: string, motion: bool, video: array{id: int, title: string, mobile: string|null, desktop: string|null, poster: string|null}|null}
      */
     public static function for(User $user): array
     {
@@ -107,8 +117,8 @@ class Backgrounds
         return [
             'preset' => in_array($preset, self::presets(), true) ? $preset : $default,
             'motion' => (bool) $user->pref('background_motion', true),
-            // Відео — привілей GameCon+: після закінчення підписки просто не показується (налаштування лишається).
-            'video' => $user->isPlus() ? self::youtubeId($user->pref('background_video')) : null,
+            // Відеофон — привілей GameCon+: після закінчення підписки просто не показується (налаштування лишається).
+            'video' => $user->isPlus() ? self::video($user->pref('background_video')) : null,
         ];
     }
 }

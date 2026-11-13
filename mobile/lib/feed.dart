@@ -159,7 +159,7 @@ class _FeedScreenState extends State<FeedScreen> {
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 180),
                   height: 42,
-                  decoration: BoxDecoration(color: tab == key ? const Color(0xFF0EA5E9) : card, borderRadius: BorderRadius.circular(14)),
+                  decoration: BoxDecoration(color: tab == key ? const Color(0xFF0EA5E9) : card, borderRadius: BorderRadius.circular(8)),
                   child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                     Icon(icon, size: 16, color: tab == key ? Colors.white : soft),
                     const SizedBox(width: 7),

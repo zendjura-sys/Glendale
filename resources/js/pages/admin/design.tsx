@@ -14,6 +14,8 @@ import {
     Snowflake,
     Trash2,
     Upload,
+    Video,
+    EyeOff,
 } from 'lucide-react';
 import { useRef, useState } from 'react';
 import type { FormEvent } from 'react';
@@ -50,6 +52,7 @@ type Props = {
     seasonal: string;
     seasons: string[];
     background: SiteImage | null;
+    videos: VideoBg[];
     authImages: Record<string, string | null>;
     appLinks: Partial<Record<StoreKey, string>>;
     appFiles: Partial<Record<DirectKey, AppFile>>;
@@ -69,6 +72,15 @@ type AppFile = {
 /** Розмір частини, як на сервері (AppFiles::CHUNK_BYTES). */
 const CHUNK_BYTES = 4 * 1024 * 1024;
 
+type VideoBg = {
+    id: number;
+    title: string;
+    mobile: string | null;
+    desktop: string | null;
+    poster: string | null;
+    is_active: boolean;
+};
+
 type SiteImage = {
     desktop: string | null;
     mobile: string | null;
@@ -87,6 +99,7 @@ export default function AdminDesign({
     seasonal,
     seasons,
     background,
+    videos,
     authImages,
     appLinks,
     appFiles,
@@ -134,6 +147,7 @@ export default function AdminDesign({
             />
 
             <BackgroundCard image={background} />
+            <VideosCard videos={videos} />
             <AppLinksCard
                 links={appLinks}
                 files={appFiles}
@@ -841,6 +855,217 @@ function BackgroundCard({ image }: { image: SiteImage | null }) {
                     )}
                 </span>
             </label>
+        </section>
+    );
+}
+
+/**
+ * Відеофони для учасників GameCon+: окремий файл для смартфона (вертикальний) і для ПК/планшета.
+ * Люди обирають їх у Налаштування → Вигляд на сайті й у застосунку.
+ */
+function VideosCard({ videos }: { videos: VideoBg[] }) {
+    const form = useForm<{
+        title: string;
+        mobile: File | null;
+        desktop: File | null;
+        poster: File | null;
+    }>({ title: '', mobile: null, desktop: null, poster: null });
+    const [key, setKey] = useState(0);
+    const submit = (e: FormEvent) => {
+        e.preventDefault();
+        form.post('/admin/design/videos', {
+            forceFormData: true,
+            preserveScroll: true,
+            onSuccess: () => {
+                form.reset();
+                setKey((k) => k + 1);
+            },
+        });
+    };
+    const files = [
+        {
+            name: 'mobile' as const,
+            icon: Smartphone,
+            label: tr('Смартфон'),
+            hint: tr('Вертикальне 9:16, MP4/WebM'),
+            accept: 'video/mp4,video/webm',
+        },
+        {
+            name: 'desktop' as const,
+            icon: Monitor,
+            label: tr('ПК і планшет'),
+            hint: tr('Горизонтальне 16:9, MP4/WebM'),
+            accept: 'video/mp4,video/webm',
+        },
+        {
+            name: 'poster' as const,
+            icon: ImagePlus,
+            label: tr('Обкладинка'),
+            hint: tr('Кадр, поки відео вантажиться'),
+            accept: 'image/jpeg,image/png,image/webp',
+        },
+    ];
+
+    return (
+        <section className="gc-solid mb-5 rounded-2xl p-4">
+            <div className="flex items-center gap-3">
+                <span className="gc-solid-2 flex size-11 items-center justify-center rounded-2xl text-white">
+                    <Video className="size-5" />
+                </span>
+                <div className="min-w-0 flex-1">
+                    <h3 className="font-display text-base font-bold text-white">
+                        {tr('Відеофони GameCon+')}
+                    </h3>
+                    <p className="text-xs text-white/45">
+                        {tr(
+                            'Учасники GameCon+ обирають їх у налаштуваннях вигляду на сайті й у застосунку. Відео без звуку, коротке й зациклене, до 60 МБ; якщо є лише один файл, він буде всюди.',
+                        )}
+                    </p>
+                </div>
+            </div>
+
+            {videos.length > 0 && (
+                <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                    {videos.map((video) => (
+                        <div
+                            key={video.id}
+                            className={cn(
+                                'gc-solid-2 overflow-hidden rounded-xl',
+                                !video.is_active && 'opacity-50',
+                            )}
+                        >
+                            <video
+                                src={video.desktop ?? video.mobile ?? undefined}
+                                poster={video.poster ?? undefined}
+                                muted
+                                loop
+                                playsInline
+                                preload="metadata"
+                                onMouseEnter={(e) =>
+                                    void e.currentTarget.play().catch(() => {})
+                                }
+                                onMouseLeave={(e) => e.currentTarget.pause()}
+                                className="aspect-video w-full bg-black object-cover"
+                            />
+                            <div className="flex items-center gap-1 p-2">
+                                <div className="min-w-0 flex-1">
+                                    <p className="truncate text-sm font-medium text-white">
+                                        {video.title}
+                                    </p>
+                                    <p className="flex items-center gap-1 text-xs text-white/40">
+                                        {video.mobile && (
+                                            <Smartphone className="size-3" />
+                                        )}
+                                        {video.desktop && (
+                                            <Monitor className="size-3" />
+                                        )}
+                                        {!video.is_active && tr('приховано')}
+                                    </p>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        router.post(
+                                            `/admin/design/videos/${video.id}/toggle`,
+                                            {},
+                                            { preserveScroll: true },
+                                        )
+                                    }
+                                    aria-label={
+                                        video.is_active
+                                            ? tr('Приховати')
+                                            : tr('Показати')
+                                    }
+                                    className="flex size-8 items-center justify-center rounded-lg text-white/50 transition hover:bg-[var(--gc-l3)] hover:text-white"
+                                >
+                                    {video.is_active ? (
+                                        <EyeOff className="size-4" />
+                                    ) : (
+                                        <Eye className="size-4" />
+                                    )}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        if (
+                                            confirm(
+                                                tr(
+                                                    'Видалити відеофон? У тих, хто його обрав, повернеться звичайний фон.',
+                                                ),
+                                            )
+                                        )
+                                            router.delete(
+                                                `/admin/design/videos/${video.id}`,
+                                                { preserveScroll: true },
+                                            );
+                                    }}
+                                    aria-label={tr('Видалити')}
+                                    className="flex size-8 items-center justify-center rounded-lg text-white/50 transition hover:bg-[var(--gc-l3)] hover:text-red-400"
+                                >
+                                    <Trash2 className="size-4" />
+                                </button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            <form
+                key={key}
+                onSubmit={submit}
+                className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
+            >
+                <div className="flex flex-col gap-1.5">
+                    <Input
+                        value={form.data.title}
+                        onChange={(e) => form.setData('title', e.target.value)}
+                        placeholder={tr('Назва, напр. «Неонове місто»')}
+                        maxLength={60}
+                    />
+                    <InputError message={form.errors.title} />
+                </div>
+                {files.map((file) => (
+                    <label
+                        key={file.name}
+                        className="gc-solid-2 flex min-h-11 cursor-pointer items-center gap-2 rounded-xl px-3 py-2 text-sm text-white/80 transition hover:text-white"
+                    >
+                        <file.icon className="size-4 shrink-0 text-white/50" />
+                        <span className="min-w-0 flex-1">
+                            <span className="block truncate">
+                                {form.data[file.name]?.name ?? file.label}
+                            </span>
+                            <span className="block truncate text-xs text-white/40">
+                                {form.errors[file.name] ?? file.hint}
+                            </span>
+                        </span>
+                        <input
+                            type="file"
+                            accept={file.accept}
+                            className="sr-only"
+                            onChange={(e) =>
+                                form.setData(
+                                    file.name,
+                                    e.target.files?.[0] ?? null,
+                                )
+                            }
+                        />
+                    </label>
+                ))}
+                <button
+                    type="submit"
+                    disabled={
+                        form.processing ||
+                        !form.data.title.trim() ||
+                        (!form.data.mobile && !form.data.desktop)
+                    }
+                    className="flex h-11 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-white transition disabled:opacity-40 sm:col-span-2 lg:col-span-4 lg:justify-self-start"
+                >
+                    <Upload className="size-4" />
+                    {form.progress
+                        ? `${form.progress.percentage ?? 0}%`
+                        : tr('Додати відеофон')}
+                </button>
+            </form>
         </section>
     );
 }

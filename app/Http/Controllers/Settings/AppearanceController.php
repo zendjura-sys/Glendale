@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Settings;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use App\Services\FriendshipService;
 use App\Support\Backgrounds;
 use App\Support\GameTheme;
@@ -15,6 +16,7 @@ use App\Support\Palette;
 use App\Support\Plugins\Plugins;
 use App\Support\ProfileBlocks;
 use App\Support\Skins;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -34,10 +36,11 @@ class AppearanceController extends Controller
             'palettes' => Palette::all(),
             'background' => [
                 ...Backgrounds::for($user),
-                // Поле вводу показує збережене відео навіть після закінчення GameCon+.
-                'video' => Backgrounds::youtubeId($user->pref('background_video')),
+                // Вибір показує збережений відеофон навіть після закінчення GameCon+.
+                'video' => Backgrounds::video($user->pref('background_video')),
             ],
             'backgrounds' => Backgrounds::presets(),
+            'videos' => Backgrounds::videos(),
             'skin' => Skins::for($user),
             'theme' => Skins::theme($user),
             'seasonal' => $user->pref('seasonal') !== false,
@@ -100,7 +103,7 @@ class AppearanceController extends Controller
             'hide_spoilers' => ['sometimes', 'boolean'],
             'background' => ['sometimes', 'string', 'in:'.implode(',', Backgrounds::presets())],
             'background_motion' => ['sometimes', 'boolean'],
-            'background_video' => ['sometimes', 'nullable', 'string', 'max:200'],
+            'background_video' => ['sometimes', 'nullable', 'integer'],
             'skin' => ['sometimes', 'string', 'in:'.implode(',', Skins::ALL)],
             'theme' => ['sometimes', 'string', 'in:'.implode(',', Skins::THEMES)],
             'seasonal' => ['sometimes', 'boolean'],
@@ -177,21 +180,62 @@ class AppearanceController extends Controller
             $patch['background_motion'] = (bool) $data['background_motion'];
         }
         if (array_key_exists('background_video', $data)) {
-            $video = Backgrounds::youtubeId($data['background_video']);
-            if (filled($data['background_video']) && $video === null) {
-                throw ValidationException::withMessages(['background_video' => 'Не вдалося розпізнати посилання на відео YouTube.']);
-            }
-            // Нове відео може поставити лише учасник GameCon+; прибрати своє — будь-хто.
-            if ($video !== null && $video !== $request->user()->pref('background_video') && ! $request->user()->isPlus()) {
-                throw ValidationException::withMessages(['background_video' => 'Відеофон доступний з GameCon+.']);
-            }
-            $patch['background_video'] = $video;
+            $patch['background_video'] = $this->videoChoice($data['background_video'], $request->user());
         }
         $request->user()->mergePref($patch);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Вигляд збережено.']);
 
         return to_route('appearance.edit');
+    }
+
+    /**
+     * Лише фон (застосунок і швидкі перемикачі): сцена, рух і відеофон GameCon+ — без решти форми «Вигляд».
+     */
+    public function background(Request $request): RedirectResponse|JsonResponse
+    {
+        $user = $request->user();
+        $data = $request->validate([
+            'background' => ['sometimes', 'string', 'in:'.implode(',', Backgrounds::presets())],
+            'background_motion' => ['sometimes', 'boolean'],
+            'background_video' => ['sometimes', 'nullable', 'integer'],
+        ]);
+        $patch = [];
+        if (array_key_exists('background', $data)) {
+            $patch['background'] = $data['background'];
+        }
+        if (array_key_exists('background_motion', $data)) {
+            $patch['background_motion'] = (bool) $data['background_motion'];
+        }
+        if (array_key_exists('background_video', $data)) {
+            $patch['background_video'] = $this->videoChoice($data['background_video'], $user);
+        }
+        $user->mergePref($patch);
+
+        if ($request->expectsJson()) {
+            return response()->json(['background' => Backgrounds::for($user->fresh())]);
+        }
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Фон збережено.']);
+
+        return back();
+    }
+
+    /**
+     * Відеофон з бібліотеки адміністрації: новий може обрати лише учасник GameCon+, прибрати свій — будь-хто.
+     */
+    private function videoChoice(mixed $id, User $user): ?int
+    {
+        if ($id === null || $id === '') {
+            return null;
+        }
+        if (Backgrounds::video($id) === null) {
+            throw ValidationException::withMessages(['background_video' => 'Цей відеофон більше недоступний.']);
+        }
+        if ((int) $id !== (int) $user->pref('background_video') && ! $user->isPlus()) {
+            throw ValidationException::withMessages(['background_video' => 'Відеофон доступний з GameCon+.']);
+        }
+
+        return (int) $id;
     }
 
     /** Швидкий перемикач теми (меню облікового запису): лише тема, без решти налаштувань. */
