@@ -3,7 +3,9 @@ import {
     ChevronRight,
     History,
     MapPin,
+    Plus,
     Search,
+    Trash2,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type {
@@ -319,6 +321,10 @@ export function AlertPlacePicker({
     onSave: (patch: AlertPrefsPatch) => void;
 }) {
     const [open, setOpen] = useState(false);
+    const [adding, setAdding] = useState(false);
+    const places = prefs.places ?? [];
+    const savePlaces = (next: { id: string; label: string }[]) =>
+        onSave({ places: next });
 
     const filters: {
         key: 'start' | 'end' | 'red' | 'yellow' | 'silent';
@@ -420,6 +426,111 @@ export function AlertPlacePicker({
                         <ChevronRight className="mt-1 size-4 shrink-0 text-white/40" />
                     </button>
                     <AlertHistory key={prefs.unit?.id ?? prefs.region ?? ''} />
+
+                    {/* Інші місця: рідні, робота — окремі сповіщення з підписом. */}
+                    <div className="grid gap-2">
+                        <p className="text-xs text-white/50">
+                            {tr(
+                                'Інші місця — сповіщення з підписом, наприклад «Мама»',
+                            )}
+                        </p>
+                        {places.map((place) => (
+                            <div
+                                key={place.id}
+                                className="flex items-start gap-2 rounded-lg bg-white/[0.03] p-2.5"
+                            >
+                                <div className="min-w-0 flex-1">
+                                    <input
+                                        defaultValue={place.label}
+                                        maxLength={30}
+                                        placeholder={tr('Підпис')}
+                                        aria-label={tr('Підпис місця')}
+                                        onBlur={(e) => {
+                                            const label = e.target.value.trim();
+                                            if (label === place.label) return;
+                                            savePlaces(
+                                                places.map((p) => ({
+                                                    id: p.id,
+                                                    label:
+                                                        p.id === place.id
+                                                            ? label
+                                                            : p.label,
+                                                })),
+                                            );
+                                        }}
+                                        className="input-glass h-8 w-full rounded-md px-2 text-sm font-semibold text-white"
+                                    />
+                                    <p className="mt-1 truncate text-xs text-white/50">
+                                        {place.name} · {place.path}
+                                    </p>
+                                    <div className="mt-1.5 flex flex-wrap gap-1">
+                                        {place.status.length === 0 ? (
+                                            <span className="rounded-md bg-[#10B981]/15 px-2 py-0.5 text-[11px] font-semibold text-[#10B981]">
+                                                {tr('Тривоги немає')}
+                                            </span>
+                                        ) : (
+                                            place.status.map((st) => (
+                                                <span
+                                                    key={st.type}
+                                                    className="rounded-md px-2 py-0.5 text-[11px] font-semibold"
+                                                    style={{
+                                                        color: st.accent,
+                                                        background: `color-mix(in srgb, ${st.accent} 16%, transparent)`,
+                                                    }}
+                                                >
+                                                    {st.name}
+                                                </span>
+                                            ))
+                                        )}
+                                    </div>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        savePlaces(
+                                            places
+                                                .filter(
+                                                    (p) => p.id !== place.id,
+                                                )
+                                                .map((p) => ({
+                                                    id: p.id,
+                                                    label: p.label,
+                                                })),
+                                        )
+                                    }
+                                    aria-label={tr('Прибрати місце')}
+                                    className="flex size-8 items-center justify-center rounded-lg text-white/50 transition hover:bg-white/10 hover:text-red-400"
+                                >
+                                    <Trash2 className="size-4" />
+                                </button>
+                            </div>
+                        ))}
+                        {places.length < 5 && (
+                            <button
+                                type="button"
+                                onClick={() => setAdding(true)}
+                                className="inline-flex h-9 items-center gap-1.5 self-start rounded-lg bg-white/[0.06] px-3 text-sm text-white transition hover:bg-white/10"
+                            >
+                                <Plus className="size-4" />
+                                {tr('Додати місце')}
+                            </button>
+                        )}
+                    </div>
+                    <PlaceDialog
+                        open={adding}
+                        onClose={() => setAdding(false)}
+                        onPick={(id) => {
+                            setAdding(false);
+                            if (places.some((p) => p.id === id)) return;
+                            savePlaces([
+                                ...places.map((p) => ({
+                                    id: p.id,
+                                    label: p.label,
+                                })),
+                                { id, label: '' },
+                            ]);
+                        }}
+                    />
                     <PlaceDialog
                         open={open}
                         onClose={() => setOpen(false)}

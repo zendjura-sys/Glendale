@@ -316,6 +316,7 @@ class _AlertsScreenState extends State<AlertsScreen> {
             if (prefs['units_enabled'] == true) ...[
               _AlertPlace(region: mineSlug ?? '', prefs: prefs, onSave: _save),
               _AlertHistory(key: ValueKey('${mapOf(prefs['unit'])['id'] ?? mineSlug}')),
+              _OtherPlaces(prefs: prefs, onSave: _save),
             ],
             const SizedBox(height: 12),
             Text(tr('Налаштування сповіщень тривог'), style: body(14.5, weight: FontWeight.w700)),
@@ -1054,5 +1055,80 @@ class _AlertHistoryState extends State<_AlertHistory> {
     if (t == null) return '';
     String two(int n) => n.toString().padLeft(2, '0');
     return '${two(t.day)}.${two(t.month)} ${two(t.hour)}:${two(t.minute)}';
+  }
+}
+
+/// Інші місця (рідні, робота): окремі сповіщення з підписом, до 5.
+class _OtherPlaces extends StatelessWidget {
+  const _OtherPlaces({required this.prefs, required this.onSave});
+  final Map<String, dynamic> prefs;
+  final Future<void> Function(Map<String, dynamic>) onSave;
+
+  List<Map<String, dynamic>> get _places => maps(prefs['places']);
+
+  List<Map<String, String>> _plain() => [for (final p in _places) {'id': '${p['id']}', 'label': '${p['label'] ?? ''}'}];
+
+  Future<void> _rename(BuildContext context, Map<String, dynamic> place) async {
+    final ctrl = TextEditingController(text: '${place['label'] ?? ''}');
+    final label = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(tr('Підпис місця')),
+        content: TextField(controller: ctrl, maxLength: 30, autofocus: true, decoration: InputDecoration(hintText: tr('Наприклад, «Мама»'))),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(tr('Скасувати'))),
+          TextButton(onPressed: () => Navigator.pop(ctx, ctrl.text.trim()), child: Text(tr('Зберегти'))),
+        ],
+      ),
+    );
+    ctrl.dispose();
+    if (label == null) return;
+    await onSave({'places': [for (final p in _plain()) p['id'] == place['id'] ? {'id': p['id'], 'label': label} : p]});
+  }
+
+  Color _hex(Object? v) => Color(0xFF000000 | (int.tryParse('${v ?? ''}'.replaceFirst('#', ''), radix: 16) ?? 0xEF4444));
+
+  @override
+  Widget build(BuildContext context) {
+    final places = _places;
+    return Padding(
+      padding: const EdgeInsets.only(top: 6),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Text(tr('Інші місця — сповіщення з підписом, наприклад «Мама»'), style: body(12.5, color: muted)),
+        for (final place in places)
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            dense: true,
+            onTap: () => _rename(context, place),
+            title: Text((text(place['label']) ?? '').isEmpty ? (text(place['name']) ?? '') : '${place['label']} · ${place['name']}', style: body(14, weight: FontWeight.w700)),
+            subtitle: Wrap(spacing: 4, runSpacing: 4, children: [
+              if (maps(place['status']).isEmpty)
+                Text(tr('Тривоги немає'), style: body(12, color: const Color(0xFF10B981), weight: FontWeight.w700))
+              else
+                for (final st in maps(place['status'])) Text('${st['name']}', style: body(12, color: _hex(st['accent']), weight: FontWeight.w700)),
+            ]),
+            trailing: IconButton(
+              icon: const Icon(LucideIcons.trash2, size: 18),
+              tooltip: tr('Прибрати місце'),
+              onPressed: () => onSave({'places': [for (final p in _plain()) if (p['id'] != place['id']) p]}),
+            ),
+          ),
+        if (places.length < 5)
+          Align(
+            alignment: Alignment.centerLeft,
+            child: GhostButton(
+              label: tr('Додати місце'),
+              icon: LucideIcons.plus,
+              compact: true,
+              expand: false,
+              onPressed: () async {
+                final id = await Navigator.of(context).push<String>(MaterialPageRoute(builder: (_) => const AlertPlacePickerPage()));
+                if (id == null || places.any((p) => p['id'] == id)) return;
+                await onSave({'places': [..._plain(), {'id': id, 'label': ''}]});
+              },
+            ),
+          ),
+      ]),
+    );
   }
 }

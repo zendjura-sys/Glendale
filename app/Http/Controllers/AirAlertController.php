@@ -124,6 +124,10 @@ class AirAlertController extends Controller
             'red' => ['sometimes', 'boolean'],
             'yellow' => ['sometimes', 'boolean'],
             'silent' => ['sometimes', 'boolean'],
+            // Додаткові місця (рідні, робота): до 5, з підписом.
+            'places' => ['sometimes', 'array', 'max:'.AlertWatcher::MAX_PLACES],
+            'places.*.id' => ['required', 'string', 'max:20'],
+            'places.*.label' => ['nullable', 'string', 'max:30'],
         ]);
         $user = $request->user();
         $patch = [];
@@ -149,6 +153,17 @@ class AirAlertController extends Controller
                 }
             }
             $patch['alert_unit'] = $unit;
+        }
+        if (array_key_exists('places', $data)) {
+            $tree = $this->api->regions();
+            $places = [];
+            foreach ($data['places'] as $place) {
+                if (! isset($tree[$place['id']])) {
+                    throw ValidationException::withMessages(['places' => 'Такого місця немає в довіднику.']);
+                }
+                $places[$place['id']] = ['id' => $place['id'], 'label' => trim((string) ($place['label'] ?? ''))];
+            }
+            $patch['alert_places'] = array_values($places);
         }
         foreach (['start', 'end', 'red', 'yellow', 'silent'] as $flag) {
             if (array_key_exists($flag, $data)) {
@@ -179,7 +194,7 @@ class AirAlertController extends Controller
     }
 
     /**
-     * @return array{region: string|null, unit: array<string, mixed>|null, status: list<array<string, mixed>>, units_enabled: bool, push: bool, start: bool, end: bool, red: bool, yellow: bool, silent: bool, shelter: bool}
+     * @return array{region: string|null, unit: array<string, mixed>|null, status: list<array<string, mixed>>, places: list<array<string, mixed>>, units_enabled: bool, push: bool, start: bool, end: bool, red: bool, yellow: bool, silent: bool, shelter: bool}
      */
     private function prefs(Request $request): array
     {
@@ -202,6 +217,19 @@ class AirAlertController extends Controller
             'status' => ($place = $known['id'] ?? (is_string($region) ? $this->api->stateIdFor($region) : null)) !== null && $this->api->enabled() ? $this->api->statusOf($place) : [],
             'units_enabled' => $this->api->enabled(),
             ...AlertWatcher::prefsOf($user),
+            // Додаткові місця з поточним статусом тривоги.
+            'places' => $this->api->enabled() ? array_values(array_filter(array_map(function (array $place) {
+                $node = $this->api->regions()[$place['id']] ?? null;
+
+                return $node === null ? null : [
+                    'id' => $place['id'],
+                    'label' => $place['label'],
+                    'name' => $node['name'],
+                    'type_label' => UkraineAlarm::typeLabel($node['type']),
+                    'path' => $this->api->pathLabel($place['id']),
+                    'status' => $this->api->statusOf($place['id']),
+                ];
+            }, AlertWatcher::placesOf($user)))) : [],
             'shelter' => $user->status_emoji === '🛡️' && ($user->status_until === null || $user->status_until->isFuture()),
         ];
     }

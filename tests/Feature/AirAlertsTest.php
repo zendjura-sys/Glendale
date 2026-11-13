@@ -316,6 +316,32 @@ class AirAlertsTest extends TestCase
             ->assertJsonPath('prefs.status.0.accent', '#EF4444');
     }
 
+    public function test_extra_places_notify_with_label_and_keep_my_shelter(): void
+    {
+        $alerts = [];
+        $index = 1;
+        $this->fakeUkraineAlarm($this->zhytomyrTree(), $alerts, $index);
+        $user = User::factory()->create(['country' => 'UA']);
+        $this->actingAs($user)->putJson('/alerts/preferences', ['unit' => '1001', 'places' => [['id' => '200', 'label' => 'Мама']]])->assertOk()
+            ->assertJsonPath('prefs.places.0.name', 'Коростенський район')
+            ->assertJsonPath('prefs.places.0.label', 'Мама')
+            ->assertJsonPath('prefs.places.0.status', []);
+        $this->actingAs($user)->putJson('/alerts/preferences', ['places' => [['id' => 'nope']]])->assertStatus(422);
+        $watcher = app(AlertWatcher::class);
+        $watcher->run();
+
+        // Тривога лише в Коростенському районі (у мами) — сповіщення з підписом, у мене тихо.
+        [$alerts, $index] = [[$this->row('200', 'District', 'AIR')], 2];
+        $this->assertSame(1, $watcher->run());
+        $this->assertSame('Мама — Повітряна тривога (червоний рівень): Коростенський район', $user->notifications()->first()->data['text']);
+
+        // Я в укритті у себе; відбій у мами не знімає мій статус.
+        $this->actingAs($user)->putJson('/alerts/preferences', ['shelter' => true])->assertOk();
+        [$alerts, $index] = [[], 3];
+        $this->assertSame(1, $watcher->run());
+        $this->assertSame('🛡️', $user->fresh()->status_emoji);
+    }
+
     public function test_alert_history_of_my_place(): void
     {
         app(SiteSettings::class)->putSecret('ukrainealarm_token', 'ua-alarm-key-1234567890');

@@ -48,6 +48,15 @@ export type AlertPrefs = {
         accent: string;
         severity: string;
     }[];
+    /** Додаткові місця (рідні, робота) з підписом і статусом. */
+    places?: {
+        id: string;
+        label: string;
+        name: string;
+        type_label: string;
+        path: string;
+        status: AlertPrefs['status'];
+    }[];
     /** Чи є ключ UkraineAlarm — без нього тривог і сповіщень немає. */
     units_enabled: boolean;
     /** Отримувати сповіщення про тривоги взагалі. */
@@ -65,6 +74,7 @@ export type AlertPrefs = {
 export type AlertPrefsPatch = {
     region?: string | null;
     unit?: string | null;
+    places?: { id: string; label: string }[];
     push?: boolean;
     start?: boolean;
     end?: boolean;

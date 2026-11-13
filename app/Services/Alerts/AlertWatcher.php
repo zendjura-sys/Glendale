@@ -68,6 +68,26 @@ class AlertWatcher
         Cache::forget('presence.'.$user->id);
     }
 
+    /** Скільки додаткових місць можна додати. */
+    public const MAX_PLACES = 5;
+
+    /**
+     * Додаткові місця людини: [{id, label}] (дім рідних, робота…).
+     *
+     * @return list<array{id: string, label: string}>
+     */
+    public static function placesOf(User $user): array
+    {
+        $out = [];
+        foreach ((array) $user->pref('alert_places', []) as $place) {
+            if (is_array($place) && is_string($place['id'] ?? null) && $place['id'] !== '') {
+                $out[] = ['id' => $place['id'], 'label' => trim((string) ($place['label'] ?? ''))];
+            }
+        }
+
+        return array_slice($out, 0, self::MAX_PLACES);
+    }
+
     /** regionId, за яким стежить людина: обраний район/громада або її область. */
     public function unitFor(User $user): ?string
     {
@@ -113,14 +133,25 @@ class AlertWatcher
 
         // Хто за чим стежить: regionId → люди.
         $watchers = [];
-        User::query()->where(fn ($q) => $q->whereNotNull('preferences->alert_region')->orWhereNotNull('preferences->alert_unit'))
+        User::query()->where(fn ($q) => $q->whereNotNull('preferences->alert_region')->orWhereNotNull('preferences->alert_unit')->orWhereNotNull('preferences->alert_places'))
             ->chunkById(500, function ($users) use (&$watchers) {
                 foreach ($users as $user) {
-                    if (self::prefsOf($user)['push'] && ($unit = $this->unitFor($user)) !== null) {
-                        $watchers[$unit][] = $user->id;
+                    if (! self::prefsOf($user)['push']) {
+                        continue;
+                    }
+                    $main = $this->unitFor($user);
+                    if ($main !== null) {
+                        $watchers[$main][] = $user->id;
+                    }
+                    // Додаткові місця (рідні, робота) — окремі сповіщення з підписом.
+                    foreach (self::placesOf($user) as $place) {
+                        if ($place['id'] !== $main) {
+                            $watchers[$place['id']][] = $user->id;
+                        }
                     }
                 }
             });
+        $watchers = array_map(fn ($ids) => array_values(array_unique($ids)), $watchers);
 
         $tree = $this->api->regions();
         $sent = 0;
@@ -239,7 +270,7 @@ class AlertWatcher
         // Замок на одну зміну стану: паралельні опитування й вебхук не створять дубль.
         $status = $raised ? 'raised' : ($started ? 'on' : 'off');
 
-        return (int) (Cache::lock('ua_alarm_notify:'.$place.':'.$type.':'.$status, 60)->block(10, fn () => $this->deliver($ids, $started, $type, $name, $local, $since, $now, $alertKey, $airLevel, $severity, $raised)));
+        return (int) (Cache::lock('ua_alarm_notify:'.$place.':'.$type.':'.$status, 60)->block(10, fn () => $this->deliver($ids, $started, $type, $name, $local, $since, $now, $alertKey, $airLevel, $severity, $raised, $place)));
     }
 
     /** Область (slug) регіону з довідника: для обраного місця «unit» чи «state/district». */
@@ -253,12 +284,21 @@ class AlertWatcher
     }
 
     /** @param  list<int>  $ids */
-    private function deliver(array $ids, bool $started, string $type, string $name, bool $local, ?string $since, CarbonImmutable $now, string $alertKey, string $airLevel, string $severity, bool $raised = false): int
+    private function deliver(array $ids, bool $started, string $type, string $name, bool $local, ?string $since, CarbonImmutable $now, string $alertKey, string $airLevel, string $severity, bool $raised = false, string $place = ''): int
     {
         $count = 0;
         foreach (User::query()->whereKey($ids)->get() as $user) {
-            // Відбій знімає «В укритті» в усіх, хто стежить за місцем, навіть якщо сповіщення про відбій вимкнено.
-            if (! $started) {
+            // Чужим (додатковим) місцем стежимо з підписом; «В укритті» знімаємо лише відбоєм у своєму місці.
+            $main = $this->unitFor($user);
+            $label = null;
+            if ($place !== $main) {
+                foreach (self::placesOf($user) as $extra) {
+                    if ($extra['id'] === $place) {
+                        $label = $extra['label'] !== '' ? $extra['label'] : null;
+                    }
+                }
+            }
+            if (! $started && ($place === $main || str_starts_with($place, (string) $main.'/'))) {
                 self::leaveShelter($user);
             }
             $prefs = self::prefsOf($user);
@@ -269,7 +309,7 @@ class AlertWatcher
             if (! Cache::add('ua_alarm_sent:'.$user->id.':'.$alertKey.':'.($raised ? 'raised' : ($started ? 'on' : 'off')), 1, now()->addMinutes(5))) {
                 continue;
             }
-            $notice = new AirAlertNotice($started, $name, $type, $now->toIso8601String(), $local, $alertKey, $since, $prefs['silent'], $airLevel, $raised);
+            $notice = new AirAlertNotice($started, $name, $type, $now->toIso8601String(), $local, $alertKey, $since, $prefs['silent'], $airLevel, $raised, $label);
             $row = $user->notifications()->where('type', AirAlertNotice::class)->where('data->alert_key', $alertKey)->first();
             if ($started) {
                 if (! $prefs['start']) {

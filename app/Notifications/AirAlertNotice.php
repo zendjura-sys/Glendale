@@ -35,6 +35,8 @@ class AirAlertNotice extends Notification
         public readonly string $airLevel = 'red',
         /** Та сама тривога, але API підвищив рівень із жовтого до червоного. */
         public readonly bool $raised = false,
+        /** Підпис додаткового місця («Мама», «Робота»). */
+        public readonly ?string $label = null,
     ) {}
 
     /**
@@ -66,7 +68,8 @@ class AirAlertNotice extends Notification
             'kind' => $this->started ? 'air_alert' : 'air_alert_end',
             'raised' => $this->raised,
             'actor_id' => null,
-            'text' => $this->raised ? UkraineAlarm::TYPES['AIR'][0].' · '.$this->region.$level : $name.': '.$this->region,
+            'text' => ($this->label !== null ? $this->label.' — ' : '').($this->raised ? UkraineAlarm::TYPES['AIR'][0].' · '.$this->region.$level : $name.': '.$this->region),
+            'place_label' => $this->label,
             'excerpt' => match (true) {
                 $this->raised => 'Ракетна небезпека — негайно в укриття',
                 ! $this->started => ($minutes !== null ? 'Тривала '.self::duration($minutes).' · ' : '').'можна виходити з укриття',
