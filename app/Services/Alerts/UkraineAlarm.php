@@ -15,7 +15,9 @@ use Illuminate\Support\Facades\Http;
  *   GET /api/v3/alerts/status      — lastActionIndex: змінюється з кожною новою тривогою чи відбоєм;
  *   GET /api/v3/regions            — дерево: області (State) → райони (District) → громади (Community).
  *
- * Типи тривог API: AIR, ARTILLERY, URBAN_FIGHTS, CHEMICAL, NUCLEAR, INFO (UNKNOWN вважаємо повітряною).
+ * Типи тривог API: AIR, ARTILLERY, URBAN_FIGHTS, CHEMICAL, NUCLEAR, INFO, CUSTOM (UNKNOWN вважаємо повітряною).
+ * Рівень тривоги — activeAlertLevels: [{alertLevel: Red|Yellow, reason, createdAt}] (актуальний — найсвіжіший).
+ * Рівні регіонів: State, District, Community, CityOrVillage, CityDistrict, Null.
  */
 class UkraineAlarm
 {
@@ -29,7 +31,15 @@ class UkraineAlarm
         'CHEMICAL' => ['Хімічна загроза', 'Відбій хімічної загрози'],
         'NUCLEAR' => ['Радіаційна небезпека', 'Відбій радіаційної небезпеки'],
         'INFO' => ['Інформаційне повідомлення', 'Кінець інформаційного повідомлення'],
+        'CUSTOM' => ['Тривога', 'Відбій тривоги'],
     ];
+
+    /**
+     * Рівень тривоги з останньої відповіді /alerts: regionId → тип → red|yellow (з activeAlertLevels).
+     *
+     * @var array<string, array<string, string>>
+     */
+    private array $levels = [];
 
     /**
      * 🔴 Червона (критичний рівень, негайно в укриття): AIR, CHEMICAL, NUCLEAR.
@@ -67,7 +77,7 @@ class UkraineAlarm
             'URBAN_FIGHTS' => '#84CC16',
             'CHEMICAL' => '#A855F7',
             'NUCLEAR' => '#FACC15',
-            default => '#3B82F6',
+            default => '#3B82F6', // INFO, CUSTOM
         };
     }
 
@@ -105,6 +115,7 @@ class UkraineAlarm
         if (! is_array($json)) {
             return null;
         }
+        $this->levels = [];
         $out = [];
         foreach ($json as $region) {
             if (! is_array($region)) {
@@ -120,10 +131,44 @@ class UkraineAlarm
                 }
                 $type = self::type($alert['type'] ?? 'AIR');
                 $out[$id][$type] = isset($alert['lastUpdate']) ? (string) $alert['lastUpdate'] : null;
+                $level = self::levelOf($alert);
+                if ($level !== null) {
+                    $this->levels[$id][$type] = $level;
+                }
             }
         }
 
         return $out;
+    }
+
+    /**
+     * Рівень однієї тривоги з activeAlertLevels: найсвіжіший запис (Red → red, Yellow → yellow), інакше null.
+     *
+     * @param  array<string, mixed>  $alert
+     */
+    public static function levelOf(array $alert): ?string
+    {
+        $latest = null;
+        foreach ((array) ($alert['activeAlertLevels'] ?? []) as $level) {
+            if (is_array($level) && is_string($level['alertLevel'] ?? null) && ($latest === null || (string) ($level['createdAt'] ?? '') >= (string) ($latest['createdAt'] ?? ''))) {
+                $latest = $level;
+            }
+        }
+        $value = $latest !== null ? strtolower((string) $latest['alertLevel']) : null;
+
+        return in_array($value, ['red', 'yellow'], true) ? $value : null;
+    }
+
+    /** Офіційний рівень тривоги цього типу для регіону (з нього самого чи з області/району над ним). */
+    public function levelFor(string $id, string $type): ?string
+    {
+        foreach ($this->lineage($id) as $node) {
+            if (isset($this->levels[$node][$type])) {
+                return $this->levels[$node][$type];
+            }
+        }
+
+        return null;
     }
 
     /** lastActionIndex: якщо не змінився — нових тривог чи відбоїв не було. */

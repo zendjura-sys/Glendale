@@ -33,6 +33,8 @@ class AirAlertNotice extends Notification
         public readonly bool $silent = false,
         /** Повітряна тривога: yellow — лише БпЛА, red — ракети (чи невідомо). */
         public readonly string $airLevel = 'red',
+        /** Та сама тривога, але API підвищив рівень із жовтого до червоного. */
+        public readonly bool $raised = false,
     ) {}
 
     /**
@@ -51,6 +53,7 @@ class AirAlertNotice extends Notification
         $type = UkraineAlarm::type($this->type);
         $severity = UkraineAlarm::severity($type, $this->local, $this->airLevel);
         $level = match (true) {
+            $this->raised => ': рівень підвищено до червоного',
             $type !== 'AIR' || ! $this->started => '',
             $this->airLevel === 'yellow' => ' (жовтий рівень · БпЛА)',
             default => ' (червоний рівень)',
@@ -61,9 +64,11 @@ class AirAlertNotice extends Notification
 
         return [
             'kind' => $this->started ? 'air_alert' : 'air_alert_end',
+            'raised' => $this->raised,
             'actor_id' => null,
-            'text' => $name.': '.$this->region,
+            'text' => $this->raised ? UkraineAlarm::TYPES['AIR'][0].' · '.$this->region.$level : $name.': '.$this->region,
             'excerpt' => match (true) {
+                $this->raised => 'Ракетна небезпека — негайно в укриття',
                 ! $this->started => ($minutes !== null ? 'Тривала '.self::duration($minutes).' · ' : '').'можна виходити з укриття',
                 $type === 'AIR' && $this->airLevel === 'yellow' && ! $this->local => 'Загроза БпЛА — пройдіть в укриття',
                 $severity === 'red' => 'Негайно пройдіть в укриття',

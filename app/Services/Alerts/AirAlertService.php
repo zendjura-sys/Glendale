@@ -155,8 +155,12 @@ class AirAlertService
             }
             // Повітряна тривога за правилами оповіщення: жовтий рівень — лише БпЛА, червоний — ракети (з БпЛА чи без).
             // API v3 цього не розрізняє (лише AIR), тож рівень беремо з цілей на радарі; немає даних — червоний.
+            // Рівень — офіційний з API (activeAlertLevels); якщо API його не дав — за цілями на радарі, інакше червоний.
             $air = in_array(AlertType::AIR, $all, true);
-            $airLevel = ! $air ? null : (in_array(AlertType::UAV, $all, true) && ! in_array(AlertType::BALLISTIC, $all, true) ? 'yellow' : 'red');
+            $airLevel = ! $air ? null : ($alert['air'] ?? (in_array(AlertType::UAV, $all, true) && ! in_array(AlertType::BALLISTIC, $all, true) ? 'yellow' : 'red'));
+            if ($airLevel === 'yellow' && ! in_array(AlertType::UAV, $all, true)) {
+                $all[] = AlertType::UAV;
+            }
             if ($airLevel === 'yellow') {
                 $all = array_values(array_filter($all, fn (AlertType $t) => $t !== AlertType::AIR));
             }
@@ -186,7 +190,9 @@ class AirAlertService
                 'code' => $code,
                 'kind' => $unit['kind'],
                 // Єдиний код типу (AlertType) і масштаб (AlertScale) — для кольору заливки.
-                'type' => AlertType::fromApi($unit['kind'])->value,
+                // Жовтий рівень повітряної тривоги (лише БпЛА) — тип UAV, жовта заливка.
+                'type' => ($unit['air'] ?? null) === 'yellow' ? AlertType::UAV->value : AlertType::fromApi($unit['kind'])->value,
+                'air_level' => $unit['air'] ?? null,
                 'scale' => $unit['scale'] ?? AlertScale::OBLAST->value,
                 'started_at' => $unit['started_at'],
             ];
@@ -289,6 +295,7 @@ class AirAlertService
                 'code' => is_string($row['code'] ?? null) ? $row['code'] : null,
                 'kind' => $row['kind'],
                 'started_at' => is_string($row['started_at'] ?? null) ? $row['started_at'] : null,
+                'air' => in_array($row['air'] ?? null, ['red', 'yellow'], true) ? $row['air'] : null,
             ];
         }
 
@@ -333,11 +340,16 @@ class AirAlertService
                 'kind' => $row['kind'],
                 'started_at' => $row['started_at'],
             ]);
+            // Офіційний рівень повітряної тривоги в області: досить одного червоного.
+            if ($row['kind'] === 'air_raid' && ($row['air'] ?? null) !== null) {
+                $current = $regions[$row['oblast']]['air'] ?? null;
+                $regions[$row['oblast']]['air'] = $current === 'red' || $row['air'] === 'red' ? 'red' : 'yellow';
+            }
             // Повна тривога в області важливіша за часткову з тим самим видом.
             if ($whole && $regions[$row['oblast']]['type'] === 'partial') {
                 $regions[$row['oblast']]['type'] = 'air_raid';
             }
-            $value = ['kind' => $row['kind'], 'started_at' => $row['started_at'], 'scale' => AlertScale::fromLevel($row['level'])->value];
+            $value = ['kind' => $row['kind'], 'started_at' => $row['started_at'], 'scale' => AlertScale::fromLevel($row['level'])->value, 'air' => $row['kind'] === 'air_raid' ? ($row['air'] ?? null) : null];
             $codes = $whole ? AlertUnits::raionsOf($row['oblast']) : ($row['code'] !== null ? [$row['code']] : []);
             foreach ($codes as $code) {
                 $put($units, $code, $value);
@@ -372,7 +384,8 @@ class AirAlertService
                 continue;
             }
             foreach ((array) ($region['activeAlerts'] ?? []) as $alert) {
-                if (! is_array($alert)) {
+                // Інформаційні й власні повідомлення ОВА — не небезпека на мапі (лише сповіщення).
+                if (! is_array($alert) || in_array(UkraineAlarm::type($alert['type'] ?? 'AIR'), ['INFO', 'CUSTOM'], true)) {
                     continue;
                 }
                 $id = (string) ($alert['regionId'] ?? $region['regionId'] ?? '');
@@ -383,7 +396,12 @@ class AirAlertService
                 if ($slug === null) {
                     continue;
                 }
-                $level = $type === 'District' ? 2 : ($type === 'Community' ? 3 : 1);
+                // Місто/село й район міста малюємо як громаду; на всю область — лише State.
+                $level = match ($type) {
+                    'District' => 2,
+                    'Community', 'CityOrVillage', 'CityDistrict' => 3,
+                    default => 1,
+                };
                 if ($slug === 'kyiv') {
                     $level = 1;
                 }
@@ -395,6 +413,8 @@ class AirAlertService
                     'code' => $level === 1 ? null : AlertUnits::find($slug, $level, $name, $raion),
                     'kind' => self::kindOf(UkraineAlarm::type($alert['type'] ?? 'AIR')),
                     'started_at' => isset($alert['lastUpdate']) ? (string) $alert['lastUpdate'] : null,
+                    // Офіційний рівень тривоги (activeAlertLevels): red — ракетна небезпека, yellow — лише БпЛА.
+                    'air' => UkraineAlarm::levelOf($alert),
                 ];
             }
         }

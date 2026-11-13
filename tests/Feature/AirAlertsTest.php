@@ -268,6 +268,41 @@ class AirAlertsTest extends TestCase
         $this->assertSame(['UAV', 'yellow'], [$region['alert'], $region['air_level']]);
     }
 
+    public function test_official_alert_level_yellow_then_raised_to_red(): void
+    {
+        $alerts = [];
+        $index = 1;
+        $this->fakeUkraineAlarm($this->zhytomyrTree(), $alerts, $index);
+        $user = User::factory()->create();
+        $user->mergePref(['alert_region' => 'zhytomyr']);
+        $watcher = app(AlertWatcher::class);
+        $watcher->run();
+        $at = now()->toIso8601String();
+        $air = fn (string $level, string $created) => ['regionId' => '10', 'regionType' => 'State', 'regionName' => 'Житомирська область', 'activeAlerts' => [[
+            'regionId' => '10', 'regionType' => 'State', 'type' => 'AIR', 'lastUpdate' => $at,
+            'activeAlertLevels' => [['alertLevel' => $level, 'reason' => 'test', 'createdAt' => $created]],
+        ]]];
+
+        // Офіційний рівень Yellow з API (радар порожній) — жовта тривога.
+        [$alerts, $index] = [[$air('Yellow', now()->toIso8601String())], 2];
+        $this->assertSame(1, $watcher->run());
+        $data = $user->notifications()->first()->data;
+        $this->assertSame(['yellow', '#F59E0B'], [$data['air_level'], $data['accent']]);
+        Cache::forget('alerts.state');
+        $this->assertSame('yellow', collect($this->service()->state()['regions'])->firstWhere('slug', 'zhytomyr')['air_level']);
+
+        // API підвищив рівень до Red — та сама картка оновлюється, один пуш «рівень підвищено».
+        [$alerts, $index] = [[$air('Red', now()->addSecond()->toIso8601String())], 3];
+        $this->assertSame(1, $watcher->run());
+        $this->assertSame(1, $user->notifications()->count());
+        $row = $user->notifications()->first()->data;
+        $this->assertSame(['red', '#EF4444', true], [$row['air_level'], $row['accent'], $row['raised']]);
+        $this->assertSame('Повітряна тривога · Житомирська область: рівень підвищено до червоного', $row['text']);
+        // Повтор того самого стану — нічого.
+        $index = 4;
+        $this->assertSame(0, $watcher->run());
+    }
+
     public function test_webhook_only_signals_and_cleanup_removes_old_duplicates(): void
     {
         $alerts = [];
@@ -278,7 +313,7 @@ class AirAlertsTest extends TestCase
         app(AlertWatcher::class)->run();
 
         // Вебхук — лише сигнал: «тривога» в тілі без підтвердження API нічого не створює.
-        $this->postJson('/api/webhooks/ukraine-alarm', ['regionId' => '10', 'type' => 'AIR', 'status' => 'Activate'])->assertOk();
+        $this->postJson('/api/webhooks/ukraine-alarm', ['regionId' => 10, 'alarmType' => 'AIR', 'status' => 'Activate', 'alertLevel' => 'Red'])->assertOk();
         $this->assertSame(0, $user->notifications()->count());
         [$alerts, $index] = [[$this->row('10', 'State', 'AIR')], 2];
         $this->postJson('/api/webhooks/ukraine-alarm', ['regionId' => '10'])->assertOk();

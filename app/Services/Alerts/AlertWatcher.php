@@ -118,7 +118,8 @@ class AlertWatcher
             $effective = $this->api->typesFor($unit, $active);
             foreach (array_keys(UkraineAlarm::TYPES) as $type) {
                 $sent += $this->transition("ua_alarm_state:{$unit}:{$type}", "ua_alarm_lock:{$unit}:{$type}", isset($effective[$type]), $effective[$type] ?? null, $quiet, $now,
-                    fn (bool $started, ?string $since) => $this->notify($ids, $started, $type, $tree[$unit]['name'] ?? '', $unit, false, $since, $now));
+                    fn (bool $started, ?string $since, bool $raised = false) => $this->notify($ids, $started, $type, $tree[$unit]['name'] ?? '', $unit, false, $since, $now, $raised),
+                    $this->api->levelFor($unit, $type));
             }
             // Обрана вся область — тривоги лише в її районах чи громадах (жовті, з назвою району).
             if (($tree[$unit]['type'] ?? null) === 'State') {
@@ -156,7 +157,7 @@ class AlertWatcher
         foreach (array_unique([...array_keys($now_keys), ...$known]) as $key) {
             [$region, $type] = explode(':', $key, 2);
             $sent += $this->transition("ua_alarm_local:{$state}:{$key}", "ua_alarm_lock:{$region}:{$type}", array_key_exists($key, $now_keys), $now_keys[$key] ?? null, $quiet, $now,
-                fn (bool $started, ?string $since) => $this->notify($ids, $started, $type, $tree[$region]['name'] ?? '', $state.'/'.$region, true, $since, $now));
+                fn (bool $started, ?string $since, bool $raised = false) => $this->notify($ids, $started, $type, $tree[$region]['name'] ?? '', $state.'/'.$region, true, $since, $now, $raised));
         }
         Cache::forever("ua_alarm_local_keys:{$state}", array_keys($now_keys));
 
@@ -168,14 +169,20 @@ class AlertWatcher
      *
      * @param  callable(bool, ?string): int  $notify
      */
-    private function transition(string $key, string $lock, bool $on, ?string $since, bool $quiet, CarbonImmutable $now, callable $notify): int
+    private function transition(string $key, string $lock, bool $on, ?string $since, bool $quiet, CarbonImmutable $now, callable $notify, ?string $level = null): int
     {
-        return (int) (Cache::lock($lock, 30)->block(5, function () use ($key, $on, $since, $quiet, $now, $notify) {
+        return (int) (Cache::lock($lock, 30)->block(5, function () use ($key, $on, $since, $quiet, $now, $notify, $level) {
             $prev = Cache::get($key);
             if ($on && ! is_array($prev)) {
-                Cache::forever($key, ['since' => $since ?? $now->toIso8601String()]);
+                Cache::forever($key, ['since' => $since ?? $now->toIso8601String(), 'level' => $level]);
 
                 return $quiet || ! $this->fresh($since, $now) ? 0 : $notify(true, $since);
+            }
+            if ($on && is_array($prev) && $level !== null && ($prev['level'] ?? null) !== $level) {
+                // Та сама тривога, але API змінив рівень: жовтий → червоний — окреме сповіщення «рівень підвищено».
+                Cache::forever($key, [...$prev, 'level' => $level]);
+
+                return ! $quiet && ($prev['level'] ?? null) === 'yellow' && $level === 'red' ? $notify(true, $prev['since'] ?? $since, true) : 0;
             }
             if (! $on && is_array($prev)) {
                 Cache::forget($key);
@@ -204,19 +211,22 @@ class AlertWatcher
      *
      * @param  list<int>  $ids
      */
-    private function notify(array $ids, bool $started, string $type, string $name, string $place, bool $local, ?string $since, CarbonImmutable $now): int
+    private function notify(array $ids, bool $started, string $type, string $name, string $place, bool $local, ?string $since, CarbonImmutable $now, bool $raised = false): int
     {
         $alertKey = md5($place.'|'.$type.'|'.$since);
-        // Повітряна тривога: жовтий рівень — лише БпЛА, червоний — ракети. API цього не дає (лише AIR), тож рівень —
-        // за цілями на радарі в області на момент початку; немає даних — червоний. Відбій бере рівень з початку.
-        $airLevel = $type === 'AIR' ? (Cache::get('ua_alarm_level:'.$alertKey) ?? $this->alerts->airLevel($this->oblastOf($place))) : 'red';
+        // Повітряна тривога: жовтий рівень — лише БпЛА, червоний — ракети.
+        // Рівень AIR — офіційний з API (activeAlertLevels: Red/Yellow); якщо API його не дав — за цілями на радарі.
+        $region = str_contains($place, '/') ? explode('/', $place)[1] : $place;
+        $airLevel = $type !== 'AIR' ? 'red' : ($this->api->levelFor($region, 'AIR') ?? Cache::get('ua_alarm_level:'.$alertKey) ?? $this->alerts->airLevel($this->oblastOf($place)));
         if ($started) {
             Cache::put('ua_alarm_level:'.$alertKey, $airLevel, now()->addDays(3));
         }
         $severity = UkraineAlarm::severity($type, $local, $airLevel);
 
         // Замок на одну зміну стану: паралельні опитування й вебхук не створять дубль.
-        return (int) (Cache::lock('ua_alarm_notify:'.$place.':'.$type.':'.($started ? 'on' : 'off'), 60)->block(10, fn () => $this->deliver($ids, $started, $type, $name, $local, $since, $now, $alertKey, $airLevel, $severity)));
+        $status = $raised ? 'raised' : ($started ? 'on' : 'off');
+
+        return (int) (Cache::lock('ua_alarm_notify:'.$place.':'.$type.':'.$status, 60)->block(10, fn () => $this->deliver($ids, $started, $type, $name, $local, $since, $now, $alertKey, $airLevel, $severity, $raised)));
     }
 
     /** Область (slug) регіону з довідника: для обраного місця «unit» чи «state/district». */
@@ -230,7 +240,7 @@ class AlertWatcher
     }
 
     /** @param  list<int>  $ids */
-    private function deliver(array $ids, bool $started, string $type, string $name, bool $local, ?string $since, CarbonImmutable $now, string $alertKey, string $airLevel, string $severity): int
+    private function deliver(array $ids, bool $started, string $type, string $name, bool $local, ?string $since, CarbonImmutable $now, string $alertKey, string $airLevel, string $severity, bool $raised = false): int
     {
         $count = 0;
         foreach (User::query()->whereKey($ids)->get() as $user) {
@@ -239,20 +249,28 @@ class AlertWatcher
                 continue;
             }
             // Та сама зміна стану в людини за 5 хв — блокуємо (Redis), навіть якщо стан скинули.
-            if (! Cache::add('ua_alarm_sent:'.$user->id.':'.$alertKey.':'.($started ? 'on' : 'off'), 1, now()->addMinutes(5))) {
+            if (! Cache::add('ua_alarm_sent:'.$user->id.':'.$alertKey.':'.($raised ? 'raised' : ($started ? 'on' : 'off')), 1, now()->addMinutes(5))) {
                 continue;
             }
-            $notice = new AirAlertNotice($started, $name, $type, $now->toIso8601String(), $local, $alertKey, $since, $prefs['silent'], $airLevel);
+            $notice = new AirAlertNotice($started, $name, $type, $now->toIso8601String(), $local, $alertKey, $since, $prefs['silent'], $airLevel, $raised);
+            $row = $user->notifications()->where('type', AirAlertNotice::class)->where('data->alert_key', $alertKey)->first();
             if ($started) {
                 if (! $prefs['start']) {
                     continue;
                 }
-                rescue(fn () => $user->notify($notice), report: false);
+                if ($raised && $row instanceof DatabaseNotification) {
+                    // Рівень підвищено — оновлюємо картку цієї ж тривоги й надсилаємо пуш.
+                    $row->forceFill(['data' => $notice->toArray($user), 'read_at' => null, 'created_at' => $now])->save();
+                    if (! $prefs['silent']) {
+                        rescue(fn () => app(PushNotifier::class)->notification($user, $row), report: false);
+                    }
+                } else {
+                    rescue(fn () => $user->notify($notice), report: false);
+                }
                 $count++;
 
                 continue;
             }
-            $row = $user->notifications()->where('type', AirAlertNotice::class)->where('data->alert_key', $alertKey)->first();
             if ($row instanceof DatabaseNotification) {
                 // Пара «початок + відбій» — один рядок: оновлюємо, піднімаємо нагору.
                 $row->forceFill(['data' => $notice->toArray($user), 'read_at' => null, 'created_at' => $now])->save();
