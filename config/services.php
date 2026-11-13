@@ -227,6 +227,8 @@ return [
     // Офіційний API тривог UkraineAlarm v3.
     'ukraine_alarm' => [
         'key' => env('UKRAINE_ALARM_KEY'),
+        // Публічний ключ підпису вебхука (PEM); якщо порожньо — береться з api.ukrainealarm.com/webhook-public.pem.
+        'webhook_key' => env('UKRAINE_ALARM_WEBHOOK_KEY'),
     ],
 
 ];

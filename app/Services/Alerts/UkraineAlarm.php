@@ -459,6 +459,75 @@ class UkraineAlarm
         return $out;
     }
 
+    public const WEBHOOK_KEY_URL = 'https://api.ukrainealarm.com/webhook-public.pem';
+
+    /** Підпис вебхука старший за 5 хв — не приймаємо (захист від повтору). */
+    public const WEBHOOK_MAX_AGE = 300;
+
+    /**
+     * Публічний ключ підпису вебхука: UKRAINE_ALARM_WEBHOOK_KEY (PEM) → офіційний файл з API (кеш на добу) →
+     * копія в репозиторії (resources/keys). Ключ публічний, секрету в ньому немає.
+     *
+     * @return list<string>
+     */
+    public function webhookKeys(): array
+    {
+        $keys = [];
+        $env = config('services.ukraine_alarm.webhook_key');
+        if (is_string($env) && str_contains($env, 'BEGIN PUBLIC KEY')) {
+            $keys[] = str_replace('\\n', "\n", $env);
+        }
+        $remote = Cache::remember('ua_alarm:webhook_key', now()->addDay(), function () {
+            try {
+                $response = Http::timeout(5)->get(self::WEBHOOK_KEY_URL);
+            } catch (ConnectionException) {
+                return '';
+            }
+
+            return $response->successful() && str_contains($response->body(), 'BEGIN PUBLIC KEY') ? trim($response->body()) : '';
+        });
+        if (is_string($remote) && $remote !== '') {
+            $keys[] = $remote;
+        }
+        $local = resource_path('keys/ukrainealarm-webhook.pem');
+        if (is_file($local)) {
+            $keys[] = (string) file_get_contents($local);
+        }
+
+        return array_values(array_unique($keys));
+    }
+
+    /**
+     * Перевірка підпису вебхука (RSA SHA-256): рядок «{X-Webhook-Timestamp}.{сире тіло}», підпис — X-Webhook-Signature
+     * у Base64. Час — не старший за 5 хв; той самий підпис удруге — відхиляємо.
+     *
+     * @return 'ok'|'missing'|'stale'|'replay'|'bad_alg'|'invalid'
+     */
+    public function verifyWebhook(?string $signature, ?string $timestamp, ?string $algorithm, string $rawBody): string
+    {
+        if ($signature === null || $signature === '' || $timestamp === null || ! ctype_digit($timestamp)) {
+            return 'missing';
+        }
+        if ($algorithm !== null && $algorithm !== '' && strtolower($algorithm) !== 'rsa-sha256') {
+            return 'bad_alg';
+        }
+        if (abs(time() - (int) $timestamp) > self::WEBHOOK_MAX_AGE) {
+            return 'stale';
+        }
+        $raw = base64_decode($signature, true);
+        if ($raw === false) {
+            return 'invalid';
+        }
+        foreach ($this->webhookKeys() as $pem) {
+            $key = openssl_pkey_get_public($pem);
+            if ($key !== false && openssl_verify($timestamp.'.'.$rawBody, $raw, $key, OPENSSL_ALGO_SHA256) === 1) {
+                return Cache::add('ua_alarm:webhook_seen:'.hash('sha256', $signature), 1, self::WEBHOOK_MAX_AGE + 60) ? 'ok' : 'replay';
+            }
+        }
+
+        return 'invalid';
+    }
+
     /** Наша адреса для вебхука (WebHookModel.webHookUrl). Тіло вебхука — лише сигнал, стан однаково з API. */
     public function webhookUrl(): string
     {

@@ -355,12 +355,32 @@ class AirAlertsTest extends TestCase
         $user->mergePref(['alert_region' => 'zhytomyr']);
         app(AlertWatcher::class)->run();
 
-        // Вебхук — лише сигнал: «тривога» в тілі без підтвердження API нічого не створює.
-        $this->postJson('/api/webhooks/ukraine-alarm', ['regionId' => 10, 'alarmType' => 'AIR', 'status' => 'Activate', 'alertLevel' => 'Red'])->assertOk();
+        // Підпис RSA SHA-256 як в UkraineAlarm: «{timestamp}.{сире тіло}», Base64.
+        $pair = openssl_pkey_new(['private_key_bits' => 2048, 'private_key_type' => OPENSSL_KEYTYPE_RSA]);
+        config(['services.ukraine_alarm.webhook_key' => openssl_pkey_get_details($pair)['key']]);
+        $send = function (array $body, ?int $ts = null, $key = null) use ($pair) {
+            $raw = json_encode($body);
+            $ts ??= time();
+            openssl_sign($ts.'.'.$raw, $sig, $key ?? $pair, OPENSSL_ALGO_SHA256);
+
+            return $this->call('POST', '/api/webhooks/ukraine-alarm', [], [], [], [
+                'CONTENT_TYPE' => 'application/json',
+                'HTTP_X_WEBHOOK_SIGNATURE' => base64_encode($sig),
+                'HTTP_X_WEBHOOK_TIMESTAMP' => (string) $ts,
+                'HTTP_X_WEBHOOK_SIGNATURE_ALG' => 'rsa-sha256',
+            ], $raw);
+        };
+        // Без підпису, чужим ключем чи зі старим часом — 401.
+        $this->postJson('/api/webhooks/ukraine-alarm', ['regionId' => 10])->assertStatus(401);
+        $send(['regionId' => 10], null, openssl_pkey_new(['private_key_bits' => 2048, 'private_key_type' => OPENSSL_KEYTYPE_RSA]))->assertStatus(401);
+        $send(['regionId' => 10], time() - 600)->assertStatus(401)->assertJsonPath('reason', 'stale');
+
+        // Підписаний вебхук — лише сигнал: «тривога» в тілі без підтвердження API нічого не створює.
+        $send(['regionId' => 10, 'alarmType' => 'AIR', 'status' => 'Activate', 'alertLevel' => 'Red'])->assertOk();
         $this->assertSame(0, $user->notifications()->count());
         [$alerts, $index] = [[$this->row('10', 'State', 'AIR')], 2];
-        $this->postJson('/api/webhooks/ukraine-alarm', ['regionId' => '10'])->assertOk();
-        $this->postJson('/api/webhooks/ukraine-alarm', ['regionId' => '10'])->assertOk();
+        $send(['regionId' => 10, 'n' => 1])->assertOk();
+        $send(['regionId' => 10, 'n' => 2])->assertOk();
         $this->assertSame(1, $user->notifications()->count());
 
         // Старі дублі (без alert_key) прибирає команда; нові лишаються.
