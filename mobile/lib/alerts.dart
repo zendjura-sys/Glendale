@@ -316,6 +316,7 @@ class _AlertsScreenState extends State<AlertsScreen> {
             if (prefs['units_enabled'] == true) ...[
               _AlertPlace(region: mineSlug ?? '', prefs: prefs, onSave: _save),
               _AlertHistory(key: ValueKey('${mapOf(prefs['unit'])['id'] ?? mineSlug}')),
+              _SheltersNearby(key: ValueKey('s-${mapOf(prefs['unit'])['id'] ?? mineSlug}')),
               _OtherPlaces(prefs: prefs, onSave: _save),
             ],
             const SizedBox(height: 12),
@@ -1130,6 +1131,75 @@ class _OtherPlaces extends StatelessWidget {
             ),
           ),
       ]),
+    );
+  }
+}
+
+
+/// Укриття й пункти незламності поруч з обраним місцем (OpenStreetMap); натискання — пішохідний маршрут у картах.
+class _SheltersNearby extends StatefulWidget {
+  const _SheltersNearby({super.key});
+
+  @override
+  State<_SheltersNearby> createState() => _SheltersNearbyState();
+}
+
+class _SheltersNearbyState extends State<_SheltersNearby> {
+  Map<String, dynamic>? data;
+
+  Future<void> _load() async {
+    try {
+      final d = await AppScope.read(context).session.api.get(Api.site('/alerts/shelters'));
+      if (mounted) setState(() => data = d);
+    } catch (_) {
+      if (mounted) setState(() => data = {'around': null, 'items': const []});
+    }
+  }
+
+  static String _distance(int m) => m < 1000 ? tr('{n} м', {'n': (m / 10).round() * 10}) : tr('{n} км', {'n': (m / 1000).toStringAsFixed(1)});
+
+  @override
+  Widget build(BuildContext context) {
+    final items = maps(data?['items']).take(12).toList();
+    return ExpansionTile(
+      tilePadding: EdgeInsets.zero,
+      leading: Icon(LucideIcons.shieldCheck, size: 18, color: muted),
+      title: Text(tr('Укриття поруч'), style: body(14.5, weight: FontWeight.w700)),
+      onExpansionChanged: (open) {
+        if (open && data == null) _load();
+      },
+      children: [
+        if (data == null)
+          const Padding(padding: EdgeInsets.all(12), child: CircularProgressIndicator())
+        else if (items.isEmpty)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Text(
+              data?['around'] == null
+                  ? tr('Оберіть місце тривог, щоб побачити укриття поруч.')
+                  : tr('На мапі OpenStreetMap поруч укриттів не позначено. Перевірте офіційний застосунок вашої громади.'),
+              style: body(12.5, color: muted),
+            ),
+          )
+        else ...[
+          if (text(data?['around']) != null)
+            Align(alignment: Alignment.centerLeft, child: Text(tr('Навколо: {place}', {'place': text(data?['around'])}), style: body(12.5, color: muted))),
+          for (final item in items)
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              dense: true,
+              leading: Icon(item['kind'] == 'invincibility' ? LucideIcons.zap : LucideIcons.shield, size: 18, color: item['kind'] == 'invincibility' ? const Color(0xFF38BDF8) : const Color(0xFF34D399)),
+              title: Text(text(item['name']) ?? (item['kind'] == 'invincibility' ? tr('Пункт незламності') : tr('Укриття')), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(13.5)),
+              subtitle: text(item['address']) == null ? null : Text(text(item['address'])!, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: muted)),
+              trailing: Text(_distance(intOf(item['distance'])), style: body(12, color: muted)),
+              onTap: () => launchUrl(Uri.parse('https://www.google.com/maps/dir/?api=1&destination=${item['lat']},${item['lng']}&travelmode=walking'), mode: LaunchMode.externalApplication),
+            ),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Text(tr('Дані OpenStreetMap можуть бути неповні. Під час тривоги йдіть до найближчого відомого вам укриття.'), style: body(11, color: muted)),
+          ),
+        ],
+      ],
     );
   }
 }

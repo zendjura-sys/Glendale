@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Services\Alerts\AirAlertService;
 use App\Services\Alerts\AlertWatcher;
+use App\Services\Alerts\Shelters;
 use App\Services\Alerts\UkraineAlarm;
 use App\Support\Plugins\Plugins;
 use Illuminate\Http\JsonResponse;
@@ -49,6 +50,28 @@ class AirAlertController extends Controller
     }
 
     /** Історія тривог обраного місця (або області): останні 25 і підсумок за тиждень. */
+    /** Укриття й пункти незламності поруч: за координатами браузера або навколо обраного місця тривог. */
+    public function shelters(Request $request, Shelters $shelters): JsonResponse
+    {
+        $this->ensure($request);
+        $data = $request->validate([
+            'lat' => ['nullable', 'numeric', 'between:44,53'],
+            'lng' => ['nullable', 'numeric', 'between:22,41'],
+        ]);
+        $user = $request->user();
+        $center = isset($data['lat'], $data['lng']) ? ['lat' => (float) $data['lat'], 'lng' => (float) $data['lng']] : null;
+        $around = $center !== null ? 'here' : null;
+        if ($center === null && $this->api->enabled() && ($unit = app(AlertWatcher::class)->unitFor($user)) !== null) {
+            $center = $shelters->centerOf($unit);
+            $around = $this->api->regions()[$unit]['name'] ?? null;
+        }
+        if ($center === null) {
+            return response()->json(['center' => null, 'around' => null, 'items' => []]);
+        }
+
+        return response()->json(['center' => $center, 'around' => $around, 'radius' => Shelters::RADIUS, 'items' => $shelters->near($center['lat'], $center['lng'])]);
+    }
+
     public function history(Request $request): JsonResponse
     {
         $this->ensure($request);

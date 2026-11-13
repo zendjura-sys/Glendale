@@ -783,4 +783,42 @@ class AirAlertsTest extends TestCase
         $this->assertFalse($watcher->hushed($user->fresh()));
         $this->assertNotNull($notification());
     }
+
+    public function test_shelters_near_my_place_or_my_location_from_openstreetmap(): void
+    {
+        Http::fake(function ($request) {
+            $url = $request->url();
+            if (str_contains($url, 'api.ukrainealarm.com/api/v3/regions')) {
+                return Http::response($this->zhytomyrTree());
+            }
+            if (str_contains($url, 'nominatim.openstreetmap.org')) {
+                return Http::response([['lat' => '50.2547', 'lon' => '28.6587']]);
+            }
+            if (str_contains($url, 'overpass-api.de')) {
+                return Http::response(['elements' => [
+                    ['type' => 'node', 'id' => 1, 'lat' => 50.2600, 'lon' => 28.6600, 'tags' => ['amenity' => 'shelter', 'shelter_type' => 'bomb_shelter', 'addr:street' => 'вул. Київська', 'addr:housenumber' => '10']],
+                    ['type' => 'way', 'id' => 2, 'center' => ['lat' => 50.2550, 'lon' => 28.6590], 'tags' => ['name' => 'Пункт незламності']],
+                    ['type' => 'node', 'id' => 3, 'tags' => []],
+                ]]);
+            }
+
+            return Http::response([]);
+        });
+        app(SiteSettings::class)->putSecret('ukrainealarm_token', 'ua-alarm-key-1234567890');
+        $user = User::factory()->create(['country' => 'UA']);
+        $this->actingAs($user)->putJson('/alerts/preferences', ['unit' => '10011'])->assertOk();
+
+        // Без координат — навколо обраного місця; найближче першим.
+        $this->actingAs($user)->getJson('/alerts/shelters')->assertOk()
+            ->assertJsonPath('around', 'м. Житомир')
+            ->assertJsonCount(2, 'items')
+            ->assertJsonPath('items.0.kind', 'invincibility')
+            ->assertJsonPath('items.1.address', 'вул. Київська 10');
+        // Координати браузера; поза Україною — відмова.
+        $this->actingAs($user)->getJson('/alerts/shelters?lat=50.26&lng=28.66')->assertOk()->assertJsonPath('around', 'here')->assertJsonPath('items.0.id', 'node/1');
+        $this->actingAs($user)->getJson('/alerts/shelters?lat=10&lng=10')->assertStatus(422);
+        // Overpass опитуємо раз на квартал ~500 м, а не на кожен запит.
+        $this->actingAs($user)->getJson('/alerts/shelters')->assertOk();
+        $this->assertSame(2, Http::recorded()->filter(fn ($pair) => str_contains($pair[0]->url(), 'overpass'))->count());
+    }
 }

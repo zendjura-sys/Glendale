@@ -68,6 +68,7 @@ class AppSiteParityTest extends TestCase
         $this->withToken($token)->getJson('/api/v1/site/alerts/search?q=Київ')->assertOk()->assertJsonPath('places', []);
         $this->withToken($token)->getJson('/api/v1/site/alerts/places')->assertOk()->assertJsonPath('places', []);
         $this->withToken($token)->getJson('/api/v1/site/alerts/history')->assertOk()->assertJsonPath('alarms', []);
+        $this->withToken($token)->getJson('/api/v1/site/alerts/shelters')->assertOk()->assertJsonPath('items', []);
         $this->withToken($token)->putJson('/api/v1/site/alerts/preferences', ['yellow' => false, 'end' => false, 'silent' => true])->assertOk()
             ->assertJsonPath('prefs.yellow', false)->assertJsonPath('prefs.end', false)->assertJsonPath('prefs.silent', true)->assertJsonPath('prefs.red', true);
     }

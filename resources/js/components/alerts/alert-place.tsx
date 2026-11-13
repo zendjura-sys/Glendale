@@ -2,7 +2,9 @@ import {
     ChevronLeft,
     ChevronRight,
     History,
+    LocateFixed,
     MapPin,
+    ShieldCheck,
     Plus,
     Search,
     Trash2,
@@ -127,6 +129,178 @@ function AlertHistory() {
                             </ul>
                         </>
                     )}
+                </div>
+            )}
+        </div>
+    );
+}
+
+type ShelterItem = {
+    id: string;
+    kind: 'shelter' | 'invincibility';
+    name: string | null;
+    address: string | null;
+    lat: number;
+    lng: number;
+    distance: number;
+};
+
+function distanceLabel(m: number): string {
+    return m < 1000
+        ? tr('{n} м', { n: Math.round(m / 10) * 10 })
+        : tr('{n} км', { n: (m / 1000).toFixed(1) });
+}
+
+/**
+ * Укриття й пункти незламності поруч (OpenStreetMap): навколо обраного місця або, за згодою,
+ * за геолокацією браузера. Кожне — з маршрутом у картах.
+ */
+function SheltersNearby() {
+    const [open, setOpen] = useState(false);
+    const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(
+        null,
+    );
+    const [data, setData] = useState<{
+        around: string | null;
+        items: ShelterItem[];
+    } | null>(null);
+    const [locating, setLocating] = useState(false);
+
+    useEffect(() => {
+        if (!open) return;
+        let alive = true;
+        setData(null);
+        api<{ around: string | null; items: ShelterItem[] }>(
+            'GET',
+            `/alerts/shelters${coords ? `?lat=${coords.lat}&lng=${coords.lng}` : ''}`,
+        )
+            .then((d) => alive && setData(d))
+            .catch(() => alive && setData({ around: null, items: [] }));
+
+        return () => {
+            alive = false;
+        };
+    }, [open, coords]);
+
+    const locate = () => {
+        if (!navigator.geolocation) return;
+        setLocating(true);
+        navigator.geolocation.getCurrentPosition(
+            (p) => {
+                setLocating(false);
+                setCoords({
+                    lat: Number(p.coords.latitude.toFixed(4)),
+                    lng: Number(p.coords.longitude.toFixed(4)),
+                });
+            },
+            () => setLocating(false),
+            { timeout: 10000, maximumAge: 300000 },
+        );
+    };
+
+    return (
+        <div className="rounded-lg bg-white/[0.03]">
+            <button
+                type="button"
+                onClick={() => setOpen((v) => !v)}
+                aria-expanded={open}
+                className="flex min-h-11 w-full items-center gap-2 px-3 text-left text-sm font-semibold text-white"
+            >
+                <ShieldCheck className="size-4 text-white/60" />
+                <span className="flex-1">{tr('Укриття поруч')}</span>
+                <ChevronRight
+                    className={cn(
+                        'size-4 text-white/40 transition',
+                        open && 'rotate-90',
+                    )}
+                />
+            </button>
+            {open && (
+                <div className="grid gap-2 px-3 pb-3">
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-white/55">
+                        <span className="min-w-0 flex-1">
+                            {data?.around === 'here'
+                                ? tr('Поруч із вами')
+                                : data?.around
+                                  ? tr('Навколо: {place}', {
+                                        place: data.around,
+                                    })
+                                  : ''}
+                        </span>
+                        <button
+                            type="button"
+                            onClick={locate}
+                            disabled={locating}
+                            className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 font-medium text-primary hover:bg-white/[0.06] disabled:opacity-50"
+                        >
+                            <LocateFixed className="size-3.5" />
+                            {locating
+                                ? tr('Визначаємо…')
+                                : tr('За моїм розташуванням')}
+                        </button>
+                    </div>
+                    {data === null ? (
+                        <p className="text-xs text-white/45">
+                            {tr('Завантаження…')}
+                        </p>
+                    ) : data.items.length === 0 ? (
+                        <p className="text-xs text-white/45">
+                            {data.around === null
+                                ? tr(
+                                      'Оберіть місце тривог або дозвольте геолокацію.',
+                                  )
+                                : tr(
+                                      'На мапі OpenStreetMap поруч укриттів не позначено. Перевірте офіційний застосунок вашої громади.',
+                                  )}
+                        </p>
+                    ) : (
+                        <ul className="grid gap-1">
+                            {data.items.slice(0, 12).map((item) => (
+                                <li key={item.id}>
+                                    <a
+                                        href={`https://www.google.com/maps/dir/?api=1&destination=${item.lat},${item.lng}&travelmode=walking`}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="flex min-h-11 items-center gap-2 rounded-lg px-2 text-sm hover:bg-white/[0.05]"
+                                    >
+                                        <span
+                                            aria-hidden
+                                            className={cn(
+                                                'size-2 shrink-0 rounded-full',
+                                                item.kind === 'invincibility'
+                                                    ? 'bg-sky-400'
+                                                    : 'bg-emerald-400',
+                                            )}
+                                        />
+                                        <span className="min-w-0 flex-1">
+                                            <span className="block truncate text-white/85">
+                                                {item.name ??
+                                                    (item.kind ===
+                                                    'invincibility'
+                                                        ? tr(
+                                                              'Пункт незламності',
+                                                          )
+                                                        : tr('Укриття'))}
+                                            </span>
+                                            {item.address && (
+                                                <span className="block truncate text-xs text-white/45">
+                                                    {item.address}
+                                                </span>
+                                            )}
+                                        </span>
+                                        <span className="shrink-0 text-xs text-white/50">
+                                            {distanceLabel(item.distance)}
+                                        </span>
+                                    </a>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                    <p className="text-[11px] text-white/35">
+                        {tr(
+                            'Дані OpenStreetMap можуть бути неповні. Під час тривоги йдіть до найближчого відомого вам укриття.',
+                        )}
+                    </p>
                 </div>
             )}
         </div>
@@ -433,6 +607,9 @@ export function AlertPlacePicker({
                         <ChevronRight className="mt-1 size-4 shrink-0 text-white/40" />
                     </button>
                     <AlertHistory key={prefs.unit?.id ?? prefs.region ?? ''} />
+                    <SheltersNearby
+                        key={`s-${prefs.unit?.id ?? prefs.region ?? ''}`}
+                    />
 
                     {/* Інші місця: рідні, робота — окремі сповіщення з підписом. */}
                     <div className="grid gap-2">
