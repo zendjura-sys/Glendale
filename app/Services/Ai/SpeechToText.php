@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Storage;
 
 /**
  * Розшифровка голосових повідомлень: будь-який OpenAI-сумісний /audio/transcriptions (OpenAI Whisper, Groq).
- * Окремий ключ в «Інтеграціях», бо Claude аудіо не розпізнає. Текст зберігаємо в meta вкладення — повторно не платимо.
+ * Свій ключ в «Інтеграціях» або той самий, що в «ШІ» (OpenAI-сумісний): Claude аудіо не розпізнає. Текст зберігаємо в meta вкладення — повторно не платимо.
  */
 class SpeechToText
 {
@@ -24,16 +24,41 @@ class SpeechToText
 
     public function __construct(private readonly SiteSettings $settings) {}
 
+    /** Модель Groq за замовчуванням (коли розшифровка йде через ключ Groq). */
+    public const GROQ_MODEL = 'whisper-large-v3';
+
     public function configured(): bool
     {
-        return $this->settings->secret('stt_key') !== null;
+        return $this->key() !== null;
+    }
+
+    /**
+     * Свій ключ розшифровки, а без нього — ключ «ШІ», якщо там OpenAI-сумісний сервіс (Groq, OpenAI, OpenRouter):
+     * один ключ на текст і голос.
+     */
+    public function key(): ?string
+    {
+        return $this->settings->secret('stt_key') ?? ($this->sharesAiKey() ? $this->settings->secret('ai_key') : null);
+    }
+
+    public function sharesAiKey(): bool
+    {
+        return $this->settings->secret('stt_key') === null && $this->settings->get('ai_provider') === AiClient::OPENAI;
+    }
+
+    public function base(): string
+    {
+        $own = trim((string) $this->settings->get('stt_base_url'));
+        $ai = $this->sharesAiKey() ? trim((string) $this->settings->get('ai_base_url')) : '';
+
+        return rtrim($own !== '' ? $own : ($ai !== '' ? $ai : self::DEFAULT_BASE), '/');
     }
 
     public function model(): string
     {
         $model = trim((string) $this->settings->get('stt_model'));
 
-        return $model !== '' ? $model : self::DEFAULT_MODEL;
+        return $model !== '' ? $model : (str_contains($this->base(), 'groq.com') ? self::GROQ_MODEL : self::DEFAULT_MODEL);
     }
 
     /** @throws AiException */
@@ -42,7 +67,7 @@ class SpeechToText
         if (is_string($attachment->meta['transcript'] ?? null)) {
             return $attachment->meta['transcript'];
         }
-        $key = $this->settings->secret('stt_key');
+        $key = $this->key();
         if ($key === null) {
             throw new AiException('Розшифровку ще не підключено: адміністрація не додала ключ.');
         }
@@ -53,7 +78,7 @@ class SpeechToText
         if (! $disk->exists($attachment->path)) {
             throw new AiException('Файл голосового не знайдено.');
         }
-        $base = rtrim((string) ($this->settings->get('stt_base_url') ?: self::DEFAULT_BASE), '/');
+        $base = $this->base();
         try {
             $response = Http::withToken($key)->timeout(90)
                 ->attach('file', (string) $disk->get($attachment->path), basename($attachment->path))

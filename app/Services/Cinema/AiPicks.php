@@ -79,7 +79,7 @@ class AiPicks
             ."\n\nКандидати з каталогу сайту (id | назва | тип | жанри):\n".$candidates->map($line)->implode("\n")
             ."\n\nОбери ".self::COUNT.' кандидатів, що найбільше підійдуть, бажано різних типів (фільм, серіал, аніме). '
             .'Відповідай лише JSON-масивом: [{"id": 123, "why": "до 70 символів українською, чому підійде"}].';
-        $raw = $this->ai->complete('Ти — кінокуратор соцмережі для геймерів. Обирай лише з наданих кандидатів, без вигаданих назв.', [['role' => 'user', 'content' => $prompt]], 400);
+        $raw = $this->ai->complete('Ти — кінокуратор соцмережі для геймерів. Обирай лише з наданих кандидатів, без вигаданих назв.', [['role' => 'user', 'content' => $prompt]], 400, task: 'cinema');
         $json = trim((string) preg_replace('/^```(?:json)?|```$/m', '', $raw));
         $rows = json_decode($json, true, 4, JSON_THROW_ON_ERROR);
         $byId = $candidates->keyBy('id');

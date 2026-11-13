@@ -246,6 +246,8 @@ class IntegrationController extends Controller
                     'type' => $type,
                     'placeholder' => $field['placeholder'] ?? null,
                     'help' => $field['help'] ?? null,
+                    // Довідка за значком (?): що робить поле й які моделі підходять.
+                    'info' => $field['info'] ?? null,
                     'options' => $field['options'] ?? null,
                     'value' => $type === 'secret' ? null : $value,
                     'hint' => $type === 'secret' ? $this->hint(is_string($value) && $value !== '' ? $value : (is_string($env) ? $env : null)) : null,
@@ -777,17 +779,31 @@ class IntegrationController extends Controller
                         'rules' => ['required', Rule::in([AiClient::ANTHROPIC, AiClient::OPENAI])]],
                     ['name' => 'key', 'setting' => 'ai_key', 'type' => 'secret', 'label' => 'API-ключ',
                         'rules' => ['nullable', 'string', 'max:400', 'regex:/^[A-Za-z0-9_\-.:]+$/'], 'message' => 'Ключ містить недопустимі символи.'],
-                    ['name' => 'model', 'setting' => 'ai_model', 'type' => 'text', 'label' => 'Модель', 'placeholder' => AiClient::DEFAULT_CLAUDE,
+                    ['name' => 'model', 'setting' => 'ai_model', 'type' => 'text', 'label' => 'Основна модель', 'placeholder' => AiClient::DEFAULT_CLAUDE,
                         'help' => 'Порожньо — claude-opus-5-5 для Claude або gpt-4o-mini для OpenAI.',
+                        'info' => self::modelInfo('main'),
                         'rules' => ['nullable', 'string', 'max:120', 'regex:/^[A-Za-z0-9_\-.:\/@]+$/'], 'message' => 'Назва моделі — латиниця, цифри, «-», «.», «/».'],
                     ['name' => 'base_url', 'setting' => 'ai_base_url', 'type' => 'url', 'label' => 'Адреса API (лише OpenAI-сумісний)', 'placeholder' => 'https://api.openai.com/v1',
                         'rules' => ['nullable', 'url:https', 'max:255']],
+                    // Окремі моделі на тому самому ключі: голосові, фото, ШІ-бот. Порожньо — основна модель.
+                    ['name' => 'stt_model', 'setting' => 'stt_model', 'type' => 'text', 'label' => 'Модель для голосових (розшифровка)', 'placeholder' => SpeechToText::GROQ_MODEL,
+                        'help' => 'Той самий ключ, якщо провайдер OpenAI-сумісний. Для Claude потрібен окремий ключ у «Розшифровка голосових».',
+                        'info' => self::modelInfo('voice'),
+                        'rules' => $modelRule = ['nullable', 'string', 'max:120', 'regex:/^[A-Za-z0-9_\-.:\/@]+$/'], 'message' => 'Назва моделі — латиниця, цифри, «-», «.», «/».'],
+                    // Профілі завдань: своя модель на тому самому ключі.
+                    ...array_map(fn (string $task, string $label) => [
+                        'name' => 'model_'.$task, 'setting' => 'ai_model_'.$task, 'type' => 'text', 'label' => 'Модель: '.$label,
+                        'placeholder' => $task === 'vision' ? 'meta-llama/llama-4-scout-17b-16e-instruct' : 'основна',
+                        'help' => $task === 'vision' ? 'Потрібна, якщо основна модель не бачить картинок (напр. Qwen у Groq).' : 'Порожньо — основна модель.',
+                        'info' => self::modelInfo($task),
+                        'rules' => $modelRule, 'message' => 'Назва моделі — латиниця, цифри, «-», «.», «/».',
+                    ], array_keys(AiClient::TASKS), AiClient::TASKS),
                 ],
             ],
             'speech' => [
                 'label' => 'Розшифровка голосових (Whisper)',
                 'group' => 'ai',
-                'description' => 'Перетворює голосові повідомлення в чатах на текст за натисканням «Текст». Будь-який OpenAI-сумісний сервіс розпізнавання мовлення: OpenAI Whisper або Groq (whisper-large-v3).',
+                'description' => 'Перетворює голосові повідомлення в чатах на текст за натисканням «Текст». Якщо в «ШІ» підключено OpenAI-сумісний сервіс (Groq, OpenAI), окремий ключ не потрібен — модель голосових обирається там. Сюди — лише окремий ключ.',
                 'docs' => 'https://platform.openai.com/docs/guides/speech-to-text',
                 'steps' => [
                     'OpenAI: platform.openai.com → API keys → Create new secret key; модель — whisper-1.',
@@ -795,12 +811,10 @@ class IntegrationController extends Controller
                     'Вставте ключ і натисніть «Зберегти». Текст кожного голосового розпізнається один раз і зберігається.',
                 ],
                 'configured' => app(SpeechToText::class)->configured(),
-                'stat' => app(SpeechToText::class)->configured() ? 'Сьогодні розшифровок: '.app(SpeechToText::class)->today().' · модель '.app(SpeechToText::class)->model() : null,
+                'stat' => app(SpeechToText::class)->configured() ? 'Сьогодні розшифровок: '.app(SpeechToText::class)->today().' · модель '.app(SpeechToText::class)->model().(app(SpeechToText::class)->sharesAiKey() ? ' · ключ із «ШІ»' : '') : null,
                 'fields' => [
                     ['name' => 'key', 'setting' => 'stt_key', 'type' => 'secret', 'label' => 'API-ключ',
                         'rules' => ['nullable', 'string', 'max:400', 'regex:/^[A-Za-z0-9_\-.:]+$/'], 'message' => 'Ключ містить недопустимі символи.'],
-                    ['name' => 'model', 'setting' => 'stt_model', 'type' => 'text', 'label' => 'Модель', 'placeholder' => SpeechToText::DEFAULT_MODEL,
-                        'rules' => ['nullable', 'string', 'max:120', 'regex:/^[A-Za-z0-9_\-.:\/@]+$/'], 'message' => 'Назва моделі — латиниця, цифри, «-», «.», «/».'],
                     ['name' => 'base_url', 'setting' => 'stt_base_url', 'type' => 'url', 'label' => 'Адреса API', 'placeholder' => SpeechToText::DEFAULT_BASE,
                         'rules' => ['nullable', 'url:https', 'max:255']],
                 ],
@@ -991,5 +1005,54 @@ class IntegrationController extends Controller
     private function hint(?string $secret): ?string
     {
         return $secret ? Str::mask($secret, '•', 0, -4) : null;
+    }
+
+    /**
+     * Довідка до полів моделей ШІ: що робить поле й перевірені моделі за провайдерами.
+     * Списки моделей змінюються — актуальні завжди в кабінеті провайдера (посилання в довідці).
+     *
+     * @return array{text: string, models: list<array{provider: string, docs: string, items: list<array{id: string, note: string}>}>}
+     */
+    private static function modelInfo(string $task): array
+    {
+        $text = [
+            'main' => 'Основна модель: нею працює все, для чого не вказано окрему модель нижче. Вибирайте розумну універсальну модель з хорошою українською.',
+            'voice' => 'Розшифровка голосових у чатах (кнопка «Текст»). Тут потрібна модель розпізнавання мовлення (Whisper), звичайна текстова модель не підійде.',
+            'writer' => 'ШІ-редактор у полі повідомлення (покращити, виправити, скоротити, перекласти) й «Написати з ШІ» для опису спільноти. Важлива якість мови.',
+            'summary' => 'Підсумок чату: переказ останніх ~80 повідомлень групи. Потрібне довге вікно контексту; швидкість важливіша за «розумність».',
+            'moderation' => 'Оцінка скарг на повідомлення й токсичності коментарів. Короткі відповіді у JSON — підійде швидка й дешева модель.',
+            'bot' => 'ШІ-бот у групах і каналах (відповідає на згадку чи /ші). Запити часті — краще швидка модель.',
+            'vision' => 'Перевірка фото на відвертий вміст (запасний варіант до Sightengine). Модель обов’язково має розуміти зображення.',
+            'cards' => 'Колекційні картки: ранги, персонажі з ігор, тематичні набори. Потрібні знання про ігри й відповідь у JSON.',
+            'cinema' => 'ШІ-добірки кіно й аніме з наявного каталогу.',
+        ][$task] ?? '';
+        $groq = ['provider' => 'Groq', 'docs' => 'https://console.groq.com/docs/models'];
+        $openai = ['provider' => 'OpenAI', 'docs' => 'https://platform.openai.com/docs/models'];
+        $claude = ['provider' => 'Claude (Anthropic)', 'docs' => 'https://platform.claude.com/docs/en/about-claude/models/overview'];
+        $m = fn (string $id, string $note) => ['id' => $id, 'note' => $note];
+        $models = match ($task) {
+            'voice' => [
+                [...$groq, 'items' => [$m('whisper-large-v3', 'найточніша, добре з українською'), $m('whisper-large-v3-turbo', 'швидша й дешевша')]],
+                [...$openai, 'items' => [$m('whisper-1', 'класична'), $m('gpt-4o-mini-transcribe', 'новіша, дешева'), $m('gpt-4o-transcribe', 'найточніша')]],
+                [...$claude, 'items' => [$m('—', 'Claude аудіо не розпізнає: потрібен окремий ключ Groq чи OpenAI')]],
+            ],
+            'vision' => [
+                [...$groq, 'items' => [$m('meta-llama/llama-4-scout-17b-16e-instruct', 'бачить фото, швидка'), $m('meta-llama/llama-4-maverick-17b-128e-instruct', 'бачить фото, точніша')]],
+                [...$openai, 'items' => [$m('gpt-4o-mini', 'дешева, бачить фото'), $m('gpt-4o', 'точніша')]],
+                [...$claude, 'items' => [$m('claude-haiku-5-5', 'швидка'), $m('claude-sonnet-5-5', 'баланс')]],
+            ],
+            'moderation', 'bot', 'cinema' => [
+                [...$groq, 'items' => [$m('llama-3.1-8b-instant', 'дуже швидка й дешева'), $m('openai/gpt-oss-20b', 'швидка, розумніша'), $m('qwen/qwen3-32b', 'як основна')]],
+                [...$openai, 'items' => [$m('gpt-4o-mini', 'дешева'), $m('gpt-4.1-mini', 'розумніша')]],
+                [...$claude, 'items' => [$m('claude-haiku-5-5', 'швидка'), $m('claude-sonnet-5-5', 'баланс')]],
+            ],
+            default => [
+                [...$groq, 'items' => [$m('qwen/qwen3-32b', 'добра українська, міркування'), $m('llama-3.3-70b-versatile', 'універсальна'), $m('openai/gpt-oss-120b', 'найрозумніша в Groq'), $m('moonshotai/kimi-k2-instruct', 'довгий контекст')]],
+                [...$openai, 'items' => [$m('gpt-4o-mini', 'дешева'), $m('gpt-4.1-mini', 'баланс'), $m('gpt-4o', 'найкраща якість')]],
+                [...$claude, 'items' => [$m('claude-opus-5-5', 'найкраща якість'), $m('claude-sonnet-5-5', 'баланс'), $m('claude-haiku-5-5', 'швидка')]],
+            ],
+        };
+
+        return ['text' => $text, 'models' => $models];
     }
 }

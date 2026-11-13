@@ -8,6 +8,8 @@ use App\Models\Message;
 use App\Models\MessageAttachment;
 use App\Models\StickerPack;
 use App\Models\User;
+use App\Services\Ai\AiClient;
+use App\Services\Ai\SpeechToText;
 use App\Services\CommunityService;
 use App\Services\Messenger;
 use App\Services\MessengerPresenter;
@@ -147,5 +149,37 @@ class ChatExtrasTest extends TestCase
         // Текст іде разом з повідомленням в історії; чужим — ні.
         $this->assertSame('Заходь у дискорд о восьмій', app(MessengerPresenter::class)->message($message->fresh()->load('attachments'))['attachments'][0]['transcript']);
         $this->actingAs(User::factory()->create())->postJson($url)->assertNotFound();
+    }
+
+    public function test_voice_transcription_reuses_openai_compatible_ai_key_and_task_models(): void
+    {
+        Storage::fake('public');
+        Http::fake([
+            'api.groq.com/openai/v1/audio/*' => Http::response(['text' => 'Привіт']),
+            'api.groq.com/openai/v1/chat/*' => Http::response(['choices' => [['message' => ['content' => '0.01']]]]),
+        ]);
+        // Groq у картці «ШІ» з Qwen; окремого ключа розшифровки немає.
+        app(SiteSettings::class)->putSecret('ai_key', 'gsk_shared_1234567890');
+        app(SiteSettings::class)->put(['ai_provider' => 'openai', 'ai_base_url' => 'https://api.groq.com/openai/v1', 'ai_model' => 'qwen/qwen3-32b', 'ai_model_vision' => 'meta-llama/llama-4-scout-17b-16e-instruct']);
+        $stt = app(SpeechToText::class);
+        $this->assertTrue($stt->configured());
+        $this->assertSame('whisper-large-v3', $stt->model());
+
+        $owner = User::factory()->create();
+        $member = User::factory()->create();
+        Friendship::query()->create(['requester_id' => $owner->id, 'addressee_id' => $member->id, 'status' => Friendship::ACCEPTED, 'accepted_at' => now()]);
+        $chat = app(Messenger::class)->createGroup($owner, 'Рейд', [$member->id]);
+        $message = Message::query()->create(['conversation_id' => $chat->id, 'user_id' => $owner->id, 'type' => Message::TYPE_VOICE, 'body' => null]);
+        Storage::disk('public')->put('voice/b.webm', 'audio');
+        $message->attachments()->create(['type' => MessageAttachment::TYPE_VOICE, 'disk' => 'public', 'path' => 'voice/b.webm', 'mime' => 'audio/webm', 'duration' => 3, 'position' => 0]);
+        $this->actingAs($owner)->postJson("/messages/{$chat->id}/messages/{$message->id}/transcribe")->assertOk()->assertJsonPath('text', 'Привіт');
+        Http::assertSent(fn ($r) => str_ends_with($r->url(), '/audio/transcriptions') && $r->hasHeader('Authorization', 'Bearer gsk_shared_1234567890'));
+
+        // Фото — своєю моделлю, текст — основною.
+        $ai = app(AiClient::class);
+        $ai->complete('s', [['role' => 'user', 'content' => 'x']], 16, [['mime' => 'image/png', 'data' => 'AA==']]);
+        $ai->complete('s', [['role' => 'user', 'content' => 'x']], 16);
+        $models = Http::recorded()->filter(fn ($pair) => str_contains($pair[0]->url(), '/chat/'))->map(fn ($pair) => $pair[0]['model'])->values()->all();
+        $this->assertSame(['meta-llama/llama-4-scout-17b-16e-instruct', 'qwen/qwen3-32b'], $models);
     }
 }

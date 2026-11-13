@@ -28,6 +28,19 @@ class AiAssistant
 
     public function __construct(private readonly AiClient $ai) {}
 
+    /**
+     * Запит у профілі завдання — своя модель з адмінки (той самий ключ), якщо її вказано.
+     *
+     * @param  list<array{role: 'user'|'assistant', content: string}>  $messages
+     * @param  list<array{mime: string, data: string}>  $images
+     *
+     * @throws AiException
+     */
+    private function ask(string $task, string $system, array $messages, int $maxTokens = 1024, array $images = []): string
+    {
+        return $this->ai->complete($system, $messages, $maxTokens, $images, $task);
+    }
+
     public function rewrite(User $user, string $text, string $mode): string
     {
         $this->limit($user);
@@ -42,7 +55,7 @@ class AiAssistant
         };
         $language = in_array($mode, ['en', 'uk'], true) ? '' : ' Відповідай мовою оригіналу.';
 
-        return $this->ai->complete(
+        return $this->ask('writer',
             "Ти редактор повідомлень соцмережі для геймерів GameCon. {$task}{$language} Поверни лише готовий текст — без лапок, пояснень і варіантів. Емодзі й згадки (@нік, #тег) лишай як є.",
             [['role' => 'user', 'content' => Str::limit($text, self::MAX_INPUT, '')]],
             1024,
@@ -61,7 +74,7 @@ class AiAssistant
         if ($transcript === '') {
             return 'У бесіді ще немає повідомлень.';
         }
-        $summary = $this->ai->complete(
+        $summary = $this->ask('summary',
             'Ти коротко переказуєш груповий чат геймерів українською. Дай 3–6 пунктів: про що говорили, до чого домовилися (час, гра, хто що робить), відкриті питання. Без вступу, лише пункти через «• ». Не вигадуй того, чого немає в чаті.',
             [['role' => 'user', 'content' => "Чат «{$conversation->title}»:\n\n{$transcript}"]],
             800,
@@ -83,7 +96,7 @@ class AiAssistant
             $hints !== '' ? 'Побажання адміністратора: '.Str::limit($hints, 400) : null,
         ])->filter()->implode("\n");
 
-        return $this->ai->complete(
+        return $this->ask('writer',
             'Ти пишеш опис спільноти для соцмережі геймерів GameCon українською: 2–3 коротких абзаци, жваво, без канцеляриту й гучних обіцянок. Що тут роблять, для кого спільнота, як долучитися. Без хештегів і без вигаданих фактів. Поверни лише текст опису.',
             [['role' => 'user', 'content' => $facts]],
             700,
@@ -103,7 +116,7 @@ class AiAssistant
         }
         $context = $this->transcript($message->conversation, 6, $message->id);
         try {
-            $raw = $this->ai->complete(
+            $raw = $this->ask('moderation',
                 'Ти допомагаєш модераторам соцмережі геймерів. Оціни повідомлення, на яке поскаржились: чи порушує воно правила (образи, погрози, переслідування, спам, шахрайство, відвертий вміст, загроза дітям). Відповідай лише JSON без пояснень: {"severity":"low|medium|high","reason":"до 120 символів українською"}. high — погрози, загроза дітям, шахрайство, жорсткі образи; medium — грубість, спам; low — порушення не видно.',
                 [['role' => 'user', 'content' => "Причина скарги: {$report->reason}\nКонтекст:\n{$context}\n\nПовідомлення: ".Str::limit((string) $message->body, 1500)]],
                 300,
@@ -127,7 +140,7 @@ class AiAssistant
     public function toxicity(string $text): ?array
     {
         try {
-            $raw = $this->ai->complete(
+            $raw = $this->ask('moderation',
                 'Ти модератор коментарів соцмережі геймерів. Оціни токсичність коментаря від 0 до 100: образи людей, погрози, цькування, мова ворожнечі — високо; ігровий сленг, сарказм без образ, критика гри — низько. Відповідай лише JSON: {"score":0-100,"reason":"до 80 символів українською"}.',
                 [['role' => 'user', 'content' => Str::limit($text, 1500)]],
                 150,
@@ -156,7 +169,7 @@ class AiAssistant
         }
         $list = implode("\n", array_map(fn (array $c) => "{$c['id']}. {$c['name']} — «{$c['title']}» (".($c['role'] === 'main' ? 'головний' : 'другорядний').')', $characters));
         try {
-            $raw = $this->ai->complete(
+            $raw = $this->ask('cards',
                 'Ти експерт з аніме, фільмів і серіалів. Признач кожному персонажу ранг колекційної картки за шкалою від найнижчого до найвищого: N, G, F, E, D, C, B, A, R, SR, SSR, S, SS, SSS, EX, U. Враховуй силу, вплив на сюжет, культовість і популярність: масовка й епізодичні — N–D, помітні другорядні — C–A, сильні й улюблені — R–SSR, головні герої й легенди жанру — S–SSS, надзвичайні — EX, абсолютні ікони світового рівня — U (дуже рідко). Відповідай лише JSON: {"id": {"rank": "…", "reason": "до 80 символів українською"}, …}.',
                 [['role' => 'user', 'content' => $list]],
                 1500,
@@ -184,7 +197,7 @@ class AiAssistant
     public function gameCharacters(string $game, int $limit = 8): array
     {
         try {
-            $raw = $this->ai->complete(
+            $raw = $this->ask('cards',
                 'Ти знавець відеоігор. Назви до '.$limit.' найвідоміших персонажів гри — лише справжніх, з канону гри (герої, лиходії, культові NPC). Якщо в грі немає іменованих персонажів (симулятори, спорт, пісочниці без героїв) — порожній список. Імена пиши як прийнято в українській спільноті (або оригінал). Відповідай лише JSON: {"characters":[{"name":"…","role":"main|supporting"}]}.',
                 [['role' => 'user', 'content' => 'Гра: '.Str::limit($game, 120)]],
                 600,
@@ -218,7 +231,7 @@ class AiAssistant
         }
         $list = implode("\n", array_map(fn (array $c) => "{$c['key']}: {$c['name']} ({$c['about']})", $cards));
         try {
-            $raw = $this->ai->complete(
+            $raw = $this->ask('cards',
                 'Розклади колекційні картки (ігри й персонажі аніме, фільмів, серіалів) за тематичними наборами. Обирай рівно одну назву з переліку: '.implode(', ', $themes).'. «Круті хлопці» — харизматичні круті герої, «Лиходії» — антагоністи, «Меха» — роботи й пілоти, «Супергерої» — герої з надздібностями. Відповідай лише JSON: {"ключ": "набір", …}.',
                 [['role' => 'user', 'content' => $list]],
                 1500,
@@ -249,7 +262,7 @@ class AiAssistant
             return null;
         }
         try {
-            $raw = $this->ai->complete(
+            $raw = $this->ask('vision',
                 'Ти перевіряєш фото для соцмережі. Оціни ймовірність відвертого сексуального вмісту або оголеного тіла від 0 до 1. Відповідай лише числом, напр. 0.05.',
                 [['role' => 'user', 'content' => 'Оціни це фото.']],
                 16,
@@ -269,7 +282,7 @@ class AiAssistant
         $transcript = $this->transcript($conversation, 20, $trigger->id);
         $author = $trigger->user->name ?? 'Учасник';
 
-        return $this->ai->complete(
+        return $this->ask('bot',
             "Ти бот «{$bot->bot_name}» у груповому чаті «{$conversation->title}» соцмережі геймерів GameCon. {$persona}\nВідповідай коротко (до 5 речень), мовою запитання, без markdown-заголовків. Не вигадуй фактів про людей із чату. Якщо не знаєш — так і скажи.",
             [['role' => 'user', 'content' => "Останні повідомлення чату:\n{$transcript}\n\n{$author} звертається до тебе: ".Str::limit((string) $trigger->body, 1500)]],
             700,

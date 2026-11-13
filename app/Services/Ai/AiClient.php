@@ -46,8 +46,27 @@ class AiClient
         return $this->settings->get('ai_provider') === self::OPENAI ? self::OPENAI : self::ANTHROPIC;
     }
 
-    public function model(): string
+    /**
+     * Профілі завдань: своя модель на тому самому ключі (порожньо — основна). Назва → підпис в адмінці.
+     * У Groq/OpenRouter основна модель може не бачити картинок — тоді для «vision» вказують окрему.
+     */
+    public const TASKS = [
+        'writer' => 'Редактор і описи (переписати текст, опис спільноти)',
+        'summary' => 'Підсумок чату',
+        'moderation' => 'Модерація (скарги, токсичність)',
+        'bot' => 'ШІ-бот у чатах',
+        'vision' => 'Фото (перевірка зображень)',
+        'cards' => 'Колекційні картки (ранги, персонажі, набори)',
+        'cinema' => 'Кіно-добірки',
+    ];
+
+    /** Модель для завдання з TASKS; порожнє поле в адмінці — основна модель. */
+    public function model(?string $task = null): string
     {
+        $special = $task !== null ? trim((string) $this->settings->get('ai_model_'.$task)) : '';
+        if ($special !== '') {
+            return $special;
+        }
         $model = trim((string) $this->settings->get('ai_model'));
 
         return $model !== '' ? $model : ($this->provider() === self::OPENAI ? self::DEFAULT_OPENAI : self::DEFAULT_CLAUDE);
@@ -61,16 +80,17 @@ class AiClient
      *
      * @throws AiException
      */
-    public function complete(string $system, array $messages, int $maxTokens = 1024, array $images = []): string
+    public function complete(string $system, array $messages, int $maxTokens = 1024, array $images = [], ?string $task = null): string
     {
+        $task ??= $images !== [] ? 'vision' : null;
         $key = $this->settings->secret('ai_key');
         if ($key === null) {
             throw new AiException('ШІ не підключено: адміністрація ще не додала ключ.');
         }
         try {
             $text = $this->provider() === self::OPENAI
-                ? $this->openai($key, $system, $messages, $maxTokens, $images)
-                : $this->anthropic($key, $system, $messages, $maxTokens, $images);
+                ? $this->openai($key, $system, $messages, $maxTokens, $images, $this->model($task))
+                : $this->anthropic($key, $system, $messages, $maxTokens, $images, $this->model($task));
         } catch (ConnectionException) {
             throw new AiException('ШІ зараз недоступний. Спробуйте трохи пізніше.');
         }
@@ -99,9 +119,8 @@ class AiClient
      * @param  list<array{role: 'user'|'assistant', content: string}>  $messages
      * @param  list<array{mime: string, data: string}>  $images
      */
-    private function anthropic(string $key, string $system, array $messages, int $maxTokens, array $images): string
+    private function anthropic(string $key, string $system, array $messages, int $maxTokens, array $images, string $model): string
     {
-        $model = $this->model();
         $payload = [
             'model' => $model,
             'max_tokens' => $maxTokens,
@@ -140,11 +159,11 @@ class AiClient
      * @param  list<array{role: 'user'|'assistant', content: string}>  $messages
      * @param  list<array{mime: string, data: string}>  $images
      */
-    private function openai(string $key, string $system, array $messages, int $maxTokens, array $images): string
+    private function openai(string $key, string $system, array $messages, int $maxTokens, array $images, string $model): string
     {
         $base = rtrim((string) ($this->settings->get('ai_base_url') ?: 'https://api.openai.com/v1'), '/');
         $response = Http::withToken($key)->acceptJson()->timeout(60)->post($base.'/chat/completions', [
-            'model' => $this->model(),
+            'model' => $model,
             'max_tokens' => $maxTokens,
             'messages' => [
                 ['role' => 'system', 'content' => $system],

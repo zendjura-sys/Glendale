@@ -410,6 +410,7 @@ class CinemaTest extends TestCase
         $response->assertInertia(fn (Assert $page) => $page
             ->component('admin/integrations')
             ->has('cinema', 30)
+            ->where('cinema', fn ($cards) => collect($cards)->firstWhere('key', 'ai')['fields'][4]['info']['models'][0]['provider'] === 'Groq')
             ->where('cinema.2.key', 'push')
             ->where('cinema.3.key', 'telegram_bot')
             ->where('cinema.4.key', 'discord_bot')

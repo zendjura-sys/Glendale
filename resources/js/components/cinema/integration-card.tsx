@@ -1,6 +1,7 @@
 import { router, useForm } from '@inertiajs/react';
 import {
     CheckCircle2,
+    CircleHelp,
     Clapperboard,
     Database,
     Sparkles,
@@ -13,6 +14,12 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { Pill, Toggle, selectClass } from '@/components/gc/admin';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
@@ -24,6 +31,15 @@ export type IntegrationField = {
     type: 'secret' | 'url' | 'text' | 'select' | 'bool' | 'textarea';
     placeholder: string | null;
     help: string | null;
+    /** Довідка за значком (?): що робить поле й які моделі підходять. */
+    info?: {
+        text: string;
+        models: {
+            provider: string;
+            docs: string;
+            items: { id: string; note: string }[];
+        }[];
+    } | null;
     options: { value: string; label: string }[] | null;
     value: string | boolean | null;
     hint: string | null;
@@ -157,9 +173,20 @@ export function IntegrationCard({
 
                     return (
                         <div key={f.name} className="grid gap-1.5">
-                            <Label htmlFor={id} className="text-xs">
-                                {f.label}
-                            </Label>
+                            <div className="flex items-center gap-1.5">
+                                <Label htmlFor={id} className="text-xs">
+                                    {f.label}
+                                </Label>
+                                {f.info && (
+                                    <FieldInfo
+                                        label={f.label}
+                                        info={f.info}
+                                        onPick={(model) =>
+                                            form.setData(f.name, model)
+                                        }
+                                    />
+                                )}
+                            </div>
                             {f.type === 'select' ? (
                                 <select
                                     id={id}
@@ -336,5 +363,92 @@ export function IntegrationCard({
                 )}
             </footer>
         </section>
+    );
+}
+
+/** Значок (?) біля поля: вікно з поясненням і переліком моделей; натискання на модель підставляє її в поле. */
+function FieldInfo({
+    label,
+    info,
+    onPick,
+}: {
+    label: string;
+    info: NonNullable<IntegrationField['info']>;
+    onPick: (model: string) => void;
+}) {
+    const [open, setOpen] = useState(false);
+
+    return (
+        <Dialog open={open} onOpenChange={setOpen}>
+            <button
+                type="button"
+                onClick={() => setOpen(true)}
+                aria-label={tr('Що це за поле?')}
+                className="rounded-full p-0.5 text-white/40 transition hover:text-white"
+            >
+                <CircleHelp className="size-3.5" />
+            </button>
+            <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-lg">
+                <DialogTitle>{label}</DialogTitle>
+                <DialogDescription className="text-sm text-white/70">
+                    {info.text}
+                </DialogDescription>
+                <div className="grid gap-3">
+                    {info.models.map((group) => (
+                        <section key={group.provider}>
+                            <div className="mb-1 flex items-center justify-between gap-2">
+                                <h3 className="text-sm font-semibold text-white">
+                                    {group.provider}
+                                </h3>
+                                <a
+                                    href={group.docs}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                                >
+                                    {tr('Усі моделі')}
+                                    <ExternalLink className="size-3" />
+                                </a>
+                            </div>
+                            <ul className="grid gap-1">
+                                {group.items.map((item) =>
+                                    item.id === '—' ? (
+                                        <li
+                                            key={item.note}
+                                            className="px-2 text-xs text-white/50"
+                                        >
+                                            {item.note}
+                                        </li>
+                                    ) : (
+                                        <li key={item.id}>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    onPick(item.id);
+                                                    setOpen(false);
+                                                }}
+                                                className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left hover:bg-white/[0.06]"
+                                            >
+                                                <code className="min-w-0 truncate font-mono text-[13px] text-white">
+                                                    {item.id}
+                                                </code>
+                                                <span className="ml-auto shrink-0 text-xs text-white/45">
+                                                    {item.note}
+                                                </span>
+                                            </button>
+                                        </li>
+                                    ),
+                                )}
+                            </ul>
+                        </section>
+                    ))}
+                </div>
+                <p className="text-xs text-white/40">
+                    {tr(
+                        'Натисніть на модель, щоб підставити її в поле, потім «Зберегти». Перелік моделей у провайдерів змінюється — актуальний за посиланням «Усі моделі».',
+                    )}
+                </p>
+            </DialogContent>
+        </Dialog>
     );
 }
