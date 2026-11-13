@@ -55,6 +55,19 @@ class AlertWatcher
         ];
     }
 
+    /**
+     * Відбій — знімаємо статус «В укритті», який людина поставила під час тривоги (свій власний статус не чіпаємо).
+     */
+    public static function leaveShelter(User $user): void
+    {
+        if ($user->status_emoji !== '🛡️' || $user->pref('shelter_since') === null) {
+            return;
+        }
+        $user->forceFill(['status_emoji' => null, 'status' => null, 'status_until' => null])->save();
+        $user->mergePref(['shelter_since' => null]);
+        Cache::forget('presence.'.$user->id);
+    }
+
     /** regionId, за яким стежить людина: обраний район/громада або її область. */
     public function unitFor(User $user): ?string
     {
@@ -244,6 +257,10 @@ class AlertWatcher
     {
         $count = 0;
         foreach (User::query()->whereKey($ids)->get() as $user) {
+            // Відбій знімає «В укритті» в усіх, хто стежить за місцем, навіть якщо сповіщення про відбій вимкнено.
+            if (! $started) {
+                self::leaveShelter($user);
+            }
             $prefs = self::prefsOf($user);
             if (! $prefs[$severity]) {
                 continue;

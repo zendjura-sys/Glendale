@@ -137,4 +137,30 @@ class PushNotificationsTest extends TestCase
         Http::assertSent(fn ($request) => ($request['message']['token'] ?? null) === $legacy
             && $request['message']['notification']['title'] === 'Олена');
     }
+
+    public function test_alert_push_is_data_only_only_for_apps_with_shelter_button(): void
+    {
+        $this->configureFcm();
+        $user = User::factory()->create();
+        $token = $this->token($user);
+        $new = str_repeat('h', 40);
+        $old = str_repeat('i', 40);
+        $this->withToken($token)->postJson('/api/v1/push/devices', ['token' => $new, 'platform' => 'android', 'local_render' => true, 'alert_render' => true])->assertOk();
+        // Застосунок до 1.1.125: малює чати сам, а тривогу — ні.
+        $this->withToken($token)->postJson('/api/v1/push/devices', ['token' => $old, 'platform' => 'android', 'local_render' => true])->assertOk();
+
+        Http::fake([
+            'oauth2.googleapis.com/token' => Http::response(['access_token' => 'ya29.test', 'expires_in' => 3600]),
+            'fcm.googleapis.com/*' => Http::response(['name' => 'projects/gamecon-test/messages/1']),
+        ]);
+
+        (new SendPushNotification($user->id, 'GameCon', 'Повітряна тривога: Житомир', ['type' => 'notification', 'kind' => 'air_alert', 'url' => '/alerts'], 'air_alerts', 'air-alert', dataOnly: true, ttl: 60))->handle(app(FcmClient::class));
+
+        Http::assertSent(fn ($request) => ($request['message']['token'] ?? null) === $new
+            && ! isset($request['message']['notification'])
+            && $request['message']['data']['kind'] === 'air_alert'
+            && $request['message']['android']['ttl'] === '60s');
+        Http::assertSent(fn ($request) => ($request['message']['token'] ?? null) === $old
+            && $request['message']['notification']['body'] === 'Повітряна тривога: Житомир');
+    }
 }

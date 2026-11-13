@@ -187,6 +187,10 @@ class AirAlertsTest extends TestCase
         $this->assertSame('Повітряна тривога (червоний рівень): Житомирська територіальна громада', $start->data['text']);
         $this->assertSame('#EF4444', $start->data['accent']);
 
+        // «Я в укритті» під час тривоги (з пушу чи картки) — відбій зніме його сам.
+        $this->actingAs($user)->putJson('/alerts/preferences', ['shelter' => true])->assertOk();
+        $this->assertSame('🛡️', $user->fresh()->status_emoji);
+
         // Відбій — оновлює той самий рядок у дзвіночку (пара «початок + відбій»), з тривалістю.
         $this->travel(65)->minutes();
         $watcher->run(); // воркер «стояв» — перша перевірка після паузи лише запам'ятовує
@@ -198,6 +202,7 @@ class AirAlertsTest extends TestCase
         $this->assertSame('clear', $row->data['severity']);
         $this->assertSame('Відбій повітряної тривоги: Житомирська територіальна громада', $row->data['text']);
         $this->assertStringStartsWith('Тривала 1 год 05 хв', $row->data['excerpt']);
+        $this->assertNull($user->fresh()->status_emoji);
         $this->assertNull($row->read_at);
     }
 

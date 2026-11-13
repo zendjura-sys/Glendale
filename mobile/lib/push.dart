@@ -66,10 +66,13 @@ Future<void> firebaseBackgroundHandler(RemoteMessage message) async {
   DartPluginRegistrant.ensureInitialized();
   await Firebase.initializeApp();
   final type = message.data['type'];
-  if (message.notification != null || !['message', 'call', 'call_ended'].contains(type)) return;
+  final alert = '${message.data['kind'] ?? ''}'.startsWith('air_alert');
+  if (message.notification != null || (!['message', 'call', 'call_ended'].contains(type) && !alert)) return;
   final local = FlutterLocalNotificationsPlugin();
   await local.initialize(settings: _initSettings, onDidReceiveBackgroundNotificationResponse: notificationActionInBackground);
-  if (type == 'message') {
+  if (alert) {
+    await AlertNotifications(local).incoming(message.data);
+  } else if (type == 'message') {
     await ChatNotifications(local, await SharedPreferences.getInstance()).incoming(message.data);
   } else {
     await CallNotifications(local).incoming(message.data);
@@ -83,7 +86,59 @@ Future<void> notificationActionInBackground(NotificationResponse response) async
   final local = FlutterLocalNotificationsPlugin();
   await local.initialize(settings: _initSettings);
   if (await CallNotifications(local).act(response)) return;
+  if (await AlertNotifications(local).act(response)) return;
   await ChatNotifications(local, await SharedPreferences.getInstance()).act(response);
+}
+
+/// Тривога з кнопкою «Я в укритті»: статус ставиться просто з шторки, без відкриття застосунку.
+/// Приходить data-повідомленням (див. `PushNotifier`), колір — за типом тривоги.
+class AlertNotifications {
+  AlertNotifications(this.local);
+  final FlutterLocalNotificationsPlugin local;
+
+  static const _id = 0x0A1E27;
+
+  Future<void> incoming(Map<String, dynamic> data) async {
+    final hex = int.tryParse('${data['accent'] ?? ''}'.replaceFirst('#', ''), radix: 16);
+    final severity = data['severity'];
+    final started = data['kind'] == 'air_alert';
+    await local.show(
+      id: _id,
+      title: text(data['title']) ?? 'GameCon',
+      body: text(data['body']),
+      payload: jsonEncode({'url': text(data['url']) ?? '/alerts', 'kind': 'air_alert'}),
+      notificationDetails: NotificationDetails(
+        android: AndroidNotificationDetails(
+          _alerts.id,
+          _alerts.name,
+          channelDescription: _alerts.description,
+          importance: severity == 'red' ? Importance.max : Importance.high,
+          priority: severity == 'red' ? Priority.max : Priority.high,
+          icon: 'ic_notification',
+          color: hex != null ? Color(0xFF000000 | hex) : const Color(0xFFEF4444),
+          tag: 'air-alert',
+          category: AndroidNotificationCategory.alarm,
+          styleInformation: BigTextStyleInformation(text(data['body']) ?? ''),
+          actions: [
+            if (started) AndroidNotificationAction('shelter', tr('Я в укритті')),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// «Я в укритті» з шторки. Повертає true, якщо це була ця дія.
+  Future<bool> act(NotificationResponse response) async {
+    if (response.actionId != 'shelter') return false;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.reload();
+    final token = prefs.getString('token');
+    if (token != null) {
+      await Api(() => token).put(Api.site('/alerts/preferences'), {'shelter': true}).catchError((_) => <String, dynamic>{});
+    }
+    await local.cancel(id: _id, tag: 'air-alert');
+    return true;
+  }
 }
 
 /// Що відкрити при натисканні: локальні сповіщення несуть JSON, старі — просто шлях.
@@ -355,6 +410,7 @@ class Push {
       settings: _initSettings,
       onDidReceiveNotificationResponse: (response) async {
         if (await _callNotes.act(response)) return;
+        if (await AlertNotifications(_local).act(response)) return;
         if (_answer(response)) return;
         if (await _chats.act(response)) return;
         _open(response.payload);
@@ -417,7 +473,7 @@ class Push {
 
   Future<void> _register(String token) async {
     if (session.token == null) return;
-    await session.api.post('/api/v1/push/devices', {'token': token, 'platform': Platform.isIOS ? 'ios' : 'android', 'local_render': Platform.isAndroid});
+    await session.api.post('/api/v1/push/devices', {'token': token, 'platform': Platform.isIOS ? 'ios' : 'android', 'local_render': Platform.isAndroid, 'alert_render': Platform.isAndroid});
   }
 
   String get _location => router.routerDelegate.currentConfiguration.uri.path;
@@ -444,6 +500,12 @@ class Push {
     final note = message.notification;
     if (chat && note == null) {
       await _chats.incoming(data);
+      return;
+    }
+    // Тривога data-повідомленням (з кнопкою «Я в укритті»).
+    if (note == null && '${data['kind'] ?? ''}'.startsWith('air_alert')) {
+      unawaited(AlertSound.play(session.prefs));
+      await AlertNotifications(_local).incoming(data);
       return;
     }
     if (note == null) return;

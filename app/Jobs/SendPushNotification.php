@@ -69,7 +69,10 @@ class SendPushNotification implements ShouldQueue
 
         PushDevice::query()->where('user_id', $this->userId)->latest('id')->limit(10)->get()
             ->each(function (PushDevice $device) use ($fcm, $title, $body) {
-                $result = $fcm->send($device->token, $title, $body, $this->data, $this->channel, $this->tag, $this->dataOnly && $device->local_render && $device->platform === 'android', $this->ttl);
+                // Тривогу data-повідомленням — лише застосунку, що вміє її малювати (alert_render), іншим — звичайний пуш.
+                $alert = str_starts_with((string) ($this->data['kind'] ?? ''), 'air_alert');
+                $local = $this->dataOnly && $device->local_render && $device->platform === 'android' && (! $alert || $device->alert_render);
+                $result = $fcm->send($device->token, $title, $body, $this->data, $this->channel, $this->tag, $local, $this->ttl);
                 match ($result) {
                     FcmClient::GONE => $device->delete(),
                     FcmClient::SENT => $device->forceFill(['last_used_at' => now()])->saveQuietly(),
