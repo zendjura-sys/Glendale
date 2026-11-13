@@ -2,6 +2,8 @@
 <resources>
     <string name="family_widget_label">Моя сім’я</string>
     <string name="family_widget_description">Рахунок у банку сім’ї, заробіток за тиждень, місце в рейтингу й найближча подія</string>
+    <string name="alert_widget_label">Тривога в моєму місці</string>
+    <string name="alert_widget_description">Чи є зараз тривога у вашому місці, її тип і скільки триває</string>
     <string name="pulse_widget_label">Пульс GameCon</string>
     <string name="pulse_widget_description">Непрочитані чати й сповіщення, друзі онлайн і в що грають, завдання дня й рівень сезону</string>
 </resources>

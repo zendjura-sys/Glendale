@@ -12,6 +12,7 @@ import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'alerts.dart';
+import 'alert_widget.dart';
 import 'api.dart';
 import 'shell.dart';
 import 'state.dart';
@@ -72,6 +73,10 @@ Future<void> firebaseBackgroundHandler(RemoteMessage message) async {
   await local.initialize(settings: _initSettings, onDidReceiveBackgroundNotificationResponse: notificationActionInBackground);
   if (alert) {
     await AlertNotifications(local).incoming(message.data);
+    // Віджет «Тривога» — одразу свіжий статус.
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+    if (token != null) await AlertWidget.refresh(Api(() => token)).catchError((_) {});
   } else if (type == 'message') {
     await ChatNotifications(local, await SharedPreferences.getInstance()).incoming(message.data);
   } else {
@@ -506,6 +511,7 @@ class Push {
     if (note == null && '${data['kind'] ?? ''}'.startsWith('air_alert')) {
       unawaited(AlertSound.play(session.prefs));
       await AlertNotifications(_local).incoming(data);
+      unawaited(AlertWidget.refresh(session.api).catchError((_) {}));
       return;
     }
     if (note == null) return;

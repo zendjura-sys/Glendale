@@ -65,6 +65,7 @@ class PulseWidget {
       'friends' => '/friends?tab=online',
       'quests' => '/quests',
       'feed' => '/feed',
+      'alerts' => '/alerts',
       _ => null,
     };
   }

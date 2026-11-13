@@ -34,6 +34,7 @@ import 'game_reviews.dart';
 import 'game_tools.dart';
 import 'status.dart';
 import 'alerts.dart';
+import 'alert_widget.dart';
 import 'pulse_widget.dart';
 import 'feed.dart';
 import 'characters.dart';
@@ -114,6 +115,7 @@ Future<void> main() async {
   unawaited(FamilyWidget.refresh(session.token == null ? null : session.api, prefs).then((_) => null, onError: (_) => null));
   // Віджет «Пульс GameCon»: непрочитане, друзі онлайн, завдання дня.
   unawaited(PulseWidget.refresh(session.token == null ? null : session.api).then((_) => null, onError: (_) => null));
+  unawaited(AlertWidget.refresh(session.token == null ? null : session.api).then((_) => null, onError: (_) => null));
   final links = AppLinks();
   links.uriLinkStream.listen(session.takeLink);
   final initial = await links.getInitialLink();
