@@ -18,6 +18,7 @@ use App\Models\VoiceParticipant;
 use App\Models\VoiceRoom;
 use App\Services\Ai\AiClient;
 use App\Services\Alerts\AirAlertService;
+use App\Services\Alerts\UkraineAlarm;
 use App\Services\Auth\DiscordOAuth;
 use App\Services\Auth\FirebaseAuth;
 use App\Services\Billing\GooglePlay;
@@ -723,27 +724,24 @@ class IntegrationController extends Controller
                 ],
             ],
             'air_alerts' => [
-                'label' => 'Мапа тривог (UkraineAlarm, alerts.in.ua)',
+                'label' => 'Мапа тривог (UkraineAlarm API v3)',
                 'group' => 'alerts',
-                'description' => 'Стан тривог за областями для «Мапи тривог» (лише для України): офіційний API UkraineAlarm, далі alerts.in.ua, без ключів — відкрите запасне джерело. Мітки цілей — з публічних каналів моніторингу; збіг кількох джерел підвищує упевненість мітки.',
-                'docs' => 'https://alerts.in.ua/api-request',
+                'description' => 'Стан тривог, типи загроз, час початку й відбою, а також усі сповіщення — виключно з офіційного API UkraineAlarm v3 (api.ukrainealarm.com). Без ключа тривог і сповіщень немає. Мітки цілей на мапі (радар) — окремо, з публічних каналів моніторингу; вони не створюють тривог.',
+                'docs' => 'https://api.ukrainealarm.com/swagger/index.html',
                 'steps' => [
-                    'Офіційний статус: попросіть ключ API на api.ukrainealarm.com і вставте в «Ключ UkraineAlarm».',
-                    'Запасний: заявка на токен на alerts.in.ua (безкоштовно для некомерційних проєктів).',
-                    'Без ключів основне джерело — відкритий API NEPTUN (neptun.in.ua/developers): тривоги по районах, цілі з курсом і впевненістю, стрічка. Умова — видиме посилання на NEPTUN біля мапи (додається саме). Вимкнути — «0» у полі NEPTUN.',
-                    'Запасне без ключів — офіційний канал «Повітряна тривога» (@air_alert_ua) — райони й громади, види тривог; давні тривоги областей доповнює ubilling.',
+                    'Попросіть ключ API на api.ukrainealarm.com і вставте в «Ключ UkraineAlarm» (або UKRAINE_ALARM_KEY у .env сервера).',
+                    'Миттєві зміни: команда php artisan alerts:webhook реєструє наш вебхук в UkraineAlarm; без нього сервер сам перевіряє /alerts/status кожні 10 с.',
+                    'Цілі на мапі (радар) — відкритий API NEPTUN (neptun.in.ua/developers), умова — видиме посилання на NEPTUN біля мапи (додається саме). Вимкнути — «0» у полі NEPTUN.',
                     'Групи джерел цілей — через кому: official, intel, regional, aggregators. Власні канали — через кому, без @.',
                     'Натисніть «Перевірити».',
                 ],
-                // Без ключів працюють відкриті джерела (NEPTUN, офіційний канал), тож картка налаштована й так.
+                // «Перевірити» доступна й без ключа: діагностика пояснить, що без ключа UkraineAlarm тривог немає.
                 'configured' => true,
                 'stat' => null,
                 'test' => fn () => app(AirAlertService::class)->diagnose(),
                 'fields' => [
                     ['name' => 'official', 'setting' => 'ukrainealarm_token', 'type' => 'secret', 'label' => 'Ключ UkraineAlarm',
                         'rules' => ['nullable', 'string', 'regex:/^[A-Za-z0-9_\-\.:]{16,200}$/'], 'message' => 'Ключ — латинські літери, цифри, «-», «_», «:» і «.».'],
-                    ['name' => 'token', 'setting' => 'alerts_in_ua_token', 'type' => 'secret', 'label' => 'Токен alerts.in.ua',
-                        'rules' => ['nullable', 'string', 'regex:/^[A-Za-z0-9_\-\.]{16,200}$/'], 'message' => 'Токен — латинські літери, цифри, «-», «_» і «.».'],
                     ['name' => 'channels', 'setting' => 'alerts_monitor_channels', 'type' => 'text', 'label' => 'Додаткові канали',
                         'rules' => ['nullable', 'string', 'max:500', 'regex:/^[A-Za-z0-9_,@\s]*$/'], 'message' => 'Назви каналів латиницею через кому.'],
                     ['name' => 'visibility', 'setting' => 'alerts_visibility', 'type' => 'select', 'label' => 'Кому показувати мапу',
@@ -755,8 +753,6 @@ class IntegrationController extends Controller
                         'rules' => ['nullable', 'in:ukraine,all,admins'], 'message' => 'Оберіть варіант зі списку.'],
                     ['name' => 'neptun', 'setting' => 'alerts_neptun', 'type' => 'text', 'label' => 'NEPTUN (1 — увімкнено, 0 — вимкнено)',
                         'rules' => ['nullable', 'in:0,1'], 'message' => 'Лише 1 або 0.'],
-                    ['name' => 'status_channel', 'setting' => 'alerts_status_channel', 'type' => 'text', 'label' => 'Канал статусу тривог (без ключа)',
-                        'rules' => ['nullable', 'string', 'max:64', 'regex:/^@?[A-Za-z0-9_]*$/'], 'message' => 'Назва каналу латиницею, без пробілів.'],
                     ['name' => 'groups', 'setting' => 'alerts_source_groups', 'type' => 'text', 'label' => 'Групи джерел',
                         'rules' => ['nullable', 'string', 'max:80', 'regex:/^(official|intel|regional|aggregators|,|\s)*$/'], 'message' => 'Лише official, intel, regional, aggregators через кому.'],
                 ],

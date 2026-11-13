@@ -451,7 +451,10 @@ class Push {
     // Тривога при відкритому застосунку — ще й свій звук з файлу, якщо обрано.
     if (alert) unawaited(AlertSound.play(session.prefs));
     final channel = chat ? _messages : (alert ? _alerts : _activity);
-    final tag = chat ? 'chat-${data['conversation_id']}' : null;
+    // Тривога — один «слот»: відбій замінює тривогу, а не складається в пачку.
+    final tag = chat ? 'chat-${data['conversation_id']}' : (alert ? 'air-alert' : null);
+    final yellow = data['severity'] == 'yellow';
+    final clear = data['severity'] == 'clear';
     await _local.show(
       id: (tag ?? message.messageId ?? '${DateTime.now().millisecondsSinceEpoch}').hashCode & 0x7fffffff,
       title: note.title,
@@ -462,10 +465,11 @@ class Push {
           channel.id,
           channel.name,
           channelDescription: channel.description,
-          importance: Importance.high,
-          priority: Priority.high,
+          importance: alert && !yellow && !clear ? Importance.max : Importance.high,
+          priority: alert && !yellow && !clear ? Priority.max : Priority.high,
           icon: 'ic_notification',
-          color: primary,
+          // Червона тривога — червоний акцент, жовта — бурштиновий.
+          color: alert ? (clear ? const Color(0xFF10B981) : (yellow ? const Color(0xFFF59E0B) : const Color(0xFFEF4444))) : primary,
           tag: tag,
           styleInformation: BigTextStyleInformation(note.body ?? ''),
         ),

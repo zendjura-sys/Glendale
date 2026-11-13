@@ -42,6 +42,7 @@ import { timeAgo } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import type { NotificationItem } from '@/types';
 import { UserAvatar } from './user-avatar';
+import { AlertNotification } from '@/components/alerts/alert-notification';
 import { WebPushButton } from './web-push-toggle';
 import { tr } from '@/lib/i18n';
 
@@ -235,6 +236,16 @@ export function NotificationsMenu() {
                                     </div>
                                 ) : (
                                     items.map((item) => {
+                                        if (item.alert)
+                                            return (
+                                                <AlertNotification
+                                                    key={item.id}
+                                                    item={item}
+                                                    onOpen={() =>
+                                                        setOpen(false)
+                                                    }
+                                                />
+                                            );
                                         const meta =
                                             kindIcon[item.kind] ??
                                             (item.kind.startsWith('family_')

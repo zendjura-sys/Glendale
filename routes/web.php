@@ -1140,6 +1140,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     Route::get('alerts', [AirAlertController::class, 'index'])->name('alerts.index');
     Route::get('alerts/state', [AirAlertController::class, 'state'])->middleware('throttle:120,1')->name('alerts.state');
     Route::put('alerts/preferences', [AirAlertController::class, 'preferences'])->middleware('throttle:30,1')->name('alerts.preferences');
+    Route::get('alerts/units', [AirAlertController::class, 'units'])->middleware('throttle:60,1')->name('alerts.units');
     // Четверта колонка на екранах 2K+: друзі онлайн і бесіди.
     Route::get('me/rail', RailController::class)->middleware('throttle:60,1')->name('rail');
     Route::get('me/hub', HubController::class)->middleware('throttle:60,1')->name('hub');

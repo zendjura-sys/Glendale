@@ -26,6 +26,7 @@ import {
     threatTitle,
 } from '@/components/alerts/alert-map';
 import { AlertBadge } from '@/components/alerts/alert-badge';
+import { AlertPlacePicker } from '@/components/alerts/alert-place';
 import { Toggle } from '@/components/gc/admin';
 import {
     AIR_RAID_SCALE_COLORS,
@@ -49,6 +50,7 @@ import {
 import type {
     AlertLayer,
     AlertPrefs,
+    AlertPrefsPatch,
     AlertSourceGroup,
     AlertState,
 } from '@/components/alerts/alert-utils';
@@ -193,7 +195,7 @@ export default function Alerts(props: {
         };
     }, []);
 
-    const save = (patch: Partial<AlertPrefs>) =>
+    const save = (patch: AlertPrefsPatch) =>
         api<{ prefs: AlertPrefs }>('PUT', '/alerts/preferences', patch)
             .then((d) => {
                 setPrefs(d.prefs);
@@ -343,7 +345,7 @@ export default function Alerts(props: {
                             <Toggle
                                 checked={prefs.push}
                                 onChange={(v) => save({ push: v })}
-                                label={tr('Сповіщення про тривогу')}
+                                label={tr('Отримувати сповіщення про тривоги')}
                             />
                         </label>
                         <button
@@ -387,6 +389,7 @@ export default function Alerts(props: {
                                 : tr('Я в укритті')}
                         </button>
                     </div>
+                    <AlertPlacePicker prefs={prefs} onSave={save} />
                 </section>
 
                 <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">

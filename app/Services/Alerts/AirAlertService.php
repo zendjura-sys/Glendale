@@ -6,7 +6,6 @@ use App\Enums\AlertScale;
 use App\Enums\AlertType;
 use App\Models\AirThreat;
 use App\Models\User;
-use App\Notifications\AirAlertNotice;
 use App\Services\Geo\VisitorCountry;
 use App\Support\Plugins\Plugins;
 use App\Support\Settings\SiteSettings;
@@ -22,7 +21,7 @@ use Illuminate\Support\Str;
 use Throwable;
 
 /**
- * Мапа тривог і радар цілей (лише для України): стан областей з alerts.in.ua (запасне джерело — ubilling),
+ * Мапа тривог і радар цілей (лише для України): стан тривог — виключно з офіційного API UkraineAlarm v3,
  * повітряні цілі з публічних зведень Повітряних сил ЗСУ (t.me/s/kpszsu) — лише приблизне місце (центр міста
  * чи області з повідомлення) і курс. Жодних точних координат, даних від людей, місць влучань і роботи ППО.
  */
@@ -231,41 +230,19 @@ class AirAlertService
     }
 
     /**
-     * Активні тривоги: офіційний UkraineAlarm, далі alerts.in.ua з токеном, далі ubilling; якщо всі мовчать —
-     * останній вдалий стан (до 10 хв) з позначкою «може бути неактуальним».
+     * Активні тривоги — ВИКЛЮЧНО з офіційного API UkraineAlarm v3. Інших джерел статусу немає: без ключа
+     * чи коли API мовчить — останній вдалий стан (до 10 хв) з позначкою «може бути неактуальним».
      *
      * @return array{regions: array<string, array{type: string, kind: string, started_at: string|null, codes?: array<string, bool>}>, units: array<string, array{kind: string, started_at: string|null, scale?: string, codes?: array<string, bool>}>, source: string|null, stale: bool}
      */
     public function fetchAlerts(): array
     {
-        $official = $this->settings->secret('ukrainealarm_token');
-        $token = $this->settings->secret('alerts_in_ua_token');
-        $rows = null;
-        $source = null;
-        if (is_string($official) && $official !== '') {
-            $rows = $this->fromUkraineAlarm($official);
-            $source = $rows !== null ? 'UkraineAlarm' : null;
-        }
-        if ($rows === null && is_string($token) && $token !== '') {
-            $rows = $this->fromAlertsInUa($token);
-            $source = $rows !== null ? 'alerts.in.ua' : null;
-        }
-        if ($rows === null) {
-            $rows = app(Neptun::class)->alertRows();
-            $source = $rows !== null ? 'NEPTUN' : null;
-        }
-        if ($rows === null) {
-            $rows = $this->fromChannel();
-            $source = $rows !== null ? 'Повітряна тривога (Telegram)' : null;
-        }
-        if ($rows === null) {
-            $rows = $this->fromUbilling();
-            $source = $rows !== null ? 'ubilling' : null;
-        }
+        $key = app(UkraineAlarm::class)->key();
+        $rows = $key !== null ? $this->fromUkraineAlarm($key) : null;
         if ($rows !== null) {
             Cache::put('alerts.last', $rows, now()->addMinutes(10));
 
-            return [...$this->aggregate($rows), 'source' => $source, 'stale' => false];
+            return [...$this->aggregate($rows), 'source' => 'UkraineAlarm', 'stale' => false];
         }
 
         return [...$this->aggregate($this->cachedRows()), 'source' => null, 'stale' => true];
@@ -430,104 +407,6 @@ class AirAlertService
         });
     }
 
-    /**
-     * alerts.in.ua: location_type oblast | raion | hromada | city, alert_type air_raid | artillery_shelling | …
-     *
-     * @return list<array{oblast: string, level: int, code: string|null, kind: string, started_at: string|null}>|null
-     */
-    private function fromAlertsInUa(string $token): ?array
-    {
-        try {
-            $response = Http::timeout(3)->withToken($token)->acceptJson()->get('https://api.alerts.in.ua/v1/alerts/active.json');
-        } catch (ConnectionException) {
-            return null;
-        }
-        if (! $response->successful() || ! is_array($response->json('alerts'))) {
-            return null;
-        }
-        $rows = [];
-        foreach ((array) $response->json('alerts') as $alert) {
-            if (! is_array($alert)) {
-                continue;
-            }
-            $slug = $this->slugFor((string) ($alert['location_oblast'] ?? $alert['location_title'] ?? ''));
-            if ($slug === null) {
-                continue;
-            }
-            $title = (string) ($alert['location_title'] ?? '');
-            $level = match ((string) ($alert['location_type'] ?? 'oblast')) {
-                'raion' => 2,
-                'hromada' => 3,
-                'city' => $this->slugFor($title) === $slug ? 1 : 3,
-                default => 1,
-            };
-            $raion = isset($alert['location_raion']) ? AlertUnits::find($slug, 2, (string) $alert['location_raion']) : null;
-            $rows[] = [
-                'oblast' => $slug,
-                'level' => $level,
-                'code' => $level === 1 ? null : AlertUnits::find($slug, $level, $title, $raion),
-                'kind' => self::kindOf((string) ($alert['alert_type'] ?? 'air_raid')),
-                'started_at' => isset($alert['started_at']) ? (string) $alert['started_at'] : null,
-            ];
-        }
-
-        return $rows;
-    }
-
-    /**
-     * Без ключів: офіційний канал «Повітряна тривога» (райони й громади, види тривог). Давні тривоги, яких уже
-     * немає серед останніх дописів (окуповані території тощо), доповнюємо областями з ubilling.
-     *
-     * @return list<array{oblast: string, level: int, code: string|null, kind: string, started_at: string|null}>|null
-     */
-    private function fromChannel(): ?array
-    {
-        $channel = app(AirAlertChannel::class);
-        if (! $channel->fresh()) {
-            return null;
-        }
-        $rows = $channel->rows();
-        $covered = array_flip(array_column($rows, 'oblast'));
-        foreach ($this->fromUbilling() ?? [] as $row) {
-            if (! isset($covered[$row['oblast']])) {
-                $rows[] = $row;
-            }
-        }
-
-        return $rows;
-    }
-
-    /**
-     * Запасне відкрите джерело ubilling (лише області): {"states": {"Київська область": {"alertnow": true, "changed": "…"}}}.
-     *
-     * @return list<array{oblast: string, level: int, code: string|null, kind: string, started_at: string|null}>|null
-     */
-    private function fromUbilling(): ?array
-    {
-        try {
-            $response = Http::timeout(3)->acceptJson()->get('https://ubilling.net.ua/aerialalerts/');
-        } catch (ConnectionException) {
-            return null;
-        }
-        $states = $response->successful() ? ($response->json('states') ?? $response->json('alerts')) : null;
-        if (! is_array($states)) {
-            return null;
-        }
-        $rows = [];
-        foreach ($states as $name => $state) {
-            if (! is_array($state) || ! ($state['alertnow'] ?? $state['alert'] ?? $state['enabled'] ?? false)) {
-                continue;
-            }
-            $slug = $this->slugFor((string) $name);
-            if ($slug !== null) {
-                $changed = $state['changed'] ?? null;
-                $rows[] = ['oblast' => $slug, 'level' => 1, 'code' => null, 'kind' => 'air_raid', 'started_at' => is_string($changed) ? $changed : null];
-            }
-        }
-
-        return $rows;
-    }
-
     /** Slug регіону за назвою з API («Київська область», «м. Київ», «Автономна Республіка Крим»). */
     public function slugFor(string $name): ?string
     {
@@ -564,11 +443,6 @@ class AirAlertService
      */
     public function syncThreats(): array
     {
-        // Стан тривог з офіційного каналу — лише коли немає ключа API (з ключем він не потрібен).
-        if (blank($this->settings->secret('ukrainealarm_token')) && blank($this->settings->secret('alerts_in_ua_token'))) {
-            rescue(fn () => app(AirAlertChannel::class)->sync(), report: false);
-            Cache::forget('alerts.state');
-        }
         $created = 0;
         // Цілі вже дає NEPTUN — власний розбір десятків каналів не потрібен (запасний шлях, коли він мовчить).
         $posts = app(Neptun::class)->threatCards() === null ? $this->fetchChannels($this->channelsForRun()) : [];
@@ -577,7 +451,8 @@ class AirAlertService
         }
         AirThreat::query()->where('expires_at', '<', now()->subDay())->delete();
         Cache::forget('alerts.state');
-        $notified = $this->notifyChanges();
+        // Сповіщення про тривогу й відбій — окремо, кожні 10 с (alerts:watch).
+        $notified = 0;
         Log::info('alerts: sync', ['threats' => $created, 'notified' => $notified]);
 
         return ['threats' => $created, 'notified' => $notified];
@@ -907,59 +782,6 @@ class AirAlertService
     }
 
     /**
-     * Пуш тим, у кого в обраній області щойно почалась тривога чи настав відбій.
-     */
-    public function notifyChanges(): int
-    {
-        $state = $this->state();
-        if ($state['stale'] === true) {
-            return 0;
-        }
-        $active = [];
-        foreach (is_array($state['regions']) ? $state['regions'] : [] as $region) {
-            if (is_array($region) && ($region['active'] ?? false) === true) {
-                $active[] = (string) $region['slug'];
-            }
-        }
-        $previous = Cache::get('alerts.active');
-        Cache::put('alerts.active', $active, now()->addDay());
-        if (! is_array($previous)) {
-            // Перший запуск: лише запам’ятовуємо, щоб не розіслати «тривогу» всім одразу.
-            return 0;
-        }
-        $sent = 0;
-        foreach (array_diff($active, $previous) as $slug) {
-            $sent += $this->notifyRegion($slug, true);
-        }
-        foreach (array_diff($previous, $active) as $slug) {
-            $sent += $this->notifyRegion($slug, false);
-        }
-
-        return $sent;
-    }
-
-    private function notifyRegion(string $slug, bool $started): int
-    {
-        $name = self::REGIONS[$slug]['name'] ?? null;
-        if ($name === null) {
-            return 0;
-        }
-        $count = 0;
-        User::query()->where('preferences->alert_region', $slug)
-            ->chunkById(500, function ($users) use ($name, $started, &$count) {
-                foreach ($users as $user) {
-                    if ($user->pref('alert_push', true) === false) {
-                        continue;
-                    }
-                    rescue(fn () => $user->notify(new AirAlertNotice($started, $name)), report: false);
-                    $count++;
-                }
-            });
-
-        return $count;
-    }
-
-    /**
      * Перевірка всіх джерел для кнопки «Перевірити» в адмінці: що відповіло, що ні й чому.
      *
      * @return array{ok: bool, message: string}
@@ -987,29 +809,25 @@ class AirAlertService
             $ok = true;
             $lines[] = '✅ '.$label.': відповідає'.(is_int($rows) ? ', записів: '.$rows : '');
         };
-        $official = (string) $this->settings->secret('ukrainealarm_token');
-        $token = (string) $this->settings->secret('alerts_in_ua_token');
-        $check('UkraineAlarm', $official, fn () => ($r = $this->fromUkraineAlarm($official)) === null ? null : count($r));
-        $check('alerts.in.ua', $token, fn () => ($r = $this->fromAlertsInUa($token)) === null ? null : count($r));
+        $official = (string) app(UkraineAlarm::class)->key();
+        if ($official === '') {
+            $lines[] = '❌ UkraineAlarm: немає ключа — без нього тривог і сповіщень немає (інших джерел статусу не використовуємо).';
+        } else {
+            $check('UkraineAlarm /alerts', $official, fn () => ($r = $this->fromUkraineAlarm($official)) === null ? null : count($r));
+            $check('UkraineAlarm /alerts/status', $official, fn () => app(UkraineAlarm::class)->lastActionIndex());
+            $check('UkraineAlarm /regions', $official, fn () => ($r = app(UkraineAlarm::class)->regions()) === [] ? null : count($r));
+        }
         $neptun = app(Neptun::class);
         if (! $neptun->enabled()) {
             $lines[] = '— NEPTUN: вимкнено в налаштуваннях';
         } else {
             Cache::forget('alerts.neptun.'.md5('/api/v1/alerts'));
             Cache::forget('alerts.neptun.'.md5('/api/v1/threats'));
-            $check('NEPTUN тривоги', null, fn () => ($r = $neptun->alertRows()) === null ? null : count($r));
             $check('NEPTUN цілі', null, fn () => ($r = $neptun->threatCards()) === null ? null : count($r));
         }
-        $channel = app(AirAlertChannel::class)->channel();
-        $check('Канал @'.$channel, null, function () use ($channel) {
-            $response = Http::timeout(6)->get('https://t.me/s/'.$channel);
-
-            return $response->successful() ? count($this->parseChannel($response->body())) : null;
-        });
-        $check('ubilling', null, fn () => ($r = $this->fromUbilling()) === null ? null : count($r));
         Cache::forget('alerts.state');
         $source = $this->fetchAlerts()['source'];
-        $lines[] = $source !== null ? 'Зараз мапа бере тривоги з: '.$source : 'Жодне джерело тривог зараз не відповідає — мапа покаже останній збережений стан.';
+        $lines[] = $source !== null ? 'Зараз мапа бере тривоги з: '.$source : 'UkraineAlarm зараз не відповідає — мапа покаже останній збережений стан.';
         $lines[] = 'Показ: '.match ((string) ($this->settings->get('alerts_visibility') ?: 'ukraine')) {
             'all' => 'усім',
             'admins' => 'лише адміністраторам',

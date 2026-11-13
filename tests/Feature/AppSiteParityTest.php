@@ -63,6 +63,10 @@ class AppSiteParityTest extends TestCase
         $this->withToken($token)->getJson('/api/v1/me')->assertOk()->assertJsonPath('user.air_alerts', true);
         $this->withToken($token)->getJson('/api/v1/site/alerts/state')->assertOk()->assertJsonCount(26, 'regions');
         $this->withToken($token)->putJson('/api/v1/site/alerts/preferences', ['region' => 'kyiv', 'shelter' => true])->assertOk()->assertJsonPath('prefs.shelter', true);
+        // Вибір району/громади й типів тривог — як на сайті.
+        $this->withToken($token)->getJson('/api/v1/site/alerts/units?region=kyiv')->assertOk()->assertJsonPath('enabled', false);
+        $this->withToken($token)->putJson('/api/v1/site/alerts/preferences', ['yellow' => false, 'end' => false, 'silent' => true])->assertOk()
+            ->assertJsonPath('prefs.yellow', false)->assertJsonPath('prefs.end', false)->assertJsonPath('prefs.silent', true)->assertJsonPath('prefs.red', true);
     }
 
     public function test_app_reaches_cinema_overview_schedule_library_and_random(): void

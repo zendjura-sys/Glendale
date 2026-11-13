@@ -130,6 +130,7 @@ use App\Http\Controllers\TrackController;
 use App\Http\Controllers\TrackImportController;
 use App\Http\Controllers\TranslateController;
 use App\Http\Controllers\TransparencyController;
+use App\Http\Controllers\UkraineAlarmWebhookController;
 use App\Http\Controllers\VitalsController;
 use App\Http\Controllers\VoiceController;
 use App\Http\Controllers\WatchPartyController;
@@ -144,6 +145,8 @@ Route::post('livekit/webhook', [VoiceController::class, 'webhook'])->middleware(
 
 // Боти GameCon: оновлення Telegram (секрет у заголовку) і кнопки Discord (підпис Ed25519).
 Route::post('bots/telegram', Bots\TelegramWebhookController::class)->middleware('throttle:600,1')->name('bots.telegram.webhook');
+// Вебхук UkraineAlarm v3 (миттєві тривоги й відбої); секрет — у адресі.
+Route::post('alerts/ukraine-alarm/{secret}', UkraineAlarmWebhookController::class)->middleware('throttle:600,1')->name('alerts.ukraine-alarm.webhook');
 Route::post('bots/discord/interactions', Bots\DiscordInteractionsController::class)->middleware('throttle:600,1')->name('bots.discord.interactions');
 
 // «Увійти через GameCon» для серверів: обмін коду, профіль гравця, синхронізація онлайну.
@@ -483,6 +486,7 @@ Route::prefix('v1')->group(function () {
                 Route::get('alerts', [AirAlertController::class, 'state'])->middleware('throttle:120,1');
                 Route::get('alerts/state', [AirAlertController::class, 'state'])->middleware('throttle:120,1');
                 Route::put('alerts/preferences', [AirAlertController::class, 'preferences'])->middleware('throttle:30,1');
+                Route::get('alerts/units', [AirAlertController::class, 'units'])->middleware('throttle:60,1');
                 Route::get('games/awards', [GameAwardsController::class, 'index']);
                 Route::get('games/awards/candidates', [GameAwardsController::class, 'candidates'])->middleware('throttle:120,1');
                 Route::post('games/awards/vote', [GameAwardsController::class, 'vote'])->middleware('throttle:60,1');

@@ -224,4 +224,10 @@ return [
         'interval_ms' => (int) env('DISCOGS_INTERVAL_MS', 1000),
     ],
 
+    // Офіційний API тривог UkraineAlarm v3; webhook_secret — частина адреси нашого вебхука.
+    'ukraine_alarm' => [
+        'key' => env('UKRAINE_ALARM_KEY'),
+        'webhook_secret' => env('UKRAINE_ALARM_WEBHOOK_SECRET'),
+    ],
+
 ];

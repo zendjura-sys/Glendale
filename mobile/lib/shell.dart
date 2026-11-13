@@ -477,6 +477,7 @@ class NotificationRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (mapOf(row['alert']).isNotEmpty) return AlertNoticeRow(row: row, onTap: onTap);
     final actor = mapOf(row['actor']);
     final kind = noticeKind(text(row['kind']) ?? '');
     final name = text(actor['name']) ?? '';
@@ -527,6 +528,84 @@ class NotificationRow extends StatelessWidget {
             if (!read) Container(margin: EdgeInsets.only(top: 6, left: 6), width: 8, height: 8, decoration: BoxDecoration(color: primary, shape: BoxShape.circle)),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Тривога в сповіщеннях: червона — в укриття, жовта — увага; відбій — зелений.
+/// «Я в укритті (AFK)» ставить статус, який бачать друзі й клан.
+class AlertNoticeRow extends StatefulWidget {
+  const AlertNoticeRow({required this.row, required this.onTap, super.key});
+  final Map<String, dynamic> row;
+  final VoidCallback onTap;
+
+  @override
+  State<AlertNoticeRow> createState() => _AlertNoticeRowState();
+}
+
+class _AlertNoticeRowState extends State<AlertNoticeRow> {
+  bool sheltered = false;
+  bool busy = false;
+
+  Future<void> _shelter() async {
+    final session = AppScope.of(context).session;
+    setState(() => busy = true);
+    final ok = await attempt(context, () => session.api.put(Api.site('/alerts/preferences'), {'shelter': true}), success: tr('Статус «В укритті» видно друзям і родині.'));
+    if (!mounted) return;
+    setState(() {
+      busy = false;
+      sheltered = ok;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final alert = mapOf(widget.row['alert']);
+    final ended = alert['ended'] == true || alert['severity'] == 'clear';
+    final red = alert['severity'] != 'yellow' && !ended;
+    final accent = ended ? const Color(0xFF10B981) : (red ? const Color(0xFFEF4444) : const Color(0xFFF59E0B));
+    final label = ended ? tr('Відбій') : (red ? tr('Небезпека · в укриття') : tr('Увага · підвищена небезпека'));
+    final icon = ended ? LucideIcons.shieldCheck : (red ? LucideIcons.siren : LucideIcons.triangleAlert);
+    return InkWell(
+      onTap: widget.onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
+        decoration: BoxDecoration(
+          color: accent.withValues(alpha: ended ? 0.07 : 0.12),
+          borderRadius: BorderRadius.circular(12),
+          border: Border(left: BorderSide(color: accent, width: 2)),
+        ),
+        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(color: accent.withValues(alpha: 0.22), shape: BoxShape.circle),
+            child: Icon(icon, size: 20, color: accent),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(label, style: body(11.5, color: accent, weight: FontWeight.w700)),
+              const SizedBox(height: 2),
+              Text(text(widget.row['text']) ?? '', style: body(14, weight: FontWeight.w700)),
+              if (text(widget.row['excerpt']) != null) Padding(padding: const EdgeInsets.only(top: 2), child: Text(text(widget.row['excerpt'])!, style: body(12.5, color: muted))),
+              const SizedBox(height: 4),
+              Text(ago(widget.row['created_at']), style: body(11.5, color: faint)),
+              if (!ended) ...[
+                const SizedBox(height: 8),
+                GhostButton(
+                  label: sheltered ? tr('Ви в укритті') : tr('Я в укритті (AFK)'),
+                  icon: LucideIcons.shieldCheck,
+                  compact: true,
+                  expand: false,
+                  onPressed: sheltered || busy ? null : _shelter,
+                ),
+              ],
+            ]),
+          ),
+        ]),
       ),
     );
   }

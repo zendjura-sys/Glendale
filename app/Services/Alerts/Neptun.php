@@ -38,44 +38,6 @@ class Neptun
     }
 
     /**
-     * Тривоги: райони («odeska:odeskyi») й області цілком (окуповані — областю).
-     *
-     * @return list<array{oblast: string, level: int, code: string|null, kind: string, started_at: string|null}>|null
-     */
-    public function alertRows(): ?array
-    {
-        $data = $this->get('/api/v1/alerts');
-        if ($data === null || (! is_array($data['raions'] ?? null) && ! is_array($data['oblasts'] ?? null))) {
-            return null;
-        }
-        $rows = [];
-        foreach ((array) ($data['oblasts'] ?? []) as $item) {
-            if (! is_array($item)) {
-                continue;
-            }
-            $slug = $this->oblastSlug((string) ($item['key'] ?? ''), (string) ($item['name'] ?? ''));
-            if ($slug !== null) {
-                $rows[] = ['oblast' => $slug, 'level' => 1, 'code' => null, 'kind' => AirAlertService::kindOf((string) ($item['type'] ?? 'air_raid')), 'started_at' => self::time($item)];
-            }
-        }
-        foreach ((array) ($data['raions'] ?? []) as $item) {
-            if (! is_array($item)) {
-                continue;
-            }
-            [$oblastKey, $raionKey] = array_pad(explode(':', (string) ($item['key'] ?? ''), 2), 2, '');
-            $slug = $this->oblastSlug($oblastKey, (string) ($item['oblast'] ?? $item['region'] ?? ''));
-            if ($slug === null) {
-                continue;
-            }
-            $code = $this->raionCode($slug, $raionKey, (string) ($item['name'] ?? ''));
-            // Київ — окреме «місто-область»: райони міста не малюємо, лише місто цілком.
-            $rows[] = ['oblast' => $slug, 'level' => $code === null || $slug === 'kyiv' ? 1 : 2, 'code' => $slug === 'kyiv' ? null : $code, 'kind' => AirAlertService::kindOf((string) ($item['type'] ?? 'air_raid')), 'started_at' => self::time($item)];
-        }
-
-        return $rows;
-    }
-
-    /**
      * Активні цілі у форматі картки мапи (як AirThreat::toCard()).
      *
      * @return list<array<string, mixed>>|null

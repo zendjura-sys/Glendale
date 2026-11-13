@@ -28,8 +28,38 @@ export type AlertState = {
 
 export type AlertPrefs = {
     region: string | null;
+    /** Район чи громада з довідника UkraineAlarm; null — уся область. */
+    unit: { id: string; name: string; type: string } | null;
+    /** Чи є ключ UkraineAlarm — без нього тривог і сповіщень немає. */
+    units_enabled: boolean;
+    /** Отримувати сповіщення про тривоги взагалі. */
     push: boolean;
+    /** Фільтри: початок, відбій, червоні, жовті; беззвучно — лише рядок у дзвіночку. */
+    start: boolean;
+    end: boolean;
+    red: boolean;
+    yellow: boolean;
+    silent: boolean;
     shelter: boolean;
+};
+
+/** Що можна змінити в налаштуваннях тривог. */
+export type AlertPrefsPatch = {
+    region?: string | null;
+    unit?: string | null;
+    push?: boolean;
+    start?: boolean;
+    end?: boolean;
+    red?: boolean;
+    yellow?: boolean;
+    silent?: boolean;
+    shelter?: boolean;
+};
+
+export type AlertDistrict = {
+    id: string;
+    name: string;
+    communities: { id: string; name: string }[];
 };
 
 /** Тривалість «1 год 05 хв» від початку тривоги до зараз. */

@@ -2,13 +2,36 @@
 
 namespace App\Notifications;
 
+use App\Services\Alerts\UkraineAlarm;
 use App\Support\NotifyPrefs;
+use Carbon\CarbonImmutable;
 use Illuminate\Notifications\Notification;
+use Throwable;
 
-/** Тривога чи відбій в обраній людиною області — приходить і в тихі години. */
+/**
+ * Початок чи відбій тривоги за даними UkraineAlarm v3 — приходить і в тихі години.
+ * 🔴 червона — в укриття; 🟡 жовта — увага (зокрема локальна тривога в районі); 🟢 відбій — з тривалістю.
+ */
 class AirAlertNotice extends Notification
 {
-    public function __construct(public readonly bool $started, public readonly string $region) {}
+    /**
+     * @param  string  $region  назва регіону з довідника API
+     * @param  string|null  $at  час події — коли опитування/вебхук API побачили зміну (не час роботи черги)
+     * @param  bool  $local  тривога лише в районі чи громаді всередині обраної області
+     * @param  string|null  $alertKey  ключ пари «початок + відбій» (відбій оновлює той самий рядок)
+     * @param  string|null  $since  lastUpdate початку з API
+     * @param  bool  $silent  лише рядок у дзвіночку, без пушу
+     */
+    public function __construct(
+        public readonly bool $started,
+        public readonly string $region,
+        public readonly string $type = 'AIR',
+        public readonly ?string $at = null,
+        public readonly bool $local = false,
+        public readonly ?string $alertKey = null,
+        public readonly ?string $since = null,
+        public readonly bool $silent = false,
+    ) {}
 
     /**
      * @return list<string>
@@ -23,12 +46,50 @@ class AirAlertNotice extends Notification
      */
     public function toArray(object $notifiable): array
     {
+        $type = UkraineAlarm::type($this->type);
+        $severity = UkraineAlarm::severity($type, $this->local);
+        $name = UkraineAlarm::TYPES[$type][$this->started ? 0 : 1].($this->local && $this->started ? ' (локально)' : '');
+        $at = $this->at ?? now()->toIso8601String();
+        $minutes = $this->minutes($at);
+
         return [
             'kind' => $this->started ? 'air_alert' : 'air_alert_end',
             'actor_id' => null,
-            'text' => $this->started ? 'Повітряна тривога: '.$this->region : 'Відбій тривоги: '.$this->region,
-            'excerpt' => $this->started ? 'Пройдіть в укриття' : 'Можна виходити з укриття',
+            'text' => $name.': '.$this->region,
+            'excerpt' => match (true) {
+                ! $this->started => ($minutes !== null ? 'Тривала '.self::duration($minutes).' · ' : '').'можна виходити з укриття',
+                $severity === 'red' => 'Негайно пройдіть в укриття',
+                $this->local => 'Увага: тривога в частині області',
+                default => 'Увага: підвищена небезпека',
+            },
+            'alert_type' => $type,
+            'severity' => $this->started ? $severity : 'clear',
+            'start_severity' => $severity,
+            'local' => $this->local,
+            'region' => $this->region,
+            'alert_key' => $this->alertKey,
+            'started_at' => $this->since,
+            'event_at' => $at,
+            'duration_min' => $this->started ? null : $minutes,
+            'silent' => $this->silent,
             'url' => '/alerts',
         ];
+    }
+
+    private function minutes(string $at): ?int
+    {
+        if ($this->since === null) {
+            return null;
+        }
+        try {
+            return max(0, intdiv(CarbonImmutable::parse($at)->getTimestamp() - CarbonImmutable::parse($this->since)->getTimestamp(), 60));
+        } catch (Throwable) {
+            return null;
+        }
+    }
+
+    public static function duration(int $minutes): string
+    {
+        return $minutes >= 60 ? intdiv($minutes, 60).' год '.str_pad((string) ($minutes % 60), 2, '0', STR_PAD_LEFT).' хв' : $minutes.' хв';
     }
 }

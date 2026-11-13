@@ -30,6 +30,9 @@ class PushNotifier
     /** Тривога й відбій в обраній області: окремий гучний канал. */
     public const CHANNEL_ALERTS = 'air_alerts';
 
+    /** Пуш про тривогу актуальний 60 с: пізніше FCM його не доставляє. */
+    public const ALERT_TTL = 60;
+
     /** Вхідні дзвінки: окремий канал із мелодією й показом поверх екрана. */
     public const CHANNEL_CALLS = 'calls';
 
@@ -45,6 +48,10 @@ class PushNotifier
         }
 
         $data = $notification->data;
+        // Беззвучний режим тривог: лише рядок у дзвіночку.
+        if (($data['silent'] ?? false) === true) {
+            return;
+        }
         $title = $this->sender($data);
         // Текст сповіщення — мовою отримувача.
         $text = app(Translations::class)->line(trim((string) ($data['text'] ?? '')), app(Locales::class)->forUser($notifiable));
@@ -55,18 +62,27 @@ class PushNotifier
             return;
         }
 
-        SendPushNotification::dispatch(
+        $alert = str_starts_with((string) ($data['kind'] ?? ''), 'air_alert');
+        $job = new SendPushNotification(
             $notifiable->id,
             $title,
             Str::ucfirst($body),
-            [
+            array_filter([
                 'type' => 'notification',
                 'id' => (string) $notification->id,
                 'kind' => (string) ($data['kind'] ?? 'generic'),
                 'url' => (string) ($data['url'] ?? '/notifications'),
-            ],
-            str_starts_with((string) ($data['kind'] ?? ''), 'air_alert') ? self::CHANNEL_ALERTS : self::CHANNEL_ACTIVITY,
+                'severity' => isset($data['severity']) ? (string) $data['severity'] : null,
+                'alert_type' => isset($data['alert_type']) ? (string) $data['alert_type'] : null,
+                'expires_at' => $alert ? (string) (now()->getTimestamp() + self::ALERT_TTL) : null,
+            ], fn ($v) => $v !== null),
+            $alert ? self::CHANNEL_ALERTS : self::CHANNEL_ACTIVITY,
+            // Тривога регіону — один «слот»: новий пуш замінює попередній, а не складається в пачку.
+            $alert ? 'air-alert' : null,
+            ttl: $alert ? self::ALERT_TTL : null,
         );
+        // Тривогу — одразу, повз загальну чергу: черга може стояти за важкими задачами хвилинами.
+        $alert ? dispatch_sync($job) : dispatch($job);
     }
 
     /**

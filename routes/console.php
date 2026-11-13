@@ -43,6 +43,8 @@ Schedule::command('games:steam-news')->cron('25 * * * *')->withoutOverlapping(50
 Schedule::command('appeals:sla')->cron('40 * * * *')->withoutOverlapping(10);
 // Мапа тривог: зведення, цілі й сповіщення про тривогу та відбій.
 Schedule::command('alerts:sync')->everyMinute()->withoutOverlapping(5)->runInBackground();
+// Тривога й відбій — кожні 10 с, щоб пуш приходив одразу (а не через хвилину й більше).
+Schedule::command('alerts:watch')->everyTenSeconds()->withoutOverlapping(1);
 Schedule::command('games:release-alerts')->dailyAt('10:10')->timezone('Europe/Kyiv')->withoutOverlapping(30);
 Schedule::command('games:wishlist-alerts')->cron('40 */6 * * *')->withoutOverlapping(120)->runInBackground();
 Schedule::command('digest:morning')->dailyAt('09:00')->timezone('Europe/Kyiv')->withoutOverlapping(60)->runInBackground();

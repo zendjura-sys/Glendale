@@ -6,14 +6,17 @@ use App\Enums\AlertScale;
 use App\Enums\AlertType;
 use App\Models\AirThreat;
 use App\Models\User;
-use App\Services\Alerts\AirAlertChannel;
+use App\Notifications\AirAlertNotice;
 use App\Services\Alerts\AirAlertService;
+use App\Services\Alerts\AlertWatcher;
+use App\Services\Alerts\UkraineAlarm;
 use App\Support\Plugins\Plugins;
 use App\Support\Settings\SiteSettings;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
@@ -60,69 +63,209 @@ class AirAlertsTest extends TestCase
         $this->assertSame('crimea', $this->service()->slugFor('Автономна Республіка Крим'));
     }
 
-    public function test_state_uses_alerts_in_ua_and_falls_back_to_ubilling(): void
+    /**
+     * Підміна UkraineAlarm v3: довідник регіонів і поточні activeAlerts. Будь-які інші хости — 503,
+     * щоб жодне стороннє джерело не могло вплинути на стан.
+     *
+     * @param  array<string, mixed>  $tree
+     */
+    private function fakeUkraineAlarm(array $tree, array &$alerts, int &$index): void
     {
-        Http::fake([
-            'api.alerts.in.ua/*' => Http::response(['alerts' => [
-                ['location_title' => 'Харківська область', 'location_type' => 'oblast', 'location_oblast' => 'Харківська область', 'alert_type' => 'air_raid', 'started_at' => now()->subMinutes(20)->toIso8601String()],
-                ['location_title' => 'Нікопольський район', 'location_type' => 'raion', 'location_oblast' => 'Дніпропетровська область', 'alert_type' => 'artillery_shelling', 'started_at' => now()->toIso8601String()],
-            ]]),
-            'ubilling.net.ua/*' => Http::response(['states' => ['Сумська область' => ['alertnow' => true, 'changed' => now()->toDateTimeString()]]]),
-            // Без підміни тест ходив би до справжніх NEPTUN і Telegram (у CI мережа є).
-            'neptun.in.ua/*' => Http::response(null, 503),
-            't.me/*' => Http::response(null, 503),
-        ]);
-        app(SiteSettings::class)->putSecret('alerts_in_ua_token', 'test-token-1234567890');
-        $state = $this->service()->state();
-        $kharkiv = collect($state['regions'])->firstWhere('slug', 'kharkiv');
-        $this->assertTrue($kharkiv['active']);
-        $this->assertSame('air_raid', $kharkiv['type']);
-        $this->assertGreaterThanOrEqual(19, $kharkiv['minutes']);
-        $this->assertSame('artillery', collect($state['regions'])->firstWhere('slug', 'dnipropetrovsk')['type']);
-        $this->assertSame('alerts.in.ua', $state['source']);
-        $this->assertCount(26, $state['regions']);
+        Http::fake(function ($request) use ($tree, &$alerts, &$index) {
+            $url = $request->url();
+            if (! str_contains($url, 'api.ukrainealarm.com')) {
+                return Http::response(null, 503);
+            }
+            if (str_contains($url, '/api/v3/regions')) {
+                return Http::response($tree);
+            }
+            if (str_contains($url, '/api/v3/alerts/status')) {
+                return Http::response(['lastActionIndex' => $index]);
+            }
 
-        app(SiteSettings::class)->putSecret('alerts_in_ua_token', null);
-        Cache::forget('alerts.state');
-        $state = $this->service()->state();
-        $this->assertSame('ubilling', $state['source']);
-        $this->assertTrue(collect($state['regions'])->firstWhere('slug', 'sumy')['active']);
-        $this->assertSame(1, $state['active_count']);
+            return Http::response($alerts);
+        });
+        app(SiteSettings::class)->putSecret('ukrainealarm_token', 'ua-alarm-key-1234567890');
     }
 
-    public function test_sync_reads_channel_and_notifies_region_changes(): void
+    /** @return array<string, mixed> */
+    private function zhytomyrTree(): array
+    {
+        return ['states' => [[
+            'regionId' => '10', 'regionName' => 'Житомирська область', 'regionType' => 'State',
+            'regionChildIds' => [[
+                'regionId' => '100', 'regionName' => 'Житомирський район', 'regionType' => 'District',
+                'regionChildIds' => [['regionId' => '1001', 'regionName' => 'Житомирська територіальна громада', 'regionType' => 'Community', 'regionChildIds' => []]],
+            ], [
+                'regionId' => '200', 'regionName' => 'Коростенський район', 'regionType' => 'District', 'regionChildIds' => [],
+            ]],
+        ]]];
+    }
+
+    /** @return array<string, mixed> */
+    private function row(string $id, string $regionType, string $type, ?string $at = null): array
+    {
+        return ['regionId' => $id, 'regionType' => $regionType, 'regionName' => '', 'activeAlerts' => [['regionId' => $id, 'regionType' => $regionType, 'type' => $type, 'lastUpdate' => $at ?? now()->toIso8601String()]]];
+    }
+
+    public function test_status_comes_only_from_ukraine_alarm(): void
+    {
+        // Сторонні джерела «бачать» тривогу, але без ключа UkraineAlarm стан порожній і сповіщень немає.
+        Http::fake([
+            'api.alerts.in.ua/*' => Http::response(['alerts' => [['location_title' => 'Харківська область', 'location_type' => 'oblast', 'alert_type' => 'air_raid']]]),
+            'ubilling.net.ua/*' => Http::response(['states' => ['Сумська область' => ['alertnow' => true]]]),
+            '*' => Http::response(null, 503),
+        ]);
+        app(SiteSettings::class)->putSecret('alerts_in_ua_token', 'test-token-1234567890');
+        $user = User::factory()->create();
+        $user->mergePref(['alert_region' => 'sumy']);
+        $state = $this->service()->state();
+        $this->assertNull($state['source']);
+        $this->assertSame(0, $state['active_count']);
+        $this->assertCount(26, $state['regions']);
+        $this->artisan('alerts:watch')->assertOk();
+        $this->assertSame(0, $user->notifications()->count());
+    }
+
+    public function test_sync_reads_threats_but_never_notifies(): void
     {
         $at = now()->subMinutes(3)->toIso8601String();
         $html = '<div class="tgme_widget_message_wrap js-widget_message_wrap"><div class="tgme_widget_message" data-post="kpszsu/101">'
             .'<div class="tgme_widget_message_text js-message_text" dir="auto">БпЛА з Чернігівщини курсом на Київщину</div>'
             .'<time datetime="'.$at.'" class="time">10:00</time></div></div>';
-        $states = ['states' => ['Київська область' => ['alertnow' => false]]];
-        Http::fake(function ($request) use ($html, &$states) {
-            return str_contains($request->url(), 't.me') ? Http::response($html) : Http::response($states);
-        });
+        Http::fake(fn ($request) => str_contains($request->url(), 't.me') ? Http::response($html) : Http::response(null, 503));
         $user = User::factory()->create();
         $user->mergePref(['alert_region' => 'kyiv-oblast']);
 
+        // Радар цілей працює окремо: мітки є, а тривог і сповіщень без UkraineAlarm немає.
         $this->artisan('alerts:sync')->assertOk();
+        $this->artisan('alerts:watch')->assertOk();
         $this->assertSame(1, AirThreat::query()->count());
         $threat = AirThreat::query()->first();
         $this->assertSame('uav', $threat->type);
         $this->assertSame('chernihiv', $threat->region_slug);
         $this->assertSame(0, $user->notifications()->count());
-
-        // Тривога почалась — сповіщення; повторний запуск без змін — нічого.
-        $states = ['states' => ['Київська область' => ['alertnow' => true, 'changed' => now()->toDateTimeString()]]];
-        $this->artisan('alerts:sync')->assertOk();
-        $this->artisan('alerts:sync')->assertOk();
-        $this->assertSame(1, AirThreat::query()->count());
-        $this->assertSame(1, $user->notifications()->count());
-        $this->assertSame('air_alert', $user->notifications()->first()->data['kind']);
         $this->assertCount(1, $this->service()->state()['feed']);
+    }
 
-        // Відбій.
-        $states = ['states' => ['Київська область' => ['alertnow' => false]]];
-        $this->artisan('alerts:sync')->assertOk();
-        $this->assertSame(2, $user->notifications()->count());
+    public function test_state_machine_notifies_start_and_end_exactly_once_by_last_action_index(): void
+    {
+        $alerts = [];
+        $index = 1;
+        $this->fakeUkraineAlarm($this->zhytomyrTree(), $alerts, $index);
+        $user = User::factory()->create(['country' => 'UA']);
+        $this->actingAs($user)->getJson('/alerts/units?region=zhytomyr')->assertOk()
+            ->assertJsonPath('districts.0.name', 'Житомирський район')
+            ->assertJsonPath('districts.0.communities.0.id', '1001');
+        $this->actingAs($user)->putJson('/alerts/preferences', ['unit' => '1001'])->assertOk()
+            ->assertJsonPath('prefs.region', 'zhytomyr')
+            ->assertJsonPath('prefs.unit.name', 'Житомирська територіальна громада');
+        $watcher = app(AlertWatcher::class);
+        $this->assertSame(0, $watcher->run()); // перший запуск лише запам'ятовує
+
+        // lastActionIndex не змінився — /alerts навіть не запитуємо.
+        $before = Http::recorded()->count();
+        $this->assertSame(0, $watcher->run());
+        $this->assertFalse(Http::recorded()->slice($before)->contains(fn ($pair) => str_ends_with($pair[0]->url(), '/api/v3/alerts')));
+
+        // Тривога в сусідньому районі — не моя.
+        [$alerts, $index] = [[$this->row('200', 'District', 'AIR')], 2];
+        $this->assertSame(0, $watcher->run());
+        // Тривога в моєму районі діє й на громаду; повтор опитування — без нових сповіщень.
+        [$alerts, $index] = [[$this->row('100', 'District', 'AIR')], 3];
+        $this->assertSame(1, $watcher->run());
+        $this->assertSame(0, $watcher->run());
+        $index = 4;
+        $this->assertSame(0, $watcher->run());
+        // Перейшла на всю область — та сама тривога для громади, не нове сповіщення.
+        [$alerts, $index] = [[$this->row('10', 'State', 'AIR'), $this->row('100', 'District', 'AIR')], 5];
+        $this->assertSame(0, $watcher->run());
+        $start = $user->notifications()->first();
+        $this->assertSame('red', $start->data['severity']);
+        $this->assertSame('Повітряна тривога: Житомирська територіальна громада', $start->data['text']);
+
+        // Відбій — оновлює той самий рядок у дзвіночку (пара «початок + відбій»), з тривалістю.
+        $this->travel(65)->minutes();
+        $watcher->run(); // воркер «стояв» — перша перевірка після паузи лише запам'ятовує
+        [$alerts, $index] = [[], 6];
+        $this->assertSame(1, $watcher->run());
+        $this->assertSame(1, $user->notifications()->count());
+        $row = $user->notifications()->first();
+        $this->assertSame('air_alert_end', $row->data['kind']);
+        $this->assertSame('clear', $row->data['severity']);
+        $this->assertSame('Відбій повітряної тривоги: Житомирська територіальна громада', $row->data['text']);
+        $this->assertStringStartsWith('Тривала 1 год 05 хв', $row->data['excerpt']);
+        $this->assertNull($row->read_at);
+    }
+
+    public function test_red_yellow_local_filters_and_no_backfill(): void
+    {
+        $alerts = [];
+        $index = 1;
+        $this->fakeUkraineAlarm($this->zhytomyrTree(), $alerts, $index);
+        $user = User::factory()->create();
+        $user->mergePref(['alert_region' => 'zhytomyr']);
+        $watcher = app(AlertWatcher::class);
+        $watcher->run();
+
+        // Подія 5 хв тому (пропущена пачка) — стан запам'ятовано, пуш не йде.
+        [$alerts, $index] = [[$this->row('10', 'State', 'AIR', now()->subMinutes(5)->toIso8601String())], 2];
+        $this->assertSame(0, $watcher->run());
+        // Артобстріл — жовта тривога.
+        [$alerts, $index] = [[...$alerts, $this->row('10', 'State', 'ARTILLERY')], 3];
+        $this->assertSame(1, $watcher->run());
+        $data = $user->notifications()->first()->data;
+        $this->assertSame(['yellow', 'ARTILLERY', 'Загроза артобстрілу: Житомирська область'], [$data['severity'], $data['alert_type'], $data['text']]);
+
+        // Обрана вся область, а повітряна тривога лише в районі — жовта «локальна» з назвою району.
+        // (Тривога й артобстріл на всю область скінчились — два відбої, плюс локальна в районі.)
+        [$alerts, $index] = [[$this->row('200', 'District', 'AIR')], 4];
+        $this->assertSame(3, $watcher->run());
+        $local = $user->notifications()->get()->first(fn ($n) => $n->data['local'] ?? false);
+        $this->assertSame(['yellow', 'Повітряна тривога (локально): Коростенський район'], [$local->data['severity'], $local->data['text']]);
+
+        // Фільтри: жовті вимкнено, відбій вимкнено, беззвучно — без пушу.
+        $user->mergePref(['alert_yellow' => false]);
+        [$alerts, $index] = [[$this->row('200', 'District', 'AIR'), $this->row('10', 'State', 'INFO')], 5];
+        $this->assertSame(0, $watcher->run());
+        $user->mergePref(['alert_silent' => true]);
+        [$alerts, $index] = [[$this->row('10', 'State', 'NUCLEAR')], 6];
+        $this->assertSame(1, $watcher->run());
+        $this->assertTrue($user->notifications()->get()->firstWhere('data.alert_type', 'NUCLEAR')->data['silent']);
+
+        // Воркер стояв 2 хв: відбій, що стався за цей час, не надсилається «заднім числом».
+        $count = $user->notifications()->count();
+        $this->travel(2)->minutes();
+        [$alerts, $index] = [[], 7];
+        $this->assertSame(0, $watcher->run());
+        $this->assertSame($count, $user->notifications()->count());
+    }
+
+    public function test_webhook_triggers_check_only_with_secret_and_cleanup_removes_old_duplicates(): void
+    {
+        $alerts = [];
+        $index = 1;
+        $this->fakeUkraineAlarm($this->zhytomyrTree(), $alerts, $index);
+        $user = User::factory()->create();
+        $user->mergePref(['alert_region' => 'zhytomyr']);
+        app(AlertWatcher::class)->run();
+
+        $secret = app(UkraineAlarm::class)->webhookSecret();
+        $this->postJson('/api/alerts/ukraine-alarm/wrong', [])->assertNotFound();
+        // Вебхук — лише сигнал: тривога все одно підтверджується через API.
+        $this->postJson('/api/alerts/ukraine-alarm/'.$secret, ['regionId' => '10', 'alertType' => 'AIR'])->assertOk();
+        $this->assertSame(0, $user->notifications()->count());
+        [$alerts, $index] = [[$this->row('10', 'State', 'AIR')], 2];
+        $this->postJson('/api/alerts/ukraine-alarm/'.$secret, ['regionId' => '10'])->assertOk();
+        $this->postJson('/api/alerts/ukraine-alarm/'.$secret, ['regionId' => '10'])->assertOk();
+        $this->assertSame(1, $user->notifications()->count());
+
+        // Старі дублі (без alert_key) прибирає команда; нові лишаються.
+        foreach (range(1, 4) as $i) {
+            $user->notifications()->create(['id' => (string) Str::uuid(), 'type' => AirAlertNotice::class, 'data' => ['kind' => 'air_alert', 'text' => 'Повітряна тривога: Житомирська область']]);
+        }
+        $this->artisan('alerts:clean-notifications')->assertOk();
+        $this->assertSame(1, $user->notifications()->count());
     }
 
     public function test_only_for_ukraine_and_preferences_set_shelter_status(): void
@@ -203,16 +346,19 @@ class AirAlertsTest extends TestCase
 
     public function test_alerts_by_raion_and_hromada_with_kinds(): void
     {
-        Http::fake([
-            'api.alerts.in.ua/*' => Http::response(['alerts' => [
-                ['location_type' => 'raion', 'location_title' => 'Бучанський район', 'location_oblast' => 'Київська область', 'alert_type' => 'air_raid', 'started_at' => now()->subMinutes(5)->toIso8601String()],
-                ['location_type' => 'hromada', 'location_title' => 'Нікопольська територіальна громада', 'location_oblast' => 'Дніпропетровська область', 'alert_type' => 'artillery_shelling', 'started_at' => now()->toIso8601String()],
-                ['location_type' => 'oblast', 'location_title' => 'Луганська область', 'location_oblast' => 'Луганська область', 'alert_type' => 'air_raid', 'started_at' => now()->subDays(900)->toIso8601String()],
-                ['location_type' => 'raion', 'location_title' => 'Шосткинський район', 'location_oblast' => 'Сумська область', 'alert_type' => 'chemical', 'started_at' => now()->toIso8601String()],
-            ]]),
-            '*' => Http::response(['states' => []]),
-        ]);
-        app(SiteSettings::class)->putSecret('alerts_in_ua_token', 'test-token-1234567890');
+        $alerts = [
+            ['regionId' => '141', 'regionType' => 'District', 'regionName' => 'Бучанський район', 'activeAlerts' => [['regionId' => '141', 'regionType' => 'District', 'type' => 'AIR', 'lastUpdate' => now()->subMinutes(5)->toIso8601String()]]],
+            ['regionId' => '911', 'regionType' => 'Community', 'regionName' => 'Нікопольська територіальна громада', 'activeAlerts' => [['regionId' => '911', 'regionType' => 'Community', 'type' => 'ARTILLERY', 'lastUpdate' => now()->toIso8601String()]]],
+            ['regionId' => '16', 'regionType' => 'State', 'regionName' => 'Луганська область', 'activeAlerts' => [['regionId' => '16', 'regionType' => 'State', 'type' => 'AIR', 'lastUpdate' => now()->subDays(900)->toIso8601String()]]],
+            ['regionId' => '181', 'regionType' => 'District', 'regionName' => 'Шосткинський район', 'activeAlerts' => [['regionId' => '181', 'regionType' => 'District', 'type' => 'CHEMICAL', 'lastUpdate' => now()->toIso8601String()]]],
+        ];
+        $index = 1;
+        $this->fakeUkraineAlarm(['states' => [
+            ['regionId' => '14', 'regionName' => 'Київська область', 'regionType' => 'State', 'regionChildIds' => [['regionId' => '141', 'regionName' => 'Бучанський район', 'regionType' => 'District', 'regionChildIds' => []]]],
+            ['regionId' => '9', 'regionName' => 'Дніпропетровська область', 'regionType' => 'State', 'regionChildIds' => [['regionId' => '91', 'regionName' => 'Нікопольський район', 'regionType' => 'District', 'regionChildIds' => [['regionId' => '911', 'regionName' => 'Нікопольська територіальна громада', 'regionType' => 'Community', 'regionChildIds' => []]]]]],
+            ['regionId' => '16', 'regionName' => 'Луганська область', 'regionType' => 'State', 'regionChildIds' => []],
+            ['regionId' => '18', 'regionName' => 'Сумська область', 'regionType' => 'State', 'regionChildIds' => [['regionId' => '181', 'regionName' => 'Шосткинський район', 'regionType' => 'District', 'regionChildIds' => []]]],
+        ]], $alerts, $index);
         $state = $this->service()->state();
         $units = collect($state['units'])->keyBy('code');
         $regions = collect($state['regions'])->keyBy('slug');
@@ -228,39 +374,6 @@ class AirAlertsTest extends TestCase
         // Хімічна загроза — свій вид.
         $this->assertSame('chemical', $units['UA59100000000036457']['kind']);
         $this->assertSame('chemical', $regions['sumy']['type']);
-    }
-
-    public function test_status_without_key_from_official_channel(): void
-    {
-        $post = fn (int $id, string $text, int $minutesAgo) => '<div class="tgme_widget_message_wrap js-widget_message_wrap"><div class="tgme_widget_message" data-post="air_alert_ua/'.$id.'">'
-            .'<div class="tgme_widget_message_text js-message_text" dir="auto">'.$text.'</div>'
-            .'<time datetime="'.now()->subMinutes($minutesAgo)->toIso8601String().'" class="time">10:00</time></div></div>';
-        $html = $post(101, '🔴 10:00 Повітряна тривога в Харківська область.<br/>Слідкуйте за подальшими повідомленнями.<br/>#Харківська_область', 30)
-            .$post(102, '🔴 10:05 Повітряна тривога в Бучанський район.<br/>#Київська_область', 25)
-            .$post(103, '🟡 10:06 Загроза артобстрілу в Нікопольська територіальна громада.<br/>#Дніпропетровська_область', 24)
-            .$post(104, '🔴 10:07 Повітряна тривога в Шосткинський район.<br/>#Сумська_область', 23)
-            .$post(105, '🟢 10:20 Відбій тривоги в Шосткинський район.<br/>#Сумська_область', 10);
-        Http::fake(function ($request) use ($html) {
-            return str_contains($request->url(), 't.me/s/air_alert_ua')
-                ? Http::response(str_contains($request->url(), 'before=') ? '' : $html)
-                : Http::response(['states' => ['Луганська область' => ['alertnow' => true, 'changed' => '2022-04-04 19:45:39'], 'Харківська область' => ['alertnow' => true]]]);
-        });
-
-        $this->artisan('alerts:sync')->assertOk();
-        $state = $this->service()->state();
-        $this->assertSame('Повітряна тривога (Telegram)', $state['source']);
-        $regions = collect($state['regions'])->keyBy('slug');
-        $units = collect($state['units'])->keyBy('code');
-        $this->assertSame('air_raid', $regions['kharkiv']['type']);
-        $this->assertSame('partial', $regions['kyiv-oblast']['type']);
-        $this->assertSame('artillery', $units['UA12080050000062712']['kind']);
-        // Відбій знімає тривогу.
-        $this->assertFalse($regions['sumy']['active']);
-        // Давня тривога, якої немає в останніх дописах, — з ubilling.
-        $this->assertTrue($regions['luhansk']['active']);
-
-        // Повторний запуск не застосовує ті самі дописи вдруге.
-        $this->assertSame(0, app(AirAlertChannel::class)->sync());
     }
 
     public function test_neptun_open_api_without_keys(): void
@@ -287,15 +400,10 @@ class AirAlertsTest extends TestCase
         ]);
         $state = $this->service()->state();
 
-        $this->assertSame('NEPTUN', $state['source']);
+        // Тривоги NEPTUN більше не беремо — лише UkraineAlarm; NEPTUN дає тільки цілі на радар.
+        $this->assertNull($state['source']);
         $this->assertSame('Дані: Карта повітряних загроз NEPTUN', $state['attribution']['text']);
-        $regions = collect($state['regions'])->keyBy('slug');
-        $this->assertSame('partial', $regions['odesa']['type']);
-        $this->assertSame('air_raid', $regions['crimea']['type']);
-        $units = collect($state['units'])->keyBy('code');
-        // Райони за ключем без назви (транслітерація) теж знаходимо.
-        $this->assertTrue($units->has('UA32080000000084076'));
-        $this->assertSame(11, $units->filter(fn ($u, $code) => str_starts_with($code, 'UA01') || str_starts_with($code, 'UA85'))->count());
+        $this->assertFalse(collect($state['regions'])->firstWhere('slug', 'odesa')['active']);
 
         $shahed = collect($state['threats'])->firstWhere('place', 'Чорноморськ');
         $this->assertSame('uav', $shahed['type']);
@@ -315,7 +423,7 @@ class AirAlertsTest extends TestCase
         // Вимкнено в налаштуваннях — NEPTUN не питаємо.
         app(SiteSettings::class)->put(['alerts_neptun' => '0']);
         Cache::forget('alerts.state');
-        $this->assertNotSame('NEPTUN', $this->service()->state()['source']);
+        $this->assertNull($this->service()->state()['attribution'] ?? null);
     }
 
     public function test_visibility_modes_and_source_diagnostics(): void
@@ -338,13 +446,13 @@ class AirAlertsTest extends TestCase
         app(SiteSettings::class)->put(['alerts_visibility' => 'all']);
         $this->actingAs($foreign)->getJson('/alerts/state')->assertOk();
 
-        // Перевірка в адмінці: картка налаштована без ключів, тост перелічує джерела.
+        // Перевірка в адмінці: без ключа UkraineAlarm тривог немає, тост це каже.
         $this->actingAs($admin)->post('/admin/integrations/cinema/air_alerts/test')->assertRedirect();
         $toast = session('inertia.flash_data.toast') ?? session('inertia.flash.toast') ?? collect(session()->all())->flatten(5)->first(fn ($v) => is_string($v) && str_contains($v, 'NEPTUN'));
         $message = is_array($toast) ? $toast['message'] : (string) $toast;
-        $this->assertStringContainsString('UkraineAlarm: ключ не задано', $message);
-        $this->assertStringContainsString('✅ NEPTUN тривоги', $message);
-        $this->assertStringContainsString('Зараз мапа бере тривоги з: NEPTUN', $message);
+        $this->assertStringContainsString('UkraineAlarm: немає ключа', $message);
+        $this->assertStringContainsString('✅ NEPTUN цілі', $message);
+        $this->assertStringContainsString('UkraineAlarm зараз не відповідає', $message);
     }
 
     public function test_alert_types_priority_scale_and_threat_levels(): void
@@ -355,15 +463,19 @@ class AirAlertsTest extends TestCase
         $this->assertSame(AlertScale::HROMADA, AlertScale::fromApi('Community'));
         $this->assertSame('#E11D48', AlertType::AIR->colors(AlertScale::RAION)['hex']);
 
-        Http::fake([
-            'api.alerts.in.ua/*' => Http::response(['alerts' => [
-                ['location_type' => 'oblast', 'location_title' => 'Сумська область', 'location_oblast' => 'Сумська область', 'alert_type' => 'air_raid'],
-                ['location_type' => 'raion', 'location_title' => 'Шосткинський район', 'location_oblast' => 'Сумська область', 'alert_type' => 'chemical'],
-                ['location_type' => 'raion', 'location_title' => 'Бучанський район', 'location_oblast' => 'Київська область', 'alert_type' => 'air_raid'],
-            ]]),
-            '*' => Http::response(['states' => []]),
-        ]);
-        app(SiteSettings::class)->putSecret('alerts_in_ua_token', 'test-token-1234567890');
+        $alerts = [
+            $this->row('18', 'State', 'AIR'),
+            ['regionId' => '181', 'regionType' => 'District', 'regionName' => 'Шосткинський район', 'activeAlerts' => [['regionId' => '181', 'regionType' => 'District', 'type' => 'CHEMICAL', 'lastUpdate' => now()->toIso8601String()]]],
+            ['regionId' => '141', 'regionType' => 'District', 'regionName' => 'Бучанський район', 'activeAlerts' => [['regionId' => '141', 'regionType' => 'District', 'type' => 'AIR', 'lastUpdate' => now()->toIso8601String()]]],
+        ];
+        $alerts[0]['regionName'] = 'Сумська область';
+        $index = 1;
+        $this->fakeUkraineAlarm(['states' => [
+            ['regionId' => '14', 'regionName' => 'Київська область', 'regionType' => 'State', 'regionChildIds' => [['regionId' => '141', 'regionName' => 'Бучанський район', 'regionType' => 'District', 'regionChildIds' => []]]],
+            ['regionId' => '9', 'regionName' => 'Дніпропетровська область', 'regionType' => 'State', 'regionChildIds' => [['regionId' => '91', 'regionName' => 'Нікопольський район', 'regionType' => 'District', 'regionChildIds' => [['regionId' => '911', 'regionName' => 'Нікопольська територіальна громада', 'regionType' => 'Community', 'regionChildIds' => []]]]]],
+            ['regionId' => '16', 'regionName' => 'Луганська область', 'regionType' => 'State', 'regionChildIds' => []],
+            ['regionId' => '18', 'regionName' => 'Сумська область', 'regionType' => 'State', 'regionChildIds' => [['regionId' => '181', 'regionName' => 'Шосткинський район', 'regionType' => 'District', 'regionChildIds' => []]]],
+        ]], $alerts, $index);
         AirThreat::query()->create(['type' => 'ballistic', 'region_slug' => 'kharkiv', 'place_name' => 'Харків', 'title' => 'Балістика', 'lat' => 50, 'lng' => 36.2, 'detected_at' => now(), 'expires_at' => now()->addMinutes(5)]);
         AirThreat::query()->create(['type' => 'uav', 'region_slug' => 'sumy', 'place_name' => 'Суми', 'title' => 'Шахед', 'lat' => 50.9, 'lng' => 34.8, 'detected_at' => now(), 'expires_at' => now()->addMinutes(5)]);
         $state = $this->service()->state();

@@ -311,6 +311,33 @@ class _AlertsScreenState extends State<AlertsScreen> {
               items: [for (final r in regionList) (text(r['slug'])!, text(r['name']) ?? '')],
               onChanged: (v) => _save({'region': v}),
             ),
+            if (mineSlug != null && prefs['units_enabled'] == true)
+              _AlertPlace(key: ValueKey(mineSlug), region: mineSlug, prefs: prefs, onSave: _save),
+            const SizedBox(height: 12),
+            Text(tr('Налаштування сповіщень тривог'), style: body(14.5, weight: FontWeight.w700)),
+            if (prefs['units_enabled'] != true)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(tr('Офіційне джерело UkraineAlarm ще не підключено — сповіщень про тривоги поки немає.'), style: body(12.5, color: const Color(0xFFF59E0B))),
+              ),
+            for (final f in [
+              ('start', tr('Початок тривоги'), tr('одразу, як API оголосить тривогу'), null),
+              ('end', tr('Відбій тривоги'), tr('з тривалістю тривоги'), null),
+              ('red', tr('Червоні тривоги'), tr('повітряна, хімічна, радіаційна — в укриття'), const Color(0xFFEF4444)),
+              ('yellow', tr('Жовті тривоги'), tr('артобстріл, вуличні бої, інформаційні, локальні в районах'), const Color(0xFFF59E0B)),
+              ('silent', tr('Беззвучний режим'), tr('лише рядок у дзвіночку, без push і звуку'), null),
+            ])
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                dense: true,
+                value: f.$1 == 'silent' ? prefs['silent'] == true : prefs[f.$1] != false,
+                title: Row(children: [
+                  if (f.$4 != null) ...[Container(width: 8, height: 8, decoration: BoxDecoration(color: f.$4, shape: BoxShape.circle)), const SizedBox(width: 6)],
+                  Flexible(child: Text(f.$2, style: body(14, weight: FontWeight.w600))),
+                ]),
+                subtitle: Text(f.$3, style: body(12, color: muted)),
+                onChanged: prefs['push'] == false ? null : (v) => _save({f.$1: v}),
+              ),
             if (mine != null) ...[
               const SizedBox(height: 8),
               Text(
@@ -322,8 +349,8 @@ class _AlertsScreenState extends State<AlertsScreen> {
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
               value: prefs['push'] != false,
-              title: Text(tr('Сповіщення про тривогу'), style: body(14.5, weight: FontWeight.w600)),
-              subtitle: Text(tr('Push, коли в області почалась тривога чи відбій — навіть у тихі години.'), style: body(12.5, color: muted)),
+              title: Text(tr('Отримувати сповіщення про тривоги'), style: body(14.5, weight: FontWeight.w600)),
+              subtitle: Text(tr('Push одразу на початку й на відбій у вашому місці — навіть у тихі години.'), style: body(12.5, color: muted)),
               onChanged: (v) => _save({'push': v}),
             ),
             SwitchListTile(
@@ -762,4 +789,63 @@ class _FlagMapPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_FlagMapPainter old) => old.active != active;
+}
+
+/// Район і громада для сповіщень (довідник UkraineAlarm): тривога в області чи районі діє й на громаду в ньому.
+class _AlertPlace extends StatefulWidget {
+  const _AlertPlace({required this.region, required this.prefs, required this.onSave, super.key});
+  final String region;
+  final Map<String, dynamic> prefs;
+  final Future<void> Function(Map<String, dynamic>) onSave;
+
+  @override
+  State<_AlertPlace> createState() => _AlertPlaceState();
+}
+
+class _AlertPlaceState extends State<_AlertPlace> {
+  List<Map<String, dynamic>> districts = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final d = await AppScope.read(context).session.api.get(Api.site('/alerts/units?region=${Uri.encodeQueryComponent(widget.region)}'));
+      if (mounted) setState(() => districts = maps(d['districts']));
+    } catch (_) {}
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (districts.isEmpty) return const SizedBox.shrink();
+    final unit = mapOf(widget.prefs['unit']);
+    final unitId = text(unit['id']);
+    final district = unit['type'] == 'District'
+        ? unitId
+        : text(districts.where((d) => maps(d['communities']).any((c) => c['id'] == unitId)).firstOrNull?['id']);
+    final communities = maps(districts.where((d) => d['id'] == district).firstOrNull?['communities']);
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        GcSelect<String>(
+          value: district ?? '',
+          expand: true,
+          items: [('', tr('Уся область')), for (final d in districts) (text(d['id'])!, text(d['name']) ?? '')],
+          onChanged: (v) => widget.onSave({'unit': (v == null || v.isEmpty) ? null : v}),
+        ),
+        if (district != null && communities.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          GcSelect<String>(
+            value: unit['type'] == 'Community' ? unitId : '',
+            expand: true,
+            items: [('', tr('Увесь район')), for (final c in communities) (text(c['id'])!, text(c['name']) ?? '')],
+            onChanged: (v) => widget.onSave({'unit': (v == null || v.isEmpty) ? district : v}),
+          ),
+        ],
+      ]),
+    );
+  }
 }

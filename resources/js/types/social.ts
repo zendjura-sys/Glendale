@@ -243,6 +243,13 @@ export type NotificationItem = {
     excerpt: string | null;
     url: string | null;
     actor: UserCard | null;
+    /** Тривога: червона — в укриття, жовта — увага; ended — відбій. */
+    alert?: {
+        severity: 'red' | 'yellow' | 'clear';
+        type: string;
+        ended: boolean;
+        region: string | null;
+    } | null;
     read: boolean;
     created_at: string;
 };

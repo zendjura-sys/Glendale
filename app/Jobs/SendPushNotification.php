@@ -40,11 +40,18 @@ class SendPushNotification implements ShouldQueue
         public readonly bool $dataOnly = false,
         /** Лише в застосунок (без push у браузери). */
         public readonly bool $appOnly = false,
+        /** Скільки секунд пуш актуальний (тривоги): пізніше — не надсилається й не доставляється. */
+        public readonly ?int $ttl = null,
     ) {}
 
     public function handle(FcmClient $fcm, ?WebPush $web = null): void
     {
         $web ??= app(WebPush::class);
+        // Застаріле термінове сповіщення (тривога, відбій) не надсилаємо «заднім числом».
+        $expires = $this->data['expires_at'] ?? null;
+        if (is_string($expires) && is_numeric($expires) && (int) $expires < now()->getTimestamp()) {
+            return;
+        }
 
         // Заголовок і текст — мовою отримувача.
         $user = User::query()->find($this->userId);
@@ -62,7 +69,7 @@ class SendPushNotification implements ShouldQueue
 
         PushDevice::query()->where('user_id', $this->userId)->latest('id')->limit(10)->get()
             ->each(function (PushDevice $device) use ($fcm, $title, $body) {
-                $result = $fcm->send($device->token, $title, $body, $this->data, $this->channel, $this->tag, $this->dataOnly && $device->local_render && $device->platform === 'android');
+                $result = $fcm->send($device->token, $title, $body, $this->data, $this->channel, $this->tag, $this->dataOnly && $device->local_render && $device->platform === 'android', $this->ttl);
                 match ($result) {
                     FcmClient::GONE => $device->delete(),
                     FcmClient::SENT => $device->forceFill(['last_used_at' => now()])->saveQuietly(),
