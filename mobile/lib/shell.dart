@@ -51,6 +51,10 @@ String appPathFor(String? sitePath) {
     case 'moments':
     case 'quests':
     case 'season':
+    case 'level':
+    case 'rewards':
+    case 'cards':
+    case 'transparency':
     case 'wrapped':
     case 'saved':
     case 'invite':
@@ -58,6 +62,10 @@ String appPathFor(String? sitePath) {
       return '/$head';
     case 'help':
       return path;
+    case 'season-events':
+      return parts.length > 1 ? '/season-events/${rest(1)}' : '/season-events';
+    case 'streams':
+      return rest(1) == 'live' ? '/streams/live' : '/feed';
     case 'podcasts':
       return parts.length > 1 ? '/podcasts/${rest(1)}' : '/podcasts';
     case 'ideas':
@@ -121,6 +129,8 @@ String appPathFor(String? sitePath) {
       return '/listen/${rest(1)}';
     case 'events':
       return rest(1) == 'releases' ? '/events/releases' : '/events';
+    case 'games' when rest(1) == 'steam-import':
+      return '/games/steam-import';
     case 'games' when rest(1) == 'backlog' || rest(1) == 'deals':
       return path;
     case 'games':

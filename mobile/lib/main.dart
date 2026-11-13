@@ -55,6 +55,7 @@ import 'prefs.dart';
 import 'start.dart';
 import 'playing.dart';
 import 'push.dart';
+import 'gamify.dart';
 import 'season.dart';
 import 'teammates.dart';
 import 'tournaments.dart';
@@ -239,6 +240,15 @@ Future<void> main() async {
           GoRoute(path: '/phone', builder: (_, state) => PhoneScreen(key: ValueKey(state.uri.queryParameters['dial']), dial: state.uri.queryParameters['dial'])),
           GoRoute(path: '/quests', builder: (_, _) => const QuestsScreen()),
           GoRoute(path: '/season', builder: (_, _) => const SeasonScreen()),
+          GoRoute(path: '/level', builder: (_, _) => const LevelScreen()),
+          GoRoute(path: '/rewards', builder: (_, _) => const LoginRewardsScreen()),
+          GoRoute(path: '/cards', builder: (_, _) => const CardsScreen()),
+          GoRoute(path: '/season-events', builder: (_, _) => const SiteEventScreen()),
+          GoRoute(path: '/season-events/:slug', builder: (_, state) => SiteEventScreen(slug: state.pathParameters['slug'])),
+          GoRoute(path: '/streams/live', builder: (_, _) => const LiveNowScreen()),
+          GoRoute(path: '/transparency', builder: (_, _) => const TransparencyScreen()),
+          GoRoute(path: '/games/steam-import', builder: (_, _) => const SteamImportScreen()),
+          GoRoute(path: '/cinema/import', builder: (_, _) => const AnimeImportScreen()),
           GoRoute(path: '/tournaments', builder: (_, _) => const TournamentsScreen()),
           GoRoute(path: '/tournaments/:id', builder: (_, state) => TournamentScreen(id: int.tryParse(state.pathParameters['id']!) ?? 0)),
           GoRoute(path: '/saved', builder: (_, _) => const SavedScreen()),

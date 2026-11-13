@@ -35,6 +35,7 @@ final navCatalog = [
   NavItem('/party', tr('Паті'), tr('Пошук паті'), LucideIcons.userRoundSearch, LucideIcons.userRoundSearch500),
   NavItem('/moments', tr('Моменти'), tr('Моменти'), LucideIcons.clapperboard, LucideIcons.clapperboard500),
   NavItem('/quests', tr('Завдання'), tr('Завдання й сезон'), LucideIcons.target, LucideIcons.target500),
+  NavItem('/cards', tr('Картки'), tr('Колекційні картки'), LucideIcons.layers, LucideIcons.layers500),
   NavItem('/saved', tr('Збережене'), tr('Збережене'), LucideIcons.bookmark, LucideIcons.bookmark500),
 ];
 
