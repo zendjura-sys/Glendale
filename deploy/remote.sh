@@ -51,6 +51,8 @@ sudo chmod -R ug+rwX storage bootstrap/cache
 # Скомпільовані шаблони — власність PHP-FPM: Blade робить touch() на файлі, а змінити час може лише власник
 # (інакше 500 «touch(): Utime failed: Operation not permitted» на кожній сторінці).
 sudo chown -R www-data:www-data storage/framework/views
+# Шаблони консолі (черга, планувальник) — окремо, див. config/view.php.
+mkdir -p storage/framework/views-cli
 # Журнали: нові файли успадковують групу www-data (setgid) і доступні на запис і сайту, і черзі.
 sudo chmod g+s storage/logs
 sudo chmod -R ug+rw storage/logs

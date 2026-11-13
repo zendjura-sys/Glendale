@@ -2,7 +2,6 @@
 
 namespace App\Services\Cards;
 
-use App\Models\CardCharacter;
 use App\Models\Game;
 use App\Models\User;
 use App\Notifications\CardGifted;
@@ -10,6 +9,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -120,25 +120,38 @@ class CardCollection
                 $out['g'.$g->id] = ['key' => 'g'.$g->id, 'kind' => 'game', 'name' => $g->name, 'cover' => $g->cover,
                     'rarity' => $this->rankAt($i, $games->count()), 'set' => (string) ($genres[0] ?? 'Інше'), 'href' => '/games/'.$g->slug];
             }
-            $characters = CardCharacter::query()->with(['movie:id,slug,title,type,watchers_count,is_published,poster_url,poster_path', 'game:id,slug,name,cover,popularity,is_published'])
-                ->where('is_hidden', false)
-                ->where(fn ($q) => $q->whereHas('movie', fn ($m) => $m->where('is_published', true))
-                    ->orWhereHas('game', fn ($g) => $g->where('is_published', true)))
-                ->get()
-                // Популярність персонажа: роль × глядачі тайтлу (для ігор — популярність гри).
-                ->sortByDesc(fn (CardCharacter $c) => $c->popularity * (1 + (int) ($c->movie->watchers_count ?? intdiv((int) ($c->game->popularity ?? 0), 100))))->values();
-            foreach ($characters as $i => $c) {
+            // Персонажі — легким запитом лише з потрібними колонками (без моделей і зв’язків): їх десятки тисяч,
+            // і моделі з фільмами/іграми з’їдали всю пам’ять процесу під час нічної генерації.
+            // Популярність персонажа: роль × глядачі тайтлу (для ігор — популярність гри / 100).
+            $characters = DB::table('card_characters as c')
+                ->leftJoin('movies as m', 'm.id', '=', 'c.movie_id')
+                ->leftJoin('games as g', 'g.id', '=', 'c.game_id')
+                ->where('c.is_hidden', false)
+                ->where(fn ($q) => $q->where('m.is_published', true)->orWhere('g.is_published', true))
+                ->orderByRaw('c.popularity * (1 + COALESCE(m.watchers_count, FLOOR(COALESCE(g.popularity, 0) / 100))) DESC')
+                ->orderBy('c.id')
+                ->select([
+                    'c.id', 'c.name', 'c.image_url', 'c.movie_id', 'c.game_id', 'c.ai_rank', 'c.manual_rank',
+                    'm.slug as movie_slug', 'm.title as movie_title', 'm.type as movie_type', 'm.poster_url', 'm.poster_path',
+                    'g.slug as game_slug', 'g.name as game_name', 'g.cover as game_cover',
+                ]);
+            $total = (clone $characters)->count();
+            $disk = Storage::disk('public');
+            $i = 0;
+            foreach ($characters->lazy(1000) as $c) {
                 // Ранг: вручну від персоналу → оцінка ІІ («чим крутіший персонаж — тим крутіша картка») → за популярністю.
-                $rank = $c->manual_rank ?: ($c->ai_rank ?: $this->rankAt($i, $characters->count()));
-                $out['c'.$c->id] = $c->game ? [
-                    'key' => 'c'.$c->id, 'kind' => 'game', 'name' => $c->name, 'cover' => $c->image_url ?: $c->game->cover,
-                    'rarity' => in_array($rank, self::RARITIES, true) ? $rank : 'N', 'movie_id' => null, 'game_id' => $c->game_id,
-                    'set' => $c->game->name, 'href' => '/games/'.$c->game->slug,
+                $rank = $c->manual_rank ?: ($c->ai_rank ?: $this->rankAt($i, $total));
+                $i++;
+                $rarity = in_array($rank, self::RARITIES, true) ? $rank : 'N';
+                $out['c'.$c->id] = $c->game_id !== null && $c->game_slug !== null ? [
+                    'key' => 'c'.$c->id, 'kind' => 'game', 'name' => $c->name, 'cover' => $c->image_url ?: $c->game_cover,
+                    'rarity' => $rarity, 'movie_id' => null, 'game_id' => (int) $c->game_id,
+                    'set' => $c->game_name, 'href' => '/games/'.$c->game_slug,
                 ] : [
-                    'key' => 'c'.$c->id, 'kind' => $c->movie->type === 'anime' ? 'anime' : ($c->movie->type === 'serial' ? 'serial' : 'movie'),
-                    'name' => $c->name, 'cover' => $c->image_url ?: $c->movie->poster, 'rarity' => in_array($rank, self::RARITIES, true) ? $rank : 'N',
-                    'movie_id' => $c->movie_id, 'game_id' => null,
-                    'set' => $c->movie->title, 'href' => '/cinema/'.$c->movie->slug,
+                    'key' => 'c'.$c->id, 'kind' => $c->movie_type === 'anime' ? 'anime' : ($c->movie_type === 'serial' ? 'serial' : 'movie'),
+                    'name' => $c->name, 'cover' => $c->image_url ?: ($c->poster_path ? $disk->url($c->poster_path) : $c->poster_url),
+                    'rarity' => $rarity, 'movie_id' => (int) $c->movie_id, 'game_id' => null,
+                    'set' => $c->movie_title, 'href' => '/cinema/'.$c->movie_slug,
                 ];
             }
             $themes = DB::table('card_themes')->pluck('theme', 'card_key');

@@ -73,6 +73,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        // Скомпільовані шаблони консолі (черга, планувальник — інший користувач ОС) окремо від сайту:
+        // інакше файл належить іншому власнику, і Blade на сайті падає на touch() «Utime failed».
+        // Тут, а не в config/view.php: кеш конфігу збирається в консолі й переніс би шлях на сайт.
+        if ($this->app->runningInConsole() && ! $this->app->runningUnitTests()) {
+            config(['view.compiled' => storage_path('framework/views-cli')]);
+        }
         // Значки біля ніка збираються раз на запит (і для черги — окремо на кожну задачу).
         $this->app->scoped(Affiliations::class);
         $this->app->scoped(UserRoles::class);

@@ -152,74 +152,86 @@ export default function AdminFamilies({
 
             <div className="grid gap-3">
                 {families.data.map((f) => (
-                    <article
-                        key={f.id}
-                        className="gc-solid flex flex-wrap items-center gap-4 rounded-2xl p-4"
-                    >
-                        <FamilyLogo family={f} />
-                        <div className="min-w-0 flex-1">
-                            <div className="flex flex-wrap items-center gap-2">
+                    <article key={f.id} className="gc-solid rounded-2xl p-4">
+                        {/* Шапка: логотип, тег і назва, сервер і статус — компактно в один блок. */}
+                        <div className="flex items-start gap-3">
+                            <FamilyLogo family={f} />
+                            <div className="min-w-0 flex-1">
                                 <Link
                                     href={`/f/${f.slug}`}
-                                    className="font-semibold text-white hover:underline"
+                                    className="block leading-snug font-semibold text-white hover:underline"
                                 >
                                     <span className="text-amber-300">
                                         [{f.tag}]
                                     </span>{' '}
                                     {f.name}
                                 </Link>
-                                {f.server && <Pill>{f.server.name}</Pill>}
-                                <Pill
-                                    tone={
-                                        f.status === 'verified'
-                                            ? 'green'
-                                            : f.status === 'suspended'
-                                              ? 'red'
-                                              : 'gold'
-                                    }
-                                >
-                                    {f.status_label}
-                                </Pill>
-                            </div>
-                            <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-white/45">
-                                {f.leader && (
-                                    <span className="font-mono">
-                                        {tr('Лідер:')} {f.leader}
-                                    </span>
-                                )}
-                                {f.owner && (
-                                    <Link
-                                        href={`/${f.owner.username}`}
-                                        className="hover:underline"
+                                <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                                    {f.server && <Pill>{f.server.name}</Pill>}
+                                    <Pill
+                                        tone={
+                                            f.status === 'verified'
+                                                ? 'green'
+                                                : f.status === 'suspended'
+                                                  ? 'red'
+                                                  : 'gold'
+                                        }
                                     >
-                                        @{f.owner.username}
-                                    </Link>
-                                )}
-                                <span>
-                                    {f.members_count} {tr('учасн.')}
-                                </span>
-                                <span>
-                                    {tr('скарбниця')} {uah(f.treasury)}
-                                </span>
-                                <span>
-                                    {tr('звітів за тиждень:')} {f.reports_week}
-                                </span>
-                                <span>
-                                    {tr('створено')} {timeAgo(f.created_at)}
-                                </span>
+                                        {f.status_label}
+                                    </Pill>
+                                </div>
                             </div>
-                            {f.description && (
-                                <p className="mt-1.5 line-clamp-2 text-xs text-white/55">
-                                    {f.description}
-                                </p>
+                        </div>
+                        {/* Лідер і власник — один рядок; цифри — сіткою однакових клітинок. */}
+                        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-white/55">
+                            {f.leader && (
+                                <span className="font-mono">
+                                    {tr('Лідер:')} {f.leader}
+                                </span>
                             )}
-                            {f.status_reason && (
-                                <p className="mt-1 text-xs text-red-400/80">
-                                    {tr('Причина:')} {f.status_reason}
-                                </p>
+                            {f.owner && (
+                                <Link
+                                    href={`/${f.owner.username}`}
+                                    className="text-sky-300 hover:underline"
+                                >
+                                    @{f.owner.username}
+                                </Link>
                             )}
                         </div>
-                        <div className="flex shrink-0 gap-1.5">
+                        <dl className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                            {[
+                                [tr('Учасники'), String(f.members_count)],
+                                [tr('Скарбниця'), uah(f.treasury)],
+                                [
+                                    tr('Звіти за тиждень'),
+                                    String(f.reports_week),
+                                ],
+                                [tr('Створено'), timeAgo(f.created_at)],
+                            ].map(([label, value]) => (
+                                <div
+                                    key={label}
+                                    className="rounded-xl bg-white/[0.04] px-3 py-2"
+                                >
+                                    <dt className="text-[11px] text-white/45">
+                                        {label}
+                                    </dt>
+                                    <dd className="mt-0.5 truncate text-sm font-semibold text-white tabular-nums">
+                                        {value}
+                                    </dd>
+                                </div>
+                            ))}
+                        </dl>
+                        {f.description && (
+                            <p className="mt-3 line-clamp-2 text-xs text-white/55">
+                                {f.description}
+                            </p>
+                        )}
+                        {f.status_reason && (
+                            <p className="mt-2 text-xs text-red-400/80">
+                                {tr('Причина:')} {f.status_reason}
+                            </p>
+                        )}
+                        <div className="mt-3 flex flex-wrap justify-end gap-1.5 border-t border-white/[0.06] pt-3">
                             {f.status !== 'verified' && (
                                 <button
                                     type="button"
