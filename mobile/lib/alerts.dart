@@ -331,6 +331,7 @@ class _AlertsScreenState extends State<AlertsScreen> {
               ('red', tr('Червоні тривоги'), tr('ракетна небезпека, хімічна, радіаційна — в укриття'), const Color(0xFFEF4444)),
               ('yellow', tr('Жовті тривоги'), tr('лише БпЛА, артобстріл, вуличні бої, інформаційні, локальні в районах'), const Color(0xFFF59E0B)),
               ('silent', tr('Беззвучний режим'), tr('лише рядок у дзвіночку, без push і звуку'), null),
+              ('hush', tr('Тиша під час тривоги'), tr('поки у вашому місці тривога, лайки, запрошення в гру й інше несрочне — лише в дзвіночку'), null),
             ])
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,

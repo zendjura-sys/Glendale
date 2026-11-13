@@ -11,6 +11,7 @@ use App\Models\Message;
 use App\Models\PushDevice;
 use App\Models\User;
 use App\Models\WebPushSubscription;
+use App\Services\Alerts\AlertWatcher;
 use App\Services\Auth\AccountSecurity;
 use App\Support\I18n\Locales;
 use App\Support\I18n\Translations;
@@ -32,6 +33,9 @@ class PushNotifier
 
     /** Пуш про тривогу актуальний 60 с: пізніше FCM його не доставляє. */
     public const ALERT_TTL = 60;
+
+    /** Що пушимо навіть у «Тишу під час тривоги»: безпека акаунта й оголошення адміністрації. */
+    public const URGENT = ['new_login', 'broadcast'];
 
     /** Вхідні дзвінки: окремий канал із мелодією й показом поверх екрана. */
     public const CHANNEL_CALLS = 'calls';
@@ -63,6 +67,10 @@ class PushNotifier
         }
 
         $alert = str_starts_with((string) ($data['kind'] ?? ''), 'air_alert');
+        // Тривога в місці людини й «Тиша під час тривоги» — несрочне лише в дзвіночку.
+        if (! $alert && ! in_array($data['kind'] ?? null, self::URGENT, true) && app(AlertWatcher::class)->hushed($notifiable)) {
+            return;
+        }
         $job = new SendPushNotification(
             $notifiable->id,
             $title,

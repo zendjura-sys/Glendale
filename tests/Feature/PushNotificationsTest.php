@@ -5,11 +5,14 @@ namespace Tests\Feature;
 use App\Jobs\SendPushNotification;
 use App\Models\PushDevice;
 use App\Models\User;
+use App\Services\Alerts\AlertWatcher;
 use App\Services\Push\FcmClient;
+use App\Services\Push\PushNotifier;
 use App\Support\Settings\SiteSettings;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class PushNotificationsTest extends TestCase
@@ -162,5 +165,21 @@ class PushNotificationsTest extends TestCase
             && $request['message']['android']['ttl'] === '60s');
         Http::assertSent(fn ($request) => ($request['message']['token'] ?? null) === $old
             && $request['message']['notification']['body'] === 'Повітряна тривога: Житомир');
+    }
+
+    public function test_hush_skips_social_push_but_keeps_urgent_ones(): void
+    {
+        $this->configureFcm();
+        Bus::fake([SendPushNotification::class]);
+        $user = User::factory()->create();
+        PushDevice::query()->create(['user_id' => $user->id, 'token' => str_repeat('h', 40), 'platform' => 'android']);
+        // Тривога в місці людини.
+        $this->mock(AlertWatcher::class, fn ($mock) => $mock->shouldReceive('hushed')->andReturn(true));
+        $push = fn (string $kind) => app(PushNotifier::class)->notification($user, $user->notifications()->create(['id' => (string) Str::uuid(), 'type' => 'test', 'data' => ['kind' => $kind, 'text' => 'Текст']]));
+
+        $push('friend_request');
+        Bus::assertNotDispatched(SendPushNotification::class);
+        $push('new_login');
+        Bus::assertDispatched(SendPushNotification::class, fn (SendPushNotification $job) => $job->data['kind'] === 'new_login');
     }
 }

@@ -327,7 +327,7 @@ export function AlertPlacePicker({
         onSave({ places: next });
 
     const filters: {
-        key: 'start' | 'end' | 'red' | 'yellow' | 'silent';
+        key: 'start' | 'end' | 'red' | 'yellow' | 'silent' | 'hush';
         label: string;
         hint: string;
         dot?: string;
@@ -360,6 +360,13 @@ export function AlertPlacePicker({
             key: 'silent',
             label: tr('Беззвучний режим'),
             hint: tr('лише рядок у дзвіночку, без push і звуку'),
+        },
+        {
+            key: 'hush',
+            label: tr('Тиша під час тривоги'),
+            hint: tr(
+                'поки у вашому місці тривога, лайки, запрошення в гру й інше несрочне — лише в дзвіночку',
+            ),
         },
     ];
 

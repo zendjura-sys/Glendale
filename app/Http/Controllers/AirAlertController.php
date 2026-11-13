@@ -124,6 +124,7 @@ class AirAlertController extends Controller
             'red' => ['sometimes', 'boolean'],
             'yellow' => ['sometimes', 'boolean'],
             'silent' => ['sometimes', 'boolean'],
+            'hush' => ['sometimes', 'boolean'],
             // Додаткові місця (рідні, робота): до 5, з підписом.
             'places' => ['sometimes', 'array', 'max:'.AlertWatcher::MAX_PLACES],
             'places.*.id' => ['required', 'string', 'max:20'],
@@ -165,7 +166,7 @@ class AirAlertController extends Controller
             }
             $patch['alert_places'] = array_values($places);
         }
-        foreach (['start', 'end', 'red', 'yellow', 'silent'] as $flag) {
+        foreach (['start', 'end', 'red', 'yellow', 'silent', 'hush'] as $flag) {
             if (array_key_exists($flag, $data)) {
                 $patch['alert_'.$flag] = (bool) $data[$flag];
             }

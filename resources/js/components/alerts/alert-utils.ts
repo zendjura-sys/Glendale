@@ -67,6 +67,8 @@ export type AlertPrefs = {
     red: boolean;
     yellow: boolean;
     silent: boolean;
+    /** Тиша під час тривоги: несрочні пуші лише в дзвіночок. */
+    hush: boolean;
     shelter: boolean;
 };
 
@@ -81,6 +83,7 @@ export type AlertPrefsPatch = {
     red?: boolean;
     yellow?: boolean;
     silent?: boolean;
+    hush?: boolean;
     shelter?: boolean;
 };
 

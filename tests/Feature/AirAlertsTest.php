@@ -753,4 +753,34 @@ class AirAlertsTest extends TestCase
         $this->actingAs($owner)->put("/f/{$family->slug}/settings/webhooks", ['clear' => 'alerts'])->assertSessionHasNoErrors();
         $this->assertSame([], AlertWatcher::familyWatchers());
     }
+
+    public function test_hush_holds_social_pushes_while_my_place_is_under_alert(): void
+    {
+        $alerts = [];
+        $index = 1;
+        $this->fakeUkraineAlarm($this->zhytomyrTree(), $alerts, $index);
+        $user = User::factory()->create(['country' => 'UA']);
+        $this->actingAs($user)->putJson('/alerts/preferences', ['unit' => '1001'])->assertOk()->assertJsonPath('prefs.hush', true);
+        $watcher = app(AlertWatcher::class);
+        $watcher->run();
+        $notification = fn () => $user->notifications()->create(['id' => (string) Str::uuid(), 'type' => 'test', 'data' => ['kind' => 'friend_request', 'text' => 'Нова заявка']]);
+
+        [$alerts, $index] = [[$this->row('100', 'District', 'AIR')], 2];
+        $watcher->run();
+        $this->assertTrue($watcher->hushed($user));
+        // Тривога в сусідньому районі — не моя.
+        $other = User::factory()->create(['country' => 'UA']);
+        $this->actingAs($other)->putJson('/alerts/preferences', ['unit' => '200'])->assertOk();
+        $this->assertFalse($watcher->hushed($other->fresh()));
+
+        // Вимкнули «Тишу» — пуші йдуть і під час тривоги.
+        $this->actingAs($user)->putJson('/alerts/preferences', ['hush' => false])->assertOk();
+        $this->assertFalse($watcher->hushed($user->fresh()));
+        $this->actingAs($user)->putJson('/alerts/preferences', ['hush' => true])->assertOk();
+
+        [$alerts, $index] = [[], 3];
+        $watcher->run();
+        $this->assertFalse($watcher->hushed($user->fresh()));
+        $this->assertNotNull($notification());
+    }
 }

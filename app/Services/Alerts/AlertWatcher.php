@@ -36,6 +36,8 @@ class AlertWatcher
 
     public const INDEX = 'ua_alarm:last_action_index';
 
+    public const HOT = 'ua_alarm:hot_units';
+
     private const AT = 'ua_alarm_at';
 
     public function __construct(private readonly UkraineAlarm $api, private readonly AirAlertService $alerts) {}
@@ -54,6 +56,8 @@ class AlertWatcher
             'red' => $user->pref('alert_red', true) !== false,
             'yellow' => $user->pref('alert_yellow', true) !== false,
             'silent' => $user->pref('alert_silent', false) === true,
+            // «Тиша під час тривоги»: несрочні пуші (лайки, запрошення в гру…) лише в дзвіночок.
+            'hush' => $user->pref('alert_hush', true) !== false,
         ];
     }
 
@@ -88,6 +92,24 @@ class AlertWatcher
         }
 
         return array_slice($out, 0, self::MAX_PLACES);
+    }
+
+    /**
+     * Чи йде зараз тривога в головному місці людини й чи ввімкнено «Тишу під час тривоги».
+     * Береться з останнього проходу опитувача (без запитів до API), тож дешево для кожного пушу.
+     */
+    public function hushed(User $user): bool
+    {
+        if (! self::prefsOf($user)['hush'] || ! $this->api->enabled()) {
+            return false;
+        }
+        $hot = Cache::get(self::HOT);
+        if (! is_array($hot) || $hot === []) {
+            return false;
+        }
+        $unit = $this->unitFor($user);
+
+        return $unit !== null && in_array($unit, $hot, true);
     }
 
     /** regionId, за яким стежить людина: обраний район/громада або її область. */
@@ -162,11 +184,15 @@ class AlertWatcher
 
         $tree = $this->api->regions();
         $sent = 0;
+        $hot = [];
         foreach ($watchers as $unit => $ids) {
             $unit = (string) $unit;
             $fresh = Cache::add('ua_alarm_seen:'.$unit, 1, now()->addDays(30));
             $quiet = $silent || $fresh;
             $effective = $this->api->typesFor($unit, $active);
+            if ($effective !== []) {
+                $hot[] = $unit;
+            }
             foreach (array_keys(UkraineAlarm::TYPES) as $type) {
                 $sent += $this->transition("ua_alarm_state:{$unit}:{$type}", "ua_alarm_lock:{$unit}:{$type}", isset($effective[$type]), $effective[$type] ?? null, $quiet, $now,
                     fn (bool $started, ?string $since, bool $raised = false) => $this->notify($ids, $started, $type, $tree[$unit]['name'] ?? '', $unit, false, $since, $now, $raised, $families[$unit] ?? []),
@@ -178,6 +204,8 @@ class AlertWatcher
             }
         }
         Cache::forever(self::INDEX, $index);
+        // Де зараз тривога (з тих місць, за якими стежать) — для «Тиші під час тривоги».
+        Cache::forever(self::HOT, $hot);
 
         return $sent;
     }
