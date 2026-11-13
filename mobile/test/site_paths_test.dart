@@ -5,6 +5,9 @@ import 'package:gamecon/shell.dart';
 void main() {
   test('нові розділи сайту відкриваються в застосунку', () {
     expect(appPathFor('/moments'), '/moments');
+    // Сповіщення про повітряну тривогу ведуть на мапу тривог, а не в профіль «alerts».
+    expect(appPathFor('/alerts'), '/alerts');
+    expect(appPathFor('/playing'), '/playing');
     expect(appPathFor('/quests'), '/quests');
     expect(appPathFor('/ideas'), '/ideas');
     expect(appPathFor('/duels'), '/duels');
