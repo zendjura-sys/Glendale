@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\MovieRequest;
 use App\Services\Cinema\AnimeListImport;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -24,17 +25,30 @@ class AnimeImportController extends Controller
     public function preview(Request $request): RedirectResponse
     {
         $data = $request->validate([
-            'source' => ['required', 'in:shikimori,mal'],
+            'source' => ['required', 'in:shikimori,mal,anixart'],
             'nickname' => ['required_if:source,shikimori', 'nullable', 'string', 'max:60'],
-            'file' => ['required_if:source,mal', 'nullable', 'file', 'max:20480'],
+            'file' => ['required_if:source,mal,anixart', 'nullable', 'file', 'max:20480'],
         ]);
-        $rows = $data['source'] === 'shikimori'
-            ? $this->import->fromShikimori((string) $data['nickname'])
-            : $this->import->fromMalXml((string) file_get_contents($request->file('file')->getRealPath()));
+        $rows = match ($data['source']) {
+            'shikimori' => $this->import->fromShikimori((string) $data['nickname']),
+            'anixart' => $this->import->fromAnixartCsv((string) file_get_contents($request->file('file')->getRealPath())),
+            default => $this->import->fromMalXml((string) file_get_contents($request->file('file')->getRealPath())),
+        };
         $preview = $this->import->preview($request->user(), $rows);
         $this->import->remember($request->user(), $preview);
 
         return redirect()->route('cinema.import')->with('anime_preview', $preview)->with('anime_source', $data['source']);
+    }
+
+    /** Попросити додати тайтли, яких немає в каталозі (запити на додавання). */
+    public function requestMissing(Request $request): RedirectResponse
+    {
+        $data = $request->validate(['titles' => ['required', 'array', 'max:40'], 'titles.*' => ['string', 'max:200']]);
+        foreach ($data['titles'] as $title) {
+            MovieRequest::query()->firstOrCreate(['user_id' => $request->user()->id, 'title' => $title]);
+        }
+
+        return back()->with('success', 'Запити надіслано — тайтли з’являться після перевірки.');
     }
 
     public function store(Request $request): RedirectResponse

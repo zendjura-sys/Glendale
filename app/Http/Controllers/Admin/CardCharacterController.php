@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\CardCharacter;
 use App\Models\Movie;
+use App\Services\Cards\CardAutopilot;
 use App\Services\Cards\CardCollection;
+use App\Support\Settings\SiteSettings;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
@@ -35,6 +37,14 @@ class CardCharacterController extends Controller
             'movies' => Movie::query()->where('is_published', true)->orderBy('title')->limit(500)->get(['id', 'title'])
                 ->map(fn (Movie $m) => ['id' => $m->id, 'title' => $m->title]),
             'q' => $q,
+            'autopilot' => [
+                ...app(CardAutopilot::class)->config(),
+                'quiet_now' => app(CardAutopilot::class)->quiet(),
+                'online' => app(CardAutopilot::class)->online(),
+                'ai_used' => app(CardAutopilot::class)->aiUsedToday(),
+                'ai_left' => app(CardAutopilot::class)->aiLeft(),
+                'last' => Cache::get('cards.autopilot.last'),
+            ],
         ]);
     }
 
@@ -88,6 +98,31 @@ class CardCharacterController extends Controller
         Log::info('admin: card themes ai', ['admin' => $request->user()->id]);
 
         return back()->with('success', trim(Artisan::output()));
+    }
+
+    /** Налаштування автопілота карток (тихі години, поріг онлайну, бюджет ІІ). */
+    public function autopilot(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'enabled' => ['required', 'boolean'],
+            'quiet_from' => ['required', 'integer', 'between:0,23'],
+            'quiet_to' => ['required', 'integer', 'between:0,23'],
+            'online_below' => ['required', 'integer', 'min:0', 'max:100000'],
+            'ai_daily' => ['required', 'integer', 'min:0', 'max:10000'],
+            'ai_site_cap' => ['required', 'integer', 'min:0', 'max:100000'],
+        ]);
+        app(SiteSettings::class)->put(['cards_autopilot' => $data]);
+        Log::info('admin: cards autopilot settings', ['admin' => $request->user()->id, ...$data]);
+
+        return back()->with('success', 'Налаштування автопілота збережено.');
+    }
+
+    public function autopilotRun(Request $request): RedirectResponse
+    {
+        $result = app(CardAutopilot::class)->run(force: true);
+        Log::info('admin: cards autopilot run', ['admin' => $request->user()->id]);
+
+        return back()->with('success', 'Автопілот: '.json_encode($result, JSON_UNESCAPED_UNICODE));
     }
 
     public function sync(Request $request): RedirectResponse

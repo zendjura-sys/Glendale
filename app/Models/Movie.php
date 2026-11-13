@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Jobs\GenerateTitleCards;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -90,6 +91,16 @@ class Movie extends Model
         'on_hold' => 'Відкладено',
         'dropped' => 'Кинуто',
     ];
+
+    protected static function booted(): void
+    {
+        // Новий чи оновлений тайтл (парсер, оновлення в розділі кіно) — картки персонажів: нових додаємо, наявні оновлюємо.
+        static::saved(function (Movie $movie): void {
+            if ($movie->is_published && ($movie->wasRecentlyCreated || $movie->wasChanged(['shikimori_id', 'tmdb_id', 'is_published', 'enriched_at', 'synced_at'])) && ! app()->runningUnitTests()) {
+                GenerateTitleCards::dispatch(movieId: $movie->id)->afterCommit();
+            }
+        });
+    }
 
     protected function casts(): array
     {

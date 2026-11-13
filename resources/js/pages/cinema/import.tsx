@@ -19,8 +19,13 @@ type Row = {
 };
 
 type Props = {
-    preview: { matched: Row[]; unmatched: number; total: number } | null;
-    source: 'shikimori' | 'mal' | null;
+    preview: {
+        matched: Row[];
+        unmatched: number;
+        total: number;
+        missing?: string[];
+    } | null;
+    source: 'shikimori' | 'mal' | 'anixart' | null;
 };
 
 function statusLabel(s: string): string {
@@ -39,7 +44,9 @@ function statusLabel(s: string): string {
 }
 
 export default function AnimeImport({ preview }: Props) {
-    const [source, setSource] = useState<'shikimori' | 'mal'>('shikimori');
+    const [source, setSource] = useState<'shikimori' | 'mal' | 'anixart'>(
+        'shikimori',
+    );
     const form = useForm<{
         source: string;
         nickname: string;
@@ -80,11 +87,11 @@ export default function AnimeImport({ preview }: Props) {
                     </h1>
                     <p className="text-sm text-white/60">
                         {tr(
-                            'Перенесіть свої списки з Shikimori або MyAnimeList: «Дивлюся», «Переглянуто», «В планах» і оцінки. Тайтли, які вже є у ваших списках, не змінюються.',
+                            'Перенесіть свої списки з Shikimori, MyAnimeList або Anixart: «Дивлюся», «Переглянуто», «В планах» і оцінки. Тайтли, які вже є у ваших списках, не змінюються.',
                         )}
                     </p>
                     <div className="flex gap-2">
-                        {(['shikimori', 'mal'] as const).map((s) => (
+                        {(['shikimori', 'mal', 'anixart'] as const).map((s) => (
                             <button
                                 key={s}
                                 type="button"
@@ -101,7 +108,9 @@ export default function AnimeImport({ preview }: Props) {
                             >
                                 {s === 'shikimori'
                                     ? 'Shikimori'
-                                    : 'MyAnimeList'}
+                                    : s === 'mal'
+                                      ? 'MyAnimeList'
+                                      : 'Anixart'}
                             </button>
                         ))}
                     </div>
@@ -128,9 +137,13 @@ export default function AnimeImport({ preview }: Props) {
                         ) : (
                             <>
                                 <p className="text-xs text-white/50">
-                                    {tr(
-                                        'На MyAnimeList: Профіль → Export Lists → Export My List — і завантажте отриманий файл (.xml або .xml.gz).',
-                                    )}
+                                    {source === 'mal'
+                                        ? tr(
+                                              'На MyAnimeList: Профіль → Export Lists → Export My List — і завантажте отриманий файл (.xml або .xml.gz).',
+                                          )
+                                        : tr(
+                                              'В Anixart: Профіль → Налаштування → Експорт закладок — і завантажте отриманий файл .csv. Тайтли знайдемо за назвами.',
+                                          )}
                                 </p>
                                 <label className="flex cursor-pointer items-center gap-2 rounded-xl border border-dashed border-white/20 px-4 py-3 text-sm text-white/70 hover:bg-white/5">
                                     <FileUp className="size-4" />
@@ -138,7 +151,11 @@ export default function AnimeImport({ preview }: Props) {
                                         tr('Обрати файл експорту')}
                                     <input
                                         type="file"
-                                        accept=".xml,.gz,application/xml,application/gzip"
+                                        accept={
+                                            source === 'mal'
+                                                ? '.xml,.gz,application/xml,application/gzip'
+                                                : '.csv,text/csv'
+                                        }
                                         className="hidden"
                                         onChange={(e) =>
                                             form.setData(
@@ -218,6 +235,32 @@ export default function AnimeImport({ preview }: Props) {
                                 </li>
                             ))}
                         </ul>
+                        {(preview.missing?.length ?? 0) > 0 && (
+                            <div className="gc-solid space-y-2 rounded-xl p-4">
+                                <div className="text-sm font-semibold text-white">
+                                    {tr('Немає в каталозі')}
+                                </div>
+                                <p className="text-xs text-white/55">
+                                    {preview.missing!.slice(0, 12).join(' · ')}
+                                    {preview.missing!.length > 12 && ' …'}
+                                </p>
+                                <Button
+                                    size="sm"
+                                    variant="secondary"
+                                    onClick={() =>
+                                        router.post(
+                                            '/cinema/import/requests',
+                                            { titles: preview.missing },
+                                            { preserveScroll: true },
+                                        )
+                                    }
+                                >
+                                    {tr('Попросити додати ({n})', {
+                                        n: preview.missing!.length,
+                                    })}
+                                </Button>
+                            </div>
+                        )}
                         <div className="sticky bottom-4 flex justify-end">
                             <Button
                                 disabled={picked.size === 0 || busy}

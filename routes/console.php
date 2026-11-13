@@ -69,9 +69,7 @@ Schedule::command('stories:prune')->hourly()->withoutOverlapping(30);
 // Запити «Увійти через застосунок» старші за 30 днів (до того — для аудиту).
 Schedule::command('model:prune', ['--model' => [AppLoginRequest::class, SpamBlock::class]])->dailyAt('04:20')->timezone('Europe/Kyiv')->withoutOverlapping(30);
 // Рідкість бейджів («є у 2% людей»).
-Schedule::command('cards:ai-themes')->dailyAt('05:20')->timezone('Europe/Kyiv')->withoutOverlapping(60)->runInBackground();
-Schedule::command('cards:ai-rank')->dailyAt('05:05')->timezone('Europe/Kyiv')->withoutOverlapping(60)->runInBackground();
-Schedule::command('cards:characters')->dailyAt('04:40')->timezone('Europe/Kyiv')->withoutOverlapping(60)->runInBackground();
+Schedule::command('cards:autopilot')->everyThirtyMinutes()->withoutOverlapping(30)->runInBackground();
 Schedule::command('levels:sync')->hourlyAt(23)->withoutOverlapping(30)->runInBackground();
 Schedule::command('achievements:rarity')->dailyAt('05:10')->timezone('Europe/Kyiv')->withoutOverlapping(60)->runInBackground();
 Schedule::command('games:sync')->dailyAt('04:40')->timezone('Europe/Kyiv')->withoutOverlapping(120)->runInBackground();

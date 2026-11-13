@@ -177,6 +177,34 @@ class AiAssistant
     }
 
     /**
+     * Відомі персонажі гри для колекційних карток (герої, лиходії, культові NPC). Порожньо — у гри немає персонажів.
+     *
+     * @return list<array{name: string, role: string}>
+     */
+    public function gameCharacters(string $game, int $limit = 8): array
+    {
+        try {
+            $raw = $this->ai->complete(
+                'Ти знавець відеоігор. Назви до '.$limit.' найвідоміших персонажів гри — лише справжніх, з канону гри (герої, лиходії, культові NPC). Якщо в грі немає іменованих персонажів (симулятори, спорт, пісочниці без героїв) — порожній список. Імена пиши як прийнято в українській спільноті (або оригінал). Відповідай лише JSON: {"characters":[{"name":"…","role":"main|supporting"}]}.',
+                [['role' => 'user', 'content' => 'Гра: '.Str::limit($game, 120)]],
+                600,
+            );
+        } catch (AiException) {
+            return [];
+        }
+        $json = json_decode((string) Str::of($raw)->after('{')->beforeLast('}')->prepend('{')->append('}'), true);
+        $out = [];
+        foreach ((array) ($json['characters'] ?? []) as $row) {
+            $name = is_array($row) ? trim((string) ($row['name'] ?? '')) : '';
+            if ($name !== '' && mb_strlen($name) <= 120) {
+                $out[] = ['name' => $name, 'role' => ($row['role'] ?? '') === 'main' ? 'main' : 'supporting'];
+            }
+        }
+
+        return array_slice($out, 0, $limit);
+    }
+
+    /**
      * Тематичні набори колекційних карток: до якого набору з переліку належить кожна картка.
      *
      * @param  list<array{key: string, name: string, about: string}>  $cards

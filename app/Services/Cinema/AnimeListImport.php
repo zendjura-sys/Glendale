@@ -11,7 +11,8 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 
 /**
- * Імпорт списків аніме: Shikimori (за ніком, публічний профіль) або MyAnimeList (файл експорту XML).
+ * Імпорт списків аніме: Shikimori (за ніком, публічний профіль), MyAnimeList (файл експорту XML)
+ * або Anixart (експорт закладок CSV — зіставляємо за назвами).
  * Id Shikimori збігається з MyAnimeList, тож тайтли знаходимо за shikimori_id каталогу.
  * Уже позначені тайтли не перезаписуються; імпорт не дає колекційних карток (вони — за перегляд на сайті).
  */
@@ -21,6 +22,8 @@ class AnimeListImport
     private const STATUS = [
         'planned' => 'planned', 'plan to watch' => 'planned', 'watching' => 'watching', 'rewatching' => 'watching',
         'completed' => 'watched', 'on_hold' => 'on_hold', 'on-hold' => 'on_hold', 'dropped' => 'dropped',
+        // Anixart (експорт закладок CSV, російською).
+        'смотрю' => 'watching', 'просмотрено' => 'watched', 'в планах' => 'planned', 'брошено' => 'dropped', 'отложено' => 'on_hold',
     ];
 
     /**
@@ -69,6 +72,56 @@ class AnimeListImport
     }
 
     /**
+     * Експорт закладок Anixart (CSV: №, назва, оригінальна назва, альтернативні, обране, статус).
+     * У файлі трапляються лапки всередині назв, тому статус беремо з останньої колонки рядка.
+     *
+     * @return list<array{id: null, status: string, score: int, episodes: int, title: string, titles: list<string>}>
+     */
+    public function fromAnixartCsv(string $contents): array
+    {
+        $contents = preg_replace('/^\xEF\xBB\xBF/', '', $contents) ?? $contents;
+        // fgetcsv коректно читає назви з переносами рядків у лапках.
+        $stream = fopen('php://temp', 'r+');
+        fwrite($stream, $contents);
+        rewind($stream);
+        $header = fgetcsv($stream, escape: '') ?: [];
+        $lines = [];
+        while (($cols = fgetcsv($stream, escape: '')) !== false) {
+            $lines[] = $cols;
+        }
+        fclose($stream);
+        if (count($header) < 6 || ! str_contains(mb_strtolower(implode(',', $header)), 'статус')) {
+            throw ValidationException::withMessages(['file' => 'Це не схоже на експорт закладок Anixart (CSV).']);
+        }
+        $out = [];
+        foreach ($lines as $cols) {
+            if ($cols === [null] || count($cols) < 2) {
+                continue;
+            }
+            $status = mb_strtolower(trim((string) end($cols)));
+            $titles = array_values(array_filter([trim((string) ($cols[1] ?? '')), trim((string) ($cols[2] ?? ''))]));
+            foreach (explode(',', (string) ($cols[3] ?? '')) as $alt) {
+                $alt = trim($alt, " \t\"");
+                if ($alt !== '' && $alt !== 'Не указаны' && mb_strlen($alt) <= 200) {
+                    $titles[] = $alt;
+                }
+            }
+            if ($titles === []) {
+                continue;
+            }
+            $out[] = ['id' => null, 'status' => $status, 'score' => 0, 'episodes' => 0, 'title' => $titles[0], 'titles' => $titles];
+        }
+
+        return $out;
+    }
+
+    /** Назва для порівняння: без регістру, розділових знаків і зайвих пробілів. */
+    private static function norm(string $title): string
+    {
+        return trim((string) preg_replace(['/[^\p{L}\p{N}]+/u'], ' ', mb_strtolower($title)));
+    }
+
+    /**
      * Збіги з каталогом.
      *
      * @param  list<array{id: string, status: string, score: int, episodes: int, title: string}>  $rows
@@ -78,10 +131,25 @@ class AnimeListImport
     {
         $ids = array_values(array_unique(array_filter(array_column($rows, 'id'))));
         $movies = Movie::query()->where('is_published', true)->whereIn('shikimori_id', $ids)->get(['id', 'slug', 'title', 'poster_url', 'poster_path', 'shikimori_id'])->keyBy('shikimori_id');
+        // Без id (Anixart) — шукаємо за назвами: українська, оригінальна й альтернативні.
+        $byTitle = collect();
+        if (collect($rows)->contains(fn ($r) => $r['id'] === null)) {
+            Movie::query()->where('is_published', true)->get(['id', 'slug', 'title', 'title_original', 'poster_url', 'poster_path'])
+                ->each(function (Movie $m) use (&$byTitle) {
+                    foreach ([$m->title, $m->title_original] as $t) {
+                        if (is_string($t) && $t !== '') {
+                            $byTitle->put(self::norm($t), $m);
+                        }
+                    }
+                });
+        }
         $have = DB::table('movie_user')->where('user_id', $user->id)->whereNotNull('status')->pluck('status', 'movie_id');
         $matched = [];
         foreach ($rows as $r) {
-            $movie = $movies->get($r['id']);
+            $movie = $r['id'] !== null ? $movies->get($r['id']) : null;
+            foreach ($r['titles'] ?? [] as $t) {
+                $movie ??= $byTitle->get(self::norm($t));
+            }
             $status = self::STATUS[$r['status']] ?? null;
             if (! $movie || ! $status) {
                 continue;
@@ -93,7 +161,15 @@ class AnimeListImport
             ];
         }
 
-        return ['matched' => $matched, 'unmatched' => count($rows) - count($matched), 'total' => count($rows)];
+        $found = array_column($matched, 'title', 'movie_id');
+        $missing = [];
+        foreach ($rows as $r) {
+            if (count($missing) < 40 && ! in_array($r['title'], $found, true) && isset(self::STATUS[$r['status']])) {
+                $missing[] = $r['title'];
+            }
+        }
+
+        return ['matched' => $matched, 'unmatched' => count($rows) - count($matched), 'total' => count($rows), 'missing' => $missing];
     }
 
     /** Зберегти попередній перегляд на 30 хвилин (щоб імпорт не завантажував список удруге). */

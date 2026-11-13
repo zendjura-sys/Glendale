@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Jobs\GenerateTitleCards;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -128,6 +129,16 @@ class Game extends Model
         'itch' => 'itch.io',
         'website' => 'Офіційний сайт',
     ];
+
+    protected static function booted(): void
+    {
+        // Нова чи оновлена гра в каталозі — картки її персонажів: бракує когось — ІІ додасть (у межах бюджету).
+        static::saved(function (Game $game): void {
+            if ($game->is_published && ($game->wasRecentlyCreated || $game->wasChanged(['is_published', 'name', 'details', 'links', 'igdb_id', 'rawg_id'])) && ! app()->runningUnitTests()) {
+                GenerateTitleCards::dispatch(gameId: $game->id)->afterCommit();
+            }
+        });
+    }
 
     protected function casts(): array
     {

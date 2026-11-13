@@ -28,9 +28,141 @@ type Props = {
     };
     movies: { id: number; title: string }[];
     q: string;
+    autopilot: Autopilot;
 };
 
-export default function AdminCardCharacters({ characters, movies, q }: Props) {
+type Autopilot = {
+    enabled: boolean;
+    quiet_from: number;
+    quiet_to: number;
+    online_below: number;
+    ai_daily: number;
+    ai_site_cap: number;
+    quiet_now: boolean;
+    online: number;
+    ai_used: number;
+    ai_left: number;
+    last: {
+        at: string;
+        titles: number;
+        game_characters: number;
+        ranked: number;
+        themed: number;
+    } | null;
+};
+
+/** Автопілот: картки поруч із парсингом + догін рангів і наборів у тихі години в межах бюджету ІІ. */
+function AutopilotPanel({ data }: { data: Autopilot }) {
+    const [form, setForm] = useState({
+        enabled: data.enabled,
+        quiet_from: data.quiet_from,
+        quiet_to: data.quiet_to,
+        online_below: data.online_below,
+        ai_daily: data.ai_daily,
+        ai_site_cap: data.ai_site_cap,
+    });
+    const num = (key: keyof typeof form, label: string, max: number) => (
+        <label className="space-y-1 text-xs text-white/60">
+            {label}
+            <Input
+                type="number"
+                min={0}
+                max={max}
+                value={Number(form[key])}
+                onChange={(e) =>
+                    setForm({ ...form, [key]: Number(e.target.value) })
+                }
+            />
+        </label>
+    );
+
+    return (
+        <section className="gc-solid mb-5 space-y-3 rounded-xl p-4">
+            <div className="flex flex-wrap items-center gap-2">
+                <h2 className="font-display text-lg font-bold text-white">
+                    {tr('Автопілот карток')}
+                </h2>
+                <Pill tone={data.quiet_now ? 'green' : 'gold'}>
+                    {data.quiet_now
+                        ? tr('Зараз тихо — працює')
+                        : tr('Зараз людно — чекає')}
+                </Pill>
+                <span className="text-xs text-white/50">
+                    {tr('Онлайн: {o} · ІІ сьогодні: {u}, ще можна: {l}', {
+                        o: data.online,
+                        u: data.ai_used,
+                        l: data.ai_left,
+                    })}
+                </span>
+            </div>
+            <p className="text-xs text-white/50">
+                {tr(
+                    'Нові тайтли й ігри отримують картки персонажів одразу після парсингу. Автопілот у тихі години догонить решту: персонажів ігор, ранги й набори від ІІ — не більше денного бюджету, щоб не вийти за безкоштовний ліміт.',
+                )}
+            </p>
+            <div className="grid gap-3 sm:grid-cols-5">
+                {num('quiet_from', tr('Тихо з (год)'), 23)}
+                {num('quiet_to', tr('Тихо до (год)'), 23)}
+                {num('online_below', tr('Або онлайн менше'), 100000)}
+                {num('ai_daily', tr('ІІ-запитів на картки за добу'), 10000)}
+                {num(
+                    'ai_site_cap',
+                    tr('Не перевищувати ліміт ІІ сайту'),
+                    100000,
+                )}
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+                <label className="flex items-center gap-2 text-sm text-white/80">
+                    <input
+                        type="checkbox"
+                        checked={form.enabled}
+                        onChange={(e) =>
+                            setForm({ ...form, enabled: e.target.checked })
+                        }
+                    />
+                    {tr('Увімкнено')}
+                </label>
+                <Button
+                    size="sm"
+                    onClick={() =>
+                        router.put('/admin/card-characters/autopilot', form, {
+                            preserveScroll: true,
+                        })
+                    }
+                >
+                    {tr('Зберегти')}
+                </Button>
+                <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() =>
+                        router.post(
+                            '/admin/card-characters/autopilot/run',
+                            {},
+                            { preserveScroll: true },
+                        )
+                    }
+                >
+                    {tr('Запустити зараз')}
+                </Button>
+                {data.last && (
+                    <span className="text-xs text-white/45">
+                        {tr('Останній прохід: {at}', {
+                            at: new Date(data.last.at).toLocaleString('uk-UA'),
+                        })}
+                    </span>
+                )}
+            </div>
+        </section>
+    );
+}
+
+export default function AdminCardCharacters({
+    characters,
+    movies,
+    q,
+    autopilot,
+}: Props) {
     const [form, setForm] = useState({
         movie_id: movies[0]?.id ?? 0,
         name: '',
@@ -75,6 +207,19 @@ export default function AdminCardCharacters({ characters, movies, q }: Props) {
                             variant="secondary"
                             onClick={() =>
                                 router.post(
+                                    '/admin/card-characters/ai-themes',
+                                    {},
+                                    { preserveScroll: true },
+                                )
+                            }
+                        >
+                            <Sparkles className="size-4" />
+                            {tr('Набори від ІІ')}
+                        </Button>
+                        <Button
+                            variant="secondary"
+                            onClick={() =>
+                                router.post(
                                     '/admin/card-characters/sync',
                                     {},
                                     { preserveScroll: true },
@@ -87,6 +232,8 @@ export default function AdminCardCharacters({ characters, movies, q }: Props) {
                     </div>
                 }
             />
+
+            <AutopilotPanel data={autopilot} />
 
             <form
                 onSubmit={add}

@@ -755,6 +755,7 @@ Route::prefix('v1')->group(function () {
                 Route::get('import', [AnimeImportController::class, 'show']);
                 Route::post('import/preview', [AnimeImportController::class, 'preview'])->middleware('throttle:10,1');
                 Route::post('import', [AnimeImportController::class, 'store'])->middleware('throttle:10,1');
+                Route::post('import/requests', [AnimeImportController::class, 'requestMissing'])->middleware('throttle:5,1');
                 // «Тайтл тижня» — те саме, що на сайті.
                 Route::get('week', [CinemaController::class, 'week']);
                 Route::post('week/{movie}', [CinemaController::class, 'voteWeek'])->middleware('throttle:20,1');

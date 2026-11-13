@@ -104,7 +104,8 @@ class CardDrops
             }
             $catalog = $this->cards->catalog();
             $pool = match (true) {
-                $drop->game_id !== null => $catalog->only(['g'.$drop->game_id]),
+                // Гра: картка самої гри й персонажі цієї гри.
+                $drop->game_id !== null => $catalog->filter(fn ($c) => $c['key'] === 'g'.$drop->game_id || ($c['game_id'] ?? null) === (int) $drop->game_id),
                 $drop->movie_id !== null => $catalog->where('movie_id', $drop->movie_id),
                 default => collect(),
             };

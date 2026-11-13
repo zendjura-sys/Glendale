@@ -120,19 +120,27 @@ class CardCollection
                 $out['g'.$g->id] = ['key' => 'g'.$g->id, 'kind' => 'game', 'name' => $g->name, 'cover' => $g->cover,
                     'rarity' => $this->rankAt($i, $games->count()), 'set' => (string) ($genres[0] ?? 'Інше'), 'href' => '/games/'.$g->slug];
             }
-            $characters = CardCharacter::query()->with('movie:id,slug,title,type,watchers_count,is_published,poster_url,poster_path')
-                ->where('is_hidden', false)->whereHas('movie', fn ($q) => $q->where('is_published', true))->get()
-                // Популярність персонажа: роль × глядачі тайтлу.
-                ->sortByDesc(fn (CardCharacter $c) => $c->popularity * (1 + (int) $c->movie->watchers_count))->values();
+            $characters = CardCharacter::query()->with(['movie:id,slug,title,type,watchers_count,is_published,poster_url,poster_path', 'game:id,slug,name,cover,popularity,is_published'])
+                ->where('is_hidden', false)
+                ->where(fn ($q) => $q->whereHas('movie', fn ($m) => $m->where('is_published', true))
+                    ->orWhereHas('game', fn ($g) => $g->where('is_published', true)))
+                ->get()
+                // Популярність персонажа: роль × глядачі тайтлу (для ігор — популярність гри).
+                ->sortByDesc(fn (CardCharacter $c) => $c->popularity * (1 + (int) ($c->movie->watchers_count ?? intdiv((int) ($c->game->popularity ?? 0), 100))))->values();
             foreach ($characters as $i => $c) {
                 // Ранг: вручну від персоналу → оцінка ІІ («чим крутіший персонаж — тим крутіша картка») → за популярністю.
                 $rank = $c->manual_rank ?: ($c->ai_rank ?: $this->rankAt($i, $characters->count()));
-                $out['c'.$c->id] = ['key' => 'c'.$c->id, 'kind' => $c->movie->type === 'anime' ? 'anime' : ($c->movie->type === 'serial' ? 'serial' : 'movie'),
+                $out['c'.$c->id] = $c->game ? [
+                    'key' => 'c'.$c->id, 'kind' => 'game', 'name' => $c->name, 'cover' => $c->image_url ?: $c->game->cover,
+                    'rarity' => in_array($rank, self::RARITIES, true) ? $rank : 'N', 'movie_id' => null, 'game_id' => $c->game_id,
+                    'set' => $c->game->name, 'href' => '/games/'.$c->game->slug,
+                ] : [
+                    'key' => 'c'.$c->id, 'kind' => $c->movie->type === 'anime' ? 'anime' : ($c->movie->type === 'serial' ? 'serial' : 'movie'),
                     'name' => $c->name, 'cover' => $c->image_url ?: $c->movie->poster, 'rarity' => in_array($rank, self::RARITIES, true) ? $rank : 'N',
-                    'movie_id' => $c->movie_id,
-                    'set' => $c->movie->title, 'href' => '/cinema/'.$c->movie->slug];
+                    'movie_id' => $c->movie_id, 'game_id' => null,
+                    'set' => $c->movie->title, 'href' => '/cinema/'.$c->movie->slug,
+                ];
             }
-
             $themes = DB::table('card_themes')->pluck('theme', 'card_key');
             foreach ($out as $key => $card) {
                 $out[$key]['theme'] = $themes[$key] ?? null;

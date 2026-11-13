@@ -736,6 +736,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::get('import', [AnimeImportController::class, 'show'])->name('import');
         Route::post('import/preview', [AnimeImportController::class, 'preview'])->middleware('throttle:10,1')->name('import.preview');
         Route::post('import', [AnimeImportController::class, 'store'])->middleware('throttle:10,1')->name('import.store');
+        Route::post('import/requests', [AnimeImportController::class, 'requestMissing'])->middleware('throttle:5,1')->name('import.requests');
         Route::get('overview', [CinemaController::class, 'overview'])->name('overview');
         Route::get('schedule', [CinemaController::class, 'schedule'])->name('schedule');
         Route::get('random', [CinemaController::class, 'random'])->middleware('throttle:60,1')->name('random');
@@ -1283,6 +1284,8 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::get('card-characters', [Admin\CardCharacterController::class, 'index'])->name('card-characters.index');
         Route::post('card-characters', [Admin\CardCharacterController::class, 'store'])->name('card-characters.store');
         Route::post('card-characters/sync', [Admin\CardCharacterController::class, 'sync'])->middleware('throttle:5,1')->name('card-characters.sync');
+        Route::put('card-characters/autopilot', [Admin\CardCharacterController::class, 'autopilot'])->name('card-characters.autopilot');
+        Route::post('card-characters/autopilot/run', [Admin\CardCharacterController::class, 'autopilotRun'])->middleware('throttle:3,1')->name('card-characters.autopilot.run');
         Route::post('card-characters/ai-rank', [Admin\CardCharacterController::class, 'aiRank'])->middleware('throttle:5,1')->name('card-characters.ai-rank');
         Route::post('card-characters/ai-themes', [Admin\CardCharacterController::class, 'aiThemes'])->middleware('throttle:5,1')->name('card-characters.ai-themes');
         Route::post('card-characters/{character}/rank', [Admin\CardCharacterController::class, 'rank'])->whereNumber('character')->name('card-characters.rank');
