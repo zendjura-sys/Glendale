@@ -462,12 +462,17 @@ Future<void> showFeedbackSheet(BuildContext context, {String screen = 'menu'}) a
 
 
 /// Що нового в цій версії застосунку — один раз після оновлення.
-const whatsNewVersion = '1.1.118';
+const whatsNewVersion = '1.1.119';
 
 /// Нове саме в цій версії — зверху, окремим блоком.
 List<String> _whatsNewCurrent() => [
+      tr('Налаштування → «Меню розділів у нижній панелі»: язичок над вкладками (свайп угору) або окрема кнопка «Меню» — як вам зручніше.'),
+    ];
+
+/// Версія 1.1.118.
+List<String> _whatsNew118() => [
       tr('Новий вигляд у стилі iOS 27: нейтральне темне тло, суцільні картки без просвічування, безбарвне матове скло шапки й доку.'),
-      tr('У нижньому меню завжди 5 пунктів, серед них «Меню»; активна вкладка — біла з рискою.'),
+      tr('Активна вкладка нижнього меню — біла з рискою; решта розділів — за язичком над вкладками (свайп угору).'),
       tr('Плавні пружні переходи між екранами, новий стартовий екран і тихі звуки інтерфейсу (вимикаються в налаштуваннях).'),
       tr('Сім’ї: календар змін і чергувань; засновник може змінити сервер сім’ї.'),
       tr('Стрічка: вкладка «Активність» — відгуки, добірки й ігри друзів.'),
@@ -684,7 +689,7 @@ Future<void> showWhatsNew(BuildContext context, SharedPreferences prefs, {bool f
   await prefs.setString('whats_new', whatsNewVersion);
   if (!context.mounted) return;
   final current = _whatsNewCurrent();
-  final earlier = [..._whatsNew117(), ..._whatsNew116(), ..._whatsNew115(), ..._whatsNew113(), ..._whatsNew112(), ..._whatsNew111(), ..._whatsNewPrev(), ..._whatsNew()];
+  final earlier = [..._whatsNew118(), ..._whatsNew117(), ..._whatsNew116(), ..._whatsNew115(), ..._whatsNew113(), ..._whatsNew112(), ..._whatsNew111(), ..._whatsNewPrev(), ..._whatsNew()];
   Widget card(String item, {bool fresh = false}) => Container(
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.fromLTRB(12, 12, 14, 12),

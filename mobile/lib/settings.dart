@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'sound_fx.dart';
+import 'chrome.dart' show dockMenuButton, setDockMenuStyle;
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -401,6 +402,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const ListeningSwitch(),
           const DigestSwitch(),
           const _UiSoundsSwitch(),
+          const _DockMenuStyle(),
           const SizedBox(height: 6),
           Text(tr('Хто може писати мені'), style: body(13, color: muted)),
           SizedBox(height: 6),
@@ -948,5 +950,28 @@ class _UiSoundsSwitchState extends State<_UiSoundsSwitch> {
           GcSoundEngine.instance.setEnabled(v);
           if (v) GcSoundEngine.instance.navTick();
         },
+      );
+}
+
+/// Як відкривати меню розділів: язичок над вкладками (свайп угору) чи окрема кнопка «Меню» в доку.
+class _DockMenuStyle extends StatelessWidget {
+  const _DockMenuStyle();
+
+  @override
+  Widget build(BuildContext context) => ValueListenableBuilder<bool>(
+        valueListenable: dockMenuButton,
+        builder: (context, button, _) => Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          const SizedBox(height: 8),
+          Text(tr('Меню розділів у нижній панелі'), style: body(13, color: muted)),
+          const SizedBox(height: 6),
+          Segmented(
+            options: [
+              SegmentOption('handle', tr('Язичок (свайп)'), icon: LucideIcons.gripHorizontal),
+              SegmentOption('button', tr('Кнопка «Меню»'), icon: LucideIcons.layoutGrid),
+            ],
+            selected: button ? 'button' : 'handle',
+            onSelect: (v) => setDockMenuStyle(v == 'button'),
+          ),
+        ]),
       );
 }

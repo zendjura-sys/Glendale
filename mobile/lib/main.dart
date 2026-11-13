@@ -56,6 +56,7 @@ import 'start.dart';
 import 'playing.dart';
 import 'push.dart';
 import 'boot_splash.dart';
+import 'chrome.dart' show loadDockMenuStyle;
 import 'gamify.dart';
 import 'sound_fx.dart';
 import 'season.dart';
@@ -365,6 +366,7 @@ Future<void> main() async {
     unawaited(showFullPlayer(context, player, session: session));
   });
   await GcSoundEngine.instance.init();
+  await loadDockMenuStyle();
   // Зміна мови перебудовує весь застосунок.
   runApp(ValueListenableBuilder<int>(
     valueListenable: I18n.revision,

@@ -1,5 +1,7 @@
 import 'dart:math' as math;
 
+import 'package:shared_preferences/shared_preferences.dart';
+
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -527,6 +529,23 @@ class SideList extends StatelessWidget {
 /// Нижня панель-острів (як у iOS 26): капсула з вкладками й «язичком» угорі. Замість кнопки «Меню»
 /// острів тягнеться вгору — за язичок, свайпом по панелі або тапом — і розгортається в меню з рештою
 /// розділів; вкладки лишаються внизу того самого острова. Згорнути: свайп униз, тап по затемненню, «Назад».
+/// Як відкривати меню розділів у доку (Налаштування → Вигляд): false — язичок над вкладками
+/// (свайп угору чи дотик), true — п'ята кнопка «Меню» замість язичка.
+final dockMenuButton = ValueNotifier<bool>(false);
+
+Future<void> loadDockMenuStyle() async {
+  try {
+    dockMenuButton.value = (await SharedPreferences.getInstance()).getBool('dock_menu_button') ?? false;
+  } catch (_) {}
+}
+
+Future<void> setDockMenuStyle(bool button) async {
+  dockMenuButton.value = button;
+  try {
+    await (await SharedPreferences.getInstance()).setBool('dock_menu_button', button);
+  } catch (_) {}
+}
+
 class IslandNav extends StatefulWidget {
   const IslandNav({required this.session, required this.player, required this.path, this.hidden = false, super.key});
   final Session session;
@@ -542,6 +561,21 @@ class IslandNav extends StatefulWidget {
 
 class _IslandNavState extends State<IslandNav> {
   bool open = false;
+
+  void _style() => setState(() {});
+
+  @override
+  void initState() {
+    super.initState();
+    dockMenuButton.addListener(_style);
+  }
+
+  @override
+  void dispose() {
+    dockMenuButton.removeListener(_style);
+    super.dispose();
+  }
+
   double drag = 0;
   bool dragging = false;
 
@@ -589,6 +623,8 @@ class _IslandNavState extends State<IslandNav> {
     final restBadge = rest.any((i) => i.path == '/messages') ? session.unreadChats : 0;
     final tabItems = [for (final path in tabs) ?navItem(path)];
     final activeTab = tabItems.indexWhere((item) => _isActive(item.path, widget.path, session.username));
+    final menuButton = dockMenuButton.value;
+    final menuTabs = math.min(tabItems.length, 4);
     final media = MediaQuery.of(context);
     final systemBottom = media.viewPadding.bottom;
     final maxMenu = media.size.height - media.viewPadding.top - systemBottom - 160;
@@ -614,7 +650,8 @@ class _IslandNavState extends State<IslandNav> {
           mainAxisSize: MainAxisSize.min,
           children: [
             // Язичок свайп-меню: компактна крижана капсула; від початку свайпу — сапфірове сяйво.
-            Semantics(
+            // У режимі «Кнопка Меню» язичка немає — меню відкриває п'ята вкладка.
+            if (dockMenuButton.value && !open) const SizedBox(height: 8) else Semantics(
               button: true,
               label: open ? tr('Згорнути меню') : tr('Меню'),
               child: GestureDetector(
@@ -674,15 +711,17 @@ class _IslandNavState extends State<IslandNav> {
               child: ArcticDockTabs(
                 // Язичок 12 + вкладки 48 + відступ 4 = висота доку 64.
                 height: 48,
-                // Рівно 5 пунктів: 4 вкладки + «Меню» (завжди останнє, ніколи не витісняється).
+                // Вкладки доку; решта розділів — за язичком (свайп угору чи дотик) або за кнопкою «Меню».
                 items: [
-                  for (final item in tabItems.take(4)) ArcticDockItem(icon: item.icon, activeIcon: item.activeIcon, label: item.label, badge: item.path == '/messages' && session.unreadChats > 0 ? _Badge(session.unreadChats) : null),
-                  ArcticDockItem(icon: navMenu.icon, activeIcon: navMenu.activeIcon, label: navMenu.label, badge: restBadge > 0 && !open ? _Badge(restBadge) : null),
+                  for (final item in menuButton ? tabItems.take(4) : tabItems) ArcticDockItem(icon: item.icon, activeIcon: item.activeIcon, label: item.label, badge: item.path == '/messages' && session.unreadChats > 0 ? _Badge(session.unreadChats) : null),
+                  if (menuButton) ArcticDockItem(icon: navMenu.icon, activeIcon: navMenu.activeIcon, label: navMenu.label, badge: restBadge > 0 && !open ? _Badge(restBadge) : null),
                 ],
-                current: open || (activeTab < 0 || activeTab >= 4) && restActive ? math.min(tabItems.length, 4) : (activeTab < 0 || activeTab >= 4 ? null : activeTab),
+                current: menuButton && (open || (activeTab < 0 || activeTab >= menuTabs) && restActive)
+                    ? menuTabs
+                    : (open || activeTab < 0 || (menuButton && activeTab >= menuTabs) ? null : activeTab),
                 onTap: (i) {
                   GcSoundEngine.instance.navTick();
-                  if (i >= math.min(tabItems.length, 4)) {
+                  if (menuButton && i >= menuTabs) {
                     _set(!open);
                     return;
                   }
