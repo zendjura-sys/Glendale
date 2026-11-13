@@ -32,11 +32,11 @@ class AlertWatcher
     /** Пуш лише про свіжу подію: не пізніше ніж 30 с від початку (lastUpdate з API) чи відбою. */
     public const FRESH = 30;
 
-    private const INDEX = 'ua_alarm_index';
+    private const INDEX = 'ua_alarm:last_action_index';
 
     private const AT = 'ua_alarm_at';
 
-    public function __construct(private readonly UkraineAlarm $api) {}
+    public function __construct(private readonly UkraineAlarm $api, private readonly AirAlertService $alerts) {}
 
     /**
      * Налаштування сповіщень людини.
@@ -206,8 +206,32 @@ class AlertWatcher
      */
     private function notify(array $ids, bool $started, string $type, string $name, string $place, bool $local, ?string $since, CarbonImmutable $now): int
     {
-        $severity = UkraineAlarm::severity($type, $local);
         $alertKey = md5($place.'|'.$type.'|'.$since);
+        // Повітряна тривога: жовтий рівень — лише БпЛА, червоний — ракети. API цього не дає (лише AIR), тож рівень —
+        // за цілями на радарі в області на момент початку; немає даних — червоний. Відбій бере рівень з початку.
+        $airLevel = $type === 'AIR' ? (Cache::get('ua_alarm_level:'.$alertKey) ?? $this->alerts->airLevel($this->oblastOf($place))) : 'red';
+        if ($started) {
+            Cache::put('ua_alarm_level:'.$alertKey, $airLevel, now()->addDays(3));
+        }
+        $severity = UkraineAlarm::severity($type, $local, $airLevel);
+
+        // Замок на одну зміну стану: паралельні опитування й вебхук не створять дубль.
+        return (int) (Cache::lock('ua_alarm_notify:'.$place.':'.$type.':'.($started ? 'on' : 'off'), 60)->block(10, fn () => $this->deliver($ids, $started, $type, $name, $local, $since, $now, $alertKey, $airLevel, $severity)));
+    }
+
+    /** Область (slug) регіону з довідника: для обраного місця «unit» чи «state/district». */
+    private function oblastOf(string $place): ?string
+    {
+        $id = explode('/', $place)[0];
+        $tree = $this->api->regions();
+        $state = $tree[$tree[$id]['state'] ?? $id] ?? null;
+
+        return $state !== null ? $this->alerts->slugFor($state['name']) : null;
+    }
+
+    /** @param  list<int>  $ids */
+    private function deliver(array $ids, bool $started, string $type, string $name, bool $local, ?string $since, CarbonImmutable $now, string $alertKey, string $airLevel, string $severity): int
+    {
         $count = 0;
         foreach (User::query()->whereKey($ids)->get() as $user) {
             $prefs = self::prefsOf($user);
@@ -218,7 +242,7 @@ class AlertWatcher
             if (! Cache::add('ua_alarm_sent:'.$user->id.':'.$alertKey.':'.($started ? 'on' : 'off'), 1, now()->addMinutes(5))) {
                 continue;
             }
-            $notice = new AirAlertNotice($started, $name, $type, $now->toIso8601String(), $local, $alertKey, $since, $prefs['silent']);
+            $notice = new AirAlertNotice($started, $name, $type, $now->toIso8601String(), $local, $alertKey, $since, $prefs['silent'], $airLevel);
             if ($started) {
                 if (! $prefs['start']) {
                     continue;

@@ -51,6 +51,8 @@ String threatTitle(Map<String, dynamic> t) => switch (t['variant']) {
   'gerbera' => tr('Гербера (імітатор)'),
   'fpv' => tr('FPV-дрон'),
   'cruise' => tr('Крилата ракета'),
+  'banderol' => tr('Бандероль'),
+  'unknown' => tr('Ціль не визначена'),
   _ => threatLabel('${t['type']}'),
 };
 
@@ -64,6 +66,8 @@ const glyphs = {
   'kab': 'M12 1.5c2.6 0 3.8 2.8 3.8 6.7v7l2.6 3.3v2.2l-3.4-1.6-3 3.4-3-3.4-3.4 1.6v-2.2l2.6-3.3v-7c0-3.9 1.2-6.7 3.8-6.7Z',
   'mig': 'M12 .8 13.6 7l8.6 6.1v2.1l-8.7-2.6-.5 6.2 3.1 2.1v1.6l-4.1-1-4.1 1v-1.6l3.1-2.1-.5-6.2-8.7 2.6v-2.1L10.4 7Z',
   'artillery': 'M12 2l2 6 6-2-4 5 5 4-6 .5L13 22l-1-6-4 4.5.8-6.3L3 13.5l5.3-2.6L5 5.5l5.4 2.6Z',
+  'banderol': 'M12 1.2c.8 0 1.2.9 1.2 2.1v5.4l9.6 2.1v2l-9.6-.8v6l3.2 1.8v1.6L12 20.6l-4.4.8v-1.6l3.2-1.8v-6l-9.6.8v-2l9.6-2.1V3.3c0-1.2.4-2.1 1.2-2.1Z',
+  'unknown': 'M12 1.5 22.5 21h-21Z M10.4 10.8c0-1.3.8-2.1 1.7-2.1 1 0 1.8.7 1.8 1.7 0 1.4-1.4 1.6-1.4 3h-1c0-1.9 1.3-2 1.3-3 0-.5-.3-.8-.7-.8-.5 0-.8.4-.8 1.2Zm1 4.2h1.2v1.3h-1.2Z',
 };
 
 /// Значок цілі: різновид, а якщо невідомий — тип.
@@ -82,7 +86,8 @@ String glyphKey(Map<String, dynamic> t) {
 }
 
 final _glyphCache = <String, Path>{};
-Path glyphPath(String key) => _glyphCache.putIfAbsent(key, () => parseSvgPath(glyphs[key] ?? glyphs['shahed']!));
+// «Ціль не визначена» — знак питання вирізано в трикутнику (evenOdd).
+Path glyphPath(String key) => _glyphCache.putIfAbsent(key, () => parseSvgPath(glyphs[key] ?? glyphs['shahed']!)..fillType = key == 'unknown' ? PathFillType.evenOdd : PathFillType.nonZero);
 
 /// Розбір шляху SVG (M L H V C A Z, абсолютні й відносні) у [Path].
 Path parseSvgPath(String d) {
@@ -396,13 +401,19 @@ class _AlertMapPainter extends CustomPainter {
     /// Головна тривога зони (найвищий пріоритет), кольори за типом і масштабом.
     void fillUnit(String code, String oblast, Path path) {
       final unit = byCode[code];
-      var type = AlertsConfig.primary([if (unit != null) unitType(unit), ...?levels[oblast]]);
+      final lv = levels[oblast] ?? const <AlertTypeCode>[];
+      // Повітряна тривога: жовтий рівень — лише БпЛА, червоний — ракети (чи невідомо).
+      final uavOnly = lv.contains(AlertTypeCode.uav) && !lv.contains(AlertTypeCode.ballistic);
+      final own = unit != null ? unitType(unit) : null;
+      var type = AlertsConfig.primary([if (own != null) (own == AlertTypeCode.air && uavOnly ? AlertTypeCode.uav : own), ...lv]);
       if (type == AlertTypeCode.clear && noData.contains(oblast)) type = AlertTypeCode.noData;
       final palette = AlertsConfig.resolveColors(type, type == AlertTypeCode.air ? (AlertsConfig.scaleOf(unit?['scale']) ?? AlertScaleCode.oblast) : null);
       final scale = type == AlertTypeCode.air ? (AlertsConfig.scaleOf(unit?['scale']) ?? AlertScaleCode.oblast) : null;
       canvas.drawPath(path, Paint()..color = AlertsConfig.mapColor(type, scale, dark));
       final active = type != AlertTypeCode.clear && type != AlertTypeCode.noData;
       if (!active) return;
+      // Радіаційна небезпека — жовта «зебра» з чорних смуг.
+      if (type == AlertTypeCode.nuclear) _hatch(canvas, path, Colors.black.withValues(alpha: 0.6), gap: 6, width: 2.4);
       final started = DateTime.tryParse('${unit?['started_at'] ?? ''}');
       if (started != null && now.difference(started).inHours >= 24) {
         // Тривога понад добу (окуповані території тощо) — штрих.

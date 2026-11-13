@@ -182,7 +182,8 @@ class AirAlertsTest extends TestCase
         $this->assertSame(0, $watcher->run());
         $start = $user->notifications()->first();
         $this->assertSame('red', $start->data['severity']);
-        $this->assertSame('Повітряна тривога: Житомирська територіальна громада', $start->data['text']);
+        $this->assertSame('Повітряна тривога (червоний рівень): Житомирська територіальна громада', $start->data['text']);
+        $this->assertSame('#EF4444', $start->data['accent']);
 
         // Відбій — оновлює той самий рядок у дзвіночку (пара «початок + відбій»), з тривалістю.
         $this->travel(65)->minutes();
@@ -215,14 +216,14 @@ class AirAlertsTest extends TestCase
         [$alerts, $index] = [[...$alerts, $this->row('10', 'State', 'ARTILLERY')], 3];
         $this->assertSame(1, $watcher->run());
         $data = $user->notifications()->first()->data;
-        $this->assertSame(['yellow', 'ARTILLERY', 'Загроза артобстрілу: Житомирська область'], [$data['severity'], $data['alert_type'], $data['text']]);
+        $this->assertSame(['yellow', 'ARTILLERY', 'Загроза артобстрілу: Житомирська область', '#F97316'], [$data['severity'], $data['alert_type'], $data['text'], $data['accent']]);
 
         // Обрана вся область, а повітряна тривога лише в районі — жовта «локальна» з назвою району.
         // (Тривога й артобстріл на всю область скінчились — два відбої, плюс локальна в районі.)
         [$alerts, $index] = [[$this->row('200', 'District', 'AIR')], 4];
         $this->assertSame(3, $watcher->run());
         $local = $user->notifications()->get()->first(fn ($n) => $n->data['local'] ?? false);
-        $this->assertSame(['yellow', 'Повітряна тривога (локально): Коростенський район'], [$local->data['severity'], $local->data['text']]);
+        $this->assertSame(['yellow', 'Повітряна тривога (червоний рівень) · локально: Коростенський район'], [$local->data['severity'], $local->data['text']]);
 
         // Фільтри: жовті вимкнено, відбій вимкнено, беззвучно — без пушу.
         $user->mergePref(['alert_yellow' => false]);
@@ -231,7 +232,10 @@ class AirAlertsTest extends TestCase
         $user->mergePref(['alert_silent' => true]);
         [$alerts, $index] = [[$this->row('10', 'State', 'NUCLEAR')], 6];
         $this->assertSame(1, $watcher->run());
-        $this->assertTrue($user->notifications()->get()->firstWhere('data.alert_type', 'NUCLEAR')->data['silent']);
+        $nuclear = $user->notifications()->get()->firstWhere('data.alert_type', 'NUCLEAR');
+        $this->assertTrue($nuclear->data['silent']);
+        // Радіаційна — жовта «зебра».
+        $this->assertSame(['#FACC15', true], [$nuclear->data['accent'], $nuclear->data['striped']]);
 
         // Воркер стояв 2 хв: відбій, що стався за цей час, не надсилається «заднім числом».
         $count = $user->notifications()->count();
@@ -241,7 +245,30 @@ class AirAlertsTest extends TestCase
         $this->assertSame($count, $user->notifications()->count());
     }
 
-    public function test_webhook_triggers_check_only_with_secret_and_cleanup_removes_old_duplicates(): void
+    public function test_air_alert_is_yellow_when_only_drones_are_on_radar(): void
+    {
+        $alerts = [];
+        $index = 1;
+        $this->fakeUkraineAlarm($this->zhytomyrTree(), $alerts, $index);
+        $user = User::factory()->create();
+        $user->mergePref(['alert_region' => 'zhytomyr']);
+        $watcher = app(AlertWatcher::class);
+        $watcher->run();
+        // На радарі в області — лише шахед: повітряна тривога жовтого рівня.
+        AirThreat::query()->create(['type' => 'uav', 'region_slug' => 'zhytomyr', 'place_name' => 'Житомир', 'title' => 'Шахед', 'lat' => 50.25, 'lng' => 28.66, 'detected_at' => now(), 'expires_at' => now()->addMinutes(10)]);
+        Cache::forget('alerts.state');
+        [$alerts, $index] = [[$this->row('10', 'State', 'AIR')], 2];
+        $this->assertSame(1, $watcher->run());
+        $data = $user->notifications()->first()->data;
+        $this->assertSame(['yellow', 'yellow', '#F59E0B'], [$data['severity'], $data['air_level'], $data['accent']]);
+        $this->assertSame('Повітряна тривога (жовтий рівень · БпЛА): Житомирська область', $data['text']);
+        // На мапі — теж жовтий рівень.
+        Cache::forget('alerts.state');
+        $region = collect($this->service()->state()['regions'])->firstWhere('slug', 'zhytomyr');
+        $this->assertSame(['UAV', 'yellow'], [$region['alert'], $region['air_level']]);
+    }
+
+    public function test_webhook_only_signals_and_cleanup_removes_old_duplicates(): void
     {
         $alerts = [];
         $index = 1;
@@ -250,14 +277,12 @@ class AirAlertsTest extends TestCase
         $user->mergePref(['alert_region' => 'zhytomyr']);
         app(AlertWatcher::class)->run();
 
-        $secret = app(UkraineAlarm::class)->webhookSecret();
-        $this->postJson('/api/alerts/ukraine-alarm/wrong', [])->assertNotFound();
-        // Вебхук — лише сигнал: тривога все одно підтверджується через API.
-        $this->postJson('/api/alerts/ukraine-alarm/'.$secret, ['regionId' => '10', 'alertType' => 'AIR'])->assertOk();
+        // Вебхук — лише сигнал: «тривога» в тілі без підтвердження API нічого не створює.
+        $this->postJson('/api/webhooks/ukraine-alarm', ['regionId' => '10', 'type' => 'AIR', 'status' => 'Activate'])->assertOk();
         $this->assertSame(0, $user->notifications()->count());
         [$alerts, $index] = [[$this->row('10', 'State', 'AIR')], 2];
-        $this->postJson('/api/alerts/ukraine-alarm/'.$secret, ['regionId' => '10'])->assertOk();
-        $this->postJson('/api/alerts/ukraine-alarm/'.$secret, ['regionId' => '10'])->assertOk();
+        $this->postJson('/api/webhooks/ukraine-alarm', ['regionId' => '10'])->assertOk();
+        $this->postJson('/api/webhooks/ukraine-alarm', ['regionId' => '10'])->assertOk();
         $this->assertSame(1, $user->notifications()->count());
 
         // Старі дублі (без alert_key) прибирає команда; нові лишаються.
@@ -483,7 +508,9 @@ class AirAlertsTest extends TestCase
 
         // Хімічна (90) важливіша за повітряну (70) й БпЛА (40); решта — вторинні бейджі.
         $this->assertSame('CHEMICAL', $regions['sumy']['alert']);
-        $this->assertSame(['CHEMICAL', 'AIR', 'UAV'], $regions['sumy']['alerts']);
+        // Повітряна тривога, а на радарі лише шахед — жовтий рівень (UAV) замість червоного.
+        $this->assertSame(['CHEMICAL', 'UAV'], $regions['sumy']['alerts']);
+        $this->assertSame('yellow', $regions['sumy']['air_level']);
         $this->assertSame('oblast', $regions['sumy']['scale']);
         // Тривога лише в районі — масштаб «район», колір заливки району.
         $this->assertSame('AIR', $regions['kyiv-oblast']['alert']);

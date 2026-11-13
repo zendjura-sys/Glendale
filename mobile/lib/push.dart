@@ -469,7 +469,7 @@ class Push {
           priority: alert && !yellow && !clear ? Priority.max : Priority.high,
           icon: 'ic_notification',
           // Червона тривога — червоний акцент, жовта — бурштиновий.
-          color: alert ? (clear ? const Color(0xFF10B981) : (yellow ? const Color(0xFFF59E0B) : const Color(0xFFEF4444))) : primary,
+          color: alert ? (_accent(data['accent']) ?? (clear ? const Color(0xFF10B981) : (yellow ? const Color(0xFFF59E0B) : const Color(0xFFEF4444)))) : primary,
           tag: tag,
           styleInformation: BigTextStyleInformation(note.body ?? ''),
         ),
@@ -505,4 +505,10 @@ class Push {
     if (_location == target) return;
     router.push(target);
   }
+}
+
+/// Колір тривоги з пушу («#F97316» → Color), щоб значок сповіщення мав колір типу.
+Color? _accent(Object? hex) {
+  final v = int.tryParse('${hex ?? ''}'.replaceFirst('#', ''), radix: 16);
+  return v == null ? null : Color(0xFF000000 | v);
 }

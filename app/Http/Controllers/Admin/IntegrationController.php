@@ -730,7 +730,7 @@ class IntegrationController extends Controller
                 'docs' => 'https://api.ukrainealarm.com/swagger/index.html',
                 'steps' => [
                     'Попросіть ключ API на api.ukrainealarm.com і вставте в «Ключ UkraineAlarm» (або UKRAINE_ALARM_KEY у .env сервера).',
-                    'Миттєві зміни: команда php artisan alerts:webhook реєструє наш вебхук в UkraineAlarm; без нього сервер сам перевіряє /alerts/status кожні 10 с.',
+                    'Миттєві зміни: команда php artisan alerts:webhook підписує /api/webhooks/ukraine-alarm в UkraineAlarm; без вебхука сервер сам перевіряє /alerts/status кожні 10 с.',
                     'Цілі на мапі (радар) — відкритий API NEPTUN (neptun.in.ua/developers), умова — видиме посилання на NEPTUN біля мапи (додається саме). Вимкнути — «0» у полі NEPTUN.',
                     'Групи джерел цілей — через кому: official, intel, regional, aggregators. Власні канали — через кому, без @.',
                     'Натисніть «Перевірити».',

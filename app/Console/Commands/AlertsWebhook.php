@@ -5,10 +5,10 @@ namespace App\Console\Commands;
 use App\Services\Alerts\UkraineAlarm;
 use Illuminate\Console\Command;
 
-/** Зареєструвати (оновити) наш вебхук в UkraineAlarm v3: POST /api/v3/webhook з адресою й усіма областями. */
+/** Вебхук UkraineAlarm v3: POST (підписка), PATCH (--update) чи DELETE (--delete) /api/v3/webhook з webHookUrl. */
 class AlertsWebhook extends Command
 {
-    protected $signature = 'alerts:webhook {--delete : Прибрати вебхук}';
+    protected $signature = 'alerts:webhook {--update : Оновити адресу (PATCH)} {--delete : Прибрати вебхук}';
 
     protected $description = 'Зареєструвати вебхук UkraineAlarm для миттєвих тривог';
 
@@ -19,7 +19,7 @@ class AlertsWebhook extends Command
 
             return self::FAILURE;
         }
-        $ok = $this->option('delete') ? $api->deleteWebhook() : $api->registerWebhook();
+        $ok = $this->option('delete') ? $api->deleteWebhook() : $api->registerWebhook((bool) $this->option('update'));
         $ok ? $this->info('Готово: '.$api->webhookUrl()) : $this->error('UkraineAlarm не прийняв запит.');
 
         return $ok ? self::SUCCESS : self::FAILURE;

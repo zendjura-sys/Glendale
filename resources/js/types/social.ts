@@ -249,6 +249,10 @@ export type NotificationItem = {
         type: string;
         ended: boolean;
         region: string | null;
+        /** Колір типу тривоги (#EF4444, #F59E0B, #F97316…). */
+        accent?: string | null;
+        /** Радіаційна — жовта «зебра». */
+        striped?: boolean;
     } | null;
     read: boolean;
     created_at: string;

@@ -67,6 +67,8 @@ const GLYPH_LEGEND = [
     ['jet', 'uav', () => tr('Реактивний Shahed')],
     ['fpv', 'uav', () => tr('FPV-дрон')],
     ['cruise', 'missile', () => tr('Крилата ракета')],
+    ['banderol', 'uav', () => tr('Бандероль')],
+    ['unknown', 'uav', () => tr('Ціль не визначена')],
     ['ballistic', 'ballistic', () => tr('Балістика')],
     ['kab', 'kab', () => tr('КАБ')],
     ['mig', 'mig', () => tr('МіГ-31К')],
@@ -511,6 +513,11 @@ export default function Alerts(props: {
                                                 >
                                                     <path
                                                         d={GLYPHS[glyph]}
+                                                        fillRule={
+                                                            glyph === 'unknown'
+                                                                ? 'evenodd'
+                                                                : undefined
+                                                        }
                                                         fill={
                                                             THREAT_COLOR[type]
                                                         }

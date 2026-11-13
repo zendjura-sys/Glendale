@@ -31,6 +31,8 @@ class AirAlertNotice extends Notification
         public readonly ?string $alertKey = null,
         public readonly ?string $since = null,
         public readonly bool $silent = false,
+        /** Повітряна тривога: yellow — лише БпЛА, red — ракети (чи невідомо). */
+        public readonly string $airLevel = 'red',
     ) {}
 
     /**
@@ -47,8 +49,13 @@ class AirAlertNotice extends Notification
     public function toArray(object $notifiable): array
     {
         $type = UkraineAlarm::type($this->type);
-        $severity = UkraineAlarm::severity($type, $this->local);
-        $name = UkraineAlarm::TYPES[$type][$this->started ? 0 : 1].($this->local && $this->started ? ' (локально)' : '');
+        $severity = UkraineAlarm::severity($type, $this->local, $this->airLevel);
+        $level = match (true) {
+            $type !== 'AIR' || ! $this->started => '',
+            $this->airLevel === 'yellow' => ' (жовтий рівень · БпЛА)',
+            default => ' (червоний рівень)',
+        };
+        $name = UkraineAlarm::TYPES[$type][$this->started ? 0 : 1].$level.($this->local && $this->started ? ' · локально' : '');
         $at = $this->at ?? now()->toIso8601String();
         $minutes = $this->minutes($at);
 
@@ -58,12 +65,18 @@ class AirAlertNotice extends Notification
             'text' => $name.': '.$this->region,
             'excerpt' => match (true) {
                 ! $this->started => ($minutes !== null ? 'Тривала '.self::duration($minutes).' · ' : '').'можна виходити з укриття',
+                $type === 'AIR' && $this->airLevel === 'yellow' && ! $this->local => 'Загроза БпЛА — пройдіть в укриття',
                 $severity === 'red' => 'Негайно пройдіть в укриття',
                 $this->local => 'Увага: тривога в частині області',
                 default => 'Увага: підвищена небезпека',
             },
             'alert_type' => $type,
             'severity' => $this->started ? $severity : 'clear',
+            // Колір картки за типом (AIR червоний/жовтий, артобстріл помаранчевий, бої салатові, хімічна фіолетова,
+            // радіаційна жовта з чорними смугами); відбій — смарагдовий.
+            'accent' => $this->started ? UkraineAlarm::accent($type, $this->airLevel) : '#10B981',
+            'striped' => $this->started && $type === 'NUCLEAR',
+            'air_level' => $type === 'AIR' ? $this->airLevel : null,
             'start_severity' => $severity,
             'local' => $this->local,
             'region' => $this->region,

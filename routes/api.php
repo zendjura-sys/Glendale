@@ -145,8 +145,8 @@ Route::post('livekit/webhook', [VoiceController::class, 'webhook'])->middleware(
 
 // Боти GameCon: оновлення Telegram (секрет у заголовку) і кнопки Discord (підпис Ed25519).
 Route::post('bots/telegram', Bots\TelegramWebhookController::class)->middleware('throttle:600,1')->name('bots.telegram.webhook');
-// Вебхук UkraineAlarm v3 (миттєві тривоги й відбої); секрет — у адресі.
-Route::post('alerts/ukraine-alarm/{secret}', UkraineAlarmWebhookController::class)->middleware('throttle:600,1')->name('alerts.ukraine-alarm.webhook');
+// Вебхук UkraineAlarm v3 (миттєві тривоги й відбої): лише сигнал перевірити API.
+Route::post('webhooks/ukraine-alarm', UkraineAlarmWebhookController::class)->middleware('throttle:120,1')->name('alerts.ukraine-alarm.webhook');
 Route::post('bots/discord/interactions', Bots\DiscordInteractionsController::class)->middleware('throttle:600,1')->name('bots.discord.interactions');
 
 // «Увійти через GameCon» для серверів: обмін коду, профіль гравця, синхронізація онлайну.

@@ -61,11 +61,11 @@ enum AlertType: string
         return match ($this) {
             self::NUCLEAR => 'Радіаційна небезпека',
             self::CHEMICAL => 'Хімічна загроза',
-            self::BALLISTIC => 'Ракетна небезпека (Балістика)',
-            self::AIR => 'Повітряна тривога',
+            self::BALLISTIC => 'Ракетна небезпека',
+            self::AIR => 'Повітряна тривога (червоний рівень)',
             self::ARTILLERY => 'Загроза артобстрілу',
             self::URBAN_FIGHTS => 'Вуличні бої',
-            self::UAV => 'Загроза БпЛА',
+            self::UAV => 'Повітряна тривога (жовтий рівень)',
             self::CLEAR => 'Немає тривоги',
             self::NO_DATA => 'Немає даних',
         };
@@ -114,12 +114,14 @@ enum AlertType: string
         }
 
         return match ($this) {
-            self::NUCLEAR => ['hex' => '#9333EA', 'fill' => 'rgba(147, 51, 234, 0.34)', 'border' => 'rgba(192, 132, 252, 0.55)', 'text' => '#C084FC'],
-            self::CHEMICAL => ['hex' => '#84CC16', 'fill' => 'rgba(132, 204, 22, 0.30)', 'border' => 'rgba(163, 230, 53, 0.52)', 'text' => '#A3E635'],
+            // Радіаційна — жовта з чорними смугами («зебра», смуги малює мапа), хімічна — фіолетова.
+            self::NUCLEAR => ['hex' => '#FACC15', 'fill' => 'rgba(250, 204, 21, 0.40)', 'border' => 'rgba(253, 224, 71, 0.62)', 'text' => '#FDE047'],
+            self::CHEMICAL => ['hex' => '#A855F7', 'fill' => 'rgba(168, 85, 247, 0.34)', 'border' => 'rgba(192, 132, 252, 0.55)', 'text' => '#C084FC'],
             self::BALLISTIC => ['hex' => '#BE123C', 'fill' => 'rgba(190, 18, 60, 0.44)', 'border' => 'rgba(251, 113, 133, 0.65)', 'text' => '#FDA4AF'],
             self::AIR => AlertScale::OBLAST->colors(),
             self::ARTILLERY => ['hex' => '#F97316', 'fill' => 'rgba(249, 115, 22, 0.32)', 'border' => 'rgba(251, 146, 60, 0.52)', 'text' => '#FB923C'],
-            self::URBAN_FIGHTS => ['hex' => '#EA580C', 'fill' => 'rgba(234, 88, 12, 0.35)', 'border' => 'rgba(249, 115, 22, 0.55)', 'text' => '#F97316'],
+            // Вуличні бої — салатовий.
+            self::URBAN_FIGHTS => ['hex' => '#84CC16', 'fill' => 'rgba(132, 204, 22, 0.30)', 'border' => 'rgba(163, 230, 53, 0.52)', 'text' => '#A3E635'],
             self::UAV => ['hex' => '#F59E0B', 'fill' => 'rgba(245, 158, 11, 0.26)', 'border' => 'rgba(251, 191, 36, 0.48)', 'text' => '#FBBF24'],
             self::CLEAR => ['hex' => '#10B981', 'fill' => 'rgba(16, 185, 129, 0.14)', 'border' => 'rgba(52, 211, 153, 0.35)', 'text' => '#34D399'],
             self::NO_DATA => ['hex' => '#475569', 'fill' => 'rgba(71, 85, 105, 0.28)', 'border' => 'rgba(100, 116, 139, 0.40)', 'text' => '#94A3B8'],

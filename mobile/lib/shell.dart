@@ -564,9 +564,21 @@ class _AlertNoticeRowState extends State<AlertNoticeRow> {
     final alert = mapOf(widget.row['alert']);
     final ended = alert['ended'] == true || alert['severity'] == 'clear';
     final red = alert['severity'] != 'yellow' && !ended;
-    final accent = ended ? const Color(0xFF10B981) : (red ? const Color(0xFFEF4444) : const Color(0xFFF59E0B));
+    // Колір за типом з сервера (AIR червоний/жовтий, артобстріл помаранчевий, бої салатові, хімічна фіолетова…).
+    final hex = int.tryParse('${alert['accent'] ?? ''}'.replaceFirst('#', ''), radix: 16);
+    final accent = hex != null ? Color(0xFF000000 | hex) : (ended ? const Color(0xFF10B981) : (red ? const Color(0xFFEF4444) : const Color(0xFFF59E0B)));
+    final striped = alert['striped'] == true && !ended;
     final label = ended ? tr('Відбій') : (red ? tr('Небезпека · в укриття') : tr('Увага · підвищена небезпека'));
-    final icon = ended ? LucideIcons.shieldCheck : (red ? LucideIcons.siren : LucideIcons.triangleAlert);
+    final icon = ended
+        ? LucideIcons.shieldCheck
+        : switch (alert['type']) {
+            'ARTILLERY' => LucideIcons.bomb,
+            'URBAN_FIGHTS' => LucideIcons.swords,
+            'CHEMICAL' => LucideIcons.biohazard,
+            'NUCLEAR' => LucideIcons.radiation,
+            'INFO' => LucideIcons.info,
+            _ => red ? LucideIcons.siren : LucideIcons.triangleAlert,
+          };
     return InkWell(
       onTap: widget.onTap,
       borderRadius: BorderRadius.circular(12),
@@ -581,8 +593,22 @@ class _AlertNoticeRowState extends State<AlertNoticeRow> {
           Container(
             width: 42,
             height: 42,
-            decoration: BoxDecoration(color: accent.withValues(alpha: 0.22), shape: BoxShape.circle),
-            child: Icon(icon, size: 20, color: accent),
+            clipBehavior: Clip.antiAlias,
+            decoration: BoxDecoration(
+              color: accent.withValues(alpha: 0.22),
+              shape: BoxShape.circle,
+              // Радіаційна небезпека — жовта «зебра».
+              gradient: striped
+                  ? LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: const Alignment(-0.6, -0.6),
+                      tileMode: TileMode.repeated,
+                      colors: [accent.withValues(alpha: 0.5), accent.withValues(alpha: 0.5), Colors.black54, Colors.black54],
+                      stops: const [0, 0.5, 0.5, 1],
+                    )
+                  : null,
+            ),
+            child: Icon(icon, size: 20, color: striped ? Colors.white : accent),
           ),
           const SizedBox(width: 12),
           Expanded(

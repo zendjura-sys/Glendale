@@ -55,6 +55,8 @@ class NotificationController extends Controller
                     'type' => $n->data['alert_type'] ?? 'AIR',
                     'ended' => ($n->data['kind'] ?? '') === 'air_alert_end',
                     'region' => $n->data['region'] ?? null,
+                    'accent' => $n->data['accent'] ?? null,
+                    'striped' => (bool) ($n->data['striped'] ?? false),
                 ] : null,
                 'read' => $n->read_at !== null,
                 // Час події тривоги — коли її побачило опитування API, а не коли спрацювала черга.

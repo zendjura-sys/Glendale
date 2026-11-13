@@ -74,6 +74,7 @@ class PushNotifier
                 'url' => (string) ($data['url'] ?? '/notifications'),
                 'severity' => isset($data['severity']) ? (string) $data['severity'] : null,
                 'alert_type' => isset($data['alert_type']) ? (string) $data['alert_type'] : null,
+                'accent' => isset($data['accent']) ? (string) $data['accent'] : null,
                 'expires_at' => $alert ? (string) (now()->getTimestamp() + self::ALERT_TTL) : null,
             ], fn ($v) => $v !== null),
             $alert ? self::CHANNEL_ALERTS : self::CHANNEL_ACTIVITY,

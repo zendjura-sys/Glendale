@@ -38,9 +38,37 @@ class UkraineAlarm
      */
     public const RED = ['AIR', 'CHEMICAL', 'NUCLEAR'];
 
-    public static function severity(string $type, bool $local = false): string
+    /**
+     * Рівень для фільтрів «червоні / жовті». Повітряна тривога за правилами оповіщення: жовта — лише БпЛА,
+     * червона — ракети (з БпЛА чи без); API цього не розрізняє, тож рівень AIR передаємо окремо ($airLevel).
+     */
+    public static function severity(string $type, bool $local = false, string $airLevel = 'red'): string
     {
-        return ! $local && in_array(self::type($type), self::RED, true) ? 'red' : 'yellow';
+        $type = self::type($type);
+        if ($local) {
+            return 'yellow';
+        }
+        if ($type === 'AIR') {
+            return $airLevel === 'yellow' ? 'yellow' : 'red';
+        }
+
+        return in_array($type, self::RED, true) ? 'red' : 'yellow';
+    }
+
+    /**
+     * Колір типу за правилами оповіщення: AIR — червоний (ракети) чи жовтий (БпЛА), артобстріл — помаранчевий,
+     * вуличні бої — салатовий, хімічна — фіолетовий, радіаційна — жовтий із чорними смугами, інформаційне — синій.
+     */
+    public static function accent(string $type, string $airLevel = 'red'): string
+    {
+        return match (self::type($type)) {
+            'AIR' => $airLevel === 'yellow' ? '#F59E0B' : '#EF4444',
+            'ARTILLERY' => '#F97316',
+            'URBAN_FIGHTS' => '#84CC16',
+            'CHEMICAL' => '#A855F7',
+            'NUCLEAR' => '#FACC15',
+            default => '#3B82F6',
+        };
     }
 
     public function __construct(private readonly SiteSettings $settings) {}
@@ -49,8 +77,9 @@ class UkraineAlarm
     public function key(): ?string
     {
         $key = config('services.ukraine_alarm.key') ?: $this->settings->secret('ukrainealarm_token');
+        $key = is_string($key) ? trim($key) : '';
 
-        return is_string($key) && $key !== '' ? $key : null;
+        return $key !== '' ? $key : null;
     }
 
     public function enabled(): bool
@@ -224,25 +253,16 @@ class UkraineAlarm
         return $out;
     }
 
-    /** Секрет у адресі нашого вебхука: з конфігу або похідний від APP_KEY (не зберігається окремо). */
-    public function webhookSecret(): string
-    {
-        $secret = config('services.ukraine_alarm.webhook_secret');
-
-        return is_string($secret) && $secret !== '' ? $secret : substr(hash_hmac('sha256', 'ukraine-alarm-webhook', (string) config('app.key')), 0, 40);
-    }
-
+    /** Наша адреса для вебхука (WebHookModel.webHookUrl). Тіло вебхука — лише сигнал, стан однаково з API. */
     public function webhookUrl(): string
     {
-        return url('/api/alerts/ukraine-alarm/'.$this->webhookSecret());
+        return url('/api/webhooks/ukraine-alarm');
     }
 
-    /** POST /api/v3/webhook — сервер UkraineAlarm кличе нас на кожну зміну в усіх областях. */
-    public function registerWebhook(): bool
+    /** POST /api/v3/webhook (підписка) чи PATCH (оновити адресу). */
+    public function registerWebhook(bool $update = false): bool
     {
-        $states = array_values(array_map(fn ($r) => $r['id'], array_filter($this->regions(), fn ($r) => $r['type'] === 'State')));
-
-        return $this->send('post', '/webhook', ['webHookUrl' => $this->webhookUrl(), 'regionIds' => $states]);
+        return $this->send($update ? 'patch' : 'post', '/webhook', ['webHookUrl' => $this->webhookUrl()]);
     }
 
     public function deleteWebhook(): bool

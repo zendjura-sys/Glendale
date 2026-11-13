@@ -29,12 +29,12 @@ class AlertTypeMeta {
 
 abstract final class AlertsConfig {
   static const types = <AlertTypeCode, AlertTypeMeta>{
-    AlertTypeCode.nuclear: AlertTypeMeta(100, LucideIcons.radiation, AlertPalette(Color(0xFF9333EA), Color.fromRGBO(147, 51, 234, 0.34), Color.fromRGBO(192, 132, 252, 0.55), Color(0xFFC084FC))),
-    AlertTypeCode.chemical: AlertTypeMeta(90, LucideIcons.biohazard, AlertPalette(Color(0xFF84CC16), Color.fromRGBO(132, 204, 22, 0.30), Color.fromRGBO(163, 230, 53, 0.52), Color(0xFFA3E635))),
+    AlertTypeCode.nuclear: AlertTypeMeta(100, LucideIcons.radiation, AlertPalette(Color(0xFFFACC15), Color.fromRGBO(250, 204, 21, 0.40), Color.fromRGBO(253, 224, 71, 0.62), Color(0xFFFDE047))),
+    AlertTypeCode.chemical: AlertTypeMeta(90, LucideIcons.biohazard, AlertPalette(Color(0xFFA855F7), Color.fromRGBO(168, 85, 247, 0.34), Color.fromRGBO(192, 132, 252, 0.55), Color(0xFFC084FC))),
     AlertTypeCode.ballistic: AlertTypeMeta(80, LucideIcons.flame, AlertPalette(Color(0xFFBE123C), Color.fromRGBO(190, 18, 60, 0.44), Color.fromRGBO(251, 113, 133, 0.65), Color(0xFFFDA4AF))),
     AlertTypeCode.air: AlertTypeMeta(70, LucideIcons.siren, AlertPalette(Color(0xFFDC2626), Color.fromRGBO(220, 38, 38, 0.38), Color.fromRGBO(248, 113, 113, 0.60), Color(0xFFF87171))),
     AlertTypeCode.artillery: AlertTypeMeta(60, LucideIcons.bomb, AlertPalette(Color(0xFFF97316), Color.fromRGBO(249, 115, 22, 0.32), Color.fromRGBO(251, 146, 60, 0.52), Color(0xFFFB923C))),
-    AlertTypeCode.urbanFights: AlertTypeMeta(50, LucideIcons.swords, AlertPalette(Color(0xFFEA580C), Color.fromRGBO(234, 88, 12, 0.35), Color.fromRGBO(249, 115, 22, 0.55), Color(0xFFF97316))),
+    AlertTypeCode.urbanFights: AlertTypeMeta(50, LucideIcons.swords, AlertPalette(Color(0xFF84CC16), Color.fromRGBO(132, 204, 22, 0.30), Color.fromRGBO(163, 230, 53, 0.52), Color(0xFFA3E635))),
     AlertTypeCode.uav: AlertTypeMeta(40, LucideIcons.plane, AlertPalette(Color(0xFFF59E0B), Color.fromRGBO(245, 158, 11, 0.26), Color.fromRGBO(251, 191, 36, 0.48), Color(0xFFFBBF24))),
     AlertTypeCode.clear: AlertTypeMeta(10, LucideIcons.shieldCheck, AlertPalette(Color(0xFF10B981), Color.fromRGBO(16, 185, 129, 0.14), Color.fromRGBO(52, 211, 153, 0.35), Color(0xFF34D399))),
     AlertTypeCode.noData: AlertTypeMeta(0, LucideIcons.circleHelp, AlertPalette(Color(0xFF475569), Color.fromRGBO(71, 85, 105, 0.28), Color.fromRGBO(100, 116, 139, 0.40), Color(0xFF94A3B8))),
@@ -96,11 +96,11 @@ abstract final class AlertsConfig {
   static String label(AlertTypeCode type) => switch (type) {
     AlertTypeCode.nuclear => tr('Радіаційна небезпека'),
     AlertTypeCode.chemical => tr('Хімічна загроза'),
-    AlertTypeCode.ballistic => tr('Ракетна небезпека (Балістика)'),
-    AlertTypeCode.air => tr('Повітряна тривога'),
+    AlertTypeCode.ballistic => tr('Ракетна небезпека'),
+    AlertTypeCode.air => tr('Повітряна тривога (червоний рівень)'),
     AlertTypeCode.artillery => tr('Загроза артобстрілу'),
     AlertTypeCode.urbanFights => tr('Вуличні бої'),
-    AlertTypeCode.uav => tr('Загроза БпЛА'),
+    AlertTypeCode.uav => tr('Повітряна тривога (жовтий рівень)'),
     AlertTypeCode.clear => tr('Немає тривоги'),
     AlertTypeCode.noData => tr('Немає даних'),
   };

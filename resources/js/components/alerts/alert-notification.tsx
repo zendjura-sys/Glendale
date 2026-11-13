@@ -1,6 +1,15 @@
 import { Link } from '@inertiajs/react';
-import { ShieldCheck, Siren, TriangleAlert } from 'lucide-react';
+import {
+    Biohazard,
+    Bomb,
+    Info,
+    Radiation,
+    ShieldCheck,
+    Siren,
+    Swords,
+} from 'lucide-react';
 import { useState } from 'react';
+import type { CSSProperties } from 'react';
 import { toast } from 'sonner';
 import { api } from '@/lib/api';
 import { timeAgo } from '@/lib/format';
@@ -8,9 +17,19 @@ import { tr } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import type { NotificationItem } from '@/types';
 
+const ICONS = {
+    AIR: Siren,
+    ARTILLERY: Bomb,
+    URBAN_FIGHTS: Swords,
+    CHEMICAL: Biohazard,
+    NUCLEAR: Radiation,
+    INFO: Info,
+} as const;
+
 /**
- * Картка тривоги в сповіщеннях: червона — негайно в укриття, жовта — увага, підвищена небезпека;
- * відбій — спокійний зелений. Кнопка «Я в укритті» ставить статус, який бачать друзі й клан.
+ * Картка тривоги в сповіщеннях — колір за правилами оповіщення: повітряна червона (ракети) чи жовта (БпЛА),
+ * артобстріл помаранчевий, вуличні бої салатові, хімічна фіолетова, радіаційна жовта з чорними смугами;
+ * відбій — смарагдовий. «Я в укритті» ставить статус, який бачать друзі й клан.
  */
 export function AlertNotification({
     item,
@@ -21,9 +40,19 @@ export function AlertNotification({
 }) {
     const alert = item.alert!;
     const [sheltered, setSheltered] = useState(false);
-    // 🔴 #EF4444 — в укриття, 🟡 #F59E0B — увага, 🟢 #10B981 — відбій.
     const red = alert.severity === 'red' && !alert.ended;
-    const Icon = alert.ended ? ShieldCheck : red ? Siren : TriangleAlert;
+    const accent =
+        alert.accent ?? (alert.ended ? '#10B981' : red ? '#EF4444' : '#F59E0B');
+    const Icon = alert.ended
+        ? ShieldCheck
+        : (ICONS[alert.type as keyof typeof ICONS] ?? Siren);
+    const tint = (alpha: number) =>
+        `color-mix(in srgb, ${accent} ${alpha}%, transparent)`;
+    const stripes: CSSProperties | undefined = alert.striped
+        ? {
+              backgroundImage: `repeating-linear-gradient(45deg, ${tint(22)} 0 6px, rgb(0 0 0 / 0.35) 6px 12px)`,
+          }
+        : undefined;
     const shelter = () =>
         api('PUT', '/alerts/preferences', { shelter: true })
             .then(() => {
@@ -34,25 +63,13 @@ export function AlertNotification({
 
     return (
         <div
-            className={cn(
-                'relative overflow-hidden rounded-xl px-2.5 py-2.5',
-                alert.ended
-                    ? 'bg-[#10B981]/[0.08]'
-                    : red
-                      ? 'bg-[#EF4444]/[0.12]'
-                      : 'bg-[#F59E0B]/[0.10]',
-            )}
+            className="relative overflow-hidden rounded-xl px-2.5 py-2.5"
+            style={{ background: tint(alert.ended ? 8 : 12) }}
         >
             <span
                 aria-hidden
-                className={cn(
-                    'absolute inset-y-2 left-0 w-0.5 rounded-full',
-                    alert.ended
-                        ? 'bg-[#10B981]'
-                        : red
-                          ? 'bg-[#EF4444]'
-                          : 'bg-[#F59E0B]',
-                )}
+                className="absolute inset-y-2 left-0 w-0.5 rounded-full"
+                style={{ background: accent }}
             />
             <Link
                 href={item.url ?? '/alerts'}
@@ -60,14 +77,8 @@ export function AlertNotification({
                 className="flex gap-3"
             >
                 <span
-                    className={cn(
-                        'flex size-11 shrink-0 items-center justify-center rounded-full',
-                        alert.ended
-                            ? 'bg-[#10B981]/20 text-[#10B981]'
-                            : red
-                              ? 'bg-[#EF4444]/25 text-[#EF4444]'
-                              : 'bg-[#F59E0B]/20 text-[#F59E0B]',
-                    )}
+                    className="flex size-11 shrink-0 items-center justify-center rounded-full"
+                    style={{ background: tint(22), color: accent, ...stripes }}
                 >
                     <Icon
                         className={cn(
@@ -78,14 +89,8 @@ export function AlertNotification({
                 </span>
                 <span className="min-w-0 flex-1 text-sm leading-snug break-words">
                     <span
-                        className={cn(
-                            'block text-[11px] font-semibold',
-                            alert.ended
-                                ? 'text-[#10B981]'
-                                : red
-                                  ? 'text-[#EF4444]'
-                                  : 'text-[#F59E0B]',
-                        )}
+                        className="block text-[11px] font-semibold"
+                        style={{ color: accent }}
                     >
                         {alert.ended
                             ? tr('Відбій')
@@ -114,7 +119,7 @@ export function AlertNotification({
                     className={cn(
                         'mt-2 ml-14 inline-flex h-8 items-center gap-1.5 rounded-lg px-3 text-xs font-semibold transition',
                         sheltered
-                            ? 'bg-emerald-500/20 text-emerald-200'
+                            ? 'bg-[#10B981]/20 text-emerald-200'
                             : 'bg-white/10 text-white hover:bg-white/15',
                     )}
                 >

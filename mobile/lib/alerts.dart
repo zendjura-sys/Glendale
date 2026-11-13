@@ -162,6 +162,8 @@ _Legend _legendOf(List<Map<String, dynamic>> regions, List<Map<String, dynamic>>
     ('jet', 'jet', 'uav', tr('Реактивний Shahed')),
     ('fpv', 'fpv', 'uav', tr('FPV-дрон')),
     ('cruise', 'cruise', 'missile', tr('Крилата ракета')),
+    ('banderol', 'banderol', 'uav', tr('Бандероль')),
+    ('unknown', 'unknown', 'uav', tr('Ціль не визначена')),
     ('ballistic', null, 'ballistic', tr('Балістика')),
     ('kab', null, 'kab', tr('КАБ')),
     ('mig', null, 'mig', tr('МіГ-31К')),
@@ -323,8 +325,8 @@ class _AlertsScreenState extends State<AlertsScreen> {
             for (final f in [
               ('start', tr('Початок тривоги'), tr('одразу, як API оголосить тривогу'), null),
               ('end', tr('Відбій тривоги'), tr('з тривалістю тривоги'), null),
-              ('red', tr('Червоні тривоги'), tr('повітряна, хімічна, радіаційна — в укриття'), const Color(0xFFEF4444)),
-              ('yellow', tr('Жовті тривоги'), tr('артобстріл, вуличні бої, інформаційні, локальні в районах'), const Color(0xFFF59E0B)),
+              ('red', tr('Червоні тривоги'), tr('ракетна небезпека, хімічна, радіаційна — в укриття'), const Color(0xFFEF4444)),
+              ('yellow', tr('Жовті тривоги'), tr('лише БпЛА, артобстріл, вуличні бої, інформаційні, локальні в районах'), const Color(0xFFF59E0B)),
               ('silent', tr('Беззвучний режим'), tr('лише рядок у дзвіночку, без push і звуку'), null),
             ])
               SwitchListTile(

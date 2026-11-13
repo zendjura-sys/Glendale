@@ -60,7 +60,14 @@ export type AlertUnit = {
     started_at: string | null;
 };
 
-export type ThreatVariant = 'shahed' | 'jet' | 'gerbera' | 'fpv' | 'cruise';
+export type ThreatVariant =
+    | 'shahed'
+    | 'jet'
+    | 'gerbera'
+    | 'fpv'
+    | 'cruise'
+    | 'banderol'
+    | 'unknown';
 
 export type AirThreat = {
     id: number;
@@ -151,6 +158,10 @@ export function threatTitle(
             return tr('FPV-дрон');
         case 'cruise':
             return tr('Крилата ракета');
+        case 'banderol':
+            return tr('Бандероль');
+        case 'unknown':
+            return tr('Ціль не визначена');
         default:
             return threatLabel(threat.type);
     }
@@ -175,6 +186,12 @@ export const GLYPHS = {
     mig: 'M12 .8 13.6 7l8.6 6.1v2.1l-8.7-2.6-.5 6.2 3.1 2.1v1.6l-4.1-1-4.1 1v-1.6l3.1-2.1-.5-6.2-8.7 2.6v-2.1L10.4 7Z',
     artillery:
         'M12 2l2 6 6-2-4 5 5 4-6 .5L13 22l-1-6-4 4.5.8-6.3L3 13.5l5.3-2.6L5 5.5l5.4 2.6Z',
+    // «Бандероль»: реактивний безпілотник із прямими крилами й хвостовим оперенням.
+    banderol:
+        'M12 1.2c.8 0 1.2.9 1.2 2.1v5.4l9.6 2.1v2l-9.6-.8v6l3.2 1.8v1.6L12 20.6l-4.4.8v-1.6l3.2-1.8v-6l-9.6.8v-2l9.6-2.1V3.3c0-1.2.4-2.1 1.2-2.1Z',
+    // Ціль не визначена: трикутник зі знаком питання (малюється з fill-rule="evenodd").
+    unknown:
+        'M12 1.5 22.5 21h-21Z M10.4 10.8c0-1.3.8-2.1 1.7-2.1 1 0 1.8.7 1.8 1.7 0 1.4-1.4 1.6-1.4 3h-1c0-1.9 1.3-2 1.3-3 0-.5-.3-.8-.7-.8-.5 0-.8.4-.8 1.2Zm1 4.2h1.2v1.3h-1.2Z',
 } as const;
 
 /** Значок цілі: різновид, а якщо невідомий — тип (БпЛА → «Шахед», ракета → крилата). */
@@ -366,9 +383,13 @@ export function AlertMap({
         const unit = showAlerts ? byCode.get(code) : undefined;
         // Заливка: головна за пріоритетом серед офіційної тривоги району й загрози з цілей в області
         // (БпЛА — жовтий, балістика — червоний): уся область фарбується, де немає важливішої тривоги.
+        const lv = levels.get(oblast) ?? [];
+        // Повітряна тривога: жовтий рівень — лише БпЛА, червоний — ракети (чи невідомо).
+        const uavOnly = lv.includes('UAV') && !lv.includes('BALLISTIC');
+        const own = unit ? unitType(unit) : null;
         const primary = primaryAlert([
-            unit ? unitType(unit) : null,
-            ...(levels.get(oblast) ?? []),
+            own === 'AIR' && uavOnly ? 'UAV' : own,
+            ...lv,
         ]);
         const type: AlertTypeCode =
             primary === 'CLEAR' && noData.has(oblast) ? 'NO_DATA' : primary;
@@ -508,6 +529,13 @@ export function AlertMap({
                                             <path
                                                 d={u.d}
                                                 fill={`url(#long-${id})`}
+                                            />
+                                        )}
+                                        {/* Радіаційна небезпека — жовта «зебра» з чорних смуг. */}
+                                        {st.type === 'NUCLEAR' && (
+                                            <path
+                                                d={u.d}
+                                                fill={`url(#chez-${id})`}
                                             />
                                         )}
                                         {!reduce && !st.long && (
@@ -700,6 +728,11 @@ export function AlertMap({
                                         )}
                                         <path
                                             d={glyphFor(threat)}
+                                            fillRule={
+                                                threat.variant === 'unknown'
+                                                    ? 'evenodd'
+                                                    : undefined
+                                            }
                                             fill={color}
                                             stroke="#0b1220"
                                             strokeWidth={1.3}
