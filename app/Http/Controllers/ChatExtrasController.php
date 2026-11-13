@@ -8,6 +8,8 @@ use App\Models\ConversationParticipant;
 use App\Models\Message;
 use App\Models\MessageAttachment;
 use App\Models\MessagePin;
+use App\Services\Ai\AiException;
+use App\Services\Ai\SpeechToText;
 use App\Services\Messenger;
 use App\Services\MessengerPresenter;
 use App\Services\Moderation\ContentFilter;
@@ -117,6 +119,23 @@ class ChatExtrasController extends Controller
             'Content-Type' => $attachment->mime ?: 'image/jpeg',
             'Cache-Control' => 'no-store, private',
         ]);
+    }
+
+    /** Текст голосового (розпізнається один раз, далі — зі збереженого). */
+    public function transcribe(Request $request, Conversation $conversation, Message $message, SpeechToText $stt): JsonResponse
+    {
+        app(Plugins::class)->ensure('voice_transcripts');
+        $this->participant($conversation, $request);
+        abort_unless($message->conversation_id === $conversation->id, 404);
+        $voice = $message->attachments()->where('type', MessageAttachment::TYPE_VOICE)->first();
+        abort_if($voice === null, 404);
+        try {
+            $text = $stt->transcribe($voice);
+        } catch (AiException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
+
+        return response()->json(['text' => $text]);
     }
 
     private function participant(Conversation $conversation, Request $request): ConversationParticipant

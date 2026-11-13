@@ -1,5 +1,6 @@
 import { Link } from '@inertiajs/react';
 import {
+    Captions,
     Download,
     File as FileIcon,
     FileArchive,
@@ -22,6 +23,8 @@ import { formatBytes, formatDuration } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import type { ChatAttachment, ContactCard } from '@/types';
 import { tr } from '@/lib/i18n';
+import { api } from '@/lib/api';
+import { toast } from 'sonner';
 
 let playing: HTMLAudioElement | null = null;
 
@@ -30,10 +33,39 @@ const SPEEDS = [1, 1.5, 2] as const;
 export function VoicePlayer({
     attachment,
     own,
+    transcribeUrl,
 }: {
     attachment: ChatAttachment;
     own: boolean;
+    /** Адреса розшифровки (плагін voice_transcripts); без неї кнопки «Текст» немає. */
+    transcribeUrl?: string | null;
 }) {
+    const [transcript, setTranscript] = useState<string | null>(
+        attachment.transcript ?? null,
+    );
+    const [transcribing, setTranscribing] = useState(false);
+    const [showText, setShowText] = useState(false);
+    const transcribe = () => {
+        if (transcript !== null) {
+            setShowText((v) => !v);
+            return;
+        }
+        if (!transcribeUrl) return;
+        setTranscribing(true);
+        api<{ text: string }>('POST', transcribeUrl)
+            .then((d) => {
+                setTranscript(d.text);
+                setShowText(true);
+            })
+            .catch((e: unknown) =>
+                toast.error(
+                    e instanceof Error
+                        ? e.message
+                        : tr('Не вдалося розшифрувати.'),
+                ),
+            )
+            .finally(() => setTranscribing(false));
+    };
     const audioRef = useRef<HTMLAudioElement | null>(null);
     const [isPlaying, setPlaying] = useState(false);
     const [progress, setProgress] = useState(0);
@@ -190,7 +222,34 @@ export function VoicePlayer({
                     >
                         {speed}×
                     </button>
+                    {(transcribeUrl || transcript !== null) && (
+                        <button
+                            type="button"
+                            onClick={transcribe}
+                            disabled={transcribing}
+                            aria-expanded={showText}
+                            className={cn(
+                                'inline-flex items-center gap-1 rounded-md px-1.5 py-px text-xs font-semibold transition disabled:opacity-60',
+                                own
+                                    ? 'bg-white/15 hover:bg-white/25'
+                                    : 'bg-white/[0.07] hover:bg-white/15',
+                            )}
+                        >
+                            <Captions className="size-3.5" />
+                            {transcribing ? tr('Розпізнаємо…') : tr('Текст')}
+                        </button>
+                    )}
                 </div>
+                {showText && transcript !== null && (
+                    <p
+                        className={cn(
+                            'mt-1.5 text-sm leading-snug whitespace-pre-wrap',
+                            own ? 'text-white/90' : 'text-white/80',
+                        )}
+                    >
+                        {transcript || tr('Слів не розпізнано.')}
+                    </p>
+                )}
             </div>
         </div>
     );

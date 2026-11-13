@@ -1485,7 +1485,7 @@ class _Bubble extends StatelessWidget {
             ),
           ),
         for (final doc in docs) _FileChip(file: doc, own: own),
-        for (final clip in voice) _VoiceClip(clip: clip, own: own),
+        for (final clip in voice) _VoiceClip(clip: clip, own: own, conversationId: conversationId, messageId: intOf(message['id'])),
         if (contact != null)
           GestureDetector(
             onTap: () => context.push('/u/${contact['username']}'),
@@ -1594,7 +1594,9 @@ class _FileChip extends StatelessWidget {
 
 /// Голосове повідомлення: власний маленький програвач (не чіпає музичну чергу).
 class _VoiceClip extends StatefulWidget {
-  const _VoiceClip({required this.clip, required this.own});
+  const _VoiceClip({required this.clip, required this.own, required this.conversationId, required this.messageId});
+  final int conversationId;
+  final int messageId;
   final Map<String, dynamic> clip;
   final bool own;
 
@@ -1645,13 +1647,33 @@ class _VoiceClipState extends State<_VoiceClip> {
     playing ? await player!.pause() : await player!.play();
   }
 
+  /// Розшифровка (плагін voice_transcripts): сервер розпізнає раз і зберігає.
+  late String? transcript = text(widget.clip['transcript']);
+  bool transcribing = false;
+  bool showText = false;
+
+  Future<void> _transcribe() async {
+    if (transcript != null) return setState(() => showText = !showText);
+    setState(() => transcribing = true);
+    try {
+      final data = await AppScope.read(context).session.api.post(Api.site('/messages/${widget.conversationId}/messages/${widget.messageId}/transcribe'));
+      if (mounted) setState(() => (transcript = '${data['text'] ?? ''}', showText = true));
+    } catch (e) {
+      if (mounted) toast(context, e is ApiException ? e.message : tr('Не вдалося розшифрувати.'));
+    } finally {
+      if (mounted) setState(() => transcribing = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final canTranscribe = transcript != null || AppScope.read(context).session.pluginOn('voice_transcripts');
     final waveform = (widget.clip['waveform'] is List ? (widget.clip['waveform'] as List) : const []).map((v) => (v is num ? v / 100 : 0.3).clamp(0.08, 1.0)).toList();
     final bars = waveform.isEmpty ? List<double>.filled(28, 0.35) : waveform;
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
-      child: Row(mainAxisSize: MainAxisSize.min, children: [
+      child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Row(mainAxisSize: MainAxisSize.min, children: [
         GestureDetector(
           onTap: _toggle,
           child: Container(
@@ -1683,6 +1705,26 @@ class _VoiceClipState extends State<_VoiceClip> {
         ),
         const SizedBox(width: 8),
         Text(duration(widget.clip['duration']), style: body(11.5, color: widget.own ? fgSoft : muted)),
+        if (canTranscribe) ...[
+          const SizedBox(width: 4),
+          IconButton(
+            visualDensity: VisualDensity.compact,
+            tooltip: tr('Текст'),
+            onPressed: transcribing ? null : _transcribe,
+            icon: transcribing
+                ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
+                : Icon(LucideIcons.captions, size: 18, color: widget.own ? fgSoft : muted),
+          ),
+        ],
+      ]),
+      if (showText && transcript != null)
+        ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 260),
+          child: Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Text(transcript!.isEmpty ? tr('Слів не розпізнано.') : transcript!, style: body(13.5, color: widget.own ? Colors.white : null)),
+          ),
+        ),
       ]),
     );
   }

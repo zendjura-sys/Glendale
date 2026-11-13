@@ -748,6 +748,7 @@ Route::prefix('v1')->group(function () {
                 Route::get('attachments/{attachment}/preview', [ChatToolsController::class, 'preview'])->whereNumber('attachment')->middleware('throttle:120,1');
                 // Гілки, закріплені, нотатка до бесіди, фото на один перегляд.
                 Route::get('{conversation}/messages/{message}/thread', [ChatExtrasController::class, 'thread']);
+                Route::post('{conversation}/messages/{message}/transcribe', [ChatExtrasController::class, 'transcribe'])->middleware('throttle:20,1');
                 Route::post('{conversation}/messages/{message}/thread', [ChatExtrasController::class, 'reply'])->middleware('throttle:60,1');
                 Route::post('{conversation}/messages/{message}/pin', [ChatExtrasController::class, 'pin'])->middleware('throttle:30,1');
                 Route::put('{conversation}/note', [ChatExtrasController::class, 'note'])->middleware('throttle:30,1');

@@ -74,6 +74,7 @@ class MessengerPresenter
                 'size' => $a->size,
                 'duration' => $a->duration,
                 'waveform' => $a->meta['waveform'] ?? null,
+                'transcript' => $a->type === MessageAttachment::TYPE_VOICE && is_string($a->meta['transcript'] ?? null) ? $a->meta['transcript'] : null,
                 'preview' => $a->type === MessageAttachment::TYPE_FILE ? MessageAttachment::previewKind($a->mime, $a->name) : null,
             ])->all(),
             'sticker' => $message->type === Message::TYPE_STICKER && isset($message->meta['sticker']['path']) ? [

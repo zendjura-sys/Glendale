@@ -5,12 +5,16 @@ namespace Tests\Feature;
 use App\Models\Community;
 use App\Models\Friendship;
 use App\Models\Message;
+use App\Models\MessageAttachment;
 use App\Models\StickerPack;
 use App\Models\User;
 use App\Services\CommunityService;
 use App\Services\Messenger;
+use App\Services\MessengerPresenter;
+use App\Support\Settings\SiteSettings;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -116,5 +120,32 @@ class ChatExtrasTest extends TestCase
         $chat = app(Messenger::class)->direct($member, $stranger);
         $this->actingAs($member)->postJson("/messages/{$chat->id}", ['sticker_id' => $sticker->id])->assertCreated();
         $this->actingAs($stranger)->postJson("/messages/{$chat->id}", ['sticker_id' => $sticker->id])->assertStatus(422);
+    }
+
+    public function test_voice_message_is_transcribed_once_for_participants(): void
+    {
+        Storage::fake('public');
+        Http::fake(['api.groq.com/*' => Http::response(['text' => 'Заходь у дискорд о восьмій'])]);
+        $owner = User::factory()->create();
+        $member = User::factory()->create();
+        Friendship::query()->create(['requester_id' => $owner->id, 'addressee_id' => $member->id, 'status' => Friendship::ACCEPTED, 'accepted_at' => now()]);
+        $chat = app(Messenger::class)->createGroup($owner, 'Рейд', [$member->id]);
+        $message = Message::query()->create(['conversation_id' => $chat->id, 'user_id' => $owner->id, 'type' => Message::TYPE_VOICE, 'body' => null]);
+        Storage::disk('public')->put('voice/a.webm', 'audio');
+        $message->attachments()->create(['type' => MessageAttachment::TYPE_VOICE, 'disk' => 'public', 'path' => 'voice/a.webm', 'mime' => 'audio/webm', 'duration' => 4, 'position' => 0]);
+        $url = "/messages/{$chat->id}/messages/{$message->id}/transcribe";
+
+        // Ключа ще немає — зрозуміла відмова.
+        $this->actingAs($member)->postJson($url)->assertStatus(422)->assertJsonPath('message', 'Розшифровку ще не підключено: адміністрація не додала ключ.');
+
+        app(SiteSettings::class)->putSecret('stt_key', 'gsk_test_1234567890');
+        app(SiteSettings::class)->put(['stt_base_url' => 'https://api.groq.com/openai/v1', 'stt_model' => 'whisper-large-v3']);
+        $this->actingAs($member)->postJson($url)->assertOk()->assertJsonPath('text', 'Заходь у дискорд о восьмій');
+        $this->actingAs($owner)->postJson($url)->assertOk()->assertJsonPath('text', 'Заходь у дискорд о восьмій');
+        Http::assertSentCount(1);
+        Http::assertSent(fn ($request) => str_ends_with($request->url(), '/audio/transcriptions'));
+        // Текст іде разом з повідомленням в історії; чужим — ні.
+        $this->assertSame('Заходь у дискорд о восьмій', app(MessengerPresenter::class)->message($message->fresh()->load('attachments'))['attachments'][0]['transcript']);
+        $this->actingAs(User::factory()->create())->postJson($url)->assertNotFound();
     }
 }

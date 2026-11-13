@@ -553,6 +553,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
             Route::post('{conversation}/messages/{message}/close-poll', [MessageController::class, 'closePoll'])->middleware('throttle:20,1')->name('messages.close-poll');
             // Гілки в групах, закріплені повідомлення, особиста нотатка до бесіди.
             Route::get('{conversation}/messages/{message}/thread', [ChatExtrasController::class, 'thread'])->name('thread');
+            Route::post('{conversation}/messages/{message}/transcribe', [ChatExtrasController::class, 'transcribe'])->middleware('throttle:20,1')->name('messages.transcribe');
             Route::post('{conversation}/messages/{message}/thread', [ChatExtrasController::class, 'reply'])->middleware('throttle:60,1')->name('thread.reply');
             Route::post('{conversation}/messages/{message}/pin', [ChatExtrasController::class, 'pin'])->middleware('throttle:30,1')->name('messages.pin');
             Route::put('{conversation}/note', [ChatExtrasController::class, 'note'])->middleware('throttle:30,1')->name('note');

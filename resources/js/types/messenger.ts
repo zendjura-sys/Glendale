@@ -24,6 +24,8 @@ export type ChatAttachment = {
     size?: number | null;
     duration?: number | null;
     waveform?: number[] | null;
+    /** Розшифровка голосового, якщо вже є. */
+    transcript?: string | null;
     /** Документ можна переглянути на сайті (PDF, текст, аудіо, відео). */
     preview?: 'pdf' | 'text' | 'image' | 'audio' | 'video' | null;
     /** Фото «на один перегляд»: посилання немає, відкривається через /once. */

@@ -17,6 +17,7 @@ use App\Models\UserStream;
 use App\Models\VoiceParticipant;
 use App\Models\VoiceRoom;
 use App\Services\Ai\AiClient;
+use App\Services\Ai\SpeechToText;
 use App\Services\Alerts\AirAlertService;
 use App\Services\Alerts\UkraineAlarm;
 use App\Services\Auth\DiscordOAuth;
@@ -780,6 +781,27 @@ class IntegrationController extends Controller
                         'help' => 'Порожньо — claude-opus-5-5 для Claude або gpt-4o-mini для OpenAI.',
                         'rules' => ['nullable', 'string', 'max:120', 'regex:/^[A-Za-z0-9_\-.:\/@]+$/'], 'message' => 'Назва моделі — латиниця, цифри, «-», «.», «/».'],
                     ['name' => 'base_url', 'setting' => 'ai_base_url', 'type' => 'url', 'label' => 'Адреса API (лише OpenAI-сумісний)', 'placeholder' => 'https://api.openai.com/v1',
+                        'rules' => ['nullable', 'url:https', 'max:255']],
+                ],
+            ],
+            'speech' => [
+                'label' => 'Розшифровка голосових (Whisper)',
+                'group' => 'ai',
+                'description' => 'Перетворює голосові повідомлення в чатах на текст за натисканням «Текст». Будь-який OpenAI-сумісний сервіс розпізнавання мовлення: OpenAI Whisper або Groq (whisper-large-v3).',
+                'docs' => 'https://platform.openai.com/docs/guides/speech-to-text',
+                'steps' => [
+                    'OpenAI: platform.openai.com → API keys → Create new secret key; модель — whisper-1.',
+                    'Groq — безкоштовний тариф без картки: console.groq.com → API Keys; адреса https://api.groq.com/openai/v1, модель whisper-large-v3.',
+                    'Вставте ключ і натисніть «Зберегти». Текст кожного голосового розпізнається один раз і зберігається.',
+                ],
+                'configured' => app(SpeechToText::class)->configured(),
+                'stat' => app(SpeechToText::class)->configured() ? 'Сьогодні розшифровок: '.app(SpeechToText::class)->today().' · модель '.app(SpeechToText::class)->model() : null,
+                'fields' => [
+                    ['name' => 'key', 'setting' => 'stt_key', 'type' => 'secret', 'label' => 'API-ключ',
+                        'rules' => ['nullable', 'string', 'max:400', 'regex:/^[A-Za-z0-9_\-.:]+$/'], 'message' => 'Ключ містить недопустимі символи.'],
+                    ['name' => 'model', 'setting' => 'stt_model', 'type' => 'text', 'label' => 'Модель', 'placeholder' => SpeechToText::DEFAULT_MODEL,
+                        'rules' => ['nullable', 'string', 'max:120', 'regex:/^[A-Za-z0-9_\-.:\/@]+$/'], 'message' => 'Назва моделі — латиниця, цифри, «-», «.», «/».'],
+                    ['name' => 'base_url', 'setting' => 'stt_base_url', 'type' => 'url', 'label' => 'Адреса API', 'placeholder' => SpeechToText::DEFAULT_BASE,
                         'rules' => ['nullable', 'url:https', 'max:255']],
                 ],
             ],

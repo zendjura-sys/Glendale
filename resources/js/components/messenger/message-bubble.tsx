@@ -189,6 +189,7 @@ export function MessageBubble({
             ?.emoji ?? null;
     const videoNote = message.attachments.find((a) => a.type === 'video_note');
     const favoriteOn = usePlugin('favorite_messages');
+    const transcriptsOn = usePlugin('voice_transcripts');
     const images = message.attachments.filter(
         (a) => (a.type ?? 'image') === 'image' && !a.view_once,
     );
@@ -497,7 +498,17 @@ export function MessageBubble({
                         </div>
                     )}
 
-                    {voice && <VoicePlayer attachment={voice} own={own} />}
+                    {voice && (
+                        <VoicePlayer
+                            attachment={voice}
+                            own={own}
+                            transcribeUrl={
+                                transcriptsOn
+                                    ? `/messages/${message.conversation_id}/messages/${message.id}/transcribe`
+                                    : null
+                            }
+                        />
+                    )}
 
                     {videoNote && <VideoNotePlayer attachment={videoNote} />}
 
