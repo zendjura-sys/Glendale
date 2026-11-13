@@ -282,6 +282,15 @@ class AirAlertsTest extends TestCase
             ->assertJsonPath('tree.0.name', 'Житомирський район')
             ->assertJsonPath('tree.0.children.0.children.0.name', 'м. Житомир')
             ->assertJsonPath('tree.0.children.0.children.0.type', 'CityOrVillage');
+        // Екран вибору як у «Тривозі»: області → райони → громади → міста.
+        $this->actingAs($user)->getJson('/alerts/places')->assertOk()->assertJsonPath('places.0.name', 'Житомирська область')->assertJsonPath('places.0.has_children', true);
+        $this->actingAs($user)->getJson('/alerts/places?parent=10')->assertOk()
+            ->assertJsonPath('parent.type', 'State')
+            ->assertJsonPath('places.0.name', 'Житомирський район')
+            ->assertJsonPath('places.1.has_children', false);
+        // Обрати всю область (id області) — без окремого місця.
+        $this->actingAs($user)->putJson('/alerts/preferences', ['unit' => '10'])->assertOk()
+            ->assertJsonPath('prefs.region', 'zhytomyr')->assertJsonPath('prefs.unit', null);
         // Пошук за назвою — з шляхом.
         $this->actingAs($user)->getJson('/alerts/search?q=житомир')->assertOk()
             ->assertJsonPath('places.0.name', 'м. Житомир')

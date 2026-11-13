@@ -48,6 +48,21 @@ class AirAlertController extends Controller
         return response()->json(['enabled' => $on, 'tree' => $on ? $this->api->treeOf($data['region']) : [], 'districts' => $on ? $this->api->unitsOf($data['region']) : []]);
     }
 
+    /** Екран вибору місця, як у «Тривозі»: області, далі райони, громади, міста й села. */
+    public function places(Request $request): JsonResponse
+    {
+        $this->ensure($request);
+        $data = $request->validate(['parent' => ['nullable', 'string', 'max:20']]);
+        $parent = $data['parent'] ?? null;
+        $node = $parent !== null ? ($this->api->regions()[$parent] ?? null) : null;
+
+        return response()->json([
+            'enabled' => $this->api->enabled(),
+            'parent' => $node !== null ? ['id' => $node['id'], 'name' => $node['name'], 'type' => $node['type'], 'type_label' => UkraineAlarm::typeLabel($node['type'])] : null,
+            'places' => $this->api->enabled() ? $this->api->childrenOf($parent) : [],
+        ]);
+    }
+
     /** Пошук місця за назвою (як у «Тривозі»): район, громада, місто чи село. */
     public function search(Request $request): JsonResponse
     {
@@ -112,8 +127,11 @@ class AirAlertController extends Controller
                 if ($known === null || $state === null) {
                     throw ValidationException::withMessages(['unit' => 'Такого району чи громади немає в довіднику.']);
                 }
-                // Область підлаштовується під обране місце.
+                // Область підлаштовується під обране місце; обрана вся область — без окремого місця.
                 $patch['alert_region'] = $this->alerts->slugFor($state['name']) ?? $user->pref('alert_region');
+                if ($known['type'] === 'State') {
+                    $unit = null;
+                }
             }
             $patch['alert_unit'] = $unit;
         }

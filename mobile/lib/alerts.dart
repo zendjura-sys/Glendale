@@ -313,8 +313,8 @@ class _AlertsScreenState extends State<AlertsScreen> {
               items: [for (final r in regionList) (text(r['slug'])!, text(r['name']) ?? '')],
               onChanged: (v) => _save({'region': v}),
             ),
-            if (mineSlug != null && prefs['units_enabled'] == true)
-              _AlertPlace(key: ValueKey(mineSlug), region: mineSlug, prefs: prefs, onSave: _save),
+            if (prefs['units_enabled'] == true)
+              _AlertPlace(region: mineSlug ?? '', prefs: prefs, onSave: _save),
             const SizedBox(height: 12),
             Text(tr('Налаштування сповіщень тривог'), style: body(14.5, weight: FontWeight.w700)),
             if (prefs['units_enabled'] != true)
@@ -793,20 +793,85 @@ class _FlagMapPainter extends CustomPainter {
   bool shouldRepaint(_FlagMapPainter old) => old.active != active;
 }
 
-/// Місце для сповіщень, як у застосунку «Тривога»: пошук за назвою або крок за кроком —
-/// район → громада → місто/село → район міста. Тривога в районі чи області над місцем діє й на нього.
-class _AlertPlace extends StatefulWidget {
-  const _AlertPlace({required this.region, required this.prefs, required this.onSave, super.key});
+/// Місце для сповіщень, як у застосунку «Тривога»: рядок «Моє місце ›» відкриває екран вибору —
+/// області → райони («Обрати всю область») → громади («Обрати весь район») → міста й села, з пошуком.
+/// Тривога в районі чи області над обраним місцем діє й на нього; сусідні громади — ні.
+class _AlertPlace extends StatelessWidget {
+  const _AlertPlace({required this.region, required this.prefs, required this.onSave});
   final String region;
   final Map<String, dynamic> prefs;
   final Future<void> Function(Map<String, dynamic>) onSave;
 
+  Color _hex(Object? v, Color fallback) {
+    final n = int.tryParse('${v ?? ''}'.replaceFirst('#', ''), radix: 16);
+    return n == null ? fallback : Color(0xFF000000 | n);
+  }
+
   @override
-  State<_AlertPlace> createState() => _AlertPlaceState();
+  Widget build(BuildContext context) {
+    final unit = mapOf(prefs['unit']);
+    final status = maps(prefs['status']);
+    return Padding(
+      padding: const EdgeInsets.only(top: 10),
+      child: Material(
+        color: Colors.white.withValues(alpha: 0.04),
+        borderRadius: BorderRadius.circular(8),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(8),
+          onTap: () async {
+            final id = await Navigator.of(context).push<String>(MaterialPageRoute(builder: (_) => const AlertPlacePickerPage()));
+            if (id != null) await onSave({'unit': id});
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(10),
+            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Icon(LucideIcons.mapPin, size: 16, color: muted),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(tr('Моє місце'), style: body(12, color: muted)),
+                  Text(text(unit['name']) ?? tr('Уся область'), style: body(14.5, weight: FontWeight.w700)),
+                  if (unit.isNotEmpty) Text('${unit['type_label'] ?? ''} · ${unit['path'] ?? ''}', maxLines: 2, overflow: TextOverflow.ellipsis, style: body(12, color: muted)),
+                  const SizedBox(height: 6),
+                  Wrap(spacing: 6, runSpacing: 6, children: [
+                    if (status.isEmpty)
+                      _chip(tr('Тривоги немає'), const Color(0xFF10B981))
+                    else
+                      for (final st in status)
+                        _chip(
+                          '${st['name']}${st['level'] == 'yellow' ? ' · ${tr('жовтий рівень')}' : st['level'] == 'red' ? ' · ${tr('червоний рівень')}' : ''}',
+                          _hex(st['accent'], const Color(0xFFEF4444)),
+                        ),
+                  ]),
+                ]),
+              ),
+              Icon(LucideIcons.chevronRight, size: 18, color: muted),
+            ]),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _chip(String label, Color color) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        decoration: BoxDecoration(color: color.withValues(alpha: 0.16), borderRadius: BorderRadius.circular(6)),
+        child: Text(label, style: body(12, color: color, weight: FontWeight.w700)),
+      );
 }
 
-class _AlertPlaceState extends State<_AlertPlace> {
-  List<Map<String, dynamic>> tree = [];
+/// Екран вибору місця (як у «Тривозі»): один рівень довідника UkraineAlarm, зверху пошук.
+/// Повертає regionId обраного місця (id області — «уся область»).
+class AlertPlacePickerPage extends StatefulWidget {
+  const AlertPlacePickerPage({this.parent, super.key});
+  final Map<String, dynamic>? parent;
+
+  @override
+  State<AlertPlacePickerPage> createState() => _AlertPlacePickerPageState();
+}
+
+class _AlertPlacePickerPageState extends State<AlertPlacePickerPage> {
+  List<Map<String, dynamic>>? places;
   List<Map<String, dynamic>> hits = [];
   final query = TextEditingController();
   Timer? debounce;
@@ -825,10 +890,13 @@ class _AlertPlaceState extends State<_AlertPlace> {
   }
 
   Future<void> _load() async {
+    final parent = widget.parent?['id'];
     try {
-      final d = await AppScope.read(context).session.api.get(Api.site('/alerts/units?region=${Uri.encodeQueryComponent(widget.region)}'));
-      if (mounted) setState(() => tree = maps(d['tree']));
-    } catch (_) {}
+      final d = await AppScope.read(context).session.api.get(Api.site('/alerts/places${parent != null ? '?parent=$parent' : ''}'));
+      if (mounted) setState(() => places = maps(d['places']));
+    } catch (e) {
+      if (mounted) setState(() => places = const []);
+    }
   }
 
   void _search(String q) {
@@ -845,100 +913,71 @@ class _AlertPlaceState extends State<_AlertPlace> {
     });
   }
 
-  static String _levelLabel(Object? type) => switch (type) {
-        'District' => tr('Район'),
-        'Community' => tr('Територіальна громада'),
-        'CityOrVillage' => tr('Населений пункт'),
-        'CityDistrict' => tr('Район міста'),
-        _ => tr('Місце'),
-      };
-
-  Color _hex(Object? v, Color fallback) {
-    final n = int.tryParse('${v ?? ''}'.replaceFirst('#', ''), radix: 16);
-    return n == null ? fallback : Color(0xFF000000 | n);
+  Future<void> _open(Map<String, dynamic> place) async {
+    if (place['has_children'] != true) {
+      Navigator.of(context).pop('${place['id']}');
+      return;
+    }
+    final id = await Navigator.of(context).push<String>(MaterialPageRoute(builder: (_) => AlertPlacePickerPage(parent: place)));
+    if (id != null && mounted) Navigator.of(context).pop(id);
   }
+
+  String _wholeLabel(Object? type) => switch (type) {
+        'State' => tr('Обрати всю область'),
+        'District' => tr('Обрати весь район'),
+        'Community' => tr('Обрати всю громаду'),
+        _ => tr('Обрати все місто'),
+      };
 
   @override
   Widget build(BuildContext context) {
-    final unit = mapOf(widget.prefs['unit']);
-    final status = maps(widget.prefs['status']);
-    final path = [for (final id in (unit['path_ids'] is List ? unit['path_ids'] as List : const [])) '$id'].skip(1).toList();
-    // Каскад: на кожному рівні — діти обраного вище вузла.
-    final levels = <({List<Map<String, dynamic>> options, String value, String? parent})>[];
-    var options = tree;
-    String? parent;
-    for (var depth = 0; options.isNotEmpty; depth++) {
-      final value = depth < path.length ? path[depth] : '';
-      levels.add((options: options, value: value, parent: parent));
-      final picked = options.where((o) => o['id'] == value).firstOrNull;
-      if (picked == null) break;
-      parent = '${picked['id']}';
-      options = maps(picked['children']);
-    }
-    return Padding(
-      padding: const EdgeInsets.only(top: 10),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        // Моє місце: точний статус саме тут.
-        Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.04), borderRadius: BorderRadius.circular(8)),
-          child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Icon(LucideIcons.mapPin, size: 16, color: muted),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(text(unit['name']) ?? tr('Уся область'), style: body(14, weight: FontWeight.w700)),
-                if (unit.isNotEmpty) Text('${unit['type_label'] ?? ''} · ${unit['path'] ?? ''}', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: muted)),
-                const SizedBox(height: 6),
-                Wrap(spacing: 6, runSpacing: 6, children: [
-                  if (status.isEmpty)
-                    _chip(tr('Тривоги немає'), const Color(0xFF10B981))
-                  else
-                    for (final st in status)
-                      _chip(
-                        '${st['name']}${st['level'] == 'yellow' ? ' · ${tr('жовтий рівень')}' : st['level'] == 'red' ? ' · ${tr('червоний рівень')}' : ''}',
-                        _hex(st['accent'], const Color(0xFFEF4444)),
-                      ),
-                ]),
-              ]),
-            ),
-            if (unit.isNotEmpty) IconButton(icon: const Icon(LucideIcons.x, size: 16), tooltip: tr('Уся область'), onPressed: () => widget.onSave({'unit': null})),
-          ]),
+    final parent = widget.parent;
+    final searching = query.text.trim().length >= 2;
+    return Scaffold(
+      appBar: AppBar(
+        leading: IconButton(
+          icon: Icon(parent == null ? LucideIcons.x : LucideIcons.chevronLeft, color: primary),
+          onPressed: () => Navigator.of(context).pop(),
         ),
-        const SizedBox(height: 8),
-        // Пошук: місто, село, громада чи район по всій Україні.
-        GcField(controller: query, label: tr('Знайти місто, село, громаду чи район'), icon: LucideIcons.search, dense: true, onChanged: _search),
-        for (final hit in hits)
-          ListTile(
-            dense: true,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 4),
-            title: Text(text(hit['name']) ?? '', style: body(14, weight: FontWeight.w600)),
-            subtitle: Text('${hit['type_label'] ?? ''}${text(hit['path']) != null && text(hit['path'])!.isNotEmpty ? ' · ${hit['path']}' : ''}', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: muted)),
-            onTap: () {
-              widget.onSave({'unit': hit['id']});
-              query.clear();
-              setState(() => hits = []);
-            },
-          ),
-        // Або крок за кроком.
-        for (final (i, level) in levels.indexed) ...[
-          const SizedBox(height: 8),
-          Text(_levelLabel(level.options.first['type']), style: body(12, color: muted)),
-          const SizedBox(height: 4),
-          GcSelect<String>(
-            value: level.value,
-            expand: true,
-            items: [('', i == 0 ? tr('Уся область') : tr('Усе вище обране')), for (final o in level.options) (text(o['id'])!, text(o['name']) ?? '')],
-            onChanged: (v) => widget.onSave({'unit': (v == null || v.isEmpty) ? level.parent : v}),
-          ),
-        ],
+        title: parent == null ? null : Text(text(parent['name']) ?? '', style: body(16, weight: FontWeight.w700)),
+      ),
+      body: Column(children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+          child: GcField(controller: query, label: tr('Область, місто чи район…'), icon: LucideIcons.search, dense: true, onChanged: _search),
+        ),
+        Expanded(
+          child: searching
+              ? ListView(children: [
+                  for (final hit in hits)
+                    ListTile(
+                      title: Text(text(hit['name']) ?? '', style: body(16)),
+                      subtitle: Text('${hit['type_label'] ?? ''}${(text(hit['path']) ?? '').isNotEmpty ? ' · ${hit['path']}' : ''}', maxLines: 2, overflow: TextOverflow.ellipsis, style: body(12.5, color: muted)),
+                      onTap: () => Navigator.of(context).pop('${hit['id']}'),
+                    ),
+                ])
+              : places == null
+                  ? const Center(child: CircularProgressIndicator())
+                  : ListView(children: [
+                      if (parent != null)
+                        ListTile(
+                          title: Text(_wholeLabel(parent['type']), style: body(16.5, weight: FontWeight.w800)),
+                          onTap: () => Navigator.of(context).pop('${parent['id']}'),
+                        ),
+                      for (final place in places!)
+                        ListTile(
+                          title: Text(text(place['name']) ?? '', style: body(16.5)),
+                          trailing: place['has_children'] == true ? Icon(LucideIcons.chevronRight, color: muted) : null,
+                          onTap: () => _open(place),
+                        ),
+                      if (places!.isEmpty && parent == null)
+                        Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Text(tr('Офіційне джерело UkraineAlarm ще не підключено — сповіщень про тривоги поки немає.'), textAlign: TextAlign.center, style: body(13, color: muted)),
+                        ),
+                    ]),
+        ),
       ]),
     );
   }
-
-  Widget _chip(String label, Color color) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-        decoration: BoxDecoration(color: color.withValues(alpha: 0.16), borderRadius: BorderRadius.circular(6)),
-        child: Text(label, style: body(12, color: color, weight: FontWeight.w700)),
-      );
 }

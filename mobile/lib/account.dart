@@ -462,10 +462,15 @@ Future<void> showFeedbackSheet(BuildContext context, {String screen = 'menu'}) a
 
 
 /// Що нового в цій версії застосунку — один раз після оновлення.
-const whatsNewVersion = '1.1.123';
+const whatsNewVersion = '1.1.124';
 
 /// Нове саме в цій версії — зверху, окремим блоком.
 List<String> _whatsNewCurrent() => [
+      tr('Вибір місця для тривог, як у застосунку «Тривога»: області → райони → громади → міста й села, «Обрати всю область» чи «весь район» і пошук зверху.'),
+    ];
+
+/// Версія 1.1.123.
+List<String> _whatsNew123() => [
       tr('Тривоги: оберіть точне місце, як у застосунку «Тривога» — район, територіальну громаду, місто чи село й навіть район міста; або знайдіть його пошуком.'),
       tr('Картка «Моє місце» показує, чи є тривога саме у вас зараз — з рівнем і кольором типу.'),
       tr('Офіційний рівень повітряної тривоги з API; коли жовта стає червоною — окреме сповіщення «рівень підвищено».'),
@@ -712,7 +717,7 @@ Future<void> showWhatsNew(BuildContext context, SharedPreferences prefs, {bool f
   await prefs.setString('whats_new', whatsNewVersion);
   if (!context.mounted) return;
   final current = _whatsNewCurrent();
-  final earlier = [..._whatsNew122(), ..._whatsNew121(), ..._whatsNew119(), ..._whatsNew118(), ..._whatsNew117(), ..._whatsNew116(), ..._whatsNew115(), ..._whatsNew113(), ..._whatsNew112(), ..._whatsNew111(), ..._whatsNewPrev(), ..._whatsNew()];
+  final earlier = [..._whatsNew123(), ..._whatsNew122(), ..._whatsNew121(), ..._whatsNew119(), ..._whatsNew118(), ..._whatsNew117(), ..._whatsNew116(), ..._whatsNew115(), ..._whatsNew113(), ..._whatsNew112(), ..._whatsNew111(), ..._whatsNewPrev(), ..._whatsNew()];
   Widget card(String item, {bool fresh = false}) => Container(
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.fromLTRB(12, 12, 14, 12),

@@ -319,6 +319,32 @@ class UkraineAlarm
     }
 
     /**
+     * Один рівень довідника для екрана вибору (як у «Тривозі»): без parent — області, інакше діти вузла.
+     *
+     * @return list<array{id: string, name: string, type: string, has_children: bool}>
+     */
+    public function childrenOf(?string $parent): array
+    {
+        $tree = $this->regions();
+        $parents = [];
+        foreach ($tree as $region) {
+            if ($region['parent'] !== null) {
+                $parents[$region['parent']] = true;
+            }
+        }
+        $out = [];
+        foreach ($tree as $region) {
+            if ($region['parent'] === ($parent === '' ? null : $parent)) {
+                $out[] = ['id' => $region['id'], 'name' => $region['name'], 'type' => $region['type'], 'has_children' => isset($parents[$region['id']])];
+            }
+        }
+        $collator = class_exists(\Collator::class) ? new \Collator('uk_UA') : null;
+        usort($out, fn ($a, $b) => $collator?->compare($a['name'], $b['name']) ?? strcmp($a['name'], $b['name']));
+
+        return $out;
+    }
+
+    /**
      * Дерево області будь-якої глибини (як у застосунку «Тривога»): район → громада → місто/село → район міста.
      *
      * @return list<array{id: string, name: string, type: string, children: list<array<string, mixed>>}>

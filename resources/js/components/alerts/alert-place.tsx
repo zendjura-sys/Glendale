@@ -1,30 +1,189 @@
-import { MapPin, Search, X } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { ChevronLeft, ChevronRight, MapPin, Search } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import type {
     AlertPlaceHit,
-    AlertPlaceNode,
     AlertPrefs,
     AlertPrefsPatch,
 } from '@/components/alerts/alert-utils';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Toggle } from '@/components/gc/admin';
 import { api } from '@/lib/api';
 import { tr } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
-/** Назва рівня для підпису поля каскаду. */
-function levelLabel(type: string | undefined): string {
+type PlaceRow = {
+    id: string;
+    name: string;
+    type: string;
+    has_children: boolean;
+};
+
+function wholeLabel(type: string): string {
     switch (type) {
+        case 'State':
+            return tr('Обрати всю область');
         case 'District':
-            return tr('Район');
+            return tr('Обрати весь район');
         case 'Community':
-            return tr('Територіальна громада');
-        case 'CityOrVillage':
-            return tr('Населений пункт');
-        case 'CityDistrict':
-            return tr('Район міста');
+            return tr('Обрати всю громаду');
         default:
-            return tr('Місце');
+            return tr('Обрати все місто');
     }
+}
+
+/**
+ * Вибір місця, як у застосунку «Тривога»: області → райони («Обрати всю область») →
+ * громади («Обрати весь район») → міста й села; зверху пошук.
+ */
+function PlaceDialog({
+    open,
+    onClose,
+    onPick,
+}: {
+    open: boolean;
+    onClose: () => void;
+    onPick: (id: string) => void;
+}) {
+    const [stack, setStack] = useState<PlaceRow[]>([]);
+    const [rows, setRows] = useState<PlaceRow[] | null>(null);
+    const [query, setQuery] = useState('');
+    const [hits, setHits] = useState<AlertPlaceHit[]>([]);
+    const parent = stack.at(-1) ?? null;
+
+    useEffect(() => {
+        if (!open) return;
+        let alive = true;
+        setRows(null);
+        api<{ places: PlaceRow[] }>(
+            'GET',
+            `/alerts/places${parent ? `?parent=${encodeURIComponent(parent.id)}` : ''}`,
+        )
+            .then((d) => alive && setRows(d.places))
+            .catch(() => alive && setRows([]));
+
+        return () => {
+            alive = false;
+        };
+    }, [open, parent]);
+
+    useEffect(() => {
+        const q = query.trim();
+        if (q.length < 2) {
+            setHits([]);
+            return;
+        }
+        const timer = window.setTimeout(() => {
+            api<{ places: AlertPlaceHit[] }>(
+                'GET',
+                `/alerts/search?q=${encodeURIComponent(q)}`,
+            )
+                .then((d) => setHits(d.places))
+                .catch(() => undefined);
+        }, 250);
+
+        return () => window.clearTimeout(timer);
+    }, [query]);
+
+    const close = () => {
+        setStack([]);
+        setQuery('');
+        onClose();
+    };
+    const pick = (id: string) => {
+        setStack([]);
+        setQuery('');
+        onPick(id);
+    };
+    const row =
+        'flex min-h-12 w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-[15px] text-white transition hover:bg-white/[0.06]';
+
+    return (
+        <Dialog open={open} onOpenChange={(v) => !v && close()}>
+            <DialogContent className="flex max-h-[calc(100dvh-2rem)] flex-col gap-3 p-4 sm:max-w-lg">
+                <div className="flex items-center gap-2">
+                    {parent && (
+                        <button
+                            type="button"
+                            onClick={() => setStack((s) => s.slice(0, -1))}
+                            aria-label={tr('Назад')}
+                            className="flex size-9 items-center justify-center rounded-lg text-primary hover:bg-white/10"
+                        >
+                            <ChevronLeft className="size-5" />
+                        </button>
+                    )}
+                    <DialogTitle className="truncate text-base">
+                        {parent?.name ?? tr('Оберіть місце')}
+                    </DialogTitle>
+                </div>
+                <div className="relative">
+                    <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-white/40" />
+                    <input
+                        type="search"
+                        value={query}
+                        onChange={(e) => setQuery(e.target.value)}
+                        placeholder={tr('Область, місто чи район…')}
+                        aria-label={tr('Пошук місця')}
+                        className="input-glass h-10 w-full rounded-lg pr-3 pl-9 text-sm text-white placeholder:text-white/35"
+                    />
+                </div>
+                <div className="-mx-1 min-h-0 flex-1 overflow-y-auto px-1">
+                    {query.trim().length >= 2 ? (
+                        hits.map((hit) => (
+                            <button
+                                key={hit.id}
+                                type="button"
+                                onClick={() => pick(hit.id)}
+                                className={row}
+                            >
+                                <span className="min-w-0 flex-1">
+                                    <span className="block">{hit.name}</span>
+                                    <span className="block truncate text-xs text-white/45">
+                                        {hit.type_label}
+                                        {hit.path ? ` · ${hit.path}` : ''}
+                                    </span>
+                                </span>
+                            </button>
+                        ))
+                    ) : rows === null ? (
+                        <p className="p-4 text-center text-sm text-white/45">
+                            {tr('Завантаження…')}
+                        </p>
+                    ) : (
+                        <>
+                            {parent && (
+                                <button
+                                    type="button"
+                                    onClick={() => pick(parent.id)}
+                                    className={cn(row, 'font-bold')}
+                                >
+                                    {wholeLabel(parent.type)}
+                                </button>
+                            )}
+                            {rows.map((place) => (
+                                <button
+                                    key={place.id}
+                                    type="button"
+                                    onClick={() =>
+                                        place.has_children
+                                            ? setStack((s) => [...s, place])
+                                            : pick(place.id)
+                                    }
+                                    className={row}
+                                >
+                                    <span className="min-w-0 flex-1">
+                                        {place.name}
+                                    </span>
+                                    {place.has_children && (
+                                        <ChevronRight className="size-4 shrink-0 text-white/40" />
+                                    )}
+                                </button>
+                            ))}
+                        </>
+                    )}
+                </div>
+            </DialogContent>
+        </Dialog>
+    );
 }
 
 /**
@@ -39,65 +198,7 @@ export function AlertPlacePicker({
     prefs: AlertPrefs;
     onSave: (patch: AlertPrefsPatch) => void;
 }) {
-    const [tree, setTree] = useState<AlertPlaceNode[]>([]);
-    const [query, setQuery] = useState('');
-    const [hits, setHits] = useState<AlertPlaceHit[]>([]);
-    const region = prefs.region;
-
-    useEffect(() => {
-        if (!region || !prefs.units_enabled) return;
-        let alive = true;
-        api<{ tree?: AlertPlaceNode[] }>(
-            'GET',
-            `/alerts/units?region=${encodeURIComponent(region)}`,
-        )
-            .then((d) => alive && setTree(d.tree ?? []))
-            .catch(() => undefined);
-
-        return () => {
-            alive = false;
-        };
-    }, [region, prefs.units_enabled]);
-
-    useEffect(() => {
-        const q = query.trim();
-        if (q.length < 2 || !prefs.units_enabled) {
-            setHits([]);
-            return;
-        }
-        const timer = window.setTimeout(() => {
-            api<{ places: AlertPlaceHit[] }>(
-                'GET',
-                `/alerts/search?q=${encodeURIComponent(q)}`,
-            )
-                .then((d) => setHits(d.places))
-                .catch(() => undefined);
-        }, 250);
-
-        return () => window.clearTimeout(timer);
-    }, [query, prefs.units_enabled]);
-
-    // Каскад: на кожному рівні — діти обраного вище вузла; path_ids[0] — область.
-    const levels = useMemo(() => {
-        const path = prefs.unit?.path_ids.slice(1) ?? [];
-        const out: {
-            options: AlertPlaceNode[];
-            value: string;
-            parent: string | null;
-        }[] = [];
-        let options = tree;
-        let parent: string | null = null;
-        for (let depth = 0; options.length > 0; depth++) {
-            const value = path[depth] ?? '';
-            out.push({ options, value, parent });
-            const picked = options.find((o) => o.id === value);
-            if (!picked) break;
-            parent = picked.id;
-            options = picked.children;
-        }
-
-        return out;
-    }, [tree, prefs.unit]);
+    const [open, setOpen] = useState(false);
 
     const filters: {
         key: 'start' | 'end' | 'red' | 'yellow' | 'silent';
@@ -151,19 +252,26 @@ export function AlertPlacePicker({
 
             {prefs.units_enabled && (
                 <>
-                    {/* Моє місце: точний статус саме тут. */}
-                    <div className="flex items-start gap-3 rounded-lg bg-white/[0.04] p-3">
+                    {/* Моє місце: точний статус саме тут; натиснути — вибір, як у «Тривозі». */}
+                    <button
+                        type="button"
+                        onClick={() => setOpen(true)}
+                        className="flex items-start gap-3 rounded-lg bg-white/[0.04] p-3 text-left transition hover:bg-white/[0.07]"
+                    >
                         <MapPin className="mt-0.5 size-4 shrink-0 text-white/60" />
-                        <div className="min-w-0 flex-1">
-                            <p className="text-sm font-semibold text-white">
+                        <span className="min-w-0 flex-1">
+                            <span className="block text-xs text-white/45">
+                                {tr('Моє місце')}
+                            </span>
+                            <span className="block text-sm font-semibold text-white">
                                 {prefs.unit?.name ?? tr('Уся область')}
-                            </p>
+                            </span>
                             {prefs.unit && (
-                                <p className="truncate text-xs text-white/45">
+                                <span className="block truncate text-xs text-white/45">
                                     {prefs.unit.type_label} · {prefs.unit.path}
-                                </p>
+                                </span>
                             )}
-                            <div className="mt-2 flex flex-wrap gap-1.5">
+                            <span className="mt-2 flex flex-wrap gap-1.5">
                                 {prefs.status.length === 0 ? (
                                     <span className="rounded-md bg-[#10B981]/15 px-2 py-0.5 text-xs font-semibold text-[#10B981]">
                                         {tr('Тривоги немає')}
@@ -187,97 +295,18 @@ export function AlertPlacePicker({
                                         </span>
                                     ))
                                 )}
-                            </div>
-                        </div>
-                        {prefs.unit && (
-                            <button
-                                type="button"
-                                onClick={() => onSave({ unit: null })}
-                                aria-label={tr('Уся область')}
-                                className="flex size-8 items-center justify-center rounded-lg text-white/50 transition hover:bg-white/10 hover:text-white"
-                            >
-                                <X className="size-4" />
-                            </button>
-                        )}
-                    </div>
-
-                    {/* Пошук: місто, село, громада чи район по всій Україні. */}
-                    <div className="relative">
-                        <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-white/40" />
-                        <input
-                            type="search"
-                            value={query}
-                            onChange={(e) => setQuery(e.target.value)}
-                            placeholder={tr(
-                                'Знайти місто, село, громаду чи район',
-                            )}
-                            aria-label={tr('Пошук місця')}
-                            className="input-glass h-10 w-full rounded-lg pr-3 pl-9 text-sm text-white placeholder:text-white/35"
-                        />
-                        {hits.length > 0 && (
-                            <ul className="gc-solid absolute inset-x-0 top-11 z-20 max-h-72 overflow-auto rounded-lg p-1">
-                                {hits.map((hit) => (
-                                    <li key={hit.id}>
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                onSave({ unit: hit.id });
-                                                setQuery('');
-                                                setHits([]);
-                                            }}
-                                            className="block w-full rounded-md px-3 py-2 text-left transition hover:bg-white/10"
-                                        >
-                                            <span className="block text-sm text-white">
-                                                {hit.name}
-                                            </span>
-                                            <span className="block truncate text-xs text-white/45">
-                                                {hit.type_label}
-                                                {hit.path
-                                                    ? ` · ${hit.path}`
-                                                    : ''}
-                                            </span>
-                                        </button>
-                                    </li>
-                                ))}
-                            </ul>
-                        )}
-                    </div>
-
-                    {/* Або крок за кроком: район → громада → місто/село → район міста. */}
-                    {region && levels.length > 0 && (
-                        <div className="grid gap-2 sm:grid-cols-2">
-                            {levels.map((level, depth) => (
-                                <label
-                                    key={depth}
-                                    className="text-xs text-white/50"
-                                >
-                                    {levelLabel(level.options[0]?.type)}
-                                    <select
-                                        value={level.value}
-                                        onChange={(e) =>
-                                            onSave({
-                                                unit:
-                                                    e.target.value ||
-                                                    level.parent,
-                                            })
-                                        }
-                                        className="input-glass mt-1 h-10 w-full rounded-lg px-3 text-sm text-white"
-                                    >
-                                        <option value="">
-                                            {depth === 0
-                                                ? tr('Уся область')
-                                                : tr('Усе вище обране')}
-                                        </option>
-                                        {level.options.map((o) => (
-                                            <option key={o.id} value={o.id}>
-                                                {o.name}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </label>
-                            ))}
-                        </div>
-                    )}
+                            </span>
+                        </span>
+                        <ChevronRight className="mt-1 size-4 shrink-0 text-white/40" />
+                    </button>
+                    <PlaceDialog
+                        open={open}
+                        onClose={() => setOpen(false)}
+                        onPick={(id) => {
+                            setOpen(false);
+                            onSave({ unit: id });
+                        }}
+                    />
                 </>
             )}
 
