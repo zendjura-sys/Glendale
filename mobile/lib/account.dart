@@ -462,10 +462,21 @@ Future<void> showFeedbackSheet(BuildContext context, {String screen = 'menu'}) a
 
 
 /// Що нового в цій версії застосунку — один раз після оновлення.
-const whatsNewVersion = '1.1.121';
+const whatsNewVersion = '1.1.122';
 
 /// Нове саме в цій версії — зверху, окремим блоком.
 List<String> _whatsNewCurrent() => [
+      tr('Тривоги — лише з офіційного API «Тривога»: одне сповіщення на початок і одне на відбій, без дублів і запізнень.'),
+      tr('Налаштування сповіщень тривог: область, район чи громада; початок, відбій, червоні й жовті тривоги, беззвучний режим.'),
+      tr('Повітряна тривога жовтого (лише БпЛА) і червоного (ракети) рівня; кольори типів, як в офіційних застосунках.'),
+      tr('Картка тривоги в сповіщеннях з кнопкою «Я в укритті (AFK)»; відбій оновлює ту саму картку й показує тривалість.'),
+      tr('Нові значки цілей: «Бандероль» і «Ціль не визначена».'),
+      tr('Фон застосунку як на сайті: сцени, фірмовий фон і відеофони GameCon+ з бібліотеки.'),
+      tr('Квадратніші кнопки й фільтри; сповіщення про тривогу відкривають мапу тривог.'),
+    ];
+
+/// Версія 1.1.121.
+List<String> _whatsNew121() => [
       tr('Плоский Liquid Glass: блоки, шапка й нижня панель — матове скло з молочною димкою, без тіней і кантів.'),
     ];
 
@@ -694,7 +705,7 @@ Future<void> showWhatsNew(BuildContext context, SharedPreferences prefs, {bool f
   await prefs.setString('whats_new', whatsNewVersion);
   if (!context.mounted) return;
   final current = _whatsNewCurrent();
-  final earlier = [..._whatsNew119(), ..._whatsNew118(), ..._whatsNew117(), ..._whatsNew116(), ..._whatsNew115(), ..._whatsNew113(), ..._whatsNew112(), ..._whatsNew111(), ..._whatsNewPrev(), ..._whatsNew()];
+  final earlier = [..._whatsNew121(), ..._whatsNew119(), ..._whatsNew118(), ..._whatsNew117(), ..._whatsNew116(), ..._whatsNew115(), ..._whatsNew113(), ..._whatsNew112(), ..._whatsNew111(), ..._whatsNewPrev(), ..._whatsNew()];
   Widget card(String item, {bool fresh = false}) => Container(
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.fromLTRB(12, 12, 14, 12),
