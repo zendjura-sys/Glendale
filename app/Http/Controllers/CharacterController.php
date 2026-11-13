@@ -266,7 +266,7 @@ class CharacterController extends Controller implements HasMiddleware
                 ->map(fn (GtaServer $server) => ['slug' => $server->slug, 'name' => $server->name])->all()),
             'families' => array_values(FamilyMember::query()->with('family.server')
                 ->where('user_id', $user->id)->where('status', FamilyMember::STATUS_ACTIVE)->get()
-                ->filter(fn (FamilyMember $member) => $member->family->server !== null)
+                ->filter(fn (FamilyMember $member) => $member->family?->server !== null)
                 ->map(fn (FamilyMember $member) => [
                     'id' => $member->family->id,
                     'name' => $member->family->name,
