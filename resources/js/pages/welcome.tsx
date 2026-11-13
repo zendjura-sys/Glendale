@@ -5,12 +5,14 @@ import {
     CalendarDays,
     Crown,
     Gamepad2,
+    Gift,
     Heart,
     Layers,
     Lock,
     MessageCircle,
     Mic,
     Newspaper,
+    Podcast,
     Server,
     Sparkles,
     Trophy,
@@ -199,6 +201,61 @@ function MockCards() {
     );
 }
 
+/** Макет ефіру GameCast: «в ефірі», тема, ведучі зі смужкою голосу. */
+function MockGameCast() {
+    const speakers = [
+        { tone: 'from-sky-400 to-blue-600', name: tr('Ведучий'), live: true },
+        {
+            tone: 'from-violet-400 to-indigo-600',
+            name: tr('Гість'),
+            live: false,
+        },
+    ];
+
+    return (
+        <div
+            className="mt-4 flex flex-wrap items-center gap-4 rounded-2xl bg-white/[0.05] p-3.5"
+            aria-hidden
+        >
+            <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 text-xs">
+                    <span className="flex items-center gap-1.5 rounded-full bg-rose-500/15 px-2 py-0.5 font-semibold text-rose-400">
+                        <span className="size-1.5 rounded-full bg-rose-500" />
+                        {tr('В ефірі')}
+                    </span>
+                    <span className="text-white/50">{tr('128 слухачів')}</span>
+                </div>
+                <div className="mt-2 truncate text-sm font-semibold text-white">
+                    {tr('Чи потрібен ранкед у GTA RP?')}
+                </div>
+                <div className="mt-0.5 text-xs text-sky-400">
+                    #gta #rp #сервери
+                </div>
+            </div>
+            <div className="flex items-end gap-3">
+                {speakers.map((sp) => (
+                    <div
+                        key={sp.name}
+                        className="flex flex-col items-center gap-1"
+                    >
+                        <span
+                            className={cn(
+                                'size-10 rounded-full bg-gradient-to-br',
+                                sp.tone,
+                                sp.live &&
+                                    'ring-2 ring-emerald-400 ring-offset-2 ring-offset-transparent',
+                            )}
+                        />
+                        <span className="text-[10px] text-white/55">
+                            {sp.name}
+                        </span>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
+
 type Tile = {
     icon: typeof Newspaper;
     title: string;
@@ -288,6 +345,36 @@ export default function Welcome({
             title: tr('Турніри й події'),
             text: tr(
                 'Сітки турнірів, ігрові вечори, сезонні події з нагородами для профілю.',
+            ),
+        },
+        {
+            icon: Podcast,
+            title: 'GameCast',
+            text: tr(
+                'Живі розмовні ефіри про ігри: ведучі, гості й слухачі. Формати 1 на 1, 2 на 2 або свій, #теми й питання з залу.',
+            ),
+            className: 'lg:col-span-2',
+            extra: <MockGameCast />,
+        },
+        {
+            icon: Gamepad2,
+            title: tr('Ігри й бібліотека'),
+            text: tr(
+                'Імпорт бібліотеки Steam, список «хочу/граю/пройшов», знижки й безкоштовні роздачі ігор.',
+            ),
+            extra: (
+                <div
+                    className="mt-4 flex items-center gap-2 rounded-xl bg-white/[0.05] p-2.5 text-xs"
+                    aria-hidden
+                >
+                    <Gift className="size-4 shrink-0 text-emerald-400" />
+                    <span className="flex-1 truncate font-medium text-white/80">
+                        {tr('Роздача тижня')}
+                    </span>
+                    <span className="rounded-md bg-emerald-400/15 px-1.5 py-0.5 font-semibold text-emerald-400">
+                        −100%
+                    </span>
+                </div>
             ),
         },
         {

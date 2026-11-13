@@ -147,30 +147,41 @@
     <body class="font-sans antialiased">
         {{-- Перший екран до завантаження JS/CSS: інлайн-стилі, щоб показатися миттєво. Ховає app.tsx після першого рендеру. --}}
         <noscript><style>#gc-splash-loader{display:none!important}</style></noscript>
-        <div id="gc-splash-loader" role="status" aria-live="polite" style="position:fixed;inset:0;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#04070D;transition:opacity .35s cubic-bezier(.22,1,.36,1),visibility .35s">
+        {{-- Сплеш лише при першому відкритті сайту за сесію браузера; далі переходи безшовні (SPA). --}}
+        <script>try { if (sessionStorage.getItem('gc_splash_seen')) document.documentElement.classList.add('gc-splash-skip'); } catch (e) {}</script>
+        <div id="gc-splash-loader" role="status" aria-live="polite">
             <style>
-                @keyframes gcSplashPulse{0%,100%{transform:scale(.98)}50%{transform:scale(1.02)}}
+                #gc-splash-loader{--sp-bg:#05070f;--sp-glow:rgba(37,99,235,.28);--sp-glow2:rgba(0,210,255,.14);--sp-tile:#0a1222;--sp-text:rgba(226,232,240,.72);--sp-track:rgba(255,255,255,.08);position:fixed;inset:0;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(60% 45% at 50% 42%,var(--sp-glow),transparent 70%),radial-gradient(40% 35% at 70% 70%,var(--sp-glow2),transparent 70%),var(--sp-bg);transition:opacity .35s cubic-bezier(.22,1,.36,1),visibility .35s}
+                html[data-theme='light'] #gc-splash-loader{--sp-bg:#e9f1f8;--sp-glow:rgba(56,189,248,.30);--sp-glow2:rgba(99,102,241,.16);--sp-tile:#ffffff;--sp-text:#475569;--sp-track:rgba(15,23,42,.08)}
+                html.gc-splash-skip #gc-splash-loader{display:none}
+                @keyframes gcSplashPulse{0%,100%{transform:scale(.98);box-shadow:0 0 28px rgba(0,210,255,.22)}50%{transform:scale(1.02);box-shadow:0 0 44px rgba(0,210,255,.38)}}
                 @keyframes gcSplashBeam{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
-                #gc-splash-loader .gc-sq{width:88px;height:88px;border-radius:24px;padding:2px;background:linear-gradient(45deg,#1D4ED8,#00D2FF);box-shadow:0 0 35px rgba(0,210,255,.28);animation:gcSplashPulse 2s ease-in-out infinite}
-                #gc-splash-loader .gc-sq>div{width:100%;height:100%;border-radius:22px;background:#070D19;box-shadow:inset 0 0 18px rgba(0,210,255,.15);display:flex;align-items:center;justify-content:center}
-                #gc-splash-loader img{width:58px;height:58px;filter:drop-shadow(0 0 12px rgba(0,210,255,.6))}
-                #gc-splash-loader .gc-bar{width:140px;height:3px;border-radius:999px;background:rgba(255,255,255,.06);overflow:hidden;margin-top:24px}
+                #gc-splash-loader .gc-sq{width:88px;height:88px;border-radius:26px;padding:2px;background:linear-gradient(45deg,#1D4ED8,#00D2FF);animation:gcSplashPulse 2s ease-in-out infinite}
+                #gc-splash-loader .gc-sq>div{width:100%;height:100%;border-radius:24px;background:var(--sp-tile);display:flex;align-items:center;justify-content:center;overflow:hidden}
+                #gc-splash-loader img{width:100%;height:100%;object-fit:cover}
+                #gc-splash-loader .gc-bar{width:140px;height:3px;border-radius:999px;background:var(--sp-track);overflow:hidden;margin-top:26px}
                 #gc-splash-loader .gc-bar>i{display:block;width:100%;height:100%;background:linear-gradient(90deg,transparent,#2563EB,#00D2FF,transparent);animation:gcSplashBeam 1.1s ease-in-out infinite}
-                #gc-splash-loader .gc-st{font:500 12px/1.4 Montserrat,system-ui,sans-serif;color:#94A3B8;letter-spacing:.04em;margin-top:10px;min-height:17px}
+                #gc-splash-loader .gc-name{margin-top:18px;font:700 20px/1 'Montserrat Variable','Montserrat',ui-sans-serif,system-ui,sans-serif;color:var(--sp-text);letter-spacing:-.01em}
+                #gc-splash-loader .gc-name b{color:#0EA5E9;font-weight:700}
+                #gc-splash-loader .gc-st{font:500 13px/1.4 'Montserrat Variable','Montserrat',ui-sans-serif,system-ui,sans-serif;color:var(--sp-text);margin-top:12px;min-height:18px}
                 @media (prefers-reduced-motion:reduce){#gc-splash-loader .gc-sq,#gc-splash-loader .gc-bar>i{animation:none}}
             </style>
-            <div class="gc-sq"><div><img src="/images/brand/logo-mark.png" alt="GameCon" width="58" height="58" onerror="this.outerHTML='<svg width=&quot;52&quot; height=&quot;52&quot; viewBox=&quot;0 0 52 52&quot;><defs><linearGradient id=&quot;gcG&quot; x1=&quot;0&quot; y1=&quot;1&quot; x2=&quot;1&quot; y2=&quot;0&quot;><stop offset=&quot;0&quot; stop-color=&quot;#2563EB&quot;/><stop offset=&quot;1&quot; stop-color=&quot;#00D2FF&quot;/></linearGradient></defs><path d=&quot;M40 14a17 17 0 1 0 2 20H27&quot; fill=&quot;none&quot; stroke=&quot;url(#gcG)&quot; stroke-width=&quot;5&quot; stroke-linecap=&quot;round&quot;/></svg>'"></div></div>
+            <div class="gc-sq"><div><img src="/images/app/logo.webp" alt="GameCon" width="84" height="84" onerror="this.outerHTML='<svg width=&quot;52&quot; height=&quot;52&quot; viewBox=&quot;0 0 52 52&quot;><defs><linearGradient id=&quot;gcG&quot; x1=&quot;0&quot; y1=&quot;1&quot; x2=&quot;1&quot; y2=&quot;0&quot;><stop offset=&quot;0&quot; stop-color=&quot;#2563EB&quot;/><stop offset=&quot;1&quot; stop-color=&quot;#00D2FF&quot;/></linearGradient></defs><path d=&quot;M40 14a17 17 0 1 0 2 20H27&quot; fill=&quot;none&quot; stroke=&quot;url(#gcG)&quot; stroke-width=&quot;5&quot; stroke-linecap=&quot;round&quot;/></svg>'"></div></div>
+            <div class="gc-name">Game<b>Con</b></div>
             <div class="gc-bar"><i></i></div>
             <div class="gc-st" id="gc-splash-status">Ініціалізація GameCon OS...</div>
             <script>
                 (function () {
                     var lines = ['Ініціалізація GameCon OS...', 'Синхронізація ігрового профілю...', 'Підключення до серверів та штабу...'];
                     var i = 0, el = document.getElementById('gc-splash-status');
-                    var timer = setInterval(function () { i = (i + 1) % lines.length; if (el) el.textContent = lines[i]; }, 900);
+                    var skip = document.documentElement.classList.contains('gc-splash-skip');
+                    var timer = skip ? 0 : setInterval(function () { i = (i + 1) % lines.length; if (el) el.textContent = lines[i]; }, 900);
                     window.gcHideSplash = function () {
                         var s = document.getElementById('gc-splash-loader');
                         if (!s) return;
                         clearInterval(timer);
+                        try { sessionStorage.setItem('gc_splash_seen', '1'); } catch (e) {}
+                        if (skip) { s.parentNode.removeChild(s); return; }
                         s.style.opacity = '0'; s.style.pointerEvents = 'none'; s.style.visibility = 'hidden';
                         setTimeout(function () { if (s.parentNode) s.parentNode.removeChild(s); }, 350);
                     };
