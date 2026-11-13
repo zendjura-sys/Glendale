@@ -2,8 +2,10 @@
 
 namespace App\Services\Alerts;
 
+use App\Models\Family;
 use App\Models\User;
 use App\Notifications\AirAlertNotice;
+use App\Services\Families\FamilyBot;
 use App\Services\Push\PushNotifier;
 use Carbon\CarbonImmutable;
 use Illuminate\Notifications\DatabaseNotification;
@@ -152,6 +154,11 @@ class AlertWatcher
                 }
             });
         $watchers = array_map(fn ($ids) => array_values(array_unique($ids)), $watchers);
+        // Боти сімей (Discord/Telegram) з обраним місцем тривог.
+        $families = self::familyWatchers();
+        foreach (array_keys($families) as $unit) {
+            $watchers[$unit] ??= [];
+        }
 
         $tree = $this->api->regions();
         $sent = 0;
@@ -162,11 +169,11 @@ class AlertWatcher
             $effective = $this->api->typesFor($unit, $active);
             foreach (array_keys(UkraineAlarm::TYPES) as $type) {
                 $sent += $this->transition("ua_alarm_state:{$unit}:{$type}", "ua_alarm_lock:{$unit}:{$type}", isset($effective[$type]), $effective[$type] ?? null, $quiet, $now,
-                    fn (bool $started, ?string $since, bool $raised = false) => $this->notify($ids, $started, $type, $tree[$unit]['name'] ?? '', $unit, false, $since, $now, $raised),
+                    fn (bool $started, ?string $since, bool $raised = false) => $this->notify($ids, $started, $type, $tree[$unit]['name'] ?? '', $unit, false, $since, $now, $raised, $families[$unit] ?? []),
                     $this->api->levelFor($unit, $type));
             }
             // Обрана вся область — тривоги лише в її районах чи громадах (жовті, з назвою району).
-            if (($tree[$unit]['type'] ?? null) === 'State') {
+            if ($ids !== [] && ($tree[$unit]['type'] ?? null) === 'State') {
                 $sent += $this->locals($unit, $ids, $active, $effective, $tree, $quiet, $now);
             }
         }
@@ -255,7 +262,7 @@ class AlertWatcher
      *
      * @param  list<int>  $ids
      */
-    private function notify(array $ids, bool $started, string $type, string $name, string $place, bool $local, ?string $since, CarbonImmutable $now, bool $raised = false): int
+    private function notify(array $ids, bool $started, string $type, string $name, string $place, bool $local, ?string $since, CarbonImmutable $now, bool $raised = false, array $families = []): int
     {
         $alertKey = md5($place.'|'.$type.'|'.$since);
         // Повітряна тривога: жовтий рівень — лише БпЛА, червоний — ракети.
@@ -270,7 +277,61 @@ class AlertWatcher
         // Замок на одну зміну стану: паралельні опитування й вебхук не створять дубль.
         $status = $raised ? 'raised' : ($started ? 'on' : 'off');
 
-        return (int) (Cache::lock('ua_alarm_notify:'.$place.':'.$type.':'.$status, 60)->block(10, fn () => $this->deliver($ids, $started, $type, $name, $local, $since, $now, $alertKey, $airLevel, $severity, $raised, $place)));
+        $sent = (int) (Cache::lock('ua_alarm_notify:'.$place.':'.$type.':'.$status, 60)->block(10, fn () => $this->deliver($ids, $started, $type, $name, $local, $since, $now, $alertKey, $airLevel, $severity, $raised, $place)));
+        if ($families !== []) {
+            $this->announce($families, new AirAlertNotice($started, $name, $type, $now->toIso8601String(), $local, $alertKey, $since, false, $airLevel, $raised), $alertKey.':'.$status);
+        }
+
+        return $sent;
+    }
+
+    /**
+     * Сім’ї, що ввімкнули тривоги в боті: regionId → id сімей. Вебхуки зашифровані, тож читаємо в PHP (сімей мало).
+     *
+     * @return array<string, list<int>>
+     */
+    public static function familyWatchers(): array
+    {
+        $out = [];
+        Family::query()->whereNotNull('webhooks')->select(['id', 'webhooks'])->chunkById(500, function ($families) use (&$out) {
+            foreach ($families as $family) {
+                $unit = $family->webhook('alerts');
+                $bot = $family->webhook('discord') || ($family->webhook('telegram_token') && $family->webhook('telegram_chat'));
+                if (is_string($unit) && $unit !== '' && $bot) {
+                    $out[$unit][] = $family->id;
+                }
+            }
+        });
+
+        return $out;
+    }
+
+    /**
+     * Тривога чи відбій у бот сім’ї. У черзі — щоб повільний Discord/Telegram не затримував пуші людям.
+     *
+     * @param  list<int>  $families
+     */
+    private function announce(array $families, AirAlertNotice $notice, string $key): void
+    {
+        $data = $notice->toArray(new \stdClass);
+        $icon = match ($data['severity']) {
+            'clear' => '🟢',
+            'red' => '🔴',
+            default => '🟡',
+        };
+        $text = $icon.' '.$data['text']."\n".$data['excerpt'];
+        foreach ($families as $id) {
+            // Та сама зміна стану — один раз на сім’ю, навіть якщо вебхук і опитування збіглися.
+            if (! Cache::add('ua_alarm_family:'.$id.':'.$key, 1, now()->addMinutes(10))) {
+                continue;
+            }
+            dispatch(function () use ($id, $text) {
+                $family = Family::query()->find($id);
+                if ($family !== null) {
+                    rescue(fn () => app(FamilyBot::class)->send($family, $text, 'Тривога'), report: false);
+                }
+            });
+        }
     }
 
     /** Область (slug) регіону з довідника: для обраного місця «unit» чи «state/district». */

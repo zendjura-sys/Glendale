@@ -157,7 +157,7 @@ function wholeLabel(type: string): string {
  * Вибір місця, як у застосунку «Тривога»: області → райони («Обрати всю область») →
  * громади («Обрати весь район») → міста й села; зверху пошук.
  */
-function PlaceDialog({
+export function PlaceDialog({
     open,
     onClose,
     onPick,

@@ -16,6 +16,7 @@ import {
     Trash2,
     Trophy,
     UserRound,
+    Siren,
 } from 'lucide-react';
 import {
     FeatureTile,
@@ -26,7 +27,7 @@ import {
 import { DonationJarForm } from '@/components/gc/donation-jar';
 import { OnboardingSettings } from '@/components/families/onboarding-settings';
 import type { Question, Step } from '@/components/families/onboarding-settings';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { FamilyLogo } from '@/components/families/family-logo';
 import { FamilyShell } from '@/components/families/family-shell';
@@ -47,6 +48,7 @@ import { cn } from '@/lib/utils';
 import type { FamilyShellProps } from '@/types';
 import { BotsCard } from '@/components/bots/bots-card';
 import { DeleteZone } from '@/components/gc/delete-zone';
+import { PlaceDialog } from '@/components/alerts/alert-place';
 import { tr } from '@/lib/i18n';
 
 type Settings = {
@@ -82,6 +84,7 @@ type Props = FamilyShellProps & {
         discord: string | null;
         telegram_token: string | null;
         telegram_chat: string | null;
+        alerts: { id: string; name: string; path: string } | null;
     };
     digest: {
         text: string;
@@ -643,7 +646,8 @@ function WebhooksPanel({
         telegram_chat: webhooks.telegram_chat ?? '',
     });
 
-    const clear = (target: 'discord' | 'telegram') =>
+    const [placeOpen, setPlaceOpen] = useState(false);
+    const clear = (target: 'discord' | 'telegram' | 'alerts') =>
         router.put(
             `${base}/settings/webhooks`,
             { clear: target },
@@ -739,6 +743,53 @@ function WebhooksPanel({
                         />
                     </Field>
                 </div>
+                <Field
+                    label={tr('Тривоги в боті')}
+                    hint={
+                        webhooks.alerts
+                            ? webhooks.alerts.path
+                            : tr(
+                                  'Бот напише про початок і відбій тривоги в обраному місці.',
+                              )
+                    }
+                >
+                    <div className="flex gap-2">
+                        <button
+                            type="button"
+                            onClick={() => setPlaceOpen(true)}
+                            className={cn(
+                                inputClass,
+                                'flex items-center gap-2 text-left',
+                            )}
+                        >
+                            <Siren className="size-4 shrink-0 text-white/45" />
+                            <span className="truncate">
+                                {webhooks.alerts?.name ?? tr('Оберіть місце')}
+                            </span>
+                        </button>
+                        {webhooks.alerts && (
+                            <button
+                                type="button"
+                                onClick={() => clear('alerts')}
+                                className={btnGhost}
+                            >
+                                {tr('Вимкнути')}
+                            </button>
+                        )}
+                    </div>
+                </Field>
+                <PlaceDialog
+                    open={placeOpen}
+                    onClose={() => setPlaceOpen(false)}
+                    onPick={(id) => {
+                        setPlaceOpen(false);
+                        router.put(
+                            `${base}/settings/webhooks`,
+                            { alerts: id },
+                            { preserveScroll: true },
+                        );
+                    }}
+                />
                 <div className="flex justify-end gap-2">
                     {webhooks.telegram_token && (
                         <button

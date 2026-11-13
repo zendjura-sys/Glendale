@@ -5,11 +5,13 @@ namespace Tests\Feature;
 use App\Enums\AlertScale;
 use App\Enums\AlertType;
 use App\Models\AirThreat;
+use App\Models\GtaServer;
 use App\Models\User;
 use App\Notifications\AirAlertNotice;
 use App\Services\Alerts\AirAlertService;
 use App\Services\Alerts\AlertWatcher;
 use App\Services\Alerts\UkraineAlarm;
+use App\Services\Families\FamilyService;
 use App\Support\Plugins\Plugins;
 use App\Support\Settings\SiteSettings;
 use Carbon\CarbonImmutable;
@@ -715,5 +717,40 @@ class AirAlertsTest extends TestCase
         $this->actingAs($admin)->post('/admin/alerts/check')->assertRedirect();
         Log::shouldHaveReceived('info')->withArgs(fn ($msg) => $msg === 'admin.alerts.check')->once();
         $this->actingAs($admin)->post('/admin/alerts/webhook', ['action' => 'nope'])->assertSessionHasErrors('action');
+    }
+
+    public function test_family_bot_posts_alert_start_and_end_for_chosen_place(): void
+    {
+        $alerts = [];
+        $index = 1;
+        $this->fakeUkraineAlarm($this->zhytomyrTree(), $alerts, $index);
+        $server = GtaServer::query()->create(['slug' => 'quant', 'name' => 'Quant', 'platform' => 'pc', 'multiplayer' => 'ragemp', 'status' => GtaServer::STATUS_PUBLISHED, 'origin' => 'seed']);
+        $owner = User::factory()->create();
+        $family = app(FamilyService::class)->create($owner, ['server_id' => $server->id, 'name' => 'Scaletta', 'tag' => 'SCL', 'rp_nickname' => 'Marco_Scaletta', 'static_id' => '1']);
+        $family->update(['webhooks' => ['discord' => 'https://discord.com/api/webhooks/1/abc']]);
+
+        // Місце з довідника; неіснуюче — відмова.
+        $this->actingAs($owner)->put("/f/{$family->slug}/settings/webhooks", ['alerts' => '999'])->assertStatus(422);
+        $this->actingAs($owner)->put("/f/{$family->slug}/settings/webhooks", ['alerts' => '1001'])->assertSessionHasNoErrors();
+        $this->assertSame('1001', $family->fresh()->webhook('alerts'));
+        $this->assertSame([['1001' => [$family->id]]], [AlertWatcher::familyWatchers()]);
+
+        $watcher = app(AlertWatcher::class);
+        $watcher->run();
+        $discord = fn () => Http::recorded()->filter(fn ($pair) => str_contains($pair[0]->url(), 'discord.com'))->values();
+        [$alerts, $index] = [[$this->row('100', 'District', 'AIR')], 2];
+        $watcher->run();
+        $watcher->run(force: true); // вебхук слідом — без дубля
+        $this->assertCount(1, $discord());
+        $this->assertStringContainsString('🔴 Повітряна тривога (червоний рівень): Житомирська територіальна громада', json_encode($discord()[0][0]->data(), JSON_UNESCAPED_UNICODE));
+
+        [$alerts, $index] = [[], 3];
+        $watcher->run();
+        $this->assertCount(2, $discord());
+        $this->assertStringContainsString('🟢 Відбій повітряної тривоги', json_encode($discord()[1][0]->data(), JSON_UNESCAPED_UNICODE));
+
+        // Вимкнули — більше не стежимо.
+        $this->actingAs($owner)->put("/f/{$family->slug}/settings/webhooks", ['clear' => 'alerts'])->assertSessionHasNoErrors();
+        $this->assertSame([], AlertWatcher::familyWatchers());
     }
 }

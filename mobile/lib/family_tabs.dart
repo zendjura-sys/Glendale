@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import 'alerts.dart' show AlertPlacePickerPage;
 import 'api.dart';
 import 'families.dart';
 import 'posts.dart';
@@ -1659,6 +1660,27 @@ class _SettingsTabState extends State<SettingsTab> {
           LabeledField(label: tr('Токен Telegram-бота'), hint: text(hooks['telegram_token']) ?? tr('Створіть бота в @BotFather'), child: GcField(controller: telegramToken, label: '123456789:AA…', dense: true)),
           const SizedBox(height: 8),
           LabeledField(label: 'Chat ID', child: GcField(controller: telegramChat, label: '-1001234567890', dense: true)),
+          const SizedBox(height: 8),
+          // Тривоги в боті: те саме дерево місць, що й у розділі «Тривоги».
+          LabeledField(
+            label: tr('Тривоги в боті'),
+            hint: text(mapOf(hooks['alerts'])['path']) ?? tr('Бот напише про початок і відбій тривоги в обраному місці.'),
+            child: Row(children: [
+              Expanded(
+                child: GhostButton(
+                  label: text(mapOf(hooks['alerts'])['name']) ?? tr('Оберіть місце'),
+                  icon: LucideIcons.siren,
+                  compact: true,
+                  onPressed: () async {
+                    final id = await Navigator.of(context).push<String>(MaterialPageRoute(builder: (_) => const AlertPlacePickerPage()));
+                    if (id != null && context.mounted) await ctx.act(context, () => ctx.api.put(ctx.path('settings/webhooks'), {'alerts': id}));
+                  },
+                ),
+              ),
+              if (hooks['alerts'] != null)
+                TextButton(onPressed: () => ctx.act(context, () => ctx.api.put(ctx.path('settings/webhooks'), {'clear': 'alerts'})), child: Text(tr('Вимкнути'), style: body(12.5, color: dangerSoft))),
+            ]),
+          ),
           const SizedBox(height: 10),
           Row(children: [
             if (hooks['discord'] != null) TextButton(onPressed: () => ctx.act(context, () => ctx.api.put(ctx.path('settings/webhooks'), {'clear': 'discord'})), child: Text(tr('Прибрати Discord'), style: body(12.5, color: dangerSoft))),

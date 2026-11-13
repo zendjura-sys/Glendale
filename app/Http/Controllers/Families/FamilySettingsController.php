@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Families;
 
 use App\Models\Family;
 use App\Models\GtaServer;
+use App\Services\Alerts\UkraineAlarm;
 use App\Services\Donations\MonobankJar;
 use App\Services\Families\FamilyAudit;
 use App\Services\Families\FamilyBot;
@@ -43,6 +44,8 @@ class FamilySettingsController extends FamilyBaseController
                 'discord' => $family->webhook('discord') ? Str::mask((string) $family->webhook('discord'), '•', 40, -6) : null,
                 'telegram_token' => $family->webhook('telegram_token') ? Str::mask((string) $family->webhook('telegram_token'), '•', 4, -4) : null,
                 'telegram_chat' => $family->webhook('telegram_chat'),
+                // Тривоги в боті: обране місце з довідника UkraineAlarm.
+                'alerts' => $this->alertPlace($family->webhook('alerts')),
             ],
             'jar' => ['url' => $family->donation_jar, 'note' => $family->donation_note],
             'can_delete' => $family->owner_id === $request->user()->id || $request->user()->isStaff(),
@@ -268,7 +271,8 @@ class FamilySettingsController extends FamilyBaseController
             'discord' => ['nullable', 'string', 'max:300', 'regex:'.FamilyBot::DISCORD_PATTERN],
             'telegram_token' => ['nullable', 'string', 'max:80', 'regex:'.FamilyBot::TELEGRAM_TOKEN_PATTERN],
             'telegram_chat' => ['nullable', 'string', 'max:40', 'regex:/^(-?\d{5,20}|@\w{4,40})$/'],
-            'clear' => ['nullable', Rule::in(['discord', 'telegram'])],
+            'alerts' => ['nullable', 'string', 'max:20'],
+            'clear' => ['nullable', Rule::in(['discord', 'telegram', 'alerts'])],
         ], [
             'discord.regex' => 'Вставте адресу вебхука Discord: https://discord.com/api/webhooks/…',
             'telegram_token.regex' => 'Токен бота від @BotFather має вигляд 123456789:AA…',
@@ -280,7 +284,13 @@ class FamilySettingsController extends FamilyBaseController
             unset($hooks['discord']);
         } elseif (($data['clear'] ?? null) === 'telegram') {
             unset($hooks['telegram_token'], $hooks['telegram_chat']);
+        } elseif (($data['clear'] ?? null) === 'alerts') {
+            unset($hooks['alerts']);
         } else {
+            if (filled($data['alerts'] ?? null)) {
+                abort_unless($this->alertPlace($data['alerts']) !== null, 422, 'Такого місця немає в довіднику тривог.');
+                $hooks['alerts'] = $data['alerts'];
+            }
             foreach (['discord', 'telegram_token'] as $key) {
                 if (filled($data[$key] ?? null)) {
                     $hooks[$key] = trim((string) $data[$key]);
@@ -295,6 +305,7 @@ class FamilySettingsController extends FamilyBaseController
         $audit->log($family, 'WEBHOOKS_UPDATE', $member, null, [
             'discord' => isset($hooks['discord']),
             'telegram' => isset($hooks['telegram_token'], $hooks['telegram_chat']),
+            'alerts' => $hooks['alerts'] ?? null,
         ]);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Налаштування бота збережено.']);
@@ -323,5 +334,17 @@ class FamilySettingsController extends FamilyBaseController
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Тижневий звіт надіслано: '.(collect($result)->filter()->keys()->map(fn ($k) => ['chat' => 'чат', 'discord' => 'Discord', 'telegram' => 'Telegram'][$k] ?? $k)->implode(', ') ?: 'немає каналів')]);
 
         return back();
+    }
+
+    /** @return array{id: string, name: string, path: string}|null */
+    private function alertPlace(?string $id): ?array
+    {
+        $api = app(UkraineAlarm::class);
+        if ($id === null || ! $api->enabled()) {
+            return null;
+        }
+        $node = $api->regions()[$id] ?? null;
+
+        return $node === null ? null : ['id' => $id, 'name' => $node['name'], 'path' => $api->pathLabel($id)];
     }
 }
