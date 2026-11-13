@@ -528,6 +528,49 @@ class UkraineAlarm
         return 'invalid';
     }
 
+    /**
+     * Останні 25 тривог регіону (GET /api/v3/alerts/regionHistory) і підсумок за 7 днів. Кеш 2 хв.
+     *
+     * @return array{alarms: list<array{type: string, name: string, start: string|null, end: string|null, minutes: int|null, ongoing: bool, accent: string}>, week: array{count: int, minutes: int}}
+     */
+    public function history(string $id): array
+    {
+        $json = Cache::remember('ua_alarm:history:'.$id, 120, fn () => $this->get('/alerts/regionHistory?regionId='.rawurlencode($id), 6) ?? []);
+        $alarms = [];
+        foreach ((array) $json as $region) {
+            foreach (is_array($region) ? (array) ($region['alarms'] ?? []) : [] as $alarm) {
+                if (! is_array($alarm)) {
+                    continue;
+                }
+                $type = self::type($alarm['alertType'] ?? 'AIR');
+                $start = isset($alarm['startDate']) ? (string) $alarm['startDate'] : null;
+                $ongoing = ($alarm['isContinue'] ?? false) === true;
+                $end = ! $ongoing && isset($alarm['endDate']) ? (string) $alarm['endDate'] : null;
+                $minutes = null;
+                try {
+                    if ($start !== null) {
+                        $minutes = max(0, intdiv(($end !== null ? strtotime($end) : time()) - strtotime($start), 60));
+                    }
+                } catch (\Throwable) {
+                    $minutes = null;
+                }
+                $alarms[] = ['type' => $type, 'name' => self::TYPES[$type][0], 'start' => $start, 'end' => $end, 'minutes' => $minutes, 'ongoing' => $ongoing, 'accent' => self::accent($type)];
+            }
+        }
+        usort($alarms, fn ($a, $b) => strcmp((string) $b['start'], (string) $a['start']));
+        $alarms = array_slice($alarms, 0, 25);
+        $since = time() - 7 * 86400;
+        $week = ['count' => 0, 'minutes' => 0];
+        foreach ($alarms as $alarm) {
+            if ($alarm['start'] !== null && strtotime($alarm['start']) >= $since) {
+                $week['count']++;
+                $week['minutes'] += (int) $alarm['minutes'];
+            }
+        }
+
+        return ['alarms' => $alarms, 'week' => $week];
+    }
+
     /** Наша адреса для вебхука (WebHookModel.webHookUrl). Тіло вебхука — лише сигнал, стан однаково з API. */
     public function webhookUrl(): string
     {

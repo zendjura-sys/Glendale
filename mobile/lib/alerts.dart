@@ -313,8 +313,10 @@ class _AlertsScreenState extends State<AlertsScreen> {
               items: [for (final r in regionList) (text(r['slug'])!, text(r['name']) ?? '')],
               onChanged: (v) => _save({'region': v}),
             ),
-            if (prefs['units_enabled'] == true)
+            if (prefs['units_enabled'] == true) ...[
               _AlertPlace(region: mineSlug ?? '', prefs: prefs, onSave: _save),
+              _AlertHistory(key: ValueKey('${mapOf(prefs['unit'])['id'] ?? mineSlug}')),
+            ],
             const SizedBox(height: 12),
             Text(tr('Налаштування сповіщень тривог'), style: body(14.5, weight: FontWeight.w700)),
             if (prefs['units_enabled'] != true)
@@ -979,5 +981,78 @@ class _AlertPlacePickerPageState extends State<AlertPlacePickerPage> {
         ),
       ]),
     );
+  }
+}
+
+/// Історія тривог мого місця з API (останні 25) і підсумок за тиждень.
+class _AlertHistory extends StatefulWidget {
+  const _AlertHistory({super.key});
+
+  @override
+  State<_AlertHistory> createState() => _AlertHistoryState();
+}
+
+class _AlertHistoryState extends State<_AlertHistory> {
+  Map<String, dynamic>? data;
+
+  Future<void> _load() async {
+    try {
+      final d = await AppScope.read(context).session.api.get(Api.site('/alerts/history'));
+      if (mounted) setState(() => data = d);
+    } catch (_) {
+      if (mounted) setState(() => data = {'alarms': const [], 'week': {'count': 0, 'minutes': 0}});
+    }
+  }
+
+  static String _minutes(int m) => m >= 60 ? tr('{h} год {m} хв', {'h': m ~/ 60, 'm': m % 60}) : tr('{m} хв', {'m': m});
+
+  @override
+  Widget build(BuildContext context) {
+    final alarms = maps(data?['alarms']);
+    final week = mapOf(data?['week']);
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: ExpansionTile(
+        tilePadding: EdgeInsets.zero,
+        leading: Icon(LucideIcons.history, size: 18, color: muted),
+        title: Text(tr('Історія тривог'), style: body(14.5, weight: FontWeight.w700)),
+        onExpansionChanged: (open) {
+          if (open && data == null) _load();
+        },
+        children: [
+          if (data == null)
+            const Padding(padding: EdgeInsets.all(12), child: CircularProgressIndicator())
+          else if (alarms.isEmpty)
+            Padding(padding: const EdgeInsets.only(bottom: 8), child: Text(tr('Тривог поки не було.'), style: body(12.5, color: muted)))
+          else ...[
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(tr('За тиждень: {n} тривог, разом {t}', {'n': intOf(week['count']), 't': _minutes(intOf(week['minutes']))}), style: body(12.5, color: muted)),
+            ),
+            const SizedBox(height: 6),
+            for (final a in alarms)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Row(children: [
+                  Container(width: 8, height: 8, decoration: BoxDecoration(color: Color(0xFF000000 | (int.tryParse('${a['accent'] ?? ''}'.replaceFirst('#', ''), radix: 16) ?? 0xEF4444)), shape: BoxShape.circle)),
+                  const SizedBox(width: 8),
+                  Expanded(child: Text(text(a['name']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(13.5))),
+                  Text(
+                    '${_when(a['start'])} · ${a['ongoing'] == true ? tr('триває') : (a['minutes'] is num ? _minutes((a['minutes'] as num).toInt()) : '')}',
+                    style: body(12, color: muted),
+                  ),
+                ]),
+              ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  static String _when(Object? iso) {
+    final t = DateTime.tryParse('${iso ?? ''}')?.toLocal();
+    if (t == null) return '';
+    String two(int n) => n.toString().padLeft(2, '0');
+    return '${two(t.day)}.${two(t.month)} ${two(t.hour)}:${two(t.minute)}';
   }
 }

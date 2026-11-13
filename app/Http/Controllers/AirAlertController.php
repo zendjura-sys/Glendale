@@ -48,6 +48,21 @@ class AirAlertController extends Controller
         return response()->json(['enabled' => $on, 'tree' => $on ? $this->api->treeOf($data['region']) : [], 'districts' => $on ? $this->api->unitsOf($data['region']) : []]);
     }
 
+    /** Історія тривог обраного місця (або області): останні 25 і підсумок за тиждень. */
+    public function history(Request $request): JsonResponse
+    {
+        $this->ensure($request);
+        $user = $request->user();
+        $unit = $user->pref('alert_unit');
+        $region = $user->pref('alert_region');
+        $place = is_string($unit) && $unit !== '' ? $unit : (is_string($region) ? $this->api->stateIdFor($region) : null);
+        if ($place === null || ! $this->api->enabled()) {
+            return response()->json(['place' => null, 'alarms' => [], 'week' => ['count' => 0, 'minutes' => 0]]);
+        }
+
+        return response()->json(['place' => $this->api->regions()[$place]['name'] ?? null, ...$this->api->history($place)]);
+    }
+
     /** Екран вибору місця, як у «Тривозі»: області, далі райони, громади, міста й села. */
     public function places(Request $request): JsonResponse
     {

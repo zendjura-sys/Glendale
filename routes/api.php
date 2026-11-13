@@ -489,6 +489,7 @@ Route::prefix('v1')->group(function () {
                 Route::get('alerts/units', [AirAlertController::class, 'units'])->middleware('throttle:60,1');
                 Route::get('alerts/search', [AirAlertController::class, 'search'])->middleware('throttle:60,1');
                 Route::get('alerts/places', [AirAlertController::class, 'places'])->middleware('throttle:120,1');
+                Route::get('alerts/history', [AirAlertController::class, 'history'])->middleware('throttle:60,1');
                 Route::get('games/awards', [GameAwardsController::class, 'index']);
                 Route::get('games/awards/candidates', [GameAwardsController::class, 'candidates'])->middleware('throttle:120,1');
                 Route::post('games/awards/vote', [GameAwardsController::class, 'vote'])->middleware('throttle:60,1');

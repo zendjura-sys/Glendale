@@ -316,6 +316,35 @@ class AirAlertsTest extends TestCase
             ->assertJsonPath('prefs.status.0.accent', '#EF4444');
     }
 
+    public function test_alert_history_of_my_place(): void
+    {
+        app(SiteSettings::class)->putSecret('ukrainealarm_token', 'ua-alarm-key-1234567890');
+        Http::fake(function ($request) {
+            $url = $request->url();
+            if (str_contains($url, '/regions')) {
+                return Http::response($this->zhytomyrTree());
+            }
+            if (str_contains($url, '/alerts/regionHistory')) {
+                return Http::response([['regionId' => '100', 'regionName' => 'Житомирський район', 'alarms' => [
+                    ['regionId' => '100', 'startDate' => now()->subDays(1)->subMinutes(70)->toIso8601String(), 'endDate' => now()->subDays(1)->toIso8601String(), 'alertType' => 'AIR', 'isContinue' => false],
+                    ['regionId' => '100', 'startDate' => now()->subDays(10)->toIso8601String(), 'endDate' => now()->subDays(10)->addMinutes(30)->toIso8601String(), 'alertType' => 'ARTILLERY', 'isContinue' => false],
+                ]]]);
+            }
+
+            return Http::response([]);
+        });
+        $user = User::factory()->create(['country' => 'UA']);
+        $this->actingAs($user)->getJson('/alerts/history')->assertOk()->assertJsonPath('place', null);
+        $user->mergePref(['alert_region' => 'zhytomyr', 'alert_unit' => '100']);
+        $this->actingAs($user)->getJson('/alerts/history')->assertOk()
+            ->assertJsonPath('place', 'Житомирський район')
+            ->assertJsonPath('alarms.0.type', 'AIR')
+            ->assertJsonPath('alarms.0.minutes', 70)
+            ->assertJsonPath('alarms.1.accent', '#F97316')
+            ->assertJsonPath('week.count', 1)
+            ->assertJsonPath('week.minutes', 70);
+    }
+
     public function test_official_alert_level_yellow_then_raised_to_red(): void
     {
         $alerts = [];

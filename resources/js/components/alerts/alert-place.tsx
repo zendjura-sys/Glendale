@@ -1,4 +1,10 @@
-import { ChevronLeft, ChevronRight, MapPin, Search } from 'lucide-react';
+import {
+    ChevronLeft,
+    ChevronRight,
+    History,
+    MapPin,
+    Search,
+} from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type {
     AlertPlaceHit,
@@ -10,6 +16,120 @@ import { Toggle } from '@/components/gc/admin';
 import { api } from '@/lib/api';
 import { tr } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
+
+type HistoryAlarm = {
+    type: string;
+    name: string;
+    start: string | null;
+    end: string | null;
+    minutes: number | null;
+    ongoing: boolean;
+    accent: string;
+};
+
+function minutesLabel(minutes: number): string {
+    return minutes >= 60
+        ? tr('{h} год {m} хв', { h: Math.floor(minutes / 60), m: minutes % 60 })
+        : tr('{m} хв', { m: minutes });
+}
+
+/** Історія тривог мого місця з API (останні 25) і підсумок за тиждень. Відкривається за натисканням. */
+function AlertHistory() {
+    const [open, setOpen] = useState(false);
+    const [data, setData] = useState<{
+        alarms: HistoryAlarm[];
+        week: { count: number; minutes: number };
+    } | null>(null);
+
+    useEffect(() => {
+        if (!open || data) return;
+        api<{
+            alarms: HistoryAlarm[];
+            week: { count: number; minutes: number };
+        }>('GET', '/alerts/history')
+            .then(setData)
+            .catch(() =>
+                setData({ alarms: [], week: { count: 0, minutes: 0 } }),
+            );
+    }, [open, data]);
+
+    return (
+        <div className="rounded-lg bg-white/[0.03]">
+            <button
+                type="button"
+                onClick={() => setOpen((v) => !v)}
+                aria-expanded={open}
+                className="flex min-h-11 w-full items-center gap-2 px-3 text-left text-sm font-semibold text-white"
+            >
+                <History className="size-4 text-white/60" />
+                <span className="flex-1">{tr('Історія тривог')}</span>
+                <ChevronRight
+                    className={cn(
+                        'size-4 text-white/40 transition',
+                        open && 'rotate-90',
+                    )}
+                />
+            </button>
+            {open && (
+                <div className="px-3 pb-3">
+                    {data === null ? (
+                        <p className="text-xs text-white/45">
+                            {tr('Завантаження…')}
+                        </p>
+                    ) : data.alarms.length === 0 ? (
+                        <p className="text-xs text-white/45">
+                            {tr('Тривог поки не було.')}
+                        </p>
+                    ) : (
+                        <>
+                            <p className="mb-2 text-xs text-white/55">
+                                {tr('За тиждень: {n} тривог, разом {t}', {
+                                    n: data.week.count,
+                                    t: minutesLabel(data.week.minutes),
+                                })}
+                            </p>
+                            <ul className="grid gap-1.5">
+                                {data.alarms.map((a, i) => (
+                                    <li
+                                        key={`${a.start}-${i}`}
+                                        className="flex items-center gap-2 text-sm"
+                                    >
+                                        <span
+                                            aria-hidden
+                                            className="size-2 shrink-0 rounded-full"
+                                            style={{ background: a.accent }}
+                                        />
+                                        <span className="min-w-0 flex-1 truncate text-white/85">
+                                            {a.name}
+                                        </span>
+                                        <span className="shrink-0 text-xs text-white/45">
+                                            {a.start
+                                                ? new Date(
+                                                      a.start,
+                                                  ).toLocaleString('uk-UA', {
+                                                      day: '2-digit',
+                                                      month: '2-digit',
+                                                      hour: '2-digit',
+                                                      minute: '2-digit',
+                                                  })
+                                                : ''}
+                                            {' · '}
+                                            {a.ongoing
+                                                ? tr('триває')
+                                                : a.minutes !== null
+                                                  ? minutesLabel(a.minutes)
+                                                  : ''}
+                                        </span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </>
+                    )}
+                </div>
+            )}
+        </div>
+    );
+}
 
 type PlaceRow = {
     id: string;
@@ -299,6 +419,7 @@ export function AlertPlacePicker({
                         </span>
                         <ChevronRight className="mt-1 size-4 shrink-0 text-white/40" />
                     </button>
+                    <AlertHistory key={prefs.unit?.id ?? prefs.region ?? ''} />
                     <PlaceDialog
                         open={open}
                         onClose={() => setOpen(false)}
