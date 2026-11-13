@@ -11,6 +11,7 @@ import {
     PiggyBank,
     Send,
     Settings as SettingsIcon,
+    Server,
     SlidersHorizontal,
     Trash2,
     Trophy,
@@ -65,6 +66,12 @@ type Props = FamilyShellProps & {
     onboarding: { questions: Question[]; steps: Step[] };
     jar: { url: string | null; note: string | null };
     can_delete: boolean;
+    server: {
+        current: number;
+        servers: { id: number; name: string }[];
+        can_change: boolean;
+        next_at: string | null;
+    };
     profile: {
         name: string;
         tag: string;
@@ -221,6 +228,12 @@ export default function FamilySettings(props: Props) {
                     family={family}
                     profile={profile}
                 />
+                {props.server.can_change && (
+                    <ServerPanel
+                        action={`${base}/settings/server`}
+                        server={props.server}
+                    />
+                )}
             </SettingsAnchor>
             <SettingsPanel action={`${base}/settings`} settings={settings} />
             <SettingsAnchor id="onboarding">
@@ -752,6 +765,63 @@ function WebhooksPanel({
                     </button>
                 </div>
             </div>
+        </Panel>
+    );
+}
+
+/** Сервер сім’ї: засновник обирає новий; зміна — не частіше разу на тиждень. */
+function ServerPanel({
+    action,
+    server,
+}: {
+    action: string;
+    server: Props['server'];
+}) {
+    const form = useForm({ server_id: server.current });
+    const changed = form.data.server_id !== server.current;
+
+    return (
+        <Panel title={tr('Сервер сім’ї')} icon={Server} className="mt-4">
+            <p className="mb-3 text-sm text-white/55">
+                {tr(
+                    'Перенесіть сім’ю на інший сервер. Тег має бути вільним на новому сервері; змінювати сервер можна раз на тиждень.',
+                )}
+            </p>
+            <div className="flex flex-col gap-2 sm:flex-row">
+                <select
+                    value={form.data.server_id}
+                    onChange={(e) =>
+                        form.setData('server_id', Number(e.target.value))
+                    }
+                    className={cn(selectClass, 'h-11 flex-1')}
+                    aria-label={tr('Сервер')}
+                >
+                    {server.servers.map((s) => (
+                        <option key={s.id} value={s.id}>
+                            {s.name}
+                        </option>
+                    ))}
+                </select>
+                <button
+                    type="button"
+                    disabled={!changed || form.processing}
+                    onClick={() =>
+                        confirm(tr('Перенести сім’ю на інший сервер?')) &&
+                        form.put(action, { preserveScroll: true })
+                    }
+                    className={cn(btnPrimary, 'h-11 disabled:opacity-50')}
+                >
+                    {tr('Змінити сервер')}
+                </button>
+            </div>
+            <FieldError message={form.errors.server_id} />
+            {server.next_at && (
+                <p className="mt-2 text-xs text-white/45">
+                    {tr('Наступна зміна — {date}', {
+                        date: new Date(server.next_at).toLocaleString(),
+                    })}
+                </p>
+            )}
         </Panel>
     );
 }

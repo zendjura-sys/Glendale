@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Families;
 
 use App\Models\Family;
+use App\Models\GtaServer;
 use App\Services\Donations\MonobankJar;
 use App\Services\Families\FamilyAudit;
 use App\Services\Families\FamilyBot;
@@ -10,9 +11,11 @@ use App\Services\Families\FamilyChat;
 use App\Services\Families\FamilyNotifier;
 use App\Services\Families\WeeklyDigest;
 use App\Services\ImageStorage;
+use Carbon\CarbonInterface;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -43,6 +46,13 @@ class FamilySettingsController extends FamilyBaseController
             ],
             'jar' => ['url' => $family->donation_jar, 'note' => $family->donation_note],
             'can_delete' => $family->owner_id === $request->user()->id || $request->user()->isStaff(),
+            'server' => [
+                'current' => $family->server_id,
+                'servers' => array_values(GtaServer::query()->published()->orderBy('name')->limit(500)->get(['id', 'name'])
+                    ->map(fn (GtaServer $s) => ['id' => $s->id, 'name' => $s->name])->all()),
+                'can_change' => $family->owner_id === $request->user()->id || $request->user()->isStaff(),
+                'next_at' => $this->serverChangeAt($family)?->toIso8601String(),
+            ],
             'digest' => [
                 'text' => $digest->format($family, $preview),
                 'members' => count($preview['lines']),
@@ -50,6 +60,49 @@ class FamilySettingsController extends FamilyBaseController
                 'last' => $family->settings['digest_last'] ?? null,
             ],
         ]);
+    }
+
+    /** Сервер сім’ї можна змінювати раз на тиждень (персонал — будь-коли). */
+    private const SERVER_COOLDOWN_DAYS = 7;
+
+    private function serverChangeAt(Family $family): ?CarbonInterface
+    {
+        $last = $family->settings['server_changed_at'] ?? null;
+        $next = $last ? Carbon::parse($last)->addDays(self::SERVER_COOLDOWN_DAYS) : null;
+
+        return $next !== null && $next->isFuture() ? $next : null;
+    }
+
+    /** Змінити сервер сім’ї: засновник або персонал; тег має бути вільним на новому сервері. */
+    public function server(Request $request, Family $family, FamilyAudit $audit): RedirectResponse
+    {
+        $member = $this->member($request, $family, 'settings.manage', write: true);
+        $user = $request->user();
+        abort_unless($family->owner_id === $user->id || $user->isStaff(), 403, 'Змінити сервер може засновник сім’ї.');
+        $data = $request->validate([
+            'server_id' => ['required', 'integer', Rule::exists('gta_servers', 'id')->where('status', GtaServer::STATUS_PUBLISHED)],
+        ]);
+        $to = (int) $data['server_id'];
+        if ($to === $family->server_id) {
+            return back();
+        }
+        if (! $user->isStaff() && ($next = $this->serverChangeAt($family)) !== null) {
+            throw ValidationException::withMessages(['server_id' => 'Сервер можна змінювати раз на тиждень. Наступна зміна — '.$next->timezone('Europe/Kyiv')->format('d.m H:i').'.']);
+        }
+        if (Family::query()->where('server_id', $to)->where('tag', $family->tag)->whereKeyNot($family->id)->exists()) {
+            throw ValidationException::withMessages(['server_id' => 'На цьому сервері вже є сім’я з тегом ['.$family->tag.'] — спершу змініть тег.']);
+        }
+
+        $from = $family->server_id;
+        $family->forceFill([
+            'server_id' => $to,
+            'settings' => [...($family->settings ?? []), 'server_changed_at' => now()->toIso8601String()],
+        ])->save();
+        $audit->log($family, 'FAMILY_UPDATE', $member, null, ['server' => ['from' => $from, 'to' => $to]]);
+        Log::info('family: server changed', ['family' => $family->id, 'from' => $from, 'to' => $to, 'by' => $user->id]);
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Сервер сім’ї змінено.']);
+
+        return back();
     }
 
     /** Видалити сім’ю: лідер-засновник або персонал сайту, з підтвердженням адресою (м’яке видалення). */

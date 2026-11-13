@@ -1447,6 +1447,8 @@ class _SettingsTabState extends State<SettingsTab> {
   late final tag = TextEditingController(text: text(profile['tag']) ?? '');
   late final description = TextEditingController(text: text(profile['description']) ?? '');
   late bool recruiting = profile['is_recruiting'] == true;
+  late final serverInfo = mapOf(widget.ctx.data['server']);
+  late int? serverId = serverInfo['current'] is num ? (serverInfo['current'] as num).toInt() : null;
   XFile? logo;
   XFile? cover;
 
@@ -1558,6 +1560,33 @@ class _SettingsTabState extends State<SettingsTab> {
           PrimaryButton(label: tr('Зберегти профіль'), onPressed: _saveProfile),
         ],
       ),
+      // Сервер сім’ї: засновник переносить сім’ю на інший сервер (раз на тиждень, тег має бути вільним).
+      if (serverInfo['can_change'] == true)
+        _card(
+          title: tr('Сервер сім’ї'),
+          icon: LucideIcons.server,
+          subtitle: tr('Перенесіть сім’ю на інший сервер. Тег має бути вільним на новому сервері; змінювати сервер можна раз на тиждень.'),
+          children: [
+            GcSelect<int>(
+              expand: true,
+              value: serverId,
+              items: [for (final s in maps(serverInfo['servers'])) (intOf(s['id']), text(s['name']) ?? '')],
+              onChanged: (v) => setState(() => serverId = v),
+            ),
+            const SizedBox(height: 10),
+            PrimaryButton(
+              label: tr('Змінити сервер'),
+              icon: LucideIcons.arrowRightLeft,
+              onPressed: serverId == null || serverId == intOf(serverInfo['current'])
+                  ? null
+                  : () async {
+                      if (!await confirm(context, tr('Перенести сім’ю на інший сервер?'))) return;
+                      if (!context.mounted) return;
+                      await ctx.act(context, () => ctx.api.put(ctx.path('settings/server'), {'server_id': serverId}));
+                    },
+            ),
+          ],
+        ),
       _card(
         title: tr('Правила й ставки'),
         icon: LucideIcons.listChecks,

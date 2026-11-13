@@ -1139,6 +1139,7 @@ Route::prefix('v1')->group(function () {
                     });
 
                     Route::post('settings/profile', [Families\FamilySettingsController::class, 'profile']);
+                    Route::put('settings/server', [Families\FamilySettingsController::class, 'server'])->middleware('throttle:10,1');
                     Route::put('settings/webhooks', [Families\FamilySettingsController::class, 'webhooks']);
                     Route::post('settings/webhooks/test', [Families\FamilySettingsController::class, 'test'])->middleware('throttle:6,1');
                     Route::post('settings/digest', [Families\FamilySettingsController::class, 'digest'])->middleware('throttle:3,10');

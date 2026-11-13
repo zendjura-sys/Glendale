@@ -24,6 +24,7 @@ use App\Models\Track;
 use App\Models\User;
 use App\Services\Auth\ApiTokens;
 use App\Services\CommunityService;
+use App\Services\Families\FamilyService;
 use App\Services\FriendshipService;
 use App\Services\Messenger;
 use App\Services\Phones\PhoneNumbers;
@@ -958,5 +959,17 @@ class AppSiteParityTest extends TestCase
         $csv = UploadedFile::fake()->createWithContent('anixart.csv', "#,Название,Оригинал,Альтернативные,Год,Статус\n1,Невідомий тайтл,Unknown,Не указаны,2020,Смотрю\n");
         $this->withToken($token)->post('/api/v1/site/cinema/import/preview', ['source' => 'anixart', 'file' => $csv], ['Accept' => 'application/json'])
             ->assertOk()->assertJsonPath('source', 'anixart')->assertJsonStructure(['preview' => ['matched', 'missing', 'total']]);
+    }
+
+    public function test_app_changes_family_server_through_bridge(): void
+    {
+        $servers = [GtaServer::query()->create(['slug' => 'a-rp', 'name' => 'A RP', 'platform' => 'pc', 'multiplayer' => 'ragemp', 'status' => GtaServer::STATUS_PUBLISHED, 'origin' => 'seed']),
+            GtaServer::query()->create(['slug' => 'b-rp', 'name' => 'B RP', 'platform' => 'pc', 'multiplayer' => 'ragemp', 'status' => GtaServer::STATUS_PUBLISHED, 'origin' => 'seed'])];
+        $owner = User::factory()->create();
+        $family = app(FamilyService::class)->create($owner, ['server_id' => $servers[0]->id, 'name' => 'Scaletta', 'tag' => 'SCL', 'rp_nickname' => 'Marco_Scaletta', 'static_id' => '1']);
+        $token = $this->app_token($owner);
+        $this->withToken($token)->getJson("/api/v1/site/f/{$family->slug}/settings")->assertOk()->assertJsonPath('server.can_change', true);
+        $this->withToken($token)->putJson("/api/v1/site/f/{$family->slug}/settings/server", ['server_id' => $servers[1]->id])->assertSuccessful();
+        $this->assertSame($servers[1]->id, $family->fresh()->server_id);
     }
 }

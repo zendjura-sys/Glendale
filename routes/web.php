@@ -1111,6 +1111,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
 
             Route::get('settings', [Families\FamilySettingsController::class, 'index'])->name('settings');
             Route::post('settings/profile', [Families\FamilySettingsController::class, 'profile'])->name('settings.profile');
+            Route::put('settings/server', [Families\FamilySettingsController::class, 'server'])->middleware('throttle:10,1')->name('settings.server');
             Route::put('settings', [Families\FamilySettingsController::class, 'update'])->name('settings.update');
             Route::delete('/', [Families\FamilySettingsController::class, 'destroy'])->name('destroy');
             Route::put('settings/webhooks', [Families\FamilySettingsController::class, 'webhooks'])->name('settings.webhooks');
