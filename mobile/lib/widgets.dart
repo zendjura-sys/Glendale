@@ -1933,3 +1933,33 @@ class _EdgeFadeState extends State<EdgeFade> {
   }
 }
 
+
+/// Оцінки за критеріями (сюжет, графіка, звук…) — необов'язкові, 0 = «не оцінено», як на сайті.
+class CriteriaSliders extends StatelessWidget {
+  const CriteriaSliders({required this.labels, required this.values, required this.onChanged, super.key});
+  final Map<String, String> labels;
+  final Map<String, int> values;
+  final void Function(String key, int value) onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      Text(tr('За критеріями (необов’язково)'), style: body(12.5, color: muted, weight: FontWeight.w600)),
+      for (final e in labels.entries)
+        Row(children: [
+          SizedBox(width: 92, child: Text(e.value, style: body(13))),
+          Expanded(
+            child: Slider(
+              value: (values[e.key] ?? 0).toDouble(),
+              min: 0,
+              max: 10,
+              divisions: 10,
+              label: (values[e.key] ?? 0) == 0 ? '—' : '${values[e.key]}',
+              onChanged: (v) => onChanged(e.key, v.round()),
+            ),
+          ),
+          SizedBox(width: 34, child: Text((values[e.key] ?? 0) == 0 ? '—' : '${values[e.key]}', textAlign: TextAlign.end, style: body(13, weight: FontWeight.w600))),
+        ]),
+    ]);
+  }
+}

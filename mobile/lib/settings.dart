@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'sound_fx.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -399,6 +400,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           // Зберігається одразу, без «Зберегти» — те саме налаштування, що й на сайті.
           const ListeningSwitch(),
           const DigestSwitch(),
+          const _UiSoundsSwitch(),
           const SizedBox(height: 6),
           Text(tr('Хто може писати мені'), style: body(13, color: muted)),
           SizedBox(height: 6),
@@ -922,4 +924,29 @@ class _DigestSwitchState extends State<DigestSwitch> {
       ),
     );
   }
+}
+
+/// «Звуки інтерфейсу»: тихий клац доку й акорд запуску (локально на пристрої).
+class _UiSoundsSwitch extends StatefulWidget {
+  const _UiSoundsSwitch();
+
+  @override
+  State<_UiSoundsSwitch> createState() => _UiSoundsSwitchState();
+}
+
+class _UiSoundsSwitchState extends State<_UiSoundsSwitch> {
+  bool on = GcSoundEngine.instance.enabled;
+
+  @override
+  Widget build(BuildContext context) => SwitchListTile(
+        value: on,
+        contentPadding: EdgeInsets.zero,
+        title: Text(tr('Звуки інтерфейсу'), style: body(14.5, weight: FontWeight.w600)),
+        subtitle: Text(tr('Тихий клац вкладок і акорд під час запуску; музика не переривається.'), style: body(12.5, color: muted)),
+        onChanged: (v) {
+          setState(() => on = v);
+          GcSoundEngine.instance.setEnabled(v);
+          if (v) GcSoundEngine.instance.navTick();
+        },
+      );
 }

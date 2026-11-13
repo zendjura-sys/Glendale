@@ -89,21 +89,46 @@ function groups(): { title: string; items: Item[] }[] {
                     exact: true,
                 },
                 {
+                    label: tr('Метрики'),
+                    href: '/admin/metrics',
+                    icon: ChartLine,
+                },
+                {
+                    label: tr('Воронка реєстрації'),
+                    href: '/admin/funnel',
+                    icon: Filter,
+                },
+                {
                     label: tr('Користувачі'),
                     href: '/admin/users',
                     icon: UsersRound,
+                },
+                {
+                    label: tr('Команда'),
+                    href: '/admin/team',
+                    icon: ShieldCheck,
+                },
+                {
+                    label: tr('Ролі'),
+                    href: '/admin/roles',
+                    icon: Crown,
                 },
                 {
                     label: tr('Підтримка'),
                     href: '/admin/support',
                     icon: LifeBuoy,
                 },
-                { label: tr('Записи'), href: '/admin/posts', icon: FileText },
+            ],
+        },
+        {
+            title: tr('Модерація'),
+            items: [
                 {
                     label: tr('Модерація'),
                     href: '/admin/moderation',
                     icon: ShieldAlert,
                 },
+                { label: tr('Записи'), href: '/admin/posts', icon: FileText },
                 {
                     label: tr('Верифікація'),
                     href: '/admin/verification',
@@ -119,60 +144,10 @@ function groups(): { title: string; items: Item[] }[] {
                     href: '/admin/chats',
                     icon: MessagesSquare,
                 },
-                {
-                    label: tr('Розсилки'),
-                    href: '/admin/broadcasts',
-                    icon: Send,
-                },
-                {
-                    label: tr('Статус'),
-                    href: '/admin/status',
-                    icon: Activity,
-                },
-                {
-                    label: tr('Система'),
-                    href: '/admin/system',
-                    icon: DatabaseBackup,
-                },
-                {
-                    label: tr('Банери й A/B'),
-                    href: '/admin/banners',
-                    icon: FlaskConical,
-                },
-                {
-                    label: tr('Метрики'),
-                    href: '/admin/metrics',
-                    icon: ChartLine,
-                },
-                {
-                    label: tr('Швидкість'),
-                    href: '/admin/vitals',
-                    icon: Gauge,
-                },
-                {
-                    label: tr('Биті посилання'),
-                    href: '/admin/links',
-                    icon: Unlink,
-                },
-                {
-                    label: tr('Команда'),
-                    href: '/admin/team',
-                    icon: ShieldCheck,
-                },
-                {
-                    label: tr('Ролі'),
-                    href: '/admin/roles',
-                    icon: Crown,
-                },
-                {
-                    label: tr('Воронка реєстрації'),
-                    href: '/admin/funnel',
-                    icon: Filter,
-                },
             ],
         },
         {
-            title: tr('Контент'),
+            title: tr('Розділи'),
             items: [
                 {
                     label: tr('Спільноти'),
@@ -180,6 +155,24 @@ function groups(): { title: string; items: Item[] }[] {
                     icon: Shield,
                 },
                 { label: tr('Фото'), href: '/admin/photos', icon: Images },
+                { label: tr('Ігри'), href: '/admin/games', icon: Gamepad2 },
+                {
+                    label: tr('Сервери GTA'),
+                    href: '/admin/servers',
+                    icon: Server,
+                },
+                { label: tr('Сім’ї'), href: '/admin/families', icon: Crown },
+                { label: tr('Клани'), href: '/admin/clans', icon: Swords },
+                {
+                    label: tr('Стікери'),
+                    href: '/admin/stickers',
+                    icon: Sticker,
+                },
+            ],
+        },
+        {
+            title: tr('Медіа'),
+            items: [
                 {
                     label: tr('Музика'),
                     href: '/admin/music',
@@ -201,26 +194,18 @@ function groups(): { title: string; items: Item[] }[] {
                     href: '/admin/cinema',
                     icon: Clapperboard,
                 },
-                {
-                    label: tr('Сервери GTA'),
-                    href: '/admin/servers',
-                    icon: Server,
-                },
-                { label: tr('Ігри'), href: '/admin/games', icon: Gamepad2 },
-                { label: tr('Сім’ї'), href: '/admin/families', icon: Crown },
-                { label: tr('Клани'), href: '/admin/clans', icon: Swords },
-                {
-                    label: tr('Стікери'),
-                    href: '/admin/stickers',
-                    icon: Sticker,
-                },
+            ],
+        },
+        {
+            title: tr('Гейміфікація'),
+            items: [
                 {
                     label: tr('Сезони'),
                     href: '/admin/seasons',
                     icon: Trophy,
                 },
                 {
-                    label: tr('Події'),
+                    label: tr('Події сезону'),
                     href: '/admin/site-events',
                     icon: PartyPopper,
                 },
@@ -228,6 +213,21 @@ function groups(): { title: string; items: Item[] }[] {
                     label: tr('Картки персонажів'),
                     href: '/admin/card-characters',
                     icon: Layers,
+                },
+            ],
+        },
+        {
+            title: tr('Маркетинг'),
+            items: [
+                {
+                    label: tr('Розсилки'),
+                    href: '/admin/broadcasts',
+                    icon: Send,
+                },
+                {
+                    label: tr('Банери й A/B'),
+                    href: '/admin/banners',
+                    icon: FlaskConical,
                 },
             ],
         },
@@ -245,8 +245,51 @@ function groups(): { title: string; items: Item[] }[] {
             ],
         },
         {
-            title: tr('Система'),
+            title: tr('Стан сайту'),
             items: [
+                {
+                    label: tr('Статус'),
+                    href: '/admin/status',
+                    icon: Activity,
+                },
+                {
+                    label: tr('Журнали й копії'),
+                    href: '/admin/system',
+                    icon: DatabaseBackup,
+                },
+                {
+                    label: tr('Швидкість'),
+                    href: '/admin/vitals',
+                    icon: Gauge,
+                },
+                {
+                    label: tr('Биті посилання'),
+                    href: '/admin/links',
+                    icon: Unlink,
+                },
+            ],
+        },
+        {
+            title: tr('Налаштування'),
+            items: [
+                {
+                    label: tr('Налаштування'),
+                    href: '/admin/settings',
+                    icon: Settings2,
+                },
+                {
+                    label: tr('Інтеграції'),
+                    href: '/admin/integrations',
+                    icon: PlugZap,
+                },
+                { label: tr('Модулі'), href: '/admin/modules', icon: Blocks },
+                { label: tr('Плагіни'), href: '/admin/plugins', icon: Puzzle },
+                {
+                    label: tr('Режими'),
+                    href: '/admin/modes',
+                    icon: SlidersHorizontal,
+                },
+                { label: tr('Дизайн'), href: '/admin/design', icon: Palette },
                 {
                     label: tr('Мови'),
                     href: '/admin/languages',
@@ -262,24 +305,6 @@ function groups(): { title: string; items: Item[] }[] {
                     label: tr('Обмеження за країнами'),
                     href: '/admin/geo/restrictions',
                     icon: MapPinOff,
-                },
-                { label: tr('Дизайн'), href: '/admin/design', icon: Palette },
-                {
-                    label: tr('Режими'),
-                    href: '/admin/modes',
-                    icon: SlidersHorizontal,
-                },
-                { label: tr('Модулі'), href: '/admin/modules', icon: Blocks },
-                { label: tr('Плагіни'), href: '/admin/plugins', icon: Puzzle },
-                {
-                    label: tr('Інтеграції'),
-                    href: '/admin/integrations',
-                    icon: PlugZap,
-                },
-                {
-                    label: tr('Налаштування'),
-                    href: '/admin/settings',
-                    icon: Settings2,
                 },
             ],
         },

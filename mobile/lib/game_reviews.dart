@@ -42,6 +42,7 @@ class _GameReviewsSectionState extends State<GameReviewsSection> {
     final hours = TextEditingController(text: mine['hours'] == null ? '' : '${mine['hours']}');
     var score = mine['score'] == null ? 8.0 : intOf(mine['score']).toDouble();
     var recommended = mine['recommended'] != false;
+    final criteria = <String, int>{for (final e in mapOf(mine['criteria']).entries) e.key: intOf(e.value)};
     final saved = await showGcSheet<bool>(
       context,
       title: mine.isEmpty ? tr('Написати огляд') : tr('Редагувати мій огляд'),
@@ -58,6 +59,12 @@ class _GameReviewsSectionState extends State<GameReviewsSection> {
             Expanded(child: Slider(value: score, min: 1, max: 10, divisions: 9, label: '${score.round()}', onChanged: (v) => setSheet(() => score = v))),
             Text('${score.round()}/10', style: body(14, weight: FontWeight.w600)),
           ]),
+          CriteriaSliders(
+            labels: {'story': tr('Сюжет'), 'graphics': tr('Графіка'), 'sound': tr('Звук'), 'gameplay': tr('Геймплей')},
+            values: criteria,
+            onChanged: (k, v) => setSheet(() => criteria[k] = v),
+          ),
+          const SizedBox(height: 6),
           GcField(controller: hours, label: tr('Годин у грі'), keyboard: TextInputType.number, icon: LucideIcons.clock),
           const SizedBox(height: 10),
           GcField(controller: note, label: tr('Що сподобалось, що ні, кому порадите?'), maxLines: 6, minLines: 4),
@@ -72,6 +79,7 @@ class _GameReviewsSectionState extends State<GameReviewsSection> {
                   'score': score.round(),
                   'recommended': recommended,
                   'hours': int.tryParse(hours.text.trim()),
+                  'criteria': {for (final e in criteria.entries) if (e.value > 0) e.key: e.value},
                 }),
               );
               if (ok && sheet.mounted) Navigator.of(sheet).pop(true);

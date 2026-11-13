@@ -501,6 +501,7 @@ final familySections = [
   ('members', tr('Учасники'), LucideIcons.usersRound),
   ('discipline', tr('Дисципліна'), LucideIcons.gavel),
   ('events', tr('Події'), LucideIcons.calendarDays),
+  ('shifts', tr('Зміни'), LucideIcons.calendarClock),
   ('rating', tr('Рейтинг'), LucideIcons.chartNoAxesColumnIncreasing),
   ('audit', tr('Аудит'), LucideIcons.receipt),
   ('settings', tr('Налаштування'), LucideIcons.settings),
@@ -605,6 +606,7 @@ class _FamilyScreenState extends State<FamilyScreen> {
           'queue' => can['reports.review'] == true || can['treasury.manage'] == true,
           'audit' => can['audit.view'] == true,
           'settings' => can['settings.manage'] == true,
+          'shifts' => mapOf(family['sections'])['shifts'] == true || family['shifts_enabled'] == true,
           _ => true,
         });
     final ctx = FamilyContext(slug: widget.slug, data: page, can: can, reload: ({Map<String, String>? extra}) => load(extra: extra), api: api);
@@ -673,6 +675,7 @@ class _FamilyScreenState extends State<FamilyScreen> {
             'members' => [MembersTab(ctx: ctx)],
             'discipline' => [DisciplineTab(ctx: ctx)],
             'events' => [EventsTab(ctx: ctx)],
+            'shifts' => [ShiftsTab(ctx: ctx)],
             'rating' => ratingTab(ctx),
             'audit' => auditTab(ctx),
             'settings' => [SettingsTab(ctx: ctx)],

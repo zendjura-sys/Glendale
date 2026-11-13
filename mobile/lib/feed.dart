@@ -103,6 +103,11 @@ class _FeedScreenState extends State<FeedScreen> {
   Future<void> _reload() async {
     unawaited(stories.currentState?.reload());
     unawaited(pulse.currentState?.reload());
+    // «Активність друзів» — окремий список (міст /site/feed/activity), без пагінатора постів.
+    if (tab == 'activity') {
+      if (mounted) setState(() => ready = true);
+      return;
+    }
     try {
       await pager.reset();
       error = null;
@@ -140,7 +145,7 @@ class _FeedScreenState extends State<FeedScreen> {
         SizedBox(height: 12),
         // Вкладки-пігулки, як на сайті: активна — суцільна небесна.
         Row(children: [
-          for (final (key, label, icon) in [('friends', tr('Друзі'), LucideIcons.usersRound), ('discover', tr('Рекомендації'), LucideIcons.flame)]) ...[
+          for (final (key, label, icon) in [('friends', tr('Друзі'), LucideIcons.usersRound), ('discover', tr('Рекомендації'), LucideIcons.flame), ('activity', tr('Активність'), LucideIcons.activity)]) ...[
             Expanded(
               child: GestureDetector(
                 onTap: () {
@@ -163,7 +168,7 @@ class _FeedScreenState extends State<FeedScreen> {
                 ),
               ),
             ),
-            if (key == 'friends') const SizedBox(width: 8),
+            if (key != 'activity') const SizedBox(width: 8),
           ],
         ]),
         if (languages.isNotEmpty) ...[
@@ -212,7 +217,9 @@ class _FeedScreenState extends State<FeedScreen> {
           ),
           const SizedBox(height: 12),
         ],
-        if (!ready)
+        if (tab == 'activity')
+          const FriendActivityList()
+        else if (!ready)
           const FeedSkeleton()
         else if (error != null)
           EmptyState(icon: LucideIcons.wifiOff, title: tr('Не вдалося завантажити'), text: '$error', action: tr('Спробувати знову'), onAction: _reload)
@@ -323,11 +330,50 @@ class _SearchScreenState extends State<SearchScreen> {
   List<Map<String, dynamic>> hits = [];
   bool loading = false;
   Timer? debounce;
+  // Історія й популярні запити — як на сайті (/search/quick без запиту).
+  List<String> recent = [];
+  List<String> popular = [];
 
   @override
   void initState() {
     super.initState();
-    if (widget.initial.isNotEmpty) WidgetsBinding.instance.addPostFrameCallback((_) => _search());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (widget.initial.isNotEmpty) _search();
+      _history();
+    });
+  }
+
+  List<String> _words(dynamic v) => [
+        for (final x in (v is List ? v : const []))
+          if (x is String) x else if (x is Map && (x['q'] ?? x['query'] ?? x['title']) != null) '${x['q'] ?? x['query'] ?? x['title']}',
+      ];
+
+  Future<void> _history() async {
+    try {
+      final r = await AppScope.read(context).session.api.get(Api.site('/search/quick?q='));
+      if (mounted) setState(() => (recent = _words(r['recent']), popular = _words(r['trending']).isNotEmpty ? _words(r['trending']) : _words(r['popular'])));
+    } catch (_) {}
+  }
+
+  Future<void> _remember(String q) async {
+    try {
+      final r = await AppScope.read(context).session.api.post(Api.site('/search/recent'), {'q': q});
+      if (mounted) setState(() => recent = _words(r['recent']));
+    } catch (_) {}
+  }
+
+  Future<void> _forget([String? q]) async {
+    try {
+      final r = await AppScope.read(context).session.api.delete(Api.site('/search/recent'), q == null ? null : {'q': q});
+      if (mounted) setState(() => recent = _words(r['recent']));
+    } catch (_) {}
+  }
+
+  void _pick(String q) {
+    query.text = q;
+    setState(() {});
+    _search();
+    _remember(q);
   }
 
   @override
@@ -391,7 +437,10 @@ class _SearchScreenState extends State<SearchScreen> {
                   debounce = Timer(const Duration(milliseconds: 300), _search);
                   setState(() {});
                 },
-                onSubmit: _search,
+                onSubmit: () {
+                  _search();
+                  if (query.text.trim().length >= 2) _remember(query.text.trim());
+                },
               ),
             ),
           ],
@@ -399,6 +448,22 @@ class _SearchScreenState extends State<SearchScreen> {
         const SizedBox(height: 14),
         if (loading && users.isEmpty && communities.isEmpty)
           const ListSkeleton(rows: 5)
+        else if (q.length < 2 && (recent.isNotEmpty || popular.isNotEmpty))
+          Glass(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              if (recent.isNotEmpty) ...[
+                CardTitle(tr('Нещодавні'), icon: LucideIcons.history, trailing: tr('Очистити'), onTrailing: () => _forget()),
+                Wrap(spacing: 6, runSpacing: 6, children: [
+                  for (final r in recent) InputChip(label: Text(r, style: body(13)), onPressed: () => _pick(r), onDeleted: () => _forget(r), deleteIcon: Icon(LucideIcons.x, size: 14, color: muted)),
+                ]),
+              ],
+              if (popular.isNotEmpty) ...[
+                if (recent.isNotEmpty) const SizedBox(height: 12),
+                CardTitle(tr('Популярне'), icon: LucideIcons.trendingUp),
+                Wrap(spacing: 6, runSpacing: 6, children: [for (final p in popular.take(10)) ActionChip(label: Text(p, style: body(13)), onPressed: () => _pick(p))]),
+              ],
+            ]),
+          )
         else if (q.length < 2)
           QuietEmpty(icon: LucideIcons.search, text: tr('Введіть щонайменше 2 символи'))
         else if (users.isEmpty && communities.isEmpty && hits.isEmpty)
@@ -531,5 +596,82 @@ class _TomorrowCard extends StatelessWidget {
           ),
       ]),
     );
+  }
+}
+
+/// «Активність друзів» — як вкладка на сайті: відгуки, добірки кіно, беклог ігор (хто що пройшов чи почав).
+class FriendActivityList extends StatefulWidget {
+  const FriendActivityList({super.key});
+
+  @override
+  State<FriendActivityList> createState() => _FriendActivityListState();
+}
+
+class _FriendActivityListState extends State<FriendActivityList> {
+  List<Map<String, dynamic>>? items;
+  Object? error;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      try {
+        final r = await AppScope.read(context).session.api.get(Api.site('/feed/activity'));
+        if (mounted) setState(() => items = maps(r['items']));
+      } catch (e) {
+        if (mounted) setState(() => error = e);
+      }
+    });
+  }
+
+  String _verb(String kind) => switch (kind) {
+        'game_review' => tr('оцінює гру'),
+        'movie_review' => tr('пише відгук'),
+        'movie_list' => tr('створює добірку'),
+        'backlog.done' => tr('проходить'),
+        'backlog.playing' => tr('починає грати'),
+        _ => tr('оновлює профіль'),
+      };
+
+  @override
+  Widget build(BuildContext context) {
+    final list = items;
+    if (error != null) return EmptyState(icon: LucideIcons.wifiOff, title: tr('Не вдалося завантажити'), text: '$error');
+    if (list == null) return const FeedSkeleton();
+    if (list.isEmpty) return EmptyState(icon: LucideIcons.activity, title: tr('Поки тихо'), text: tr('Тут з’являться відгуки, добірки й ігри друзів.'));
+    return Column(children: [
+      for (final it in list) ...[
+        Builder(builder: (context) {
+          final target = mapOf(it['game']).isNotEmpty ? mapOf(it['game']) : (mapOf(it['movie']).isNotEmpty ? mapOf(it['movie']) : mapOf(it['list']));
+          final user = mapOf(it['user']);
+          return Glass(
+            padding: const EdgeInsets.all(12),
+            onTap: text(target['href']) != null ? () => context.push(appPathFor(text(target['href']))) : null,
+            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Avatar(name: text(user['name']) ?? '', url: text(user['avatar_url']), size: 40),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text.rich(TextSpan(children: [
+                    TextSpan(text: '${text(user['name']) ?? ''} ', style: body(13.5, weight: FontWeight.w700)),
+                    TextSpan(text: '${_verb(text(it['kind']) ?? '')} ', style: body(13.5, color: muted)),
+                    TextSpan(text: text(target['title']) ?? '', style: body(13.5, weight: FontWeight.w600)),
+                    if (it['score'] != null) TextSpan(text: ' · ${it['score']}/10', style: body(13.5, color: primary, weight: FontWeight.w700)),
+                  ])),
+                  if (text(it['excerpt']) != null) ...[
+                    const SizedBox(height: 4),
+                    Text(text(it['excerpt'])!, maxLines: 3, overflow: TextOverflow.fade, style: body(12.5, color: soft)),
+                  ],
+                  const SizedBox(height: 4),
+                  Text(ago(it['at']), style: body(11.5, color: faint)),
+                ]),
+              ),
+              if (text(target['cover']) != null) ...[const SizedBox(width: 10), NetImage(text(target['cover']), width: 54, height: 54, radius: 12)],
+            ]),
+          );
+        }),
+        const SizedBox(height: 8),
+      ],
+    ]);
   }
 }

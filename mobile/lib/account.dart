@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'api.dart';
 import 'core/widgets/arctic_glass/arctic_glass.dart';
 import 'state.dart';
@@ -27,8 +28,58 @@ class AccountSettings extends StatelessWidget {
         SizedBox(height: 12),
         _Appeals(data: data, reload: reload),
         SizedBox(height: 12),
+        const _DataExport(),
+        SizedBox(height: 12),
         _Freeze(),
       ]),
+    );
+  }
+}
+
+/// Архів своїх даних (GDPR) і листи про новий вхід — як «Налаштування → Акаунт» на сайті.
+class _DataExport extends StatelessWidget {
+  const _DataExport();
+
+  @override
+  Widget build(BuildContext context) {
+    final api = AppScope.read(context).session.api;
+    return Remote(
+      load: () => api.get(Api.site('/settings/account')),
+      builder: (data, reload) {
+        final exports = maps(data['exports']);
+        return Glass(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            CardTitle(tr('Мої дані'), icon: LucideIcons.archive),
+            Text(tr('Архів усього, що ви створили: профіль, записи, фото, повідомлення. Готуємо кілька хвилин, посилання діє 7 днів.'), style: body(12.5, color: muted)),
+            const SizedBox(height: 10),
+            for (final e in exports)
+              _Row(
+                icon: e['status'] == 'ready' ? LucideIcons.fileArchive : LucideIcons.loader,
+                title: e['status'] == 'ready' ? tr('Архів готовий') : tr('Готуємо архів…'),
+                subtitle: '${shortStamp(e['created_at'])}${e['size'] != null ? ' · ${(intOf(e['size']) / 1048576).toStringAsFixed(1)} МБ' : ''}',
+                trailing: e['status'] == 'ready' && text(e['url']) != null
+                    ? IconButton(tooltip: tr('Завантажити на сайті'), icon: Icon(LucideIcons.download, size: 18, color: soft), onPressed: () => launchUrl(Uri.parse('${Api.root}${e['url']}'), mode: LaunchMode.externalApplication))
+                    : null,
+              ),
+            GhostButton(
+              label: tr('Підготувати архів'),
+              icon: LucideIcons.archive,
+              onPressed: () async {
+                if (await attempt(context, () => api.post(Api.site('/settings/account/exports')), success: tr('Готуємо архів — повідомимо, коли буде готовий.'))) await reload();
+              },
+            ),
+            const SizedBox(height: 6),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              value: data['loginAlerts'] == true,
+              title: Text(tr('Лист про вхід з нового пристрою'), style: body(14)),
+              onChanged: (v) async {
+                if (await attempt(context, () => api.put(Api.site('/settings/account/login-alerts'), {'on': v}))) await reload();
+              },
+            ),
+          ]),
+        );
+      },
     );
   }
 }
@@ -411,10 +462,22 @@ Future<void> showFeedbackSheet(BuildContext context, {String screen = 'menu'}) a
 
 
 /// Що нового в цій версії застосунку — один раз після оновлення.
-const whatsNewVersion = '1.1.117';
+const whatsNewVersion = '1.1.118';
 
 /// Нове саме в цій версії — зверху, окремим блоком.
 List<String> _whatsNewCurrent() => [
+      tr('Новий вигляд у стилі iOS 27: нейтральне темне тло, суцільні картки без просвічування, безбарвне матове скло шапки й доку.'),
+      tr('У нижньому меню завжди 5 пунктів, серед них «Меню»; активна вкладка — біла з рискою.'),
+      tr('Плавні пружні переходи між екранами, новий стартовий екран і тихі звуки інтерфейсу (вимикаються в налаштуваннях).'),
+      tr('Сім’ї: календар змін і чергувань; засновник може змінити сервер сім’ї.'),
+      tr('Стрічка: вкладка «Активність» — відгуки, добірки й ігри друзів.'),
+      tr('Пошук: історія запитів і популярне.'),
+      tr('Повільний режим коментарів для своїх записів, оцінки за критеріями у відгуках, архів своїх даних.'),
+      tr('Кіно: без дублів — статус лише кнопкою «Дивлюся ▾», біля «Продовжити» — вибір озвучки й серії.'),
+    ];
+
+/// Версія 1.1.117.
+List<String> _whatsNew117() => [
       tr('Колекційні картки: набір щодня, картки за перегляд і гру, колекції за темами, вітрина профілю й кристали з дублікатів.'),
       tr('Рівень профілю: досвід за активність і нагороди за рівні.'),
       tr('Нагороди за щоденний вхід — календар місяця.'),
@@ -621,7 +684,7 @@ Future<void> showWhatsNew(BuildContext context, SharedPreferences prefs, {bool f
   await prefs.setString('whats_new', whatsNewVersion);
   if (!context.mounted) return;
   final current = _whatsNewCurrent();
-  final earlier = [..._whatsNew116(), ..._whatsNew115(), ..._whatsNew113(), ..._whatsNew112(), ..._whatsNew111(), ..._whatsNewPrev(), ..._whatsNew()];
+  final earlier = [..._whatsNew117(), ..._whatsNew116(), ..._whatsNew115(), ..._whatsNew113(), ..._whatsNew112(), ..._whatsNew111(), ..._whatsNewPrev(), ..._whatsNew()];
   Widget card(String item, {bool fresh = false}) => Container(
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.fromLTRB(12, 12, 14, 12),

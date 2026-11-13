@@ -1703,3 +1703,90 @@ class _SettingsTabState extends State<SettingsTab> {
     ]);
   }
 }
+
+/// Календар змін і чергувань — як на сайті (/f/{slug}/shifts): тиждень, хто чергує, «Взяти» й «Відмовитися»;
+/// керівництво створює зміни й призначає учасників.
+class ShiftsTab extends StatelessWidget {
+  const ShiftsTab({required this.ctx, super.key});
+  final FamilyContext ctx;
+
+  Future<void> _create(BuildContext context) async {
+    final title = TextEditingController();
+    DateTime start = DateTime.now().add(const Duration(hours: 1));
+    double hours = 2;
+    final ok = await showGcSheet<bool>(
+      context,
+      title: tr('Нова зміна'),
+      builder: (sheet) => StatefulBuilder(
+        builder: (sheet, setSheet) => Column(crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: MainAxisSize.min, children: [
+          GcField(controller: title, label: tr('Назва, напр. «Чергування на складі»')),
+          const SizedBox(height: 10),
+          GhostButton(
+            label: '${shortStamp(start.toIso8601String())} ${clock(start.toIso8601String())}',
+            icon: LucideIcons.calendarClock,
+            onPressed: () async {
+              final d = await showDatePicker(context: sheet, firstDate: DateTime.now(), lastDate: DateTime.now().add(const Duration(days: 60)), initialDate: start);
+              if (d == null || !sheet.mounted) return;
+              final t = await showTimePicker(context: sheet, initialTime: TimeOfDay.fromDateTime(start));
+              if (t == null) return;
+              setSheet(() => start = DateTime(d.year, d.month, d.day, t.hour, t.minute));
+            },
+          ),
+          const SizedBox(height: 10),
+          Row(children: [
+            Text(tr('Тривалість: {n} год', {'n': hours % 1 == 0 ? hours.toInt() : hours}), style: body(13.5)),
+            Expanded(child: Slider(value: hours, min: 0.5, max: 12, divisions: 23, onChanged: (v) => setSheet(() => hours = v))),
+          ]),
+          PrimaryButton(label: tr('Створити'), onPressed: () => Navigator.pop(sheet, true)),
+        ]),
+      ),
+    );
+    if (ok != true || !context.mounted || title.text.trim().length < 2) return;
+    await ctx.act(context, () => ctx.api.post(ctx.path('shifts'), {'title': title.text.trim(), 'starts_at': start.toUtc().toIso8601String(), 'hours': hours}));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final shifts = maps(ctx.data['shifts']);
+    final manage = ctx.allowed('events.manage');
+    final week = mapOf(ctx.data['week']);
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      _card(
+        title: tr('Зміни й чергування'),
+        icon: LucideIcons.calendarClock,
+        subtitle: text(week['start']) != null ? tr('Тиждень з {d}', {'d': shortStamp(week['start'])}) : null,
+        trailing: manage ? GhostButton(label: tr('Нова'), icon: LucideIcons.plus, compact: true, expand: false, onPressed: () => _create(context)) : null,
+        children: [
+          if (shifts.isEmpty) QuietEmpty(icon: LucideIcons.calendarClock, text: tr('Цього тижня змін немає.')),
+          for (final s in shifts)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: Row(children: [
+                Expanded(
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text(text(s['title']) ?? '', style: body(14, weight: FontWeight.w600)),
+                    Text('${shortStamp(s['starts_at'])} ${clock(s['starts_at'])}–${clock(s['ends_at'])}', style: body(12, color: muted)),
+                    Text(mapOf(s['member'])['display'] != null ? '${mapOf(s['member'])['display']}' : tr('Вільна'), style: body(12, color: s['member'] == null ? green : soft)),
+                  ]),
+                ),
+                if (s['member'] == null)
+                  PrimaryButton(label: tr('Взяти'), compact: true, expand: false, onPressed: () => ctx.act(context, () => ctx.api.post(ctx.path('shifts/${s['id']}/claim'))))
+                else if (s['mine'] == true)
+                  GhostButton(label: tr('Відмовитися'), compact: true, expand: false, onPressed: () => ctx.act(context, () => ctx.api.post(ctx.path('shifts/${s['id']}/release')))),
+                if (manage)
+                  IconButton(
+                    tooltip: tr('Видалити'),
+                    icon: Icon(LucideIcons.trash2, size: 18, color: dangerSoft),
+                    onPressed: () async {
+                      if (await confirm(context, tr('Видалити зміну?'), danger: true) && context.mounted) {
+                        await ctx.act(context, () => ctx.api.delete(ctx.path('shifts/${s['id']}')));
+                      }
+                    },
+                  ),
+              ]),
+            ),
+        ],
+      ),
+    ]);
+  }
+}

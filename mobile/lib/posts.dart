@@ -152,6 +152,7 @@ class _PostCardState extends State<PostCard> {
             if (can['mute'] == true) _SheetAction(icon: post['muted'] == true ? LucideIcons.volume2 : LucideIcons.volumeX, label: post['muted'] == true ? tr('Зняти заглушку') : tr('Заглушити'), onTap: () => Navigator.pop(sheet, 'mute')),
             if (can['series'] == true) _SheetAction(icon: LucideIcons.listOrdered, label: post['series'] is Map ? tr('Змінити серію') : tr('Додати в серію'), onTap: () => Navigator.pop(sheet, 'series')),
             if (can['pin'] == true) _SheetAction(icon: post['is_pinned'] == true ? LucideIcons.pinOff : LucideIcons.pin, label: post['is_pinned'] == true ? tr('Відкріпити') : tr('Закріпити'), onTap: () => Navigator.pop(sheet, 'pin')),
+            if (can['slow_mode'] == true) _SheetAction(icon: LucideIcons.timer, label: post['slow_mode'] is Map ? tr('Повільний режим: змінити') : tr('Повільний режим'), onTap: () => Navigator.pop(sheet, 'slow')),
             if (can['delete'] == true) _SheetAction(icon: LucideIcons.trash2, label: tr('Видалити запис'), color: dangerSoft, onTap: () => Navigator.pop(sheet, 'delete')),
           ],
         ),
@@ -165,6 +166,28 @@ class _PostCardState extends State<PostCard> {
         if (!mounted) return;
         setState(() => post['saved'] = result['saved'] == true);
         toast(context, post['saved'] == true ? tr('Збережено.') : tr('Прибрано зі збереженого.'));
+      } catch (e) {
+        if (mounted) toast(context, e);
+      }
+      return;
+    }
+    if (choice == 'slow') {
+      // Повільний режим коментарів (як на сайті): один коментар на людину раз на N секунд.
+      final seconds = await showGcSheet<int>(
+        context,
+        title: tr('Повільний режим'),
+        subtitle: tr('Один коментар від людини раз на вибраний інтервал; діє годину.'),
+        builder: (sheet) => Column(mainAxisSize: MainAxisSize.min, children: [
+          for (final (v, label) in [(0, tr('Вимкнути')), (15, tr('15 секунд')), (30, tr('30 секунд')), (60, tr('1 хвилина')), (120, tr('2 хвилини')), (300, tr('5 хвилин'))])
+            _SheetAction(icon: v == 0 ? LucideIcons.timerOff : LucideIcons.timer, label: label, onTap: () => Navigator.pop(sheet, v)),
+        ]),
+      );
+      if (seconds == null || !mounted) return;
+      try {
+        final r = await api.post(Api.site('/posts/${post['id']}/slow-mode'), {'seconds': seconds});
+        if (!mounted) return;
+        setState(() => post['slow_mode'] = r['slow_mode']);
+        toast(context, seconds == 0 ? tr('Повільний режим вимкнено.') : tr('Повільний режим увімкнено.'));
       } catch (e) {
         if (mounted) toast(context, e);
       }
