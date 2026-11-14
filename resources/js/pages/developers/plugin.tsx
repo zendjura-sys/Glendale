@@ -6,6 +6,7 @@ import {
     Download,
     KeyRound,
     Link2,
+    Terminal,
 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -17,6 +18,8 @@ type Props = {
     plugin: CmsPluginCard & {
         steps: string[];
         settings: string;
+        installable: boolean;
+        install: string | null;
         features: string[];
         redirect: string;
     };
@@ -67,7 +70,8 @@ export default function DeveloperPlugin({
             ? clean
             : `https://${clean}`
         : 'https://ваш-сайт';
-    const redirect = host + plugin.redirect;
+    const native = plugin.kind === 'app';
+    const redirect = native ? plugin.redirect : host + plugin.redirect;
 
     return (
         <>
@@ -82,7 +86,7 @@ export default function DeveloperPlugin({
                     className="inline-flex items-center gap-1.5 text-sm text-white/55 transition hover:text-white"
                 >
                     <ArrowLeft className="size-4" />
-                    {tr('Плагіни для CMS і форумів')}
+                    {tr('Плагіни й SDK')}
                 </Link>
 
                 <header className="gc-solid flex flex-col gap-4 rounded-2xl p-5 sm:flex-row sm:items-center">
@@ -130,24 +134,56 @@ export default function DeveloperPlugin({
 
                 <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_300px]">
                     <div className="min-w-0 space-y-5">
+                        {plugin.installable && (
+                            <section className="gc-solid space-y-3 rounded-2xl p-5">
+                                <h2 className="flex items-center gap-2 font-semibold text-white">
+                                    <Terminal className="size-4 text-primary" />
+                                    {tr('Встановлення командою')}
+                                </h2>
+                                {plugin.install ? (
+                                    <>
+                                        <Line
+                                            label={tr('Виконайте в терміналі')}
+                                            value={plugin.install}
+                                        />
+                                        <p className="text-xs text-white/45">
+                                            {tr(
+                                                'Посилання персональне й діє добу. Потрібні curl і python3.',
+                                            )}
+                                        </p>
+                                    </>
+                                ) : (
+                                    <p className="text-sm text-white/60">
+                                        {tr(
+                                            'Увійдіть у GameCon — тут з’явиться команда встановлення з персональним посиланням.',
+                                        )}
+                                    </p>
+                                )}
+                            </section>
+                        )}
+
                         <section className="gc-solid space-y-4 rounded-2xl p-5">
                             <h2 className="font-semibold text-white">
                                 {tr('Встановлення')}
                             </h2>
                             <ol className="space-y-3">
-                                {[
-                                    ...plugin.steps.map((s) => tr(s)),
-                                    tr(
-                                        'Відкрийте налаштування плагіна ({where}) — там показано адресу повернення (callback). Її ж можна зібрати нижче.',
-                                        { where: tr(plugin.settings) },
-                                    ),
-                                    tr(
-                                        'Розробникам → Новий застосунок «з секретом»: вставте цю адресу в поле «Адреси повернення» й збережіть.',
-                                    ),
-                                    tr(
-                                        'Скопіюйте Client ID і Client Secret застосунку в налаштування плагіна й збережіть — кнопка «Увійти через GameCon» з’явиться сама.',
-                                    ),
-                                ].map((step, i) => (
+                                {(plugin.kind === 'cms' ||
+                                plugin.kind === 'forum'
+                                    ? [
+                                          ...plugin.steps.map((s) => tr(s)),
+                                          tr(
+                                              'Відкрийте налаштування плагіна ({where}) — там показано адресу повернення (callback). Її ж можна зібрати нижче.',
+                                              { where: tr(plugin.settings) },
+                                          ),
+                                          tr(
+                                              'Розробникам → Новий застосунок «з секретом»: вставте цю адресу в поле «Адреси повернення» й збережіть.',
+                                          ),
+                                          tr(
+                                              'Скопіюйте Client ID і Client Secret застосунку в налаштування плагіна й збережіть — кнопка «Увійти через GameCon» з’явиться сама.',
+                                          ),
+                                      ]
+                                    : plugin.steps.map((s) => tr(s))
+                                ).map((step, i) => (
                                     <li key={step} className="flex gap-3">
                                         <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/20 text-[13px] font-semibold text-primary">
                                             {i + 1}
@@ -165,69 +201,88 @@ export default function DeveloperPlugin({
                                 <Link2 className="size-4 text-primary" />
                                 {tr('Адреса повернення')}
                             </h2>
-                            <label className="grid gap-1">
-                                <span className="text-xs text-white/50">
-                                    {tr('Адреса вашого сайту')}
-                                </span>
-                                <input
-                                    value={site}
-                                    onChange={(e) => setSite(e.target.value)}
-                                    placeholder="forum.example.com"
-                                    inputMode="url"
-                                    className="min-h-11 rounded-xl bg-white/[0.04] px-3 text-sm text-white outline-none placeholder:text-white/30 focus:ring-2 focus:ring-primary/50"
-                                />
-                            </label>
+                            {!native && (
+                                <label className="grid gap-1">
+                                    <span className="text-xs text-white/50">
+                                        {tr('Адреса вашого сайту')}
+                                    </span>
+                                    <input
+                                        value={site}
+                                        onChange={(e) =>
+                                            setSite(e.target.value)
+                                        }
+                                        placeholder="forum.example.com"
+                                        inputMode="url"
+                                        className="min-h-11 rounded-xl bg-white/[0.04] px-3 text-sm text-white outline-none placeholder:text-white/30 focus:ring-2 focus:ring-primary/50"
+                                    />
+                                </label>
+                            )}
                             <Line
                                 label={tr('Вставте в налаштування застосунку')}
                                 value={redirect}
                             />
+                            {native && (
+                                <p className="text-xs text-white/45">
+                                    {tr(
+                                        'Нативні застосунки — публічні клієнти: створіть застосунок без секрету. Схему com.example.game замініть своєю; для loopback порт підставляється сам.',
+                                    )}
+                                </p>
+                            )}
                         </section>
 
-                        <section className="gc-solid space-y-3 rounded-2xl p-5">
-                            <h2 className="font-semibold text-white">
-                                {tr('Функції GameCon на вашому сайті')}
-                            </h2>
-                            <p className="text-sm text-white/60">
-                                {tr(
-                                    'Додайте скрипт у шаблон один раз і розставте атрибути там, де потрібна функція. Працює на будь-якому рушії, навіть без плагіна.',
-                                )}
-                            </p>
-                            <Line
-                                label={tr('Скрипт (у <head> чи перед </body>)')}
-                                value={`<script src="${base}/embed.js" async></script>`}
-                            />
-                            <Line
-                                label={tr('Картка профілю')}
-                                value={'<div data-gamecon-card="нік"></div>'}
-                            />
-                            <Line
-                                label={tr('Значок GameCon біля імені')}
-                                value={'<span data-gamecon-badge="нік"></span>'}
-                            />
-                            <Line
-                                label={tr('Кнопка «Поділитися в GameCon»')}
-                                value={'<span data-gamecon-share></span>'}
-                            />
-                            <Line
-                                label={tr('Віджет сервера з онлайном')}
-                                value={
-                                    '<div data-gamecon-widget="server:slug"></div>'
-                                }
-                            />
-                            <Line
-                                label={tr(
-                                    'Дзвіночок сповіщень (токен із профілю після входу)',
-                                )}
-                                value={
-                                    '<span data-gamecon-bell="bell_token"></span>'
-                                }
-                            />
-                            <p className="text-xs text-white/45">
-                                {tr(
-                                    'Дзвіночок потребує права «notifications» у застосунку: після входу userinfo повертає bell_token — збережіть його в профілі користувача.',
-                                )}
-                            </p>
-                        </section>
+                        {!native && (
+                            <section className="gc-solid space-y-3 rounded-2xl p-5">
+                                <h2 className="font-semibold text-white">
+                                    {tr('Функції GameCon на вашому сайті')}
+                                </h2>
+                                <p className="text-sm text-white/60">
+                                    {tr(
+                                        'Додайте скрипт у шаблон один раз і розставте атрибути там, де потрібна функція. Працює на будь-якому рушії, навіть без плагіна.',
+                                    )}
+                                </p>
+                                <Line
+                                    label={tr(
+                                        'Скрипт (у <head> чи перед </body>)',
+                                    )}
+                                    value={`<script src="${base}/embed.js" async></script>`}
+                                />
+                                <Line
+                                    label={tr('Картка профілю')}
+                                    value={
+                                        '<div data-gamecon-card="нік"></div>'
+                                    }
+                                />
+                                <Line
+                                    label={tr('Значок GameCon біля імені')}
+                                    value={
+                                        '<span data-gamecon-badge="нік"></span>'
+                                    }
+                                />
+                                <Line
+                                    label={tr('Кнопка «Поділитися в GameCon»')}
+                                    value={'<span data-gamecon-share></span>'}
+                                />
+                                <Line
+                                    label={tr('Віджет сервера з онлайном')}
+                                    value={
+                                        '<div data-gamecon-widget="server:slug"></div>'
+                                    }
+                                />
+                                <Line
+                                    label={tr(
+                                        'Дзвіночок сповіщень (токен із профілю після входу)',
+                                    )}
+                                    value={
+                                        '<span data-gamecon-bell="bell_token"></span>'
+                                    }
+                                />
+                                <p className="text-xs text-white/45">
+                                    {tr(
+                                        'Дзвіночок потребує права «notifications» у застосунку: після входу userinfo повертає bell_token — збережіть його в профілі користувача.',
+                                    )}
+                                </p>
+                            </section>
+                        )}
 
                         <section className="gc-solid space-y-3 rounded-2xl p-5">
                             <h2 className="font-semibold text-white">
@@ -273,7 +328,7 @@ export default function DeveloperPlugin({
 
                         <section className="gc-solid space-y-2 rounded-2xl p-4">
                             <h2 className="px-1 text-sm font-semibold text-white/80">
-                                {tr('Інші рушії')}
+                                {tr('Інші варіанти')}
                             </h2>
                             {others.map((o) => (
                                 <Link

@@ -17,7 +17,7 @@ import { cn } from '@/lib/utils';
 export type CmsPluginCard = {
     key: string;
     name: string;
-    kind: 'cms' | 'forum';
+    kind: 'cms' | 'forum' | 'framework' | 'app';
     color: string;
     mark: string;
     logo: string | null;
@@ -113,6 +113,8 @@ const FILTERS = [
     ['all', 'Усі'],
     ['cms', 'CMS'],
     ['forum', 'Форуми'],
+    ['framework', 'Фреймворки'],
+    ['app', 'Застосунки'],
 ] as const;
 
 export default function DeveloperPlugins({ plugins, version }: Props) {
@@ -125,7 +127,7 @@ export default function DeveloperPlugins({ plugins, version }: Props) {
 
     return (
         <>
-            <Head title={tr('Плагіни для CMS і форумів')} />
+            <Head title={tr('Плагіни й SDK')} />
             <div className="mx-auto max-w-5xl space-y-6">
                 <Link
                     href="/developers"
@@ -137,11 +139,11 @@ export default function DeveloperPlugins({ plugins, version }: Props) {
 
                 <header className="space-y-2">
                     <h1 className="font-display text-3xl font-bold text-white">
-                        {tr('Плагіни для CMS і форумів')}
+                        {tr('Плагіни й SDK')}
                     </h1>
                     <p className="max-w-2xl text-white/60">
                         {tr(
-                            '«Увійти через GameCon» на вашому сайті за кілька хвилин: встановіть плагін, вставте ключі свого застосунку — і гравці входять одним натиском.',
+                            '«Увійти через GameCon» на вашому сайті, форумі чи в застосунку: готові плагіни для CMS, пакети для фреймворків і SDK для Android, iOS, Windows, Linux і Flutter.',
                         )}
                     </p>
                 </header>

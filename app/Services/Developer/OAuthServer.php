@@ -245,7 +245,24 @@ class OAuthServer
     /** Чи дозволена адреса повернення: точний збіг з однією зі збережених. */
     public static function redirectAllowed(DeveloperApp $app, string $uri): bool
     {
-        return in_array($uri, $app->redirect_uris, true);
+        if (in_array($uri, $app->redirect_uris, true)) {
+            return true;
+        }
+        // RFC 8252 §7.3: нативні застосунки (Windows, Linux, macOS) слухають випадковий порт на loopback —
+        // зареєстрована адреса без порту (http://127.0.0.1/callback) підходить з будь-яким портом.
+        $got = parse_url($uri);
+        if (($got['scheme'] ?? '') !== 'http' || ! in_array($got['host'] ?? '', ['127.0.0.1', 'localhost', '[::1]'], true) || isset($got['query']) || isset($got['fragment'])) {
+            return false;
+        }
+        foreach ($app->redirect_uris as $registered) {
+            $want = parse_url($registered);
+            if (($want['scheme'] ?? '') === 'http' && ! isset($want['port']) && ($want['host'] ?? '') === $got['host']
+                && rtrim($want['path'] ?? '/', '/') === rtrim($got['path'] ?? '/', '/')) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /** Що людина дозволила застосункам: для «Підключених застосунків». @return list<array<string, mixed>> */

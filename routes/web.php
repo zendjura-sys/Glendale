@@ -158,6 +158,8 @@ Route::get('share', [Developer\EmbedKitController::class, 'share'])->middleware(
 // Розробникам → плагіни «Увійти через GameCon» для CMS і форумів.
 Route::get('developers/plugins', [Developer\CmsPluginsController::class, 'index'])->name('developers.plugins');
 Route::get('developers/plugins/{plugin}', [Developer\CmsPluginsController::class, 'show'])->where('plugin', '[a-z]+')->name('developers.plugins.show');
+Route::get('developers/plugins/{plugin}/install.sh', [Developer\CmsPluginsController::class, 'install'])->where('plugin', '[a-z]+')->middleware(['signed', 'throttle:30,1'])->name('developers.plugins.install');
+Route::get('developers/plugins/{plugin}/cli', [Developer\CmsPluginsController::class, 'cli'])->where('plugin', '[a-z]+')->middleware(['signed', 'throttle:30,1'])->name('developers.plugins.cli');
 Route::get('developers/plugins/{plugin}/download', [Developer\CmsPluginsController::class, 'download'])->where('plugin', '[a-z]+')->middleware(['auth', 'throttle:30,1'])->name('developers.plugins.download');
 Route::post('oauth/token', [Developer\OAuthController::class, 'token'])->middleware('throttle:60,1')->name('oauth.token');
 Route::post('oauth/revoke', [Developer\OAuthController::class, 'revoke'])->middleware('throttle:60,1')->name('oauth.revoke');
