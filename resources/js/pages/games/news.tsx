@@ -40,7 +40,7 @@ export default function GameNews({ items, next, games, mode, patches }: Props) {
     const more = () => {
         if (!cursor) return;
         setLoading(true);
-        api<{ items: Item[]; next: number | null }>(
+        void api<{ items: Item[]; next: number | null }>(
             'GET',
             `/games/news?before=${cursor}${patches ? '&patches=1' : ''}`,
         )

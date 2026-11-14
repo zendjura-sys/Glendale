@@ -58,6 +58,13 @@ class MainActivity : AudioServiceActivity() {
                     startActivity(intent)
                     result.success(true)
                 }
+                // Блокування застосунку: відбиток чи обличчя через системний BiometricPrompt (Android 9+).
+                "biometricAvailable" -> result.success(AppLockBiometric.available(this))
+                "biometricAuth" -> AppLockBiometric.authenticate(
+                    this,
+                    call.argument<String>("title") ?: "GameCon",
+                    call.argument<String>("cancel") ?: "PIN",
+                ) { ok -> result.success(ok) }
                 "bluetoothSettings" -> {
                     startActivity(android.content.Intent(android.provider.Settings.ACTION_BLUETOOTH_SETTINGS))
                     result.success(true)
