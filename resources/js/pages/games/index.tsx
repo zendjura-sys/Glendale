@@ -16,6 +16,7 @@ import {
     WandSparkles,
     CalendarClock,
     Crosshair,
+    Newspaper,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
@@ -179,6 +180,15 @@ export default function GamesIndex({
                     >
                         <ListChecks className="size-4 text-sky-400" />
                         {tr('Мій беклог')}
+                    </Link>
+                )}
+                {signedIn && (
+                    <Link
+                        href="/games/news"
+                        className="gc-solid-2 inline-flex h-10 items-center gap-2 rounded-xl px-3.5 text-sm font-semibold text-white/80 transition hover:bg-white/10 hover:text-white"
+                    >
+                        <Newspaper className="size-4 text-sky-400" />
+                        {tr('Новини моїх ігор')}
                     </Link>
                 )}
                 {tierOn && signedIn && (

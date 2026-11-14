@@ -1155,6 +1155,7 @@ List<({String title, List<_MenuEntry> items})> _menuGroups(BuildContext context,
       title: tr('Для гравців'),
       items: <_MenuEntry>[
         if (session.pluginOn('game_backlog') && fresh('/games/backlog')) go(LucideIcons.listChecks, tr('Мій беклог'), '/games/backlog'),
+        if (session.pluginOn('steam_patch_news') && fresh('/games/news')) go(LucideIcons.newspaper, tr('Новини моїх ігор'), '/games/news'),
         if ((session.pluginOn('game_deals') || session.pluginOn('game_giveaways')) && fresh('/games/deals')) go(LucideIcons.badgePercent, tr('Знижки й роздачі'), '/games/deals'),
         if (session.pluginOn('tier_lists') && fresh('/tierlists')) go(LucideIcons.listOrdered, tr('Тір-листи'), '/tierlists'),
         if (session.pluginOn('duels') && fresh('/duels')) go(LucideIcons.swords, tr('Дуелі'), '/duels'),

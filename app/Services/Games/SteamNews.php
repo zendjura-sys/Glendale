@@ -23,6 +23,51 @@ class SteamNews
 {
     public const URL = 'https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/';
 
+    /** Бібліотека людини: усе, крім покинутих. */
+    public const LIBRARY = [GameBacklog::WANT, GameBacklog::PLAYING, GameBacklog::DONE];
+
+    /** Про патчі яких ігор сповіщати: playing — лише «граю» (типово), library — уся бібліотека, off — ні. */
+    public const ALERT_MODES = ['playing', 'library', 'off'];
+
+    public static function alertsFor(User $user): string
+    {
+        $mode = $user->pref('patch_alerts', 'playing');
+
+        return in_array($mode, self::ALERT_MODES, true) ? $mode : 'playing';
+    }
+
+    /**
+     * Стрічка новин моєї бібліотеки й підписок (нові першими).
+     *
+     * @return array{items: list<array<string, mixed>>, next: int|null}
+     */
+    public function feed(User $user, bool $patchesOnly = false, ?int $before = null, int $limit = 30): array
+    {
+        $games = GameBacklog::query()->where('user_id', $user->id)->whereIn('status', self::LIBRARY)->pluck('game_id')
+            ->merge(Follow::query()->where('user_id', $user->id)->where('kind', Follow::GAME)->pluck('subject_id'))
+            ->unique()->values();
+        $rows = GameNews::query()->with('game')->whereIn('game_id', $games)
+            ->when($patchesOnly, fn ($q) => $q->where('is_patch', true))
+            ->when($before, fn ($q, int $id) => $q->where('id', '<', $id))
+            ->orderByDesc('published_at')->orderByDesc('id')->limit($limit + 1)->get();
+        $more = $rows->count() > $limit;
+        $rows = $rows->take($limit);
+
+        return [
+            'items' => $rows->map(fn (GameNews $n) => [
+                'id' => $n->id,
+                'title' => $n->title,
+                'url' => $n->url,
+                'excerpt' => $n->excerpt,
+                'is_patch' => $n->is_patch,
+                'published_at' => $n->published_at->toIso8601String(),
+                'game' => ['id' => $n->game->id, 'slug' => $n->game->slug, 'name' => $n->game->name, 'cover' => $n->game->cover],
+            ])->values()->all(),
+            'next' => $more ? $rows->last()?->id : null,
+            'games' => $games->count(),
+        ];
+    }
+
     /** Як часто оновлювати одну гру. */
     public const STALE_HOURS = 3;
 
@@ -100,12 +145,21 @@ class SteamNews
     public function notify(GameNews $news): int
     {
         $game = $news->game;
-        $ids = GameBacklog::query()->where('game_id', $game->id)->where('status', GameBacklog::PLAYING)->pluck('user_id')
-            ->merge(Follow::query()->where('kind', Follow::GAME)->where('subject_id', $game->id)->pluck('user_id'))
-            ->unique()->values();
+        // Бібліотека (хочу / граю / пройдено) і підписки; кому саме — за налаштуванням «Патчі ігор».
+        $library = GameBacklog::query()->where('game_id', $game->id)->whereIn('status', self::LIBRARY)->pluck('status', 'user_id');
+        $followers = Follow::query()->where('kind', Follow::GAME)->where('subject_id', $game->id)->pluck('user_id');
+        $ids = $library->keys()->merge($followers)->unique()->values();
         $sent = 0;
-        User::query()->whereIn('id', $ids)->whereNull('banned_at')->chunkById(200, function ($users) use ($news, &$sent) {
+        User::query()->whereIn('id', $ids)->whereNull('banned_at')->chunkById(200, function ($users) use ($news, &$sent, $library, $followers) {
             foreach ($users as $user) {
+                $mode = self::alertsFor($user);
+                $status = $library[$user->id] ?? null;
+                $wanted = $followers->contains($user->id)
+                    || ($mode === 'library' && $status !== null)
+                    || ($mode === 'playing' && $status === GameBacklog::PLAYING);
+                if ($mode === 'off' || ! $wanted) {
+                    continue;
+                }
                 $user->notify(new GamePatchReleased($news));
                 $sent++;
             }
@@ -121,7 +175,7 @@ class SteamNews
      */
     public function due(int $limit = 40): Collection
     {
-        $ids = GameBacklog::query()->where('status', GameBacklog::PLAYING)->distinct()->pluck('game_id')
+        $ids = GameBacklog::query()->whereIn('status', self::LIBRARY)->distinct()->pluck('game_id')
             ->merge(Follow::query()->where('kind', Follow::GAME)->distinct()->pluck('subject_id'))
             ->unique()->values();
 

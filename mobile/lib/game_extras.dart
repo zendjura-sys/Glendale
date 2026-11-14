@@ -599,3 +599,112 @@ class _Achievements extends StatelessWidget {
     ]);
   }
 }
+
+
+/// «Новини моїх ігор»: патчі й анонси Steam для бібліотеки й підписок (як /games/news на сайті).
+class MyGameNewsScreen extends StatefulWidget {
+  const MyGameNewsScreen({super.key});
+
+  @override
+  State<MyGameNewsScreen> createState() => _MyGameNewsScreenState();
+}
+
+class _MyGameNewsScreenState extends State<MyGameNewsScreen> {
+  Map<String, dynamic>? data;
+  List<Map<String, dynamic>> items = [];
+  bool patches = false;
+  bool loading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _load());
+  }
+
+  Future<void> _load({bool more = false}) async {
+    if (loading) return;
+    setState(() => loading = true);
+    try {
+      final Object? before = more ? (data ?? const {})['next'] : null;
+      final d = await AppScope.read(context).session.api.get(Api.site('/games/news?${patches ? 'patches=1&' : ''}${before != null ? 'before=$before' : ''}'));
+      if (!mounted) return;
+      setState(() {
+        data = d;
+        items = more ? [...items, ...maps(d['items'])] : maps(d['items']);
+      });
+    } catch (e) {
+      if (mounted) toast(context, e);
+    } finally {
+      if (mounted) setState(() => loading = false);
+    }
+  }
+
+  Future<void> _mode(String mode) async {
+    try {
+      await AppScope.read(context).session.api.put(Api.site('/games/news/prefs'), {'mode': mode});
+      if (mounted) setState(() => data = {...?data, 'mode': mode});
+    } catch (e) {
+      if (mounted) toast(context, e);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final d = data;
+    if (d == null) return const ScreenSkeleton();
+    final mode = '${d['mode'] ?? 'playing'}';
+    return ScreenScroll(
+      onRefresh: _load,
+      children: [
+        PageTitle(tr('Новини моїх ігор'), subtitle: tr('Патчі й анонси розробників у Steam для {n} ігор з вашої бібліотеки й підписок.', {'n': intOf(d['games'])})),
+        Wrap(spacing: 8, runSpacing: 8, children: [
+          ChoiceChip(label: Text(tr('Усе')), selected: !patches, onSelected: (_) {
+            setState(() => patches = false);
+            _load();
+          }),
+          ChoiceChip(label: Text(tr('Лише патчі')), selected: patches, onSelected: (_) {
+            setState(() => patches = true);
+            _load();
+          }),
+        ]),
+        const SizedBox(height: 10),
+        Glass(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(tr('Сповіщати про патчі'), style: body(14, weight: FontWeight.w700)),
+            for (final m in [('playing', tr('Лише ігри «Граю»')), ('library', tr('Уся бібліотека')), ('off', tr('Не надсилати'))])
+              ListTile(
+                dense: true,
+                contentPadding: EdgeInsets.zero,
+                leading: Icon(mode == m.$1 ? LucideIcons.circleCheck : LucideIcons.circle, size: 18, color: mode == m.$1 ? primary : muted),
+                title: Text(m.$2, style: body(13.5)),
+                onTap: () => _mode(m.$1),
+              ),
+          ]),
+        ),
+        const SizedBox(height: 10),
+        if (items.isEmpty)
+          Glass(child: Text(tr('Імпортуйте бібліотеку Steam або додайте ігри в «Хочу / Граю», щоб бачити їхні патчі.'), style: body(13.5, color: muted)))
+        else
+          for (final n in items)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Glass(
+                child: InkWell(
+                  onTap: () => launchUrl(Uri.parse('${n['url']}'), mode: LaunchMode.externalApplication),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Row(children: [
+                      Expanded(child: Text(text(mapOf(n['game'])['name']) ?? '', style: body(12.5, color: muted, weight: FontWeight.w700))),
+                      if (n['is_patch'] == true) Text(tr('Патч'), style: body(12, color: primary, weight: FontWeight.w700)),
+                    ]),
+                    const SizedBox(height: 3),
+                    Text(text(n['title']) ?? '', style: body(14.5, weight: FontWeight.w700)),
+                    if (text(n['excerpt']) != null) Padding(padding: const EdgeInsets.only(top: 3), child: Text(text(n['excerpt'])!, maxLines: 2, overflow: TextOverflow.ellipsis, style: body(13, color: muted))),
+                  ]),
+                ),
+              ),
+            ),
+        if (d['next'] != null) GhostButton(label: loading ? tr('Завантаження…') : tr('Показати ще'), onPressed: loading ? null : () => _load(more: true)),
+      ],
+    );
+  }
+}

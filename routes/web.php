@@ -83,6 +83,7 @@ use App\Http\Controllers\MonobankWebhookController;
 use App\Http\Controllers\MusicConnectController;
 use App\Http\Controllers\MusicController;
 use App\Http\Controllers\MusicHubController;
+use App\Http\Controllers\MyGameNewsController;
 use App\Http\Controllers\NewcomerController;
 use App\Http\Controllers\NicknameController;
 use App\Http\Controllers\NotificationController;
@@ -334,6 +335,8 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     Route::post('duels', [GamePlayController::class, 'challenge'])->middleware('throttle:20,1')->name('duels.store');
     Route::post('duels/{duel}', [GamePlayController::class, 'act'])->whereNumber('duel')->middleware('throttle:60,1')->name('duels.act');
     Route::post('tools/nicknames/check', [NicknameController::class, 'check'])->middleware('throttle:30,1')->name('tools.nicknames.check');
+    Route::get('games/news', [MyGameNewsController::class, 'index'])->middleware('module:games')->name('games.news');
+    Route::put('games/news/prefs', [MyGameNewsController::class, 'prefs'])->middleware('module:games')->name('games.news.prefs');
     Route::prefix('games/{game}')->name('games.')->middleware('module:games')->withoutScopedBindings()->group(function () {
         Route::post('questions', [GameQaController::class, 'ask'])->middleware('throttle:5,1')->name('questions.store');
         Route::delete('questions/{question}', [GameQaController::class, 'destroyQuestion'])->whereNumber('question')->name('questions.destroy');

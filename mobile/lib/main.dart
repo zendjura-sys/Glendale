@@ -31,6 +31,7 @@ import 'engagement.dart';
 import 'fun.dart';
 import 'awards.dart';
 import 'movie_extras.dart';
+import 'game_extras.dart' show MyGameNewsScreen;
 import 'game_reviews.dart';
 import 'game_tools.dart';
 import 'status.dart';
@@ -337,6 +338,7 @@ Future<void> main() async {
             routes: [
               // Перед :slug — щоб «deals» і «backlog» не сприймались як гра.
               GoRoute(path: 'deals', builder: (_, _) => const DealsScreen()),
+              GoRoute(path: 'news', builder: (_, _) => const MyGameNewsScreen()),
               GoRoute(path: 'trivia', builder: (_, _) => const TriviaScreen()),
               GoRoute(path: 'trailers', builder: (_, _) => const TrailersScreen()),
               GoRoute(path: 'awards', builder: (_, _) => const AwardsScreen(), routes: [

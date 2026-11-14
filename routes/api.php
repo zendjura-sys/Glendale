@@ -78,6 +78,7 @@ use App\Http\Controllers\MomentController;
 use App\Http\Controllers\MusicConnectController;
 use App\Http\Controllers\MusicController;
 use App\Http\Controllers\MusicHubController;
+use App\Http\Controllers\MyGameNewsController;
 use App\Http\Controllers\NewcomerController;
 use App\Http\Controllers\NicknameController;
 use App\Http\Controllers\NowPlayingController;
@@ -511,6 +512,8 @@ Route::prefix('v1')->group(function () {
                 Route::get('alerts/places', [AirAlertController::class, 'places'])->middleware('throttle:120,1');
                 Route::get('alerts/history', [AirAlertController::class, 'history'])->middleware('throttle:60,1');
                 Route::get('alerts/shelters', [AirAlertController::class, 'shelters'])->middleware('throttle:20,1');
+                Route::get('games/news', [MyGameNewsController::class, 'index'])->middleware('module:games');
+                Route::put('games/news/prefs', [MyGameNewsController::class, 'prefs'])->middleware('module:games');
                 // Підключені застосунки (OAuth розробників).
                 Route::get('settings/connected-apps', [ConnectedAppsController::class, 'index']);
                 Route::delete('settings/connected-apps/{app}', [ConnectedAppsController::class, 'destroy'])->whereNumber('app');
