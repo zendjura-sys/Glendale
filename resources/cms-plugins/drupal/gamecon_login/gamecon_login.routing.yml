@@ -1,0 +1,23 @@
+gamecon_login.login:
+  path: '/gamecon/login'
+  defaults:
+    _controller: '\Drupal\gamecon_login\Controller\GameConController::login'
+  requirements:
+    _access: 'TRUE'
+  options:
+    no_cache: TRUE
+gamecon_login.callback:
+  path: '/gamecon/callback'
+  defaults:
+    _controller: '\Drupal\gamecon_login\Controller\GameConController::callback'
+  requirements:
+    _access: 'TRUE'
+  options:
+    no_cache: TRUE
+gamecon_login.settings:
+  path: '/admin/config/people/gamecon'
+  defaults:
+    _form: '\Drupal\gamecon_login\Form\SettingsForm'
+    _title: 'Увійти через GameCon'
+  requirements:
+    _permission: 'administer site configuration'

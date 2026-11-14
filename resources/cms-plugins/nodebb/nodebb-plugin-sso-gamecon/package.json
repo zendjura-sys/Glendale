@@ -1,0 +1,11 @@
+{
+  "name": "nodebb-plugin-sso-gamecon",
+  "version": "1.0.0",
+  "description": "NodeBB: увійти через GameCon (OAuth 2.1 + PKCE)",
+  "main": "library.js",
+  "license": "MIT",
+  "keywords": ["nodebb", "plugin", "sso", "oauth", "gamecon"],
+  "homepage": "https://gamecon.online/developers/plugins/nodebb",
+  "dependencies": {"passport-oauth2": "^1.8.0"},
+  "nbbpm": {"compatibility": "^3.0.0 || ^4.0.0"}
+}

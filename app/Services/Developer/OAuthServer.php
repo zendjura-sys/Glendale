@@ -133,7 +133,7 @@ class OAuthServer
                 return 'invalid_grant';
             }
             DB::table('developer_oauth_codes')->where('id', $row->id)->update(['used_at' => now()]);
-            if (now()->greaterThan($row->expires_at) || ! hash_equals($row->redirect_uri, $redirect) || ! self::verifyPkce($verifier, $row->code_challenge)) {
+            if (now()->greaterThan($row->expires_at) || ! hash_equals($row->redirect_uri, $redirect) || ! ($row->code_challenge === '' || $row->code_challenge === null ? $app->confidential : self::verifyPkce($verifier, $row->code_challenge))) {
                 return 'invalid_grant';
             }
 

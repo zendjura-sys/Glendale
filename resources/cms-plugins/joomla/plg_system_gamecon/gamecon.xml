@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension type="plugin" group="system" method="upgrade">
+    <name>plg_system_gamecon</name>
+    <author>GameCon</author>
+    <authorUrl>https://gamecon.online</authorUrl>
+    <creationDate>2026-11</creationDate>
+    <copyright>GameCon</copyright>
+    <license>GNU General Public License version 2 or later</license>
+    <version>1.0.0</version>
+    <description>PLG_SYSTEM_GAMECON_XML_DESCRIPTION</description>
+    <namespace path="src">GameCon\Plugin\System\GameCon</namespace>
+    <files>
+        <folder plugin="gamecon">services</folder>
+        <folder>src</folder>
+        <folder>lib</folder>
+    </files>
+    <languages>
+        <language tag="en-GB">language/en-GB/plg_system_gamecon.ini</language>
+        <language tag="en-GB">language/en-GB/plg_system_gamecon.sys.ini</language>
+        <language tag="uk-UA">language/uk-UA/plg_system_gamecon.ini</language>
+        <language tag="uk-UA">language/uk-UA/plg_system_gamecon.sys.ini</language>
+    </languages>
+    <config>
+        <fields name="params">
+            <fieldset name="basic">
+                <field name="client_id" type="text" label="Client ID" required="true"/>
+                <field name="client_secret" type="password" label="Client Secret" required="true"/>
+                <field name="base" type="url" label="PLG_SYSTEM_GAMECON_BASE" default="https://gamecon.online" filter="url"/>
+                <field name="email" type="radio" label="PLG_SYSTEM_GAMECON_EMAIL" default="1" layout="joomla.form.field.radio.switcher">
+                    <option value="0">JNO</option>
+                    <option value="1">JYES</option>
+                </field>
+                <field name="note" type="note" description="PLG_SYSTEM_GAMECON_REDIRECT_NOTE"/>
+            </fieldset>
+        </fields>
+    </config>
+</extension>

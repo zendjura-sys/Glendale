@@ -1,0 +1,6 @@
+gamecon-login:
+  forum:
+    log_in_with: "Sign in with GameCon"
+  admin:
+    base: "GameCon address"
+    redirect: "Redirect URI for your GameCon app: {url}"

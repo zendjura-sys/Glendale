@@ -1,0 +1,16 @@
+{
+  "id": "nodebb-plugin-sso-gamecon",
+  "url": "https://gamecon.online/developers/plugins/nodebb",
+  "library": "./library.js",
+  "hooks": [
+    { "hook": "static:app.load", "method": "init" },
+    { "hook": "filter:auth.init", "method": "getStrategy" },
+    { "hook": "filter:auth.list", "method": "getAssociation" },
+    { "hook": "filter:admin.header.build", "method": "addMenuItem" },
+    { "hook": "static:user.delete", "method": "deleteUserData" }
+  ],
+  "templates": "templates",
+  "modules": { "../admin/plugins/sso-gamecon.js": "public/admin.js" },
+  "languages": "languages",
+  "defaultLang": "en-GB"
+}

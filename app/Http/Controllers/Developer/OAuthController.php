@@ -38,9 +38,10 @@ class OAuthController extends Controller
         if ($request->query('response_type') !== 'code') {
             return $fail('unsupported_response_type', 'Підтримується лише response_type=code.');
         }
-        // OAuth 2.1: PKCE обов’язковий для всіх клієнтів, лише S256.
+        // PKCE (лише S256) обов’язковий для публічних клієнтів; конфіденційні (із секретом —
+        // плагіни форумів і CMS) можуть без нього: код без секрету все одно не обміняти.
         $challenge = (string) $request->query('code_challenge', '');
-        if (preg_match('/^[A-Za-z0-9\-_]{43}$/', $challenge) !== 1 || $request->query('code_challenge_method') !== 'S256') {
+        if (! ($challenge === '' && $app->confidential) && (preg_match('/^[A-Za-z0-9\-_]{43}$/', $challenge) !== 1 || $request->query('code_challenge_method') !== 'S256')) {
             return $fail('invalid_request', 'Потрібен PKCE: code_challenge і code_challenge_method=S256.');
         }
         $scopes = $this->oauth->scopes($app, $request->query('scope'));
@@ -81,7 +82,7 @@ class OAuthController extends Controller
         }
         $challenge = (string) $request->input('code_challenge', '');
         $scopes = $this->oauth->scopes($app, $request->input('scope'));
-        if ($scopes === null || preg_match('/^[A-Za-z0-9\-_]{43}$/', $challenge) !== 1) {
+        if ($scopes === null || (! ($challenge === '' && $app->confidential) && preg_match('/^[A-Za-z0-9\-_]{43}$/', $challenge) !== 1)) {
             return Inertia::location($this->back($redirect, ['error' => 'invalid_request', 'state' => $state]));
         }
         Log::info('oauth.authorize', ['user' => $request->user()->id, 'app' => $app->id, 'scopes' => $scopes]);
@@ -138,6 +139,7 @@ class OAuthController extends Controller
             'authorization_endpoint' => url('/oauth/authorize'),
             'token_endpoint' => url('/oauth/token'),
             'revocation_endpoint' => url('/oauth/revoke'),
+            'userinfo_endpoint' => url('/api/developer/v1/userinfo'),
             'scopes_supported' => array_keys(OAuthServer::SCOPES),
             'response_types_supported' => ['code'],
             'grant_types_supported' => ['authorization_code', 'refresh_token'],

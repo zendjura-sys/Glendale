@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<phrases>
+  <phrase title="gamecon_login" version_id="1000070" version_string="1.0.0"><![CDATA[Увійти через GameCon]]></phrase>
+  <phrase title="gamecon_not_configured" version_id="1000070" version_string="1.0.0"><![CDATA[Вхід через GameCon ще не налаштовано.]]></phrase>
+  <phrase title="option_group.gameconLogin" version_id="1000070" version_string="1.0.0"><![CDATA[Увійти через GameCon]]></phrase>
+  <phrase title="option_group_description.gameconLogin" version_id="1000070" version_string="1.0.0"><![CDATA[Адреса повернення для застосунку GameCon: https://ваш-форум/gamecon/callback (або /index.php?gamecon/callback без дружніх URL).]]></phrase>
+  <phrase title="option.gameconClientId" version_id="1000070" version_string="1.0.0"><![CDATA[Client ID]]></phrase>
+  <phrase title="option.gameconClientSecret" version_id="1000070" version_string="1.0.0"><![CDATA[Client Secret]]></phrase>
+  <phrase title="option.gameconBase" version_id="1000070" version_string="1.0.0"><![CDATA[Адреса GameCon]]></phrase>
+  <phrase title="option_explain.gameconClientId" version_id="1000070" version_string="1.0.0"><![CDATA[]]></phrase>
+  <phrase title="option_explain.gameconClientSecret" version_id="1000070" version_string="1.0.0"><![CDATA[]]></phrase>
+  <phrase title="option_explain.gameconBase" version_id="1000070" version_string="1.0.0"><![CDATA[]]></phrase>
+</phrases>

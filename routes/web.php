@@ -152,6 +152,10 @@ Route::get('i18n/{locale}.js', [LocaleController::class, 'script'])->where('loca
 Route::get('/', WelcomeController::class)->name('home');
 // Розробникам (публічно): документація, OAuth 2.1 токени й метадані RFC 8414.
 Route::get('developers', [Developer\DeveloperPortalController::class, 'index'])->name('developers.index');
+// Розробникам → плагіни «Увійти через GameCon» для CMS і форумів.
+Route::get('developers/plugins', [Developer\CmsPluginsController::class, 'index'])->name('developers.plugins');
+Route::get('developers/plugins/{plugin}', [Developer\CmsPluginsController::class, 'show'])->where('plugin', '[a-z]+')->name('developers.plugins.show');
+Route::get('developers/plugins/{plugin}/download', [Developer\CmsPluginsController::class, 'download'])->where('plugin', '[a-z]+')->middleware(['auth', 'throttle:30,1'])->name('developers.plugins.download');
 Route::post('oauth/token', [Developer\OAuthController::class, 'token'])->middleware('throttle:60,1')->name('oauth.token');
 Route::post('oauth/revoke', [Developer\OAuthController::class, 'revoke'])->middleware('throttle:60,1')->name('oauth.revoke');
 Route::get('.well-known/oauth-authorization-server', [Developer\OAuthController::class, 'metadata'])->name('oauth.metadata');

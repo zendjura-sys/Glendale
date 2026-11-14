@@ -1,0 +1,13 @@
+{
+    "gamecon_link": {
+        "name": "gamecon_link",
+        "columns": {
+            "member_id": {"name": "member_id", "type": "BIGINT", "length": 20, "unsigned": true, "allow_null": false, "default": "0"},
+            "gamecon_id": {"name": "gamecon_id", "type": "VARCHAR", "length": 32, "allow_null": false, "default": ""}
+        },
+        "indexes": {
+            "PRIMARY": {"type": "primary", "name": "PRIMARY", "columns": ["member_id"], "length": [null]},
+            "gamecon_id": {"type": "unique", "name": "gamecon_id", "columns": ["gamecon_id"], "length": [null]}
+        }
+    }
+}

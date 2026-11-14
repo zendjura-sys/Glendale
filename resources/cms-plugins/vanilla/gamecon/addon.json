@@ -1,0 +1,13 @@
+{
+    "type": "addon",
+    "key": "gamecon",
+    "name": "Увійти через GameCon",
+    "description": "Вхід і реєстрація через акаунт GameCon (OAuth 2.1).",
+    "version": "1.0.0",
+    "license": "GPL-2.0-only",
+    "mobileFriendly": true,
+    "settingsUrl": "/settings/gamecon",
+    "settingsPermission": "Garden.Settings.Manage",
+    "authors": [{"name": "GameCon", "homepage": "https://gamecon.online"}],
+    "require": {"vanilla": ">=3.3"}
+}

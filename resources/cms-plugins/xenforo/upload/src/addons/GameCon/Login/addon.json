@@ -1,0 +1,14 @@
+{
+    "legacy_addon_id": "",
+    "title": "Увійти через GameCon",
+    "description": "Вхід і реєстрація через акаунт GameCon (OAuth 2.1).",
+    "version_id": 1000070,
+    "version_string": "1.0.0",
+    "dev": "GameCon",
+    "dev_url": "https://gamecon.online/developers/plugins/xenforo",
+    "faq_url": "",
+    "support_url": "https://gamecon.online/developers",
+    "extra_urls": [],
+    "require": {"XF": [2020000, "XenForo 2.2.0+"]},
+    "icon": "fa-gamepad"
+}

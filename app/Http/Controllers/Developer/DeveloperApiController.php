@@ -36,6 +36,31 @@ class DeveloperApiController extends Controller
         ]]);
     }
 
+    /**
+     * Плаский профіль у стилі OpenID Connect (sub, preferred_username, picture…) — для готових
+     * OAuth-модулів форумів і CMS, які не вміють читати вкладене поле «data».
+     */
+    public function userinfo(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        /** @var DeveloperToken $token */
+        $token = $request->attributes->get('oauth_token');
+        $email = $token->can('email');
+
+        return response()->json([
+            'sub' => (string) $user->id,
+            'id' => $user->id,
+            'preferred_username' => $user->username,
+            'username' => $user->username,
+            'name' => $user->name,
+            'picture' => $user->avatar_url,
+            'avatar_url' => $user->avatar_url,
+            'profile' => url('/u/'.$user->username),
+            'email' => $email ? $user->email : null,
+            'email_verified' => $email ? $user->email_verified_at !== null : null,
+        ]);
+    }
+
     /** Публічний профіль за ніком (закритий профіль — лише ім’я й аватар). */
     public function user(Request $request, string $username): JsonResponse
     {

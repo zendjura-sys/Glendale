@@ -153,6 +153,7 @@ Route::post('bots/telegram', Bots\TelegramWebhookController::class)->middleware(
 Route::prefix('developer/v1')->group(function () {
     Route::middleware('oauth')->group(function () {
         Route::get('me', [DeveloperApiController::class, 'me'])->middleware('oauth:profile');
+        Route::get('userinfo', [DeveloperApiController::class, 'userinfo'])->middleware('oauth:profile');
         Route::get('users/{username}', [DeveloperApiController::class, 'user'])->middleware('oauth:profile');
         Route::get('me/friends', [DeveloperApiController::class, 'friends'])->middleware('oauth:friends');
         Route::get('me/posts', [DeveloperApiController::class, 'posts'])->middleware('oauth:posts:read');

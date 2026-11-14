@@ -95,7 +95,7 @@ export function SiteFooter({
         },
     ];
     const button =
-        'flex min-h-11 w-full items-center gap-2.5 rounded-xl bg-white/[0.04] px-3 text-left text-[13px] font-medium text-white/80 transition hover:bg-white/[0.08] hover:text-white active:scale-[0.98] [html[data-theme=light]_&]:bg-black/[0.04]';
+        'flex min-h-11 w-full items-center gap-2.5 rounded-xl bg-white/[0.04] px-3 text-left text-[13px] font-medium text-white/80 transition hover:bg-white/[0.08] hover:text-white active:scale-[0.98] [html[data-theme=light]_&]:bg-black/[0.04] [html[data-theme=light]_&]:text-slate-700 [html[data-theme=light]_&]:hover:text-slate-900';
 
     return (
         <footer
@@ -118,7 +118,7 @@ export function SiteFooter({
                     </div>
                     <Link
                         href="/app"
-                        className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-white/[0.05] px-3 text-xs font-semibold text-white/80 transition hover:bg-white/[0.1] hover:text-white [html[data-theme=light]_&]:bg-black/[0.04]"
+                        className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-white/[0.05] px-3 text-xs font-semibold text-white/80 transition hover:bg-white/[0.1] hover:text-white [html[data-theme=light]_&]:bg-black/[0.04] [html[data-theme=light]_&]:text-slate-700"
                     >
                         <Smartphone className="size-3.5 text-primary" />
                         {tr('Застосунок')}

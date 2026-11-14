@@ -1,0 +1,12 @@
+gamecon_login.settings:
+  type: config_object
+  label: 'GameCon login settings'
+  mapping:
+    client_id:
+      type: string
+    client_secret:
+      type: string
+    base:
+      type: string
+    email:
+      type: boolean

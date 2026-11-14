@@ -1,0 +1,11 @@
+plugins:
+  gamecon_login_enabled:
+    default: false
+    client: true
+  gamecon_client_id:
+    default: ""
+  gamecon_client_secret:
+    default: ""
+    secret: true
+  gamecon_base_url:
+    default: "https://gamecon.online"

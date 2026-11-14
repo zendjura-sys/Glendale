@@ -1,0 +1,5 @@
+gamecon_login.settings:
+  title: 'Увійти через GameCon'
+  description: 'Client ID, Secret і адреса повернення.'
+  route_name: gamecon_login.settings
+  parent: user.admin_index

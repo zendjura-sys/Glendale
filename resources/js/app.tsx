@@ -156,6 +156,11 @@ const PUBLIC_PAGES = new Set([
     'transparency',
     'app/index',
     'public/entity',
+    // Розробникам: документація й плагіни відкриті гостям.
+    'developers/index',
+    'developers/oauth',
+    'developers/plugins',
+    'developers/plugin',
 ]);
 
 void createInertiaApp({

@@ -1,0 +1,6 @@
+en:
+  site_settings:
+    gamecon_login_enabled: "Enable Sign in with GameCon. Redirect URI for your GameCon app: https://your-forum/auth/gamecon/callback"
+    gamecon_client_id: "GameCon Client ID"
+    gamecon_client_secret: "GameCon Client Secret"
+    gamecon_base_url: "GameCon address"
