@@ -696,6 +696,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::get('imports', [TrackImportController::class, 'index'])->name('music.imports.index');
         Route::delete('imports/{import}', [TrackImportController::class, 'destroy'])->whereNumber('import')->name('music.imports.destroy');
         Route::post('together', [ListenPartyController::class, 'store'])->middleware('throttle:10,1')->name('listen.store');
+        Route::match(['get', 'put'], 'jam', [ListenPartyController::class, 'jamPrefs'])->middleware('throttle:30,1')->name('listen.jam');
         // Кімнати «Слухати разом» для сім’ї, клану, спільноти чи друзів.
         Route::get('rooms', [ListenRoomController::class, 'index'])->name('music.rooms');
         Route::post('rooms', [ListenRoomController::class, 'store'])->middleware('throttle:10,1')->name('music.rooms.store');

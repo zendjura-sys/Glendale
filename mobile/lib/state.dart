@@ -731,7 +731,11 @@ class TrackPlayer extends ChangeNotifier {
     // Пряму трансляцію не перемотати.
     if (current?.live == true) return;
     await _player.seek(to);
+    onSeek?.call(to);
   }
+
+  /// Перемотування для трансляції (DLNA): телевізор чи колонка переходить у те саме місце.
+  void Function(Duration to)? onSeek;
 
   Future<void> playAt(int i) async {
     if (i < 0 || i >= queue.length) return;
@@ -897,8 +901,19 @@ class TrackPlayer extends ChangeNotifier {
     });
   }
 
+  /// Трансляція на телевізор чи колонку (DLNA): тут трек іде беззвучно, лише як таймлайн.
+  bool get castMuted => _castMuted;
+  bool _castMuted = false;
+  set castMuted(bool value) {
+    if (_castMuted == value) return;
+    _castMuted = value;
+    _applied = -1;
+    _applyVolume();
+    notifyListeners();
+  }
+
   void _applyVolume() {
-    final value = volume * _fade;
+    final value = _castMuted ? 0.0 : volume * _fade;
     if ((value - _applied).abs() < 0.004) return;
     _applied = value;
     unawaited(_player.setVolume(value).catchError((_) {}));

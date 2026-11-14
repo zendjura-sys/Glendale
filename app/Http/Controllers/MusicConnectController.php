@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Services\Music\MusicConnect;
+use App\Services\Music\NearbyJam;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -56,6 +57,9 @@ class MusicConnectController extends Controller
         $queue = is_array($raw) && isset($raw['queue'])
             ? array_values(array_filter(array_map(fn ($t) => $this->card(is_array($t) ? $t : null), $raw['queue'])))
             : null;
+
+        // «Друзі поблизу» для джему: хто з GameCon у тій самій мережі (див. NearbyJam).
+        app(NearbyJam::class)->seen($this->user($request), $request->ip());
 
         return response()->json($this->connect->heartbeat(
             $this->user($request),

@@ -213,7 +213,7 @@ class _FullPlayerState extends State<FullPlayer> {
           const SizedBox(height: 14),
           _Volume(player: player),
           const SizedBox(height: 8),
-          _BottomRow(view: panel, live: live, onView: _toggle, onOutput: () => showAudioOutput(context), onDevices: () => showConnectDevices(context)),
+          _BottomRow(view: panel, live: live, onView: _toggle, onDevices: () => showConnectDevices(context)),
         ]);
 
         Widget panelBody() => panel == 'lyrics' ? _lyricsArea() : _QueuePanel(player: player);
@@ -689,14 +689,12 @@ class _Volume extends StatelessWidget {
   }
 }
 
-/// Текст пісні, вивід звуку, пристрої GameCon Connect і черга.
+/// Текст пісні, GameCon Connect (усі пристрої й вивід звуку) і черга.
 class _BottomRow extends StatelessWidget {
-  const _BottomRow({required this.view, required this.live, required this.onView, required this.onOutput, required this.onDevices});
+  const _BottomRow({required this.view, required this.live, required this.onView, required this.onDevices});
   final String? view;
   final bool live;
   final ValueChanged<String> onView;
-  final VoidCallback onOutput;
-
   /// GameCon Connect: сайт та інші пристрої акаунта.
   final VoidCallback onDevices;
 
@@ -722,8 +720,7 @@ class _BottomRow extends StatelessWidget {
         );
     return Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
       item(LucideIcons.messageSquareQuote, tr('Текст пісні'), live ? null : () => onView('lyrics'), active: view == 'lyrics'),
-      item(LucideIcons.airplay, tr('Вивід звуку'), onOutput),
-      item(LucideIcons.monitorSpeaker, tr('Пристрої'), onDevices),
+      item(LucideIcons.monitorSpeaker, tr('GameCon Connect'), onDevices),
       item(LucideIcons.listMusic, tr('Далі в черзі'), () => onView('queue'), active: view == 'queue'),
     ]);
   }

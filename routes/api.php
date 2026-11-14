@@ -326,6 +326,7 @@ Route::prefix('v1')->group(function () {
         // Спільне прослуховування в застосунку: ті самі дії, стан — опитуванням.
         Route::middleware('module:music')->group(function () {
             Route::post('music/together', [ListenPartyController::class, 'store'])->middleware('throttle:10,1');
+            Route::match(['get', 'put'], 'music/jam', [ListenPartyController::class, 'jamPrefs'])->middleware('throttle:30,1');
             Route::prefix('listen/{party}')->group(function () {
                 Route::get('/', [ListenPartyController::class, 'show']);
                 Route::get('state', [ListenPartyController::class, 'poll']);

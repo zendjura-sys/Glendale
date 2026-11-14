@@ -65,12 +65,53 @@ class MainActivity : AudioServiceActivity() {
                     call.argument<String>("title") ?: "GameCon",
                     call.argument<String>("cancel") ?: "PIN",
                 ) { ok -> result.success(ok) }
+                // GameCon Connect: пристрої для відтворення (див. ConnectScan).
+                "connectOutputs" -> result.success(ConnectScan.outputs(this))
+                "connectBonded" -> result.success(ConnectScan.bonded(this))
+                "connectCast" -> ConnectScan.cast(this, (call.argument<Int>("ms") ?: 3000).toLong()) { result.success(it) }
+                "connectWifiDirect" -> ConnectScan.wifiDirect(this, (call.argument<Int>("ms") ?: 5000).toLong()) { result.success(it) }
+                "connectMulticast" -> {
+                    ConnectScan.multicast(this, call.argument<Boolean>("held") == true)
+                    result.success(true)
+                }
+                "connectPermissions" -> requestConnectPermissions(result)
+                "castSettings" -> {
+                    val intent = android.content.Intent("android.settings.CAST_SETTINGS")
+                    try {
+                        startActivity(intent)
+                    } catch (e: Exception) {
+                        startActivity(android.content.Intent(android.provider.Settings.ACTION_WIRELESS_SETTINGS))
+                    }
+                    result.success(true)
+                }
                 "bluetoothSettings" -> {
                     startActivity(android.content.Intent(android.provider.Settings.ACTION_BLUETOOTH_SETTINGS))
                     result.success(true)
                 }
                 else -> result.notImplemented()
             }
+        }
+    }
+
+    private var permissionResult: MethodChannel.Result? = null
+
+    /** Дозволи для пошуку пристроїв: Bluetooth (Android 12+) і Wi-Fi поруч (Android 13+). */
+    private fun requestConnectPermissions(result: MethodChannel.Result) {
+        val wanted = buildList {
+            if (android.os.Build.VERSION.SDK_INT >= 31) add(android.Manifest.permission.BLUETOOTH_CONNECT)
+            if (android.os.Build.VERSION.SDK_INT >= 33) add(android.Manifest.permission.NEARBY_WIFI_DEVICES)
+        }.filter { !ConnectScan.hasPermission(this, it) }
+        if (wanted.isEmpty()) return result.success(true)
+        permissionResult?.success(false)
+        permissionResult = result
+        requestPermissions(wanted.toTypedArray(), CONNECT_PERMISSIONS)
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == CONNECT_PERMISSIONS) {
+            permissionResult?.success(grantResults.isNotEmpty() && grantResults.all { it == PackageManager.PERMISSION_GRANTED })
+            permissionResult = null
         }
     }
 
@@ -87,6 +128,8 @@ class MainActivity : AudioServiceActivity() {
     }
 
     companion object {
+        private const val CONNECT_PERMISSIONS = 4201
+
         // Один замок на процес: живе довше за Activity, поки музику тримає медіасервіс.
         private var wifiLock: android.net.wifi.WifiManager.WifiLock? = null
     }

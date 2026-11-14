@@ -2,13 +2,16 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'api.dart';
 import 'core/widgets/arctic_glass/arctic_glass.dart';
+import 'dlna.dart';
 import 'full_player.dart' show showAudioOutput;
 import 'i18n.dart';
+import 'listen_together.dart' show startListening;
 import 'player_view.dart' show TrackCover;
 import 'state.dart';
 import 'theme.dart';
@@ -658,75 +661,535 @@ class _RemoteVolumeState extends State<_RemoteVolume> {
   }
 }
 
-/// «Пристрої»: цей телефон і інші пристрої акаунта; дотик — перемкнути музику туди.
+/// Пристрій для відтворення в «GameCon Connect»: інший GameCon, DLNA, Bluetooth, Cast, Wi-Fi Direct.
+class _Target {
+  const _Target({required this.key, required this.icon, required this.name, this.detail, this.onTap, this.badge});
+  final String key;
+  final IconData icon;
+  final String name;
+  final String? detail;
+  final String? badge;
+  final VoidCallback? onTap;
+}
+
+const _native = MethodChannel('gamecon/app');
+
+Future<T?> _call<T>(String method, [Map<String, dynamic>? args]) async {
+  try {
+    return await _native.invokeMethod<T>(method, args);
+  } catch (_) {
+    return null;
+  }
+}
+
+List<Map<String, dynamic>> _list(dynamic value) => [
+      for (final item in (value is List ? value : const []))
+        if (item is Map) Map<String, dynamic>.from(item),
+    ];
+
+/// GameCon Connect, як у Spotify: зверху — де грає зараз, нижче — джем і всі пристрої
+/// (інші GameCon акаунта, телевізори й колонки в мережі, Bluetooth, Cast, Wi-Fi Direct).
 Future<void> showConnectDevices(BuildContext context) async {
   final connect = GameConnect.instance;
   if (connect == null) return showAudioOutput(context);
   unawaited(connect.heartbeat());
-  await showGcSheet<void>(
-    context,
-    title: tr('Пристрої'),
-    subtitle: tr('GameCon Connect'),
-    builder: (sheet) => ListenableBuilder(
-      listenable: Listenable.merge([connect, connect.player]),
-      builder: (sheet, _) {
+  await showGcSheet<void>(context, title: tr('GameCon Connect'), builder: (sheet) => _ConnectSheet(connect: connect, host: context));
+}
+
+class _ConnectSheet extends StatefulWidget {
+  const _ConnectSheet({required this.connect, required this.host});
+  final GameConnect connect;
+
+  /// Контекст екрана під шторкою — для переходу в джем після закриття.
+  final BuildContext host;
+
+  @override
+  State<_ConnectSheet> createState() => _ConnectSheetState();
+}
+
+class _ConnectSheetState extends State<_ConnectSheet> {
+  static const _kAsked = 'connect.permissions_asked';
+
+  List<Map<String, dynamic>> outputs = [];
+  List<Map<String, dynamic>>? bonded = [];
+  List<DlnaRenderer> renderers = [];
+  List<Map<String, dynamic>> casts = [];
+  List<Map<String, dynamic>>? nearby = [];
+  bool scanning = true;
+  bool autoInvite = false;
+  int nearbyFriends = 0;
+
+  GameConnect get connect => widget.connect;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _scan());
+    unawaited(_loadJam());
+  }
+
+  Future<void> _loadJam() async {
+    try {
+      final data = await connect.session.api.get(Api.site('/music/jam'));
+      if (!mounted) return;
+      setState(() {
+        autoInvite = data['auto_invite'] == true;
+        nearbyFriends = intOf(data['nearby']);
+      });
+    } catch (_) {}
+  }
+
+  Future<void> _setJam(bool value) async {
+    setState(() => autoInvite = value);
+    try {
+      await connect.session.api.put(Api.site('/music/jam'), {'auto_invite': value});
+    } catch (e) {
+      if (mounted) {
+        setState(() => autoInvite = !value);
+        toast(context, e);
+      }
+    }
+  }
+
+  Future<void> _scan({bool ask = false}) async {
+    setState(() => scanning = true);
+    final prefs = connect.session.prefs;
+    // Дозволи на Bluetooth і Wi-Fi поруч питаємо один раз; далі — лише з кнопки.
+    if (ask || prefs.getBool(_kAsked) != true) {
+      await prefs.setBool(_kAsked, true);
+      await _call<bool>('connectPermissions');
+    }
+    final outs = _list(await _call<List<dynamic>>('connectOutputs'));
+    final paired = await _call<List<dynamic>>('connectBonded');
+    if (mounted) {
+      setState(() {
+        outputs = outs;
+        bonded = paired == null ? null : _list(paired);
+      });
+    }
+    await _call<bool>('connectMulticast', {'held': true});
+    final results = await Future.wait<Object?>([
+      Dlna.discover(),
+      _call<List<dynamic>>('connectCast', {'ms': 3000}),
+      _call<List<dynamic>>('connectWifiDirect', {'ms': 5000}),
+    ]);
+    await _call<bool>('connectMulticast', {'held': false});
+    if (!mounted) return;
+    setState(() {
+      renderers = (results[0] as List<DlnaRenderer>?) ?? [];
+      casts = _list(results[1]);
+      nearby = results[2] == null ? null : _list(results[2]);
+      scanning = false;
+    });
+  }
+
+  void _close() => Navigator.of(context).pop();
+
+  Future<void> _castTo(DlnaRenderer renderer) async {
+    final player = connect.player;
+    if (player.current == null) {
+      toast(context, tr('Спершу увімкніть трек — і він заграє на {name}.', {'name': renderer.name}));
+      return;
+    }
+    if (player.current!.source == 'radio') {
+      toast(context, tr('Радіо на телевізор поки не передається — лише треки.'));
+      return;
+    }
+    // Музика грала на іншому пристрої акаунта — забираємо її сюди, а звідси вже на телевізор.
+    if (!player.playing && connect.active != null && connect.active!.id != connect.deviceId) await connect.playHere();
+    await DlnaCast.instance.start(renderer, player);
+    if (!player.playing) await player.toggle(forcePlay: true);
+  }
+
+  Future<void> _thisPhone() async {
+    _close();
+    if (DlnaCast.instance.active) {
+      await DlnaCast.instance.stop();
+      return;
+    }
+    final out = _activeOutput;
+    // Android сам веде звук на останні підключені навушники — перемкнути назад допоможе системний перемикач.
+    if (out != null && out['kind'] != 'phone') {
+      await _call<bool>('audioOutput');
+      return;
+    }
+    await connect.playHere();
+  }
+
+  Map<String, dynamic>? get _activeOutput => outputs.where((o) => o['active'] == true).firstOrNull;
+
+  IconData _outputIcon(String? kind) => switch (kind) {
+        'bluetooth' => LucideIcons.headphones,
+        'wired' => LucideIcons.headphones,
+        'usb' => LucideIcons.usb,
+        _ => LucideIcons.smartphone,
+      };
+
+  @override
+  Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: Listenable.merge([connect, connect.player, DlnaCast.instance]),
+      builder: (context, _) {
         final player = connect.player;
-        final activeId = player.playing ? connect.deviceId : connect.active?.id;
-        final others = [for (final d in connect.devices) if (d.id != connect.deviceId) d];
+        final cast = DlnaCast.instance;
+        final remote = connect.active;
+        final out = _activeOutput;
         final local = player.current;
-        Widget row({required IconData icon, required String title, required String subtitle, required bool active, VoidCallback? onTap}) => ListTile(
-              leading: Icon(icon, color: active ? accent : muted),
-              title: FitText(title, style: body(15, weight: FontWeight.w600, color: active ? accent : ink)),
-              subtitle: FitText(subtitle, style: body(13, color: muted)),
-              trailing: active ? Icon(LucideIcons.audioLines, color: accent, size: 20) : null,
-              onTap: onTap,
-            );
-        String line(String title, String artist, bool playing) {
-          final who = artistOf(artist);
-          final base = who.isEmpty ? title : '$title — $who';
-          return playing ? base : '$base · ${tr('пауза')}';
+
+        // Де грає зараз: телевізор (DLNA) → інший GameCon → навушники чи колонка → цей телефон.
+        late final String nowName;
+        late final IconData nowIcon;
+        String? nowBadge;
+        String? nowTrack;
+        var nowPlaying = false;
+        if (cast.active) {
+          nowName = cast.renderer!.name;
+          nowIcon = LucideIcons.tv;
+          nowBadge = 'DLNA';
+          nowTrack = local == null ? null : _line(local.title, local.artist);
+          nowPlaying = player.playing;
+        } else if (remote != null && remote.id != connect.deviceId && remote.state != null && !player.playing) {
+          nowName = remote.name;
+          nowIcon = remote.icon;
+          nowBadge = 'GameCon';
+          nowTrack = _line(remote.state!.title, remote.state!.artist);
+          nowPlaying = remote.state!.playing;
+        } else {
+          final kind = text(out?['kind']);
+          nowName = kind == null || kind == 'phone' ? tr('Цей телефон') : (text(out?['name']) ?? tr('Навушники'));
+          nowIcon = _outputIcon(kind);
+          nowBadge = switch (kind) { 'bluetooth' => 'Bluetooth', 'wired' => tr('Дротові'), 'usb' => 'USB', _ => null };
+          nowTrack = local == null ? null : _line(local.title, local.artist);
+          nowPlaying = player.playing;
         }
 
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(12, 0, 12, 20),
-          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-            row(
-              icon: LucideIcons.smartphone,
-              title: tr('Цей пристрій'),
-              subtitle: local == null ? connect.deviceName : line(local.title, local.artist, player.playing),
-              active: activeId == connect.deviceId || (activeId == null && local != null),
-              onTap: () {
-                Navigator.pop(sheet);
-                unawaited(connect.playHere());
-              },
-            ),
-            for (final d in others)
-              row(
-                icon: d.icon,
-                title: d.name,
-                subtitle: d.state == null ? tr('Нічого не грає') : line(d.state!.title, d.state!.artist, d.state!.playing),
-                active: d.id == activeId,
+        final targets = <_Target>[
+          if (cast.active || (out != null && out['kind'] != 'phone') || (remote != null && remote.id != connect.deviceId && !player.playing))
+            _Target(key: 'phone', icon: LucideIcons.smartphone, name: tr('Цей телефон'), onTap: () => unawaited(_thisPhone())),
+          for (final o in outputs)
+            if (o['active'] != true && o['kind'] != 'phone')
+              _Target(
+                key: 'out:${o['id']}',
+                icon: _outputIcon(text(o['kind'])),
+                name: text(o['name']) ?? tr('Навушники'),
+                detail: tr('Підключено'),
                 onTap: () {
-                  Navigator.pop(sheet);
-                  unawaited(connect.transferTo(d.id));
+                  _close();
+                  unawaited(_call<bool>('audioOutput'));
                 },
               ),
-            if (others.isEmpty)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
-                child: Text(tr('Відкрийте GameCon на комп’ютері чи іншому телефоні з цим акаунтом — він з’явиться тут.'), style: body(13, color: muted).copyWith(height: 1.45)),
+          for (final d in connect.devices)
+            if (d.id != connect.deviceId && !(d.id == remote?.id && nowBadge == 'GameCon'))
+              _Target(
+                key: 'gc:${d.id}',
+                icon: d.icon,
+                name: d.name,
+                badge: 'GameCon',
+                detail: d.state == null ? null : _line(d.state!.title, d.state!.artist),
+                onTap: () {
+                  _close();
+                  unawaited(() async {
+                    if (cast.active) await cast.stop();
+                    await connect.transferTo(d.id);
+                  }());
+                },
               ),
-            ListTile(
-              leading: Icon(LucideIcons.bluetooth, color: muted),
-              title: Text(tr('Навушники чи колонка…'), style: body(15)),
+          for (final r in renderers)
+            if (r.id != cast.renderer?.id)
+              _Target(
+                key: 'dlna:${r.id}',
+                icon: LucideIcons.tv,
+                name: r.name,
+                detail: r.model.isEmpty ? tr('У вашій мережі') : r.model,
+                onTap: () {
+                  _close();
+                  unawaited(_castTo(r));
+                },
+              ),
+          for (final c in casts)
+            _Target(
+              key: 'cast:${c['id']}',
+              icon: LucideIcons.cast,
+              name: text(c['name']) ?? 'Chromecast',
+              detail: tr('Google Cast · через системний перемикач'),
               onTap: () {
-                Navigator.pop(sheet);
-                unawaited(showAudioOutput(context));
+                _close();
+                unawaited(_call<bool>('audioOutput'));
               },
             ),
+          for (final b in bonded ?? const <Map<String, dynamic>>[])
+            if (!outputs.any((o) => text(o['name']) == text(b['name'])))
+              _Target(
+                key: 'bt:${b['address']}',
+                icon: LucideIcons.bluetooth,
+                name: text(b['name']) ?? 'Bluetooth',
+                detail: tr('Спарено · торкніться, щоб підключити'),
+                onTap: () {
+                  _close();
+                  unawaited(_call<bool>('bluetoothSettings'));
+                },
+              ),
+          for (final p in nearby ?? const <Map<String, dynamic>>[])
+            _Target(
+              key: 'p2p:${p['id']}',
+              icon: p['kind'] == 'display' ? LucideIcons.monitor : (p['kind'] == 'audio' ? LucideIcons.speaker : LucideIcons.wifi),
+              name: text(p['name']) ?? 'Wi-Fi Direct',
+              detail: 'Wi-Fi Direct',
+              onTap: () {
+                _close();
+                unawaited(_call<bool>('castSettings'));
+              },
+            ),
+        ];
+
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(12, 0, 12, 16),
+          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            _NowCard(name: nowName, icon: nowIcon, badge: nowBadge, track: nowTrack, playing: nowPlaying, cast: cast.active ? cast : null, player: player),
+            const SizedBox(height: 6),
+            ListTile(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+              leading: Icon(LucideIcons.usersRound, color: muted),
+              title: Text(tr('Автоматично запрошувати друзів поблизу в джем'), style: body(15)),
+              subtitle: nearbyFriends > 0 ? Text(tr('Поруч друзів: {n}', {'n': '$nearbyFriends'}), style: body(13, color: muted)) : null,
+              trailing: GcSwitch(value: autoInvite, onChanged: _setJam),
+              onTap: () => _setJam(!autoInvite),
+            ),
+            Divider(height: 1, color: ink.withValues(alpha: 0.08)),
+            const SizedBox(height: 4),
+            for (final t in targets)
+              ListTile(
+                key: ValueKey(t.key),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+                leading: Icon(t.icon, color: ink.withValues(alpha: 0.85)),
+                title: Row(children: [
+                  Flexible(child: FitText(t.name, style: body(16, weight: FontWeight.w600))),
+                  if (t.badge != null) ...[const SizedBox(width: 8), _Badge(t.badge!)],
+                ]),
+                subtitle: t.detail == null ? null : FitText(t.detail!, style: body(13, color: muted)),
+                onTap: t.onTap,
+              ),
+            if (scanning)
+              ListTile(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+                leading: const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2)),
+                title: Text(tr('Шукаємо пристрої поруч…'), style: body(14, color: muted)),
+              )
+            else if (targets.isEmpty)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
+                child: Text(
+                  tr('Поруч нічого не знайдено. Відкрийте GameCon на комп’ютері чи іншому телефоні, увімкніть телевізор або колонку в тій самій Wi-Fi-мережі.'),
+                  style: body(13, color: muted).copyWith(height: 1.45),
+                ),
+              ),
+            if (!scanning && (bonded == null || nearby == null))
+              ListTile(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+                leading: Icon(LucideIcons.radar, color: accent),
+                title: Text(tr('Дозволити пошук пристроїв поруч'), style: body(15, color: accent)),
+                subtitle: Text(tr('Bluetooth-навушники й колонки, телевізори через Wi-Fi Direct'), style: body(13, color: muted)),
+                onTap: () => unawaited(_scan(ask: true)),
+              ),
+            if (!scanning)
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  onPressed: () => unawaited(_scan()),
+                  icon: Icon(LucideIcons.refreshCw, size: 16, color: muted),
+                  label: Text(tr('Шукати ще раз'), style: body(13, color: muted)),
+                ),
+              ),
+            const SizedBox(height: 8),
+            Row(children: [
+              Expanded(
+                child: _BigButton(
+                  icon: LucideIcons.usersRound,
+                  label: tr('Почати джем'),
+                  onTap: () {
+                    final id = local?.source == 'local' ? local?.id : null;
+                    _close();
+                    unawaited(startListening(widget.host, trackId: id));
+                  },
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _BigButton(
+                  icon: LucideIcons.bluetooth,
+                  label: 'Bluetooth',
+                  color: accent,
+                  onTap: () => unawaited(_call<bool>('bluetoothSettings')),
+                ),
+              ),
+            ]),
           ]),
         );
       },
-    ),
-  );
+    );
+  }
+
+  String _line(String title, String artist) {
+    final who = artistOf(artist);
+    return who.isEmpty ? title : '$title — $who';
+  }
+}
+
+/// Картка «де грає зараз»: назва пристрою, позначка, трек з еквалайзером і велика іконка.
+class _NowCard extends StatelessWidget {
+  const _NowCard({required this.name, required this.icon, required this.badge, required this.track, required this.playing, required this.cast, required this.player});
+  final String name;
+  final IconData icon;
+  final String? badge;
+  final String? track;
+  final bool playing;
+  final DlnaCast? cast;
+  final TrackPlayer player;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(18, 16, 14, 16),
+      decoration: BoxDecoration(color: ink.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(24)),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(children: [
+                Flexible(child: FitText(name, style: display(26))),
+                if (badge != null) ...[const SizedBox(width: 10), _Badge(badge!)],
+              ]),
+              if (track != null) ...[
+                const SizedBox(height: 6),
+                Row(children: [
+                  _Equalizer(active: playing, color: accent),
+                  const SizedBox(width: 8),
+                  Expanded(child: Text(track!, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(15, color: accent, weight: FontWeight.w600))),
+                ]),
+              ],
+            ]),
+          ),
+          const SizedBox(width: 12),
+          Icon(icon, size: 56, color: accent),
+        ]),
+        if (cast != null) ...[
+          const SizedBox(height: 12),
+          Row(children: [
+            IconButton(
+              onPressed: () => unawaited(player.toggle()),
+              icon: Icon(player.playing ? LucideIcons.pause : LucideIcons.play, color: ink),
+              tooltip: player.playing ? tr('Пауза') : tr('Грати'),
+            ),
+            Icon(LucideIcons.volume1, size: 18, color: muted),
+            Expanded(
+              child: Slider(
+                value: cast!.volume,
+                onChanged: (v) => cast!.previewVolume(v),
+                onChangeEnd: (v) => unawaited(cast!.setVolume(v)),
+              ),
+            ),
+            TextButton(onPressed: () => unawaited(cast!.stop()), child: Text(tr('Відключити'), style: body(14, color: accent, weight: FontWeight.w600))),
+          ]),
+          if (cast!.status == 'error')
+            Text(tr('Пристрій не прийняв трек. Перевірте, що він увімкнений і в тій самій мережі.'), style: body(12, color: muted)),
+        ],
+      ]),
+    );
+  }
+}
+
+class _Badge extends StatelessWidget {
+  const _Badge(this.label);
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        decoration: BoxDecoration(color: ink.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
+        child: Text(label, style: body(12, color: ink.withValues(alpha: 0.75), weight: FontWeight.w600)),
+      );
+}
+
+class _BigButton extends StatelessWidget {
+  const _BigButton({required this.icon, required this.label, required this.onTap, this.color});
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) => Material(
+        color: ink.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Column(children: [
+              Icon(icon, color: color ?? ink, size: 26),
+              const SizedBox(height: 8),
+              Text(label, style: body(14, color: color ?? ink, weight: FontWeight.w600)),
+            ]),
+          ),
+        ),
+      );
+}
+
+/// Три стовпчики «грає зараз»; без анімацій у системі — нерухомі.
+class _Equalizer extends StatefulWidget {
+  const _Equalizer({required this.active, required this.color});
+  final bool active;
+  final Color color;
+
+  @override
+  State<_Equalizer> createState() => _EqualizerState();
+}
+
+class _EqualizerState extends State<_Equalizer> with SingleTickerProviderStateMixin {
+  late final _anim = AnimationController(vsync: this, duration: const Duration(milliseconds: 900));
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _sync();
+  }
+
+  @override
+  void didUpdateWidget(_Equalizer old) {
+    super.didUpdateWidget(old);
+    _sync();
+  }
+
+  void _sync() {
+    final still = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+    if (widget.active && !still) {
+      if (!_anim.isAnimating) _anim.repeat(reverse: true);
+    } else {
+      _anim.stop();
+    }
+  }
+
+  @override
+  void dispose() {
+    _anim.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+        animation: _anim,
+        builder: (_, _) => SizedBox(
+          width: 16,
+          height: 14,
+          child: Row(crossAxisAlignment: CrossAxisAlignment.end, mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+            for (final phase in const [0.0, 0.45, 0.8])
+              Container(
+                width: 3.5,
+                height: 4 + 10 * (widget.active ? (0.35 + 0.65 * ((_anim.value + phase) % 1.0)) : 0.4),
+                decoration: BoxDecoration(color: widget.color, borderRadius: BorderRadius.circular(1)),
+              ),
+          ]),
+        ),
+      );
 }
