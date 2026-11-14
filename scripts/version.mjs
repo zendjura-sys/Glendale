@@ -46,13 +46,14 @@ if (command === 'next') {
 } else if (command === 'site') {
     const path = 'config/release.php';
     const config = readFileSync(path, 'utf8');
-    if (config.includes(`'${today}' =>`)) {
-        console.log(`Реліз ${today} уже є в журналі.`);
-    } else if (write) {
-        writeFileSync(path, config.replace(/(\$releases = \[[\s\S]*?)(\n\];)/, `$1\n    '${today}' => null,$2`));
-        console.log(`Додано реліз ${today}.`);
+    // Другий і наступні релізи того самого дня — ключ із номером: '2026-11-14.2'.
+    let key = today;
+    for (let n = 2; config.includes(`'${key}' =>`); n++) key = `${today}.${n}`;
+    if (write) {
+        writeFileSync(path, config.replace(/(\$releases = \[[\s\S]*?)(\n\];)/, `$1\n    '${key}' => null,$2`));
+        console.log(`Додано реліз ${key}.`);
     } else {
-        console.log(`Буде додано реліз ${today} (запустіть з --write).`);
+        console.log(`Буде додано реліз ${key} (запустіть з --write).`);
     }
 } else {
     console.log('Використання: node scripts/version.mjs next <версія> | app [--write] | site [--write] [--date=YYYY-MM-DD]');

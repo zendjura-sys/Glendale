@@ -14,6 +14,7 @@ import 'state.dart';
 import 'theme.dart';
 import 'widgets.dart';
 import 'i18n.dart';
+import 'sdk/gc_overlay_widget.dart';
 
 /// Налаштування → Застосунки: кому дано доступ через «Увійти через GameCon» (як на сайті /settings/connected-apps).
 class ConnectedAppsScreen extends StatefulWidget {
@@ -100,6 +101,18 @@ class _ConnectedAppsScreenState extends State<ConnectedAppsScreen> {
                         Expanded(child: Text(tr('Оверлей GameCon у цій грі'), style: body(13.5))),
                         GcSwitch(value: app['overlay'] != false, onChanged: (v) => _overlay(app, v)),
                       ]),
+                      if (app['overlay'] != false) ...[
+                        const SizedBox(height: 10),
+                        // Як оверлей виглядає в грі: та сама скляна капсула, що й у SDK.
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: GcOverlayHud(items: [
+                            (LucideIcons.users, tr('Паті')),
+                            (LucideIcons.messageCircle, tr('Чат')),
+                            (LucideIcons.shield, tr('Сім’я')),
+                          ]),
+                        ),
+                      ],
                     ]),
                   ),
                   TextButton(onPressed: () => _disconnect(app), child: Text(tr('Відключити'), style: body(13, color: dangerSoft))),
