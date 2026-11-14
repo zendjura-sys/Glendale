@@ -32,6 +32,8 @@ export type MovieCard = {
     episodes_count: number | null;
     /** Статус виходу для бейджа: анонс / виходить / завершено. */
     release?: 'announced' | 'ongoing' | 'released';
+    /** Пояснення рекомендації: «Бо вам сподобалося …». */
+    reason?: string | null;
     /** Скільки переглянуто, % (лише в картках, де відомий глядач). */
     progress_pct?: number | null;
 };

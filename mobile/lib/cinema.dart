@@ -475,7 +475,7 @@ class CinemaOverviewScreen extends StatelessWidget {
             const CinemaNav(active: 'overview'),
             const SizedBox(height: 12),
             if (featured.isNotEmpty) CinemaHero(movies: featured),
-            if (recommended.isNotEmpty) row(tr('Рекомендації для вас'), recommended),
+            if (recommended.isNotEmpty) ...[SectionLabel(tr('Вам сподобається')), _ForYouRow(movies: recommended)],
             if (discussed.isNotEmpty) row(tr('Обговорюють'), discussed),
             if (watching.isNotEmpty) row(tr('Зараз дивляться'), watching),
             if (collections.isNotEmpty) ...[
@@ -512,6 +512,55 @@ class CinemaOverviewScreen extends StatelessWidget {
           ],
         );
       },
+    );
+  }
+}
+
+/// «Вам сподобається»: постер, пояснення «Бо вам сподобалося …» і «Не цікаво» — як на сайті.
+class _ForYouRow extends StatefulWidget {
+  const _ForYouRow({required this.movies});
+  final List<Map<String, dynamic>> movies;
+
+  @override
+  State<_ForYouRow> createState() => _ForYouRowState();
+}
+
+class _ForYouRowState extends State<_ForYouRow> {
+  late final List<Map<String, dynamic>> _movies = [...widget.movies];
+
+  void _dismiss(Map<String, dynamic> movie) {
+    setState(() => _movies.remove(movie));
+    AppScope.read(context).session.api.post(Api.site('/cinema/${movie['slug']}/dismiss')).catchError((_) => <String, dynamic>{});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final muted = Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.55);
+    return SizedBox(
+      height: 290,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: _movies.length,
+        separatorBuilder: (_, _) => const SizedBox(width: 10),
+        itemBuilder: (_, i) {
+          final movie = _movies[i];
+          final reason = text(movie['reason']);
+          return SizedBox(
+            width: 132,
+            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              SizedBox(height: 240, child: PosterCard(movie: movie)),
+              const SizedBox(height: 4),
+              Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Expanded(child: Text(reason != null ? tr(reason) : tr('Під ваш смак'), maxLines: 2, overflow: TextOverflow.ellipsis, style: body(11, color: muted))),
+                GestureDetector(
+                  onTap: () => _dismiss(movie),
+                  child: Padding(padding: const EdgeInsets.all(2), child: Icon(LucideIcons.eyeOff, size: 15, color: muted, semanticLabel: tr('Не цікаво'))),
+                ),
+              ]),
+            ]),
+          );
+        },
+      ),
     );
   }
 }

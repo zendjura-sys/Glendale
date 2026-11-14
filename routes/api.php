@@ -490,6 +490,8 @@ Route::prefix('v1')->group(function () {
             // Рулетка кіно, «Вгадай пісню», вікторина дня й ігровий щоденник — ті самі дії, що й на сайті.
             Route::get('cinema/roulette', [MovieRouletteController::class, 'index'])->middleware('module:cinema');
             Route::get('cinema/overview', [CinemaController::class, 'overview'])->middleware('module:cinema');
+            Route::get('cinema/for-you', [CinemaController::class, 'forYou'])->middleware(['module:cinema', 'throttle:60,1']);
+            Route::post('cinema/{movie}/dismiss', [CinemaController::class, 'dismiss'])->middleware(['module:cinema', 'throttle:60,1']);
             Route::get('cinema/schedule', [CinemaController::class, 'schedule'])->middleware('module:cinema');
             Route::get('cinema/my', [CinemaController::class, 'my'])->middleware('module:cinema');
             Route::get('cinema/random', [CinemaController::class, 'random'])->middleware(['module:cinema', 'throttle:60,1']);

@@ -22,6 +22,7 @@ use App\Services\Cinema\KodikClient;
 use App\Services\Cinema\Metadata\MetadataEnricher;
 use App\Services\Cinema\Metadata\TmdbProvider;
 use App\Services\Cinema\MovieOfWeek;
+use App\Services\Cinema\Recommendations;
 use App\Services\Cinema\TmdbAutoParse;
 use App\Services\Cinema\VideoseedClient;
 use App\Services\FriendshipService;
@@ -585,26 +586,33 @@ class CinemaController extends Controller
     }
 
     /**
-     * Рекомендації за оцінками: жанри тайтлів, яким глядач поставив 8+, без уже позначених.
+     * «Вам сподобається»: гібридні рекомендації (див. Recommendations) з поясненням.
      *
      * @return list<array<string, mixed>>
      */
-    private function recommended(User $user): array
+    private function recommended(User $user, int $limit = 12): array
     {
-        $liked = DB::table('movie_user')->where('user_id', $user->id)->where('rating', '>=', 8)->pluck('movie_id');
-        if ($liked->isEmpty()) {
-            return [];
+        $picks = app(Recommendations::class)->for($user, $limit);
+        $cards = $this->cards(new Collection(array_map(fn (array $p) => $p['movie'], $picks)));
+        foreach ($cards as $i => $card) {
+            $cards[$i]['reason'] = $picks[$i]['reason'] ?? null;
         }
-        $genres = Movie::query()->whereIn('id', $liked)->pluck('genres')->flatten()->filter()->countBy()->sortDesc()->keys()->take(3)->all();
-        $seen = DB::table('movie_user')->where('user_id', $user->id)->pluck('movie_id');
 
-        return $this->cards(Movie::query()->published()->whereNotIn('id', $seen)
-            ->where(function (Builder $q) use ($genres) {
-                foreach ($genres as $genre) {
-                    $q->orWhereJsonContains('genres', $genre);
-                }
-            })
-            ->orderByDesc('views_count')->limit(12)->get());
+        return $cards;
+    }
+
+    /** Повна добірка «Вам сподобається» (JSON для сайту й застосунку). */
+    public function forYou(Request $request): JsonResponse
+    {
+        return response()->json(['movies' => $this->recommended($request->user(), 48)]);
+    }
+
+    /** «Не цікаво»: прибрати тайтл із рекомендацій назавжди. */
+    public function dismiss(Request $request, Movie $movie): JsonResponse
+    {
+        app(Recommendations::class)->dismiss($request->user(), $movie);
+
+        return response()->json(['ok' => true]);
     }
 
     /** Назва озвучки за ключем плеєра (provider:external_id). */
@@ -654,6 +662,7 @@ class CinemaController extends Controller
         $data = $request->validate(['status' => ['nullable', Rule::in(array_keys(Movie::STATUSES))]]);
 
         $this->cinema->setStatus($request->user(), $movie, $data['status'] ?? null);
+        app(Recommendations::class)->forget($request->user());
 
         return $this->stateResponse($request->user(), $movie);
     }
@@ -664,6 +673,7 @@ class CinemaController extends Controller
         $data = $request->validate(['rating' => ['nullable', 'integer', 'between:1,10']]);
 
         $this->cinema->rate($request->user(), $movie, $data['rating'] ?? null);
+        app(Recommendations::class)->forget($request->user());
 
         return $this->stateResponse($request->user(), $movie);
     }
