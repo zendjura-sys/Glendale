@@ -607,15 +607,10 @@ button.gc-sdk-slot {
     display: flex;
     flex-direction: column;
     gap: 10px;
-    /* Кожна стопка — не вище за пів екрана: верхня й нижня ніколи не зійдуться */
+    /* Кожна стопка — не вище за пів екрана: верхня й нижня ніколи не зійдуться.
+       Без overflow/mask на стопці: вони обрізали б тінь і розмиття скла (квадратні кути). */
     max-height: calc(50% - 18px);
-    overflow-y: auto;
-    overflow-x: hidden;
-    scrollbar-width: none;
     zoom: var(--gc-scale, 1);
-}
-.gc-sdk-stack::-webkit-scrollbar {
-    display: none;
 }
 .gc-sdk-stack[data-corner^='bottom'] {
     flex-direction: column-reverse;
@@ -628,6 +623,15 @@ button.gc-sdk-slot {
     position: relative;
     inset: auto;
     flex-shrink: 0;
+}
+/* Мало місця — картка стискається сама, а прокручується лише список усередині */
+.gc-sdk-stack > .gc-sdk-card {
+    flex-shrink: 1;
+    min-height: 96px;
+}
+.gc-sdk-card > .gc-sdk-list {
+    flex: 1 1 auto;
+    min-height: 0;
 }
 .gc-sdk-panel,
 .gc-sdk-drawer,
@@ -724,13 +728,6 @@ button.gc-sdk-slot {
 .gc-sdk-streamer .gc-sdk-name:hover,
 .gc-sdk-streamer .gc-sdk-bubble:hover {
     filter: none;
-}
-/* Стопка вища за пів екрана прокручується — край м’яко згасає, а не ріже картку */
-.gc-sdk-stack[data-corner^='top'] {
-    mask-image: linear-gradient(to bottom, #000 calc(100% - 28px), transparent);
-}
-.gc-sdk-stack[data-corner^='bottom'] {
-    mask-image: linear-gradient(to top, #000 calc(100% - 28px), transparent);
 }
 `,document.head.appendChild(e)}this.vp=document.createElement(`div`),this.vp.className=`gc-sdk-viewport`+(this.o.root?` gc-sdk-contained`:``),this.vp.dataset.mode=`hud`,this.vp.setAttribute(`aria-label`,`GameCon`),(this.o.root??document.body).appendChild(this.vp);let e=!this.o.root&&window.top!==window.self,t=this.o.blur===!1||this.o.blur===`auto`&&(e||!(CSS.supports?.(`backdrop-filter`,`blur(1px)`)||CSS.supports?.(`-webkit-backdrop-filter`,`blur(1px)`)));this.vp.classList.toggle(`gc-sdk-no-blur`,t),this.applyVars(),this.vp.addEventListener(`click`,e=>this.onClick(e)),this.vp.addEventListener(`change`,e=>{let t=e.target;t.dataset.pref&&this.savePrefs({[t.dataset.pref]:Number(t.value)})}),this.vp.addEventListener(`submit`,e=>{e.preventDefault();let t=e.target.querySelector(`input`);t&&(this.send(t.value),t.value=``)})}applyVars(){let e=this.vp.style;e.setProperty(`--gc-accent`,this.o.accent),e.setProperty(`--gc-radius`,`${this.o.radius}px`),e.setProperty(`--gc-scale`,String(Math.min(130,Math.max(80,this.o.scale??100))/100));let t=Math.min(100,Math.max(60,this.o.density))/100;e.setProperty(`--gc-glass-active`,`rgba(16, 18, 24, ${t})`),e.setProperty(`--gc-glass`,`rgba(16, 18, 24, ${Math.max(.6,t-.06)})`);let n=this.o.theme===`dark`||this.o.theme===`auto`&&!matchMedia(`(prefers-color-scheme: light)`).matches;this.vp.dataset.theme=n?`dark`:`light`}corner(e,t=12){let[n,r]=e.split(`-`);return`${n}:${t}px;${r}:${t}px;`}sections(){let e=[...this.o.tabs];return e.includes(`party`)||e.splice(1,0,`party`),this.o.customItems?.length&&e.push(`game`),e}windows(){let e=this.prefs.layout??this.o.layout??`custom`,t=this.sections(),n;if(e===`unified`)n=[];else if(e===`separate`)n=t;else{let e=[];this.o.modules.includes(`party`)&&e.push(`party`),this.o.modules.includes(`family`)&&e.push(`groups`),this.o.modules.includes(`chat`)&&e.push(`chat`),n=(this.prefs.windows??this.o.windows??e).filter(e=>t.includes(e))}let r=this.context?this.o.contexts?.[this.context]:void 0;return r&&(n=n.filter(e=>r.includes(e)||r.includes(c[e]))),this.disabled?[]:n}render(){if(!this.vp)return;let e=this.modules(),t=this.user||this.o.demo?this.windows():[];this.vp.classList.toggle(`gc-sdk-streamer`,!!this.o.streamer),this.vp.dataset.panel=this.open&&e.has(`drop`)?`1`:`0`,this.vp.dataset.hudCorner=e.has(`hud`)?this.o.position.hud:``;let n=this.vp.querySelector(`.gc-sdk-input input`)?.value??``,r=[],i={"top-left":[],"top-right":[],"bottom-left":[],"bottom-right":[]};e.has(`hud`)&&i[this.o.position.hud??`top-right`].push(this.hud());for(let e of t)e!==`chat`&&i[this.cornerOf(e)].push(this.windowCard(e));for(let[e,t]of Object.entries(i))t.length&&r.push(`<div class="gc-sdk-stack" data-corner="${e}" style="${this.corner(e)}">${t.join(``)}</div>`);e.has(`drop`)&&r.push(this.drop()),(t.includes(`chat`)||e.has(`chat`))&&r.push(this.drawer()),this.welcome&&r.push(this.welcomeCard());let a=this.o.toasts===`off`?`top-right`:this.o.toasts,o=a===`top`?`top:12px;left:50%;transform:translateX(-50%);`:this.corner(a,12),s=this.vp.querySelector(`.gc-sdk-toasts`);this.vp.innerHTML=r.join(``);let c=s??document.createElement(`div`);c.className=`gc-sdk-toasts`,c.setAttribute(`style`,o+(e.has(`hud`)&&a===this.o.position.hud?`margin-top:52px;`:``)+(this.chatOpen&&a.endsWith(`right`)?`right:364px;`:``)),this.vp.appendChild(c);let l=this.vp.querySelector(`.gc-sdk-input input`);l&&n&&(l.value=n),(this.o.draggable||this.playerCan.includes(`move`))&&this.enableDrag(),this.vp.querySelectorAll(`.gc-sdk-messages`).forEach(e=>e.scrollTop=e.scrollHeight)}cornerOf(e){let t=this.o.position;return t[e]??t[c[e]??``]??l[e]??`top-left`}avatar(e,t,n){return`<span class="gc-sdk-avatar" data-online="${+!!n}" ${t?`style="background-image:url('${i(t)}')"`:``}>${t?``:i(a(e))}</span>`}logo(){return this.o.logo?`<span class="gc-sdk-logo" style="background-image:url('${i(this.o.logo)}')"></span>`:`<span class="gc-sdk-logo">G</span>`}hud(){let e=this.friends.filter(e=>e.online).length,n=this.party.length?`<span class="gc-sdk-row gc-sdk-live">${r(`mic`)}<span>${this.party.length}</span></span><span class="gc-sdk-sep"></span>`:``,a=this.user?`<span class="gc-sdk-row">${r(`users`)}<span>${t(`{n} онлайн`,{n:e})}</span></span><span class="gc-sdk-sep"></span>${n}`:`<span class="gc-sdk-row">${r(`login`)}<span>${t(`Увійти`)}</span></span><span class="gc-sdk-sep"></span>`;return`<button type="button" data-act="toggle" class="gc-sdk-pill gc-sdk-frosted-glass gc-sdk-interactive" data-w="hud" aria-label="GameCon">${this.logo()}${a}<span class="gc-sdk-kbd">${i(this.o.hotkeys.toggle)}</span></button>`}windowCard(e){let n=e===`groups`&&this.family?`${i(this.family.name)} <span class="gc-sdk-sub">[${i(this.family.tag)}]</span>`:i(t(s[e])),a=e===`party`?t(`{n} у голосі`,{n:this.party.length}):e===`groups`&&this.family?t(`{n} онлайн`,{n:this.family.online}):e===`friends`?t(`{n} онлайн`,{n:this.friends.filter(e=>e.online).length}):``;return`<section class="gc-sdk-card gc-sdk-frosted-glass gc-sdk-interactive" data-w="${e}" aria-label="${i(t(s[e]))}">
 <div class="gc-sdk-card-head">${r(e===`groups`?`crown`:o[e])}<span class="gc-sdk-grow gc-sdk-title">${n}</span><span class="gc-sdk-sub">${a}</span><button type="button" class="gc-sdk-icon-btn" data-act="dock" data-s="${e}" title="${t(`У спільне вікно`)}" aria-label="${t(`У спільне вікно`)}">${r(`dock`)}</button></div>

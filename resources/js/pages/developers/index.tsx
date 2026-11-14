@@ -37,6 +37,9 @@ type DevApp = {
     blocked_reason: string | null;
     users: number;
     overlay: OverlayConfig;
+    overlay_dirty: boolean;
+    overlay_published_at: string | null;
+    overlay_versions: { published_at: string | null }[];
 };
 
 type Props = {
@@ -488,6 +491,9 @@ function AppCard({
                     appId={app.id}
                     appName={app.name}
                     initial={app.overlay}
+                    dirty={app.overlay_dirty}
+                    publishedAt={app.overlay_published_at}
+                    versions={app.overlay_versions}
                     onClose={() => setOverlay(false)}
                 />
             )}
