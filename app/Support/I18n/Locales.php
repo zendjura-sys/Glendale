@@ -68,6 +68,22 @@ class Locales
         return $codes;
     }
 
+    /**
+     * Усі додані мови, зокрема вимкнені на сайті (напр. для локалізації GameCon SDK у грі).
+     *
+     * @return list<string>
+     */
+    public function all(): array
+    {
+        return [self::SOURCE, ...array_column($this->configured(), 'code')];
+    }
+
+    /** @return list<array{code: string, native: string}> */
+    public function allOptions(): array
+    {
+        return array_map(fn (string $code) => ['code' => $code, 'native' => self::nativeName($code)], $this->all());
+    }
+
     public function isEnabled(?string $code): bool
     {
         return $code !== null && in_array($code, $this->enabled(), true);

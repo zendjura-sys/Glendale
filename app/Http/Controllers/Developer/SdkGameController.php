@@ -8,6 +8,7 @@ use App\Models\DeveloperToken;
 use App\Models\User;
 use App\Notifications\AppNotice;
 use App\Services\Developer\OAuthServer;
+use App\Services\Developer\OverlayPrefs;
 use App\Services\FriendshipService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -51,6 +52,8 @@ class SdkGameController extends Controller
 
             return [
                 'name' => $app->name, 'website' => $app->website, 'overlay' => $app->overlayConfig(),
+                // Готовий скрипт мовою гри: /sdk/v1/gamecon-sdk.js?lang=…
+                'script' => url('/sdk/v1/gamecon-sdk.js').($app->overlayConfig()['locale'] !== 'auto' ? '?lang='.$app->overlayConfig()['locale'] : ''),
                 'scopes' => $app->scopes, 'confidential' => $app->confidential,
                 'endpoints' => ['authorize' => url('/oauth/authorize'), 'token' => url('/oauth/token'), 'device' => url('/oauth/device'), 'link' => url('/link'), 'api' => url('/api/developer/v1')],
             ];
@@ -58,6 +61,28 @@ class SdkGameController extends Controller
         abort_if($data === null, 404, 'Застосунок не знайдено.');
 
         return response()->json(['data' => $data])->header('Cache-Control', 'public, max-age=300');
+    }
+
+    // ───────────── Налаштування оверлею гравця (синхронізація між пристроями) ─────────────
+
+    public function overlayPrefs(Request $request, OverlayPrefs $prefs): JsonResponse
+    {
+        return response()->json(['data' => $prefs->get($this->app($request), $request->user())]);
+    }
+
+    public function saveOverlayPrefs(Request $request, OverlayPrefs $prefs): JsonResponse
+    {
+        $data = $request->validate(['enabled' => ['sometimes', 'boolean'], 'prefs' => ['sometimes', 'array']]);
+
+        return response()->json(['data' => $prefs->save($this->app($request), $request->user(), $data)]);
+    }
+
+    /** «Скинути до варіанта гри». */
+    public function resetOverlayPrefs(Request $request, OverlayPrefs $prefs): JsonResponse
+    {
+        $prefs->reset($this->app($request), $request->user());
+
+        return response()->json(['data' => $prefs->get($this->app($request), $request->user())]);
     }
 
     // ───────────── Друзі й присутність ─────────────

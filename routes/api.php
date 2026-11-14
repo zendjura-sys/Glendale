@@ -178,6 +178,9 @@ Route::prefix('developer/v1')->group(function () {
         Route::post('groups/clans/{clan}/members/{member}', [SdkApiController::class, 'clanManage'])->whereNumber(['clan', 'member'])->middleware(['oauth:groups:manage', 'throttle:30,1']);
         Route::get('music/now', [SdkApiController::class, 'nowPlaying'])->middleware('oauth:music');
         Route::post('music/command', [SdkApiController::class, 'musicCommand'])->middleware(['oauth:music', 'throttle:60,1']);
+        Route::get('overlay/prefs', [SdkGameController::class, 'overlayPrefs']);
+        Route::put('overlay/prefs', [SdkGameController::class, 'saveOverlayPrefs'])->middleware('throttle:30,1');
+        Route::delete('overlay/prefs', [SdkGameController::class, 'resetOverlayPrefs'])->middleware('throttle:30,1');
         Route::get('friends/online', [SdkGameController::class, 'friends'])->middleware('oauth:friends');
         Route::put('presence', [SdkGameController::class, 'presence'])->middleware(['oauth:presence', 'throttle:60,1']);
         Route::post('invites', [SdkGameController::class, 'invite'])->middleware(['oauth:invites', 'throttle:30,1']);
@@ -555,6 +558,7 @@ Route::prefix('v1')->group(function () {
                 // Підключені застосунки (OAuth розробників).
                 Route::get('settings/connected-apps', [ConnectedAppsController::class, 'index']);
                 Route::delete('settings/connected-apps/{app}', [ConnectedAppsController::class, 'destroy'])->whereNumber('app');
+                Route::put('settings/connected-apps/{app}/overlay', [ConnectedAppsController::class, 'overlay'])->whereNumber('app');
                 Route::get('games/awards', [GameAwardsController::class, 'index']);
                 Route::get('games/awards/candidates', [GameAwardsController::class, 'candidates'])->middleware('throttle:120,1');
                 Route::post('games/awards/vote', [GameAwardsController::class, 'vote'])->middleware('throttle:60,1');

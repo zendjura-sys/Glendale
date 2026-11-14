@@ -25,7 +25,8 @@ class SdkAssetsController extends Controller
     {
         $path = resource_path('sdk/gamecon-sdk.js');
         $lang = (string) $request->query('lang', 'uk');
-        $lang = $this->locales->isEnabled($lang) ? $lang : 'uk';
+        // Будь-яка додана мова (й вимкнена на сайті) — мову SDK обирає розробник гри.
+        $lang = in_array($lang, $this->locales->all(), true) ? $lang : 'uk';
         $js = Cache::remember('sdk_js:'.$lang.':'.filemtime($path), 3600, function () use ($path, $lang) {
             $source = (string) file_get_contents($path);
             $dict = [];

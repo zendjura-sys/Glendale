@@ -8,12 +8,15 @@ use App\Http\Middleware\AuthenticateOAuthToken;
 use App\Models\DeveloperApp;
 use App\Models\DeveloperToken;
 use App\Services\Developer\OAuthServer;
+use App\Services\Geo\CountryRestrictions;
+use App\Support\I18n\Locales;
 use App\Support\Plugins\Plugins;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -36,6 +39,8 @@ class DeveloperPortalController extends Controller
             'base' => url('/'),
             'limits' => ['user' => AuthenticateOAuthToken::PER_MINUTE, 'app' => AuthenticateAppKey::PER_MINUTE, 'apps' => DeveloperApp::MAX_PER_USER],
             'reveal' => session('developer_reveal'),
+            // Мови для SDK: «авто» завжди; конкретна — якщо не заборонено для країни розробника.
+            'sdk_locales' => $this->canPickLocale() ? app(Locales::class)->allOptions() : [],
         ]);
     }
 
@@ -64,10 +69,14 @@ class DeveloperPortalController extends Controller
         return back()->with('success', 'Збережено.');
     }
 
-    /** Вигляд оверлею SDK у грі — кожна гра налаштовує під свій стиль. */
+    /** Вигляд оверлею SDK у грі — чернетка; гравці бачать лише опубліковане. */
     public function overlay(Request $request, DeveloperApp $app): RedirectResponse
     {
         $this->mine($request, $app);
+        $hotkey = ['required', 'string', 'max:24', 'regex:/^((Ctrl|Shift|Alt|Meta)\\+){0,3}([A-Z0-9]|F([1-9]|1[0-2])|Tab|Home|End|Insert|`)$/'];
+        $corner = Rule::in(['top-left', 'top-right', 'bottom-left', 'bottom-right']);
+        // Будь-яка додана мова, навіть вимкнена на сайті: гра може бути не перекладена українською.
+        $locales = ['auto', ...app(Locales::class)->all()];
         $data = $request->validate([
             'enabled' => ['required', 'boolean'],
             'accent' => ['required', 'regex:/^#[0-9a-f]{6}$/i'],
@@ -75,7 +84,8 @@ class DeveloperPortalController extends Controller
             'title' => ['nullable', 'string', 'max:40'],
             'side' => ['required', Rule::in(['left', 'right', 'top'])],
             'offset' => ['required', 'integer', 'min:5', 'max:95'],
-            'hotkey' => ['required', 'string', 'max:24', 'regex:/^((Ctrl|Shift|Alt|Meta)\+){0,3}([A-Z0-9]|F([1-9]|1[0-2])|Tab|Home|End|Insert|`)$/'],
+            'hotkey' => $hotkey,
+            'chat_hotkey' => $hotkey,
             'gamepad' => ['required', 'boolean'],
             'swipe' => ['required', 'boolean'],
             'hide_when_busy' => ['required', 'boolean'],
@@ -85,13 +95,86 @@ class DeveloperPortalController extends Controller
             'toasts' => ['required', Rule::in(['top-right', 'top-left', 'bottom-right', 'bottom-left', 'top', 'off'])],
             'tabs' => ['required', 'array', 'min:1'],
             'tabs.*' => [Rule::in(DeveloperApp::OVERLAY_TABS)],
-        ], ['hotkey.regex' => 'Клавіша: напр. Shift+Tab, Ctrl+G, F10.']);
-        $data['tabs'] = array_values(array_intersect(DeveloperApp::OVERLAY_TABS, $data['tabs']));
-        $app->update(['overlay' => $data]);
-        Cache::forget('sdk_config:'.$app->client_id);
-        Log::info('developer.app.overlay', ['by' => $request->user()->id, 'app' => $app->id]);
+            'modules' => ['present', 'array'],
+            'modules.*' => [Rule::in(DeveloperApp::OVERLAY_MODULES)],
+            'positions' => ['required', 'array'],
+            'positions.hud' => ['required', $corner],
+            'positions.party' => ['required', $corner],
+            'positions.family' => ['required', $corner],
+            'contexts' => ['required', 'array'],
+            'contexts.menu' => ['present', 'array'],
+            'contexts.lobby' => ['present', 'array'],
+            'contexts.match' => ['present', 'array'],
+            'contexts.*.*' => [Rule::in(DeveloperApp::OVERLAY_MODULES)],
+            'platforms' => ['required', 'array'],
+            'platforms.*' => ['boolean'],
+            'player_can' => ['present', 'array'],
+            'player_can.*' => [Rule::in(DeveloperApp::OVERLAY_PLAYER_CAN)],
+            'custom_items' => ['present', 'array', 'max:6'],
+            'custom_items.*.label' => ['required', 'string', 'max:24'],
+            'custom_items.*.url' => ['nullable', 'url:https', 'max:500'],
+            'custom_items.*.command' => ['nullable', 'string', 'max:64', 'regex:/^[a-z0-9_.:-]+$/i'],
+            'onboarding' => ['required', 'boolean'],
+            'hotkey_hint' => ['required', 'boolean'],
+            'locale' => ['required', Rule::in($locales)],
+        ], ['hotkey.regex' => 'Клавіша: напр. Shift+Tab, Ctrl+G, F10.', 'chat_hotkey.regex' => 'Клавіша: напр. Alt+G.']);
+        // Мова SDK на вибір — лише там, де адміністрація не заборонила (Країни → Обмеження).
+        if ($data['locale'] !== 'auto' && ! $this->canPickLocale()) {
+            throw ValidationException::withMessages(['locale' => 'Вибір мови SDK недоступний у вашій країні.']);
+        }
+        $order = fn (array $list, array $all) => array_values(array_intersect($all, $list));
+        $data['tabs'] = $order($data['tabs'], DeveloperApp::OVERLAY_TABS);
+        $data['modules'] = $order($data['modules'], DeveloperApp::OVERLAY_MODULES);
+        $data['contexts'] = array_map(fn ($l) => $order($l, DeveloperApp::OVERLAY_MODULES), array_intersect_key($data['contexts'], array_flip(['menu', 'lobby', 'match'])));
+        $data['platforms'] = array_map('boolval', array_intersect_key($data['platforms'], array_flip(DeveloperApp::OVERLAY_PLATFORMS))) + array_fill_keys(DeveloperApp::OVERLAY_PLATFORMS, false);
+        $data['custom_items'] = array_values(array_filter(array_map(fn ($i) => ['label' => $i['label'], 'url' => $i['url'] ?? null, 'command' => $i['command'] ?? null], $data['custom_items']), fn ($i) => $i['url'] || $i['command']));
+        $app->update(['overlay_draft' => $data]);
+        Log::info('developer.app.overlay_draft', ['by' => $request->user()->id, 'app' => $app->id]);
 
-        return back()->with('success', 'Оверлей збережено — ігри підхоплять його за кілька хвилин.');
+        return back()->with('success', 'Чернетку збережено. Опублікуйте, щоб гравці побачили зміни.');
+    }
+
+    /** Чернетка → гравцям; попередня версія — в історію (до 10) для відкату. */
+    public function publishOverlay(Request $request, DeveloperApp $app): RedirectResponse
+    {
+        $this->mine($request, $app);
+        abort_if($app->overlay_draft === null, 422, 'Немає змін для публікації.');
+        $versions = $app->overlay_versions ?? [];
+        if ($app->overlay !== null) {
+            array_unshift($versions, ['config' => $app->overlay, 'published_at' => $app->overlay_published_at?->toIso8601String()]);
+        }
+        $app->update(['overlay' => $app->overlay_draft, 'overlay_draft' => null, 'overlay_versions' => array_slice($versions, 0, 10), 'overlay_published_at' => now()]);
+        Cache::forget('sdk_config:'.$app->client_id);
+        Log::info('developer.app.overlay_publish', ['by' => $request->user()->id, 'app' => $app->id]);
+
+        return back()->with('success', 'Оверлей опубліковано — ігри підхоплять його за кілька хвилин.');
+    }
+
+    public function rollbackOverlay(Request $request, DeveloperApp $app): RedirectResponse
+    {
+        $this->mine($request, $app);
+        $index = (int) $request->validate(['version' => ['required', 'integer', 'min:0', 'max:9']])['version'];
+        $version = ($app->overlay_versions ?? [])[$index] ?? null;
+        abort_if($version === null, 404);
+        // Відкат — це чернетка зі старої версії: розробник бачить її в прев'ю й публікує.
+        $app->update(['overlay_draft' => $version['config']]);
+        Log::info('developer.app.overlay_rollback', ['by' => $request->user()->id, 'app' => $app->id, 'version' => $index]);
+
+        return back()->with('success', 'Стару версію відкрито як чернетку — перевірте й опублікуйте.');
+    }
+
+    public function discardOverlay(Request $request, DeveloperApp $app): RedirectResponse
+    {
+        $this->mine($request, $app);
+        $app->update(['overlay_draft' => null]);
+        Log::info('developer.app.overlay_discard', ['by' => $request->user()->id, 'app' => $app->id]);
+
+        return back()->with('success', 'Чернетку скасовано.');
+    }
+
+    private function canPickLocale(): bool
+    {
+        return app(Plugins::class)->on('sdk_locale') && ! app(CountryRestrictions::class)->pluginBlocked('sdk_locale');
     }
 
     /** Новий секретний ключ, токен бота чи публічний ключ — старий одразу перестає діяти. */
@@ -169,7 +252,10 @@ class DeveloperPortalController extends Controller
             'name' => $app->name,
             'description' => $app->description,
             'website' => $app->website,
-            'overlay' => $app->overlayConfig(),
+            'overlay' => $app->overlayDraft(),
+            'overlay_dirty' => $app->overlay_draft !== null,
+            'overlay_published_at' => $app->overlay_published_at?->toIso8601String(),
+            'overlay_versions' => array_map(fn (array $v) => ['published_at' => $v['published_at'] ?? null], $app->overlay_versions ?? []),
             'client_id' => $app->client_id,
             'public_key' => $app->public_key,
             'has_secret' => $app->client_secret !== null,

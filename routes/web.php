@@ -1169,6 +1169,9 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     Route::prefix('developers')->name('developers.')->group(function () {
         Route::post('apps', [Developer\DeveloperPortalController::class, 'store'])->middleware('throttle:10,1')->name('apps.store');
         Route::put('apps/{app}', [Developer\DeveloperPortalController::class, 'update'])->whereNumber('app')->name('apps.update');
+        Route::post('apps/{app}/overlay/publish', [Developer\DeveloperPortalController::class, 'publishOverlay'])->whereNumber('app')->middleware('throttle:20,1')->name('apps.overlay.publish');
+        Route::post('apps/{app}/overlay/rollback', [Developer\DeveloperPortalController::class, 'rollbackOverlay'])->whereNumber('app')->middleware('throttle:20,1')->name('apps.overlay.rollback');
+        Route::delete('apps/{app}/overlay', [Developer\DeveloperPortalController::class, 'discardOverlay'])->whereNumber('app')->name('apps.overlay.discard');
         Route::put('apps/{app}/overlay', [Developer\DeveloperPortalController::class, 'overlay'])->whereNumber('app')->middleware('throttle:30,1')->name('apps.overlay');
         Route::post('apps/{app}/rotate', [Developer\DeveloperPortalController::class, 'rotate'])->whereNumber('app')->middleware('throttle:10,1')->name('apps.rotate');
         Route::post('apps/{app}/personal-token', [Developer\DeveloperPortalController::class, 'personal'])->whereNumber('app')->middleware('throttle:10,1')->name('apps.personal');
@@ -1181,6 +1184,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     // Налаштування → Підключені застосунки.
     Route::get('settings/connected-apps', [Developer\ConnectedAppsController::class, 'index'])->name('connected-apps.index');
     Route::delete('settings/connected-apps/{app}', [Developer\ConnectedAppsController::class, 'destroy'])->whereNumber('app')->name('connected-apps.destroy');
+    Route::put('settings/connected-apps/{app}/overlay', [Developer\ConnectedAppsController::class, 'overlay'])->whereNumber('app')->name('connected-apps.overlay');
     Route::get('alerts', [AirAlertController::class, 'index'])->name('alerts.index');
     Route::get('alerts/state', [AirAlertController::class, 'state'])->middleware('throttle:120,1')->name('alerts.state');
     Route::put('alerts/preferences', [AirAlertController::class, 'preferences'])->middleware('throttle:30,1')->name('alerts.preferences');
