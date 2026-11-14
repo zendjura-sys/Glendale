@@ -38,6 +38,7 @@ use App\Http\Controllers\CrosspostController;
 use App\Http\Controllers\Developer\ConnectedAppsController;
 use App\Http\Controllers\Developer\DeveloperApiController;
 use App\Http\Controllers\Developer\EmbedKitController;
+use App\Http\Controllers\Developer\SdkApiController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\Families;
 use App\Http\Controllers\FeedController;
@@ -164,6 +165,17 @@ Route::prefix('developer/v1')->group(function () {
         Route::put('me/status', [DeveloperApiController::class, 'status'])->middleware('oauth:status');
         Route::delete('me/status', [DeveloperApiController::class, 'clearStatus'])->middleware('oauth:status');
         Route::get('me/notifications', [DeveloperApiController::class, 'notifications'])->middleware('oauth:notifications');
+        // GameCon SDK для ігор і застосунків.
+        Route::post('voice/rooms/{key}/join', [SdkApiController::class, 'voiceJoin'])->middleware(['oauth:voice', 'throttle:60,1']);
+        Route::get('chat/conversations', [SdkApiController::class, 'conversations'])->middleware('oauth:chat');
+        Route::get('chat/conversations/{conversation}/messages', [SdkApiController::class, 'messages'])->whereNumber('conversation')->middleware('oauth:chat');
+        Route::post('chat/conversations/{conversation}/messages', [SdkApiController::class, 'send'])->whereNumber('conversation')->middleware(['oauth:chat', 'throttle:30,1']);
+        Route::post('chat/direct/{username}', [SdkApiController::class, 'direct'])->middleware(['oauth:chat', 'throttle:20,1']);
+        Route::get('groups', [SdkApiController::class, 'groups'])->middleware('oauth:groups');
+        Route::get('groups/clans/{clan}/members', [SdkApiController::class, 'clanMembers'])->whereNumber('clan')->middleware('oauth:groups');
+        Route::post('groups/clans/{clan}/members/{member}', [SdkApiController::class, 'clanManage'])->whereNumber(['clan', 'member'])->middleware(['oauth:groups:manage', 'throttle:30,1']);
+        Route::get('music/now', [SdkApiController::class, 'nowPlaying'])->middleware('oauth:music');
+        Route::post('music/command', [SdkApiController::class, 'musicCommand'])->middleware(['oauth:music', 'throttle:60,1']);
     });
     Route::middleware('appkey')->prefix('public')->group(function () {
         Route::get('app', [DeveloperApiController::class, 'app']);
