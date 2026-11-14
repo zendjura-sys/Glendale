@@ -6,6 +6,7 @@ use App\Models\PushDevice;
 use App\Models\User;
 use App\Models\WebPushSubscription;
 use App\Services\Push\FcmClient;
+use App\Services\Push\PushStats;
 use App\Services\Push\WebPush;
 use App\Support\I18n\Locales;
 use App\Support\I18n\Translations;
@@ -50,6 +51,8 @@ class SendPushNotification implements ShouldQueue
         // Застаріле термінове сповіщення (тривога, відбій) не надсилаємо «заднім числом».
         $expires = $this->data['expires_at'] ?? null;
         if (is_string($expires) && is_numeric($expires) && (int) $expires < now()->getTimestamp()) {
+            PushStats::hit('app', 'expired', $this->kind());
+
             return;
         }
 
@@ -78,6 +81,11 @@ class SendPushNotification implements ShouldQueue
                     FcmClient::SENT => $device->forceFill(['last_used_at' => now()])->saveQuietly(),
                     default => null,
                 };
+                PushStats::hit('app', match ($result) {
+                    FcmClient::SENT => 'sent',
+                    FcmClient::GONE => 'gone',
+                    default => 'failed',
+                }, $this->kind());
             });
     }
 
@@ -97,6 +105,16 @@ class SendPushNotification implements ShouldQueue
                     WebPush::SENT => $subscription->forceFill(['last_used_at' => now()])->saveQuietly(),
                     default => null,
                 };
+                PushStats::hit('web', match ($result) {
+                    WebPush::SENT => 'sent',
+                    WebPush::GONE => 'gone',
+                    default => 'failed',
+                }, $this->kind());
             });
+    }
+
+    private function kind(): string
+    {
+        return (string) ($this->data['kind'] ?? $this->data['type'] ?? 'other');
     }
 }

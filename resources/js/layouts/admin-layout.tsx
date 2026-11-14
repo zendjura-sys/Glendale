@@ -53,6 +53,7 @@ import {
     Swords,
     Siren,
     Code2,
+    BellRing,
 } from 'lucide-react';
 import { AnimatePresence, m, useReducedMotion } from 'motion/react';
 import { useEffect, useState } from 'react';
@@ -263,6 +264,11 @@ function groups(): { title: string; items: Item[] }[] {
                     label: tr('Тривоги'),
                     href: '/admin/alerts',
                     icon: Siren,
+                },
+                {
+                    label: tr('Доставка пушів'),
+                    href: '/admin/push-stats',
+                    icon: BellRing,
                 },
                 {
                     label: tr('Швидкість'),

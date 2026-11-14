@@ -1451,6 +1451,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::get('vitals', [Admin\VitalsController::class, 'index'])->name('vitals.index');
         Route::get('alerts', [Admin\AlertsController::class, 'index'])->name('alerts.index');
         Route::get('developer-apps', [Admin\DeveloperAppsController::class, 'index'])->name('developer-apps.index');
+        Route::get('push-stats', [Admin\PushStatsController::class, 'index'])->name('push-stats.index');
         Route::post('developer-apps/{app}/block', [Admin\DeveloperAppsController::class, 'block'])->whereNumber('app')->name('developer-apps.block');
         Route::post('alerts/check', [Admin\AlertsController::class, 'check'])->middleware('throttle:10,1')->name('alerts.check');
         Route::post('alerts/webhook', [Admin\AlertsController::class, 'webhook'])->middleware('throttle:10,1')->name('alerts.webhook');
