@@ -503,7 +503,9 @@ class Sdk {
                 };
             }>('overlay/prefs');
             this.playerCan = r.data.allowed;
-            if (!r.data.enabled) this.disabled = true;
+            // Після входу головне — акаунт: увімкнули знову в налаштуваннях GameCon — знімаємо локальне «вимкнено».
+            this.disabled = !r.data.enabled;
+            this.store('off', r.data.enabled ? null : '1');
             this.applyPrefs(Array.isArray(r.data.prefs) ? {} : r.data.prefs);
             this.store('prefs', JSON.stringify(this.prefs));
         } catch {

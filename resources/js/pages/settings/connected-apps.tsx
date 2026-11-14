@@ -1,5 +1,6 @@
 import { Head, router } from '@inertiajs/react';
-import { AppWindow, Code2 } from 'lucide-react';
+import { AppWindow, Code2, Layers } from 'lucide-react';
+import { Toggle } from '@/components/gc/admin';
 import { SettingsCard } from '@/layouts/settings/layout';
 import { timeAgo } from '@/lib/format';
 import { tr } from '@/lib/i18n';
@@ -11,6 +12,8 @@ type ConnectedApp = {
     scope_labels: string[];
     since: string | null;
     last_used_at: string | null;
+    /** Оверлей GameCon SDK у цій грі (гравець вирішує завжди). */
+    overlay: boolean;
 };
 
 /** Налаштування → Застосунки: кому дано доступ через «Увійти через GameCon». */
@@ -28,6 +31,13 @@ export default function ConnectedApps({ apps }: { apps: ConnectedApp[] }) {
             preserveScroll: true,
         });
     };
+
+    const overlay = (app: ConnectedApp, enabled: boolean) =>
+        router.put(
+            `/settings/connected-apps/${app.id}/overlay`,
+            { enabled },
+            { preserveScroll: true },
+        );
 
     return (
         <>
@@ -69,6 +79,22 @@ export default function ConnectedApps({ apps }: { apps: ConnectedApp[] }) {
                                             .map((s) => tr(s))
                                             .join(' · ')}
                                     </p>
+                                </div>
+                                <div className="flex w-full min-w-0 items-center gap-3 rounded-xl bg-white/[0.03] px-3 py-2 sm:order-last">
+                                    <Layers className="size-4 shrink-0 text-white/50" />
+                                    <span className="min-w-0 flex-1 text-sm text-white/75">
+                                        {tr('Оверлей GameCon у цій грі')}
+                                        <span className="block text-xs text-white/40">
+                                            {tr(
+                                                'Друзі, чат і голос поверх гри. Вимкнений — гра працює як раніше.',
+                                            )}
+                                        </span>
+                                    </span>
+                                    <Toggle
+                                        checked={app.overlay}
+                                        onChange={(v) => overlay(app, v)}
+                                        label={tr('Оверлей GameCon у цій грі')}
+                                    />
                                 </div>
                                 <button
                                     type="button"

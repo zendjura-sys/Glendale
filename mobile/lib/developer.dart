@@ -55,6 +55,20 @@ class _ConnectedAppsScreenState extends State<ConnectedAppsScreen> {
     }
   }
 
+  /// Оверлей GameCon SDK у цій грі: гравець вимикає чи вмикає сам, гра підхопить при запуску.
+  Future<void> _overlay(Map<String, dynamic> app, bool enabled) async {
+    setState(() => app['overlay'] = enabled);
+    try {
+      final d = await AppScope.read(context).session.api.put(Api.site('/settings/connected-apps/${app['id']}/overlay'), {'enabled': enabled});
+      if (mounted && d['apps'] is List) setState(() => apps = maps(d['apps']));
+    } catch (e) {
+      if (mounted) {
+        setState(() => app['overlay'] = !enabled);
+        toast(context, e);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final list = apps;
@@ -79,6 +93,13 @@ class _ConnectedAppsScreenState extends State<ConnectedAppsScreen> {
                       Text(text(app['name']) ?? '', style: body(15, weight: FontWeight.w700)),
                       const SizedBox(height: 4),
                       Text((app['scope_labels'] is List ? (app['scope_labels'] as List) : const []).map((s) => tr('$s')).join(' · '), style: body(12.5, color: muted)),
+                      const SizedBox(height: 8),
+                      Row(children: [
+                        Icon(LucideIcons.layers, size: 16, color: muted),
+                        const SizedBox(width: 8),
+                        Expanded(child: Text(tr('Оверлей GameCon у цій грі'), style: body(13.5))),
+                        GcSwitch(value: app['overlay'] != false, onChanged: (v) => _overlay(app, v)),
+                      ]),
                     ]),
                   ),
                   TextButton(onPressed: () => _disconnect(app), child: Text(tr('Відключити'), style: body(13, color: dangerSoft))),

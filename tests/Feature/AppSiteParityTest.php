@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Jobs\BuildDataExport;
 use App\Models\Community;
+use App\Models\DeveloperApp;
 use App\Models\Friendship;
 use App\Models\Game;
 use App\Models\GameConfig;
@@ -25,6 +26,7 @@ use App\Models\User;
 use App\Models\VideoBackground;
 use App\Services\Auth\ApiTokens;
 use App\Services\CommunityService;
+use App\Services\Developer\OAuthServer;
 use App\Services\Families\FamilyService;
 use App\Services\FriendshipService;
 use App\Services\Messenger;
@@ -59,6 +61,16 @@ class AppSiteParityTest extends TestCase
         $token = $this->app_token(User::factory()->create());
         $this->withToken($token)->getJson('/api/v1/site/developers/sdk')->assertOk()
             ->assertJsonPath('defaults.layout', 'custom')->assertJsonStructure(['script', 'overlay', 'sections', 'scopes', 'endpoints' => ['device', 'link']]);
+    }
+
+    public function test_app_toggles_game_overlay(): void
+    {
+        $user = User::factory()->create();
+        $app = DeveloperApp::query()->create(['user_id' => $user->id, 'name' => 'Гра', 'client_id' => 'gc_t', 'public_key' => 'pk_t', 'confidential' => false, 'redirect_uris' => ['game://cb'], 'scopes' => ['profile']]);
+        app(OAuthServer::class)->personalToken($app, $user, ['profile']);
+        $token = $this->app_token($user);
+        $this->withToken($token)->getJson('/api/v1/site/settings/connected-apps')->assertOk()->assertJsonPath('apps.0.overlay', true);
+        $this->withToken($token)->putJson("/api/v1/site/settings/connected-apps/{$app->id}/overlay", ['enabled' => false])->assertOk()->assertJsonPath('apps.0.overlay', false);
     }
 
     public function test_app_reaches_air_alerts(): void
