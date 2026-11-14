@@ -9,6 +9,7 @@ import {
     Mail,
     RotateCcw,
     ShieldCheck,
+    Smartphone,
     Tag,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -94,7 +95,7 @@ export function SiteFooter({
         },
     ];
     const button =
-        'flex min-h-11 w-full items-center gap-2.5 rounded-xl bg-white/[0.04] px-3 text-left text-[13px] font-medium text-white/80 ring-1 ring-white/[0.07] transition ring-inset hover:bg-white/[0.08] hover:text-white active:scale-[0.98] [html[data-theme=light]_&]:bg-black/[0.03] [html[data-theme=light]_&]:ring-black/[0.06]';
+        'flex min-h-11 w-full items-center gap-2.5 rounded-xl bg-white/[0.04] px-3 text-left text-[13px] font-medium text-white/80 transition hover:bg-white/[0.08] hover:text-white active:scale-[0.98] [html[data-theme=light]_&]:bg-black/[0.04]';
 
     return (
         <footer
@@ -104,16 +105,24 @@ export function SiteFooter({
             )}
         >
             <div className="mx-auto max-w-3xl">
-                <div className="flex items-center gap-2.5">
-                    <LogoMark className="size-8 rounded-lg" />
-                    <div className="min-w-0">
-                        <p className="font-display text-sm font-bold text-white">
+                {/* Бренд: знак без важкого світіння, назва й підпис одним блоком; праворуч — застосунок. */}
+                <div className="flex items-center gap-3">
+                    <LogoMark className="size-11 drop-shadow-[0_2px_8px_rgb(0_150_255/0.22)]" />
+                    <div className="min-w-0 flex-1 leading-tight">
+                        <p className="font-display text-[15px] font-bold tracking-tight text-white">
                             {name || 'GameCon'}
                         </p>
-                        <p className="text-xs text-white/45">
+                        <p className="mt-0.5 text-xs text-white/50">
                             {tr('Соцмережа для геймерів')}
                         </p>
                     </div>
+                    <Link
+                        href="/app"
+                        className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-white/[0.05] px-3 text-xs font-semibold text-white/80 transition hover:bg-white/[0.1] hover:text-white [html[data-theme=light]_&]:bg-black/[0.04]"
+                    >
+                        <Smartphone className="size-3.5 text-primary" />
+                        {tr('Застосунок')}
+                    </Link>
                 </div>
 
                 {/* Дві колонки навіть на телефоні: ліве вирівнювання, рядки по 40 px — легко влучити пальцем. */}
@@ -165,8 +174,8 @@ export function SiteFooter({
                 </nav>
 
                 <div className="mt-5 border-t border-white/[0.07] pt-4">
-                    <PaymentBadges className="gap-1.5 [&>li]:h-7 [&>li]:min-w-10 [&>li]:px-2" />
-                    <p className="mt-3 text-xs text-white/40">
+                    <PaymentBadges className="justify-center gap-1.5 [&>li]:h-7 [&>li]:min-w-10 [&>li]:px-2" />
+                    <p className="mt-3 text-center text-xs text-white/40">
                         © {footer.year} {name || 'GameCon'}. {t.rights}
                     </p>
                 </div>
