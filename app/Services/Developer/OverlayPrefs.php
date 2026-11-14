@@ -44,11 +44,18 @@ class OverlayPrefs
         $p = (array) ($input['prefs'] ?? []);
         $corner = fn ($v) => in_array($v, ['top-left', 'top-right', 'bottom-left', 'bottom-right'], true) ? $v : null;
         if (in_array('move', $can, true) && isset($p['positions']) && is_array($p['positions'])) {
-            $prefs['positions'] = array_filter(array_map($corner, array_intersect_key($p['positions'], array_flip(['hud', 'party', 'family']))));
+            $prefs['positions'] = array_filter(array_map($corner, array_intersect_key($p['positions'], array_flip(['hud', 'family', ...DeveloperApp::OVERLAY_SECTIONS]))));
         }
         if (in_array('modules', $can, true)) {
             if (isset($p['modules']) && is_array($p['modules'])) {
                 $prefs['modules'] = array_values(array_intersect(DeveloperApp::OVERLAY_MODULES, $p['modules']));
+            }
+            // Розділи одним вікном чи окремо — теж «що видно», тож за тим самим дозволом.
+            if (isset($p['layout']) && in_array($p['layout'], ['unified', 'separate', 'custom'], true)) {
+                $prefs['layout'] = $p['layout'];
+            }
+            if (isset($p['windows']) && is_array($p['windows'])) {
+                $prefs['windows'] = array_values(array_intersect(DeveloperApp::OVERLAY_SECTIONS, $p['windows']));
             }
             if (isset($p['preset']) && (array_key_exists($p['preset'], self::PRESETS) || $p['preset'] === 'custom')) {
                 $prefs['preset'] = $p['preset'];

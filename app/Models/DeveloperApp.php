@@ -48,6 +48,9 @@ class DeveloperApp extends Model
 
     public const OVERLAY_PLATFORMS = ['pc', 'console', 'mobile', 'deck'];
 
+    /** Розділи оверлею: вкладка єдиного вікна або окреме вікно. */
+    public const OVERLAY_SECTIONS = ['friends', 'party', 'chat', 'voice', 'groups', 'music', 'achievements', 'game'];
+
     /** Оверлей «з коробки» — якщо розробник нічого не змінював. */
     public const OVERLAY_DEFAULTS = [
         'enabled' => true,
@@ -69,6 +72,9 @@ class DeveloperApp extends Model
         // Розкладка: які модулі й де (кути капсули й карток).
         'modules' => ['hud', 'drop', 'chat'],
         'positions' => ['hud' => 'top-right', 'party' => 'bottom-left', 'family' => 'top-left'],
+        // Розділи одним вікном (unified), кожен окремо (separate) чи на вибір (custom + windows).
+        'layout' => 'custom',
+        'windows' => ['party', 'groups', 'chat'],
         // Профілі за контекстом гри (setContext): які модулі видно в меню, лобі й матчі.
         'contexts' => ['menu' => ['hud', 'drop', 'party', 'family', 'chat'], 'lobby' => ['hud', 'drop', 'party', 'chat'], 'match' => ['hud', 'drop']],
         'platforms' => ['pc' => true, 'console' => true, 'mobile' => true, 'deck' => true],

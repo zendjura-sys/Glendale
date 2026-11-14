@@ -98,14 +98,16 @@ class DeveloperPortalController extends Controller
             'modules' => ['present', 'array'],
             'modules.*' => [Rule::in(DeveloperApp::OVERLAY_MODULES)],
             'positions' => ['required', 'array'],
+            'positions.*' => [$corner],
             'positions.hud' => ['required', $corner],
-            'positions.party' => ['required', $corner],
-            'positions.family' => ['required', $corner],
+            'layout' => ['required', Rule::in(['unified', 'separate', 'custom'])],
+            'windows' => ['present', 'array'],
+            'windows.*' => [Rule::in(DeveloperApp::OVERLAY_SECTIONS)],
             'contexts' => ['required', 'array'],
             'contexts.menu' => ['present', 'array'],
             'contexts.lobby' => ['present', 'array'],
             'contexts.match' => ['present', 'array'],
-            'contexts.*.*' => [Rule::in(DeveloperApp::OVERLAY_MODULES)],
+            'contexts.*.*' => [Rule::in([...DeveloperApp::OVERLAY_MODULES, ...DeveloperApp::OVERLAY_SECTIONS])],
             'platforms' => ['required', 'array'],
             'platforms.*' => ['boolean'],
             'player_can' => ['present', 'array'],
@@ -125,7 +127,9 @@ class DeveloperPortalController extends Controller
         $order = fn (array $list, array $all) => array_values(array_intersect($all, $list));
         $data['tabs'] = $order($data['tabs'], DeveloperApp::OVERLAY_TABS);
         $data['modules'] = $order($data['modules'], DeveloperApp::OVERLAY_MODULES);
-        $data['contexts'] = array_map(fn ($l) => $order($l, DeveloperApp::OVERLAY_MODULES), array_intersect_key($data['contexts'], array_flip(['menu', 'lobby', 'match'])));
+        $data['windows'] = $order($data['windows'], DeveloperApp::OVERLAY_SECTIONS);
+        $data['positions'] = array_intersect_key($data['positions'], array_flip(['hud', 'family', ...DeveloperApp::OVERLAY_SECTIONS]));
+        $data['contexts'] = array_map(fn ($l) => $order($l, array_values(array_unique([...DeveloperApp::OVERLAY_MODULES, ...DeveloperApp::OVERLAY_SECTIONS]))), array_intersect_key($data['contexts'], array_flip(['menu', 'lobby', 'match'])));
         $data['platforms'] = array_map('boolval', array_intersect_key($data['platforms'], array_flip(DeveloperApp::OVERLAY_PLATFORMS))) + array_fill_keys(DeveloperApp::OVERLAY_PLATFORMS, false);
         $data['custom_items'] = array_values(array_filter(array_map(fn ($i) => ['label' => $i['label'], 'url' => $i['url'] ?? null, 'command' => $i['command'] ?? null], $data['custom_items']), fn ($i) => $i['url'] || $i['command']));
         $app->update(['overlay_draft' => $data]);

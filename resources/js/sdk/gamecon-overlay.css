@@ -600,3 +600,135 @@ button.gc-sdk-slot {
 .gc-sdk-viewport .gc-sdk-toast:not([data-in]) {
     opacity: 0 !important;
 }
+
+/* ───────── Стопки в кутах: капсула й окремі вікна не перекривають одне одного ───────── */
+.gc-sdk-stack {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    /* Кожна стопка — не вище за пів екрана: верхня й нижня ніколи не зійдуться */
+    max-height: calc(50% - 18px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: none;
+    zoom: var(--gc-scale, 1);
+}
+.gc-sdk-stack::-webkit-scrollbar {
+    display: none;
+}
+.gc-sdk-stack[data-corner^='bottom'] {
+    flex-direction: column-reverse;
+}
+.gc-sdk-stack[data-corner$='right'] {
+    align-items: flex-end;
+}
+.gc-sdk-stack > .gc-sdk-card,
+.gc-sdk-stack > .gc-sdk-pill {
+    position: relative;
+    inset: auto;
+    flex-shrink: 0;
+}
+.gc-sdk-panel,
+.gc-sdk-drawer,
+.gc-sdk-welcome {
+    zoom: var(--gc-scale, 1);
+}
+.gc-sdk-card .gc-sdk-list {
+    max-height: 260px;
+}
+
+/* ───────── Шестерня ───────── */
+.gc-sdk-seg {
+    display: flex;
+    gap: 2px;
+    padding: 2px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.06);
+}
+.gc-sdk-seg button {
+    flex: 1;
+    padding: 6px 4px;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--gc-sub);
+    font: inherit;
+    font-size: 11px;
+    cursor: pointer;
+}
+.gc-sdk-seg button[aria-pressed='true'] {
+    background: rgba(255, 255, 255, 0.16);
+    color: var(--gc-ink);
+}
+.gc-sdk-switch {
+    position: relative;
+    width: 30px;
+    height: 18px;
+    flex-shrink: 0;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.16);
+    transition: background-color 0.2s ease;
+}
+.gc-sdk-switch::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 14px;
+    height: 14px;
+    border-radius: 999px;
+    background: #fff;
+    transition: transform 0.22s var(--gc-ease);
+}
+.gc-sdk-switch[data-on='1'] {
+    background: var(--gc-accent);
+}
+.gc-sdk-switch[data-on='1']::after {
+    transform: translateX(12px);
+}
+.gc-sdk-range input {
+    width: 110px;
+    accent-color: var(--gc-accent);
+}
+.gc-sdk-btn-sm {
+    height: 26px;
+    padding: 0 9px;
+    font-size: 11px;
+}
+.gc-sdk-btn-ghost {
+    background: transparent;
+    border-color: rgba(255, 255, 255, 0.12);
+}
+
+/* ───────── Привітання при першому запуску ───────── */
+.gc-sdk-welcome {
+    position: absolute;
+    left: 50%;
+    bottom: 24px;
+    width: min(440px, calc(100% - 24px));
+    transform: translateX(-50%);
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* ───────── Режим стрімера: ніки, повідомлення й коди входу не видно на трансляції ───────── */
+.gc-sdk-streamer .gc-sdk-name,
+.gc-sdk-streamer .gc-sdk-bubble,
+.gc-sdk-streamer .gc-sdk-secret,
+.gc-sdk-streamer .gc-sdk-avatar {
+    filter: blur(6px);
+}
+.gc-sdk-streamer .gc-sdk-name:hover,
+.gc-sdk-streamer .gc-sdk-bubble:hover {
+    filter: none;
+}
+/* Стопка вища за пів екрана прокручується — край м’яко згасає, а не ріже картку */
+.gc-sdk-stack[data-corner^='top'] {
+    mask-image: linear-gradient(to bottom, #000 calc(100% - 28px), transparent);
+}
+.gc-sdk-stack[data-corner^='bottom'] {
+    mask-image: linear-gradient(to top, #000 calc(100% - 28px), transparent);
+}

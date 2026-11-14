@@ -14,11 +14,16 @@ type Corner = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
 type ModuleKey = 'hud' | 'party' | 'chat' | 'family' | 'drop';
 type TabKey =
     | 'friends'
+    | 'party'
     | 'chat'
     | 'voice'
     | 'groups'
     | 'music'
     | 'achievements';
+/** Розділ: вкладка єдиного вікна або окреме вікно; game — свої пункти гри, settings — шестерня. */
+type Section = TabKey | 'game' | 'settings';
+/** unified — усе одним вікном; separate — кожен розділ окремо; custom — на вибір. */
+type Layout = 'unified' | 'separate' | 'custom';
 
 export type GameConOptions = {
     clientId?: string;
@@ -54,6 +59,27 @@ export type GameConOptions = {
     scopes?: string[];
     /** Брати вигляд із порталу розробника (типово так). */
     remoteConfig?: boolean;
+    /** Розділи одним вікном чи окремо (типово — як у порталі). */
+    layout?: Layout;
+    /** Для layout 'custom': які розділи — окремими вікнами. */
+    windows?: Section[];
+    /** Платформа (типово визначається сама): розробник може вимкнути оверлей для неї в порталі. */
+    platform?: 'pc' | 'console' | 'mobile' | 'deck';
+    /** Профілі за контекстом гри: які модулі видно в меню, лобі й матчі. */
+    contexts?: Partial<Record<'menu' | 'lobby' | 'match', ModuleKey[]>>;
+    /** Свої пункти гри в панелі: посилання або команда в гру (подія command). */
+    customItems?: {
+        label: string;
+        url?: string | null;
+        command?: string | null;
+    }[];
+    /** Привітання при першому запуску й підказка хоткея (перші 3 запуски). */
+    onboarding?: boolean;
+    hotkeyHint?: boolean;
+    /** Режим стрімера: ховати ніки, повідомлення й коди входу. */
+    streamer?: boolean;
+    /** Масштаб віджетів, 80–130 %. */
+    scale?: number;
     onReady?: (sdk: Sdk) => void;
     onLogin?: (user: User) => void;
     onEvent?: (name: string, data?: unknown) => void;
@@ -119,6 +145,12 @@ const ICONS: Record<string, string> = {
     crown: '<path d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z"/><path d="M5 21h14"/>',
     wallet: '<path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/>',
     grip: '<circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/>',
+    swords: '<polyline points="14.5 17.5 3 6 3 3 6 3 17.5 14.5"/><line x1="13" x2="19" y1="19" y2="13"/><line x1="16" x2="20" y1="16" y2="20"/><line x1="19" x2="21" y1="21" y2="19"/><polyline points="14.5 6.5 18 3 21 3 21 6 17.5 9.5"/><line x1="5" x2="9" y1="14" y2="18"/><line x1="7" x2="4" y1="17" y2="20"/><line x1="3" x2="5" y1="19" y2="21"/>',
+    settings:
+        '<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>',
+    external:
+        '<path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3"/>',
+    dock: '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="m9 15 3-3 3 3"/>',
     bell: '<path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/>',
 };
 const icon = (name: string) =>
@@ -143,22 +175,61 @@ const initials = (name: string) =>
         .slice(0, 2)
         .toUpperCase();
 
-const TAB_ICONS: Record<TabKey, string> = {
+const SECTION_ICONS: Record<Section, string> = {
     friends: 'users',
+    party: 'swords',
     chat: 'chat',
     voice: 'mic',
     groups: 'shield',
     music: 'music',
     achievements: 'trophy',
+    game: 'gamepad',
+    settings: 'settings',
 };
-const TAB_LABELS: Record<TabKey, string> = {
+const SECTION_LABELS: Record<Section, string> = {
     friends: 'Друзі',
+    party: 'Паті',
     chat: 'Чат',
     voice: 'Голос',
     groups: 'Сім’я й клан',
     music: 'Музика',
     achievements: 'Досягнення',
+    game: 'Гра',
+    settings: 'Налаштування',
 };
+/** Старі назви модулів (party/family/chat) ↔ розділи. */
+const SECTION_MODULE: Partial<Record<Section, string>> = {
+    party: 'party',
+    groups: 'family',
+    chat: 'chat',
+};
+const DEFAULT_CORNER: Partial<Record<Section, Corner>> = {
+    friends: 'top-left',
+    groups: 'top-right',
+    party: 'bottom-left',
+    voice: 'bottom-right',
+    achievements: 'top-right',
+    music: 'bottom-right',
+    game: 'bottom-right',
+};
+const PRESETS: Record<string, ModuleKey[]> = {
+    minimal: ['drop'],
+    standard: ['hud', 'drop', 'chat'],
+    full: ['hud', 'drop', 'chat', 'party', 'family'],
+};
+
+/** ПК, консоль, телефон чи Steam Deck — розробник може вимкнути оверлей для будь-якої. */
+function detectPlatform(): 'pc' | 'console' | 'mobile' | 'deck' {
+    const ua = navigator.userAgent;
+    if (/PlayStation|Xbox|Nintendo/i.test(ua)) return 'console';
+    if (
+        /SteamDeck|Steam Deck/i.test(ua) ||
+        (/Linux/.test(ua) && screen.width === 1280 && screen.height === 800)
+    )
+        return 'deck';
+    if (/Android|iPhone|iPad|Mobile/i.test(ua)) return 'mobile';
+    return 'pc';
+}
 
 // ───────── Демо-дані (пісочниця) ─────────
 const DEMO = {
@@ -253,31 +324,34 @@ const DEMO = {
 // ───────── Сам SDK ─────────
 class Sdk {
     readonly version = '1.0.0';
-    private o: Required<
-        Omit<
-            GameConOptions,
-            | 'clientId'
-            | 'token'
-            | 'root'
-            | 'logo'
-            | 'title'
-            | 'redirectUri'
-            | 'onReady'
-            | 'onLogin'
-            | 'onEvent'
-            | 'position'
-            | 'hotkeys'
-        >
-    > &
-        GameConOptions & {
-            position: Record<'hud' | 'party' | 'family', Corner>;
-            hotkeys: { toggle: string; chat: string };
-        };
+    private o: GameConOptions & {
+        base: string;
+        demo: boolean;
+        locale: string;
+        modules: ModuleKey[];
+        side: 'left' | 'right' | 'top';
+        offset: number;
+        theme: 'dark' | 'light' | 'auto';
+        radius: number;
+        density: number;
+        accent: string;
+        tabs: TabKey[];
+        toasts: Corner | 'top' | 'off';
+        gamepad: boolean;
+        swipe: boolean;
+        hideWhenBusy: boolean;
+        draggable: boolean;
+        blur: boolean | 'auto';
+        scopes: string[];
+        remoteConfig: boolean;
+        position: Record<string, Corner>;
+        hotkeys: { toggle: string; chat: string };
+    };
     private vp!: HTMLDivElement;
     private token: string | null = null;
     private refresh: string | null = null;
     user: User | null = null;
-    private tab: TabKey = 'friends';
+    private tab: Section = 'friends';
     private open = false;
     private chatOpen = false;
     private conv: number | null = null;
@@ -347,6 +421,13 @@ class Sdk {
         if (!this.o.demo && this.o.clientId && this.o.remoteConfig) {
             await this.loadRemote();
         }
+        // Розробник вимкнув оверлей для цієї платформи — SDK працює лише як API.
+        if (this.platforms[this.o.platform ?? detectPlatform()] === false)
+            this.disabled = true;
+        if (this.read('off') === '1') this.disabled = true;
+        this.applyPrefs(
+            JSON.parse(this.read('prefs') ?? '{}') as Record<string, unknown>,
+        );
         this.mount();
         this.bindKeys();
         if (this.o.demo) {
@@ -355,9 +436,17 @@ class Sdk {
             this.restore();
             await this.finishRedirect();
             if (this.token) await this.loadUser();
+            if (this.user) await this.syncPrefs();
         }
+        this.welcome =
+            !this.o.demo &&
+            !this.user &&
+            !this.disabled &&
+            this.o.onboarding !== false &&
+            this.read('welcomed') !== '1';
         this.render();
         if (this.user) this.poll();
+        this.hint();
         this.o.onReady?.(this);
         this.emit('ready');
         return this;
@@ -367,6 +456,135 @@ class Sdk {
         this.timers.forEach((t) => clearInterval(t));
         this.cleanup.forEach((f) => f());
         this.vp?.remove();
+    }
+
+    /** Профіль за контекстом гри: 'menu' | 'lobby' | 'match' (модулі — з порталу розробника). */
+    setContext(ctx: 'menu' | 'lobby' | 'match' | null): void {
+        this.context = ctx;
+        this.render();
+        this.emit('context', ctx);
+    }
+
+    /** Модулі з урахуванням вибору гравця, пресета й контексту. */
+    private modules(): Set<ModuleKey> {
+        if (this.disabled) return new Set();
+        const preset = this.prefs.preset as string | undefined;
+        let list: ModuleKey[] =
+            preset && preset !== 'custom' && PRESETS[preset]
+                ? PRESETS[preset]
+                : ((this.prefs.modules as ModuleKey[] | undefined) ??
+                  this.o.modules);
+        const ctx = this.context ? this.o.contexts?.[this.context] : undefined;
+        if (ctx) list = list.filter((m) => ctx.includes(m));
+        return new Set(list);
+    }
+
+    private applyPrefs(p: Record<string, unknown>) {
+        this.prefs = p ?? {};
+        if (p.positions) Object.assign(this.o.position, p.positions);
+        if (typeof p.hotkey === 'string') this.o.hotkeys.toggle = p.hotkey;
+        if (typeof p.chat_hotkey === 'string')
+            this.o.hotkeys.chat = p.chat_hotkey;
+        if (typeof p.gamepad === 'boolean') this.o.gamepad = p.gamepad;
+        if (typeof p.density === 'number') this.o.density = p.density;
+        if (typeof p.scale === 'number') this.o.scale = p.scale;
+        if (typeof p.streamer === 'boolean') this.o.streamer = p.streamer;
+        if (this.vp) this.applyVars();
+    }
+
+    /** Налаштування гравця з акаунта GameCon (синхронізація між пристроями). */
+    private async syncPrefs() {
+        try {
+            const r = await this.api<{
+                data: {
+                    enabled: boolean;
+                    prefs: Record<string, unknown>;
+                    allowed: string[];
+                };
+            }>('overlay/prefs');
+            this.playerCan = r.data.allowed;
+            if (!r.data.enabled) this.disabled = true;
+            this.applyPrefs(Array.isArray(r.data.prefs) ? {} : r.data.prefs);
+            this.store('prefs', JSON.stringify(this.prefs));
+        } catch {
+            /* без мережі — локальна копія */
+        }
+    }
+
+    /** Зберегти налаштування гравця: одразу локально, на сервер — з паузою. */
+    savePrefs(patch: Record<string, unknown>, enabled?: boolean): void {
+        this.applyPrefs({ ...this.prefs, ...patch });
+        this.store('prefs', JSON.stringify(this.prefs));
+        this.render();
+        if (this.o.demo || !this.user) return;
+        clearTimeout(this.saveTimer);
+        this.saveTimer = window.setTimeout(() => {
+            void this.api('overlay/prefs', {
+                method: 'PUT',
+                body: JSON.stringify({
+                    prefs: this.prefs,
+                    ...(enabled === undefined ? {} : { enabled }),
+                }),
+            }).catch(() => undefined);
+        }, 600);
+    }
+
+    /** «Скинути до варіанта гри». */
+    async resetPrefs(): Promise<void> {
+        this.prefs = {};
+        this.store('prefs', null);
+        if (!this.o.demo && this.user)
+            await this.api('overlay/prefs', { method: 'DELETE' }).catch(
+                () => undefined,
+            );
+        location.reload();
+    }
+
+    /** Вимкнути оверлей у цій грі (гравець). Увімкнути знову — у налаштуваннях GameCon чи гри. */
+    disable(): void {
+        this.disabled = true;
+        this.open = this.chatOpen = false;
+        this.store('off', '1');
+        if (!this.o.demo && this.user)
+            void this.api('overlay/prefs', {
+                method: 'PUT',
+                body: JSON.stringify({ enabled: false }),
+            }).catch(() => undefined);
+        this.render();
+        this.emit('disabled');
+    }
+    enable(): void {
+        this.disabled = false;
+        this.store('off', null);
+        if (!this.o.demo && this.user)
+            void this.api('overlay/prefs', {
+                method: 'PUT',
+                body: JSON.stringify({ enabled: true }),
+            }).catch(() => undefined);
+        this.render();
+        this.emit('enabled');
+    }
+    get isEnabled(): boolean {
+        return !this.disabled;
+    }
+
+    /** Підказка хоткея — перші 3 запуски. */
+    private hint() {
+        if (this.disabled || this.o.hotkeyHint === false || this.o.demo) return;
+        const n = Number(this.read('hints') ?? '0');
+        if (n >= 3) return;
+        this.store('hints', String(n + 1));
+        setTimeout(
+            () =>
+                this.toast(
+                    tr('{key} — відкрити GameCon', {
+                        key: this.o.hotkeys.toggle,
+                    }),
+                    undefined,
+                    'gamepad',
+                ),
+            1500,
+        );
     }
 
     /** Змінити налаштування на льоту (пісочниця, гра в рантаймі). */
@@ -746,6 +964,35 @@ class Sdk {
             }
             if (c.hotkey && !this.given.hotkeys)
                 this.o.hotkeys.toggle = String(c.hotkey);
+            if (c.chat_hotkey && !this.given.hotkeys)
+                this.o.hotkeys.chat = String(c.chat_hotkey);
+            if (Array.isArray(c.modules) && !this.given.modules)
+                this.o.modules = c.modules as ModuleKey[];
+            if (c.positions && !this.given.position)
+                Object.assign(this.o.position, c.positions);
+            if (c.contexts && !this.given.contexts)
+                this.o.contexts = c.contexts as GameConOptions['contexts'];
+            if (Array.isArray(c.custom_items) && !this.given.customItems)
+                this.o.customItems =
+                    c.custom_items as GameConOptions['customItems'];
+            if (
+                typeof c.onboarding === 'boolean' &&
+                !('onboarding' in this.given)
+            )
+                this.o.onboarding = c.onboarding;
+            if (
+                typeof c.hotkey_hint === 'boolean' &&
+                !('hotkeyHint' in this.given)
+            )
+                this.o.hotkeyHint = c.hotkey_hint;
+            if (typeof c.layout === 'string' && !this.given.layout)
+                this.o.layout = c.layout as Layout;
+            if (Array.isArray(c.windows) && !this.given.windows)
+                this.o.windows = c.windows as Section[];
+            if (Array.isArray(c.player_can))
+                this.playerCan = c.player_can as string[];
+            if (c.platforms && typeof c.platforms === 'object')
+                this.platforms = c.platforms as Record<string, boolean>;
             if (c.enabled === false && !this.given.modules)
                 this.o.modules = this.o.modules.filter((m) => m !== 'drop');
         } catch {
@@ -753,6 +1000,20 @@ class Sdk {
         }
     }
     private given: Partial<GameConOptions> = {};
+    /** Оверлей вимкнено: гравцем, розробником для цієї платформи або в привітанні. */
+    private disabled = false;
+    private context: 'menu' | 'lobby' | 'match' | null = null;
+    private playerCan: string[] = [
+        'move',
+        'modules',
+        'hotkeys',
+        'density',
+        'disable',
+    ];
+    private prefs: Record<string, unknown> = {};
+    private platforms: Record<string, boolean> = {};
+    private welcome = false;
+    private saveTimer = 0;
 
     // ── Дані ──
     private friends: Friend[] = [];
@@ -906,6 +1167,11 @@ class Sdk {
         this.vp.classList.toggle('gc-sdk-no-blur', noBlur);
         this.applyVars();
         this.vp.addEventListener('click', (e) => this.onClick(e));
+        this.vp.addEventListener('change', (e) => {
+            const input = e.target as HTMLInputElement;
+            if (input.dataset.pref)
+                this.savePrefs({ [input.dataset.pref]: Number(input.value) });
+        });
         this.vp.addEventListener('submit', (e) => {
             e.preventDefault();
             const input = (e.target as HTMLFormElement).querySelector('input');
@@ -919,6 +1185,10 @@ class Sdk {
         const s = this.vp.style;
         s.setProperty('--gc-accent', this.o.accent);
         s.setProperty('--gc-radius', `${this.o.radius}px`);
+        s.setProperty(
+            '--gc-scale',
+            String(Math.min(130, Math.max(80, this.o.scale ?? 100)) / 100),
+        );
         const a = Math.min(100, Math.max(60, this.o.density)) / 100;
         s.setProperty('--gc-glass-active', `rgba(16, 18, 24, ${a})`);
         s.setProperty(
@@ -937,21 +1207,81 @@ class Sdk {
         return `${v}:${gap}px;${h}:${gap}px;`;
     }
 
+    // ── Розмітка: вкладки в одному вікні або окремі вікна ──
+
+    /** Розділи, доступні в цій грі. */
+    private sections(): Section[] {
+        const list: Section[] = [...this.o.tabs];
+        if (!list.includes('party')) list.splice(1, 0, 'party');
+        if (this.o.customItems?.length) list.push('game');
+        return list;
+    }
+
+    /** Які розділи — окремими вікнами (решта — вкладками єдиного вікна). */
+    private windows(): Section[] {
+        const layout =
+            (this.prefs.layout as Layout | undefined) ??
+            this.o.layout ??
+            'custom';
+        const all = this.sections();
+        let list: Section[];
+        if (layout === 'unified') list = [];
+        else if (layout === 'separate') list = all;
+        else {
+            const legacy: Section[] = [];
+            if (this.o.modules.includes('party')) legacy.push('party');
+            if (this.o.modules.includes('family')) legacy.push('groups');
+            if (this.o.modules.includes('chat')) legacy.push('chat');
+            list = (
+                (this.prefs.windows as Section[] | undefined) ??
+                this.o.windows ??
+                legacy
+            ).filter((s) => all.includes(s));
+        }
+        // Профіль контексту (меню/лобі/матч) ховає зайві окремі вікна.
+        const ctx = this.context ? this.o.contexts?.[this.context] : undefined;
+        if (ctx)
+            list = list.filter(
+                (s) =>
+                    ctx.includes(s as ModuleKey) ||
+                    ctx.includes(SECTION_MODULE[s] as ModuleKey),
+            );
+        return this.disabled ? [] : list;
+    }
+
     private render() {
         if (!this.vp) return;
-        const m = new Set(this.o.modules);
+        const m = this.modules();
+        const wins = this.user || this.o.demo ? this.windows() : [];
+        this.vp.classList.toggle('gc-sdk-streamer', !!this.o.streamer);
         this.vp.dataset.panel = this.open && m.has('drop') ? '1' : '0';
         this.vp.dataset.hudCorner = m.has('hud') ? this.o.position.hud : '';
         const keep =
             this.vp.querySelector<HTMLInputElement>('.gc-sdk-input input')
                 ?.value ?? '';
         const parts: string[] = [];
-        if (m.has('hud')) parts.push(this.hud());
-        if (m.has('party') && this.user) parts.push(this.partyCard());
-        if (m.has('family') && this.user && this.family)
-            parts.push(this.familyCard());
+        // Кути екрана — стопки: капсула першою, далі окремі вікна; нічого не перекривається.
+        const stacks: Record<Corner, string[]> = {
+            'top-left': [],
+            'top-right': [],
+            'bottom-left': [],
+            'bottom-right': [],
+        };
+        if (m.has('hud'))
+            stacks[this.o.position.hud ?? 'top-right'].push(this.hud());
+        for (const s of wins) {
+            if (s === 'chat') continue;
+            stacks[this.cornerOf(s)].push(this.windowCard(s));
+        }
+        for (const [corner, items] of Object.entries(stacks)) {
+            if (items.length)
+                parts.push(
+                    `<div class="gc-sdk-stack" data-corner="${corner}" style="${this.corner(corner as Corner)}">${items.join('')}</div>`,
+                );
+        }
         if (m.has('drop')) parts.push(this.drop());
-        if (m.has('chat') || m.has('drop')) parts.push(this.drawer());
+        if (wins.includes('chat') || m.has('chat')) parts.push(this.drawer());
+        if (this.welcome) parts.push(this.welcomeCard());
         const tp = this.o.toasts === 'off' ? 'top-right' : this.o.toasts;
         const toastPos =
             tp === 'top'
@@ -974,57 +1304,62 @@ class Sdk {
             '.gc-sdk-input input',
         );
         if (input && keep) input.value = keep;
-        if (this.o.draggable) this.enableDrag();
-        const list = this.vp.querySelector('.gc-sdk-messages');
-        if (list) list.scrollTop = list.scrollHeight;
+        if (this.o.draggable || this.playerCan.includes('move'))
+            this.enableDrag();
+        this.vp
+            .querySelectorAll('.gc-sdk-messages')
+            .forEach((l) => (l.scrollTop = l.scrollHeight));
+    }
+
+    private cornerOf(s: Section): Corner {
+        const p = this.o.position as Record<string, Corner | undefined>;
+        return (
+            p[s] ??
+            p[SECTION_MODULE[s] ?? ''] ??
+            DEFAULT_CORNER[s] ??
+            'top-left'
+        );
     }
 
     private avatar(name: string, url: string | null, online?: boolean) {
         return `<span class="gc-sdk-avatar" data-online="${online ? 1 : 0}" ${url ? `style="background-image:url('${esc(url)}')"` : ''}>${url ? '' : esc(initials(name))}</span>`;
     }
+    private logo() {
+        return this.o.logo
+            ? `<span class="gc-sdk-logo" style="background-image:url('${esc(this.o.logo)}')"></span>`
+            : '<span class="gc-sdk-logo">G</span>';
+    }
 
     private hud() {
         const online = this.friends.filter((f) => f.online).length;
-        const logo = this.o.logo
-            ? `<span class="gc-sdk-logo" style="background-image:url('${esc(this.o.logo)}')"></span>`
-            : '<span class="gc-sdk-logo">G</span>';
         const voice = this.party.length
             ? `<span class="gc-sdk-row gc-sdk-live">${icon('mic')}<span>${this.party.length}</span></span><span class="gc-sdk-sep"></span>`
             : '';
         const who = this.user
             ? `<span class="gc-sdk-row">${icon('users')}<span>${tr('{n} онлайн', { n: online })}</span></span><span class="gc-sdk-sep"></span>${voice}`
             : `<span class="gc-sdk-row">${icon('login')}<span>${tr('Увійти')}</span></span><span class="gc-sdk-sep"></span>`;
-        return `<button type="button" data-act="toggle" class="gc-sdk-pill gc-sdk-frosted-glass gc-sdk-interactive" data-w="hud" style="${this.corner(this.o.position.hud)}" aria-label="GameCon">${logo}${who}<span class="gc-sdk-kbd">${esc(this.o.hotkeys.toggle)}</span></button>`;
+        return `<button type="button" data-act="toggle" class="gc-sdk-pill gc-sdk-frosted-glass gc-sdk-interactive" data-w="hud" aria-label="GameCon">${this.logo()}${who}<span class="gc-sdk-kbd">${esc(this.o.hotkeys.toggle)}</span></button>`;
     }
 
-    private partyCard() {
-        const rows = this.party
-            .map(
-                (p) =>
-                    `<div class="gc-sdk-slot">${this.avatar(p.name, p.avatar, p.online)}<span class="gc-sdk-grow gc-sdk-title">${esc(p.name)}</span><span class="${p.mic === 'speaking' ? 'gc-sdk-live' : 'gc-sdk-mute'}">${icon(p.mic === 'off' ? 'micOff' : 'mic')}</span></div>`,
-            )
-            .join('');
-        return `<section class="gc-sdk-card gc-sdk-frosted-glass gc-sdk-interactive" data-w="party" style="${this.corner(this.o.position.party)}">
-<div class="gc-sdk-card-head">${icon('users')}<span class="gc-sdk-grow gc-sdk-title">${tr('Моє паті')}</span><span class="gc-sdk-sub">${tr('{n} у голосі', { n: this.party.length })}</span></div>
-<div class="gc-sdk-list">${rows || `<div class="gc-sdk-sub">${tr('Покличте друзів із вкладки «Друзі»')}</div>`}</div>
-<button type="button" class="gc-sdk-btn" data-act="ready" aria-pressed="${this.ready ? 'true' : 'false'}">${icon('gamepad')}${tr('Готовий грати')}</button></section>`;
-    }
-    private ready = false;
-
-    private familyCard() {
-        const f = this.family!;
-        const money = (n: number) => '$' + n.toLocaleString(this.o.locale);
-        const rows = f.members
-            .slice(0, 6)
-            .map(
-                (p) =>
-                    `<div class="gc-sdk-slot">${this.avatar(p.name, p.avatar, p.online)}<span class="gc-sdk-grow"><span class="gc-sdk-title" style="display:block">${esc(p.name)}</span><span class="gc-sdk-sub">${esc(p.rank ?? '')}</span></span></div>`,
-            )
-            .join('');
-        return `<section class="gc-sdk-card gc-sdk-frosted-glass gc-sdk-interactive" data-w="family" style="${this.corner(this.o.position.family)}">
-<div class="gc-sdk-card-head">${icon('crown')}<span class="gc-sdk-grow gc-sdk-title">${esc(f.name)} <span class="gc-sdk-sub">[${esc(f.tag)}]</span></span><span class="gc-sdk-sub">${tr('{n} онлайн', { n: f.online })}</span></div>
-<div class="gc-sdk-stats"><div class="gc-sdk-slot gc-sdk-stat"><span class="gc-sdk-sub">${tr('Казна штабу')}</span><b>${money(f.treasury)}</b></div><div class="gc-sdk-slot gc-sdk-stat"><span class="gc-sdk-sub">${tr('Мій баланс')}</span><b>${money(f.my_balance)}</b></div></div>
-<div class="gc-sdk-list">${rows}</div></section>`;
+    /** Окреме вікно розділу: той самий вміст, що й вкладка, у власній скляній картці. */
+    private windowCard(s: Section) {
+        const title =
+            s === 'groups' && this.family
+                ? `${esc(this.family.name)} <span class="gc-sdk-sub">[${esc(this.family.tag)}]</span>`
+                : esc(tr(SECTION_LABELS[s]));
+        const meta =
+            s === 'party'
+                ? tr('{n} у голосі', { n: this.party.length })
+                : s === 'groups' && this.family
+                  ? tr('{n} онлайн', { n: this.family.online })
+                  : s === 'friends'
+                    ? tr('{n} онлайн', {
+                          n: this.friends.filter((f) => f.online).length,
+                      })
+                    : '';
+        return `<section class="gc-sdk-card gc-sdk-frosted-glass gc-sdk-interactive" data-w="${s}" aria-label="${esc(tr(SECTION_LABELS[s]))}">
+<div class="gc-sdk-card-head">${icon(s === 'groups' ? 'crown' : SECTION_ICONS[s])}<span class="gc-sdk-grow gc-sdk-title">${title}</span><span class="gc-sdk-sub">${meta}</span><button type="button" class="gc-sdk-icon-btn" data-act="dock" data-s="${s}" title="${tr('У спільне вікно')}" aria-label="${tr('У спільне вікно')}">${icon('dock')}</button></div>
+<div class="gc-sdk-list">${this.sectionBody(s)}</div></section>`;
     }
 
     private drop() {
@@ -1041,98 +1376,213 @@ class Sdk {
                 : (side === 'left') !== this.open
                   ? 'right'
                   : 'left';
-        const panelPos =
-            side === 'top'
-                ? `left:${this.o.offset}%;`
-                : `top:${this.o.offset}%;`;
         return `<button type="button" data-act="toggle" class="gc-sdk-drop gc-sdk-frosted-glass gc-sdk-interactive" data-side="${side}" style="${pos}" aria-expanded="${this.open}" aria-label="${tr('Відкрити GameCon')}">${icon(arrow)}</button>
-<section class="gc-sdk-panel gc-sdk-frosted-glass" data-side="${side}" data-open="${this.open ? 1 : 0}" style="${panelPos}" role="dialog" aria-label="GameCon">${this.panelBody()}</section>`;
+<section class="gc-sdk-panel gc-sdk-frosted-glass" data-side="${side}" data-open="${this.open ? 1 : 0}" style="${pos}" role="dialog" aria-label="GameCon">${this.panelBody()}</section>`;
     }
 
     private panelBody() {
-        const head = `<div class="gc-sdk-row">${this.o.logo ? `<span class="gc-sdk-logo" style="background-image:url('${esc(this.o.logo)}')"></span>` : '<span class="gc-sdk-logo">G</span>'}<span class="gc-sdk-grow gc-sdk-title">${esc(this.o.title || 'GameCon')}</span><button type="button" class="gc-sdk-icon-btn" data-act="close" aria-label="${tr('Закрити')}">${icon('x')}</button></div>`;
+        const head = `<div class="gc-sdk-row">${this.logo()}<span class="gc-sdk-grow gc-sdk-title">${esc(this.o.title || 'GameCon')}</span><button type="button" class="gc-sdk-icon-btn" data-act="close" aria-label="${tr('Закрити')}">${icon('x')}</button></div>`;
         if (!this.user) return head + this.loginBody();
-        const tabs = this.o.tabs
+        const wins = this.windows();
+        const tabs: Section[] = [
+            ...this.sections().filter((s) => !wins.includes(s)),
+            'settings',
+        ];
+        if (!tabs.includes(this.tab)) this.tab = tabs[0];
+        const buttons = tabs
             .map(
                 (t) =>
-                    `<button type="button" class="gc-sdk-tab" role="tab" data-tab="${t}" aria-selected="${this.tab === t}" title="${esc(tr(TAB_LABELS[t]))}">${icon(TAB_ICONS[t])}</button>`,
+                    `<button type="button" class="gc-sdk-tab" role="tab" data-tab="${t}" aria-selected="${this.tab === t}" title="${esc(tr(SECTION_LABELS[t]))}" aria-label="${esc(tr(SECTION_LABELS[t]))}">${icon(SECTION_ICONS[t])}</button>`,
             )
             .join('');
-        return `${head}<div class="gc-sdk-tabs" role="tablist">${tabs}</div><div class="gc-sdk-body">${this.tabBody()}</div>`;
+        // Усе винесено окремими вікнами — у панелі лишається тільки шестерня, без смуги вкладок.
+        const bar =
+            tabs.length > 1
+                ? `<div class="gc-sdk-tabs" role="tablist">${buttons}</div>`
+                : '';
+        return `${head}${bar}<div class="gc-sdk-body">${this.sectionBody(this.tab)}</div>`;
     }
 
     private loginBody() {
         if (this.device) {
             return `<div class="gc-sdk-body" style="align-items:center;text-align:center;gap:10px">
-<img alt="" width="132" height="132" style="border-radius:14px;background:#fff;padding:6px" src="${esc(this.o.base)}/link/qr.svg?code=${encodeURIComponent(this.device.user_code)}">
+<img alt="" width="132" height="132" style="border-radius:14px;background:#fff;padding:6px" class="gc-sdk-secret" src="${esc(this.o.base)}/link/qr.svg?code=${encodeURIComponent(this.device.user_code)}">
 <div class="gc-sdk-sub">${tr('Скануйте QR у застосунку GameCon або відкрийте gamecon.online/link і введіть код')}</div>
-<div style="font:600 22px ui-monospace,monospace;letter-spacing:.2em">${esc(this.device.user_code)}</div></div>`;
+<div class="gc-sdk-secret" style="font:600 22px ui-monospace,monospace;letter-spacing:.2em">${esc(this.device.user_code)}</div></div>`;
         }
         return `<div class="gc-sdk-body" style="gap:10px"><div class="gc-sdk-sub">${tr('Увійдіть через GameCon, щоб бачити друзів, чат, голос і свою сім’ю просто в грі.')}</div>
 <button type="button" class="gc-sdk-btn" data-act="login">${icon('login')}${tr('Увійти через GameCon')}</button>
 <div class="gc-sdk-sub">${tr('Немає акаунта? Його можна створити за хвилину під час входу.')}</div></div>`;
     }
 
-    private tabBody(): string {
-        switch (this.tab) {
+    private memberRow(p: Member) {
+        return `<div class="gc-sdk-slot">${this.avatar(p.name, p.avatar, p.online)}<span class="gc-sdk-grow"><span class="gc-sdk-title gc-sdk-name" style="display:block">${esc(p.name)}</span>${p.rank ? `<span class="gc-sdk-sub">${esc(p.rank)}</span>` : ''}</span>${p.mic ? `<span class="${p.mic === 'speaking' ? 'gc-sdk-live' : 'gc-sdk-mute'}">${icon(p.mic === 'off' ? 'micOff' : 'mic')}</span>` : ''}</div>`;
+    }
+
+    /** Вміст розділу — однаковий у вкладці й в окремому вікні. */
+    private sectionBody(s: Section): string {
+        const money = (n: number) => '$' + n.toLocaleString(this.o.locale);
+        switch (s) {
             case 'friends':
                 return (
                     this.friends
                         .map(
                             (f) =>
-                                `<div class="gc-sdk-slot">${this.avatar(f.name, f.avatar_url, f.online)}<span class="gc-sdk-grow"><span class="gc-sdk-title" style="display:block">${esc(f.name)}</span><span class="gc-sdk-sub">${esc(f.presence?.status ?? (f.online ? tr('Онлайн') : tr('Не в мережі')))}</span></span>${f.online ? `<button type="button" class="gc-sdk-btn" style="height:26px;padding:0 9px;font-size:11px" data-act="invite" data-user="${esc(f.username)}">${tr('Покликати')}</button>` : ''}</div>`,
+                                `<div class="gc-sdk-slot">${this.avatar(f.name, f.avatar_url, f.online)}<span class="gc-sdk-grow"><span class="gc-sdk-title gc-sdk-name" style="display:block">${esc(f.name)}</span><span class="gc-sdk-sub">${esc(f.presence?.status ?? (f.online ? tr('Онлайн') : tr('Не в мережі')))}</span></span>${f.online ? `<button type="button" class="gc-sdk-btn gc-sdk-btn-sm" data-act="invite" data-user="${esc(f.username)}">${tr('Покликати')}</button>` : ''}</div>`,
                         )
                         .join('') ||
                     `<div class="gc-sdk-sub">${tr('Друзів поки немає')}</div>`
                 );
+            case 'party':
+                return `${this.party.map((p) => this.memberRow(p)).join('') || `<div class="gc-sdk-sub">${tr('Покличте друзів із вкладки «Друзі»')}</div>`}
+<button type="button" class="gc-sdk-btn" data-act="ready" aria-pressed="${this.ready ? 'true' : 'false'}">${icon('gamepad')}${tr('Готовий грати')}</button>`;
             case 'chat':
-                return this.convs
-                    .map(
-                        (c) =>
-                            `<button type="button" class="gc-sdk-slot" data-act="conv" data-id="${c.id}">${icon('chat')}<span class="gc-sdk-grow gc-sdk-title">${esc(c.title)}</span>${c.unread ? '<span class="gc-sdk-dot"></span>' : ''}</button>`,
-                    )
-                    .join('');
+                return this.chatBody(true);
             case 'voice':
                 return this.party.length
-                    ? this.party
-                          .map(
-                              (p) =>
-                                  `<div class="gc-sdk-slot">${this.avatar(p.name, p.avatar, p.online)}<span class="gc-sdk-grow gc-sdk-title">${esc(p.name)}</span><span class="${p.mic === 'speaking' ? 'gc-sdk-live' : 'gc-sdk-mute'}">${icon(p.mic === 'off' ? 'micOff' : 'mic')}</span></div>`,
-                          )
-                          .join('')
+                    ? this.party.map((p) => this.memberRow(p)).join('')
                     : `<div class="gc-sdk-sub">${tr('Голосовий канал порожній')}</div>`;
-            case 'groups':
-                return this.family
-                    ? `<div class="gc-sdk-slot">${icon('crown')}<span class="gc-sdk-grow gc-sdk-title">${esc(this.family.name)}</span><span class="gc-sdk-sub">${tr('{n} онлайн', { n: this.family.online })}</span></div><div class="gc-sdk-slot">${icon('wallet')}<span class="gc-sdk-grow">${tr('Казна штабу')}</span><b>$${this.family.treasury.toLocaleString(this.o.locale)}</b></div>`
-                    : `<div class="gc-sdk-sub">${tr('Ви ще не в сім’ї чи клані')}</div>`;
+            case 'groups': {
+                const f = this.family;
+                if (!f)
+                    return `<div class="gc-sdk-sub">${tr('Ви ще не в сім’ї чи клані')}</div>`;
+                return `<div class="gc-sdk-stats"><div class="gc-sdk-slot gc-sdk-stat"><span class="gc-sdk-sub">${tr('Казна штабу')}</span><b>${money(f.treasury)}</b></div><div class="gc-sdk-slot gc-sdk-stat"><span class="gc-sdk-sub">${tr('Мій баланс')}</span><b>${money(f.my_balance)}</b></div></div>${f.members
+                    .slice(0, 8)
+                    .map((p) => this.memberRow({ ...p, mic: undefined }))
+                    .join('')}`;
+            }
             case 'music':
                 return this.track
                     ? `<div class="gc-sdk-slot">${icon('music')}<span class="gc-sdk-grow"><span class="gc-sdk-title" style="display:block">${esc(this.track.title)}</span><span class="gc-sdk-sub">${esc(this.track.artist)}</span></span><button type="button" class="gc-sdk-icon-btn" data-act="music" data-cmd="${this.track.playing ? 'pause' : 'play'}" aria-label="${this.track.playing ? tr('Пауза') : tr('Грати')}">${icon(this.track.playing ? 'pause' : 'play')}</button><button type="button" class="gc-sdk-icon-btn" data-act="music" data-cmd="next" aria-label="${tr('Далі')}">${icon('next')}</button></div>`
                     : `<div class="gc-sdk-sub">${tr('Зараз нічого не грає')}</div>`;
             case 'achievements':
                 return `<div class="gc-sdk-slot">${icon('trophy')}<span class="gc-sdk-grow">${tr('Досягнення гри з’являться тут')}</span></div>`;
+            case 'game':
+                return (this.o.customItems ?? [])
+                    .map(
+                        (it, i) =>
+                            `<button type="button" class="gc-sdk-slot" data-act="item" data-i="${i}">${icon(it.url ? 'external' : 'gamepad')}<span class="gc-sdk-grow gc-sdk-title">${esc(it.label)}</span></button>`,
+                    )
+                    .join('');
+            case 'settings':
+                return this.settingsBody();
         }
         return '';
     }
 
-    private drawer() {
+    private chatBody(inline: boolean) {
         const chips = this.convs
             .map(
                 (c) =>
-                    `<button type="button" class="gc-sdk-chip" role="tab" data-act="conv" data-id="${c.id}" aria-selected="${c.id === this.conv}">${esc(c.title)}</button>`,
+                    `<button type="button" class="gc-sdk-chip" role="tab" data-act="conv" data-id="${c.id}" aria-selected="${c.id === this.conv}">${esc(c.title)}${c.unread ? ' <span class="gc-sdk-dot" style="display:inline-block"></span>' : ''}</button>`,
             )
             .join('');
         const msgs = this.msgs
             .map(
                 (m) =>
-                    `<div class="gc-sdk-bubble" data-mine="${m.mine ? 1 : 0}">${m.author && !m.mine ? `<div class="gc-sdk-sub">${esc(m.author)}</div>` : ''}${esc(m.body)}</div>`,
+                    `<div class="gc-sdk-bubble" data-mine="${m.mine ? 1 : 0}">${m.author && !m.mine ? `<div class="gc-sdk-sub gc-sdk-name">${esc(m.author)}</div>` : ''}${esc(m.body)}</div>`,
             )
             .join('');
+        return `<div class="gc-sdk-convs" role="tablist">${chips}</div><div class="gc-sdk-messages"${inline ? ' style="max-height:220px"' : ''}>${msgs || `<div class="gc-sdk-sub">${this.user ? tr('Повідомлень поки немає') : tr('Увійдіть, щоб писати друзям')}</div>`}</div>
+<form class="gc-sdk-input"><input placeholder="${tr('Повідомлення…')}" aria-label="${tr('Повідомлення…')}" ${this.user ? '' : 'disabled'}><button type="submit" class="gc-sdk-btn" aria-label="${tr('Надіслати')}" ${this.user ? '' : 'disabled'}>${icon('send')}</button></form>`;
+    }
+
+    private drawer() {
         return `<aside class="gc-sdk-drawer gc-sdk-frosted-glass ${this.chatOpen ? 'gc-sdk-interactive' : ''}" data-open="${this.chatOpen ? 1 : 0}" aria-hidden="${!this.chatOpen}">
 <div class="gc-sdk-row">${icon('chat')}<span class="gc-sdk-grow gc-sdk-title">${tr('Чат GameCon')}</span><span class="gc-sdk-kbd">${esc(this.o.hotkeys.chat)}</span><button type="button" class="gc-sdk-icon-btn" data-act="chat-close" aria-label="${tr('Закрити')}">${icon('x')}</button></div>
-<div class="gc-sdk-convs" role="tablist">${chips}</div><div class="gc-sdk-messages">${msgs || `<div class="gc-sdk-sub">${this.user ? tr('Повідомлень поки немає') : tr('Увійдіть, щоб писати друзям')}</div>`}</div>
-<form class="gc-sdk-input"><input placeholder="${tr('Повідомлення…')}" aria-label="${tr('Повідомлення…')}" ${this.user ? '' : 'disabled'}><button type="submit" class="gc-sdk-btn" aria-label="${tr('Надіслати')}" ${this.user ? '' : 'disabled'}>${icon('send')}</button></form></aside>`;
+${this.chatBody(false)}</aside>`;
     }
+
+    /** Шестерня: вигляд, пресети, щільність, масштаб, хоткей, режим стрімера, вимкнення. */
+    private settingsBody() {
+        const can = (k: string) => this.playerCan.includes(k);
+        const layout =
+            (this.prefs.layout as Layout | undefined) ??
+            this.o.layout ??
+            'custom';
+        const seg = (act: string, cur: string, opts: [string, string][]) =>
+            `<div class="gc-sdk-seg">${opts.map(([v, l]) => `<button type="button" data-act="${act}" data-v="${v}" aria-pressed="${cur === v}">${esc(l)}</button>`).join('')}</div>`;
+        const toggle = (act: string, on: boolean, label: string, extra = '') =>
+            `<button type="button" class="gc-sdk-slot" data-act="${act}" ${extra} aria-pressed="${on}"><span class="gc-sdk-grow">${esc(label)}</span><span class="gc-sdk-switch" data-on="${on ? 1 : 0}"></span></button>`;
+        const out: string[] = [];
+        if (can('modules')) {
+            out.push(
+                `<div class="gc-sdk-sub">${tr('Вигляд')}</div>`,
+                seg('layout', layout, [
+                    ['unified', tr('Одним вікном')],
+                    ['separate', tr('Окремими вікнами')],
+                    ['custom', tr('На вибір')],
+                ]),
+            );
+            if (layout === 'custom') {
+                const wins = this.windows();
+                this.sections().forEach((s) =>
+                    out.push(
+                        toggle(
+                            'win',
+                            wins.includes(s),
+                            tr('{name} — окремим вікном', {
+                                name: tr(SECTION_LABELS[s]),
+                            }),
+                            `data-s="${s}"`,
+                        ),
+                    ),
+                );
+            }
+            const preset =
+                (this.prefs.preset as string | undefined) ?? 'custom';
+            out.push(
+                `<div class="gc-sdk-sub">${tr('Набір віджетів')}</div>`,
+                seg('preset', preset, [
+                    ['minimal', tr('Мінімал')],
+                    ['standard', tr('Стандарт')],
+                    ['full', tr('Повний')],
+                    ['custom', tr('Свій')],
+                ]),
+            );
+        }
+        if (can('density')) {
+            out.push(
+                `<label class="gc-sdk-slot gc-sdk-range"><span class="gc-sdk-grow">${tr('Щільність скла')}</span><input type="range" min="60" max="100" value="${this.o.density}" data-pref="density" aria-label="${tr('Щільність скла')}"></label>`,
+                `<label class="gc-sdk-slot gc-sdk-range"><span class="gc-sdk-grow">${tr('Розмір')}</span><input type="range" min="80" max="130" step="5" value="${this.o.scale ?? 100}" data-pref="scale" aria-label="${tr('Розмір')}"></label>`,
+            );
+        }
+        if (can('hotkeys')) {
+            out.push(
+                `<button type="button" class="gc-sdk-slot" data-act="rebind" data-k="hotkey"><span class="gc-sdk-grow">${tr('Відкрити GameCon')}</span><span class="gc-sdk-kbd">${this.rebinding === 'hotkey' ? tr('Натисніть клавіші…') : esc(this.o.hotkeys.toggle)}</span></button>`,
+                `<button type="button" class="gc-sdk-slot" data-act="rebind" data-k="chat_hotkey"><span class="gc-sdk-grow">${tr('Чат')}</span><span class="gc-sdk-kbd">${this.rebinding === 'chat_hotkey' ? tr('Натисніть клавіші…') : esc(this.o.hotkeys.chat)}</span></button>`,
+                toggle(
+                    'gamepad',
+                    this.o.gamepad,
+                    tr('Кнопка «Додому» на геймпаді'),
+                ),
+            );
+        }
+        out.push(
+            toggle(
+                'streamer',
+                !!this.o.streamer,
+                tr('Режим стрімера: ховати ніки й повідомлення'),
+            ),
+        );
+        out.push(
+            `<button type="button" class="gc-sdk-slot" data-act="reset"><span class="gc-sdk-grow">${tr('Скинути до варіанта гри')}</span></button>`,
+        );
+        if (can('disable'))
+            out.push(
+                `<button type="button" class="gc-sdk-slot" data-act="disable"><span class="gc-sdk-grow">${tr('Вимкнути GameCon у цій грі')}</span></button>`,
+            );
+        return out.join('');
+    }
+
+    private welcomeCard() {
+        return `<section class="gc-sdk-welcome gc-sdk-frosted-glass gc-sdk-interactive" role="dialog" aria-label="GameCon">
+<div class="gc-sdk-row">${this.logo()}<div class="gc-sdk-grow"><div class="gc-sdk-title">${tr('«{game}» підтримує GameCon', { game: this.o.title || document.title || tr('Гра') })}</div><div class="gc-sdk-sub">${tr('Друзі, чат, голос і сім’я — просто в грі, без Alt+Tab.')}</div></div></div>
+<div class="gc-sdk-row" style="justify-content:flex-end;gap:6px"><button type="button" class="gc-sdk-btn gc-sdk-btn-ghost" data-act="welcome-off">${tr('Вимкнути')}</button><button type="button" class="gc-sdk-btn gc-sdk-btn-ghost" data-act="welcome-later">${tr('Не зараз')}</button><button type="button" class="gc-sdk-btn" data-act="welcome-login">${icon('login')}${tr('Увійти')}</button></div></section>`;
+    }
+
+    private rebinding: string | null = null;
+    private ready = false;
 
     private onClick(e: MouseEvent) {
         const el = (e.target as HTMLElement).closest<HTMLElement>(
@@ -1140,12 +1590,11 @@ class Sdk {
         );
         if (!el || this.dragged) return;
         if (el.dataset.tab) {
-            this.tab = el.dataset.tab as TabKey;
-            if (this.tab === 'chat' && this.o.modules.includes('chat'))
-                this.openChat(true);
+            this.tab = el.dataset.tab as Section;
             this.render();
             return;
         }
+        const wins = () => this.windows();
         switch (el.dataset.act) {
             case 'toggle':
                 if (
@@ -1177,7 +1626,9 @@ class Sdk {
             case 'conv':
                 this.conv = Number(el.dataset.id);
                 if (this.o.demo) this.msgs = DEMO.messages[this.conv] ?? [];
-                this.openChat(true);
+                // Чат окремим вікном — відкриваємо шторку; у спільному вікні — лишаємось у вкладці.
+                if (wins().includes('chat') || !this.open) this.openChat(true);
+                else this.render();
                 void this.loadMessages().then(() => this.render());
                 return;
             case 'music': {
@@ -1192,6 +1643,59 @@ class Sdk {
                     }).catch(() => undefined);
                 return;
             }
+            case 'item': {
+                const it = this.o.customItems?.[Number(el.dataset.i)];
+                if (it?.url) window.open(it.url, '_blank', 'noopener');
+                if (it?.command) this.emit('command', { command: it.command });
+                return;
+            }
+            case 'dock': {
+                // Окреме вікно → назад у спільне вікно (вкладкою).
+                const s = el.dataset.s as Section;
+                this.savePrefs({
+                    layout: 'custom',
+                    windows: wins().filter((w) => w !== s),
+                });
+                return;
+            }
+            case 'layout':
+                return this.savePrefs({ layout: el.dataset.v });
+            case 'win': {
+                const s = el.dataset.s as Section;
+                const cur = wins();
+                return this.savePrefs({
+                    layout: 'custom',
+                    windows: cur.includes(s)
+                        ? cur.filter((w) => w !== s)
+                        : [...cur, s],
+                });
+            }
+            case 'preset':
+                return this.savePrefs({ preset: el.dataset.v });
+            case 'gamepad':
+                return this.savePrefs({ gamepad: !this.o.gamepad });
+            case 'streamer':
+                return this.savePrefs({ streamer: !this.o.streamer });
+            case 'rebind':
+                this.rebinding = el.dataset.k ?? null;
+                this.render();
+                return;
+            case 'reset':
+                return void this.resetPrefs();
+            case 'disable':
+                return this.disable();
+            case 'welcome-login':
+                this.welcome = false;
+                this.store('welcomed', '1');
+                return void this.login();
+            case 'welcome-later':
+                this.welcome = false;
+                this.store('welcomed', '1');
+                return this.render();
+            case 'welcome-off':
+                this.welcome = false;
+                this.store('welcomed', '1');
+                return this.disable();
         }
     }
 
@@ -1211,6 +1715,26 @@ class Sdk {
             );
         };
         const onKey = (e: KeyboardEvent) => {
+            // Переназначення хоткея з шестерні: наступне сполучення клавіш.
+            if (this.rebinding) {
+                if (['Shift', 'Alt', 'Control', 'Meta'].includes(e.key)) return;
+                e.preventDefault();
+                const key = e.key.length === 1 ? e.key.toUpperCase() : e.key;
+                const combo = [
+                    e.ctrlKey && 'Ctrl',
+                    e.shiftKey && 'Shift',
+                    e.altKey && 'Alt',
+                    e.metaKey && 'Meta',
+                    key,
+                ]
+                    .filter(Boolean)
+                    .join('+');
+                const k = this.rebinding;
+                this.rebinding = null;
+                if (e.key !== 'Escape') this.savePrefs({ [k]: combo });
+                else this.render();
+                return;
+            }
             if (match(this.o.hotkeys.toggle, e)) {
                 e.preventDefault();
                 this.toggle();
@@ -1298,7 +1822,7 @@ class Sdk {
         this.cleanup.push(() => window.removeEventListener('message', onMsg));
     }
 
-    // ── Перетягування віджетів ──
+    // ── Перетягування вікон між кутами ──
     private dragged = false;
     private enableDrag() {
         this.vp.querySelectorAll<HTMLElement>('[data-w]').forEach((w) => {
@@ -1312,28 +1836,19 @@ class Sdk {
                 )
                     return;
                 const box = this.vp.getBoundingClientRect();
-                const r = w.getBoundingClientRect();
-                const ox = e.clientX - r.left;
-                const oy = e.clientY - r.top;
+                const sx = e.clientX;
+                const sy = e.clientY;
                 let moved = false;
                 w.classList.add('gc-sdk-dragging');
                 const move = (ev: PointerEvent) => {
+                    if (
+                        !moved &&
+                        Math.hypot(ev.clientX - sx, ev.clientY - sy) < 6
+                    )
+                        return;
                     moved = true;
-                    const x = Math.max(
-                        0,
-                        Math.min(
-                            box.width - r.width,
-                            ev.clientX - box.left - ox,
-                        ),
-                    );
-                    const y = Math.max(
-                        0,
-                        Math.min(
-                            box.height - r.height,
-                            ev.clientY - box.top - oy,
-                        ),
-                    );
-                    w.style.cssText += `left:${x}px;top:${y}px;right:auto;bottom:auto;`;
+                    w.style.transform = `translate(${ev.clientX - sx}px, ${ev.clientY - sy}px)`;
+                    w.style.zIndex = '3';
                 };
                 const up = (ev: PointerEvent) => {
                     window.removeEventListener('pointermove', move);
@@ -1342,7 +1857,7 @@ class Sdk {
                     if (!moved) return;
                     this.dragged = true;
                     setTimeout(() => (this.dragged = false), 0);
-                    // Прилипає до найближчого кута — так позиція переживає зміну розміру вікна.
+                    // Прилипає до найближчого кута — позиція переживає зміну розміру вікна.
                     const cx =
                         ev.clientX - box.left < box.width / 2
                             ? 'left'
@@ -1351,13 +1866,19 @@ class Sdk {
                         ev.clientY - box.top < box.height / 2
                             ? 'top'
                             : 'bottom';
-                    const key = w.dataset.w as 'hud' | 'party' | 'family';
-                    this.o.position[key] = `${cy}-${cx}` as Corner;
-                    this.emit('move', {
-                        widget: key,
-                        corner: this.o.position[key],
+                    const key = w.dataset.w ?? 'hud';
+                    const corner = `${cy}-${cx}` as Corner;
+                    this.o.position[key] = corner;
+                    this.emit('move', { widget: key, corner });
+                    this.savePrefs({
+                        positions: {
+                            ...((this.prefs.positions as Record<
+                                string,
+                                Corner
+                            >) ?? {}),
+                            [key]: corner,
+                        },
                     });
-                    this.render();
                 };
                 window.addEventListener('pointermove', move);
                 window.addEventListener('pointerup', up);

@@ -69,7 +69,7 @@ class SdkAssetsController extends Controller
             'clientId' => (string) $request->query('client_id', ''),
             'demo' => $request->boolean('demo'),
         ];
-        foreach (['side', 'theme', 'toasts', 'redirect_uri' => 'redirectUri', 'token'] as $from => $to) {
+        foreach (['side', 'theme', 'toasts', 'layout', 'redirect_uri' => 'redirectUri', 'token'] as $from => $to) {
             $from = is_int($from) ? $to : $from;
             if (is_string($request->query($from)) && $request->query($from) !== '') {
                 $opts[$to] = mb_substr((string) $request->query($from), 0, 500);
