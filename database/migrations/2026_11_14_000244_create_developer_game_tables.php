@@ -9,6 +9,13 @@ return new class extends Migration
     /** GameCon SDK: досягнення й таблиці лідерів ігор розробників. */
     public function up(): void
     {
+        // MariaDB не відкочує DDL: перший запуск на сервері впав на задовгому імені індексу
+        // (> 64 символів) і лишив порожні таблиці. Міграція тоді не записалась як виконана,
+        // тож прибираємо ці залишки й створюємо наново (даних у них бути не могло).
+        Schema::dropIfExists('developer_scores');
+        Schema::dropIfExists('developer_user_achievements');
+        Schema::dropIfExists('developer_achievements');
+
         Schema::create('developer_achievements', function (Blueprint $table) {
             $table->id();
             $table->foreignId('developer_app_id')->constrained()->cascadeOnDelete();
@@ -21,16 +28,16 @@ return new class extends Migration
             // Лише з сервера гри (за секретом застосунку) — клієнт не може відкрити сам.
             $table->boolean('server_only')->default(false);
             $table->timestamps();
-            $table->unique(['developer_app_id', 'key']);
+            $table->unique(['developer_app_id', 'key'], 'dev_ach_app_key_unique');
         });
         Schema::create('developer_user_achievements', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('developer_achievement_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('developer_achievement_id')->constrained('developer_achievements', 'id', 'dev_user_ach_ach_fk')->cascadeOnDelete();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->boolean('verified')->default(false);
             $table->timestamp('unlocked_at');
-            $table->unique(['developer_achievement_id', 'user_id']);
-            $table->index(['user_id', 'unlocked_at']);
+            $table->unique(['developer_achievement_id', 'user_id'], 'dev_user_ach_unique');
+            $table->index(['user_id', 'unlocked_at'], 'dev_user_ach_user_idx');
         });
         Schema::create('developer_scores', function (Blueprint $table) {
             $table->id();
@@ -40,8 +47,8 @@ return new class extends Migration
             $table->bigInteger('score');
             $table->boolean('verified')->default(false);
             $table->timestamps();
-            $table->unique(['developer_app_id', 'board', 'user_id']);
-            $table->index(['developer_app_id', 'board', 'score']);
+            $table->unique(['developer_app_id', 'board', 'user_id'], 'dev_scores_unique');
+            $table->index(['developer_app_id', 'board', 'score'], 'dev_scores_board_idx');
         });
     }
 

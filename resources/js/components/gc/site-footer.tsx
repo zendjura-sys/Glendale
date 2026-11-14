@@ -128,10 +128,10 @@ export function SiteFooter({
                 {/* Дві колонки навіть на телефоні: ліве вирівнювання, рядки по 40 px — легко влучити пальцем. */}
                 <nav
                     aria-label={tr('Посилання футера')}
-                    className="mt-5 grid grid-cols-2 gap-x-2 gap-y-4 sm:max-w-xl sm:gap-x-4"
+                    className="mt-5 grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-x-2 gap-y-4 sm:max-w-xl sm:gap-x-4"
                 >
                     {groups.map((group) => (
-                        <div key={group.title}>
+                        <div key={group.title} className="min-w-0">
                             <p className="mb-2 px-1 text-[11px] font-semibold text-white/40">
                                 {group.title}
                             </p>
