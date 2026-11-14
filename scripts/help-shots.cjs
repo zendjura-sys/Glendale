@@ -427,6 +427,30 @@ const SHOTS = [
         },
     },
     {
+        id: 'dev-sdk-settings',
+        url: '/developers/sdk',
+        device: PC,
+        prepare: async (p) => {
+            await p
+                .locator('[data-sdk="settings"]')
+                .first()
+                .scrollIntoViewIfNeeded();
+            await p.waitForTimeout(2500);
+        },
+        clip: (p) => p.locator('[data-sdk="settings"]').first(),
+        regions: {
+            code: (p) => p.locator('[data-sdk="settings"] pre').first(),
+            toggle: (p) =>
+                p
+                    .locator('[data-sdk="settings"] .gamecon-settings .row')
+                    .first(),
+            account: (p) =>
+                p
+                    .locator('[data-sdk="settings"] .gamecon-settings .row')
+                    .nth(1),
+        },
+    },
+    {
         id: 'dev-plugins',
         url: '/developers/plugins',
         device: PC,

@@ -10,11 +10,12 @@ import {
     Monitor,
     QrCode,
     Server,
+    SlidersHorizontal,
     Swords,
     UserCog,
 } from 'lucide-react';
 import { m, useReducedMotion } from 'motion/react';
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import {
     Chips,
@@ -69,6 +70,14 @@ export default function DeveloperSdk({
 }: Props) {
     const reduce = useReducedMotion();
     const sdk = useRef<SdkInstance | null>(null);
+    const [ready, setReady] = useState<SdkInstance | null>(null);
+    const settingsRef = useRef<HTMLDivElement>(null);
+    // Живий приклад рядка для меню налаштувань гри — від того самого SDK, що й пісочниця.
+    useEffect(() => {
+        if (!ready || !settingsRef.current) return;
+
+        return ready.mountSettings(settingsRef.current);
+    }, [ready]);
     const [layout, setLayout] = useState<'unified' | 'separate' | 'custom'>(
         'custom',
     );
@@ -205,7 +214,10 @@ window.postMessage({ target: 'gamecon-sdk', cmd: 'setBusy', args: [true] }, '*')
                     <SdkStage
                         options={options}
                         background={bg || null}
-                        onSdk={(s) => (sdk.current = s)}
+                        onSdk={(s) => {
+                            sdk.current = s;
+                            setReady(s);
+                        }}
                         className="aspect-[3/4] w-full sm:aspect-video"
                     />
                     <div className="grid min-w-0 gap-3 md:grid-cols-2">
@@ -361,6 +373,42 @@ window.postMessage({ target: 'gamecon-sdk', cmd: 'setBusy', args: [true] }, '*')
                             'Вигляд, розкладку й дозволи гравцю зручніше задати в порталі (Розробникам → застосунок → Оверлей): SDK підхопить їх сам, а значення з коду мають перевагу.',
                         )}
                     </p>
+                </section>
+
+                <section
+                    data-sdk="settings"
+                    className="gc-solid grid min-w-0 gap-4 rounded-2xl p-4 sm:p-5 lg:grid-cols-2"
+                >
+                    <div className="min-w-0 space-y-3">
+                        <h2 className="flex items-center gap-2 font-display text-lg font-bold text-white">
+                            <SlidersHorizontal className="size-5 text-primary" />
+                            {tr('Перемикач у налаштуваннях гри')}
+                        </h2>
+                        <p className="text-sm leading-relaxed text-white/60">
+                            {tr(
+                                'Готовий рядок для меню налаштувань вашої гри: гравець вмикає чи вимикає оверлей і бачить, яким акаунтом увійшов. Стилі гри його не зачіпають, вибір синхронізується з акаунтом GameCon.',
+                            )}
+                        </p>
+                        <pre className="gc-solid-2 overflow-auto rounded-xl p-3 font-mono text-xs leading-relaxed text-white/85">
+                            {`const sdk = await GameConSDK.init({ clientId: '…' });
+sdk.mountSettings(document.querySelector('#gamecon-row'));
+
+// CEF / iframe:
+overlay.postMessage({ target: 'gamecon-sdk', cmd: 'disable' }, '*');`}
+                        </pre>
+                    </div>
+                    <div className="min-w-0 rounded-xl bg-black/30 p-4 ring-1 ring-white/10">
+                        <p className="mb-2 text-xs font-medium text-white/45">
+                            {tr('Так це виглядає в меню гри')}
+                        </p>
+                        <div className="divide-y divide-white/[0.06] text-sm text-white/70">
+                            <p className="flex justify-between py-2.5">
+                                <span>{tr('Гучність')}</span>
+                                <span className="text-white/45">80 %</span>
+                            </p>
+                            <div ref={settingsRef} />
+                        </div>
+                    </div>
                 </section>
 
                 <section className="grid min-w-0 gap-3 md:grid-cols-3">

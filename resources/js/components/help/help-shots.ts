@@ -316,6 +316,32 @@ const HELP_SHOTS: Record<string, HelpShotMeta> = {
             }
         }
     },
+    "dev-sdk-settings": {
+        "src": "/images/help/dev-sdk-settings.webp",
+        "w": 1048,
+        "h": 306,
+        "phone": false,
+        "regions": {
+            "code": {
+                "x": 3.1,
+                "y": 49.8,
+                "w": 46.2,
+                "h": 39.7
+            },
+            "toggle": {
+                "x": 52.3,
+                "y": 37,
+                "w": 43.1,
+                "h": 18.7
+            },
+            "account": {
+                "x": 52.3,
+                "y": 55.6,
+                "w": 43.1,
+                "h": 15.6
+            }
+        }
+    },
     "games-pc": {
         "src": "/images/help/games-pc.webp",
         "w": 1440,

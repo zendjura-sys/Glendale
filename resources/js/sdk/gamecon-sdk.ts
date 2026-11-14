@@ -578,6 +578,60 @@ class Sdk {
         return !this.disabled;
     }
 
+    /**
+     * Готовий рядок для меню налаштувань самої гри: «Оверлей GameCon» з перемикачем і акаунт гравця.
+     * Малюється в Shadow DOM — стилі гри його не ламають. Повертає функцію, що прибирає рядок.
+     *   const off = sdk.mountSettings(document.querySelector('#settings-gamecon'));
+     */
+    mountSettings(
+        target: HTMLElement,
+        opts: { theme?: 'dark' | 'light' } = {},
+    ): () => void {
+        const host = document.createElement('div');
+        host.className = 'gamecon-settings';
+        const root = host.attachShadow({ mode: 'open' });
+        const light = opts.theme === 'light';
+        const fg = light ? '#11131a' : '#f4f6fb';
+        const sub = light ? 'rgba(17,19,26,.6)' : 'rgba(244,246,251,.6)';
+        const css = `:host{all:initial;display:block;font:14px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif;color:${fg}}
+.row{display:flex;align-items:center;gap:12px;padding:10px 0}
+.grow{flex:1;min-width:0}.t{font-weight:600}.s{color:${sub};font-size:12.5px}
+.sw{position:relative;width:44px;height:26px;border-radius:999px;border:0;cursor:pointer;background:${light ? 'rgba(17,19,26,.18)' : 'rgba(255,255,255,.18)'};transition:background .2s}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .2s}
+.sw[aria-checked="true"]{background:#5b6cff}.sw[aria-checked="true"]::after{transform:translateX(18px)}
+.sw:focus-visible,.link:focus-visible{outline:2px solid #5b6cff;outline-offset:2px}
+.link{border:0;background:none;color:#7c8bff;font:inherit;font-weight:600;cursor:pointer;padding:4px 0}
+@media (prefers-reduced-motion:reduce){.sw,.sw::after{transition:none}}`;
+        const draw = () => {
+            const on = !this.disabled;
+            const who = this.user
+                ? tr('Ви увійшли як @{name}', {
+                      name: this.user.preferred_username,
+                  })
+                : tr('Увійдіть, щоб бачити друзів, паті й чат');
+            root.innerHTML = `<style>${css}</style>
+<div class="row"><div class="grow"><div class="t">${esc(tr('Оверлей GameCon'))}</div><div class="s">${esc(tr('Друзі, паті й чат поверх гри'))}</div></div>
+<button type="button" class="sw" role="switch" aria-checked="${on}" aria-label="${esc(tr('Оверлей GameCon'))}"></button></div>
+<div class="row"><div class="grow s">${esc(who)}</div><button type="button" class="link">${esc(this.user ? tr('Вийти') : tr('Увійти'))}</button></div>`;
+            root.querySelector('.sw')?.addEventListener('click', () =>
+                on ? this.disable() : this.enable(),
+            );
+            root.querySelector('.link')?.addEventListener('click', () =>
+                this.user ? this.logout() : void this.login(),
+            );
+        };
+        draw();
+        target.appendChild(host);
+        const offs = ['enabled', 'disabled', 'login', 'logout'].map((e) =>
+            this.on(e, draw),
+        );
+
+        return () => {
+            offs.forEach((off) => off());
+            host.remove();
+        };
+    }
+
     /** Підказка хоткея — перші 3 запуски. */
     private hint() {
         if (this.disabled || this.o.hotkeyHint === false || this.o.demo) return;
@@ -1878,6 +1932,8 @@ ${this.chatBody(false)}</aside>`;
                     'login',
                     'logout',
                     'setPresence',
+                    'enable',
+                    'disable',
                 ].includes(d.cmd)
             ) {
                 (fn as (...a: unknown[]) => unknown).apply(this, d.args ?? []);

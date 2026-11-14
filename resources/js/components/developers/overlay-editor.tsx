@@ -84,6 +84,10 @@ export type SdkInstance = {
     setBusy: (on: boolean) => void;
     setContext: (ctx: 'menu' | 'lobby' | 'match' | null) => void;
     toast: (title: string, body?: string, icon?: string) => void;
+    mountSettings: (
+        target: HTMLElement,
+        opts?: { theme?: 'dark' | 'light' },
+    ) => () => void;
 };
 type SdkGlobal = { init: (o: Record<string, unknown>) => Promise<SdkInstance> };
 
