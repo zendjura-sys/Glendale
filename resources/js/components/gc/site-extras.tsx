@@ -1,5 +1,5 @@
-import { ModuleIcon } from '@/components/gc/module-icon';
-import { Link, router, useForm, usePage } from '@inertiajs/react';
+import { ModuleIcon } from "@/components/gc/module-icon";
+import { Link, router, useForm, usePage } from "@inertiajs/react";
 import {
     Bell,
     Clapperboard,
@@ -14,238 +14,262 @@ import {
     Phone,
     Sparkles,
     UsersRound,
-} from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
-import { useEffect, useState } from 'react';
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { useEffect, useState } from "react";
 import {
     Dialog,
     DialogContent,
     DialogDescription,
     DialogTitle,
-} from '@/components/ui/dialog';
-import { formatDate } from '@/lib/format';
-import { tr } from '@/lib/i18n';
-import { cn } from '@/lib/utils';
+} from "@/components/ui/dialog";
+import { formatDate } from "@/lib/format";
+import { tr } from "@/lib/i18n";
+import { cn } from "@/lib/utils";
 
 /** Останні оновлення сайту: нова версія — нова позначка в шапці. */
 const CHANGELOG = () => [
     {
-        version: '2026.11.06',
-        date: '2026-11-06',
+        version: "2026.11.14",
+        date: "2026-11-14",
         items: [
             tr(
-                'Мапа тривог (лише для України): тривоги за областями з таймерами й рухомі цілі з курсом і слідом.',
+                "«Вам сподобається» в «Кіно»: рекомендації за вашими оцінками й смаком схожих глядачів, з поясненням і кнопкою «Не цікаво».",
             ),
             tr(
-                'Фільтри шарів мапи, звук тривоги на сторінці й кнопка «В укритті» — статус бачать друзі.',
+                "Портал для розробників: власні застосунки, вхід через GameCon (OAuth 2.1 з PKCE), токени ботів і власний автентифікатор.",
             ),
             tr(
-                'Мітки цілей підтверджують кілька відкритих джерел; упевненість видно на мітці, перелік джерел — на сторінці.',
+                "Тривоги: віджет на головний екран, плитка «Я в укритті», укриття поруч і режим «Тиша» в іграх під час тривоги.",
+            ),
+            tr(
+                "Голосові повідомлення можна розшифрувати в текст одним натиском.",
+            ),
+            tr(
+                "«Граємо зараз»: друзі в тій самій грі й спільна голосова кімната.",
+            ),
+            tr(
+                "Новини й патчі ігор з вашої бібліотеки Steam та розумне групування сповіщень.",
             ),
         ],
     },
     {
-        version: '2026.11.01',
-        date: '2026-11-01',
+        version: "2026.11.06",
+        date: "2026-11-06",
         items: [
             tr(
-                '«Гра року» спільноти: голосування в грудні, підсумки з 1 січня й архів років — у каталозі ігор.',
+                "Мапа тривог (лише для України): тривоги за областями з таймерами й рухомі цілі з курсом і слідом.",
             ),
             tr(
-                'Гра з бажаного вийшла — прийде сповіщення; на сторінці гри, що ще не вийшла, видно відлік днів.',
+                "Фільтри шарів мапи, звук тривоги на сторінці й кнопка «В укритті» — статус бачать друзі.",
             ),
             tr(
-                'Ігрові ID у профілі: PSN, Xbox, Nintendo, Epic, Riot, Battle.net, EA й Ubisoft — з кнопкою «Копіювати».',
-            ),
-            tr(
-                'Добірки фільмів: збирайте тайтли кнопкою «У добірку», вподобайте й стежте за чужими.',
-            ),
-            tr(
-                'Рецензії на фільми й серіали зі спойлерами під розмиттям і стрічка рецензій друзів.',
-            ),
-            tr(
-                'Пісня профілю: трек з медіатеки на вашій сторінці — гості слухають натиском.',
-            ),
-            tr(
-                '«Що нового» — картками з прокруткою й історією попередніх оновлень.',
+                "Мітки цілей підтверджують кілька відкритих джерел; упевненість видно на мітці, перелік джерел — на сторінці.",
             ),
         ],
     },
     {
-        version: '2026.10.31',
-        date: '2026-10-31',
+        version: "2026.11.01",
+        date: "2026-11-01",
         items: [
             tr(
-                'Конфіги й приціли: діліться кодом прицілу, конфігом чи біндами до гри — інші копіюють одним дотиком.',
+                "«Гра року» спільноти: голосування в грудні, підсумки з 1 січня й архів років — у каталозі ігор.",
             ),
             tr(
-                'Ігровий вечір: покличте друзів, проголосуйте за час і гру — організатор призначає, усі отримують сповіщення.',
+                "Гра з бажаного вийшла — прийде сповіщення; на сторінці гри, що ще не вийшла, видно відлік днів.",
             ),
             tr(
-                'Серії записів: об’єднайте записи в «Гайд, частина 1…5» — читачі гортають частини по порядку.',
+                "Ігрові ID у профілі: PSN, Xbox, Nintendo, Epic, Riot, Battle.net, EA й Ubisoft — з кнопкою «Копіювати».",
             ),
             tr(
-                'Підлітковий режим: для 13–17 років особисті лише від друзів, без незнайомців у пошуку й без мату.',
+                "Добірки фільмів: збирайте тайтли кнопкою «У добірку», вподобайте й стежте за чужими.",
             ),
             tr(
-                'Сторінка статусу /status: чи все працює, збої й хід робіт; під час збою — банер над стрічкою.',
+                "Рецензії на фільми й серіали зі спойлерами під розмиттям і стрічка рецензій друзів.",
             ),
             tr(
-                'Посилання на профіль чи спільноту в месенджерах тепер показують картку з аватаром, ім’ям і описом.',
+                "Пісня профілю: трек з медіатеки на вашій сторінці — гості слухають натиском.",
             ),
             tr(
-                '«Що подивитися?» у «Кіно»: рулетка підбирає фільм, серіал чи аніме за типом, жанром і роком.',
-            ),
-            tr(
-                '«Вгадай пісню» в «Музиці» й вікторина дня про ігри — з таблицею найкращих за день.',
-            ),
-            tr(
-                'Ігровий щоденник: нотатки про ігри з настроєм і часом у грі; приватні або відкриті.',
-            ),
-            tr(
-                'Чати: гілки в групах, до 10 закріплених, особиста нотатка до бесіди й фото на один перегляд.',
-            ),
-            tr(
-                'Стікери спільноти: свій набір, який учасники надсилають у будь-якому чаті.',
-            ),
-            tr(
-                'Серія днів поспіль, «Цього дня» зі спогадами, карта гравців і святкові рамки аватара.',
-            ),
-            tr(
-                'Якщо розділ на техроботах, ви побачите пояснення команди замість помилки.',
-            ),
-            tr(
-                'Огляди гравців на сторінках ігор, стрічка трейлерів і «Гравець місяця» в кланах.',
-            ),
-            tr(
-                'Ctrl+K — палітра команд: розділи, дії й пошук з клавіатури. «Розділити екран» — чат чи музика поруч.',
-            ),
-            tr(
-                'Віджети біля стрічки тепер налаштовуються: які показувати й у якому порядку.',
+                "«Що нового» — картками з прокруткою й історією попередніх оновлень.",
             ),
         ],
     },
     {
-        version: '2026.10.27',
-        date: '2026-10-27',
+        version: "2026.10.31",
+        date: "2026-10-31",
         items: [
             tr(
-                'Голосові кімнати-«сцени»: слухачі піднімають руку, ведучий запрошує говорити.',
+                "Конфіги й приціли: діліться кодом прицілу, конфігом чи біндами до гри — інші копіюють одним дотиком.",
             ),
             tr(
-                'Автопостинг у Discord і Telegram, розклад стрімів на сторінці й анкета вступу до закритих спільнот.',
+                "Ігровий вечір: покличте друзів, проголосуйте за час і гру — організатор призначає, усі отримують сповіщення.",
             ),
             tr(
-                'Статистика автора, піксельний аватар, режим стримера й секретні досягнення — шукайте!',
-            ),
-            tr('Дошка ідей: пропонуйте, що додати, і голосуйте за чужі ідеї.'),
-        ],
-    },
-    {
-        version: '2026.10.16',
-        date: '2026-10-16',
-        items: [
-            tr(
-                'Оплата GameCon+ карткою через monobank: Visa, Mastercard, Apple Pay і Google Pay. Баланс прибрано — платите напряму, залишок старого балансу зарахується в наступну оплату.',
+                "Серії записів: об’єднайте записи в «Гайд, частина 1…5» — читачі гортають частини по порядку.",
             ),
             tr(
-                'Автопродовження збереженою карткою (вмикається лише за вашим вибором), подарунок GameCon+ другу, нові промокоди: знижка на підписку чи перший платіж, безкоштовні місяці.',
+                "Підлітковий режим: для 13–17 років особисті лише від друзів, без незнайомців у пошуку й без мату.",
             ),
             tr(
-                'Документи оновлено за законодавством України: публічна оферта, політика конфіденційності й повернення коштів.',
-            ),
-        ],
-    },
-    {
-        version: '2026.10.13',
-        date: '2026-10-13',
-        items: [
-            tr(
-                'Банка Monobank для сімей і спільнот: вставте посилання в налаштуваннях — на сторінці з’явиться картка «Підтримати» з прогресом збору.',
-            ),
-        ],
-    },
-    {
-        version: '2026.10.12',
-        date: '2026-10-12',
-        items: [
-            tr(
-                'GameCon+: значок і колір ніку, рамка й GIF-аватар, більше місця, підняття паті, стікери й реакції. Можна подарувати другу.',
+                "Сторінка статусу /status: чи все працює, збої й хід робіт; під час збою — банер над стрічкою.",
             ),
             tr(
-                'GameCon+ для сім’ї: виділена картка, власні кольори сторінки й до 20 голосових кімнат.',
+                "Посилання на профіль чи спільноту в месенджерах тепер показують картку з аватаром, ім’ям і описом.",
             ),
             tr(
-                'Просування серверів: місце в топі, виділена картка й банер із позначкою «Реклама».',
+                "«Що подивитися?» у «Кіно»: рулетка підбирає фільм, серіал чи аніме за типом, жанром і роком.",
             ),
             tr(
-                'Кіно: ще один вбудований плеєр, порядок і фільтри озвучок в адмінці, автопарсинг TMDB з автододаванням популярних тайтлів, посерійний вибір серій.',
+                "«Вгадай пісню» в «Музиці» й вікторина дня про ігри — з таблицею найкращих за день.",
             ),
             tr(
-                'Білінг у GameCon+: особистий рахунок, поповнення донатом (Donatello, Diaka та інші), покупки з рахунку й автопродовження. Нова картка GameCon+ у меню. Оформлення профілю: анімований нік (перелив, відблиск) і ефект шапки (сяйво, жива рамка). «Дивилися й слухали разом» — з назвою фільму чи треку, можна прибрати людину або сховати блок. Сторінки: умови використання, конфіденційність, повернення коштів і ціни — вісьмома мовами.',
+                "Ігровий щоденник: нотатки про ігри з настроєм і часом у грі; приватні або відкриті.",
+            ),
+            tr(
+                "Чати: гілки в групах, до 10 закріплених, особиста нотатка до бесіди й фото на один перегляд.",
+            ),
+            tr(
+                "Стікери спільноти: свій набір, який учасники надсилають у будь-якому чаті.",
+            ),
+            tr(
+                "Серія днів поспіль, «Цього дня» зі спогадами, карта гравців і святкові рамки аватара.",
+            ),
+            tr(
+                "Якщо розділ на техроботах, ви побачите пояснення команди замість помилки.",
+            ),
+            tr(
+                "Огляди гравців на сторінках ігор, стрічка трейлерів і «Гравець місяця» в кланах.",
+            ),
+            tr(
+                "Ctrl+K — палітра команд: розділи, дії й пошук з клавіатури. «Розділити екран» — чат чи музика поруч.",
+            ),
+            tr(
+                "Віджети біля стрічки тепер налаштовуються: які показувати й у якому порядку.",
             ),
         ],
     },
     {
-        version: '2026.10.11.2',
-        date: '2026-10-11',
+        version: "2026.10.27",
+        date: "2026-10-27",
         items: [
             tr(
-                'Моменти: кліпи з YouTube, Twitch і Medal — стрічка, найкраще за тиждень і моменти на сторінці гри.',
+                "Голосові кімнати-«сцени»: слухачі піднімають руку, ведучий запрошує говорити.",
             ),
             tr(
-                '«Зараз у стрімі»: канал Twitch чи YouTube у профілі, позначка LIVE і «Друзі в ефірі» в стрічці.',
+                "Автопостинг у Discord і Telegram, розклад стрімів на сторінці й анкета вступу до закритих спільнот.",
             ),
             tr(
-                'Завдання дня й сезони: три завдання щодня, досвід у рівень і таблиця лідерів місяця.',
+                "Статистика автора, піксельний аватар, режим стримера й секретні досягнення — шукайте!",
+            ),
+            tr("Дошка ідей: пропонуйте, що додати, і голосуйте за чужі ідеї."),
+        ],
+    },
+    {
+        version: "2026.10.16",
+        date: "2026-10-16",
+        items: [
+            tr(
+                "Оплата GameCon+ карткою через monobank: Visa, Mastercard, Apple Pay і Google Pay. Баланс прибрано — платите напряму, залишок старого балансу зарахується в наступну оплату.",
             ),
             tr(
-                'Запрошення друзів: особисте посилання, досвід і бейджі за кожного друга.',
+                "Автопродовження збереженою карткою (вмикається лише за вашим вибором), подарунок GameCon+ другу, нові промокоди: знижка на підписку чи перший платіж, безкоштовні місяці.",
             ),
             tr(
-                'Власникам серверів — аналітика за 30 днів: перегляди, переходи й голоси.',
+                "Документи оновлено за законодавством України: публічна оферта, політика конфіденційності й повернення коштів.",
             ),
         ],
     },
     {
-        version: '2026.10.11',
-        date: '2026-10-10',
+        version: "2026.10.13",
+        date: "2026-10-13",
         items: [
             tr(
-                'Сервери: щоденне голосування, топ дня й місяця, голоси по днях для власника й бейдж «Голос спільноти».',
-            ),
-            tr(
-                'Персонажі RP: біографія, історія, портрет і фото, сім’я на сервері — у профілі й на сторінці сервера.',
-            ),
-            tr(
-                'Пошук паті: оголошення з грою, сервером, часом і ролями та своя голосова кімната для паті.',
-            ),
-            tr(
-                'Сповіщення в браузері: лайки, коментарі й повідомлення приходять, навіть коли вкладку закрито.',
-            ),
-            tr(
-                'Боти GameCon для Telegram і Discord: події з кнопками «Піду», нагадування й меню групи — без жодних команд.',
-            ),
-            tr(
-                '«Увійти через GameCon» для серверів: власники підключають вхід і онлайн, гравці отримують позначку «підтверджений гравець».',
+                "Банка Monobank для сімей і спільнот: вставте посилання в налаштуваннях — на сторінці з’явиться картка «Підтримати» з прогресом збору.",
             ),
         ],
     },
     {
-        version: '2026.10.10',
-        date: '2026-10-10',
+        version: "2026.10.12",
+        date: "2026-10-12",
         items: [
             tr(
-                'Спільноти: правила й довідник, черга постів на перевірку, мітки, свої заборонені слова, повільний режим, привітання й підписи ролей з кольором.',
+                "GameCon+: значок і колір ніку, рамка й GIF-аватар, більше місця, підняття паті, стікери й реакції. Можна подарувати другу.",
             ),
             tr(
-                'Акаунт: пристрої й сесії, журнал входів, завантаження своїх даних, заморожування, оскарження рішень і скарга на людину.',
+                "GameCon+ для сім’ї: виділена картка, власні кольори сторінки й до 20 голосових кімнат.",
             ),
             tr(
-                'Події: черга, якщо місць немає, обкладинка, код відмітки, альбом після події, файл для календаря й нагадування за 10 хвилин – добу.',
+                "Просування серверів: місце в топі, виділена картка й банер із позначкою «Реклама».",
             ),
             tr(
-                'Стрічка: фільтр за мовою, «завтра подія вашого клану», мова оригіналу біля кожного запису.',
+                "Кіно: ще один вбудований плеєр, порядок і фільтри озвучок в адмінці, автопарсинг TMDB з автододаванням популярних тайтлів, посерійний вибір серій.",
+            ),
+            tr(
+                "Білінг у GameCon+: особистий рахунок, поповнення донатом (Donatello, Diaka та інші), покупки з рахунку й автопродовження. Нова картка GameCon+ у меню. Оформлення профілю: анімований нік (перелив, відблиск) і ефект шапки (сяйво, жива рамка). «Дивилися й слухали разом» — з назвою фільму чи треку, можна прибрати людину або сховати блок. Сторінки: умови використання, конфіденційність, повернення коштів і ціни — вісьмома мовами.",
+            ),
+        ],
+    },
+    {
+        version: "2026.10.11.2",
+        date: "2026-10-11",
+        items: [
+            tr(
+                "Моменти: кліпи з YouTube, Twitch і Medal — стрічка, найкраще за тиждень і моменти на сторінці гри.",
+            ),
+            tr(
+                "«Зараз у стрімі»: канал Twitch чи YouTube у профілі, позначка LIVE і «Друзі в ефірі» в стрічці.",
+            ),
+            tr(
+                "Завдання дня й сезони: три завдання щодня, досвід у рівень і таблиця лідерів місяця.",
+            ),
+            tr(
+                "Запрошення друзів: особисте посилання, досвід і бейджі за кожного друга.",
+            ),
+            tr(
+                "Власникам серверів — аналітика за 30 днів: перегляди, переходи й голоси.",
+            ),
+        ],
+    },
+    {
+        version: "2026.10.11",
+        date: "2026-10-10",
+        items: [
+            tr(
+                "Сервери: щоденне голосування, топ дня й місяця, голоси по днях для власника й бейдж «Голос спільноти».",
+            ),
+            tr(
+                "Персонажі RP: біографія, історія, портрет і фото, сім’я на сервері — у профілі й на сторінці сервера.",
+            ),
+            tr(
+                "Пошук паті: оголошення з грою, сервером, часом і ролями та своя голосова кімната для паті.",
+            ),
+            tr(
+                "Сповіщення в браузері: лайки, коментарі й повідомлення приходять, навіть коли вкладку закрито.",
+            ),
+            tr(
+                "Боти GameCon для Telegram і Discord: події з кнопками «Піду», нагадування й меню групи — без жодних команд.",
+            ),
+            tr(
+                "«Увійти через GameCon» для серверів: власники підключають вхід і онлайн, гравці отримують позначку «підтверджений гравець».",
+            ),
+        ],
+    },
+    {
+        version: "2026.10.10",
+        date: "2026-10-10",
+        items: [
+            tr(
+                "Спільноти: правила й довідник, черга постів на перевірку, мітки, свої заборонені слова, повільний режим, привітання й підписи ролей з кольором.",
+            ),
+            tr(
+                "Акаунт: пристрої й сесії, журнал входів, завантаження своїх даних, заморожування, оскарження рішень і скарга на людину.",
+            ),
+            tr(
+                "Події: черга, якщо місць немає, обкладинка, код відмітки, альбом після події, файл для календаря й нагадування за 10 хвилин – добу.",
+            ),
+            tr(
+                "Стрічка: фільтр за мовою, «завтра подія вашого клану», мова оригіналу біля кожного запису.",
             ),
         ],
     },
@@ -254,21 +278,21 @@ const CHANGELOG = () => [
 /** Значок картки за темою пункту — довгий список легше гортати. */
 function changeIcon(item: string): LucideIcon {
     const t = item.toLowerCase();
-    if (t.includes('gamecon+')) return Crown;
+    if (t.includes("gamecon+")) return Crown;
     if (/музик|плеєр|трек|пісн|радіо|подкаст/.test(t)) return Music;
     if (/чат|повідомлен/.test(t)) return MessageCircle;
     if (/телефон|номер/.test(t)) return Phone;
     if (/кіно|подивитися|фільм|серіал|тайтл/.test(t)) return Clapperboard;
     if (/ігр|гра |гри|гравц/.test(t)) return Gamepad2;
-    if (t.includes('сповіщ')) return Bell;
+    if (t.includes("сповіщ")) return Bell;
     if (/спільнот|клан|друз|подій|події/.test(t)) return UsersRound;
     if (/стрічк|запис/.test(t)) return Newspaper;
     return Sparkles;
 }
 
-const SEEN_KEY = 'gc-whats-new';
-const FEEDBACK_EVENT = 'gc:feedback';
-const SHORTCUTS_EVENT = 'gc:shortcuts';
+const SEEN_KEY = "gc-whats-new";
+const FEEDBACK_EVENT = "gc:feedback";
+const SHORTCUTS_EVENT = "gc:shortcuts";
 
 function readSeen(): string | null {
     try {
@@ -286,8 +310,47 @@ export function openShortcuts() {
     window.dispatchEvent(new Event(SHORTCUTS_EVENT));
 }
 
+type Release = {
+    version: string;
+    codename: string;
+    codename_note: string;
+    date: string;
+};
+
+/** Версія сайту з кодовою назвою релізу — у «Що нового» й довідці. */
+export function ReleaseLine({
+    release,
+    className,
+}: {
+    release: Release;
+    className?: string;
+}) {
+    return (
+        <div
+            className={cn(
+                "mx-6 mb-3 flex items-start gap-3 rounded-2xl bg-white/[0.05] px-4 py-3",
+                className,
+            )}
+        >
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/20 text-sky-400">
+                <Sparkles className="size-4" />
+            </span>
+            <div className="min-w-0">
+                <p className="text-sm font-semibold text-white">
+                    {tr("Версія {version}", { version: release.version })}{" "}
+                    <span className="text-sky-400">«{release.codename}»</span>
+                </p>
+                <p className="mt-0.5 text-xs leading-relaxed text-white/55">
+                    {tr(release.codename_note)}
+                </p>
+            </div>
+        </div>
+    );
+}
+
 /** «Що нового» в шапці: крапка, доки людина не відкрила список. */
 export function WhatsNewButton() {
+    const release = usePage().props.site.release;
     const entries = CHANGELOG();
     const latest = entries[0];
     const [open, setOpen] = useState(false);
@@ -311,11 +374,11 @@ export function WhatsNewButton() {
             <button
                 type="button"
                 onClick={show}
-                aria-label={tr('Що нового')}
-                title={tr('Що нового')}
+                aria-label={tr("Що нового")}
+                title={tr("Що нового")}
                 className={cn(
-                    'gc-icon-button relative size-10 items-center justify-center rounded-xl transition',
-                    unseen ? 'flex' : 'hidden sm:flex',
+                    "gc-icon-button relative size-10 items-center justify-center rounded-xl transition",
+                    unseen ? "flex" : "hidden sm:flex",
                 )}
             >
                 <ModuleIcon name="sparkles" animated size={19} />
@@ -331,14 +394,15 @@ export function WhatsNewButton() {
                     <div className="flex items-center gap-2 px-6 pt-6 pb-3">
                         <Sparkles className="size-5 text-sky-400" />
                         <DialogTitle className="font-display text-lg">
-                            {tr('Що нового')}
+                            {tr("Що нового")}
                         </DialogTitle>
                         <span className="mr-8 ml-auto rounded-chip bg-white/[0.07] px-2.5 py-0.5 text-xs font-semibold text-white/70">
                             {formatDate(latest.date)}
                         </span>
                     </div>
+                    {release && <ReleaseLine release={release} />}
                     <DialogDescription className="sr-only">
-                        {tr('Оновлення від {date}', {
+                        {tr("Оновлення від {date}", {
                             date: formatDate(latest.date),
                         })}
                     </DialogDescription>
@@ -347,8 +411,8 @@ export function WhatsNewButton() {
                             <section key={entry.version} className="mb-3">
                                 <h3 className="px-2 pt-2 pb-2 text-xs font-semibold text-white/50">
                                     {index === 0
-                                        ? tr('Нове')
-                                        : tr('Раніше · {date}', {
+                                        ? tr("Нове")
+                                        : tr("Раніше · {date}", {
                                               date: formatDate(entry.date),
                                           })}
                                 </h3>
@@ -359,18 +423,18 @@ export function WhatsNewButton() {
                                             <li
                                                 key={item}
                                                 className={cn(
-                                                    'flex gap-3 rounded-2xl px-3 py-3 text-sm leading-relaxed',
+                                                    "flex gap-3 rounded-2xl px-3 py-3 text-sm leading-relaxed",
                                                     index === 0
-                                                        ? 'bg-primary/15 text-white/90'
-                                                        : 'gc-solid-2 text-white/75',
+                                                        ? "bg-primary/15 text-white/90"
+                                                        : "gc-solid-2 text-white/75",
                                                 )}
                                             >
                                                 <span
                                                     className={cn(
-                                                        'flex size-8 shrink-0 items-center justify-center rounded-xl',
+                                                        "flex size-8 shrink-0 items-center justify-center rounded-xl",
                                                         index === 0
-                                                            ? 'bg-primary/25 text-sky-400'
-                                                            : 'bg-white/[0.07] text-white/60',
+                                                            ? "bg-primary/25 text-sky-400"
+                                                            : "bg-white/[0.07] text-white/60",
                                                     )}
                                                 >
                                                     <Icon className="size-4" />
@@ -392,7 +456,7 @@ export function WhatsNewButton() {
                             className="inline-flex items-center gap-2 text-sm font-medium text-sky-400 hover:text-white"
                         >
                             <Lightbulb className="size-4" />
-                            {tr('Дошка ідей')}
+                            {tr("Дошка ідей")}
                         </Link>
                         <button
                             type="button"
@@ -403,7 +467,7 @@ export function WhatsNewButton() {
                             className="inline-flex items-center gap-2 text-sm font-medium text-sky-400 hover:text-white"
                         >
                             <MessageSquareHeart className="size-4" />
-                            {tr('Розкажіть, що думаєте')}
+                            {tr("Розкажіть, що думаєте")}
                         </button>
                     </div>
                 </DialogContent>
@@ -413,19 +477,19 @@ export function WhatsNewButton() {
 }
 
 const KINDS = () => [
-    { value: 'idea', label: tr('Ідея') },
-    { value: 'bug', label: tr('Помилка') },
-    { value: 'other', label: tr('Інше') },
+    { value: "idea", label: tr("Ідея") },
+    { value: "bug", label: tr("Помилка") },
+    { value: "other", label: tr("Інше") },
 ];
 
 /** Відгук адмінам: відкривається з меню, з «Що нового» чи з клавіш. */
 export function FeedbackDialog() {
     const [open, setOpen] = useState(false);
-    const form = useForm({ kind: 'idea', body: '', url: '' });
+    const form = useForm({ kind: "idea", body: "", url: "" });
 
     useEffect(() => {
         const onOpen = () => {
-            form.setData('url', window.location.pathname);
+            form.setData("url", window.location.pathname);
             setOpen(true);
         };
         window.addEventListener(FEEDBACK_EVENT, onOpen);
@@ -438,21 +502,21 @@ export function FeedbackDialog() {
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogContent className="glass-strong rounded-dialog p-6 text-white sm:max-w-md">
                 <DialogTitle className="font-display text-lg">
-                    {tr('Відгук адмінам')}
+                    {tr("Відгук адмінам")}
                 </DialogTitle>
                 <DialogDescription className="text-sm text-white/50">
                     {tr(
-                        'Ідея, помилка чи просто думка — читаємо все. Адреса сторінки додасться сама.',
+                        "Ідея, помилка чи просто думка — читаємо все. Адреса сторінки додасться сама.",
                     )}
                 </DialogDescription>
                 <form
                     onSubmit={(event) => {
                         event.preventDefault();
-                        form.post('/feedback', {
+                        form.post("/feedback", {
                             preserveScroll: true,
                             onSuccess: () => {
                                 setOpen(false);
-                                form.reset('body');
+                                form.reset("body");
                             },
                         });
                     }}
@@ -463,13 +527,13 @@ export function FeedbackDialog() {
                             <button
                                 key={kind.value}
                                 type="button"
-                                onClick={() => form.setData('kind', kind.value)}
+                                onClick={() => form.setData("kind", kind.value)}
                                 aria-pressed={form.data.kind === kind.value}
                                 className={cn(
-                                    'h-9 flex-1 rounded-lg text-sm font-medium transition',
+                                    "h-9 flex-1 rounded-lg text-sm font-medium transition",
                                     form.data.kind === kind.value
-                                        ? 'bg-white/10 text-white'
-                                        : 'text-white/55 hover:text-white',
+                                        ? "bg-white/10 text-white"
+                                        : "text-white/55 hover:text-white",
                                 )}
                             >
                                 {kind.label}
@@ -479,11 +543,11 @@ export function FeedbackDialog() {
                     <textarea
                         value={form.data.body}
                         onChange={(event) =>
-                            form.setData('body', event.target.value)
+                            form.setData("body", event.target.value)
                         }
                         rows={5}
                         maxLength={3000}
-                        placeholder={tr('Що варто покращити?')}
+                        placeholder={tr("Що варто покращити?")}
                         className="input-glass w-full rounded-xl px-3.5 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none"
                     />
                     {form.errors.body && (
@@ -500,7 +564,7 @@ export function FeedbackDialog() {
                             }
                             className="btn-glow h-10 rounded-xl px-5 text-sm font-semibold disabled:opacity-50"
                         >
-                            {tr('Надіслати')}
+                            {tr("Надіслати")}
                         </button>
                     </div>
                 </form>
@@ -520,54 +584,54 @@ type ShortcutGroup = {
 /** Групи гарячих клавіш; група поточного розділу показується першою. */
 const SHORTCUT_GROUPS = (): ShortcutGroup[] => [
     {
-        id: 'nav',
-        title: tr('Навігація'),
+        id: "nav",
+        title: tr("Навігація"),
         paths: [],
         items: [
-            { keys: ['/'], label: tr('Пошук') },
-            { keys: ['Ctrl', 'K'], label: tr('Командна палітра') },
-            { keys: ['G', 'F'], label: tr('Новини') },
-            { keys: ['G', 'M'], label: tr('Повідомлення') },
-            { keys: ['G', 'P'], label: tr('Моя сторінка') },
-            { keys: ['G', 'N'], label: tr('Сповіщення') },
-            { keys: ['G', 'C'], label: tr('Кіно') },
-            { keys: ['G', 'U'], label: tr('Музика') },
-            { keys: ['G', 'I'], label: tr('Ігри') },
-            { keys: ['G', 'S'], label: tr('Налаштування') },
-            { keys: ['?'], label: tr('Ця підказка') },
+            { keys: ["/"], label: tr("Пошук") },
+            { keys: ["Ctrl", "K"], label: tr("Командна палітра") },
+            { keys: ["G", "F"], label: tr("Новини") },
+            { keys: ["G", "M"], label: tr("Повідомлення") },
+            { keys: ["G", "P"], label: tr("Моя сторінка") },
+            { keys: ["G", "N"], label: tr("Сповіщення") },
+            { keys: ["G", "C"], label: tr("Кіно") },
+            { keys: ["G", "U"], label: tr("Музика") },
+            { keys: ["G", "I"], label: tr("Ігри") },
+            { keys: ["G", "S"], label: tr("Налаштування") },
+            { keys: ["?"], label: tr("Ця підказка") },
         ],
     },
     {
-        id: 'feed',
-        title: tr('Стрічка'),
-        paths: ['/feed', '/posts'],
+        id: "feed",
+        title: tr("Стрічка"),
+        paths: ["/feed", "/posts"],
         items: [
-            { keys: ['J'], label: tr('Наступний запис у стрічці') },
-            { keys: ['K'], label: tr('Попередній запис') },
-            { keys: ['L'], label: tr('Вподобати вибраний запис') },
+            { keys: ["J"], label: tr("Наступний запис у стрічці") },
+            { keys: ["K"], label: tr("Попередній запис") },
+            { keys: ["L"], label: tr("Вподобати вибраний запис") },
         ],
     },
     {
-        id: 'chat',
-        title: tr('Чат'),
-        paths: ['/messages'],
+        id: "chat",
+        title: tr("Чат"),
+        paths: ["/messages"],
         items: [
-            { keys: ['Enter'], label: tr('Надіслати повідомлення') },
-            { keys: ['Shift', 'Enter'], label: tr('Новий рядок') },
-            { keys: ['↑'], label: tr('Змінити останнє своє повідомлення') },
-            { keys: ['Esc'], label: tr('Скасувати відповідь чи зміну') },
+            { keys: ["Enter"], label: tr("Надіслати повідомлення") },
+            { keys: ["Shift", "Enter"], label: tr("Новий рядок") },
+            { keys: ["↑"], label: tr("Змінити останнє своє повідомлення") },
+            { keys: ["Esc"], label: tr("Скасувати відповідь чи зміну") },
         ],
     },
     {
-        id: 'player',
-        title: tr('Плеєр'),
-        paths: ['/music'],
+        id: "player",
+        title: tr("Плеєр"),
+        paths: ["/music"],
         items: [
             {
-                keys: ['Space'],
-                label: tr('Пауза / грати (на сторінці музики)'),
+                keys: ["Space"],
+                label: tr("Пауза / грати (на сторінці музики)"),
             },
-            { keys: ['Esc'], label: tr('Згорнути повноекранний плеєр') },
+            { keys: ["Esc"], label: tr("Згорнути повноекранний плеєр") },
         ],
     },
 ];
@@ -575,23 +639,23 @@ const SHORTCUT_GROUPS = (): ShortcutGroup[] => [
 const SHORTCUTS = (): Shortcut[] => SHORTCUT_GROUPS().flatMap((g) => g.items);
 
 const GO: Record<string, (username: string) => string> = {
-    f: () => '/feed',
-    m: () => '/messages',
+    f: () => "/feed",
+    m: () => "/messages",
     p: (username) => `/${username}`,
-    n: () => '/notifications',
-    s: () => '/settings/profile',
-    c: () => '/cinema',
-    u: () => '/music',
-    i: () => '/games',
+    n: () => "/notifications",
+    s: () => "/settings/profile",
+    c: () => "/cinema",
+    u: () => "/music",
+    i: () => "/games",
 };
 
 /** J/K: перейти до наступного чи попереднього запису стрічки й позначити його для L. */
 function stepPost(step: number) {
     const list = Array.from(
-        document.querySelectorAll<HTMLElement>('article.gc-post'),
+        document.querySelectorAll<HTMLElement>("article.gc-post"),
     );
     if (list.length === 0) return;
-    let index = list.findIndex((el) => el.hasAttribute('data-hotkey-focus'));
+    let index = list.findIndex((el) => el.hasAttribute("data-hotkey-focus"));
     if (index < 0) {
         // Ще не ходили клавішами — від запису, що зараз угорі екрана.
         index =
@@ -599,14 +663,14 @@ function stepPost(step: number) {
             (step > 0 ? 1 : 0);
     }
     const next = list[Math.min(list.length - 1, Math.max(0, index + step))];
-    list.forEach((el) => el.removeAttribute('data-hotkey-focus'));
-    next.setAttribute('data-hotkey-focus', '');
+    list.forEach((el) => el.removeAttribute("data-hotkey-focus"));
+    next.setAttribute("data-hotkey-focus", "");
     const reduce = window.matchMedia(
-        '(prefers-reduced-motion: reduce)',
+        "(prefers-reduced-motion: reduce)",
     ).matches;
     window.scrollTo({
         top: next.getBoundingClientRect().top + window.scrollY - 96,
-        behavior: reduce ? 'auto' : 'smooth',
+        behavior: reduce ? "auto" : "smooth",
     });
 }
 
@@ -616,14 +680,14 @@ function typing(target: EventTarget | null): boolean {
 
     return (
         el.isContentEditable ||
-        ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName)
+        ["INPUT", "TEXTAREA", "SELECT"].includes(el.tagName)
     );
 }
 
 /** Гарячі клавіші сайту й підказка до них (клавіша «?»). */
 export function KeyboardShortcuts({ username }: { username: string }) {
     const [open, setOpen] = useState(false);
-    const [filter, setFilter] = useState('');
+    const [filter, setFilter] = useState("");
     const { url } = usePage();
     const q = filter.trim().toLowerCase();
     const groups = SHORTCUT_GROUPS()
@@ -633,7 +697,7 @@ export function KeyboardShortcuts({ username }: { username: string }) {
                 ? g.items.filter(
                       (i) =>
                           i.label.toLowerCase().includes(q) ||
-                          i.keys.join(' ').toLowerCase().includes(q),
+                          i.keys.join(" ").toLowerCase().includes(q),
                   )
                 : g.items,
         }))
@@ -656,35 +720,35 @@ export function KeyboardShortcuts({ username }: { username: string }) {
                 return;
             }
             const key = event.key.toLowerCase();
-            if (event.key === '?') {
+            if (event.key === "?") {
                 event.preventDefault();
-                setFilter('');
+                setFilter("");
                 setOpen(true);
 
                 return;
             }
-            if (key === '/') {
+            if (key === "/") {
                 event.preventDefault();
                 window.dispatchEvent(
-                    new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }),
+                    new KeyboardEvent("keydown", { key: "k", ctrlKey: true }),
                 );
 
                 return;
             }
-            if (key === 'j' || key === 'k') {
+            if (key === "j" || key === "k") {
                 event.preventDefault();
-                stepPost(key === 'j' ? 1 : -1);
+                stepPost(key === "j" ? 1 : -1);
 
                 return;
             }
-            if (key === 'l') {
+            if (key === "l") {
                 document
-                    .querySelector('article.gc-post[data-hotkey-focus]')
-                    ?.dispatchEvent(new CustomEvent('gc:like'));
+                    .querySelector("article.gc-post[data-hotkey-focus]")
+                    ?.dispatchEvent(new CustomEvent("gc:like"));
 
                 return;
             }
-            if (key === 'g') {
+            if (key === "g") {
                 pendingG = Date.now();
 
                 return;
@@ -696,14 +760,14 @@ export function KeyboardShortcuts({ username }: { username: string }) {
             }
         };
         const onOpen = () => {
-            setFilter('');
+            setFilter("");
             setOpen(true);
         };
-        window.addEventListener('keydown', onKey);
+        window.addEventListener("keydown", onKey);
         window.addEventListener(SHORTCUTS_EVENT, onOpen);
 
         return () => {
-            window.removeEventListener('keydown', onKey);
+            window.removeEventListener("keydown", onKey);
             window.removeEventListener(SHORTCUTS_EVENT, onOpen);
         };
     }, [username]);
@@ -713,17 +777,17 @@ export function KeyboardShortcuts({ username }: { username: string }) {
             <DialogContent className="glass-strong rounded-dialog p-6 text-white sm:max-w-md">
                 <DialogTitle className="flex items-center gap-2 font-display text-lg">
                     <Keyboard className="size-5 text-sky-400" />
-                    {tr('Гарячі клавіші')}
+                    {tr("Гарячі клавіші")}
                 </DialogTitle>
                 <DialogDescription className="text-sm text-white/50">
                     {tr(
-                        'Працюють, коли курсор не в полі введення. Клавіші цього розділу — першими.',
+                        "Працюють, коли курсор не в полі введення. Клавіші цього розділу — першими.",
                     )}
                 </DialogDescription>
                 <input
                     value={filter}
                     onChange={(e) => setFilter(e.target.value)}
-                    placeholder={tr('Знайти дію…')}
+                    placeholder={tr("Знайти дію…")}
                     autoFocus
                     className="input-glass h-10 w-full rounded-xl px-3 text-sm text-white placeholder:text-white/35"
                 />
@@ -757,7 +821,7 @@ export function KeyboardShortcuts({ username }: { username: string }) {
                     ))}
                     {groups.length === 0 && (
                         <p className="py-4 text-center text-sm text-white/45">
-                            {tr('Нічого не знайшли')}
+                            {tr("Нічого не знайшли")}
                         </p>
                     )}
                 </div>
@@ -775,7 +839,7 @@ export function KeyboardHint() {
             className="mt-3 hidden items-center gap-2 px-3 text-xs text-white/35 transition hover:text-white/70 lg:flex"
         >
             <Keyboard className="size-3.5" />
-            {tr('Натисніть ? — гарячі клавіші')}
+            {tr("Натисніть ? — гарячі клавіші")}
         </button>
     );
 }

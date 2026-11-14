@@ -1,23 +1,23 @@
-import { Head } from '@inertiajs/react';
-import { Search, X } from 'lucide-react';
-import { AnimatePresence, m, useReducedMotion } from 'motion/react';
-import { useMemo, useState } from 'react';
-import { openFeedback } from '@/components/gc/site-extras';
+import { Head, usePage } from "@inertiajs/react";
+import { Search, X } from "lucide-react";
+import { AnimatePresence, m, useReducedMotion } from "motion/react";
+import { useMemo, useState } from "react";
+import { openFeedback, ReleaseLine } from "@/components/gc/site-extras";
 import {
     HelpBadge,
     HelpContact,
     HelpRow,
     HelpShell,
     plainText,
-} from '@/components/help/help-ui';
+} from "@/components/help/help-ui";
 import type {
     HelpArticleBrief,
     HelpCategoryBrief,
     HelpLinkItem,
-} from '@/components/help/help-ui';
-import { plural } from '@/lib/format';
-import { tr } from '@/lib/i18n';
-import { blurSwap } from '@/lib/motion';
+} from "@/components/help/help-ui";
+import { plural } from "@/lib/format";
+import { tr } from "@/lib/i18n";
+import { blurSwap } from "@/lib/motion";
 
 type Props = {
     categories: (HelpCategoryBrief & { articles: HelpArticleBrief[] })[];
@@ -25,13 +25,12 @@ type Props = {
 };
 
 const norm = (s: string) =>
-    plainText(s)
-        .toLocaleLowerCase()
-        .replace(/[’'ʼ]/g, '’');
+    plainText(s).toLocaleLowerCase().replace(/[’'ʼ]/g, "’");
 
 /** Головна довідки: пошук по статтях (у браузері), популярне й розділи. */
 export default function HelpIndex({ categories, popular }: Props) {
-    const [query, setQuery] = useState('');
+    const { site } = usePage().props;
+    const [query, setQuery] = useState("");
     const reduce = useReducedMotion();
     const terms = norm(query).split(/\s+/).filter(Boolean);
 
@@ -50,18 +49,18 @@ export default function HelpIndex({ categories, popular }: Props) {
                 .map((article) => ({ category, article })),
         );
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [categories, terms.join(' ')]);
+    }, [categories, terms.join(" ")]);
 
     return (
         <HelpShell>
-            <Head title={tr('Довідка')} />
+            <Head title={tr("Довідка")} />
             <header className="mb-6">
                 <h1 className="font-display text-[34px] leading-tight font-bold text-white">
-                    {tr('Довідка')}
+                    {tr("Довідка")}
                 </h1>
                 <p className="mt-1 text-[15px] text-white/55">
                     {tr(
-                        'Як користуватися GameCon: від першого входу до музики, кіно й кланів.',
+                        "Як користуватися GameCon: від першого входу до музики, кіно й кланів.",
                     )}
                 </p>
             </header>
@@ -72,15 +71,15 @@ export default function HelpIndex({ categories, popular }: Props) {
                     type="search"
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
-                    placeholder={tr('Пошук у довідці')}
-                    aria-label={tr('Пошук у довідці')}
+                    placeholder={tr("Пошук у довідці")}
+                    aria-label={tr("Пошук у довідці")}
                     className="input-glass h-12 w-full rounded-xl pr-11 pl-10 text-[15px] text-white placeholder:text-white/40"
                 />
                 {query && (
                     <button
                         type="button"
-                        onClick={() => setQuery('')}
-                        aria-label={tr('Очистити')}
+                        onClick={() => setQuery("")}
+                        aria-label={tr("Очистити")}
                         className="absolute top-1/2 right-2 flex size-8 -translate-y-1/2 items-center justify-center rounded-lg text-white/50 hover:bg-[var(--gc-l3)] hover:text-white"
                     >
                         <X className="size-4" />
@@ -93,11 +92,11 @@ export default function HelpIndex({ categories, popular }: Props) {
                     <m.section key="results" {...blurSwap(reduce)}>
                         <h2 className="mb-2 px-1 text-[13px] font-medium text-white/50">
                             {results.length > 0
-                                ? `${tr('Знайдено')}: ${results.length} ${plural(
+                                ? `${tr("Знайдено")}: ${results.length} ${plural(
                                       results.length,
-                                      ['стаття', 'статті', 'статей'],
+                                      ["стаття", "статті", "статей"],
                                   )}`
-                                : tr('Нічого не знайдено')}
+                                : tr("Нічого не знайдено")}
                         </h2>
                         {results.length > 0 ? (
                             <div className="gc-group overflow-hidden">
@@ -116,7 +115,7 @@ export default function HelpIndex({ categories, popular }: Props) {
                         ) : (
                             <p className="px-1 text-sm text-white/50">
                                 {tr(
-                                    'Спробуйте інше слово — або напишіть нам, і ми допоможемо.',
+                                    "Спробуйте інше слово — або напишіть нам, і ми допоможемо.",
                                 )}
                             </p>
                         )}
@@ -126,7 +125,7 @@ export default function HelpIndex({ categories, popular }: Props) {
                         {popular.length > 0 && (
                             <section className="mb-8">
                                 <h2 className="mb-2 px-1 text-[22px] font-bold text-white">
-                                    {tr('Популярне')}
+                                    {tr("Популярне")}
                                 </h2>
                                 <div className="gc-group overflow-hidden">
                                     {popular.map((item) => (
@@ -142,7 +141,7 @@ export default function HelpIndex({ categories, popular }: Props) {
 
                         <section>
                             <h2 className="mb-2 px-1 text-[22px] font-bold text-white">
-                                {tr('Розділи')}
+                                {tr("Розділи")}
                             </h2>
                             <div className="gc-group overflow-hidden">
                                 {categories.map((category) => (
@@ -162,6 +161,15 @@ export default function HelpIndex({ categories, popular }: Props) {
                     </m.div>
                 )}
             </AnimatePresence>
+
+            {site.release && (
+                <section className="mt-8">
+                    <h2 className="mb-2 px-1 text-[22px] font-bold text-white">
+                        {tr("Про сайт")}
+                    </h2>
+                    <ReleaseLine release={site.release} className="mx-0 mb-0" />
+                </section>
+            )}
 
             <HelpContact onFeedback={openFeedback} />
         </HelpShell>

@@ -58,6 +58,13 @@ declare module '@inertiajs/core' {
                     site_mobile?: string | null;
                 };
                 translate: boolean;
+                /** Версія сайту й кодова назва релізу. */
+                release: {
+                    version: string;
+                    codename: string;
+                    codename_note: string;
+                    date: string;
+                };
                 max_attachments: number;
                 max_message_file_mb: number;
                 announcement: string | null;

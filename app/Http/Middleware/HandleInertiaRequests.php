@@ -94,6 +94,8 @@ class HandleInertiaRequests extends Middleware
             ],
             'site' => [
                 'name' => $this->settings->get('site_name'),
+                // Версія сайту й кодова назва релізу (config/release.php).
+                'release' => config('release'),
                 'tagline' => $this->settings->get('tagline'),
                 'description' => $this->settings->seoDescription(),
                 // Магазини застосунку (Адмінка → Дизайн): лише ті, де вказано посилання.
