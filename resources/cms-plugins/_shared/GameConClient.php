@@ -27,6 +27,12 @@ if (! class_exists('GameConClient', false)) {
             $this->scope = $scope;
         }
 
+        /** Адреса GameCon (для embed.js і посилань). */
+        public function base()
+        {
+            return $this->base;
+        }
+
         public function configured()
         {
             return $this->clientId !== '' && $this->clientSecret !== '';
@@ -102,6 +108,8 @@ if (! class_exists('GameConClient', false)) {
                 'email_verified' => ! empty($user['email_verified']),
                 'avatar' => isset($user['picture']) && is_string($user['picture']) ? $user['picture'] : null,
                 'profile' => (string) (isset($user['profile']) ? $user['profile'] : $this->base),
+                // Токен дзвіночка для embed.js (лише з правом notifications).
+                'bell_token' => isset($user['bell_token']) && is_string($user['bell_token']) ? $user['bell_token'] : null,
             ];
         }
 

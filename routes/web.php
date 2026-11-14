@@ -152,6 +152,9 @@ Route::get('i18n/{locale}.js', [LocaleController::class, 'script'])->where('loca
 Route::get('/', WelcomeController::class)->name('home');
 // Розробникам (публічно): документація, OAuth 2.1 токени й метадані RFC 8414.
 Route::get('developers', [Developer\DeveloperPortalController::class, 'index'])->name('developers.index');
+// Набір для сайтів: картка профілю, «Поділитися», віджети, дзвіночок (див. resources/embed/embed.js).
+Route::get('embed.js', [Developer\EmbedKitController::class, 'script'])->name('embed.script');
+Route::get('share', [Developer\EmbedKitController::class, 'share'])->middleware('auth')->name('share.intent');
 // Розробникам → плагіни «Увійти через GameCon» для CMS і форумів.
 Route::get('developers/plugins', [Developer\CmsPluginsController::class, 'index'])->name('developers.plugins');
 Route::get('developers/plugins/{plugin}', [Developer\CmsPluginsController::class, 'show'])->where('plugin', '[a-z]+')->name('developers.plugins.show');

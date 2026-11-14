@@ -37,6 +37,7 @@ use App\Http\Controllers\CreatorController;
 use App\Http\Controllers\CrosspostController;
 use App\Http\Controllers\Developer\ConnectedAppsController;
 use App\Http\Controllers\Developer\DeveloperApiController;
+use App\Http\Controllers\Developer\EmbedKitController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\Families;
 use App\Http\Controllers\FeedController;
@@ -151,6 +152,8 @@ Route::post('bots/telegram', Bots\TelegramWebhookController::class)->middleware(
 // Вебхук UkraineAlarm v3 (миттєві тривоги й відбої): лише сигнал перевірити API.
 // Публічний API для сторонніх застосунків (OAuth-токен людини або ключ застосунку).
 Route::prefix('developer/v1')->group(function () {
+    // Дзвіночок сповіщень на сайтах розробників (токен з userinfo, лише кількість).
+    Route::get('bell', [EmbedKitController::class, 'bell'])->middleware('throttle:120,1');
     Route::middleware('oauth')->group(function () {
         Route::get('me', [DeveloperApiController::class, 'me'])->middleware('oauth:profile');
         Route::get('userinfo', [DeveloperApiController::class, 'userinfo'])->middleware('oauth:profile');

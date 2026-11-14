@@ -2,8 +2,8 @@
 /**
  * Plugin Name: Увійти через GameCon
  * Plugin URI: https://gamecon.online/developers/plugins/wordpress
- * Description: Вхід і реєстрація через акаунт GameCon (OAuth 2.1 + PKCE). Кнопка на сторінці входу, шорткод [gamecon_login] і віджет профілю [gamecon_profile].
- * Version: 1.0.0
+ * Description: Вхід і реєстрація через акаунт GameCon (OAuth 2.1 + PKCE), картка профілю, «Поділитися в GameCon», віджет сервера, дзвіночок сповіщень і значок GameCon.
+ * Version: 1.1.0
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * Author: GameCon
@@ -32,6 +32,12 @@ final class GameCon_Login
         add_shortcode('gamecon_login', [__CLASS__, 'shortcode']);
         add_shortcode('gamecon_profile', [__CLASS__, 'profile_shortcode']);
         add_filter('get_avatar_url', [__CLASS__, 'avatar'], 10, 3);
+        add_shortcode('gamecon_share', [__CLASS__, 'share_shortcode']);
+        add_shortcode('gamecon_widget', [__CLASS__, 'widget_shortcode']);
+        add_shortcode('gamecon_bell', [__CLASS__, 'bell_shortcode']);
+        add_action('wp_enqueue_scripts', [__CLASS__, 'embed']);
+        add_filter('the_content', [__CLASS__, 'share_after_post']);
+        add_filter('get_comment_author_link', [__CLASS__, 'comment_badge'], 10, 3);
         add_filter('plugin_action_links_'.plugin_basename(__FILE__), function ($links) {
             array_unshift($links, '<a href="'.esc_url(admin_url('options-general.php?page=gamecon-login')).'">'.esc_html__('Налаштування', 'gamecon-login').'</a>');
 
@@ -53,7 +59,7 @@ final class GameCon_Login
 
     private static function client()
     {
-        $scope = self::opt('email', '1') === '1' ? 'profile email' : 'profile';
+        $scope = (self::opt('email', '1') === '1' ? 'profile email' : 'profile').(self::opt('bell', '0') === '1' ? ' notifications' : '');
 
         return new GameConClient(self::opt('base', 'https://gamecon.online'), self::opt('client_id'), self::opt('client_secret'), self::redirect_uri(), $scope);
     }
@@ -107,13 +113,13 @@ final class GameCon_Login
     {
         $found = get_users(['meta_key' => self::META, 'meta_value' => $user['id'], 'number' => 1]);
         if ($found) {
-            update_user_meta($found[0]->ID, 'gamecon_avatar', $user['avatar']);
+            self::sync($found[0]->ID, $user);
 
             return $found[0];
         }
         if ($user['email'] && $user['email_verified'] && ($by_email = get_user_by('email', $user['email']))) {
             update_user_meta($by_email->ID, self::META, $user['id']);
-            update_user_meta($by_email->ID, 'gamecon_avatar', $user['avatar']);
+            self::sync($by_email->ID, $user);
 
             return $by_email;
         }
@@ -138,10 +144,70 @@ final class GameCon_Login
             throw new RuntimeException($id->get_error_message());
         }
         update_user_meta($id, self::META, $user['id']);
-        update_user_meta($id, 'gamecon_username', $user['username']);
-        update_user_meta($id, 'gamecon_avatar', $user['avatar']);
+        self::sync($id, $user);
 
         return get_user_by('id', $id);
+    }
+
+    /** Нік GameCon, аватар і токен дзвіночка — щоразу при вході; ім’я на сайті — якщо ввімкнено. */
+    private static function sync($id, array $user)
+    {
+        update_user_meta($id, 'gamecon_username', $user['username']);
+        update_user_meta($id, 'gamecon_avatar', $user['avatar']);
+        if ($user['bell_token']) {
+            update_user_meta($id, 'gamecon_bell', $user['bell_token']);
+        }
+        if (self::opt('sync', '1') === '1' && $user['name'] !== '') {
+            wp_update_user(['ID' => $id, 'display_name' => $user['name']]);
+        }
+    }
+
+    public static function embed()
+    {
+        wp_enqueue_script('gamecon-embed', rtrim(self::opt('base', 'https://gamecon.online'), '/').'/embed.js', [], null, ['strategy' => 'async', 'in_footer' => true]);
+    }
+
+    /** [gamecon_share] — «Поділитися в GameCon» для поточної сторінки. */
+    public static function share_shortcode()
+    {
+        return '<span data-gamecon-share></span>';
+    }
+
+    /** [gamecon_widget server="slug"] — віджет сервера з онлайном. */
+    public static function widget_shortcode($atts)
+    {
+        $atts = shortcode_atts(['server' => ''], $atts);
+
+        return $atts['server'] !== '' ? '<div data-gamecon-widget="server:'.esc_attr(sanitize_title($atts['server'])).'"></div>' : '';
+    }
+
+    /** [gamecon_bell] — дзвіночок непрочитаних GameCon для того, хто увійшов через GameCon. */
+    public static function bell_shortcode()
+    {
+        $token = is_user_logged_in() ? (string) get_user_meta(get_current_user_id(), 'gamecon_bell', true) : '';
+
+        return $token !== '' ? '<span data-gamecon-bell="'.esc_attr($token).'"></span>' : '';
+    }
+
+    public static function share_after_post($content)
+    {
+        if (self::opt('share', '1') === '1' && is_singular('post') && in_the_loop() && is_main_query()) {
+            $content .= '<p class="gamecon-share-row"><span data-gamecon-share data-url="'.esc_url(get_permalink()).'" data-title="'.esc_attr(get_the_title()).'"></span></p>';
+        }
+
+        return $content;
+    }
+
+    /** Значок «GameCon» біля автора коментаря, якщо він увійшов через GameCon. */
+    public static function comment_badge($link, $author, $comment_id)
+    {
+        if (self::opt('badge', '1') !== '1') {
+            return $link;
+        }
+        $comment = get_comment($comment_id);
+        $nick = $comment && $comment->user_id ? (string) get_user_meta($comment->user_id, 'gamecon_username', true) : '';
+
+        return $nick !== '' ? $link.'<span data-gamecon-badge="'.esc_attr($nick).'"></span>' : $link;
     }
 
     public static function avatar($url, $id_or_email, $args)
@@ -179,9 +245,7 @@ final class GameCon_Login
         if ($username === '') {
             return '';
         }
-        $base = rtrim(self::opt('base', 'https://gamecon.online'), '/');
-
-        return '<iframe src="'.esc_url($base.'/widget/u/'.rawurlencode($username)).'" style="width:100%;max-width:420px;height:160px;border:0;border-radius:16px" loading="lazy" title="GameCon"></iframe>';
+        return '<div data-gamecon-card="'.esc_attr($username).'"></div>';
     }
 
     public static function menu()
@@ -198,6 +262,10 @@ final class GameCon_Login
                 'client_secret' => sanitize_text_field(isset($in['client_secret']) ? $in['client_secret'] : ''),
                 'email' => empty($in['email']) ? '0' : '1',
                 'register' => empty($in['register']) ? '0' : '1',
+                'share' => empty($in['share']) ? '0' : '1',
+                'badge' => empty($in['badge']) ? '0' : '1',
+                'sync' => empty($in['sync']) ? '0' : '1',
+                'bell' => empty($in['bell']) ? '0' : '1',
             ];
         }]);
     }
@@ -217,10 +285,16 @@ final class GameCon_Login
                     <tr><th><label for="gc-base"><?php esc_html_e('Адреса GameCon', 'gamecon-login'); ?></label></th><td><input id="gc-base" class="regular-text" name="gamecon_login[base]" placeholder="https://gamecon.online" value="<?php echo esc_attr(isset($o['base']) ? $o['base'] : ''); ?>"></td></tr>
                     <tr><th><?php esc_html_e('Пошта', 'gamecon-login'); ?></th><td><label><input type="checkbox" name="gamecon_login[email]" value="1" <?php checked(! isset($o['email']) || $o['email'] === '1'); ?>> <?php esc_html_e('Просити доступ до email (для зв’язку з наявними акаунтами)', 'gamecon-login'); ?></label></td></tr>
                     <tr><th><?php esc_html_e('Реєстрація', 'gamecon-login'); ?></th><td><label><input type="checkbox" name="gamecon_login[register]" value="1" <?php checked(! isset($o['register']) || $o['register'] === '1'); ?>> <?php esc_html_e('Створювати акаунт для нових гравців, навіть якщо реєстрація закрита', 'gamecon-login'); ?></label></td></tr>
+                    <tr><th><?php esc_html_e('Функції GameCon', 'gamecon-login'); ?></th><td>
+                        <label><input type="checkbox" name="gamecon_login[share]" value="1" <?php checked(! isset($o['share']) || $o['share'] === '1'); ?>> <?php esc_html_e('Кнопка «Поділитися в GameCon» під записами', 'gamecon-login'); ?></label><br>
+                        <label><input type="checkbox" name="gamecon_login[badge]" value="1" <?php checked(! isset($o['badge']) || $o['badge'] === '1'); ?>> <?php esc_html_e('Значок «GameCon» біля авторів коментарів', 'gamecon-login'); ?></label><br>
+                        <label><input type="checkbox" name="gamecon_login[sync]" value="1" <?php checked(! isset($o['sync']) || $o['sync'] === '1'); ?>> <?php esc_html_e('Оновлювати ім’я й аватар з GameCon при кожному вході', 'gamecon-login'); ?></label><br>
+                        <label><input type="checkbox" name="gamecon_login[bell]" value="1" <?php checked(isset($o['bell']) && $o['bell'] === '1'); ?>> <?php esc_html_e('Дзвіночок сповіщень GameCon (просить право «notifications» — увімкніть його в застосунку)', 'gamecon-login'); ?></label>
+                    </td></tr>
                 </table>
                 <?php submit_button(); ?>
             </form>
-            <p><?php esc_html_e('Шорткоди: [gamecon_login] — кнопка входу, [gamecon_profile username="нік"] — картка профілю GameCon.', 'gamecon-login'); ?></p>
+            <p><?php esc_html_e('Шорткоди: [gamecon_login] — кнопка входу, [gamecon_profile username="нік"] — картка профілю, [gamecon_share] — «Поділитися в GameCon», [gamecon_widget server="slug"] — віджет сервера, [gamecon_bell] — дзвіночок сповіщень.', 'gamecon-login'); ?></p>
         </div>
         <?php
     }

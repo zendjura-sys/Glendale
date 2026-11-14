@@ -58,6 +58,8 @@ class DeveloperApiController extends Controller
             'profile' => url('/u/'.$user->username),
             'email' => $email ? $user->email : null,
             'email_verified' => $email ? $user->email_verified_at !== null : null,
+            // Токен для дзвіночка на сайті (embed.js data-gamecon-bell): лише з правом notifications.
+            'bell_token' => $token->can('notifications') && $token->app !== null ? EmbedKitController::bellToken($user, $token->app) : null,
         ]);
     }
 

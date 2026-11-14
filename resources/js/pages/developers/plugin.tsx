@@ -185,6 +185,52 @@ export default function DeveloperPlugin({
 
                         <section className="gc-solid space-y-3 rounded-2xl p-5">
                             <h2 className="font-semibold text-white">
+                                {tr('Функції GameCon на вашому сайті')}
+                            </h2>
+                            <p className="text-sm text-white/60">
+                                {tr(
+                                    'Додайте скрипт у шаблон один раз і розставте атрибути там, де потрібна функція. Працює на будь-якому рушії, навіть без плагіна.',
+                                )}
+                            </p>
+                            <Line
+                                label={tr('Скрипт (у <head> чи перед </body>)')}
+                                value={`<script src="${base}/embed.js" async></script>`}
+                            />
+                            <Line
+                                label={tr('Картка профілю')}
+                                value={'<div data-gamecon-card="нік"></div>'}
+                            />
+                            <Line
+                                label={tr('Значок GameCon біля імені')}
+                                value={'<span data-gamecon-badge="нік"></span>'}
+                            />
+                            <Line
+                                label={tr('Кнопка «Поділитися в GameCon»')}
+                                value={'<span data-gamecon-share></span>'}
+                            />
+                            <Line
+                                label={tr('Віджет сервера з онлайном')}
+                                value={
+                                    '<div data-gamecon-widget="server:slug"></div>'
+                                }
+                            />
+                            <Line
+                                label={tr(
+                                    'Дзвіночок сповіщень (токен із профілю після входу)',
+                                )}
+                                value={
+                                    '<span data-gamecon-bell="bell_token"></span>'
+                                }
+                            />
+                            <p className="text-xs text-white/45">
+                                {tr(
+                                    'Дзвіночок потребує права «notifications» у застосунку: після входу userinfo повертає bell_token — збережіть його в профілі користувача.',
+                                )}
+                            </p>
+                        </section>
+
+                        <section className="gc-solid space-y-3 rounded-2xl p-5">
+                            <h2 className="font-semibold text-white">
                                 {tr('Для ручного налаштування')}
                             </h2>
                             <Line
