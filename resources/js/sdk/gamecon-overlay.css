@@ -729,3 +729,95 @@ button.gc-sdk-slot {
 .gc-sdk-streamer .gc-sdk-bubble:hover {
     filter: none;
 }
+
+/* ───────── Лаунчер гри й віджет головного меню (mode: launcher | widget) ───────── */
+.gc-sdk-viewport.gc-sdk-page {
+    pointer-events: auto;
+    user-select: auto;
+}
+.gc-sdk-launcher {
+    position: absolute;
+    inset: 12px;
+    display: grid;
+    grid-template-columns: minmax(0, 240px) minmax(0, 1fr);
+    gap: 12px;
+}
+.gc-sdk-launcher-nav,
+.gc-sdk-launcher-main {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 0;
+    min-width: 0;
+    padding: 14px;
+}
+.gc-sdk-page > .gc-sdk-launcher-main {
+    position: absolute;
+    inset: 12px;
+    max-width: 420px;
+    margin: auto;
+    height: fit-content;
+}
+.gc-sdk-launcher-main .gc-sdk-body {
+    flex: 1;
+    gap: 8px;
+}
+.gc-sdk-launcher-main .gc-sdk-messages {
+    max-height: none !important;
+    flex: 1;
+}
+.gc-sdk-launcher-nav .gc-sdk-list {
+    max-height: none;
+}
+.gc-sdk-nav[aria-selected='true'] {
+    background: rgba(255, 255, 255, 0.14);
+    box-shadow: inset 2px 0 0 var(--gc-accent);
+}
+.gc-sdk-me {
+    padding: 4px 2px 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+/* Вузький лаунчер — навігація згори смугою */
+@media (max-width: 640px) {
+    .gc-sdk-launcher {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: auto minmax(0, 1fr);
+    }
+    .gc-sdk-launcher-nav .gc-sdk-list {
+        flex-direction: row;
+        overflow-x: auto;
+    }
+    .gc-sdk-launcher-nav .gc-sdk-nav {
+        flex-shrink: 0;
+    }
+    .gc-sdk-me {
+        display: none;
+    }
+}
+.gc-sdk-widget {
+    position: absolute;
+    inset: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+}
+.gc-sdk-widget .gc-sdk-list {
+    flex: 1;
+    max-height: none;
+}
+
+/*
+ * Лаунчер і віджет живуть у фреймі розміром майже з саму картку: велика зовнішня тінь
+ * упирається в край фрейма й обрізається прямим кутом (квадратний «фон» навколо).
+ * Тут лише внутрішні відблиски скла — межа й саме скло відділяють картку від тла.
+ */
+.gc-sdk-page .gc-sdk-frosted-glass,
+.gc-sdk-page[data-mode] .gc-sdk-frosted-glass {
+    box-shadow:
+        inset 0 1px 0 0 rgba(255, 255, 255, 0.24),
+        inset 0 -1px 0 0 rgba(255, 255, 255, 0.05);
+}
+.gc-sdk-page[data-mode='hud'] .gc-sdk-frosted-glass {
+    opacity: 1;
+}

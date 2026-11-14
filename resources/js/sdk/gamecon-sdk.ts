@@ -61,6 +61,13 @@ export type GameConOptions = {
     remoteConfig?: boolean;
     /** Розділи одним вікном чи окремо (типово — як у порталі). */
     layout?: Layout;
+    /**
+     * overlay — поверх гри (типово); launcher — повна панель для лаунчера гри;
+     * widget — один розділ карткою (головне меню гри).
+     */
+    mode?: 'overlay' | 'launcher' | 'widget';
+    /** Для mode 'widget': який розділ показати. */
+    widget?: Section;
     /** Для layout 'custom': які розділи — окремими вікнами. */
     windows?: Section[];
     /** Платформа (типово визначається сама): розробник може вимкнути оверлей для неї в порталі. */
@@ -279,6 +286,7 @@ const DEMO = {
         { name: 'Марта', avatar: null, online: true, mic: 'off' },
     ] as Member[],
     family: {
+        url: undefined as string | undefined,
         name: 'Black Rose',
         tag: 'BR',
         treasury: 1250000,
@@ -1070,6 +1078,7 @@ class Sdk {
                         }>(`groups/families/${fam.id}/members`);
                         this.family = {
                             ...m.family,
+                            url: (fam as { url?: string }).url,
                             members: m.data.map((x) => ({
                                 name: x.nickname,
                                 avatar: x.user?.avatar_url ?? null,
@@ -1253,6 +1262,8 @@ class Sdk {
 
     private render() {
         if (!this.vp) return;
+        if (this.o.mode === 'launcher' || this.o.mode === 'widget')
+            return this.renderPage();
         const m = this.modules();
         const wins = this.user || this.o.demo ? this.windows() : [];
         this.vp.classList.toggle('gc-sdk-streamer', !!this.o.streamer);
@@ -1308,6 +1319,52 @@ class Sdk {
         if (input && keep) input.value = keep;
         if (this.o.draggable || this.playerCan.includes('move'))
             this.enableDrag();
+        this.vp
+            .querySelectorAll('.gc-sdk-messages')
+            .forEach((l) => (l.scrollTop = l.scrollHeight));
+    }
+
+    /** Лаунчер і віджет меню: не поверх гри, а звичайна скляна сторінка/картка. */
+    private renderPage() {
+        const keep =
+            this.vp.querySelector<HTMLInputElement>('.gc-sdk-input input')
+                ?.value ?? '';
+        this.vp.classList.add('gc-sdk-page');
+        this.vp.classList.toggle('gc-sdk-streamer', !!this.o.streamer);
+        let html: string;
+        if (!this.user && !this.o.demo) {
+            html = `<section class="gc-sdk-launcher-main gc-sdk-frosted-glass gc-sdk-interactive"><div class="gc-sdk-row">${this.logo()}<span class="gc-sdk-grow gc-sdk-title">${esc(this.o.title || 'GameCon')}</span></div>${this.loginBody()}</section>`;
+        } else if (this.o.mode === 'widget') {
+            const w = this.o.widget ?? 'friends';
+            html = `<section class="gc-sdk-widget gc-sdk-frosted-glass gc-sdk-interactive"><div class="gc-sdk-card-head">${icon(SECTION_ICONS[w])}<span class="gc-sdk-grow gc-sdk-title">${esc(tr(SECTION_LABELS[w]))}</span>${this.logo()}</div><div class="gc-sdk-list">${this.sectionBody(w)}</div></section>`;
+        } else {
+            const tabs: Section[] = [...this.sections(), 'settings'];
+            if (!tabs.includes(this.tab)) this.tab = tabs[0];
+            const nav = tabs
+                .map(
+                    (t) =>
+                        `<button type="button" class="gc-sdk-slot gc-sdk-nav" data-tab="${t}" aria-selected="${this.tab === t}">${icon(SECTION_ICONS[t])}<span class="gc-sdk-grow">${esc(tr(SECTION_LABELS[t]))}</span></button>`,
+                )
+                .join('');
+            const me = this.user
+                ? `<div class="gc-sdk-row gc-sdk-me">${this.avatar(this.user.name, this.user.picture, true)}<span class="gc-sdk-grow"><span class="gc-sdk-title gc-sdk-name" style="display:block">${esc(this.user.name)}</span><span class="gc-sdk-sub">@${esc(this.user.preferred_username)}</span></span></div>`
+                : '';
+            html = `<div class="gc-sdk-launcher gc-sdk-interactive">
+<nav class="gc-sdk-launcher-nav gc-sdk-frosted-glass" aria-label="GameCon"><div class="gc-sdk-row">${this.logo()}<span class="gc-sdk-grow gc-sdk-title">${esc(this.o.title || 'GameCon')}</span></div>${me}<div class="gc-sdk-list" role="tablist">${nav}</div></nav>
+<section class="gc-sdk-launcher-main gc-sdk-frosted-glass"><div class="gc-sdk-card-head">${icon(SECTION_ICONS[this.tab])}<span class="gc-sdk-grow gc-sdk-title">${esc(tr(SECTION_LABELS[this.tab]))}</span></div><div class="gc-sdk-body">${this.sectionBody(this.tab)}</div></section></div>`;
+        }
+        const toasts =
+            this.vp.querySelector('.gc-sdk-toasts') ??
+            Object.assign(document.createElement('div'), {
+                className: 'gc-sdk-toasts',
+            });
+        this.vp.innerHTML = html;
+        toasts.setAttribute('style', 'top:12px;right:12px;');
+        this.vp.appendChild(toasts);
+        const input = this.vp.querySelector<HTMLInputElement>(
+            '.gc-sdk-input input',
+        );
+        if (input && keep) input.value = keep;
         this.vp
             .querySelectorAll('.gc-sdk-messages')
             .forEach((l) => (l.scrollTop = l.scrollHeight));
@@ -1448,7 +1505,10 @@ class Sdk {
                 const f = this.family;
                 if (!f)
                     return `<div class="gc-sdk-sub">${tr('Ви ще не в сім’ї чи клані')}</div>`;
-                return `<div class="gc-sdk-stats"><div class="gc-sdk-slot gc-sdk-stat"><span class="gc-sdk-sub">${tr('Казна штабу')}</span><b>${money(f.treasury)}</b></div><div class="gc-sdk-slot gc-sdk-stat"><span class="gc-sdk-sub">${tr('Мій баланс')}</span><b>${money(f.my_balance)}</b></div></div>${f.members
+                const manage = f.url
+                    ? `<a class="gc-sdk-btn" href="${esc(f.url)}" target="_blank" rel="noopener">${icon('external')}${tr('Керувати на GameCon: ранги, заявки, події')}</a>`
+                    : '';
+                return `${manage}<div class="gc-sdk-stats"><div class="gc-sdk-slot gc-sdk-stat"><span class="gc-sdk-sub">${tr('Казна штабу')}</span><b>${money(f.treasury)}</b></div><div class="gc-sdk-slot gc-sdk-stat"><span class="gc-sdk-sub">${tr('Мій баланс')}</span><b>${money(f.my_balance)}</b></div></div>${f.members
                     .slice(0, 8)
                     .map((p) => this.memberRow({ ...p, mic: undefined }))
                     .join('')}`;
@@ -1629,7 +1689,10 @@ ${this.chatBody(false)}</aside>`;
                 this.conv = Number(el.dataset.id);
                 if (this.o.demo) this.msgs = DEMO.messages[this.conv] ?? [];
                 // Чат окремим вікном — відкриваємо шторку; у спільному вікні — лишаємось у вкладці.
-                if (wins().includes('chat') || !this.open) this.openChat(true);
+                if (this.o.mode === 'launcher' || this.o.mode === 'widget')
+                    this.render();
+                else if (wins().includes('chat') || !this.open)
+                    this.openChat(true);
                 else this.render();
                 void this.loadMessages().then(() => this.render());
                 return;

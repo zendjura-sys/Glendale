@@ -31,6 +31,8 @@ type Props = {
     base: string;
     script: string;
     overlay: string;
+    launcher: string;
+    widget: string;
     endpoints: Record<string, string>;
     scopes: { key: string; label: string }[];
 };
@@ -61,6 +63,8 @@ export default function DeveloperSdk({
     base,
     script,
     overlay,
+    launcher,
+    widget,
     endpoints,
 }: Props) {
     const reduce = useReducedMotion();
@@ -389,6 +393,9 @@ window.postMessage({ target: 'gamecon-sdk', cmd: 'setBusy', args: [true] }, '*')
                         {Object.entries({
                             [tr('Скрипт SDK')]: script,
                             [tr('Оверлей для CEF / iframe')]: overlay,
+                            [tr('Панель для лаунчера гри')]: launcher,
+                            [tr('Віджет головного меню')]:
+                                `${widget}?section=friends`,
                             ...Object.fromEntries(
                                 Object.entries(endpoints).map(([k, v]) => [
                                     k,

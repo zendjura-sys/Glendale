@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Developer;
 
 use App\Http\Controllers\Controller;
+use App\Models\DeveloperApp;
 use App\Support\I18n\Locales;
 use App\Support\I18n\Translations;
 use chillerlan\QRCode\Output\QROutputInterface;
@@ -63,9 +64,22 @@ class SdkAssetsController extends Controller
      * /embed/overlay?client_id=…&modules=hud,party&side=left — прозора сторінка лише з віджетами.
      * Керування з гри: window.postMessage({ target: 'gamecon-sdk', cmd: 'toggle' }, '*').
      */
-    public function overlay(Request $request): Response
+    /** /embed/launcher — повна скляна панель GameCon для лаунчера гри (сім'я, клан, друзі, чат…). */
+    public function launcher(Request $request): Response
+    {
+        return $this->overlay($request, 'launcher');
+    }
+
+    /** /embed/widget?section=friends — один розділ карткою для головного меню гри. */
+    public function widget(Request $request): Response
+    {
+        return $this->overlay($request, 'widget');
+    }
+
+    public function overlay(Request $request, string $mode = 'overlay'): Response
     {
         $opts = [
+            'mode' => $mode,
             'clientId' => (string) $request->query('client_id', ''),
             'demo' => $request->boolean('demo'),
         ];
@@ -77,6 +91,10 @@ class SdkAssetsController extends Controller
         }
         if (is_string($request->query('modules'))) {
             $opts['modules'] = array_values(array_intersect(['hud', 'party', 'chat', 'family', 'drop'], explode(',', (string) $request->query('modules'))));
+        }
+        if ($mode === 'widget') {
+            $section = (string) $request->query('section', 'friends');
+            $opts['widget'] = in_array($section, DeveloperApp::OVERLAY_SECTIONS, true) ? $section : 'friends';
         }
         if ($request->query('blur') === '0') {
             $opts['blur'] = false;

@@ -20,6 +20,8 @@ class SdkPageController extends Controller
             'base' => rtrim(url('/'), '/'),
             'script' => url('/sdk/v1/gamecon-sdk.js'),
             'overlay' => url('/embed/overlay'),
+            'launcher' => url('/embed/launcher'),
+            'widget' => url('/embed/widget'),
             'defaults' => DeveloperApp::OVERLAY_DEFAULTS,
             'sections' => DeveloperApp::OVERLAY_SECTIONS,
             'scopes' => collect(OAuthServer::SCOPES)->map(fn (string $label, string $key) => ['key' => $key, 'label' => $label])->values(),

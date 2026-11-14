@@ -156,6 +156,8 @@ Route::get('developers', [Developer\DeveloperPortalController::class, 'index'])-
 // GameCon Overlay SDK: скрипт, прозорий оверлей для CEF/iframe, QR для входу в гру за кодом.
 Route::get('sdk/v1/gamecon-sdk.js', [Developer\SdkAssetsController::class, 'script'])->name('sdk.script');
 Route::get('embed/overlay', [Developer\SdkAssetsController::class, 'overlay'])->name('sdk.overlay');
+Route::get('embed/launcher', [Developer\SdkAssetsController::class, 'launcher'])->name('sdk.launcher');
+Route::get('embed/widget', [Developer\SdkAssetsController::class, 'widget'])->name('sdk.widget');
 Route::get('link/qr.svg', [Developer\SdkAssetsController::class, 'qr'])->middleware('throttle:60,1')->name('oauth.link.qr');
 Route::get('embed.js', [Developer\EmbedKitController::class, 'script'])->name('embed.script');
 Route::get('share', [Developer\EmbedKitController::class, 'share'])->middleware('auth')->name('share.intent');
