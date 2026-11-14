@@ -5,6 +5,7 @@ namespace App\Services\Developer;
 use App\Models\DeveloperApp;
 use App\Models\DeveloperToken;
 use App\Models\User;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -42,6 +43,13 @@ class OAuthServer
     public const ACCESS_TTL = 3600;
 
     public const REFRESH_DAYS = 30;
+
+    public const DEVICE_TTL = 600;
+
+    public const DEVICE_INTERVAL = 5;
+
+    /** Без голосних і схожих літер — щоб у коді не склалося слово й не сплутати 0/O, 1/I. */
+    private const USER_CODE_ALPHABET = 'BCDFGHJKLMNPQRSTVWXZ';
 
     public function newClientId(): string
     {
@@ -206,6 +214,75 @@ class OAuthServer
             'refresh_token' => $refresh,
             'scope' => implode(' ', $scopes),
         ];
+    }
+
+    /**
+     * RFC 8628 — вхід за кодом пристрою: гра на ПК/консолі/телевізорі показує код і QR,
+     * гравець підтверджує на gamecon.online/link (з телефона чи застосунку), гра отримує токен.
+     *
+     * @param  list<string>  $scopes
+     * @return array<string, mixed>
+     */
+    public function deviceStart(DeveloperApp $app, array $scopes): array
+    {
+        $device = 'gcd_'.Str::random(48);
+        do {
+            $user = implode('', array_map(fn () => self::USER_CODE_ALPHABET[random_int(0, strlen(self::USER_CODE_ALPHABET) - 1)], range(1, 8)));
+        } while (Cache::has('oauth_device_code:'.$user));
+        $hash = hash('sha256', $device);
+        Cache::put('oauth_device:'.$hash, ['app' => $app->id, 'scopes' => $scopes, 'user_code' => $user, 'status' => 'pending', 'user_id' => null, 'polled' => 0], self::DEVICE_TTL);
+        Cache::put('oauth_device_code:'.$user, $hash, self::DEVICE_TTL);
+        $pretty = substr($user, 0, 4).'-'.substr($user, 4);
+
+        return [
+            'device_code' => $device,
+            'user_code' => $pretty,
+            'verification_uri' => url('/link'),
+            'verification_uri_complete' => url('/link?code='.$pretty),
+            'expires_in' => self::DEVICE_TTL,
+            'interval' => self::DEVICE_INTERVAL,
+        ];
+    }
+
+    /** Запит за кодом, який ввела людина («ABCD-EFGH», регістр і дефіс не важливі). @return array<string, mixed>|null */
+    public function deviceFind(string $userCode): ?array
+    {
+        $code = strtoupper(preg_replace('/[^A-Za-z]/', '', $userCode) ?? '');
+        $hash = strlen($code) === 8 ? Cache::get('oauth_device_code:'.$code) : null;
+        $entry = is_string($hash) ? Cache::get('oauth_device:'.$hash) : null;
+
+        return is_array($entry) && $entry['status'] === 'pending' ? $entry + ['hash' => $hash] : null;
+    }
+
+    public function deviceDecide(string $userCode, User $user, bool $approve): ?DeveloperApp
+    {
+        $entry = $this->deviceFind($userCode);
+        if ($entry === null) {
+            return null;
+        }
+        Cache::put('oauth_device:'.$entry['hash'], ['status' => $approve ? 'approved' : 'denied', 'user_id' => $user->id] + $entry, self::DEVICE_TTL);
+        Cache::forget('oauth_device_code:'.$entry['user_code']);
+
+        return DeveloperApp::query()->find($entry['app']);
+    }
+
+    /** Опитування з гри. Повертає токени або код помилки RFC 8628. @return array<string, mixed>|string */
+    public function devicePoll(DeveloperApp $app, string $deviceCode): array|string
+    {
+        $key = 'oauth_device:'.hash('sha256', $deviceCode);
+        $entry = Cache::get($key);
+        if (! is_array($entry) || $entry['app'] !== $app->id) {
+            return 'expired_token';
+        }
+        if ($entry['status'] === 'pending') {
+            $slow = microtime(true) - $entry['polled'] < self::DEVICE_INTERVAL - 1;
+            Cache::put($key, ['polled' => microtime(true)] + $entry, self::DEVICE_TTL);
+
+            return $slow ? 'slow_down' : 'authorization_pending';
+        }
+        Cache::forget($key);
+
+        return $entry['status'] === 'approved' ? $this->issueTokens($app, (int) $entry['user_id'], $entry['scopes']) : 'access_denied';
     }
 
     /** RFC 7009: токен (access чи refresh) більше не діє. Невідомий токен — теж «успіх». */

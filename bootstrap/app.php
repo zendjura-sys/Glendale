@@ -54,7 +54,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->encryptCookies(except: ['locale']);
 
         // «Відписатися одним натисканням» з Gmail надсилає POST без CSRF-токена; посилання підписане.
-        $middleware->validateCsrfTokens(except: ['mail/unsubscribe/*', 'billing/monobank/webhook', 'billing/google-play/rtdn', 'oauth/token', 'oauth/revoke']);
+        $middleware->validateCsrfTokens(except: ['mail/unsubscribe/*', 'billing/monobank/webhook', 'billing/google-play/rtdn', 'oauth/token', 'oauth/revoke', 'oauth/device']);
 
         // Гість відкрив сторінку спільноти, яку дозволено переглядати без акаунта, — гостьова сторінка замість входу.
         $middleware->redirectGuestsTo(function (Request $request) {

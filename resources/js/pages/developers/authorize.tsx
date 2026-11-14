@@ -21,7 +21,9 @@ type Props = {
         created_at: string | null;
     };
     scopes?: { key: string; label: string }[];
-    redirect_host?: string;
+    redirect_host?: string | null;
+    /** Вхід за кодом пристрою (gamecon.online/link) — нікуди не повертаємо. */
+    device?: boolean;
     query?: Record<string, string>;
 };
 
@@ -31,6 +33,7 @@ export default function DeveloperAuthorize({
     app,
     scopes = [],
     redirect_host,
+    device = false,
     query = {},
 }: Props) {
     const { auth } = usePage().props;
@@ -104,10 +107,14 @@ export default function DeveloperAuthorize({
                     </ul>
                     <p className="flex gap-2 text-xs leading-relaxed text-white/45">
                         <ShieldCheck className="size-4 shrink-0 text-white/40" />
-                        {tr(
-                            'Пароль застосунок не отримає. Після згоди вас поверне на {host}. Відключити доступ можна будь-коли в Налаштування → Застосунки.',
-                            { host: redirect_host ?? '' },
-                        )}
+                        {device
+                            ? tr(
+                                  'Пароль застосунок не отримає. Після згоди гра на іншому пристрої увійде сама. Відключити доступ можна будь-коли в Налаштування → Застосунки.',
+                              )
+                            : tr(
+                                  'Пароль застосунок не отримає. Після згоди вас поверне на {host}. Відключити доступ можна будь-коли в Налаштування → Застосунки.',
+                                  { host: redirect_host ?? '' },
+                              )}
                     </p>
                     {app.website && (
                         <a

@@ -20,7 +20,52 @@ use Symfony\Component\HttpFoundation\Response as HttpResponse;
  */
 class OAuthController extends Controller
 {
+    private const DEVICE_GRANT = 'urn:ietf:params:oauth:grant-type:device_code';
+
     public function __construct(private readonly OAuthServer $oauth) {}
+
+    /** RFC 8628 §3.1: гра просить код для входу (ПК, консоль, телевізор — де немає зручного браузера). */
+    public function device(Request $request): JsonResponse
+    {
+        if (! app(Plugins::class)->on('developers')) {
+            return $this->error('invalid_request', 'API для розробників вимкнено.', 404);
+        }
+        [$clientId, $secret] = $this->credentials($request);
+        $app = $this->oauth->client($clientId, $secret);
+        if ($app === null) {
+            return $this->error('invalid_client', 'Невідомий застосунок або неправильний секрет.', 401);
+        }
+        $scopes = $this->oauth->scopes($app, $request->input('scope'));
+        if ($scopes === null) {
+            return $this->error('invalid_scope', 'Застосунок просить права, яких не має.');
+        }
+
+        return response()->json($this->oauth->deviceStart($app, $scopes))->header('Cache-Control', 'no-store');
+    }
+
+    /** gamecon.online/link — гравець вводить код з гри (чи відкриває посилання з QR) і підтверджує вхід. */
+    public function link(Request $request): Response
+    {
+        app(Plugins::class)->ensure('developers');
+        $code = trim((string) $request->query('code', ''));
+        if ($code === '') {
+            return Inertia::render('developers/link', ['code' => null, 'error' => null, 'done' => null]);
+        }
+        $entry = $this->oauth->deviceFind($code);
+        $app = $entry ? DeveloperApp::query()->with('user')->find($entry['app']) : null;
+        if ($entry === null || $app === null || $app->blocked()) {
+            return Inertia::render('developers/link', ['code' => $code, 'error' => 'Код не знайдено або він прострочений. Перевірте літери чи почніть вхід у грі заново.', 'done' => null]);
+        }
+
+        return Inertia::render('developers/authorize', [
+            'error' => null,
+            'app' => ['name' => $app->name, 'description' => $app->description, 'website' => $app->website, 'author' => $app->user->name, 'created_at' => $app->created_at?->toIso8601String()],
+            'scopes' => array_map(fn (string $s) => ['key' => $s, 'label' => OAuthServer::SCOPES[$s]], $entry['scopes']),
+            'redirect_host' => null,
+            'device' => true,
+            'query' => ['user_code' => $code],
+        ]);
+    }
 
     /** Екран «Застосунок X просить доступ до…». Помилки клієнта й адреси показуємо тут, нікуди не перенаправляючи. */
     public function authorize(Request $request): Response|HttpResponse
@@ -71,6 +116,15 @@ class OAuthController extends Controller
         if (is_array($request->input('query'))) {
             return app(AuthorizeController::class)->decide($request);
         }
+        if ($request->filled('user_code')) {
+            app(Plugins::class)->ensure('developers');
+            $app = $this->oauth->deviceDecide((string) $request->input('user_code'), $request->user(), $request->boolean('approve'));
+            Log::info('oauth.device', ['user' => $request->user()->id, 'app' => $app?->id, 'approve' => $request->boolean('approve')]);
+
+            return Inertia::render('developers/link', $app === null
+                ? ['code' => $request->input('user_code'), 'error' => 'Код прострочено — почніть вхід у грі заново.', 'done' => null]
+                : ['code' => null, 'error' => null, 'done' => ['app' => $app->name, 'approved' => $request->boolean('approve')]]);
+        }
         app(Plugins::class)->ensure('developers');
         [$app, $redirect, $error] = $this->client($request);
         if ($error !== null) {
@@ -105,13 +159,18 @@ class OAuthController extends Controller
         $result = match ($request->input('grant_type')) {
             'authorization_code' => $this->oauth->exchangeCode($app, (string) $request->input('code'), (string) $request->input('redirect_uri'), (string) $request->input('code_verifier')),
             'refresh_token' => $this->oauth->refresh($app, (string) $request->input('refresh_token'), $request->input('scope')),
+            self::DEVICE_GRANT => $this->oauth->devicePoll($app, (string) $request->input('device_code')),
             default => 'unsupported_grant_type',
         };
         if (is_string($result)) {
             return $this->error($result, match ($result) {
                 'invalid_grant' => 'Код чи refresh-токен недійсний, прострочений, уже використаний або не збігся code_verifier / redirect_uri.',
                 'invalid_scope' => 'Не можна розширити права при оновленні токена.',
-                default => 'Підтримуються лише authorization_code і refresh_token.',
+                'authorization_pending' => 'Гравець ще не підтвердив вхід.',
+                'slow_down' => 'Опитуйте не частіше, ніж interval.',
+                'access_denied' => 'Гравець відмовив у доступі.',
+                'expired_token' => 'Код прострочено — почніть вхід заново.',
+                default => 'Підтримуються authorization_code, refresh_token і device_code.',
             });
         }
 
@@ -142,7 +201,8 @@ class OAuthController extends Controller
             'userinfo_endpoint' => url('/api/developer/v1/userinfo'),
             'scopes_supported' => array_keys(OAuthServer::SCOPES),
             'response_types_supported' => ['code'],
-            'grant_types_supported' => ['authorization_code', 'refresh_token'],
+            'grant_types_supported' => ['authorization_code', 'refresh_token', self::DEVICE_GRANT],
+            'device_authorization_endpoint' => url('/oauth/device'),
             'code_challenge_methods_supported' => ['S256'],
             'token_endpoint_auth_methods_supported' => ['client_secret_basic', 'client_secret_post', 'none'],
             'service_documentation' => url('/developers'),

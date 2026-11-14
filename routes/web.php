@@ -162,6 +162,7 @@ Route::get('developers/plugins/{plugin}/install.sh', [Developer\CmsPluginsContro
 Route::get('developers/plugins/{plugin}/cli', [Developer\CmsPluginsController::class, 'cli'])->where('plugin', '[a-z]+')->middleware(['signed', 'throttle:30,1'])->name('developers.plugins.cli');
 Route::get('developers/plugins/{plugin}/download', [Developer\CmsPluginsController::class, 'download'])->where('plugin', '[a-z]+')->middleware(['auth', 'throttle:30,1'])->name('developers.plugins.download');
 Route::post('oauth/token', [Developer\OAuthController::class, 'token'])->middleware('throttle:60,1')->name('oauth.token');
+Route::post('oauth/device', [Developer\OAuthController::class, 'device'])->middleware('throttle:30,1')->name('oauth.device');
 Route::post('oauth/revoke', [Developer\OAuthController::class, 'revoke'])->middleware('throttle:60,1')->name('oauth.revoke');
 Route::get('.well-known/oauth-authorization-server', [Developer\OAuthController::class, 'metadata'])->name('oauth.metadata');
 
@@ -1170,6 +1171,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     });
     // OAuth: екран згоди (лише для тих, хто увійшов).
     Route::get('oauth/authorize', [Developer\OAuthController::class, 'authorize'])->name('oauth.authorize');
+    Route::get('link', [Developer\OAuthController::class, 'link'])->middleware('throttle:30,1')->name('oauth.link');
     Route::post('oauth/authorize', [Developer\OAuthController::class, 'decide'])->middleware('throttle:30,1')->name('oauth.decide');
     // Налаштування → Підключені застосунки.
     Route::get('settings/connected-apps', [Developer\ConnectedAppsController::class, 'index'])->name('connected-apps.index');
