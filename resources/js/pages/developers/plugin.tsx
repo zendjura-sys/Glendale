@@ -16,6 +16,7 @@ import type { CmsPluginCard } from './plugins';
 type Props = {
     plugin: CmsPluginCard & {
         steps: string[];
+        settings: string;
         features: string[];
         redirect: string;
     };
@@ -135,10 +136,17 @@ export default function DeveloperPlugin({
                             </h2>
                             <ol className="space-y-3">
                                 {[
-                                    tr(
-                                        'Розробникам → Новий застосунок «з секретом»; адреса повернення — нижче.',
-                                    ),
                                     ...plugin.steps.map((s) => tr(s)),
+                                    tr(
+                                        'Відкрийте налаштування плагіна ({where}) — там показано адресу повернення (callback). Її ж можна зібрати нижче.',
+                                        { where: tr(plugin.settings) },
+                                    ),
+                                    tr(
+                                        'Розробникам → Новий застосунок «з секретом»: вставте цю адресу в поле «Адреси повернення» й збережіть.',
+                                    ),
+                                    tr(
+                                        'Скопіюйте Client ID і Client Secret застосунку в налаштування плагіна й збережіть — кнопка «Увійти через GameCon» з’явиться сама.',
+                                    ),
                                 ].map((step, i) => (
                                     <li key={step} className="flex gap-3">
                                         <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/20 text-[13px] font-semibold text-primary">

@@ -207,7 +207,7 @@ final class GameCon_Login
         $o = get_option(self::OPTION, []); ?>
         <div class="wrap">
             <h1><?php esc_html_e('Увійти через GameCon', 'gamecon-login'); ?></h1>
-            <p><?php esc_html_e('1. Створіть застосунок у розділі «Розробникам» на GameCon. 2. Вкажіть у ньому адресу повернення нижче. 3. Вставте Client ID і Secret.', 'gamecon-login'); ?></p>
+            <p><?php esc_html_e('1. Скопіюйте адресу повернення нижче. 2. На GameCon: Розробникам → Новий застосунок, вставте цю адресу. 3. Вставте сюди Client ID і Secret застосунку й збережіть.', 'gamecon-login'); ?></p>
             <p><strong><?php esc_html_e('Адреса повернення (Redirect URI):', 'gamecon-login'); ?></strong> <code><?php echo esc_html(self::redirect_uri()); ?></code></p>
             <form method="post" action="options.php">
                 <?php settings_fields('gamecon_login'); ?>

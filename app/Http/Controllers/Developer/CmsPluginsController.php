@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Developer;
 
 use App\Http\Controllers\Controller;
+use App\Support\Developer\CmsIcons;
 use App\Support\Developer\CmsPlugins;
 use App\Support\Plugins\Plugins;
 use Illuminate\Support\Facades\Log;
@@ -32,6 +33,7 @@ class CmsPluginsController extends Controller
             'plugin' => [
                 ...$this->card($plugin, $data),
                 'steps' => $data['steps'],
+                'settings' => $data['settings'],
                 'features' => $data['features'],
                 'redirect' => $data['redirect'],
             ],
@@ -63,6 +65,8 @@ class CmsPluginsController extends Controller
             'color' => $p['color'],
             'mark' => $p['mark'],
             'logo' => $p['logo'] ?? null,
+            // Фавікон з офіційного сайту рушія (developers:cms-icons).
+            'favicon' => CmsIcons::url($key),
             'versions' => $p['versions'],
             'stack' => $p['stack'],
             'package' => $p['package'],

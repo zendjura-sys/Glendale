@@ -11,7 +11,8 @@ License: GPLv2 or later
 
 == Встановлення ==
 1. Плагіни → Додати новий → Завантажити плагін → оберіть gamecon-wordpress.zip → Активувати.
-2. На GameCon: Розробникам → Новий застосунок. Адреса повернення: https://ваш-сайт/?gamecon=callback
-3. Налаштування → GameCon: вставте Client ID і Client Secret.
+2. Налаштування → GameCon: скопіюйте адресу повернення (https://ваш-сайт/?gamecon=callback).
+3. На GameCon: Розробникам → Новий застосунок, вставте цю адресу.
+4. Налаштування → GameCon: вставте Client ID і Client Secret застосунку.
 
 Кнопка з’явиться на сторінці входу. Шорткоди: [gamecon_login], [gamecon_profile username="нік"].

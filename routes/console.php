@@ -110,3 +110,7 @@ Schedule::call(fn () => RecentSearches::prune())->name('search-queries:prune')->
 
 // Алерти адміністраторам у Telegram: черга, пуші, тривоги, скарги.
 Schedule::call(fn () => app(AdminAlerts::class)->health())->name('admin-alerts:health')->everyTenMinutes()->withoutOverlapping();
+
+// Фавікони рушіїв для каталогу плагінів: бракує — щодня, усі — щотижня.
+Schedule::command('developers:cms-icons')->name('developers:cms-icons')->dailyAt('04:47')->withoutOverlapping();
+Schedule::command('developers:cms-icons --force')->name('developers:cms-icons:refresh')->weeklyOn(0, '04:53')->withoutOverlapping();

@@ -3,12 +3,14 @@ import {
     ArrowLeft,
     Download,
     KeyRound,
+    Link2,
     LogIn,
     PackageOpen,
     Puzzle,
 } from 'lucide-react';
 import { m, useReducedMotion } from 'motion/react';
 import { useState } from 'react';
+import type { SyntheticEvent } from 'react';
 import { tr } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
@@ -19,6 +21,8 @@ export type CmsPluginCard = {
     color: string;
     mark: string;
     logo: string | null;
+    /** Фавікон з офіційного сайту рушія (завантажує сервер). */
+    favicon: string | null;
     versions: string;
     stack: string;
     package: string;
@@ -33,9 +37,43 @@ export function EngineMark({
     plugin,
     size = 'md',
 }: {
-    plugin: Pick<CmsPluginCard, 'color' | 'mark' | 'logo'>;
+    plugin: Pick<CmsPluginCard, 'color' | 'mark' | 'logo' | 'favicon'>;
     size?: 'sm' | 'md' | 'lg';
 }) {
+    const box =
+        size === 'lg'
+            ? 'size-16 rounded-2xl'
+            : size === 'sm'
+              ? 'size-8 rounded-lg'
+              : 'size-12 rounded-xl';
+    // Фавікон — на світлій плитці: кольорові значки рушіїв тут читаються найкраще.
+    const [broken, setBroken] = useState(false);
+    if (plugin.favicon && !broken) {
+        return (
+            <span
+                aria-hidden
+                className={cn(
+                    'flex shrink-0 items-center justify-center bg-white shadow-[0_1px_2px_rgb(0_0_0/0.12)] ring-1 ring-black/5',
+                    box,
+                )}
+            >
+                <img
+                    src={plugin.favicon}
+                    alt=""
+                    loading="lazy"
+                    onError={(_: SyntheticEvent) => setBroken(true)}
+                    className={
+                        size === 'lg'
+                            ? 'size-10'
+                            : size === 'sm'
+                              ? 'size-5'
+                              : 'size-8'
+                    }
+                />
+            </span>
+        );
+    }
+
     return (
         <span
             aria-hidden
@@ -108,15 +146,8 @@ export default function DeveloperPlugins({ plugins, version }: Props) {
                     </p>
                 </header>
 
-                <section className="grid gap-3 sm:grid-cols-3">
+                <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                     {[
-                        {
-                            icon: KeyRound,
-                            title: tr('Створіть застосунок'),
-                            text: tr(
-                                'У «Розробникам» — отримаєте Client ID і Secret.',
-                            ),
-                        },
                         {
                             icon: PackageOpen,
                             title: tr('Встановіть плагін'),
@@ -125,8 +156,20 @@ export default function DeveloperPlugins({ plugins, version }: Props) {
                             ),
                         },
                         {
+                            icon: Link2,
+                            title: tr('Скопіюйте адресу повернення'),
+                            text: tr('Плагін покаже її у своїх налаштуваннях.'),
+                        },
+                        {
+                            icon: KeyRound,
+                            title: tr('Створіть застосунок'),
+                            text: tr(
+                                'У «Розробникам» вставте цю адресу — отримаєте Client ID і Secret.',
+                            ),
+                        },
+                        {
                             icon: LogIn,
-                            title: tr('Вставте ключі'),
+                            title: tr('Вставте ключі в плагін'),
                             text: tr(
                                 'Кнопка «Увійти через GameCon» з’явиться сама.',
                             ),
