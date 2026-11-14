@@ -8,7 +8,8 @@ import { PRODUCT_LABELS } from '@/lib/plus';
 
 type Product = {
     key: string;
-    kind: 'plus' | 'gift' | 'family' | 'promo' | 'phone';
+    kind: 'plus' | 'gift' | 'family' | 'promo' | 'phone' | 'balance';
+    name: string;
     price: number;
     days: number;
     recurring: boolean;
@@ -20,6 +21,10 @@ type Props = {
     locale: string;
     labels: LegalLabels;
     products: Product[];
+    /** Знижка на GameCon+ для сім’ї лідерам із власним GameCon+ (%). */
+    family_plus_discount: number;
+    /** Просування спільноти: ціна в одиницях балансу (=₴) і строк. */
+    community_promo: { price: number; days: number } | null;
     /** Ліміти [без GameCon+, з GameCon+] з config/plus.php. */
     limits: Record<string, Pair>;
     reactions: number;
@@ -42,7 +47,7 @@ const perks = (limits: Props['limits'], reactions: number): string[] => {
     }
     if (plus('pinned_posts') !== null) {
         list.push(
-            tr('{n} закріплені записи', { n: plus('pinned_posts') ?? 0 }),
+            tr('До {n} закріплених записів', { n: plus('pinned_posts') ?? 0 }),
         );
     }
     if (plus('message_file_mb') !== null) {
@@ -71,6 +76,7 @@ const GROUPS = (): Record<Product['kind'], string> => ({
     gift: tr('Подарунок другу'),
     promo: tr('Просування сервера'),
     phone: tr('Внутрішні номери +777'),
+    balance: tr('Поповнення балансу GameCon (передоплата електронних послуг)'),
 });
 
 /**
@@ -83,6 +89,8 @@ export default function Pricing({
     products,
     limits,
     reactions,
+    family_plus_discount,
+    community_promo,
 }: Props) {
     const user = usePage().props.auth?.user;
     const groups = (Object.keys(GROUPS()) as Product['kind'][])
@@ -91,7 +99,7 @@ export default function Pricing({
 
     return (
         <LegalShell title={labels.pricing} locale={locale} labels={labels}>
-            <section className="glass rounded-3xl p-5 sm:p-8">
+            <section className="glass rounded-2xl p-5 sm:p-8">
                 <h1 className="flex items-center gap-2.5 font-display text-2xl font-bold text-white sm:text-3xl">
                     <PlusBadge className="size-7 rounded-lg [&_svg]:size-5" />
                     {labels.pricing}
@@ -129,7 +137,7 @@ export default function Pricing({
                                         >
                                             <span className="min-w-0 flex-1 text-white/85">
                                                 {PRODUCT_LABELS()[p.key] ??
-                                                    p.key}
+                                                    p.name}
                                             </span>
                                             <span className="font-semibold text-white tabular-nums">
                                                 {p.price.toLocaleString(
@@ -148,8 +156,43 @@ export default function Pricing({
                                         </li>
                                     ))}
                             </ul>
+                            {group.kind === 'family' &&
+                                family_plus_discount > 0 && (
+                                    <p className="mt-2 text-xs leading-relaxed text-white/55">
+                                        {tr(
+                                            '−{n}% для лідерів із власним GameCon+: якщо лідер сім’ї сам має GameCon+, GameCon+ для сім’ї коштує на {n}% менше — і при першій оплаті, і при автопродовженні, поки його підписка активна.',
+                                            { n: family_plus_discount },
+                                        )}
+                                    </p>
+                                )}
                         </div>
                     ))}
+                    {community_promo && (
+                        <div>
+                            <h2 className="mb-2 font-display text-lg font-bold text-white">
+                                {tr('Просування спільноти')}
+                            </h2>
+                            <ul className="divide-y divide-white/[0.06] rounded-2xl bg-white/[0.03]">
+                                <li className="flex flex-wrap items-center gap-2 px-4 py-3 text-sm">
+                                    <span className="min-w-0 flex-1 text-white/85">
+                                        {tr(
+                                            'Спільнота в блоці рекомендацій · {n} днів',
+                                            { n: community_promo.days },
+                                        )}
+                                    </span>
+                                    <span className="font-semibold text-white tabular-nums">
+                                        {community_promo.price.toLocaleString(
+                                            'uk-UA',
+                                        )}{' '}
+                                        ₴
+                                    </span>
+                                    <span className="w-full text-xs text-white/40 sm:w-auto">
+                                        {tr('разова оплата з балансу')}
+                                    </span>
+                                </li>
+                            </ul>
+                        </div>
+                    )}
                 </div>
 
                 <p className="mt-6 text-xs text-white/45">
@@ -166,7 +209,7 @@ export default function Pricing({
                 </p>
                 <Link
                     href={user ? '/plus' : '/register'}
-                    className="mt-5 inline-flex h-11 items-center rounded-xl bg-[var(--btn-primary,#6366f1)] px-5 text-sm font-semibold text-white transition hover:opacity-90"
+                    className="mt-5 inline-flex h-11 items-center rounded-xl bg-primary px-5 text-sm font-semibold text-white transition hover:opacity-90"
                 >
                     {user ? tr('Оформити GameCon+') : tr('Зареєструватися')}
                 </Link>

@@ -188,6 +188,7 @@ class BillingController extends Controller
             'order_hours' => ['required', 'integer', 'min:1', 'max:72'],
             'card_renewals' => ['boolean'],
             'offer_save_card' => ['boolean'],
+            'trial_days' => ['required', 'integer', 'min:0', 'max:30'],
             'badges' => ['array'],
             'badges.*' => ['string', Rule::in(Catalog::BADGES)],
         ]);

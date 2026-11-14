@@ -93,10 +93,10 @@ export default function AdminIntegrations({ spotify, cinema }: Props) {
                 />
             </div>
 
-            <section className="glass relative overflow-hidden rounded-3xl p-6">
+            <section className="gc-solid relative overflow-hidden rounded-3xl p-6">
                 <div className="pointer-events-none absolute -top-24 -right-20 size-80 rounded-full bg-spotify/10 blur-3xl" />
                 <header className="relative mb-6 flex flex-wrap items-center gap-4">
-                    <span className="flex size-12 items-center justify-center rounded-2xl bg-spotify/10 ring-1 ring-spotify/30">
+                    <span className="flex size-12 items-center justify-center rounded-2xl bg-spotify/10 ring-spotify/30">
                         <SpotifyLogo className="size-7" />
                     </span>
                     <div className="min-w-0 flex-1">
@@ -124,7 +124,7 @@ export default function AdminIntegrations({ spotify, cinema }: Props) {
                         href="https://developer.spotify.com/dashboard"
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex items-center gap-2 rounded-xl bg-white/[0.06] px-4 py-2.5 text-sm text-white/80 transition hover:bg-white/10 hover:text-white"
+                        className="gc-solid-2 inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm text-white/80 transition hover:bg-white/10 hover:text-white"
                     >
                         Spotify Dashboard <ExternalLink className="size-4" />
                     </a>
@@ -149,7 +149,7 @@ export default function AdminIntegrations({ spotify, cinema }: Props) {
                                 className="font-mono"
                             />
                             {form.errors.client_id && (
-                                <p className="text-xs text-rose-300">
+                                <p className="text-xs text-red-400">
                                     {form.errors.client_id}
                                 </p>
                             )}
@@ -193,7 +193,7 @@ export default function AdminIntegrations({ spotify, cinema }: Props) {
                                 </button>
                             </div>
                             {form.errors.client_secret && (
-                                <p className="text-xs text-rose-300">
+                                <p className="text-xs text-red-400">
                                     {form.errors.client_secret}
                                 </p>
                             )}
@@ -227,7 +227,7 @@ export default function AdminIntegrations({ spotify, cinema }: Props) {
                                     )
                                 }
                                 disabled={!spotify.configured}
-                                className="inline-flex items-center gap-2 rounded-xl bg-white/[0.06] px-4 py-2.5 text-sm text-white/80 transition hover:bg-white/10 disabled:opacity-40"
+                                className="gc-solid-2 inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm text-white/80 transition hover:bg-white/10 disabled:opacity-40"
                             >
                                 <PlugZap className="size-4" />{' '}
                                 {tr('Перевірити з’єднання')}
@@ -247,7 +247,7 @@ export default function AdminIntegrations({ spotify, cinema }: Props) {
                                             { preserveScroll: true },
                                         )
                                     }
-                                    className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm text-rose-300 transition hover:bg-rose-500/10"
+                                    className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm text-red-400 transition hover:bg-red-500/10"
                                 >
                                     <Trash2 className="size-4" />{' '}
                                     {tr('Видалити')}
@@ -355,10 +355,36 @@ export default function AdminIntegrations({ spotify, cinema }: Props) {
                         ),
                     ],
                     [
-                        'translate',
-                        tr('Переклад'),
+                        'alerts',
+                        tr('Мапа тривог'),
                         tr(
-                            'Автопереклад інтерфейсу на інші мови й кнопка «Перекласти» під записами.',
+                            'Тривоги за областями й радар цілей для людей з України: alerts.in.ua і зведення Повітряних сил.',
+                        ),
+                    ],
+                    [
+                        'media',
+                        tr('GIF і медіа'),
+                        tr('Пошук GIF у записах і чатах.'),
+                    ],
+                    [
+                        'ai',
+                        tr('Штучний інтелект'),
+                        tr(
+                            'Власний ключ Claude чи OpenAI-сумісного сервісу: ШІ-редактор, підсумок чату, опис спільноти, ШІ-модерація й ШІ-бот у чатах.',
+                        ),
+                    ],
+                    [
+                        'translate',
+                        tr('Переклад і орфографія'),
+                        tr(
+                            'Автопереклад інтерфейсу на інші мови, кнопка «Перекласти» під записами (DeepL, а коли ліміт вичерпано — LibreTranslate) і перевірка орфографії текстів адміністрації.',
+                        ),
+                    ],
+                    [
+                        'music',
+                        tr('Музика: метадані'),
+                        tr(
+                            'Розпізнавання треків за звуком, альбоми, роки, жанри, обкладинки й біографії виконавців. MusicBrainz, Cover Art Archive і LRCLIB працюють без ключа.',
                         ),
                     ],
                     [

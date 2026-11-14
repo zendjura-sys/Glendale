@@ -144,7 +144,7 @@ export default function AdminModes({
                         <button
                             type="button"
                             onClick={reset}
-                            className="glass inline-flex h-10 items-center gap-2 rounded-xl px-3.5 text-sm font-medium text-white/80 hover:text-white"
+                            className="gc-solid inline-flex h-10 items-center gap-2 rounded-xl px-3.5 text-sm font-medium text-white/80 hover:text-white"
                         >
                             <RotateCcw className="size-4" /> {tr('Типові')}
                         </button>
@@ -160,7 +160,7 @@ export default function AdminModes({
             />
 
             {(errors.modes || errors.default) && (
-                <p className="mb-4 rounded-xl border border-rose-400/30 bg-rose-400/10 px-4 py-3 text-sm text-rose-200">
+                <p className="mb-4 rounded-xl bg-red-400/10 px-4 py-3 text-sm text-red-400">
                     {errors.modes ?? errors.default}
                 </p>
             )}
@@ -178,14 +178,14 @@ export default function AdminModes({
                                 type="button"
                                 onClick={() => setSelected(item.id)}
                                 className={cn(
-                                    'glass flex w-full items-center gap-3 rounded-2xl p-3 text-left transition-colors',
+                                    'gc-solid flex w-full items-center gap-3 rounded-2xl p-3 text-left transition-colors',
                                     active
                                         ? 'ring-2 ring-primary'
                                         : 'hover:border-white/25',
                                     !item.enabled && 'opacity-55',
                                 )}
                             >
-                                <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-black/25 ring-1 ring-white/10">
+                                <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-black/25">
                                     <Icon className="size-5 text-white/85" />
                                 </span>
                                 <span className="min-w-0 flex-1">
@@ -212,7 +212,7 @@ export default function AdminModes({
 
                 {/* Редактор вибраного режиму */}
                 {mode && (
-                    <div className="glass space-y-6 rounded-3xl p-5 sm:p-6">
+                    <div className="gc-solid space-y-6 rounded-2xl p-5 sm:p-6">
                         <div className="grid gap-3 sm:grid-cols-2">
                             <label className="text-sm text-white/70">
                                 {tr('Назва')}
@@ -245,7 +245,7 @@ export default function AdminModes({
                                             default: mode.id,
                                         }))
                                     }
-                                    className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-black/25 px-3 text-xs font-medium text-white/80 ring-1 ring-white/10 disabled:opacity-50"
+                                    className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-black/25 px-3 text-xs font-medium text-white/80 disabled:opacity-50"
                                 >
                                     <Star className="size-3.5" />
                                     {data.default === mode.id
@@ -285,10 +285,10 @@ export default function AdminModes({
                                                     patch({ icon: key })
                                                 }
                                                 className={cn(
-                                                    'flex size-10 items-center justify-center rounded-xl ring-1 transition-colors',
+                                                    'flex size-10 items-center justify-center rounded-xl transition-colors',
                                                     mode.icon === key
                                                         ? 'bg-primary text-primary-foreground ring-primary'
-                                                        : 'bg-black/25 text-white/70 ring-white/10 hover:text-white',
+                                                        : 'bg-black/25 text-white/70 hover:text-white',
                                                 )}
                                             >
                                                 <Icon className="size-5" />
@@ -312,7 +312,7 @@ export default function AdminModes({
                                 {modules.map((item) => (
                                     <label
                                         key={item.key}
-                                        className="flex min-h-11 items-center gap-3 rounded-xl bg-black/20 px-3 py-2 text-sm text-white ring-1 ring-white/[0.05]"
+                                        className="flex min-h-11 items-center gap-3 rounded-xl bg-black/20 px-3 py-2 text-sm text-white"
                                     >
                                         <input
                                             type="checkbox"
@@ -359,7 +359,7 @@ export default function AdminModes({
                                 {features.map((key) => (
                                     <label
                                         key={key}
-                                        className="flex min-h-11 items-center gap-3 rounded-xl bg-black/20 px-3 py-2 text-sm text-white ring-1 ring-white/[0.05]"
+                                        className="flex min-h-11 items-center gap-3 rounded-xl bg-black/20 px-3 py-2 text-sm text-white"
                                     >
                                         <input
                                             type="checkbox"
@@ -403,7 +403,7 @@ export default function AdminModes({
                                     return (
                                         <details
                                             key={group}
-                                            className="group rounded-2xl bg-black/20 ring-1 ring-white/[0.05]"
+                                            className="group rounded-2xl bg-black/20"
                                         >
                                             <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 px-4 text-sm font-medium text-white">
                                                 <span className="flex-1">
@@ -469,7 +469,7 @@ export default function AdminModes({
                             <button
                                 type="button"
                                 onClick={removeMode}
-                                className="inline-flex h-10 items-center gap-2 rounded-xl px-3 text-sm font-medium text-rose-300 hover:bg-rose-400/10"
+                                className="inline-flex h-10 items-center gap-2 rounded-xl px-3 text-sm font-medium text-red-400 hover:bg-red-400/10"
                             >
                                 <Trash2 className="size-4" />{' '}
                                 {tr('Видалити режим')}

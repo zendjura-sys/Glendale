@@ -11,6 +11,7 @@ use App\Services\Search\SiteSearch;
 use App\Support\Modules\ModuleManager;
 use App\Support\Plugins\Plugins;
 use App\Support\RecentSearches;
+use App\Support\TeenMode;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -86,17 +87,28 @@ class PeopleController extends Controller
                 'hits' => [],
                 'recent' => $recent,
                 'popular' => app(SiteSearch::class)->popular(),
+                'trending' => RecentSearches::trending(),
             ]);
         }
 
         return response()->json([
             'users' => $this->search(['q' => $q])->limit(8)->get()->map->toCard()->values(),
             'communities' => app(ModuleManager::class)->enabled('communities')
-                ? Community::query()->search($q)->orderByDesc('members_count')->limit(4)->get()->map->toCard()->values()
+                ? Community::query()->where('is_listed', true)->search($q)->orderByDesc('members_count')->limit(4)->get()->map->toCard()->values()
                 : [],
             'hits' => app(SiteSearch::class)->hits($q),
             'recent' => $recent,
+            'suggest' => RecentSearches::trending($q, 4),
         ]);
+    }
+
+    /** Прибрати запит з історії пошуку (без q — очистити всю). */
+    public function forgetSearch(Request $request): JsonResponse
+    {
+        $q = $request->input('q');
+        RecentSearches::forget($request->user(), is_string($q) ? $q : null);
+
+        return response()->json(['recent' => RecentSearches::list($request->user())]);
     }
 
     public function saveSearch(Request $request): RedirectResponse
@@ -139,7 +151,7 @@ class PeopleController extends Controller
      */
     private function search(array $filters): Builder
     {
-        return User::query()
+        return TeenMode::hideFrom(User::query(), request()->user())
             ->whereNull('banned_at')->whereNull('frozen_at')
             ->when($filters['q'] ?? null, function (Builder $query, string $q) {
                 $words = preg_split('/\s+/', trim($q));

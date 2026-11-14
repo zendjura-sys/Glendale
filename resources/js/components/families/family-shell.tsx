@@ -1,5 +1,6 @@
 import { Head, Link, router } from '@inertiajs/react';
 import {
+    CalendarClock,
     AlertTriangle,
     BarChart3,
     CalendarDays,
@@ -96,7 +97,7 @@ export function FamilyShell({
             href: `${base}/warehouse`,
             icon: Package,
             badge: badges?.alerts,
-            visible: true,
+            visible: family.sections?.warehouse !== false,
         },
         {
             section: 'members',
@@ -118,14 +119,21 @@ export function FamilyShell({
             label: tr('Події'),
             href: `${base}/events`,
             icon: CalendarDays,
-            visible: true,
+            visible: family.sections?.events !== false,
+        },
+        {
+            section: 'shifts',
+            label: tr('Зміни'),
+            href: `${base}/shifts`,
+            icon: CalendarClock,
+            visible: family.shifts_enabled !== false,
         },
         {
             section: 'rating',
             label: tr('Рейтинг'),
             href: `${base}/rating`,
             icon: BarChart3,
-            visible: true,
+            visible: family.sections?.rating !== false,
         },
         {
             section: 'audit',
@@ -152,7 +160,7 @@ export function FamilyShell({
             <div
                 className={cn('space-y-4', showReportButton && 'pb-20 lg:pb-0')}
             >
-                <header className="glass noise relative overflow-hidden rounded-3xl">
+                <header className="gc-solid relative overflow-hidden rounded-2xl">
                     <div className="relative h-28 sm:h-36">
                         {family.cover_url ? (
                             <img
@@ -169,7 +177,7 @@ export function FamilyShell({
                                 }}
                             />
                         ) : (
-                            <div className="size-full bg-[radial-gradient(120%_120%_at_0%_0%,#f59e0b55,transparent_55%),radial-gradient(120%_120%_at_100%_0%,#6d5dfc66,transparent_60%),linear-gradient(135deg,#0b0f1d,#141a33)]" />
+                            <div className="size-full bg-[radial-gradient(120%_120%_at_0%_0%,#38bdf855,transparent_55%),radial-gradient(120%_120%_at_100%_0%,#2f7bff66,transparent_60%),linear-gradient(135deg,#0b0f1d,#141a33)]" />
                         )}
                         <div className="scrim absolute inset-0" />
                         {family.plus?.accent && (
@@ -185,19 +193,19 @@ export function FamilyShell({
                         <FamilyLogo
                             family={family}
                             size="xl"
-                            className="shadow-[0_10px_40px_-10px_rgb(250_204_21/0.5)] ring-4 ring-[#0a0d18]"
+                            className="ring-4 ring-[#0a0d18]"
                         />
                         <div className="min-w-0 flex-1">
                             <div className="flex flex-wrap items-center gap-2">
                                 <h1 className="font-display text-2xl font-bold text-white sm:text-3xl">
-                                    <span className="text-amber-300">
+                                    <span className="text-amber-400">
                                         [{family.tag}]
                                     </span>{' '}
                                     {family.name}
                                 </h1>
                                 {family.status === 'verified' && (
                                     <ShieldCheck
-                                        className="size-5 text-emerald-300"
+                                        className="size-5 text-emerald-400"
                                         aria-label={tr('Верифіковано')}
                                     />
                                 )}
@@ -232,7 +240,7 @@ export function FamilyShell({
                             </div>
                         </div>
                         <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
-                            <div className="flex min-w-0 flex-1 items-center gap-3 rounded-2xl bg-white/[0.05] px-3.5 py-2 ring-1 ring-white/[0.07] sm:flex-none">
+                            <div className="gc-solid-2 flex min-w-0 flex-1 items-center gap-3 rounded-2xl px-3.5 py-2 sm:flex-none">
                                 <div className="min-w-0">
                                     <div className="font-mono text-sm font-semibold break-words text-white">
                                         {me.display}
@@ -243,7 +251,7 @@ export function FamilyShell({
                                         className="mt-0.5"
                                     />
                                 </div>
-                                <div className="ml-auto border-l border-white/10 pl-3 text-right">
+                                <div className="ml-auto pl-3 text-right">
                                     <div className="text-xs text-white/40">
                                         {tr('Баланс')}
                                     </div>
@@ -251,8 +259,8 @@ export function FamilyShell({
                                         className={cn(
                                             'font-display text-base font-bold whitespace-nowrap',
                                             me.balance < 0
-                                                ? 'text-rose-300'
-                                                : 'text-emerald-300',
+                                                ? 'text-red-400'
+                                                : 'text-emerald-400',
                                         )}
                                     >
                                         {uah(me.balance)}
@@ -262,7 +270,7 @@ export function FamilyShell({
                             {family.conversation_id && (
                                 <a
                                     href={`${base}/chat`}
-                                    className="glass inline-flex h-12 items-center gap-2 rounded-2xl px-4 text-sm font-medium text-white/80 hover:text-white"
+                                    className="gc-solid inline-flex h-12 items-center gap-2 rounded-2xl px-4 text-sm font-medium text-white/80 hover:text-white"
                                 >
                                     <MessagesSquare className="size-4" />{' '}
                                     {tr('Чат')}
@@ -270,7 +278,7 @@ export function FamilyShell({
                             )}
                         </div>
                     </div>
-                    <nav className="flex [scrollbar-width:none] gap-1 overflow-x-auto border-t border-white/[0.06] px-2 py-1.5 sm:px-4 [&::-webkit-scrollbar]:hidden">
+                    <nav className="flex [scrollbar-width:none] gap-1 overflow-x-auto px-2 py-1.5 sm:px-4 [&::-webkit-scrollbar]:hidden">
                         {tabs
                             .filter((t) => t.visible)
                             .map((t) => (
@@ -288,12 +296,12 @@ export function FamilyShell({
                                     <t.icon className="size-4" />
                                     {t.label}
                                     {!!t.badge && (
-                                        <span className="rounded-full bg-rose-500 px-1.5 text-[11px] leading-4 font-semibold text-white">
+                                        <span className="rounded-full bg-red-500 px-1.5 text-[11px] leading-4 font-semibold text-white">
                                             {t.badge > 99 ? '99+' : t.badge}
                                         </span>
                                     )}
                                     {section === t.section && (
-                                        <span className="absolute inset-x-3 -bottom-1.5 h-0.5 rounded-full bg-gradient-brand" />
+                                        <span className="absolute inset-x-3 -bottom-1.5 h-0.5 rounded-full bg-sky-500" />
                                     )}
                                 </Link>
                             ))}
@@ -303,10 +311,10 @@ export function FamilyShell({
                 {family.status !== 'verified' && (
                     <div
                         className={cn(
-                            'flex items-start gap-3 rounded-2xl border px-4 py-3 text-sm',
+                            'flex items-start gap-3 rounded-2xl px-4 py-3 text-sm',
                             family.status === 'suspended'
-                                ? 'border-rose-400/30 bg-rose-500/10 text-rose-100'
-                                : 'border-amber-300/30 bg-amber-300/10 text-amber-100',
+                                ? 'bg-red-500/10 text-red-400'
+                                : 'bg-amber-300/10 text-amber-400',
                         )}
                     >
                         <AlertTriangle className="mt-0.5 size-4 shrink-0" />
@@ -337,7 +345,7 @@ export function FamilyShell({
                 <Link
                     href={`${base}/reports?new=1`}
                     className={cn(
-                        'btn-glow fixed right-4 z-30 inline-flex h-14 items-center gap-2 rounded-2xl px-5 text-sm font-semibold shadow-2xl lg:hidden',
+                        'btn-glow fixed right-4 z-30 inline-flex h-14 items-center gap-2 rounded-2xl px-5 text-sm font-semibold lg:hidden',
                         floatingAboveNav(playing),
                     )}
                 >

@@ -1,0 +1,16 @@
+{% include 'overall_header.html' %}
+<h1>{{ lang('ACP_GAMECON') }}</h1>
+<p>{{ lang('ACP_GAMECON_EXPLAIN') }}</p>
+<p><strong>Redirect URI:</strong> <code>{{ GAMECON_REDIRECT }}</code></p>
+<form id="gamecon" method="post" action="{{ U_ACTION }}">
+    <fieldset>
+        <dl><dt><label for="gamecon_client_id">Client ID:</label></dt><dd><input id="gamecon_client_id" name="gamecon_client_id" type="text" size="45" value="{{ GAMECON_CLIENT_ID }}"></dd></dl>
+        <dl><dt><label for="gamecon_client_secret">Client Secret:</label><br><span>{% if GAMECON_SECRET_SET %}{{ lang('ACP_GAMECON_SECRET_SET') }}{% endif %}</span></dt><dd><input id="gamecon_client_secret" name="gamecon_client_secret" type="password" size="45" autocomplete="off"></dd></dl>
+        <dl><dt><label for="gamecon_base">{{ lang('ACP_GAMECON_BASE') }}:</label></dt><dd><input id="gamecon_base" name="gamecon_base" type="url" size="45" value="{{ GAMECON_BASE }}"></dd></dl>
+    </fieldset>
+    <fieldset class="submit-buttons">
+        <input class="button1" type="submit" name="submit" value="{{ lang('SUBMIT') }}">
+        {{ S_FORM_TOKEN }}
+    </fieldset>
+</form>
+{% include 'overall_footer.html' %}

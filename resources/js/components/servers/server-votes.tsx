@@ -47,13 +47,13 @@ export function VoteTops({
     }
 
     return (
-        <section className="glass rounded-3xl p-5">
+        <section className="gc-solid rounded-2xl p-5">
             <div className="flex flex-wrap items-center justify-between gap-3">
                 <h2 className="flex items-center gap-2 font-display text-lg font-bold text-white">
                     <Trophy className="size-5 text-amber-300" />
                     {tr('Топ за голосами')}
                 </h2>
-                <div className="flex gap-1 rounded-xl bg-white/[0.04] p-1">
+                <div className="gc-solid-2 flex gap-1 rounded-xl p-1">
                     {(
                         [
                             ['day', tr('Сьогодні')],
@@ -94,7 +94,7 @@ export function VoteTops({
                         <li key={row.id}>
                             <Link
                                 href={`/servers/${row.slug}`}
-                                className="flex min-w-0 items-center gap-3 rounded-2xl px-2 py-2 transition hover:bg-white/[0.05]"
+                                className="flex min-w-0 items-center gap-3 rounded-2xl px-2 py-2 transition hover:bg-[var(--gc-l3)]"
                             >
                                 <span
                                     className={cn(
@@ -117,7 +117,7 @@ export function VoteTops({
                                         {row.platform_label}
                                     </span>
                                 </span>
-                                <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-gc-indigo/15 px-2.5 py-1 text-xs font-semibold text-[#c4b5fd] tabular-nums">
+                                <span className="inline-flex shrink-0 items-center gap-1 rounded-chip bg-gc-indigo/15 px-2.5 py-1 text-xs font-semibold text-[#c4b5fd] tabular-nums">
                                     <Vote className="size-3.5" />
                                     {shortNumber(row.votes)}
                                     {votedToday === row.id && (
@@ -159,11 +159,11 @@ export function VotePanel({
     const peak = Math.max(1, ...(votes.daily ?? []).map((day) => day.votes));
 
     return (
-        <section className="glass rounded-3xl p-5">
+        <section className="gc-solid rounded-2xl p-5">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
                 <div className="min-w-0 flex-1">
                     <h2 className="flex items-center gap-2 font-display text-lg font-bold text-white">
-                        <Vote className="size-5 text-gc-lilac-300" />
+                        <Vote className="size-5 text-sky-400" />
                         {tr('Голосування')}
                     </h2>
                     <p className="mt-1 text-sm text-white/50">
@@ -184,7 +184,7 @@ export function VotePanel({
                         'inline-flex h-11 w-full shrink-0 items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold sm:w-auto',
                         votes.voted_today === null
                             ? 'btn-glow'
-                            : 'bg-white/[0.06] text-white/60',
+                            : 'gc-solid-2 text-white/60',
                     )}
                 >
                     {votes.voted_here ? (
@@ -212,7 +212,7 @@ export function VotePanel({
                 ).map(([label, value]) => (
                     <div
                         key={label}
-                        className="min-w-0 rounded-2xl bg-white/[0.04] px-3 py-2.5"
+                        className="gc-solid-2 min-w-0 rounded-2xl px-3 py-2.5"
                     >
                         <div className="font-display text-xl font-bold text-white tabular-nums">
                             {shortNumber(value)}

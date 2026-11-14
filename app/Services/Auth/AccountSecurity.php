@@ -6,6 +6,7 @@ use App\Models\ApiToken;
 use App\Models\LoginEvent;
 use App\Models\User;
 use App\Models\UserSession;
+use App\Notifications\NewLoginNotice;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Session;
@@ -101,23 +102,48 @@ class AccountSecurity
         return $sessions->count() + $tokens;
     }
 
-    public function logLogin(User $user, string $method, bool $success, ?Request $request = null): void
+    /**
+     * @param  string|null  $ip  IP і браузер іншого пристрою (напр. браузера, чий вхід відхилили в застосунку)
+     */
+    public function logLogin(User $user, string $method, bool $success, ?Request $request = null, ?string $ip = null, ?string $agent = null): void
     {
         $request ??= request();
+        $ip ??= $request->ip();
+        $agent = Str::limit($agent ?? (string) $request->userAgent(), 250, '');
+        $fresh = $success && $this->isNewDevice($user, $ip, $agent);
         LoginEvent::query()->create([
             'user_id' => $user->id,
             'method' => $method,
             'success' => $success,
-            'ip' => $request->ip(),
-            'user_agent' => Str::limit((string) $request->userAgent(), 250, ''),
+            'ip' => $ip,
+            'user_agent' => $agent,
             'created_at' => now(),
         ]);
+        if ($fresh) {
+            $user->notify(new NewLoginNotice(self::device($agent), $ip, now('Europe/Kyiv')->format('d.m.Y H:i')));
+        }
         if ($success && $user->frozen_at !== null) {
             $user->forceFill(['frozen_at' => null])->saveQuietly();
             if ($request->hasSession()) {
                 Inertia::flash('toast', ['type' => 'success', 'message' => 'З поверненням! Акаунт розморожено.']);
             }
         }
+    }
+
+    /**
+     * Чи це новий пристрій: раніше були входи, але жодного успішного з цим браузером
+     * (той самий пристрій і ОС) чи з цієї IP за 90 днів. Перший вхід після реєстрації — не новий.
+     */
+    public function isNewDevice(User $user, ?string $ip, string $agent): bool
+    {
+        $past = LoginEvent::query()->where('user_id', $user->id)->where('success', true)
+            ->where('created_at', '>=', now()->subDays(90))->latest('id')->limit(200)->get(['ip', 'user_agent']);
+        if ($past->isEmpty()) {
+            return false;
+        }
+        $device = self::device($agent);
+
+        return ! $past->contains(fn (LoginEvent $e) => ($ip !== null && $e->ip === $ip) || self::device($e->user_agent) === $device);
     }
 
     public function freeze(User $user, ?string $keep): void
@@ -139,7 +165,7 @@ class AccountSecurity
             str_contains($agent, 'GameConApp') || str_contains($agent, 'Dart/') => 'Застосунок GameCon',
             str_contains($agent, 'Edg/') => 'Edge',
             str_contains($agent, 'OPR/') || str_contains($agent, 'Opera') => 'Opera',
-            str_contains($agent, 'YaBrowser') => 'Yandex',
+            str_contains($agent, 'YaBrowser') => 'Chromium',
             str_contains($agent, 'Firefox/') => 'Firefox',
             str_contains($agent, 'Chrome/') => 'Chrome',
             str_contains($agent, 'Safari/') => 'Safari',
@@ -169,6 +195,7 @@ class AccountSecurity
             str_contains($route, 'google') || str_contains($route, 'firebase') => 'google',
             str_contains($route, 'register') => 'register',
             str_contains($route, 'discord') => 'discord',
+            str_starts_with($route, 'login.app.') => 'app',
             default => 'password',
         };
     }

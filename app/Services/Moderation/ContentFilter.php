@@ -6,7 +6,11 @@ use App\Models\Conversation;
 use App\Models\FamilyMember;
 use App\Models\FamilyPunishment;
 use App\Models\Message;
+use App\Models\SpamBlock;
 use App\Models\User;
+use App\Services\Antispam\IpBans;
+use App\Services\Antispam\LinkFilter;
+use App\Services\Antispam\PhishingGuard;
 use App\Support\Settings\SiteSettings;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Cache;
@@ -28,6 +32,8 @@ class ContentFilter
         'repeat_limit' => 3,
         // Посилання від акаунтів, молодших за стільки годин, не пропускаємо (0 — вимкнено).
         'new_account_link_hours' => 24,
+        // Токсичні коментарі: off — не чіпати, soft — ховати явні образи й погрози, strict — суворіше.
+        'toxic' => 'soft',
     ];
 
     /**
@@ -45,7 +51,7 @@ class ContentFilter
     public function __construct(private readonly SiteSettings $settings) {}
 
     /**
-     * @return array{profanity: string, extra_words: list<string>, flood_limit: int, repeat_limit: int, new_account_link_hours: int}
+     * @return array{profanity: string, extra_words: list<string>, flood_limit: int, repeat_limit: int, new_account_link_hours: int, toxic: string}
      */
     public function config(): array
     {
@@ -59,6 +65,7 @@ class ContentFilter
             'flood_limit' => max(0, (int) ($stored['flood_limit'] ?? self::DEFAULTS['flood_limit'])),
             'repeat_limit' => max(0, (int) ($stored['repeat_limit'] ?? self::DEFAULTS['repeat_limit'])),
             'new_account_link_hours' => max(0, (int) ($stored['new_account_link_hours'] ?? self::DEFAULTS['new_account_link_hours'])),
+            'toxic' => in_array($stored['toxic'] ?? null, ['off', 'soft', 'strict'], true) ? (string) $stored['toxic'] : self::DEFAULTS['toxic'],
         ];
     }
 
@@ -70,6 +77,12 @@ class ContentFilter
         if ($text === null || $text === '') {
             return $text;
         }
+        if (($phish = app(PhishingGuard::class)->suspicious($text)) !== null) {
+            $this->deny('phishing', "Посилання {$phish['host']} схоже на підробку {$phish['brand']} (фішинг) — повідомлення не надіслано.", null, null, $phish['host']);
+        }
+        if (($host = app(LinkFilter::class)->forbidden($text)) !== null) {
+            $this->deny('domain', "Посилання на {$host} заборонені на GameCon.", null, null, $host);
+        }
         $mode = $this->config()['profanity'];
         if ($mode === 'off') {
             return $text;
@@ -77,7 +90,7 @@ class ContentFilter
         $pattern = $this->pattern();
         if ($mode === 'block') {
             if (preg_match($pattern, $text) === 1) {
-                throw ValidationException::withMessages(['body' => 'Без мату, будь ласка — повідомлення не надіслано.']);
+                $this->deny('profanity', 'Без мату, будь ласка — повідомлення не надіслано.');
             }
 
             return $text;
@@ -124,7 +137,7 @@ class ContentFilter
             $count = (int) Cache::get($key, 0) + 1;
             Cache::put($key, $count, 120);
             if ($count > $config['flood_limit']) {
-                throw ValidationException::withMessages(['body' => 'Забагато повідомлень за хвилину — зачекайте трохи.']);
+                $this->deny('flood', 'Забагато повідомлень за хвилину — зачекайте трохи.', $user, $conversation);
             }
         }
 
@@ -133,17 +146,57 @@ class ContentFilter
                 $same = Message::query()->where('user_id', $user->id)->where('created_at', '>=', now()->subMinutes(2))
                     ->where('body', $body)->count();
                 if ($same >= $config['repeat_limit']) {
-                    throw ValidationException::withMessages(['body' => 'Однакові повідомлення поспіль схожі на спам.']);
+                    $this->deny('repeat', 'Однакові повідомлення поспіль схожі на спам.', $user, $conversation);
                 }
             }
             if ($config['new_account_link_hours'] > 0 && $user->created_at !== null
                 && $user->created_at->gt(now()->subHours($config['new_account_link_hours']))
                 && preg_match('#(https?://|www\.|t\.me/|discord\.gg/)#iu', $this->withoutOwnLinks($body)) === 1) {
-                throw ValidationException::withMessages(['body' => "Посилання можна надсилати через {$config['new_account_link_hours']} год після реєстрації — це захист від спаму."]);
+                $this->deny('new_link', "Посилання можна надсилати через {$config['new_account_link_hours']} год після реєстрації — це захист від спаму.", $user, $conversation);
             }
         }
 
+        $this->guardGroupRules($user, $conversation, $body);
+
         return $this->clean($body);
+    }
+
+    /**
+     * Правила конкретної групи (Messenger::setAutomod). Власника й адмінів не обмежують.
+     */
+    private function guardGroupRules(User $user, Conversation $conversation, ?string $body): void
+    {
+        $rules = $conversation->automod;
+        if (! is_array($rules) || ! $conversation->isGroup() || $conversation->participantFor($user)?->canManage()) {
+            return;
+        }
+        if (($rules['flood'] ?? false) === true) {
+            $key = "moderation.group-flood.{$conversation->id}.{$user->id}";
+            $count = (int) Cache::get($key, 0) + 1;
+            Cache::put($key, $count, 10);
+            if ($count > 5) {
+                $this->deny('group_rule', 'У цій групі не можна більше 5 повідомлень за 10 секунд.', $user, $conversation);
+            }
+        }
+        if ($body === null || $body === '') {
+            return;
+        }
+        if (($rules['links'] ?? false) === true && preg_match('#(https?://|www\.|t\.me/|discord\.gg/)#iu', $this->withoutOwnLinks($body)) === 1) {
+            $this->deny('group_rule', 'У цій групі посилання надсилають лише адміни.', $user, $conversation);
+        }
+        if (($rules['caps'] ?? false) === true) {
+            $letters = (string) preg_replace('/[^\p{L}]/u', '', $body);
+            $upper = (string) preg_replace('/[^\p{Lu}]/u', '', $letters);
+            if (mb_strlen($letters) >= 10 && mb_strlen($upper) / mb_strlen($letters) >= 0.7) {
+                $this->deny('group_rule', 'Будь ласка, без капсу — у цій групі так не можна.', $user, $conversation);
+            }
+        }
+        $lower = mb_strtolower($body);
+        foreach ((array) ($rules['words'] ?? []) as $word) {
+            if (is_string($word) && $word !== '' && str_contains($lower, $word)) {
+                $this->deny('group_rule', 'У повідомленні є слово, заборонене правилами групи.', $user, $conversation);
+            }
+        }
     }
 
     public function ensureNotFamilyMuted(User $user, int $familyId): void
@@ -158,6 +211,24 @@ class ContentFilter
             $at = CarbonImmutable::parse((string) $until)->setTimezone('Europe/Kyiv')->format('d.m H:i');
             throw ValidationException::withMessages(['body' => "Вас заглушено в чаті сім’ї до {$at}."]);
         }
+    }
+
+    /**
+     * Зупинити повідомлення й записати спробу в журнал антиспаму (для статистики в адмінці).
+     */
+    public function deny(string $kind, string $message, ?User $user = null, ?Conversation $conversation = null, ?string $detail = null): never
+    {
+        $user ??= auth()->user();
+        rescue(fn () => SpamBlock::query()->create([
+            'kind' => $kind,
+            'user_id' => $user instanceof User ? $user->id : null,
+            'conversation_id' => $conversation?->id,
+            'ip_hash' => app()->runningInConsole() ? null : IpBans::hash((string) request()->ip()),
+            'detail' => $detail !== null ? mb_substr($detail, 0, 160) : null,
+            'created_at' => now(),
+        ]), report: false);
+
+        throw ValidationException::withMessages(['body' => $message]);
     }
 
     /** Посилання на сам GameCon (запрошення, профілі) — не спам. */

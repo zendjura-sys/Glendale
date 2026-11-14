@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import 'core/widgets/arctic_glass/arctic_fit_text.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'api.dart';
@@ -64,7 +66,7 @@ class _AchievementsPanelState extends State<AchievementsPanel> {
             height: 48,
             decoration: BoxDecoration(gradient: buttonGradient, borderRadius: BorderRadius.circular(16)),
             child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-              Text(tr('РІВ.'), style: body(8.5, color: Colors.white70, weight: FontWeight.w700)),
+              Text(tr('РІВ.'), style: body(8.5, color: fgSoft, weight: FontWeight.w700)),
               Text('$level', style: body(18, color: Colors.white, weight: FontWeight.w800)),
             ]),
           ),
@@ -79,7 +81,7 @@ class _AchievementsPanelState extends State<AchievementsPanel> {
               const SizedBox(height: 6),
               ClipRRect(
                 borderRadius: BorderRadius.circular(4),
-                child: LinearProgressIndicator(value: percent, minHeight: 6, backgroundColor: Colors.white.withValues(alpha: 0.08), color: primary),
+                child: LinearProgressIndicator(value: percent, minHeight: 6, backgroundColor: fg.withValues(alpha: 0.08), color: primary),
               ),
               const SizedBox(height: 4),
               Text(tr('{xp} / {to} досвіду до рівня {v}', {'xp': xp, 'to': to, 'v': level + 1}), style: body(11, color: faint)),
@@ -112,14 +114,14 @@ class _AchievementsPanelState extends State<AchievementsPanel> {
                       width: 46,
                       height: 46,
                       decoration: BoxDecoration(
-                        color: b['earned'] == true ? gold.withValues(alpha: 0.15) : Colors.white.withValues(alpha: 0.04),
+                        color: b['earned'] == true ? gold.withValues(alpha: 0.15) : fg.withValues(alpha: 0.04),
                         borderRadius: BorderRadius.circular(15),
                         border: Border.all(color: b['earned'] == true ? gold.withValues(alpha: 0.4) : line),
                       ),
                       child: Icon(_icons[b['icon']] ?? LucideIcons.award, size: 21, color: b['earned'] == true ? gold : faint),
                     ),
                     const SizedBox(height: 5),
-                    Text(text(b['title']) ?? '', textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis, style: body(11, color: b['earned'] == true ? soft : faint)),
+                    FitText(text(b['title']) ?? '', style: body(11, color: b['earned'] == true ? soft : faint), textAlign: TextAlign.center, maxLines: 2),
                   ]),
                 ),
             ],

@@ -1,7 +1,12 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
+    <!-- Блокування застосунку відбитком чи обличчям. -->
+    <uses-permission android:name="android.permission.USE_BIOMETRIC"/>
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <!-- Камера — лише для сканування QR-коду входу на сайт (mobile_scanner). -->
+    <uses-permission android:name="android.permission.CAMERA"/>
+    <uses-feature android:name="android.hardware.camera" android:required="false"/>
     <!-- Музика у фоні: foreground-сервіс медіасесії (audio_service). -->
     <uses-permission android:name="android.permission.RECORD_AUDIO"/>
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
@@ -16,6 +21,11 @@
     <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE"/>
     <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30"/>
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT"/>
+    <!-- GameCon Connect: пошук DLNA-телевізорів і колонок у мережі (SSDP) і пристроїв поруч через Wi-Fi Direct. -->
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE"/>
+    <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE"/>
+    <uses-permission android:name="android.permission.NEARBY_WIFI_DEVICES" android:usesPermissionFlags="neverForLocation" tools:targetApi="33"/>
     <!-- «Граю в…»: яка гра на екрані. Користувач сам надає «Доступ до використання» в налаштуваннях. -->
     <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS" tools:ignore="ProtectedPermissions"/>
     <application
@@ -58,6 +68,25 @@
                 <category android:name="android.intent.category.BROWSABLE"/>
                 <data android:scheme="gamecon" android:host="spotify"/>
             </intent-filter>
+            <!-- Вхід на сайт через застосунок: gamecon://app-login/{id} (кнопка на сторінці входу сайту). -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="gamecon" android:host="app-login"/>
+            </intent-filter>
+            <!-- Те саме за посиланням https://gamecon.online/app-login/{id} (Android App Links): працює, коли на сайті
+                 опубліковано /.well-known/assetlinks.json з відбитком підпису (Адмінка → Інтеграції). -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="https" android:host="gamecon.online" android:pathPrefix="/app-login/"/>
+            </intent-filter>
+            <!-- Ярлики на іконці: «Я в укритті» й «Мапа тривог» (довге натискання на іконку). -->
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
             <!-- Натискання на push, надісланий із click_action (старі версії сервера). -->
             <intent-filter>
                 <action android:name="FLUTTER_NOTIFICATION_CLICK"/>
@@ -97,6 +126,44 @@
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/family_widget_info"/>
+        </receiver>
+        <!-- Плитка швидких налаштувань «Я в укритті»: ставить чи знімає статус без відкриття застосунку. -->
+        <service
+            android:name=".ShelterTileService"
+            android:exported="true"
+            android:icon="@drawable/ic_shelter"
+            android:label="@string/tile_shelter"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE"/>
+            </intent-filter>
+            <meta-data
+                android:name="android.service.quicksettings.TOGGLEABLE_TILE"
+                android:value="true" />
+        </service>
+        <!-- Віджет «Тривога в моєму місці» на головному екрані. -->
+        <receiver
+            android:name=".AlertWidgetProvider"
+            android:label="@string/alert_widget_label"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/alert_widget_info"/>
+        </receiver>
+        <!-- Віджет «Пульс GameCon» на головному екрані. -->
+        <receiver
+            android:name=".PulseWidgetProvider"
+            android:label="@string/pulse_widget_label"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/pulse_widget_info"/>
         </receiver>
         <!-- Кнопка «Оновити» й планове оновлення віджета: завантаження даних у фоні (home_widget). -->
         <receiver

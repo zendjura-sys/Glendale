@@ -93,7 +93,7 @@ export function PlayersPanel({ data }: { data: PlayersData }) {
     };
 
     return (
-        <form onSubmit={save} className="glass space-y-4 rounded-3xl p-5">
+        <form onSubmit={save} className="glass space-y-4 rounded-2xl p-5">
             <header>
                 <h2 className="flex items-center gap-2 font-display text-lg font-semibold text-white">
                     <Tv className="size-5 text-gc-lilac-400" />
@@ -191,7 +191,7 @@ export function PlayersPanel({ data }: { data: PlayersData }) {
                     </p>
                     <p className="text-xs text-white/45">
                         {tr(
-                            'Під плеєром серіалу, аніме чи мультсеріалу — сезони й серії. Обрана серія відкривається окремо в Kodik чи Videoseed (вкладку плеєра глядач обирає сам).',
+                            'Під плеєром серіалу, аніме чи мультсеріалу — сезони й серії. Обрана серія відкривається окремо в Плеєрі 1 чи Плеєрі 2 (вкладку плеєра глядач обирає сам).',
                         )}
                     </p>
                 </div>
@@ -208,7 +208,7 @@ export function PlayersPanel({ data }: { data: PlayersData }) {
                     <textarea
                         value={prefer}
                         onChange={(e) => setPrefer(e.target.value)}
-                        placeholder={'Українськ\nLostFilm\nHDrezka'}
+                        placeholder={'Українськ\nДубляж\nОригінал'}
                         className={textarea}
                     />
                 </label>
@@ -256,7 +256,7 @@ export function TmdbPanel({ data }: { data: TmdbData }) {
                 event.preventDefault();
                 form.put('/admin/cinema/tmdb', { preserveScroll: true });
             }}
-            className="glass space-y-4 rounded-3xl p-5"
+            className="glass space-y-4 rounded-2xl p-5"
         >
             <header className="flex flex-wrap items-start gap-3">
                 <div className="min-w-0 flex-1">
@@ -297,7 +297,7 @@ export function TmdbPanel({ data }: { data: TmdbData }) {
                             type="button"
                             onClick={() => toggle('fields', f.key)}
                             className={cn(
-                                'rounded-full border px-3 py-1 text-xs transition',
+                                'rounded-control border px-3 py-1 text-xs transition',
                                 d.fields.includes(f.key)
                                     ? 'border-gc-lilac-400/50 bg-gc-indigo/20 text-white'
                                     : 'border-white/10 text-white/55 hover:text-white',
@@ -363,7 +363,7 @@ export function TmdbPanel({ data }: { data: TmdbData }) {
                         </p>
                         <p className="text-xs text-white/45">
                             {tr(
-                                'Лише якщо для тайтлу знайдено плеєр: Videoseed шукає за ID TMDB, Kodik — за IMDb.',
+                                'Лише якщо для тайтлу знайдено плеєр: Плеєр 2 шукає за ID TMDB, Плеєр 1 — за IMDb.',
                             )}
                         </p>
                     </div>
@@ -390,7 +390,7 @@ export function TmdbPanel({ data }: { data: TmdbData }) {
                                     type="button"
                                     onClick={() => toggle('lists', l.key)}
                                     className={cn(
-                                        'rounded-full border px-3 py-1 text-xs transition',
+                                        'rounded-control border px-3 py-1 text-xs transition',
                                         d.lists.includes(l.key)
                                             ? 'border-gc-lilac-400/50 bg-gc-indigo/20 text-white'
                                             : 'border-white/10 text-white/55 hover:text-white',

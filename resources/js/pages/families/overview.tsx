@@ -1,3 +1,5 @@
+import { OnboardingCard } from '@/components/families/onboarding-card';
+import type { OnboardingCardData } from '@/components/families/onboarding-card';
 import { Link, router } from '@inertiajs/react';
 import {
     AlertTriangle,
@@ -12,9 +14,12 @@ import {
 } from 'lucide-react';
 import { DonationJarCard } from '@/components/gc/donation-jar';
 import type { DonationJar } from '@/components/gc/donation-jar';
+import { FamilyChatCard } from '@/components/families/family-chat-card';
+import type { FamilyChatData } from '@/components/families/family-chat-card';
 import { FamilyShell } from '@/components/families/family-shell';
 import { InviteLinkButton } from '@/components/gc/invite-link';
 import { VoiceRooms } from '@/components/gc/voice-rooms';
+import { ListenRoomButton } from '@/components/music/listen-room-button';
 import {
     Amount,
     Empty,
@@ -34,6 +39,7 @@ import type {
 import { tr } from '@/lib/i18n';
 
 type Props = FamilyShellProps & {
+    onboarding?: OnboardingCardData | null;
     stats: {
         week_earned: number;
         week_total: number;
@@ -58,6 +64,8 @@ type Props = FamilyShellProps & {
         unit: string | null;
     }[];
     activity: AuditEntry[];
+    /** Чат сім’ї: сьогодні, останні повідомлення, ШІ-підсумок. */
+    chat?: FamilyChatData | null;
     /** Банка Monobank сім’ї (відкладений проп). */
     donation?: DonationJar | null;
 };
@@ -75,7 +83,7 @@ export default function FamilyOverview(props: Props) {
                 <Metric
                     label={tr('Заробив за тиждень')}
                     value={uahShort(stats.week_earned)}
-                    tone="text-emerald-300"
+                    tone="text-emerald-400"
                     icon={TrendingUp}
                 />
                 <Metric
@@ -86,13 +94,13 @@ export default function FamilyOverview(props: Props) {
                 <Metric
                     label={tr('Мої звіти на перевірці')}
                     value={stats.pending_reports}
-                    tone="text-amber-200"
+                    tone="text-amber-400"
                     icon={Clock3}
                 />
                 <Metric
                     label={tr('Попередження')}
                     value={`${stats.warns}/${stats.warn_limit}`}
-                    tone={stats.warns > 0 ? 'text-rose-300' : 'text-white'}
+                    tone={stats.warns > 0 ? 'text-red-400' : 'text-white'}
                     icon={AlertTriangle}
                 />
             </div>
@@ -100,8 +108,12 @@ export default function FamilyOverview(props: Props) {
             {props.can['members.manage'] && (
                 <InviteLinkButton
                     url={`${base}/invite-link`}
-                    className="glass inline-flex h-10 w-fit items-center gap-2 rounded-xl px-3.5 text-sm text-white/75 hover:text-white"
+                    className="gc-solid inline-flex h-10 w-fit items-center gap-2 rounded-xl px-3.5 text-sm text-white/75 hover:text-white"
                 />
+            )}
+
+            {props.onboarding && (
+                <OnboardingCard base={base} data={props.onboarding} />
             )}
 
             <DonationJarCard
@@ -115,15 +127,20 @@ export default function FamilyOverview(props: Props) {
                 label={`[${family.tag}] ${family.name}`}
                 href={`/f/${family.slug}`}
             />
+            <ListenRoomButton group="family" id={family.id} />
+
+            {props.chat && (
+                <FamilyChatCard chat={props.chat} tag={family.tag} />
+            )}
 
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
                 <div className="space-y-4">
                     <Link
                         href={`${base}/reports?new=1`}
-                        className="glass group flex items-center gap-4 overflow-hidden rounded-3xl p-5 transition hover:bg-white/[0.06]"
+                        className="gc-solid group flex items-center gap-4 overflow-hidden rounded-2xl p-5 transition hover:bg-[var(--gc-l3)]"
                     >
-                        <span className="flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-300 to-rose-500 shadow-[0_10px_30px_-10px_rgb(250_204_21/0.8)]">
-                            <FilePlus2 className="size-6 text-white" />
+                        <span className="flex size-12 items-center justify-center rounded-2xl bg-amber-400/15 text-amber-400">
+                            <FilePlus2 className="size-6" />
                         </span>
                         <div className="min-w-0 flex-1">
                             <div className="font-display text-lg font-semibold text-white">
@@ -141,12 +158,14 @@ export default function FamilyOverview(props: Props) {
                         title={tr('Лідери тижня')}
                         icon={BarChart3}
                         actions={
-                            <Link
-                                href={`${base}/rating`}
-                                className="text-xs text-white/50 hover:text-white"
-                            >
-                                {tr('Увесь рейтинг')}
-                            </Link>
+                            family.sections?.rating !== false && (
+                                <Link
+                                    href={`${base}/rating`}
+                                    className="text-xs font-semibold text-sky-400 hover:text-sky-400"
+                                >
+                                    {tr('Увесь рейтинг')}
+                                </Link>
+                            )
                         }
                     >
                         {leaders.length === 0 ? (
@@ -161,7 +180,7 @@ export default function FamilyOverview(props: Props) {
                                 {leaders.map((row) => (
                                     <li
                                         key={row.id}
-                                        className="flex items-center gap-3 rounded-xl bg-white/[0.03] px-3 py-2"
+                                        className="gc-solid-2 flex items-center gap-3 rounded-xl px-3 py-2"
                                     >
                                         <span className="w-6 text-center text-sm">
                                             {medals[row.place - 1] ?? row.place}
@@ -172,7 +191,7 @@ export default function FamilyOverview(props: Props) {
                                         <span className="text-xs text-white/40">
                                             {uah(row.earned)}
                                         </span>
-                                        <span className="w-14 text-right font-display font-bold text-amber-200">
+                                        <span className="w-14 text-right font-display font-bold text-amber-400">
                                             {row.points}
                                         </span>
                                     </li>
@@ -187,7 +206,7 @@ export default function FamilyOverview(props: Props) {
                         actions={
                             <Link
                                 href={`${base}/bank`}
-                                className="text-xs text-white/50 hover:text-white"
+                                className="text-xs font-semibold text-sky-400 hover:text-sky-400"
                             >
                                 {tr('Банк')}
                             </Link>
@@ -227,12 +246,14 @@ export default function FamilyOverview(props: Props) {
                         title={tr('Найближчі події')}
                         icon={CalendarDays}
                         actions={
-                            <Link
-                                href={`${base}/events`}
-                                className="text-xs text-white/50 hover:text-white"
-                            >
-                                {tr('Усі')}
-                            </Link>
+                            family.sections?.events !== false && (
+                                <Link
+                                    href={`${base}/events`}
+                                    className="text-xs font-semibold text-sky-400 hover:text-sky-400"
+                                >
+                                    {tr('Усі')}
+                                </Link>
+                            )
                         }
                     >
                         {events.length === 0 ? (
@@ -245,9 +266,9 @@ export default function FamilyOverview(props: Props) {
                                 {events.map((e) => (
                                     <li
                                         key={e.id}
-                                        className="flex items-center gap-3 rounded-xl bg-white/[0.03] px-3 py-2.5"
+                                        className="gc-solid-2 flex items-center gap-3 rounded-xl px-3 py-2.5"
                                     >
-                                        <CalendarDays className="size-4 text-gc-lilac-200" />
+                                        <CalendarDays className="size-4 text-sky-400" />
                                         <div className="min-w-0 flex-1">
                                             <div className="truncate text-sm font-medium text-white">
                                                 {e.title}
@@ -272,12 +293,12 @@ export default function FamilyOverview(props: Props) {
                                 {low_stock.map((i) => (
                                     <li
                                         key={i.id}
-                                        className="flex items-center justify-between rounded-xl bg-rose-500/[0.07] px-3 py-2 text-sm"
+                                        className="flex items-center justify-between rounded-xl bg-red-500/[0.07] px-3 py-2 text-sm"
                                     >
                                         <span className="text-white">
                                             {i.name}
                                         </span>
-                                        <span className="font-mono text-rose-200">
+                                        <span className="font-mono text-red-400">
                                             {i.quantity}
                                             {i.unit ? ` ${i.unit}` : ''}{' '}
                                             {tr('/ мін.')} {i.min_stock}
@@ -295,7 +316,7 @@ export default function FamilyOverview(props: Props) {
                             actions={
                                 <Link
                                     href={`${base}/audit`}
-                                    className="text-xs text-white/50 hover:text-white"
+                                    className="text-xs font-semibold text-sky-400 hover:text-sky-400"
                                 >
                                     {tr('Журнал')}
                                 </Link>
@@ -310,7 +331,7 @@ export default function FamilyOverview(props: Props) {
                                                 a.action.includes('REJECT') ||
                                                     a.action.includes('KICK') ||
                                                     a.action.includes('PUNISH')
-                                                    ? 'bg-rose-400'
+                                                    ? 'bg-red-400'
                                                     : 'bg-emerald-400',
                                             )}
                                         />
@@ -347,7 +368,7 @@ export default function FamilyOverview(props: Props) {
                                     ),
                                 ) && router.post(`${base}/leave`)
                             }
-                            className="w-full rounded-2xl py-2 text-xs text-white/35 transition hover:text-rose-300"
+                            className="w-full rounded-2xl py-2 text-xs text-white/35 transition hover:text-red-400"
                         >
                             {tr('Покинути сім’ю')}
                         </button>

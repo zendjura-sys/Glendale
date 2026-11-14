@@ -6,7 +6,6 @@ import {
     Mail,
     Search,
     ShieldCheck,
-    Smartphone,
     Wrench,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -18,14 +17,16 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
-import { PLAY_BADGES } from '@/components/gc/play-store';
 import { cn } from '@/lib/utils';
 import { tr } from '@/lib/i18n';
+import { SpellcheckTextarea } from '@/components/gc/spellcheck';
 
 type Settings = {
     site_name: string;
     tagline: string;
     seo_description: string;
+    seo_same_as: string | null;
+    analytics_ga_id: string | null;
     play_store_enabled: boolean;
     play_store_url: string;
     play_store_badge: 'get' | 'preregister';
@@ -138,10 +139,10 @@ function Section({
     description: string;
 }>) {
     return (
-        <section className="glass grid grid-cols-1 gap-6 rounded-3xl p-6 md:grid-cols-[260px_1fr]">
+        <section className="gc-solid grid grid-cols-1 gap-6 rounded-2xl p-6 md:grid-cols-[260px_1fr]">
             <div>
-                <span className="mb-3 flex size-10 items-center justify-center rounded-xl bg-white/[0.05] ring-1 ring-white/10">
-                    <Icon className="size-[18px] text-gc-lilac-300" />
+                <span className="gc-solid-2 mb-3 flex size-10 items-center justify-center rounded-xl">
+                    <Icon className="size-[18px] text-sky-400" />
                 </span>
                 <h2 className="font-semibold text-white">{title}</h2>
                 <p className="mt-1 text-[13px] leading-relaxed text-white/45">
@@ -165,7 +166,7 @@ function SwitchRow({
     onChange: (v: boolean) => void;
 }) {
     return (
-        <div className="flex items-start gap-4 rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4">
+        <div className="gc-solid-2 flex items-start gap-4 rounded-2xl p-4">
             <div className="flex-1">
                 <div className="text-sm font-medium text-white">{title}</div>
                 <div className="mt-0.5 text-xs text-white/45">{text}</div>
@@ -205,15 +206,15 @@ function MailSection({ mail }: { mail: MailStatus }) {
         >
             <div
                 className={cn(
-                    'rounded-2xl border px-4 py-3 text-sm',
+                    'rounded-2xl px-4 py-3 text-sm',
                     mail.ready
-                        ? 'border-white/10 text-white/70'
-                        : 'border-amber-400/30 bg-amber-400/10 text-amber-100',
+                        ? 'text-white/70'
+                        : 'bg-amber-400/10 text-amber-100',
                 )}
             >
                 {mail.ready ? (
                     <>
-                        {tr('Відправка:')}{' '}
+                        {tr('Надсилання:')}{' '}
                         <b className="text-white">{mail.mailer}</b>
                         <span className="mt-1 block">
                             {tr('Оповіщення:')}{' '}
@@ -273,6 +274,8 @@ export default function AdminSettings({
         ...settings,
         tagline: settings.tagline ?? '',
         seo_description: settings.seo_description ?? '',
+        seo_same_as: settings.seo_same_as ?? '',
+        analytics_ga_id: settings.analytics_ga_id ?? '',
         play_store_enabled: Boolean(settings.play_store_enabled),
         play_store_url: settings.play_store_url ?? '',
         play_store_badge:
@@ -361,12 +364,56 @@ export default function AdminSettings({
                         />
                         <InputError message={errors.seo_description} />
                     </div>
+                    <div className="grid gap-2">
+                        <Label htmlFor="seo_same_as">
+                            {tr('Офіційні сторінки в соцмережах')}
+                        </Label>
+                        <textarea
+                            id="seo_same_as"
+                            value={data.seo_same_as ?? ''}
+                            onChange={(e) =>
+                                setData('seo_same_as', e.target.value)
+                            }
+                            rows={3}
+                            maxLength={2000}
+                            placeholder={
+                                'https://t.me/gamecon\nhttps://www.instagram.com/gamecon'
+                            }
+                            className="input-glass w-full resize-y rounded-xl px-3.5 py-3 text-sm text-white placeholder:text-white/30"
+                        />
+                        <p className="text-xs text-white/45">
+                            {tr(
+                                'По одній адресі в рядку: Telegram, Instagram, TikTok, YouTube, Discord. Пошуковики пов’язують їх із сайтом.',
+                            )}
+                        </p>
+                        <InputError message={errors.seo_same_as} />
+                    </div>
+                    <div className="grid gap-2">
+                        <Label htmlFor="analytics_ga_id">
+                            {tr('Google Analytics 4')}
+                        </Label>
+                        <Input
+                            id="analytics_ga_id"
+                            value={data.analytics_ga_id ?? ''}
+                            onChange={(e) =>
+                                setData('analytics_ga_id', e.target.value)
+                            }
+                            placeholder="G-XXXXXXXXXX"
+                            className="input-glass h-11 rounded-xl"
+                        />
+                        <p className="text-xs text-white/45">
+                            {tr(
+                                'Ідентифікатор потоку з analytics.google.com → Адміністратор → Потоки даних. Аналітика вмикається лише тим, хто погодився на cookie.',
+                            )}
+                        </p>
+                        <InputError message={errors.analytics_ga_id} />
+                    </div>
                     <img
                         loading="lazy"
                         decoding="async"
                         src="/og.jpg"
                         alt={tr('Превʼю посилання GameCon')}
-                        className="aspect-[1200/630] w-full max-w-md rounded-2xl border border-white/10"
+                        className="aspect-[1200/630] w-full max-w-md rounded-2xl"
                     />
                 </Section>
 
@@ -416,85 +463,13 @@ export default function AdminSettings({
                                     href={href}
                                     target="_blank"
                                     rel="noreferrer"
-                                    className="text-gc-lilac-300 hover:underline"
+                                    className="text-sky-400 hover:underline"
                                 >
                                     {href}
                                 </a>
                             </span>
                         ))}
                     </p>
-                </Section>
-
-                <Section
-                    icon={Smartphone}
-                    title="Google Play"
-                    description={tr(
-                        'Кнопка завантаження зʼявляється на головній, у бічному меню і в мобільному меню, коли ввімкнено і вказано посилання.',
-                    )}
-                >
-                    <SwitchRow
-                        title={tr('Показувати кнопку')}
-                        text={tr(
-                            'Вимкнено — кнопка ніде не зʼявляється, навіть якщо посилання збережене.',
-                        )}
-                        checked={data.play_store_enabled}
-                        onChange={(v) => setData('play_store_enabled', v)}
-                    />
-                    <div className="grid gap-2">
-                        <Label htmlFor="play_store_url">
-                            {tr('Посилання на Google Play')}
-                        </Label>
-                        <Input
-                            id="play_store_url"
-                            type="url"
-                            inputMode="url"
-                            value={data.play_store_url}
-                            onChange={(e) =>
-                                setData('play_store_url', e.target.value)
-                            }
-                            maxLength={300}
-                            placeholder="https://play.google.com/store/apps/details?id=…"
-                        />
-                        <InputError message={errors.play_store_url} />
-                    </div>
-                    <div className="grid gap-2">
-                        <Label>{tr('Тип застосунку')}</Label>
-                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                            {PLAY_BADGES.map((badge) => (
-                                <button
-                                    key={badge.value}
-                                    type="button"
-                                    aria-pressed={
-                                        data.play_store_badge === badge.value
-                                    }
-                                    onClick={() =>
-                                        setData('play_store_badge', badge.value)
-                                    }
-                                    className={cn(
-                                        'grid gap-2 rounded-2xl border p-3 text-left transition',
-                                        data.play_store_badge === badge.value
-                                            ? 'border-primary/70 bg-primary/10'
-                                            : 'border-white/10 hover:border-white/25',
-                                    )}
-                                >
-                                    <img
-                                        loading="lazy"
-                                        decoding="async"
-                                        src={badge.src}
-                                        alt={badge.title}
-                                        className="h-11 w-auto self-start"
-                                    />
-                                    <span className="text-sm font-medium text-white/85">
-                                        {badge.title}
-                                    </span>
-                                    <span className="text-xs text-white/50">
-                                        {badge.text}
-                                    </span>
-                                </button>
-                            ))}
-                        </div>
-                        <InputError message={errors.play_store_badge} />
-                    </div>
                 </Section>
 
                 <Section
@@ -637,11 +612,11 @@ export default function AdminSettings({
                         <Label htmlFor="maintenance_message">
                             {tr('Текст оголошення')}
                         </Label>
-                        <textarea
+                        <SpellcheckTextarea
                             id="maintenance_message"
                             value={data.maintenance_message}
-                            onChange={(e) =>
-                                setData('maintenance_message', e.target.value)
+                            onValueChange={(v) =>
+                                setData('maintenance_message', v)
                             }
                             rows={3}
                             maxLength={500}

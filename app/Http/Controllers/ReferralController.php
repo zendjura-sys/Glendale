@@ -16,7 +16,12 @@ class ReferralController extends Controller
 
     public function index(Request $request): Response
     {
-        return Inertia::render('invite/index', $this->referrals->summary($request->user()));
+        $period = $request->query('period') === 'all' ? 'all' : 'month';
+
+        return Inertia::render('invite/index', [
+            ...$this->referrals->summary($request->user()),
+            'leaderboard' => $this->referrals->leaderboard($request->user(), $period),
+        ]);
     }
 
     /** /r/{код}: запам’ятовуємо запрошувача на 30 днів і ведемо на реєстрацію. */

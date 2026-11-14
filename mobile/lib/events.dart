@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import 'core/widgets/arctic_glass/arctic_fit_text.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -9,6 +11,7 @@ import 'state.dart';
 import 'theme.dart';
 import 'widgets.dart';
 import 'i18n.dart';
+import 'skeletons.dart';
 
 final _kindIcons = {'family': LucideIcons.crown, 'clan': LucideIcons.swords, 'server': LucideIcons.server, 'game': LucideIcons.gamepad2};
 
@@ -54,7 +57,7 @@ class _EventsScreenState extends State<EventsScreen> {
   @override
   Widget build(BuildContext context) {
     final d = data;
-    if (d == null) return const Center(child: CircularProgressIndicator(strokeWidth: 2.4));
+    if (d == null) return const ScreenSkeleton();
     final events = maps(d['events']);
     final kinds = mapOf(d['kinds']);
     final days = <String, List<Map<String, dynamic>>>{};
@@ -118,7 +121,7 @@ class EventTile extends StatelessWidget {
           Container(
             width: 56,
             padding: const EdgeInsets.symmetric(vertical: 8),
-            decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.04), borderRadius: BorderRadius.circular(12)),
+            decoration: BoxDecoration(color: fg.withValues(alpha: 0.04), borderRadius: BorderRadius.circular(12)),
             child: Column(children: [
               event['all_day'] == true
                   ? Text(tr('Весь\nдень'), textAlign: TextAlign.center, style: body(11.5, weight: FontWeight.w700))
@@ -140,7 +143,7 @@ class EventTile extends StatelessWidget {
               ]),
               const SizedBox(height: 4),
               Text(text(event['title']) ?? '', style: body(15, weight: FontWeight.w600)),
-              if (text(event['description']) != null) Text(text(event['description'])!, maxLines: 2, overflow: TextOverflow.ellipsis, style: body(13, color: muted)),
+              if (text(event['description']) != null) FitText(text(event['description'])!, style: body(13, color: muted), maxLines: 2),
               const SizedBox(height: 4),
               Wrap(spacing: 12, runSpacing: 4, crossAxisAlignment: WrapCrossAlignment.center, children: [
                 Text('${isGame ? 'Цікаво' : 'Іде'}: ${event['going_count'] ?? 0}', style: body(12, color: faint)),
@@ -148,7 +151,7 @@ class EventTile extends StatelessWidget {
                   GestureDetector(
                     onTap: () => launchUrl(Uri.parse(link), mode: LaunchMode.externalApplication),
                     child: Row(mainAxisSize: MainAxisSize.min, children: [
-                      const Icon(LucideIcons.externalLink, size: 13, color: primary),
+                      Icon(LucideIcons.externalLink, size: 13, color: primary),
                       const SizedBox(width: 4),
                       Text(
                         link.contains('discord.com') ? tr('Відкрити в Discord') : (RegExp(r'twitch\.tv|youtube\.com|youtu\.be').hasMatch(link) ? tr('Дивитися трансляцію') : tr('Детальніше')),

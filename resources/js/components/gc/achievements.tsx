@@ -8,6 +8,8 @@ import {
     CirclePlay,
     Clapperboard,
     Crown,
+    Gamepad2,
+    Ghost,
     Heart,
     House,
     Lock,
@@ -17,8 +19,10 @@ import {
     PenLine,
     Rocket,
     Target,
+    Trophy,
     UserPlus,
     Megaphone,
+    Moon,
     Vote,
     Star,
     Swords,
@@ -37,7 +41,20 @@ export type Badge = {
     earned: boolean;
     progress: number;
     target: number;
+    /** У скількох відсотків активних людей є бейдж (null — ще не пораховано). */
+    rarity?: number | null;
+    /** Секретне: умову видно лише після відкриття. */
+    secret?: boolean;
 };
+
+/** Бейдж вважаємо рідкісним, якщо він є менш ніж у 10% людей. */
+const RARE = 10;
+
+function rarityLabel(rarity: number): string {
+    return tr('є у {p}% людей', {
+        p: rarity < 1 ? '<1' : String(Math.round(rarity)),
+    });
+}
 
 export type AchievementsData = {
     level: number;
@@ -73,6 +90,11 @@ const ICONS: Record<string, LucideIcon> = {
     target: Target,
     'user-plus': UserPlus,
     megaphone: Megaphone,
+    trophy: Trophy,
+    'gamepad-2': Gamepad2,
+    moon: Moon,
+    ghost: Ghost,
+    lock: Lock,
 };
 
 /** Рівень (досвід до наступного) і бейджі за активність у профілі. */
@@ -89,9 +111,9 @@ export function AchievementsCard({
     const shown = all ? data.badges : data.badges.filter((b) => b.earned);
 
     return (
-        <section className="glass rounded-3xl p-4">
+        <section className="gc-solid rounded-2xl p-4">
             <div className="flex items-center gap-3">
-                <span className="flex size-12 shrink-0 flex-col items-center justify-center rounded-2xl bg-gradient-brand text-white">
+                <span className="flex size-12 shrink-0 flex-col items-center justify-center rounded-2xl bg-sky-500 text-white">
                     <span className="text-[11px] leading-none font-semibold uppercase opacity-80">
                         {tr('рів.')}
                     </span>
@@ -111,7 +133,7 @@ export function AchievementsCard({
                         aria-valuemax={100}
                     >
                         <div
-                            className="h-full rounded-full bg-gradient-brand transition-[width] duration-500"
+                            className="h-full rounded-full bg-sky-500 transition-[width] duration-500"
                             style={{ width: `${percent}%` }}
                         />
                     </div>
@@ -132,7 +154,7 @@ export function AchievementsCard({
                 <button
                     type="button"
                     onClick={() => setAll(!all)}
-                    className="text-xs text-gc-lilac-200 hover:text-white"
+                    className="text-xs text-sky-400 hover:text-white"
                 >
                     {all ? tr('Лише отримані') : tr('Усі')}
                 </button>
@@ -151,15 +173,15 @@ export function AchievementsCard({
                         return (
                             <div
                                 key={b.key}
-                                title={`${b.title} — ${b.text}${b.earned ? '' : ` (${b.progress}/${b.target})`}`}
+                                title={`${b.title} — ${b.text}${b.earned || b.secret ? '' : ` (${b.progress}/${b.target})`}${b.rarity != null ? ` · ${rarityLabel(b.rarity)}` : ''}`}
                                 className="flex flex-col items-center gap-1 text-center"
                             >
                                 <span
                                     className={cn(
                                         'relative flex size-11 items-center justify-center rounded-2xl',
                                         b.earned
-                                            ? 'bg-amber-300/15 text-amber-200 ring-1 ring-amber-300/40'
-                                            : 'bg-white/[0.04] text-white/25',
+                                            ? 'bg-amber-300/15 text-amber-200'
+                                            : 'gc-solid-2 text-white/25',
                                     )}
                                 >
                                     <Icon className="size-5" />
@@ -177,6 +199,13 @@ export function AchievementsCard({
                                 >
                                     {b.title}
                                 </span>
+                                {b.earned &&
+                                    b.rarity != null &&
+                                    b.rarity < RARE && (
+                                        <span className="text-[9.5px] leading-none text-amber-200/80 tabular-nums">
+                                            {rarityLabel(b.rarity)}
+                                        </span>
+                                    )}
                             </div>
                         );
                     })}

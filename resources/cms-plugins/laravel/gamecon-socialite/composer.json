@@ -1,0 +1,10 @@
+{
+    "name": "gamecon/socialite",
+    "description": "Laravel Socialite: увійти через GameCon (OAuth 2.1 + PKCE)",
+    "type": "library",
+    "license": "MIT",
+    "version": "1.0.0",
+    "require": {"php": "^8.1", "laravel/socialite": "^5.10"},
+    "autoload": {"psr-4": {"GameCon\\Socialite\\": "src/"}},
+    "extra": {"laravel": {"providers": ["GameCon\\Socialite\\GameConServiceProvider"]}}
+}

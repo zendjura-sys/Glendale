@@ -73,6 +73,7 @@ class BotLinkController extends Controller
             'post_events' => ['boolean'],
             'post_reminders' => ['boolean'],
             'post_posts' => ['boolean'],
+            'post_music' => ['boolean'],
             'member_role_id' => ['nullable', 'string', 'regex:/^\d{15,22}$/'],
             'leader_role_id' => ['nullable', 'string', 'regex:/^\d{15,22}$/'],
         ]);
@@ -91,7 +92,7 @@ class BotLinkController extends Controller
                 }
             }
         }
-        foreach (['post_events', 'post_reminders', 'post_posts'] as $flag) {
+        foreach (['post_events', 'post_reminders', 'post_posts', 'post_music'] as $flag) {
             if (array_key_exists($flag, $data)) {
                 $link->{$flag} = (bool) $data[$flag];
             }

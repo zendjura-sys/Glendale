@@ -2,6 +2,8 @@ import type { Room, RoomOptions } from 'livekit-client';
 import { useSyncExternalStore } from 'react';
 import { toast } from 'sonner';
 import { api, ApiError } from '@/lib/api';
+import { createVoiceMeter, newAudioContext } from '@/lib/character';
+import type { VoiceReading } from '@/lib/character';
 import { tr } from '@/lib/i18n';
 
 /**
@@ -28,8 +30,8 @@ export type CallState = {
 
 export type VoiceState = {
     status: 'idle' | 'connecting' | 'connected';
-    kind: 'room' | 'call' | null;
-    /** Голосова кімната (kind = room). */
+    kind: 'room' | 'call' | 'show' | null;
+    /** Голосова кімната (kind = room) або шоу (kind = show). */
     roomId: number | null;
     /** Дзвінок і його бесіда (kind = call). */
     callId: number | null;
@@ -70,6 +72,32 @@ let state = initial;
 const listeners = new Set<() => void>();
 let room: Room | null = null;
 const audio = new Set<HTMLMediaElement>();
+/** Гучність і тембр кожного, хто говорить (identity → вимірювач), — для персонажів у шоу. */
+const meters = new Map<string, ReturnType<typeof createVoiceMeter>>();
+let meterCtx: AudioContext | null = null;
+
+function meterFor(identity: string, track: MediaStreamTrack) {
+    try {
+        meterCtx ??= newAudioContext();
+        meters.get(identity)?.stop();
+        meters.set(
+            identity,
+            createVoiceMeter(new MediaStream([track]), meterCtx),
+        );
+    } catch {
+        // Без Web Audio персонажі просто не рухають ротом.
+    }
+}
+
+function dropMeter(identity: string) {
+    meters.get(identity)?.stop();
+    meters.delete(identity);
+}
+
+/** Гучність і тембр людини в розмові (null — мовчить або не в розмові). */
+export function voiceLevel(identity: string): VoiceReading | null {
+    return meters.get(identity)?.read() ?? null;
+}
 
 function set(patch: Partial<VoiceState>) {
     state = { ...state, ...patch };
@@ -95,6 +123,8 @@ export function voiceState(): VoiceState {
 function cleanup() {
     audio.forEach((el) => el.remove());
     audio.clear();
+    meters.forEach((m) => m.stop());
+    meters.clear();
     room = null;
     set({ ...initial, deafened: state.deafened });
 }
@@ -149,15 +179,18 @@ async function connect(
         room = next;
         if (access.call) set({ callId: access.call.id });
 
-        next.on(RoomEvent.TrackSubscribed, (track) => {
+        next.on(RoomEvent.TrackSubscribed, (track, _pub, participant) => {
             if (track.kind !== Track.Kind.Audio) return;
+            meterFor(participant.identity, track.mediaStreamTrack);
             const el = track.attach();
             el.muted = state.deafened;
             el.style.display = 'none';
             document.body.appendChild(el);
             audio.add(el);
         });
-        next.on(RoomEvent.TrackUnsubscribed, (track) => {
+        next.on(RoomEvent.TrackUnsubscribed, (track, _pub, participant) => {
+            if (track.kind === Track.Kind.Audio)
+                dropMeter(participant.identity);
             track.detach().forEach((el) => {
                 audio.delete(el);
                 el.remove();
@@ -169,7 +202,21 @@ async function connect(
         next.on(RoomEvent.ParticipantPermissionsChanged, (_prev, p) => {
             if (p !== next.localParticipant) return;
             const blocked = p.permissions?.canPublish === false;
+            const wasBlocked = state.micBlocked;
             set({ micBlocked: blocked, micOn: blocked ? false : state.micOn });
+            if (state.kind === 'show') {
+                // Шоу: ведучий дав слово — мікрофон вмикається сам; час вийшов — вимикається.
+                if (blocked && !wasBlocked) {
+                    dropMeter(p.identity);
+                    toast(tr('Мікрофон вимкнено — ви знову слухаєте'));
+                }
+                if (!blocked && wasBlocked) {
+                    toast.success(tr('Вам дали слово — говоріть'));
+                    void setMic(true);
+                }
+
+                return;
+            }
             if (blocked) toast(tr('Модератор вимкнув вам мікрофон'));
         });
         next.on(RoomEvent.Disconnected, (reason) => {
@@ -285,22 +332,52 @@ export function declineCall(call: CallState) {
     void api('POST', `/calls/${call.id}/decline`).catch(() => undefined);
 }
 
+/** Шоу наживо: ведучі й гість говорять, решта слухає. */
+export async function joinShow(show: { id: number; title: string }) {
+    if (
+        state.kind === 'show' &&
+        state.roomId === show.id &&
+        state.status !== 'idle'
+    )
+        return;
+
+    await connect(
+        () => api<Access>('POST', `/shows/${show.id}/join`),
+        {
+            kind: 'show',
+            roomId: show.id,
+            roomName: show.title,
+            label: tr('Шоу'),
+            href: `/shows/${show.id}`,
+            owner: null,
+        },
+        tr('Не вдалося підключитися до шоу'),
+    );
+}
+
 export async function leaveVoice() {
     const current = room;
     const callId = state.kind === 'call' ? state.callId : null;
+    const showId = state.kind === 'show' ? state.roomId : null;
     room = null;
     await current?.disconnect().catch(() => undefined);
     cleanup();
     // Сервер дізнається й з вебхука, але так співрозмовник побачить кінець дзвінка одразу.
     if (callId)
         void api('POST', `/calls/${callId}/leave`).catch(() => undefined);
+    if (showId)
+        void api('POST', `/shows/${showId}/leave`).catch(() => undefined);
 }
 
 async function setMic(on: boolean) {
     if (!room) return;
     try {
-        await room.localParticipant.setMicrophoneEnabled(on);
+        const pub = await room.localParticipant.setMicrophoneEnabled(on);
         set({ micOn: on });
+        const identity = room.localParticipant.identity;
+        const track = pub?.track?.mediaStreamTrack;
+        if (on && track) meterFor(identity, track);
+        else dropMeter(identity);
     } catch {
         set({ micOn: false });
         toast.error(

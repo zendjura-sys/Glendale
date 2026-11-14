@@ -15,14 +15,17 @@ import {
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { MoviePoster } from '@/components/cinema/movie-tile';
+import { playerName } from '@/components/cinema/player-names';
 import { PageHeader, Pill, Toggle, selectClass } from '@/components/gc/admin';
 import { Input } from '@/components/ui/input';
 import { timeAgo } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import type { MovieCard, MovieOption, MoviePlayer, MovieType } from '@/types';
 import { tr } from '@/lib/i18n';
+import { SpellcheckTextarea } from '@/components/gc/spellcheck';
 
 type EditableMovie = MovieCard & {
+    release_status: string | null;
     tagline: string | null;
     trailer_url: string | null;
     description: string | null;
@@ -84,7 +87,7 @@ function Field({
         <label className={cn('grid gap-1.5', className)}>
             <span className="text-xs font-medium text-white/55">{label}</span>
             {children}
-            {error && <span className="text-xs text-rose-300">{error}</span>}
+            {error && <span className="text-xs text-red-400">{error}</span>}
         </label>
     );
 }
@@ -106,6 +109,7 @@ export default function AdminCinemaEdit({
         countries: (movie?.countries ?? []).join(', '),
         duration: movie?.duration ?? '',
         age_rating: movie?.age_rating ?? '',
+        release_status: movie?.release_status ?? '',
         rating_imdb: movie?.rating_imdb ?? '',
         rating_tmdb: movie?.rating_tmdb ?? '',
         rating_shikimori: movie?.rating_shikimori ?? '',
@@ -200,9 +204,7 @@ export default function AdminCinemaEdit({
                               v:
                                   movie.origin === 'manual'
                                       ? tr('вручну')
-                                      : movie.origin === 'kodik'
-                                        ? 'Kodik'
-                                        : 'FlixCDN',
+                                      : playerName(movie.origin),
                               v2: movie.enriched_at
                                   ? tr(' · метадані {timeAgo}', {
                                         timeAgo: timeAgo(movie.enriched_at),
@@ -215,7 +217,7 @@ export default function AdminCinemaEdit({
                                   : '',
                           })
                         : tr(
-                              'Заповніть дані вручну або скористайтеся імпортом із Kodik/FlixCDN',
+                              'Заповніть дані вручну або скористайтеся імпортом із вбудованих плеєрів',
                           )
                 }
                 actions={
@@ -232,7 +234,7 @@ export default function AdminCinemaEdit({
                                             { preserveScroll: true },
                                         )
                                     }
-                                    className="glass inline-flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-semibold text-white/85 hover:text-white disabled:opacity-40"
+                                    className="gc-solid inline-flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-semibold text-white/85 hover:text-white disabled:opacity-40"
                                     title={metadata
                                         .filter((m) => m.configured)
                                         .map((m) => m.label)
@@ -255,14 +257,14 @@ export default function AdminCinemaEdit({
                                             { preserveScroll: true },
                                         )
                                     }
-                                    className="glass inline-flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-semibold text-white/85 hover:text-white disabled:opacity-40"
+                                    className="gc-solid inline-flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-semibold text-white/85 hover:text-white disabled:opacity-40"
                                 >
                                     <RefreshCw className="size-4" />{' '}
                                     {tr('Оновити плеєри')}
                                 </button>
                                 <a
                                     href={movie.href}
-                                    className="glass inline-flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-semibold text-white/85 hover:text-white"
+                                    className="gc-solid inline-flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-semibold text-white/85 hover:text-white"
                                 >
                                     <ExternalLink className="size-4" />{' '}
                                     {tr('На сайті')}
@@ -283,7 +285,7 @@ export default function AdminCinemaEdit({
 
             <div className="grid grid-cols-1 gap-5 xl:grid-cols-[1fr_320px]">
                 <div className="space-y-5">
-                    <section className="glass grid grid-cols-1 gap-4 rounded-3xl p-5 sm:grid-cols-2">
+                    <section className="gc-solid grid grid-cols-1 gap-4 rounded-2xl p-5 sm:grid-cols-2">
                         <Field
                             label={tr('Назва')}
                             error={errors.title}
@@ -357,12 +359,10 @@ export default function AdminCinemaEdit({
                             error={errors.description}
                             className="sm:col-span-2"
                         >
-                            <textarea
+                            <SpellcheckTextarea
                                 className={cn(field, 'min-h-32 resize-y')}
                                 value={data.description}
-                                onChange={(e) =>
-                                    setData('description', e.target.value)
-                                }
+                                onValueChange={(v) => setData('description', v)}
                             />
                         </Field>
                         <Field
@@ -414,6 +414,34 @@ export default function AdminCinemaEdit({
                                     placeholder="16+"
                                 />
                             </Field>
+                            <Field
+                                label={tr('Статус виходу')}
+                                error={errors.release_status}
+                            >
+                                <select
+                                    className={field}
+                                    value={data.release_status}
+                                    onChange={(e) =>
+                                        setData(
+                                            'release_status',
+                                            e.target.value,
+                                        )
+                                    }
+                                >
+                                    <option value="">
+                                        {tr('Автоматично')}
+                                    </option>
+                                    <option value="announced">
+                                        {tr('Анонс')}
+                                    </option>
+                                    <option value="ongoing">
+                                        {tr('Виходить')}
+                                    </option>
+                                    <option value="released">
+                                        {tr('Завершено')}
+                                    </option>
+                                </select>
+                            </Field>
                         </div>
                         <Field label={tr('Трейлер')} error={errors.trailer_url}>
                             <input
@@ -427,7 +455,7 @@ export default function AdminCinemaEdit({
                         </Field>
                     </section>
 
-                    <section className="glass rounded-3xl p-5">
+                    <section className="gc-solid rounded-2xl p-5">
                         <h2 className="mb-1 font-display text-base font-semibold text-white">
                             {tr('Рейтинги та зовнішні ID')}
                         </h2>
@@ -509,7 +537,7 @@ export default function AdminCinemaEdit({
                         </div>
                     </section>
 
-                    <section className="glass rounded-3xl p-5">
+                    <section className="gc-solid rounded-2xl p-5">
                         <h2 className="mb-4 font-display text-base font-semibold text-white">
                             {tr('Зображення')}
                         </h2>
@@ -542,7 +570,7 @@ export default function AdminCinemaEdit({
                                         />
                                     </Field>
                                     <div className="flex flex-wrap items-center gap-2">
-                                        <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-white/[0.06] px-3.5 py-2 text-xs text-white/80 hover:bg-white/10">
+                                        <label className="gc-solid-2 inline-flex cursor-pointer items-center gap-2 rounded-xl px-3.5 py-2 text-xs text-white/80 hover:bg-white/10">
                                             <ImagePlus className="size-4" />
                                             {data[key]
                                                 ? data[key]!.name
@@ -588,7 +616,7 @@ export default function AdminCinemaEdit({
                                         )}
                                     </div>
                                     {errors[key] && (
-                                        <p className="text-xs text-rose-300">
+                                        <p className="text-xs text-red-400">
                                             {errors[key]}
                                         </p>
                                     )}
@@ -598,9 +626,9 @@ export default function AdminCinemaEdit({
                     </section>
 
                     {movie && (
-                        <section className="glass rounded-3xl p-5">
+                        <section className="gc-solid rounded-2xl p-5">
                             <h2 className="mb-1 flex items-center gap-2 font-display text-base font-semibold text-white">
-                                <Tv className="size-4 text-gc-lilac-400" />
+                                <Tv className="size-4 text-sky-400" />
                                 {tr('Плеєри')}
                                 <span className="text-sm font-normal text-white/40">
                                     {movie.sources.length}
@@ -608,12 +636,14 @@ export default function AdminCinemaEdit({
                             </h2>
                             <p className="mb-4 text-xs text-white/45">
                                 {tr(
-                                    'Kodik, Videoseed і FlixCDN оновлюються автоматично; сховані озвучки лишаються схованими. Власний плеєр — будь-який iframe або YouTube/Vimeo.',
+                                    'Вбудовані плеєри оновлюються автоматично; сховані озвучки лишаються схованими. Власний плеєр — будь-який iframe або YouTube/Vimeo.',
                                 )}
                             </p>
                             {movie.flixcdn_link && (
-                                <div className="mb-2 flex items-center gap-3 rounded-xl bg-white/[0.03] px-3.5 py-2.5 text-sm">
-                                    <Pill tone="violet">FlixCDN</Pill>
+                                <div className="gc-solid-2 mb-2 flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm">
+                                    <Pill tone="violet">
+                                        {playerName('flixcdn')}
+                                    </Pill>
                                     <span className="flex-1 truncate text-white/60">
                                         {tr('За шаблоном адреси')}
                                     </span>
@@ -624,7 +654,7 @@ export default function AdminCinemaEdit({
                                     <li
                                         key={s.key}
                                         className={cn(
-                                            'flex items-center gap-3 rounded-xl bg-white/[0.03] px-3.5 py-2 text-sm',
+                                            'gc-solid-2 flex items-center gap-3 rounded-xl px-3.5 py-2 text-sm',
                                             s.is_hidden && 'opacity-50',
                                         )}
                                     >
@@ -690,7 +720,7 @@ export default function AdminCinemaEdit({
                                                     { preserveScroll: true },
                                                 )
                                             }
-                                            className="text-rose-300/70 hover:text-rose-300"
+                                            className="text-red-400/70 hover:text-red-400"
                                             title={tr('Видалити')}
                                         >
                                             <Trash2 className="size-4" />
@@ -738,7 +768,7 @@ export default function AdminCinemaEdit({
                                 </button>
                             </div>
                             {source.errors.link && (
-                                <p className="mt-1.5 text-xs text-rose-300">
+                                <p className="mt-1.5 text-xs text-red-400">
                                     {source.errors.link}
                                 </p>
                             )}
@@ -747,10 +777,10 @@ export default function AdminCinemaEdit({
                 </div>
 
                 <aside className="space-y-5">
-                    <section className="glass rounded-3xl p-5">
+                    <section className="gc-solid rounded-2xl p-5">
                         <MoviePoster
                             movie={preview}
-                            className="mx-auto aspect-[2/3] w-full max-w-[220px] rounded-2xl ring-1 ring-white/10"
+                            className="mx-auto aspect-[2/3] w-full max-w-[220px] rounded-2xl"
                         />
                         <div className="mt-5 space-y-3">
                             {(
@@ -775,7 +805,7 @@ export default function AdminCinemaEdit({
                         </div>
                     </section>
                     {movie && (
-                        <section className="glass grid grid-cols-2 gap-3 rounded-3xl p-5 text-center">
+                        <section className="gc-solid grid grid-cols-2 gap-3 rounded-2xl p-5 text-center">
                             {(
                                 [
                                     [tr('Переглядів'), movie.views_count],
@@ -786,7 +816,7 @@ export default function AdminCinemaEdit({
                             ).map(([label, value]) => (
                                 <div
                                     key={label}
-                                    className="rounded-2xl bg-white/[0.03] p-3"
+                                    className="gc-solid-2 rounded-2xl p-3"
                                 >
                                     <p className="font-display text-xl font-bold text-white">
                                         {value}
@@ -798,7 +828,7 @@ export default function AdminCinemaEdit({
                             ))}
                         </section>
                     )}
-                    <section className="glass rounded-3xl p-5 text-sm">
+                    <section className="gc-solid rounded-2xl p-5 text-sm">
                         <p className="mb-2 font-semibold text-white">
                             {tr('Джерела метаданих')}
                         </p>
@@ -821,7 +851,7 @@ export default function AdminCinemaEdit({
                         </ul>
                         <Link
                             href="/admin/integrations"
-                            className="mt-3 inline-block text-xs text-gc-lilac-300 hover:text-white"
+                            className="mt-3 inline-block text-xs text-sky-400 hover:text-white"
                         >
                             {tr('Налаштувати інтеграції →')}
                         </Link>

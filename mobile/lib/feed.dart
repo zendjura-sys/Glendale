@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+
+import 'core/widgets/arctic_glass/arctic_fit_text.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
@@ -9,10 +11,14 @@ import 'people.dart';
 import 'posts.dart';
 import 'shell.dart';
 import 'state.dart';
+import 'feed_pulse.dart';
+import 'status.dart';
 import 'stories.dart';
 import 'theme.dart';
 import 'widgets.dart';
+import 'wrapped.dart';
 import 'i18n.dart';
+import 'skeletons.dart';
 
 /// Сторінки записів з підвантаженням: стрічка, стіна профілю, спільнота.
 class PostPager {
@@ -92,9 +98,16 @@ class _FeedScreenState extends State<FeedScreen> {
   }
 
   final stories = GlobalKey<StoriesStripState>();
+  final pulse = GlobalKey<FeedPulseState>();
 
   Future<void> _reload() async {
     unawaited(stories.currentState?.reload());
+    unawaited(pulse.currentState?.reload());
+    // «Активність друзів» — окремий список (міст /site/feed/activity), без пагінатора постів.
+    if (tab == 'activity') {
+      if (mounted) setState(() => ready = true);
+      return;
+    }
     try {
       await pager.reset();
       error = null;
@@ -115,30 +128,53 @@ class _FeedScreenState extends State<FeedScreen> {
   Widget build(BuildContext context) {
     final online = maps(pager.first['online_friends']);
     final suggestions = maps(pager.first['suggestions']);
+    // Віджети головної — ті самі, що людина обрала на сайті (за замовчуванням усі).
+    final widgets = (AppScope.of(context).session.me?['home_widgets'] is List) ? {for (final w in AppScope.of(context).session.me!['home_widgets'] as List) '$w'} : null;
+    bool shows(String key) => widgets == null || widgets.contains(key);
     final tomorrow = maps(pager.first['tomorrow']);
     final languages = (pager.first['languages'] is List ? pager.first['languages'] as List : const []).map((l) => '$l').toList();
     return ScreenScroll(
       onRefresh: _reload,
       children: [
+        const IncidentBanner(),
         StoriesStrip(key: stories),
+        FeedPulse(key: pulse),
+        if (AppScope.of(context).session.wrappedYear case final year?) ...[WrappedBanner(year: year), const SizedBox(height: 12)],
         if (tomorrow.isNotEmpty) ...[_TomorrowCard(events: tomorrow), const SizedBox(height: 12)],
         Composer(onPosted: _reload),
         SizedBox(height: 12),
-        Segmented(
-          options: [SegmentOption('friends', tr('Друзі'), icon: LucideIcons.usersRound), SegmentOption('discover', tr('Рекомендації'), icon: LucideIcons.flame)],
-          selected: tab,
-          onSelect: (value) {
-            setState(() {
-              tab = value;
-              ready = false;
-            });
-            _reload();
-          },
-        ),
+        // Вкладки-пігулки, як на сайті: активна — суцільна небесна.
+        Row(children: [
+          for (final (key, label, icon) in [('friends', tr('Друзі'), LucideIcons.usersRound), ('discover', tr('Рекомендації'), LucideIcons.flame), ('activity', tr('Активність'), LucideIcons.activity)]) ...[
+            Expanded(
+              child: GestureDetector(
+                onTap: () {
+                  if (tab == key) return;
+                  setState(() {
+                    tab = key;
+                    ready = false;
+                  });
+                  _reload();
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  height: 42,
+                  decoration: BoxDecoration(color: tab == key ? const Color(0xFF0EA5E9) : card, borderRadius: BorderRadius.circular(8)),
+                  child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                    Icon(icon, size: 16, color: tab == key ? Colors.white : soft),
+                    const SizedBox(width: 7),
+                    Flexible(child: FitText(label, style: body(14, color: tab == key ? Colors.white : soft, weight: FontWeight.w700))),
+                  ]),
+                ),
+              ),
+            ),
+            if (key != 'activity') const SizedBox(width: 8),
+          ],
+        ]),
         if (languages.isNotEmpty) ...[
           const SizedBox(height: 10),
           Row(children: [
-            const Icon(LucideIcons.languages, size: 16, color: muted),
+            Icon(LucideIcons.languages, size: 16, color: muted),
             const SizedBox(width: 8),
             Text(tr('Мова записів'), style: body(12.5, color: muted)),
             const SizedBox(width: 10),
@@ -159,7 +195,7 @@ class _FeedScreenState extends State<FeedScreen> {
           ]),
         ],
         const SizedBox(height: 12),
-        if (online.isNotEmpty) ...[
+        if (online.isNotEmpty && shows('online')) ...[
           Glass(
             padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
             child: Column(
@@ -181,8 +217,10 @@ class _FeedScreenState extends State<FeedScreen> {
           ),
           const SizedBox(height: 12),
         ],
-        if (!ready)
-          const Padding(padding: EdgeInsets.all(40), child: Center(child: CircularProgressIndicator(strokeWidth: 2.4)))
+        if (tab == 'activity')
+          const FriendActivityList()
+        else if (!ready)
+          const FeedSkeleton()
         else if (error != null)
           EmptyState(icon: LucideIcons.wifiOff, title: tr('Не вдалося завантажити'), text: '$error', action: tr('Спробувати знову'), onAction: _reload)
         else if (pager.posts.isEmpty)
@@ -198,7 +236,7 @@ class _FeedScreenState extends State<FeedScreen> {
           for (final post in pager.posts) PostCard(key: ValueKey('post-${post['id']}'), post: post, onDeleted: () => pager.posts.remove(post)),
           LoadMore(more: pager.more, onMore: _more),
         ],
-        if (suggestions.isNotEmpty && ready) ...[
+        if (suggestions.isNotEmpty && ready && shows('suggestions')) ...[
           const SizedBox(height: 4),
           Glass(
             padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
@@ -237,7 +275,7 @@ class _AvatarChip extends StatelessWidget {
           children: [
             Avatar(url: text(user['avatar_url']), name: text(user['name']) ?? name, size: 50, online: true),
             const SizedBox(height: 6),
-            Text(name, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(11.5, color: soft)),
+            FitText(name, style: body(11.5, color: soft)),
           ],
         ),
       ),
@@ -289,13 +327,53 @@ class _SearchScreenState extends State<SearchScreen> {
   late final query = TextEditingController(text: widget.initial);
   List<Map<String, dynamic>> users = [];
   List<Map<String, dynamic>> communities = [];
+  List<Map<String, dynamic>> hits = [];
   bool loading = false;
   Timer? debounce;
+  // Історія й популярні запити — як на сайті (/search/quick без запиту).
+  List<String> recent = [];
+  List<String> popular = [];
 
   @override
   void initState() {
     super.initState();
-    if (widget.initial.isNotEmpty) WidgetsBinding.instance.addPostFrameCallback((_) => _search());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (widget.initial.isNotEmpty) _search();
+      _history();
+    });
+  }
+
+  List<String> _words(dynamic v) => [
+        for (final x in (v is List ? v : const []))
+          if (x is String) x else if (x is Map && (x['q'] ?? x['query'] ?? x['title']) != null) '${x['q'] ?? x['query'] ?? x['title']}',
+      ];
+
+  Future<void> _history() async {
+    try {
+      final r = await AppScope.read(context).session.api.get(Api.site('/search/quick?q='));
+      if (mounted) setState(() => (recent = _words(r['recent']), popular = _words(r['trending']).isNotEmpty ? _words(r['trending']) : _words(r['popular'])));
+    } catch (_) {}
+  }
+
+  Future<void> _remember(String q) async {
+    try {
+      final r = await AppScope.read(context).session.api.post(Api.site('/search/recent'), {'q': q});
+      if (mounted) setState(() => recent = _words(r['recent']));
+    } catch (_) {}
+  }
+
+  Future<void> _forget([String? q]) async {
+    try {
+      final r = await AppScope.read(context).session.api.delete(Api.site('/search/recent'), q == null ? null : {'q': q});
+      if (mounted) setState(() => recent = _words(r['recent']));
+    } catch (_) {}
+  }
+
+  void _pick(String q) {
+    query.text = q;
+    setState(() {});
+    _search();
+    _remember(q);
   }
 
   @override
@@ -311,6 +389,7 @@ class _SearchScreenState extends State<SearchScreen> {
       setState(() {
         users = [];
         communities = [];
+        hits = [];
       });
       return;
     }
@@ -321,11 +400,14 @@ class _SearchScreenState extends State<SearchScreen> {
       final results = await Future.wait([
         api.get('/api/v1/search?q=$encoded'),
         api.get('/api/v1/communities?tab=all&q=$encoded').catchError((_) => <String, dynamic>{}),
+        api.get(Api.site('/search/quick?q=$encoded')).catchError((_) => <String, dynamic>{}),
       ]);
       if (!mounted || query.text.trim() != q) return;
       setState(() {
         users = maps(results[0]['users']);
         communities = Listing.parse(results[1]['communities']).items.take(6).toList();
+        // Кіно, музика, ігри, сервери, клани, сім'ї — з того самого пошуку, що й на сайті.
+        hits = maps(results[2]['hits']).where((h) => h['kind'] != 'user' && h['kind'] != 'community').toList();
       });
     } catch (e) {
       if (mounted) toast(context, e);
@@ -346,7 +428,7 @@ class _SearchScreenState extends State<SearchScreen> {
             Expanded(
               child: GcField(
                 controller: query,
-                label: tr('Пошук людей і спільнот'),
+                label: tr('Пошук: люди, кіно, музика, ігри…'),
                 icon: LucideIcons.search,
                 autofocus: widget.initial.isEmpty,
                 dense: true,
@@ -355,17 +437,36 @@ class _SearchScreenState extends State<SearchScreen> {
                   debounce = Timer(const Duration(milliseconds: 300), _search);
                   setState(() {});
                 },
-                onSubmit: _search,
+                onSubmit: () {
+                  _search();
+                  if (query.text.trim().length >= 2) _remember(query.text.trim());
+                },
               ),
             ),
           ],
         ),
         const SizedBox(height: 14),
         if (loading && users.isEmpty && communities.isEmpty)
-          const Padding(padding: EdgeInsets.all(30), child: Center(child: CircularProgressIndicator(strokeWidth: 2)))
+          const ListSkeleton(rows: 5)
+        else if (q.length < 2 && (recent.isNotEmpty || popular.isNotEmpty))
+          Glass(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              if (recent.isNotEmpty) ...[
+                CardTitle(tr('Нещодавні'), icon: LucideIcons.history, trailing: tr('Очистити'), onTrailing: () => _forget()),
+                Wrap(spacing: 6, runSpacing: 6, children: [
+                  for (final r in recent) InputChip(label: Text(r, style: body(13)), onPressed: () => _pick(r), onDeleted: () => _forget(r), deleteIcon: Icon(LucideIcons.x, size: 14, color: muted)),
+                ]),
+              ],
+              if (popular.isNotEmpty) ...[
+                if (recent.isNotEmpty) const SizedBox(height: 12),
+                CardTitle(tr('Популярне'), icon: LucideIcons.trendingUp),
+                Wrap(spacing: 6, runSpacing: 6, children: [for (final p in popular.take(10)) ActionChip(label: Text(p, style: body(13)), onPressed: () => _pick(p))]),
+              ],
+            ]),
+          )
         else if (q.length < 2)
           QuietEmpty(icon: LucideIcons.search, text: tr('Введіть щонайменше 2 символи'))
-        else if (users.isEmpty && communities.isEmpty)
+        else if (users.isEmpty && communities.isEmpty && hits.isEmpty)
           QuietEmpty(icon: LucideIcons.userRoundSearch, text: tr('За запитом «{q}» нічого не знайдено', {'q': q}))
         else ...[
           if (users.isNotEmpty)
@@ -401,6 +502,53 @@ class _SearchScreenState extends State<SearchScreen> {
               ),
             ),
           ],
+          if (hits.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Glass(
+              padding: const EdgeInsets.fromLTRB(12, 14, 12, 6),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(padding: EdgeInsets.only(left: 4), child: CardTitle(tr('На сайті'), icon: LucideIcons.layoutGrid)),
+                  const SizedBox(height: 4),
+                  for (final hit in hits)
+                    ListTile(
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+                      leading: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(color: primary.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(12)),
+                        child: Icon(
+                          switch ('${hit['kind']}') {
+                            'movie' => LucideIcons.clapperboard,
+                            'track' => LucideIcons.music,
+                            'game' => LucideIcons.gamepad2,
+                            'server' => LucideIcons.server,
+                            'clan' => LucideIcons.swords,
+                            'family' => LucideIcons.crown,
+                            _ => LucideIcons.search,
+                          },
+                          size: 18,
+                          color: primary,
+                        ),
+                      ),
+                      title: FitText(text(hit['title']) ?? '', style: body(15, weight: FontWeight.w600)),
+                      subtitle: Text(tr(text(hit['hint']) ?? ''), style: body(12.5, color: muted)),
+                      onTap: () => context.push(appPathFor(text(hit['href']))),
+                    ),
+                ],
+              ),
+            ),
+          ],
+          const SizedBox(height: 12),
+          // Той самий запит — одразу в розділах.
+          Wrap(spacing: 8, runSpacing: 8, children: [
+            for (final (icon, label, path) in [
+              (LucideIcons.clapperboard, tr('«{q}» у кіно', {'q': q}), '/cinema?q='),
+              (LucideIcons.music, tr('«{q}» у музиці', {'q': q}), '/music/search?q='),
+            ])
+              GestureDetector(onTap: () => context.push('$path${Uri.encodeQueryComponent(q)}'), child: Pill(label: label, icon: icon, color: primary)),
+          ]),
           const SizedBox(height: 12),
           GhostButton(label: tr('Розширений пошук людей'), icon: LucideIcons.slidersHorizontal, onPressed: () => context.push('/people?q=${Uri.encodeQueryComponent(q)}')),
         ],
@@ -434,13 +582,13 @@ class _TomorrowCard extends StatelessWidget {
                   height: 44,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(color: primary.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(12)),
-                  child: Text(clock(e['starts_at']), style: body(13.5, color: const Color(0xFFB4BFFF), weight: FontWeight.w700)),
+                  child: Text(clock(e['starts_at']), style: body(13.5, color: const Color(0xFF9DD8FF), weight: FontWeight.w700)),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(text(e['title']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14, weight: FontWeight.w600)),
-                    Text(text(mapOf(e['where'])['name']) ?? text(e['type_label']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: muted)),
+                    FitText(text(e['title']) ?? '', style: body(14, weight: FontWeight.w600)),
+                    FitText(text(mapOf(e['where'])['name']) ?? text(e['type_label']) ?? '', style: body(12, color: muted)),
                   ]),
                 ),
               ]),
@@ -448,5 +596,82 @@ class _TomorrowCard extends StatelessWidget {
           ),
       ]),
     );
+  }
+}
+
+/// «Активність друзів» — як вкладка на сайті: відгуки, добірки кіно, беклог ігор (хто що пройшов чи почав).
+class FriendActivityList extends StatefulWidget {
+  const FriendActivityList({super.key});
+
+  @override
+  State<FriendActivityList> createState() => _FriendActivityListState();
+}
+
+class _FriendActivityListState extends State<FriendActivityList> {
+  List<Map<String, dynamic>>? items;
+  Object? error;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      try {
+        final r = await AppScope.read(context).session.api.get(Api.site('/feed/activity'));
+        if (mounted) setState(() => items = maps(r['items']));
+      } catch (e) {
+        if (mounted) setState(() => error = e);
+      }
+    });
+  }
+
+  String _verb(String kind) => switch (kind) {
+        'game_review' => tr('оцінює гру'),
+        'movie_review' => tr('пише відгук'),
+        'movie_list' => tr('створює добірку'),
+        'backlog.done' => tr('проходить'),
+        'backlog.playing' => tr('починає грати'),
+        _ => tr('оновлює профіль'),
+      };
+
+  @override
+  Widget build(BuildContext context) {
+    final list = items;
+    if (error != null) return EmptyState(icon: LucideIcons.wifiOff, title: tr('Не вдалося завантажити'), text: '$error');
+    if (list == null) return const FeedSkeleton();
+    if (list.isEmpty) return EmptyState(icon: LucideIcons.activity, title: tr('Поки тихо'), text: tr('Тут з’являться відгуки, добірки й ігри друзів.'));
+    return Column(children: [
+      for (final it in list) ...[
+        Builder(builder: (context) {
+          final target = mapOf(it['game']).isNotEmpty ? mapOf(it['game']) : (mapOf(it['movie']).isNotEmpty ? mapOf(it['movie']) : mapOf(it['list']));
+          final user = mapOf(it['user']);
+          return Glass(
+            padding: const EdgeInsets.all(12),
+            onTap: text(target['href']) != null ? () => context.push(appPathFor(text(target['href']))) : null,
+            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Avatar(name: text(user['name']) ?? '', url: text(user['avatar_url']), size: 40),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text.rich(TextSpan(children: [
+                    TextSpan(text: '${text(user['name']) ?? ''} ', style: body(13.5, weight: FontWeight.w700)),
+                    TextSpan(text: '${_verb(text(it['kind']) ?? '')} ', style: body(13.5, color: muted)),
+                    TextSpan(text: text(target['title']) ?? '', style: body(13.5, weight: FontWeight.w600)),
+                    if (it['score'] != null) TextSpan(text: ' · ${it['score']}/10', style: body(13.5, color: primary, weight: FontWeight.w700)),
+                  ])),
+                  if (text(it['excerpt']) != null) ...[
+                    const SizedBox(height: 4),
+                    Text(text(it['excerpt'])!, maxLines: 3, overflow: TextOverflow.fade, style: body(12.5, color: soft)),
+                  ],
+                  const SizedBox(height: 4),
+                  Text(ago(it['at']), style: body(11.5, color: faint)),
+                ]),
+              ),
+              if (text(target['cover']) != null) ...[const SizedBox(width: 10), NetImage(text(target['cover']), width: 54, height: 54, radius: 12)],
+            ]),
+          );
+        }),
+        const SizedBox(height: 8),
+      ],
+    ]);
   }
 }

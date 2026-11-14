@@ -5,8 +5,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   final voices = [
-    {'key': 'kodik:1', 'provider': 'kodik', 'provider_label': 'Kodik', 'translation': 'AniLibria.TV', 'translation_type': 'voice', 'episodes': 12},
-    {'key': 'kodik:2', 'provider': 'kodik', 'provider_label': 'Kodik', 'translation': 'Crunchyroll', 'translation_type': 'subtitles', 'episodes': 3},
+    {'key': 'kodik:1', 'provider': 'kodik', 'provider_label': 'Плеєр 1', 'translation': 'AniLibria.TV', 'translation_type': 'voice', 'episodes': 12},
+    {'key': 'kodik:2', 'provider': 'kodik', 'provider_label': 'Плеєр 1', 'translation': 'Crunchyroll', 'translation_type': 'subtitles', 'episodes': 3},
   ];
 
   test('серії озвучки обрізаються до її кількості', () {

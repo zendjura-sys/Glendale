@@ -14,9 +14,9 @@ use App\Models\ServerPromotion;
 use App\Models\User;
 use App\Models\WalletTransaction;
 use App\Notifications\BillingNotice;
-use App\Notifications\PlusGifted;
 use App\Services\Phones\PhoneNumbers;
 use App\Services\Plus\Plus;
+use App\Services\Plus\PlusGifts;
 use App\Services\Plus\ServerPromotions;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -85,8 +85,12 @@ class Shop
         $kind = (string) (app(Catalog::class)->get($product)['kind'] ?? '');
 
         return match ($kind) {
-            'plus' => $payer,
-            'gift' => $this->recipient($payer, (string) ($input['username'] ?? '')),
+            'plus', 'balance' => $payer,
+            'gift' => tap($this->recipient($payer, (string) ($input['username'] ?? '')), function (User $to) use ($payer, $product, $input) {
+                if (filled($input['gift_message'] ?? null) || filled($input['gift_theme'] ?? null) || filled($input['gift_at'] ?? null)) {
+                    app(PlusGifts::class)->draft($payer, $to, $product, (int) (app(Catalog::class)->get($product)['days'] ?? 0), $input);
+                }
+            }),
             'family' => PlusController::ledFamilies($payer)->firstWhere('id', (int) ($input['family_id'] ?? 0))
                 ?? throw ValidationException::withMessages(['family_id' => 'Підключити GameCon+ для сім’ї може лише її лідер.']),
             'promo' => $this->ownServer($payer, (int) ($input['server_id'] ?? 0)),
@@ -180,7 +184,7 @@ class Shop
         }
 
         // Залишок старого балансу покриває ціну — списуємо з нього.
-        if ((int) $payer->balance >= self::price($renewal->product)) {
+        if ((int) $payer->balance >= app(Catalog::class)->priceFor($payer, $renewal->product)) {
             DB::transaction(function () use ($renewal, $owner, $payer) {
                 $payment = $this->charge($payer, $renewal->product, $owner, 'renewal', 'Автопродовження: '.self::label($renewal->product));
                 $this->apply($payment, $renewal->product, $owner, $payer, 'renewal');
@@ -302,6 +306,13 @@ class Shop
             app(PhoneNumbers::class)->revoke($payment->id);
 
             $payer = $payment->user;
+            // Повернення поповнення: списати ще не використані одиниці цього поповнення.
+            if ($payer !== null && (app(Catalog::class)->get($payment->product)['kind'] ?? null) === 'balance') {
+                $left = min((int) $payer->fresh()?->balance, $payment->amount);
+                if ($left > 0) {
+                    $this->wallet->debit($payer, $left, 'refund', 'Повернення поповнення балансу', $payment->product, 'payment:'.$payment->id, $by);
+                }
+            }
             if ($payer !== null && $payment->provider === 'wallet' && str_starts_with($payment->provider_id, 'wt-')) {
                 $this->wallet->credit($payer, $payment->amount, 'refund', 'Повернення: '.self::label($payment->product), $payment->product, 'payment:'.$payment->id, $by);
             }
@@ -350,6 +361,14 @@ class Shop
         $meta = (array) app(Catalog::class)->get($product);
         $days = (int) ($meta['days'] ?? 0);
 
+        // Поповнення балансу: зарахувати розрахункові одиниці (послугу надано в момент зарахування).
+        if (($meta['kind'] ?? null) === 'balance') {
+            $this->wallet->credit($payer, $payment->amount, 'topup', 'Поповнення балансу GameCon', $product, 'payment:'.$payment->id);
+            $payer->notify(new BillingNotice('wallet_topup', 'Баланс поповнено: +'.Wallet::units($payment->amount).'.'));
+
+            return;
+        }
+
         if ($target instanceof PhoneNumber) {
             app(PhoneNumbers::class)->activate($target, $payment->id);
 
@@ -362,8 +381,8 @@ class Shop
             return;
         }
         if (($meta['kind'] ?? null) === 'gift' && $target instanceof User) {
-            $this->plus->grant($target, $days, 'gift', $payer, $payer->name, $payment->id);
-            $target->notify(new PlusGifted($payer, $days));
+            // Листівка: вручити зараз або в обраний день (PlusGifts).
+            app(PlusGifts::class)->paid($payment, $payer, $target, $product, $days);
 
             return;
         }

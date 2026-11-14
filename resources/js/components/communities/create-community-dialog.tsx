@@ -51,7 +51,7 @@ export function CreateCommunityDialog({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="glass-strong gap-0 rounded-3xl border-white/10 p-6 text-white sm:max-w-lg">
+            <DialogContent className="glass-strong gap-0 rounded-dialog p-6 text-white sm:max-w-lg">
                 <DialogTitle className="font-display text-xl">
                     {tr('Нова спільнота')}
                 </DialogTitle>
@@ -66,18 +66,18 @@ export function CreateCommunityDialog({
                             type="button"
                             onClick={() => form.setData('type', type.value)}
                             className={cn(
-                                'relative flex flex-col items-start gap-2 rounded-2xl border p-4 text-left transition',
+                                'relative flex flex-col items-start gap-2 rounded-2xl p-4 text-left transition',
                                 form.data.type === type.value
-                                    ? 'border-gc-lilac-500/60 bg-gc-indigo/15 shadow-[0_0_30px_-10px_rgb(124_92_255/0.9)]'
-                                    : 'border-white/[0.07] bg-white/[0.03] hover:border-white/15',
+                                    ? 'bg-gc-indigo/15'
+                                    : 'gc-solid-2 hover:border-white/15',
                             )}
                         >
                             <span
                                 className={cn(
                                     'flex size-10 items-center justify-center rounded-xl',
                                     form.data.type === type.value
-                                        ? 'bg-gradient-brand'
-                                        : 'bg-white/[0.06]',
+                                        ? 'bg-sky-500'
+                                        : 'gc-solid-2',
                                 )}
                             >
                                 <type.icon className="size-5 text-white" />
@@ -104,7 +104,7 @@ export function CreateCommunityDialog({
                     />
                 </label>
                 {form.errors.name && (
-                    <p className="mt-1 text-xs text-rose-300">
+                    <p className="mt-1 text-xs text-red-400">
                         {form.errors.name}
                     </p>
                 )}
@@ -129,7 +129,7 @@ export function CreateCommunityDialog({
                     {form.data.type === 'group' && (
                         <div className="text-sm font-medium text-white/80">
                             {tr('Доступ')}
-                            <div className="mt-1.5 grid h-11 grid-cols-2 gap-1 rounded-xl bg-white/[0.04] p-1">
+                            <div className="gc-solid-2 mt-1.5 grid h-11 grid-cols-2 gap-1 rounded-xl p-1">
                                 {(
                                     [
                                         ['open', tr('Відкрита'), Globe2],

@@ -10,7 +10,10 @@ export function PlusTabs({ current }: { current: 'plus' | 'billing' }) {
         'inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold transition sm:flex-none';
 
     return (
-        <nav className="glass flex gap-1 rounded-2xl p-1" aria-label="GameCon+">
+        <nav
+            className="gc-solid flex gap-1 rounded-2xl p-1"
+            aria-label="GameCon+"
+        >
             <Link
                 href="/plus"
                 className={cn(

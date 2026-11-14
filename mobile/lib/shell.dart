@@ -1,21 +1,27 @@
+import 'dart:async';
 import 'dart:math' as math;
-import 'dart:ui';
 
 import 'package:flutter/material.dart';
+
+import 'core/widgets/arctic_glass/arctic_fit_text.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import 'account.dart';
+import 'chrome.dart';
+import 'connect.dart';
+import 'alert_widget.dart';
 import 'api.dart';
+import 'app_login.dart' show appLoginIdFrom;
 import 'family_widget.dart';
-import 'nav_items.dart';
+import 'pulse_widget.dart';
+import 'seasonal.dart';
 import 'player_view.dart';
-import 'plus.dart';
 import 'state.dart';
-import 'subscription.dart';
+import 'backgrounds.dart';
 import 'theme.dart';
 import 'voice_room.dart';
+import 'rail.dart';
 import 'widgets.dart';
 import 'i18n.dart';
 
@@ -36,19 +42,71 @@ String appPathFor(String? sitePath) {
       return '/families/${rest(1)}${tab.isEmpty ? '' : '?tab=$tab'}';
     case 'c':
       final sub = rest(2);
-      return '/communities/${rest(1)}${['members', 'settings', 'photos'].contains(sub) ? '/$sub' : ''}${sub == 'members' ? query : ''}';
+      if (sub == 'wiki') return '/communities/${rest(1)}/wiki${parts.length > 3 ? '/${rest(3)}' : ''}';
+      return '/communities/${rest(1)}${['members', 'settings', 'photos', 'channels', 'calendar'].contains(sub) ? '/$sub' : ''}${sub == 'members' ? query : ''}';
     case 'messages':
       if (rest(1) == 'saved') return '/starred';
       return parts.length > 1 && int.tryParse(rest(1)) != null ? '/messages/${rest(1)}' : '/messages';
     case 'posts':
       return rest(1) == 'drafts' ? '/drafts' : '/posts/${rest(1)}';
+    case 'phone':
+      return '/phone$query';
     case 'moments':
     case 'quests':
+    case 'season':
+    case 'level':
+    case 'rewards':
+    case 'cards':
+    case 'transparency':
+    case 'wrapped':
     case 'saved':
     case 'invite':
+    case 'later':
+    case 'alerts':
+    case 'playing':
       return '/$head';
+    case 'help':
+      return path;
+    case 'season-events':
+      return parts.length > 1 ? '/season-events/${rest(1)}' : '/season-events';
+    case 'streams':
+      return rest(1) == 'live' ? '/streams/live' : '/feed';
+    case 'podcasts':
+      return parts.length > 1 ? '/podcasts/${rest(1)}' : '/podcasts';
+    case 'ideas':
+      return '/ideas';
+    case 'status':
+      return '/status';
+    case 'memories':
+      return '/memories';
+    case 'map':
+      return '/map';
+    case 'journal':
+      return parts.length > 1 ? '/journal/${rest(1)}' : '/journal';
+    case 'series':
+      return parts.length > 1 && RegExp(r'^\d+$').hasMatch(parts[1]) ? '/series/${parts[1]}' : '/feed';
+    case 'configs':
+      return '/configs$query';
+    case 'game-nights':
+      return parts.length > 1 && RegExp(r'^\d+$').hasMatch(parts[1]) ? '/game-nights/${parts[1]}' : '/game-nights';
+    case 'duels':
+      return '/duels';
+    case 't':
+      return parts.length > 1 ? '/t/${rest(1)}' : '/feed';
+    case 'articles':
+      return parts.length > 1 ? '/articles/${rest(1)}' : '/articles';
+    case 'tools':
+      return '/tools/nicknames';
+    case 'memes':
+      return '/memes/new';
+    case 'tierlists':
+      return parts.length > 1 && RegExp(r'^\d+$').hasMatch(parts[1]) ? '/tierlists/${parts[1]}' : '/tierlists';
+    case 'support':
+      return parts.length > 1 ? '/support/${rest(1)}' : '/support';
     case 'join':
       return '/join/${rest(1)}';
+    case 'app-login':
+      return '/app-login/${rest(1)}';
     case 'albums':
       return '/albums/${rest(1)}$query';
     case 'photos':
@@ -56,7 +114,16 @@ String appPathFor(String? sitePath) {
     case 'music':
       if (rest(1) == 'u' && parts.length > 2) return '/music?user=${rest(2)}';
       if (rest(1) == 'playlists' && parts.length > 2) return '/music/playlists/${rest(2)}';
-      return '/music$query';
+      // Розділ у стилі Apple Music: ті самі шляхи, що на сайті.
+      if (const {'new', 'radio', 'library', 'search', 'artist', 'album', 'mix', 'genre', 'charts', 'replay', 'rooms', 'quiz'}.contains(rest(1)) && parts.length <= 3) return '$path$query';
+      // Старі вкладки ?tab=… ведуть у нові розділи (як OLD_TABS у MusicHubController).
+      return switch (uri?.queryParameters['tab']) {
+        'mine' => '/music/library/songs',
+        'playlists' => '/music/library/playlists',
+        'spotify' => '/music/library/spotify',
+        'discover' => '/music/new',
+        _ => '/music',
+      };
     case 'cinema':
       return '$path${rest(1) == 'my' ? query : ''}';
     case 'families':
@@ -67,12 +134,18 @@ String appPathFor(String? sitePath) {
       return '/listen/${rest(1)}';
     case 'events':
       return rest(1) == 'releases' ? '/events/releases' : '/events';
+    case 'games' when rest(1) == 'steam-import':
+      return '/games/steam-import';
+    case 'games' when rest(1) == 'backlog' || rest(1) == 'deals':
+      return path;
     case 'games':
     case 'clans':
       return parts.length > 2 && rest(1) != 'create' ? '/$head/${rest(1)}' : '$path$query';
     case 'party':
     case 'characters':
       return path;
+    case 'tournaments':
+      return parts.length > 1 ? '/tournaments/${rest(1)}' : '/tournaments';
     case 'servers':
     case 'communities':
     case 'friends':
@@ -81,11 +154,12 @@ String appPathFor(String? sitePath) {
     case 'feed':
       return '$path$query';
     case 'settings':
-      return '/settings';
+      if (['links', 'account-type', 'pixel-avatar'].contains(rest(1))) return '/settings/${rest(1)}';
+      return rest(1) == 'keyword-alerts' ? '/keyword-alerts' : '/settings';
     case 'id':
       return '/feed';
     default:
-      return '/u/$head';
+      return rest(1) == 'card' ? '/u/$head/card' : '/u/$head';
   }
 }
 
@@ -106,7 +180,12 @@ class _AppShellState extends State<AppShell> {
     widget.session.addListener(_onSession);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _onSession();
-      if (mounted && widget.session.me != null) showWhatsNew(context, widget.session.prefs);
+      // Новачок — спершу перші кроки (номер, режим, ігри), як на сайті.
+      if (mounted && text(widget.session.me?['onboarding']) != null) {
+        context.go('/start');
+      } else if (mounted && widget.session.me != null) {
+        showWhatsNew(context, widget.session.prefs);
+      }
     });
   }
 
@@ -120,7 +199,22 @@ class _AppShellState extends State<AppShell> {
     final uri = widget.session.handoff;
     if (!mounted || uri == null) return;
     // Натискання на віджет «Моя сім'я» — відкриваємо сім'ю.
-    final fromWidget = FamilyWidget.routeFor(uri);
+    // Вхід на сайт через застосунок: gamecon://app-login/{id}. Без акаунта посилання чекає входу.
+    final login = appLoginIdFrom(uri);
+    if (login != null) {
+      widget.session.consumeLink();
+      context.push('/app-login/$login');
+      return;
+    }
+    // Ярлик іконки «Я в укритті»: ставимо статус і показуємо тривоги.
+    if (uri.host == 'widget' && uri.path == '/shelter') {
+      widget.session.consumeLink();
+      unawaited(AlertWidget.shelter(widget.session.api, true)
+          .then((_) => mounted ? toast(context, tr('Статус «В укритті» встановлено.')) : null, onError: (_) => null));
+      context.push('/alerts');
+      return;
+    }
+    final fromWidget = FamilyWidget.routeFor(uri) ?? PulseWidget.routeFor(uri);
     if (fromWidget != null) {
       widget.session.consumeLink();
       context.push(fromWidget);
@@ -136,30 +230,47 @@ class _AppShellState extends State<AppShell> {
 
   @override
   Widget build(BuildContext context) {
-    final path = GoRouterState.of(context).uri.path;
+    final uri = GoRouterState.of(context).uri;
+    final path = uri.path;
+    // У «Музиці» нижня панель — вкладки розділу на місці острова (одна панель за раз).
+    final musicTabs = hasMusicTabs(uri);
+    // «Назад» у шапці «Музики» веде на останній маршрут поза розділом.
+    final inMusic = isMusicSection(uri);
+    if (!inMusic) MusicTopBar.exit = uri.toString();
     final topInset = MediaQuery.viewPaddingOf(context).top;
-    final headerTop = topInset == 0 ? 24.0 : topInset;
     final chatOpen = RegExp(r'^/messages/\d+').hasMatch(path);
     return AppScope(
       session: widget.session,
       player: widget.player,
       child: Stage(
         child: ListenableBuilder(
-          listenable: Listenable.merge([widget.player, widget.session, VoiceCall.instance]),
+          listenable: Listenable.merge([widget.player, widget.session, VoiceCall.instance, ?GameConnect.instance]),
           builder: (context, _) {
             final keyboard = MediaQuery.viewInsetsOf(context).bottom > 0;
             final hideChrome = chatOpen && keyboard;
-            final playing = widget.player.current != null && !hideChrome && !widget.player.covered;
-            // Планшет або широкий екран: бічне меню замість нижньої панелі, контент по центру — як на сайті.
+            // GameCon Connect: музика грає на іншому пристрої — міні-плеєр керує ним.
+            final connect = GameConnect.instance;
+            final remote = connect?.remote;
+            final playing = (widget.player.current != null || remote != null) && !hideChrome && !widget.player.covered;
+            final Widget mini = remote != null ? RemoteMiniPlayer(connect: connect!, device: remote) : (playing ? MiniPlayer(player: widget.player) : const SizedBox.shrink());
+            // Широкий екран (планшет): як сайт на комп'ютері — шапка на всю ширину, ліворуч список розділів.
+            // Телефон і вертикальний планшет: як сайт на телефоні — шапка й острів-меню внизу.
             final screen = MediaQuery.sizeOf(context);
             final wide = screen.width >= tabletWidth;
-            // Планшет вертикально (3:4): нижня панель лишається, але стрічка — по центру, не на всю ширину.
             final tabletPortrait = !wide && screen.shortestSide >= 600;
             final contentWidth = wide ? tabletContentWidth : tabletPortraitWidth;
             final systemBottom = MediaQuery.viewPaddingOf(context).bottom;
             final inCall = VoiceCall.instance.active && !hideChrome;
-            final bottom = hideChrome ? 0.0 : systemBottom + (wide ? 8 : navBarHeight) + (playing ? miniPlayerExtent : 0) + (inCall ? voiceBarExtent : 0);
-            final contentLeft = wide ? sideNavWidth + 24 : 0.0;
+            // Нижня панель (острів або вкладки «Музики»); плеєр і голосова кімната завжди над нею.
+            final bottomBar = !hideChrome && (!wide || musicTabs);
+            final bottom = hideChrome ? 0.0 : systemBottom + (bottomBar ? islandExtent : 8) + (playing ? miniPlayerExtent : 0) + (inCall ? voiceBarExtent : 0);
+            final contentLeft = wide ? sideNavWidth + 28 : 0.0;
+            // Великий планшет (1280+ dp): третя колонка праворуч — друзі онлайн і бесіди.
+            final rail = wide && screen.width >= railScreenWidth && !inMusic && !hideChrome;
+            final contentRight = rail ? railWidth + 28 : (wide ? 16.0 : 0.0);
+            // Сезон із профілю (App\Support\Seasons): прикраси тла, вмісту, шапки й аватарів.
+            final season = text(widget.session.me?['season']);
+            if (currentSeason.value != season) WidgetsBinding.instance.addPostFrameCallback((_) => currentSeason.value = season);
             return ShellChrome(
               bottom: bottom,
               child: Scaffold(
@@ -167,10 +278,15 @@ class _AppShellState extends State<AppShell> {
                 resizeToAvoidBottomInset: true,
                 body: Stack(
                   children: [
+                    // Фон, обраний у Налаштування → Вигляд (або фірмовий з Адмінка → Дизайн).
+                    Positioned.fill(child: UserBackdrop(session: widget.session)),
+                    Positioned.fill(child: SeasonBackdrop(season: season)),
+                    // Сніг, листя, кажани — під вмістом: скло карток м'яко їх розмиває.
+                    Positioned.fill(child: SeasonOverlay(season: season)),
                     if (wide || tabletPortrait)
                       Positioned.fill(
                         left: contentLeft,
-                        right: wide ? 12 : 0,
+                        right: contentRight,
                         child: LayoutBuilder(
                           builder: (context, box) => Center(
                             child: SizedBox(width: math.min(box.maxWidth, contentWidth), height: box.maxHeight, child: widget.child),
@@ -179,52 +295,77 @@ class _AppShellState extends State<AppShell> {
                       )
                     else
                       widget.child,
-                    Positioned(top: headerTop, left: 0, right: 0, child: _SiteBar(session: widget.session)),
+                    // Маски-скрими під шапкою й доком: текст розчиняється ДО входу під скляні капсули,
+                    // а не просвічує навколо них.
+                    Positioned(
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      height: topInset + headerTopGap + headerCapsuleHeight + 22,
+                      child: IgnorePointer(child: _Scrim(top: true)),
+                    ),
+                    if (!wide && !hideChrome)
+                      Positioned(
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        height: systemBottom + 96,
+                        child: IgnorePointer(child: _Scrim(top: false)),
+                      ),
+                    Positioned(
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      child: inMusic && !wide
+                          ? MusicTopBar(session: widget.session, player: widget.player, path: path, topInset: topInset)
+                          : TopBar(session: widget.session, player: widget.player, wide: wide, topInset: topInset),
+                    ),
+                    // Вогники над шапкою, гірлянда й стрічка під нею.
+                    Positioned.fill(child: SeasonHeader(season: season, headerBottom: topInset + siteBarHeight)),
+                    if (rail)
+                      Positioned(
+                        top: topInset + siteBarHeight + 10,
+                        right: 12,
+                        bottom: systemBottom + 8 + (playing ? miniPlayerExtent : 0),
+                        width: railWidth,
+                        child: RailPanel(session: widget.session),
+                      ),
                     if (wide)
                       Positioned(
-                        top: headerTop + siteBarHeight + 6,
+                        top: topInset + siteBarHeight + 10,
                         left: 12,
-                        bottom: systemBottom + 12,
+                        bottom: systemBottom + 8,
                         width: sideNavWidth,
-                        child: _SideNav(session: widget.session, path: path, onMore: () => _menu(context)),
+                        child: SideList(session: widget.session, path: path),
                       ),
                     if (!hideChrome)
                       Positioned(
                         left: contentLeft,
-                        right: wide ? 12 : 0,
-                        bottom: 0,
+                        right: contentRight,
+                        bottom: bottomBar ? systemBottom + islandExtent : 0,
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             // Розмова в голосовій кімнаті — над плеєром, на всіх екранах.
                             if (inCall)
                               Padding(
-                                padding: EdgeInsets.only(bottom: wide && !playing ? systemBottom + 8 : 0),
-                                child: Center(child: ConstrainedBox(constraints: BoxConstraints(maxWidth: wide || tabletPortrait ? contentWidth : double.infinity), child: const VoiceBar())),
+                                padding: EdgeInsets.only(bottom: !bottomBar && !playing ? systemBottom + 8 : 0),
+                                child: Center(child: ConstrainedBox(constraints: BoxConstraints(maxWidth: wide || tabletPortrait ? contentWidth : double.infinity), child: VoiceBar())),
                               ),
-                            if (playing && wide)
+                            if (playing && wide && !bottomBar)
                               Padding(
                                 padding: EdgeInsets.only(bottom: systemBottom + 8),
-                                child: Center(child: ConstrainedBox(constraints: BoxConstraints(maxWidth: contentWidth), child: MiniPlayer(player: widget.player))),
+                                child: Center(child: ConstrainedBox(constraints: BoxConstraints(maxWidth: contentWidth), child: mini)),
                               )
-                            else if (playing && tabletPortrait)
-                              Center(child: ConstrainedBox(constraints: BoxConstraints(maxWidth: contentWidth), child: MiniPlayer(player: widget.player)))
+                            else if (playing && (wide || tabletPortrait))
+                              Center(child: ConstrainedBox(constraints: BoxConstraints(maxWidth: contentWidth), child: mini))
                             else if (playing)
-                              MiniPlayer(player: widget.player),
-                            if (!wide) Builder(builder: (context) {
-                              final tabs = widget.session.navTabs;
-                              final items = [for (final t in tabs) navItem(t)!, navMenu];
-                              final selected = navIndexFor(tabs, path, username: widget.session.username) ?? tabs.length;
-                              return _BottomBar(
-                                items: items,
-                                selected: selected,
-                                unreadChats: widget.session.unreadChats,
-                                onTab: (i) => i == tabs.length ? _menu(context) : context.go(tabs[i]),
-                              );
-                            }),
+                              mini,
                           ],
                         ),
                       ),
+                    // Острів — поверх усього, щоб розгорнуте меню й затемнення накривали екран.
+                    if (!wide && !hideChrome) Positioned.fill(child: IslandNav(session: widget.session, player: widget.player, path: path, hidden: musicTabs)),
                   ],
                 ),
               ),
@@ -232,202 +373,6 @@ class _AppShellState extends State<AppShell> {
           },
         ),
       ),
-    );
-  }
-
-  void _menu(BuildContext context) {
-    final path = GoRouterState.of(context).uri.path;
-    final me = widget.session.me ?? {};
-    final pinned = widget.session.navTabs;
-    final tiles = [for (final item in navCatalog) if (!pinned.contains(item.path)) (item.path, item.title, item.icon)];
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: popover,
-      isScrollControlled: true,
-      useSafeArea: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(28)), side: BorderSide(color: lineStrong)),
-      builder: (sheet) {
-        return SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.16), borderRadius: BorderRadius.circular(4))),
-                const SizedBox(height: 14),
-                Glass(
-                  padding: const EdgeInsets.all(12),
-                  onTap: () {
-                    Navigator.pop(sheet);
-                    context.go('/profile');
-                  },
-                  child: Row(
-                    children: [
-                      Avatar(url: text(me['avatar_url']), name: text(me['name']) ?? tr('Я'), size: 44, online: true, frame: PlusMark.from(widget.session.subscription.style)?.frame),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            PlusNameRow(user: {...me, 'plus': widget.session.subscription.style}, style: body(15, weight: FontWeight.w700), animate: true),
-                            Text('@${text(me['username']) ?? ''}', style: body(12.5, color: muted)),
-                          ],
-                        ),
-                      ),
-                      const Icon(LucideIcons.chevronRight, color: muted),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 12),
-                GridView.count(
-                  crossAxisCount: 3,
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  mainAxisSpacing: 10,
-                  crossAxisSpacing: 10,
-                  childAspectRatio: 1.08,
-                  children: [
-                    for (final tile in tiles)
-                      _MenuTile(
-                        icon: tile.$3,
-                        label: tile.$2,
-                        selected: path == tile.$1 || (tile.$1 != '/feed' && tile.$1 != '/profile' && path.startsWith(tile.$1)),
-                        onTap: () {
-                          Navigator.pop(sheet);
-                          context.go(tile.$1);
-                        },
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Glass(
-                  padding: const EdgeInsets.symmetric(vertical: 6),
-                  child: Column(
-                    children: [
-                      // GameCon+ — лише статус і перелік переваг (без цін і оплати, див. subscription.dart).
-                      _MenuLink(
-                        icon: LucideIcons.sparkles,
-                        label: AppScope.read(context).session.subscription.isPro ? tr('GameCon+ · активний') : 'GameCon+',
-                        onTap: () {
-                          Navigator.pop(sheet);
-                          showProFeatures(context);
-                        },
-                      ),
-                      _MenuLink(icon: LucideIcons.userPlus, label: tr('Запросити друзів'), onTap: () {
-                        Navigator.pop(sheet);
-                        context.go('/invite');
-                      }),
-                      _MenuLink(icon: LucideIcons.filePen, label: tr('Чернетки'), onTap: () {
-                        Navigator.pop(sheet);
-                        context.go('/drafts');
-                      }),
-                      _MenuLink(icon: LucideIcons.star, label: tr('Обрані повідомлення'), onTap: () {
-                        Navigator.pop(sheet);
-                        context.go('/starred');
-                      }),
-                      _MenuLink(icon: LucideIcons.calendarClock, label: tr('Релізи і сезони'), onTap: () {
-                        Navigator.pop(sheet);
-                        context.go('/events/releases');
-                      }),
-                      _MenuLink(icon: LucideIcons.panelBottom, label: tr('Налаштувати нижню панель'), onTap: () {
-                        Navigator.pop(sheet);
-                        context.go('/settings?tab=app');
-                      }),
-                      _MenuLink(icon: LucideIcons.settings, label: tr('Налаштування'), onTap: () {
-                        Navigator.pop(sheet);
-                        context.go('/settings');
-                      }),
-                      _MenuLink(icon: LucideIcons.messageSquareHeart, label: tr('Відгук адмінам'), onTap: () {
-                        Navigator.pop(sheet);
-                        showFeedbackSheet(context);
-                      }),
-                      if (widget.session.isAdmin)
-                        _MenuLink(
-                          icon: LucideIcons.shield,
-                          label: tr('Адмін-панель'),
-                          onTap: () {
-                            Navigator.pop(sheet);
-                            launchUrl(Uri.parse('${Api.root}/admin'), mode: LaunchMode.externalApplication);
-                          },
-                        ),
-                      _MenuLink(
-                        icon: LucideIcons.logOut,
-                        label: tr('Вийти'),
-                        color: dangerSoft,
-                        onTap: () async {
-                          Navigator.pop(sheet);
-                          try {
-                            await widget.session.api.post('/api/v1/logout');
-                          } catch (_) {}
-                          await widget.player.stop();
-                          await widget.session.clear();
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
-
-class _SiteBar extends StatelessWidget {
-  const _SiteBar({required this.session});
-  final Session session;
-
-  @override
-  Widget build(BuildContext context) {
-    return ListenableBuilder(
-      listenable: session,
-      builder: (context, _) {
-        final me = session.me;
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(14, 0, 14, 10),
-          child: Row(
-            children: [
-              GestureDetector(onTap: () => context.go('/feed'), child: const LogoMark(size: 38)),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Material(
-                  color: field,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: const BorderSide(color: lineStrong)),
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(16),
-                    onTap: () => context.push('/search'),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
-                      child: Row(
-                        children: [
-                          const Icon(LucideIcons.search, color: muted, size: 18),
-                          const SizedBox(width: 8),
-                          Expanded(child: Text(tr('Пошук людей і спільнот...'), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(13.5, color: muted))),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 4),
-              Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  IconButton(onPressed: () => showNotifications(context, session), icon: const Icon(LucideIcons.bell, color: ink)),
-                  if (session.unreadNotifications > 0)
-                    Positioned(right: 6, top: 6, child: CountBadge(count: session.unreadNotifications)),
-                ],
-              ),
-              GestureDetector(
-                onTap: () => context.go('/profile'),
-                child: Avatar(url: text(me?['avatar_url']), name: text(me?['name']) ?? tr('Я'), size: 38),
-              ),
-            ],
-          ),
-        );
-      },
     );
   }
 }
@@ -439,8 +384,8 @@ class CountBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
-      padding: const EdgeInsets.symmetric(horizontal: 5),
+      constraints: BoxConstraints(minWidth: 18, minHeight: 18),
+      padding: EdgeInsets.symmetric(horizontal: 5),
       alignment: Alignment.center,
       decoration: BoxDecoration(color: pink, borderRadius: BorderRadius.circular(10), border: Border.all(color: voidColor, width: 2)),
       child: Text(count > 99 ? '99+' : '$count', style: body(11, color: Colors.white, weight: FontWeight.w700).copyWith(height: 1)),
@@ -448,7 +393,7 @@ class CountBadge extends StatelessWidget {
   }
 }
 
-const _noticeKinds = <String, (IconData, Color)>{
+final _noticeKinds = <String, (IconData, Color)>{
   'post_like': (LucideIcons.heart, Color(0xFFF43F5E)),
   'post_comment': (LucideIcons.messageCircle, neonBlue),
   'wall_post': (LucideIcons.squarePen, violet),
@@ -471,7 +416,7 @@ const _noticeKinds = <String, (IconData, Color)>{
 };
 
 (IconData, Color) noticeKind(String kind) =>
-    _noticeKinds[kind] ?? (kind.startsWith('family_') ? (LucideIcons.crown, const Color(0xFFF59E0B)) : (LucideIcons.bell, primary));
+    _noticeKinds[kind] ?? (kind.startsWith('family_') ? (LucideIcons.crown, Color(0xFFF59E0B)) : (LucideIcons.bell, primary));
 
 /// Панель сповіщень (на телефоні сайт показує її на всю ширину під шапкою).
 Future<void> showNotifications(BuildContext context, Session session) {
@@ -514,7 +459,7 @@ class _NotificationsListState extends State<NotificationsList> {
                     await reload();
                     await widget.session.refreshCounters();
                   },
-                  icon: const Icon(LucideIcons.checkCheck, size: 16, color: primary),
+                  icon: Icon(LucideIcons.checkCheck, size: 16, color: primary),
                   label: Text(tr('Прочитати всі'), style: body(13, color: primary, weight: FontWeight.w600)),
                 ),
               ),
@@ -524,7 +469,7 @@ class _NotificationsListState extends State<NotificationsList> {
                   : ListView.separated(
                       padding: EdgeInsets.fromLTRB(12, 0, 12, 20 + ShellChrome.bottomOf(context)),
                       itemCount: rows.length,
-                      separatorBuilder: (_, _) => const SizedBox(height: 2),
+                      separatorBuilder: (_, _) => SizedBox(height: 2),
                       itemBuilder: (context, i) => NotificationRow(row: rows[i], onTap: () => widget.onOpen(text(rows[i]['url']))),
                     ),
             ),
@@ -542,15 +487,29 @@ class NotificationRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (mapOf(row['alert']).isNotEmpty) return AlertNoticeRow(row: row, onTap: onTap);
     final actor = mapOf(row['actor']);
     final kind = noticeKind(text(row['kind']) ?? '');
-    final name = text(actor['name']) ?? '';
     final read = row['read'] == true;
+    // Згруповані лайки й коментарі: «Олена, Петро та ще 3 оцінили ваш запис» і дві аватарки.
+    final count = intOf(row['count']);
+    final actors = maps(row['actors']);
+    final grouped = count > 1 && actors.length > 1;
+    final shown = actors.take(2).map((a) => text(a['name']) ?? '').where((n) => n.isNotEmpty).toList();
+    final name = grouped ? '${shown.join(', ')}${count - shown.length > 0 ? ' ${tr('та ще {n}', {'n': count - shown.length})}' : ''}' : (text(actor['name']) ?? '');
+    final verb = grouped
+        ? (switch (text(row['kind'])) {
+            'post_like' => tr('оцінили ваш запис'),
+            'photo_like' => tr('оцінили ваше фото'),
+            'post_comment' => tr('прокоментували ваш запис'),
+            _ => text(row['text']) ?? '',
+          })
+        : (text(row['text']) ?? '');
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 10),
         decoration: BoxDecoration(color: read ? Colors.transparent : primary.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(16)),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -558,7 +517,24 @@ class NotificationRow extends StatelessWidget {
             Stack(
               clipBehavior: Clip.none,
               children: [
-                Avatar(url: text(actor['avatar_url']), name: name.isEmpty ? 'GameCon' : name, size: 42),
+                if (grouped)
+                  SizedBox(
+                    width: 42,
+                    height: 42,
+                    child: Stack(children: [
+                      Positioned(left: 0, top: 0, child: Avatar(url: text(actors[1]['avatar_url']), name: text(actors[1]['name']) ?? '?', size: 28)),
+                      Positioned(
+                        right: 0,
+                        bottom: 0,
+                        child: Container(
+                          decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: popover, width: 2)),
+                          child: Avatar(url: text(actors[0]['avatar_url']), name: text(actors[0]['name']) ?? '?', size: 28),
+                        ),
+                      ),
+                    ]),
+                  )
+                else
+                  Avatar(url: text(actor['avatar_url']), name: name.isEmpty ? 'GameCon' : name, size: 42),
                 Positioned(
                   right: -3,
                   bottom: -3,
@@ -571,7 +547,7 @@ class NotificationRow extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -579,17 +555,17 @@ class NotificationRow extends StatelessWidget {
                   Text.rich(
                     TextSpan(children: [
                       if (name.isNotEmpty) TextSpan(text: '$name ', style: body(14, weight: FontWeight.w700)),
-                      TextSpan(text: text(row['text']) ?? '', style: body(14, color: soft)),
+                      TextSpan(text: verb, style: body(14, color: soft)),
                     ]),
                   ),
                   if (text(row['excerpt']) != null)
-                    Padding(padding: const EdgeInsets.only(top: 3), child: Text('«${text(row['excerpt'])}»', maxLines: 2, overflow: TextOverflow.ellipsis, style: body(12.5, color: muted))),
-                  const SizedBox(height: 4),
+                    Padding(padding: EdgeInsets.only(top: 3), child: FitText('«${text(row['excerpt'])}»', style: body(12.5, color: muted), maxLines: 2)),
+                  SizedBox(height: 4),
                   Text(ago(row['created_at']), style: body(11.5, color: faint)),
                 ],
               ),
             ),
-            if (!read) Container(margin: const EdgeInsets.only(top: 6, left: 6), width: 8, height: 8, decoration: const BoxDecoration(color: primary, shape: BoxShape.circle)),
+            if (!read) Container(margin: EdgeInsets.only(top: 6, left: 6), width: 8, height: 8, decoration: BoxDecoration(color: primary, shape: BoxShape.circle)),
           ],
         ),
       ),
@@ -597,175 +573,127 @@ class NotificationRow extends StatelessWidget {
   }
 }
 
-/// Бічне меню на планшеті: усі розділи списком, як ліва колонка сайту.
-class _SideNav extends StatelessWidget {
-  const _SideNav({required this.session, required this.path, required this.onMore});
-  final Session session;
-  final String path;
-  final VoidCallback onMore;
+/// Тривога в сповіщеннях: червона — в укриття, жовта — увага; відбій — зелений.
+/// «Я в укритті (AFK)» ставить статус, який бачать друзі й клан.
+class AlertNoticeRow extends StatefulWidget {
+  const AlertNoticeRow({required this.row, required this.onTap, super.key});
+  final Map<String, dynamic> row;
+  final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
-    Widget item(IconData icon, String title, bool selected, VoidCallback onTap, {int badge = 0}) {
-      return Padding(
-        padding: const EdgeInsets.only(bottom: 2),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: onTap,
-            borderRadius: BorderRadius.circular(14),
-            child: Ink(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              decoration: BoxDecoration(
-                color: selected ? primary.withValues(alpha: 0.14) : Colors.transparent,
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Row(children: [
-                Icon(icon, size: 20, color: selected ? const Color(0xFF9AA6FF) : muted),
-                const SizedBox(width: 12),
-                Expanded(child: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14.5, color: selected ? Colors.white : soft, weight: selected ? FontWeight.w700 : FontWeight.w500))),
-                if (badge > 0) CountBadge(count: badge),
-              ]),
-            ),
-          ),
-        ),
-      );
-    }
-
-    return Glass(
-      padding: const EdgeInsets.all(8),
-      child: ListView(
-        padding: EdgeInsets.zero,
-        children: [
-          for (final nav in navCatalog)
-            item(
-              navIndexFor([nav.path], path, username: session.username) == 0 ? nav.activeIcon : nav.icon,
-              nav.title,
-              navIndexFor([nav.path], path, username: session.username) == 0,
-              () => context.go(nav.path),
-              badge: nav.path == '/messages' ? session.unreadChats : 0,
-            ),
-          const Padding(padding: EdgeInsets.symmetric(vertical: 6), child: Divider(height: 1, color: line)),
-          item(LucideIcons.settings, tr('Налаштування'), path.startsWith('/settings'), () => context.go('/settings')),
-          item(LucideIcons.layoutGrid, tr('Ще'), false, onMore),
-        ],
-      ),
-    );
-  }
+  State<AlertNoticeRow> createState() => _AlertNoticeRowState();
 }
 
-class _BottomBar extends StatelessWidget {
-  const _BottomBar({required this.items, required this.selected, required this.unreadChats, required this.onTab});
-  final List<NavItem> items;
-  final int selected;
-  final int unreadChats;
-  final ValueChanged<int> onTab;
+class _AlertNoticeRowState extends State<AlertNoticeRow> {
+  bool sheltered = false;
+  bool busy = false;
+
+  Future<void> _shelter() async {
+    final session = AppScope.of(context).session;
+    setState(() => busy = true);
+    final ok = await attempt(context, () => session.api.put(Api.site('/alerts/preferences'), {'shelter': true}), success: tr('Статус «В укритті» видно друзям і родині.'));
+    if (!mounted) return;
+    setState(() {
+      busy = false;
+      sheltered = ok;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    return ClipRect(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-        child: DecoratedBox(
-          decoration: BoxDecoration(color: const Color(0xA60F0A1E), border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.08)))),
-          child: SafeArea(
-        top: false,
-        child: SizedBox(
-          height: 64,
-          child: Row(
-            children: [
-              for (var i = 0; i < items.length; i++)
-                Expanded(
-                  child: InkWell(
-                    onTap: () => onTab(i),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Stack(
-                          clipBehavior: Clip.none,
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                              child: AnimatedScale(
-                                scale: selected == i ? 1.06 : 1,
-                                duration: const Duration(milliseconds: 260),
-                                curve: Curves.easeOutBack,
-                                child: Icon(
-                                  selected == i ? items[i].activeIcon : items[i].icon,
-                                  size: 22,
-                                  color: selected == i ? const Color(0xFF8FA0FF) : muted,
-                                  shadows: selected == i ? const [Shadow(color: Color(0xE67C8CFF), blurRadius: 10), Shadow(color: Color(0x997C8CFF), blurRadius: 20)] : null,
-                                ),
-                              ),
-                            ),
-                            if (items[i].path == '/messages' && unreadChats > 0) Positioned(right: 4, top: -4, child: CountBadge(count: unreadChats)),
-                          ],
-                        ),
-                        const SizedBox(height: 3),
-                        Text(items[i].label, maxLines: 1, overflow: TextOverflow.fade, softWrap: false, style: body(11, color: selected == i ? const Color(0xFF8FA0FF) : muted, weight: selected == i ? FontWeight.w700 : FontWeight.w500)),
-                      ],
-                    ),
-                  ),
+    final alert = mapOf(widget.row['alert']);
+    final ended = alert['ended'] == true || alert['severity'] == 'clear';
+    final red = alert['severity'] != 'yellow' && !ended;
+    // Колір за типом з сервера (AIR червоний/жовтий, артобстріл помаранчевий, бої салатові, хімічна фіолетова…).
+    final hex = int.tryParse('${alert['accent'] ?? ''}'.replaceFirst('#', ''), radix: 16);
+    final accent = hex != null ? Color(0xFF000000 | hex) : (ended ? const Color(0xFF10B981) : (red ? const Color(0xFFEF4444) : const Color(0xFFF59E0B)));
+    final striped = alert['striped'] == true && !ended;
+    final label = ended ? tr('Відбій') : (red ? tr('Небезпека · в укриття') : tr('Увага · підвищена небезпека'));
+    final icon = ended
+        ? LucideIcons.shieldCheck
+        : switch (alert['type']) {
+            'ARTILLERY' => LucideIcons.bomb,
+            'URBAN_FIGHTS' => LucideIcons.swords,
+            'CHEMICAL' => LucideIcons.biohazard,
+            'NUCLEAR' => LucideIcons.radiation,
+            'INFO' => LucideIcons.info,
+            _ => red ? LucideIcons.siren : LucideIcons.triangleAlert,
+          };
+    return InkWell(
+      onTap: widget.onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
+        decoration: BoxDecoration(
+          color: accent.withValues(alpha: ended ? 0.07 : 0.12),
+          borderRadius: BorderRadius.circular(12),
+          border: Border(left: BorderSide(color: accent, width: 2)),
+        ),
+        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Container(
+            width: 42,
+            height: 42,
+            clipBehavior: Clip.antiAlias,
+            decoration: BoxDecoration(
+              color: accent.withValues(alpha: 0.22),
+              shape: BoxShape.circle,
+              // Радіаційна небезпека — жовта «зебра».
+              gradient: striped
+                  ? LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: const Alignment(-0.6, -0.6),
+                      tileMode: TileMode.repeated,
+                      colors: [accent.withValues(alpha: 0.5), accent.withValues(alpha: 0.5), Colors.black54, Colors.black54],
+                      stops: const [0, 0.5, 0.5, 1],
+                    )
+                  : null,
+            ),
+            child: Icon(icon, size: 20, color: striped ? Colors.white : accent),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(label, style: body(11.5, color: accent, weight: FontWeight.w700)),
+              const SizedBox(height: 2),
+              Text(text(widget.row['text']) ?? '', style: body(14, weight: FontWeight.w700)),
+              if (text(widget.row['excerpt']) != null) Padding(padding: const EdgeInsets.only(top: 2), child: Text(text(widget.row['excerpt'])!, style: body(12.5, color: muted))),
+              const SizedBox(height: 4),
+              Text(ago(widget.row['created_at']), style: body(11.5, color: faint)),
+              if (!ended) ...[
+                const SizedBox(height: 8),
+                GhostButton(
+                  label: sheltered ? tr('Ви в укритті') : tr('Я в укритті (AFK)'),
+                  icon: LucideIcons.shieldCheck,
+                  compact: true,
+                  expand: false,
+                  onPressed: sheltered || busy ? null : _shelter,
                 ),
-            ],
+              ],
+            ]),
           ),
-        ),
-      ),
-        ),
-      ),
-    );
-  }
-}
-
-class _MenuTile extends StatelessWidget {
-  const _MenuTile({required this.icon, required this.label, required this.selected, required this.onTap});
-  final IconData icon;
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
-        child: Ink(
-          decoration: BoxDecoration(
-            color: selected ? primary.withValues(alpha: 0.14) : Colors.white.withValues(alpha: 0.04),
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: selected ? primary.withValues(alpha: 0.7) : line),
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, color: selected ? const Color(0xFF9AA6FF) : soft, size: 24),
-              const SizedBox(height: 8),
-              Text(label, textAlign: TextAlign.center, maxLines: 2, style: body(12, color: selected ? Colors.white : soft, weight: FontWeight.w600).copyWith(height: 1.15)),
-            ],
-          ),
-        ),
+        ]),
       ),
     );
   }
 }
 
-class _MenuLink extends StatelessWidget {
-  const _MenuLink({required this.icon, required this.label, required this.onTap, this.color = ink});
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-  final Color color;
+/// Градієнтна маска під нерухомою панеллю: колір тла → прозорість (iOS 27, без «ряби» під склом).
+class _Scrim extends StatelessWidget {
+  const _Scrim({required this.top});
+  final bool top;
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      dense: true,
-      leading: Icon(icon, color: color == ink ? muted : color, size: 20),
-      title: Text(label, style: body(14.5, color: color, weight: FontWeight.w500)),
-      onTap: onTap,
+    final base = palette.voidColor;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: top ? Alignment.topCenter : Alignment.bottomCenter,
+          end: top ? Alignment.bottomCenter : Alignment.topCenter,
+          colors: [base, base.withValues(alpha: top ? 0.82 : 0.88), base.withValues(alpha: 0)],
+          stops: top ? const [0.35, 0.7, 1] : const [0.45, 0.75, 1],
+        ),
+      ),
     );
   }
 }

@@ -1,0 +1,6 @@
+gamecon_login_start:
+    path: /gamecon/login
+    defaults: { _controller: gamecon.login.controller:login }
+gamecon_login_callback:
+    path: /gamecon/callback
+    defaults: { _controller: gamecon.login.controller:callback }

@@ -1,5 +1,14 @@
 import { Link, router } from '@inertiajs/react';
-import { Gamepad2, Loader2, Search, Server, Unplug, X } from 'lucide-react';
+import {
+    Gamepad2,
+    Loader2,
+    Mic,
+    Search,
+    Server,
+    Unplug,
+    Users,
+    X,
+} from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import {
@@ -15,6 +24,18 @@ import { UserAvatar } from './user-avatar';
 import { tr } from '@/lib/i18n';
 
 /** «Грає в…»: сервер GTA або гра, з іконкою й посиланням. */
+/** «12 хв», «1 год 20 хв» — скільки вже в грі (до хвилини не показуємо). */
+export function playingFor(since?: string | null): string | null {
+    if (!since) return null;
+    const minutes = Math.floor((Date.now() - Date.parse(since)) / 60000);
+    if (!Number.isFinite(minutes) || minutes < 1) return null;
+    if (minutes < 60) return tr('{m} хв', { m: minutes });
+    const h = Math.floor(minutes / 60);
+    const m = minutes % 60;
+
+    return m > 0 ? tr('{h} год {m} хв', { h, m }) : tr('{h} год', { h });
+}
+
 export function PlayingBadge({
     playing,
     className,
@@ -23,6 +44,13 @@ export function PlayingBadge({
     className?: string;
 }) {
     const Icon = playing.kind === 'server' ? Server : Gamepad2;
+    const elapsed = playingFor(playing.since);
+    const source =
+        playing.source === 'steam'
+            ? 'Steam'
+            : playing.source === 'discord'
+              ? 'Discord'
+              : null;
     const content = (
         <>
             {playing.icon ? (
@@ -44,11 +72,19 @@ export function PlayingBadge({
                         · {playing.note}
                     </span>
                 )}
+                {elapsed && (
+                    <span className="text-emerald-200/70"> · {elapsed}</span>
+                )}
             </span>
+            {source && (
+                <span className="shrink-0 rounded-md bg-black/20 px-1.5 text-[10px] font-semibold text-emerald-100/80">
+                    {source}
+                </span>
+            )}
         </>
     );
     const style = cn(
-        'inline-flex max-w-full items-center gap-1.5 rounded-full bg-emerald-500/12 px-2.5 py-1 text-xs font-medium text-emerald-200',
+        'inline-flex max-w-full items-center gap-1.5 rounded-chip bg-emerald-500/12 px-2.5 py-1 text-xs font-medium text-emerald-200',
         className,
     );
 
@@ -75,9 +111,9 @@ export function PlayingNow({
     if (count === 0) return null;
 
     return (
-        <section className="glass rounded-3xl p-4 sm:p-5">
+        <section className="gc-solid rounded-2xl p-4 sm:p-5">
             <h2 className="mb-3 flex items-center gap-2 font-display text-base font-semibold text-white">
-                <span className="size-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgb(52_211_153)]" />
+                <span className="size-2 rounded-full bg-emerald-400" />
                 {tr('Зараз грають:')} {count}
             </h2>
             <div className="flex flex-wrap gap-2">
@@ -85,7 +121,7 @@ export function PlayingNow({
                     <Link
                         key={u.id}
                         href={`/${u.username}`}
-                        className="flex items-center gap-2 rounded-xl bg-white/[0.04] py-1 pr-3 pl-1 text-sm text-white/80 hover:bg-white/[0.08]"
+                        className="gc-solid-2 flex items-center gap-2 rounded-xl py-1 pr-3 pl-1 text-sm text-white/80 hover:bg-[var(--gc-l3)]"
                     >
                         <UserAvatar user={u} size="xs" />
                         {u.name}
@@ -195,7 +231,7 @@ export function PlayingDialog({
                                 <button
                                     type="button"
                                     onClick={() => act('delete', '/me/playing')}
-                                    className="ml-auto rounded-lg p-1.5 text-white/40 hover:text-rose-300"
+                                    className="ml-auto rounded-lg p-1.5 text-white/40 hover:text-red-400"
                                     aria-label={tr('Прибрати статус')}
                                 >
                                     <X className="size-4" />
@@ -203,7 +239,11 @@ export function PlayingDialog({
                             </div>
                         )}
 
-                        <section className="space-y-2 rounded-2xl bg-white/[0.03] p-3">
+                        {settings.playing?.id != null && (
+                            <PlayingTogether key={settings.playing.label} />
+                        )}
+
+                        <section className="gc-solid-2 space-y-2 rounded-2xl p-3">
                             <label className="flex items-center justify-between gap-3 text-sm font-semibold text-white">
                                 {tr('Автоматично')}
                                 <input
@@ -227,7 +267,7 @@ export function PlayingDialog({
                                         'rounded-lg px-2 py-1 text-xs',
                                         settings.discord.linked
                                             ? 'bg-emerald-500/15 text-emerald-200'
-                                            : 'bg-white/[0.05] text-white/60',
+                                            : 'gc-solid-2 text-white/60',
                                     )}
                                 >
                                     Discord:{' '}
@@ -238,7 +278,7 @@ export function PlayingDialog({
                                 {!settings.discord.linked && (
                                     <a
                                         href="/auth/discord"
-                                        className="text-xs text-gc-lilac-200 hover:text-white"
+                                        className="text-xs text-sky-400 hover:text-white"
                                     >
                                         {tr('Прив’язати Discord →')}
                                     </a>
@@ -258,7 +298,7 @@ export function PlayingDialog({
                                                     '/me/playing/steam',
                                                 )
                                             }
-                                            className="inline-flex items-center gap-1 text-white/45 hover:text-rose-300"
+                                            className="inline-flex items-center gap-1 text-white/45 hover:text-red-400"
                                         >
                                             <Unplug className="size-3.5" />{' '}
                                             {tr('Відв’язати')}
@@ -286,7 +326,7 @@ export function PlayingDialog({
                                         />
                                         <button
                                             type="submit"
-                                            className="glass h-9 rounded-lg px-3 text-sm text-white/80 hover:text-white"
+                                            className="gc-solid h-9 rounded-lg px-3 text-sm text-white/80 hover:text-white"
                                         >
                                             {tr('Прив’язати')}
                                         </button>
@@ -318,7 +358,7 @@ export function PlayingDialog({
                                 />
                                 <button
                                     type="submit"
-                                    className="glass h-9 rounded-lg px-3 text-sm text-white/80 hover:text-white"
+                                    className="gc-solid h-9 rounded-lg px-3 text-sm text-white/80 hover:text-white"
                                 >
                                     {tr('Зберегти')}
                                 </button>
@@ -349,10 +389,10 @@ export function PlayingDialog({
                                             picked?.kind === o.kind &&
                                                 picked.id === o.id
                                                 ? 'bg-[var(--accent)]/20'
-                                                : 'hover:bg-white/[0.05]',
+                                                : 'hover:bg-[var(--gc-l3)]',
                                         )}
                                     >
-                                        <span className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white/[0.06]">
+                                        <span className="gc-solid-2 flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-lg">
                                             {o.icon ? (
                                                 <img
                                                     loading="lazy"
@@ -442,7 +482,7 @@ export function PlayingSettingsCard() {
     useEffect(load, []);
 
     return (
-        <div className="glass mt-5 rounded-3xl p-6 sm:p-7">
+        <div className="gc-group mt-7 p-4 sm:p-5">
             <div className="flex flex-wrap items-start gap-4">
                 <div className="min-w-[min(100%,16rem)] flex-1">
                     <h2 className="text-[17px] font-semibold text-white">
@@ -466,7 +506,7 @@ export function PlayingSettingsCard() {
                 <button
                     type="button"
                     onClick={() => setOpen(true)}
-                    className="inline-flex h-10 items-center gap-2 rounded-xl bg-white/[0.06] px-4 text-sm font-medium text-white/80 transition hover:bg-white/10 hover:text-white"
+                    className="gc-solid-2 inline-flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-medium text-white/80 transition hover:bg-white/10 hover:text-white"
                 >
                     <Gamepad2 className="size-4" /> {tr('Налаштувати')}
                 </button>
@@ -479,5 +519,104 @@ export function PlayingSettingsCard() {
                 }}
             />
         </div>
+    );
+}
+
+type Buddy = {
+    id: number;
+    name: string;
+    username: string;
+    avatar_url: string | null;
+};
+
+/**
+ * «Граємо зараз»: друзі в тій самій грі й одна кнопка — голосова з ними (паті з голосовою кімнатою,
+ * друзям приходить запрошення).
+ */
+export function PlayingTogether() {
+    const [friends, setFriends] = useState<Buddy[] | null>(null);
+    const [busy, setBusy] = useState(false);
+
+    useEffect(() => {
+        void api<{ friends: Buddy[] }>('GET', '/me/playing/friends')
+            .then((d) => setFriends(d.friends))
+            .catch(() => setFriends([]));
+    }, []);
+
+    const voice = () => {
+        setBusy(true);
+        router.post(
+            '/me/playing/voice',
+            {},
+            {
+                onError: (errors) =>
+                    toast.error(
+                        Object.values(errors)[0] ??
+                            tr('Не вдалося створити голосову.'),
+                    ),
+                onFinish: () => setBusy(false),
+            },
+        );
+    };
+
+    return (
+        <section className="gc-solid-2 space-y-2 rounded-2xl p-3">
+            <div className="flex items-center gap-2">
+                <Users className="size-4 text-white/60" />
+                <h3 className="flex-1 text-sm font-semibold text-white">
+                    {tr('Граємо зараз')}
+                </h3>
+                {friends !== null && friends.length > 0 && (
+                    <span className="text-xs text-white/45">
+                        {tr('{n} друзів у грі', { n: friends.length })}
+                    </span>
+                )}
+            </div>
+            {friends === null ? (
+                <Loader2 className="size-4 animate-spin text-white/40" />
+            ) : friends.length === 0 ? (
+                <p className="text-xs text-white/50">
+                    {tr(
+                        'Друзів у цій грі зараз немає. Голосову все одно можна створити й поділитися посиланням.',
+                    )}
+                </p>
+            ) : (
+                <div className="flex -space-x-2">
+                    {friends.slice(0, 8).map((f) => (
+                        <Link
+                            key={f.id}
+                            href={`/u/${f.username}`}
+                            title={f.name}
+                            className="rounded-full ring-2 ring-[var(--gc-surface,#0b1020)]"
+                        >
+                            <UserAvatar
+                                user={{
+                                    id: f.id,
+                                    name: f.name,
+                                    avatar_url: f.avatar_url,
+                                }}
+                                size="sm"
+                                showOnline={false}
+                            />
+                        </Link>
+                    ))}
+                </div>
+            )}
+            <button
+                type="button"
+                onClick={voice}
+                disabled={busy}
+                className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-primary text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
+            >
+                {busy ? (
+                    <Loader2 className="size-4 animate-spin" />
+                ) : (
+                    <Mic className="size-4" />
+                )}
+                {friends && friends.length > 0
+                    ? tr('Голосова з друзями')
+                    : tr('Створити голосову')}
+            </button>
+        </section>
     );
 }

@@ -1,5 +1,5 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { Plus, Search, Swords, Users, X } from 'lucide-react';
+import { Plus, Swords, Users, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Pagination } from '@/components/gc/admin';
 import { EmptyState } from '@/components/gc/widget';
@@ -57,7 +57,7 @@ export function ClanRow({ clan }: { clan: ClanCard }) {
     return (
         <Link
             href={`/clans/${clan.slug}`}
-            className="glass flex items-center gap-3 rounded-2xl p-3 transition hover:border-white/15"
+            className="gc-solid flex items-center gap-3 rounded-2xl p-3 transition hover:border-white/15"
         >
             <ClanLogo clan={clan} />
             <span className="min-w-0 flex-1">
@@ -119,7 +119,7 @@ export default function ClansIndex({ mine, clans, filters, types }: Props) {
             <Head title={tr('Клани й гільдії')} />
             <div className="mb-4 flex flex-wrap items-center gap-3">
                 <h1 className="flex flex-1 items-center gap-2 font-display text-2xl font-semibold text-white">
-                    <Swords className="size-6 text-gc-lilac-200" />{' '}
+                    <Swords className="size-6 text-sky-400" />{' '}
                     {tr('Клани й гільдії')}
                 </h1>
                 <Link
@@ -143,17 +143,21 @@ export default function ClansIndex({ mine, clans, filters, types }: Props) {
                 </section>
             )}
 
-            <div className="glass mb-4 flex flex-wrap items-center gap-2 rounded-2xl p-2.5">
-                <label className="input-glass flex h-10 min-w-[200px] flex-1 items-center gap-2 rounded-xl px-3">
-                    <Search className="size-4 text-white/35" />
-                    <input
-                        value={q}
-                        onChange={(e) => setQ(e.target.value)}
-                        placeholder={tr('Назва або тег')}
-                        className="min-w-0 flex-1 bg-transparent text-sm text-white placeholder:text-white/30 focus:outline-none"
-                    />
-                </label>
-                <div className="flex rounded-xl bg-white/[0.04] p-1 text-sm">
+            <div className="gc-solid mb-4 flex flex-wrap items-center gap-2 rounded-2xl p-2.5">
+                {q && (
+                    <button
+                        type="button"
+                        onClick={() => setQ('')}
+                        className="gc-chip self-start"
+                        title={tr('Скинути пошук')}
+                    >
+                        «{q}»{' '}
+                        <span aria-hidden className="text-white/45">
+                            ×
+                        </span>
+                    </button>
+                )}
+                <div className="gc-solid-2 flex rounded-xl p-1 text-sm">
                     {([null, 'clan', 'guild'] as const).map((t) => (
                         <button
                             key={t ?? 'all'}
@@ -162,7 +166,7 @@ export default function ClansIndex({ mine, clans, filters, types }: Props) {
                             className={cn(
                                 'rounded-lg px-3 py-1.5 transition',
                                 filters.type === t
-                                    ? 'bg-gradient-brand text-white'
+                                    ? 'bg-sky-500 text-white'
                                     : 'text-white/55 hover:text-white',
                             )}
                         >
@@ -174,7 +178,7 @@ export default function ClansIndex({ mine, clans, filters, types }: Props) {
                     <button
                         type="button"
                         onClick={() => visit({ game: null })}
-                        className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-white/[0.06] px-3 text-sm text-white/80"
+                        className="gc-solid-2 inline-flex h-9 items-center gap-1.5 rounded-xl px-3 text-sm text-white/80"
                     >
                         {filters.game.name} <X className="size-4" />
                     </button>

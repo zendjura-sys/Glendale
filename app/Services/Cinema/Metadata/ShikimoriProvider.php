@@ -93,6 +93,78 @@ class ShikimoriProvider extends MetadataProvider
     }
 
     /**
+     * Список аніме людини на Shikimori (публічний профіль): id (= MyAnimeList), статус, оцінка, серії.
+     *
+     * @return list<array{id: string, status: string, score: int, episodes: int, title: string}>
+     */
+    public function userRates(string $nickname): array
+    {
+        $rows = $this->fetch($this->http(), $this->baseUrl().'/api/users/'.rawurlencode($nickname).'/anime_rates', ['limit' => 5000]);
+        $out = [];
+        foreach (is_array($rows) ? $rows : [] as $row) {
+            $anime = is_array($row) ? ($row['anime'] ?? null) : null;
+            if (! is_array($anime) || ! isset($anime['id'])) {
+                continue;
+            }
+            $out[] = [
+                'id' => (string) $anime['id'],
+                'status' => (string) ($row['status'] ?? ''),
+                'score' => (int) ($row['score'] ?? 0),
+                'episodes' => (int) ($row['episodes'] ?? 0),
+                'title' => (string) (self::str($anime['russian'] ?? null) ?: self::str($anime['name'] ?? null) ?: ''),
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
+     * Персонажі аніме для колекційних карток: головні й найпомітніші другорядні.
+     *
+     * @return list<array{source_id: string, name: string, image_url: string|null, role: string, popularity: int}>
+     */
+    public function characters(Movie $movie, int $limit = 8): array
+    {
+        if (! $movie->shikimori_id) {
+            return [];
+        }
+        $rows = $this->fetch($this->http(), $this->baseUrl().'/api/animes/'.$movie->shikimori_id.'/roles');
+        if (! is_array($rows)) {
+            return [];
+        }
+        $out = [];
+        foreach ($rows as $row) {
+            $character = is_array($row) ? ($row['character'] ?? null) : null;
+            $roles = is_array($row) ? (array) ($row['roles'] ?? []) : [];
+            if (! is_array($character) || ! isset($character['id'])) {
+                continue;
+            }
+            $main = in_array('Main', $roles, true);
+            if (! $main && ! in_array('Supporting', $roles, true)) {
+                continue;
+            }
+            $image = self::str($character['image']['original'] ?? null);
+            if ($image && str_starts_with($image, '/')) {
+                $image = $this->baseUrl().$image;
+            }
+            $name = self::str($character['russian'] ?? null, 120) ?: self::str($character['name'] ?? null, 120);
+            if (! $name) {
+                continue;
+            }
+            $out[] = [
+                'source_id' => (string) $character['id'],
+                'name' => $name,
+                'image_url' => $image && ! str_contains($image, 'missing') ? $image : null,
+                'role' => $main ? 'main' : 'supporting',
+                'popularity' => $main ? 100 : 40,
+            ];
+        }
+        usort($out, fn ($a, $b) => $b['popularity'] <=> $a['popularity']);
+
+        return array_slice($out, 0, $limit);
+    }
+
+    /**
      * @return list<string>
      */
     private static function genreNames(mixed $genres): array

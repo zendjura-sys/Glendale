@@ -26,6 +26,7 @@ import { BulkPlayersPanel } from '@/components/cinema/bulk-players';
 import type { BulkData } from '@/components/cinema/bulk-players';
 import type { PlayersData, TmdbData } from '@/components/cinema/admin-panels';
 import { MoviePoster } from '@/components/cinema/movie-tile';
+import { playerName } from '@/components/cinema/player-names';
 import {
     PageHeader,
     Pagination,
@@ -195,29 +196,29 @@ function AutoImportPanel({
     const providerCards = [
         {
             key: 'kodik' as const,
-            label: 'Kodik',
+            label: playerName('kodik'),
             ready: providers.kodik,
             hint: tr('Оновлення каталогу з усіма озвучками'),
         },
         {
             key: 'videoseed' as const,
-            label: 'Videoseed',
+            label: playerName('videoseed'),
             ready: providers.videoseed,
             hint: tr('Новинки фільмів і серіалів з озвучками'),
         },
         {
             key: 'flixcdn' as const,
-            label: 'FlixCDN',
+            label: playerName('flixcdn'),
             ready: providers.flixcdn_api,
             hint: tr('Через «API: оновлення» з кабінету'),
         },
     ];
 
     return (
-        <section className="glass relative mb-5 overflow-hidden rounded-3xl p-5 sm:p-6">
+        <section className="gc-solid relative mb-5 overflow-hidden rounded-2xl p-5 sm:p-6">
             <div className="pointer-events-none absolute -top-24 -right-20 size-80 rounded-full bg-gc-indigo/15 blur-3xl" />
             <header className="relative mb-5 flex flex-wrap items-center gap-4">
-                <span className="flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br from-gc-indigo to-gc-pink shadow-[0_10px_30px_-10px_rgb(168_85_247/0.9)]">
+                <span className="flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br from-gc-indigo to-gc-pink">
                     <Bot className="size-6 text-white" />
                 </span>
                 <div className="min-w-0 flex-1">
@@ -263,18 +264,18 @@ function AutoImportPanel({
                                     type="button"
                                     onClick={() => toggleIn('providers', p.key)}
                                     className={cn(
-                                        'flex items-start gap-3 rounded-2xl border p-3.5 text-left transition',
+                                        'flex items-start gap-3 rounded-2xl p-3.5 text-left transition',
                                         on
-                                            ? 'border-gc-lilac-400/40 bg-gc-indigo/10'
-                                            : 'border-white/[0.08] bg-white/[0.02] hover:border-white/15',
+                                            ? 'bg-gc-indigo/10'
+                                            : 'gc-solid-2 hover:border-white/15',
                                     )}
                                 >
                                     <span
                                         className={cn(
-                                            'mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-md border transition',
+                                            'mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-md transition',
                                             on
-                                                ? 'border-transparent bg-gradient-brand'
-                                                : 'border-white/20',
+                                                ? 'border-transparent bg-sky-500'
+                                                : '',
                                         )}
                                     >
                                         {on && (
@@ -305,7 +306,7 @@ function AutoImportPanel({
 
                     <div>
                         <p className="mb-2 text-xs font-medium text-white/50">
-                            {tr('Типи Kodik')}{' '}
+                            {tr('Типи Плеєра 1')}{' '}
                             <span className="text-white/30">
                                 {tr('(нічого не вибрано — усі)')}
                             </span>
@@ -319,10 +320,10 @@ function AutoImportPanel({
                                         toggleIn('kodik_types', t.key)
                                     }
                                     className={cn(
-                                        'rounded-full border px-3 py-1 text-xs transition',
+                                        'rounded-control px-3 py-1 text-xs transition',
                                         data.kodik_types.includes(t.key)
-                                            ? 'border-gc-lilac-400/50 bg-gc-indigo/20 text-white'
-                                            : 'border-white/10 text-white/55 hover:text-white',
+                                            ? 'bg-gc-indigo/20 text-white'
+                                            : 'text-white/55 hover:text-white',
                                     )}
                                 >
                                     {t.label}
@@ -334,7 +335,7 @@ function AutoImportPanel({
                     {data.providers.includes('videoseed') && (
                         <div>
                             <p className="mb-2 text-xs font-medium text-white/50">
-                                {tr('Що брати з Videoseed')}
+                                {tr('Що брати з Плеєра 2')}
                             </p>
                             <div className="flex flex-wrap gap-1.5">
                                 {(
@@ -365,10 +366,10 @@ function AutoImportPanel({
                                             )
                                         }
                                         className={cn(
-                                            'rounded-full border px-3 py-1 text-xs transition',
+                                            'rounded-control px-3 py-1 text-xs transition',
                                             data.videoseed_lists.includes(key)
-                                                ? 'border-gc-lilac-400/50 bg-gc-indigo/20 text-white'
-                                                : 'border-white/10 text-white/55 hover:text-white',
+                                                ? 'bg-gc-indigo/20 text-white'
+                                                : 'text-white/55 hover:text-white',
                                         )}
                                     >
                                         {label}
@@ -452,7 +453,7 @@ function AutoImportPanel({
                         ).map(([key, label]) => (
                             <label
                                 key={key}
-                                className="flex items-center justify-between gap-3 rounded-xl bg-white/[0.03] px-3.5 py-2.5 text-sm text-white/75"
+                                className="gc-solid-2 flex items-center justify-between gap-3 rounded-xl px-3.5 py-2.5 text-sm text-white/75"
                             >
                                 {label}
                                 <Toggle
@@ -465,7 +466,7 @@ function AutoImportPanel({
                     </div>
 
                     {Object.keys(form.errors).length > 0 && (
-                        <p className="text-xs text-rose-300">
+                        <p className="text-xs text-red-400">
                             {Object.values(form.errors)[0]}
                         </p>
                     )}
@@ -490,7 +491,7 @@ function AutoImportPanel({
                                 (!providers.kodik && !providers.flixcdn_api)
                             }
                             onClick={() => run()}
-                            className="inline-flex items-center gap-2 rounded-xl bg-white/[0.06] px-4 py-2.5 text-sm text-white/80 transition hover:bg-white/10 disabled:opacity-40"
+                            className="gc-solid-2 inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm text-white/80 transition hover:bg-white/10 disabled:opacity-40"
                         >
                             <RefreshCw
                                 className={cn(
@@ -508,7 +509,7 @@ function AutoImportPanel({
                                 notEnriched === 0
                             }
                             onClick={() => run(true)}
-                            className="inline-flex items-center gap-2 rounded-xl bg-white/[0.06] px-4 py-2.5 text-sm text-white/80 transition hover:bg-white/10 disabled:opacity-40"
+                            className="gc-solid-2 inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm text-white/80 transition hover:bg-white/10 disabled:opacity-40"
                         >
                             <Wand2 className="size-4" />
                             {tr('Збагатити метадані (')}
@@ -607,11 +608,11 @@ function AutoImportPanel({
                     ) : (
                         <p className="mt-1 text-xs text-white/45">
                             {tr(
-                                'Ще не запускалося. Підключіть Kodik або FlixCDN в',
+                                'Ще не запускалося. Підключіть Плеєр 1 або Плеєр 3 в',
                             )}{' '}
                             <Link
                                 href="/admin/integrations"
-                                className="text-gc-lilac-300 hover:text-white"
+                                className="text-sky-400 hover:text-white"
                             >
                                 {tr('інтеграціях')}
                             </Link>{' '}
@@ -630,11 +631,11 @@ function AutoImportPanel({
     );
 }
 
-/** Підписи й порядок джерел у звіті «Останній запуск»: Kodik, FlixCDN, Videoseed, далі TMDB. */
+/** Підписи й порядок джерел у звіті «Останній запуск»: плеєри 1, 3, 2, далі TMDB. */
 const PROVIDER_LABELS = (): Record<string, string> => ({
-    kodik: 'Kodik',
-    flixcdn: 'FlixCDN',
-    videoseed: 'Videoseed',
+    kodik: playerName('kodik'),
+    flixcdn: playerName('flixcdn'),
+    videoseed: playerName('videoseed'),
     tmdb: tr('TMDB (автопарсинг)'),
 });
 const providerOrder = (key: string) => {
@@ -700,13 +701,13 @@ export default function AdminCinema({
             <PageHeader
                 title={tr('Кіно')}
                 description={tr(
-                    'Каталог фільмів, плеєри Kodik/FlixCDN, автонаповнення й метадані',
+                    'Каталог фільмів, вбудовані плеєри, автонаповнення й метадані',
                 )}
                 actions={
                     <div className="flex flex-wrap gap-2">
                         <Link
                             href="/admin/cinema/import"
-                            className="glass inline-flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-semibold text-white/85 hover:text-white"
+                            className="gc-solid inline-flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-semibold text-white/85 hover:text-white"
                         >
                             <DownloadCloud className="size-4" /> {tr('Імпорт')}
                         </Link>
@@ -768,7 +769,7 @@ export default function AdminCinema({
 
             {requests.length > 0 && <MovieRequests requests={requests} />}
 
-            <div className="glass mb-4 flex flex-col gap-3 rounded-2xl p-2.5 lg:flex-row lg:items-center">
+            <div className="gc-solid mb-4 flex flex-col gap-3 rounded-2xl p-2.5 lg:flex-row lg:items-center">
                 <div className="scrollbar-none flex gap-1 overflow-x-auto">
                     {filterTabs.map((tab) => (
                         <button
@@ -778,7 +779,7 @@ export default function AdminCinema({
                             className={cn(
                                 'shrink-0 rounded-lg px-3 py-1.5 text-sm font-medium transition',
                                 filters.filter === tab.key
-                                    ? 'bg-gradient-brand text-white'
+                                    ? 'bg-sky-500 text-white'
                                     : 'text-white/55 hover:text-white',
                             )}
                         >
@@ -816,11 +817,11 @@ export default function AdminCinema({
                 </select>
             </div>
 
-            <div className="glass overflow-hidden rounded-3xl">
+            <div className="gc-solid overflow-hidden rounded-2xl">
                 <div className="overflow-x-auto">
                     <table className="w-full min-w-[900px] text-sm">
                         <thead>
-                            <tr className="border-b border-white/[0.06] text-left text-xs text-white/40">
+                            <tr className="text-left text-xs text-white/40">
                                 <th className="px-4 py-3 font-medium">
                                     {tr('Тайтл')}
                                 </th>
@@ -844,7 +845,7 @@ export default function AdminCinema({
                                 <tr
                                     key={movie.id}
                                     className={cn(
-                                        'border-b border-white/[0.04] transition last:border-0 hover:bg-white/[0.03]',
+                                        'transition last:border-0 hover:bg-[var(--gc-l3)]',
                                         movie.deleted_at && 'opacity-60',
                                     )}
                                 >
@@ -891,12 +892,7 @@ export default function AdminCinema({
                                             >
                                                 {movie.origin === 'manual'
                                                     ? tr('Вручну')
-                                                    : movie.origin === 'kodik'
-                                                      ? 'Kodik'
-                                                      : movie.origin ===
-                                                          'videoseed'
-                                                        ? 'Videoseed'
-                                                        : 'FlixCDN'}
+                                                    : playerName(movie.origin)}
                                             </Pill>
                                             {movie.enriched_at ? (
                                                 <Pill tone="violet">
@@ -997,7 +993,7 @@ export default function AdminCinema({
                                             <button
                                                 type="button"
                                                 onClick={() => remove(movie)}
-                                                className="flex size-8 items-center justify-center rounded-lg text-rose-300 hover:bg-rose-400/10"
+                                                className="flex size-8 items-center justify-center rounded-lg text-red-400 hover:bg-red-400/10"
                                                 title={
                                                     movie.deleted_at
                                                         ? tr(
@@ -1030,9 +1026,9 @@ export default function AdminCinema({
 /** Фільми, яких глядачі не знайшли в каталозі («Немає в каталозі» на сторінці кіно). */
 function MovieRequests({ requests }: { requests: MovieRequestRow[] }) {
     return (
-        <section className="glass mb-5 rounded-3xl p-5">
+        <section className="gc-solid mb-5 rounded-2xl p-5">
             <h2 className="flex items-center gap-2 text-sm font-semibold text-white">
-                <Film className="size-4 text-gc-lilac-400" />
+                <Film className="size-4 text-sky-400" />
                 {tr('Запити глядачів')}
             </h2>
             <p className="mt-1 text-xs text-white/45">
@@ -1073,7 +1069,7 @@ function MovieRequests({ requests }: { requests: MovieRequestRow[] }) {
                                     preserveScroll: true,
                                 })
                             }
-                            className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-white/[0.06] px-3 text-xs font-medium text-white/75 hover:bg-white/10 hover:text-white"
+                            className="gc-solid-2 inline-flex h-9 items-center gap-1.5 rounded-xl px-3 text-xs font-medium text-white/75 hover:bg-white/10 hover:text-white"
                         >
                             <CheckCircle2 className="size-4" />
                             {tr('Закрити')}

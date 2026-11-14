@@ -16,13 +16,16 @@ use Illuminate\Support\Carbon;
  * @property string $type
  * @property string|null $body
  * @property int|null $reply_to_id
+ * @property int|null $thread_root_id гілка: корінь-повідомлення
+ * @property int $thread_count скільки відповідей у гілці (у кореня)
+ * @property Carbon|null $thread_last_at
  * @property array<string, mixed>|null $meta
  * @property Carbon|null $edited_at
  * @property Carbon|null $publish_at
  * @property Carbon|null $expires_at
  * @property Carbon $created_at
  */
-#[Fillable(['conversation_id', 'user_id', 'type', 'body', 'reply_to_id', 'meta', 'edited_at', 'publish_at', 'expires_at'])]
+#[Fillable(['conversation_id', 'user_id', 'type', 'body', 'reply_to_id', 'thread_root_id', 'thread_count', 'thread_last_at', 'meta', 'edited_at', 'publish_at', 'expires_at'])]
 class Message extends Model
 {
     use SoftDeletes;
@@ -37,12 +40,19 @@ class Message extends Model
 
     public const TYPE_CONTACT = 'contact';
 
+    /** Опитування в груповому чаті: питання й варіанти — у meta.poll, голоси — message_poll_votes. */
+    public const TYPE_POLL = 'poll';
+
+    /** Відеоповідомлення-кружок (до хвилини). */
+    public const TYPE_VIDEO_NOTE = 'video_note';
+
     public const EDIT_WINDOW_HOURS = 24;
 
     protected function casts(): array
     {
         return [
             'meta' => 'array',
+            'thread_last_at' => 'datetime',
             'edited_at' => 'datetime',
             'publish_at' => 'datetime',
             'expires_at' => 'datetime',
@@ -79,6 +89,14 @@ class Message extends Model
     public function attachments(): HasMany
     {
         return $this->hasMany(MessageAttachment::class)->orderBy('position');
+    }
+
+    /**
+     * @return HasMany<MessageReaction, $this>
+     */
+    public function reactions(): HasMany
+    {
+        return $this->hasMany(MessageReaction::class);
     }
 
     public function isEditableBy(User $user): bool

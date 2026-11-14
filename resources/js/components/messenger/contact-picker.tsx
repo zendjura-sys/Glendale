@@ -83,7 +83,7 @@ export function ContactPicker({
                                 type="button"
                                 onClick={() => onPick(user)}
                                 className={cn(
-                                    'flex w-full items-center gap-3 rounded-xl p-2 text-left transition hover:bg-white/[0.05]',
+                                    'flex w-full items-center gap-3 rounded-xl p-2 text-left transition hover:bg-[var(--gc-l3)]',
                                     isSelected && 'bg-gc-indigo/10',
                                 )}
                             >
@@ -105,10 +105,10 @@ export function ContactPicker({
                                 {multiple && (
                                     <span
                                         className={cn(
-                                            'flex size-5 items-center justify-center rounded-full border transition',
+                                            'flex size-5 items-center justify-center rounded-full transition',
                                             isSelected
-                                                ? 'border-transparent bg-gradient-brand'
-                                                : 'border-white/25',
+                                                ? 'border-transparent bg-sky-500'
+                                                : '',
                                         )}
                                     >
                                         {isSelected && (

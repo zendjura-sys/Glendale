@@ -27,7 +27,7 @@ export default function OAuthAuthorize({ app, server, scopes, query }: Props) {
         <>
             <Head title={tr('Увійти через GameCon')} />
             <div className="mx-auto max-w-md py-4">
-                <section className="glass space-y-5 rounded-3xl p-6">
+                <section className="gc-solid space-y-5 rounded-2xl p-6">
                     <div className="flex items-center justify-center gap-3">
                         <ServerIcon
                             name={server.name}
@@ -52,7 +52,7 @@ export default function OAuthAuthorize({ app, server, scopes, query }: Props) {
                         {scopes.map((scope) => (
                             <li
                                 key={scope}
-                                className="flex items-center gap-3 rounded-2xl bg-white/[0.04] px-4 py-3 text-sm text-white/80"
+                                className="gc-solid-2 flex items-center gap-3 rounded-2xl px-4 py-3 text-sm text-white/80"
                             >
                                 <Check className="size-4 shrink-0 text-emerald-300" />
                                 {SCOPE_LABELS()[scope] ?? scope}
@@ -70,7 +70,7 @@ export default function OAuthAuthorize({ app, server, scopes, query }: Props) {
                             type="button"
                             disabled={busy}
                             onClick={() => decide('deny')}
-                            className="h-11 rounded-xl bg-white/[0.06] text-sm font-medium text-white/75 transition hover:bg-white/10 disabled:opacity-50"
+                            className="gc-solid-2 h-11 rounded-xl text-sm font-medium text-white/75 transition hover:bg-white/10 disabled:opacity-50"
                         >
                             {tr('Відмовити')}
                         </button>

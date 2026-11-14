@@ -3,9 +3,12 @@
 namespace App\Http\Controllers\Settings;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use App\Services\FriendshipService;
 use App\Support\Backgrounds;
+use App\Support\GameTheme;
 use App\Support\I18n\Locales;
+use App\Support\Modules\ModuleManager;
 use App\Support\MutedWords;
 use App\Support\NetworkModes;
 use App\Support\NotifyPrefs;
@@ -13,6 +16,7 @@ use App\Support\Palette;
 use App\Support\Plugins\Plugins;
 use App\Support\ProfileBlocks;
 use App\Support\Skins;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -26,15 +30,19 @@ class AppearanceController extends Controller
         $user = $request->user();
 
         return Inertia::render('settings/appearance', [
+            // Персонаж-аватар: мініатюра на кнопці конструктора.
+            'character' => $request->user()->character,
             'palette' => $user->palette(),
             'palettes' => Palette::all(),
             'background' => [
                 ...Backgrounds::for($user),
-                // Поле вводу показує збережене відео навіть після закінчення GameCon+.
-                'video' => Backgrounds::youtubeId($user->pref('background_video')),
+                // Вибір показує збережений відеофон навіть після закінчення GameCon+.
+                'video' => Backgrounds::video($user->pref('background_video')),
             ],
             'backgrounds' => Backgrounds::presets(),
+            'videos' => Backgrounds::videos(),
             'skin' => Skins::for($user),
+            'theme' => Skins::theme($user),
             'seasonal' => $user->pref('seasonal') !== false,
             'modes' => app(NetworkModes::class)->available(),
             'networkMode' => app(NetworkModes::class)->for($user)['id'],
@@ -48,13 +56,19 @@ class AppearanceController extends Controller
             'languages' => array_values(array_filter((array) $user->pref('languages', []), 'is_string')),
             'looking_for_group' => (bool) $user->pref('looking_for_group'),
             'show_visitors' => (bool) $user->pref('show_visitors'),
-            'profile_blocks' => ProfileBlocks::normalize($user->pref('profile_blocks')),
+            'profile_blocks' => ProfileBlocks::visible($user->pref('profile_blocks')),
             'languageOptions' => app(Locales::class)->options(),
             'friends' => app(FriendshipService::class)->friendsQuery($user)->limit(40)->get()->map->toCard()->values(),
             'closeFriends' => array_map('intval', (array) $user->pref('close_friends', [])),
             'notify' => NotifyPrefs::for($user),
+            // Розділи, сповіщення яких можна вимкнути цілком (лише ті, що є в режимі людини).
+            'notifySections' => collect(NotifyPrefs::sections($user))
+                ->filter(fn (bool $on, string $key) => in_array($key, app(NetworkModes::class)->modulesFor($user), true))
+                ->map(fn (bool $on, string $key) => ['key' => $key, 'label' => NotifyPrefs::SECTIONS[$key], 'on' => $on])->values(),
             'muteWords' => MutedWords::phrases($user),
             'hideSpoilers' => (bool) $user->pref('hide_spoilers'),
+            'gameThemeOn' => app(ModuleManager::class)->enabled('games'),
+            'gameTheme' => ($game = GameTheme::game($user)) !== null ? ['game' => $game->toCard(), 'colors' => GameTheme::colors($user)] : null,
         ]);
     }
 
@@ -71,9 +85,11 @@ class AppearanceController extends Controller
             'close_friends' => ['sometimes', 'array', 'max:30'],
             'close_friends.*' => ['integer'],
             'show_visitors' => ['sometimes', 'boolean'],
-            'profile_blocks' => ['sometimes', 'array', 'max:12'],
+            'profile_blocks' => ['sometimes', 'array', 'max:'.count(ProfileBlocks::ORDER)],
             'profile_blocks.*' => ['string'],
             'notify' => ['sometimes', 'array'],
+            'notify_sections' => ['sometimes', 'array'],
+            'notify_sections.*' => ['boolean'],
             'notify.likes' => ['sometimes', 'boolean'],
             'notify.comments' => ['sometimes', 'boolean'],
             'notify.mentions' => ['sometimes', 'boolean'],
@@ -87,8 +103,9 @@ class AppearanceController extends Controller
             'hide_spoilers' => ['sometimes', 'boolean'],
             'background' => ['sometimes', 'string', 'in:'.implode(',', Backgrounds::presets())],
             'background_motion' => ['sometimes', 'boolean'],
-            'background_video' => ['sometimes', 'nullable', 'string', 'max:200'],
+            'background_video' => ['sometimes', 'nullable', 'integer'],
             'skin' => ['sometimes', 'string', 'in:'.implode(',', Skins::ALL)],
+            'theme' => ['sometimes', 'string', 'in:'.implode(',', Skins::THEMES)],
             'seasonal' => ['sometimes', 'boolean'],
             'network_mode' => ['sometimes', 'string', 'in:'.implode(',', array_column(app(NetworkModes::class)->available(), 'id'))],
         ]);
@@ -123,7 +140,7 @@ class AppearanceController extends Controller
             $patch['show_visitors'] = (bool) $data['show_visitors'];
         }
         if ($plugins->on('profile_order') && array_key_exists('profile_blocks', $data)) {
-            $patch['profile_blocks'] = ProfileBlocks::normalize($data['profile_blocks']);
+            $patch['profile_blocks'] = ProfileBlocks::merge($request->user()->pref('profile_blocks'), $data['profile_blocks']);
         }
         if ($plugins->on('muted_words') && array_key_exists('mute_words', $data)) {
             $patch['mute_words'] = MutedWords::normalize($data['mute_words']);
@@ -141,11 +158,17 @@ class AppearanceController extends Controller
             }
             $patch['notify'] = $notify;
         }
+        if ($plugins->on('notify_switches') && array_key_exists('notify_sections', $data)) {
+            $patch['notify_sections'] = collect($data['notify_sections'])->only(array_keys(NotifyPrefs::SECTIONS))->map(fn ($on) => (bool) $on)->all();
+        }
         if (array_key_exists('seasonal', $data)) {
             $patch['seasonal'] = (bool) $data['seasonal'];
         }
         if (array_key_exists('skin', $data)) {
             $patch['skin'] = $data['skin'];
+        }
+        if (array_key_exists('theme', $data)) {
+            $patch['theme'] = $data['theme'];
         }
         if (array_key_exists('network_mode', $data)) {
             $patch['network_mode'] = $data['network_mode'];
@@ -157,20 +180,81 @@ class AppearanceController extends Controller
             $patch['background_motion'] = (bool) $data['background_motion'];
         }
         if (array_key_exists('background_video', $data)) {
-            $video = Backgrounds::youtubeId($data['background_video']);
-            if (filled($data['background_video']) && $video === null) {
-                throw ValidationException::withMessages(['background_video' => 'Не вдалося розпізнати посилання на відео YouTube.']);
-            }
-            // Нове відео може поставити лише учасник GameCon+; прибрати своє — будь-хто.
-            if ($video !== null && $video !== $request->user()->pref('background_video') && ! $request->user()->isPlus()) {
-                throw ValidationException::withMessages(['background_video' => 'Відеофон доступний з GameCon+.']);
-            }
-            $patch['background_video'] = $video;
+            $patch['background_video'] = $this->videoChoice($data['background_video'], $request->user());
         }
         $request->user()->mergePref($patch);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Вигляд збережено.']);
 
         return to_route('appearance.edit');
+    }
+
+    /**
+     * Лише фон (застосунок і швидкі перемикачі): сцена, рух і відеофон GameCon+ — без решти форми «Вигляд».
+     */
+    public function background(Request $request): RedirectResponse|JsonResponse
+    {
+        $user = $request->user();
+        $data = $request->validate([
+            'background' => ['sometimes', 'string', 'in:'.implode(',', Backgrounds::presets())],
+            'background_motion' => ['sometimes', 'boolean'],
+            'background_video' => ['sometimes', 'nullable', 'integer'],
+        ]);
+        $patch = [];
+        if (array_key_exists('background', $data)) {
+            $patch['background'] = $data['background'];
+        }
+        if (array_key_exists('background_motion', $data)) {
+            $patch['background_motion'] = (bool) $data['background_motion'];
+        }
+        if (array_key_exists('background_video', $data)) {
+            $patch['background_video'] = $this->videoChoice($data['background_video'], $user);
+        }
+        $user->mergePref($patch);
+
+        if ($request->expectsJson()) {
+            return response()->json(['background' => Backgrounds::for($user->fresh())]);
+        }
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Фон збережено.']);
+
+        return back();
+    }
+
+    /**
+     * Відеофон з бібліотеки адміністрації: новий може обрати лише учасник GameCon+, прибрати свій — будь-хто.
+     */
+    private function videoChoice(mixed $id, User $user): ?int
+    {
+        if ($id === null || $id === '') {
+            return null;
+        }
+        if (Backgrounds::video($id) === null) {
+            throw ValidationException::withMessages(['background_video' => 'Цей відеофон більше недоступний.']);
+        }
+        if ((int) $id !== (int) $user->pref('background_video') && ! $user->isPlus()) {
+            throw ValidationException::withMessages(['background_video' => 'Відеофон доступний з GameCon+.']);
+        }
+
+        return (int) $id;
+    }
+
+    /** Швидкий перемикач теми (меню облікового запису): лише тема, без решти налаштувань. */
+    public function theme(Request $request): RedirectResponse
+    {
+        $data = $request->validate(['theme' => ['required', 'string', 'in:'.implode(',', Skins::THEMES)]]);
+        $request->user()->mergePref(['theme' => $data['theme']]);
+
+        return back();
+    }
+
+    /** Швидка зміна режиму соцмережі (застосунок: Налаштування → Вигляд). */
+    public function mode(Request $request): RedirectResponse
+    {
+        $modes = app(NetworkModes::class);
+        $data = $request->validate(['mode' => ['required', 'string', 'in:'.implode(',', array_column($modes->available(), 'id'))]]);
+        $request->user()->mergePref(['network_mode' => $data['mode']]);
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Режим змінено.']);
+
+        return back();
     }
 }

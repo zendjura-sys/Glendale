@@ -6,6 +6,7 @@ use App\Jobs\RefreshMoviePlayers;
 use App\Models\Comment;
 use App\Models\Like;
 use App\Models\Movie;
+use App\Models\MovieList;
 use App\Models\MovieRequest;
 use App\Models\MovieSource;
 use App\Models\Track;
@@ -13,15 +14,20 @@ use App\Models\User;
 use App\Services\Cinema\CinemaException;
 use App\Services\Cinema\CinemaPlayers;
 use App\Services\Cinema\CinemaService;
+use App\Services\Cinema\CinemaSidebar;
 use App\Services\Cinema\EpisodeGuide;
 use App\Services\Cinema\EpisodeMarks;
 use App\Services\Cinema\FlixcdnPlayer;
+use App\Services\Cinema\Handoff;
 use App\Services\Cinema\KodikClient;
 use App\Services\Cinema\Metadata\MetadataEnricher;
 use App\Services\Cinema\Metadata\TmdbProvider;
+use App\Services\Cinema\MovieOfWeek;
+use App\Services\Cinema\Recommendations;
 use App\Services\Cinema\TmdbAutoParse;
 use App\Services\Cinema\VideoseedClient;
 use App\Services\FriendshipService;
+use App\Services\Moderation\ToxicComments;
 use App\Services\PostPresenter;
 use App\Services\SavedItems;
 use App\Support\CommentOrder;
@@ -32,8 +38,10 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
@@ -45,7 +53,7 @@ class CinemaController extends Controller
 
     public const PREVIEW_COMMENTS = 20;
 
-    public const SORTS = ['new', 'popular', 'rating', 'year'];
+    public const SORTS = ['new', 'updated', 'popular', 'rating', 'year'];
 
     public function __construct(
         private readonly CinemaService $cinema,
@@ -60,33 +68,57 @@ class CinemaController extends Controller
             'type' => ['nullable', Rule::in(array_keys(Movie::TYPES))],
             'genre' => ['nullable', 'string', 'max:60'],
             'year' => ['nullable', 'integer', 'min:1900', 'max:2100'],
+            'country' => ['nullable', 'string', 'max:60'],
+            'release' => ['nullable', Rule::in(array_keys(Movie::RELEASE))],
             'sort' => ['nullable', Rule::in(self::SORTS)],
             'q' => ['nullable', 'string', 'max:100'],
         ]);
         $sort = $filters['sort'] ?? 'new';
         $plugins = app(Plugins::class);
-        $filtered = filled($filters['type'] ?? null) || filled($filters['genre'] ?? null) || filled($filters['year'] ?? null) || filled($filters['q'] ?? null);
+        $filtered = filled($filters['type'] ?? null) || filled($filters['genre'] ?? null) || filled($filters['year'] ?? null)
+            || filled($filters['country'] ?? null) || filled($filters['release'] ?? null) || filled($filters['q'] ?? null);
 
         $catalog = Movie::query()->published()
             ->search($filters['q'] ?? null)
             ->when($filters['type'] ?? null, fn (Builder $q, string $type) => $q->where('type', $type))
             ->when($filters['year'] ?? null, fn (Builder $q, int $year) => $q->where('year', $year))
-            ->when($filters['genre'] ?? null, fn (Builder $q, string $genre) => $q->whereJsonContains('genres', $genre));
+            ->when($filters['genre'] ?? null, fn (Builder $q, string $genre) => $q->whereJsonContains('genres', $genre))
+            ->when($filters['country'] ?? null, fn (Builder $q, string $country) => $q->whereJsonContains('countries', $country))
+            ->when($filters['release'] ?? null, fn (Builder $q, string $release) => match ($release) {
+                'announced' => $q->where(fn (Builder $w) => $w->where('release_status', 'announced')->orWhere(fn (Builder $a) => $a->whereNull('release_status')->where('year', '>', now()->year))),
+                'ongoing' => $q->where(fn (Builder $w) => $w->where('release_status', 'ongoing')->orWhere(fn (Builder $a) => $a->whereNull('release_status')
+                    ->whereIn('type', ['serial', 'anime', 'cartoon', 'documentary'])->where('episodes_count', '>', 1)
+                    ->where('year', '>=', now()->year - 1)->where('updated_at', '>=', now()->subDays(30)))),
+                default => $q->where(fn (Builder $w) => $w->where('release_status', 'released')->orWhere(fn (Builder $a) => $a->whereNull('release_status')->where(fn (Builder $o) => $o->whereNull('year')->orWhere('year', '<=', now()->year)))),
+            });
 
         match ($sort) {
             'popular' => $catalog->orderByDesc('views_count'),
             'rating' => $catalog->orderByRaw('coalesce(rating_imdb, rating_tmdb, rating_shikimori, 0) desc'),
             'year' => $catalog->orderByDesc('year'),
+            // «Нещодавно оновлені» — де нещодавно з'явилися нові серії чи озвучки, а не коли змінили запис.
+            'updated' => $catalog->orderByDesc(
+                DB::table('movie_sources')->selectRaw('max(updated_at)')->whereColumn('movie_sources.movie_id', 'movies.id')
+            ),
             default => $catalog->orderByDesc('created_at'),
         };
         $page = $catalog->orderByDesc('id')->paginate(self::PER_PAGE)->withQueryString();
-        $page->setCollection($page->getCollection()->map(fn (Movie $m) => $m->toCard()));
+        $byId = $page->getCollection()->keyBy('id');
+        $page->setCollection(collect($this->withProgress(array_values($page->getCollection()->map(fn (Movie $m) => $m->toCard())->all())))
+            ->map(fn (array $card) => [
+                ...$card,
+                'description' => $byId[$card['id']]->description,
+                'countries' => array_values(array_filter((array) ($byId[$card['id']]->countries ?? []), 'is_string')),
+                'duration' => $byId[$card['id']]->duration,
+            ]));
 
         return Inertia::render('cinema/index', [
             'filters' => [
                 'type' => $filters['type'] ?? null,
                 'genre' => $filters['genre'] ?? null,
                 'year' => $filters['year'] ?? null,
+                'country' => $filters['country'] ?? null,
+                'release' => $filters['release'] ?? null,
                 'sort' => $sort,
                 'q' => $filters['q'] ?? '',
             ],
@@ -110,6 +142,11 @@ class CinemaController extends Controller
             'myCounts' => $this->myCounts($user),
             'requests' => $plugins->on('movie_request') ? MovieRequest::query()->where('user_id', $user->id)->latest('id')->limit(5)->pluck('title')->all() : [],
             'playback' => $this->playbackPrefs($user),
+            // Вкладки-каруселі головної: свіжі тайтли кожного популярного типу.
+            'byType' => $filtered ? [] : collect(['serial', 'movie', 'anime', 'cartoon'])
+                ->map(fn (string $type) => ['key' => $type, 'label' => Movie::TYPES[$type] ?? $type, 'movies' => $this->cards(Movie::query()->published()->where('type', $type)->latest('updated_at')->limit(12)->get())])
+                ->filter(fn (array $row) => $row['movies'] !== [])->values(),
+            'side' => Inertia::defer(fn () => app(CinemaSidebar::class)->data(), 'side'),
         ]);
     }
 
@@ -385,28 +422,223 @@ class CinemaController extends Controller
             'pinned' => is_array($pin = $viewer->pref('pin')) && ($pin['kind'] ?? null) === 'movie' && (int) ($pin['id'] ?? 0) === $movie->id,
             'playback' => $this->playbackPrefs($viewer),
             'inTopTen' => app(Plugins::class)->on('top_ten') && in_array($movie->id, array_map('intval', (array) $viewer->pref('top_ten', [])), true),
+            'side' => Inertia::defer(fn () => app(CinemaSidebar::class)->data(), 'side'),
         ]);
     }
 
     public function my(Request $request): Response
     {
         $user = $request->user();
-        $data = $request->validate(['status' => ['nullable', Rule::in(['all', 'rated', ...array_keys(Movie::STATUSES)])]]);
+        $data = $request->validate(['status' => ['nullable', Rule::in(['all', 'rated', 'history', 'saved', 'lists', ...array_keys(Movie::STATUSES)])]]);
         $status = $data['status'] ?? 'all';
 
-        $page = $this->listQuery($user, $status)->paginate(self::PER_PAGE)->withQueryString();
+        $lists = null;
+        if ($status === 'history') {
+            // Історія: тайтли з прогресом — остання серія, озвучка й коли дивились.
+            $query = $this->listQuery($user, 'all')->whereNotNull('movie_user.episode')
+                ->addSelect('movie_user.player_key as my_player', 'movie_user.updated_at as my_updated_at');
+        } elseif ($status === 'saved') {
+            $query = Movie::query()->published()
+                ->join('saves', fn ($j) => $j->on('saves.subject_id', '=', 'movies.id')->where('saves.kind', 'movie')->where('saves.user_id', $user->id))
+                ->leftJoin('movie_user', fn ($j) => $j->on('movie_user.movie_id', '=', 'movies.id')->where('movie_user.user_id', $user->id))
+                ->select('movies.*', 'movie_user.status as my_status', 'movie_user.rating as my_rating')
+                ->orderByDesc('saves.id');
+        } else {
+            $query = $this->listQuery($user, $status === 'lists' ? 'all' : $status);
+        }
+        if ($status === 'lists') {
+            $lists = MovieList::query()->where('user_id', $user->id)->latest('updated_at')->limit(60)->get()
+                ->map(fn (MovieList $list) => $list->toCard())->values();
+        }
+
+        $page = $query->paginate(self::PER_PAGE)->withQueryString();
         $page->setCollection($page->getCollection()->map(fn (Movie $m) => [
             ...$m->toCard(),
+            'description' => $m->description,
             'my_status' => $m->getAttribute('my_status'),
             'my_rating' => $m->getAttribute('my_rating') !== null ? (int) $m->getAttribute('my_rating') : null,
+            'progress' => $m->getAttribute('my_episode') !== null ? [
+                'season' => $m->getAttribute('my_season') !== null ? (int) $m->getAttribute('my_season') : null,
+                'episode' => (int) $m->getAttribute('my_episode'),
+                'voice' => $this->voiceName($m, $m->getAttribute('my_player')),
+                'at' => $m->getAttribute('my_updated_at') ? Carbon::parse($m->getAttribute('my_updated_at'))->toIso8601String() : null,
+            ] : null,
         ]));
 
         return Inertia::render('cinema/my', [
             'status' => $status,
             'movies' => Inertia::scroll(fn () => $page),
+            'total' => $page->total(),
+            'lists' => $lists,
             'statuses' => $this->statusOptions(),
             'counts' => $this->myCounts($user),
+            'side' => Inertia::defer(fn () => app(CinemaSidebar::class)->data(), 'side'),
         ]);
+    }
+
+    /**
+     * «Огляд» кінопорталу: банери, обговорюване, що дивляться зараз, рекомендації, колекції й коментарі тижня.
+     */
+    public function overview(Request $request): Response
+    {
+        $user = $request->user();
+        $week = now()->subDays(7);
+
+        $discussed = Cache::remember('cinema.overview.discussed', now()->addMinutes(10), fn () => Movie::query()->published()
+            ->withCount(['comments as recent_comments' => fn (Builder $q) => $q->where('created_at', '>=', now()->subDay())])
+            ->orderByDesc('recent_comments')->orderByDesc('comments_count')->limit(5)->get()
+            ->map(fn (Movie $m) => [...$m->toCard(), 'comments_count' => (int) $m->comments_count])->values()->all());
+
+        $watchingIds = Cache::remember('cinema.overview.watching', now()->addMinutes(10), fn () => DB::table('movie_user')
+            ->where('status', 'watching')->where('updated_at', '>=', $week)
+            ->selectRaw('movie_id, count(*) as total')->groupBy('movie_id')->orderByDesc('total')->limit(12)->pluck('movie_id')->all());
+        $watchingNow = Movie::query()->published()->whereIn('id', $watchingIds)->get()
+            ->sortBy(fn (Movie $m) => array_search($m->id, $watchingIds, true))->values();
+        if ($watchingNow->isEmpty()) {
+            $watchingNow = Movie::query()->published()->orderByDesc('views_count')->limit(12)->get();
+        }
+
+        $collections = MovieList::query()->where('is_public', true)->where('items_count', '>', 0)
+            ->orderByDesc('likes_count')->orderByDesc('followers_count')->latest('updated_at')->limit(8)->get()
+            ->map(fn (MovieList $list) => $list->toCard())->values();
+
+        $comments = Comment::query()->with(['user', 'movie'])->whereNotNull('movie_id')->where('created_at', '>=', $week)
+            ->orderByDesc('likes_count')->latest('id')->limit(6)->get()
+            ->filter(fn (Comment $c) => $c->movie !== null && $c->movie->is_published)
+            ->map(fn (Comment $c) => [
+                'id' => $c->id,
+                'body' => Str::limit((string) $c->body, 160),
+                'likes' => (int) $c->likes_count,
+                'created_at' => $c->created_at->toIso8601String(),
+                'user' => $c->user?->toCard(),
+                'movie' => ['title' => $c->movie->title, 'href' => '/cinema/'.$c->movie->slug],
+            ])->values();
+
+        return Inertia::render('cinema/overview', [
+            'featured' => $this->featured(),
+            'recommended' => $this->recommended($user),
+            'discussed' => $discussed,
+            'watchingNow' => $this->cards($watchingNow),
+            'collections' => $collections,
+            'comments' => $comments,
+            'counts' => $this->myCounts($user),
+            'side' => Inertia::defer(fn () => app(CinemaSidebar::class)->data(), 'side'),
+        ]);
+    }
+
+    /**
+     * Розклад: онгоінги з серіями, що виходили останні три тижні, за днем тижня останнього оновлення.
+     */
+    /** «Тайтл тижня»: кандидати, голоси й переможець минулого тижня. */
+    public function week(Request $request): JsonResponse
+    {
+        return response()->json(app(MovieOfWeek::class)->board($request->user()));
+    }
+
+    /** Голос за «Тайтл тижня» (можна перенести на інший тайтл до кінця тижня). */
+    public function voteWeek(Request $request, Movie $movie): JsonResponse
+    {
+        app(MovieOfWeek::class)->vote($request->user(), $movie);
+
+        return response()->json(app(MovieOfWeek::class)->board($request->user()));
+    }
+
+    public function schedule(): Response
+    {
+        $rows = DB::table('movie_sources')
+            ->join('movies', 'movies.id', '=', 'movie_sources.movie_id')
+            ->where('movies.is_published', true)->whereNull('movies.deleted_at')
+            ->whereIn('movies.type', ['serial', 'anime', 'cartoon'])
+            ->where('movie_sources.updated_at', '>=', now()->subDays(21))
+            ->selectRaw('movie_sources.movie_id, max(movie_sources.updated_at) as last_at')
+            ->groupBy('movie_sources.movie_id')->get();
+        $movies = Movie::query()->whereIn('id', $rows->pluck('movie_id'))->get()->keyBy('id');
+
+        $days = [];
+        foreach ($rows as $row) {
+            $movie = $movies->get($row->movie_id);
+            if (! $movie instanceof Movie) {
+                continue;
+            }
+            $at = Carbon::parse($row->last_at);
+            $days[$at->dayOfWeekIso][] = [...$movie->toCard(), 'last_at' => $at->toIso8601String()];
+        }
+        ksort($days);
+
+        return Inertia::render('cinema/schedule', [
+            'days' => collect($days)->map(fn (array $items, int $day) => ['day' => $day, 'movies' => array_values(collect($items)->sortByDesc('last_at')->all())])->values(),
+            'side' => Inertia::defer(fn () => app(CinemaSidebar::class)->data(), 'side'),
+        ]);
+    }
+
+    /** «Рандом»: випадковий опублікований тайтл. */
+    /** Бічна колонка (навігація й віджети) окремо — для застосунку: міст не віддає відкладених props. */
+    public function side(CinemaSidebar $sidebar): JsonResponse
+    {
+        return response()->json($sidebar->data());
+    }
+
+    public function random(): RedirectResponse
+    {
+        $movie = Movie::query()->published()->inRandomOrder()->first();
+        abort_unless($movie instanceof Movie, 404);
+
+        return redirect('/cinema/'.$movie->slug);
+    }
+
+    /**
+     * «Вам сподобається»: гібридні рекомендації (див. Recommendations) з поясненням.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function recommended(User $user, int $limit = 12): array
+    {
+        $picks = app(Recommendations::class)->for($user, $limit);
+        $cards = $this->cards(new Collection(array_map(fn (array $p) => $p['movie'], $picks)));
+        foreach ($cards as $i => $card) {
+            $cards[$i]['reason'] = $picks[$i]['reason'] ?? null;
+        }
+
+        return $cards;
+    }
+
+    /** Повна добірка «Вам сподобається» (JSON для сайту й застосунку). */
+    public function forYou(Request $request): JsonResponse
+    {
+        return response()->json(['movies' => $this->recommended($request->user(), 48)]);
+    }
+
+    /** «Продовжити на іншому пристрої»: пропозиція, якщо дивились на іншому пристрої. */
+    public function handoff(Request $request): JsonResponse
+    {
+        return response()->json(['handoff' => app(Handoff::class)->offer($request->user(), $request)]);
+    }
+
+    /** «Продовжити на іншому пристрої» — відхилити пропозицію. */
+    public function dismissHandoff(Request $request): JsonResponse
+    {
+        app(Handoff::class)->clear($request->user());
+
+        return response()->json(['ok' => true]);
+    }
+
+    /** «Не цікаво»: прибрати тайтл із рекомендацій назавжди. */
+    public function dismiss(Request $request, Movie $movie): JsonResponse
+    {
+        app(Recommendations::class)->dismiss($request->user(), $movie);
+
+        return response()->json(['ok' => true]);
+    }
+
+    /** Назва озвучки за ключем плеєра (provider:external_id). */
+    private function voiceName(Movie $movie, mixed $playerKey): ?string
+    {
+        if (! is_string($playerKey) || ! str_contains($playerKey, ':')) {
+            return null;
+        }
+        [$provider, $external] = explode(':', $playerKey, 2);
+
+        return MovieSource::query()->where('movie_id', $movie->id)->where('provider', $provider)->where('external_id', $external)->value('translation');
     }
 
     /**
@@ -445,6 +677,7 @@ class CinemaController extends Controller
         $data = $request->validate(['status' => ['nullable', Rule::in(array_keys(Movie::STATUSES))]]);
 
         $this->cinema->setStatus($request->user(), $movie, $data['status'] ?? null);
+        app(Recommendations::class)->forget($request->user());
 
         return $this->stateResponse($request->user(), $movie);
     }
@@ -455,6 +688,7 @@ class CinemaController extends Controller
         $data = $request->validate(['rating' => ['nullable', 'integer', 'between:1,10']]);
 
         $this->cinema->rate($request->user(), $movie, $data['rating'] ?? null);
+        app(Recommendations::class)->forget($request->user());
 
         return $this->stateResponse($request->user(), $movie);
     }
@@ -505,6 +739,15 @@ class CinemaController extends Controller
             $episode,
             isset($data['position']) ? (int) $data['position'] : null,
             $data['player_key'] ?? null,
+        );
+        // «Продовжити на іншому пристрої»: запам'ятовуємо, де й на чому зупинились.
+        app(Handoff::class)->record(
+            $request->user(),
+            $movie,
+            isset($data['season']) ? (int) $data['season'] : null,
+            $episode,
+            isset($data['position']) ? (int) $data['position'] : null,
+            $request,
         );
 
         return $this->stateResponse($request->user(), $movie);
@@ -563,6 +806,7 @@ class CinemaController extends Controller
 
             return $comment;
         });
+        app(ToxicComments::class)->check($comment);
 
         return response()->json([
             'comment' => $this->presenter->comment($comment->load('user'), $user, false, $user->isStaff()),
@@ -622,6 +866,8 @@ class CinemaController extends Controller
             'description' => $m->description,
             'duration' => $m->duration,
             'genres' => array_slice($m->genres ?? [], 0, 4),
+            'countries' => array_slice(array_values(array_filter((array) ($m->countries ?? []), 'is_string')), 0, 2),
+            'trailer_url' => $m->trailer_url,
         ])->all());
     }
 
@@ -737,7 +983,40 @@ class CinemaController extends Controller
      */
     private function cards(Collection $movies): array
     {
-        return array_values($movies->map(fn (Movie $m) => $m->toCard())->all());
+        return $this->withProgress(array_values($movies->map(fn (Movie $m) => $m->toCard())->all()));
+    }
+
+    /**
+     * Бейдж «% переглянуто» на постері: переглянуто → 100; інакше відмічені серії / усі серії
+     * (або поточна серія); у списку без прогресу → 0; не в списках → null.
+     *
+     * @param  list<array<string, mixed>>  $cards
+     * @return list<array<string, mixed>>
+     */
+    private function withProgress(array $cards): array
+    {
+        $user = request()->user();
+        $ids = array_column($cards, 'id');
+        if ($user === null || $ids === []) {
+            return $cards;
+        }
+        $rows = DB::table('movie_user')->where('user_id', $user->id)->whereIn('movie_id', $ids)->get(['movie_id', 'status', 'episode'])->keyBy('movie_id');
+        $marks = DB::table('movie_episode_marks')->where('user_id', $user->id)->whereIn('movie_id', $ids)
+            ->selectRaw('movie_id, count(*) as total')->groupBy('movie_id')->pluck('total', 'movie_id');
+
+        return array_map(function (array $card) use ($rows, $marks) {
+            $row = $rows->get($card['id']);
+            $total = (int) ($card['episodes_count'] ?? 0);
+            $done = (int) ($marks[$card['id']] ?? 0) ?: (int) ($row->episode ?? 0);
+            $card['progress_pct'] = match (true) {
+                $row?->status === 'watched' => 100,
+                $total > 0 && $done > 0 => min(100, (int) round($done / $total * 100)),
+                $row !== null || $done > 0 => 0,
+                default => null,
+            };
+
+            return $card;
+        }, $cards);
     }
 
     /**
@@ -745,7 +1024,7 @@ class CinemaController extends Controller
      */
     private function watching(User $user): array
     {
-        return array_values($this->listQuery($user, 'watching')->limit(12)->get()->map(function (Movie $movie) {
+        return $this->withProgress(array_values($this->listQuery($user, 'watching')->limit(12)->get()->map(function (Movie $movie) {
             $episode = $movie->getAttribute('my_episode');
             $season = $movie->getAttribute('my_season');
 
@@ -756,7 +1035,7 @@ class CinemaController extends Controller
                     'episode' => (int) $episode,
                 ] : null,
             ];
-        })->all());
+        })->all()));
     }
 
     /**

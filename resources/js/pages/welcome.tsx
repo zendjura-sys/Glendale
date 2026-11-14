@@ -1,28 +1,37 @@
 import { Head, Link } from '@inertiajs/react';
 import {
     ArrowRight,
+    BadgeCheck,
     CalendarDays,
-    Clapperboard,
+    Crown,
     Gamepad2,
+    Gift,
     Heart,
-    ImageIcon,
+    Layers,
+    Lock,
     MessageCircle,
-    Music2,
+    Mic,
     Newspaper,
-    ShieldCheck,
+    Podcast,
+    Server,
     Sparkles,
+    Trophy,
     UsersRound,
 } from 'lucide-react';
+import { m, useReducedMotion } from 'motion/react';
+import type { ReactNode } from 'react';
 import { SiteBackground } from '@/components/backgrounds/site-background';
 import { Seasonal } from '@/components/gc/seasonal';
-import { Logo } from '@/components/gc/logo';
-import { PlayStoreLink } from '@/components/gc/play-store';
+import { SiteFooter } from '@/components/gc/site-footer';
 import { UserAvatar } from '@/components/gc/user-avatar';
+import { AppPageButton } from '@/components/guest/app-page-button';
+import { GuestHeader } from '@/components/guest/guest-header';
 import { compactNumber, plural } from '@/lib/format';
+import { tr } from '@/lib/i18n';
+import { motionOr, RISE } from '@/lib/motion';
+import { cn } from '@/lib/utils';
 import { login, register } from '@/routes';
 import type { UserCard } from '@/types';
-import { tr } from '@/lib/i18n';
-import { SiteFooter } from '@/components/gc/site-footer';
 
 type Props = {
     stats: { users: number; online: number; posts: number };
@@ -31,57 +40,39 @@ type Props = {
     tagline?: string;
 };
 
-const FEATURES = [
-    {
-        icon: Newspaper,
-        title: tr('Розумна стрічка'),
-        text: tr(
-            'Пости друзів і цікаве від спільноти — з фото, реакціями й обговореннями.',
-        ),
-        tone: 'from-gc-blue to-gc-indigo',
-    },
-    {
-        icon: UsersRound,
-        title: tr('Друзі та підписники'),
-        text: tr(
-            'Заявки, спільні друзі, рекомендації — як ти звик, тільки красивіше.',
-        ),
-        tone: 'from-gc-indigo to-gc-purple',
-    },
-    {
-        icon: MessageCircle,
-        title: tr('Повідомлення'),
-        text: tr('Миттєві чати, голосові та групові розмови.'),
-        tone: 'from-gc-cyan to-gc-blue',
-    },
-    {
-        icon: Gamepad2,
-        title: tr('Ігри та клани'),
-        text: tr('Збирай команду, турніри, рейтинги та ігрові профілі.'),
-        tone: 'from-gc-purple to-gc-pink',
-    },
-    {
-        icon: Clapperboard,
-        title: tr('Кінопортал'),
-        text: tr('Тисячі фільмів і серіалів — дивись і обговорюй з друзями.'),
-        tone: 'from-gc-pink to-gc-coral',
-    },
-    {
-        icon: ShieldCheck,
-        title: tr('Приватність'),
-        text: tr('Закритий профіль, видимість постів, 2FA та ключі доступу.'),
-        tone: 'from-gc-mint to-gc-cyan',
-    },
-];
+/** Поява блоку під час прокручування (з урахуванням «менше руху»). */
+function Reveal({
+    children,
+    delay = 0,
+    className,
+}: {
+    children: ReactNode;
+    delay?: number;
+    className?: string;
+}) {
+    const reduce = useReducedMotion();
+
+    return (
+        <m.div
+            initial={reduce ? false : { opacity: 0, y: 18 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-60px' }}
+            transition={motionOr(reduce, { ...RISE, delay })}
+            className={className}
+        >
+            {children}
+        </m.div>
+    );
+}
 
 function MockPost() {
     return (
-        <div className="glass-strong w-[340px] animate-float rounded-3xl p-4 shadow-[0_30px_80px_-30px_rgb(79_70_229/0.7)]">
+        <div className="glass-strong w-[330px] rounded-2xl p-4 shadow-[0_30px_80px_-30px_rgb(10_132_255/0.6)]">
             <div className="flex items-center gap-3">
                 {/* Макет без сторонніх картинок: перша сторінка не ходить на чужі сервери. */}
                 <span
                     aria-hidden
-                    className="flex size-10 items-center justify-center rounded-full bg-gradient-to-br from-gc-pink to-gc-purple text-sm font-bold text-white ring-2 ring-gc-indigo/60"
+                    className="flex size-10 items-center justify-center rounded-full bg-gradient-to-br from-sky-400 to-indigo-500 text-sm font-bold text-white"
                 >
                     СМ
                 </span>
@@ -89,25 +80,27 @@ function MockPost() {
                     <div className="text-sm font-semibold text-white">
                         {tr('Софія Мельник')}
                     </div>
-                    <div className="text-xs text-white/40">
-                        {tr('2 хв тому')}
+                    <div className="flex items-center gap-1 text-xs text-emerald-400">
+                        <Gamepad2 className="size-3" />
+                        {tr('Грає в GTA V RP')}
                     </div>
                 </div>
             </div>
             <p className="mt-3 text-[13px] leading-relaxed text-white/75">
                 {tr(
-                    "Нарешті пройшли рейд усією командою! Хто з нами в п'ятницю? 🔥",
+                    'Сім’я взяла бізвар! Дякую всім, хто був на зборі 🔥 У п’ятницю — турнір, записуйтесь.',
                 )}
             </p>
             <div
                 aria-hidden
-                className="relative mt-3 aspect-[17/10] w-full overflow-hidden rounded-2xl bg-[radial-gradient(circle_at_70%_30%,#ff9d5c_0,#c2417a_32%,#3b1d6e_62%,#0d1030_100%)]"
+                className="relative mt-3 aspect-[17/10] w-full overflow-hidden rounded-2xl bg-[radial-gradient(circle_at_75%_25%,#38bdf8_0,#4f46e5_38%,#1e1b4b_70%,#0b1220_100%)]"
             >
-                <div className="absolute inset-x-0 bottom-0 h-1/2 bg-[linear-gradient(170deg,transparent_40%,#0b0d24_41%)] opacity-90" />
-                <div className="absolute bottom-[38%] left-[18%] size-10 rounded-full bg-[#ffd9a8] shadow-[0_0_40px_#ffb36b]" />
+                <div className="absolute inset-x-6 bottom-5 h-2 rounded-full bg-white/20" />
+                <div className="absolute bottom-5 left-6 h-2 w-2/3 rounded-full bg-white/80" />
+                <Trophy className="absolute top-5 left-6 size-9 text-amber-300 drop-shadow-[0_0_16px_rgba(251,191,36,0.7)]" />
             </div>
             <div className="mt-3 flex items-center gap-4 text-xs text-white/50">
-                <span className="flex items-center gap-1.5 text-[#ff7ad9]">
+                <span className="flex items-center gap-1.5 text-rose-400">
                     <Heart className="size-4 fill-current" /> 248
                 </span>
                 <span className="flex items-center gap-1.5">
@@ -118,62 +111,158 @@ function MockPost() {
     );
 }
 
-function MockChat() {
+function MockVoice() {
     return (
-        <div className="glass-strong w-[260px] animate-float rounded-3xl p-4 [animation-delay:-2.5s]">
+        <div className="glass-strong w-[250px] rounded-2xl p-4">
             <div className="mb-3 flex items-center gap-2 text-xs font-semibold text-white/80">
-                <span className="size-2 rounded-full bg-emerald-400 shadow-[0_0_10px] shadow-emerald-400" />{' '}
-                {tr('Команда «Нова Хвиля»')}
+                <Mic className="size-3.5 text-emerald-400" />
+                {tr('Голосовий «Рейд о 20:00»')}
             </div>
-            <div className="space-y-2 text-[12px]">
-                <div className="w-fit max-w-[85%] rounded-2xl rounded-bl-md bg-white/[0.07] px-3 py-2 text-white/80">
-                    {tr('Збираємось о 20:00?')}
-                </div>
-                <div className="ml-auto w-fit max-w-[85%] rounded-2xl rounded-br-md bg-gradient-brand px-3 py-2 text-white">
-                    {tr('Так! Я вже в лобі 🎮')}
-                </div>
-                <div className="w-fit max-w-[85%] rounded-2xl rounded-bl-md bg-white/[0.07] px-3 py-2 text-white/80">
-                    {tr('Беру мікрофон 🎧')}
-                </div>
+            <div className="flex -space-x-2">
+                {[
+                    'from-sky-400 to-blue-600',
+                    'from-emerald-400 to-teal-600',
+                    'from-violet-400 to-indigo-600',
+                    'from-amber-300 to-orange-500',
+                ].map((tone, i) => (
+                    <span
+                        key={tone}
+                        aria-hidden
+                        className={cn(
+                            'size-9 rounded-full border-2 border-[#0b1220] bg-gradient-to-br',
+                            tone,
+                            i === 1 &&
+                                'ring-2 ring-emerald-400 ring-offset-1 ring-offset-transparent',
+                        )}
+                    />
+                ))}
+                <span className="flex size-9 items-center justify-center rounded-full border-2 border-[#0b1220] bg-white/10 text-[11px] font-semibold text-white">
+                    +6
+                </span>
+            </div>
+            <div className="mt-3 flex items-end gap-0.5" aria-hidden>
+                {[6, 14, 9, 18, 11, 7, 15, 10, 5, 12, 16, 8].map((h, i) => (
+                    <span
+                        key={i}
+                        className="w-1.5 rounded-full bg-emerald-400/70"
+                        style={{ height: h }}
+                    />
+                ))}
             </div>
         </div>
     );
 }
 
-function MockMovie() {
+/** Три колекційні картки віялом без нахилу (як у розділі карток). */
+function MockCards() {
+    const cards = [
+        { rank: 'SR', ring: '#a855f7', name: tr('Снайпер клану'), letter: 'S' },
+        {
+            rank: 'U',
+            ring: '#fde047',
+            name: tr('Легенда сервера'),
+            letter: 'L',
+        },
+        { rank: 'S', ring: '#f59e0b', name: tr('Лідер сім’ї'), letter: 'K' },
+    ];
+
     return (
-        <div className="glass-strong flex w-[250px] animate-float items-center gap-3 rounded-2xl p-3 [animation-delay:-5s]">
-            <span
-                aria-hidden
-                className="h-[72px] w-[52px] shrink-0 rounded-lg bg-[linear-gradient(160deg,#1d2b64_0%,#7a1fa2_55%,#ff6b3d_100%)]"
-            />
-            <div className="min-w-0">
-                <div className="text-xs font-medium text-[#ff9de6]">
-                    {tr('Дивляться зараз')}
-                </div>
-                <div className="truncate text-sm font-semibold text-white">
-                    {tr('Нічне місто')}
-                </div>
-                <div className="mt-1 flex -space-x-1.5">
-                    {[
-                        'from-gc-blue to-gc-cyan',
-                        'from-gc-mint to-gc-blue',
-                        'from-gc-purple to-gc-pink',
-                    ].map((tone) => (
+        <div className="flex items-end" aria-hidden>
+            {cards.map((c, i) => (
+                <div
+                    key={c.rank}
+                    className={cn(
+                        'relative aspect-[5/7] w-24 rounded-xl bg-[#0b1220] p-[3px]',
+                        i > 0 && '-ml-7',
+                        i === 1 && 'z-10 mb-3 w-28',
+                    )}
+                    style={{
+                        backgroundImage: `linear-gradient(160deg, ${c.ring}, #0b1220 55%, ${c.ring})`,
+                        boxShadow: `0 8px 24px ${c.ring}66`,
+                    }}
+                >
+                    <div className="flex size-full flex-col justify-between rounded-[10px] bg-[#0b1220] p-2 text-white">
                         <span
-                            key={tone}
-                            aria-hidden
-                            className={`size-5 rounded-full border border-[#0c1024] bg-gradient-to-br ${tone}`}
-                        />
-                    ))}
-                    <span className="pl-3 text-xs text-white/45">
-                        {tr('+12 друзів')}
-                    </span>
+                            className="w-fit rounded bg-black/60 px-1 text-[10px] font-black"
+                            style={{ color: c.ring }}
+                        >
+                            {c.rank}
+                        </span>
+                        <span className="text-center font-display text-3xl font-black text-white/15">
+                            {c.letter}
+                        </span>
+                        <span className="text-[10px] leading-tight font-semibold">
+                            {c.name}
+                        </span>
+                    </div>
                 </div>
+            ))}
+        </div>
+    );
+}
+
+/** Макет ефіру GameCast: «в ефірі», тема, ведучі зі смужкою голосу. */
+function MockGameCast() {
+    const speakers = [
+        { tone: 'from-sky-400 to-blue-600', name: tr('Ведучий'), live: true },
+        {
+            tone: 'from-violet-400 to-indigo-600',
+            name: tr('Гість'),
+            live: false,
+        },
+    ];
+
+    return (
+        <div
+            className="mt-4 flex flex-wrap items-center gap-4 rounded-2xl bg-white/[0.05] p-3.5"
+            aria-hidden
+        >
+            <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 text-xs">
+                    <span className="flex items-center gap-1.5 rounded-full bg-rose-500/15 px-2 py-0.5 font-semibold text-rose-400">
+                        <span className="size-1.5 rounded-full bg-rose-500" />
+                        {tr('В ефірі')}
+                    </span>
+                    <span className="text-white/50">{tr('128 слухачів')}</span>
+                </div>
+                <div className="mt-2 truncate text-sm font-semibold text-white">
+                    {tr('Чи потрібен ранкед у GTA RP?')}
+                </div>
+                <div className="mt-0.5 text-xs text-sky-400">
+                    #gta #rp #сервери
+                </div>
+            </div>
+            <div className="flex items-end gap-3">
+                {speakers.map((sp) => (
+                    <div
+                        key={sp.name}
+                        className="flex flex-col items-center gap-1"
+                    >
+                        <span
+                            className={cn(
+                                'size-10 rounded-full bg-gradient-to-br',
+                                sp.tone,
+                                sp.live &&
+                                    'ring-2 ring-emerald-400 ring-offset-2 ring-offset-transparent',
+                            )}
+                        />
+                        <span className="text-[10px] text-white/55">
+                            {sp.name}
+                        </span>
+                    </div>
+                ))}
             </div>
         </div>
     );
 }
+
+type Tile = {
+    icon: typeof Newspaper;
+    title: string;
+    text: string;
+    className?: string;
+    extra?: ReactNode;
+};
 
 export default function Welcome({
     stats,
@@ -181,57 +270,151 @@ export default function Welcome({
     canRegister,
     tagline,
 }: Props) {
+    const reduce = useReducedMotion();
+    const tiles: Tile[] = [
+        {
+            icon: Newspaper,
+            title: tr('Стрічка й друзі'),
+            text: tr(
+                'Пости, моменти з ігор, реакції й обговорення. Хто з друзів зараз грає — видно одразу.',
+            ),
+            className: 'lg:col-span-2',
+        },
+        {
+            icon: Mic,
+            title: tr('Чати й голос'),
+            text: tr(
+                'Особисті й групові чати, голосові кімнати, дзвінки й трансляції для команди.',
+            ),
+        },
+        {
+            icon: Server,
+            title: tr('Сервери GTA RP'),
+            text: tr(
+                'Каталог серверів з онлайном наживо, голосування, відгуки й перевірені сервери.',
+            ),
+            extra: (
+                <div className="mt-4 space-y-1.5" aria-hidden>
+                    {[
+                        ['Quant RP', 84],
+                        ['Ukraine GTA 5', 41],
+                    ].map(([name, pct]) => (
+                        <div key={name}>
+                            <div className="flex justify-between text-[11px] text-white/55">
+                                <span className="flex items-center gap-1">
+                                    {name}
+                                    {pct === 84 && (
+                                        <BadgeCheck className="size-3 text-sky-400" />
+                                    )}
+                                </span>
+                                <span>{pct}%</span>
+                            </div>
+                            <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-white/10">
+                                <div
+                                    className="h-full rounded-full bg-gradient-to-r from-sky-400 to-indigo-500"
+                                    style={{ width: `${pct}%` }}
+                                />
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            ),
+        },
+        {
+            icon: Crown,
+            title: tr('Сім’ї, гільдії й клани'),
+            text: tr(
+                'Звіти, банк і склад, зміни й події, рейтинг сезону — штаб твоєї команди.',
+            ),
+        },
+        {
+            icon: Layers,
+            title: tr('Колекційні картки'),
+            text: tr(
+                'Персонажі ігор і світів — 16 рангів від N до U. Набір щодня, картки за гру, обмін з друзями.',
+            ),
+            className: 'lg:col-span-2',
+            extra: (
+                <div className="mt-4 flex justify-end">
+                    <MockCards />
+                </div>
+            ),
+        },
+        {
+            icon: CalendarDays,
+            title: tr('Турніри й події'),
+            text: tr(
+                'Сітки турнірів, ігрові вечори, сезонні події з нагородами для профілю.',
+            ),
+        },
+        {
+            icon: Podcast,
+            title: 'GameCast',
+            text: tr(
+                'Живі розмовні ефіри про ігри: ведучі, гості й слухачі. Формати 1 на 1, 2 на 2 або свій, #теми й питання з залу.',
+            ),
+            className: 'lg:col-span-2',
+            extra: <MockGameCast />,
+        },
+        {
+            icon: Gamepad2,
+            title: tr('Ігри й бібліотека'),
+            text: tr(
+                'Імпорт бібліотеки Steam, список «хочу/граю/пройшов», знижки й безкоштовні роздачі ігор.',
+            ),
+            extra: (
+                <div
+                    className="mt-4 flex items-center gap-2 rounded-xl bg-white/[0.05] p-2.5 text-xs"
+                    aria-hidden
+                >
+                    <Gift className="size-4 shrink-0 text-emerald-400" />
+                    <span className="flex-1 truncate font-medium text-white/80">
+                        {tr('Роздача тижня')}
+                    </span>
+                    <span className="rounded-md bg-emerald-400/15 px-1.5 py-0.5 font-semibold text-emerald-400">
+                        −100%
+                    </span>
+                </div>
+            ),
+        },
+        {
+            icon: Lock,
+            title: tr('Приватність'),
+            text: tr(
+                'Закритий профіль, видимість постів, двофакторний вхід і ключі доступу.',
+            ),
+        },
+    ];
+
     return (
         <>
-            <Head title={tr('Соціальна мережа для геймерів і кіноманів')} />
+            <Head title={tr('Соціальна мережа для гравців')} />
             <SiteBackground />
             <Seasonal />
-
-            <header className="fixed inset-x-0 top-0 z-40 pt-[env(safe-area-inset-top)]">
-                <div className="liquid-glass liquid-glass--dense mx-2 mt-2 flex h-14 items-center gap-3 rounded-[22px] px-3 sm:mx-3 sm:px-4 xl:mx-auto xl:max-w-[1240px]">
-                    {/* На вузьких екранах (чи з великим системним шрифтом) — лише знак, щоб кнопки не вилазили за край. */}
-                    <Logo compact className="min-[400px]:hidden" />
-                    <Logo className="max-[399px]:hidden" />
-                    <nav className="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2">
-                        <Link
-                            href={login()}
-                            className="rounded-xl px-3 py-2 text-sm font-medium whitespace-nowrap text-white/75 transition hover:bg-white/[0.06] hover:text-white sm:px-4"
-                        >
-                            {tr('Увійти')}
-                        </Link>
-                        {canRegister && (
-                            <Link
-                                href={register()}
-                                className="btn-glow rounded-xl px-3.5 py-2 text-sm font-semibold whitespace-nowrap sm:px-4"
-                            >
-                                {tr('Реєстрація')}
-                            </Link>
-                        )}
-                    </nav>
-                </div>
-            </header>
+            <GuestHeader />
 
             <main id="main-content" className="relative">
-                <section className="mx-auto grid max-w-[1240px] grid-cols-1 items-center gap-14 px-5 pt-32 pb-20 lg:grid-cols-[1.05fr_1fr] lg:pt-40">
-                    <div className="animate-rise">
-                        <span className="glass inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-medium text-white/75">
-                            <Sparkles className="size-3.5 text-gc-violet-300" />
-                            {tagline || tr('Соціальна мережа нового покоління')}
+                <section className="mx-auto grid max-w-[1240px] grid-cols-1 items-center gap-14 px-5 pt-32 pb-16 lg:grid-cols-[1.05fr_1fr] lg:pt-40">
+                    <m.div
+                        initial={reduce ? false : { opacity: 0, y: 14 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={motionOr(reduce, RISE)}
+                    >
+                        <span className="glass inline-flex items-center gap-2 rounded-chip px-3.5 py-1.5 text-xs font-medium text-white/75">
+                            <Sparkles className="size-3.5 text-sky-400" />
+                            {tagline || tr('Соцмережа для тих, хто грає разом')}
                         </span>
-                        <h1 className="mt-6 font-display text-[clamp(2.6rem,6vw,5rem)] leading-[1.02] font-extrabold tracking-tight text-white">
-                            {tr('Грай. Дивись.')}
+                        <h1 className="mt-6 font-display text-[clamp(2.6rem,6vw,4.8rem)] leading-[1.02] font-extrabold tracking-tight text-white">
+                            {tr('Твоя гра.')}
                             <br />
-                            <span className="text-gradient">
-                                {tr('Спілкуйся.')}
-                            </span>
+                            {tr('Твоя команда.')}
                         </h1>
-                        <p className="mt-6 max-w-lg text-[17px] leading-relaxed text-white/55">
+                        <p className="mt-6 max-w-lg text-[17px] leading-relaxed text-white/60">
                             {tr(
-                                'GameCon — місце, де живуть твої друзі, команди, улюблені ігри та кіно. Знайоме з першого кліку, неймовірне з першого погляду.',
+                                'Друзі, сервери GTA RP, сім’ї й клани, голосові кімнати, турніри та колекційні картки — усе, що потрібно, щоб грати не самому.',
                             )}
                         </p>
 
-                        {/* Телефон: кнопки однакової ширини одна під одною, значок Google Play по центру. */}
                         <div className="mt-9 grid gap-3 sm:flex sm:flex-wrap sm:items-center">
                             {canRegister && (
                                 <Link
@@ -244,19 +427,19 @@ export default function Welcome({
                             )}
                             <Link
                                 href={login()}
-                                className="glass inline-flex h-13 items-center justify-center rounded-2xl px-7 text-[15px] font-semibold text-white/85 transition hover:border-white/20 hover:text-white"
+                                className="glass inline-flex h-13 items-center justify-center rounded-2xl px-7 text-[15px] font-semibold text-white/85 transition hover:text-white"
                             >
                                 {tr('У мене вже є акаунт')}
                             </Link>
-                            <PlayStoreLink className="mt-1 justify-self-center sm:mt-0" />
+                            <AppPageButton className="justify-center sm:justify-start" />
                         </div>
 
-                        <div className="mt-10 flex items-center gap-4">
+                        <div className="mt-9 flex items-center gap-4">
                             <div className="flex -space-x-2.5">
-                                {members.slice(0, 6).map((m) => (
+                                {members.slice(0, 6).map((mb) => (
                                     <UserAvatar
-                                        key={m.id}
-                                        user={m}
+                                        key={mb.id}
+                                        user={mb}
                                         size="sm"
                                         showOnline={false}
                                         className="rounded-full border-2 border-background"
@@ -272,30 +455,54 @@ export default function Welcome({
                                         'учасників',
                                     ])}
                                 </div>
-                                <div className="flex items-center gap-1.5 text-white/45">
-                                    <span className="size-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px] shadow-emerald-400" />
+                                <div className="flex items-center gap-1.5 text-white/50">
+                                    <span className="size-1.5 rounded-full bg-emerald-400" />
                                     {stats.online} {tr('зараз онлайн')}
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    </m.div>
 
-                    <div className="relative hidden h-[560px] lg:block">
-                        <div className="absolute inset-0 m-auto size-[460px] rounded-full bg-gradient-brand opacity-25 blur-[90px]" />
-                        <div className="absolute top-6 left-8 z-10">
+                    <div className="relative hidden h-[540px] lg:block">
+                        <div className="absolute inset-0 m-auto size-[440px] rounded-full bg-sky-500/20 blur-[100px]" />
+                        <m.div
+                            initial={reduce ? false : { opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={motionOr(reduce, {
+                                ...RISE,
+                                delay: 0.1,
+                            })}
+                            className="absolute top-8 left-6 z-10"
+                        >
                             <MockPost />
-                        </div>
-                        <div className="absolute top-0 right-0 z-20">
-                            <MockChat />
-                        </div>
-                        <div className="absolute right-6 bottom-10 z-20">
-                            <MockMovie />
-                        </div>
+                        </m.div>
+                        <m.div
+                            initial={reduce ? false : { opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={motionOr(reduce, {
+                                ...RISE,
+                                delay: 0.2,
+                            })}
+                            className="absolute top-0 right-0 z-20"
+                        >
+                            <MockVoice />
+                        </m.div>
+                        <m.div
+                            initial={reduce ? false : { opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={motionOr(reduce, {
+                                ...RISE,
+                                delay: 0.3,
+                            })}
+                            className="absolute right-8 bottom-6 z-20"
+                        >
+                            <MockCards />
+                        </m.div>
                     </div>
                 </section>
 
                 <section className="mx-auto max-w-[1240px] px-5 pb-10">
-                    <div className="glass grid grid-cols-3 divide-x divide-white/[0.06] rounded-3xl py-6">
+                    <Reveal className="glass grid grid-cols-3 divide-x divide-white/[0.08] rounded-2xl py-6">
                         {[
                             {
                                 value: compactNumber(stats.users),
@@ -311,97 +518,128 @@ export default function Welcome({
                             },
                         ].map((s) => (
                             <div key={s.label} className="text-center">
-                                <div className="text-gradient font-display text-3xl font-bold sm:text-4xl">
+                                <div className="font-display text-3xl font-bold text-white sm:text-4xl">
                                     {s.value}
                                 </div>
-                                <div className="mt-1 text-xs text-white/40">
+                                <div className="mt-1 text-xs text-white/50">
                                     {s.label}
                                 </div>
                             </div>
                         ))}
+                    </Reveal>
+                </section>
+
+                <section className="mx-auto max-w-[1240px] px-5 py-16">
+                    <Reveal className="max-w-2xl">
+                        <h2 className="font-display text-[clamp(1.9rem,3.6vw,2.8rem)] leading-tight font-bold text-white">
+                            {tr('Усе для гри разом — в одному місці')}
+                        </h2>
+                        <p className="mt-3 text-white/55">
+                            {tr(
+                                'Від першого «го катку?» до турніру сім’ї: чати, сервери, команди й нагороди.',
+                            )}
+                        </p>
+                    </Reveal>
+
+                    <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                        {tiles.map((t, i) => (
+                            <Reveal
+                                key={t.title}
+                                delay={Math.min(i, 6) * 0.05}
+                                className={cn(
+                                    'glass rounded-2xl p-6',
+                                    t.className,
+                                )}
+                            >
+                                <span className="flex size-11 items-center justify-center rounded-xl bg-sky-500/15 text-sky-400">
+                                    <t.icon className="size-5" aria-hidden />
+                                </span>
+                                <h3 className="mt-4 text-lg font-semibold text-white">
+                                    {t.title}
+                                </h3>
+                                <p className="mt-1.5 text-sm leading-relaxed text-white/55">
+                                    {t.text}
+                                </p>
+                                {t.extra}
+                            </Reveal>
+                        ))}
                     </div>
                 </section>
 
-                <section className="mx-auto max-w-[1240px] px-5 py-20">
-                    <div className="mx-auto max-w-2xl text-center">
-                        <h2 className="font-display text-[clamp(1.9rem,3.6vw,2.8rem)] leading-tight font-bold text-white">
-                            {tr('Усе, що ти любиш,')}{' '}
-                            <span className="text-gradient">
-                                {tr('в одному місці')}
+                <section className="mx-auto max-w-[1240px] px-5 pb-16">
+                    <Reveal className="glass-strong grid items-center gap-8 rounded-3xl p-8 sm:p-10 lg:grid-cols-[1.2fr_1fr]">
+                        <div>
+                            <h2 className="font-display text-[clamp(1.6rem,3vw,2.3rem)] font-bold text-white">
+                                {tr('Для власників серверів і лідерів сімей')}
+                            </h2>
+                            <ul className="mt-5 space-y-3 text-sm text-white/70">
+                                {[
+                                    tr(
+                                        'Віджет для сайту сервера: онлайн наживо, топ сімей, кнопка голосування.',
+                                    ),
+                                    tr(
+                                        'Значок перевіреного сервера й публічний рейтинг сімей.',
+                                    ),
+                                    tr(
+                                        'Штаб сім’ї: анкета новачка, зміни й чергування, підсумки сезону картинкою для Discord.',
+                                    ),
+                                ].map((line) => (
+                                    <li key={line} className="flex gap-3">
+                                        <BadgeCheck className="mt-0.5 size-4 shrink-0 text-sky-400" />
+                                        {line}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                        <div className="flex flex-col items-start gap-3 lg:items-end">
+                            <span className="flex items-center gap-2 text-sm text-white/60">
+                                <UsersRound className="size-4" />
+                                {tr('Безкоштовно для серверів і спільнот')}
                             </span>
-                        </h2>
-                        <p className="mt-4 text-white/50">
-                            {tr(
-                                'Модульна платформа: нові розділи вмикаються без зупинки сайту.',
-                            )}
-                        </p>
-                    </div>
-
-                    <div className="mt-14 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                        {FEATURES.map(({ icon: Icon, title, text, tone }) => (
-                            <div
-                                key={title}
-                                className="glass group relative overflow-hidden rounded-3xl p-6 transition duration-300 hover:-translate-y-1 hover:border-white/15"
-                            >
-                                <div
-                                    className={`absolute -top-16 -right-16 size-40 rounded-full bg-gradient-to-br ${tone} opacity-0 blur-3xl transition duration-500 group-hover:opacity-40`}
-                                />
-                                <span
-                                    className={`relative flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br ${tone} shadow-[0_10px_30px_-10px_rgb(109_93_252/0.9)]`}
+                            {canRegister && (
+                                <Link
+                                    href={register()}
+                                    className="btn-glow inline-flex h-12 items-center gap-2 rounded-2xl px-6 text-[15px] font-semibold"
                                 >
-                                    <Icon
-                                        aria-hidden
-                                        className="size-[22px] text-white"
-                                    />
-                                </span>
-                                <h3 className="relative mt-5 flex items-center gap-2 text-lg font-semibold text-white">
-                                    {title}
-                                </h3>
-                                <p className="relative mt-2 text-sm leading-relaxed text-white/50">
-                                    {text}
-                                </p>
-                            </div>
-                        ))}
-                    </div>
-
-                    <div className="mt-6 flex flex-wrap justify-center gap-2 text-xs text-white/40">
-                        {[
-                            { icon: ImageIcon, label: tr('Фотоальбоми') },
-                            { icon: Music2, label: tr('Музика') },
-                            { icon: CalendarDays, label: tr('Події') },
-                            { icon: UsersRound, label: tr('Спільноти') },
-                        ].map(({ icon: Icon, label }) => (
-                            <span
-                                key={label}
-                                className="glass inline-flex items-center gap-1.5 rounded-full px-3 py-1.5"
-                            >
-                                <Icon className="size-3.5" /> {label}
-                            </span>
-                        ))}
-                    </div>
+                                    {tr('Додати свій сервер')}
+                                </Link>
+                            )}
+                        </div>
+                    </Reveal>
                 </section>
 
                 <section className="mx-auto max-w-[1240px] px-5 pb-24">
-                    <div className="gradient-border glass-strong relative overflow-hidden rounded-[32px] px-8 py-14 text-center sm:px-16">
-                        <div className="absolute inset-0 bg-gradient-brand opacity-[0.12]" />
-                        <h2 className="relative font-display text-[clamp(1.8rem,3.4vw,2.6rem)] font-bold text-white">
-                            {tr('Твоя команда вже тут')}
-                        </h2>
-                        <p className="relative mx-auto mt-3 max-w-md text-white/55">
-                            {tr(
-                                'Реєстрація займає хвилину. Без реклами в стрічці друзів.',
-                            )}
-                        </p>
-                        {canRegister && (
-                            <Link
-                                href={register()}
-                                className="btn-glow relative mt-8 inline-flex h-13 items-center gap-2 rounded-2xl px-8 text-[15px] font-semibold text-white"
-                            >
-                                {tr('Приєднатися безкоштовно')}{' '}
-                                <ArrowRight className="size-4" />
-                            </Link>
-                        )}
-                    </div>
+                    <Reveal className="relative overflow-hidden rounded-3xl px-8 py-14 text-center sm:px-16">
+                        <div
+                            data-on-dark
+                            className="absolute inset-0"
+                            style={{
+                                background:
+                                    'radial-gradient(120% 140% at 0% 0%, #2563eb 0%, transparent 55%), radial-gradient(90% 120% at 100% 100%, #4f46e5 0%, transparent 60%), #0b1220',
+                            }}
+                        />
+                        <div data-on-dark className="relative">
+                            <h2 className="font-display text-[clamp(1.8rem,3.4vw,2.6rem)] font-bold text-white">
+                                {tr('Твоя команда вже тут')}
+                            </h2>
+                            <p className="mx-auto mt-3 max-w-md text-white/70">
+                                {tr(
+                                    'Реєстрація займає хвилину. Без реклами в стрічці друзів.',
+                                )}
+                            </p>
+                            <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+                                {canRegister && (
+                                    <Link
+                                        href={register()}
+                                        className="inline-flex h-13 items-center gap-2 rounded-2xl bg-white px-8 text-[15px] font-semibold text-[#0b1220]"
+                                    >
+                                        {tr('Приєднатися безкоштовно')}
+                                    </Link>
+                                )}
+                                <AppPageButton onDark />
+                            </div>
+                        </div>
+                    </Reveal>
                 </section>
             </main>
 

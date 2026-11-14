@@ -1,5 +1,6 @@
 import { Link } from '@inertiajs/react';
 import {
+    Captions,
     Download,
     File as FileIcon,
     FileArchive,
@@ -8,6 +9,7 @@ import {
     FileSpreadsheet,
     FileText,
     FileVideo,
+    Eye,
     MessageCircle,
     Pause,
     Play,
@@ -21,6 +23,8 @@ import { formatBytes, formatDuration } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import type { ChatAttachment, ContactCard } from '@/types';
 import { tr } from '@/lib/i18n';
+import { api } from '@/lib/api';
+import { toast } from 'sonner';
 
 let playing: HTMLAudioElement | null = null;
 
@@ -29,10 +33,39 @@ const SPEEDS = [1, 1.5, 2] as const;
 export function VoicePlayer({
     attachment,
     own,
+    transcribeUrl,
 }: {
     attachment: ChatAttachment;
     own: boolean;
+    /** Адреса розшифровки (плагін voice_transcripts); без неї кнопки «Текст» немає. */
+    transcribeUrl?: string | null;
 }) {
+    const [transcript, setTranscript] = useState<string | null>(
+        attachment.transcript ?? null,
+    );
+    const [transcribing, setTranscribing] = useState(false);
+    const [showText, setShowText] = useState(false);
+    const transcribe = () => {
+        if (transcript !== null) {
+            setShowText((v) => !v);
+            return;
+        }
+        if (!transcribeUrl) return;
+        setTranscribing(true);
+        api<{ text: string }>('POST', transcribeUrl)
+            .then((d) => {
+                setTranscript(d.text);
+                setShowText(true);
+            })
+            .catch((e: unknown) =>
+                toast.error(
+                    e instanceof Error
+                        ? e.message
+                        : tr('Не вдалося розшифрувати.'),
+                ),
+            )
+            .finally(() => setTranscribing(false));
+    };
     const audioRef = useRef<HTMLAudioElement | null>(null);
     const [isPlaying, setPlaying] = useState(false);
     const [progress, setProgress] = useState(0);
@@ -122,9 +155,7 @@ export function VoicePlayer({
                 onClick={toggle}
                 className={cn(
                     'flex size-10 shrink-0 items-center justify-center rounded-full transition hover:scale-105',
-                    own
-                        ? 'bg-white text-[#5b4cf0]'
-                        : 'bg-gradient-brand text-white shadow-[0_0_18px_-4px_rgb(124_92_255/0.9)]',
+                    own ? 'bg-white text-[#1d6fe0]' : 'bg-sky-500 text-white',
                 )}
                 aria-label={isPlaying ? tr('Пауза') : tr('Відтворити')}
             >
@@ -158,7 +189,7 @@ export function VoicePlayer({
                                             ? 'bg-white'
                                             : 'bg-white/40'
                                         : active
-                                          ? 'bg-gc-lilac-400'
+                                          ? 'bg-sky-400'
                                           : 'bg-white/25',
                                 )}
                                 style={{
@@ -191,7 +222,34 @@ export function VoicePlayer({
                     >
                         {speed}×
                     </button>
+                    {(transcribeUrl || transcript !== null) && (
+                        <button
+                            type="button"
+                            onClick={transcribe}
+                            disabled={transcribing}
+                            aria-expanded={showText}
+                            className={cn(
+                                'inline-flex items-center gap-1 rounded-md px-1.5 py-px text-xs font-semibold transition disabled:opacity-60',
+                                own
+                                    ? 'bg-white/15 hover:bg-white/25'
+                                    : 'bg-white/[0.07] hover:bg-white/15',
+                            )}
+                        >
+                            <Captions className="size-3.5" />
+                            {transcribing ? tr('Розпізнаємо…') : tr('Текст')}
+                        </button>
+                    )}
                 </div>
+                {showText && transcript !== null && (
+                    <p
+                        className={cn(
+                            'mt-1.5 text-sm leading-snug whitespace-pre-wrap',
+                            own ? 'text-white/90' : 'text-white/80',
+                        )}
+                    >
+                        {transcript || tr('Слів не розпізнано.')}
+                    </p>
+                )}
             </div>
         </div>
     );
@@ -210,7 +268,7 @@ function fileVisual(name: string | null | undefined, mime?: string | null) {
         return { icon: FileAudio, tone: 'from-gc-pink to-gc-purple' };
     }
     if (mime?.startsWith('video/')) {
-        return { icon: FileVideo, tone: 'from-rose-400 to-gc-pink' };
+        return { icon: FileVideo, tone: 'from-red-400 to-gc-pink' };
     }
     if (['js', 'ts', 'php', 'json', 'html', 'css', 'py', 'cs'].includes(ext)) {
         return { icon: FileCode, tone: 'from-gc-cyan to-gc-blue' };
@@ -225,25 +283,26 @@ function fileVisual(name: string | null | undefined, mime?: string | null) {
 export function FileAttachment({
     attachment,
     own,
+    onPreview,
 }: {
     attachment: ChatAttachment;
     own: boolean;
+    onPreview?: (attachment: ChatAttachment) => void;
 }) {
     const { icon: Icon, tone } = fileVisual(attachment.name, attachment.mime);
     const ext = attachment.name?.split('.').pop()?.toUpperCase();
-
-    return (
+    const card = (
         <a
             href={attachment.url}
             download={attachment.name ?? true}
             className={cn(
                 'group/file flex w-[min(300px,62vw)] items-center gap-3 rounded-[14px] p-2 transition',
-                own ? 'hover:bg-white/10' : 'hover:bg-white/[0.05]',
+                own ? 'hover:bg-white/10' : 'hover:bg-[var(--gc-l3)]',
             )}
         >
             <span
                 className={cn(
-                    'relative flex size-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br text-white shadow-lg',
+                    'relative flex size-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br text-white',
                     tone,
                 )}
             >
@@ -265,6 +324,32 @@ export function FileAttachment({
                 </span>
             </span>
         </a>
+    );
+
+    if (!attachment.preview || !onPreview) return card;
+
+    // Документ, який можна відкрити тут: кнопка «Переглянути» поруч із карткою.
+    return (
+        <div className="flex items-center gap-1">
+            {card}
+            <button
+                type="button"
+                onClick={(event) => {
+                    event.stopPropagation();
+                    onPreview(attachment);
+                }}
+                aria-label={tr('Переглянути')}
+                title={tr('Переглянути')}
+                className={cn(
+                    'flex size-9 shrink-0 items-center justify-center rounded-xl transition',
+                    own
+                        ? 'text-white/80 hover:bg-white/15'
+                        : 'text-white/55 hover:bg-[var(--gc-l3)] hover:text-white',
+                )}
+            >
+                <Eye className="size-4" />
+            </button>
+        </div>
     );
 }
 
@@ -293,7 +378,9 @@ export function ContactAttachment({
                 <span className="min-w-0 flex-1">
                     <span className="flex items-center gap-1 truncate text-[14.5px] font-semibold">
                         {contact.name}
-                        {contact.is_verified && <VerifiedBadge />}
+                        {contact.is_verified && (
+                            <VerifiedBadge kind={contact.verified_kind} />
+                        )}
                     </span>
                     <span
                         className={cn(
@@ -307,8 +394,8 @@ export function ContactAttachment({
             </div>
             <div
                 className={cn(
-                    'mt-2.5 grid grid-cols-2 gap-1.5 border-t pt-2',
-                    own ? 'border-white/20' : 'border-white/[0.07]',
+                    'mt-2.5 grid grid-cols-2 gap-1.5 pt-2',
+                    own ? '' : '',
                 )}
             >
                 <Link
@@ -317,7 +404,7 @@ export function ContactAttachment({
                         'flex items-center justify-center gap-1.5 rounded-lg py-1.5 text-xs font-semibold transition',
                         own
                             ? 'bg-white/15 hover:bg-white/25'
-                            : 'bg-white/[0.06] hover:bg-white/10',
+                            : 'gc-solid-2 hover:bg-white/10',
                     )}
                 >
                     <UserRound className="size-3.5" /> {tr('Профіль')}

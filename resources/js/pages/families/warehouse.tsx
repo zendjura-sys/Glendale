@@ -132,17 +132,17 @@ export default function FamilyWarehouse(props: Props) {
                         )}
                         {grouped.map((g) => (
                             <Panel key={g.key} title={g.label} icon={Package}>
-                                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
+                                <div className="grid grid-cols-1 gap-2 min-[1920px]:grid-cols-4 min-[2400px]:grid-cols-5 sm:grid-cols-2 xl:grid-cols-3">
                                     {g.items.map((item) => (
                                         <div
                                             key={item.id}
                                             className={cn(
-                                                'rounded-2xl p-3 ring-1',
+                                                'rounded-2xl p-3',
                                                 item.is_archived
-                                                    ? 'bg-white/[0.02] opacity-50 ring-white/[0.04]'
+                                                    ? 'gc-solid-2 opacity-50'
                                                     : item.low
-                                                      ? 'bg-rose-500/[0.07] ring-rose-400/25'
-                                                      : 'bg-white/[0.03] ring-white/[0.06]',
+                                                      ? 'bg-red-500/[0.07]'
+                                                      : 'gc-solid-2',
                                             )}
                                         >
                                             <div className="flex items-start gap-2">
@@ -175,7 +175,7 @@ export default function FamilyWarehouse(props: Props) {
                                                     className={cn(
                                                         'font-display text-xl font-bold tabular-nums',
                                                         item.low
-                                                            ? 'text-rose-300'
+                                                            ? 'text-red-400'
                                                             : 'text-white',
                                                     )}
                                                 >
@@ -200,7 +200,7 @@ export default function FamilyWarehouse(props: Props) {
                                                             action: 'take',
                                                         })
                                                     }
-                                                    className="inline-flex h-8 flex-1 items-center justify-center gap-1 rounded-lg bg-white/[0.06] text-xs font-medium text-white/80 hover:bg-white/10 disabled:opacity-30"
+                                                    className="gc-solid-2 inline-flex h-8 flex-1 items-center justify-center gap-1 rounded-lg text-xs font-medium text-white/80 hover:bg-white/10 disabled:opacity-30"
                                                 >
                                                     <ArrowUpFromLine className="size-3.5" />{' '}
                                                     {tr('Взяти')}
@@ -214,7 +214,7 @@ export default function FamilyWarehouse(props: Props) {
                                                             action: 'put',
                                                         })
                                                     }
-                                                    className="inline-flex h-8 flex-1 items-center justify-center gap-1 rounded-lg bg-white/[0.06] text-xs font-medium text-white/80 hover:bg-white/10 disabled:opacity-30"
+                                                    className="gc-solid-2 inline-flex h-8 flex-1 items-center justify-center gap-1 rounded-lg text-xs font-medium text-white/80 hover:bg-white/10 disabled:opacity-30"
                                                 >
                                                     <ArrowDownToLine className="size-3.5" />{' '}
                                                     {tr('Покласти')}
@@ -225,7 +225,7 @@ export default function FamilyWarehouse(props: Props) {
                                                         onClick={() =>
                                                             setEditing(item)
                                                         }
-                                                        className="flex size-8 items-center justify-center rounded-lg text-white/45 hover:bg-white/[0.06] hover:text-white"
+                                                        className="flex size-8 items-center justify-center rounded-lg text-white/45 hover:bg-[var(--gc-l3)] hover:text-white"
                                                         aria-label={tr(
                                                             'Редагувати',
                                                         )}
@@ -272,7 +272,7 @@ export default function FamilyWarehouse(props: Props) {
                                 {top_takers.map((t, i) => (
                                     <li
                                         key={i}
-                                        className="flex items-center gap-2 rounded-xl bg-white/[0.03] px-3 py-2 text-sm"
+                                        className="gc-solid-2 flex items-center gap-2 rounded-xl px-3 py-2 text-sm"
                                     >
                                         <span className="w-5 text-white/40">
                                             {i + 1}
@@ -326,17 +326,17 @@ function LogList({ logs, compact }: { logs: Log[]; compact?: boolean }) {
                     key={l.id}
                     className={cn(
                         'flex items-center gap-3 py-2',
-                        l.is_suspicious && 'rounded-lg bg-rose-500/[0.07] px-2',
+                        l.is_suspicious && 'rounded-lg bg-red-500/[0.07] px-2',
                     )}
                 >
                     <span
                         className={cn(
                             'flex size-8 shrink-0 items-center justify-center rounded-lg',
                             l.action === 'take'
-                                ? 'bg-rose-400/10 text-rose-200'
+                                ? 'bg-red-400/10 text-red-400'
                                 : l.action === 'put'
-                                  ? 'bg-emerald-400/10 text-emerald-200'
-                                  : 'bg-white/[0.06] text-white/60',
+                                  ? 'bg-emerald-400/10 text-emerald-400'
+                                  : 'gc-solid-2 text-white/60',
                         )}
                     >
                         {l.action === 'take' ? (
@@ -360,7 +360,7 @@ function LogList({ logs, compact }: { logs: Log[]; compact?: boolean }) {
                             {kyivDateTime(l.created_at)}
                             {l.comment && ` · ${l.comment}`}
                             {l.is_suspicious && (
-                                <span className="text-rose-300">
+                                <span className="text-red-400">
                                     {' '}
                                     {tr('· понад квоту')}
                                 </span>
@@ -372,7 +372,7 @@ function LogList({ logs, compact }: { logs: Log[]; compact?: boolean }) {
                             href={l.proof_url}
                             target="_blank"
                             rel="noreferrer"
-                            className="text-xs text-gc-lilac-200 hover:underline"
+                            className="text-xs text-sky-400 hover:underline"
                         >
                             {tr('скрін')}
                         </a>
@@ -468,8 +468,8 @@ function MoveDialog({
                         className={cn(
                             'h-9 min-w-12 rounded-lg px-3 text-sm font-medium',
                             form.data.quantity === n
-                                ? 'bg-gradient-brand text-white'
-                                : 'bg-white/[0.05] text-white/60',
+                                ? 'bg-sky-500 text-white'
+                                : 'gc-solid-2 text-white/60',
                         )}
                     >
                         {n}

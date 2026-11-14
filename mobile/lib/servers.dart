@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+
+import 'core/widgets/arctic_glass/arctic_fit_text.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -8,11 +10,13 @@ import 'package:url_launcher/url_launcher.dart';
 
 import 'api.dart';
 import 'characters.dart';
+import 'tournaments.dart';
 import 'extras.dart';
 import 'state.dart';
 import 'theme.dart';
 import 'widgets.dart';
 import 'i18n.dart';
+import 'skeletons.dart';
 
 List<(String, String)> _serverSorts(bool votes) => [
       ('online', tr('За онлайном')),
@@ -76,7 +80,7 @@ class _ServersScreenState extends State<ServersScreen> {
   @override
   Widget build(BuildContext context) {
     final data = page;
-    if (data == null) return const Center(child: CircularProgressIndicator(strokeWidth: 2.4));
+    if (data == null) return const ScreenSkeleton();
     final stats = mapOf(data['stats']);
     final servers = maps(data['servers']);
     final mine = maps(data['my_suggestions']);
@@ -252,7 +256,7 @@ class ServerCard extends StatelessWidget {
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [
-                Flexible(child: Text(text(server['name']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: display(16))),
+                Flexible(child: FitText(text(server['name']) ?? '', style: display(16))),
                 if (server['is_featured'] == true) const Padding(padding: EdgeInsets.only(left: 6), child: Icon(LucideIcons.sparkles, size: 16, color: gold)),
               ]),
               const SizedBox(height: 6),
@@ -276,7 +280,7 @@ class ServerCard extends StatelessWidget {
           ]),
           if (progress != null) ...[
             const SizedBox(height: 6),
-            ClipRRect(borderRadius: BorderRadius.circular(4), child: LinearProgressIndicator(value: progress, minHeight: 4, color: primary, backgroundColor: Colors.white.withValues(alpha: 0.06))),
+            ClipRRect(borderRadius: BorderRadius.circular(4), child: LinearProgressIndicator(value: progress, minHeight: 4, color: primary, backgroundColor: fg.withValues(alpha: 0.06))),
           ],
         ] else if (server['discord_members'] != null)
           Text(tr('{v} у Discord · {v2} в мережі', {'v': compact(server['discord_members']), 'v2': compact(server['discord_online'])}), style: body(12.5, color: muted)),
@@ -291,11 +295,11 @@ class ServerCard extends StatelessWidget {
                 },
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(10), border: Border.all(color: line)),
+                  decoration: BoxDecoration(color: fg.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(10)),
                   child: Row(mainAxisSize: MainAxisSize.min, children: [
-                    const Icon(LucideIcons.copy, size: 13, color: muted),
+                    Icon(LucideIcons.copy, size: 13, color: muted),
                     const SizedBox(width: 6),
-                    Flexible(child: Text(text(server['connect'])!, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: soft).copyWith(fontFamily: 'monospace'))),
+                    Flexible(child: FitText(text(server['connect'])!, style: body(12, color: soft).copyWith(fontFamily: 'monospace'))),
                   ]),
                 ),
               ),
@@ -437,6 +441,16 @@ class ServerScreen extends StatelessWidget {
               const SizedBox(height: 12),
               VotePanel(slug: slug, votes: mapOf(data['votes'])),
             ],
+            if (data['tournaments'] is Map && maps(mapOf(data['tournaments'])['list']).isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Glass(
+                padding: const EdgeInsets.fromLTRB(12, 14, 12, 6),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  CardTitle(tr('Турніри'), icon: LucideIcons.trophy, trailing: tr('Усі'), onTrailing: () => context.push('/tournaments')),
+                  for (final t in maps(mapOf(data['tournaments'])['list'])) TournamentTile(tournament: t, showServer: false),
+                ]),
+              ),
+            ],
             if (data['characters'] is List) ...[
               const SizedBox(height: 12),
               CharactersPanel(
@@ -478,7 +492,7 @@ class ServerScreen extends StatelessWidget {
                           Avatar(url: text(families[i]['logo_url']), name: text(families[i]['tag']) ?? '?', size: 40, square: true),
                         ]),
                       ),
-                      title: Text('[${families[i]['tag']}] ${families[i]['name']}', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14.5, weight: FontWeight.w600)),
+                      title: FitText('[${families[i]['tag']}] ${families[i]['name']}', style: body(14.5, weight: FontWeight.w600)),
                       subtitle: Text(tr('{v} учасників · {v2} балів', {'v': families[i]['members_count'] ?? 0, 'v2': compact(families[i]['score'])}), style: body(12, color: muted)),
                       onTap: () => context.push('/families/${families[i]['slug']}'),
                     ),
@@ -540,7 +554,7 @@ class _VoteTopsState extends State<VoteTops> {
                   const SizedBox(width: 10),
                   Expanded(
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text(text(rows[i]['name']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14, weight: FontWeight.w600)),
+                      FitText(text(rows[i]['name']) ?? '', style: body(14, weight: FontWeight.w600)),
                       Text(text(rows[i]['platform_label']) ?? '', style: body(11.5, color: muted)),
                     ]),
                   ),

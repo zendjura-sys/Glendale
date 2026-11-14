@@ -1,5 +1,7 @@
+import { QuoteSelection } from '@/components/gc/quote-selection';
 import { Link, router, usePage } from '@inertiajs/react';
 import {
+    BookmarkPlus,
     ChevronRight,
     Clock,
     Earth,
@@ -19,8 +21,9 @@ import {
     UsersRound,
     Volume2,
     VolumeX,
+    ListOrdered,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import {
     DropdownMenu,
@@ -37,13 +40,22 @@ import { cn } from '@/lib/utils';
 import type { PostItem } from '@/types';
 import { MentionText } from './mention-text';
 import { SaveButton } from './save-button';
+import { SeriesPicker } from './series-picker';
 import { Comments } from './comments';
 import { RoleBadge } from '@/components/communities/role-badge';
 import { CommunityAvatar } from './community-avatar';
 import { ReactionBar } from './reaction-bar';
 import { MediaGrid } from './media-grid';
 import { UserAvatar } from './user-avatar';
-import { PlusBadge, plusNameStyle } from './plus';
+import { usePlugin } from '@/lib/plugins';
+import { nameDisplayProps, PlusBadge } from './plus';
+import {
+    CosmeticBadge,
+    cosmeticNameStyle,
+} from '@/components/season/cosmetics';
+import { AffiliationBadges } from './affiliation-badges';
+import { UserRoles, UserTitle } from '@/components/gc/user-title';
+import { StaffBadge } from './staff-badge';
 import { VerifiedBadge } from './verified-badge';
 import {
     TranslateToggle,
@@ -75,14 +87,17 @@ export function PostCard({
         expanded || post.comments.length > 0,
     );
     const [focusComment, setFocusComment] = useState(false);
+    const [quote, setQuote] = useState<{ text: string } | null>(null);
     const [fullText, setFullText] = useState(expanded);
     const [deleted, setDeleted] = useState(false);
     const [poll, setPoll] = useState(post.poll ?? null);
+    const laterOn = usePlugin('read_later');
     const [spoilerOpen, setSpoilerOpen] = useState(false);
     const hideSpoilers = usePage().props.auth.user?.hide_spoilers === true;
     const [editing, setEditing] = useState(false);
     const [editBody, setEditBody] = useState(post.body ?? '');
     const [quoting, setQuoting] = useState(false);
+    const [seriesOpen, setSeriesOpen] = useState(false);
     const [quoteBody, setQuoteBody] = useState('');
 
     const Visibility = visibilityMeta[post.visibility].icon;
@@ -91,6 +106,17 @@ export function PostCard({
     const { locale } = usePage().props;
     const body = translation.text ?? post.body ?? '';
     const isLong = body.length > LONG_TEXT;
+
+    // Гаряча клавіша L (components/gc/hotkeys.tsx): вподобати вибраний запис.
+    const articleRef = useRef<HTMLElement>(null);
+    const likeRef = useRef<() => void>(() => undefined);
+    useEffect(() => {
+        const el = articleRef.current;
+        const like = () => likeRef.current();
+        el?.addEventListener('gc:like', like);
+
+        return () => el?.removeEventListener('gc:like', like);
+    }, []);
 
     const pickReaction = async (next: string) => {
         const previous = reaction;
@@ -112,6 +138,7 @@ export function PostCard({
             setLikes(post.likes_count);
         }
     };
+    likeRef.current = () => void pickReaction(reaction ?? 'like');
 
     const copyLink = async () => {
         await navigator.clipboard?.writeText(
@@ -125,7 +152,10 @@ export function PostCard({
     }
 
     return (
-        <article className="glass animate-rise rounded-3xl p-4 sm:p-5">
+        <article
+            ref={articleRef}
+            className="gc-post animate-rise p-4 data-[hotkey-focus]:rounded-2xl data-[hotkey-focus]:ring-1 data-[hotkey-focus]:ring-primary/40 sm:p-5"
+        >
             <header className="flex items-start gap-3">
                 <Link href={publisherHref} className="shrink-0">
                     {post.publisher ? (
@@ -138,20 +168,45 @@ export function PostCard({
                     <div className="flex flex-wrap items-center gap-x-1.5 text-[15px] leading-tight">
                         <Link
                             href={publisherHref}
-                            className="flex items-center gap-1 font-semibold text-white hover:underline"
+                            className="flex max-w-full min-w-0 flex-wrap items-center gap-1 font-semibold text-white hover:underline"
                         >
                             {post.publisher ? (
                                 post.publisher.name
                             ) : (
-                                <span style={plusNameStyle(post.author.plus)}>
+                                <span
+                                    {...nameDisplayProps(
+                                        post.author.plus,
+                                        cosmeticNameStyle(
+                                            post.author.cosmetics,
+                                        ),
+                                    )}
+                                >
                                     {post.author.name}
                                 </span>
                             )}
                             {(post.publisher ?? post.author).is_verified && (
                                 <VerifiedBadge />
                             )}
+                            {!post.publisher && (
+                                <StaffBadge role={post.author.staff} />
+                            )}
+                            {!post.publisher && (
+                                <UserTitle user={post.author} />
+                            )}
+                            {!post.publisher && (
+                                <UserRoles
+                                    roles={post.author.roles}
+                                    limit={1}
+                                />
+                            )}
                             {!post.publisher && post.author.plus && (
                                 <PlusBadge />
+                            )}
+                            {!post.publisher && (
+                                <CosmeticBadge
+                                    cosmetics={post.author.cosmetics}
+                                    className="size-4"
+                                />
                             )}
                         </Link>
                         {post.badge && (
@@ -159,6 +214,9 @@ export function PostCard({
                                 title={post.badge.title}
                                 color={post.badge.color}
                             />
+                        )}
+                        {!post.publisher && (
+                            <AffiliationBadges badges={post.author.badges} />
                         )}
                         {post.wall && (
                             <>
@@ -188,33 +246,53 @@ export function PostCard({
                         {post.tag && (
                             <Link
                                 href={post.tag.href}
-                                className="ml-1 inline-flex items-center gap-1 rounded-full bg-white/[0.06] px-2 py-0.5 text-xs font-medium text-white/70 hover:text-white"
+                                className="gc-solid-2 ml-1 inline-flex items-center gap-1 rounded-control px-2 py-0.5 text-xs font-medium text-white/70 hover:text-white"
                             >
                                 <Hash className="size-3" />
                                 {post.tag.name}
                             </Link>
                         )}
                         {post.pending && (
-                            <span className="ml-1 inline-flex items-center gap-1 rounded-full bg-gc-amber/15 px-2 py-0.5 text-xs font-medium text-gc-amber">
+                            <span className="ml-1 inline-flex items-center gap-1 rounded-chip bg-gc-amber/15 px-2 py-0.5 text-xs font-medium text-gc-amber">
                                 <Clock className="size-3" />{' '}
                                 {tr('На перевірці')}
                             </span>
                         )}
                         {post.is_pinned && (
-                            <span className="ml-1 inline-flex items-center gap-1 rounded-full bg-gc-blue/15 px-2 py-0.5 text-xs font-medium text-[#9fb6ff]">
+                            <span className="ml-1 inline-flex items-center gap-1 rounded-chip bg-gc-blue/15 px-2 py-0.5 text-xs font-medium text-[#9fb6ff]">
                                 <Pin className="size-3" /> {tr('Закріплено')}
                             </span>
+                        )}
+                        {post.series && (
+                            <Link
+                                href={`/series/${post.series.id}`}
+                                className="ml-1 inline-flex max-w-full items-center gap-1 rounded-chip bg-sky-500/15 px-2 py-0.5 text-xs font-medium text-sky-400 hover:text-white"
+                            >
+                                <ListOrdered className="size-3 shrink-0" />
+                                <span className="truncate">
+                                    {tr(
+                                        '{title} · частина {position} з {count}',
+                                        {
+                                            title: post.series.title,
+                                            position: String(
+                                                post.series.position,
+                                            ),
+                                            count: String(post.series.count),
+                                        },
+                                    )}
+                                </span>
+                            </Link>
                         )}
                     </div>
                 </div>
 
                 <DropdownMenu>
-                    <DropdownMenuTrigger className="rounded-full p-1.5 text-white/40 transition outline-none hover:bg-white/[0.06] hover:text-white">
+                    <DropdownMenuTrigger className="rounded-full p-1.5 text-white/40 transition outline-none hover:bg-[var(--gc-l3)] hover:text-white">
                         <MoreHorizontal className="size-5" />
                     </DropdownMenuTrigger>
                     <DropdownMenuContent
                         align="end"
-                        className="glass-strong w-60 rounded-2xl border-white/10 p-1.5 text-white"
+                        className="glass-strong w-60 rounded-2xl p-1.5 text-white"
                     >
                         <DropdownMenuItem
                             className="rounded-lg focus:bg-white/[0.06]"
@@ -222,6 +300,27 @@ export function PostCard({
                         >
                             <Link2 /> {tr('Копіювати посилання')}
                         </DropdownMenuItem>
+                        {laterOn && (
+                            <DropdownMenuItem
+                                className="rounded-lg focus:bg-white/[0.06]"
+                                onSelect={async () => {
+                                    const result = await api<{
+                                        later: boolean;
+                                    }>('POST', `/posts/${post.id}/later`);
+                                    toast.success(
+                                        result.later
+                                            ? tr(
+                                                  'Додано до «Прочитати пізніше»',
+                                              )
+                                            : tr(
+                                                  'Прибрано зі списку «Прочитати пізніше»',
+                                              ),
+                                    );
+                                }}
+                            >
+                                <BookmarkPlus /> {tr('Прочитати пізніше')}
+                            </DropdownMenuItem>
+                        )}
                         {post.can.edit && (
                             <DropdownMenuItem
                                 className="rounded-lg focus:bg-white/[0.06]"
@@ -283,6 +382,17 @@ export function PostCard({
                                     : tr('Заглушити')}
                             </DropdownMenuItem>
                         )}
+                        {post.can.series && (
+                            <DropdownMenuItem
+                                className="rounded-lg focus:bg-white/[0.06]"
+                                onSelect={() => setSeriesOpen(true)}
+                            >
+                                <ListOrdered />{' '}
+                                {post.series
+                                    ? tr('Змінити серію')
+                                    : tr('Додати в серію')}
+                            </DropdownMenuItem>
+                        )}
                         {post.can.pin && (
                             <DropdownMenuItem
                                 className="rounded-lg focus:bg-white/[0.06]"
@@ -304,7 +414,7 @@ export function PostCard({
                             <>
                                 <DropdownMenuSeparator className="bg-white/5" />
                                 <DropdownMenuItem
-                                    className="rounded-lg text-rose-300 focus:bg-rose-500/10 focus:text-rose-200"
+                                    className="rounded-lg text-red-400 focus:bg-red-500/10 focus:text-red-400"
                                     onSelect={() =>
                                         router.delete(`/posts/${post.id}`, {
                                             preserveScroll: true,
@@ -312,7 +422,7 @@ export function PostCard({
                                         })
                                     }
                                 >
-                                    <Trash2 className="text-rose-300" />{' '}
+                                    <Trash2 className="text-red-400" />{' '}
                                     {tr('Видалити запис')}
                                 </DropdownMenuItem>
                             </>
@@ -320,6 +430,14 @@ export function PostCard({
                     </DropdownMenuContent>
                 </DropdownMenu>
             </header>
+
+            {seriesOpen && (
+                <SeriesPicker
+                    postId={post.id}
+                    current={post.series?.id ?? null}
+                    onDone={() => setSeriesOpen(false)}
+                />
+            )}
 
             {quoting && (
                 <form
@@ -345,7 +463,7 @@ export function PostCard({
                         onChange={(event) => setQuoteBody(event.target.value)}
                         rows={3}
                         placeholder={tr('Ваш коментар до цитати…')}
-                        className="w-full resize-none rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white placeholder:text-white/35 focus:outline-none"
+                        className="gc-solid-2 w-full resize-none rounded-2xl px-3 py-2 text-sm text-white placeholder:text-white/35 focus:outline-none"
                     />
                     <div className="flex gap-2">
                         <button
@@ -366,6 +484,33 @@ export function PostCard({
                         </button>
                     </div>
                 </form>
+            )}
+
+            {post.locked && (
+                <Link
+                    href={`/${post.author.username}`}
+                    className="gc-solid-2 mt-3 flex items-center gap-3.5 rounded-2xl p-4 transition hover:bg-[var(--gc-l3)]"
+                >
+                    <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-gc-indigo/20">
+                        <Lock className="size-5 text-sky-400" />
+                    </span>
+                    <span className="min-w-0">
+                        <span className="block text-sm font-semibold text-white">
+                            {tr('Запис для підписників')}
+                        </span>
+                        <span className="block text-sm text-white/55">
+                            {tr('Підтримайте {name}, щоб відкрити', {
+                                name: post.author.name,
+                            })}
+                        </span>
+                    </span>
+                </Link>
+            )}
+            {post.subscribers_only && !post.locked && (
+                <span className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-gc-indigo/15 px-2.5 py-0.5 text-xs text-sky-400">
+                    <Lock className="size-3" />
+                    {tr('Для підписників')}
+                </span>
             )}
 
             {editing ? (
@@ -424,39 +569,48 @@ export function PostCard({
                 </button>
             ) : (
                 body && (
-                    <div className="mt-3.5 text-[15px] leading-relaxed break-words whitespace-pre-line text-white/90">
-                        {isLong && !fullText ? (
-                            <MentionText
-                                text={`${body.slice(0, LONG_TEXT).trimEnd()}…`}
-                            />
-                        ) : (
-                            <MentionText text={body} />
-                        )}
-                        {isLong && !fullText && (
-                            <button
-                                type="button"
-                                onClick={() => setFullText(true)}
-                                className="ml-1 font-medium text-gc-lilac-300 hover:text-white"
-                            >
-                                {tr('Показати повністю')}
-                            </button>
-                        )}
-                        {(!post.lang || post.lang !== locale) && (
-                            <div className="mt-1.5 flex flex-wrap items-center gap-x-2 text-xs text-white/40">
-                                {post.lang && translation.enabled && (
-                                    <span>
-                                        {tr('Оригінал: {language}', {
-                                            language: languageName(
-                                                post.lang,
-                                                locale,
-                                            ),
-                                        })}
-                                    </span>
-                                )}
-                                <TranslateToggle state={translation} />
-                            </div>
-                        )}
-                    </div>
+                    <QuoteSelection
+                        enabled={post.can.comment && post.comments_enabled}
+                        onQuote={(text) => {
+                            setQuote({ text });
+                            setShowComments(true);
+                        }}
+                    >
+                        <div className="mt-3.5 text-[15px] leading-relaxed break-words whitespace-pre-line text-white/90">
+                            {isLong && !fullText ? (
+                                <MentionText
+                                    text={`${body.slice(0, LONG_TEXT).trimEnd()}…`}
+                                    games={post.games}
+                                />
+                            ) : (
+                                <MentionText text={body} games={post.games} />
+                            )}
+                            {isLong && !fullText && (
+                                <button
+                                    type="button"
+                                    onClick={() => setFullText(true)}
+                                    className="ml-1 font-medium text-sky-400 hover:text-white"
+                                >
+                                    {tr('Показати повністю')}
+                                </button>
+                            )}
+                            {(!post.lang || post.lang !== locale) && (
+                                <div className="mt-1.5 flex flex-wrap items-center gap-x-2 text-xs text-white/40">
+                                    {post.lang && translation.enabled && (
+                                        <span>
+                                            {tr('Оригінал: {language}', {
+                                                language: languageName(
+                                                    post.lang,
+                                                    locale,
+                                                ),
+                                            })}
+                                        </span>
+                                    )}
+                                    <TranslateToggle state={translation} />
+                                </div>
+                            )}
+                        </div>
+                    </QuoteSelection>
                 )
             )}
 
@@ -469,7 +623,7 @@ export function PostCard({
             {post.quoted && (
                 <Link
                     href={`/posts/${post.quoted.id}`}
-                    className="mt-3.5 block rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-2.5"
+                    className="gc-solid-2 mt-3.5 block rounded-2xl px-3 py-2.5"
                 >
                     <span className="text-xs text-white/40">
                         {tr('Цитата')}
@@ -488,7 +642,7 @@ export function PostCard({
             {post.shared && (
                 <Link
                     href={post.shared.post_href ?? post.shared.href}
-                    className="mt-3.5 block rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-2.5"
+                    className="gc-solid-2 mt-3.5 block rounded-2xl px-3 py-2.5"
                 >
                     <span className="flex items-center gap-1 text-xs text-white/40">
                         {post.shared.community ? (
@@ -526,10 +680,18 @@ export function PostCard({
                 <MovieCardEmbed movie={post.movie} className="mt-3.5" />
             )}
 
-            {post.card && (
+            {post.card?.kind === 'gif' && (
+                <img
+                    src={post.card.image ?? post.card.href}
+                    alt={post.card.title}
+                    loading="lazy"
+                    className="mt-3.5 max-h-[420px] max-w-full rounded-2xl"
+                />
+            )}
+            {post.card && post.card.kind !== 'gif' && (
                 <Link
                     href={post.card.href}
-                    className="mt-3.5 flex items-center gap-3 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] p-3"
+                    className="gc-solid-2 mt-3.5 flex items-center gap-3 overflow-hidden rounded-2xl p-3"
                 >
                     {post.card.image && (
                         <img
@@ -552,7 +714,7 @@ export function PostCard({
             )}
 
             {poll && (
-                <div className="mt-3.5 space-y-2 rounded-2xl border border-white/10 bg-white/[0.03] p-3">
+                <div className="gc-solid-2 mt-3.5 space-y-2 rounded-2xl p-3">
                     <p className="text-sm font-medium text-white">
                         {poll.question}
                     </p>
@@ -576,10 +738,10 @@ export function PostCard({
                                     setPoll(next);
                                 }}
                                 className={cn(
-                                    'relative w-full overflow-hidden rounded-xl border px-3 py-2 text-left text-sm',
+                                    'relative w-full overflow-hidden rounded-xl px-3 py-2 text-left text-sm',
                                     chosen
-                                        ? 'border-gc-lilac-400/50 text-white'
-                                        : 'border-white/10 text-white/80 hover:border-white/20',
+                                        ? 'text-white'
+                                        : 'text-white/80 hover:border-white/20',
                                 )}
                             >
                                 <span
@@ -590,17 +752,36 @@ export function PostCard({
                                 />
                                 <span className="relative flex items-center justify-between gap-3">
                                     <span>{option.label}</span>
-                                    {poll.voted !== null && (
-                                        <span className="text-xs text-white/50 tabular-nums">
-                                            {share}%
-                                        </span>
-                                    )}
+                                    <span className="flex items-center gap-2">
+                                        {(option.voters?.length ?? 0) > 0 && (
+                                            <span className="flex -space-x-1.5">
+                                                {option.voters?.map((voter) => (
+                                                    <UserAvatar
+                                                        key={voter.id}
+                                                        user={voter}
+                                                        size="xs"
+                                                        showOnline={false}
+                                                        className="size-5 ring-2 ring-black/30"
+                                                    />
+                                                ))}
+                                            </span>
+                                        )}
+                                        {poll.voted !== null && (
+                                            <span className="text-xs text-white/50 tabular-nums">
+                                                {share}%
+                                            </span>
+                                        )}
+                                    </span>
                                 </span>
                             </button>
                         );
                     })}
                     <p className="text-xs text-white/40">
                         {tr('{total} голосів', { total: poll.total })}
+                        {' · '}
+                        {poll.anonymous === false
+                            ? tr('відкрите опитування')
+                            : tr('анонімне')}
                     </p>
                 </div>
             )}
@@ -610,7 +791,7 @@ export function PostCard({
                     href={post.link.url}
                     target="_blank"
                     rel="noreferrer"
-                    className="mt-3.5 flex overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04]"
+                    className="gc-solid-2 mt-3.5 flex overflow-hidden rounded-2xl"
                 >
                     {post.link.thumbnail && (
                         <img
@@ -649,7 +830,7 @@ export function PostCard({
                         setFocusComment(true);
                     }}
                     className={cn(
-                        'inline-flex h-9 items-center gap-1.5 rounded-full bg-white/[0.045] px-3.5 text-sm font-medium text-white/65 transition hover:bg-white/[0.08] hover:text-white',
+                        'gc-vk-pill',
                         !post.comments_enabled &&
                             'pointer-events-none opacity-40',
                     )}
@@ -671,7 +852,7 @@ export function PostCard({
                 <button
                     type="button"
                     onClick={copyLink}
-                    className="inline-flex h-9 items-center gap-1.5 rounded-full bg-white/[0.045] px-3.5 text-sm font-medium text-white/65 transition hover:bg-white/[0.08] hover:text-white"
+                    className="gc-vk-pill"
                     aria-label={tr('Поділитися')}
                 >
                     <Link2 className="size-[18px]" />
@@ -693,6 +874,13 @@ export function PostCard({
                         canComment={post.can.comment}
                         onCountChange={setCommentsCount}
                         autoFocus={focusComment}
+                        quote={quote}
+                        slowMode={post.slow_mode ?? null}
+                        slowModeEndpoint={
+                            post.can.slow_mode
+                                ? `/posts/${post.id}/slow-mode`
+                                : null
+                        }
                     />
                 </div>
             )}

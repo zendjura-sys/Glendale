@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Http\Middleware\HandleInertiaRequests;
 use App\Models\Conversation;
 use App\Models\ConversationParticipant;
 use App\Models\Family;
@@ -16,13 +17,18 @@ use App\Models\FamilyReport;
 use App\Models\FamilyTransaction;
 use App\Models\GtaServer;
 use App\Models\Message;
+use App\Models\Post;
 use App\Models\User;
 use App\Services\Families\FamilyBank;
 use App\Services\Families\FamilyNotifier;
 use App\Services\Families\FamilyRating;
 use App\Services\Families\FamilyService;
 use App\Services\Families\WeeklyDigest;
+use App\Services\ImageStorage;
 use App\Services\MessengerPresenter;
+use App\Services\PostPresenter;
+use App\Services\Profile\Affiliations;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
@@ -136,6 +142,76 @@ class FamiliesTest extends TestCase
         $this->assertSame(count(FamilyItem::STARTER), $family->items()->count());
         $this->assertTrue(FamilyAuditLog::query()->where('family_id', $family->id)->where('action', 'FAMILY_CREATE')->exists());
         $this->assertNull($family->conversation_id);
+    }
+
+    public function test_posts_show_author_family_role_and_server(): void
+    {
+        $post = Post::query()->create(['author_id' => $this->leaderUser->id, 'wall_type' => $this->leaderUser->getMorphClass(), 'wall_id' => $this->leaderUser->id, 'body' => 'Закрили контракт', 'visibility' => 'public']);
+        $card = app(PostPresenter::class)->many(new Collection([$post]), $this->leaderUser)[0];
+
+        $this->assertSame('SCL', $card['family']['tag']);
+        $this->assertSame(10, $card['family']['rank']);
+        $this->assertSame($this->family->rankTitle(10), $card['family']['rank_title']);
+        $this->assertSame('Quant RP', $card['family']['server']);
+
+        // Логотипи біля ніка: сім'я (з роллю й підказкою) і сервер сім'ї.
+        $badges = $card['author']['badges'];
+        $this->assertSame(['family', 'server'], array_column($badges, 'kind'));
+        $this->assertSame('/f/'.$this->family->slug, $badges[0]['href']);
+        $this->assertSame($this->family->rankTitle(10), $badges[0]['role']);
+        $this->assertSame('Quant RP', $badges[1]['name']);
+
+        // Без сім'ї — без значка.
+        $stranger = User::factory()->create();
+        $other = Post::query()->create(['author_id' => $stranger->id, 'wall_type' => $stranger->getMorphClass(), 'wall_id' => $stranger->id, 'body' => 'Привіт', 'visibility' => 'public']);
+        $this->assertNull(app(PostPresenter::class)->many(new Collection([$other]), $stranger)[0]['family']);
+        $this->assertSame([], app(PostPresenter::class)->many(new Collection([$other]), $stranger)[0]['author']['badges']);
+    }
+
+    public function test_badge_is_small_copy_of_logo_and_follows_new_logo(): void
+    {
+        Storage::fake('public');
+        $images = app(ImageStorage::class);
+        $this->family->forceFill(['logo_path' => $images->store(UploadedFile::fake()->image('a.png', 600, 600), 'families/logos', cover: [512, 512])['path']])->save();
+        $this->family->server?->forceFill(['icon_path' => $images->store(UploadedFile::fake()->image('s.png', 300, 300), 'gta-servers', cover: [256, 256])['path'], 'icon_url' => null])->save();
+
+        $badges = app(Affiliations::class)->forUsers([$this->leaderUser->fresh()])[$this->leaderUser->id];
+        $first = (string) $badges[0]['logo'];
+        $this->assertStringContainsString('/badges/', $first);
+        $this->assertStringContainsString('/badges/', (string) $badges[1]['logo']);
+        $thumb = 'badges/'.basename($first);
+        Storage::disk('public')->assertExists($thumb);
+        $this->assertSame([64, 64], array_slice(getimagesizefromstring((string) Storage::disk('public')->get($thumb)) ?: [], 0, 2));
+
+        // Новий логотип — новий значок.
+        $this->family->forceFill(['logo_path' => $images->store(UploadedFile::fake()->image('b.png', 600, 600), 'families/logos', cover: [512, 512])['path']])->save();
+        $again = app(Affiliations::class)->forUsers([$this->leaderUser->fresh()])[$this->leaderUser->id];
+        $this->assertNotSame($first, $again[0]['logo']);
+    }
+
+    public function test_overview_shows_family_chat_card_with_rp_names(): void
+    {
+        // Після опівночі за Києвом, але ще «вчора» за UTC — лічильник «сьогодні» має рахувати за Києвом.
+        $this->travelTo(now('UTC')->setTime(22, 30));
+        $conversation = Conversation::query()->findOrFail($this->family->conversation_id);
+        $conversation->messages()->create(['user_id' => $this->leaderUser->id, 'type' => Message::TYPE_TEXT, 'body' => "Збір о 21:30\nбіля особняка"]);
+
+        $this->actingAs($this->leaderUser)
+            ->get(route('families.show', $this->family), [
+                'X-Inertia' => 'true',
+                'X-Inertia-Version' => app(HandleInertiaRequests::class)->version(request()),
+                'X-Inertia-Partial-Component' => 'families/overview',
+                'X-Inertia-Partial-Data' => 'chat',
+            ])
+            ->assertOk()
+            ->assertJsonPath('props.chat.id', $conversation->id)
+            ->assertJsonPath('props.chat.today', 1)
+            ->assertJsonPath('props.chat.latest.0.name', 'Marco_Scaletta [10001]')
+            ->assertJsonPath('props.chat.latest.0.body', 'Збір о 21:30 біля особняка');
+
+        // Не учасник чату — картки немає (публічна сторінка сім'ї).
+        $this->actingAs(User::factory()->create())->get(route('families.show', $this->family))->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->missing('chat'));
     }
 
     public function test_verification_opens_family_chat_with_rp_names(): void

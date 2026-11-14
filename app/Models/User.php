@@ -2,9 +2,14 @@
 
 namespace App\Models;
 
+use App\Services\Profile\Affiliations;
+use App\Services\Profile\UserRoles;
+use App\Services\Quests\SeasonPass;
+use App\Services\Streams\LiveStreams;
 use App\Support\Palette;
 use App\Support\Plugins\Plugins;
 use App\Support\PlusStyle;
+use App\Support\Seasons;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Contracts\Translation\HasLocalePreference;
@@ -12,6 +17,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -19,6 +25,7 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Fortify\Contracts\PasskeyUser;
 use Laravel\Fortify\PasskeyAuthenticatable;
@@ -43,15 +50,31 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property string $password
  * @property string $role
  * @property string|null $avatar_path
+ * @property string|null $cover_video_path GameCon+: відео замість обкладинки
  * @property string|null $cover_path
  * @property string|null $status
+ * @property string|null $status_emoji Емодзі статусу («🎮»)
+ * @property Carbon|null $status_until Після цього часу статус (текст і емодзі) ховається
  * @property string|null $about
  * @property string|null $city
  * @property string|null $country
+ * @property list<string>|null $staff_sections розділи адмінки, доручені модератору
+ * @property int|null $staff_role_id роль команди (StaffRole): назва, колір і розділи адмінки
+ * @property string|null $plus_title власна роль-підпис біля ніка (GameCon+)
+ * @property string|null $plus_title_color колір підпису (StaffRole::COLORS)
+ * @property Carbon|null $plus_title_at коли підпис востаннє змінювали (раз на тиждень)
+ * @property-read StaffRole|null $staffRole
+ * @property int $streak_days серія днів поспіль
+ * @property int $streak_best
+ * @property Carbon|null $streak_on
  * @property Carbon|null $birthday
  * @property string|null $gender
  * @property string|null $website
  * @property bool $is_verified
+ * @property string $account_type Тип акаунта: personal, streamer, business, agency…
+ * @property array<string, string>|null $account_details Публічні поля спеціального акаунта
+ * @property string|null $verification_kind Вид позначки верифікації 2.0 (identity, creator, business, organization)
+ * @property Carbon|null $verified_at
  * @property bool $is_private
  * @property string $message_privacy
  * @property Carbon|null $last_seen_at
@@ -70,6 +93,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property string|null $playing_note
  * @property Carbon|null $playing_until
  * @property string|null $playing_source manual | discord | steam
+ * @property Carbon|null $playing_since
  * @property bool $playing_auto Ставити статус автоматично з Discord і Steam
  * @property string|null $steam_id
  * @property Carbon|null $muted_until Тимчасовий мут на всьому сайті
@@ -78,8 +102,12 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property Carbon|null $frozen_at Заморожено власником: сторінку не видно, вхід розморожує
  * @property array<string, mixed>|null $preferences
  * @property Carbon|null $plus_until GameCon+ активний до (кеш plus_grants)
+ * @property Carbon|null $plus_trial_at Коли взято пробний період GameCon+
+ * @property Carbon|null $plus_trial_reminded_at
  * @property int $balance Особистий рахунок, копійок (журнал — wallet_transactions)
  * @property array<string, string>|null $plus_style Колір ніку, рамка, акцент профілю
+ * @property array<string, string>|null $cosmetics Вдягнута косметика сезонного пропуску (тип → ключ)
+ * @property array<string, int>|null $character Персонаж-аватар (частини → номер варіанта)
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
@@ -115,33 +143,63 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
 
     protected $appends = ['avatar_url', 'cover_url', 'is_online'];
 
+    /** @var array<string, mixed> */
+    protected $attributes = ['account_type' => 'personal'];
+
     protected static function booted(): void
     {
         static::saving(function (User $user) {
             $user->name = trim($user->first_name.' '.$user->last_name);
+        });
+        // Верифікація 2.0 підтверджує саме це імʼя й адресу: змінили — позначку знято, подайте заново.
+        static::updating(function (User $user) {
+            if ($user->is_verified && $user->verification_kind !== null && ! $user->isDirty('is_verified') && $user->isDirty(['first_name', 'last_name', 'username'])) {
+                $user->is_verified = false;
+                $user->verification_kind = null;
+                $user->verified_at = null;
+                Log::info('verification: revoked after rename', ['user' => $user->id]);
+            }
+        });
+        // Історія ніків: стара адреса лишається в журналі (і 30 днів не віддається іншим).
+        static::updated(function (User $user) {
+            $old = (string) $user->getOriginal('username');
+            if ($user->wasChanged('username') && $old !== '' && mb_strtolower($old) !== mb_strtolower((string) $user->username)) {
+                UsernameChange::query()->create(['user_id' => $user->id, 'old_username' => mb_strtolower($old), 'new_username' => mb_strtolower((string) $user->username)]);
+            }
         });
     }
 
     protected function casts(): array
     {
         return [
+            'staff_sections' => 'array',
+            'plus_title_at' => 'datetime',
+            'streak_on' => 'date',
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'two_factor_confirmed_at' => 'datetime',
             'birthday' => 'date',
             'last_seen_at' => 'datetime',
             'playing_until' => 'datetime',
+            'playing_since' => 'datetime',
+            'status_until' => 'datetime',
             'playing_auto' => 'boolean',
             'muted_until' => 'datetime',
             'frozen_at' => 'datetime',
             'banned_at' => 'datetime',
             'is_verified' => 'boolean',
+            'account_details' => 'array',
+            'verified_at' => 'datetime',
             'is_private' => 'boolean',
             'email_social' => 'boolean',
             'nav_tabs' => 'array',
             'preferences' => 'array',
+            'character' => 'array',
             'plus_until' => 'datetime',
+            'plus_trial_at' => 'datetime',
+            'plus_trial_reminded_at' => 'datetime',
             'plus_style' => 'array',
+            'cosmetics' => 'array',
             'balance' => 'integer',
         ];
     }
@@ -200,6 +258,16 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
     }
 
     /**
+     * «Граю в…»: ігри й сервери, які людина позначила.
+     *
+     * @return HasMany<PlayedPlace, $this>
+     */
+    public function playedPlaces(): HasMany
+    {
+        return $this->hasMany(PlayedPlace::class);
+    }
+
+    /**
      * @return MorphMany<Post, $this>
      */
     public function wallPosts(): MorphMany
@@ -244,6 +312,14 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
         return $this->role === self::ROLE_ADMIN;
     }
 
+    /**
+     * @return BelongsTo<StaffRole, $this>
+     */
+    public function staffRole(): BelongsTo
+    {
+        return $this->belongsTo(StaffRole::class);
+    }
+
     public function isStaff(): bool
     {
         return in_array($this->role, [self::ROLE_ADMIN, self::ROLE_MODERATOR], true);
@@ -280,7 +356,24 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
      */
     protected function isOnline(): Attribute
     {
-        return Attribute::get(fn () => $this->last_seen_at !== null && $this->last_seen_at->gt(now()->subMinutes(5)));
+        // «Невидимий» — для інших не в мережі.
+        return Attribute::get(fn () => $this->pref('presence') !== 'invisible' && $this->last_seen_at !== null && $this->last_seen_at->gt(now()->subMinutes(5)));
+    }
+
+    /**
+     * Назва й колір ролі команди. Явний запит, якщо зв’язок не завантажено: картки збирають пачками,
+     * а ролі мають лише кілька людей із команди.
+     *
+     * @return array{name: string, color: string}|null
+     */
+    private function staffTitle(): ?array
+    {
+        if (! $this->isStaff() || $this->staff_role_id === null) {
+            return null;
+        }
+        $role = $this->relationLoaded('staffRole') ? $this->staffRole : StaffRole::query()->find($this->staff_role_id);
+
+        return $role ? ['name' => $role->name, 'color' => $role->color] : null;
     }
 
     /**
@@ -297,11 +390,54 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
             'first_name' => $this->first_name,
             'avatar_url' => $this->avatar_url,
             'is_online' => $this->is_online,
+            'presence' => $this->presence(),
+            // Персонаж-аватар (конструктор у налаштуваннях) — у шоу говорить замість фото.
+            'character' => $this->character,
             'is_verified' => $this->is_verified,
-            'status' => $this->status,
+            // Команда сайту (адміністратор чи модератор) — значок біля імені.
+            'staff' => $this->isStaff() ? $this->role : null,
+            // Назва й колір ролі команди, створеної адміністратором («Модератор чатів»).
+            'staff_title' => $this->staffTitle(),
+            // Власна роль-підпис підписника GameCon+ (змінюється раз на тиждень).
+            'title' => $this->isPlus() && $this->plus_title !== null ? ['name' => $this->plus_title, 'color' => $this->plus_title_color ?? 'sky'] : null,
+            'verified_kind' => $this->is_verified ? $this->verification_kind : null,
+            'account_type' => $this->account_type !== 'personal' ? $this->account_type : null,
+            'status' => $this->statusExpired() ? null : $this->status,
+            'status_emoji' => $this->statusExpired() ? null : $this->status_emoji,
+            'status_until' => $this->statusExpired() ? null : $this->status_until?->toIso8601String(),
             'playing' => $this->playing(),
+            // Зараз у стрімі (Twitch / YouTube) — червона позначка LIVE на аватарі.
+            'live' => isset(LiveStreams::liveIds()[$this->id]),
             'plus' => $this->plusCard(),
+            'cosmetics' => SeasonPass::card($this->cosmetics),
+            'event_frame' => $this->eventFrame(),
+            // Логотипи сім'ї, клану, сервера й гри біля ніка (з підказкою при наведенні).
+            'badges' => app(Affiliations::class)->of($this),
+            // Ролі-плашки з титулами («old», «Big Sponsor»): видані адміністратором або за правилом.
+            'roles' => app(UserRoles::class)->of($this),
         ];
+    }
+
+    /** Рамка аватара свята (Хелловін, Новий рік…): лише якщо людина її ввімкнула й свято триває. */
+    public function eventFrame(): ?string
+    {
+        if ($this->pref('event_frame') !== true) {
+            return null;
+        }
+        // Свято одне на весь запит — рахуємо раз. Загортаємо в масив: «немає свята» (null) контейнер
+        // не вважає зареєстрованим і намагався б створити клас з такою назвою.
+        if (! app()->bound('event-frame.season')) {
+            app()->instance('event-frame.season', ['season' => app(Plugins::class)->on('event_frames') ? app(Seasons::class)->for(null) : null]);
+        }
+        $season = app('event-frame.season')['season'] ?? null;
+
+        return is_string($season) ? $season : null;
+    }
+
+    /** Статус із таймером, час якого минув, — більше не показується (текст і емодзі). */
+    public function statusExpired(): bool
+    {
+        return $this->status_until !== null && $this->status_until->isPast();
     }
 
     public function isPlus(): bool
@@ -352,7 +488,7 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
     /**
      * «Граю в…»: де людина зараз, поки статус не сплив.
      *
-     * @return array{kind: string, id: int|null, label: string, icon: string|null, url: string|null, note: string|null, until: string, auto: bool}|null
+     * @return array{kind: string, id: int|null, label: string, icon: string|null, url: string|null, note: string|null, until: string, auto: bool, source: string|null, since: string|null}|null
      */
     public function playing(): ?array
     {
@@ -369,7 +505,35 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
             'note' => $this->playing_note,
             'until' => $this->playing_until->toIso8601String(),
             'auto' => $this->playing_source !== null && $this->playing_source !== 'manual',
+            'source' => $this->playing_source,
+            'since' => $this->playing_since?->toIso8601String(),
         ];
+    }
+
+    /** Мережевий статус, який обирає людина (як у Discord). */
+    public const PRESENCES = ['online', 'idle', 'dnd', 'invisible'];
+
+    /**
+     * Що бачать інші: online, idle («Неактивний» — сам після 10 хв без дій), dnd («Не турбувати») чи offline
+     * («Невидимий» або давно не заходив).
+     */
+    public function presence(): string
+    {
+        $chosen = $this->pref('presence', 'online');
+        if ($chosen === 'invisible' || $this->last_seen_at === null || $this->last_seen_at->lt(now()->subMinutes(15))) {
+            return 'offline';
+        }
+        if ($chosen === 'dnd') {
+            return 'dnd';
+        }
+
+        return $chosen === 'idle' || $this->last_seen_at->lt(now()->subMinutes(10)) ? 'idle' : 'online';
+    }
+
+    /** «Не турбувати»: пуш-сповіщення не надсилаються (у самому сайті й застосунку все видно). */
+    public function doNotDisturb(): bool
+    {
+        return $this->pref('presence') === 'dnd';
     }
 
     public function pref(string $key, mixed $default = null): mixed
@@ -386,6 +550,21 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
     {
         $this->preferences = array_merge($this->preferences ?? [], $patch);
         $this->save();
+    }
+
+    /**
+     * «Показувати, що я слухаю»: чи бачать інші, що грає в людини (треки GameCon, радіо, Spotify).
+     * Типово ввімкнено; Spotify додатково вимикається своїм перемикачем show_now_playing.
+     */
+    public function showsListening(): bool
+    {
+        return $this->pref('show_listening', true) !== false;
+    }
+
+    /** Ранковий дайджест (одне сповіщення о 9:00): увімкнено, доки людина не вимкне. */
+    public function wantsDigest(): bool
+    {
+        return $this->pref('morning_digest', true) !== false;
     }
 
     public function palette(): string

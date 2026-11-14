@@ -1,5 +1,6 @@
-import { Head, InfiniteScroll, router } from '@inertiajs/react';
-import { MapPin, Radio, Search, SearchX } from 'lucide-react';
+import { Head, InfiniteScroll, Link, router } from '@inertiajs/react';
+import { ListSkeleton } from '@/components/gc/skeletons';
+import { Globe2, MapPin, Radio, Search, SearchX } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { PersonCard } from '@/components/gc/person-card';
 import { EmptyState } from '@/components/gc/widget';
@@ -7,6 +8,7 @@ import { plural } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import type { PersonCard as Person, ScrollData } from '@/types';
 import { tr } from '@/lib/i18n';
+import { usePlugin } from '@/lib/plugins';
 
 type Filters = {
     q: string;
@@ -26,6 +28,7 @@ type Props = {
 };
 
 export default function People({ filters, saved, total, users }: Props) {
+    const mapOn = usePlugin('players_map');
     const [form, setForm] = useState<Filters>(filters);
 
     useEffect(() => {
@@ -53,7 +56,7 @@ export default function People({ filters, saved, total, users }: Props) {
         <>
             <Head title={tr('Пошук людей')} />
             <div className="space-y-5">
-                <section className="glass relative overflow-hidden rounded-3xl p-5 sm:p-6">
+                <section className="gc-solid relative overflow-hidden rounded-2xl p-5 sm:p-6">
                     <div className="pointer-events-none absolute -top-24 right-0 size-72 rounded-full bg-gc-blue/20 blur-3xl" />
                     <h1 className="relative font-display text-2xl font-bold text-white">
                         {tr('Знайдіть')}{' '}
@@ -64,6 +67,15 @@ export default function People({ filters, saved, total, users }: Props) {
                     <p className="relative mt-1 text-sm text-white/50">
                         {total} {plural(total, ['людина', 'людини', 'людей'])}{' '}
                         {tr('за вашим запитом')}
+                        {mapOn && (
+                            <Link
+                                href="/map"
+                                className="ml-3 inline-flex items-center gap-1 text-sky-400 hover:text-sky-400"
+                            >
+                                <Globe2 className="size-3.5" />
+                                {tr('Карта гравців')}
+                            </Link>
+                        )}
                     </p>
 
                     <div className="relative mt-5 grid grid-cols-1 gap-3 md:grid-cols-[1fr_220px_auto_auto]">
@@ -93,7 +105,7 @@ export default function People({ filters, saved, total, users }: Props) {
                                 className="min-w-0 flex-1 bg-transparent text-sm text-white placeholder:text-white/35 focus:outline-none"
                             />
                         </label>
-                        <div className="flex rounded-xl bg-white/[0.04] p-1">
+                        <div className="gc-solid-2 flex rounded-xl p-1">
                             {[
                                 { value: '', label: tr('Усі') },
                                 { value: 'male', label: tr('Чоловіки') },
@@ -125,10 +137,10 @@ export default function People({ filters, saved, total, users }: Props) {
                                 setForm({ ...form, online: !form.online })
                             }
                             className={cn(
-                                'inline-flex h-11 items-center gap-2 rounded-xl px-4 text-sm font-medium transition',
+                                'inline-flex h-11 shrink-0 items-center gap-2 rounded-xl px-4 text-sm font-medium whitespace-nowrap transition',
                                 form.online
                                     ? 'nav-active text-white'
-                                    : 'bg-white/[0.04] text-white/55 hover:text-white',
+                                    : 'gc-solid-2 text-white/55 hover:text-white',
                             )}
                         >
                             <Radio
@@ -184,7 +196,7 @@ export default function People({ filters, saved, total, users }: Props) {
                             <button
                                 type="button"
                                 onClick={() => setForm(saved)}
-                                className="h-11 rounded-xl px-4 text-sm text-gc-lilac-300 hover:text-white"
+                                className="h-11 rounded-xl px-4 text-sm text-sky-400 hover:text-white"
                             >
                                 {tr('Мій запит')}
                             </button>
@@ -203,6 +215,7 @@ export default function People({ filters, saved, total, users }: Props) {
                 ) : (
                     <InfiniteScroll
                         data="users"
+                        loading={<ListSkeleton rows={3} card={false} />}
                         preserveUrl
                         className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4"
                     >

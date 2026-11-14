@@ -1,5 +1,15 @@
 <?php
 
+use App\Models\AppLoginRequest;
+use App\Models\SpamBlock;
+use App\Services\Account\DataExporter;
+use App\Services\Analytics\ActivityMetrics;
+use App\Services\Billing\AuthorSubscriptions;
+use App\Services\Profile\UserRoles;
+use App\Services\Quality\PageVitals;
+use App\Services\Support\SupportDesk;
+use App\Services\System\AdminAlerts;
+use App\Support\RecentSearches;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -18,14 +28,36 @@ Schedule::command('families:tick --digest')->weeklyOn(0, '23:59')->timezone('Eur
 // Особиста зведення рахунку в банку сім’ї — у неділю ввечері, поки тиждень ще не закінчився.
 Schedule::command('families:bank-digest')->weeklyOn(0, '20:00')->timezone('Europe/Kyiv')->withoutOverlapping(60);
 Schedule::command('site:weekly')->weeklyOn(1, '09:00')->timezone('Europe/Kyiv')->withoutOverlapping(60);
+// «Кліп тижня» — після опівночі понеділка, коли тиждень закрито.
+Schedule::command('moments:clip-of-week')->weeklyOn(1, '10:10')->timezone('Europe/Kyiv')->withoutOverlapping(30);
 
 Schedule::command('calls:expire')->everyMinute()->withoutOverlapping(5);
+// «Слухати разом»: кімнати без слухачів 10 хвилин завершуються.
+Schedule::command('listen:sweep')->everyMinute()->withoutOverlapping(5);
+// Автопости ботів у групах і каналах (розклад за Києвом).
+Schedule::command('chat:autopost')->everyMinute()->withoutOverlapping(5);
+Schedule::command('tournaments:tick')->everyFiveMinutes()->withoutOverlapping(10);
+// Роздачі ігор (GamerPower) — щогодини; знижки на бажане (CheapShark) — кожні 6 год.
+Schedule::command('communities:weekly-digest')->weeklyOn(1, '10:05')->timezone('Europe/Kyiv')->withoutOverlapping(60);
+Schedule::command('games:giveaways')->hourlyAt(17)->withoutOverlapping(30)->runInBackground();
+Schedule::command('games:steam-news')->cron('25 * * * *')->withoutOverlapping(50)->runInBackground();
+Schedule::command('appeals:sla')->cron('40 * * * *')->withoutOverlapping(10);
+// Мапа тривог: зведення, цілі й сповіщення про тривогу та відбій.
+Schedule::command('alerts:sync')->everyMinute()->withoutOverlapping(5)->runInBackground();
+// Тривога й відбій — кожні 10 с, щоб пуш приходив одразу (а не через хвилину й більше).
+Schedule::command('alerts:watch')->everyTenSeconds()->withoutOverlapping(1);
+Schedule::command('games:release-alerts')->dailyAt('10:10')->timezone('Europe/Kyiv')->withoutOverlapping(30);
+Schedule::command('games:wishlist-alerts')->cron('40 */6 * * *')->withoutOverlapping(120)->runInBackground();
+Schedule::command('digest:morning')->dailyAt('09:00')->timezone('Europe/Kyiv')->withoutOverlapping(60)->runInBackground();
+// Щотижневий дайджест: найкраще в друзів, нові серії, роздачі.
+Schedule::command('digest:weekly')->weeklyOn(0, '17:47')->timezone('Europe/Kyiv')->withoutOverlapping(60)->runInBackground();
 
 // Білінг: донати Donatello → поповнення; автопродовження GameCon+ з рахунку.
 Schedule::command('billing:tick')->hourly()->withoutOverlapping(30);
 Schedule::command('posts:publish')->everyMinute()->withoutOverlapping(5);
 Schedule::command('messages:tick')->everyMinute()->withoutOverlapping(5);
 Schedule::command('events:remind')->everyFiveMinutes()->withoutOverlapping(10);
+Schedule::command('plus:deliver-gifts')->everyFifteenMinutes()->withoutOverlapping(10);
 // Події серверів із Discord — що 15 хвилин, події й виходи ігор з IGDB — щогодини.
 Schedule::command('events:sync --servers')->everyFifteenMinutes()->withoutOverlapping(15);
 Schedule::command('events:sync --games')->hourlyAt(25)->withoutOverlapping(30);
@@ -37,6 +69,12 @@ Schedule::command('i18n:translate')->dailyAt('03:20')->timezone('Europe/Kyiv')->
 // База «IP → країна» для блокування країн — щотижня.
 Schedule::command('geoip:update')->weeklyOn(3, '04:10')->timezone('Europe/Kyiv')->withoutOverlapping(60)->runInBackground();
 Schedule::command('stories:prune')->hourly()->withoutOverlapping(30);
+// Запити «Увійти через застосунок» старші за 30 днів (до того — для аудиту).
+Schedule::command('model:prune', ['--model' => [AppLoginRequest::class, SpamBlock::class]])->dailyAt('04:20')->timezone('Europe/Kyiv')->withoutOverlapping(30);
+// Рідкість бейджів («є у 2% людей»).
+Schedule::command('cards:autopilot')->everyThirtyMinutes()->withoutOverlapping(30)->runInBackground();
+Schedule::command('levels:sync')->hourlyAt(23)->withoutOverlapping(30)->runInBackground();
+Schedule::command('achievements:rarity')->dailyAt('05:10')->timezone('Europe/Kyiv')->withoutOverlapping(60)->runInBackground();
 Schedule::command('games:sync')->dailyAt('04:40')->timezone('Europe/Kyiv')->withoutOverlapping(120)->runInBackground();
 
 // Ролі Discord за складом груп, де підключено бота GameCon.
@@ -44,3 +82,35 @@ Schedule::command('bots:roles')->hourly()->withoutOverlapping(30)->runInBackgrou
 
 // «Зараз у стрімі»: Twitch пакетами, YouTube по черзі.
 Schedule::command('streams:check')->everyThreeMinutes()->withoutOverlapping(10)->runInBackground();
+// Платні підписки на авторів: продовження з рахунку за добу до кінця строку.
+Schedule::call(fn () => app(AuthorSubscriptions::class)->renewDue())->name('author-subscriptions:renew')->dailyAt('06:10')->withoutOverlapping();
+// Підтримка: звернення без відповіді людини тиждень після нашої — закриваються.
+Schedule::call(fn () => app(SupportDesk::class)->autoClose())->name('support:auto-close')->dailyAt('05:20')->withoutOverlapping();
+
+// Щоденна резервна копія бази (зберігаються останні 14; стан — Адмінка → Система).
+Schedule::command('gc:backup')->dailyAt('04:10')->timezone('Europe/Kyiv')->withoutOverlapping(120)->runInBackground();
+
+// Ролі-плашки за рівнем, досягненнями й підтримкою — раз на ніч (GameCon+ і стаж перевіряються одразу).
+Schedule::call(fn () => app(UserRoles::class)->sync())->name('user-roles:sync')->dailyAt('04:40')->timezone('Europe/Kyiv')->withoutOverlapping(60);
+
+// Заміри швидкості старші за 30 днів не потрібні.
+Schedule::call(fn () => app(PageVitals::class)->prune())->name('vitals:prune')->dailyAt('05:35')->withoutOverlapping();
+
+// Нічна перевірка битих посилань і картинок — лише звіт, нічого не видаляє.
+Schedule::command('gc:check-links')->dailyAt('03:25')->timezone('Europe/Kyiv')->withoutOverlapping(60)->runInBackground();
+
+// Прострочені архіви «Мої дані» (копії) — геть з диска.
+Schedule::call(fn () => app(DataExporter::class)->prune())->name('data-exports:prune')->dailyAt('05:50')->withoutOverlapping();
+
+// Відвідини розділів старші за 120 днів не потрібні (DAU-дні лишаються для утримання).
+Schedule::call(fn () => app(ActivityMetrics::class)->prune())->name('metrics:prune')->dailyAt('05:05')->withoutOverlapping();
+
+// Лічильники запитів пошуку старші за 30 днів не потрібні.
+Schedule::call(fn () => RecentSearches::prune())->name('search-queries:prune')->dailyAt('05:12')->withoutOverlapping();
+
+// Алерти адміністраторам у Telegram: черга, пуші, тривоги, скарги.
+Schedule::call(fn () => app(AdminAlerts::class)->health())->name('admin-alerts:health')->everyTenMinutes()->withoutOverlapping();
+
+// Фавікони рушіїв для каталогу плагінів: бракує — щодня, усі — щотижня.
+Schedule::command('developers:cms-icons')->name('developers:cms-icons')->dailyAt('04:47')->withoutOverlapping();
+Schedule::command('developers:cms-icons --force')->name('developers:cms-icons:refresh')->weeklyOn(0, '04:53')->withoutOverlapping();

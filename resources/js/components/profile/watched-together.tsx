@@ -55,7 +55,7 @@ export function WatchedTogether({
                     return (
                         <span
                             key={person.id}
-                            className="inline-flex items-center gap-1.5 rounded-full bg-white/[0.06] py-1 pr-1.5 pl-2.5 text-xs text-white/80"
+                            className="gc-solid-2 inline-flex items-center gap-1.5 rounded-full py-1 pr-1.5 pl-2.5 text-xs text-white/80"
                         >
                             <Link
                                 href={`/${person.username}`}

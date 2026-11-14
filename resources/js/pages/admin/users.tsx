@@ -1,5 +1,6 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import {
+    Eye,
     BadgeCheck,
     Ban,
     Check,
@@ -42,6 +43,7 @@ import { Input } from '@/components/ui/input';
 import { formatDate, timeAgo } from '@/lib/format';
 import type { Paginated, UserCard } from '@/types';
 import { tr } from '@/lib/i18n';
+import { SpellcheckHints, useSpellcheck } from '@/components/gc/spellcheck';
 
 type AdminUser = UserCard & {
     email: string;
@@ -54,6 +56,7 @@ type AdminUser = UserCard & {
     created_at: string;
     email_verified: boolean;
     two_factor: boolean;
+    previous_usernames?: string[];
 };
 
 type Props = {
@@ -89,7 +92,28 @@ export default function AdminUsers({ users, filters, roles }: Props) {
     const [q, setQ] = useState(filters.q);
     const [banTarget, setBanTarget] = useState<AdminUser | null>(null);
     const [banReason, setBanReason] = useState('');
+    const banSpell = useSpellcheck(banReason);
     const [deleteTarget, setDeleteTarget] = useState<AdminUser | null>(null);
+    // Масові дії: вибрані люди на цій сторінці (себе вибрати не можна).
+    const [picked, setPicked] = useState<number[]>([]);
+    const selectable = users.data.filter((u) => u.id !== auth.user.id);
+    const allPicked =
+        selectable.length > 0 && selectable.every((u) => picked.includes(u.id));
+    const bulk = (action: 'ban' | 'unban' | 'verify' | 'unverify') => {
+        if (
+            action === 'ban' &&
+            !window.confirm(
+                tr('Заблокувати вибраних ({n})?', { n: picked.length }),
+            )
+        ) {
+            return;
+        }
+        router.post(
+            '/admin/users/bulk',
+            { ids: picked, action },
+            { preserveScroll: true, onSuccess: () => setPicked([]) },
+        );
+    };
 
     const apply = (patch: Partial<Props['filters']>) => {
         router.get(
@@ -121,7 +145,7 @@ export default function AdminUsers({ users, filters, roles }: Props) {
                 description={tr('Усього {total}', { total: users.total })}
             />
 
-            <div className="glass mb-4 flex flex-wrap items-center gap-2 rounded-2xl p-2.5">
+            <div className="gc-solid mb-4 flex flex-wrap items-center gap-2 rounded-2xl p-2.5">
                 <form
                     onSubmit={submitSearch}
                     className="relative min-w-[220px] flex-1"
@@ -169,12 +193,74 @@ export default function AdminUsers({ users, filters, roles }: Props) {
                 </select>
             </div>
 
-            <div className="glass overflow-hidden rounded-3xl">
+            {picked.length > 0 && (
+                <div className="gc-solid sticky top-20 z-20 mb-3 flex flex-wrap items-center gap-2 rounded-2xl p-2.5">
+                    <span className="px-2 text-sm text-white/70">
+                        {tr('Вибрано: {n}', { n: picked.length })}
+                    </span>
+                    <button
+                        type="button"
+                        onClick={() => bulk('verify')}
+                        className="h-9 rounded-xl bg-white/[0.07] px-3 text-sm text-white hover:bg-white/[0.11]"
+                    >
+                        {tr('Верифікувати')}
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => bulk('unverify')}
+                        className="h-9 rounded-xl bg-white/[0.07] px-3 text-sm text-white hover:bg-white/[0.11]"
+                    >
+                        {tr('Зняти верифікацію')}
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => bulk('unban')}
+                        className="h-9 rounded-xl bg-white/[0.07] px-3 text-sm text-white hover:bg-white/[0.11]"
+                    >
+                        {tr('Розблокувати')}
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => bulk('ban')}
+                        className="h-9 rounded-xl bg-red-500/15 px-3 text-sm text-red-400 hover:bg-red-500/25"
+                    >
+                        {tr('Заблокувати')}
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setPicked([])}
+                        className="ml-auto h-9 rounded-xl px-3 text-sm text-white/55 hover:text-white"
+                    >
+                        {tr('Скасувати')}
+                    </button>
+                </div>
+            )}
+
+            <div className="gc-solid overflow-hidden rounded-2xl">
                 <div className="overflow-x-auto">
                     <table className="w-full min-w-[860px] text-sm">
                         <thead>
-                            <tr className="border-b border-white/[0.06] text-left text-xs text-white/35">
-                                <th className="px-5 py-3 font-medium">
+                            <tr className="text-left text-xs text-white/35">
+                                <th className="w-10 py-3 pl-5">
+                                    <input
+                                        type="checkbox"
+                                        checked={allPicked}
+                                        onChange={() =>
+                                            setPicked(
+                                                allPicked
+                                                    ? []
+                                                    : selectable.map(
+                                                          (u) => u.id,
+                                                      ),
+                                            )
+                                        }
+                                        aria-label={tr(
+                                            'Вибрати всіх на сторінці',
+                                        )}
+                                        className="size-4 accent-gc-indigo"
+                                    />
+                                </th>
+                                <th className="px-3 py-3 font-medium">
                                     {tr('Користувач')}
                                 </th>
                                 <th className="px-3 py-3 font-medium">
@@ -202,9 +288,35 @@ export default function AdminUsers({ users, filters, roles }: Props) {
                                 return (
                                     <tr
                                         key={u.id}
-                                        className="transition hover:bg-white/[0.02]"
+                                        className="transition hover:bg-[var(--gc-l3)]"
                                     >
-                                        <td className="px-5 py-3">
+                                        <td className="py-3 pl-5">
+                                            {!self && (
+                                                <input
+                                                    type="checkbox"
+                                                    checked={picked.includes(
+                                                        u.id,
+                                                    )}
+                                                    onChange={() =>
+                                                        setPicked((list) =>
+                                                            list.includes(u.id)
+                                                                ? list.filter(
+                                                                      (id) =>
+                                                                          id !==
+                                                                          u.id,
+                                                                  )
+                                                                : [
+                                                                      ...list,
+                                                                      u.id,
+                                                                  ],
+                                                        )
+                                                    }
+                                                    aria-label={tr('Вибрати')}
+                                                    className="size-4 accent-gc-indigo"
+                                                />
+                                            )}
+                                        </td>
+                                        <td className="px-3 py-3">
                                             <Link
                                                 href={`/${u.username}`}
                                                 className="flex items-center gap-3"
@@ -217,13 +329,44 @@ export default function AdminUsers({ users, filters, roles }: Props) {
                                                     <span className="flex items-center gap-1 font-medium text-white">
                                                         {u.name}
                                                         {u.is_verified && (
-                                                            <VerifiedBadge className="size-3.5" />
+                                                            <VerifiedBadge
+                                                                kind={
+                                                                    u.verified_kind
+                                                                }
+                                                                className="size-3.5"
+                                                            />
                                                         )}
                                                     </span>
                                                     <span className="block truncate text-xs text-white/40">
                                                         @{u.username} ·{' '}
                                                         {u.email}
                                                     </span>
+                                                    {(
+                                                        u.previous_usernames ??
+                                                        []
+                                                    ).length > 0 && (
+                                                        <span className="block text-xs text-white/40">
+                                                            {tr(
+                                                                'Раніше: {names}',
+                                                                {
+                                                                    names: (
+                                                                        u.previous_usernames ??
+                                                                        []
+                                                                    )
+                                                                        .map(
+                                                                            (
+                                                                                n,
+                                                                            ) =>
+                                                                                '@' +
+                                                                                n,
+                                                                        )
+                                                                        .join(
+                                                                            ', ',
+                                                                        ),
+                                                                },
+                                                            )}
+                                                        </span>
+                                                    )}
                                                 </span>
                                             </Link>
                                         </td>
@@ -254,7 +397,7 @@ export default function AdminUsers({ users, filters, roles }: Props) {
                                                 )}
                                             </div>
                                             {u.ban_reason && (
-                                                <div className="mt-1 max-w-[180px] truncate text-xs text-rose-200/60">
+                                                <div className="mt-1 max-w-[180px] truncate text-xs text-red-400/60">
                                                     {u.ban_reason}
                                                 </div>
                                             )}
@@ -274,12 +417,12 @@ export default function AdminUsers({ users, filters, roles }: Props) {
                                         </td>
                                         <td className="px-3 py-3 text-right">
                                             <DropdownMenu>
-                                                <DropdownMenuTrigger className="flex size-8 items-center justify-center rounded-lg text-white/50 outline-none hover:bg-white/[0.06] hover:text-white">
+                                                <DropdownMenuTrigger className="flex size-8 items-center justify-center rounded-lg text-white/50 outline-none hover:bg-[var(--gc-l3)] hover:text-white">
                                                     <MoreHorizontal className="size-4" />
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent
                                                     align="end"
-                                                    className="glass-strong w-56 rounded-2xl border-white/10 p-1.5 text-white"
+                                                    className="glass-strong w-56 rounded-2xl p-1.5 text-white"
                                                 >
                                                     <DropdownMenuLabel className="text-xs text-white/40">
                                                         <UserCog className="mr-1 inline size-3.5" />{' '}
@@ -302,11 +445,26 @@ export default function AdminUsers({ users, filters, roles }: Props) {
                                                             {ROLE_LABELS[r] ??
                                                                 r}
                                                             {u.role === r && (
-                                                                <Check className="ml-auto size-4 text-gc-lilac-400" />
+                                                                <Check className="ml-auto size-4 text-sky-400" />
                                                             )}
                                                         </DropdownMenuItem>
                                                     ))}
                                                     <DropdownMenuSeparator className="bg-white/5" />
+                                                    {u.role !== 'admin' && (
+                                                        <DropdownMenuItem
+                                                            onSelect={() =>
+                                                                router.post(
+                                                                    `/admin/view-as/${u.username}`,
+                                                                )
+                                                            }
+                                                            className="rounded-lg focus:bg-white/[0.06]"
+                                                        >
+                                                            <Eye className="text-sky-400" />{' '}
+                                                            {tr(
+                                                                'Подивитися очима',
+                                                            )}
+                                                        </DropdownMenuItem>
+                                                    )}
                                                     <DropdownMenuItem
                                                         onSelect={() =>
                                                             update(u, {
@@ -358,9 +516,9 @@ export default function AdminUsers({ users, filters, roles }: Props) {
                                                         onSelect={() =>
                                                             setDeleteTarget(u)
                                                         }
-                                                        className="rounded-lg text-rose-300 focus:bg-rose-500/10 focus:text-rose-200"
+                                                        className="rounded-lg text-red-400 focus:bg-red-500/10 focus:text-red-400"
                                                     >
-                                                        <Trash2 className="text-rose-300" />{' '}
+                                                        <Trash2 className="text-red-400" />{' '}
                                                         {tr('Видалити')}
                                                     </DropdownMenuItem>
                                                 </DropdownMenuContent>
@@ -385,7 +543,7 @@ export default function AdminUsers({ users, filters, roles }: Props) {
                 open={!!banTarget}
                 onOpenChange={(open) => !open && setBanTarget(null)}
             >
-                <DialogContent className="glass-strong rounded-3xl border-white/10 text-white">
+                <DialogContent className="glass-strong rounded-dialog text-white">
                     <DialogTitle>
                         {tr('Заблокувати')} {banTarget?.name}?
                     </DialogTitle>
@@ -399,6 +557,11 @@ export default function AdminUsers({ users, filters, roles }: Props) {
                         onChange={(e) => setBanReason(e.target.value)}
                         placeholder={tr("Причина (необов'язково)")}
                         maxLength={255}
+                    />
+                    <SpellcheckHints
+                        spell={banSpell}
+                        onApply={setBanReason}
+                        className="mt-0"
                     />
                     <DialogFooter className="gap-2">
                         <DialogClose asChild>
@@ -429,7 +592,7 @@ export default function AdminUsers({ users, filters, roles }: Props) {
                 open={!!deleteTarget}
                 onOpenChange={(open) => !open && setDeleteTarget(null)}
             >
-                <DialogContent className="glass-strong rounded-3xl border-white/10 text-white">
+                <DialogContent className="glass-strong rounded-dialog text-white">
                     <DialogTitle>
                         {tr('Видалити')} {deleteTarget?.name}?
                     </DialogTitle>

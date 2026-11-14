@@ -1,17 +1,20 @@
 import { usePage } from '@inertiajs/react';
 import { useReducedMotion } from 'motion/react';
-import { useMemo, useSyncExternalStore } from 'react';
+import { useMemo } from 'react';
 import { Aurora } from '@/components/gc/aurora';
 import {
     DEFAULT_BACKGROUND,
     useBackgroundPreview,
     usePageBackgroundVideo,
+    useIsPhone,
+    videoSource,
 } from '@/lib/backgrounds';
+import { useDataSaver } from '@/lib/data-saver';
 import { cn } from '@/lib/utils';
-import type { SiteBackgroundPreset } from '@/types';
+import type { SiteBackgroundPreset, VideoBackground } from '@/types';
 
 /**
- * Фон сайту за інтерфейсом: жива сцена (Налаштування → Вигляд → Фон) або відео YouTube (GameCon+).
+ * Фон сайту за інтерфейсом: жива сцена (Налаштування → Вигляд → Фон) або відеофон з бібліотеки (GameCon+).
  * Сцени — CSS і SVG без картинок: рухаються лише прозорість і зсуви, тож це дешево для відеокарти.
  * «Без руху» (вимикач, системне «зменшити рух» чи режим економії трафіку) — нерухомий кадр.
  */
@@ -32,21 +35,6 @@ function starField(count: number, seed: number, spread = 100): string {
 
         return `${x}vw ${y}vh 0 rgb(255 255 255 / ${a})`;
     }).join(',');
-}
-
-function useSaveData(): boolean {
-    return useSyncExternalStore(
-        () => () => {},
-        () =>
-            Boolean(
-                (
-                    navigator as Navigator & {
-                        connection?: { saveData?: boolean };
-                    }
-                ).connection?.saveData,
-            ),
-        () => false,
-    );
 }
 
 function DuneScene() {
@@ -275,24 +263,40 @@ function ImageScene({
     );
 }
 
-function YouTubeScene({ id, still }: { id: string; still: boolean }) {
+function VideoScene({
+    video,
+    still,
+}: {
+    video: VideoBackground;
+    still: boolean;
+}) {
+    const phone = useIsPhone();
+    const src = videoSource(video, phone);
+
     return (
         <div className="bg-scene bg-video">
-            {still ? (
-                <img
-                    src={`https://i.ytimg.com/vi/${id}/hqdefault.jpg`}
-                    alt=""
-                    decoding="async"
-                    className="bg-video__frame object-cover"
-                />
+            {still || !src ? (
+                video.poster && (
+                    <img
+                        src={video.poster}
+                        alt=""
+                        decoding="async"
+                        className="bg-video__frame"
+                    />
+                )
             ) : (
-                <iframe
-                    // youtube-nocookie: без рекламних cookie; звук вимкнено, керування сховане, по колу.
-                    src={`https://www.youtube-nocookie.com/embed/${id}?autoplay=1&mute=1&loop=1&playlist=${id}&controls=0&disablekb=1&modestbranding=1&playsinline=1&rel=0&iv_load_policy=3&fs=0`}
-                    title="background"
+                // Без звуку, по колу, вбудовано (iOS) — фон, а не плеєр.
+                <video
+                    key={src}
+                    src={src}
+                    poster={video.poster ?? undefined}
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                    disablePictureInPicture
+                    preload="auto"
                     tabIndex={-1}
-                    allow="autoplay; encrypted-media"
-                    referrerPolicy="strict-origin-when-cross-origin"
                     className="bg-video__frame"
                 />
             )}
@@ -323,13 +327,13 @@ export function SiteBackground({ className }: { className?: string }) {
     const prefs =
         preview ?? (pageVideo ? { ...saved, video: pageVideo } : saved);
     const reduce = useReducedMotion();
-    const saveData = useSaveData();
+    const saveData = useDataSaver();
     const still = !prefs.motion || Boolean(reduce) || saveData;
 
     if (prefs.video) {
         return (
             <div aria-hidden className={cn('site-bg', className)}>
-                <YouTubeScene id={prefs.video} still={still} />
+                <VideoScene video={prefs.video} still={still} />
             </div>
         );
     }

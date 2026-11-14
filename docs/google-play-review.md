@@ -2,33 +2,62 @@
 
 ## Как устроено (мультиплатформенный аккаунт)
 
-- GameCon+ привязан к **аккаунту GameCon**. Купить его можно только на сайте, в разделе GameCon+ → «Рахунок».
-- Приложение **ничего не продаёт**: оно лишь узнаёт статус через `GET /api/v1/user/subscription-status`
-  (`is_pro`, `expires_at`, `plan_name`, `style`) и открывает функции, если GameCon+ активен.
-- Статус обновляется при запуске, входе, возврате в приложение (не чаще раза в 5 минут)
-  и по кнопке «Перевірити статус».
-- В меню приложения есть пункт «GameCon+»: список преимуществ, текущий статус, нейтральный текст,
-  кнопки «Перевірити статус» и «Зрозуміло».
-- Если сервер отвечает ошибкой лимита (например, «З GameCon+ — до 25 персонажів»), в снекбаре
-  появляется кнопка «Що таке GameCon+?», которая открывает ту же информационную панель.
+- GameCon+ привязан к **аккаунту GameCon**: купленный на сайте или в приложении, он действует везде.
+- В приложении GameCon+ покупается **только через Google Play Billing** (`mobile/lib/play_billing.dart`,
+  пакет `in_app_purchase` 3.3 + `in_app_purchase_android` 0.5.4 = **Play Billing Library 8**). Цены, периоды
+  и пробные периоды показывает Google Play (ProductDetails); сервер отдаёт только ID подписок и `account_id`
+  (`GET /api/v1/google-play` → obfuscatedAccountId).
+- Каждую покупку проверяет сервер: токен → `POST /api/v1/google-play/verify` → Google Play Developer API
+  (subscriptionsv2) → acknowledge → доступ в `plus_grants`. Приложение само доступ не включает.
+- Продления, отмены и возвраты приходят через RTDN (Pub/Sub) и ежедневную проверку `billing:tick`.
+- Статус: `GET /api/v1/user/subscription-status` (`is_pro`, `expires_at`, `plan_name`, `style`; для подписки
+  из Google Play — `store`, `auto_renew`, `manage_url` на страницу подписки в Google Play).
+- В приложении: Меню → GameCon+ — преимущества, статус, планы Google Play, «Відновити покупки»,
+  «Керувати підпискою в Google Play», «Перевірити статус».
 
-- Оформление GameCon+ (с 1.1.32): значок у имени, цвет и анимация ника, рамка аватара, эффект шапки
-  профиля — как на сайте (`mobile/lib/plus.dart`). Приложение только показывает оформление, выбранное
-  на сайте (поле `plus` в карточке пользователя); плашка «GameCon+» в профиле открывает ту же
-  информационную панель без цен и ссылок.
+Код: `mobile/lib/play_billing.dart`, `mobile/lib/subscription.dart`, `app/Services/Billing/GooglePlay.php`,
+`Api/GooglePlayController`, `GooglePlayRtdnController`. Тест `tests/Feature/AppSubscriptionStatusTest.php`
+проверяет, что в ответах для приложения нет цен сайта, ссылок на оплату сайта и донат-сервисов.
 
-Код: `mobile/lib/subscription.dart`, `app/Http/Controllers/Api/SubscriptionStatusController.php`.
-Тест `tests/Feature/AppSubscriptionStatusTest.php` проверяет, что в ответах для приложения нет цен,
-сумм, слов «balance/billing/checkout», ссылок на оплату и донат-сервисов.
+## Номера телефона в приложении
+
+- Красивый номер (+777) покупается тоже только через Google Play: разовые товары `phone_regular`, `phone_bronze`,
+  `phone_silver`, `phone_gold`, `phone_platinum`, `phone_diamond` — цена по уровню номера задаётся в Play Console
+  (скидка GameCon+ действует только на сайте).
+- Приложение: проверка номера и «Підібрати» — через мост (`/api/v1/site/phone/check|suggest`), затем
+  `POST /api/v1/google-play/phone/hold` бронирует номер и отдаёт `profile_id` → покупка с obfuscatedAccountId и
+  obfuscatedProfileId → `POST /api/v1/google-play/phone/verify`: сервер проверяет покупку (purchases.products),
+  включает именно забронированный номер и списывает покупку (consume). Если бронь пропала, покупка не
+  подтверждается — Google вернёт деньги сам через 3 дня. Возврат (RTDN voided) освобождает номер.
+- Включение: Админка → Інтеграції → Google Play → «Продавати номери телефону в застосунку».
+
+## Актуальные требования Google (октябрь 2026)
+
+- С 31 августа 2026 новые приложения и обновления должны использовать **Play Billing Library 8+**
+  (продление по запросу — до 1 ноября 2026). У нас PBL 8.0.0 — требование выполнено.
+- Внешние ссылки на оплату и альтернативный биллинг Google разрешает лишь в отдельных программах (ЕЭЗ,
+  Великобритания, США) с отдельной регистрацией и комиссией — мы ими **не пользуемся**: в приложении только
+  Google Play Billing.
+
+## Включить продажу (один раз, владелец)
+
+1. Play Console → Монетизация → Подписки: создать подписку с ID `gamecon_plus` (или свой — тогда указать его
+   в админке), базовые планы (например, месяц и год), по желанию — пробный период.
+2. Play Console → Пользователи и разрешения: дать сервисному аккаунту (Firebase или отдельный) права
+   «Просмотр финансовых данных» и «Управление заказами и подписками».
+3. Play Console → Монетизация → Настройки монетизации → Real-time developer notifications: Pub/Sub-топик
+   с push-подпиской на адрес из Админка → Інтеграції → Google Play (`…/billing/google-play/rtdn?token=…`).
+4. Админка → Інтеграції → Google Play: ключ сервисного аккаунта (или оставить ключ Firebase), ID подписок,
+   включить «Продавати GameCon+ у застосунку».
+5. Проверить покупку тестовым аккаунтом (Play Console → Тестирование лицензий) во внутреннем тесте.
 
 ## Чего в приложении быть не должно (иначе бан)
 
-1. Кнопок «Купить», «Оплатить», «Оформить», «Upgrade».
-2. Цен в любой валюте.
-3. Ссылок на `/plus`, `/pricing`, `/plus/billing` и страницы донат-сервисов — ни в браузере, ни в WebView.
-4. Текстов в духе «купите на сайте», «на сайте дешевле», а также призывов перейти на сайт за GameCon+.
+1. Оплаты мимо Google Play Billing: ссылок и WebView на `/plus`, `/pricing`, `/plus/billing`, донат-сервисы.
+2. Цен сайта и своих цен — в приложении только цены, которые вернул Google Play.
+3. Текстов в духе «купите на сайте», «на сайте дешевле».
 
-Эти правила продублированы в `docs/web-vs-app-checklist.md` и в комментарии в начале `subscription.dart`.
+Эти правила продублированы в `AGENTS.md`, `docs/web-vs-app-checklist.md` и в начале `subscription.dart`.
 
 ## Тестовый аккаунт для модераторов
 
@@ -56,8 +85,8 @@ php artisan plus:review-account
 ```
 GameCon is a multi-platform social network for gamers. Accounts are shared between our
 website and this Android app. Optional premium features (GameCon+) are granted to the user
-account; the app itself does not sell anything and contains no purchase flows, prices or
-links to external payment pages.
+account. In the app GameCon+ is sold only through Google Play Billing (subscriptions); there are
+no links to external payment pages.
 
 We provide pre-activated test credentials so the review team can test all GameCon+ features
 directly without payment. Sign in with the email and password above on the login screen

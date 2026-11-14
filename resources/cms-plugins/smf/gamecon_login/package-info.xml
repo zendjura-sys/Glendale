@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<!DOCTYPE package-info SYSTEM "http://www.simplemachines.org/xml/package-info">
+<package-info xmlns="http://www.simplemachines.org/xml/package-info" xmlns:smf="http://www.simplemachines.org/">
+    <id>gamecon:login</id>
+    <name>Увійти через GameCon</name>
+    <version>1.0.0</version>
+    <type>modification</type>
+    <install for="2.1.*">
+        <readme type="inline">Вхід і реєстрація через акаунт GameCon. Налаштування: Адмінка → Конфігурація → Налаштування модифікацій.</readme>
+        <require-file name="Sources/GameCon.php" destination="$sourcedir" />
+        <require-file name="lib/GameConClient.php" destination="$sourcedir/GameCon" />
+        <require-file name="languages/GameCon.english.php" destination="$languagedir" />
+        <require-file name="languages/GameCon.ukrainian.php" destination="$languagedir" />
+        <database>install.php</database>
+        <hook hook="integrate_actions" function="GameCon_Actions" file="$sourcedir/GameCon.php" />
+        <hook hook="integrate_general_mod_settings" function="GameCon_Settings" file="$sourcedir/GameCon.php" />
+        <hook hook="integrate_menu_buttons" function="GameCon_Menu" file="$sourcedir/GameCon.php" />
+        <hook hook="integrate_load_theme" function="GameCon_Language" file="$sourcedir/GameCon.php" />
+    </install>
+    <uninstall for="2.1.*">
+        <hook hook="integrate_actions" function="GameCon_Actions" file="$sourcedir/GameCon.php" reverse="true" />
+        <hook hook="integrate_general_mod_settings" function="GameCon_Settings" file="$sourcedir/GameCon.php" reverse="true" />
+        <hook hook="integrate_menu_buttons" function="GameCon_Menu" file="$sourcedir/GameCon.php" reverse="true" />
+        <hook hook="integrate_load_theme" function="GameCon_Language" file="$sourcedir/GameCon.php" reverse="true" />
+        <remove-file name="$sourcedir/GameCon.php" />
+        <remove-dir name="$sourcedir/GameCon" />
+        <remove-file name="$languagedir/GameCon.english.php" />
+        <remove-file name="$languagedir/GameCon.ukrainian.php" />
+    </uninstall>
+</package-info>

@@ -64,6 +64,7 @@ class GroupsApiController extends ApiController
         $query = Community::query()
             ->when($tab === 'mine', fn (Builder $q) => $q->whereIn('id', $joined !== [] ? $joined : [0]))
             ->when($tab === 'managed', fn (Builder $q) => $q->whereIn('id', $managed !== [] ? $managed : [0]))
+            ->when($tab === 'discover', fn (Builder $q) => $q->where('is_listed', true))
             ->when($term !== '', fn (Builder $q) => $q->search($term))
             ->orderByDesc('is_verified')
             ->orderByDesc('members_count');
@@ -127,7 +128,8 @@ class GroupsApiController extends ApiController
 
     public function joinCommunity(Request $request, Community $community): JsonResponse
     {
-        $status = $this->communities->join($community, $this->user($request));
+        $data = $request->validate(['password' => ['nullable', 'string', 'max:64'], 'answers' => ['nullable', 'array', 'max:5'], 'answers.*' => ['nullable', 'string', 'max:1000']]);
+        $status = $this->communities->join($community, $this->user($request), password: $data['password'] ?? null, answers: $data['answers'] ?? []);
 
         return response()->json(['membership' => $status]);
     }
@@ -290,7 +292,9 @@ class GroupsApiController extends ApiController
             ])->values();
         $applications = $can['members.manage']
             ? FamilyMember::query()->with('user')->where('family_id', $family->id)->where('status', FamilyMember::STATUS_PENDING)->latest('id')->get()
-                ->map(fn (FamilyMember $m) => [...$m->toCard($family), 'note' => $m->application_note])->values()
+                ->map(fn (FamilyMember $m) => [...$m->toCard($family), 'note' => $m->application_note,
+                    'answers' => collect($family->applicationQuestions())->map(fn (array $q) => ['question' => $q['text'], 'answer' => $m->answers[$q['id']] ?? null])
+                        ->filter(fn (array $a) => $a['answer'] !== null)->values()])->values()
             : [];
 
         return response()->json([

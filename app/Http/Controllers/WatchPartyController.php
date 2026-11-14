@@ -115,6 +115,13 @@ class WatchPartyController extends Controller
         return response()->json(['sent' => $this->parties->invite($party, $user, array_values(array_map('intval', $data['user_ids'])))]);
     }
 
+    public function leave(Request $request, WatchParty $party): JsonResponse
+    {
+        $this->parties->leave($party, $request->user());
+
+        return response()->json(['ok' => true]);
+    }
+
     public function end(Request $request, WatchParty $party): JsonResponse
     {
         $this->parties->end($party, $this->live($request, $party));

@@ -28,8 +28,12 @@ class Appeal extends Model
         'ban' => 'Блокування акаунта',
         'mute' => 'Заборона писати',
         'content' => 'Видалений запис чи повідомлення',
+        'strike' => 'Страйк',
         'other' => 'Інше рішення',
     ];
+
+    /** Скільки годин команда має, щоб відповісти на оскарження. */
+    public const SLA_HOURS = 48;
 
     public const PENDING = 'pending';
 

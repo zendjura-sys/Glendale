@@ -27,6 +27,8 @@ type Props = {
     } | null;
     blocked: { username: string; name: string }[];
     can_block: boolean;
+    /** Анкета сім’ї: питання, на які відповідає кандидат. */
+    questions?: { id: string; text: string; required: boolean }[];
     /** Банка Monobank сім’ї (відкладений проп). */
     donation?: DonationJar | null;
 };
@@ -38,8 +40,18 @@ export default function FamilyPublic({
     blocked,
     can_block,
     donation,
+    questions = [],
 }: Props) {
-    const form = useForm({ rp_nickname: '', static_id: '', note: '' });
+    const form = useForm({
+        rp_nickname: '',
+        static_id: '',
+        note: '',
+        answers: {} as Record<string, string>,
+    });
+    const errors = form.errors as Record<string, string>;
+    const unanswered = questions.some(
+        (q) => q.required && !(form.data.answers[q.id] ?? '').trim(),
+    );
     const pending = application?.status === 'pending';
     const canApply =
         family.status === 'verified' &&
@@ -57,7 +69,7 @@ export default function FamilyPublic({
                 >
                     <ArrowLeft className="size-4" /> {tr('До сімей')}
                 </Link>
-                <section className="glass noise relative overflow-hidden rounded-3xl">
+                <section className="gc-solid relative overflow-hidden rounded-2xl">
                     <div className="h-40 sm:h-52">
                         {family.cover_url ? (
                             <img
@@ -68,7 +80,7 @@ export default function FamilyPublic({
                                 className="size-full object-cover"
                             />
                         ) : (
-                            <div className="size-full bg-[radial-gradient(120%_120%_at_0%_0%,#f59e0b55,transparent_55%),radial-gradient(120%_120%_at_100%_0%,#6d5dfc66,transparent_60%),linear-gradient(135deg,#0b0f1d,#141a33)]" />
+                            <div className="size-full bg-[radial-gradient(120%_120%_at_0%_0%,#38bdf855,transparent_55%),radial-gradient(120%_120%_at_100%_0%,#2f7bff66,transparent_60%),linear-gradient(135deg,#0b0f1d,#141a33)]" />
                         )}
                     </div>
                     <div className="relative -mt-14 flex flex-wrap items-end gap-4 px-5 pb-5 sm:px-7">
@@ -79,12 +91,12 @@ export default function FamilyPublic({
                         />
                         <div className="min-w-0 flex-1">
                             <h1 className="flex flex-wrap items-center gap-2 font-display text-3xl font-bold text-white">
-                                <span className="text-amber-300">
+                                <span className="text-amber-400">
                                     [{family.tag}]
                                 </span>
                                 {family.name}
                                 {family.status === 'verified' && (
-                                    <ShieldCheck className="size-6 text-emerald-300" />
+                                    <ShieldCheck className="size-6 text-emerald-400" />
                                 )}
                             </h1>
                             <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-white/50">
@@ -116,7 +128,7 @@ export default function FamilyPublic({
                 <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_360px]">
                     <div className="space-y-4">
                         {family.description && (
-                            <section className="glass rounded-3xl p-5">
+                            <section className="gc-solid rounded-2xl p-5">
                                 <h2 className="mb-2 font-display font-semibold text-white">
                                     {tr('Про сім’ю')}
                                 </h2>
@@ -129,7 +141,7 @@ export default function FamilyPublic({
                             jar={donation}
                             title={tr('Підтримати сім’ю')}
                         />
-                        <section className="glass rounded-3xl p-5">
+                        <section className="gc-solid rounded-2xl p-5">
                             <h2 className="mb-3 font-display font-semibold text-white">
                                 {tr('Керівництво')}
                             </h2>
@@ -137,7 +149,7 @@ export default function FamilyPublic({
                                 {leaders.map((m) => (
                                     <div
                                         key={m.id}
-                                        className="flex items-center gap-3 rounded-2xl bg-white/[0.03] p-2.5"
+                                        className="gc-solid-2 flex items-center gap-3 rounded-2xl p-2.5"
                                     >
                                         <UserAvatar
                                             user={{
@@ -147,7 +159,7 @@ export default function FamilyPublic({
                                             size="sm"
                                         />
                                         <div className="min-w-0">
-                                            <div className="truncate font-mono text-sm text-white">
+                                            <div className="font-mono text-sm break-words text-white">
                                                 {m.display}
                                             </div>
                                             <RankBadge
@@ -161,10 +173,10 @@ export default function FamilyPublic({
                         </section>
                     </div>
 
-                    <section className="glass h-fit rounded-3xl p-5">
+                    <section className="gc-solid h-fit rounded-2xl p-5">
                         {pending ? (
                             <div className="text-center">
-                                <Clock3 className="mx-auto size-8 text-amber-300" />
+                                <Clock3 className="mx-auto size-8 text-amber-400" />
                                 <div className="mt-2 font-semibold text-white">
                                     {tr('Заявку надіслано')}
                                 </div>
@@ -193,11 +205,11 @@ export default function FamilyPublic({
                         ) : canApply ? (
                             <div className="space-y-3">
                                 <h2 className="flex items-center gap-2 font-display font-semibold text-white">
-                                    <UserPlus className="size-4 text-amber-300" />
+                                    <UserPlus className="size-4 text-amber-400" />
                                     {tr('Вступити до сім’ї')}
                                 </h2>
                                 {application?.status === 'declined' && (
-                                    <p className="rounded-xl bg-rose-500/10 px-3 py-2 text-xs text-rose-200">
+                                    <p className="rounded-xl bg-red-500/10 px-3 py-2 text-xs text-red-400">
                                         {tr(
                                             'Попередню заявку відхилено — можна подати знову.',
                                         )}
@@ -238,6 +250,48 @@ export default function FamilyPublic({
                                         className={cn(inputClass, 'font-mono')}
                                     />
                                 </Field>
+                                {questions.length > 0 && (
+                                    <div className="space-y-3 rounded-2xl bg-white/[0.04] p-3">
+                                        <p className="text-xs font-semibold text-white/55">
+                                            {tr('Анкета сім’ї')}
+                                        </p>
+                                        {questions.map((q) => (
+                                            <Field
+                                                key={q.id}
+                                                label={
+                                                    q.required
+                                                        ? `${q.text} *`
+                                                        : q.text
+                                                }
+                                                error={
+                                                    errors[`answers.${q.id}`]
+                                                }
+                                            >
+                                                <textarea
+                                                    value={
+                                                        form.data.answers[
+                                                            q.id
+                                                        ] ?? ''
+                                                    }
+                                                    onChange={(e) =>
+                                                        form.setData(
+                                                            'answers',
+                                                            {
+                                                                ...form.data
+                                                                    .answers,
+                                                                [q.id]: e.target
+                                                                    .value,
+                                                            },
+                                                        )
+                                                    }
+                                                    rows={2}
+                                                    maxLength={500}
+                                                    className={textareaClass}
+                                                />
+                                            </Field>
+                                        ))}
+                                    </div>
+                                )}
                                 <textarea
                                     value={form.data.note}
                                     onChange={(e) =>
@@ -251,7 +305,7 @@ export default function FamilyPublic({
                                 />
                                 <button
                                     type="button"
-                                    disabled={form.processing}
+                                    disabled={form.processing || unanswered}
                                     onClick={() =>
                                         form.post(`/f/${family.slug}/apply`, {
                                             preserveScroll: true,
@@ -273,7 +327,7 @@ export default function FamilyPublic({
                         )}
                     </section>
                     {can_block && (
-                        <section className="glass space-y-3 rounded-3xl p-4">
+                        <section className="gc-solid space-y-3 rounded-2xl p-4">
                             <h2 className="font-display text-base font-semibold text-white">
                                 {tr('Чорний список')}
                             </h2>
@@ -310,7 +364,7 @@ export default function FamilyPublic({
                                     <span>{person.name}</span>
                                     <button
                                         type="button"
-                                        className="text-xs text-rose-300"
+                                        className="text-xs text-red-400"
                                         onClick={() =>
                                             router.delete(
                                                 `/f/${family.slug}/block/${person.username}`,

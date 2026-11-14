@@ -1,4 +1,5 @@
 import { InfiniteScroll, router, useForm } from '@inertiajs/react';
+import { ListSkeleton } from '@/components/gc/skeletons';
 import {
     ArrowDownToLine,
     Banknote,
@@ -66,15 +67,15 @@ type Props = FamilyShellProps & {
 };
 
 const cashoutStatus = {
-    pending: [tr('Очікує видачі'), 'bg-amber-300/10 text-amber-200'],
-    paid: [tr('Видано'), 'bg-emerald-400/10 text-emerald-200'],
-    cancelled: [tr('Скасовано'), 'bg-white/[0.05] text-white/45'],
+    pending: [tr('Очікує видачі'), 'bg-amber-300/10 text-amber-400'],
+    paid: [tr('Видано'), 'bg-emerald-400/10 text-emerald-400'],
+    cancelled: [tr('Скасовано'), 'gc-solid-2 text-white/45'],
 } as const;
 
 const depositStatus = {
     active: [tr('Активний'), 'bg-gc-indigo/15 text-[#c4b5fd]'],
-    matured: [tr('Виплачено'), 'bg-emerald-400/10 text-emerald-200'],
-    closed: [tr('Закрито достроково'), 'bg-white/[0.05] text-white/45'],
+    matured: [tr('Виплачено'), 'bg-emerald-400/10 text-emerald-400'],
+    closed: [tr('Закрито достроково'), 'gc-solid-2 text-white/45'],
 } as const;
 
 export default function FamilyBank(props: Props) {
@@ -98,7 +99,7 @@ export default function FamilyBank(props: Props) {
                 <Metric
                     label={tr('Мій баланс')}
                     value={uahShort(me.balance)}
-                    tone={me.balance < 0 ? 'text-rose-300' : 'text-emerald-300'}
+                    tone={me.balance < 0 ? 'text-red-400' : 'text-emerald-400'}
                     icon={Wallet}
                 />
                 {totals ? (
@@ -122,7 +123,7 @@ export default function FamilyBank(props: Props) {
                             tone={
                                 totals.balances + totals.pending_cashouts >
                                 family.treasury
-                                    ? 'text-rose-300'
+                                    ? 'text-red-400'
                                     : 'text-white'
                             }
                             icon={Scale}
@@ -181,7 +182,6 @@ export default function FamilyBank(props: Props) {
                                         preserveScroll: true,
                                         preserveState: true,
                                         replace: true,
-                                        reset: ['ledger'],
                                     },
                                 )
                             }
@@ -197,7 +197,17 @@ export default function FamilyBank(props: Props) {
                     <Empty icon={ReceiptText} text={tr('Операцій ще немає')} />
                 ) : (
                     <div className="overflow-x-auto">
-                        <InfiniteScroll data="ledger" preserveUrl>
+                        <InfiniteScroll
+                            data="ledger"
+                            loading={
+                                <ListSkeleton
+                                    rows={3}
+                                    avatar="none"
+                                    card={false}
+                                />
+                            }
+                            preserveUrl
+                        >
                             <table className="w-full min-w-[560px] text-sm">
                                 <thead className="text-left text-xs text-white/35">
                                     <tr>
@@ -348,7 +358,7 @@ function CashoutPanel({
                     {cashouts.map((c) => (
                         <li
                             key={c.id}
-                            className="flex items-center gap-3 rounded-xl bg-white/[0.03] px-3 py-2"
+                            className="gc-solid-2 flex items-center gap-3 rounded-xl px-3 py-2"
                         >
                             <div className="min-w-0 flex-1">
                                 <div className="font-semibold text-white">
@@ -365,14 +375,14 @@ function CashoutPanel({
                                     href={`${base}/bank/cashouts/${c.id}/proof`}
                                     target="_blank"
                                     rel="noreferrer"
-                                    className="text-xs text-gc-lilac-200 hover:underline"
+                                    className="text-xs text-sky-400 hover:underline"
                                 >
                                     {tr('скрін')}
                                 </a>
                             )}
                             <span
                                 className={cn(
-                                    'rounded-full px-2 py-0.5 text-xs font-medium',
+                                    'rounded-chip px-2 py-0.5 text-xs font-medium',
                                     cashoutStatus[c.status][1],
                                 )}
                             >
@@ -388,7 +398,7 @@ function CashoutPanel({
                                             { preserveScroll: true },
                                         )
                                     }
-                                    className="text-xs text-white/45 hover:text-rose-300"
+                                    className="text-xs text-white/45 hover:text-red-400"
                                 >
                                     {tr('скасувати')}
                                 </button>
@@ -481,13 +491,13 @@ function DepositPanel({
                     {form.data.period === 'daily' ? tr('дн.') : tr('тиж.')}
                 </span>
             </div>
-            <div className="mt-3 flex items-center gap-3 rounded-2xl bg-white/[0.03] p-3 ring-1 ring-white/[0.06]">
+            <div className="gc-solid-2 mt-3 flex items-center gap-3 rounded-2xl p-3">
                 <div className="min-w-0 flex-1 text-xs text-white/45">
                     {tr('До виплати')}
-                    <div className="font-display text-lg font-bold text-emerald-300">
+                    <div className="font-display text-lg font-bold text-emerald-400">
                         {uah(principal + interest)}
                     </div>
-                    <span className="text-emerald-300/70">
+                    <span className="text-emerald-400/70">
                         +{uah(interest)} {tr('відсотків')}
                     </span>
                 </div>
@@ -512,12 +522,12 @@ function DepositPanel({
                     {deposits.map((d) => (
                         <li
                             key={d.id}
-                            className="flex items-center gap-3 rounded-xl bg-white/[0.03] px-3 py-2"
+                            className="gc-solid-2 flex items-center gap-3 rounded-xl px-3 py-2"
                         >
                             <div className="min-w-0 flex-1">
                                 <div className="text-sm font-semibold text-white">
                                     {uah(d.amount)} →{' '}
-                                    <span className="text-emerald-300">
+                                    <span className="text-emerald-400">
                                         {uah(d.paid ?? d.payout)}
                                     </span>
                                 </div>
@@ -542,7 +552,7 @@ function DepositPanel({
                             </div>
                             <span
                                 className={cn(
-                                    'rounded-full px-2 py-0.5 text-xs font-medium',
+                                    'rounded-chip px-2 py-0.5 text-xs font-medium',
                                     depositStatus[d.status][1],
                                 )}
                             >
@@ -563,7 +573,7 @@ function DepositPanel({
                                             { preserveScroll: true },
                                         )
                                     }
-                                    className="text-xs text-white/45 hover:text-rose-300"
+                                    className="text-xs text-white/45 hover:text-red-400"
                                 >
                                     {tr('закрити')}
                                 </button>
@@ -600,7 +610,7 @@ function ManualPanel({
                 <button
                     type="button"
                     onClick={() => setOpen((v) => !v)}
-                    className="text-xs text-white/50 hover:text-white"
+                    className="text-xs font-semibold text-sky-400 hover:text-sky-400"
                 >
                     {open ? tr('Згорнути') : tr('Розгорнути')}
                 </button>

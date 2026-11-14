@@ -1,7 +1,12 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import { toast } from 'sonner';
 import { ArrowLeft, Globe2, Lock, Megaphone, UsersRound } from 'lucide-react';
+import { AccessCard } from '@/components/communities/access-card';
+import type { CommunityAccess } from '@/components/communities/access-card';
 import { DonationJarForm } from '@/components/gc/donation-jar';
+import { useState } from 'react';
+import { useReducedMotion } from 'motion/react';
+import { HungryTrashIcon } from '@/components/gc/animated-icons';
 import type { FormEvent } from 'react';
 import { selectClass } from '@/components/gc/admin';
 import {
@@ -18,6 +23,8 @@ import { cn } from '@/lib/utils';
 import type { CommunityDetails } from '@/types';
 import { BotsCard } from '@/components/bots/bots-card';
 import { tr } from '@/lib/i18n';
+import { usePlugin } from '@/lib/plugins';
+import { AiDescriptionButton } from '@/components/communities/ai-description-button';
 
 type Props = {
     community: CommunityDetails;
@@ -28,6 +35,7 @@ type Props = {
     slowModes: number[];
     stats?: CommunityStats;
     jar: { url: string | null; note: string | null };
+    access: CommunityAccess | null;
 };
 
 const field =
@@ -35,7 +43,7 @@ const field =
 
 function Error({ message }: { message?: string }) {
     return message ? (
-        <p className="mt-1 text-xs text-rose-300">{message}</p>
+        <p className="mt-1 text-xs text-red-400">{message}</p>
     ) : null;
 }
 
@@ -56,10 +64,10 @@ function Segmented<T extends string>({
                     type="button"
                     onClick={() => onChange(option.value)}
                     className={cn(
-                        'flex items-start gap-3 rounded-2xl border p-3.5 text-left transition',
+                        'flex items-start gap-3 rounded-2xl p-3.5 text-left transition',
                         value === option.value
-                            ? 'border-gc-lilac-500/60 bg-gc-indigo/15'
-                            : 'border-white/[0.07] bg-white/[0.02] hover:border-white/15',
+                            ? 'bg-gc-indigo/15'
+                            : 'gc-solid-2 hover:border-white/15',
                     )}
                 >
                     <option.icon
@@ -93,6 +101,7 @@ export default function CommunitySettings({
     slowModes,
     stats,
     jar,
+    access,
 }: Props) {
     const form = useForm({
         name: community.name,
@@ -107,6 +116,9 @@ export default function CommunitySettings({
         city: community.city ?? '',
     });
     const remove = useForm({ confirm: '' });
+    const [eating, setEating] = useState(false);
+    const reduceMotion = useReducedMotion();
+    const aiDescriptionOn = usePlugin('ai_community_description');
     const { data, setData, errors } = form;
 
     const submit = (event: FormEvent) => {
@@ -121,7 +133,7 @@ export default function CommunitySettings({
                 <div className="flex items-center gap-4">
                     <Link
                         href={`/c/${community.slug}`}
-                        className="flex size-10 items-center justify-center rounded-xl bg-white/[0.05] text-white/70 transition hover:bg-white/10 hover:text-white"
+                        className="gc-solid-2 flex size-10 items-center justify-center rounded-xl text-white/70 transition hover:bg-white/10 hover:text-white"
                         aria-label={tr('Назад')}
                     >
                         <ArrowLeft className="size-5" />
@@ -191,9 +203,22 @@ export default function CommunitySettings({
                                 />
                                 <Error message={errors.status} />
                             </label>
-                            <label className="text-sm font-medium text-white/80">
-                                {tr('Опис')}
+                            <div className="text-sm font-medium text-white/80">
+                                <div className="flex items-center justify-between gap-2">
+                                    <label htmlFor="community-description">
+                                        {tr('Опис')}
+                                    </label>
+                                    {aiDescriptionOn && (
+                                        <AiDescriptionButton
+                                            slug={community.slug}
+                                            onResult={(text) =>
+                                                setData('description', text)
+                                            }
+                                        />
+                                    )}
+                                </div>
                                 <textarea
+                                    id="community-description"
                                     value={data.description}
                                     onChange={(e) =>
                                         setData('description', e.target.value)
@@ -206,7 +231,7 @@ export default function CommunitySettings({
                                     )}
                                 />
                                 <Error message={errors.description} />
-                            </label>
+                            </div>
                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                                 <label className="text-sm font-medium text-white/80">
                                     {tr('Тематика')}
@@ -384,6 +409,14 @@ export default function CommunitySettings({
                     </div>
                 </form>
 
+                {access && (
+                    <AccessCard
+                        slug={community.slug}
+                        access={access}
+                        closed={community.privacy === 'closed'}
+                    />
+                )}
+
                 <RulesForm
                     slug={community.slug}
                     extras={extras}
@@ -411,7 +444,14 @@ export default function CommunitySettings({
                         <form
                             onSubmit={(event) => {
                                 event.preventDefault();
-                                remove.delete(`/c/${community.slug}`);
+                                setEating(true);
+                                window.setTimeout(
+                                    () =>
+                                        remove.delete(`/c/${community.slug}`, {
+                                            onFinish: () => setEating(false),
+                                        }),
+                                    reduceMotion ? 0 : 650,
+                                );
                             }}
                             className="flex flex-col gap-3 sm:flex-row"
                         >
@@ -431,8 +471,9 @@ export default function CommunitySettings({
                                 disabled={
                                     remove.data.confirm !== community.slug
                                 }
-                                className="h-11 rounded-xl bg-rose-500/80 px-5 text-sm font-semibold text-white transition hover:bg-rose-500 disabled:opacity-40"
+                                className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-red-500/80 px-5 text-sm font-semibold text-white transition hover:bg-red-500 disabled:opacity-40"
                             >
+                                <HungryTrashIcon eating={eating} />
                                 {tr('Видалити')}
                             </button>
                         </form>

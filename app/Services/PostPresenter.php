@@ -5,16 +5,26 @@ namespace App\Services;
 use App\Models\Comment;
 use App\Models\Community;
 use App\Models\CommunityMember;
+use App\Models\Family;
+use App\Models\FamilyMember;
 use App\Models\Like;
 use App\Models\Movie;
 use App\Models\PollOption;
 use App\Models\PollVote;
 use App\Models\Post;
 use App\Models\PostAttachment;
+use App\Models\PostSeries;
 use App\Models\Save;
 use App\Models\Track;
 use App\Models\User;
 use App\Models\UserMute;
+use App\Services\Billing\AuthorSubscriptions;
+use App\Services\Feed\SlowMode;
+use App\Services\Games\GameTags;
+use App\Services\Profile\Affiliations;
+use App\Services\Profile\UserRoles;
+use App\Support\Modules\ModuleManager;
+use App\Support\Plugins\Plugins;
 use App\Support\Stickers;
 use Illuminate\Database\Eloquent\Collection;
 
@@ -31,14 +41,26 @@ class PostPresenter
     /** @var array<int, bool> */
     private array $saved = [];
 
+    /** @var array<int, array{id: int, title: string, count: int}> серії записів */
+    private array $series = [];
+
     /** @var array<int, int> */
     private array $votes = [];
+
+    /** @var array<int, list<array<string, mixed>>> */
+    private array $voters = [];
+
+    /** @var array<int, true> Автори, на яких глядач має платну підписку */
+    private array $subscribedTo = [];
 
     /** @var array<int, bool> */
     private array $muted = [];
 
     /** @var array<string, array{title: string, color: string|null}> підписи ролей у спільнотах: "спільнота:автор" */
     private array $badges = [];
+
+    /** @var array<int, array<string, mixed>> сім'я автора (верифікована): тег, ранг, сервер — значок «Лідер STARK» біля імені */
+    private array $families = [];
 
     /**
      * Готує записи до показу: автор, стіна, вкладення, останні коментарі, лайки глядача.
@@ -54,6 +76,9 @@ class PostPresenter
 
         $posts->loadMissing(['author', 'wall', 'attachments', 'sharedPost.author', 'sharedPost.wall', 'quotedPost.author']);
         $ids = $posts->modelKeys();
+        $this->subscribedTo = $viewer && $posts->contains(fn (Post $p) => $p->subscribers_only)
+            ? array_fill_keys(app(AuthorSubscriptions::class)->authorsFor($viewer), true)
+            : [];
 
         $previewComments = Comment::query()
             ->with('user')
@@ -97,11 +122,27 @@ class PostPresenter
             ]])->all()
             : [];
 
+        $seriesIds = $posts->pluck('series_id')->filter()->unique();
+        $this->series = $seriesIds->isNotEmpty()
+            ? PostSeries::query()->whereIn('id', $seriesIds)->withCount(['posts' => fn ($q) => $q->where('is_draft', false)])->get()
+                ->mapWithKeys(fn (PostSeries $s) => [$s->id => ['id' => $s->id, 'title' => $s->title, 'count' => (int) $s->posts_count]])->all()
+            : [];
+
         $posts->loadMissing('poll.options');
         $this->saved = $viewer
             ? Save::query()->where('user_id', $viewer->id)->where('kind', Save::POST)->whereIn('subject_id', $ids)->pluck('subject_id')->mapWithKeys(fn ($id) => [(int) $id => true])->all()
             : [];
         $pollIds = $posts->map(fn (Post $post) => $post->poll?->id)->filter()->values();
+        // Відкриті опитування: перші троє тих, хто обрав кожен варіант.
+        $openIds = $posts->map(fn (Post $post) => $post->poll && ! $post->poll->is_anonymous ? $post->poll->id : null)->filter()->values();
+        $this->voters = [];
+        if ($openIds->isNotEmpty()) {
+            $votes = PollVote::query()->whereIn('poll_id', $openIds)->latest('id')->limit(500)->get(['option_id', 'user_id']);
+            $people = User::query()->whereIn('id', $votes->pluck('user_id')->unique())->get()->keyBy('id');
+            foreach ($votes->groupBy('option_id') as $optionId => $rows) {
+                $this->voters[(int) $optionId] = array_values($rows->take(3)->map(fn ($vote) => $people->get($vote->user_id)?->toCard())->filter()->all());
+            }
+        }
         $this->votes = $viewer && $pollIds->isNotEmpty()
             ? PollVote::query()->where('user_id', $viewer->id)->whereIn('poll_id', $pollIds)->pluck('option_id', 'poll_id')->map(fn ($id) => (int) $id)->all()
             : [];
@@ -112,6 +153,32 @@ class PostPresenter
         $managed = $viewer && $posts->contains('wall_type', 'community')
             ? array_flip(app(CommunityService::class)->managedIds($viewer))
             : [];
+
+        // Значки біля ніків авторів — одним заходом для всієї стрічки.
+        app(Affiliations::class)->prime($posts->pluck('author'));
+        app(UserRoles::class)->prime($posts->pluck('author'));
+        $this->families = [];
+        if (app(ModuleManager::class)->enabled('families')) {
+            $members = FamilyMember::query()->with('family.server')
+                ->whereIn('user_id', $posts->pluck('author_id')->unique()->all())
+                ->where('status', FamilyMember::STATUS_ACTIVE)
+                ->whereHas('family', fn ($q) => $q->where('status', Family::STATUS_VERIFIED))
+                ->get();
+            foreach ($members as $member) {
+                $family = $member->family;
+                if (isset($this->families[$member->user_id])) {
+                    continue;
+                }
+                $this->families[$member->user_id] = [
+                    'tag' => $family->tag,
+                    'name' => $family->name,
+                    'href' => '/f/'.$family->slug,
+                    'rank' => $member->rank,
+                    'rank_title' => $family->rankTitle($member->rank),
+                    'server' => $family->server?->name,
+                ];
+            }
+        }
 
         $this->badges = [];
         $communityPosts = $posts->filter(fn (Post $post) => $post->wall instanceof Community);
@@ -177,20 +244,24 @@ class PostPresenter
             default => null,
         };
 
-        return [
+        $card = [
             'id' => $post->id,
             'body' => $post->body,
+            // #Згадки ігор у тексті → посилання на сторінки ігор.
+            'games' => array_values(app(GameTags::class)->resolve($post->body)),
             'spoiler' => $post->spoiler,
             'sticker' => Stickers::emoji($post->sticker),
             'visibility' => $post->visibility,
             'is_pinned' => $post->is_pinned,
             'comments_enabled' => $post->comments_enabled,
+            'slow_mode' => app(SlowMode::class)->card($post),
             'likes_count' => $post->likes_count,
             'comments_count' => $post->comments_count,
             'views_count' => $post->views_count,
             'created_at' => $post->created_at->toIso8601String(),
             'edited_at' => $post->edited_at?->toIso8601String(),
             'author' => $post->author->toCard(),
+            'family' => $publisher ? null : ($this->families[$post->author_id] ?? null),
             'badge' => $community && ! $publisher ? $this->badges[$community->id.':'.$post->author_id] ?? null : null,
             'tag' => $post->tag !== null && $community ? ['name' => $post->tag, 'href' => '/c/'.$community->slug.'?tag='.rawurlencode($post->tag)] : null,
             'pending' => $post->is_pending,
@@ -212,6 +283,10 @@ class PostPresenter
             'poll' => $this->pollCard($post),
             'shared' => $this->sharedCard($post),
             'quoted' => $this->quotedCard($post),
+            // Серія: «Назва · частина 2 з 5» — посилання на сторінку серії.
+            'series' => $post->series_id && isset($this->series[$post->series_id])
+                ? [...$this->series[$post->series_id], 'position' => (int) $post->series_position]
+                : null,
             'muted' => isset($this->muted[$post->author_id]),
             'reaction' => $reaction,
             'liked' => $reaction !== null,
@@ -221,12 +296,22 @@ class PostPresenter
                 'edit' => $viewer !== null && $post->author_id === $viewer->id && ($post->is_draft || $post->publish_at?->isFuture() || $post->created_at->greaterThan(now()->subMinutes(Post::EDIT_MINUTES))),
                 'pin' => $ownWall || $managesWall,
                 'comment' => $viewer !== null && $post->comments_enabled,
+                'slow_mode' => $viewer !== null && ($post->author_id === $viewer->id || $viewer->isStaff()),
                 'hide' => $viewer !== null && $post->author_id !== $viewer->id && ! $post->is_draft && ! $post->publish_at?->isFuture(),
                 'mute' => $viewer !== null && $post->author_id !== $viewer->id && ! $post->is_draft && ! $post->publish_at?->isFuture(),
                 'share' => $shareable,
                 'quote' => $viewer !== null && ! $post->is_draft && ! $post->publish_at?->isFuture(),
+                'series' => $viewer !== null && $post->author_id === $viewer->id && ! $post->as_community,
             ],
+            'subscribers_only' => $post->subscribers_only,
+            'locked' => false,
         ];
+        // Запис «лише для підписників»: решта бачить тільки автора й заклик підписатися.
+        if ($post->subscribers_only && ! ($viewer && ($viewer->id === $post->author_id || $viewer->isStaff() || isset($this->subscribedTo[$post->author_id])))) {
+            $card = [...$card, 'locked' => true, 'body' => '', 'games' => [], 'attachments' => [], 'music' => null, 'movie' => null, 'link' => null, 'card' => null, 'poll' => null, 'shared' => null, 'quoted' => null, 'comments' => [], 'can' => [...$card['can'], 'comment' => false, 'share' => false, 'quote' => false]];
+        }
+
+        return $card;
     }
 
     /**
@@ -276,7 +361,7 @@ class PostPresenter
     }
 
     /**
-     * @return array{id: int, question: string, total: int, voted: int|null, options: list<array{id: int, label: string, votes: int}>}|null
+     * @return array{id: int, question: string, total: int, voted: int|null, anonymous: bool, options: list<array{id: int, label: string, votes: int, voters: list<array<string, mixed>>}>}|null
      */
     private function pollCard(Post $post): ?array
     {
@@ -290,10 +375,12 @@ class PostPresenter
             'question' => $poll->question,
             'total' => (int) $poll->options->sum('votes_count'),
             'voted' => isset($this->votes[$poll->id]) ? (int) $this->votes[$poll->id] : null,
+            'anonymous' => $poll->is_anonymous,
             'options' => array_values($poll->options->map(fn (PollOption $option) => [
                 'id' => $option->id,
                 'label' => $option->label,
                 'votes' => $option->votes_count,
+                'voters' => $poll->is_anonymous ? [] : ($this->voters[$option->id] ?? []),
             ])->all()),
         ];
     }
@@ -332,6 +419,43 @@ class PostPresenter
             'user' => $comment->user->toCard(),
             'can_delete' => $viewer !== null && ($viewer->id === $comment->user_id || $viewer->isStaff()),
             'can_pin' => $canPin && $comment->parent_id === null,
+            'can_thank' => $viewer !== null && $viewer->id !== $comment->user_id && app(Plugins::class)->on('thanks'),
+            'thanked' => $viewer !== null && $viewer->id !== $comment->user_id && app(Thanks::class)->has($viewer, 'comment', $comment->id),
+            'badge' => $this->commentBadge($comment),
+            // Приховано автоматикою (токсичність) або вручну: показуємо згорнутим.
+            'hidden' => $comment->hidden_at ? ['reason' => $comment->hidden_reason] : null,
+            'can_moderate' => $canPin || ($viewer?->isStaff() ?? false),
         ];
+    }
+
+    /** @var array<int, int> id запису → id спільноти (0 — не спільнота) */
+    private array $commentCommunities = [];
+
+    /** @var array<string, array{title: string, color: string|null}|null> */
+    private array $commentBadges = [];
+
+    /**
+     * Звання автора коментаря в спільноті, де стоїть запис (як у записах — колір і назва).
+     *
+     * @return array{title: string, color: string|null}|null
+     */
+    private function commentBadge(Comment $comment): ?array
+    {
+        if ($comment->post_id === null) {
+            return null;
+        }
+        $communityId = $this->commentCommunities[$comment->post_id] ??= (int) (Post::query()->whereKey($comment->post_id)
+            ->where('wall_type', 'community')->value('wall_id') ?? 0);
+        if ($communityId === 0) {
+            return null;
+        }
+        $key = $communityId.':'.$comment->user_id;
+        if (! array_key_exists($key, $this->commentBadges)) {
+            $member = CommunityMember::query()->where('community_id', $communityId)->where('user_id', $comment->user_id)
+                ->whereNotNull('title')->first(['title', 'color']);
+            $this->commentBadges[$key] = $member ? ['title' => (string) $member->title, 'color' => $member->color] : null;
+        }
+
+        return $this->commentBadges[$key];
     }
 }

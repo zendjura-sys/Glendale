@@ -1,3 +1,4 @@
+import { InviteLinkButton } from '@/components/gc/invite-link';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import {
     ArrowLeft,
@@ -5,6 +6,7 @@ import {
     Clock3,
     Crown,
     Gamepad2,
+    Headphones,
     LogOut,
     Server,
     XCircle,
@@ -12,12 +14,22 @@ import {
 import { useState } from 'react';
 import { UserAvatar } from '@/components/gc/user-avatar';
 import { VoiceRooms } from '@/components/gc/voice-rooms';
+import { joinVoice } from '@/lib/voice';
 import { PARTY_PLATFORMS, partyWhen } from '@/components/party/party-card';
 import type { PartyCardData } from '@/components/party/party-card';
+import { MatchRow } from '@/components/party/teammates';
+import { TimePoll } from '@/components/party/time-poll';
+import type { TeammateMatch } from '@/components/party/teammates';
 import { tr } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
-export default function PartyShow({ party }: { party: PartyCardData }) {
+export default function PartyShow({
+    party,
+    suggestions = [],
+}: {
+    party: PartyCardData;
+    suggestions?: TeammateMatch[];
+}) {
     const plus = Boolean(usePage().props.auth.user?.plus);
     const free = party.roles.filter(
         (role) => !party.taken_roles.includes(role),
@@ -25,6 +37,7 @@ export default function PartyShow({ party }: { party: PartyCardData }) {
     const [role, setRole] = useState<string | null>(free[0] ?? null);
     const full = party.count >= party.slots;
     const canJoin = party.open && !party.joined && !full;
+    const voting = Boolean(party.time_poll && !party.time_poll.decided);
 
     return (
         <>
@@ -38,7 +51,7 @@ export default function PartyShow({ party }: { party: PartyCardData }) {
                     {tr('Пошук паті')}
                 </Link>
 
-                <section className="glass space-y-4 rounded-3xl p-5 sm:p-6">
+                <section className="gc-solid space-y-4 rounded-2xl p-5 sm:p-6">
                     <div className="flex items-start gap-3">
                         <UserAvatar user={party.host} size="lg" />
                         <div className="min-w-0 flex-1">
@@ -55,14 +68,16 @@ export default function PartyShow({ party }: { party: PartyCardData }) {
                     </div>
 
                     <div className="flex flex-wrap gap-2 text-sm">
-                        <span className="inline-flex items-center gap-1.5 rounded-xl bg-gc-indigo/15 px-3 py-1.5 text-[#c4b5fd]">
-                            <Clock3 className="size-4" />
-                            {partyWhen(party.starts_at)}
-                        </span>
+                        {!voting && (
+                            <span className="inline-flex items-center gap-1.5 rounded-xl bg-gc-indigo/15 px-3 py-1.5 text-[#c4b5fd]">
+                                <Clock3 className="size-4" />
+                                {partyWhen(party.starts_at)}
+                            </span>
+                        )}
                         {party.game && (
                             <Link
                                 href={`/games/${party.game.slug}`}
-                                className="inline-flex max-w-full min-w-0 items-center gap-1.5 rounded-xl bg-white/[0.06] px-3 py-1.5 text-white/80 hover:bg-white/10"
+                                className="gc-solid-2 inline-flex max-w-full min-w-0 items-center gap-1.5 rounded-xl px-3 py-1.5 text-white/80 hover:bg-white/10"
                             >
                                 <Gamepad2 className="size-4 shrink-0" />
                                 <span className="truncate">
@@ -73,7 +88,7 @@ export default function PartyShow({ party }: { party: PartyCardData }) {
                         {party.server && (
                             <Link
                                 href={`/servers/${party.server.slug}`}
-                                className="inline-flex max-w-full min-w-0 items-center gap-1.5 rounded-xl bg-white/[0.06] px-3 py-1.5 text-white/80 hover:bg-white/10"
+                                className="gc-solid-2 inline-flex max-w-full min-w-0 items-center gap-1.5 rounded-xl px-3 py-1.5 text-white/80 hover:bg-white/10"
                             >
                                 <Server className="size-4 shrink-0" />
                                 <span className="truncate">
@@ -82,7 +97,7 @@ export default function PartyShow({ party }: { party: PartyCardData }) {
                             </Link>
                         )}
                         {party.platform && (
-                            <span className="rounded-xl bg-white/[0.06] px-3 py-1.5 text-white/80">
+                            <span className="gc-solid-2 rounded-xl px-3 py-1.5 text-white/80">
                                 {PARTY_PLATFORMS()[party.platform] ??
                                     party.platform}
                             </span>
@@ -95,14 +110,23 @@ export default function PartyShow({ party }: { party: PartyCardData }) {
                         </p>
                     )}
 
+                    {party.time_poll && (
+                        <TimePoll
+                            partyId={party.id}
+                            poll={party.time_poll}
+                            canPick={party.mine}
+                            open={party.open}
+                        />
+                    )}
+
                     {!party.open && (
-                        <p className="rounded-2xl bg-white/[0.04] px-4 py-3 text-sm text-white/60">
+                        <p className="gc-solid-2 rounded-2xl px-4 py-3 text-sm text-white/60">
                             {tr('Оголошення закрите.')}
                         </p>
                     )}
 
                     {canJoin && (
-                        <div className="space-y-3 rounded-2xl bg-white/[0.03] p-4">
+                        <div className="gc-solid-2 space-y-3 rounded-2xl p-4">
                             {free.length > 0 && (
                                 <div className="flex flex-wrap gap-1.5">
                                     {free.map((item) => (
@@ -115,7 +139,7 @@ export default function PartyShow({ party }: { party: PartyCardData }) {
                                                 'rounded-lg px-3 py-1.5 text-sm transition',
                                                 role === item
                                                     ? 'bg-amber-300/20 text-amber-50'
-                                                    : 'bg-white/[0.05] text-white/70 hover:text-white',
+                                                    : 'gc-solid-2 text-white/70 hover:text-white',
                                             )}
                                         >
                                             {item}
@@ -147,6 +171,12 @@ export default function PartyShow({ party }: { party: PartyCardData }) {
                     )}
 
                     <div className="flex flex-wrap gap-2">
+                        {party.joined && party.open && (
+                            <InviteLinkButton
+                                url={`/party/${party.id}/invite-link`}
+                                className="gc-solid-2 inline-flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-medium text-white/75 transition hover:bg-white/10"
+                            />
+                        )}
                         {party.joined && !party.mine && (
                             <button
                                 type="button"
@@ -155,7 +185,7 @@ export default function PartyShow({ party }: { party: PartyCardData }) {
                                         preserveScroll: true,
                                     })
                                 }
-                                className="inline-flex h-10 items-center gap-2 rounded-xl bg-white/[0.05] px-4 text-sm font-medium text-white/75 transition hover:bg-white/10"
+                                className="gc-solid-2 inline-flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-medium text-white/75 transition hover:bg-white/10"
                             >
                                 <LogOut className="size-4" />
                                 {tr('Вийти з паті')}
@@ -171,7 +201,7 @@ export default function PartyShow({ party }: { party: PartyCardData }) {
                                         { preserveScroll: true },
                                     )
                                 }
-                                className="inline-flex h-10 items-center gap-2 rounded-xl bg-white/[0.05] px-4 text-sm font-medium text-indigo-200 transition hover:bg-indigo-400/10"
+                                className="gc-solid-2 inline-flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-medium text-indigo-200 transition hover:bg-indigo-400/10"
                             >
                                 <ArrowUp className="size-4" />
                                 {tr('Підняти нагору на годину')}
@@ -183,7 +213,7 @@ export default function PartyShow({ party }: { party: PartyCardData }) {
                                 onClick={() =>
                                     router.delete(`/party/${party.id}`)
                                 }
-                                className="inline-flex h-10 items-center gap-2 rounded-xl bg-white/[0.05] px-4 text-sm font-medium text-rose-200 transition hover:bg-rose-400/10"
+                                className="gc-solid-2 inline-flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-medium text-red-400 transition hover:bg-red-400/10"
                             >
                                 <XCircle className="size-4" />
                                 {tr('Закрити оголошення')}
@@ -192,7 +222,7 @@ export default function PartyShow({ party }: { party: PartyCardData }) {
                     </div>
                 </section>
 
-                <section className="glass rounded-3xl p-5">
+                <section className="gc-solid rounded-2xl p-5">
                     <h2 className="font-display text-lg font-bold text-white">
                         {tr('Склад')} · {party.count}/{party.slots}
                     </h2>
@@ -211,7 +241,7 @@ export default function PartyShow({ party }: { party: PartyCardData }) {
                             <li key={member.id}>
                                 <Link
                                     href={`/${member.username}`}
-                                    className="flex min-w-0 items-center gap-3 rounded-2xl px-1.5 py-1.5 transition hover:bg-white/[0.05]"
+                                    className="flex min-w-0 items-center gap-3 rounded-2xl px-1.5 py-1.5 transition hover:bg-[var(--gc-l3)]"
                                 >
                                     <UserAvatar user={member} size="sm" />
                                     <span className="min-w-0 flex-1 truncate text-sm text-white">
@@ -227,6 +257,65 @@ export default function PartyShow({ party }: { party: PartyCardData }) {
                         ))}
                     </ul>
                 </section>
+
+                {party.voice_room && (
+                    <section className="gc-solid flex flex-wrap items-center gap-4 rounded-2xl p-5 sm:p-6">
+                        <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-300">
+                            <Headphones className="size-5" />
+                        </span>
+                        <div className="min-w-[12rem] flex-1">
+                            <h2 className="font-display text-lg font-semibold text-white">
+                                {tr('Паті зібрана')}
+                            </h2>
+                            <p className="text-sm text-white/55">
+                                {tr(
+                                    'Усі місця зайняті — голосова кімната вже чекає.',
+                                )}
+                            </p>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() =>
+                                void joinVoice(
+                                    party.voice_room!,
+                                    { type: 'party', id: party.id },
+                                    party.title,
+                                    party.href,
+                                )
+                            }
+                            className="btn-glow inline-flex h-11 items-center gap-2 rounded-xl px-5 text-sm font-semibold"
+                        >
+                            <Headphones className="size-4" />
+                            {tr('Зайти в голосову')}
+                        </button>
+                    </section>
+                )}
+
+                {suggestions.length > 0 && !party.full && (
+                    <section className="gc-solid rounded-2xl p-5 sm:p-6">
+                        <div className="flex items-center justify-between gap-3">
+                            <h2 className="font-display text-lg font-semibold text-white">
+                                {tr('Підходять у паті')}
+                            </h2>
+                            <Link
+                                href="/party/match"
+                                className="text-sm text-white/55 hover:text-white"
+                            >
+                                {tr('Підбір тиммейтів')}
+                            </Link>
+                        </div>
+                        <div className="divide-y divide-white/[0.06]">
+                            {suggestions.map((match) => (
+                                <MatchRow
+                                    key={match.user.id}
+                                    match={match}
+                                    parties={[]}
+                                    party={party.id}
+                                />
+                            ))}
+                        </div>
+                    </section>
+                )}
 
                 {party.joined && party.open && (
                     <VoiceRooms

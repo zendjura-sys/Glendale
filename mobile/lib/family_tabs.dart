@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+
+import 'core/widgets/arctic_glass/arctic_fit_text.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import 'alerts.dart' show AlertPlacePickerPage;
 import 'api.dart';
 import 'families.dart';
 import 'posts.dart';
@@ -309,7 +312,7 @@ class _QueueTabState extends State<QueueTab> {
               Container(
                 margin: const EdgeInsets.only(bottom: 10),
                 padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.035), borderRadius: BorderRadius.circular(14), border: Border.all(color: line)),
+                decoration: BoxDecoration(color: fg.withValues(alpha: 0.035), borderRadius: BorderRadius.circular(14)),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                   Row(children: [
                     Expanded(child: Text(text(mapOf(c['member'])['display']) ?? '', style: body(13.5, weight: FontWeight.w600).copyWith(fontFamily: 'monospace'))),
@@ -437,13 +440,13 @@ class _BankTabState extends State<BankTab> {
                       visualDensity: VisualDensity.compact,
                       tooltip: tr('Скасувати'),
                       onPressed: () => ctx.act(context, () => ctx.api.post(ctx.path('bank/cashouts/${c['id']}/cancel')), keep: keep),
-                      icon: const Icon(LucideIcons.x, size: 18, color: muted),
+                      icon: Icon(LucideIcons.x, size: 18, color: muted),
                     ),
                   if (c['has_proof'] == true)
                     IconButton(
                       visualDensity: VisualDensity.compact,
                       onPressed: () => openAuthImages(context, [ctx.path('bank/cashouts/${c['id']}/proof')], 0),
-                      icon: const Icon(LucideIcons.image, size: 18, color: muted),
+                      icon: Icon(LucideIcons.image, size: 18, color: muted),
                     ),
                 ]),
               ),
@@ -489,7 +492,7 @@ class _BankTabState extends State<BankTab> {
               Container(
                 margin: const EdgeInsets.only(top: 10),
                 padding: EdgeInsets.all(10),
-                decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.035), borderRadius: BorderRadius.circular(12), border: Border.all(color: line)),
+                decoration: BoxDecoration(color: fg.withValues(alpha: 0.035), borderRadius: BorderRadius.circular(12)),
                 child: Row(children: [
                   Expanded(
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -720,9 +723,8 @@ class WarehouseTab extends StatelessWidget {
                   margin: const EdgeInsets.only(bottom: 8),
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: item['is_archived'] == true ? 0.015 : 0.035),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: item['low'] == true ? danger.withValues(alpha: 0.4) : line),
+                    color: item['low'] == true ? danger.withValues(alpha: 0.1) : (item['is_archived'] == true ? raised.withValues(alpha: 0.5) : raised),
+                    borderRadius: BorderRadius.circular(16),
                   ),
                   child: Column(children: [
                     Row(children: [
@@ -741,7 +743,7 @@ class WarehouseTab extends StatelessWidget {
                       Expanded(child: GhostButton(label: tr('Взяти'), icon: LucideIcons.upload, compact: true, onPressed: intOf(item['quantity']) > 0 && item['is_archived'] != true ? () => _move(context, item, 'take') : null)),
                       const SizedBox(width: 8),
                       Expanded(child: GhostButton(label: tr('Покласти'), icon: LucideIcons.download, compact: true, onPressed: item['is_archived'] != true ? () => _move(context, item, 'put') : null)),
-                      if (manage) IconButton(visualDensity: VisualDensity.compact, onPressed: () => _editItem(context, item: item), icon: const Icon(LucideIcons.pencil, size: 18, color: muted)),
+                      if (manage) IconButton(visualDensity: VisualDensity.compact, onPressed: () => _editItem(context, item: item), icon: Icon(LucideIcons.pencil, size: 18, color: muted)),
                     ]),
                   ]),
                 ),
@@ -787,7 +789,7 @@ class WarehouseTab extends StatelessWidget {
                   ]),
                 ),
                 if (text(l['proof_url']) != null)
-                  IconButton(visualDensity: VisualDensity.compact, onPressed: () => openAuthImages(context, [sitePathOf(text(l['proof_url'])!)], 0), icon: const Icon(LucideIcons.image, size: 18, color: muted)),
+                  IconButton(visualDensity: VisualDensity.compact, onPressed: () => openAuthImages(context, [sitePathOf(text(l['proof_url'])!)], 0), icon: Icon(LucideIcons.image, size: 18, color: muted)),
               ]),
             ),
         ],
@@ -884,7 +886,7 @@ class _MembersTabState extends State<MembersTab> {
     final saved = await showGcSheet<bool>(
       context,
       title: tr('Ранги й права'),
-      subtitle: tr('Ранг 10 і власник можуть усе. Відмітьте, які ранги мають кожне право.'),
+      subtitle: tr('Ранг 10 і власник можуть усе. Позначте, які ранги мають кожне право.'),
       height: MediaQuery.sizeOf(context).height * 0.9,
       builder: (sheet) => StatefulBuilder(
         builder: (context, set) => ListView(padding: const EdgeInsets.fromLTRB(16, 4, 16, 24), children: [
@@ -964,7 +966,7 @@ class _MembersTabState extends State<MembersTab> {
                 ].join(' · '),
                 trailing: Row(mainAxisSize: MainAxisSize.min, children: [
                   if (m['balance'] != null) Text(hryvnia(m['balance']), style: body(12.5, color: green, weight: FontWeight.w700)),
-                  IconButton(visualDensity: VisualDensity.compact, onPressed: () => _manage(m), icon: const Icon(LucideIcons.slidersHorizontal, size: 18, color: muted)),
+                  IconButton(visualDensity: VisualDensity.compact, onPressed: () => _manage(m), icon: Icon(LucideIcons.slidersHorizontal, size: 18, color: muted)),
                 ]),
               ),
           ]),
@@ -1127,7 +1129,7 @@ class _DisciplineTabState extends State<DisciplineTab> {
             Container(
               margin: const EdgeInsets.only(bottom: 8),
               padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.035), borderRadius: BorderRadius.circular(12), border: Border.all(color: p['active'] == true ? danger.withValues(alpha: 0.35) : line)),
+              decoration: BoxDecoration(color: p['active'] == true ? danger.withValues(alpha: 0.12) : raised, borderRadius: BorderRadius.circular(14)),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Row(children: [
                   Text(text(p['type_label']) ?? '', style: body(13.5, weight: FontWeight.w700, color: p['active'] == true ? dangerSoft : soft)),
@@ -1227,7 +1229,7 @@ class EventsTab extends StatelessWidget {
     final ok = await showGcSheet<String>(
       context,
       title: tr('Підсумок: {v}', {'v': event['title']}),
-      subtitle: tr('Відмітьте присутніх — їм нарахуються бали й нагорода.'),
+      subtitle: tr('Позначте присутніх — їм нарахуються бали й нагорода.'),
       height: MediaQuery.sizeOf(context).height * 0.8,
       builder: (sheet) => StatefulBuilder(
         builder: (context, set) => Column(children: [
@@ -1371,7 +1373,7 @@ List<Widget> ratingTab(FamilyContext ctx) {
             SizedBox(width: 44, child: Text(tr('КОНТР.'), textAlign: TextAlign.center, style: body(11, color: faint, weight: FontWeight.w700))),
             SizedBox(width: 44, child: Text(tr('БАЛИ'), textAlign: TextAlign.right, style: body(11, color: faint, weight: FontWeight.w700))),
           ]),
-          const Divider(color: line),
+          Divider(color: line),
           for (final r in rows)
             Container(
               padding: const EdgeInsets.symmetric(vertical: 7, horizontal: 4),
@@ -1380,7 +1382,7 @@ List<Widget> ratingTab(FamilyContext ctx) {
                 SizedBox(width: 22, child: Text('${r['place']}', style: body(12.5, color: intOf(r['place']) <= 3 ? gold : muted, weight: FontWeight.w700))),
                 Expanded(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(text(r['display']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12.5).copyWith(fontFamily: 'monospace')),
+                    FitText(text(r['display']) ?? '', style: body(12.5).copyWith(fontFamily: 'monospace')),
                     Text(text(r['rank_title']) ?? '', style: body(11, color: muted)),
                   ]),
                 ),
@@ -1413,7 +1415,7 @@ List<Widget> auditTab(FamilyContext ctx) {
         ),
         const SizedBox(height: 8),
         Row(children: [
-          const Icon(LucideIcons.lock, size: 14, color: muted),
+          Icon(LucideIcons.lock, size: 14, color: muted),
           const SizedBox(width: 6),
           Expanded(child: Text(tr('Записи незмінні: їх не може відредагувати чи видалити навіть лідер.'), style: body(12, color: muted))),
         ]),
@@ -1446,6 +1448,8 @@ class _SettingsTabState extends State<SettingsTab> {
   late final tag = TextEditingController(text: text(profile['tag']) ?? '');
   late final description = TextEditingController(text: text(profile['description']) ?? '');
   late bool recruiting = profile['is_recruiting'] == true;
+  late final serverInfo = mapOf(widget.ctx.data['server']);
+  late int? serverId = serverInfo['current'] is num ? (serverInfo['current'] as num).toInt() : null;
   XFile? logo;
   XFile? cover;
 
@@ -1516,7 +1520,7 @@ class _SettingsTabState extends State<SettingsTab> {
   Widget _group(String title, List<Widget> children) => Container(
         margin: const EdgeInsets.only(bottom: 10),
         padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.03), borderRadius: BorderRadius.circular(16), border: Border.all(color: line)),
+        decoration: BoxDecoration(color: raised, borderRadius: BorderRadius.circular(16)),
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [Text(title, style: body(14, weight: FontWeight.w700)), const SizedBox(height: 10), ...children]),
       );
 
@@ -1557,6 +1561,33 @@ class _SettingsTabState extends State<SettingsTab> {
           PrimaryButton(label: tr('Зберегти профіль'), onPressed: _saveProfile),
         ],
       ),
+      // Сервер сім’ї: засновник переносить сім’ю на інший сервер (раз на тиждень, тег має бути вільним).
+      if (serverInfo['can_change'] == true)
+        _card(
+          title: tr('Сервер сім’ї'),
+          icon: LucideIcons.server,
+          subtitle: tr('Перенесіть сім’ю на інший сервер. Тег має бути вільним на новому сервері; змінювати сервер можна раз на тиждень.'),
+          children: [
+            GcSelect<int>(
+              expand: true,
+              value: serverId,
+              items: [for (final s in maps(serverInfo['servers'])) (intOf(s['id']), text(s['name']) ?? '')],
+              onChanged: (v) => setState(() => serverId = v),
+            ),
+            const SizedBox(height: 10),
+            PrimaryButton(
+              label: tr('Змінити сервер'),
+              icon: LucideIcons.arrowRightLeft,
+              onPressed: serverId == null || serverId == intOf(serverInfo['current'])
+                  ? null
+                  : () async {
+                      if (!await confirm(context, tr('Перенести сім’ю на інший сервер?'))) return;
+                      if (!context.mounted) return;
+                      await ctx.act(context, () => ctx.api.put(ctx.path('settings/server'), {'server_id': serverId}));
+                    },
+            ),
+          ],
+        ),
       _card(
         title: tr('Правила й ставки'),
         icon: LucideIcons.listChecks,
@@ -1629,6 +1660,27 @@ class _SettingsTabState extends State<SettingsTab> {
           LabeledField(label: tr('Токен Telegram-бота'), hint: text(hooks['telegram_token']) ?? tr('Створіть бота в @BotFather'), child: GcField(controller: telegramToken, label: '123456789:AA…', dense: true)),
           const SizedBox(height: 8),
           LabeledField(label: 'Chat ID', child: GcField(controller: telegramChat, label: '-1001234567890', dense: true)),
+          const SizedBox(height: 8),
+          // Тривоги в боті: те саме дерево місць, що й у розділі «Тривоги».
+          LabeledField(
+            label: tr('Тривоги в боті'),
+            hint: text(mapOf(hooks['alerts'])['path']) ?? tr('Бот напише про початок і відбій тривоги в обраному місці.'),
+            child: Row(children: [
+              Expanded(
+                child: GhostButton(
+                  label: text(mapOf(hooks['alerts'])['name']) ?? tr('Оберіть місце'),
+                  icon: LucideIcons.siren,
+                  compact: true,
+                  onPressed: () async {
+                    final id = await Navigator.of(context).push<String>(MaterialPageRoute(builder: (_) => const AlertPlacePickerPage()));
+                    if (id != null && context.mounted) await ctx.act(context, () => ctx.api.put(ctx.path('settings/webhooks'), {'alerts': id}));
+                  },
+                ),
+              ),
+              if (hooks['alerts'] != null)
+                TextButton(onPressed: () => ctx.act(context, () => ctx.api.put(ctx.path('settings/webhooks'), {'clear': 'alerts'})), child: Text(tr('Вимкнути'), style: body(12.5, color: dangerSoft))),
+            ]),
+          ),
           const SizedBox(height: 10),
           Row(children: [
             if (hooks['discord'] != null) TextButton(onPressed: () => ctx.act(context, () => ctx.api.put(ctx.path('settings/webhooks'), {'clear': 'discord'})), child: Text(tr('Прибрати Discord'), style: body(12.5, color: dangerSoft))),
@@ -1668,6 +1720,93 @@ class _SettingsTabState extends State<SettingsTab> {
             decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.25), borderRadius: BorderRadius.circular(12)),
             child: Text(text(digest['text']) ?? '', style: body(12.5, color: soft).copyWith(fontFamily: 'monospace', height: 1.4)),
           ),
+        ],
+      ),
+    ]);
+  }
+}
+
+/// Календар змін і чергувань — як на сайті (/f/{slug}/shifts): тиждень, хто чергує, «Взяти» й «Відмовитися»;
+/// керівництво створює зміни й призначає учасників.
+class ShiftsTab extends StatelessWidget {
+  const ShiftsTab({required this.ctx, super.key});
+  final FamilyContext ctx;
+
+  Future<void> _create(BuildContext context) async {
+    final title = TextEditingController();
+    DateTime start = DateTime.now().add(const Duration(hours: 1));
+    double hours = 2;
+    final ok = await showGcSheet<bool>(
+      context,
+      title: tr('Нова зміна'),
+      builder: (sheet) => StatefulBuilder(
+        builder: (sheet, setSheet) => Column(crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: MainAxisSize.min, children: [
+          GcField(controller: title, label: tr('Назва, напр. «Чергування на складі»')),
+          const SizedBox(height: 10),
+          GhostButton(
+            label: '${shortStamp(start.toIso8601String())} ${clock(start.toIso8601String())}',
+            icon: LucideIcons.calendarClock,
+            onPressed: () async {
+              final d = await showDatePicker(context: sheet, firstDate: DateTime.now(), lastDate: DateTime.now().add(const Duration(days: 60)), initialDate: start);
+              if (d == null || !sheet.mounted) return;
+              final t = await showTimePicker(context: sheet, initialTime: TimeOfDay.fromDateTime(start));
+              if (t == null) return;
+              setSheet(() => start = DateTime(d.year, d.month, d.day, t.hour, t.minute));
+            },
+          ),
+          const SizedBox(height: 10),
+          Row(children: [
+            Text(tr('Тривалість: {n} год', {'n': hours % 1 == 0 ? hours.toInt() : hours}), style: body(13.5)),
+            Expanded(child: Slider(value: hours, min: 0.5, max: 12, divisions: 23, onChanged: (v) => setSheet(() => hours = v))),
+          ]),
+          PrimaryButton(label: tr('Створити'), onPressed: () => Navigator.pop(sheet, true)),
+        ]),
+      ),
+    );
+    if (ok != true || !context.mounted || title.text.trim().length < 2) return;
+    await ctx.act(context, () => ctx.api.post(ctx.path('shifts'), {'title': title.text.trim(), 'starts_at': start.toUtc().toIso8601String(), 'hours': hours}));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final shifts = maps(ctx.data['shifts']);
+    final manage = ctx.allowed('events.manage');
+    final week = mapOf(ctx.data['week']);
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      _card(
+        title: tr('Зміни й чергування'),
+        icon: LucideIcons.calendarClock,
+        subtitle: text(week['start']) != null ? tr('Тиждень з {d}', {'d': shortStamp(week['start'])}) : null,
+        trailing: manage ? GhostButton(label: tr('Нова'), icon: LucideIcons.plus, compact: true, expand: false, onPressed: () => _create(context)) : null,
+        children: [
+          if (shifts.isEmpty) QuietEmpty(icon: LucideIcons.calendarClock, text: tr('Цього тижня змін немає.')),
+          for (final s in shifts)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: Row(children: [
+                Expanded(
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text(text(s['title']) ?? '', style: body(14, weight: FontWeight.w600)),
+                    Text('${shortStamp(s['starts_at'])} ${clock(s['starts_at'])}–${clock(s['ends_at'])}', style: body(12, color: muted)),
+                    Text(mapOf(s['member'])['display'] != null ? '${mapOf(s['member'])['display']}' : tr('Вільна'), style: body(12, color: s['member'] == null ? green : soft)),
+                  ]),
+                ),
+                if (s['member'] == null)
+                  PrimaryButton(label: tr('Взяти'), compact: true, expand: false, onPressed: () => ctx.act(context, () => ctx.api.post(ctx.path('shifts/${s['id']}/claim'))))
+                else if (s['mine'] == true)
+                  GhostButton(label: tr('Відмовитися'), compact: true, expand: false, onPressed: () => ctx.act(context, () => ctx.api.post(ctx.path('shifts/${s['id']}/release')))),
+                if (manage)
+                  IconButton(
+                    tooltip: tr('Видалити'),
+                    icon: Icon(LucideIcons.trash2, size: 18, color: dangerSoft),
+                    onPressed: () async {
+                      if (await confirm(context, tr('Видалити зміну?'), danger: true) && context.mounted) {
+                        await ctx.act(context, () => ctx.api.delete(ctx.path('shifts/${s['id']}')));
+                      }
+                    },
+                  ),
+              ]),
+            ),
         ],
       ),
     ]);

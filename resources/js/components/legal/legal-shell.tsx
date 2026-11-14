@@ -11,6 +11,7 @@ export type LegalLabels = {
     refund: string;
     pricing: string;
     contacts: string;
+    child_safety: string;
     view_original: string;
     prevail: string;
     prevail_en: string;

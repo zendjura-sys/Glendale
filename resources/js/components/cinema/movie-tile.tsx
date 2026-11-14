@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 import type { MovieCard } from '@/types';
 import { tr } from '@/lib/i18n';
 
-const hues = [228, 262, 290, 200, 316, 245];
+const hues = [216, 200, 222, 190, 210, 230];
 
 export function MoviePoster({
     movie,
@@ -31,15 +31,15 @@ export function MoviePoster({
     return (
         <div
             className={cn(
-                'flex flex-col items-center justify-center gap-2 p-3 text-center',
+                '@container flex flex-col items-center justify-center gap-2 p-3 text-center',
                 className,
             )}
             style={{
-                background: `radial-gradient(120% 90% at 20% 0%, hsl(${hue} 90% 60% / .55), transparent 60%), linear-gradient(160deg, hsl(${hue + 30} 60% 22%), #0b0d1f)`,
+                background: `radial-gradient(120% 90% at 20% 0%, hsl(${hue} 90% 60% / .55), transparent 60%), linear-gradient(160deg, hsl(${hue + 6} 60% 20%), #0b0d1f)`,
             }}
         >
-            <Clapperboard className="size-8 text-white/50" />
-            <span className="line-clamp-3 font-display text-sm font-semibold text-white/85">
+            <Clapperboard className="size-5 text-white/50 @[90px]:size-8" />
+            <span className="hidden font-display text-sm font-semibold text-white/85 @[90px]:line-clamp-3">
                 {movie.title}
             </span>
         </div>
@@ -93,7 +93,8 @@ export function MovieTile({
                     movie={movie}
                     className="size-full transition duration-500 group-hover:scale-105"
                 />
-                <div className="scrim scrim-dark absolute inset-0 opacity-0 transition group-hover:opacity-100" />
+                {/* Постер — тло картки: назва й опис лежать поверх нього на затемненні внизу. */}
+                <div className="scrim-dark pointer-events-none absolute inset-x-0 bottom-0 h-3/5 bg-gradient-to-t from-black/90 via-black/50 to-transparent" />
                 <div className="absolute top-2 left-2 flex flex-col items-start gap-1">
                     <RatingBadge value={movie.rating} />
                 </div>
@@ -102,32 +103,32 @@ export function MovieTile({
                         {movie.age_rating}
                     </span>
                 )}
-                {badge && (
-                    <div className="absolute inset-x-2 bottom-2">{badge}</div>
-                )}
+                <div data-on-dark className="absolute inset-x-0 bottom-0 p-2.5">
+                    {badge && <div className="mb-1.5">{badge}</div>}
+                    <p className="line-clamp-2 text-[13px] leading-snug font-semibold text-white">
+                        {movie.title}
+                    </p>
+                    <p className="mt-0.5 line-clamp-1 text-[11px] text-white/70">
+                        {[
+                            movie.progress
+                                ? movie.progress.season
+                                    ? tr('Сезон {season}, серія {episode}', {
+                                          season: movie.progress.season,
+                                          episode: movie.progress.episode,
+                                      })
+                                    : tr('Серія {episode}', {
+                                          episode: movie.progress.episode,
+                                      })
+                                : null,
+                            movie.year,
+                            movie.type_label,
+                            movie.genres[0],
+                        ]
+                            .filter(Boolean)
+                            .join(' · ')}
+                    </p>
+                </div>
             </div>
-            <p className="mt-2 line-clamp-2 text-[13px] leading-snug font-semibold text-white/90 group-hover:text-white">
-                {movie.title}
-            </p>
-            <p className="mt-0.5 truncate text-xs text-white/40">
-                {[
-                    movie.progress
-                        ? movie.progress.season
-                            ? tr('Сезон {season}, серія {episode}', {
-                                  season: movie.progress.season,
-                                  episode: movie.progress.episode,
-                              })
-                            : tr('Серія {episode}', {
-                                  episode: movie.progress.episode,
-                              })
-                        : null,
-                    movie.year,
-                    movie.type_label,
-                    movie.genres[0],
-                ]
-                    .filter(Boolean)
-                    .join(' · ')}
-            </p>
         </Link>
     );
 }
@@ -152,7 +153,7 @@ export function PosterRow({
         });
 
     return (
-        <section className="glass group/row relative rounded-3xl p-4 sm:p-5">
+        <section className="glass group/row relative rounded-2xl p-4 sm:p-5">
             <div className="mb-3 flex items-center gap-2">
                 <h2 className="flex-1 font-display text-lg font-semibold text-white">
                     {title}

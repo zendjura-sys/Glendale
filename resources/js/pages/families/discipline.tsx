@@ -48,12 +48,12 @@ type Props = FamilyShellProps & {
 };
 
 const typeTones: Record<string, string> = {
-    warn: 'bg-amber-300/10 text-amber-200',
+    warn: 'bg-amber-300/10 text-amber-400',
     reprimand: 'bg-orange-400/10 text-orange-200',
-    fine: 'bg-rose-400/10 text-rose-200',
-    demote: 'bg-violet-400/10 text-violet-200',
-    kick: 'bg-rose-500/20 text-rose-100',
-    mute: 'bg-sky-400/10 text-sky-200',
+    fine: 'bg-red-400/10 text-red-400',
+    demote: 'bg-sky-400/10 text-sky-400',
+    kick: 'bg-red-500/20 text-red-400',
+    mute: 'bg-sky-400/10 text-sky-400',
 };
 
 export default function FamilyDiscipline(props: Props) {
@@ -75,7 +75,7 @@ export default function FamilyDiscipline(props: Props) {
                 <Metric
                     label={tr('Мої попередження')}
                     value={`${my_warns}/${config.warn_limit}`}
-                    tone={my_warns > 0 ? 'text-rose-300' : 'text-emerald-300'}
+                    tone={my_warns > 0 ? 'text-red-400' : 'text-emerald-400'}
                     icon={ShieldAlert}
                 />
                 <Metric
@@ -217,7 +217,7 @@ export default function FamilyDiscipline(props: Props) {
                     {target &&
                         form.data.type === 'warn' &&
                         target.warns + 1 >= config.warn_limit && (
-                            <p className="mt-2 text-xs text-rose-300">
+                            <p className="mt-2 text-xs text-red-400">
                                 {tr('Це')} {target.warns + 1}
                                 {tr('-е попередження з')} {config.warn_limit} —{' '}
                                 {config.escalation === 'kick'
@@ -265,15 +265,15 @@ export default function FamilyDiscipline(props: Props) {
                             <li
                                 key={p.id}
                                 className={cn(
-                                    'flex flex-wrap items-start gap-3 rounded-2xl bg-white/[0.03] p-3 ring-1 ring-white/[0.05]',
+                                    'gc-solid-2 flex flex-wrap items-start gap-3 rounded-2xl p-3',
                                     !p.active && 'opacity-55',
                                 )}
                             >
                                 <span
                                     className={cn(
-                                        'rounded-full px-2.5 py-1 text-xs font-semibold',
+                                        'rounded-chip px-2.5 py-1 text-xs font-semibold',
                                         typeTones[p.type] ??
-                                            'bg-white/[0.06] text-white/60',
+                                            'gc-solid-2 text-white/60',
                                     )}
                                 >
                                     {p.type_label}
@@ -287,7 +287,7 @@ export default function FamilyDiscipline(props: Props) {
                                         )}
                                         {p.reason}
                                         {p.amount ? (
-                                            <span className="ml-1 font-semibold text-rose-300">
+                                            <span className="ml-1 font-semibold text-red-400">
                                                 −{uah(p.amount)}
                                             </span>
                                         ) : null}

@@ -1,3 +1,7 @@
+import { CommunityPromoteCard } from '@/components/communities/promote-card';
+import type { Promotion } from '@/components/communities/promote-card';
+import { CommunityWelcomeCard } from '@/components/communities/welcome-card';
+import type { WelcomeCard } from '@/components/communities/welcome-card';
 import { Head, InfiniteScroll, Link, router } from '@inertiajs/react';
 import {
     BookOpen,
@@ -28,6 +32,7 @@ import type { DonationJar } from '@/components/gc/donation-jar';
 import { useRef } from 'react';
 import { membersLabel } from '@/components/communities/community-card';
 import { JoinButton } from '@/components/communities/join-button';
+import { CommunityHub } from '@/components/communities/community-hub';
 import { roleLabels } from '@/components/communities/roles';
 import { CommunityAvatar } from '@/components/gc/community-avatar';
 import { InviteLinkButton } from '@/components/gc/invite-link';
@@ -35,6 +40,7 @@ import { PostCard } from '@/components/gc/post-card';
 import { PostComposer } from '@/components/gc/post-composer';
 import { PostSkeleton } from '@/components/gc/post-skeleton';
 import { VoiceRooms } from '@/components/gc/voice-rooms';
+import { ListenRoomButton } from '@/components/music/listen-room-button';
 import { UserAvatar } from '@/components/gc/user-avatar';
 import { VerifiedBadge } from '@/components/gc/verified-badge';
 import { EmptyState, Widget } from '@/components/gc/widget';
@@ -49,12 +55,15 @@ import type {
     UserCard,
 } from '@/types';
 import { tr } from '@/lib/i18n';
+import { usePlugin } from '@/lib/plugins';
 
 type Props = {
     community: CommunityDetails;
     /** Банка Monobank спільноти (відкладений проп). */
     donation?: DonationJar | null;
     membership: { status: MembershipStatus; role: CommunityRole } | null;
+    welcome_card?: WelcomeCard | null;
+    promotion?: Promotion | null;
     can: {
         view: boolean;
         post: boolean;
@@ -140,6 +149,8 @@ function ImageUpload({
 export default function CommunityShow({
     community,
     membership,
+    welcome_card,
+    promotion,
     can,
     stats,
     members,
@@ -153,6 +164,7 @@ export default function CommunityShow({
     rules,
     donation,
 }: Props) {
+    const channelsOn = usePlugin('community_channels');
     const isPublic = community.type === 'public';
     const moderate = (postId: number, approve: boolean) => {
         const url = `/c/${community.slug}/queue/${postId}`;
@@ -168,8 +180,8 @@ export default function CommunityShow({
         <>
             <Head title={community.name} />
 
-            <section className="glass relative overflow-hidden rounded-[28px]">
-                <div className="relative h-48 overflow-hidden sm:h-64">
+            <section className="gc-solid relative overflow-hidden rounded-2xl">
+                <div className="relative isolate h-48 overflow-hidden sm:h-64">
                     {community.cover_url ? (
                         <img
                             decoding="async"
@@ -179,7 +191,7 @@ export default function CommunityShow({
                             className="size-full object-cover"
                         />
                     ) : (
-                        <div className="size-full bg-[radial-gradient(circle_at_15%_30%,#4f8bff_0%,transparent_45%),radial-gradient(circle_at_70%_20%,#a855f7_0%,transparent_45%),radial-gradient(circle_at_95%_100%,#38e1ff_0%,transparent_45%)] opacity-80" />
+                        <div className="size-full bg-[radial-gradient(circle_at_15%_30%,#4f8bff_0%,transparent_45%),radial-gradient(circle_at_70%_20%,#22d3ee_0%,transparent_45%),radial-gradient(circle_at_95%_100%,#38e1ff_0%,transparent_45%)] opacity-80" />
                     )}
                     <div className="scrim absolute inset-0" />
                     <div className="grid-lines absolute inset-0 opacity-40" />
@@ -207,7 +219,7 @@ export default function CommunityShow({
                                 <ImageUpload
                                     slug={community.slug}
                                     field="avatar"
-                                    className="absolute inset-[3px] flex items-center justify-center rounded-[35px] bg-black/55 text-white opacity-0 backdrop-blur-sm transition group-hover:opacity-100"
+                                    className="absolute inset-[3px] flex items-center justify-center rounded-[17px] bg-black/55 text-white opacity-0 backdrop-blur-sm transition group-hover:opacity-100"
                                 >
                                     <Camera className="size-7" />
                                 </ImageUpload>
@@ -256,6 +268,15 @@ export default function CommunityShow({
                                 status={membership?.status ?? null}
                                 role={membership?.role}
                             />
+                            {channelsOn && membership?.status === 'active' && (
+                                <Link
+                                    href={`/c/${community.slug}/channels`}
+                                    className="inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-white transition hover:brightness-110"
+                                >
+                                    <Hash className="size-4" />
+                                    {tr('Канали')}
+                                </Link>
+                            )}
                             {can.manage && (
                                 <>
                                     <InviteLinkButton
@@ -269,7 +290,7 @@ export default function CommunityShow({
                                         <UserPlus className="size-4" />
                                         {tr('Учасники')}
                                         {stats.requests > 0 && (
-                                            <span className="rounded-full bg-gradient-brand px-1.5 text-[11px] leading-5">
+                                            <span className="rounded-full bg-sky-500 px-1.5 text-[11px] leading-5">
                                                 {stats.requests}
                                             </span>
                                         )}
@@ -287,11 +308,11 @@ export default function CommunityShow({
                         </div>
                     </div>
 
-                    <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-white/[0.06] pt-4">
+                    <div className="mt-5 flex flex-wrap items-center justify-between gap-3 pt-4">
                         <div className="flex flex-wrap gap-x-5 gap-y-2 text-[13px] text-white/55">
                             {community.city && (
                                 <span className="inline-flex items-center gap-1.5">
-                                    <MapPin className="size-4 text-gc-lilac-400" />
+                                    <MapPin className="size-4 text-sky-400" />
                                     {community.city}
                                 </span>
                             )}
@@ -318,7 +339,7 @@ export default function CommunityShow({
                         <div className="flex">
                             <Link
                                 href={`/c/${community.slug}/members`}
-                                className="flex flex-col items-center rounded-2xl px-4 py-2 transition hover:bg-white/[0.05]"
+                                className="flex flex-col items-center rounded-2xl px-4 py-2 transition hover:bg-[var(--gc-l3)]"
                             >
                                 <span className="font-display text-xl font-bold text-white tabular-nums">
                                     {compactNumber(stats.members)}
@@ -352,7 +373,7 @@ export default function CommunityShow({
                             {photos && (
                                 <Link
                                     href={`/c/${community.slug}/photos`}
-                                    className="flex flex-col items-center rounded-2xl px-4 py-2 transition hover:bg-white/[0.05]"
+                                    className="flex flex-col items-center rounded-2xl px-4 py-2 transition hover:bg-[var(--gc-l3)]"
                                 >
                                     <span className="font-display text-xl font-bold text-white tabular-nums">
                                         {compactNumber(photos.count)}
@@ -387,10 +408,17 @@ export default function CommunityShow({
                                 href={`/c/${community.slug}`}
                             />
                         )}
+                        {membership?.status === 'active' && (
+                            <ListenRoomButton
+                                group="community"
+                                id={community.id}
+                            />
+                        )}
                         <DonationJarCard
                             jar={donation}
                             title={tr('Підтримати спільноту')}
                         />
+                        {can.view && <CommunityHub slug={community.slug} />}
                         {(community.description ||
                             rules.rules ||
                             rules.handbook) && (
@@ -410,7 +438,7 @@ export default function CommunityShow({
                                         {rules.rules && (
                                             <Link
                                                 href={`/c/${community.slug}/rules`}
-                                                className="inline-flex h-9 items-center gap-2 rounded-xl bg-white/[0.06] px-3 text-sm font-medium text-white transition hover:bg-white/[0.1]"
+                                                className="gc-solid-2 inline-flex h-9 items-center gap-2 rounded-xl px-3 text-sm font-medium text-white transition hover:bg-white/[0.1]"
                                             >
                                                 <ScrollText className="size-4" />
                                                 {tr('Правила')}
@@ -419,7 +447,7 @@ export default function CommunityShow({
                                         {rules.handbook && (
                                             <Link
                                                 href={`/c/${community.slug}/handbook`}
-                                                className="inline-flex h-9 items-center gap-2 rounded-xl bg-white/[0.06] px-3 text-sm font-medium text-white transition hover:bg-white/[0.1]"
+                                                className="gc-solid-2 inline-flex h-9 items-center gap-2 rounded-xl px-3 text-sm font-medium text-white transition hover:bg-white/[0.1]"
                                             >
                                                 <BookOpen className="size-4" />
                                                 {tr('Довідник')}
@@ -437,7 +465,7 @@ export default function CommunityShow({
                                 action={
                                     <Link
                                         href={`/c/${community.slug}/photos`}
-                                        className="text-xs text-gc-lilac-300 hover:text-white"
+                                        className="text-xs text-sky-400 hover:text-white"
                                     >
                                         {photos.count > 0
                                             ? tr('Усі {count}', {
@@ -483,7 +511,7 @@ export default function CommunityShow({
                             action={
                                 <Link
                                     href={`/c/${community.slug}/members`}
-                                    className="text-xs text-gc-lilac-300 hover:text-white"
+                                    className="text-xs text-sky-400 hover:text-white"
                                 >
                                     {membersLabel(stats.members, isPublic)}
                                 </Link>
@@ -505,7 +533,7 @@ export default function CommunityShow({
                                     <Link
                                         key={member.id}
                                         href={`/${member.username}`}
-                                        className="flex flex-col items-center gap-1.5 rounded-2xl p-2 text-center transition hover:bg-white/[0.04]"
+                                        className="flex flex-col items-center gap-1.5 rounded-2xl p-2 text-center transition hover:bg-[var(--gc-l3)]"
                                     >
                                         <UserAvatar user={member} size="lg" />
                                         <span className="w-full truncate text-xs text-white/75">
@@ -523,7 +551,7 @@ export default function CommunityShow({
                                         <Link
                                             key={manager.id}
                                             href={`/${manager.username}`}
-                                            className="flex items-center gap-3 rounded-xl p-1.5 transition hover:bg-white/[0.04]"
+                                            className="flex items-center gap-3 rounded-xl p-1.5 transition hover:bg-[var(--gc-l3)]"
                                         >
                                             <UserAvatar
                                                 user={manager}
@@ -552,12 +580,12 @@ export default function CommunityShow({
                         {can.moderate && queue.length > 0 && (
                             <section
                                 id="queue"
-                                className="glass space-y-3 rounded-3xl p-4 sm:p-5"
+                                className="gc-solid space-y-3 rounded-2xl p-4 sm:p-5"
                             >
                                 <h2 className="flex items-center gap-2 text-sm font-semibold text-white">
                                     <ClipboardCheck className="size-4 text-gc-amber" />
                                     {tr('Черга на перевірку')}
-                                    <span className="rounded-full bg-gc-amber/15 px-2 text-xs leading-5 text-gc-amber">
+                                    <span className="rounded-chip bg-gc-amber/15 px-2 text-xs leading-5 text-gc-amber">
                                         {queue.length}
                                     </span>
                                 </h2>
@@ -570,7 +598,7 @@ export default function CommunityShow({
                                                 onClick={() =>
                                                     moderate(post.id, false)
                                                 }
-                                                className="inline-flex h-9 items-center gap-2 rounded-xl bg-white/[0.06] px-3 text-sm font-medium text-white/80 transition hover:bg-white/[0.1] hover:text-white"
+                                                className="gc-solid-2 inline-flex h-9 items-center gap-2 rounded-xl px-3 text-sm font-medium text-white/80 transition hover:bg-white/[0.1] hover:text-white"
                                             >
                                                 <X className="size-4" />
                                                 {tr('Відхилити')}
@@ -589,6 +617,21 @@ export default function CommunityShow({
                                     </div>
                                 ))}
                             </section>
+                        )}
+
+                        {promotion && (
+                            <CommunityPromoteCard
+                                slug={community.slug}
+                                promotion={promotion}
+                            />
+                        )}
+
+                        {welcome_card && (
+                            <CommunityWelcomeCard
+                                card={welcome_card}
+                                slug={community.slug}
+                                name={community.name}
+                            />
                         )}
 
                         {can.post && (
@@ -656,10 +699,10 @@ export default function CommunityShow({
                                         href={`/c/${community.slug}${item ? `?tag=${encodeURIComponent(item)}` : ''}`}
                                         preserveScroll
                                         className={cn(
-                                            'inline-flex h-8 shrink-0 items-center gap-1 rounded-full px-3 text-xs font-medium transition',
+                                            'inline-flex h-8 shrink-0 items-center gap-1 rounded-control px-3 text-xs font-medium transition',
                                             tag === item
                                                 ? 'bg-gc-indigo text-white'
-                                                : 'bg-white/[0.05] text-white/65 hover:text-white',
+                                                : 'gc-solid-2 text-white/65 hover:text-white',
                                         )}
                                     >
                                         {item ? (

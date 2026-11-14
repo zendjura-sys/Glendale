@@ -50,7 +50,7 @@ export default function CommunityPage({ community, page, text, other }: Props) {
                 <div className="flex items-center gap-4">
                     <Link
                         href={`/c/${community.slug}`}
-                        className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-white/[0.05] text-white/70 transition hover:bg-white/10 hover:text-white"
+                        className="gc-solid-2 flex size-10 shrink-0 items-center justify-center rounded-xl text-white/70 transition hover:bg-white/10 hover:text-white"
                         aria-label={tr('Назад')}
                     >
                         <ArrowLeft className="size-5" />
@@ -58,7 +58,7 @@ export default function CommunityPage({ community, page, text, other }: Props) {
                     <CommunityAvatar community={community} size="md" />
                     <div className="min-w-0">
                         <h1 className="flex items-center gap-2 font-display text-xl font-bold text-white">
-                            <Icon className="size-5 text-gc-lilac-300" />
+                            <Icon className="size-5 text-sky-400" />
                             {isRules ? tr('Правила') : tr('Довідник')}
                         </h1>
                         <p className="truncate text-sm text-white/50">
@@ -68,7 +68,7 @@ export default function CommunityPage({ community, page, text, other }: Props) {
                     {other && (
                         <Link
                             href={`/c/${community.slug}/${isRules ? 'handbook' : 'rules'}`}
-                            className="ml-auto inline-flex h-9 shrink-0 items-center gap-2 rounded-xl bg-white/[0.06] px-3 text-sm font-medium text-white transition hover:bg-white/[0.1]"
+                            className="gc-solid-2 ml-auto inline-flex h-9 shrink-0 items-center gap-2 rounded-xl px-3 text-sm font-medium text-white transition hover:bg-white/[0.1]"
                         >
                             {isRules ? (
                                 <BookOpen className="size-4" />
@@ -85,7 +85,7 @@ export default function CommunityPage({ community, page, text, other }: Props) {
                 {toc.length > 2 && (
                     <nav
                         aria-label={tr('Зміст')}
-                        className="glass rounded-3xl p-4 sm:p-5"
+                        className="gc-solid rounded-2xl p-4 sm:p-5"
                     >
                         <p className="mb-2 text-xs font-semibold text-white/45">
                             {tr('Зміст')}
@@ -95,7 +95,7 @@ export default function CommunityPage({ community, page, text, other }: Props) {
                                 <li key={part.id}>
                                     <a
                                         href={`#${part.id}`}
-                                        className="text-gc-lilac-300 hover:text-white"
+                                        className="text-sky-400 hover:text-white"
                                     >
                                         {part.title}
                                     </a>
@@ -105,7 +105,7 @@ export default function CommunityPage({ community, page, text, other }: Props) {
                     </nav>
                 )}
 
-                <article className="glass space-y-6 rounded-3xl p-5 sm:p-7">
+                <article className="gc-solid space-y-6 rounded-2xl p-5 sm:p-7">
                     {parts.map((part) => (
                         <section
                             key={part.id}

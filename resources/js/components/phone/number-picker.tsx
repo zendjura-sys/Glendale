@@ -1,4 +1,5 @@
 import { router } from '@inertiajs/react';
+import { Sk } from '@/components/gc/skeletons';
 import {
     Dices,
     Gift,
@@ -125,9 +126,9 @@ function RandomCard({
     };
 
     return (
-        <section className="glass flex min-w-0 flex-col rounded-3xl p-4 sm:p-5">
+        <section className="gc-solid flex min-w-0 flex-col rounded-2xl p-4 sm:p-5">
             <header className="flex items-start gap-3">
-                <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-white/[0.06] text-white">
+                <span className="gc-solid-2 flex size-11 shrink-0 items-center justify-center rounded-2xl text-white">
                     <Dices className="size-5" />
                 </span>
                 <div className="min-w-0">
@@ -143,7 +144,7 @@ function RandomCard({
                 </div>
             </header>
 
-            <div className="mt-4 flex min-h-[5.5rem] items-center justify-center rounded-2xl bg-white/[0.03] px-3 py-5 text-center">
+            <div className="gc-solid-2 mt-4 flex min-h-[5.5rem] items-center justify-center rounded-2xl px-3 py-5 text-center">
                 {scramble ? (
                     <span className="text-2xl font-semibold tracking-tight text-white/70 tabular-nums sm:text-3xl">
                         {scramble}
@@ -315,9 +316,9 @@ function BuyCard({
     );
 
     return (
-        <section className="glass flex min-w-0 flex-col rounded-3xl p-4 sm:p-5">
+        <section className="gc-solid flex min-w-0 flex-col rounded-2xl p-4 sm:p-5">
             <header className="flex items-start gap-3">
-                <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-white/[0.06] text-white">
+                <span className="gc-solid-2 flex size-11 shrink-0 items-center justify-center rounded-2xl text-white">
                     <ShoppingBag className="size-5" />
                 </span>
                 <div className="min-w-0">
@@ -339,7 +340,7 @@ function BuyCard({
                 </div>
             </header>
 
-            <div className="mt-4 flex items-center gap-1.5 rounded-2xl bg-white/[0.04] px-3 py-2 text-xl font-semibold tracking-tight text-white tabular-nums ring-1 ring-white/10 focus-within:ring-2 focus-within:ring-primary sm:text-2xl">
+            <div className="gc-solid-2 mt-4 flex items-center gap-1.5 rounded-2xl px-3 py-2 text-xl font-semibold tracking-tight text-white tabular-nums focus-within:ring-2 focus-within:ring-primary sm:text-2xl">
                 <span className="text-white/50">+{props.codes.premium}</span>
                 <span className="text-white/40">(</span>
                 <input
@@ -374,7 +375,7 @@ function BuyCard({
             </div>
 
             <div className="mt-3 min-h-[3.25rem]" aria-live="polite">
-                {error && <p className="text-sm text-red-300">{error}</p>}
+                {error && <p className="text-sm text-red-400">{error}</p>}
                 {check && (
                     <div
                         className={cn(
@@ -423,7 +424,7 @@ function BuyCard({
                             `phone-tier--${t}`,
                             tier === t
                                 ? 'phone-tier-ring text-[color:var(--tier)]'
-                                : 'bg-white/[0.04] text-white/70 hover:bg-white/[0.08]',
+                                : 'gc-solid-2 text-white/70 hover:bg-[var(--gc-l3)]',
                         )}
                     >
                         {labels[t]} · {money(props.prices[t].price)}
@@ -438,7 +439,11 @@ function BuyCard({
                         {hints[tier]}
                     </p>
                     {loadingIdeas ? (
-                        <Loader2 className="size-4 animate-spin text-white/40" />
+                        <div className="flex flex-wrap gap-1.5">
+                            {[0, 1, 2, 3, 4].map((i) => (
+                                <Sk key={i} className="h-8 w-28 rounded-xl" />
+                            ))}
+                        </div>
                     ) : ideas && ideas.length > 0 ? (
                         <div className="flex flex-wrap gap-1.5">
                             {ideas.map((idea) => (
@@ -449,7 +454,7 @@ function BuyCard({
                                         setOperator(idea.operator);
                                         setDigits(idea.digits);
                                     }}
-                                    className="rounded-xl bg-white/[0.04] px-2.5 py-1.5 transition hover:bg-white/[0.08]"
+                                    className="gc-solid-2 rounded-xl px-2.5 py-1.5 transition hover:bg-[var(--gc-l3)]"
                                 >
                                     <PhoneBadge phone={idea} size="sm" />
                                 </button>
@@ -466,7 +471,7 @@ function BuyCard({
             )}
 
             {friends && (
-                <div className="mt-4 rounded-2xl bg-white/[0.03] p-3">
+                <div className="gc-solid-2 mt-4 rounded-2xl p-3">
                     <label className="flex min-h-9 items-center gap-3 text-sm text-white">
                         <input
                             type="checkbox"
@@ -474,7 +479,7 @@ function BuyCard({
                             onChange={(e) => setGift(e.target.checked)}
                             className="gc-switch"
                         />
-                        <Gift className="size-4 text-pink-300" />
+                        <Gift className="size-4 text-sky-400" />
                         {tr('Подарувати другові')}
                     </label>
                     {gift && (
@@ -500,7 +505,7 @@ function BuyCard({
                     type="button"
                     onClick={buy}
                     disabled={!check?.available || (gift && !giftTo)}
-                    className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[var(--btn-primary,#6366f1)] text-[15px] font-semibold text-white transition hover:opacity-90 disabled:opacity-40"
+                    className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-primary text-[15px] font-semibold text-white transition hover:opacity-90 disabled:opacity-40"
                 >
                     {gift ? (
                         <Gift className="size-4" />

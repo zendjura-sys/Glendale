@@ -1,6 +1,7 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import {
     ArrowLeft,
+    LogOut,
     Copy,
     Crown,
     Headphones,
@@ -388,6 +389,17 @@ export default function WatchParty({
                         <UserPlus className="size-4" /> {tr('Запросити')}
                     </button>
                 )}
+                <button
+                    type="button"
+                    onClick={() =>
+                        void api('POST', `/watch/${party.code}/leave`)
+                            .catch(() => undefined)
+                            .then(() => router.visit(movie.href))
+                    }
+                    className="inline-flex h-10 items-center gap-2 rounded-xl px-3 text-sm text-rose-300 hover:bg-rose-500/10"
+                >
+                    <LogOut className="size-4" /> {tr('Вийти')}
+                </button>
             </div>
 
             {party.ended && (
@@ -405,7 +417,7 @@ export default function WatchParty({
 
             <div className="flex flex-col gap-4 xl:flex-row">
                 <div className="min-w-0 flex-1 space-y-3">
-                    <div className="glass overflow-hidden rounded-3xl">
+                    <div className="glass overflow-hidden rounded-2xl">
                         <div className="relative aspect-video bg-black">
                             {player ? (
                                 <iframe
@@ -539,7 +551,7 @@ export default function WatchParty({
                 </div>
 
                 <aside className="flex w-full shrink-0 flex-col gap-3 xl:w-[340px]">
-                    <section className="glass rounded-3xl p-4">
+                    <section className="glass rounded-2xl p-4">
                         <div className="mb-3 flex items-center gap-2">
                             <Users className="size-4 text-gc-lilac-200" />
                             <h2 className="flex-1 text-sm font-semibold text-white">
@@ -601,7 +613,7 @@ export default function WatchParty({
                         </ul>
                     </section>
 
-                    <section className="glass flex min-h-[320px] flex-1 flex-col rounded-3xl p-4 xl:max-h-[calc(100dvh-260px)]">
+                    <section className="glass flex min-h-[320px] flex-1 flex-col rounded-2xl p-4 xl:max-h-[calc(100dvh-260px)]">
                         <div className="mb-2 flex items-center gap-2">
                             <MessageCircle className="size-4 text-gc-lilac-200" />
                             <h2 className="text-sm font-semibold text-white">
@@ -665,7 +677,7 @@ export default function WatchParty({
                     onClick={() => setInviteOpen(false)}
                 >
                     <div
-                        className="glass-strong w-full max-w-md rounded-3xl p-5"
+                        className="glass-strong w-full max-w-md rounded-2xl p-5"
                         onClick={(e) => e.stopPropagation()}
                     >
                         <h2 className="mb-3 font-display text-base font-semibold text-white">

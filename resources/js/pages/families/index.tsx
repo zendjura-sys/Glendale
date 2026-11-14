@@ -1,5 +1,5 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { Clock3, Crown, Plus, Search, ShieldCheck, Users } from 'lucide-react';
+import { Clock3, Crown, Plus, ShieldCheck, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Pagination, selectClass } from '@/components/gc/admin';
 import { EmptyState } from '@/components/gc/widget';
@@ -53,12 +53,12 @@ export default function Families({ mine, families, filters, servers }: Props) {
         <>
             <Head title={tr('Сім’ї GTA RP')} />
             <div className="space-y-5">
-                <section className="glass noise relative overflow-hidden rounded-3xl p-5 sm:p-7">
+                <section className="gc-solid relative overflow-hidden rounded-2xl p-5 sm:p-7">
                     <div className="pointer-events-none absolute -top-24 -right-10 size-96 rounded-full bg-amber-400/20 blur-3xl" />
                     <div className="pointer-events-none absolute -bottom-40 left-10 size-96 rounded-full bg-gc-indigo/25 blur-3xl" />
                     <div className="relative flex flex-wrap items-end justify-between gap-5">
                         <div className="max-w-xl">
-                            <span className="inline-flex items-center gap-2 rounded-full border border-amber-300/25 bg-amber-300/10 px-3 py-1 text-xs font-semibold text-amber-200">
+                            <span className="inline-flex items-center gap-2 rounded-chip bg-amber-300/10 px-3 py-1 text-xs font-semibold text-amber-400">
                                 <Crown className="size-3.5" /> Family ERP
                             </span>
                             <h1 className="mt-3 font-display text-3xl font-bold text-white sm:text-4xl">
@@ -85,17 +85,17 @@ export default function Families({ mine, families, filters, servers }: Props) {
                         <h2 className="mb-3 font-display text-lg font-semibold text-white">
                             {tr('Мої сім’ї')}
                         </h2>
-                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                        <div className="grid grid-cols-1 gap-3 min-[1920px]:grid-cols-4 min-[2400px]:grid-cols-5 sm:grid-cols-2 xl:grid-cols-3">
                             {mine.map((f) => (
                                 <Link
                                     key={f.id}
                                     href={`/f/${f.slug}`}
-                                    className="glass group flex items-center gap-4 rounded-3xl p-4 transition hover:bg-white/[0.06]"
+                                    className="gc-solid group flex items-center gap-4 rounded-2xl p-4 transition hover:bg-[var(--gc-l3)]"
                                 >
                                     <FamilyLogo family={f} size="lg" />
                                     <div className="min-w-0 flex-1">
                                         <div className="truncate font-semibold text-white">
-                                            <span className="text-amber-300">
+                                            <span className="text-amber-400">
                                                 [{f.tag}]
                                             </span>{' '}
                                             {f.name}
@@ -106,7 +106,7 @@ export default function Families({ mine, families, filters, servers }: Props) {
                                         <div className="mt-1.5 flex items-center gap-2">
                                             {f.membership.status ===
                                             'pending' ? (
-                                                <span className="inline-flex items-center gap-1 rounded-full bg-amber-300/10 px-2 py-0.5 text-xs text-amber-200">
+                                                <span className="inline-flex items-center gap-1 rounded-chip bg-amber-300/10 px-2 py-0.5 text-xs text-amber-400">
                                                     <Clock3 className="size-3" />{' '}
                                                     {tr('Заявка на розгляді')}
                                                 </span>
@@ -119,7 +119,7 @@ export default function Families({ mine, families, filters, servers }: Props) {
                                                                 .rank_title
                                                         }
                                                     />
-                                                    <span className="text-xs font-semibold text-emerald-300">
+                                                    <span className="text-xs font-semibold text-emerald-400">
                                                         {uah(
                                                             f.membership
                                                                 .balance,
@@ -140,15 +140,19 @@ export default function Families({ mine, families, filters, servers }: Props) {
                         <h2 className="mr-auto font-display text-lg font-semibold text-white">
                             {tr('Каталог сімей')}
                         </h2>
-                        <label className="input-glass flex h-10 min-w-[200px] items-center gap-2 rounded-xl px-3">
-                            <Search className="size-4 text-white/35" />
-                            <input
-                                value={q}
-                                onChange={(e) => setQ(e.target.value)}
-                                placeholder={tr('Назва або тег')}
-                                className="min-w-0 flex-1 bg-transparent text-sm text-white placeholder:text-white/30 focus:outline-none"
-                            />
-                        </label>
+                        {q && (
+                            <button
+                                type="button"
+                                onClick={() => setQ('')}
+                                className="gc-chip self-start"
+                                title={tr('Скинути пошук')}
+                            >
+                                «{q}»{' '}
+                                <span aria-hidden className="text-white/45">
+                                    ×
+                                </span>
+                            </button>
+                        )}
                         <select
                             value={filters.server ?? ''}
                             onChange={(e) =>
@@ -174,19 +178,19 @@ export default function Families({ mine, families, filters, servers }: Props) {
                             )}
                         />
                     ) : (
-                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                        <div className="grid grid-cols-1 gap-3 min-[1920px]:grid-cols-4 min-[2400px]:grid-cols-5 sm:grid-cols-2 xl:grid-cols-3">
                             {families.data.map((f, i) => (
                                 <Link
                                     key={f.id}
                                     href={`/f/${f.slug}`}
                                     className={cn(
-                                        'glass group relative animate-rise overflow-hidden rounded-3xl transition hover:-translate-y-0.5',
+                                        'gc-solid group relative animate-rise overflow-hidden rounded-2xl transition hover:-translate-y-0.5',
                                         f.plus && 'border-indigo-400/40',
                                     )}
                                     style={{ animationDelay: `${i * 30}ms` }}
                                 >
                                     {f.plus && (
-                                        <span className="absolute top-2 right-2 z-10 inline-flex items-center gap-1 rounded-full bg-black/45 px-2 py-0.5 text-[11px] font-semibold text-white backdrop-blur">
+                                        <span className="absolute top-2 right-2 z-10 inline-flex items-center gap-1 rounded-chip bg-black/45 px-2 py-0.5 text-[11px] font-semibold text-white backdrop-blur">
                                             <PlusBadge className="size-3.5 [&_svg]:size-2.5" />
                                             GameCon+
                                         </span>
@@ -208,7 +212,7 @@ export default function Families({ mine, families, filters, servers }: Props) {
                                                 }}
                                             />
                                         ) : (
-                                            <div className="size-full bg-[linear-gradient(135deg,#f59e0b33,#6d5dfc44)]" />
+                                            <div className="size-full bg-[linear-gradient(135deg,#38bdf833,#2f7bff44)]" />
                                         )}
                                     </div>
                                     <div className="-mt-8 flex items-end gap-3 px-4">
@@ -219,13 +223,13 @@ export default function Families({ mine, families, filters, servers }: Props) {
                                         />
                                         <div className="min-w-0 pb-1">
                                             <div className="flex items-center gap-1.5 truncate font-semibold text-white">
-                                                <span className="text-amber-300">
+                                                <span className="text-amber-400">
                                                     [{f.tag}]
                                                 </span>
                                                 <span className="truncate">
                                                     {f.name}
                                                 </span>
-                                                <ShieldCheck className="size-4 shrink-0 text-emerald-300" />
+                                                <ShieldCheck className="size-4 shrink-0 text-emerald-400" />
                                             </div>
                                         </div>
                                     </div>
@@ -254,10 +258,10 @@ export default function Families({ mine, families, filters, servers }: Props) {
                                             </span>
                                             <span
                                                 className={cn(
-                                                    'ml-auto rounded-full px-2 py-0.5 text-xs font-medium',
+                                                    'ml-auto rounded-chip px-2 py-0.5 text-xs font-medium',
                                                     f.is_recruiting
-                                                        ? 'bg-emerald-400/10 text-emerald-200'
-                                                        : 'bg-white/[0.05] text-white/40',
+                                                        ? 'bg-emerald-400/10 text-emerald-400'
+                                                        : 'gc-solid-2 text-white/40',
                                                 )}
                                             >
                                                 {f.is_recruiting

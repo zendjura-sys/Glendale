@@ -43,10 +43,19 @@ chown -R "$OWNER":www-data "$APP"
 # 4. Залежності, збірка, міграції, перезапуск сервісів (remote.sh наприкінці знімає режим обслуговування).
 cd "$APP"
 if [ "$OWNER" != root ] && sudo -n -u "$OWNER" sudo -n true 2>/dev/null; then
-    sudo -u "$OWNER" bash deploy/remote.sh
+    sudo -u "$OWNER" env INSTALL_LIBRETRANSLATE="${INSTALL_LIBRETRANSLATE:-}" bash deploy/remote.sh
 else
     bash deploy/remote.sh
     chown -R "$OWNER":www-data "$APP"
+fi
+# Після chown шаблони знову повертаємо PHP-FPM (див. remote.sh): інакше Blade падає на touch().
+chown -R www-data:www-data "$APP/storage/framework/views"
+
+# 5. Сайт відкривається в браузері (порожній екран через помилку JavaScript curl не помічає).
+if ! bash deploy/smoke.sh; then
+    echo "✗ Сайт оновлено, але в браузері він зламаний. Попередня версія — повторний деплой старішого коміту;" \
+        "база: $BACKUP" >&2
+    exit 1
 fi
 
 echo "✅ Готово. Відкат бази за потреби: gunzip -c $BACKUP | mysql -u$U -p $DB"

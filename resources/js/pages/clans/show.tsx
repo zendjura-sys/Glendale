@@ -1,6 +1,16 @@
+import { LiveBracket } from '@/components/clans/live-bracket';
+import type { BracketData } from '@/components/clans/live-bracket';
+import { ShiftsTab } from '@/components/clans/shifts-tab';
+import type { ClanShift } from '@/components/clans/shifts-tab';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import {
     BellRing,
+    CalendarClock,
+    Hand,
+    Headphones,
+    LayoutGrid,
+    Mic,
+    SlidersHorizontal,
     CalendarDays,
     Check,
     Coins,
@@ -22,6 +32,7 @@ import {
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { InviteLinkButton } from '@/components/gc/invite-link';
+import { ListenRoomButton } from '@/components/music/listen-room-button';
 import { UserAvatar } from '@/components/gc/user-avatar';
 import { VoiceRooms } from '@/components/gc/voice-rooms';
 import { timeAgo } from '@/lib/format';
@@ -30,6 +41,14 @@ import type { ClanCard, UserCard } from '@/types';
 import { ClanLogo } from './index';
 import { eventTime } from '@/lib/event-time';
 import { BotsCard } from '@/components/bots/bots-card';
+import { DeleteZone } from '@/components/gc/delete-zone';
+import {
+    FeatureTile,
+    SaveBar,
+    SettingsAnchor,
+    SettingsNav,
+} from '@/components/gc/settings-kit';
+import type { LucideIcon } from 'lucide-react';
 import { LOCALE, tr } from '@/lib/i18n';
 
 type Member = {
@@ -48,11 +67,20 @@ type Member = {
     away?: boolean;
 };
 
+type Mvp = {
+    month: string;
+    winner: { user: UserCard; votes: number; month: string } | null;
+    leaders: { user: UserCard; votes: number }[];
+    my_vote: number | null;
+};
+
 type Props = {
+    mvp?: Mvp | null;
     clan: ClanCard & {
         description: string | null;
         rules: string | null;
         features: string[];
+        options?: Record<string, boolean | number>;
         currency: string;
         treasury: number | null;
         owner: UserCard | null;
@@ -64,6 +92,7 @@ type Props = {
     me: (Member & { can: Record<string, boolean> }) | null;
     application: { applied_at: string } | null;
     features: Record<string, { label: string; text: string }>;
+    can_staff_delete?: boolean;
     join_modes: Record<string, string>;
     members: Member[];
     applications: Member[];
@@ -76,6 +105,7 @@ type Props = {
         created_at: string;
         mine: boolean;
     }[];
+    shifts?: ClanShift[];
     events: {
         id: number;
         title: string;
@@ -132,6 +162,18 @@ type Props = {
     }[];
 };
 
+/** Іконки розділів клану в налаштуваннях. */
+const FEATURE_ICONS: Record<string, LucideIcon> = {
+    news: Newspaper,
+    events: CalendarDays,
+    treasury: Coins,
+    voice: Mic,
+    chat: MessageCircle,
+    rating: Trophy,
+    rules: ScrollText,
+    shifts: CalendarClock,
+};
+
 const input =
     'input-glass h-10 w-full rounded-xl px-3 text-sm text-white placeholder:text-white/30 focus:outline-none';
 const area =
@@ -139,7 +181,7 @@ const area =
 const btn =
     'btn-glow inline-flex h-10 items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold disabled:opacity-50';
 const ghost =
-    'glass inline-flex h-10 items-center justify-center gap-2 rounded-xl px-3.5 text-sm text-white/75 hover:text-white';
+    'gc-solid inline-flex h-10 items-center justify-center gap-2 rounded-xl px-3.5 text-sm text-white/75 hover:text-white';
 
 const num = (n: number) => new Intl.NumberFormat(LOCALE).format(n);
 
@@ -155,9 +197,9 @@ function Card({
     children: ReactNode;
 }) {
     return (
-        <section className="glass rounded-3xl p-4 sm:p-5">
+        <section className="gc-solid rounded-2xl p-4 sm:p-5">
             <div className="mb-3 flex items-center gap-2">
-                <Icon className="size-4 text-gc-lilac-200" />
+                <Icon className="size-4 text-sky-400" />
                 <h2 className="flex-1 font-display text-base font-semibold text-white">
                     {title}
                 </h2>
@@ -165,6 +207,102 @@ function Card({
             </div>
             {children}
         </section>
+    );
+}
+
+/** «Гравець місяця»: переможець минулого місяця, лідери поточного й голос за учасника. */
+function MvpCard({
+    base,
+    mvp,
+    members,
+    myUserId,
+}: {
+    base: string;
+    mvp: Mvp;
+    members: Member[];
+    myUserId: number | null;
+}) {
+    const [pick, setPick] = useState<number | ''>(mvp.my_vote ?? '');
+    const candidates = members.filter((m) => m.user && m.user.id !== myUserId);
+
+    return (
+        <Card title={tr('Гравець місяця')} icon={Trophy}>
+            {mvp.winner ? (
+                <div className="mb-4 flex items-center gap-3 rounded-2xl bg-amber-400/10 p-3">
+                    <UserAvatar user={mvp.winner.user} size="md" />
+                    <div className="min-w-0 flex-1">
+                        <p className="text-xs text-amber-200">
+                            {tr('Гравець місяця · {month}', {
+                                month: new Date(
+                                    `${mvp.winner.month}-01`,
+                                ).toLocaleDateString(LOCALE, {
+                                    month: 'long',
+                                    year: 'numeric',
+                                }),
+                            })}
+                        </p>
+                        <p className="truncate font-semibold text-white">
+                            {mvp.winner.user.name}
+                        </p>
+                    </div>
+                    <span className="text-xs text-white/55">
+                        {tr('{votes} голос.', { votes: mvp.winner.votes })}
+                    </span>
+                </div>
+            ) : (
+                <p className="mb-3 text-sm text-white/50">
+                    {tr(
+                        'Голосуйте за найкращого гравця клану — переможця оголосимо на початку наступного місяця.',
+                    )}
+                </p>
+            )}
+            {mvp.leaders.length > 0 && (
+                <ol className="mb-3 space-y-1.5">
+                    {mvp.leaders.map((l, i) => (
+                        <li
+                            key={l.user.id}
+                            className="flex items-center gap-2.5 text-sm"
+                        >
+                            <span className="w-4 text-xs text-white/40">
+                                {i + 1}
+                            </span>
+                            <UserAvatar user={l.user} size="xs" />
+                            <span className="min-w-0 flex-1 truncate text-white/85">
+                                {l.user.name}
+                            </span>
+                            <span className="text-xs text-white/55 tabular-nums">
+                                {l.votes}
+                            </span>
+                        </li>
+                    ))}
+                </ol>
+            )}
+            <div className="flex gap-2">
+                <select
+                    value={pick}
+                    onChange={(e) =>
+                        setPick(e.target.value ? Number(e.target.value) : '')
+                    }
+                    className="input-glass h-10 min-w-0 flex-1 rounded-xl px-3 text-sm text-white [color-scheme:dark]"
+                    aria-label={tr('Мій голос')}
+                >
+                    <option value="">{tr('Оберіть учасника')}</option>
+                    {candidates.map((m) => (
+                        <option key={m.user!.id} value={m.user!.id}>
+                            {m.nickname || m.user!.name}
+                        </option>
+                    ))}
+                </select>
+                <button
+                    type="button"
+                    disabled={pick === '' || pick === mvp.my_vote}
+                    onClick={() => post(`${base}/mvp`, { user_id: pick })}
+                    className="h-10 rounded-xl bg-primary px-4 text-sm font-semibold text-white disabled:opacity-50"
+                >
+                    {mvp.my_vote ? tr('Змінити голос') : tr('Голосувати')}
+                </button>
+            </div>
+        </Card>
     );
 }
 
@@ -176,7 +314,7 @@ function JoinForm({ base, questions }: { base: string; questions: string[] }) {
 
     return (
         <form
-            className="glass w-full basis-full space-y-2 rounded-2xl p-3"
+            className="gc-solid w-full basis-full space-y-2 rounded-2xl p-3"
             onSubmit={(event) => {
                 event.preventDefault();
                 form.post(`${base}/join`, { preserveScroll: true });
@@ -209,7 +347,7 @@ function JoinForm({ base, questions }: { base: string; questions: string[] }) {
                 className={input}
             />
             {form.errors.answers && (
-                <p className="text-xs text-rose-300">{form.errors.answers}</p>
+                <p className="text-xs text-red-400">{form.errors.answers}</p>
             )}
             <button type="submit" disabled={form.processing} className={btn}>
                 <UserPlus className="size-4" /> {tr('Подати заявку')}
@@ -240,6 +378,7 @@ export default function ClanShow(props: Props) {
         ['overview', tr('Огляд'), Swords, true],
         ['news', tr('Новини'), Newspaper, me && has('news')],
         ['events', tr('Заходи'), CalendarDays, me && has('events')],
+        ['shifts', tr('Зміни'), CalendarClock, me && has('shifts')],
         ['treasury', tr('Внески'), Coins, me && has('treasury')],
         ['rating', tr('Рейтинг'), Trophy, me && has('rating')],
         ['rules', tr('Статут'), ScrollText, has('rules') && clan.rules],
@@ -257,14 +396,14 @@ export default function ClanShow(props: Props) {
     return (
         <>
             <Head title={clan.display_name} />
-            <div className="glass mb-4 flex flex-wrap items-center gap-4 rounded-3xl p-4 sm:p-5">
+            <div className="gc-solid mb-4 flex flex-wrap items-center gap-4 rounded-2xl p-4 sm:p-5">
                 <ClanLogo clan={clan} size="lg" />
                 <div className="min-w-0 flex-1">
                     <h1 className="truncate font-display text-xl font-semibold text-white sm:text-2xl">
                         {clan.display_name}
                     </h1>
                     <p className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-white/55">
-                        <span className="font-mono text-gc-lilac-200">
+                        <span className="font-mono text-sky-400">
                             [{clan.tag}]
                         </span>
                         {clan.game && (
@@ -291,6 +430,14 @@ export default function ClanShow(props: Props) {
                         <a href={`${base}/chat`} className={ghost}>
                             <MessageCircle className="size-4" /> {tr('Чат')}
                         </a>
+                    )}
+                    {me && clan.options?.listen !== false && (
+                        <ListenRoomButton
+                            group="clan"
+                            id={clan.id}
+                            variant="button"
+                            className={ghost}
+                        />
                     )}
                     {me?.can['members.manage'] && (
                         <InviteLinkButton
@@ -343,6 +490,26 @@ export default function ClanShow(props: Props) {
                             <LogOut className="size-4" /> {tr('Вийти')}
                         </button>
                     )}
+                    {props.can_staff_delete && (
+                        <button
+                            type="button"
+                            onClick={() => {
+                                const reason = prompt(
+                                    tr(
+                                        'Видалити «{name}» як персонал? Вкажіть причину (піде в журнал).',
+                                        { name: clan.name },
+                                    ),
+                                );
+                                if (reason === null) return;
+                                router.delete(`/admin/clans/${clan.id}`, {
+                                    data: { reason, from_page: true },
+                                });
+                            }}
+                            className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-red-500/15 px-3.5 text-sm font-semibold text-red-400 transition hover:bg-red-500/25"
+                        >
+                            <Trash2 className="size-4" /> {tr('Видалити клан')}
+                        </button>
+                    )}
                 </div>
             </div>
 
@@ -355,13 +522,13 @@ export default function ClanShow(props: Props) {
                         className={cn(
                             'inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl px-3.5 text-sm transition',
                             tab === key
-                                ? 'bg-gradient-brand text-white'
-                                : 'glass text-white/65 hover:text-white',
+                                ? 'bg-sky-500 text-white'
+                                : 'gc-solid text-white/65 hover:text-white',
                         )}
                     >
                         <Icon className="size-4" /> {label}
                         {key === 'members' && applications.length > 0 && (
-                            <span className="rounded-full bg-rose-500 px-1.5 text-[11px] text-white">
+                            <span className="rounded-full bg-red-500 px-1.5 text-[11px] text-white">
                                 {applications.length}
                             </span>
                         )}
@@ -398,7 +565,7 @@ export default function ClanShow(props: Props) {
                                         <Link
                                             key={ally.slug}
                                             href={`/clans/${ally.slug}`}
-                                            className="rounded-full bg-white/10 px-3 py-1 text-sm text-white"
+                                            className="rounded-chip bg-white/10 px-3 py-1 text-sm text-white"
                                         >
                                             {ally.name}
                                         </Link>
@@ -510,7 +677,7 @@ export default function ClanShow(props: Props) {
                                 {news.slice(0, 3).map((n) => (
                                     <div
                                         key={n.id}
-                                        className="border-b border-white/[0.06] py-2 last:border-0"
+                                        className="py-2 last:border-0"
                                     >
                                         <p className="text-sm font-semibold text-white">
                                             {n.title}
@@ -532,7 +699,7 @@ export default function ClanShow(props: Props) {
                                         key={e.id}
                                         className="py-1 text-sm text-white/75"
                                     >
-                                        <span className="text-gc-lilac-200">
+                                        <span className="text-sky-400">
                                             {eventTime(e.starts_at)}
                                         </span>{' '}
                                         — {e.title} · {e.going_count}{' '}
@@ -563,6 +730,16 @@ export default function ClanShow(props: Props) {
                         base={base}
                         events={events}
                         canManage={!!can['events.manage']}
+                        bracket={clan.options?.bracket !== false}
+                    />
+                )}
+                {tab === 'shifts' && (
+                    <ShiftsTab
+                        base={base}
+                        shifts={props.shifts ?? []}
+                        members={props.members}
+                        canManage={!!can['shifts.manage']}
+                        selfClaim={clan.options?.shifts_self_claim !== false}
                     />
                 )}
                 {tab === 'treasury' && (
@@ -609,6 +786,14 @@ export default function ClanShow(props: Props) {
                     </Card>
                 )}
 
+                {tab === 'members' && props.mvp && (
+                    <MvpCard
+                        base={base}
+                        mvp={props.mvp}
+                        members={members}
+                        myUserId={me?.user?.id ?? null}
+                    />
+                )}
                 {tab === 'members' && (
                     <MembersTab
                         base={base}
@@ -632,6 +817,20 @@ export default function ClanShow(props: Props) {
                         logs={props.logs}
                         isOwner={!!me?.is_owner}
                         myRank={me?.rank ?? 0}
+                    />
+                )}
+                {tab === 'settings' && props.settings && me?.is_owner && (
+                    <DeleteZone
+                        title={
+                            clan.type === 'guild'
+                                ? tr('Видалення гільдії')
+                                : tr('Видалення клану')
+                        }
+                        description={tr(
+                            'Зникне для всіх учасників разом із новинами, подіями й скарбницею.',
+                        )}
+                        slug={clan.slug}
+                        action={base}
                     />
                 )}
             </div>
@@ -714,7 +913,7 @@ function NewsTab({
                 </p>
             )}
             {news.map((n) => (
-                <article key={n.id} className="glass rounded-3xl p-4">
+                <article key={n.id} className="gc-solid rounded-2xl p-4">
                     <div className="mb-1 flex items-center gap-2">
                         {n.is_pinned && (
                             <Pin className="size-4 text-amber-300" />
@@ -731,7 +930,7 @@ function NewsTab({
                                         preserveScroll: true,
                                     })
                                 }
-                                className="text-white/40 hover:text-rose-300"
+                                className="text-white/40 hover:text-red-400"
                                 aria-label={tr('Видалити')}
                             >
                                 <Trash2 className="size-4" />
@@ -754,10 +953,12 @@ function EventsTab({
     base,
     events,
     canManage,
+    bracket,
 }: {
     base: string;
     events: Props['events'];
     canManage: boolean;
+    bracket: boolean;
 }) {
     const form = useForm({
         title: '',
@@ -809,7 +1010,7 @@ function EventsTab({
                             className={cn(area, 'sm:col-span-2')}
                         />
                         {form.errors.starts_at && (
-                            <p className="text-xs text-rose-300 sm:col-span-2">
+                            <p className="text-xs text-red-400 sm:col-span-2">
                                 {form.errors.starts_at}
                             </p>
                         )}
@@ -827,7 +1028,7 @@ function EventsTab({
                                 className={cn(input, 'py-2')}
                             />
                             {form.errors.cover && (
-                                <span className="text-rose-300">
+                                <span className="text-red-400">
                                     {form.errors.cover}
                                 </span>
                             )}
@@ -860,7 +1061,7 @@ function EventsTab({
             {events.map((e) => (
                 <article
                     key={e.id}
-                    className="glass flex flex-wrap items-center gap-3 rounded-3xl p-4"
+                    className="gc-solid flex flex-wrap items-center gap-3 rounded-2xl p-4"
                 >
                     {e.cover_url && (
                         <img
@@ -872,7 +1073,7 @@ function EventsTab({
                         />
                     )}
                     <div className="min-w-0 flex-1">
-                        <p className="text-xs text-gc-lilac-200">
+                        <p className="text-xs text-sky-400">
                             {eventTime(e.starts_at)}
                         </p>
                         <h3 className="font-semibold text-white">{e.title}</h3>
@@ -885,7 +1086,18 @@ function EventsTab({
                             {tr('Іде:')} {e.going_count}
                             {e.repeat === 'weekly' ? ` · ${tr('Щотижня')}` : ''}
                         </p>
-                        {canManage && <BracketForm base={base} event={e} />}
+                        {bracket &&
+                            e.bracket &&
+                            e.bracket.teams?.some((t) => t.trim() !== '') && (
+                                <LiveBracket
+                                    url={`${base}/events/${e.id}/bracket`}
+                                    initial={e.bracket as BracketData}
+                                    startsAt={e.starts_at}
+                                />
+                            )}
+                        {canManage && bracket && (
+                            <BracketForm base={base} event={e} />
+                        )}
                     </div>
                     <button
                         type="button"
@@ -917,7 +1129,7 @@ function EventsTab({
                                     preserveScroll: true,
                                 })
                             }
-                            className="text-white/40 hover:text-rose-300"
+                            className="text-white/40 hover:text-red-400"
                             aria-label={tr('Видалити')}
                         >
                             <Trash2 className="size-4" />
@@ -1006,7 +1218,7 @@ function TreasuryTab({
                                 onSuccess: () => spend.reset(),
                             });
                         }}
-                        className="mt-4 flex flex-wrap gap-2 border-t border-white/[0.06] pt-4"
+                        className="mt-4 flex flex-wrap gap-2 pt-4"
                     >
                         <input
                             type="number"
@@ -1035,7 +1247,7 @@ function TreasuryTab({
                             {tr('Записати витрату')}
                         </button>
                         {spend.errors.amount && (
-                            <p className="w-full text-xs text-rose-300">
+                            <p className="w-full text-xs text-red-400">
                                 {spend.errors.amount}
                             </p>
                         )}
@@ -1051,7 +1263,7 @@ function TreasuryTab({
                 {contributions.map((c) => (
                     <div
                         key={c.id}
-                        className="flex flex-wrap items-center gap-3 border-b border-white/[0.06] py-2 last:border-0"
+                        className="flex flex-wrap items-center gap-3 py-2 last:border-0"
                     >
                         {c.user && <UserAvatar user={c.user} size="xs" />}
                         <span className="min-w-0 flex-1 text-sm text-white/75">
@@ -1066,7 +1278,7 @@ function TreasuryTab({
                             className={cn(
                                 'text-sm font-semibold',
                                 c.amount < 0
-                                    ? 'text-rose-300'
+                                    ? 'text-red-400'
                                     : 'text-emerald-300',
                             )}
                         >
@@ -1099,7 +1311,7 @@ function TreasuryTab({
                                             approve: false,
                                         })
                                     }
-                                    className="rounded-lg bg-rose-500/15 p-1.5 text-rose-200"
+                                    className="rounded-lg bg-red-500/15 p-1.5 text-red-400"
                                     aria-label={tr('Відхилити')}
                                 >
                                     <X className="size-4" />
@@ -1193,7 +1405,7 @@ function MembersTab({
                     return (
                         <div
                             key={m.id}
-                            className="flex flex-wrap items-center gap-3 border-b border-white/[0.06] py-2 last:border-0"
+                            className="flex flex-wrap items-center gap-3 py-2 last:border-0"
                         >
                             {m.user && <UserAvatar user={m.user} size="sm" />}
                             <span className="min-w-0 flex-1">
@@ -1258,7 +1470,7 @@ function MembersTab({
                                                 }),
                                             ) && act(m, 'kick')
                                         }
-                                        className="text-xs text-rose-300 hover:underline"
+                                        className="text-xs text-red-400 hover:underline"
                                     >
                                         {tr('Виключити')}
                                     </button>
@@ -1316,8 +1528,16 @@ function SettingsTab({
         features: clan.features,
         rank_titles: [1, 2, 3, 4, 5].map((r) => clan.rank_titles[r] ?? ''),
         permissions: permissions?.matrix ?? {},
+        settings: { ...clan.options } as Record<string, boolean | number>,
         logo: null as File | null,
     });
+    const opt = (key: string, value: boolean | number) =>
+        form.setData('settings', { ...form.data.settings, [key]: value });
+    const save = () =>
+        form.post(`${base}/settings`, {
+            preserveScroll: true,
+            forceFormData: true,
+        });
     const toggleFeature = (key: string) =>
         form.setData(
             'features',
@@ -1339,259 +1559,383 @@ function SettingsTab({
         <form
             onSubmit={(e) => {
                 e.preventDefault();
-                form.post(`${base}/settings`, {
-                    preserveScroll: true,
-                    forceFormData: true,
-                });
+                save();
             }}
             className="space-y-4"
         >
-            <Card title={tr('Основне')} icon={Settings}>
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_120px_160px]">
-                    <input
-                        value={form.data.name}
-                        maxLength={60}
-                        onChange={(e) => form.setData('name', e.target.value)}
-                        className={input}
-                        aria-label={tr('Назва')}
-                    />
-                    <input
-                        value={form.data.tag}
-                        maxLength={6}
-                        onChange={(e) =>
-                            form.setData('tag', e.target.value.toUpperCase())
-                        }
-                        className={input}
-                        aria-label={tr('Тег')}
-                    />
-                    <input
-                        value={form.data.currency}
-                        maxLength={24}
-                        onChange={(e) =>
-                            form.setData('currency', e.target.value)
-                        }
-                        className={input}
-                        aria-label={tr('Валюта внесків')}
-                        placeholder={tr('Валюта внесків')}
-                    />
-                </div>
-                <textarea
-                    value={form.data.description}
-                    rows={3}
-                    maxLength={1000}
-                    onChange={(e) =>
-                        form.setData('description', e.target.value)
-                    }
-                    placeholder={tr('Опис')}
-                    className={cn(area, 'mt-2')}
-                />
-                <textarea
-                    value={form.data.rules}
-                    rows={4}
-                    maxLength={10000}
-                    onChange={(e) => form.setData('rules', e.target.value)}
-                    placeholder={tr('Статут (розділ «Статут»)')}
-                    className={cn(area, 'mt-2')}
-                />
-                <div className="mt-2 flex flex-wrap items-center gap-2">
-                    {Object.entries(joinModes).map(([key, label]) => (
-                        <button
-                            key={key}
-                            type="button"
-                            onClick={() => form.setData('join_mode', key)}
-                            className={cn(
-                                'rounded-xl px-3 py-1.5 text-sm',
-                                form.data.join_mode === key
-                                    ? 'bg-gradient-brand text-white'
-                                    : 'bg-white/[0.05] text-white/65',
-                            )}
-                        >
-                            {label}
-                        </button>
-                    ))}
-                    <label className="ml-auto inline-flex cursor-pointer items-center gap-2 text-sm text-white/70">
-                        {tr('Логотип')}
+            <SettingsNav
+                items={[
+                    { id: 'clan-main', label: tr('Основне'), icon: Settings },
+                    {
+                        id: 'clan-sections',
+                        label: tr('Розділи'),
+                        icon: LayoutGrid,
+                    },
+                    {
+                        id: 'clan-functions',
+                        label: tr('Функції'),
+                        icon: SlidersHorizontal,
+                    },
+                    {
+                        id: 'clan-ranks',
+                        label: tr('Ранги й права'),
+                        icon: Crown,
+                    },
+                    ...(logs.length > 0
+                        ? [
+                              {
+                                  id: 'clan-log',
+                                  label: tr('Журнал'),
+                                  icon: ScrollText,
+                              },
+                          ]
+                        : []),
+                ]}
+            />
+            <SettingsAnchor id="clan-main">
+                <Card title={tr('Основне')} icon={Settings}>
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_120px_160px]">
                         <input
-                            type="file"
-                            accept="image/*"
-                            className="text-xs"
+                            value={form.data.name}
+                            maxLength={60}
+                            onChange={(e) =>
+                                form.setData('name', e.target.value)
+                            }
+                            className={input}
+                            aria-label={tr('Назва')}
+                        />
+                        <input
+                            value={form.data.tag}
+                            maxLength={6}
                             onChange={(e) =>
                                 form.setData(
-                                    'logo',
-                                    e.target.files?.[0] ?? null,
+                                    'tag',
+                                    e.target.value.toUpperCase(),
                                 )
                             }
-                        />
-                    </label>
-                </div>
-                <div className="mt-3 space-y-2">
-                    <p className="text-xs text-white/45">
-                        {tr('Питання в заявці')}
-                    </p>
-                    {[0, 1, 2].map((index) => (
-                        <input
-                            key={index}
-                            value={form.data.questions[index] ?? ''}
-                            maxLength={80}
-                            onChange={(e) => {
-                                const next = [...form.data.questions];
-                                next[index] = e.target.value;
-                                form.setData('questions', next);
-                            }}
-                            placeholder={tr('Питання {n}', { n: index + 1 })}
                             className={input}
-                            aria-label={tr('Питання {n}', { n: index + 1 })}
+                            aria-label={tr('Тег')}
                         />
-                    ))}
-                </div>
-            </Card>
-
-            <Card title={tr('Розділи клану')} icon={Swords}>
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                    {Object.entries(features).map(([key, f]) => {
-                        const on = form.data.features.includes(key);
-
-                        return (
+                        <input
+                            value={form.data.currency}
+                            maxLength={24}
+                            onChange={(e) =>
+                                form.setData('currency', e.target.value)
+                            }
+                            className={input}
+                            aria-label={tr('Валюта внесків')}
+                            placeholder={tr('Валюта внесків')}
+                        />
+                    </div>
+                    <textarea
+                        value={form.data.description}
+                        rows={3}
+                        maxLength={1000}
+                        onChange={(e) =>
+                            form.setData('description', e.target.value)
+                        }
+                        placeholder={tr('Опис')}
+                        className={cn(area, 'mt-2')}
+                    />
+                    <textarea
+                        value={form.data.rules}
+                        rows={4}
+                        maxLength={10000}
+                        onChange={(e) => form.setData('rules', e.target.value)}
+                        placeholder={tr('Статут (розділ «Статут»)')}
+                        className={cn(area, 'mt-2')}
+                    />
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                        {Object.entries(joinModes).map(([key, label]) => (
                             <button
                                 key={key}
                                 type="button"
-                                onClick={() => toggleFeature(key)}
+                                onClick={() => form.setData('join_mode', key)}
                                 className={cn(
-                                    'flex items-start gap-3 rounded-2xl p-3 text-left',
-                                    on
-                                        ? 'bg-[var(--accent)]/15 ring-1 ring-[var(--accent)]/60'
-                                        : 'bg-white/[0.03]',
+                                    'rounded-xl px-3 py-1.5 text-sm',
+                                    form.data.join_mode === key
+                                        ? 'bg-sky-500 text-white'
+                                        : 'gc-solid-2 text-white/65',
                                 )}
                             >
-                                <span
-                                    className={cn(
-                                        'mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-md border',
-                                        on
-                                            ? 'border-transparent bg-gradient-brand'
-                                            : 'border-white/25',
-                                    )}
-                                >
-                                    {on && (
-                                        <Check className="size-3.5 text-white" />
-                                    )}
-                                </span>
-                                <span>
-                                    <span className="block text-sm font-semibold text-white">
-                                        {f.label}
-                                    </span>
-                                    <span className="block text-xs text-white/50">
-                                        {f.text}
-                                    </span>
-                                </span>
+                                {label}
                             </button>
-                        );
-                    })}
-                </div>
-            </Card>
-
-            <Card title={tr('Ранги й права')} icon={Crown}>
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
-                    {form.data.rank_titles.map((t, i) => (
-                        <label key={i}>
-                            <span className="mb-1 block text-xs text-white/45">
-                                {tr('Ранг')} {i + 1}
-                            </span>
+                        ))}
+                        <label className="ml-auto inline-flex cursor-pointer items-center gap-2 text-sm text-white/70">
+                            {tr('Логотип')}
                             <input
-                                value={t}
-                                maxLength={24}
+                                type="file"
+                                accept="image/*"
+                                className="text-xs"
                                 onChange={(e) =>
                                     form.setData(
-                                        'rank_titles',
-                                        form.data.rank_titles.map((x, j) =>
-                                            j === i ? e.target.value : x,
-                                        ),
+                                        'logo',
+                                        e.target.files?.[0] ?? null,
                                     )
                                 }
-                                className={cn(input, 'h-9 text-xs')}
                             />
                         </label>
-                    ))}
-                </div>
-                {permissions && (
-                    <div className="mt-4 overflow-x-auto">
-                        <table className="w-full min-w-[480px] text-xs">
-                            <thead>
-                                <tr className="text-white/40">
-                                    <th className="py-2 text-left font-medium">
-                                        {tr('Право')}
-                                    </th>
-                                    {[1, 2, 3, 4].map((r) => (
-                                        <th
-                                            key={r}
-                                            className="w-9 py-2 font-medium"
-                                        >
-                                            {r}
-                                        </th>
-                                    ))}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {Object.entries(permissions.labels).map(
-                                    ([perm, label]) => (
-                                        <tr
-                                            key={perm}
-                                            className="border-t border-white/[0.05]"
-                                        >
-                                            <td className="py-2 pr-2 text-white/70">
-                                                {label}
-                                            </td>
-                                            {[1, 2, 3, 4].map((r) => {
-                                                const on = (
-                                                    form.data.permissions[
-                                                        perm
-                                                    ] ?? []
-                                                ).includes(r);
-                                                const locked =
-                                                    !isOwner && r >= myRank;
-
-                                                return (
-                                                    <td
-                                                        key={r}
-                                                        className="text-center"
-                                                    >
-                                                        <button
-                                                            type="button"
-                                                            disabled={locked}
-                                                            onClick={() =>
-                                                                togglePerm(
-                                                                    perm,
-                                                                    r,
-                                                                )
-                                                            }
-                                                            className={cn(
-                                                                'size-6 rounded-md disabled:opacity-30',
-                                                                on
-                                                                    ? 'bg-gradient-brand text-white'
-                                                                    : 'bg-white/[0.05]',
-                                                            )}
-                                                            aria-label={tr(
-                                                                '{label}: ранг {r}',
-                                                                { label, r },
-                                                            )}
-                                                        >
-                                                            {on && (
-                                                                <Check className="mx-auto size-3.5" />
-                                                            )}
-                                                        </button>
-                                                    </td>
-                                                );
-                                            })}
-                                        </tr>
-                                    ),
-                                )}
-                            </tbody>
-                        </table>
-                        <p className="mt-2 text-xs text-white/40">
-                            {tr('Ранг 5 (лідер) і засновник мають усі права.')}
-                        </p>
                     </div>
-                )}
-            </Card>
+                    <div className="mt-3 space-y-2">
+                        <p className="text-xs text-white/45">
+                            {tr('Питання в заявці')}
+                        </p>
+                        {[0, 1, 2].map((index) => (
+                            <input
+                                key={index}
+                                value={form.data.questions[index] ?? ''}
+                                maxLength={80}
+                                onChange={(e) => {
+                                    const next = [...form.data.questions];
+                                    next[index] = e.target.value;
+                                    form.setData('questions', next);
+                                }}
+                                placeholder={tr('Питання {n}', {
+                                    n: index + 1,
+                                })}
+                                className={input}
+                                aria-label={tr('Питання {n}', { n: index + 1 })}
+                            />
+                        ))}
+                    </div>
+                </Card>
+            </SettingsAnchor>
+
+            <SettingsAnchor id="clan-sections">
+                <Card title={tr('Розділи')} icon={LayoutGrid}>
+                    <p className="mb-3 text-xs text-white/45">
+                        {tr(
+                            'Вимкнений розділ зникає з вкладок для всіх учасників. Дані зберігаються — увімкніть, і все повернеться.',
+                        )}
+                    </p>
+                    <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+                        {Object.entries(features).map(([key, f]) => (
+                            <FeatureTile
+                                key={key}
+                                icon={FEATURE_ICONS[key] ?? LayoutGrid}
+                                label={f.label}
+                                text={f.text}
+                                on={form.data.features.includes(key)}
+                                onChange={() => toggleFeature(key)}
+                            />
+                        ))}
+                    </div>
+                </Card>
+            </SettingsAnchor>
+
+            <SettingsAnchor id="clan-functions">
+                <Card title={tr('Функції')} icon={SlidersHorizontal}>
+                    <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+                        <FeatureTile
+                            icon={Crown}
+                            label={tr('Гравець місяця')}
+                            text={tr(
+                                'Учасники голосують, переможця оголошуємо 1-го числа',
+                            )}
+                            on={form.data.settings.mvp !== false}
+                            onChange={(v) => opt('mvp', v)}
+                        />
+                        <FeatureTile
+                            icon={Trophy}
+                            label={tr('Турнірна сітка')}
+                            text={tr('Жива сітка на 4 команди в заходах клану')}
+                            on={form.data.settings.bracket !== false}
+                            onChange={(v) => opt('bracket', v)}
+                        />
+                        <FeatureTile
+                            icon={BellRing}
+                            label={tr('Нагадування неактивним')}
+                            text={tr(
+                                'Кнопка «Нагадати» біля тих, хто не заходив 2 тижні',
+                            )}
+                            on={form.data.settings.nudge !== false}
+                            onChange={(v) => opt('nudge', v)}
+                        />
+                        <FeatureTile
+                            icon={Headphones}
+                            label={tr('Слухати разом')}
+                            text={tr(
+                                'Спільна музична кімната на сторінці клану',
+                            )}
+                            on={form.data.settings.listen !== false}
+                            onChange={(v) => opt('listen', v)}
+                        />
+                    </div>
+                    {form.data.features.includes('shifts') && (
+                        <div className="mt-4 space-y-2">
+                            <p className="text-xs font-semibold text-white/55">
+                                {tr('Зміни')}
+                            </p>
+                            <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+                                <FeatureTile
+                                    icon={Hand}
+                                    label={tr('Самі беруть вільні зміни')}
+                                    text={tr(
+                                        'Вимкніть, щоб зміни призначало лише керівництво',
+                                    )}
+                                    on={
+                                        form.data.settings.shifts_self_claim !==
+                                        false
+                                    }
+                                    onChange={(v) =>
+                                        opt('shifts_self_claim', v)
+                                    }
+                                />
+                                <FeatureTile
+                                    icon={BellRing}
+                                    label={tr('Нагадування про зміну')}
+                                    text={tr('Сповіщення за годину до початку')}
+                                    on={
+                                        form.data.settings.shifts_remind !==
+                                        false
+                                    }
+                                    onChange={(v) => opt('shifts_remind', v)}
+                                />
+                            </div>
+                            <label className="gc-solid-2 flex items-center justify-between gap-3 rounded-2xl p-3 text-sm text-white/70">
+                                {tr(
+                                    'Ліміт змін на людину за тиждень (0 — без ліміту)',
+                                )}
+                                <input
+                                    type="number"
+                                    min={0}
+                                    max={21}
+                                    value={Number(
+                                        form.data.settings.shifts_week_limit ??
+                                            0,
+                                    )}
+                                    onChange={(e) =>
+                                        opt(
+                                            'shifts_week_limit',
+                                            Math.max(
+                                                0,
+                                                Math.min(
+                                                    21,
+                                                    Number(e.target.value) || 0,
+                                                ),
+                                            ),
+                                        )
+                                    }
+                                    className={cn(
+                                        input,
+                                        'h-9 w-20 text-center',
+                                    )}
+                                />
+                            </label>
+                        </div>
+                    )}
+                </Card>
+            </SettingsAnchor>
+
+            <SettingsAnchor id="clan-ranks">
+                <Card title={tr('Ранги й права')} icon={Crown}>
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+                        {form.data.rank_titles.map((t, i) => (
+                            <label key={i}>
+                                <span className="mb-1 block text-xs text-white/45">
+                                    {tr('Ранг')} {i + 1}
+                                </span>
+                                <input
+                                    value={t}
+                                    maxLength={24}
+                                    onChange={(e) =>
+                                        form.setData(
+                                            'rank_titles',
+                                            form.data.rank_titles.map((x, j) =>
+                                                j === i ? e.target.value : x,
+                                            ),
+                                        )
+                                    }
+                                    className={cn(input, 'h-9 text-xs')}
+                                />
+                            </label>
+                        ))}
+                    </div>
+                    {permissions && (
+                        <div className="mt-4 overflow-x-auto">
+                            <table className="w-full min-w-[480px] text-xs">
+                                <thead>
+                                    <tr className="text-white/40">
+                                        <th className="py-2 text-left font-medium">
+                                            {tr('Право')}
+                                        </th>
+                                        {[1, 2, 3, 4].map((r) => (
+                                            <th
+                                                key={r}
+                                                className="w-9 py-2 font-medium"
+                                            >
+                                                {r}
+                                            </th>
+                                        ))}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {Object.entries(permissions.labels).map(
+                                        ([perm, label]) => (
+                                            <tr key={perm} className=" ">
+                                                <td className="py-2 pr-2 text-white/70">
+                                                    {label}
+                                                </td>
+                                                {[1, 2, 3, 4].map((r) => {
+                                                    const on = (
+                                                        form.data.permissions[
+                                                            perm
+                                                        ] ?? []
+                                                    ).includes(r);
+                                                    const locked =
+                                                        !isOwner && r >= myRank;
+
+                                                    return (
+                                                        <td
+                                                            key={r}
+                                                            className="text-center"
+                                                        >
+                                                            <button
+                                                                type="button"
+                                                                disabled={
+                                                                    locked
+                                                                }
+                                                                onClick={() =>
+                                                                    togglePerm(
+                                                                        perm,
+                                                                        r,
+                                                                    )
+                                                                }
+                                                                className={cn(
+                                                                    'size-6 rounded-md disabled:opacity-30',
+                                                                    on
+                                                                        ? 'bg-sky-500 text-white'
+                                                                        : 'gc-solid-2',
+                                                                )}
+                                                                aria-label={tr(
+                                                                    '{label}: ранг {r}',
+                                                                    {
+                                                                        label,
+                                                                        r,
+                                                                    },
+                                                                )}
+                                                            >
+                                                                {on && (
+                                                                    <Check className="mx-auto size-3.5" />
+                                                                )}
+                                                            </button>
+                                                        </td>
+                                                    );
+                                                })}
+                                            </tr>
+                                        ),
+                                    )}
+                                </tbody>
+                            </table>
+                            <p className="mt-2 text-xs text-white/40">
+                                {tr(
+                                    'Ранг 5 (лідер) і засновник мають усі права.',
+                                )}
+                            </p>
+                        </div>
+                    )}
+                </Card>
+            </SettingsAnchor>
 
             <button
                 type="submit"
@@ -1600,18 +1944,29 @@ function SettingsTab({
             >
                 {tr('Зберегти налаштування')}
             </button>
+            <SaveBar
+                dirty={form.isDirty}
+                processing={form.processing}
+                onSave={save}
+                onReset={() => form.reset()}
+            />
 
             {logs.length > 0 && (
-                <Card title={tr('Журнал дій')} icon={ScrollText}>
-                    {logs.map((l) => (
-                        <p key={l.id} className="py-1 text-xs text-white/60">
-                            <span className="text-white/40">
-                                {timeAgo(l.created_at)}
-                            </span>{' '}
-                            · {l.actor ?? tr('Система')}: {l.text}
-                        </p>
-                    ))}
-                </Card>
+                <SettingsAnchor id="clan-log">
+                    <Card title={tr('Журнал дій')} icon={ScrollText}>
+                        {logs.map((l) => (
+                            <p
+                                key={l.id}
+                                className="py-1 text-xs text-white/60"
+                            >
+                                <span className="text-white/40">
+                                    {timeAgo(l.created_at)}
+                                </span>{' '}
+                                · {l.actor ?? tr('Система')}: {l.text}
+                            </p>
+                        ))}
+                    </Card>
+                </SettingsAnchor>
             )}
         </form>
     );

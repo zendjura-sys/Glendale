@@ -1,0 +1,6 @@
+uk:
+  site_settings:
+    gamecon_login_enabled: "Увімкнути вхід через GameCon. Адреса повернення для застосунку GameCon: https://ваш-форум/auth/gamecon/callback"
+    gamecon_client_id: "Client ID застосунку GameCon"
+    gamecon_client_secret: "Client Secret застосунку GameCon"
+    gamecon_base_url: "Адреса GameCon"

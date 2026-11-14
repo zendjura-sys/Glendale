@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<templates>
+  <template type="public" title="gamecon_login_button" version_id="1000070" version_string="1.0.0"><![CDATA[<xf:if is="!$xf.visitor.user_id AND $xf.options.gameconClientId">
+	<div class="blockMessage" style="text-align:center">
+		<a href="{{ link('gamecon/login') }}" class="button button--cta" style="background:#4f46e5;border-color:#4f46e5"><i class="fa--xf fas fa-gamepad"></i> {{ phrase('gamecon_login') }}</a>
+	</div>
+</xf:if>]]></template>
+</templates>

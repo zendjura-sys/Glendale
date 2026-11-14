@@ -3,6 +3,8 @@
 namespace App\Http\Middleware;
 
 use App\Models\ApiToken;
+use App\Services\Analytics\ActivityMetrics;
+use App\Services\Engagement\Streaks;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -35,12 +37,16 @@ class AuthenticateApiToken
 
         if ($user->last_seen_at === null || $user->last_seen_at->lt(now()->subMinute())) {
             $user->forceFill(['last_seen_at' => now()])->saveQuietly();
+            // Серія днів поспіль — раз на день, разом з «був у мережі».
+            app(Streaks::class)->touch($user);
         }
 
         if ($record->last_used_at === null || $record->last_used_at->lt(now()->subMinutes(5))) {
             $record->forceFill(['last_used_at' => now()])->saveQuietly();
         }
 
+        // Активність у застосунку — платформа «app» (для DAU і утримання).
+        app(ActivityMetrics::class)->touch($user, 'app');
         Auth::setUser($user);
         $request->attributes->set('api_token_id', $record->id);
 

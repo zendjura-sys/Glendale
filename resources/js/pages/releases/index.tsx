@@ -16,7 +16,7 @@ export default function ReleasesIndex({ events }: Props) {
             <Head title={tr('Релізи і сезони')} />
             <div className="mb-4">
                 <h1 className="flex items-center gap-2 font-display text-2xl font-semibold text-white">
-                    <CalendarDays className="size-6 text-gc-lilac-200" />{' '}
+                    <CalendarDays className="size-6 text-sky-400" />{' '}
                     {tr('Релізи і сезони')}
                 </h1>
                 <p className="text-sm text-white/50">
@@ -25,7 +25,7 @@ export default function ReleasesIndex({ events }: Props) {
                     )}{' '}
                     <Link
                         href="/events"
-                        className="text-gc-lilac-200 hover:text-white"
+                        className="text-sky-400 hover:text-white"
                     >
                         {tr('Усі події')}
                     </Link>

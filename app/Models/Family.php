@@ -48,7 +48,7 @@ use Illuminate\Support\Facades\Storage;
 #[Hidden(['donation_jar', 'donation_note'])]
 #[Fillable([
     'server_id', 'owner_id', 'slug', 'name', 'tag', 'description', 'status', 'status_reason', 'verified_at',
-    'settings', 'rank_titles', 'permissions', 'webhooks', 'is_recruiting', 'season_started_at',
+    'settings', 'rank_titles', 'permissions', 'webhooks', 'is_recruiting', 'season_started_at', 'questions', 'onboarding',
 ])]
 class Family extends Model
 {
@@ -159,12 +159,35 @@ class Family extends Model
             'enabled' => true,
             'chat' => true,
         ],
+        // Розділи, які лідер може вимкнути (вкладка зникає, маршрути — 404).
+        'sections' => [
+            'events' => true,
+            'warehouse' => true,
+            'rating' => true,
+        ],
+        // Календар змін і чергувань.
+        'shifts' => [
+            'enabled' => true,
+            'self_claim' => true,
+            'week_limit' => 0,
+            'remind' => true,
+        ],
+    ];
+
+    /** Розділи, які можна вимкнути, і де лежить їхній перемикач. */
+    public const TOGGLE_SECTIONS = [
+        'events' => 'sections.events',
+        'warehouse' => 'sections.warehouse',
+        'rating' => 'sections.rating',
+        'shifts' => 'shifts.enabled',
     ];
 
     protected function casts(): array
     {
         return [
             'settings' => 'array',
+            'questions' => 'array',
+            'onboarding' => 'array',
             'rank_titles' => 'array',
             'permissions' => 'array',
             'webhooks' => 'encrypted:array',
@@ -306,6 +329,39 @@ class Family extends Model
     /**
      * Налаштування з підставленими значеннями за замовчуванням.
      */
+    /**
+     * Питання анкети для заявки: [{id, text, required}].
+     *
+     * @return list<array{id: string, text: string, required: bool}>
+     */
+    public function applicationQuestions(): array
+    {
+        return array_values(array_filter((array) $this->questions, fn ($q) => is_array($q) && ($q['text'] ?? '') !== ''));
+    }
+
+    /**
+     * Кроки чек-листа новачка: [{id, title, url}].
+     *
+     * @return list<array{id: string, title: string, url: string|null}>
+     */
+    public function onboardingSteps(): array
+    {
+        return array_values(array_filter((array) $this->onboarding, fn ($s) => is_array($s) && ($s['title'] ?? '') !== ''));
+    }
+
+    public function sectionEnabled(string $section): bool
+    {
+        $key = self::TOGGLE_SECTIONS[$section] ?? null;
+
+        return $key === null || (bool) $this->setting($key, true);
+    }
+
+    /** @return array<string, bool> */
+    public function sections(): array
+    {
+        return array_map(fn (string $key) => (bool) $this->setting($key, true), self::TOGGLE_SECTIONS);
+    }
+
     public function setting(string $key, mixed $default = null): mixed
     {
         return Arr::get($this->settings ?? [], $key, Arr::get(self::DEFAULT_SETTINGS, $key, $default));

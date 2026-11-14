@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\User;
 use App\Notifications\PhotoInteraction;
 use App\Notifications\PostInteraction;
+use App\Services\Push\PushNotifier;
 use App\Support\NotifyPrefs;
 use Illuminate\Notifications\DatabaseNotification;
 
@@ -13,6 +14,9 @@ use Illuminate\Notifications\DatabaseNotification;
  */
 class ReactionDigest
 {
+    /** На цих кількостях — один пуш-підсумок («10 людей оцінили…»). */
+    public const MILESTONES = [5, 10, 25, 50, 100, 250, 500, 1000];
+
     public function record(User $author, PostInteraction|PhotoInteraction $notification): void
     {
         if ($author->is($notification->actor) || ! NotifyPrefs::allowsKind($author, $notification->kind)) {
@@ -29,11 +33,23 @@ class ReactionDigest
 
         if ($existing instanceof DatabaseNotification) {
             $payload = $existing->data;
-            $count = max(1, (int) ($payload['count'] ?? 1)) + 1;
+            // Хто саме: останні три різні людини (для «Олена, Петро та ще 3»), без повторів того самого.
+            $actors = array_values(array_unique([$notification->actor->id, ...array_map('intval', (array) ($payload['actor_ids'] ?? [$payload['actor_id'] ?? 0]))]));
+            $actors = array_values(array_filter($actors));
+            $repeat = in_array($notification->actor->id, (array) ($payload['actor_ids'] ?? [$payload['actor_id'] ?? 0]), false);
+            $count = max(1, (int) ($payload['count'] ?? 1)) + ($repeat ? 0 : 1);
             $payload['count'] = $count;
             $payload['actor_id'] = $notification->actor->id;
+            $payload['actor_ids'] = array_slice($actors, 0, 3);
             $payload['text'] = $this->text((string) $fresh['kind'], $count);
+            if (isset($fresh['excerpt'])) {
+                $payload['excerpt'] = $fresh['excerpt'];
+            }
             $existing->forceFill(['data' => $payload, 'created_at' => now()])->save();
+            // Без пушу на кожну оцінку: лише підсумок на круглих числах.
+            if (! $repeat && in_array($count, self::MILESTONES, true)) {
+                rescue(fn () => app(PushNotifier::class)->notification($author, $existing), report: false);
+            }
 
             return;
         }
@@ -62,6 +78,9 @@ class ReactionDigest
 
     private function text(string $kind, int $count): string
     {
+        if ($kind === PostInteraction::COMMENT) {
+            return "{$count} ".$this->plural($count, 'людина прокоментувала', 'людини прокоментували', 'людей прокоментували').' ваш запис';
+        }
         $mod10 = $count % 10;
         $mod100 = $count % 100;
         $people = match (true) {
@@ -72,5 +91,17 @@ class ReactionDigest
         $target = $kind === PhotoInteraction::LIKE ? 'реакцію на фото' : 'реакцію';
 
         return "{$count} {$people} {$target}";
+    }
+
+    private function plural(int $n, string $one, string $few, string $many): string
+    {
+        $mod10 = $n % 10;
+        $mod100 = $n % 100;
+
+        return match (true) {
+            $mod10 === 1 && $mod100 !== 11 => $one,
+            $mod10 >= 2 && $mod10 <= 4 && ($mod100 < 12 || $mod100 > 14) => $few,
+            default => $many,
+        };
     }
 }

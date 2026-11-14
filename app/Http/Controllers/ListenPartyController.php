@@ -4,10 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\Conversation;
 use App\Models\ListenParty;
+use App\Models\RadioStation;
 use App\Models\Track;
 use App\Models\User;
 use App\Services\FriendshipService;
 use App\Services\ListenParties;
+use App\Services\Music\ListenRooms;
+use App\Services\Music\NearbyJam;
 use App\Support\Plugins\Plugins;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -32,18 +35,21 @@ class ListenPartyController extends Controller
         $track = isset($data['track_id']) ? Track::query()->findOrFail((int) $data['track_id']) : null;
 
         $party = $this->parties->create($user, $track);
+        // «Автоматично запрошувати друзів поблизу в джем».
+        $nearby = app(NearbyJam::class)->autoInvite($party, $user, $request->ip());
         if (isset($data['conversation_id'])) {
             $this->parties->share($party, $user, Conversation::query()->findOrFail((int) $data['conversation_id']));
         }
 
         return $request->expectsJson()
-            ? response()->json(['code' => $party->code, 'url' => url('/listen/'.$party->code)], 201)
+            ? response()->json(['code' => $party->code, 'url' => url('/listen/'.$party->code), 'invited' => $nearby], 201)
             : to_route('listen.show', $party);
     }
 
     public function show(Request $request, ListenParty $party, FriendshipService $friendships): Response|JsonResponse
     {
         $user = $this->user($request);
+        app(ListenRooms::class)->ensureCanJoin($party, $user);
         if ($party->isLive()) {
             $this->parties->touch($party, $user);
         }
@@ -74,9 +80,11 @@ class ListenPartyController extends Controller
             'playing' => ['required', 'boolean'],
             'position' => ['required', 'numeric', 'min:0', 'max:86400'],
             'track_id' => ['nullable', 'integer'],
+            'station_id' => ['nullable', 'integer'],
         ]);
         $track = isset($data['track_id']) ? Track::query()->findOrFail((int) $data['track_id']) : null;
-        $this->parties->control($party, $user, (bool) $data['playing'], (float) $data['position'], $track);
+        $station = isset($data['station_id']) ? RadioStation::query()->where('is_active', true)->findOrFail((int) $data['station_id']) : null;
+        $this->parties->control($party, $user, (bool) $data['playing'], (float) $data['position'], $track, $station);
 
         return response()->json(['state' => $this->parties->playback($party->refresh())]);
     }
@@ -84,8 +92,11 @@ class ListenPartyController extends Controller
     public function enqueue(Request $request, ListenParty $party): JsonResponse
     {
         $user = $this->live($request, $party);
-        $data = $request->validate(['track_id' => ['required', 'integer']]);
-        $this->parties->enqueue($party, $user, Track::query()->findOrFail((int) $data['track_id']));
+        $data = $request->validate(['track_id' => ['required_without:station_id', 'nullable', 'integer'], 'station_id' => ['nullable', 'integer']]);
+        $item = isset($data['station_id'])
+            ? RadioStation::query()->where('is_active', true)->findOrFail((int) $data['station_id'])
+            : Track::query()->findOrFail((int) $data['track_id']);
+        $this->parties->enqueue($party, $user, $item);
 
         return response()->json($this->parties->state($party->refresh(), $user));
     }
@@ -123,6 +134,21 @@ class ListenPartyController extends Controller
         return response()->json(['state' => $this->parties->playback($party->refresh())]);
     }
 
+    /** Налаштування «Автоматично запрошувати друзів поблизу в джем». */
+    public function jamPrefs(Request $request): JsonResponse
+    {
+        $user = $this->user($request);
+        if ($request->isMethod('put')) {
+            $data = $request->validate(['auto_invite' => ['required', 'boolean']]);
+            $user->mergePref([NearbyJam::PREF => (bool) $data['auto_invite']]);
+        }
+
+        return response()->json([
+            'auto_invite' => (bool) $user->pref(NearbyJam::PREF, false),
+            'nearby' => count(app(NearbyJam::class)->nearbyFriends($user, $request->ip())),
+        ]);
+    }
+
     public function invite(Request $request, ListenParty $party): JsonResponse
     {
         $user = $this->live($request, $party);
@@ -140,6 +166,13 @@ class ListenPartyController extends Controller
         return response()->json(['ok' => true]);
     }
 
+    public function leave(Request $request, ListenParty $party): JsonResponse
+    {
+        $this->parties->leave($party, $request->user());
+
+        return response()->json(['ok' => true]);
+    }
+
     public function end(Request $request, ListenParty $party): JsonResponse
     {
         $this->parties->end($party, $this->live($request, $party));
@@ -150,6 +183,7 @@ class ListenPartyController extends Controller
     private function member(Request $request, ListenParty $party): User
     {
         $user = $this->user($request);
+        app(ListenRooms::class)->ensureCanJoin($party, $user);
         abort_unless($this->parties->isMember($party, $user), 403, 'Відкрийте посилання, щоб приєднатися.');
 
         return $user;

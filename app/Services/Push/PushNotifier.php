@@ -3,6 +3,7 @@
 namespace App\Services\Push;
 
 use App\Jobs\SendPushNotification;
+use App\Models\AppLoginRequest;
 use App\Models\Community;
 use App\Models\Conversation;
 use App\Models\Family;
@@ -10,6 +11,8 @@ use App\Models\Message;
 use App\Models\PushDevice;
 use App\Models\User;
 use App\Models\WebPushSubscription;
+use App\Services\Alerts\AlertWatcher;
+use App\Services\Auth\AccountSecurity;
 use App\Support\I18n\Locales;
 use App\Support\I18n\Translations;
 use Illuminate\Notifications\DatabaseNotification;
@@ -25,6 +28,15 @@ class PushNotifier
 
     public const CHANNEL_ACTIVITY = 'activity';
 
+    /** Тривога й відбій в обраній області: окремий гучний канал. */
+    public const CHANNEL_ALERTS = 'air_alerts';
+
+    /** Пуш про тривогу актуальний 60 с: пізніше FCM його не доставляє. */
+    public const ALERT_TTL = 60;
+
+    /** Що пушимо навіть у «Тишу під час тривоги»: безпека акаунта й оголошення адміністрації. */
+    public const URGENT = ['new_login', 'broadcast'];
+
     /** Вхідні дзвінки: окремий канал із мелодією й показом поверх екрана. */
     public const CHANNEL_CALLS = 'calls';
 
@@ -35,11 +47,15 @@ class PushNotifier
      */
     public function notification(object $notifiable, DatabaseNotification $notification): void
     {
-        if (! $notifiable instanceof User || ! $this->reachable($notifiable->id)) {
+        if (! $notifiable instanceof User || ! $this->reachable($notifiable->id) || $notifiable->doNotDisturb()) {
             return;
         }
 
         $data = $notification->data;
+        // Беззвучний режим тривог: лише рядок у дзвіночку.
+        if (($data['silent'] ?? false) === true) {
+            return;
+        }
         $title = $this->sender($data);
         // Текст сповіщення — мовою отримувача.
         $text = app(Translations::class)->line(trim((string) ($data['text'] ?? '')), app(Locales::class)->forUser($notifiable));
@@ -50,18 +66,34 @@ class PushNotifier
             return;
         }
 
-        SendPushNotification::dispatch(
+        $alert = str_starts_with((string) ($data['kind'] ?? ''), 'air_alert');
+        // Тривога в місці людини й «Тиша під час тривоги» — несрочне лише в дзвіночку.
+        if (! $alert && ! in_array($data['kind'] ?? null, self::URGENT, true) && app(AlertWatcher::class)->hushed($notifiable)) {
+            return;
+        }
+        $job = new SendPushNotification(
             $notifiable->id,
             $title,
             Str::ucfirst($body),
-            [
+            array_filter([
                 'type' => 'notification',
                 'id' => (string) $notification->id,
                 'kind' => (string) ($data['kind'] ?? 'generic'),
                 'url' => (string) ($data['url'] ?? '/notifications'),
-            ],
-            self::CHANNEL_ACTIVITY,
+                'severity' => isset($data['severity']) ? (string) $data['severity'] : null,
+                'alert_type' => isset($data['alert_type']) ? (string) $data['alert_type'] : null,
+                'accent' => isset($data['accent']) ? (string) $data['accent'] : null,
+                'expires_at' => $alert ? (string) (now()->getTimestamp() + self::ALERT_TTL) : null,
+            ], fn ($v) => $v !== null),
+            $alert ? self::CHANNEL_ALERTS : self::CHANNEL_ACTIVITY,
+            // Тривога регіону — один «слот»: новий пуш замінює попередній, а не складається в пачку.
+            $alert ? 'air-alert' : null,
+            // Тривога в застосунок — data-повідомленням: застосунок сам малює сповіщення з кнопкою «Я в укритті».
+            dataOnly: $alert,
+            ttl: $alert ? self::ALERT_TTL : null,
         );
+        // Тривогу — одразу, повз загальну чергу: черга може стояти за важкими задачами хвилинами.
+        $alert ? dispatch_sync($job) : dispatch($job);
     }
 
     /**
@@ -80,6 +112,9 @@ class PushNotifier
             ->where('is_muted', false)
             ->pluck('user_id')
             ->all();
+        // «Не турбувати» — без пушів.
+        $recipients = User::query()->whereIn('id', $recipients)->get(['id', 'preferences'])
+            ->reject(fn (User $u) => $u->doNotDisturb())->pluck('id')->all();
         $recipients = array_values(array_unique([
             ...($this->fcm->configured() ? PushDevice::query()->whereIn('user_id', $recipients)->distinct()->pluck('user_id')->all() : []),
             ...WebPushSubscription::query()->whereIn('user_id', $recipients)->distinct()->pluck('user_id')->all(),
@@ -113,6 +148,31 @@ class PushNotifier
                 dataOnly: true,
             );
         }
+    }
+
+    /**
+     * «Увійти через застосунок»: браузер просить вхід — лише в застосунок (не в браузери).
+     */
+    public function appLogin(User $user, AppLoginRequest $request): void
+    {
+        if (! $this->fcm->configured() || ! PushDevice::query()->where('user_id', $user->id)->exists()) {
+            return;
+        }
+
+        SendPushNotification::dispatch(
+            $user->id,
+            'Запит на вхід у GameCon',
+            // Видимий блок notification (не data-only): у фоні застосунок інакше push не покаже.
+            implode(' · ', array_filter([AccountSecurity::device($request->user_agent), $request->city ?? $request->country])).'. Підтвердіть, якщо це ви.',
+            [
+                'type' => 'app_login',
+                'id' => $request->id,
+                'url' => '/app-login/'.$request->id,
+            ],
+            self::CHANNEL_ACTIVITY,
+            'app-login-'.$request->id,
+            appOnly: true,
+        );
     }
 
     private function reachable(int $userId): bool

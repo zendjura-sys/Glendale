@@ -1,6 +1,10 @@
 <?php
 
+use App\Http\Controllers\AiController;
+use App\Http\Controllers\AirAlertController;
+use App\Http\Controllers\AnimeImportController;
 use App\Http\Controllers\Api\AccountApiController;
+use App\Http\Controllers\Api\AppLoginApiController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ChatApiController;
 use App\Http\Controllers\Api\FeedApiController;
@@ -10,49 +14,137 @@ use App\Http\Controllers\Api\MediaApiController;
 use App\Http\Controllers\Api\PushApiController;
 use App\Http\Controllers\Api\SocialApiController;
 use App\Http\Controllers\Api\SubscriptionStatusController;
+use App\Http\Controllers\Api\WidgetApiController;
+use App\Http\Controllers\ArticleController;
+use App\Http\Controllers\AvatarCharacterController;
+use App\Http\Controllers\BioLinksController;
 use App\Http\Controllers\Bots;
 use App\Http\Controllers\CallController;
+use App\Http\Controllers\CardController;
 use App\Http\Controllers\CharacterController;
+use App\Http\Controllers\ChatBotController;
+use App\Http\Controllers\ChatExtrasController;
+use App\Http\Controllers\ChatToolsController;
 use App\Http\Controllers\CinemaController;
 use App\Http\Controllers\ClanController;
 use App\Http\Controllers\CommentController;
+use App\Http\Controllers\CommunityChannelController;
 use App\Http\Controllers\CommunityController;
+use App\Http\Controllers\CommunityHubController;
 use App\Http\Controllers\CommunityMemberController;
+use App\Http\Controllers\CommunityStickerController;
+use App\Http\Controllers\CreatorController;
+use App\Http\Controllers\CrosspostController;
+use App\Http\Controllers\Developer\ConnectedAppsController;
+use App\Http\Controllers\Developer\DeveloperApiController;
+use App\Http\Controllers\Developer\EmbedKitController;
+use App\Http\Controllers\Developer\SdkApiController;
+use App\Http\Controllers\Developer\SdkGameController;
+use App\Http\Controllers\Developer\SdkPageController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\Families;
+use App\Http\Controllers\FeedController;
 use App\Http\Controllers\FollowController;
+use App\Http\Controllers\Fun\GameAwardsController;
+use App\Http\Controllers\Fun\GameJournalController;
+use App\Http\Controllers\Fun\GameReviewController;
+use App\Http\Controllers\Fun\MemoriesController;
+use App\Http\Controllers\Fun\MovieListController;
+use App\Http\Controllers\Fun\MovieReviewController;
+use App\Http\Controllers\Fun\MovieRouletteController;
+use App\Http\Controllers\Fun\QuizController;
+use App\Http\Controllers\GameBacklogController;
+use App\Http\Controllers\GameConfigController;
 use App\Http\Controllers\GameController;
+use App\Http\Controllers\GameDealsController;
+use App\Http\Controllers\GameNewsController;
+use App\Http\Controllers\GameNightController;
+use App\Http\Controllers\GamePlayController;
+use App\Http\Controllers\GameQaController;
+use App\Http\Controllers\GameRatingController;
+use App\Http\Controllers\GameSoundtrackController;
+use App\Http\Controllers\GifController;
+use App\Http\Controllers\GuestBanController;
+use App\Http\Controllers\HelpController;
+use App\Http\Controllers\HubController;
+use App\Http\Controllers\IdeaController;
 use App\Http\Controllers\InviteLinkController;
+use App\Http\Controllers\LevelController;
 use App\Http\Controllers\ListenPartyController;
+use App\Http\Controllers\ListenRoomController;
+use App\Http\Controllers\LiveNowController;
+use App\Http\Controllers\LiveShowController;
 use App\Http\Controllers\LocaleController;
+use App\Http\Controllers\LoginRewardController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\MessengerController;
 use App\Http\Controllers\MomentController;
+use App\Http\Controllers\MusicConnectController;
 use App\Http\Controllers\MusicController;
+use App\Http\Controllers\MusicHubController;
+use App\Http\Controllers\MyGameNewsController;
+use App\Http\Controllers\NewcomerController;
+use App\Http\Controllers\NicknameController;
 use App\Http\Controllers\NowPlayingController;
 use App\Http\Controllers\OAuth\TokenController as OAuthTokenController;
 use App\Http\Controllers\PartyController;
+use App\Http\Controllers\PeopleController;
+use App\Http\Controllers\PhoneController;
 use App\Http\Controllers\PhotoAlbumController;
 use App\Http\Controllers\PhotoController;
 use App\Http\Controllers\PlayingController;
 use App\Http\Controllers\PlaylistController;
+use App\Http\Controllers\PlusController;
+use App\Http\Controllers\PodcastController;
 use App\Http\Controllers\PostController;
+use App\Http\Controllers\PostSeriesController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\PromoController;
 use App\Http\Controllers\QuestController;
+use App\Http\Controllers\RailController;
+use App\Http\Controllers\ReadingController;
+use App\Http\Controllers\ReadyToPlayController;
 use App\Http\Controllers\ReferralController;
 use App\Http\Controllers\SavedController;
+use App\Http\Controllers\ScreenshotController;
+use App\Http\Controllers\SeasonController;
 use App\Http\Controllers\ServerController;
+use App\Http\Controllers\ServerFamiliesController;
+use App\Http\Controllers\Settings\AccountController as SettingsAccountController;
+use App\Http\Controllers\Settings\AccountTypeController;
+use App\Http\Controllers\Settings\AppearanceController;
+use App\Http\Controllers\Settings\BadgeOrderController;
+use App\Http\Controllers\Settings\DigestController;
+use App\Http\Controllers\Settings\GameThemeController;
+use App\Http\Controllers\Settings\ListeningController;
 use App\Http\Controllers\Settings\NavigationController;
 use App\Http\Controllers\Settings\ProfileController as SettingsProfileController;
 use App\Http\Controllers\Settings\StreamController;
+use App\Http\Controllers\SetupController;
+use App\Http\Controllers\SiteEventController;
 use App\Http\Controllers\SpotifyController;
+use App\Http\Controllers\StartController;
+use App\Http\Controllers\StatusController;
+use App\Http\Controllers\StatusPageController;
+use App\Http\Controllers\SteamImportController;
 use App\Http\Controllers\StoryController;
+use App\Http\Controllers\SupportController;
+use App\Http\Controllers\TeammateController;
+use App\Http\Controllers\TierListController;
+use App\Http\Controllers\TopicController;
+use App\Http\Controllers\TournamentController;
 use App\Http\Controllers\TrackController;
+use App\Http\Controllers\TrackImportController;
 use App\Http\Controllers\TranslateController;
+use App\Http\Controllers\TransparencyController;
+use App\Http\Controllers\UkraineAlarmWebhookController;
+use App\Http\Controllers\VitalsController;
 use App\Http\Controllers\VoiceController;
 use App\Http\Controllers\WatchPartyController;
+use App\Http\Controllers\WrappedController;
 use App\Http\Middleware\BridgeSiteAction;
 use App\Models\VoiceRoom;
+use App\Support\AuthImages;
 use Illuminate\Support\Facades\Route;
 
 // Вебхук сервера голосу LiveKit (підпис перевіряє контролер).
@@ -60,6 +152,59 @@ Route::post('livekit/webhook', [VoiceController::class, 'webhook'])->middleware(
 
 // Боти GameCon: оновлення Telegram (секрет у заголовку) і кнопки Discord (підпис Ed25519).
 Route::post('bots/telegram', Bots\TelegramWebhookController::class)->middleware('throttle:600,1')->name('bots.telegram.webhook');
+// Вебхук UkraineAlarm v3 (миттєві тривоги й відбої): лише сигнал перевірити API.
+// Публічний API для сторонніх застосунків (OAuth-токен людини або ключ застосунку).
+Route::prefix('developer/v1')->group(function () {
+    // Дзвіночок сповіщень на сайтах розробників (токен з userinfo, лише кількість).
+    Route::get('bell', [EmbedKitController::class, 'bell'])->middleware('throttle:120,1');
+    Route::middleware('oauth')->group(function () {
+        Route::get('me', [DeveloperApiController::class, 'me'])->middleware('oauth:profile');
+        Route::get('userinfo', [DeveloperApiController::class, 'userinfo'])->middleware('oauth:profile');
+        Route::get('users/{username}', [DeveloperApiController::class, 'user'])->middleware('oauth:profile');
+        Route::get('me/friends', [DeveloperApiController::class, 'friends'])->middleware('oauth:friends');
+        Route::get('me/posts', [DeveloperApiController::class, 'posts'])->middleware('oauth:posts:read');
+        Route::post('me/posts', [DeveloperApiController::class, 'createPost'])->middleware(['oauth:posts:write', 'throttle:10,1']);
+        Route::put('me/status', [DeveloperApiController::class, 'status'])->middleware('oauth:status');
+        Route::delete('me/status', [DeveloperApiController::class, 'clearStatus'])->middleware('oauth:status');
+        Route::get('me/notifications', [DeveloperApiController::class, 'notifications'])->middleware('oauth:notifications');
+        // GameCon SDK для ігор і застосунків.
+        Route::post('voice/rooms/{key}/join', [SdkApiController::class, 'voiceJoin'])->middleware(['oauth:voice', 'throttle:60,1']);
+        Route::get('chat/conversations', [SdkApiController::class, 'conversations'])->middleware('oauth:chat');
+        Route::get('chat/conversations/{conversation}/messages', [SdkApiController::class, 'messages'])->whereNumber('conversation')->middleware('oauth:chat');
+        Route::post('chat/conversations/{conversation}/messages', [SdkApiController::class, 'send'])->whereNumber('conversation')->middleware(['oauth:chat', 'throttle:30,1']);
+        Route::post('chat/direct/{username}', [SdkApiController::class, 'direct'])->middleware(['oauth:chat', 'throttle:20,1']);
+        Route::get('groups', [SdkApiController::class, 'groups'])->middleware('oauth:groups');
+        Route::get('groups/clans/{clan}/members', [SdkApiController::class, 'clanMembers'])->whereNumber('clan')->middleware('oauth:groups');
+        Route::get('groups/families/{family}/members', [SdkApiController::class, 'familyMembers'])->whereNumber('family')->middleware('oauth:groups');
+        Route::post('groups/clans/{clan}/members/{member}', [SdkApiController::class, 'clanManage'])->whereNumber(['clan', 'member'])->middleware(['oauth:groups:manage', 'throttle:30,1']);
+        Route::get('music/now', [SdkApiController::class, 'nowPlaying'])->middleware('oauth:music');
+        Route::post('music/command', [SdkApiController::class, 'musicCommand'])->middleware(['oauth:music', 'throttle:60,1']);
+        Route::get('overlay/prefs', [SdkGameController::class, 'overlayPrefs']);
+        Route::put('overlay/prefs', [SdkGameController::class, 'saveOverlayPrefs'])->middleware('throttle:30,1');
+        Route::delete('overlay/prefs', [SdkGameController::class, 'resetOverlayPrefs'])->middleware('throttle:30,1');
+        Route::get('friends/online', [SdkGameController::class, 'friends'])->middleware('oauth:friends');
+        Route::put('presence', [SdkGameController::class, 'presence'])->middleware(['oauth:presence', 'throttle:60,1']);
+        Route::post('invites', [SdkGameController::class, 'invite'])->middleware(['oauth:invites', 'throttle:30,1']);
+        Route::get('achievements', [SdkGameController::class, 'achievements'])->middleware('oauth:achievements');
+        Route::post('achievements/{key}/unlock', [SdkGameController::class, 'unlock'])->middleware(['oauth:achievements', 'throttle:60,1']);
+        Route::get('leaderboards/{board}', [SdkGameController::class, 'leaderboard'])->middleware('oauth:achievements');
+        Route::post('leaderboards/{board}/scores', [SdkGameController::class, 'submitScore'])->middleware(['oauth:achievements', 'throttle:60,1']);
+    });
+    Route::get('sdk/config/{clientId}', [SdkGameController::class, 'config'])->middleware('throttle:120,1');
+    // Сервер гри (client_id + client_secret): досягнення, результати, сповіщення гравцям.
+    Route::prefix('server')->middleware('throttle:600,1')->group(function () {
+        Route::put('achievements/{key}', [SdkGameController::class, 'defineAchievement']);
+        Route::post('achievements/{key}/unlock', [SdkGameController::class, 'serverUnlock']);
+        Route::post('leaderboards/{board}/scores', [SdkGameController::class, 'serverScore']);
+        Route::post('notify', [SdkGameController::class, 'notify']);
+    });
+    Route::middleware('appkey')->prefix('public')->group(function () {
+        Route::get('app', [DeveloperApiController::class, 'app']);
+        Route::get('users/{username}', [DeveloperApiController::class, 'publicUser']);
+        Route::get('users/{username}/posts', [DeveloperApiController::class, 'publicPosts']);
+    });
+});
+Route::post('webhooks/ukraine-alarm', UkraineAlarmWebhookController::class)->middleware('throttle:120,1')->name('alerts.ukraine-alarm.webhook');
 Route::post('bots/discord/interactions', Bots\DiscordInteractionsController::class)->middleware('throttle:600,1')->name('bots.discord.interactions');
 
 // «Увійти через GameCon» для серверів: обмін коду, профіль гравця, синхронізація онлайну.
@@ -69,9 +214,20 @@ Route::prefix('oauth')->group(function () {
     Route::post('server/sync', [OAuthTokenController::class, 'sync'])->middleware('throttle:30,1');
 });
 
+// Заміри швидкості сторінок сайту з браузера (sendBeacon): без сесії, cookie й акаунта.
+Route::post('vitals', [VitalsController::class, 'store'])->middleware('throttle:30,1');
+
 Route::prefix('v1')->group(function () {
     // Мова застосунку: словник його рядків (мова — з X-Locale або Accept-Language).
     Route::get('i18n', [LocaleController::class, 'app'])->middleware('throttle:60,1');
+    // Фони екрана входу застосунку (Адмінка → Дизайн) — без авторизації.
+    Route::get('auth-images', fn () => response()->json(collect(AuthImages::urls())->only(['app_phone', 'app_tablet'])))->middleware('throttle:60,1');
+    // Довідка відкрита й без входу — застосунок показує її на екрані «Довідка».
+    Route::prefix('help')->controller(HelpController::class)->middleware('throttle:60,1')->where(['category' => '[a-z0-9-]+', 'article' => '[a-z0-9-]+'])->group(function () {
+        Route::get('/', 'index');
+        Route::get('{category}', 'category');
+        Route::get('{category}/{article}', 'article');
+    });
     Route::prefix('auth')->middleware('throttle:20,1')->group(function () {
         Route::post('login', [AuthController::class, 'login']);
         Route::post('register', [AuthController::class, 'register']);
@@ -83,11 +239,19 @@ Route::prefix('v1')->group(function () {
 
     Route::middleware(['auth.api', 'verified.site'])->group(function () {
         Route::get('me', [AuthController::class, 'me']);
+        // «Увійти через застосунок GameCon»: застосунок підтверджує або відхиляє вхід браузера.
+        Route::prefix('auth/app-login/{id}')->whereUuid('id')->middleware('throttle:app-login-app')->group(function () {
+            Route::get('/', [AppLoginApiController::class, 'show']);
+            Route::post('approve', [AppLoginApiController::class, 'approve']);
+            Route::post('deny', [AppLoginApiController::class, 'deny']);
+        });
         // GameCon+ у застосунку: лише статус доступу, без жодних цін і посилань на оплату.
         Route::get('user/subscription-status', SubscriptionStatusController::class)->middleware('throttle:60,1');
         // Покупка GameCon+ у застосунку — лише через Google Play Billing; сервер перевіряє токен у Google.
         Route::get('google-play', [GooglePlayController::class, 'show'])->middleware('throttle:60,1');
         Route::post('google-play/verify', [GooglePlayController::class, 'verify'])->middleware('throttle:30,1');
+        Route::post('google-play/phone/hold', [GooglePlayController::class, 'phoneHold'])->middleware(['throttle:20,1', 'module:phone']);
+        Route::post('google-play/phone/verify', [GooglePlayController::class, 'phoneVerify'])->middleware(['throttle:30,1', 'module:phone']);
         Route::post('me/locale', [LocaleController::class, 'update'])->middleware('throttle:30,1');
         Route::post('translate', TranslateController::class)->middleware('throttle:60,1');
         Route::post('logout', [AuthController::class, 'logout']);
@@ -126,6 +290,7 @@ Route::prefix('v1')->group(function () {
             Route::patch('rooms/{room}', [VoiceController::class, 'update'])->whereNumber('room');
             Route::delete('rooms/{room}', [VoiceController::class, 'destroy'])->whereNumber('room');
             Route::post('rooms/{room}/join', [VoiceController::class, 'join'])->whereNumber('room')->middleware('throttle:30,1');
+            Route::post('rooms/{room}/hand', [VoiceController::class, 'hand'])->whereNumber('room')->middleware('throttle:30,1');
             Route::post('rooms/{room}/members/{user:id}', [VoiceController::class, 'moderate'])->whereNumber(['room', 'user'])->withoutScopedBindings();
         });
 
@@ -143,6 +308,7 @@ Route::prefix('v1')->group(function () {
             Route::post('posts/{post}/like', [FeedApiController::class, 'like'])->whereNumber('post')->middleware('throttle:120,1');
             Route::get('posts/{post}/comments', [FeedApiController::class, 'comments'])->whereNumber('post');
             Route::post('posts/{post}/comments', [FeedApiController::class, 'comment'])->whereNumber('post')->middleware('throttle:30,1');
+            Route::post('posts/{post}/slow-mode', [CommentController::class, 'slowMode'])->whereNumber('post')->middleware('throttle:20,1');
         });
 
         Route::middleware('module:friends')->group(function () {
@@ -189,6 +355,7 @@ Route::prefix('v1')->group(function () {
                 Route::post('messages', [WatchPartyController::class, 'message'])->middleware('throttle:30,1');
                 Route::post('voice', [WatchPartyController::class, 'voice'])->middleware('throttle:20,1');
                 Route::post('invite', [WatchPartyController::class, 'invite'])->middleware('throttle:10,1');
+                Route::post('leave', [WatchPartyController::class, 'leave']);
                 Route::delete('/', [WatchPartyController::class, 'end']);
             });
         });
@@ -196,6 +363,7 @@ Route::prefix('v1')->group(function () {
         // Спільне прослуховування в застосунку: ті самі дії, стан — опитуванням.
         Route::middleware('module:music')->group(function () {
             Route::post('music/together', [ListenPartyController::class, 'store'])->middleware('throttle:10,1');
+            Route::match(['get', 'put'], 'music/jam', [ListenPartyController::class, 'jamPrefs'])->middleware('throttle:30,1');
             Route::prefix('listen/{party}')->group(function () {
                 Route::get('/', [ListenPartyController::class, 'show']);
                 Route::get('state', [ListenPartyController::class, 'poll']);
@@ -206,6 +374,13 @@ Route::prefix('v1')->group(function () {
                 Route::post('shared', [ListenPartyController::class, 'shared']);
                 Route::post('invite', [ListenPartyController::class, 'invite'])->middleware('throttle:10,1');
                 Route::post('share', [ListenPartyController::class, 'share'])->middleware('throttle:10,1');
+                Route::post('suggest', [ListenRoomController::class, 'suggest'])->middleware('throttle:30,1');
+                Route::post('suggestions/{index}', [ListenRoomController::class, 'review'])->whereNumber('index')->middleware('throttle:60,1');
+                Route::post('react', [ListenRoomController::class, 'react'])->middleware('throttle:40,1');
+                Route::post('chat', [ListenRoomController::class, 'chat'])->middleware('throttle:30,1');
+                Route::post('kick', [ListenRoomController::class, 'kick'])->middleware('throttle:30,1');
+                Route::post('host', [ListenRoomController::class, 'host'])->middleware('throttle:20,1');
+                Route::post('leave', [ListenPartyController::class, 'leave']);
                 Route::delete('/', [ListenPartyController::class, 'end']);
             });
         });
@@ -262,6 +437,7 @@ Route::prefix('v1')->group(function () {
 
         Route::middleware('module:families')->group(function () {
             Route::get('me/family-widget', [GroupsApiController::class, 'familyWidget']);
+            Route::get('me/pulse-widget', [WidgetApiController::class, 'pulse'])->middleware('throttle:30,1');
             // Застосунок на Android: гра на екрані → «Граю в…».
             Route::post('me/playing/mobile', [PlayingController::class, 'mobile'])->middleware('throttle:30,1');
             Route::get('me/playing/packages', [PlayingController::class, 'packages']);
@@ -294,7 +470,245 @@ Route::prefix('v1')->group(function () {
          * шляхами з префіксом /api/v1/site. BridgeSiteAction перетворює редиректи й Inertia-сторінки на JSON.
          */
         Route::prefix('site')->middleware(BridgeSiteAction::class)->group(function () {
+            // Один пошук на весь сайт: люди, кіно, музика, ігри, сервери, спільноти, клани, сім'ї.
+            Route::get('search/quick', [PeopleController::class, 'quick'])->middleware('throttle:120,1');
+            // GameCon SDK: документація й пісочниця оверлею (той самий контролер, що на сайті).
+            Route::get('developers/sdk', [SdkPageController::class, 'index']);
+            Route::post('search/recent', [PeopleController::class, 'remember'])->middleware('throttle:60,1');
+            Route::delete('search/recent', [PeopleController::class, 'forgetSearch'])->middleware('throttle:60,1');
+            Route::get('games/steam-import', [SteamImportController::class, 'show'])->middleware(['module:games', 'throttle:20,1']);
+            Route::post('games/steam-import', [SteamImportController::class, 'store'])->middleware(['module:games', 'throttle:10,1']);
+            // Беклог ігор — ті самі дії, що й на сайті.
+            Route::prefix('games')->middleware('module:games')->controller(GameBacklogController::class)->group(function () {
+                Route::get('backlog', 'mine');
+                Route::get('backlog/{user:username}', 'show');
+                Route::put('{game}/backlog', 'update')->middleware('throttle:60,1');
+            });
+            // Роздачі, бажане й знижки — розділ «Знижки» застосунку.
+            Route::prefix('games')->middleware('module:games')->controller(GameDealsController::class)->group(function () {
+                Route::get('deals', 'index');
+                Route::post('deals/subscribe', 'subscribe');
+                Route::post('{game}/wish', 'wish')->middleware('throttle:60,1');
+                Route::get('{game}/prices', 'prices')->middleware('throttle:60,1');
+            });
+            // Статті: огляди, історії й гайди — читання й написання з телефона.
+            Route::prefix('articles')->middleware('module:articles')->controller(ArticleController::class)->group(function () {
+                Route::get('/', 'index');
+                Route::post('/', 'store')->middleware('throttle:10,1');
+                Route::get('{article}/edit', 'edit');
+                Route::get('{article}', 'show');
+                Route::post('{article}', 'update')->middleware('throttle:20,1');
+                Route::delete('{article}', 'destroy');
+            });
+            Route::get('games/{game}/news', [GameNewsController::class, 'index'])->middleware(['module:games', 'throttle:60,1']);
+            Route::post('newcomer/hide', [NewcomerController::class, 'hide']);
+            Route::put('settings/setup', [SetupController::class, 'update'])->middleware('throttle:30,1');
+            Route::get('ideas', [IdeaController::class, 'index']);
+            Route::get('series/mine', [PostSeriesController::class, 'mine']);
+            Route::post('series', [PostSeriesController::class, 'store'])->middleware('throttle:10,1');
+            Route::get('series/{series}', [PostSeriesController::class, 'show'])->whereNumber('series');
+            Route::delete('series/{series}', [PostSeriesController::class, 'destroy'])->whereNumber('series');
+            Route::post('posts/{post}/series', [PostSeriesController::class, 'attach'])->middleware('throttle:30,1');
+            Route::get('status', StatusPageController::class)->middleware('throttle:60,1');
+            Route::get('configs', [GameConfigController::class, 'index']);
+            Route::post('configs', [GameConfigController::class, 'store'])->middleware('throttle:10,1');
+            Route::post('configs/{config}/like', [GameConfigController::class, 'like'])->whereNumber('config')->middleware('throttle:60,1');
+            Route::post('configs/{config}/copied', [GameConfigController::class, 'copied'])->whereNumber('config')->middleware('throttle:60,1');
+            Route::delete('configs/{config}', [GameConfigController::class, 'destroy'])->whereNumber('config');
+            Route::middleware('module:communities')->group(function () {
+                Route::get('c/{community}/stickers', [CommunityStickerController::class, 'show']);
+                Route::post('c/{community}/stickers', [CommunityStickerController::class, 'upload'])->middleware('throttle:10,1');
+                Route::delete('c/{community}/stickers/{sticker}', [CommunityStickerController::class, 'destroy'])->whereNumber('sticker')->withoutScopedBindings();
+            });
+            Route::get('memories', [MemoriesController::class, 'memories']);
+            Route::get('map', [MemoriesController::class, 'map']);
+            Route::put('settings/event-frame', [MemoriesController::class, 'eventFrame'])->middleware('throttle:20,1');
+            Route::put('settings/home-widgets', [MemoriesController::class, 'homeWidgets'])->middleware('throttle:30,1');
+            // Порядок значків біля ніка (сім'я, клани, гільдії).
+            Route::get('settings/badges', [BadgeOrderController::class, 'show']);
+            Route::put('settings/badges', [BadgeOrderController::class, 'update'])->middleware('throttle:30,1');
+            // Рулетка кіно, «Вгадай пісню», вікторина дня й ігровий щоденник — ті самі дії, що й на сайті.
+            Route::get('cinema/roulette', [MovieRouletteController::class, 'index'])->middleware('module:cinema');
+            Route::get('cinema/overview', [CinemaController::class, 'overview'])->middleware('module:cinema');
+            Route::get('cinema/for-you', [CinemaController::class, 'forYou'])->middleware(['module:cinema', 'throttle:60,1']);
+            Route::get('cinema/handoff', [CinemaController::class, 'handoff'])->middleware(['module:cinema', 'throttle:60,1']);
+            Route::delete('cinema/handoff', [CinemaController::class, 'dismissHandoff'])->middleware('module:cinema');
+            Route::post('cinema/{movie}/dismiss', [CinemaController::class, 'dismiss'])->middleware(['module:cinema', 'throttle:60,1']);
+            Route::get('cinema/schedule', [CinemaController::class, 'schedule'])->middleware('module:cinema');
+            Route::get('cinema/my', [CinemaController::class, 'my'])->middleware('module:cinema');
+            Route::get('cinema/random', [CinemaController::class, 'random'])->middleware(['module:cinema', 'throttle:60,1']);
+            Route::get('cinema/side', [CinemaController::class, 'side'])->middleware('module:cinema');
+            Route::get('cinema/roulette/spin', [MovieRouletteController::class, 'spin'])->middleware(['module:cinema', 'throttle:60,1']);
+            Route::get('music/quiz', [QuizController::class, 'music'])->middleware('module:music');
+            Route::post('music/quiz', [QuizController::class, 'musicStart'])->middleware(['module:music', 'throttle:20,1']);
+            Route::post('music/quiz/{round}', [QuizController::class, 'musicAnswer'])->whereUuid('round')->middleware(['module:music', 'throttle:120,1']);
+            Route::get('games/trivia', [QuizController::class, 'trivia'])->middleware('module:games');
+            Route::middleware('module:games')->group(function () {
+                Route::put('settings/profile-track', [SetupController::class, 'saveTrack'])->middleware('throttle:30,1');
+                Route::get('settings/profile-track', [SetupController::class, 'tracks'])->middleware('throttle:60,1');
+                Route::get('me/rail', RailController::class)->middleware('throttle:60,1');
+                Route::get('me/hub', HubController::class)->middleware('throttle:60,1');
+                Route::get('alerts', [AirAlertController::class, 'state'])->middleware('throttle:120,1');
+                Route::get('alerts/state', [AirAlertController::class, 'state'])->middleware('throttle:120,1');
+                Route::put('alerts/preferences', [AirAlertController::class, 'preferences'])->middleware('throttle:30,1');
+                Route::get('alerts/units', [AirAlertController::class, 'units'])->middleware('throttle:60,1');
+                Route::get('alerts/search', [AirAlertController::class, 'search'])->middleware('throttle:60,1');
+                Route::get('alerts/places', [AirAlertController::class, 'places'])->middleware('throttle:120,1');
+                Route::get('alerts/history', [AirAlertController::class, 'history'])->middleware('throttle:60,1');
+                Route::get('alerts/shelters', [AirAlertController::class, 'shelters'])->middleware('throttle:20,1');
+                Route::get('games/news', [MyGameNewsController::class, 'index'])->middleware('module:games');
+                Route::put('games/news/prefs', [MyGameNewsController::class, 'prefs'])->middleware('module:games');
+                // Підключені застосунки (OAuth розробників).
+                Route::get('settings/connected-apps', [ConnectedAppsController::class, 'index']);
+                Route::delete('settings/connected-apps/{app}', [ConnectedAppsController::class, 'destroy'])->whereNumber('app');
+                Route::put('settings/connected-apps/{app}/overlay', [ConnectedAppsController::class, 'overlay'])->whereNumber('app');
+                Route::get('games/awards', [GameAwardsController::class, 'index']);
+                Route::get('games/awards/candidates', [GameAwardsController::class, 'candidates'])->middleware('throttle:120,1');
+                Route::post('games/awards/vote', [GameAwardsController::class, 'vote'])->middleware('throttle:60,1');
+                Route::get('games/awards/{year}', [GameAwardsController::class, 'index'])->whereNumber('year');
+                Route::get('games/trailers', [GameReviewController::class, 'trailers']);
+                Route::post('games/reviews/{review}/helpful', [GameReviewController::class, 'helpful'])->whereNumber('review')->middleware('throttle:60,1');
+                Route::get('games/{game}/reviews', [GameReviewController::class, 'index'])->middleware('throttle:60,1');
+                Route::post('games/{game}/reviews', [GameReviewController::class, 'store'])->middleware('throttle:10,1');
+                Route::delete('games/{game}/reviews', [GameReviewController::class, 'destroy']);
+            });
+            Route::post('clans/{clan}/mvp', [ClanController::class, 'mvp'])->middleware(['module:clans', 'throttle:20,1']);
+            Route::post('games/trivia', [QuizController::class, 'triviaSubmit'])->middleware(['module:games', 'throttle:20,1']);
+            Route::middleware('module:games')->group(function () {
+                Route::get('journal', [GameJournalController::class, 'index']);
+                Route::post('journal', [GameJournalController::class, 'store'])->middleware('throttle:30,1');
+                Route::delete('journal/{entry}', [GameJournalController::class, 'destroy'])->whereNumber('entry');
+                Route::get('journal/{user:username}', [GameJournalController::class, 'show']);
+            });
+            Route::get('game-nights', [GameNightController::class, 'index']);
+            Route::post('game-nights', [GameNightController::class, 'store'])->middleware('throttle:10,1');
+            Route::get('game-nights/{night}', [GameNightController::class, 'show'])->whereNumber('night');
+            Route::post('game-nights/{night}/options/{option}/vote', [GameNightController::class, 'vote'])->whereNumber(['night', 'option'])->middleware('throttle:60,1');
+            Route::post('game-nights/{night}/respond', [GameNightController::class, 'respond'])->whereNumber('night');
+            Route::post('game-nights/{night}/finalize', [GameNightController::class, 'finalize'])->whereNumber('night');
+            Route::delete('game-nights/{night}', [GameNightController::class, 'cancel'])->whereNumber('night');
+            Route::get('t/{tag}', [TopicController::class, 'show']);
+            Route::post('t/{tag}/follow', [TopicController::class, 'toggle'])->middleware('throttle:60,1');
+            Route::get('settings/links', [BioLinksController::class, 'edit']);
+            Route::put('settings/links', [BioLinksController::class, 'update'])->middleware('throttle:20,1');
+            Route::get('tierlists', [TierListController::class, 'index']);
+            Route::post('tierlists', [TierListController::class, 'store'])->middleware('throttle:10,1');
+            Route::get('tierlists/{tierList}', [TierListController::class, 'show'])->whereNumber('tierList');
+            Route::put('tierlists/{tierList}', [TierListController::class, 'update'])->whereNumber('tierList');
+            Route::delete('tierlists/{tierList}', [TierListController::class, 'destroy'])->whereNumber('tierList');
+            Route::post('tools/nicknames/check', [NicknameController::class, 'check'])->middleware('throttle:30,1');
+            Route::get('duels', [GamePlayController::class, 'duels']);
+            Route::get('podcasts', [PodcastController::class, 'index']);
+            Route::get('podcasts/{podcast}', [PodcastController::class, 'show'])->whereNumber('podcast');
+            Route::post('podcasts/{podcast}/subscribe', [PodcastController::class, 'subscribe'])->whereNumber('podcast')->middleware('throttle:30,1');
+            Route::post('podcasts/{podcast}/episodes/{episode}/play', [PodcastController::class, 'play'])->whereNumber(['podcast', 'episode'])->withoutScopedBindings()->middleware('throttle:60,1');
+            Route::get('gifs', [GifController::class, 'index'])->middleware('throttle:60,1');
+            // Картка гри, сервера чи події в новому записі (як «Картка» в редакторі сайту).
+            Route::get('cards/search', [FollowController::class, 'cards'])->middleware('throttle:120,1');
+            Route::post('duels', [GamePlayController::class, 'challenge'])->middleware('throttle:20,1');
+            Route::post('duels/{duel}', [GamePlayController::class, 'act'])->whereNumber('duel')->middleware('throttle:60,1');
+            Route::prefix('games/{game}')->middleware('module:games')->withoutScopedBindings()->group(function () {
+                Route::get('questions', [GameQaController::class, 'questions'])->middleware('throttle:60,1');
+                Route::post('questions', [GameQaController::class, 'ask'])->middleware('throttle:5,1');
+                Route::delete('questions/{question}', [GameQaController::class, 'destroyQuestion'])->whereNumber('question');
+                Route::post('questions/{question}/answers', [GameQaController::class, 'answer'])->whereNumber('question')->middleware('throttle:20,1');
+                Route::post('questions/{question}/solve', [GameQaController::class, 'solve'])->whereNumber('question');
+                Route::post('answers/{answer}/vote', [GameQaController::class, 'vote'])->whereNumber('answer')->middleware('throttle:60,1');
+                Route::get('mentors', [GameQaController::class, 'mentors'])->middleware('throttle:60,1');
+                Route::get('goals', [GamePlayController::class, 'goals']);
+                Route::post('goals', [GamePlayController::class, 'storeGoal'])->middleware('throttle:30,1');
+                Route::patch('goals/{goal}', [GamePlayController::class, 'updateGoal'])->whereNumber('goal');
+                Route::delete('goals/{goal}', [GamePlayController::class, 'destroyGoal'])->whereNumber('goal');
+                Route::get('fps', [GamePlayController::class, 'fps'])->middleware('throttle:60,1');
+                Route::post('fps', [GamePlayController::class, 'storeFps'])->middleware('throttle:10,1');
+                Route::post('mentors', [GameQaController::class, 'becomeMentor'])->middleware('throttle:10,1');
+                Route::delete('mentors', [GameQaController::class, 'leaveMentors']);
+                // Сторінка гри в застосунку: оцінка спільноти, «грав», «чи потягне ПК», саундтреки.
+                Route::post('rating', [GameRatingController::class, 'rate'])->middleware('throttle:30,1');
+                Route::post('played', [GameRatingController::class, 'played'])->middleware('throttle:30,1');
+                Route::get('pc-check', [GameDealsController::class, 'pcCheck'])->middleware('throttle:60,1');
+                Route::get('playlists/mine', [GameSoundtrackController::class, 'mine']);
+                Route::post('playlists', [GameSoundtrackController::class, 'store'])->middleware('throttle:20,1');
+                Route::delete('playlists/{playlist}', [GameSoundtrackController::class, 'destroy'])->whereNumber('playlist');
+            });
+            // Сповіщення, тихі години, близькі, заглушені слова, спойлери, прикраси — ті самі, що на сайті.
+            Route::get('settings/appearance', [AppearanceController::class, 'edit']);
+            Route::put('settings/appearance', [AppearanceController::class, 'update']);
+            Route::put('settings/appearance/background', [AppearanceController::class, 'background'])->middleware('throttle:30,1');
+            Route::patch('settings/notify-sound', [GameThemeController::class, 'sound'])->middleware('throttle:30,1');
+            Route::patch('settings/streamer-mode', [GameThemeController::class, 'streamerMode'])->middleware('throttle:30,1');
+            Route::patch('settings/data-saver', [GameThemeController::class, 'dataSaver'])->middleware('throttle:30,1');
+            Route::put('settings/account/profanity', [SettingsAccountController::class, 'profanity']);
+            Route::put('settings/account/teen-mode', [SettingsAccountController::class, 'teenMode']);
+            // «Зв’язки й дані»: Telegram/Discord, сервери з входом через GameCon, вивантаження даних.
+            Route::get('settings/account', [SettingsAccountController::class, 'edit']);
+            Route::delete('settings/account/connections/{client}', [SettingsAccountController::class, 'disconnect'])->whereNumber('client');
+            Route::get('settings/account/export', [SettingsAccountController::class, 'export'])->middleware('throttle:3,60');
+            Route::post('settings/account/exports', [SettingsAccountController::class, 'requestArchive'])->middleware('throttle:3,60');
+            Route::get('settings/account/exports/{export}', [SettingsAccountController::class, 'downloadArchive'])->whereNumber('export')->middleware('throttle:10,1');
+            Route::put('settings/account/login-alerts', [SettingsAccountController::class, 'loginAlerts']);
+            Route::post('bots/telegram/account', [Bots\BotLinkController::class, 'telegramAccount'])->middleware('throttle:10,1');
+            Route::delete('bots/telegram/account', [Bots\BotLinkController::class, 'telegramUnlink']);
+            // «Вигляд профілю»: тема за грою (порядок блоків — у settings/appearance).
+            Route::put('settings/game-theme', [GameThemeController::class, 'update'])->middleware('throttle:20,1');
+            // GameCon+: оформлення (колір і анімація ніку, рамка, кольори сторінки, ефект шапки).
+            // Купівля в застосунку — лише Google Play (BillingController), ціни сайту тут не показуються.
+            Route::get('plus', [PlusController::class, 'index']);
+            Route::get('plus/gifts/{gift}', [PlusController::class, 'gift'])->whereNumber('gift');
+            Route::get('plus/compare', [PlusController::class, 'compare']);
+            Route::put('plus/style', [PlusController::class, 'style'])->middleware('throttle:30,1');
+            Route::put('plus/title', [PlusController::class, 'title'])->middleware('throttle:20,1');
+            // Перші кроки новачка: номер → режим → ігри й сервери.
+            Route::get('start', [StartController::class, 'index']);
+            Route::post('start', [StartController::class, 'store']);
+            Route::post('start/skip', [StartController::class, 'skip']);
+            Route::post('start/phone', [StartController::class, 'phoneDone']);
+            // Мій ПК для «чи потягне» і повна сторінка гри (ті самі дані, що й сайт).
+            Route::get('games/pc', [GameDealsController::class, 'pcShow'])->middleware('module:games');
+            Route::put('games/pc', [GameDealsController::class, 'pcSave'])->middleware(['module:games', 'throttle:30,1']);
+            Route::get('games/{game}', [GameController::class, 'show'])->middleware('module:games');
+            Route::post('ideas', [IdeaController::class, 'store'])->middleware('throttle:5,1');
+            Route::post('ideas/{idea}/vote', [IdeaController::class, 'toggleVote'])->middleware('throttle:60,1');
+            Route::get('settings/account-type', [AccountTypeController::class, 'edit']);
+            Route::put('settings/account-type', [AccountTypeController::class, 'update'])->middleware('throttle:20,1');
+            Route::post('settings/account-type/roster', [AccountTypeController::class, 'invite'])->middleware('throttle:30,1');
+            Route::post('settings/account-type/links/{link}', [AccountTypeController::class, 'answer'])->whereNumber('link');
+            Route::delete('settings/account-type/links/{link}', [AccountTypeController::class, 'remove'])->whereNumber('link');
+            Route::post('settings/verification', [AccountTypeController::class, 'verify'])->middleware('throttle:5,1');
+            Route::get('me/author-stats', [CreatorController::class, 'stats'])->middleware('throttle:30,1');
+            Route::put('settings/stream-schedule', [SetupController::class, 'schedule'])->middleware('throttle:30,1');
+            Route::prefix('crosspost/{type}/{id}')->whereIn('type', ['user', 'server'])->whereNumber('id')->group(function () {
+                Route::get('/', [CrosspostController::class, 'index']);
+                Route::post('/', [CrosspostController::class, 'store'])->middleware('throttle:10,1');
+                Route::patch('{target}', [CrosspostController::class, 'update'])->whereNumber('target');
+                Route::delete('{target}', [CrosspostController::class, 'destroy'])->whereNumber('target');
+            });
+            Route::get('games/{game}/achievements', [SetupController::class, 'game'])->middleware(['module:games', 'throttle:30,1']);
+            Route::get('u/{user:username}/achievements', [SetupController::class, 'achievements'])->middleware('throttle:30,1');
+            // «Телефон»: свій номер, набирач, дзвінки й повідомлення за номером, подарунки й передача.
+            // Купити номер у застосунку можна лише через Google Play Billing (google-play/phone/*).
+            Route::prefix('phone')->middleware('module:phone')->controller(PhoneController::class)->group(function () {
+                Route::get('/', 'index');
+                Route::post('random', 'random')->middleware('throttle:10,1');
+                Route::get('lookup', 'lookup')->middleware('throttle:60,1');
+                Route::get('check', 'check')->middleware('throttle:120,1');
+                Route::get('suggest', 'suggest')->middleware('throttle:60,1');
+                Route::post('dial', 'dial')->middleware('throttle:30,1');
+                Route::put('settings', 'settings');
+                Route::post('dismiss', 'dismiss');
+                Route::post('transfer', 'transfer')->middleware('throttle:20,1');
+                Route::post('offers/{offer}/accept', 'accept')->whereNumber('offer');
+                Route::post('offers/{offer}/decline', 'decline')->whereNumber('offer');
+                Route::delete('offers/{offer}', 'cancel')->whereNumber('offer');
+                Route::post('gifts/{number}/give', 'regift')->whereNumber('number')->middleware('throttle:20,1');
+                Route::post('gifts/{number}/claim', 'claim')->whereNumber('number');
+            });
             Route::middleware('module:feed')->group(function () {
+                // Активність друзів — окрема вкладка стрічки.
+                Route::get('feed/activity', [FeedController::class, 'activity'])->middleware('throttle:60,1');
+                Route::get('feed/widgets', [FeedController::class, 'widgets'])->middleware('throttle:60,1');
+                Route::get('promo/slot/{placement}', [PromoController::class, 'show'])->where('placement', '[a-z]+')->middleware('throttle:60,1');
+                Route::post('promo/dismiss/{banner}', [PromoController::class, 'dismiss'])->whereNumber('banner')->middleware('throttle:30,1');
                 Route::post('posts/{post}/pin', [PostController::class, 'pin'])->whereNumber('post');
                 Route::get('posts/drafts', [PostController::class, 'drafts']);
                 Route::post('posts/{post}/publish', [PostController::class, 'release'])->whereNumber('post');
@@ -303,42 +717,148 @@ Route::prefix('v1')->group(function () {
                 Route::post('posts/{post}/quote', [PostController::class, 'quote'])->whereNumber('post')->middleware('throttle:30,1');
                 Route::post('posts/{post}/hide', [PostController::class, 'hide'])->whereNumber('post');
                 Route::post('posts/{post}/mute', [PostController::class, 'mute'])->whereNumber('post');
+                Route::post('posts/{post}/poll', [PostController::class, 'vote'])->whereNumber('post')->middleware('throttle:60,1');
                 Route::delete('comments/{comment}', [CommentController::class, 'destroy'])->whereNumber('comment');
                 Route::post('comments/{comment}/like', [CommentController::class, 'like'])->whereNumber('comment')->middleware('throttle:120,1');
+                Route::post('comments/{comment}/visibility', [CommentController::class, 'visibility'])->whereNumber('comment')->middleware('throttle:60,1');
+                Route::post('posts/{post}/slow-mode', [CommentController::class, 'slowMode'])->whereNumber('post')->middleware('throttle:20,1');
             });
 
             // Шапка профілю як на сайті: статистика, друзі, фото, аудіо, права (canPost, canMessage).
             Route::get('u/{user}', [ProfileController::class, 'show']);
+            Route::get('u/{user}/card', [ProfileController::class, 'card']);
             Route::post('me/avatar', [ProfileController::class, 'updateAvatar']);
             Route::delete('me/avatar', [ProfileController::class, 'destroyAvatar']);
             Route::post('me/cover', [ProfileController::class, 'updateCover']);
             Route::delete('settings/profile', [SettingsProfileController::class, 'destroy']);
             Route::put('settings/navigation', [NavigationController::class, 'update']);
+            Route::put('settings/theme', [AppearanceController::class, 'theme']);
+            Route::put('settings/mode', [AppearanceController::class, 'mode']);
             // Свій канал Twitch/YouTube і позначка LIVE у профілі.
             Route::put('settings/stream', [StreamController::class, 'update'])->middleware('throttle:10,1');
             Route::delete('settings/stream', [StreamController::class, 'destroy']);
             Route::post('settings/stream/live', [StreamController::class, 'live'])->middleware('throttle:20,1');
+            // «Показувати, що я слухаю» — те саме налаштування, що й на сайті.
+            Route::patch('settings/digest', [DigestController::class, 'update'])->middleware('throttle:30,1');
+            Route::patch('settings/listening', [ListeningController::class, 'update'])->middleware('throttle:30,1');
 
             // Збережене: пости, фільми, ігри й сервери.
             Route::get('saved', [SavedController::class, 'index']);
+            Route::get('later', [ReadingController::class, 'later']);
+            Route::get('help', [HelpController::class, 'index']);
+            Route::get('help/{category}', [HelpController::class, 'category'])->where('category', '[a-z0-9-]+');
+            Route::get('help/{category}/{article}', [HelpController::class, 'article'])->where(['category' => '[a-z0-9-]+', 'article' => '[a-z0-9-]+']);
+            Route::get('support', [SupportController::class, 'index']);
+            Route::post('support', [SupportController::class, 'store'])->middleware('throttle:6,10');
+            Route::get('support/{ticket}', [SupportController::class, 'show'])->whereNumber('ticket');
+            Route::post('support/{ticket}/reply', [SupportController::class, 'reply'])->whereNumber('ticket')->middleware('throttle:20,1');
+            Route::post('support/{ticket}/close', [SupportController::class, 'close'])->whereNumber('ticket');
+            Route::post('support/{ticket}/rate', [SupportController::class, 'rate'])->whereNumber('ticket');
+            Route::get('support/{ticket}/files/{message}/{index}', [SupportController::class, 'file'])->whereNumber(['ticket', 'message', 'index'])->withoutScopedBindings();
+            Route::post('posts/{post}/later', [ReadingController::class, 'toggleLater'])->middleware('throttle:60,1');
+            Route::get('settings/keyword-alerts', [ReadingController::class, 'alerts']);
+            Route::post('settings/keyword-alerts', [ReadingController::class, 'addAlert'])->middleware('throttle:30,1');
+            Route::delete('settings/keyword-alerts', [ReadingController::class, 'removeAlert']);
+            Route::post('c/{community}/welcome-seen', [ReadingController::class, 'welcomeSeen']);
             Route::post('saved', [SavedController::class, 'toggle'])->middleware('throttle:60,1');
             // «Стежити» (сповіщення про новини гри, сервера чи фільму) і «Закріпити в профілі».
             Route::post('follows', [FollowController::class, 'toggle'])->middleware('throttle:60,1');
             Route::post('me/pin', [ProfileController::class, 'pin']);
+            Route::get('ready', [ReadyToPlayController::class, 'show']);
+            Route::put('ready', [ReadyToPlayController::class, 'update'])->middleware('throttle:30,1');
+            Route::delete('ready', [ReadyToPlayController::class, 'destroy']);
+            Route::put('me/status', [StatusController::class, 'update'])->middleware('throttle:30,1');
+            Route::put('me/presence', [StatusController::class, 'presence'])->middleware('throttle:30,1');
+            // Шоу наживо: сцена, гості з питанням на таймері, слухачі.
+            Route::prefix('shows')->controller(LiveShowController::class)->whereNumber(['show', 'user'])->group(function () {
+                Route::get('/', 'index');
+                Route::get('pulse', 'pulse')->middleware('throttle:60,1');
+                Route::post('/', 'store')->middleware('throttle:6,1');
+                Route::get('{show}', 'show');
+                Route::get('{show}/state', 'state')->middleware('throttle:120,1');
+                Route::post('{show}/join', 'join')->middleware('throttle:20,1');
+                Route::post('{show}/leave', 'leave');
+                Route::post('{show}/hand', 'hand')->middleware('throttle:30,1');
+                Route::post('{show}/floor/{user:id}', 'floor')->withoutScopedBindings()->middleware('throttle:60,1');
+                Route::delete('{show}/floor/{user:id}', 'unfloor')->withoutScopedBindings();
+                Route::post('{show}/speakers', 'addSpeaker')->middleware('throttle:30,1');
+                Route::delete('{show}/speakers/{user:id}', 'removeSpeaker')->withoutScopedBindings();
+                Route::post('{show}/start', 'start');
+                Route::post('{show}/end', 'end');
+            });
+            // Персонаж-аватар: той самий конструктор, що й на сайті.
+            Route::get('settings/character', [AvatarCharacterController::class, 'edit']);
+            Route::put('me/character', [AvatarCharacterController::class, 'update'])->middleware('throttle:30,1');
+            Route::delete('me/character', [AvatarCharacterController::class, 'destroy']);
+            Route::delete('me/status', [StatusController::class, 'destroy']);
 
             // Запросити друзів (реферальна програма) і вступ за посиланням-запрошенням у клан, сім’ю чи спільноту.
             Route::get('invite', [ReferralController::class, 'index']);
             Route::get('join/{token}', [InviteLinkController::class, 'show']);
             Route::post('join/{token}', [InviteLinkController::class, 'accept'])->middleware('throttle:20,1');
 
+            Route::post('ai/rewrite', [AiController::class, 'rewrite'])->middleware('throttle:30,1');
+
             Route::prefix('messages')->middleware('module:messages')->whereNumber(['conversation', 'message'])->group(function () {
                 Route::get('saved', [MessengerController::class, 'saved']);
+                Route::get('{conversation}/catch-up', [MessengerController::class, 'catchUp'])->middleware('throttle:60,1');
                 Route::post('{conversation}/settings', [MessengerController::class, 'update']);
                 Route::post('{conversation}/members', [MessengerController::class, 'addMembers']);
                 Route::delete('{conversation}/members/{user}', [MessengerController::class, 'removeMember']);
+                Route::get('{conversation}/shared', [ChatToolsController::class, 'shared'])->middleware('throttle:120,1');
+                Route::post('{conversation}/members/{user}/restrict', [ChatToolsController::class, 'restrict']);
+                Route::delete('{conversation}/members/{user}/restrict', [ChatToolsController::class, 'lift']);
+                Route::post('{conversation}/background', [ChatToolsController::class, 'background'])->middleware('throttle:30,1');
+                Route::get('{conversation}/bots', [ChatBotController::class, 'index']);
+                Route::put('{conversation}/bots/ai', [ChatBotController::class, 'ai'])->middleware('throttle:30,1');
+                Route::post('{conversation}/ai/summary', [AiController::class, 'summary'])->middleware('throttle:20,1');
+                Route::put('{conversation}/bots/welcome', [ChatBotController::class, 'welcome'])->middleware('throttle:30,1');
+                Route::post('{conversation}/bots/posts', [ChatBotController::class, 'store'])->middleware('throttle:30,1');
+                Route::patch('{conversation}/bots/posts/{automation}', [ChatBotController::class, 'update'])->whereNumber('automation');
+                Route::delete('{conversation}/bots/posts/{automation}', [ChatBotController::class, 'destroy'])->whereNumber('automation');
+                Route::get('attachments/{attachment}/preview', [ChatToolsController::class, 'preview'])->whereNumber('attachment')->middleware('throttle:120,1');
+                // Гілки, закріплені, нотатка до бесіди, фото на один перегляд.
+                Route::get('{conversation}/messages/{message}/thread', [ChatExtrasController::class, 'thread']);
+                Route::post('{conversation}/messages/{message}/transcribe', [ChatExtrasController::class, 'transcribe'])->middleware('throttle:20,1');
+                Route::post('{conversation}/messages/{message}/thread', [ChatExtrasController::class, 'reply'])->middleware('throttle:60,1');
+                Route::post('{conversation}/messages/{message}/pin', [ChatExtrasController::class, 'pin'])->middleware('throttle:30,1');
+                Route::put('{conversation}/note', [ChatExtrasController::class, 'note'])->middleware('throttle:30,1');
+                Route::get('attachments/{attachment}/once', [ChatExtrasController::class, 'once'])->whereNumber('attachment')->middleware('throttle:30,1');
                 Route::patch('{conversation}/messages/{message}', [MessageController::class, 'update']);
                 Route::delete('{conversation}/messages/{message}', [MessageController::class, 'destroy']);
                 Route::post('{conversation}/messages/{message}/report', [MessageController::class, 'report'])->middleware('throttle:20,1');
+                Route::post('{conversation}/polls', [MessageController::class, 'poll'])->middleware('throttle:10,1');
+                Route::post('{conversation}/messages/{message}/vote', [MessageController::class, 'vote'])->middleware('throttle:60,1');
+                Route::post('{conversation}/messages/{message}/close-poll', [MessageController::class, 'closePoll'])->middleware('throttle:20,1');
+                Route::post('{conversation}/messages/{message}/ban-guest', [GuestBanController::class, 'store'])->middleware('throttle:20,1');
+            });
+
+            Route::prefix('cinema')->middleware('module:cinema')->group(function () {
+                Route::get('import', [AnimeImportController::class, 'show']);
+                Route::post('import/preview', [AnimeImportController::class, 'preview'])->middleware('throttle:10,1');
+                Route::post('import', [AnimeImportController::class, 'store'])->middleware('throttle:10,1');
+                Route::post('import/requests', [AnimeImportController::class, 'requestMissing'])->middleware('throttle:5,1');
+                // «Тайтл тижня» — те саме, що на сайті.
+                Route::get('week', [CinemaController::class, 'week']);
+                Route::post('week/{movie}', [CinemaController::class, 'voteWeek'])->middleware('throttle:20,1');
+                Route::get('lists', [MovieListController::class, 'index']);
+                Route::post('lists', [MovieListController::class, 'store'])->middleware('throttle:20,1');
+                Route::get('lists/{list}', [MovieListController::class, 'show'])->whereNumber('list');
+                Route::put('lists/{list}', [MovieListController::class, 'update'])->whereNumber('list')->middleware('throttle:30,1');
+                Route::delete('lists/{list}', [MovieListController::class, 'destroy'])->whereNumber('list');
+                Route::post('lists/{list}/items', [MovieListController::class, 'item'])->whereNumber('list')->middleware('throttle:60,1');
+                Route::post('lists/{list}/like', [MovieListController::class, 'like'])->whereNumber('list')->middleware('throttle:60,1');
+                Route::post('lists/{list}/follow', [MovieListController::class, 'follow'])->whereNumber('list')->middleware('throttle:60,1');
+                Route::get('lists/{list}/comments', [MovieListController::class, 'comments'])->whereNumber('list');
+                Route::post('lists/{list}/comments', [MovieListController::class, 'comment'])->whereNumber('list')->middleware('throttle:20,1');
+                Route::delete('lists/{list}/comments/{comment}', [MovieListController::class, 'destroyComment'])->whereNumber(['list', 'comment']);
+                Route::put('lists/{list}/order', [MovieListController::class, 'reorder'])->whereNumber('list')->middleware('throttle:30,1');
+                Route::get('reviews', [MovieReviewController::class, 'feed']);
+                Route::post('reviews/{review}/like', [MovieReviewController::class, 'like'])->whereNumber('review')->middleware('throttle:60,1');
+                Route::get('{movie}/lists', [MovieListController::class, 'forMovie']);
+                Route::get('{movie}/reviews', [MovieReviewController::class, 'index'])->middleware('throttle:60,1');
+                Route::post('{movie}/reviews', [MovieReviewController::class, 'store'])->middleware('throttle:10,1');
+                Route::delete('{movie}/reviews', [MovieReviewController::class, 'destroy']);
             });
 
             Route::prefix('me/playing')->group(function () {
@@ -349,6 +869,9 @@ Route::prefix('v1')->group(function () {
                 Route::put('auto', [PlayingController::class, 'auto']);
                 Route::post('steam', [PlayingController::class, 'linkSteam'])->middleware('throttle:10,1');
                 Route::delete('steam', [PlayingController::class, 'unlinkSteam']);
+                Route::put('consoles', [PlayingController::class, 'consoles'])->middleware('throttle:20,1');
+                Route::get('friends', [PlayingController::class, 'friends'])->middleware('throttle:60,1');
+                Route::post('voice', [PlayingController::class, 'voice'])->middleware(['throttle:6,1', 'module:party']);
             });
 
             // Календар подій.
@@ -375,11 +898,16 @@ Route::prefix('v1')->group(function () {
                     Route::post('leave', [ClanController::class, 'leave']);
                     Route::post('members/{member}', [ClanController::class, 'member'])->whereNumber('member');
                     Route::post('settings', [ClanController::class, 'update']);
+                    Route::delete('/', [ClanController::class, 'destroy']);
                     Route::post('news', [ClanController::class, 'news'])->middleware('throttle:20,1');
                     Route::delete('news/{news}', [ClanController::class, 'deleteNews'])->whereNumber('news');
                     Route::post('events', [ClanController::class, 'event'])->middleware('throttle:20,1');
                     Route::post('events/{event}/rsvp', [ClanController::class, 'rsvp'])->whereNumber('event');
+                    Route::post('events/{event}/bracket', [ClanController::class, 'bracket'])->whereNumber('event')->middleware('throttle:30,1');
+                    Route::get('events/{event}/bracket', [ClanController::class, 'bracketState'])->whereNumber('event')->middleware('throttle:120,1');
                     Route::delete('events/{event}', [ClanController::class, 'deleteEvent'])->whereNumber('event');
+                    Route::post('shifts', [ClanController::class, 'shift'])->middleware('throttle:20,1');
+                    Route::post('shifts/{shift}', [ClanController::class, 'shiftAction'])->whereNumber('shift')->middleware('throttle:60,1');
                     Route::post('contributions', [ClanController::class, 'contribute'])->middleware('throttle:30,1');
                     Route::post('contributions/{contribution}', [ClanController::class, 'review'])->whereNumber('contribution');
                     Route::post('spend', [ClanController::class, 'spend'])->middleware('throttle:30,1');
@@ -394,12 +922,33 @@ Route::prefix('v1')->group(function () {
 
             Route::middleware('module:communities')->prefix('c/{community}')->group(function () {
                 Route::get('/', [CommunityController::class, 'show']);
+                Route::get('hub', [CommunityHubController::class, 'hub']);
+                Route::get('calendar', [CommunityHubController::class, 'calendar']);
+                Route::post('events', [CommunityHubController::class, 'storeEvent'])->middleware('throttle:20,1');
+                Route::post('events/{event}/rsvp', [CommunityHubController::class, 'rsvp'])->whereNumber('event')->withoutScopedBindings();
+                Route::get('events/{event}/stories', [CommunityHubController::class, 'eventStories'])->whereNumber('event')->withoutScopedBindings();
+                Route::post('events/{event}/stories', [CommunityHubController::class, 'storeEventStory'])->whereNumber('event')->withoutScopedBindings()->middleware('throttle:20,1');
+                Route::get('wiki', [CommunityHubController::class, 'wikiIndex']);
+                Route::post('wiki', [CommunityHubController::class, 'wikiSave'])->middleware('throttle:30,1');
+                Route::get('wiki/{slug}', [CommunityHubController::class, 'wikiShow']);
+                Route::get('channels', [CommunityChannelController::class, 'index']);
+                Route::post('channels', [CommunityChannelController::class, 'store'])->middleware('throttle:30,1');
+                Route::put('channels/order', [CommunityChannelController::class, 'reorder']);
+                Route::get('channels/members', [CommunityChannelController::class, 'members'])->middleware('throttle:60,1');
+                Route::get('channels/{channel}', [CommunityChannelController::class, 'show'])->whereNumber('channel');
+                Route::patch('channels/{channel}', [CommunityChannelController::class, 'update'])->whereNumber('channel');
+                Route::delete('channels/{channel}', [CommunityChannelController::class, 'destroy'])->whereNumber('channel');
+                Route::post('channel-categories', [CommunityChannelController::class, 'storeCategory'])->middleware('throttle:30,1');
+                Route::patch('channel-categories/{category}', [CommunityChannelController::class, 'updateCategory'])->whereNumber('category');
+                Route::delete('channel-categories/{category}', [CommunityChannelController::class, 'destroyCategory'])->whereNumber('category');
                 Route::post('join', [CommunityController::class, 'join'])->middleware('throttle:60,1');
                 Route::delete('join', [CommunityController::class, 'leave']);
                 Route::get('photos', [PhotoController::class, 'community'])->middleware('module:photos');
                 Route::delete('/', [CommunityController::class, 'destroy']);
                 Route::get('settings', [CommunityController::class, 'edit']);
                 Route::patch('settings', [CommunityController::class, 'update']);
+                Route::put('settings/access', [CommunityController::class, 'updateAccess']);
+                Route::post('ai/description', [AiController::class, 'description'])->middleware('throttle:10,1');
                 Route::post('images/{field}', [CommunityController::class, 'updateImage'])->whereIn('field', ['avatar', 'cover']);
                 Route::get('members', [CommunityMemberController::class, 'index']);
                 Route::post('members/{user}/approve', [CommunityMemberController::class, 'approve']);
@@ -411,6 +960,7 @@ Route::prefix('v1')->group(function () {
             Route::middleware('module:photos')->group(function () {
                 Route::get('photos', [PhotoController::class, 'index']);
                 Route::get('photos/u/{user}', [PhotoController::class, 'user']);
+                Route::get('screenshots', [ScreenshotController::class, 'index']);
                 Route::post('albums', [PhotoAlbumController::class, 'store'])->middleware('throttle:20,1');
             });
 
@@ -430,13 +980,50 @@ Route::prefix('v1')->group(function () {
 
             Route::prefix('music')->middleware('module:music')->group(function () {
                 Route::get('/', [MusicController::class, 'index']);
+                // Розділ у стилі Apple Music (ті самі контролери, що й на сайті).
+                Route::get('home', [MusicHubController::class, 'home']);
+                Route::get('new', [MusicHubController::class, 'newest']);
+                Route::get('radio', [MusicHubController::class, 'radio']);
+                Route::get('library', [MusicHubController::class, 'library']);
+                Route::post('library/sections', [MusicHubController::class, 'sections']);
+                Route::get('library/{section}', [MusicHubController::class, 'librarySection'])->where('section', '[a-z]+');
+                Route::get('artist', [MusicHubController::class, 'artist']);
+                Route::get('artist/info', [MusicHubController::class, 'artistInfo'])->middleware('throttle:60,1');
+                Route::get('album', [MusicHubController::class, 'album']);
+                Route::get('mix/{key}', [MusicHubController::class, 'mix'])->where('key', '[a-z]+');
+                Route::get('mood/{key}', [MusicHubController::class, 'mood'])->where('key', '[a-z]+');
+                Route::get('tracks/{track}/moods', [MusicHubController::class, 'trackMoodsShow'])->whereNumber('track');
+                Route::post('tracks/{track}/moods', [MusicHubController::class, 'voteMood'])->whereNumber('track')->middleware('throttle:60,1');
+                Route::get('genre', [MusicHubController::class, 'genre']);
+                Route::get('charts', [MusicHubController::class, 'charts']);
+                Route::get('replay/{year?}', [MusicHubController::class, 'replay'])->whereNumber('year');
+                Route::get('station', [MusicHubController::class, 'station'])->middleware('throttle:120,1');
+                Route::get('playlists/mine', [MusicHubController::class, 'myPlaylists']);
+                // Кімнати «Слухати разом» (ті самі шляхи, що на сайті).
+                Route::get('rooms', [ListenRoomController::class, 'index']);
+                Route::post('rooms', [ListenRoomController::class, 'store'])->middleware('throttle:10,1');
+                Route::get('rooms/{type}/{id}', [ListenRoomController::class, 'group'])->whereIn('type', ['family', 'clan', 'community'])->whereNumber('id');
+                Route::put('rooms/{type}/{id}/policy', [ListenRoomController::class, 'policy'])->whereIn('type', ['family', 'clan', 'community'])->whereNumber('id');
+                Route::get('find', [MusicHubController::class, 'search']);
+                Route::post('tracks/{track}/favorite', [MusicHubController::class, 'favorite'])->whereNumber('track');
+                Route::delete('tracks/{track}/favorite', [MusicHubController::class, 'unfavorite'])->whereNumber('track');
                 Route::get('u/{user}', [MusicController::class, 'user']);
                 Route::post('tracks', [TrackController::class, 'store'])->middleware('throttle:60,1');
+                Route::post('tracks/import', [TrackImportController::class, 'store'])->middleware('throttle:10,1');
+                Route::get('imports', [TrackImportController::class, 'index']);
+                Route::delete('imports/{import}', [TrackImportController::class, 'destroy'])->whereNumber('import');
                 Route::post('playlists', [PlaylistController::class, 'store'])->middleware('throttle:20,1');
                 Route::get('search', [MusicController::class, 'search'])->middleware('throttle:120,1');
                 Route::delete('now-playing', [NowPlayingController::class, 'destroy']);
+                Route::post('connect/heartbeat', [MusicConnectController::class, 'heartbeat'])->middleware('throttle:music-connect');
+                Route::post('connect/command', [MusicConnectController::class, 'command'])->middleware('throttle:60,1');
+                Route::get('lyrics/find', [TrackController::class, 'findLyrics'])->middleware('throttle:60,1');
                 Route::whereNumber(['track', 'playlist'])->group(function () {
                     Route::post('tracks/{track}/library', [TrackController::class, 'add']);
+                    Route::get('tracks/{track}/lyrics', [TrackController::class, 'lyrics']);
+                    // «Завантажити на пристрій» в оригінальній якості (офлайн-музика застосунку).
+                    Route::get('tracks/{track}/download', [TrackController::class, 'download']);
+                    Route::get('tracks/{track}/metadata', [TrackController::class, 'metadata'])->middleware('throttle:10,1');
                     Route::delete('tracks/{track}/library', [TrackController::class, 'remove']);
                     Route::get('playlists/{playlist}', [PlaylistController::class, 'show']);
                     Route::patch('tracks/{track}', [TrackController::class, 'update']);
@@ -479,16 +1066,62 @@ Route::prefix('v1')->group(function () {
                 Route::get('compare', [ServerController::class, 'compare']);
                 Route::post('suggest', [ServerController::class, 'suggest'])->middleware('throttle:5,10');
                 Route::get('{server}', [ServerController::class, 'show']);
+                Route::get('{server}/families', [ServerFamiliesController::class, 'index']);
+                Route::post('{server}/verify', [ServerController::class, 'verify'])->middleware('throttle:10,1');
             });
+
+            Route::post('servers/{server}/tournaments', [TournamentController::class, 'store'])->middleware(['module:servers', 'throttle:10,10']);
+            Route::prefix('tournaments')->middleware('module:servers')->whereNumber(['tournament', 'match', 'submission'])->group(function () {
+                Route::get('/', [TournamentController::class, 'index']);
+                Route::get('{tournament}', [TournamentController::class, 'show']);
+                Route::post('{tournament}/join', [TournamentController::class, 'join'])->middleware('throttle:20,1');
+                Route::delete('{tournament}/join', [TournamentController::class, 'leave']);
+                Route::post('{tournament}/start', [TournamentController::class, 'start']);
+                Route::post('{tournament}/matches/{match}', [TournamentController::class, 'report'])->middleware('throttle:60,1');
+                Route::post('{tournament}/submissions', [TournamentController::class, 'submit'])->middleware('throttle:10,1');
+                Route::post('{tournament}/submissions/{submission}', [TournamentController::class, 'review'])->middleware('throttle:120,1');
+                Route::post('{tournament}/finish', [TournamentController::class, 'finish']);
+                Route::delete('{tournament}', [TournamentController::class, 'destroy']);
+            });
+
+            Route::get('wrapped', [WrappedController::class, 'show'])->middleware('throttle:30,1');
 
             Route::prefix('quests')->middleware('module:quests')->group(function () {
                 Route::get('/', [QuestController::class, 'index']);
                 Route::post('{quest}/claim', [QuestController::class, 'claim'])->where('quest', '[a-z]{2,24}')->middleware('throttle:30,1');
             });
 
+            Route::get('level', [LevelController::class, 'index'])->middleware('throttle:30,1');
+            Route::get('streams/live', LiveNowController::class)->middleware('throttle:60,1');
+            Route::get('transparency', TransparencyController::class)->middleware('throttle:60,1');
+            Route::get('rewards', [LoginRewardController::class, 'index'])->middleware('module:quests');
+            Route::post('rewards/claim', [LoginRewardController::class, 'claim'])->middleware(['module:quests', 'throttle:10,1']);
+            Route::prefix('cards')->middleware('module:quests')->group(function () {
+                Route::get('/', [CardController::class, 'index']);
+                Route::post('open', [CardController::class, 'open'])->middleware('throttle:10,1');
+                Route::post('dust', [CardController::class, 'dust'])->middleware('throttle:10,1');
+                Route::get('chance', [CardController::class, 'chance'])->middleware('throttle:120,1');
+                Route::post('drops/{drop}/open', [CardController::class, 'openDrop'])->whereNumber('drop')->middleware('throttle:30,1');
+                Route::post('{card}/split', [CardController::class, 'split'])->where('card', '[gc]\d{1,10}')->middleware('throttle:60,1');
+                Route::post('{card}/gift', [CardController::class, 'gift'])->where('card', '[gc]\d{1,10}')->middleware('throttle:20,1');
+                Route::post('{card}/craft', [CardController::class, 'craft'])->where('card', '[gc]\d{1,10}')->middleware('throttle:20,1');
+                Route::post('{card}/showcase', [CardController::class, 'showcase'])->where('card', '[gc]\d{1,10}')->middleware('throttle:30,1');
+            });
+            Route::prefix('season-events')->middleware('module:quests')->group(function () {
+                Route::get('/', [SiteEventController::class, 'index']);
+                Route::get('{slug}', [SiteEventController::class, 'show'])->where('slug', '[a-z0-9-]+');
+                Route::post('{slug}/claim', [SiteEventController::class, 'claim'])->where('slug', '[a-z0-9-]+')->middleware('throttle:20,1');
+            });
+            Route::prefix('season')->middleware('module:quests')->group(function () {
+                Route::get('/', [SeasonController::class, 'index']);
+                Route::post('levels/{level}/{track}/claim', [SeasonController::class, 'claim'])->whereNumber('level')->whereIn('track', ['free', 'plus'])->middleware('throttle:60,1');
+                Route::post('equip', [SeasonController::class, 'equip'])->middleware('throttle:60,1');
+            });
+
             Route::prefix('moments')->middleware('module:moments')->whereNumber('moment')->group(function () {
                 Route::get('/', [MomentController::class, 'index']);
                 Route::post('/', [MomentController::class, 'store'])->middleware('throttle:10,60');
+                Route::post('upload', [MomentController::class, 'upload'])->middleware('throttle:10,60');
                 Route::post('{moment}/like', [MomentController::class, 'like'])->middleware('throttle:120,1');
                 Route::delete('{moment}', [MomentController::class, 'destroy']);
             });
@@ -496,8 +1129,14 @@ Route::prefix('v1')->group(function () {
             Route::prefix('party')->middleware('module:party')->whereNumber('party')->group(function () {
                 Route::get('/', [PartyController::class, 'index']);
                 Route::post('/', [PartyController::class, 'store'])->middleware('throttle:10,10');
+                Route::get('match', [TeammateController::class, 'index']);
+                Route::put('match/profile', [TeammateController::class, 'update'])->middleware('throttle:20,1');
+                Route::post('match/looking', [TeammateController::class, 'looking'])->middleware('throttle:20,1');
+                Route::post('{party}/invite', [TeammateController::class, 'invite'])->middleware('throttle:30,1');
                 Route::get('{party}', [PartyController::class, 'show']);
                 Route::post('{party}/join', [PartyController::class, 'join'])->middleware('throttle:20,1');
+                Route::post('{party}/time', [PartyController::class, 'voteTime'])->middleware('throttle:30,1');
+                Route::post('{party}/time/{slot}', [PartyController::class, 'pickTime'])->whereNumber('slot')->middleware('throttle:10,1');
                 Route::delete('{party}/join', [PartyController::class, 'leave']);
                 Route::delete('{party}', [PartyController::class, 'close']);
             });
@@ -532,16 +1171,26 @@ Route::prefix('v1')->group(function () {
                     Route::post('bank/cashouts', [Families\FamilyBankController::class, 'requestCashout'])->middleware('throttle:10,1');
                     Route::post('bank/deposits', [Families\FamilyBankController::class, 'openDeposit'])->middleware('throttle:10,1');
                     Route::post('bank/manual', [Families\FamilyBankController::class, 'manual'])->middleware('throttle:30,1');
-                    Route::get('warehouse', [Families\FamilyWarehouseController::class, 'index']);
-                    Route::get('warehouse/logs/{log}/proof', [Families\FamilyWarehouseController::class, 'proof'])->whereNumber('log');
+                    Route::get('warehouse', [Families\FamilyWarehouseController::class, 'index'])->middleware('family.section:warehouse');
+                    Route::get('warehouse/logs/{log}/proof', [Families\FamilyWarehouseController::class, 'proof'])->middleware('family.section:warehouse')->whereNumber('log');
                     Route::get('members', [Families\FamilyMemberController::class, 'index']);
                     Route::get('discipline', [Families\FamilyDisciplineController::class, 'index']);
                     Route::post('discipline', [Families\FamilyDisciplineController::class, 'store'])->middleware('throttle:30,1');
-                    Route::get('events', [Families\FamilyEventController::class, 'index']);
-                    Route::get('rating', [Families\FamilyEventController::class, 'rating']);
+                    Route::get('events', [Families\FamilyEventController::class, 'index'])->middleware('family.section:events');
+                    Route::put('settings/onboarding', [Families\FamilyOnboardingController::class, 'update']);
+                    Route::post('onboarding/{step}', [Families\FamilyOnboardingController::class, 'tick'])->where('step', '[a-z0-9]{1,12}')->middleware('throttle:60,1');
+                    Route::get('shifts', [Families\FamilyShiftController::class, 'index'])->middleware('family.section:shifts');
+                    Route::post('shifts', [Families\FamilyShiftController::class, 'store'])->middleware('family.section:shifts')->middleware('throttle:30,1');
+                    Route::post('shifts/{shift}/assign', [Families\FamilyShiftController::class, 'assign'])->middleware('family.section:shifts')->whereNumber('shift');
+                    Route::post('shifts/{shift}/claim', [Families\FamilyShiftController::class, 'claim'])->middleware('family.section:shifts')->whereNumber('shift')->middleware('throttle:30,1');
+                    Route::post('shifts/{shift}/release', [Families\FamilyShiftController::class, 'release'])->middleware('family.section:shifts')->whereNumber('shift');
+                    Route::delete('shifts/{shift}', [Families\FamilyShiftController::class, 'destroy'])->middleware('family.section:shifts')->whereNumber('shift');
+                    Route::get('rating', [Families\FamilyEventController::class, 'rating'])->middleware('family.section:rating');
+                    Route::get('rating/seasons/{number}.png', [Families\FamilyEventController::class, 'seasonImage'])->whereNumber('number')->middleware('family.section:rating');
                     Route::get('audit', [Families\FamilyAuditController::class, 'index']);
                     Route::get('settings', [Families\FamilySettingsController::class, 'index']);
                     Route::put('settings', [Families\FamilySettingsController::class, 'update']);
+                    Route::delete('/', [Families\FamilySettingsController::class, 'destroy']);
 
                     Route::delete('apply', [Families\FamilyController::class, 'withdraw']);
                     Route::post('leave', [Families\FamilyController::class, 'leave']);
@@ -553,9 +1202,9 @@ Route::prefix('v1')->group(function () {
                         Route::get('bank/cashouts/{cashout}/proof', [Families\FamilyBankController::class, 'cashoutProof']);
                         Route::post('bank/deposits/{deposit}/close', [Families\FamilyBankController::class, 'closeDeposit']);
 
-                        Route::post('warehouse/move', [Families\FamilyWarehouseController::class, 'move'])->middleware('throttle:60,1');
-                        Route::post('warehouse/items', [Families\FamilyWarehouseController::class, 'storeItem']);
-                        Route::patch('warehouse/items/{item}', [Families\FamilyWarehouseController::class, 'updateItem']);
+                        Route::post('warehouse/move', [Families\FamilyWarehouseController::class, 'move'])->middleware('family.section:warehouse')->middleware('throttle:60,1');
+                        Route::post('warehouse/items', [Families\FamilyWarehouseController::class, 'storeItem'])->middleware('family.section:warehouse');
+                        Route::patch('warehouse/items/{item}', [Families\FamilyWarehouseController::class, 'updateItem'])->middleware('family.section:warehouse');
 
                         Route::put('ranks', [Families\FamilyMemberController::class, 'ranks']);
                         Route::post('members/{member}/accept', [Families\FamilyMemberController::class, 'accept']);
@@ -566,12 +1215,14 @@ Route::prefix('v1')->group(function () {
 
                         Route::post('discipline/{punishment}/revoke', [Families\FamilyDisciplineController::class, 'revoke']);
 
-                        Route::post('events', [Families\FamilyEventController::class, 'store'])->middleware('throttle:20,1');
-                        Route::post('events/{event}/rsvp', [Families\FamilyEventController::class, 'rsvp']);
-                        Route::post('events/{event}/close', [Families\FamilyEventController::class, 'close']);
+                        Route::post('events', [Families\FamilyEventController::class, 'store'])->middleware('family.section:events')->middleware('throttle:20,1');
+                        Route::post('rating/seasons/{number}/share', [Families\FamilyEventController::class, 'shareSeason'])->whereNumber('number')->middleware(['family.section:rating', 'throttle:6,1']);
+                        Route::post('events/{event}/rsvp', [Families\FamilyEventController::class, 'rsvp'])->middleware('family.section:events');
+                        Route::post('events/{event}/close', [Families\FamilyEventController::class, 'close'])->middleware('family.section:events');
                     });
 
                     Route::post('settings/profile', [Families\FamilySettingsController::class, 'profile']);
+                    Route::put('settings/server', [Families\FamilySettingsController::class, 'server'])->middleware('throttle:10,1');
                     Route::put('settings/webhooks', [Families\FamilySettingsController::class, 'webhooks']);
                     Route::post('settings/webhooks/test', [Families\FamilySettingsController::class, 'test'])->middleware('throttle:6,1');
                     Route::post('settings/digest', [Families\FamilySettingsController::class, 'digest'])->middleware('throttle:3,10');

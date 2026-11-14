@@ -1,0 +1,6 @@
+gamecon-login:
+  forum:
+    log_in_with: "Увійти через GameCon"
+  admin:
+    base: "Адреса GameCon"
+    redirect: "Адреса повернення для застосунку GameCon: {url}"

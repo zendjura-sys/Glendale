@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Jobs\CheckImage;
+use App\Jobs\NotifyNewEpisodes;
 use App\Jobs\RelayToBots;
 use App\Models\ClanEvent;
 use App\Models\Comment;
@@ -18,11 +19,17 @@ use App\Models\Photo;
 use App\Models\Post;
 use App\Models\PostAttachment;
 use App\Models\User;
+use App\Services\Accounts\AccountSwitcher;
 use App\Services\Auth\AccountSecurity;
+use App\Services\Communities\CommunityPoints;
 use App\Services\CommunityService;
 use App\Services\Families\FamilyGate;
+use App\Services\Feed\KeywordAlerts;
 use App\Services\FriendshipService;
+use App\Services\Geo\CountryRestrictions;
 use App\Services\Moderation\NsfwCheck;
+use App\Services\Profile\Affiliations;
+use App\Services\Profile\UserRoles;
 use App\Services\Push\PushNotifier;
 use App\Services\Referrals;
 use App\Support\I18n\CatalogLoader;
@@ -34,14 +41,18 @@ use App\Support\Mail\MailCategory;
 use App\Support\Mail\SocialMailer;
 use App\Support\Modules\ModuleManager;
 use App\Support\NotifyPrefs;
+use App\Support\Plugins\Plugins;
 use App\Support\Settings\SiteSettings;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Events\Failed;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Logout;
+use Illuminate\Auth\Events\Verified;
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Contracts\Translation\Loader;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Http\Request;
 use Illuminate\Mail\Events\MessageSending;
 use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Notifications\Events\NotificationSent;
@@ -49,6 +60,7 @@ use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
@@ -61,6 +73,15 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        // Скомпільовані шаблони консолі (черга, планувальник — інший користувач ОС) окремо від сайту:
+        // інакше файл належить іншому власнику, і Blade на сайті падає на touch() «Utime failed».
+        // Тут, а не в config/view.php: кеш конфігу збирається в консолі й переніс би шлях на сайт.
+        if ($this->app->runningInConsole() && ! $this->app->runningUnitTests()) {
+            config(['view.compiled' => storage_path('framework/views-cli')]);
+        }
+        // Значки біля ніка збираються раз на запит (і для черги — окремо на кожну задачу).
+        $this->app->scoped(Affiliations::class);
+        $this->app->scoped(UserRoles::class);
         $this->app->singleton(ModuleManager::class, fn () => new ModuleManager(config('modules')));
         $this->app->singleton(SiteSettings::class);
         $this->app->scoped(Translations::class);
@@ -69,6 +90,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->scoped(FriendshipService::class);
         $this->app->scoped(CommunityService::class);
         $this->app->scoped(FamilyGate::class);
+        $this->app->scoped(CountryRestrictions::class);
     }
 
     /**
@@ -77,6 +99,16 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureDefaults();
+
+        // Захист від флуду на рівні застосунку (nginx стримує грубіше — deploy/nginx): запитів на хвилину
+        // з одного акаунта чи адреси. Із запасом для звичайної роботи й оновлень у реальному часі.
+        RateLimiter::for('web-global', fn (Request $request) => Limit::perMinute(600)->by('web|'.($request->user()?->id ?: $request->ip())));
+        RateLimiter::for('api-global', fn (Request $request) => Limit::perMinute(600)->by('api|'.($request->user()?->id ?: $request->ip())));
+        // GameCon Connect: heartbeat кожного пристрою окремо (застосунок шле раз на 3–5 с) і загальна межа акаунта.
+        RateLimiter::for('music-connect', fn (Request $request) => [
+            Limit::perMinute(60)->by('connect|'.($request->user()?->id ?: $request->ip()).'|'.substr((string) $request->input('device_id'), 0, 64)),
+            Limit::perMinute(300)->by('connect|'.($request->user()?->id ?: $request->ip())),
+        ]);
 
         // $t у шаблонах листів: переклад мовою отримувача (Laravel ставить її з preferredLocale).
         View::share('t', fn (string $text, array $params = []) => (string) preg_replace_callback(
@@ -140,15 +172,48 @@ class AppServiceProvider extends ServiceProvider
 
         AccountMail::register();
 
+        // Бали учасника спільноти: запис (одразу чи після перевірки) і коментар.
+        Post::created(fn (Post $post) => app(CommunityPoints::class)->forPost($post));
+        // Нові серії: лічильник серій зріс після імпорту — сповістити тих, хто дивиться.
+        Movie::updated(function (Movie $movie) {
+            if ($movie->wasChanged('episodes_count') && (int) $movie->episodes_count > (int) $movie->getOriginal('episodes_count') && (int) $movie->getOriginal('episodes_count') > 0) {
+                NotifyNewEpisodes::dispatch($movie->id, (int) $movie->getOriginal('episodes_count'), (int) $movie->episodes_count);
+            }
+        });
+        // Сповіщення за ключовими словами — після відповіді, щоб не гальмувати публікацію.
+        Post::created(function (Post $post) {
+            if (app(Plugins::class)->on('keyword_alerts')) {
+                dispatch(fn () => app(KeywordAlerts::class)->match($post))->afterResponse();
+            }
+        });
+        Post::updated(function (Post $post) {
+            if ($post->wasChanged('is_pending') && ! $post->is_pending) {
+                app(CommunityPoints::class)->forPost($post);
+            }
+        });
+        Comment::created(fn (Comment $comment) => app(CommunityPoints::class)->forComment($comment));
+
         // Журнал входів і список відкритих сесій.
         Event::listen(Login::class, function (Login $event) {
             if ($event->guard === 'web' && $event->user instanceof User) {
                 app(AccountSecurity::class)->logLogin($event->user, AccountSecurity::methodFromRoute(request()->route()?->getName()), true);
+                // Перемикач акаунтів: якщо на пристрої вже є збережені акаунти чи людина додає ще один — запамʼятати й цей.
+                $request = request();
+                $switcher = app(AccountSwitcher::class);
+                if (($request->hasSession() && $request->session()->pull(AccountSwitcher::ADDING)) || $switcher->stored($request) !== []) {
+                    $switcher->remember($request, $event->user);
+                }
             }
         });
         Event::listen(Failed::class, function (Failed $event) {
             if ($event->user instanceof User) {
                 app(AccountSecurity::class)->logLogin($event->user, 'password', false);
+            }
+        });
+        // Запрошений підтвердив пошту — запрошувач бачить прогрес до нагороди.
+        Event::listen(Verified::class, function (Verified $event) {
+            if ($event->user instanceof User) {
+                app(Referrals::class)->activated($event->user);
             }
         });
         Event::listen(Logout::class, function () {

@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+
+import 'core/widgets/arctic_glass/arctic_fit_text.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
@@ -9,10 +11,14 @@ import 'package:url_launcher/url_launcher.dart';
 
 import 'achievements.dart';
 import 'playing.dart';
+import 'phone.dart';
 import 'plus.dart';
 import 'subscription.dart';
 import 'account.dart';
+import 'affiliation_badges.dart';
 import 'api.dart';
+import 'awards.dart';
+import 'movie_extras.dart';
 import 'characters.dart';
 import 'feed.dart';
 import 'posts.dart';
@@ -21,6 +27,7 @@ import 'theme.dart';
 import 'widgets.dart';
 import 'i18n.dart';
 import 'extras.dart';
+import 'skeletons.dart';
 
 // ───────────────────────── Дружба ─────────────────────────
 
@@ -102,9 +109,9 @@ class PersonCard extends StatelessWidget {
         children: [
           Avatar(url: text(user['avatar_url']), name: name, size: 76, online: user['is_online'] == true),
           const SizedBox(height: 12),
-          Text(name, maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: TextAlign.center, style: body(14.5, weight: FontWeight.w700)),
+          FitText(name, style: body(14.5, weight: FontWeight.w700), textAlign: TextAlign.center),
           const SizedBox(height: 3),
-          Text(subtitle, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: muted)),
+          FitText(subtitle, style: body(12, color: muted)),
           const SizedBox(height: 12),
           FriendAction(username: '${user['username']}', relation: text(user['relation']) ?? 'none', compact: true, onChanged: onChanged),
         ],
@@ -254,7 +261,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
         ),
         const SizedBox(height: 12),
         if (loading && users.isEmpty)
-          const Padding(padding: EdgeInsets.all(30), child: Center(child: CircularProgressIndicator(strokeWidth: 2.4)))
+          const ListSkeleton(rows: 5)
         else if (users.isEmpty)
           EmptyState(
             icon: empty.$2,
@@ -396,13 +403,13 @@ class _PeopleScreenState extends State<PeopleScreen> {
             ),
             const SizedBox(height: 10),
             Material(
-              color: Colors.white.withValues(alpha: 0.04),
+              color: fg.withValues(alpha: 0.04),
               borderRadius: BorderRadius.circular(14),
               child: SwitchListTile(
                 value: online,
                 dense: true,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                secondary: const Icon(LucideIcons.radio, color: muted, size: 20),
+                secondary: Icon(LucideIcons.radio, color: muted, size: 20),
                 title: Text(tr('Зараз онлайн'), style: body(14, color: soft)),
                 onChanged: (value) {
                   setState(() => online = value);
@@ -414,7 +421,7 @@ class _PeopleScreenState extends State<PeopleScreen> {
         ),
         const SizedBox(height: 12),
         if (loading && users.isEmpty)
-          const Padding(padding: EdgeInsets.all(30), child: Center(child: CircularProgressIndicator(strokeWidth: 2.4)))
+          const ListSkeleton(rows: 5)
         else if (users.isEmpty)
           EmptyState(icon: LucideIcons.userRoundSearch, title: tr('Нікого не знайдено'), text: tr('Спробуйте змінити запит або фільтри.'))
         else ...[
@@ -546,7 +553,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       );
     }
     final data = page;
-    if (data == null) return const Center(child: CircularProgressIndicator(strokeWidth: 2.4));
+    if (data == null) return const ScreenSkeleton();
 
     final profile = mapOf(data['profile']);
     final relation = text(data['relation']) ?? 'none';
@@ -558,7 +565,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final open = data['canSeeContent'] != false;
     final fullName = text(profile['name']) ?? name;
     final plus = PlusMark.of(profile);
-    final headerFx = plus == null ? null : text(profile['header_fx']);
+    // Ефект шапки сервер віддає лише з GameCon+ або вдягнутий із сезонного пропуску.
+    final headerFx = text(profile['header_fx']);
     final headerColors = plusHeaderColors(profile);
 
     return ScreenScroll(
@@ -625,7 +633,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         onTap: self ? () => _avatarMenu(text(profile['avatar_url']) != null) : null,
                         child: Stack(
                           children: [
-                            Avatar(url: text(profile['avatar_url']), name: fullName, size: 128, ring: true, online: profile['is_online'] == true, frame: plus?.frame),
+                            Avatar(url: text(profile['avatar_url']), name: fullName, size: 128, ring: true, online: profile['is_online'] == true, frame: avatarFrameOf(profile)),
                             if (uploading) const Positioned.fill(child: Center(child: CircularProgressIndicator(strokeWidth: 2.4))),
                           ],
                         ),
@@ -640,11 +648,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(children: [
-                      Flexible(child: PlusName(fullName, plus: plus, style: display(24), animate: true, maxLines: 2)),
-                      if (profile['is_verified'] == true) ...[const SizedBox(width: 6), const Icon(LucideIcons.badgeCheck, color: primary, size: 20)],
+                      Flexible(child: PlusName(fullName, plus: nameMarkOf(profile), style: display(24), animate: true, maxLines: 2)),
+                      if (profile['is_verified'] == true) ...[const SizedBox(width: 6), Icon(LucideIcons.badgeCheck, color: primary, size: 20)],
+                      // Логотипи сім'ї, клану, сервера й гри.
+                      const SizedBox(width: 6),
+                      AffiliationBadges(user: profile, size: 22),
                       if (plus != null) ...[const SizedBox(width: 6), const PlusBadge(size: 20)],
+                      SeasonBadge(user: profile, size: 20),
                     ]),
                     if (text(profile['status']) != null) Padding(padding: const EdgeInsets.only(top: 4), child: Text(text(profile['status'])!, style: body(14, color: soft))),
+                    // Внутрішній номер, як на сайті: торкнутися — набрати його в «Телефоні».
+                    if (profile['phone'] is Map)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 6),
+                        child: GestureDetector(
+                          onTap: mapOf(profile['phone'])['can_call'] == true ? () => context.push('/phone?dial=${Uri.encodeQueryComponent('${mapOf(profile['phone'])['number']}')}') : null,
+                          child: PhoneBadge(phone: mapOf(profile['phone']), size: 14),
+                        ),
+                      ),
                     if (profile['playing'] is Map) Padding(padding: const EdgeInsets.only(top: 8), child: PlayingBadge(mapOf(profile['playing']))),
                     if (data['stream'] is Map) Padding(padding: const EdgeInsets.only(top: 8), child: StreamBadge(mapOf(data['stream']))),
                     const SizedBox(height: 8),
@@ -662,11 +683,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     const SizedBox(height: 16),
                     if (self)
-                      GhostButton(label: tr('Редагувати профіль'), icon: LucideIcons.pencil, expand: false, compact: true, onPressed: () => context.push('/settings'))
+                      Wrap(spacing: 10, runSpacing: 10, children: [
+                        GhostButton(label: tr('Редагувати профіль'), icon: LucideIcons.pencil, expand: false, compact: true, onPressed: () => context.push('/settings')),
+                        GhostButton(label: tr('Сезонний пропуск'), icon: LucideIcons.ticket, expand: false, compact: true, onPressed: () => context.push('/season')),
+                        GhostButton(label: 'Game Card', icon: LucideIcons.qrCode, expand: false, compact: true, onPressed: () => context.push('/u/$name/card')),
+                      ])
                     else
                       Wrap(spacing: 10, runSpacing: 10, children: [
                         FriendAction(username: name, relation: relation, compact: true, onChanged: (_) => _load()),
                         if (data['canMessage'] == true) GhostButton(label: tr('Написати'), icon: LucideIcons.messageCircle, compact: true, expand: false, onPressed: _message),
+                        GhostButton(label: 'Game Card', icon: LucideIcons.qrCode, compact: true, expand: false, onPressed: () => context.push('/u/$name/card')),
                         GhostButton(label: tr('Поскаржитися'), icon: LucideIcons.flag, compact: true, expand: false, color: muted, onPressed: () => showReportSheet(context, name, text(profile['name']) ?? name)),
                       ]),
                     const SizedBox(height: 16),
@@ -719,6 +745,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
         if (data['achievements'] is Map) ...[
           const SizedBox(height: 12),
           AchievementsPanel(data: mapOf(data['achievements']), isSelf: data['relation'] == 'self'),
+        ],
+        if (open && (data['profileTrack'] is Map || (data['relation'] == 'self' && AppScope.of(context).session.pluginOn('profile_track')))) ...[
+          const SizedBox(height: 12),
+          ProfileTrackPanel(track: data['profileTrack'] is Map ? mapOf(data['profileTrack']) : null, isSelf: data['relation'] == 'self' && AppScope.of(context).session.pluginOn('profile_track'), onSaved: _load),
+        ],
+        if (open && profile['platforms'] is Map) ...[
+          const SizedBox(height: 12),
+          GamerIdsPanel(platforms: mapOf(profile['platforms']), isSelf: data['relation'] == 'self' && AppScope.of(context).session.pluginOn('gamer_ids'), onSaved: _load),
         ],
         if (maps(data['characters']).isNotEmpty || data['relation'] == 'self') ...[
           const SizedBox(height: 12),
@@ -775,7 +809,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         child: Column(children: [
                           Avatar(url: text(friend['avatar_url']), name: text(friend['name']) ?? '?', size: 54, online: friend['is_online'] == true),
                           const SizedBox(height: 6),
-                          Text(text(friend['first_name']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: soft)),
+                          FitText(text(friend['first_name']) ?? '', style: body(12, color: soft)),
                         ]),
                       ),
                     ),

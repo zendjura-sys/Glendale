@@ -79,7 +79,7 @@ class CinemaTest extends TestCase
             'material_data' => [
                 'title' => 'Матрица',
                 'description' => 'Опис російською',
-                'poster_url' => 'https://st.kp.yandex.net/images/film_big/301.jpg',
+                'poster_url' => 'https://image.tmdb.org/t/p/w500/test.jpg',
                 'genres' => ['фантастика', 'боевик'],
                 'imdb_rating' => 8.7,
                 'kinopoisk_rating' => 8.5,
@@ -262,7 +262,7 @@ class CinemaTest extends TestCase
 
         $this->actingAs($admin)->getJson('/admin/cinema/remote/kodik/search?q=test')
             ->assertStatus(500)
-            ->assertJsonPath('message', 'Kodik відхилив токен. Перевірте його в налаштуваннях інтеграції.');
+            ->assertJsonPath('message', 'Плеєр 1 відхилив токен. Перевірте його в налаштуваннях інтеграції.');
     }
 
     public function test_auto_import_creates_titles_enriches_them_from_tmdb_and_skips_trashed(): void
@@ -409,7 +409,8 @@ class CinemaTest extends TestCase
         $this->assertStringNotContainsString('КіноПошук', $response->getContent());
         $response->assertInertia(fn (Assert $page) => $page
             ->component('admin/integrations')
-            ->has('cinema', 20)
+            ->has('cinema', 30)
+            ->where('cinema', fn ($cards) => collect($cards)->firstWhere('key', 'ai')['fields'][4]['info']['models'][0]['provider'] === 'Groq')
             ->where('cinema.2.key', 'push')
             ->where('cinema.3.key', 'telegram_bot')
             ->where('cinema.4.key', 'discord_bot')
@@ -466,5 +467,33 @@ class CinemaTest extends TestCase
 
         $this->get('/play/embed?src='.urlencode('https://evil.example/phish'))->assertNotFound();
         $this->get('/play/embed?src='.urlencode('http://kodik.info/video/1'))->assertNotFound();
+    }
+
+    public function test_catalog_cards_carry_release_and_progress_badges_and_filters_work(): void
+    {
+        $user = User::factory()->create();
+        $series = $this->movie(['type' => 'serial', 'title' => 'Серіал', 'year' => (int) now()->year, 'episodes_count' => 10, 'countries' => ['Японія']]);
+        $soon = $this->movie(['title' => 'Скоро', 'year' => (int) now()->year + 1]);
+        $old = $this->movie(['title' => 'Класика', 'year' => 1999, 'release_status' => 'released']);
+        $series->viewers()->attach($user->id, ['status' => 'watching', 'episode' => 4]);
+        $old->viewers()->attach($user->id, ['status' => 'watched']);
+
+        $this->actingAs($user)->get('/cinema')->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('movies.data', fn ($cards) => collect($cards)->firstWhere('id', $series->id)['release'] === 'ongoing'
+                    && collect($cards)->firstWhere('id', $series->id)['progress_pct'] === 40
+                    && collect($cards)->firstWhere('id', $soon->id)['release'] === 'announced'
+                    && collect($cards)->firstWhere('id', $soon->id)['progress_pct'] === null
+                    && collect($cards)->firstWhere('id', $old->id)['progress_pct'] === 100)
+                ->loadDeferredProps('side', fn (Assert $reload) => $reload
+                    ->has('side.genres')
+                    ->where('side.countries', ['Японія'])
+                    ->has('side.popular.week')));
+
+        $this->actingAs($user)->get('/cinema?country=Японія')->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->where('total', 1));
+        $this->actingAs($user)->get('/cinema?release=announced')->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->where('total', 1)->where('movies.data.0.id', $soon->id));
+        $this->actingAs($user)->get('/cinema?sort=updated')->assertOk();
     }
 }

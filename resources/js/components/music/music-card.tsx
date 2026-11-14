@@ -40,9 +40,8 @@ export function MusicCard({
     return (
         <div
             className={cn(
-                'group relative flex items-center gap-3 overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.035] p-2.5 pr-3 transition hover:border-white/15',
-                isCurrent &&
-                    'border-gc-lilac-500/40 shadow-[0_0_30px_-14px_rgb(124_92_255/0.9)]',
+                'group relative flex items-center gap-3 overflow-hidden rounded-2xl bg-white/[0.035] p-2.5 pr-3 transition hover:border-white/15',
+                isCurrent && ' ',
                 className,
             )}
         >
@@ -106,7 +105,7 @@ export function MusicCard({
                     className={cn(
                         'relative flex size-8 items-center justify-center rounded-full transition',
                         track.in_library
-                            ? 'text-gc-lilac-400'
+                            ? 'text-sky-400'
                             : 'text-white/45 hover:bg-white/10 hover:text-white',
                     )}
                     aria-label={

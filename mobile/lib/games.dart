@@ -1,11 +1,15 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+
+import 'core/widgets/arctic_glass/arctic_fit_text.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'api.dart';
+import 'game_reviews.dart';
+import 'game_extras.dart';
 import 'clans.dart';
 import 'events.dart';
 import 'state.dart';
@@ -250,9 +254,9 @@ class _GamesScreenState extends State<GamesScreen> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text(text(g['name']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(15, weight: FontWeight.w600)),
+                      FitText(text(g['name']) ?? '', style: body(15, weight: FontWeight.w600)),
                       const SizedBox(height: 3),
-                      Text(platformsLabel(g), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: muted)),
+                      FitText(platformsLabel(g), style: body(12, color: muted)),
                     ]),
                   ),
                   Pill(label: text(g['category_label']) ?? '', color: soft),
@@ -374,8 +378,12 @@ class GameScreen extends StatelessWidget {
         }
 
         final palette = mapOf(data['palette']);
+        // Відлік до виходу (лише майбутні релізи) — як на сайті.
+        final releaseDate = DateTime.tryParse(text(game['released']) ?? '');
+        final today = DateUtils.dateOnly(DateTime.now());
+        final releaseIn = AppScope.of(context).session.pluginOn('release_alerts') && releaseDate != null && !releaseDate.isBefore(today) ? releaseDate.difference(today).inDays : null;
         final accent = hexColor(palette['accent']) ?? primary;
-        final soft2 = hexColor(palette['soft']) ?? const Color(0xFFB4BFFF);
+        final soft2 = hexColor(palette['soft']) ?? const Color(0xFF9DD8FF);
         final base = hexColor(palette['base']);
 
         return ScreenScroll(
@@ -392,8 +400,14 @@ class GameScreen extends StatelessWidget {
               ),
             Glass(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                if (modes.isNotEmpty || genres.isNotEmpty) ...[
+                if (modes.isNotEmpty || genres.isNotEmpty || releaseIn != null) ...[
                   Wrap(spacing: 6, runSpacing: 6, children: [
+                    if (releaseIn != null)
+                      Pill(
+                        label: releaseIn == 0 ? tr('Виходить сьогодні') : tr('Вихід через {n}', {'n': '$releaseIn ${plural(releaseIn, 'день', 'дні', 'днів')}'}),
+                        color: Colors.white,
+                        background: primary.withValues(alpha: 0.35),
+                      ),
                     for (final m in modes) Pill(label: text(m['label']) ?? '', color: soft2, background: accent.withValues(alpha: 0.18)),
                     for (final g in genres) Pill(label: g),
                   ]),
@@ -412,6 +426,7 @@ class GameScreen extends StatelessWidget {
                 ],
               ]),
             ),
+            if (AppScope.of(context).session.pluginOn('game_reviews')) GameReviewsSection(slug: slug),
             if (videos.isNotEmpty || shots.isNotEmpty)
               _section(tr('Трейлери й скриншоти'), LucideIcons.images, [
                 SizedBox(
@@ -493,6 +508,9 @@ class GameScreen extends StatelessWidget {
                   if (text(d['igdb_url']) != null) GhostButton(label: 'IGDB', icon: LucideIcons.externalLink, expand: false, compact: true, onPressed: () => _open(text(d['igdb_url'])!)),
                 ]),
               ]),
+            // Блоки сайту: беклог, оцінка гравців, лідерборд, музика, ціни, «чи потягне ПК», новини, цілі, FPS, Q&A, наставники, досягнення.
+            GameExtras(key: ValueKey('extras-$slug'), slug: slug, name: text(d['name']) ?? slug),
+            const SizedBox(height: 12),
             if (events.isNotEmpty) ...[
               SectionLabel(tr('Події гри'), trailing: tr('Календар'), onTrailing: () => context.push('/events')),
               for (final e in events)
@@ -531,7 +549,7 @@ class GameScreen extends StatelessWidget {
                           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                             GameCover(g, size: 110),
                             const SizedBox(height: 6),
-                            Text(text(g['name']) ?? '', maxLines: 2, overflow: TextOverflow.ellipsis, style: body(12.5)),
+                            FitText(text(g['name']) ?? '', style: body(12.5), maxLines: 2),
                           ]),
                         ),
                       ),
@@ -622,8 +640,8 @@ class _GameHero extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Wrap(spacing: 10, runSpacing: 4, crossAxisAlignment: WrapCrossAlignment.center, children: [
-                    if (game['year'] != null) Text('${game['year']}', style: body(13, color: Colors.white.withValues(alpha: 0.88), weight: FontWeight.w600)),
-                    if (platformsLabel(game, 8).isNotEmpty) Text(platformsLabel(game, 8), style: body(13, color: Colors.white.withValues(alpha: 0.85), weight: FontWeight.w500)),
+                    if (game['year'] != null) Text('${game['year']}', style: body(13, color: fg.withValues(alpha: 0.88), weight: FontWeight.w600)),
+                    if (platformsLabel(game, 8).isNotEmpty) Text(platformsLabel(game, 8), style: body(13, color: fg.withValues(alpha: 0.85), weight: FontWeight.w500)),
                     if (rating is num)
                       Row(mainAxisSize: MainAxisSize.min, children: [
                         const Icon(LucideIcons.star, size: 14, color: gold),
@@ -637,8 +655,8 @@ class _GameHero extends StatelessWidget {
                       for (final a in ages)
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(6), border: Border.all(color: Colors.white.withValues(alpha: 0.3))),
-                          child: Text(a, style: body(11.5, color: Colors.white.withValues(alpha: 0.9), weight: FontWeight.w500)),
+                          decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(6), border: Border.all(color: fg.withValues(alpha: 0.3))),
+                          child: Text(a, style: body(11.5, color: fg.withValues(alpha: 0.9), weight: FontWeight.w500)),
                         ),
                     ]),
                   ],

@@ -11,6 +11,8 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'alerts.dart';
+import 'alert_widget.dart';
 import 'api.dart';
 import 'shell.dart';
 import 'state.dart';
@@ -41,6 +43,18 @@ final _calls = AndroidNotificationChannel(
   audioAttributesUsage: AudioAttributesUsage.notificationRingtone,
 );
 
+/// Повітряна тривога: як будильник (звук будильника, поверх «Не турбувати»); звук можна змінити
+/// в системних налаштуваннях каналу — кнопка «Звук push у системі» на мапі тривог.
+final _alerts = AndroidNotificationChannel(
+  'air_alerts',
+  tr('Повітряна тривога'),
+  description: tr('Початок і відбій тривоги в обраній області'),
+  importance: Importance.max,
+  sound: UriAndroidNotificationSound('content://settings/system/alarm_alert'),
+  audioAttributesUsage: AudioAttributesUsage.alarm,
+  enableVibration: true,
+);
+
 const _initSettings = InitializationSettings(
   android: AndroidInitializationSettings('ic_notification'),
   iOS: DarwinInitializationSettings(requestAlertPermission: false, requestBadgePermission: false, requestSoundPermission: false),
@@ -53,10 +67,17 @@ Future<void> firebaseBackgroundHandler(RemoteMessage message) async {
   DartPluginRegistrant.ensureInitialized();
   await Firebase.initializeApp();
   final type = message.data['type'];
-  if (message.notification != null || !['message', 'call', 'call_ended'].contains(type)) return;
+  final alert = '${message.data['kind'] ?? ''}'.startsWith('air_alert');
+  if (message.notification != null || (!['message', 'call', 'call_ended'].contains(type) && !alert)) return;
   final local = FlutterLocalNotificationsPlugin();
   await local.initialize(settings: _initSettings, onDidReceiveBackgroundNotificationResponse: notificationActionInBackground);
-  if (type == 'message') {
+  if (alert) {
+    await AlertNotifications(local).incoming(message.data);
+    // Віджет «Тривога» — одразу свіжий статус.
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+    if (token != null) await AlertWidget.refresh(Api(() => token)).catchError((_) {});
+  } else if (type == 'message') {
     await ChatNotifications(local, await SharedPreferences.getInstance()).incoming(message.data);
   } else {
     await CallNotifications(local).incoming(message.data);
@@ -70,7 +91,59 @@ Future<void> notificationActionInBackground(NotificationResponse response) async
   final local = FlutterLocalNotificationsPlugin();
   await local.initialize(settings: _initSettings);
   if (await CallNotifications(local).act(response)) return;
+  if (await AlertNotifications(local).act(response)) return;
   await ChatNotifications(local, await SharedPreferences.getInstance()).act(response);
+}
+
+/// Тривога з кнопкою «Я в укритті»: статус ставиться просто з шторки, без відкриття застосунку.
+/// Приходить data-повідомленням (див. `PushNotifier`), колір — за типом тривоги.
+class AlertNotifications {
+  AlertNotifications(this.local);
+  final FlutterLocalNotificationsPlugin local;
+
+  static const _id = 0x0A1E27;
+
+  Future<void> incoming(Map<String, dynamic> data) async {
+    final hex = int.tryParse('${data['accent'] ?? ''}'.replaceFirst('#', ''), radix: 16);
+    final severity = data['severity'];
+    final started = data['kind'] == 'air_alert';
+    await local.show(
+      id: _id,
+      title: text(data['title']) ?? 'GameCon',
+      body: text(data['body']),
+      payload: jsonEncode({'url': text(data['url']) ?? '/alerts', 'kind': 'air_alert'}),
+      notificationDetails: NotificationDetails(
+        android: AndroidNotificationDetails(
+          _alerts.id,
+          _alerts.name,
+          channelDescription: _alerts.description,
+          importance: severity == 'red' ? Importance.max : Importance.high,
+          priority: severity == 'red' ? Priority.max : Priority.high,
+          icon: 'ic_notification',
+          color: hex != null ? Color(0xFF000000 | hex) : const Color(0xFFEF4444),
+          tag: 'air-alert',
+          category: AndroidNotificationCategory.alarm,
+          styleInformation: BigTextStyleInformation(text(data['body']) ?? ''),
+          actions: [
+            if (started) AndroidNotificationAction('shelter', tr('Я в укритті')),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// «Я в укритті» з шторки. Повертає true, якщо це була ця дія.
+  Future<bool> act(NotificationResponse response) async {
+    if (response.actionId != 'shelter') return false;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.reload();
+    final token = prefs.getString('token');
+    if (token != null) {
+      await Api(() => token).put(Api.site('/alerts/preferences'), {'shelter': true}).catchError((_) => <String, dynamic>{});
+    }
+    await local.cancel(id: _id, tag: 'air-alert');
+    return true;
+  }
 }
 
 /// Що відкрити при натисканні: локальні сповіщення несуть JSON, старі — просто шлях.
@@ -78,10 +151,19 @@ String? _urlOf(String? payload) {
   if (payload == null || payload.isEmpty) return null;
   if (!payload.startsWith('{')) return payload;
   try {
-    return text((jsonDecode(payload) as Map)['url']);
+    return pushTarget(Map<String, dynamic>.from(jsonDecode(payload) as Map));
   } catch (_) {
     return null;
   }
+}
+
+/// Куди веде push: шлях сайту з `url`, а запит на вхід {type: 'app_login', id} — на екран підтвердження.
+String? pushTarget(Map<String, dynamic> data) {
+  final url = text(data['url']);
+  if (url != null) return url;
+  final login = text(data['id']);
+  if (data['type'] == 'app_login' && login != null) return '/app-login/$login';
+  return null;
 }
 
 /// Вхідний дзвінок у шторці: «Відповісти» відкриває застосунок і підключає розмову,
@@ -333,6 +415,7 @@ class Push {
       settings: _initSettings,
       onDidReceiveNotificationResponse: (response) async {
         if (await _callNotes.act(response)) return;
+        if (await AlertNotifications(_local).act(response)) return;
         if (_answer(response)) return;
         if (await _chats.act(response)) return;
         _open(response.payload);
@@ -343,10 +426,11 @@ class Push {
     await android?.createNotificationChannel(_messages);
     await android?.createNotificationChannel(_activity);
     await android?.createNotificationChannel(_calls);
+    await android?.createNotificationChannel(_alerts);
 
     await FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(alert: false, badge: true, sound: false);
     FirebaseMessaging.onMessage.listen(_foreground);
-    FirebaseMessaging.onMessageOpenedApp.listen((message) => _open(message.data['url']));
+    FirebaseMessaging.onMessageOpenedApp.listen((message) => _open(pushTarget(message.data)));
 
     // Застосунок запущено натисканням на push або локальне сповіщення.
     final initial = await FirebaseMessaging.instance.getInitialMessage();
@@ -355,7 +439,7 @@ class Push {
     if (response != null && response.actionId == 'call_accept') {
       WidgetsBinding.instance.addPostFrameCallback((_) => _answer(response));
     }
-    final url = initial?.data['url'] ?? (response != null && response.actionId == null ? response.payload : null);
+    final url = (initial == null ? null : pushTarget(initial.data)) ?? (response != null && response.actionId == null ? response.payload : null);
     if (url != null) WidgetsBinding.instance.addPostFrameCallback((_) => _open(url));
 
     session.addListener(_sync);
@@ -394,7 +478,7 @@ class Push {
 
   Future<void> _register(String token) async {
     if (session.token == null) return;
-    await session.api.post('/api/v1/push/devices', {'token': token, 'platform': Platform.isIOS ? 'ios' : 'android', 'local_render': Platform.isAndroid});
+    await session.api.post('/api/v1/push/devices', {'token': token, 'platform': Platform.isIOS ? 'ios' : 'android', 'local_render': Platform.isAndroid, 'alert_render': Platform.isAndroid});
   }
 
   String get _location => router.routerDelegate.currentConfiguration.uri.path;
@@ -409,6 +493,11 @@ class Push {
       await _callNotes.incoming(data);
       return;
     }
+    // Запит на вхід на сайт: застосунок відкритий — одразу показуємо екран підтвердження.
+    if (data['type'] == 'app_login') {
+      _open(pushTarget(data));
+      return;
+    }
     final chat = data['type'] == 'message';
     // Бесіда вже відкрита — повідомлення й так з’явиться на екрані.
     if (chat && url != null && _location == url) return;
@@ -418,9 +507,22 @@ class Push {
       await _chats.incoming(data);
       return;
     }
+    // Тривога data-повідомленням (з кнопкою «Я в укритті»).
+    if (note == null && '${data['kind'] ?? ''}'.startsWith('air_alert')) {
+      unawaited(AlertSound.play(session.prefs));
+      await AlertNotifications(_local).incoming(data);
+      unawaited(AlertWidget.refresh(session.api).catchError((_) {}));
+      return;
+    }
     if (note == null) return;
-    final channel = chat ? _messages : _activity;
-    final tag = chat ? 'chat-${data['conversation_id']}' : null;
+    final alert = '${data['kind'] ?? ''}'.startsWith('air_alert');
+    // Тривога при відкритому застосунку — ще й свій звук з файлу, якщо обрано.
+    if (alert) unawaited(AlertSound.play(session.prefs));
+    final channel = chat ? _messages : (alert ? _alerts : _activity);
+    // Тривога — один «слот»: відбій замінює тривогу, а не складається в пачку.
+    final tag = chat ? 'chat-${data['conversation_id']}' : (alert ? 'air-alert' : null);
+    final yellow = data['severity'] == 'yellow';
+    final clear = data['severity'] == 'clear';
     await _local.show(
       id: (tag ?? message.messageId ?? '${DateTime.now().millisecondsSinceEpoch}').hashCode & 0x7fffffff,
       title: note.title,
@@ -431,10 +533,11 @@ class Push {
           channel.id,
           channel.name,
           channelDescription: channel.description,
-          importance: Importance.high,
-          priority: Priority.high,
+          importance: alert && !yellow && !clear ? Importance.max : Importance.high,
+          priority: alert && !yellow && !clear ? Priority.max : Priority.high,
           icon: 'ic_notification',
-          color: primary,
+          // Червона тривога — червоний акцент, жовта — бурштиновий.
+          color: alert ? (_accent(data['accent']) ?? (clear ? const Color(0xFF10B981) : (yellow ? const Color(0xFFF59E0B) : const Color(0xFFEF4444)))) : primary,
           tag: tag,
           styleInformation: BigTextStyleInformation(note.body ?? ''),
         ),
@@ -470,4 +573,10 @@ class Push {
     if (_location == target) return;
     router.push(target);
   }
+}
+
+/// Колір тривоги з пушу («#F97316» → Color), щоб значок сповіщення мав колір типу.
+Color? _accent(Object? hex) {
+  final v = int.tryParse('${hex ?? ''}'.replaceFirst('#', ''), radix: 16);
+  return v == null ? null : Color(0xFF000000 | v);
 }

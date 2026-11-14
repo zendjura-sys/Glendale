@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\Music\AudioProbe;
 use App\Support\Plugins\Plugins;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -25,6 +26,23 @@ use Illuminate\Support\Facades\Storage;
  * @property string $path
  * @property string|null $cover_path
  * @property string|null $mime
+ * @property int|null $year
+ * @property int|null $track_no
+ * @property string|null $codec
+ * @property int|null $sample_rate
+ * @property int|null $bit_depth
+ * @property int|null $bitrate
+ * @property int|null $channels
+ * @property string|null $quality
+ * @property string|null $stream_path
+ * @property bool $processing
+ * @property string|null $mbid
+ * @property string|null $release_mbid
+ * @property string|null $release_group_mbid
+ * @property string|null $artist_mbid
+ * @property string|null $metadata_source
+ * @property array<string, array{source: string, score: int|float}>|null $metadata_meta
+ * @property Carbon|null $enriched_at
  * @property int $size
  * @property int $plays_count
  * @property int $adds_count
@@ -34,12 +52,77 @@ use Illuminate\Support\Facades\Storage;
  * @property-read string|null $cover_url
  * @property-read User|null $user
  */
-#[Fillable(['user_id', 'title', 'artist', 'album', 'genre', 'lyrics', 'duration', 'path', 'cover_path', 'mime', 'size'])]
+#[Fillable(['user_id', 'title', 'artist', 'album', 'genre', 'year', 'track_no', 'lyrics', 'duration', 'path', 'stream_path', 'processing', 'cover_path', 'mime', 'codec', 'sample_rate', 'bit_depth', 'bitrate', 'channels', 'quality', 'size', 'mbid', 'release_mbid', 'release_group_mbid', 'artist_mbid', 'metadata_source', 'metadata_meta', 'enriched_at'])]
 class Track extends Model
 {
     use SoftDeletes;
 
     public const AUDIO_MIMES = ['mp3', 'mpga', 'm4a', 'mp4', 'aac', 'ogg', 'oga', 'opus', 'wav', 'flac', 'webm'];
+
+    /** Формати, які приймаємо лише з ffmpeg на сервері: файл перевіряє ffprobe, для браузера робиться копія AAC. */
+    public const FFMPEG_MIMES = ['aiff', 'aif', 'wma', 'ape', 'wv', 'tta', 'ac3', 'amr', 'mka', 'caf', 'dsf'];
+
+    /**
+     * Формати для завантаження: «рідні» плюс ті, що розбирає ffmpeg, якщо він є на сервері.
+     *
+     * @return list<string>
+     */
+    public static function uploadFormats(): array
+    {
+        return app(AudioProbe::class)->available() ? [...self::AUDIO_MIMES, ...self::FFMPEG_MIMES] : self::AUDIO_MIMES;
+    }
+
+    /** Якість звуку: стиснений, без втрат (до 48 кГц) і високої роздільності (понад 48 кГц). */
+    public const QUALITY_LOSSY = 'lossy';
+
+    public const QUALITY_LOSSLESS = 'lossless';
+
+    public const QUALITY_HIRES = 'hires';
+
+    protected function casts(): array
+    {
+        return ['processing' => 'boolean', 'metadata_meta' => 'array', 'enriched_at' => 'datetime'];
+    }
+
+    /** Поля, які заповнює автоматика (MetadataEnricher); «user» у metadata_meta — їх задав користувач. */
+    public const META_FIELDS = ['title', 'artist', 'album', 'genre', 'year', 'track_no', 'lyrics', 'cover'];
+
+    /** Джерело, з якого користувач задав поле власноруч: такі значення автоматика не чіпає ніколи. */
+    public const SOURCE_USER = 'user';
+
+    /**
+     * Позначає поля як введені користувачем (завантаження, редагування).
+     *
+     * @param  list<string>  $fields
+     */
+    public function markUserFields(array $fields): void
+    {
+        $meta = $this->metadata_meta ?? [];
+        foreach (array_intersect($fields, self::META_FIELDS) as $field) {
+            $meta[$field] = ['source' => self::SOURCE_USER, 'score' => 100];
+        }
+        $this->metadata_meta = $meta;
+    }
+
+    /**
+     * Звідки взялося поле: {source, score} або null (невідомо — тоді заповнене поле теж вважаємо користувацьким).
+     *
+     * @return array{source: string, score: int|float}|null
+     */
+    public function fieldMeta(string $field): ?array
+    {
+        return $this->metadata_meta[$field] ?? null;
+    }
+
+    /** Наскільки надійна обкладинка (для вибору найкращої в альбомі): власна — найвища, невідома — середня. */
+    public function coverScore(): float
+    {
+        if ($this->cover_path === null) {
+            return -1;
+        }
+
+        return (float) ($this->fieldMeta('cover')['score'] ?? 50);
+    }
 
     /**
      * @return BelongsTo<User, $this>
@@ -72,11 +155,21 @@ class Track extends Model
     }
 
     /**
+     * Адреса для відтворення: копія для браузера, якщо оригінал грає не скрізь (ALAC, AIFF, WMA…).
+     *
      * @return Attribute<string, never>
      */
     protected function url(): Attribute
     {
-        return Attribute::get(fn () => Storage::disk('public')->url($this->path));
+        return Attribute::get(fn () => Storage::disk('public')->url($this->stream_path ?? $this->path));
+    }
+
+    /**
+     * @param  Builder<Track>  $query
+     */
+    public function scopeReady(Builder $query): void
+    {
+        $query->where('processing', false);
     }
 
     /**
@@ -100,6 +193,16 @@ class Track extends Model
             'artist' => $this->artist,
             'album' => $this->album,
             'genre' => $this->genre,
+            'year' => $this->year,
+            'quality' => $this->quality,
+            // «Відомості про пісню» й значок якості: формат файлу, що звучить.
+            'audio' => $this->codec ? [
+                'codec' => $this->codec,
+                'sample_rate' => $this->sample_rate,
+                'bit_depth' => $this->bit_depth,
+                'bitrate' => $this->bitrate,
+                'channels' => $this->channels,
+            ] : null,
             'has_lyrics' => filled($this->lyrics) && app(Plugins::class)->on('lyrics'),
             'duration' => $this->duration,
             'url' => $this->url,

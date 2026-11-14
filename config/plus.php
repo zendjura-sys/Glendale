@@ -26,6 +26,11 @@ return [
         'promo_highlight_30' => ['kind' => 'promo', 'promo' => 'highlight', 'name' => 'Виділена картка · 30 днів', 'price' => 590, 'days' => 30, 'recurring' => false],
         'promo_banner_30' => ['kind' => 'promo', 'promo' => 'banner', 'name' => 'Банер над каталогом серверів · 30 днів', 'price' => 2490, 'days' => 30, 'recurring' => false],
         // Внутрішні номери +777 (App\Services\Phones): ціна за рівнем номера, з GameCon+ — знижка (Адмінка → Номери).
+        // Поповнення балансу GameCon: передоплата електронних послуг порталу (1 ₴ = 1 розрахункова одиниця).
+        'balance_100' => ['kind' => 'balance', 'name' => 'Баланс GameCon · 100 одиниць', 'price' => 100, 'days' => 0, 'recurring' => false],
+        'balance_250' => ['kind' => 'balance', 'name' => 'Баланс GameCon · 250 одиниць', 'price' => 250, 'days' => 0, 'recurring' => false],
+        'balance_500' => ['kind' => 'balance', 'name' => 'Баланс GameCon · 500 одиниць', 'price' => 500, 'days' => 0, 'recurring' => false],
+        'balance_1000' => ['kind' => 'balance', 'name' => 'Баланс GameCon · 1000 одиниць', 'price' => 1000, 'days' => 0, 'recurring' => false],
         'phone_regular' => ['kind' => 'phone', 'name' => 'Номер +777 · звичайний', 'price' => 19, 'days' => 0, 'recurring' => false],
         'phone_bronze' => ['kind' => 'phone', 'name' => 'Номер +777 · бронзовий', 'price' => 49, 'days' => 0, 'recurring' => false],
         'phone_silver' => ['kind' => 'phone', 'name' => 'Номер +777 · срібний', 'price' => 99, 'days' => 0, 'recurring' => false],
@@ -58,7 +63,7 @@ return [
     'limits' => [
         'characters' => [10, 25],
         'character_photos' => [6, 20],
-        'pinned_posts' => [1, 3],
+        'pinned_posts' => [3, 5],
         'party_open' => [3, 5],
         'message_file_mb' => [null, 200],
         'family_voice_rooms' => [10, 20],
@@ -79,8 +84,9 @@ return [
         'ocean' => ['#06b6d4', '#6366f1'],
     ],
 
-    // Анімація ніку (плоска, вимикається при «зменшити рух»): flow — кольори течуть по імені, shine — відблиск.
-    'name_effects' => ['flow', 'shine'],
+    // Анімація ніку (вимикається при «зменшити рух»): flow — кольори течуть по імені, shine — відблиск,
+    // neon — м’яке пульсуюче світіння, rainbow — плавна зміна відтінку.
+    'name_effects' => ['flow', 'shine', 'neon', 'rainbow'],
 
     // Ефект шапки профілю в кольорах сторінки: aurora — повільне сяйво внизу обкладинки, rim — жива рамка шапки.
     'header_effects' => ['aurora', 'rim'],
@@ -91,7 +97,26 @@ return [
         'gold' => ['#f59e0b', '#fde68a'],
         'ice' => ['#38bdf8', '#e0f2fe'],
         'ember' => ['#f43f5e', '#f97316'],
+        // Ексклюзивні рамки GameCon+ (з багатоколірним переливом).
+        'aurora' => ['#22d3ee', '#a855f7', '#f472b6'],
+        'toxic' => ['#a3e635', '#22c55e', '#14b8a6'],
+        'void' => ['#312e81', '#6366f1', '#0f172a'],
+        'sakura' => ['#fbcfe8', '#f472b6', '#fda4af'],
+        'carbon' => ['#cbd5e1', '#475569', '#0f172a'],
         'season' => [],
+    ],
+
+    // Рух рамки аватара: spin — перелив по колу, pulse — м’яке дихання світла, glint — відблиск. З «менше руху» — статично.
+    'frame_motions' => ['spin', 'pulse', 'glint'],
+
+    // Ексклюзивні теми профілю: три кольори сторінки (шапка, відсвіт) і тонкий візерунок на обкладинці.
+    'themes' => [
+        'glacier' => ['colors' => ['#38bdf8', '#e0f2fe', '#0ea5e9'], 'pattern' => 'grid'],
+        'midnight' => ['colors' => ['#6366f1', '#1e1b4b', '#a855f7'], 'pattern' => 'stars'],
+        'sakura' => ['colors' => ['#f472b6', '#fbcfe8', '#c084fc'], 'pattern' => 'waves'],
+        'toxic' => ['colors' => ['#a3e635', '#22c55e', '#0f766e'], 'pattern' => 'hex'],
+        'ember' => ['colors' => ['#f97316', '#ef4444', '#facc15'], 'pattern' => 'waves'],
+        'gold' => ['colors' => ['#f59e0b', '#fde68a', '#b45309'], 'pattern' => 'stars'],
     ],
 
     'season_frames' => [

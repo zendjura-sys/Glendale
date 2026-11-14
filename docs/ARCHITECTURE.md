@@ -1,6 +1,6 @@
 # GameCon — как устроен проект
 
-GameCon (gamecon.online) — социальная сеть для геймеров в духе ВКонтакте: лента, профили, друзья,
+GameCon (gamecon.online) — социальная сеть для геймеров: лента, профили, друзья,
 сообщения, сообщества, музыка, кино, GTA RP‑серверы, семьи и кланы, голосовые комнаты, звонки,
 совместный просмотр и прослушивание. Есть **веб‑сайт** и **Android‑приложение** (Flutter). Оба работают
 с **одним и тем же бэкендом** и одной базой: всё, что делается в приложении, видно на сайте, и наоборот.
@@ -106,9 +106,9 @@ flowchart LR
 ```mermaid
 flowchart TB
     subgraph Кино
-        CIN[Services/Cinema] --> KODIK[Kodik API<br/>поиск, video-links]
-        CIN --> VS[Videoseed API]
-        CIN --> FLIX[FlixCDN API]
+        CIN[Services/Cinema] --> KODIK[Плеер 1 API, ключ kodik<br/>поиск, video-links]
+        CIN --> VS[Плеер 2 API, ключ videoseed]
+        CIN --> FLIX[Плеер 3 API, ключ flixcdn]
         CIN --> TMDB[TMDB<br/>метаданные, автопарсинг]
         CIN --> OMDB[OMDb]
         CIN --> SHIKI[Shikimori]
@@ -123,6 +123,7 @@ flowchart TB
         BOTS[Services/Bots] --> TG[Telegram Bot API]
         BOTS --> DISCORD
         TR[Перевод постов] --> DEEPL[DeepL]
+        TR -->|лимит DeepL исчерпан| LIBRE[LibreTranslate<br/>свой сервер]
         MOD[Services/Moderation] --> SIGHT[Sightengine<br/>NSFW‑проверка]
         STR[Services/Streams] --> TWITCH[Twitch / YouTube]
     end
@@ -130,6 +131,8 @@ flowchart TB
         AUTH[Вход] --> GOOGLE[Google OAuth / Firebase Auth]
         AUTH --> DISCAUTH[Discord OAuth]
         MUS[Музыка] --> SPOTIFY[Spotify API]
+        MUS --> MBZ[AcoustID / MusicBrainz /<br/>Cover Art Archive]
+        MUS --> MUSX[Discogs / Last.fm / LRCLIB /<br/>Wikipedia / Wikidata]
         BILL[Services/Billing] --> ACQ[monobank эквайринг]
         BILL --> GPAY[Google Pay pay.js]
         JAR[Банки семей/сообществ] --> MONO[Monobank «банки»]
@@ -194,7 +197,7 @@ flowchart LR
     BULK[Общая проставка<br/>BulkPlayers + AssignCinemaPlayers] -->|mergeSources| CS
     CS -->|после импорта| JOB[Job RefreshMoviePlayers]
     OPEN[Открытие тайтла<br/>CinemaController] -->|due() → раз в 3 дня| JOB
-    JOB -->|fetchPlayers по всем ID| P[Kodik / Videoseed / FlixCDN]
+    JOB -->|fetchPlayers по всем ID| P[Плееры 1 / 2 / 3]
     JOB -->|mergeSources: только добавить| SRC[(movie_sources)]
 ```
 
@@ -204,27 +207,30 @@ flowchart LR
   добавляют и обновляют.** Пропавшая у провайдера озвучка получает `missing_since` и удаляется лишь через
   `MovieSource::RETIRE_DAYS` (30) дней отсутствия. Пустой ответ провайдера не удаляет ничего.
 - После любого импорта ставится `RefreshMoviePlayers`: он ищет тайтл во всех провайдерах по всем ID
-  (Кинопоиск, IMDb, Shikimori, TMDB) и добавляет все озвучки.
+  (ID каталога, IMDb, Shikimori, TMDB) и добавляет все озвучки.
 - Скрытые админом озвучки (`is_hidden`) и порядок не трогаются автоматикой. Свои плееры — provider `custom`.
 - Прогресс просмотра: `movie_user` (`season`, `episode`, `position`, `player_key`).
-- Плеер приложения: `/cinema/{movie}/stream` → прямые HLS‑ссылки через партнёрский метод Kodik
+- Плеер приложения: `/cinema/{movie}/stream` → прямые HLS‑ссылки через партнёрский метод плеера 1 (`kodik`)
   `video-links` (ключ — в админке, см. SECRETS.md). Нет ключа или ссылки → веб‑плеер балансера
   в WebView (`/play/embed`). **Не обходить защиту балансеров** (расшифровка ссылок, подделка подписей,
   перехват потоков) — только официальные методы.
 
 ### 4.4. Фоновые процессы
 
-- Очередь: `Jobs/*` (push, обновление плееров, проставка плееров, …). Сервис `gamecon-queue`.
+- Очередь: `Jobs/*` (push, обновление плееров, проставка плееров, разбор треков через ffmpeg — `ProcessTrackAudio`, …). Сервис `gamecon-queue`; ffmpeg ставит `deploy/remote.sh`.
+- Метаданные треков: `ProcessTrackAudio` (ffprobe, без него — getID3 `Music/Id3Probe`) → `EnrichTrackMetadata` →
+  `Music/MetadataEnricher`. Источники работают вместе: теги файла, AcoustID (отпечаток `fpcalc`, Chromaprint) →
+  MusicBrainz, поиск MusicBrainz, Discogs, Spotify, Last.fm, Cover Art Archive, LRCLIB; для каждого поля побеждает
+  значение с наибольшим доверием (`Music/MetaMatch`, совпадение источников — бонус). Происхождение полей —
+  `tracks.metadata_meta`; заданное пользователем (`user`) автоматика не меняет. «Про исполнителя» (`Music/ArtistInfo`)
+  сверяет личность через MBID ↔ Wikidata и ссылки MusicBrainz на Spotify/Discogs. Догрузка: `php artisan music:enrich`
+  или Админка → Музыка → «Оновити метадані». `MUSIC_METADATA=false` отключает внешние запросы (так в тестах).
 - Планировщик (`routes/console.php`, сервис `gamecon-scheduler`): `cinema:sync`, `servers:sync`,
   `families:tick`, `posts:publish`, `events:remind`, `events:sync`, `discord:presence`, `steam:presence`,
   `billing:tick`, `streams:check`, `games:sync`, `i18n:translate`, `geoip:update`, …
 - Реалтайм: Reverb (сервис `gamecon-reverb`), на сайте — Laravel Echo.
 
 ### 4.4.0. GameCon+ в приложении (Google Play Billing)
-
-> **Сейчас выключено:** покупки из приложения убраны (1.1.45, нет пакета `in_app_purchase`), приложение
-> только показывает статус. Серверная часть ниже готова и выключена (`google_play_enabled = false`);
-> чтобы вернуть, восстановите `mobile/lib/play_billing.dart` из коммита d2878083/f86f58c9.
 
 - Приложение продаёт GameCon+ **только через Google Play Billing** (`mobile/lib/play_billing.dart`, пакет
   `in_app_purchase`): цены и планы — из Google Play, сервер отдаёт лишь ID подписок и `account_id`
@@ -292,6 +298,16 @@ flowchart LR
 - Источник строк — **украинский текст** внутри `tr('…')` (сайт: `resources/js/lib/i18n`, приложение:
   `mobile/lib/i18n.dart`), на сервере — сообщения контроллеров. Каталог `lang/catalog.json` собирает
   `node scripts/i18n/extract.mjs`; переводы на другие языки делает `i18n:translate` (DeepL) + админка «Мови».
+- Машинный перевод — `I18n/Translator`: DeepL, пока есть ключ и не исчерпан месячный лимит символов
+  (DeepL считает символы исходного текста вместе с пробелами и знаками; Free — 500 000 в месяц). Ответ 456
+  «Quota exceeded» или `used ≥ limit` в `/v2/usage` ставят флаг «исчерпано» до начала следующего месяца
+  (снимается раньше, если счётчик DeepL обнулился), и переводит `I18n/LibreTranslate` (свой сервер,
+  `libretranslate_url`, по умолчанию `http://127.0.0.1:5000`). Оба недоступны — прежняя ошибка. Кнопка
+  «Перекласти» (`site.translate`) видна, если работает хоть один. Состояние — Адмінка → Мови.
+- Проверка орфографии текстов админов и модераторов — `Spellcheck/Spellchecker`, `POST /admin/spellcheck`
+  (Hunspell `uk_UA`/`en_US` всегда + LanguageTool `languagetool_url` для грамматики, если задан; словарь
+  исключений — `resources/dictionaries/gamecon.dic` + `spellcheck_words` из Адмінки → Інтеграції).
+  На сайте — `components/gc/spellcheck.tsx` (`SpellcheckTextarea`, `useSpellcheck` + `SpellcheckHints`).
 - Константы с текстом делать функциями (`_questTitles()`), а не значениями модуля — чтобы менялся язык.
 
 ---
@@ -321,4 +337,11 @@ CI запускает то же самое; сборка приложения и
   клона ветки) делает бэкап БД, переносит код и вызывает `deploy/remote.sh`: composer, npm build,
   `migrate --force`, `optimize`, перезапуск `gamecon-queue`, `gamecon-reverb`, `gamecon-scheduler`.
 - `.env`, `storage/`, загруженные файлы на сервере деплой не трогает.
+- `remote.sh` сам ставит ffmpeg, `fpcalc` и Hunspell (`hunspell hunspell-uk hunspell-en-us`); не вышло — только
+  предупреждение.
+- LibreTranslate (запасной переводчик) — **по желанию**: `INSTALL_LIBRETRANSLATE=1 bash deploy/server-deploy.sh`
+  (или `INSTALL_LIBRETRANSLATE=1 ./deploy/deploy.sh`). `deploy/libretranslate.sh` создаёт venv в
+  `/opt/libretranslate`, пользователя `libretranslate` и службу `libretranslate` (`deploy/systemd/libretranslate.service`,
+  `127.0.0.1:5000`, языки `uk,en,pl,de`). Нужно ~2–4 ГБ RAM и несколько ГБ диска. Повторный запуск безопасен;
+  ошибка установки деплой не останавливает. Без флага деплой LibreTranslate не трогает.
 - Приложение: артефакт `gamecon-<версия>` из Actions (APK для теста, AAB для Google Play).

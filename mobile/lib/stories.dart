@@ -12,20 +12,35 @@ import 'theme.dart';
 import 'widgets.dart';
 import 'i18n.dart';
 
-/// Кільце довкола аватарки: кольорове — є нові історії, сіре — усе переглянуто.
+/// Плитка «Момент»: квадрат із заокругленням і кільцем — небесне (нове) чи тьмяне (переглянуте).
 class _Ring extends StatelessWidget {
-  const _Ring({required this.seen, required this.child});
+  const _Ring({required this.seen, required this.child, this.none = false});
   final bool seen;
+  final bool none;
   final Widget child;
 
   @override
   Widget build(BuildContext context) {
     return Container(
+      width: 68,
+      height: 68,
       padding: const EdgeInsets.all(2.5),
-      decoration: BoxDecoration(shape: BoxShape.circle, gradient: seen ? null : brand, color: seen ? Colors.white24 : null),
-      child: Container(padding: const EdgeInsets.all(2), decoration: const BoxDecoration(shape: BoxShape.circle, color: abyss), child: child),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        gradient: none || seen ? null : const LinearGradient(colors: [Color(0xFF38BDF8), Color(0xFF6EE7B7)], begin: Alignment.topLeft, end: Alignment.bottomRight),
+        color: none ? Colors.transparent : (seen ? fg.withValues(alpha: 0.15) : null),
+      ),
+      child: ClipRRect(borderRadius: BorderRadius.circular(17), child: ColoredBox(color: raised, child: child)),
     );
   }
+}
+
+/// Кадр першої історії (фото) або аватар автора на всю плитку.
+Widget _cover(Map<String, dynamic> group) {
+  final first = maps(group['stories']).firstOrNull;
+  final user = mapOf(group['user']);
+  if (first != null && first['media_type'] != 'video') return NetImage(absolute(first['url']), width: 68, height: 68);
+  return Avatar(name: text(user['name']) ?? '', url: absolute(user['avatar_url']), size: 63, square: true);
 }
 
 /// Смуга історій над стрічкою.
@@ -82,7 +97,6 @@ class StoriesStripState extends State<StoriesStrip> {
   Widget build(BuildContext context) {
     final list = groups;
     if (list == null) return const SizedBox.shrink();
-    final me = AppScope.of(context).session.me ?? const {};
     final ownIndex = list.indexWhere((g) => g['own'] == true);
     final others = [for (var i = 0; i < list.length; i++) if (list[i]['own'] != true) i];
 
@@ -91,38 +105,38 @@ class StoriesStripState extends State<StoriesStrip> {
       child: Glass(
         padding: const EdgeInsets.symmetric(vertical: 12),
         child: SizedBox(
-          height: 86,
+          height: 92,
           child: ListView(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 12),
             children: [
               _Tile(
-                label: tr('Ваша історія'),
+                label: ownIndex >= 0 ? tr('Ваша історія') : tr('Момент'),
                 onTap: ownIndex >= 0 ? () => _open(ownIndex) : _compose,
-                badge: GestureDetector(
-                  onTap: _compose,
-                  child: Container(
-                    width: 22,
-                    height: 22,
-                    decoration: BoxDecoration(shape: BoxShape.circle, gradient: buttonGradient, border: Border.all(color: abyss, width: 2)),
-                    child: const Icon(LucideIcons.plus, size: 13, color: Colors.white),
-                  ),
-                ),
+                badge: ownIndex < 0
+                    ? null
+                    : GestureDetector(
+                        onTap: _compose,
+                        child: Container(
+                          width: 24,
+                          height: 24,
+                          decoration: BoxDecoration(color: const Color(0xFF0EA5E9), borderRadius: BorderRadius.circular(8)),
+                          child: const Icon(LucideIcons.plus, size: 15, color: Colors.white),
+                        ),
+                      ),
                 child: ownIndex >= 0
-                    ? _Ring(seen: list[ownIndex]['all_seen'] == true, child: Avatar(name: text(me['name']) ?? '', url: absolute(me['avatar_url']), size: 54))
-                    : Padding(padding: const EdgeInsets.all(4.5), child: Avatar(name: text(me['name']) ?? '', url: absolute(me['avatar_url']), size: 54)),
+                    ? _Ring(seen: list[ownIndex]['all_seen'] == true, child: _cover(list[ownIndex]))
+                    : const _Ring(seen: true, none: true, child: Center(child: Icon(LucideIcons.plus, size: 28, color: Color(0xFF38BDF8)))),
               ),
               for (final i in others)
                 _Tile(
                   label: text(mapOf(list[i]['user'])['first_name']) ?? '',
+                  highlight: list[i]['all_seen'] != true,
                   onTap: () => _open(i),
-                  child: _Ring(
-                    seen: list[i]['all_seen'] == true,
-                    child: Avatar(name: text(mapOf(list[i]['user'])['name']) ?? '', url: absolute(mapOf(list[i]['user'])['avatar_url']), size: 54),
-                  ),
+                  child: _Ring(seen: list[i]['all_seen'] == true, child: _cover(list[i])),
                 ),
               if (others.isEmpty)
-                Center(child: Padding(padding: const EdgeInsets.only(left: 8), child: Text(tr('Історії друзів — тут на 24 години'), style: body(12.5, color: muted)))),
+                Center(child: Padding(padding: const EdgeInsets.only(left: 10), child: SizedBox(width: 150, child: Text(tr('Історії друзів з’являться тут на 24 години'), maxLines: 3, style: body(12.5, color: muted).copyWith(height: 1.3))))),
             ],
           ),
         ),
@@ -132,8 +146,9 @@ class StoriesStripState extends State<StoriesStrip> {
 }
 
 class _Tile extends StatelessWidget {
-  const _Tile({required this.label, required this.onTap, required this.child, this.badge});
+  const _Tile({required this.label, required this.onTap, required this.child, this.badge, this.highlight = false});
   final String label;
+  final bool highlight;
   final VoidCallback onTap;
   final Widget child;
   final Widget? badge;
@@ -150,7 +165,7 @@ class _Tile extends StatelessWidget {
             if (badge != null) Positioned(right: -2, bottom: -2, child: badge!),
           ]),
           const SizedBox(height: 5),
-          Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(11.5, color: soft)),
+          FittedBox(fit: BoxFit.scaleDown, child: Text(label, maxLines: 1, softWrap: false, style: body(12, color: highlight ? const Color(0xFF38BDF8) : soft, weight: FontWeight.w600))),
         ]),
       ),
     );
@@ -163,9 +178,9 @@ Future<bool?> showStoryComposer(BuildContext context, Api api) async {
     context,
     title: tr('Нова історія'),
     builder: (sheet) => Column(mainAxisSize: MainAxisSize.min, children: [
-      ListTile(leading: const Icon(LucideIcons.image, color: primary), title: Text(tr('Фото'), style: body(15)), onTap: () => Navigator.pop(sheet, 'image')),
-      ListTile(leading: const Icon(LucideIcons.video, color: primary), title: Text(tr('Відео до 60 с'), style: body(15)), onTap: () => Navigator.pop(sheet, 'video')),
-      ListTile(leading: const Icon(LucideIcons.camera, color: primary), title: Text(tr('Зняти фото'), style: body(15)), onTap: () => Navigator.pop(sheet, 'camera')),
+      ListTile(leading: Icon(LucideIcons.image, color: primary), title: Text(tr('Фото'), style: body(15)), onTap: () => Navigator.pop(sheet, 'image')),
+      ListTile(leading: Icon(LucideIcons.video, color: primary), title: Text(tr('Відео до 60 с'), style: body(15)), onTap: () => Navigator.pop(sheet, 'video')),
+      ListTile(leading: Icon(LucideIcons.camera, color: primary), title: Text(tr('Зняти фото'), style: body(15)), onTap: () => Navigator.pop(sheet, 'camera')),
     ]),
   );
   if (kind == null) return false;
@@ -452,7 +467,7 @@ class _StoryViewerPageState extends State<StoryViewerPage> with SingleTickerProv
                               minHeight: 3,
                               value: n < i ? 1 : (n == i ? timer.value : 0),
                               color: Colors.white,
-                              backgroundColor: Colors.white24,
+                              backgroundColor: fg.withValues(alpha: 0.24),
                             ),
                           ),
                         ),
@@ -470,7 +485,7 @@ class _StoryViewerPageState extends State<StoryViewerPage> with SingleTickerProv
                   Expanded(
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       Text(text(user['name']) ?? '', style: body(14, color: Colors.white, weight: FontWeight.w700)),
-                      Text(ago(current['created_at']), style: body(12, color: Colors.white70)),
+                      Text(ago(current['created_at']), style: body(12, color: fgSoft)),
                     ]),
                   ),
                   if (own) IconButton(onPressed: _delete, icon: const Icon(LucideIcons.trash2, color: Colors.white)),
@@ -500,8 +515,8 @@ class _StoryViewerPageState extends State<StoryViewerPage> with SingleTickerProv
                     alignment: Alignment.centerLeft,
                     child: TextButton.icon(
                       onPressed: _viewers,
-                      icon: const Icon(LucideIcons.eye, color: Colors.white70, size: 18),
-                      label: Text(tr('{v} переглядів', {'v': intOf(current['views_count'])}), style: body(13.5, color: Colors.white70)),
+                      icon: Icon(LucideIcons.eye, color: fgSoft, size: 18),
+                      label: Text(tr('{v} переглядів', {'v': intOf(current['views_count'])}), style: body(13.5, color: fgSoft)),
                     ),
                   )
                 : Column(mainAxisSize: MainAxisSize.min, children: [
@@ -523,9 +538,9 @@ class _StoryViewerPageState extends State<StoryViewerPage> with SingleTickerProv
                             hintText: tr('Відповісти {v}', {'v': text(user['first_name']) ?? ''}),
                             counterText: '',
                             isDense: true,
-                            hintStyle: body(14, color: Colors.white54),
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(24), borderSide: const BorderSide(color: Colors.white38)),
-                            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(24), borderSide: const BorderSide(color: Colors.white38)),
+                            hintStyle: body(14, color: fg.withValues(alpha: 0.54)),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(24), borderSide: BorderSide(color: fg.withValues(alpha: 0.38))),
+                            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(24), borderSide: BorderSide(color: fg.withValues(alpha: 0.38))),
                           ),
                         ),
                       ),

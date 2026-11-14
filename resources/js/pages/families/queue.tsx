@@ -218,7 +218,7 @@ export default function FamilyQueue(props: Props) {
                 ) : (
                     <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,380px)_1fr]">
                         <Panel padded={false} className="overflow-hidden">
-                            <div className="flex items-center gap-2 border-b border-white/[0.06] px-3 py-2.5">
+                            <div className="flex items-center gap-2 px-3 py-2.5">
                                 <input
                                     type="checkbox"
                                     aria-label={tr('Обрати всі')}
@@ -275,8 +275,8 @@ export default function FamilyQueue(props: Props) {
                                             className={cn(
                                                 'flex cursor-pointer items-center gap-2.5 rounded-xl px-2.5 py-2 transition',
                                                 i === index
-                                                    ? 'bg-gc-indigo/15 ring-1 ring-gc-lilac-500/40'
-                                                    : 'hover:bg-white/[0.04]',
+                                                    ? 'bg-gc-indigo/15'
+                                                    : 'hover:bg-[var(--gc-l3)]',
                                             )}
                                         >
                                             <input
@@ -294,7 +294,7 @@ export default function FamilyQueue(props: Props) {
                                                 onChange={() => toggle(r.id)}
                                                 className="size-4 accent-gc-indigo disabled:opacity-20"
                                             />
-                                            <Icon className="size-4 shrink-0 text-amber-200" />
+                                            <Icon className="size-4 shrink-0 text-amber-400" />
                                             <div className="min-w-0 flex-1">
                                                 <div className="truncate font-mono text-xs text-white">
                                                     {r.beneficiary.display}
@@ -304,7 +304,7 @@ export default function FamilyQueue(props: Props) {
                                                 </div>
                                             </div>
                                             {r.flags?.similar_reports && (
-                                                <AlertTriangle className="size-4 text-rose-300" />
+                                                <AlertTriangle className="size-4 text-red-400" />
                                             )}
                                             <span className="text-xs font-semibold text-white/70">
                                                 {r.reward > 0
@@ -325,9 +325,9 @@ export default function FamilyQueue(props: Props) {
                                     customReward={customReward}
                                     setCustomReward={setCustomReward}
                                 />
-                                <div className="mt-5 flex flex-wrap gap-2 border-t border-white/[0.06] pt-4">
+                                <div className="mt-5 flex flex-wrap gap-2 pt-4">
                                     {current.self_review ? (
-                                        <p className="text-sm text-amber-200">
+                                        <p className="text-sm text-amber-400">
                                             {tr(
                                                 'Це ваш звіт — його має перевірити інший офіцер.',
                                             )}
@@ -379,7 +379,7 @@ export default function FamilyQueue(props: Props) {
                             {cashouts.map((c) => (
                                 <div
                                     key={c.id}
-                                    className="flex flex-wrap items-center gap-3 rounded-2xl bg-white/[0.03] p-3 ring-1 ring-white/[0.05]"
+                                    className="gc-solid-2 flex flex-wrap items-center gap-3 rounded-2xl p-3"
                                 >
                                     <div className="min-w-0 flex-1">
                                         <div className="font-mono text-sm text-white">
@@ -447,7 +447,7 @@ export default function FamilyQueue(props: Props) {
 
 function Kbd({ children }: { children: React.ReactNode }) {
     return (
-        <kbd className="rounded-md border border-white/15 bg-white/[0.06] px-1.5 font-mono text-xs text-white/70">
+        <kbd className="gc-solid-2 rounded-md px-1.5 font-mono text-xs text-white/70">
             {children}
         </kbd>
     );
@@ -485,7 +485,7 @@ function ReportDetail({
                     <div className="text-xs text-white/40">
                         {tr('До виплати')}
                     </div>
-                    <div className="font-display text-2xl font-bold text-emerald-300">
+                    <div className="font-display text-2xl font-bold text-emerald-400">
                         {report.type === 'other'
                             ? customReward
                                 ? `${customReward} ₴`
@@ -510,7 +510,7 @@ function ReportDetail({
                         {report.submitter.display}
                     </span>
                     {report.for_friend && (
-                        <span className="ml-1 text-xs text-amber-200">
+                        <span className="ml-1 text-xs text-amber-400">
                             {tr('(за друга)')}
                         </span>
                     )}
@@ -520,12 +520,12 @@ function ReportDetail({
                     {kyivDateTime(report.created_at)}
                 </Info>
                 <Info label={tr('Історія за 30 днів')}>
-                    <span className="inline-flex items-center gap-1 text-emerald-300">
+                    <span className="inline-flex items-center gap-1 text-emerald-400">
                         <Check className="size-3.5" aria-hidden />
                         {report.history.approved}
                     </span>{' '}
                     ·{' '}
-                    <span className="inline-flex items-center gap-1 text-rose-300">
+                    <span className="inline-flex items-center gap-1 text-red-400">
                         <X className="size-3.5" aria-hidden />
                         {report.history.rejected}
                     </span>
@@ -535,7 +535,7 @@ function ReportDetail({
                         <span
                             className={cn(
                                 report.contracts_used > contractLimit &&
-                                    'text-rose-300',
+                                    'text-red-400',
                             )}
                         >
                             {report.contracts_used}/{contractLimit}
@@ -552,7 +552,7 @@ function ReportDetail({
             </div>
 
             {report.flags?.similar_reports && (
-                <div className="mt-3 flex items-start gap-2 rounded-xl border border-rose-400/30 bg-rose-500/10 px-3 py-2 text-xs text-rose-100">
+                <div className="mt-3 flex items-start gap-2 rounded-xl bg-red-500/10 px-3 py-2 text-xs text-red-400">
                     <AlertTriangle className="mt-0.5 size-4 shrink-0" />
                     {tr('Скріншот дуже схожий на звіти #')}
                     {report.flags.similar_reports.join(', #')}
@@ -561,7 +561,7 @@ function ReportDetail({
             )}
 
             {report.description && report.type !== 'other' && (
-                <p className="mt-3 rounded-xl bg-white/[0.04] px-3 py-2 text-sm text-white/70">
+                <p className="gc-solid-2 mt-3 rounded-xl px-3 py-2 text-sm text-white/70">
                     {report.description}
                 </p>
             )}
@@ -587,7 +587,7 @@ function ReportDetail({
                         key={p.id}
                         type="button"
                         onClick={() => setZoom(p.url)}
-                        className="aspect-video overflow-hidden rounded-xl bg-black/30 ring-1 ring-white/10"
+                        className="aspect-video overflow-hidden rounded-xl bg-black/30"
                     >
                         <img
                             src={p.url}
@@ -630,7 +630,7 @@ function Info({
     children: React.ReactNode;
 }) {
     return (
-        <div className="rounded-xl bg-white/[0.03] px-3 py-2">
+        <div className="gc-solid-2 rounded-xl px-3 py-2">
             <div className="text-xs text-white/40">{label}</div>
             <div className="mt-0.5 text-white/75">{children}</div>
         </div>
@@ -690,7 +690,7 @@ function RejectDialog({
                         key={p}
                         type="button"
                         onClick={() => setComment(p)}
-                        className="rounded-full bg-white/[0.05] px-2.5 py-1 text-xs text-white/65 hover:text-white"
+                        className="gc-solid-2 rounded-control px-2.5 py-1 text-xs text-white/65 hover:text-white"
                     >
                         {p}
                     </button>
@@ -733,7 +733,7 @@ function PayDialog({
             description={
                 cashout
                     ? tr(
-                          'Підтвердіть, що передали гроші {display} у грі. Суму буде списано зі скарбниці.',
+                          'Підтвердьте, що передали гроші {display} у грі. Суму буде списано зі скарбниці.',
                           { display: cashout.member.display },
                       )
                     : undefined

@@ -13,12 +13,15 @@ import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
 
 import 'api.dart';
-import 'cinema.dart' show PosterCard;
+import 'cinema_ui.dart';
+import 'movie_extras.dart';
+import 'core/widgets/arctic_glass/arctic_glass.dart';
 import 'i18n.dart';
 import 'posts.dart';
 import 'state.dart';
 import 'theme.dart';
 import 'widgets.dart';
+import 'skeletons.dart';
 
 // Сторінка тайтлу в застосунку: велика обкладинка, статус, «Дивитися» → озвучка → серія → власна
 // оболонка керування поверх плеєра балансера (Kodik / Videoseed через міст /play/embed).
@@ -120,6 +123,8 @@ class _MovieScreenState extends State<MovieScreen> {
   Set<String> marks = {};
   bool about = false;
   final commentsKey = GlobalKey();
+  /// Нижні вкладки (як в Animax): «Схожі» / «Коментарі».
+  String bottomTab = 'similar';
   final scroll = ScrollController();
 
   @override
@@ -231,18 +236,7 @@ class _MovieScreenState extends State<MovieScreen> {
     final movie = mapOf(data?['movie']);
     final list = _episodic(source) ? voiceSeasons(seasons, source) : const <Season>[];
     final pick = chosen ?? (list.isEmpty ? null : _continuePick(list));
-    // Прямі потоки (якщо адміністратор додав ключ Kodik video-links) — і вибір плеєра, як в Anixart.
-    final resolver = text(source['provider']) == 'kodik' && source['id'] != null ? _streams(source) : null;
-    var first = <Stream>[];
-    if (resolver != null) {
-      first = await resolver(pick);
-      if (!mounted) return;
-      if (first.isNotEmpty) {
-        final engine = await _choosePlayer();
-        if (engine == null || !mounted) return;
-        if (engine == 'web') first = [];
-      }
-    }
+    // Лише веб-плеєр балансера, як на сайті (власний плеєр застосунку прибрано).
     unawaited(api.post(Api.site('/cinema/${widget.slug}/started')).then(_applyState).catchError((_) {}));
     await Navigator.of(context, rootNavigator: true).push(MaterialPageRoute<void>(
       fullscreenDialog: true,
@@ -253,8 +247,8 @@ class _MovieScreenState extends State<MovieScreen> {
         pick: pick,
         single: intOf(movie['episodes_count']) <= 1 && list.isEmpty,
         memory: memory,
-        streams: first.isEmpty ? null : resolver,
-        firstStreams: first,
+        streams: null,
+        firstStreams: const [],
         resumeAt: pick != null && pick == _serverPick ? intOf(_state['position']) : (pick == null ? intOf(_state['position']) : 0),
         onWatched: (p) {
           if (!marks.contains('${p.season}:${p.episode}')) unawaited(_toggleMark(p));
@@ -274,91 +268,7 @@ class _MovieScreenState extends State<MovieScreen> {
     if (mounted) setState(() {});
   }
 
-  StreamResolver _streams(Map<String, dynamic> source) => (pick) async {
-        try {
-          final result = await api.get(Api.site('/cinema/${widget.slug}/stream?source=${source['id']}${pick == null ? '' : '&season=${pick.season}&episode=${pick.episode}'}'));
-          return [
-            for (final q in maps(result['qualities']))
-              if (text(q['url']) != null) (label: text(q['label']) ?? '', url: text(q['url'])!),
-          ];
-        } catch (_) {
-          return const <Stream>[];
-        }
-      };
 
-  /// Який плеєр: власний (прямий потік, якість) чи веб-плеєр балансера. Запам’ятовується, якщо попросили.
-  Future<String?> _choosePlayer() async {
-    final prefs = AppScope.read(context).session.prefs;
-    final saved = prefs.getString('cinema.engine');
-    if (saved == 'native' || saved == 'web') return saved;
-    var remember = false;
-    var engine = 'native';
-    return showModalBottomSheet<String>(
-      context: context,
-      useRootNavigator: true,
-      backgroundColor: popover,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
-      builder: (sheet) => StatefulBuilder(
-        builder: (sheet, setSheet) => SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 18, 20, 14),
-            child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(tr('Оберіть плеєр'), style: display(20)),
-              const SizedBox(height: 14),
-              for (final option in [
-                (key: 'native', icon: LucideIcons.clapperboard, title: tr('Плеєр GameCon'), hint: tr('Власний плеєр: якість відео, жести, швидкість, без чужих кнопок.')),
-                (key: 'web', icon: LucideIcons.globe, title: tr('Веб-плеєр'), hint: tr('Плеєр балансера, як на сайті. Якщо в GameCon-плеєрі щось не грає.')),
-              ])
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Material(
-                    color: engine == option.key ? primary.withValues(alpha: 0.14) : Colors.white.withValues(alpha: 0.04),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18), side: BorderSide(color: engine == option.key ? primary : line)),
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(18),
-                      onTap: () => setSheet(() => engine = option.key),
-                      child: Padding(
-                        padding: const EdgeInsets.all(14),
-                        child: Row(children: [
-                          Icon(option.icon, color: engine == option.key ? primary : muted),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                              Text(option.title, style: body(15.5, weight: FontWeight.w700)),
-                              const SizedBox(height: 2),
-                              Text(option.hint, style: body(12.5, color: muted)),
-                            ]),
-                          ),
-                          Icon(engine == option.key ? LucideIcons.circleDot : LucideIcons.circle, color: engine == option.key ? primary : faint),
-                        ]),
-                      ),
-                    ),
-                  ),
-                ),
-              CheckboxListTile(
-                contentPadding: EdgeInsets.zero,
-                controlAffinity: ListTileControlAffinity.leading,
-                value: remember,
-                onChanged: (v) => setSheet(() => remember = v == true),
-                title: Text(tr('Запам’ятати вибір'), style: body(14)),
-                subtitle: Text(tr('Змінити можна в меню «⋮» на сторінці тайтлу'), style: body(12, color: muted)),
-              ),
-              const SizedBox(height: 6),
-              PrimaryButton(
-                label: tr('Продовжити'),
-                icon: LucideIcons.play,
-                onPressed: () {
-                  if (remember) unawaited(prefs.setString('cinema.engine', engine));
-                  Navigator.pop(sheet, engine);
-                },
-              ),
-            ]),
-          ),
-        ),
-      ),
-    );
-  }
 
   Future<void> _toggleMark(Pick pick) async {
     try {
@@ -422,13 +332,13 @@ class _MovieScreenState extends State<MovieScreen> {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
               leading: Icon(
                 (text(option['key']) ?? '') == (current ?? '') ? LucideIcons.circleDot : LucideIcons.circle,
-                color: (text(option['key']) ?? '') == (current ?? '') ? (_statusColors[option['key']] ?? primary) : muted,
+                color: (text(option['key']) ?? '') == (current ?? '') ? (_statusColors[option['key']] ?? cinemaAccent) : muted,
               ),
               title: Text('${option['label']}', style: body(15.5)),
               onTap: () => Navigator.pop(dialog, '${option['key']}'),
             ),
         ]),
-        actions: [TextButton(onPressed: () => Navigator.pop(dialog), child: Text(tr('Скасувати'), style: body(14, color: primary, weight: FontWeight.w600)))],
+        actions: [TextButton(onPressed: () => Navigator.pop(dialog), child: Text(tr('Скасувати'), style: body(14, color: cinemaAccent, weight: FontWeight.w600)))],
       ),
     );
     if (picked == null) return;
@@ -482,10 +392,7 @@ class _MovieScreenState extends State<MovieScreen> {
       builder: (sheet) => Padding(
         padding: const EdgeInsets.fromLTRB(12, 0, 12, 20),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          if (players.isNotEmpty) SheetAction(icon: LucideIcons.languages, label: tr('Обрати озвучку й серію'), onTap: () => Navigator.pop(sheet, 'voice')),
           if (players.isNotEmpty) SheetAction(icon: LucideIcons.popcorn, label: tr('Дивитися разом'), onTap: () => Navigator.pop(sheet, 'together')),
-          if (AppScope.read(context).session.prefs.getString('cinema.engine') != null)
-            SheetAction(icon: LucideIcons.monitorPlay, label: tr('Обирати плеєр щоразу'), onTap: () => Navigator.pop(sheet, 'engine')),
           SheetAction(
             icon: data?['saved'] == true ? LucideIcons.bookmarkCheck : LucideIcons.bookmark,
             label: data?['saved'] == true ? tr('Прибрати зі збереженого') : tr('Зберегти'),
@@ -512,9 +419,6 @@ class _MovieScreenState extends State<MovieScreen> {
         await _chooseVoice();
       case 'together':
         await _watchTogether();
-      case 'engine':
-        await AppScope.read(context).session.prefs.remove('cinema.engine');
-        if (mounted) toast(context, tr('Плеєр обиратиметься перед переглядом'));
       case 'save':
       case 'pin':
       case 'ten':
@@ -530,7 +434,7 @@ class _MovieScreenState extends State<MovieScreen> {
     final page = data;
     if (page == null) {
       return error == null
-          ? const Center(child: CircularProgressIndicator(strokeWidth: 2.4))
+          ? const ListSkeleton(rows: 6)
           : Center(child: Padding(padding: const EdgeInsets.all(20), child: EmptyState(icon: LucideIcons.film, title: tr('Фільм недоступний'), text: '$error')));
     }
     final movie = mapOf(page['movie']);
@@ -557,23 +461,50 @@ class _MovieScreenState extends State<MovieScreen> {
         : tr('Дивитися');
     final duration = intOf(movie['duration']);
     final episodes = intOf(movie['episodes_count']);
+    // Горизонтальний телефон/планшет: постер закріплений ліворуч, уміст прокручується праворуч.
+    final size = MediaQuery.sizeOf(context);
+    final landscape = size.width > size.height && size.width >= 600;
+    final infoRows = <(String, String)>[
+      if (countries.isNotEmpty) (tr('Країна'), countries.join(', ')),
+      if (text(movie['type_label']) != null) (tr('Тип'), text(movie['type_label'])!),
+      if (episodes > 1) (tr('Епізоди'), '$episodes'),
+      if (duration > 0) (tr('Тривалість'), tr('{v} хв', {'v': duration})),
+      if (genres.isNotEmpty) (tr('Жанри'), genres.join(', ')),
+      if (movie['year'] != null) (tr('Рік'), '${movie['year']}'),
+      if (releaseLabel(movie['release']) != null) (tr('Статус'), releaseLabel(movie['release'])!),
+      if (mapOf(movie['ratings']).isNotEmpty) (tr('Рейтинги'), [for (final r in mapOf(movie['ratings']).entries) '${r.key.toUpperCase()} ${r.value}'].join('  ·  ')),
+    ];
 
-    return ScreenScroll(
-      controller: scroll,
-      onRefresh: _load,
-      children: [
-        _Hero(
-          poster: text(movie['poster']),
-          backdrop: text(movie['backdrop']),
-          onBack: () => context.canPop() ? context.pop() : context.go('/cinema'),
-          onMenu: _menu,
-        ),
-        const SizedBox(height: 16),
+    final content = <Widget>[
+        if (!landscape) ...[
+          _Hero(
+            poster: text(movie['poster']),
+            backdrop: text(movie['backdrop']),
+            badges: movie,
+            onBack: () => context.canPop() ? context.pop() : context.go('/cinema'),
+            onMenu: _menu,
+          ),
+          const SizedBox(height: 16),
+        ],
         Text(text(movie['title']) ?? '', style: display(23).copyWith(height: 1.2)),
         const SizedBox(height: 4),
-        Row(children: [
-          if (text(movie['title_original']) != null) Expanded(child: Text(text(movie['title_original'])!, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14, color: muted))) else const Spacer(),
-          if (text(movie['age_rating']) != null) Pill(label: text(movie['age_rating'])!),
+        if (text(movie['title_original']) != null) FitText(text(movie['title_original'])!, style: body(14, color: muted)),
+        const SizedBox(height: 10),
+        // Рядок відомостей (як в Animax): рейтинг, рік і контурні чипи — країна, тип, статус.
+        Wrap(spacing: 8, runSpacing: 6, crossAxisAlignment: WrapCrossAlignment.center, children: [
+          if (movie['rating'] is num && (movie['rating'] as num) > 0)
+            Row(mainAxisSize: MainAxisSize.min, children: [
+              Icon(LucideIcons.star, size: 16, color: cinemaAccent),
+              const SizedBox(width: 4),
+              Text((movie['rating'] as num).toStringAsFixed(1), style: body(13.5, color: cinemaAccent, weight: FontWeight.w700)),
+            ]),
+          if (movie['year'] != null) Text('${movie['year']}', style: body(13.5, weight: FontWeight.w600)),
+          for (final chip in [if (countries.isNotEmpty) countries.first, text(movie['type_label']), releaseLabel(movie['release'])].whereType<String>())
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(border: Border.all(color: cinemaAccent, width: 1.2), borderRadius: BorderRadius.circular(6)),
+              child: Text(chip, style: body(11.5, color: cinemaAccent, weight: FontWeight.w600)),
+            ),
         ]),
         const SizedBox(height: 14),
         Row(children: [
@@ -581,19 +512,22 @@ class _MovieScreenState extends State<MovieScreen> {
             child: _TonalAction(
               icon: status == null ? LucideIcons.plus : LucideIcons.chevronDown,
               label: status == null ? tr('Додати до списку') : '$statusLabel',
-              color: _statusColors[status] ?? primary,
+              color: _statusColors[status] ?? cinemaAccent,
               onTap: _statusDialog,
             ),
           ),
-          const SizedBox(width: 8),
-          _TonalAction(icon: LucideIcons.bookmark, label: compact(movie['watchers_count']), color: gold, onTap: _statusDialog),
+          if (AppScope.of(context).session.pluginOn('movie_lists')) ...[
+            const SizedBox(width: 8),
+            _TonalAction(icon: LucideIcons.listPlus, label: null, color: cinemaAccent, onTap: () => showAddToList(context, intOf(movie['id']), widget.slug)),
+          ],
           const SizedBox(width: 8),
           _TonalAction(
             icon: LucideIcons.messageSquare,
             label: intOf(movie['comments_count']) > 0 ? compact(movie['comments_count']) : null,
-            color: soft,
+            color: cinemaAccent,
             onTap: () {
               // Список будується ліниво: коментарі ще можуть бути не створені — їдемо в самий низ.
+              setState(() => bottomTab = 'comments');
               final target = commentsKey.currentContext;
               if (target != null) {
                 unawaited(Scrollable.ensureVisible(target, duration: const Duration(milliseconds: 400), curve: Curves.easeOutCubic));
@@ -609,13 +543,13 @@ class _MovieScreenState extends State<MovieScreen> {
             // Кнопка лежить на темній підкладці, під нею в тій самій підкладці — «Додано: …».
             Expanded(
               child: DecoratedBox(
-                decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(28)),
+                decoration: BoxDecoration(color: fg.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(28)),
                 child: Column(children: [
                   _PlayPill(label: watchLabel, onTap: _watch),
                   if (added != null)
                     Padding(
                       padding: const EdgeInsets.fromLTRB(14, 7, 14, 9),
-                      child: Text(tr('Додано: {v}', {'v': added}), textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12.5, color: muted)),
+                      child: FitText(tr('Додано: {v}', {'v': added}), style: body(12.5, color: muted), textAlign: TextAlign.center),
                     ),
                 ]),
               ),
@@ -623,21 +557,27 @@ class _MovieScreenState extends State<MovieScreen> {
             SizedBox(
               width: 44,
               height: 54,
-              child: IconButton(onPressed: _menu, tooltip: tr('Ще'), icon: const Icon(LucideIcons.ellipsisVertical, color: soft)),
+              // Поруч із «Дивитися» — лише вибір озвучки й серії; решта дій — у меню на постері.
+              child: IconButton(onPressed: _chooseVoice, tooltip: tr('Обрати озвучку й серію'), icon: Icon(LucideIcons.listVideo, color: soft)),
             ),
           ]),
         ],
         const SizedBox(height: 16),
-        if (countries.isNotEmpty || movie['year'] != null)
-          _InfoRow(icon: LucideIcons.globe, label: [if (countries.isNotEmpty) countries.take(2).join(', '), if (movie['year'] != null) '${movie['year']}'].join(', ')),
-        if (episodes > 1)
-          _InfoRow(icon: LucideIcons.tv, label: duration > 0 ? tr('{n} еп. по ~{m} хв', {'n': episodes, 'm': duration}) : tr('{n} еп.', {'n': episodes}))
-        else if (duration > 0)
-          _InfoRow(icon: LucideIcons.clock, label: tr('{v} хв', {'v': duration})),
-        if (text(movie['type_label']) != null) _InfoRow(icon: LucideIcons.clapperboard, label: text(movie['type_label'])!),
-        if (mapOf(movie['ratings']).isNotEmpty)
-          _InfoRow(icon: LucideIcons.star, label: [for (final r in mapOf(movie['ratings']).entries) '${r.key.toUpperCase()} ${r.value}'].join('  ·  ')),
-        if (genres.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 8), child: Text(genres.join(', '), style: body(14.5, color: const Color(0xFF9AA8FF), weight: FontWeight.w600))),
+        // Відомості таблицею з чергуванням рядків.
+        ClipRRect(
+          borderRadius: BorderRadius.circular(14),
+          child: Column(children: [
+            for (var i = 0; i < infoRows.length; i++)
+              Container(
+                color: i.isEven ? fg.withValues(alpha: 0.05) : Colors.transparent,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  SizedBox(width: 110, child: Text('${infoRows[i].$1}:', style: body(13.5, weight: FontWeight.w700))),
+                  Expanded(child: Text(infoRows[i].$2, style: body(13.5, color: soft))),
+                ]),
+              ),
+          ]),
+        ),
         if (text(movie['tagline']) != null) Padding(padding: const EdgeInsets.only(top: 10), child: Text('«${text(movie['tagline'])}»', style: body(14, color: soft).copyWith(fontStyle: FontStyle.italic))),
         if (text(movie['description']) != null)
           GestureDetector(
@@ -685,37 +625,69 @@ class _MovieScreenState extends State<MovieScreen> {
             ]),
           ),
         ],
-        if (similar.isNotEmpty) ...[
-          SectionLabel(tr('Рекомендуємо також')),
-          SizedBox(
-            height: 250,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: similar.length,
-              separatorBuilder: (_, _) => const SizedBox(width: 10),
-              itemBuilder: (_, i) => SizedBox(width: 132, child: PosterCard(movie: similar[i])),
+        if (AppScope.of(context).session.pluginOn('movie_reviews')) MovieReviewsSection(slug: widget.slug),
+        const SizedBox(height: 8),
+        UnderlineTabs(
+          key: commentsKey,
+          tabs: [
+            if (similar.isNotEmpty) ('similar', tr('Схожі')),
+            ('comments', intOf(movie['comments_count']) > 0 ? tr('Коментарі ({n})', {'n': compact(movie['comments_count'])}) : tr('Коментарі')),
+          ],
+          active: similar.isEmpty ? 'comments' : bottomTab,
+          onSelect: (key) => setState(() => bottomTab = key),
+        ),
+        Container(height: 1, color: fg.withValues(alpha: 0.08)),
+        const SizedBox(height: 14),
+        if (similar.isNotEmpty && bottomTab == 'similar')
+          AnimaxGrid(movies: similar)
+        else
+          Glass(
+            child: CommentsThread(
+              endpoint: Api.site('/cinema/${widget.slug}/comments'),
+              initial: maps(page['comments']),
+              total: intOf(movie['comments_count']),
+              canComment: movie['comments_enabled'] != false,
+              onCount: (value) => setState(() => movie['comments_count'] = value),
             ),
           ),
-        ],
-        SectionLabel(tr('Коментарі'), key: commentsKey, trailing: intOf(movie['comments_count']) > 0 ? '${movie['comments_count']}' : null),
-        Glass(
-          child: CommentsThread(
-            endpoint: Api.site('/cinema/${widget.slug}/comments'),
-            initial: maps(page['comments']),
-            total: intOf(movie['comments_count']),
-            canComment: movie['comments_enabled'] != false,
-            onCount: (value) => setState(() => movie['comments_count'] = value),
+    ];
+
+    if (!landscape) return ScreenScroll(controller: scroll, onRefresh: _load, children: content);
+    final top = siteHeaderInset(context) + 8;
+    final bottom = ShellChrome.bottomOf(context) + 12;
+    return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Padding(
+        padding: EdgeInsets.fromLTRB(14, top, 4, bottom),
+        child: SizedBox(
+          width: size.width * 0.32,
+          height: size.height - top - bottom,
+          child: Center(
+            child: AspectRatio(
+              aspectRatio: 2 / 3,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(24),
+                child: Stack(fit: StackFit.expand, children: [
+                  NetImage(text(movie['poster']) ?? text(movie['backdrop'])),
+                  PosterBadges(movie: movie),
+                  Positioned(left: 10, top: 36, child: _GlassIcon(icon: LucideIcons.arrowLeft, onTap: () => context.canPop() ? context.pop() : context.go('/cinema'))),
+                  Positioned(right: 10, top: 36, child: _GlassIcon(icon: LucideIcons.ellipsis, onTap: _menu)),
+                ]),
+              ),
+            ),
           ),
         ),
-      ],
-    );
+      ),
+      Expanded(child: ScreenScroll(controller: scroll, onRefresh: _load, children: content)),
+    ]);
   }
 }
 
 class _Hero extends StatelessWidget {
-  const _Hero({required this.poster, required this.backdrop, required this.onBack, required this.onMenu});
+  const _Hero({required this.poster, required this.backdrop, required this.onBack, required this.onMenu, this.badges});
   final String? poster;
   final String? backdrop;
+  /// Тайтл — для бейджів на постері (статус виходу, серії, вік).
+  final Map<String, dynamic>? badges;
   final VoidCallback onBack;
   final VoidCallback onMenu;
 
@@ -746,9 +718,14 @@ class _Hero extends StatelessWidget {
               child: Container(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(24),
-                  boxShadow: const [BoxShadow(color: Color(0x99000000), blurRadius: 30, offset: Offset(0, 16), spreadRadius: -8)],
                 ),
-                child: NetImage(cover, radius: 24),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(24),
+                  child: Stack(fit: StackFit.expand, children: [
+                    NetImage(cover),
+                    if (badges != null) PosterBadges(movie: badges!),
+                  ]),
+                ),
               ),
             ),
           ),
@@ -770,11 +747,11 @@ class _GlassIcon extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: Colors.black.withValues(alpha: 0.45),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14), side: BorderSide(color: Colors.white.withValues(alpha: 0.10))),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14), side: BorderSide(color: fg.withValues(alpha: 0.10))),
       child: InkWell(
         borderRadius: BorderRadius.circular(14),
         onTap: onTap,
-        child: SizedBox(width: 46, height: 46, child: Icon(icon, size: 21, color: Colors.white.withValues(alpha: 0.9))),
+        child: SizedBox(width: 46, height: 46, child: Icon(icon, size: 21, color: fg.withValues(alpha: 0.9))),
       ),
     );
   }
@@ -831,8 +808,7 @@ class _PlayPill extends StatelessWidget {
           height: 54,
           decoration: ShapeDecoration(
             shape: const StadiumBorder(),
-            gradient: buttonGradient,
-            shadows: [BoxShadow(color: indigo.withValues(alpha: 0.45), blurRadius: 22, offset: const Offset(0, 8), spreadRadius: -10)],
+            gradient: cinemaGradient,
           ),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 18),
@@ -844,24 +820,6 @@ class _PlayPill extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-class _InfoRow extends StatelessWidget {
-  const _InfoRow({required this.icon, required this.label});
-  final IconData icon;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 5),
-      child: Row(children: [
-        Icon(icon, size: 20, color: muted),
-        const SizedBox(width: 12),
-        Expanded(child: Text(label, style: body(15, color: soft))),
-      ]),
     );
   }
 }
@@ -887,7 +845,7 @@ class _TrailerCard extends StatelessWidget {
                 Container(
                   width: 52,
                   height: 52,
-                  decoration: const BoxDecoration(color: primary, shape: BoxShape.circle),
+                  decoration: BoxDecoration(color: cinemaAccent, shape: BoxShape.circle),
                   child: const Icon(LucideIcons.play, color: Colors.white, size: 26),
                 ),
                 const SizedBox(width: 12),
@@ -921,7 +879,7 @@ class _RatingBlock extends StatelessWidget {
       child: Column(children: [
         if (total == 0)
           Row(children: [
-            const Icon(LucideIcons.star, size: 20, color: faint),
+            Icon(LucideIcons.star, size: 20, color: faint),
             const SizedBox(width: 10),
             Expanded(child: Text(tr('Оцінок ще немає — будьте першими.'), style: body(14, color: muted))),
           ])
@@ -949,8 +907,8 @@ class _RatingBlock extends StatelessWidget {
                         child: LinearProgressIndicator(
                           value: top == 0 ? 0 : counts[i]! / top,
                           minHeight: 10,
-                          backgroundColor: Colors.white.withValues(alpha: 0.06),
-                          valueColor: const AlwaysStoppedAnimation(primary),
+                          backgroundColor: fg.withValues(alpha: 0.06),
+                          valueColor: AlwaysStoppedAnimation(cinemaAccent),
                         ),
                       ),
                     ),
@@ -1009,7 +967,7 @@ class _ListsBar extends StatelessWidget {
                 child: Row(children: [
                   Container(width: 12, height: 12, decoration: BoxDecoration(color: _statusColors[item.key] ?? muted, shape: BoxShape.circle)),
                   const SizedBox(width: 8),
-                  Flexible(child: Text(item.label, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14, color: muted))),
+                  Flexible(child: FitText(item.label, style: body(14, color: muted))),
                   const SizedBox(width: 6),
                   Text(compact(item.count), style: body(14, weight: FontWeight.w700)),
                 ]),
@@ -1097,7 +1055,7 @@ class _VoicePickerScreenState extends State<VoicePickerScreen> {
                       const SizedBox(width: 14),
                       Expanded(
                         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          Text(name, maxLines: 2, overflow: TextOverflow.ellipsis, style: body(16, weight: FontWeight.w700)),
+                          FitText(name, style: body(16, weight: FontWeight.w700), maxLines: 2),
                           const SizedBox(height: 2),
                           Text(
                             [if (count > 0) tr('{n} серій', {'n': count}), text(p['provider_label']), text(p['quality'])].whereType<String>().join(' · '),
@@ -1105,7 +1063,7 @@ class _VoicePickerScreenState extends State<VoicePickerScreen> {
                           ),
                         ]),
                       ),
-                      if (active) const Icon(LucideIcons.circleCheck, color: primary),
+                      if (active) Icon(LucideIcons.circleCheck, color: cinemaAccent),
                     ]),
                   ),
                 );
@@ -1124,9 +1082,9 @@ class _VoiceBadge extends StatelessWidget {
   final bool subs;
 
   static const _tones = [
-    [Color(0xFF6D5DFC), Color(0xFFA855F7)],
+    [Color(0xFF0A84FF), Color(0xFF00D2FF)],
     [Color(0xFF4F8BFF), Color(0xFF38E1FF)],
-    [Color(0xFFF04FD8), Color(0xFFA855F7)],
+    [Color(0xFF38BDF8), Color(0xFF00D2FF)],
     [Color(0xFF34D399), Color(0xFF4F8BFF)],
     [Color(0xFFF5C451), Color(0xFFF0734A)],
   ];
@@ -1162,12 +1120,12 @@ class _PageBar extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(6, 6, 6, 8),
       decoration: BoxDecoration(border: Border(bottom: BorderSide(color: line))),
       child: Row(children: [
-        IconButton(onPressed: onBack, icon: const Icon(LucideIcons.arrowLeft, color: ink)),
+        IconButton(onPressed: onBack, icon: Icon(LucideIcons.arrowLeft, color: ink)),
         const SizedBox(width: 4),
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: display(20)),
-            if (subtitle != null) Text(subtitle!, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(13.5, color: muted)),
+            FitText(title, style: display(20)),
+            if (subtitle != null) FitText(subtitle!, style: body(13.5, color: muted)),
           ]),
         ),
         ?trailing,
@@ -1186,10 +1144,10 @@ class _Hint extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
       padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
-      decoration: BoxDecoration(borderRadius: BorderRadius.circular(20), border: Border.all(color: lineStrong), color: Colors.white.withValues(alpha: 0.03)),
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(20), color: fg.withValues(alpha: 0.03)),
       child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Expanded(child: Text(text, style: body(13.5, color: muted).copyWith(height: 1.45))),
-        IconButton(onPressed: onClose, icon: const Icon(LucideIcons.circleX, color: muted, size: 22)),
+        IconButton(onPressed: onClose, icon: Icon(LucideIcons.circleX, color: muted, size: 22)),
       ]),
     );
   }
@@ -1275,7 +1233,7 @@ class _EpisodeListScreenState extends State<EpisodeListScreen> {
                         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                           Text(
                             widget.seasons.length > 1 ? tr('{s} сезон · {e} серія', {'s': pick.season, 'e': pick.episode}) : tr('{n} серія', {'n': pick.episode}),
-                            style: body(16.5, weight: FontWeight.w700, color: last ? primary : ink),
+                            style: body(16.5, weight: FontWeight.w700, color: last ? cinemaAccent : ink),
                           ),
                           if (at > 0) Text(tr('Переглянуто до {t}', {'t': clock(at.toDouble())}), style: body(13, color: muted)),
                         ]),
@@ -1442,6 +1400,8 @@ class _Playback {
 }
 
 class _MoviePlayerScreenState extends State<MoviePlayerScreen> {
+  /// Власний плеєр застосунку вимкнено: показуємо веб-версію плеєра, як на сайті.
+  static const webOnly = true;
   static const _speeds = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
   static const _hideAfter = Duration(milliseconds: 3500);
 
@@ -1557,7 +1517,8 @@ class _MoviePlayerScreenState extends State<MoviePlayerScreen> {
     setState(() {
       started = false;
       tapAt = 0;
-      embedded = embed;
+      // Лише веб-плеєр балансера з його власними кнопками — як на сайті; свої елементи керування не накладаємо.
+      embedded = embed || webOnly;
       assist = false;
       reported = false;
       resumed = false;
@@ -1652,9 +1613,9 @@ class _MoviePlayerScreenState extends State<MoviePlayerScreen> {
     _show(keep: true);
     final picked = await showModalBottomSheet<String>(
       context: context,
-      backgroundColor: popover,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (sheet) => SafeArea(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      builder: (sheet) => ArcticGlassSheetSurface(child: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
           child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -1665,7 +1626,7 @@ class _MoviePlayerScreenState extends State<MoviePlayerScreen> {
             ]),
           ]),
         ),
-      ),
+      )),
     );
     if (picked != null && picked != quality) {
       unawaited(widget.memory.prefs.setString('cinema.quality', picked));
@@ -1870,9 +1831,9 @@ class _MoviePlayerScreenState extends State<MoviePlayerScreen> {
     _show(keep: true);
     final picked = await showModalBottomSheet<double>(
       context: context,
-      backgroundColor: popover,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (sheet) => SafeArea(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      builder: (sheet) => ArcticGlassSheetSurface(child: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
           child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -1883,7 +1844,7 @@ class _MoviePlayerScreenState extends State<MoviePlayerScreen> {
             ]),
           ]),
         ),
-      ),
+      )),
     );
     if (picked != null) _speed(picked);
     _autoHide();
@@ -1893,10 +1854,10 @@ class _MoviePlayerScreenState extends State<MoviePlayerScreen> {
     _show(keep: true);
     final target = await showModalBottomSheet<Pick>(
       context: context,
-      backgroundColor: popover,
+      backgroundColor: Colors.transparent,
+      elevation: 0,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (sheet) => _EpisodeSheet(seasons: widget.seasons, current: pick, memory: widget.memory),
+      builder: (sheet) => ArcticGlassSheetSurface(child: _EpisodeSheet(seasons: widget.seasons, current: pick, memory: widget.memory)),
     );
     if (target != null && target != pick) {
       _goto(target);
@@ -1992,8 +1953,8 @@ class _MoviePlayerScreenState extends State<MoviePlayerScreen> {
               const SizedBox(width: 6),
               Expanded(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-                  Text(widget.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: display(17, color: Colors.white)),
-                  if (_subtitle.isNotEmpty) Text(_subtitle, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(13, color: Colors.white70)),
+                  FitText(widget.title, style: display(17, color: Colors.white)),
+                  if (_subtitle.isNotEmpty) FitText(_subtitle, style: body(13, color: fgSoft)),
                 ]),
               ),
               _PillButton(icon: LucideIcons.gauge, label: speed == 1 ? '1x' : '${speed}x', onTap: _speedMenu),
@@ -2096,10 +2057,10 @@ class _SeekBarState extends State<_SeekBar> {
               child: SliderTheme(
                 data: SliderTheme.of(context).copyWith(
                   trackHeight: 3.5,
-                  activeTrackColor: primary,
-                  inactiveTrackColor: Colors.white24,
+                  activeTrackColor: cinemaAccent,
+                  inactiveTrackColor: fg.withValues(alpha: 0.24),
                   thumbColor: Colors.white,
-                  overlayColor: primary.withValues(alpha: 0.2),
+                  overlayColor: cinemaAccent.withValues(alpha: 0.2),
                   thumbShape: RoundSliderThumbShape(enabledThumbRadius: dragging == null ? 6 : 9),
                   overlayShape: const RoundSliderOverlayShape(overlayRadius: 16),
                 ),
@@ -2143,7 +2104,7 @@ class _TimeLabel extends StatelessWidget {
         builder: (context, position, _) => Text.rich(
           TextSpan(children: [
             TextSpan(text: clock(position), style: body(13.5, color: Colors.white, weight: FontWeight.w600)),
-            TextSpan(text: ' / ${duration > 0 ? clock(duration) : '--:--'}', style: body(13.5, color: Colors.white60)),
+            TextSpan(text: ' / ${duration > 0 ? clock(duration) : '--:--'}', style: body(13.5, color: fg.withValues(alpha: 0.60))),
           ]),
         ),
       ),
@@ -2169,7 +2130,7 @@ class _BigPlay extends StatelessWidget {
           width: 76,
           height: 76,
           child: Stack(alignment: Alignment.center, children: [
-            if (loading) const SizedBox(width: 76, height: 76, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white70)),
+            if (loading) SizedBox(width: 76, height: 76, child: CircularProgressIndicator(strokeWidth: 2.5, color: fgSoft)),
             AnimatedSwitcher(
               duration: const Duration(milliseconds: 180),
               transitionBuilder: (child, anim) => ScaleTransition(scale: anim, child: child),
@@ -2195,7 +2156,7 @@ class _PlayerIcon extends StatelessWidget {
       onPressed: onTap,
       tooltip: tooltip,
       iconSize: size,
-      icon: Icon(icon, color: onTap == null ? Colors.white30 : Colors.white),
+      icon: Icon(icon, color: onTap == null ? fg.withValues(alpha: 0.30) : Colors.white),
     );
   }
 }
@@ -2209,7 +2170,7 @@ class _PillButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.white.withValues(alpha: 0.12),
+      color: fg.withValues(alpha: 0.12),
       shape: const StadiumBorder(),
       child: InkWell(
         customBorder: const StadiumBorder(),
@@ -2248,7 +2209,7 @@ class _SkipRipple extends StatelessWidget {
           builder: (context, t, child) => Opacity(opacity: t, child: child),
           child: DecoratedBox(
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.12),
+              color: fg.withValues(alpha: 0.12),
               borderRadius: dir < 0 ? const BorderRadius.horizontal(right: Radius.circular(400)) : const BorderRadius.horizontal(left: Radius.circular(400)),
             ),
             child: Center(
@@ -2415,7 +2376,7 @@ class _EpisodeCell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: active ? primary : Colors.white.withValues(alpha: started ? 0.04 : 0.08),
+      color: active ? cinemaAccent : fg.withValues(alpha: started ? 0.04 : 0.08),
       borderRadius: BorderRadius.circular(10),
       child: InkWell(
         borderRadius: BorderRadius.circular(10),

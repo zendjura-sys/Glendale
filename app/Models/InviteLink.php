@@ -8,7 +8,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
 
 /**
- * Посилання, за яким людина вступає в клан, сім’ю або спільноту.
+ * Посилання, за яким людина вступає в клан, сім’ю або спільноту, приєднується до паті
+ * чи одразу заходить у голосову кімнату.
  *
  * @property int $id
  * @property string $token
@@ -26,7 +27,11 @@ class InviteLink extends Model
 
     public const COMMUNITY = 'community';
 
-    public const KINDS = [self::CLAN, self::FAMILY, self::COMMUNITY];
+    public const PARTY = 'party';
+
+    public const VOICE = 'voice';
+
+    public const KINDS = [self::CLAN, self::FAMILY, self::COMMUNITY, self::PARTY, self::VOICE];
 
     protected function casts(): array
     {

@@ -46,6 +46,7 @@ type Rules = {
     order_hours: number;
     card_renewals: boolean;
     offer_save_card: boolean;
+    trial_days: number;
     badges: PaymentBadge[];
 };
 
@@ -96,11 +97,10 @@ type Props = {
 };
 
 const button =
-    'inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[var(--btn-primary,#6366f1)] px-4 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-40';
+    'inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-40';
 const ghost =
-    'inline-flex h-9 items-center justify-center gap-1.5 rounded-xl bg-white/[0.06] px-3 text-xs font-semibold text-white/80 transition hover:bg-white/10 disabled:opacity-40';
-const field =
-    'h-9 w-full rounded-lg border border-white/10 bg-white/[0.04] px-2 text-sm text-white';
+    'inline-flex h-9 items-center justify-center gap-1.5 rounded-xl gc-solid-2 px-3 text-xs font-semibold text-white/80 transition hover:bg-white/10 disabled:opacity-40';
+const field = 'h-9 w-full rounded-lg   gc-solid-2 px-2 text-sm text-white';
 
 const KIND_LABELS = (): Record<Product['kind'], string> => ({
     plus: tr('GameCon+'),
@@ -117,6 +117,7 @@ const PROMO_LABELS = (): Record<string, string> => ({
 });
 
 const BADGE_LABELS: Record<PaymentBadge, string> = {
+    plata: 'plata by mono',
     visa: 'Visa',
     mastercard: 'Mastercard',
     maestro: 'Maestro',
@@ -157,7 +158,7 @@ export default function AdminBilling({
             />
 
             {!monobank && (
-                <p className="mb-5 rounded-2xl border border-amber-300/30 bg-amber-300/10 p-4 text-sm text-amber-100">
+                <p className="mb-5 rounded-2xl bg-amber-300/10 p-4 text-sm text-amber-100">
                     {tr(
                         'Оплата карткою вимкнена: вставте токен еквайрингу monobank в Адмінка → Інтеграції → monobank.',
                     )}
@@ -226,7 +227,7 @@ function OrdersList({ orders }: { orders: Props['orders'] }) {
     };
 
     return (
-        <section className="glass mb-5 rounded-3xl p-5">
+        <section className="gc-solid mb-5 rounded-2xl p-5">
             <h2 className="font-display text-lg font-bold text-white">
                 {tr('Оплати')}
             </h2>
@@ -303,7 +304,7 @@ function OrdersList({ orders }: { orders: Props['orders'] }) {
                                 {formatDate(o.paid_at ?? o.created_at)}
                             </span>
                             {o.failure && o.status !== 'paid' && (
-                                <span className="w-full text-xs text-rose-200/70">
+                                <span className="w-full text-xs text-red-400/70">
                                     {o.failure}
                                 </span>
                             )}
@@ -385,7 +386,7 @@ function ProductsForm({ products }: { products: Product[] }) {
     };
 
     return (
-        <form onSubmit={save} className="glass rounded-3xl p-5">
+        <form onSubmit={save} className="gc-solid rounded-2xl p-5">
             <div className="flex flex-wrap items-center gap-3">
                 <h2 className="flex-1 font-display text-lg font-bold text-white">
                     {tr('Тарифи')}
@@ -408,7 +409,7 @@ function ProductsForm({ products }: { products: Product[] }) {
                     <div
                         key={row.isNew ? `new-${i}` : row.key}
                         className={cn(
-                            'grid gap-2 rounded-2xl border border-white/[0.08] bg-white/[0.03] p-3 sm:grid-cols-[1fr_1fr_90px_90px_80px] lg:grid-cols-[150px_1.4fr_110px_90px_90px_80px_120px_auto]',
+                            'gc-solid-2 grid gap-2 rounded-2xl p-3 sm:grid-cols-[1fr_1fr_90px_90px_80px] lg:grid-cols-[150px_1.4fr_110px_90px_90px_80px_120px_auto]',
                             !row.enabled && 'opacity-60',
                         )}
                     >
@@ -587,7 +588,7 @@ function ProductsForm({ products }: { products: Product[] }) {
                                 {row.custom && (
                                     <button
                                         type="button"
-                                        className="p-1.5 text-white/40 hover:text-rose-200"
+                                        className="p-1.5 text-white/40 hover:text-red-400"
                                         onClick={() =>
                                             setRows((list) =>
                                                 list.filter((_, j) => j !== i),
@@ -605,7 +606,7 @@ function ProductsForm({ products }: { products: Product[] }) {
                             .map(([key, message]) => (
                                 <p
                                     key={key}
-                                    className="text-xs text-rose-300 sm:col-span-full"
+                                    className="text-xs text-red-400 sm:col-span-full"
                                 >
                                     {message}
                                 </p>
@@ -623,19 +624,21 @@ function NumberField({
     value,
     onChange,
     max,
+    min = 1,
 }: {
     label: string;
     hint?: string;
     value: number;
     onChange: (value: number) => void;
     max: number;
+    min?: number;
 }) {
     return (
         <label className="block text-sm text-white/80">
             {label}
             <input
                 type="number"
-                min={1}
+                min={min}
                 max={max}
                 className={cn(field, 'mt-1')}
                 value={value}
@@ -662,7 +665,7 @@ function RulesForm({ rules }: { rules: Rules }) {
                 event.preventDefault();
                 form.put('/admin/billing/rules', { preserveScroll: true });
             }}
-            className="glass space-y-3 rounded-3xl p-5"
+            className="gc-solid space-y-3 rounded-2xl p-5"
         >
             <h2 className="font-display text-lg font-bold text-white">
                 {tr('Правила підписок')}
@@ -694,6 +697,14 @@ function RulesForm({ rules }: { rules: Rules }) {
                     value={form.data.order_hours}
                     onChange={(v) => form.setData('order_hours', v)}
                     max={72}
+                />
+                <NumberField
+                    label={tr('Пробний період, днів')}
+                    hint={tr('один раз на акаунт; 0 — вимкнено')}
+                    value={form.data.trial_days}
+                    onChange={(v) => form.setData('trial_days', v)}
+                    min={0}
+                    max={30}
                 />
             </div>
             <label className="flex items-center gap-3 text-sm text-white/80">
@@ -727,10 +738,10 @@ function RulesForm({ rules }: { rules: Rules }) {
                                 type="button"
                                 onClick={() => toggleBadge(key)}
                                 className={cn(
-                                    'rounded-lg border px-2.5 py-1 text-xs transition',
+                                    'rounded-lg px-2.5 py-1 text-xs transition',
                                     form.data.badges.includes(key)
                                         ? 'border-indigo-400/50 bg-indigo-500/15 text-white'
-                                        : 'border-white/10 text-white/50 hover:text-white',
+                                        : 'text-white/50 hover:text-white',
                                 )}
                             >
                                 {BADGE_LABELS[key]}
@@ -771,7 +782,7 @@ function GooglePayForm({
                 event.preventDefault();
                 form.put('/admin/billing/google-pay', { preserveScroll: true });
             }}
-            className="glass space-y-3 rounded-3xl p-5"
+            className="gc-solid space-y-3 rounded-2xl p-5"
         >
             <div className="flex items-center gap-3">
                 <h2 className="flex-1 font-display text-lg font-bold text-white">
@@ -848,7 +859,7 @@ function GooglePayForm({
             <button type="submit" className={button} disabled={form.processing}>
                 {tr('Зберегти')}
             </button>
-            <p className="border-t border-white/[0.06] pt-3 text-xs text-white/40">
+            <p className="pt-3 text-xs text-white/40">
                 {tr('Адреса вебхука monobank (підставляється автоматично):')}{' '}
                 <code className="font-mono break-all text-white/70">
                     {webhook}
@@ -868,7 +879,7 @@ function LegacySection({
     transactions: Props['transactions'];
 }) {
     return (
-        <section className="glass rounded-3xl p-5">
+        <section className="gc-solid rounded-2xl p-5">
             <h2 className="font-display text-lg font-bold text-white">
                 {tr('Старий баланс')}
             </h2>
@@ -978,7 +989,7 @@ function LegacySection({
                                                 'tabular-nums',
                                                 t.amount > 0
                                                     ? 'text-emerald-200'
-                                                    : 'text-rose-200',
+                                                    : 'text-red-400',
                                             )}
                                         >
                                             {t.amount > 0 ? '+' : ''}

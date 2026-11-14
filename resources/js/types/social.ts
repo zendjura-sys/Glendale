@@ -10,6 +10,10 @@ export type PlayingInfo = {
     note: string | null;
     until: string;
     auto: boolean;
+    /** manual | steam | discord */
+    source?: string | null;
+    /** З якого часу в цій грі. */
+    since?: string | null;
 };
 
 export type UserCard = {
@@ -19,12 +23,38 @@ export type UserCard = {
     first_name: string;
     avatar_url: string | null;
     is_online: boolean;
+    /** Мережевий статус: online | idle | dnd | offline. */
+    presence?: string | null;
     is_verified: boolean;
+    /** Логотипи сім'ї, клану, сервера й гри біля ніка. */
+    badges?: import('@/components/gc/affiliation-badges').AffiliationBadge[];
+    /** Команда сайту: 'admin' | 'moderator'. */
+    staff?: string | null;
+    /** Назва й колір ролі команди, створеної адміністратором. */
+    staff_title?: { name: string; color: string } | null;
+    /** Власна роль-підпис підписника GameCon+. */
+    title?: { name: string; color: string } | null;
+    /** Персонаж-аватар (конструктор у налаштуваннях); у шоу говорить замість фото. */
+    character?: Partial<import('@/lib/character').CharacterConfig> | null;
+    /** Ролі-плашки (звичайні, святкові, нагородні, преміум) з Адмінка → Ролі. */
+    roles?: UserRoleCard[];
+    /** Вид позначки (верифікація 2.0): identity, creator, business, organization. */
+    verified_kind?: string | null;
+    /** Спеціальний акаунт (стрімер, бізнес…); null — особистий. */
+    account_type?: string | null;
     status: string | null;
+    /** Емодзі швидкого статусу («🎮»); null — немає. */
+    status_emoji?: string | null;
+    /** До якого часу діє статус (ISO); null — постійний. */
+    status_until?: string | null;
     /** «Граю в…»: сервер GTA або гра (автоматично чи вручну). */
     playing?: PlayingInfo | null;
     /** GameCon+: null — без підписки. */
     plus?: PlusMark | null;
+    /** Вдягнута косметика сезонного пропуску: null — нічого. */
+    cosmetics?: Cosmetics | null;
+    event_frame?: string | null;
+    live?: boolean;
     /** Лише в чаті сім’ї. */
     family_rank?: { rank: number; title: string | null; tag: string };
 };
@@ -64,24 +94,46 @@ export type CommentItem = {
     created_at: string;
     user: UserCard;
     can_delete: boolean;
+    can_thank?: boolean;
+    thanked?: boolean;
+    badge?: { title: string; color: string | null } | null;
+    /** Приховано (токсичність або вручну) — показуємо згорнутим. */
+    hidden?: { reason: string | null } | null;
+    can_moderate?: boolean;
 };
 
 export type Visibility = 'public' | 'friends' | 'private';
 
+/** #тег гри в тексті запису. */
+export type GameTag = { tag: string; slug: string; name: string };
+
 export type PostItem = {
     id: number;
     body: string | null;
+    /** #Згадки ігор у тексті. */
+    games?: GameTag[];
     spoiler?: boolean;
     sticker?: string | null;
     visibility: Visibility;
     is_pinned: boolean;
     comments_enabled: boolean;
+    /** Повільний режим коментарів (гарячий запис). */
+    slow_mode?: { seconds: number; until: string; auto: boolean } | null;
     likes_count: number;
     comments_count: number;
     views_count: number;
     created_at: string;
     edited_at?: string | null;
     author: UserCard;
+    /** Сім'я автора (верифікована): значок «Лідер STARK» і сервер під ім'ям. */
+    family?: {
+        tag: string;
+        name: string;
+        href: string;
+        rank: number;
+        rank_title: string;
+        server: string | null;
+    } | null;
     badge?: { title: string; color: string | null } | null;
     tag?: { name: string; href: string } | null;
     pending?: boolean;
@@ -114,12 +166,25 @@ export type PostItem = {
         image: string | null;
     } | null;
     saved?: boolean;
+    subscribers_only?: boolean;
+    locked?: boolean;
     poll?: {
         id: number;
         question: string;
         total: number;
         voted: number | null;
-        options: { id: number; label: string; votes: number }[];
+        anonymous?: boolean;
+        options: {
+            id: number;
+            label: string;
+            votes: number;
+            voters?: {
+                id: number;
+                name: string;
+                username: string;
+                avatar_url: string | null;
+            }[];
+        }[];
     } | null;
     reaction?: string | null;
     liked: boolean;
@@ -139,6 +204,12 @@ export type PostItem = {
         body: string;
     } | null;
     muted?: boolean;
+    series?: {
+        id: number;
+        title: string;
+        count: number;
+        position: number;
+    } | null;
     comments: CommentItem[];
     can: {
         delete: boolean;
@@ -149,6 +220,8 @@ export type PostItem = {
         mute?: boolean;
         share?: boolean;
         quote?: boolean;
+        series?: boolean;
+        slow_mode?: boolean;
     };
 };
 
@@ -170,6 +243,20 @@ export type NotificationItem = {
     excerpt: string | null;
     url: string | null;
     actor: UserCard | null;
+    /** Згруповане сповіщення: скільки людей і до трьох останніх. */
+    count?: number;
+    actors?: UserCard[];
+    /** Тривога: червона — в укриття, жовта — увага; ended — відбій. */
+    alert?: {
+        severity: 'red' | 'yellow' | 'clear';
+        type: string;
+        ended: boolean;
+        region: string | null;
+        /** Колір типу тривоги (#EF4444, #F59E0B, #F97316…). */
+        accent?: string | null;
+        /** Радіаційна — жовта «зебра». */
+        striped?: boolean;
+    } | null;
     read: boolean;
     created_at: string;
 };
@@ -213,9 +300,28 @@ export type ClanCard = {
 };
 
 /** Оформлення GameCon+ у картці: готові кольори ніку й рамки (null — стандартні). */
+/** Косметика сезонного пропуску на картці користувача (значення лише з сервера). */
+export type Cosmetics = {
+    frame: string[] | null;
+    name: string[] | null;
+    badge: { icon: string; color: string; name: string } | null;
+};
+
 export type PlusMark = {
     name: string[] | null;
     frame: string[] | null;
     /** Анімація ніку: flow — перелив, shine — відблиск. */
-    fx?: 'flow' | 'shine' | null;
+    fx?: 'flow' | 'shine' | 'neon' | 'rainbow' | null;
+    /** Рух рамки аватара (GameCon+). */
+    motion?: 'spin' | 'pulse' | 'glint' | null;
+};
+
+/** Роль-плашка користувача («old», «Big Sponsor»). */
+export type UserRoleCard = {
+    id: number;
+    name: string;
+    kind: string;
+    color: string;
+    icon: string | null;
+    description: string | null;
 };

@@ -90,7 +90,7 @@ export function MusicPicker({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="glass-strong flex max-h-[85dvh] flex-col gap-0 rounded-3xl border-white/10 p-0 text-white sm:max-w-lg">
+            <DialogContent className="glass-strong flex max-h-[85dvh] flex-col gap-0 rounded-3xl p-0 text-white sm:max-w-lg">
                 <div className="p-5 pb-3">
                     <DialogTitle className="font-display text-xl">
                         {tr('Прикріпити музику')}
@@ -98,7 +98,7 @@ export function MusicPicker({
                     <DialogDescription className="mt-1 text-sm text-white/50">
                         {tr('Оберіть трек — він з’явиться у записі з плеєром.')}
                     </DialogDescription>
-                    <div className="mt-4 flex gap-1 rounded-xl bg-white/[0.04] p-1">
+                    <div className="gc-solid-2 mt-4 flex gap-1 rounded-xl p-1">
                         {sources.map((item) => (
                             <button
                                 key={item.key}
@@ -139,7 +139,7 @@ export function MusicPicker({
 
                 <div className="min-h-[240px] flex-1 overflow-y-auto px-3 pb-3">
                     {error ? (
-                        <p className="px-3 py-10 text-center text-sm text-rose-300">
+                        <p className="px-3 py-10 text-center text-sm text-red-400">
                             {error}
                         </p>
                     ) : tracks.length === 0 && !loading ? (
@@ -172,7 +172,7 @@ export function MusicPicker({
                                             onPick(track);
                                             onOpenChange(false);
                                         }}
-                                        className="flex w-full items-center gap-3 rounded-2xl p-2 text-left transition hover:bg-white/[0.06]"
+                                        className="flex w-full items-center gap-3 rounded-2xl p-2 text-left transition hover:bg-[var(--gc-l3)]"
                                     >
                                         <TrackCover
                                             url={track.cover_url}

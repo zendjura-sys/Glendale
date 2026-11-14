@@ -87,7 +87,7 @@ export default function AdminPosts({ posts, filters }: Props) {
                         : tr('Усього: {total}', { total: posts.total })
                 }
                 actions={
-                    <div className="glass flex rounded-xl p-1 text-sm">
+                    <div className="gc-solid flex rounded-xl p-1 text-sm">
                         {[
                             { label: tr('Опубліковані'), value: false },
                             { label: tr('Кошик'), value: true },
@@ -99,7 +99,7 @@ export default function AdminPosts({ posts, filters }: Props) {
                                 className={cn(
                                     'rounded-lg px-3.5 py-1.5 font-medium transition',
                                     filters.trashed === tab.value
-                                        ? 'bg-gradient-brand text-white'
+                                        ? 'bg-sky-500 text-white'
                                         : 'text-white/55 hover:text-white',
                                 )}
                             >
@@ -110,7 +110,7 @@ export default function AdminPosts({ posts, filters }: Props) {
                 }
             />
 
-            <div className="glass mb-4 flex flex-wrap items-center gap-2 rounded-2xl p-2.5">
+            <div className="gc-solid mb-4 flex flex-wrap items-center gap-2 rounded-2xl p-2.5">
                 <form
                     onSubmit={submit}
                     className="relative min-w-[220px] flex-1"
@@ -145,7 +145,7 @@ export default function AdminPosts({ posts, filters }: Props) {
                         <article
                             key={p.id}
                             className={cn(
-                                'glass flex gap-4 rounded-2xl p-4',
+                                'gc-solid flex gap-4 rounded-2xl p-4',
                                 p.deleted_at && 'opacity-70',
                             )}
                         >
@@ -202,7 +202,7 @@ export default function AdminPosts({ posts, filters }: Props) {
                                     {!p.deleted_at && (
                                         <Link
                                             href={`/posts/${p.id}`}
-                                            className="ml-auto text-gc-lilac-300 hover:underline"
+                                            className="ml-auto text-sky-400 hover:underline"
                                         >
                                             {tr('Відкрити')}
                                         </Link>
@@ -229,7 +229,7 @@ export default function AdminPosts({ posts, filters }: Props) {
                                 <button
                                     type="button"
                                     onClick={() => remove(p)}
-                                    className="flex size-9 items-center justify-center rounded-xl text-rose-300 transition hover:bg-rose-500/10"
+                                    className="flex size-9 items-center justify-center rounded-xl text-red-400 transition hover:bg-red-500/10"
                                     title={
                                         p.deleted_at
                                             ? tr('Видалити назавжди')
@@ -243,7 +243,7 @@ export default function AdminPosts({ posts, filters }: Props) {
                     );
                 })}
                 {posts.data.length === 0 && (
-                    <div className="glass rounded-3xl px-6 py-14 text-center text-sm text-white/40">
+                    <div className="gc-solid rounded-2xl px-6 py-14 text-center text-sm text-white/40">
                         {tr('Записів не знайдено')}
                     </div>
                 )}

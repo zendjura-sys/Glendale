@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
-/** Масова проставка плеєрів: «лише нові» не чіпає наявні, «замінити» оновлює; звіт — що змінено. */
+/** Масове призначення плеєрів: «лише нові» не чіпає наявні, «замінити» оновлює; звіт — що змінено. */
 class BulkPlayersTest extends TestCase
 {
     use RefreshDatabase;

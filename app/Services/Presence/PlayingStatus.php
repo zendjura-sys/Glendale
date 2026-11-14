@@ -6,8 +6,10 @@ use App\Models\Game;
 use App\Models\GtaServer;
 use App\Models\PlayedPlace;
 use App\Models\User;
+use App\Services\Cards\CardDrops;
 use App\Services\FollowAlerts;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 /**
@@ -65,13 +67,26 @@ class PlayingStatus
             'playing_note' => $target['note'] !== null ? Str::limit($target['note'], 60, '') : null,
             'playing_until' => now()->addMinutes($minutes),
             'playing_source' => $source,
+            // Нова гра — відлік з нуля; та сама — лишаємо, коли почали.
+            'playing_since' => $changedTarget || $user->playing_since === null || $user->playing_until?->isPast() ? now() : $user->playing_since,
         ])->save();
 
+        // Гра з автоматичного статусу (Steam/Discord, не вручну) — колекційна картка цієї гри раз на тиждень.
+        if ($target['kind'] === PlayedPlace::GAME && $target['id'] !== null && $source !== self::SOURCE_MANUAL) {
+            app(CardDrops::class)->playing($user, (int) $target['id']);
+        }
         if (in_array($target['kind'], [PlayedPlace::GAME, PlayedPlace::SERVER], true) && $target['id'] !== null) {
             PlayedPlace::query()->firstOrCreate([
                 'user_id' => $user->id,
                 'kind' => $target['kind'],
                 'subject_id' => $target['id'],
+            ]);
+            // День гри — для «Підсумків року» (топ ігор і серверів за кількістю днів).
+            DB::table('play_days')->insertOrIgnore([
+                'user_id' => $user->id,
+                'kind' => $target['kind'],
+                'subject_id' => $target['id'],
+                'day' => now()->toDateString(),
             ]);
         }
 
@@ -84,7 +99,7 @@ class PlayingStatus
     {
         $user->forceFill([
             'playing_kind' => null, 'playing_ref_id' => null, 'playing_label' => null, 'playing_icon' => null,
-            'playing_url' => null, 'playing_note' => null, 'playing_until' => null, 'playing_source' => null,
+            'playing_url' => null, 'playing_note' => null, 'playing_until' => null, 'playing_source' => null, 'playing_since' => null,
         ])->save();
     }
 
@@ -276,7 +291,7 @@ class PlayingStatus
      *
      * @return array<string, int>
      */
-    private function steamApps(): array
+    public function steamApps(): array
     {
         /** @var array<string, int> */
         return Cache::remember('presence.steam', now()->addMinutes(30), function () {

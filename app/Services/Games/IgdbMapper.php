@@ -49,12 +49,12 @@ class IgdbMapper
     private const SOCIAL = [
         'discord.gg' => 'discord', 'discord.com' => 'discord', 'twitch.tv' => 'twitch', 'youtube.com' => 'youtube', 'youtu.be' => 'youtube',
         'reddit.com' => 'reddit', 'x.com' => 'twitter', 'twitter.com' => 'twitter', 'facebook.com' => 'facebook', 'instagram.com' => 'instagram',
-        'tiktok.com' => 'tiktok', 'vk.com' => 'vk', 'wikipedia.org' => 'wikipedia', 'fandom.com' => 'wiki', 't.me' => 'telegram',
+        'tiktok.com' => 'tiktok', 'wikipedia.org' => 'wikipedia', 'fandom.com' => 'wiki', 't.me' => 'telegram',
     ];
 
     public const SOCIAL_LABELS = [
         'official' => 'Офіційний сайт', 'discord' => 'Discord', 'twitch' => 'Twitch', 'youtube' => 'YouTube', 'reddit' => 'Reddit',
-        'twitter' => 'X (Twitter)', 'facebook' => 'Facebook', 'instagram' => 'Instagram', 'tiktok' => 'TikTok', 'vk' => 'VK',
+        'twitter' => 'X (Twitter)', 'facebook' => 'Facebook', 'instagram' => 'Instagram', 'tiktok' => 'TikTok',
         'wikipedia' => 'Вікіпедія', 'wiki' => 'Вікі гри', 'telegram' => 'Telegram',
     ];
 

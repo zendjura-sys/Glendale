@@ -1,14 +1,33 @@
 import { router, useForm } from '@inertiajs/react';
 import {
     Bot,
+    CalendarClock,
+    CalendarDays,
+    ClipboardList,
     FileBarChart,
     ImagePlus,
+    LayoutGrid,
+    Package,
+    PiggyBank,
     Send,
     Settings as SettingsIcon,
+    Server,
     SlidersHorizontal,
+    Trash2,
+    Trophy,
+    UserRound,
+    Siren,
 } from 'lucide-react';
+import {
+    FeatureTile,
+    SaveBar,
+    SettingsAnchor,
+    SettingsNav,
+} from '@/components/gc/settings-kit';
 import { DonationJarForm } from '@/components/gc/donation-jar';
-import { useRef } from 'react';
+import { OnboardingSettings } from '@/components/families/onboarding-settings';
+import type { Question, Step } from '@/components/families/onboarding-settings';
+import { useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { FamilyLogo } from '@/components/families/family-logo';
 import { FamilyShell } from '@/components/families/family-shell';
@@ -28,6 +47,8 @@ import { uah } from '@/lib/money';
 import { cn } from '@/lib/utils';
 import type { FamilyShellProps } from '@/types';
 import { BotsCard } from '@/components/bots/bots-card';
+import { DeleteZone } from '@/components/gc/delete-zone';
+import { PlaceDialog } from '@/components/alerts/alert-place';
 import { tr } from '@/lib/i18n';
 
 type Settings = {
@@ -38,11 +59,21 @@ type Settings = {
     discipline: Record<string, number | string>;
     cashout: Record<string, number>;
     digest: Record<string, boolean>;
+    sections: Record<string, boolean>;
+    shifts: Record<string, number | boolean>;
 };
 
 type Props = FamilyShellProps & {
     settings: Settings;
+    onboarding: { questions: Question[]; steps: Step[] };
     jar: { url: string | null; note: string | null };
+    can_delete: boolean;
+    server: {
+        current: number;
+        servers: { id: number; name: string }[];
+        can_change: boolean;
+        next_at: string | null;
+    };
     profile: {
         name: string;
         tag: string;
@@ -53,6 +84,7 @@ type Props = FamilyShellProps & {
         discord: string | null;
         telegram_token: string | null;
         telegram_chat: string | null;
+        alerts: { id: string; name: string; path: string } | null;
     };
     digest: {
         text: string;
@@ -108,7 +140,45 @@ const labels: Record<string, Record<string, string>> = {
         enabled: tr('Щотижневий звіт (нд 23:59)'),
         chat: tr('Публікувати в чат сім’ї'),
     },
+    shifts: {
+        self_claim: tr('Учасники самі беруть вільні зміни'),
+        week_limit: tr('Ліміт змін на людину за тиждень (0 — без ліміту)'),
+        remind: tr('Нагадувати за годину до зміни'),
+    },
 };
+
+/** Розділи, які можна вимкнути: вкладка зникає, сторінка й дії відповідають 404. */
+const SECTION_TILES = () =>
+    [
+        {
+            group: 'sections',
+            key: 'events',
+            icon: CalendarDays,
+            label: tr('Події'),
+            text: tr('Збори, check-in, альбоми й бали в рейтинг'),
+        },
+        {
+            group: 'shifts',
+            key: 'enabled',
+            icon: CalendarClock,
+            label: tr('Зміни'),
+            text: tr('Календар чергувань: хто й коли на складі, у патрулі'),
+        },
+        {
+            group: 'sections',
+            key: 'warehouse',
+            icon: Package,
+            label: tr('Склад'),
+            text: tr('Облік предметів, видача й повернення'),
+        },
+        {
+            group: 'sections',
+            key: 'rating',
+            icon: Trophy,
+            label: tr('Рейтинг'),
+            text: tr('Таблиця учасників і сезони'),
+        },
+    ] as const;
 
 const groups: { key: keyof Settings; title: string }[] = [
     { key: 'rates', title: tr('Ставки винагород') },
@@ -118,7 +188,9 @@ const groups: { key: keyof Settings; title: string }[] = [
     { key: 'discipline', title: tr('Дисципліна') },
     { key: 'cashout', title: tr('Виплати') },
     { key: 'digest', title: tr('Тижневий звіт') },
+    { key: 'shifts', title: tr('Зміни') },
 ];
+const HIDDEN: Record<string, string[]> = { shifts: ['enabled'] };
 
 export default function FamilySettings(props: Props) {
     const { family, settings, profile, webhooks, digest, jar } = props;
@@ -126,20 +198,66 @@ export default function FamilySettings(props: Props) {
 
     return (
         <FamilyShell {...props} title={tr('Налаштування')}>
-            <ProfilePanel
-                action={`${base}/settings/profile`}
-                family={family}
-                profile={profile}
+            <SettingsNav
+                items={[
+                    { id: 'profile', label: tr('Профіль'), icon: UserRound },
+                    { id: 'sections', label: tr('Розділи'), icon: LayoutGrid },
+                    {
+                        id: 'rules',
+                        label: tr('Правила й ставки'),
+                        icon: SlidersHorizontal,
+                    },
+                    {
+                        id: 'onboarding',
+                        label: tr('Анкета й новачки'),
+                        icon: ClipboardList,
+                    },
+                    { id: 'jar', label: tr('Банка'), icon: PiggyBank },
+                    { id: 'bots', label: tr('Боти й звіт'), icon: Bot },
+                    ...(props.can_delete
+                        ? [
+                              {
+                                  id: 'danger',
+                                  label: tr('Видалення'),
+                                  icon: Trash2,
+                              },
+                          ]
+                        : []),
+                ]}
             />
-            <SettingsPanel action={`${base}/settings`} settings={settings} />
-            <DonationJarForm
-                action={`${base}/settings/jar`}
-                initial={jar}
-                hint={tr(
-                    'Вставте посилання на банку Monobank — на сторінці сім’ї з’явиться картка «Підтримати» з прогресом збору. Порожнє поле — прибрати картку.',
+            <SettingsAnchor id="profile">
+                <ProfilePanel
+                    action={`${base}/settings/profile`}
+                    family={family}
+                    profile={profile}
+                />
+                {props.server.can_change && (
+                    <ServerPanel
+                        action={`${base}/settings/server`}
+                        server={props.server}
+                    />
                 )}
-            />
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            </SettingsAnchor>
+            <SettingsPanel action={`${base}/settings`} settings={settings} />
+            <SettingsAnchor id="onboarding">
+                <OnboardingSettings
+                    action={`${base}/settings/onboarding`}
+                    initial={props.onboarding}
+                />
+            </SettingsAnchor>
+            <SettingsAnchor id="jar">
+                <DonationJarForm
+                    action={`${base}/settings/jar`}
+                    initial={jar}
+                    hint={tr(
+                        'Вставте посилання на банку Monobank — на сторінці сім’ї з’явиться картка «Підтримати» з прогресом збору. Порожнє поле — прибрати картку.',
+                    )}
+                />
+            </SettingsAnchor>
+            <div
+                id="bots"
+                className="grid scroll-mt-40 grid-cols-1 gap-4 lg:grid-cols-2"
+            >
                 <BotsCard type="family" id={family.id} />
                 <WebhooksPanel base={base} webhooks={webhooks} />
                 <Panel
@@ -176,6 +294,18 @@ export default function FamilySettings(props: Props) {
                     </pre>
                 </Panel>
             </div>
+            {props.can_delete && (
+                <SettingsAnchor id="danger">
+                    <DeleteZone
+                        title={tr('Видалення сім’ї')}
+                        description={tr(
+                            'Сім’я зникне для всіх учасників разом зі штабом, банком і складом.',
+                        )}
+                        slug={family.slug}
+                        action={base}
+                    />
+                </SettingsAnchor>
+            )}
         </FamilyShell>
     );
 }
@@ -340,109 +470,151 @@ function SettingsPanel({
     const error = (group: string, key: string) =>
         (form.errors as Record<string, string>)[`${group}.${key}`];
 
-    return (
-        <Panel
-            title={tr('Правила й ставки')}
-            icon={SlidersHorizontal}
-            actions={
-                <button
-                    type="button"
-                    disabled={form.processing || !form.isDirty}
-                    onClick={() => form.put(action, { preserveScroll: true })}
-                    className={btnPrimary}
-                >
-                    {tr('Зберегти')}
-                </button>
-            }
-        >
-            <p className="mb-4 text-xs text-white/45">
-                {tr(
-                    'Кожна зміна записується в журнал аудиту (було → стало). Нові ставки діють для звітів, схвалених після збереження.',
-                )}
-            </p>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-                {groups.map((g) => (
-                    <SettingsGroup key={g.key} title={g.title}>
-                        {Object.entries(form.data[g.key]).map(
-                            ([key, value]) => {
-                                const label = labels[g.key]?.[key] ?? key;
-                                if (typeof value === 'boolean') {
-                                    return (
-                                        <label
-                                            key={key}
-                                            className="flex items-center justify-between gap-3 text-sm text-white/70"
-                                        >
-                                            {label}
-                                            <Toggle
-                                                checked={value}
-                                                onChange={(v) =>
-                                                    set(g.key, key, v)
-                                                }
-                                                label={label}
-                                            />
-                                        </label>
-                                    );
-                                }
-                                if (key === 'escalation') {
-                                    return (
-                                        <Field key={key} label={label}>
-                                            <select
-                                                value={String(value)}
-                                                onChange={(e) =>
-                                                    set(
-                                                        g.key,
-                                                        key,
-                                                        e.target.value,
-                                                    )
-                                                }
-                                                className={cn(
-                                                    selectClass,
-                                                    'h-10 w-full',
-                                                )}
-                                            >
-                                                <option value="demote">
-                                                    {tr('Знизити ранг')}
-                                                </option>
-                                                <option value="kick">
-                                                    {tr('Виключити')}
-                                                </option>
-                                            </select>
-                                        </Field>
-                                    );
-                                }
+    const save = () => form.put(action, { preserveScroll: true });
 
-                                return (
-                                    <Field
-                                        key={key}
-                                        label={label}
-                                        error={error(g.key, key)}
-                                    >
-                                        <input
-                                            type="number"
-                                            step="any"
-                                            min={0}
-                                            value={String(value)}
-                                            onChange={(e) =>
-                                                set(
-                                                    g.key,
-                                                    key,
-                                                    e.target.value === ''
-                                                        ? ''
-                                                        : Number(
-                                                              e.target.value,
-                                                          ),
-                                                )
-                                            }
-                                            className={cn(inputClass, 'h-10')}
-                                        />
-                                    </Field>
-                                );
-                            },
+    return (
+        <>
+            <SettingsAnchor id="sections">
+                <Panel title={tr('Розділи сім’ї')} icon={LayoutGrid}>
+                    <p className="mb-3 text-xs text-white/45">
+                        {tr(
+                            'Вимкнений розділ зникає з меню сім’ї для всіх, а його сторінки й дії стають недоступні. Дані не видаляються — увімкніть, і все повернеться.',
                         )}
-                    </SettingsGroup>
-                ))}
-            </div>
-        </Panel>
+                    </p>
+                    <div className="grid grid-cols-1 gap-2 md:grid-cols-2 2xl:grid-cols-4">
+                        {SECTION_TILES().map((t) => (
+                            <FeatureTile
+                                key={`${t.group}.${t.key}`}
+                                icon={t.icon}
+                                label={t.label}
+                                text={t.text}
+                                on={Boolean(form.data[t.group][t.key])}
+                                onChange={(v) => set(t.group, t.key, v)}
+                            />
+                        ))}
+                    </div>
+                </Panel>
+            </SettingsAnchor>
+            <SettingsAnchor id="rules">
+                <Panel
+                    title={tr('Правила й ставки')}
+                    icon={SlidersHorizontal}
+                    actions={
+                        <button
+                            type="button"
+                            disabled={form.processing || !form.isDirty}
+                            onClick={save}
+                            className={btnPrimary}
+                        >
+                            {tr('Зберегти')}
+                        </button>
+                    }
+                >
+                    <p className="mb-4 text-xs text-white/45">
+                        {tr(
+                            'Кожна зміна записується в журнал аудиту (було → стало). Нові ставки діють для звітів, схвалених після збереження.',
+                        )}
+                    </p>
+                    <div className="grid grid-cols-1 gap-4 min-[1920px]:grid-cols-4 min-[2400px]:grid-cols-5 md:grid-cols-2 xl:grid-cols-3">
+                        {groups.map((g) => (
+                            <SettingsGroup key={g.key} title={g.title}>
+                                {Object.entries(form.data[g.key])
+                                    .filter(
+                                        ([key]) =>
+                                            !HIDDEN[g.key]?.includes(key),
+                                    )
+                                    .map(([key, value]) => {
+                                        const label =
+                                            labels[g.key]?.[key] ?? key;
+                                        if (typeof value === 'boolean') {
+                                            return (
+                                                <label
+                                                    key={key}
+                                                    className="flex items-center justify-between gap-3 text-sm text-white/70"
+                                                >
+                                                    {label}
+                                                    <Toggle
+                                                        checked={value}
+                                                        onChange={(v) =>
+                                                            set(g.key, key, v)
+                                                        }
+                                                        label={label}
+                                                    />
+                                                </label>
+                                            );
+                                        }
+                                        if (key === 'escalation') {
+                                            return (
+                                                <Field key={key} label={label}>
+                                                    <select
+                                                        value={String(value)}
+                                                        onChange={(e) =>
+                                                            set(
+                                                                g.key,
+                                                                key,
+                                                                e.target.value,
+                                                            )
+                                                        }
+                                                        className={cn(
+                                                            selectClass,
+                                                            'h-10 w-full',
+                                                        )}
+                                                    >
+                                                        <option value="demote">
+                                                            {tr('Знизити ранг')}
+                                                        </option>
+                                                        <option value="kick">
+                                                            {tr('Виключити')}
+                                                        </option>
+                                                    </select>
+                                                </Field>
+                                            );
+                                        }
+
+                                        return (
+                                            <Field
+                                                key={key}
+                                                label={label}
+                                                error={error(g.key, key)}
+                                            >
+                                                <input
+                                                    type="number"
+                                                    step="any"
+                                                    min={0}
+                                                    value={String(value)}
+                                                    onChange={(e) =>
+                                                        set(
+                                                            g.key,
+                                                            key,
+                                                            e.target.value ===
+                                                                ''
+                                                                ? ''
+                                                                : Number(
+                                                                      e.target
+                                                                          .value,
+                                                                  ),
+                                                        )
+                                                    }
+                                                    className={cn(
+                                                        inputClass,
+                                                        'h-10',
+                                                    )}
+                                                />
+                                            </Field>
+                                        );
+                                    })}
+                            </SettingsGroup>
+                        ))}
+                    </div>
+                </Panel>
+            </SettingsAnchor>
+            <SaveBar
+                dirty={form.isDirty}
+                processing={form.processing}
+                onSave={save}
+                onReset={() => form.reset()}
+            />
+        </>
     );
 }
 
@@ -454,7 +626,7 @@ function SettingsGroup({
     children: ReactNode;
 }) {
     return (
-        <div className="space-y-3 rounded-2xl bg-white/[0.03] p-4 ring-1 ring-white/[0.05]">
+        <div className="gc-solid-2 space-y-3 rounded-2xl p-4">
             <div className="text-sm font-semibold text-white">{title}</div>
             {children}
         </div>
@@ -474,7 +646,8 @@ function WebhooksPanel({
         telegram_chat: webhooks.telegram_chat ?? '',
     });
 
-    const clear = (target: 'discord' | 'telegram') =>
+    const [placeOpen, setPlaceOpen] = useState(false);
+    const clear = (target: 'discord' | 'telegram' | 'alerts') =>
         router.put(
             `${base}/settings/webhooks`,
             { clear: target },
@@ -570,6 +743,53 @@ function WebhooksPanel({
                         />
                     </Field>
                 </div>
+                <Field
+                    label={tr('Тривоги в боті')}
+                    hint={
+                        webhooks.alerts
+                            ? webhooks.alerts.path
+                            : tr(
+                                  'Бот напише про початок і відбій тривоги в обраному місці.',
+                              )
+                    }
+                >
+                    <div className="flex gap-2">
+                        <button
+                            type="button"
+                            onClick={() => setPlaceOpen(true)}
+                            className={cn(
+                                inputClass,
+                                'flex items-center gap-2 text-left',
+                            )}
+                        >
+                            <Siren className="size-4 shrink-0 text-white/45" />
+                            <span className="truncate">
+                                {webhooks.alerts?.name ?? tr('Оберіть місце')}
+                            </span>
+                        </button>
+                        {webhooks.alerts && (
+                            <button
+                                type="button"
+                                onClick={() => clear('alerts')}
+                                className={btnGhost}
+                            >
+                                {tr('Вимкнути')}
+                            </button>
+                        )}
+                    </div>
+                </Field>
+                <PlaceDialog
+                    open={placeOpen}
+                    onClose={() => setPlaceOpen(false)}
+                    onPick={(id) => {
+                        setPlaceOpen(false);
+                        router.put(
+                            `${base}/settings/webhooks`,
+                            { alerts: id },
+                            { preserveScroll: true },
+                        );
+                    }}
+                />
                 <div className="flex justify-end gap-2">
                     {webhooks.telegram_token && (
                         <button
@@ -596,6 +816,63 @@ function WebhooksPanel({
                     </button>
                 </div>
             </div>
+        </Panel>
+    );
+}
+
+/** Сервер сім’ї: засновник обирає новий; зміна — не частіше разу на тиждень. */
+function ServerPanel({
+    action,
+    server,
+}: {
+    action: string;
+    server: Props['server'];
+}) {
+    const form = useForm({ server_id: server.current });
+    const changed = form.data.server_id !== server.current;
+
+    return (
+        <Panel title={tr('Сервер сім’ї')} icon={Server} className="mt-4">
+            <p className="mb-3 text-sm text-white/55">
+                {tr(
+                    'Перенесіть сім’ю на інший сервер. Тег має бути вільним на новому сервері; змінювати сервер можна раз на тиждень.',
+                )}
+            </p>
+            <div className="flex flex-col gap-2 sm:flex-row">
+                <select
+                    value={form.data.server_id}
+                    onChange={(e) =>
+                        form.setData('server_id', Number(e.target.value))
+                    }
+                    className={cn(selectClass, 'h-11 flex-1')}
+                    aria-label={tr('Сервер')}
+                >
+                    {server.servers.map((s) => (
+                        <option key={s.id} value={s.id}>
+                            {s.name}
+                        </option>
+                    ))}
+                </select>
+                <button
+                    type="button"
+                    disabled={!changed || form.processing}
+                    onClick={() =>
+                        confirm(tr('Перенести сім’ю на інший сервер?')) &&
+                        form.put(action, { preserveScroll: true })
+                    }
+                    className={cn(btnPrimary, 'h-11 disabled:opacity-50')}
+                >
+                    {tr('Змінити сервер')}
+                </button>
+            </div>
+            <FieldError message={form.errors.server_id} />
+            {server.next_at && (
+                <p className="mt-2 text-xs text-white/45">
+                    {tr('Наступна зміна — {date}', {
+                        date: new Date(server.next_at).toLocaleString(),
+                    })}
+                </p>
+            )}
         </Panel>
     );
 }

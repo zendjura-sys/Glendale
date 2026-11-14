@@ -47,7 +47,7 @@ type Props = {
     search: string;
 };
 
-const card = 'glass mb-5 rounded-2xl p-4';
+const card = 'gc-solid mb-5 rounded-2xl p-4';
 
 /**
  * Адмінка → Номери: коди мереж (+777 куплені, +555 випадкові), шанси рідкісного номера, знижка GameCon+,
@@ -105,7 +105,7 @@ export default function AdminPhones({
             />
 
             <section className="mb-5 grid gap-3 sm:grid-cols-3">
-                <div className="glass rounded-2xl p-4">
+                <div className="gc-solid rounded-2xl p-4">
                     <p className="text-xs text-white/45">
                         {tr('Номерів видано')}
                     </p>
@@ -113,13 +113,13 @@ export default function AdminPhones({
                         {stats.total}
                     </p>
                 </div>
-                <div className="glass rounded-2xl p-4">
+                <div className="gc-solid rounded-2xl p-4">
                     <p className="text-xs text-white/45">{tr('Куплено')}</p>
                     <p className="font-display text-2xl font-bold text-white">
                         {stats.purchased}
                     </p>
                 </div>
-                <div className="glass flex flex-wrap gap-x-3 gap-y-1 rounded-2xl p-4">
+                <div className="gc-solid flex flex-wrap gap-x-3 gap-y-1 rounded-2xl p-4">
                     {PHONE_TIERS.map((t) => (
                         <span
                             key={t}
@@ -306,7 +306,7 @@ export default function AdminPhones({
                     <select
                         value={rule.data.tier}
                         onChange={(e) => rule.setData('tier', e.target.value)}
-                        className="h-9 rounded-md border border-white/10 bg-white/[0.04] px-2 text-sm text-white"
+                        className="gc-solid-2 h-9 rounded-md px-2 text-sm text-white"
                     >
                         <option value="">{tr('Рівень — автоматично')}</option>
                         {PHONE_TIERS.map((t) => (
@@ -380,7 +380,7 @@ export default function AdminPhones({
                                         )
                                     }
                                     aria-label={tr('Прибрати')}
-                                    className="ml-auto flex size-8 items-center justify-center rounded-lg text-white/45 hover:bg-white/[0.06] hover:text-red-300"
+                                    className="ml-auto flex size-8 items-center justify-center rounded-lg text-white/45 hover:bg-[var(--gc-l3)] hover:text-red-400"
                                 >
                                     <Trash2 className="size-4" />
                                 </button>
@@ -475,7 +475,7 @@ export default function AdminPhones({
                                             );
                                         }
                                     }}
-                                    className="ml-auto text-xs text-white/45 hover:text-red-300"
+                                    className="ml-auto text-xs text-white/45 hover:text-red-400"
                                 >
                                     {tr('Вилучити')}
                                 </button>

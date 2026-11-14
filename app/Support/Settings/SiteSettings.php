@@ -2,6 +2,7 @@
 
 namespace App\Support\Settings;
 
+use App\Support\AppFiles;
 use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Crypt;
@@ -14,8 +15,13 @@ class SiteSettings
     /** @var array<string, mixed> */
     public const DEFAULTS = [
         'site_name' => 'GameCon',
-        'tagline' => 'Соціальна мережа нового покоління',
-        'seo_description' => 'GameCon — соціальна мережа для геймерів і кіноманів: друзі, спільноти, музика, кіно, сімʼї та ігрові сервери.',
+        'tagline' => 'Соцмережа для тих, хто грає разом',
+        // Офіційні сторінки сайту в соцмережах (по одній адресі в рядку) — для розмітки Schema «sameAs».
+        'seo_same_as' => null,
+        'app_links' => [],
+        // Ідентифікатор потоку Google Analytics 4 (G-XXXXXXX); порожньо — аналітики немає.
+        'analytics_ga_id' => null,
+        'seo_description' => 'GameCon — соціальна мережа для гравців: друзі, спільноти, сервери GTA RP, сімʼї й клани, турніри та колекційні картки.',
         'play_store_enabled' => false,
         'play_store_url' => null,
         'play_store_badge' => 'get',
@@ -26,8 +32,20 @@ class SiteSettings
         'max_upload_mb' => 20,
         'max_message_file_mb' => 50,
         'music_max_track_mb' => 30,
+        // Мапа тривог: токен alerts.in.ua (без нього — відкрите джерело) і канали зі зведеннями.
+        'alerts_in_ua_token' => null,
+        'ukrainealarm_token' => null,
+        'alerts_monitor_channels' => '',
+        'alerts_source_groups' => 'official,intel,regional,aggregators',
+        'alerts_status_channel' => 'air_alert_ua',
+        'alerts_neptun' => '1',
+        'alerts_visibility' => 'ukraine',
         'spotify_client_id' => null,
         'spotify_client_secret' => null,
+        // Метадані музики: AcoustID (відбиток), Last.fm (теги, біографії), Discogs (релізи, обкладинки).
+        'acoustid_key' => null,
+        'lastfm_key' => null,
+        'discogs_token' => null,
         'kodik_token' => null,
         'kodik_links_key' => null,
         'videoseed_token' => null,
@@ -51,6 +69,34 @@ class SiteSettings
         'discord_guild_id' => null,
         'steam_api_key' => null,
         'deepl_key' => null,
+        // Запасний перекладач (коли ліміт DeepL вичерпано): адреса власного LibreTranslate і ключ (необов’язковий).
+        'translate_deepl' => true,
+        'translate_azure' => true,
+        'translate_libre' => true,
+        'azure_translator_key' => null,
+        'azure_translator_region' => null,
+        // ШІ з власним ключем: Claude (Anthropic) або OpenAI-сумісний сервіс (OpenAI, OpenRouter, Groq…).
+        'ai_provider' => 'anthropic',
+        'ai_key' => null,
+        'ai_model' => null,
+        'ai_base_url' => null,
+        'ai_model_writer' => null,
+        'ai_model_summary' => null,
+        'ai_model_moderation' => null,
+        'ai_model_bot' => null,
+        'ai_model_vision' => null,
+        'ai_model_cards' => null,
+        'ai_model_cinema' => null,
+        'stt_key' => null,
+        'stt_model' => null,
+        'stt_base_url' => null,
+        'libretranslate_url' => null,
+        'libretranslate_key' => null,
+        // Перевірка орфографії для адміністрації: LanguageTool (граматика) і власні слова словника.
+        'languagetool_url' => null,
+        'languagetool_username' => null,
+        'languagetool_key' => null,
+        'spellcheck_words' => null,
         'moderation' => [],
         // Мови інтерфейсу: [{code, enabled}], українська — завжди; типова — для решти відвідувачів.
         'languages' => [],
@@ -69,6 +115,8 @@ class SiteSettings
         'cinema_auto' => [],
         'cinema_sync_last' => null,
         'maintenance_message' => null,
+        // Техроботи в окремих розділах: [модуль => повідомлення].
+        'maintenance_modules' => [],
         'servers_auto_publish' => false,
         'plugins' => [],
         'discord_client_id' => null,
@@ -84,6 +132,11 @@ class SiteSettings
         'vapid_public' => null,
         'telegram_bot_token' => null,
         'telegram_bot_username' => null,
+        'admin_alert_chat' => null,
+        'admin_alert_errors' => true,
+        'admin_alert_health' => true,
+        'admin_alert_payments' => true,
+        'admin_alert_reports' => true,
         'telegram_webhook_secret' => null,
         'discord_public_key' => null,
         'twitch_client_id' => null,
@@ -116,12 +169,15 @@ class SiteSettings
         'google_play_enabled' => false,
         'google_play_package' => null,
         'google_play_products' => null,
+        'google_play_phones_enabled' => false,
         'google_play_service_account' => null,
         'google_play_rtdn_token' => null,
+        // SHA-256 відбитки підпису застосунку для Android App Links (/.well-known/assetlinks.json). Не секрет.
+        'app_link_fingerprints' => null,
     ];
 
     /** Ключі, які не можна віддавати у фронтенд. */
-    public const SECRETS = ['spotify_client_secret', 'kodik_token', 'kodik_links_key', 'videoseed_token', 'flixcdn_token', 'tmdb_token', 'omdb_key', 'discord_client_secret', 'fcm_service_account', 'livekit_api_secret', 'rawg_key', 'igdb_client_secret', 'discord_bot_token', 'steam_api_key', 'deepl_key', 'maxmind_license_key', 'vapid_private', 'telegram_bot_token', 'telegram_webhook_secret', 'twitch_client_secret', 'sightengine_secret', 'donatello_token', 'monobank_acquiring_token', 'google_play_service_account', 'google_play_rtdn_token'];
+    public const SECRETS = ['spotify_client_secret', 'kodik_token', 'kodik_links_key', 'videoseed_token', 'flixcdn_token', 'tmdb_token', 'omdb_key', 'discord_client_secret', 'fcm_service_account', 'livekit_api_secret', 'rawg_key', 'igdb_client_secret', 'discord_bot_token', 'steam_api_key', 'deepl_key', 'maxmind_license_key', 'vapid_private', 'telegram_bot_token', 'telegram_webhook_secret', 'twitch_client_secret', 'sightengine_secret', 'donatello_token', 'monobank_acquiring_token', 'google_play_service_account', 'google_play_rtdn_token', 'acoustid_key', 'lastfm_key', 'discogs_token', 'libretranslate_key', 'languagetool_key', 'azure_translator_key', 'ai_key', 'stt_key', 'giphy_key', 'alerts_in_ua_token', 'ukrainealarm_token'];
 
     /** @var array<string, mixed>|null */
     private ?array $values = null;
@@ -179,6 +235,27 @@ class SiteSettings
             : (string) self::DEFAULTS['seo_description'];
     }
 
+    /**
+     * Офіційні сторінки в соцмережах і магазинах застосунків — для розмітки Organization.sameAs.
+     *
+     * @return list<string>
+     */
+    public function seoSameAs(): array
+    {
+        $lines = preg_split('/\R/', (string) $this->get('seo_same_as')) ?: [];
+        $links = array_values(array_filter(array_map('trim', $lines), fn (string $url) => preg_match('#\Ahttps://[^\s<>"]+\z#i', $url) === 1));
+        $play = $this->appLinks()['google_play'] ?? null;
+
+        return array_values(array_unique($play !== null ? [...$links, $play] : $links));
+    }
+
+    public function analyticsId(): ?string
+    {
+        $id = strtoupper(trim((string) $this->get('analytics_ga_id')));
+
+        return preg_match('/\AG-[A-Z0-9]{4,16}\z/', $id) === 1 ? $id : null;
+    }
+
     public function playStoreUrl(): ?string
     {
         if (! $this->get('play_store_enabled')) {
@@ -188,6 +265,42 @@ class SiteSettings
         $url = $this->get('play_store_url');
 
         return is_string($url) && preg_match('#\Ahttps?://#i', $url) === 1 ? $url : null;
+    }
+
+    /** Магазини застосунку для сторінки /app і картки «Офіційний застосунок» (Адмінка → Дизайн). */
+    public const APP_STORES = [
+        // Магазини
+        'google_play', 'app_store', 'app_gallery', 'galaxy_store', 'amazon', 'xiaomi', 'microsoft_store',
+        // Пряме завантаження: Android (APK), Windows, macOS (.dmg), Linux / Ubuntu (.deb, AppImage)
+        'apk', 'windows', 'macos', 'linux',
+    ];
+
+    /**
+     * Посилання на застосунок у магазинах; без посилання кнопки не видно. Google Play — і зі старого
+     * налаштування play_store_url, якщо в новому порожньо.
+     *
+     * @return array<string, string>
+     */
+    public function appLinks(): array
+    {
+        $stored = $this->get('app_links');
+        $stored = is_array($stored) ? $stored : [];
+        $links = [];
+        foreach (self::APP_STORES as $store) {
+            $url = $stored[$store] ?? null;
+            if ($store === 'google_play' && ! is_string($url)) {
+                $url = $this->playStoreUrl();
+            }
+            if (is_string($url) && preg_match('#\Ahttps://[^\s<>"]+\z#i', $url) === 1) {
+                $links[$store] = $url;
+            }
+        }
+        // Завантажений в адмінці файл має перевагу над посиланням.
+        foreach (AppFiles::all($this) as $platform => $file) {
+            $links[$platform] = $file['url'];
+        }
+
+        return $links;
     }
 
     /** Офіційний значок Google Play: «Get it on» (застосунок опубліковано) або «Pre-register» (попередня реєстрація). */

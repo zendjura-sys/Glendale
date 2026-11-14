@@ -46,7 +46,7 @@ class FamilyEvents
 
         $this->audit->log($family, 'EVENT_CREATE', $creator, null, ['event_id' => $event->id, 'title' => $event->title]);
         $when = $event->starts_at->setTimezone(ReportService::TIMEZONE)->format('d.m H:i');
-        $this->chat->announce($family, "📅 Нова подія: «{$event->title}» — {$when}. Відмітьтеся на сторінці подій!");
+        $this->chat->announce($family, "📅 Нова подія: «{$event->title}» — {$when}. Позначтеся на сторінці подій!");
         $this->notifier->members($family->activeMembers()->with('user')->get()->reject(fn ($m) => $m->id === $creator->id), $family, 'event', "Нова подія «{$event->title}» — {$when}", route('families.events', $family, absolute: false));
         $this->notifier->refresh($family, 'events');
 

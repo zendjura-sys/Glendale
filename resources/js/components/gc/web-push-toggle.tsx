@@ -22,7 +22,7 @@ export function WebPushButton() {
             className={cn(
                 'inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-xs font-medium transition disabled:opacity-50',
                 push.subscribed
-                    ? 'text-white/50 hover:bg-white/[0.06] hover:text-white'
+                    ? 'text-white/50 hover:bg-[var(--gc-l3)] hover:text-white'
                     : 'bg-gc-indigo/20 text-[#c4b5fd] hover:bg-gc-indigo/30',
             )}
         >
@@ -70,9 +70,7 @@ export function WebPushSettings() {
                     }
                     className={cn(
                         'inline-flex h-10 w-full shrink-0 items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold disabled:opacity-50 sm:w-auto',
-                        push.subscribed
-                            ? 'bg-white/[0.06] text-white'
-                            : 'btn-glow',
+                        push.subscribed ? 'gc-solid-2 text-white' : 'btn-glow',
                     )}
                 >
                     {push.subscribed ? (
@@ -83,9 +81,7 @@ export function WebPushSettings() {
                     {push.subscribed ? tr('Вимкнути') : tr('Увімкнути')}
                 </button>
             )}
-            {push.error && (
-                <p className="text-xs text-rose-300">{push.error}</p>
-            )}
+            {push.error && <p className="text-xs text-red-400">{push.error}</p>}
         </div>
     );
 }

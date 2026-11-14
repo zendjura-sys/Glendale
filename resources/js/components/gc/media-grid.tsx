@@ -1,6 +1,8 @@
-import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ImageDown, X } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useDataSaver } from '@/lib/data-saver';
+import { tr } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import type { Attachment } from '@/types';
 
@@ -47,7 +49,7 @@ export function Lightbox({
                 decoding="async"
                 src={items[current].url}
                 alt=""
-                className="max-h-[90vh] max-w-[92vw] animate-in rounded-xl object-contain shadow-2xl zoom-in-95"
+                className="max-h-[90vh] max-w-[92vw] animate-in rounded-xl object-contain zoom-in-95"
                 onClick={(event) => event.stopPropagation()}
             />
             <button
@@ -79,7 +81,7 @@ export function Lightbox({
                     >
                         <ChevronRight className="size-6" />
                     </button>
-                    <div className="absolute bottom-6 rounded-full bg-white/10 px-3 py-1 text-sm text-white/80">
+                    <div className="absolute bottom-6 rounded-chip bg-white/10 px-3 py-1 text-sm text-white/80">
                         {current + 1} / {items.length}
                     </div>
                 </>
@@ -90,31 +92,50 @@ export function Lightbox({
 }
 
 /**
- * Сітка фото у стилі ВК: 1 — велике, 2 — пополам, 3 — велике + 2, 4+ — 2×2 з «+N».
+ * Сітка фото як у класичних соцмережах: 1 — велике, 2 — пополам, 3 — велике + 2, 4+ — 2×2 з «+N».
  */
 export function MediaGrid({ items }: { items: Attachment[] }) {
     const [open, setOpen] = useState<number | null>(null);
+    const saver = useDataSaver();
+    const [shown, setShown] = useState(false);
 
     if (items.length === 0) {
         return null;
     }
 
-    const visible = items.slice(0, 4);
+    // Економія трафіку: фото не вантажимо, доки людина не попросить.
+    if (saver && !shown) {
+        return (
+            <button
+                type="button"
+                onClick={() => setShown(true)}
+                className="gc-solid-2 flex h-28 w-full items-center justify-center gap-2 rounded-[10px] text-sm text-white/60 transition hover:bg-[var(--gc-l3)] hover:text-white"
+            >
+                <ImageDown className="size-4" />
+                {items.length === 1
+                    ? tr('Фото · натисніть, щоб завантажити')
+                    : tr('{n} фото · натисніть, щоб завантажити', {
+                          n: items.length,
+                      })}
+            </button>
+        );
+    }
+
+    // Мозаїка: 3+ фото — велике зліва й два праворуч, решта — «+N» на останньому.
+    const visible = items.slice(0, 3);
     const rest = items.length - visible.length;
     const layout =
         items.length === 1
             ? 'grid-cols-1'
             : items.length === 2
               ? 'grid-cols-2'
-              : items.length === 3
-                ? 'grid-cols-2 grid-rows-2'
-                : 'grid-cols-2 grid-rows-2';
+              : 'grid-cols-[1.25fr_1fr] grid-rows-2';
 
     return (
         <>
             <div
                 className={cn(
-                    'grid gap-1 overflow-hidden rounded-2xl',
+                    'grid gap-2 overflow-hidden rounded-2xl',
                     layout,
                     items.length > 1 && 'aspect-[4/3]',
                 )}
@@ -125,8 +146,8 @@ export function MediaGrid({ items }: { items: Attachment[] }) {
                         key={item.id}
                         onClick={() => setOpen(index)}
                         className={cn(
-                            'group relative overflow-hidden bg-white/5',
-                            items.length === 3 && index === 0 && 'row-span-2',
+                            'group relative overflow-hidden rounded-2xl bg-white/5',
+                            items.length >= 3 && index === 0 && 'row-span-2',
                         )}
                     >
                         <img
@@ -145,7 +166,7 @@ export function MediaGrid({ items }: { items: Attachment[] }) {
                                     : undefined
                             }
                         />
-                        {rest > 0 && index === 3 && (
+                        {rest > 0 && index === 2 && (
                             <span className="absolute inset-0 flex items-center justify-center bg-black/55 font-display text-2xl font-bold text-white backdrop-blur-sm">
                                 +{rest}
                             </span>

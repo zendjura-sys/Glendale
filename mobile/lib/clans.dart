@@ -1,17 +1,22 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+
+import 'core/widgets/arctic_glass/arctic_fit_text.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'api.dart';
+import 'game_reviews.dart';
 import 'games.dart';
 import 'shell.dart';
 import 'state.dart';
 import 'theme.dart';
 import 'voice_room.dart';
+import 'listen_rooms.dart';
 import 'widgets.dart';
 import 'i18n.dart';
+import 'skeletons.dart';
 
 String _num(dynamic value) {
   final digits = '${intOf(value).abs()}';
@@ -60,12 +65,12 @@ class ClanTile extends StatelessWidget {
         const SizedBox(width: 12),
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(text(clan['display_name']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14.5, weight: FontWeight.w600)),
+            FitText(text(clan['display_name']) ?? '', style: body(14.5, weight: FontWeight.w600)),
             const SizedBox(height: 2),
-            Text(text(game['name']) ?? '—', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: muted)),
+            FitText(text(game['name']) ?? '—', style: body(12, color: muted)),
             const SizedBox(height: 2),
             Row(children: [
-              const Icon(LucideIcons.usersRound, size: 13, color: faint),
+              Icon(LucideIcons.usersRound, size: 13, color: faint),
               const SizedBox(width: 4),
               Text(compact(clan['members_count']), style: body(12, color: faint)),
               const SizedBox(width: 10),
@@ -128,7 +133,7 @@ class _ClansScreenState extends State<ClansScreen> {
   @override
   Widget build(BuildContext context) {
     final d = data;
-    if (d == null) return const Center(child: CircularProgressIndicator(strokeWidth: 2.4));
+    if (d == null) return const ScreenSkeleton();
     final mine = maps(d['mine']);
     final clans = Listing.parse(d['clans']).items;
     final types = mapOf(d['types']);
@@ -282,7 +287,7 @@ class _ClanCreateScreenState extends State<ClanCreateScreen> {
   @override
   Widget build(BuildContext context) {
     final o = options;
-    if (o == null) return const Center(child: CircularProgressIndicator(strokeWidth: 2.4));
+    if (o == null) return const ScreenSkeleton();
     final types = mapOf(o['types']);
     final allFeatures = mapOf(o['features']);
     final joinModes = mapOf(o['join_modes']);
@@ -321,8 +326,8 @@ class _ClanCreateScreenState extends State<ClanCreateScreen> {
                 child: Row(children: [
                   GameCover(g, size: 38),
                   const SizedBox(width: 10),
-                  Expanded(child: Text(text(g['name']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14))),
-                  if (game?['id'] == g['id']) const Icon(LucideIcons.check, color: primary, size: 18),
+                  Expanded(child: FitText(text(g['name']) ?? '', style: body(14))),
+                  if (game?['id'] == g['id']) Icon(LucideIcons.check, color: primary, size: 18),
                 ]),
               ),
             ),
@@ -408,7 +413,7 @@ class _ClanScreenState extends State<ClanScreen> {
   @override
   Widget build(BuildContext context) {
     final d = data;
-    if (d == null) return const Center(child: CircularProgressIndicator(strokeWidth: 2.4));
+    if (d == null) return const ScreenSkeleton();
     final clan = mapOf(d['clan']);
     final me = d['me'] is Map ? mapOf(d['me']) : null;
     final can = mapOf(me?['can']);
@@ -511,6 +516,7 @@ class _ClanScreenState extends State<ClanScreen> {
         const SizedBox(height: 12),
         VoiceRoomsPanel(key: ValueKey('voice-clan-${clan['id']}'), type: 'clan', id: intOf(clan['id']), label: text(clan['display_name']) ?? '', route: base),
       ],
+      if (me != null) ListenRoomPanel(key: ValueKey('listen-clan-${clan['id']}'), type: 'clan', id: intOf(clan['id'])),
       if (news.isNotEmpty) ...[
         const SizedBox(height: 12),
         Glass(
@@ -549,7 +555,7 @@ class _ClanScreenState extends State<ClanScreen> {
                 Expanded(child: Text(text(n['title']) ?? '', style: body(15, weight: FontWeight.w600))),
                 if (n['mine'] == true || canPost)
                   IconButton(
-                    icon: const Icon(LucideIcons.trash2, size: 17, color: faint),
+                    icon: Icon(LucideIcons.trash2, size: 17, color: faint),
                     onPressed: () async {
                       if (await confirm(context, tr('Видалити новину?'), danger: true, action: tr('Видалити'))) _delete('/news/${n['id']}');
                     },
@@ -610,7 +616,7 @@ class _ClanScreenState extends State<ClanScreen> {
                   GhostButton(label: tr('Піду'), expand: false, compact: true, onPressed: () => _act('/events/${e['id']}/rsvp')),
                 if (manage)
                   IconButton(
-                    icon: const Icon(LucideIcons.trash2, size: 17, color: faint),
+                    icon: Icon(LucideIcons.trash2, size: 17, color: faint),
                     onPressed: () async {
                       if (await confirm(context, tr('Видалити захід?'), danger: true, action: tr('Видалити'))) _delete('/events/${e['id']}');
                     },
@@ -725,7 +731,7 @@ class _ClanScreenState extends State<ClanScreen> {
                 SizedBox(width: 26, child: Text('${i + 1}', style: body(14, color: muted, weight: FontWeight.w700))),
                 Avatar(url: text(mapOf(rows[i]['user'])['avatar_url']), name: text(mapOf(rows[i]['user'])['name']) ?? '?', size: 34),
                 const SizedBox(width: 10),
-                Expanded(child: Text(text(rows[i]['nickname']) ?? text(mapOf(rows[i]['user'])['name']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14))),
+                Expanded(child: FitText(text(rows[i]['nickname']) ?? text(mapOf(rows[i]['user'])['name']) ?? '', style: body(14))),
                 Text(tr('{v} зах. · ', {'v': intOf(rows[i]['events'])}), style: body(12, color: faint)),
                 Text('${_num(rows[i]['contributed'])} ${clan['currency']}', style: body(13, color: gold)),
               ]),
@@ -757,10 +763,10 @@ class _ClanScreenState extends State<ClanScreen> {
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [
-                Flexible(child: Text(text(m['nickname']) ?? text(user['name']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14, weight: FontWeight.w600))),
+                Flexible(child: FitText(text(m['nickname']) ?? text(user['name']) ?? '', style: body(14, weight: FontWeight.w600))),
                 if (m['is_owner'] == true) const Padding(padding: EdgeInsets.only(left: 4), child: Icon(LucideIcons.crown, size: 14, color: gold)),
               ]),
-              Text(text(m['note']) ?? text(m['rank_title']) ?? '', maxLines: 2, overflow: TextOverflow.ellipsis, style: body(12, color: muted)),
+              FitText(text(m['note']) ?? text(m['rank_title']) ?? '', style: body(12, color: muted), maxLines: 2),
             ]),
           ),
           ...trailing,
@@ -769,6 +775,13 @@ class _ClanScreenState extends State<ClanScreen> {
     }
 
     return [
+      if (d['mvp'] is Map)
+        ClanMvpCard(
+          mvp: mapOf(d['mvp']),
+          members: members,
+          myUserId: AppScope.read(context).session.myId,
+          onVote: (userId) => _act('/mvp', {'user_id': userId}),
+        ),
       if (manage && applications.isNotEmpty) ...[
         Glass(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -789,7 +802,7 @@ class _ClanScreenState extends State<ClanScreen> {
             person(m, [
               if ((manage && m['is_owner'] != true && m['id'] != me['id'] && (iAmOwner || myRank > intOf(m['rank']))) || (iAmOwner && m['is_owner'] != true))
                 PopupMenuButton<String>(
-                  icon: const Icon(LucideIcons.ellipsisVertical, size: 18, color: muted),
+                  icon: Icon(LucideIcons.ellipsisVertical, size: 18, color: muted),
                   color: popover,
                   onSelected: (value) async {
                     final name = text(mapOf(m['user'])['name']) ?? '';

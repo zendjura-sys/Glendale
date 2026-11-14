@@ -32,6 +32,9 @@ class PersonalBankDigest
         $out = [];
         foreach ($members as $member) {
             $family = $member->family;
+            if ($family === null) {
+                continue;
+            }
             $operations = FamilyTransaction::query()
                 ->where('family_id', $family->id)->where('member_id', $member->id)->where('amount', '!=', 0)
                 ->whereBetween('created_at', [$start->utc(), $end->utc()])

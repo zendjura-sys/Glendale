@@ -1,7 +1,14 @@
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import {
+    CloudOff,
+    MessagesSquare,
+    Pin,
+    SmilePlus,
+    Bot,
     Flag,
+    Ban,
+    Gavel,
     Forward,
     Languages,
     Star,
@@ -19,6 +26,7 @@ import { RankBadge } from '@/components/families/ui';
 import { UserAvatar } from '@/components/gc/user-avatar';
 import { clockTime } from '@/lib/format';
 import { cn } from '@/lib/utils';
+import { PollCard } from './chat-poll';
 import type { ChatAttachment, ChatMessage } from '@/types';
 import {
     ContactAttachment,
@@ -26,9 +34,15 @@ import {
     VoicePlayer,
 } from './message-media';
 import { useContentTranslation } from '@/components/gc/translate';
+import { VideoNotePlayer } from './video-note';
+import { ViewOnceAttachment } from './view-once';
+import { PartyInvite, parsePartyInvite } from './party-invite';
 import { tr } from '@/lib/i18n';
 import { useProfanityMask } from '@/lib/profanity';
 import { usePlugin } from '@/lib/plugins';
+
+/** Ті самі, що MessageReaction::EMOJI на сервері. */
+const REACTIONS = ['👍', '❤️', '🔥', '😂', '😮', '😢', '🎉', '👎'];
 
 export type BubbleActions = {
     onReply: (message: ChatMessage) => void;
@@ -39,10 +53,27 @@ export type BubbleActions = {
     onRetry: (message: ChatMessage) => void;
     onCopy: (message: ChatMessage) => void;
     onForward: (message: ChatMessage) => void;
+    /** Реакція (той самий емодзі ще раз — прибрати). */
+    onReact?: (message: ChatMessage, emoji: string | null) => void;
     onStar: (message: ChatMessage) => void;
     onJump: (id: number) => void;
     onOpenImage: (items: ChatAttachment[], index: number) => void;
     onMediaLoad: () => void;
+    /** Переглянути документ на сайті. */
+    onPreview?: (attachment: ChatAttachment) => void;
+    /** Тайм-аут чи виключення автора (адміністраторам групи чи каналу). */
+    onRestrict?: (message: ChatMessage) => void;
+    /** Бан гостя гостьового чату (адміністраторам каналу). */
+    onBanGuest?: (message: ChatMessage) => void;
+    /** Закріпити / відкріпити (кілька закріплених у бесіді). */
+    onPin?: (message: ChatMessage) => void;
+    /** Повідомлення змінилось на сервері (голос в опитуванні) — замінити в списку. */
+    onReplace?: (message: ChatMessage) => void;
+    /** Чи може людина закривати опитування (автор або адміністратор бесіди). */
+    canClosePoll?: (message: ChatMessage) => boolean;
+    isPinned?: (message: ChatMessage) => boolean;
+    /** Відкрити гілку під повідомленням (групи). */
+    onThread?: (message: ChatMessage) => void;
 };
 
 type Props = {
@@ -128,7 +159,7 @@ function Images({
 export function SystemMessage({ message }: { message: ChatMessage }) {
     return (
         <div className="flex justify-center py-1.5">
-            <span className="rounded-full bg-white/[0.05] px-3 py-1 text-center text-xs text-white/50">
+            <span className="gc-solid-2 rounded-chip px-3 py-1 text-center text-xs text-white/50">
                 {message.body}
             </span>
         </div>
@@ -149,13 +180,24 @@ export function MessageBubble({
     actions,
 }: Props) {
     const forwardOn = usePlugin('forward_message');
+    const reactionsOn = usePlugin('message_reactions');
+    const me = usePage().props.auth.user?.id;
+    const [reactOpen, setReactOpen] = useState(false);
+    const reactions = message.reactions ?? [];
+    const mine =
+        reactions.find((r) => me !== undefined && r.user_ids.includes(me))
+            ?.emoji ?? null;
+    const videoNote = message.attachments.find((a) => a.type === 'video_note');
     const favoriteOn = usePlugin('favorite_messages');
+    const transcriptsOn = usePlugin('voice_transcripts');
     const images = message.attachments.filter(
-        (a) => (a.type ?? 'image') === 'image',
+        (a) => (a.type ?? 'image') === 'image' && !a.view_once,
     );
+    const viewOnce = message.attachments.find((a) => a.view_once);
     const files = message.attachments.filter((a) => a.type === 'file');
     const voice = message.attachments.find((a) => a.type === 'voice');
-    const isSticker = message.type === 'sticker' && !!message.sticker;
+    const isSticker =
+        (message.type === 'sticker' && !!message.sticker) || !!videoNote;
     const hasImages = images.length > 0;
     const bare = isSticker && !message.reply_to;
     const onlyImages =
@@ -163,6 +205,7 @@ export function MessageBubble({
         (hasImages && !message.body && !message.reply_to && !files.length);
     const pending = message.pending;
     const translation = useContentTranslation('message', message.id);
+    const invite = parsePartyInvite(message.body);
     const mask = useProfanityMask();
     const [toolsOpen, setToolsOpen] = useState(false);
 
@@ -171,7 +214,7 @@ export function MessageBubble({
             className={cn(
                 'inline-flex items-center gap-1 text-[11px] leading-none select-none',
                 onlyImages
-                    ? 'rounded-full bg-black/45 px-2 py-1 text-white/90 backdrop-blur'
+                    ? 'rounded-chip bg-black/45 px-2 py-1 text-white/90 backdrop-blur'
                     : own
                       ? 'text-white/70'
                       : 'text-white/40',
@@ -182,8 +225,10 @@ export function MessageBubble({
             {own &&
                 (pending === 'sending' ? (
                     <Clock3 className="size-3" />
+                ) : pending === 'queued' ? (
+                    <CloudOff className="size-3.5 text-amber-300" />
                 ) : pending === 'failed' ? (
-                    <AlertCircle className="size-3.5 text-rose-300" />
+                    <AlertCircle className="size-3.5 text-red-400" />
                 ) : read ? (
                     <CheckCheck className="size-3.5 text-[#8fe3ff] drop-shadow-[0_0_4px_rgb(56_225_255/0.8)]" />
                 ) : (
@@ -211,7 +256,7 @@ export function MessageBubble({
             id={`message-${message.id}`}
             onClick={toggleTools}
             className={cn(
-                'group/msg flex items-end gap-2 px-3 sm:px-5',
+                'group/msg relative flex items-end gap-2 px-3 sm:px-5',
                 own ? 'flex-row-reverse' : 'flex-row',
                 groupStart ? 'mt-2.5' : 'mt-0.5',
             )}
@@ -228,6 +273,16 @@ export function MessageBubble({
                             />
                         </Link>
                     )}
+                    {showAvatar && message.bot && (
+                        <span className="flex size-8 items-center justify-center rounded-full bg-primary/20 text-sky-400">
+                            <Bot className="size-4" />
+                        </span>
+                    )}
+                    {showAvatar && message.guest && (
+                        <span className="flex size-8 items-center justify-center rounded-full bg-white/10 text-xs font-semibold text-white/70">
+                            {message.guest.name.slice(0, 1).toUpperCase()}
+                        </span>
+                    )}
                 </span>
             )}
 
@@ -243,12 +298,12 @@ export function MessageBubble({
                         bare
                             ? ''
                             : onlyImages
-                              ? 'overflow-hidden rounded-[18px]'
+                              ? 'overflow-hidden rounded-[14px]'
                               : cn(
-                                    'rounded-[20px] px-3.5 py-2',
+                                    'rounded-[14px] px-3.5 py-2',
                                     own
-                                        ? 'bg-gradient-to-br from-[#4f6bff] via-gc-indigo to-[#8b5cf6] text-white shadow-[0_8px_24px_-12px_rgb(109_93_252/0.9)]'
-                                        : 'border border-white/[0.07] bg-white/[0.06] text-white/90 backdrop-blur-xl',
+                                        ? 'gc-bubble-out bg-primary text-white'
+                                        : 'gc-bubble-in gc-solid-2 text-white/90 backdrop-blur-xl',
                                     own
                                         ? groupEnd
                                             ? 'rounded-br-md'
@@ -264,8 +319,7 @@ export function MessageBubble({
                         hasImages && !onlyImages && 'pt-1.5 pr-1.5 pl-1.5',
                         voice && 'py-2 pr-3 pl-2',
                         pending === 'sending' && 'opacity-80',
-                        highlighted &&
-                            'shadow-[0_0_30px_rgb(124_140_255/0.6)] ring-2 ring-gc-lilac-400',
+                        highlighted && 'ring-2',
                     )}
                 >
                     {showAuthor && message.user && (
@@ -288,6 +342,27 @@ export function MessageBubble({
                                     className="px-1.5 py-0 text-xs"
                                 />
                             )}
+                        </div>
+                    )}
+
+                    {showAuthor && message.bot && (
+                        <div className="mb-0.5 flex min-w-0 items-center gap-1.5">
+                            <span className="truncate text-[13px] font-semibold text-sky-400">
+                                {message.bot.name}
+                            </span>
+                            <span className="rounded-full bg-primary/20 px-1.5 text-[10px] leading-4 text-sky-400">
+                                {tr('бот')}
+                            </span>
+                        </div>
+                    )}
+                    {showAuthor && message.guest && (
+                        <div className="mb-0.5 flex min-w-0 items-center gap-1.5">
+                            <span className="truncate text-[13px] font-semibold text-white/70">
+                                {message.guest.name}
+                            </span>
+                            <span className="rounded-full bg-white/10 px-1.5 text-[10px] leading-4 text-white/55">
+                                {tr('гість')}
+                            </span>
                         </div>
                     )}
 
@@ -340,8 +415,8 @@ export function MessageBubble({
                             className={cn(
                                 'mb-1.5 block w-full min-w-0 rounded-lg border-l-2 py-1 pr-2 pl-2 text-left text-[13px] transition',
                                 own
-                                    ? 'border-white/70 bg-white/15 hover:bg-white/20'
-                                    : 'border-gc-lilac-500 bg-gc-lilac-500/10 hover:bg-gc-lilac-500/15',
+                                    ? 'bg-white/15 hover:bg-white/20'
+                                    : 'bg-sky-500/10 hover:bg-sky-500/15',
                                 hasImages && 'mx-0.5 mt-0.5 w-[calc(100%-4px)]',
                             )}
                         >
@@ -417,12 +492,25 @@ export function MessageBubble({
                                     key={file.id}
                                     attachment={file}
                                     own={own}
+                                    onPreview={actions.onPreview}
                                 />
                             ))}
                         </div>
                     )}
 
-                    {voice && <VoicePlayer attachment={voice} own={own} />}
+                    {voice && (
+                        <VoicePlayer
+                            attachment={voice}
+                            own={own}
+                            transcribeUrl={
+                                transcriptsOn
+                                    ? `/messages/${message.conversation_id}/messages/${message.id}/transcribe`
+                                    : null
+                            }
+                        />
+                    )}
+
+                    {videoNote && <VideoNotePlayer attachment={videoNote} />}
 
                     {message.type === 'contact' && (
                         <ContactAttachment
@@ -431,7 +519,15 @@ export function MessageBubble({
                         />
                     )}
 
-                    {message.card && (
+                    {message.card?.kind === 'gif' && (
+                        <img
+                            src={message.card.image ?? message.card.href}
+                            alt={message.card.title}
+                            loading="lazy"
+                            className="mb-1.5 max-h-64 max-w-full rounded-xl"
+                        />
+                    )}
+                    {message.card && message.card.kind !== 'gif' && (
                         <Link
                             href={message.card.href}
                             className={cn(
@@ -466,10 +562,23 @@ export function MessageBubble({
                                 hasImages && 'px-2 pt-1.5 pb-1.5',
                             )}
                         >
-                            {message.body && (
-                                <span className="break-words whitespace-pre-wrap">
-                                    {mask(translation.text ?? message.body)}
-                                </span>
+                            {message.type === 'poll' && message.poll ? (
+                                <PollCard
+                                    message={message}
+                                    own={own}
+                                    canClose={
+                                        actions.canClosePoll?.(message) ?? own
+                                    }
+                                    onChange={(m) => actions.onReplace?.(m)}
+                                />
+                            ) : invite ? (
+                                <PartyInvite invite={invite} />
+                            ) : (
+                                message.body && (
+                                    <span className="break-words whitespace-pre-wrap">
+                                        {mask(translation.text ?? message.body)}
+                                    </span>
+                                )
                             )}
                             <span className="float-right mt-1.5 ml-2.5 translate-y-0.5">
                                 {meta}
@@ -478,11 +587,72 @@ export function MessageBubble({
                     )}
                 </div>
 
+                {viewOnce && (
+                    <div className={cn('mt-1 flex', own && 'justify-end')}>
+                        <ViewOnceAttachment attachment={viewOnce} own={own} />
+                    </div>
+                )}
+
+                {message.thread && message.thread.count > 0 && (
+                    <div className={cn('mt-1 flex', own && 'justify-end')}>
+                        <button
+                            type="button"
+                            onClick={() => actions.onThread?.(message)}
+                            className="inline-flex items-center gap-1.5 rounded-full bg-white/[0.07] px-3 py-1 text-xs font-medium text-sky-400 hover:bg-white/[0.12]"
+                        >
+                            <MessagesSquare className="size-3.5" />
+                            {tr('{count} відп. у гілці', {
+                                count: message.thread.count,
+                            })}
+                        </button>
+                    </div>
+                )}
+
+                {reactions.length > 0 && (
+                    <div
+                        className={cn(
+                            'mt-1 flex flex-wrap gap-1',
+                            own && 'justify-end',
+                        )}
+                    >
+                        {reactions.map((r) => (
+                            <button
+                                key={r.emoji}
+                                type="button"
+                                disabled={!actions.onReact}
+                                onClick={() =>
+                                    actions.onReact?.(message, r.emoji)
+                                }
+                                aria-pressed={r.emoji === mine}
+                                className={cn(
+                                    'inline-flex h-7 items-center gap-1 rounded-full px-2 text-sm transition',
+                                    r.emoji === mine
+                                        ? 'bg-primary/25 ring-primary/60'
+                                        : 'bg-white/[0.07] hover:bg-white/[0.12]',
+                                )}
+                            >
+                                <span>{r.emoji}</span>
+                                {r.count > 1 && (
+                                    <span className="text-xs text-white/75 tabular-nums">
+                                        {r.count}
+                                    </span>
+                                )}
+                            </button>
+                        ))}
+                    </div>
+                )}
+
+                {pending === 'queued' && (
+                    <span className="mt-1 inline-flex items-center gap-1 text-xs text-amber-300">
+                        <CloudOff className="size-3" />{' '}
+                        {tr('Чекає мережі — надішлеться саме')}
+                    </span>
+                )}
                 {pending === 'failed' && (
                     <button
                         type="button"
                         onClick={() => actions.onRetry(message)}
-                        className="mt-1 inline-flex items-center gap-1 text-xs text-rose-300 hover:text-rose-200"
+                        className="mt-1 inline-flex items-center gap-1 text-xs text-red-400 hover:text-red-400"
                     >
                         <RotateCw className="size-3" />{' '}
                         {tr('Не надіслано. Повторити')}
@@ -493,9 +663,13 @@ export function MessageBubble({
             {!pending && (
                 <div
                     className={cn(
-                        'pointer-events-none mb-1 flex shrink-0 items-center gap-0.5 rounded-xl border border-white/[0.06] bg-[#0d1222]/90 p-0.5 opacity-0 shadow-lg backdrop-blur transition group-hover/msg:pointer-events-auto group-hover/msg:opacity-100 focus-within:pointer-events-auto focus-within:opacity-100',
+                        'gc-float-menu pointer-events-none mb-1 flex shrink-0 items-center gap-0.5 rounded-xl bg-[#0d1222]/90 p-0.5 opacity-0 backdrop-blur transition group-hover/msg:pointer-events-auto group-hover/msg:opacity-100 focus-within:pointer-events-auto focus-within:opacity-100',
                         own && 'flex-row-reverse',
                         toolsOpen && 'pointer-events-auto opacity-100',
+                        // На телефоні панель не займає місця в рядку, а з’являється над повідомленням по тапу.
+                        'max-sm:absolute max-sm:bottom-full max-sm:z-20',
+                        own ? 'max-sm:right-3' : 'max-sm:left-12',
+                        !toolsOpen && 'max-sm:hidden',
                     )}
                 >
                     <button
@@ -506,6 +680,52 @@ export function MessageBubble({
                     >
                         <Reply className="size-4" />
                     </button>
+                    {reactionsOn &&
+                        actions.onReact &&
+                        message.type !== 'system' && (
+                            <span className="relative">
+                                <button
+                                    type="button"
+                                    className={toolButton}
+                                    onClick={() => setReactOpen(!reactOpen)}
+                                    title={tr('Реакція')}
+                                    aria-expanded={reactOpen}
+                                >
+                                    <SmilePlus className="size-3.5" />
+                                </button>
+                                {reactOpen && (
+                                    <span
+                                        className={cn(
+                                            'glass-strong absolute bottom-9 z-30 flex gap-0.5 rounded-full p-1',
+                                            own ? 'right-0' : 'left-0',
+                                        )}
+                                    >
+                                        {REACTIONS.map((emoji) => (
+                                            <button
+                                                key={emoji}
+                                                type="button"
+                                                onClick={() => {
+                                                    setReactOpen(false);
+                                                    actions.onReact?.(
+                                                        message,
+                                                        emoji === mine
+                                                            ? null
+                                                            : emoji,
+                                                    );
+                                                }}
+                                                className={cn(
+                                                    'grid size-8 place-items-center rounded-full text-lg transition hover:scale-110 hover:bg-white/10 motion-reduce:hover:scale-100',
+                                                    emoji === mine &&
+                                                        'bg-primary/25',
+                                                )}
+                                            >
+                                                {emoji}
+                                            </button>
+                                        ))}
+                                    </span>
+                                )}
+                            </span>
+                        )}
                     {message.body && (
                         <button
                             type="button"
@@ -524,6 +744,35 @@ export function MessageBubble({
                             title={tr('Редагувати')}
                         >
                             <Pencil className="size-3.5" />
+                        </button>
+                    )}
+                    {actions.onThread &&
+                        message.type !== 'system' &&
+                        !message.thread_root_id && (
+                            <button
+                                type="button"
+                                className={toolButton}
+                                onClick={() => actions.onThread?.(message)}
+                                title={tr('Відповісти в гілці')}
+                            >
+                                <MessagesSquare className="size-3.5" />
+                            </button>
+                        )}
+                    {actions.onPin && message.type !== 'system' && (
+                        <button
+                            type="button"
+                            className={cn(
+                                toolButton,
+                                actions.isPinned?.(message) && 'text-sky-400',
+                            )}
+                            onClick={() => actions.onPin?.(message)}
+                            title={
+                                actions.isPinned?.(message)
+                                    ? tr('Відкріпити')
+                                    : tr('Закріпити')
+                            }
+                        >
+                            <Pin className="size-3.5" />
                         </button>
                     )}
                     {forwardOn && message.type !== 'system' && (
@@ -561,7 +810,7 @@ export function MessageBubble({
                     {canDelete && (
                         <button
                             type="button"
-                            className={cn(toolButton, 'hover:text-rose-300')}
+                            className={cn(toolButton, 'hover:text-red-400')}
                             onClick={() => actions.onDelete(message)}
                             title={tr('Видалити')}
                         >
@@ -573,7 +822,7 @@ export function MessageBubble({
                             type="button"
                             className={cn(
                                 toolButton,
-                                translation.shown && 'text-gc-lilac-200',
+                                translation.shown && 'text-sky-400',
                             )}
                             onClick={translation.toggle}
                             title={
@@ -583,6 +832,26 @@ export function MessageBubble({
                             }
                         >
                             <Languages className="size-3.5" />
+                        </button>
+                    )}
+                    {!own && message.user && actions.onRestrict && (
+                        <button
+                            type="button"
+                            className={cn(toolButton, 'hover:text-red-400')}
+                            onClick={() => actions.onRestrict?.(message)}
+                            title={tr('Тайм-аут або виключення')}
+                        >
+                            <Gavel className="size-3.5" />
+                        </button>
+                    )}
+                    {message.guest && actions.onBanGuest && (
+                        <button
+                            type="button"
+                            className={cn(toolButton, 'hover:text-red-400')}
+                            onClick={() => actions.onBanGuest?.(message)}
+                            title={tr('Заблокувати гостя')}
+                        >
+                            <Ban className="size-3.5" />
                         </button>
                     )}
                     {!own && actions.onReport && (

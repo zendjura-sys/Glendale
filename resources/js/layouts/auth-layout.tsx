@@ -1,26 +1,18 @@
-import { Link, usePage } from '@inertiajs/react';
-import {
-    AnimatePresence,
-    LayoutGroup,
-    m,
-    useReducedMotion,
-} from 'motion/react';
-import { useRef } from 'react';
-import type { PointerEvent, ReactNode } from 'react';
-import { AuthBackdrop } from '@/components/auth/auth-backdrop';
-import { LanguageSelect } from '@/components/gc/language-switcher';
-import { Logo } from '@/components/gc/logo';
+import { usePage } from '@inertiajs/react';
+import { AnimatePresence, m, useReducedMotion } from 'motion/react';
+import type { ReactNode } from 'react';
+import { SiteBackground } from '@/components/backgrounds/site-background';
 import { PaletteSync } from '@/components/gc/palette-sync';
+import { Seasonal } from '@/components/gc/seasonal';
 import { SiteFooter } from '@/components/gc/site-footer';
+import { GuestHeader } from '@/components/guest/guest-header';
 import { tr } from '@/lib/i18n';
-import { blurSwap, EASE_OUT, motionOr, SWAP } from '@/lib/motion';
-import { cn } from '@/lib/utils';
+import { blurSwap } from '@/lib/motion';
 
 /**
- * Макет входу й реєстрації: одна скляна картка, розділена навскіс на форму й «запрошення».
- * Макет постійний (Inertia зберігає його між /login і /register), тож при переході половини
- * міняються місцями анімацією layout, а вміст розмивається й проявляється знову.
- * Інші сторінки (відновлення пароля, 2FA, оскарження) — та сама картка з коротким запрошенням.
+ * Вхід і реєстрація — у стилі головної: та сама шапка зі значком теми, фон і футер;
+ * ліворуч великий заголовок (і картинка з адмінки, якщо є), праворуч — скляна картка з формою.
+ * Світла й темна теми — як на всьому сайті. Інші сторінки (пароль, 2FA) — той самий макет.
  */
 
 type Mode = 'login' | 'register' | 'other';
@@ -35,65 +27,41 @@ function useMode(): Mode {
           : 'other';
 }
 
-/** Ліва/права «запрошувальна» половина: що сказати й куди вести. */
-function Invite({ mode }: { mode: Mode }) {
-    const registrationOpen = usePage().props.site?.registration_open !== false;
+/** Заголовок лівої половини: що відбувається на цій сторінці. */
+function hero(mode: Mode): { title: string; text: string } {
+    if (mode === 'register') {
+        return {
+            title: tr('Ще немає акаунта?'),
+            text: tr(
+                'Зареєструйтеся — друзі, команда, ваші сервери й сім’ї в одному місці. Це безкоштовно.',
+            ),
+        };
+    }
+    if (mode === 'login') {
+        return {
+            title: tr('З поверненням!'),
+            text: tr('Увійдіть — і продовжимо з того місця, де ви зупинилися.'),
+        };
+    }
 
-    const content =
-        mode === 'login'
-            ? registrationOpen
-                ? {
-                      title: tr('Вперше тут?'),
-                      text: tr(
-                          'Акаунт — за хвилину. Друзі, кіно разом і ваші ігрові сервери вже чекають.',
-                      ),
-                      href: '/register',
-                      action: tr('Створити акаунт'),
-                  }
-                : {
-                      title: tr('Раді бачити'),
-                      text: tr(
-                          'Реєстрація зараз закрита, але вхід працює як завжди.',
-                      ),
-                      href: null,
-                      action: null,
-                  }
-            : mode === 'register'
-              ? {
-                    title: tr('Уже з нами?'),
-                    text: tr(
-                        'Увійдіть — і продовжимо з того місця, де ви зупинилися.',
-                    ),
-                    href: '/login',
-                    action: tr('Увійти'),
-                }
-              : {
-                    title: tr('GameCon'),
-                    text: tr('Соцмережа для гравців і кіноманів.'),
-                    href: '/login',
-                    action: tr('До входу'),
-                };
+    return {
+        title: 'GameCon',
+        text: tr('Соцмережа для гравців.'),
+    };
+}
+
+/** Картинка з адмінки (Адмінка → Дизайн) — у лівій половині як ілюстрація, не на весь екран. */
+function AuthArt() {
+    const images = usePage().props.site?.auth_images;
+    const src = images?.site_desktop ?? images?.site_mobile ?? null;
+    if (!src) return null;
 
     return (
-        <div className="flex h-full flex-col justify-end">
-            {/* На телефоні — компактний рядок під формою: питання й кнопка. */}
-            <div className="flex items-center justify-between gap-4 lg:block">
-                <h2 className="font-display text-base font-semibold tracking-tight text-balance text-white lg:text-[clamp(1.9rem,3vw,2.6rem)] lg:leading-[1.05] lg:font-bold">
-                    {content.title}
-                </h2>
-                <p className="mt-3 hidden max-w-[30ch] text-[15px] leading-relaxed text-white/55 lg:block">
-                    {content.text}
-                </p>
-                {content.href && (
-                    <Link
-                        href={content.href}
-                        className="inline-flex h-10 shrink-0 items-center rounded-full border border-white/20 px-5 text-sm font-semibold text-white transition-colors hover:border-white/40 hover:bg-white/[0.06] focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none lg:mt-7 lg:h-11 lg:px-6"
-                    >
-                        {content.action}
-                    </Link>
-                )}
-            </div>
-        </div>
+        <div
+            aria-hidden
+            className="mt-10 aspect-[16/10] w-full max-w-[30rem] rounded-3xl bg-cover bg-center shadow-[0_30px_80px_-30px_rgb(10_132_255/0.55)]"
+            style={{ backgroundImage: `url(${src})` }}
+        />
     );
 }
 
@@ -109,109 +77,57 @@ export default function AuthLayout({
     const mode = useMode();
     const component = usePage().component;
     const reduce = useReducedMotion();
-    const card = useRef<HTMLDivElement>(null);
-    // «Рідке скло»: відблиск іде за курсором. Пишемо CSS-змінні напряму — без перерендеру React.
-    const glare = (e: PointerEvent<HTMLDivElement>) => {
-        const el = card.current;
-        if (!el || reduce || e.pointerType !== 'mouse') return;
-        const box = el.getBoundingClientRect();
-        el.style.setProperty('--lx', `${e.clientX - box.left}px`);
-        el.style.setProperty('--ly', `${e.clientY - box.top}px`);
-    };
-    // Вхід: форма ліворуч, запрошення праворуч; реєстрація — навпаки (як у референсі).
-    const inviteFirst = mode === 'register';
-    const spring = motionOr(reduce, SWAP);
     const fade = blurSwap(reduce);
+    const intro = hero(mode);
 
+    // Той самий фон, шапка й футер, що на головній — переходи між ними без стрибків.
     return (
-        <div className="relative flex min-h-dvh flex-col items-center justify-center px-4 py-8 sm:px-6">
+        <div className="relative min-h-dvh">
             <PaletteSync />
-            <AuthBackdrop />
+            <SiteBackground />
+            <Seasonal />
+            <GuestHeader />
 
             <main
                 id="main-content"
-                className="relative z-10 w-full max-w-[440px] lg:max-w-[960px]"
+                className="relative mx-auto grid max-w-[1240px] items-start gap-10 px-4 pt-24 pb-12 sm:px-5 lg:min-h-dvh lg:grid-cols-[1fr_minmax(0,460px)] lg:items-center lg:gap-16 lg:pt-32"
             >
-                <Link
-                    href="/"
-                    className="mb-6 flex justify-center lg:hidden"
-                    aria-label="GameCon"
-                >
-                    <Logo />
-                </Link>
-                <m.div
-                    initial={reduce ? false : { opacity: 0, y: 16 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6, ease: EASE_OUT }}
-                    ref={card}
-                    onPointerMove={glare}
-                    className="auth-card liquid-glass overflow-hidden rounded-[30px]"
-                >
-                    <span aria-hidden className="liquid-glass__glare" />
-                    <LayoutGroup>
-                        <div className="relative flex flex-col lg:grid lg:min-h-[600px] lg:grid-cols-2">
-                            {/* Запрошення: на ПК — половина зі скошеним краєм, на телефоні — рядок над формою. */}
-                            <m.section
-                                layout
-                                transition={spring}
-                                className={cn(
-                                    'auth-invite relative order-2 px-7 py-5 sm:px-9 lg:px-12 lg:py-12',
-                                    inviteFirst ? 'lg:order-1' : 'lg:order-2',
-                                    inviteFirst
-                                        ? 'auth-invite--left'
-                                        : 'auth-invite--right',
-                                )}
-                            >
-                                <AnimatePresence mode="wait" initial={false}>
-                                    <m.div
-                                        key={`invite-${mode}`}
-                                        className="h-full"
-                                        {...fade}
-                                    >
-                                        <Invite mode={mode} />
-                                    </m.div>
-                                </AnimatePresence>
-                            </m.section>
+                <section className="hidden lg:block">
+                    <AnimatePresence mode="wait" initial={false}>
+                        <m.div key={`hero-${mode}`} {...fade}>
+                            <h2 className="font-display text-[clamp(2.4rem,4.2vw,4rem)] leading-[1.04] font-extrabold tracking-tight text-balance text-white">
+                                {intro.title}
+                            </h2>
+                            <p className="mt-4 max-w-[36ch] text-[17px] leading-relaxed text-white/60">
+                                {intro.text}
+                            </p>
+                        </m.div>
+                    </AnimatePresence>
+                    <AuthArt />
+                </section>
 
-                            <m.section
-                                layout
-                                transition={spring}
-                                className={cn(
-                                    'auth-form relative order-1 px-7 pt-8 pb-8 sm:px-9 lg:px-12 lg:py-12',
-                                    inviteFirst ? 'lg:order-2' : 'lg:order-1',
-                                )}
-                            >
-                                {/* Логотип над формою: їде разом із нею на інший бік. */}
-                                <Link
-                                    href="/"
-                                    className="mb-10 hidden w-fit lg:block"
-                                    aria-label="GameCon"
-                                >
-                                    <Logo />
-                                </Link>
-                                <AnimatePresence mode="wait" initial={false}>
-                                    <m.div key={component} {...fade}>
-                                        <h1 className="font-display text-xl font-semibold tracking-tight text-white">
-                                            {title}
-                                        </h1>
-                                        {description && (
-                                            <p className="mt-1.5 text-sm leading-relaxed text-white/50">
-                                                {description}
-                                            </p>
-                                        )}
-                                        <div className="mt-7">{children}</div>
-                                    </m.div>
-                                </AnimatePresence>
-                            </m.section>
-                        </div>
-                    </LayoutGroup>
-                </m.div>
-
-                <div className="mt-5 flex justify-center">
-                    <LanguageSelect />
-                </div>
-                <SiteFooter className="mt-4 border-t-0 px-0" />
+                <section className="auth-form auth-card relative mx-auto w-full max-w-[440px] rounded-[28px] p-7 sm:p-9">
+                    {/* Тонкий акцентний відблиск по верхньому краю картки. */}
+                    <span
+                        aria-hidden
+                        className="pointer-events-none absolute inset-x-10 top-0 h-px bg-[linear-gradient(90deg,transparent,rgb(56_189_248/0.7),transparent)]"
+                    />
+                    <AnimatePresence mode="wait" initial={false}>
+                        <m.div key={component} {...fade}>
+                            <h1 className="font-display text-[28px] leading-tight font-bold tracking-tight text-white">
+                                {title}
+                            </h1>
+                            {description && (
+                                <p className="mt-2 text-[14px] leading-relaxed text-white/55">
+                                    {description}
+                                </p>
+                            )}
+                            <div className="mt-8">{children}</div>
+                        </m.div>
+                    </AnimatePresence>
+                </section>
             </main>
+            <SiteFooter className="py-8" />
         </div>
     );
 }

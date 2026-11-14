@@ -21,7 +21,7 @@ function Step({
     children: React.ReactNode;
 }) {
     return (
-        <section className="glass min-w-0 space-y-3 rounded-3xl p-5 sm:p-6">
+        <section className="gc-solid min-w-0 space-y-3 rounded-2xl p-5 sm:p-6">
             <h2 className="font-display text-lg font-bold text-white">
                 {title}
             </h2>
@@ -38,7 +38,7 @@ export default function DevelopersOAuth({ scopes, base }: Props) {
             <div className="mx-auto max-w-3xl space-y-5">
                 <header className="space-y-2">
                     <h1 className="flex items-center gap-2 font-display text-2xl font-bold text-white">
-                        <LogIn className="size-6 text-gc-lilac-300" />
+                        <LogIn className="size-6 text-sky-400" />
                         {tr('Увійти через GameCon')}
                     </h1>
                     <p className="text-sm leading-relaxed text-white/60">

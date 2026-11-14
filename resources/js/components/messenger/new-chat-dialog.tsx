@@ -74,7 +74,7 @@ export function NewChatDialog({
 
     return (
         <Dialog open={open} onOpenChange={close}>
-            <DialogContent className="glass-strong gap-0 rounded-3xl border-white/10 p-5 text-white sm:max-w-md">
+            <DialogContent className="glass-strong gap-0 rounded-dialog p-5 text-white sm:max-w-md">
                 <DialogTitle className="font-display text-lg">
                     {mode === 'direct'
                         ? tr('Нове повідомлення')
@@ -88,7 +88,7 @@ export function NewChatDialog({
                           )}
                 </DialogDescription>
 
-                <div className="mt-4 mb-4 grid grid-cols-2 gap-1 rounded-2xl bg-white/[0.04] p-1">
+                <div className="gc-solid-2 mt-4 mb-4 grid grid-cols-2 gap-1 rounded-2xl p-1">
                     {tabs.map((tab) => (
                         <button
                             key={tab.value}
@@ -97,7 +97,7 @@ export function NewChatDialog({
                             className={cn(
                                 'flex items-center justify-center gap-2 rounded-xl py-2 text-sm font-medium transition',
                                 mode === tab.value
-                                    ? 'bg-gradient-brand text-white shadow-[0_0_20px_-4px_rgb(124_92_255/0.8)]'
+                                    ? 'bg-sky-500 text-white'
                                     : 'text-white/55 hover:text-white',
                             )}
                         >
@@ -149,7 +149,7 @@ export function NewChatDialog({
 
                 {mode === 'group' && (
                     <div className="mt-4 flex items-center justify-between gap-3">
-                        <span className="text-xs text-rose-300">{error}</span>
+                        <span className="text-xs text-red-400">{error}</span>
                         <button
                             type="button"
                             onClick={createGroup}

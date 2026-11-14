@@ -1,5 +1,11 @@
+import { ModuleIcon } from '@/components/gc/module-icon';
 import { Link, usePage } from '@inertiajs/react';
 import {
+    Clapperboard,
+    Archive,
+    ShieldAlert,
+    BadgePercent,
+    Headphones,
     Radio,
     UserRoundSearch,
     AlarmClock,
@@ -18,28 +24,37 @@ import {
     Shield,
     ShieldCheck,
     UserCheck,
+    Sunrise,
+    Trophy,
     UserPlus,
     Gift,
+    Layers,
     RefreshCw,
+    Rocket,
+    CalendarRange,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import type { CSSProperties } from 'react';
+import { createPortal } from 'react-dom';
 import { api } from '@/lib/api';
+import { playNotifySound } from '@/lib/sounds';
 import { timeAgo } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import type { NotificationItem } from '@/types';
 import { UserAvatar } from './user-avatar';
+import { AlertNotification } from '@/components/alerts/alert-notification';
 import { WebPushButton } from './web-push-toggle';
 import { tr } from '@/lib/i18n';
 
 const kindIcon: Record<string, { icon: typeof Bell; className: string }> = {
-    post_like: { icon: Heart, className: 'bg-rose-500' },
+    post_like: { icon: Heart, className: 'bg-red-500' },
     post_comment: { icon: MessageSquare, className: 'bg-gc-blue' },
     wall_post: { icon: PenSquare, className: 'bg-gc-purple' },
     friend_request: { icon: UserPlus, className: 'bg-emerald-500' },
     friend_accepted: { icon: UserCheck, className: 'bg-emerald-500' },
     community_request: { icon: Shield, className: 'bg-gc-indigo' },
     community_approved: { icon: ShieldCheck, className: 'bg-gc-indigo' },
-    photo_like: { icon: Heart, className: 'bg-rose-500' },
+    photo_like: { icon: Heart, className: 'bg-red-500' },
     photo_comment: { icon: ImageIcon, className: 'bg-[#38bdf8]' },
     family_application: { icon: UserPlus, className: 'bg-amber-500' },
     family_accepted: { icon: Crown, className: 'bg-amber-500' },
@@ -47,19 +62,34 @@ const kindIcon: Record<string, { icon: typeof Bell; className: string }> = {
     family_review: { icon: ClipboardCheck, className: 'bg-emerald-500' },
     family_cashout: { icon: Wallet, className: 'bg-emerald-500' },
     family_bank: { icon: Wallet, className: 'bg-emerald-500' },
-    family_sanction: { icon: Gavel, className: 'bg-rose-500' },
-    family_kicked: { icon: Gavel, className: 'bg-rose-500' },
-    family_warehouse: { icon: Package, className: 'bg-rose-500' },
+    family_sanction: { icon: Gavel, className: 'bg-red-500' },
+    family_kicked: { icon: Gavel, className: 'bg-red-500' },
+    family_warehouse: { icon: Package, className: 'bg-red-500' },
     family_event: { icon: CalendarDays, className: 'bg-gc-indigo' },
     event_reminder: { icon: AlarmClock, className: 'bg-amber-500' },
     party_join: { icon: UserRoundSearch, className: 'bg-gc-indigo' },
-    stream_live: { icon: Radio, className: 'bg-rose-500' },
+    party_invite: { icon: UserRoundSearch, className: 'bg-primary' },
+    stream_live: { icon: Radio, className: 'bg-red-500' },
+    listen_room: { icon: Headphones, className: 'bg-gc-indigo' },
+    tournament: { icon: Trophy, className: 'bg-amber-500' },
+    clip_of_week: { icon: Trophy, className: 'bg-amber-500' },
+    giveaway: { icon: Gift, className: 'bg-emerald-500' },
+    price_drop: { icon: BadgePercent, className: 'bg-primary' },
+    game_release: { icon: Rocket, className: 'bg-primary' },
+    morning_digest: { icon: Sunrise, className: 'bg-primary' },
+    weekly_digest: { icon: CalendarRange, className: 'bg-primary' },
+    new_login: { icon: ShieldAlert, className: 'bg-amber-500' },
+    data_export: { icon: Archive, className: 'bg-primary' },
+    episode_new: { icon: Clapperboard, className: 'bg-rose-500' },
     referral_joined: { icon: UserPlus, className: 'bg-emerald-500' },
     plus_gifted: { icon: Gift, className: 'bg-indigo-500' },
+    level_up: { icon: Trophy, className: 'bg-amber-500' },
+    card_gift: { icon: Gift, className: 'bg-violet-500' },
+    card_earned: { icon: Layers, className: 'bg-sky-500' },
     wallet_topup: { icon: Wallet, className: 'bg-emerald-500' },
     plus_renewed: { icon: RefreshCw, className: 'bg-indigo-500' },
     plus_renewal_failed: { icon: Wallet, className: 'bg-amber-500' },
-    phone_offer: { icon: Gift, className: 'bg-pink-500' },
+    phone_offer: { icon: Gift, className: 'bg-sky-500' },
     phone_offer_result: { icon: Phone, className: 'bg-indigo-500' },
 };
 
@@ -70,7 +100,18 @@ export function NotificationsMenu() {
     const [open, setOpen] = useState(false);
     const [items, setItems] = useState<NotificationItem[] | null>(null);
     const [unread, setUnread] = useState(counters?.notifications ?? 0);
+    // Звук, коли непрочитаних сповіщень побільшало (нове прийшло з наступною сторінкою).
+    const sound = usePage().props.auth.user?.notify_sound;
+    const seen = useRef(counters?.notifications ?? 0);
+    useEffect(() => {
+        const count = counters?.notifications ?? 0;
+        if (count > seen.current) playNotifySound(sound);
+        seen.current = count;
+    }, [counters?.notifications, sound]);
     const boxRef = useRef<HTMLDivElement>(null);
+    const panelRef = useRef<HTMLDivElement>(null);
+    // Панель живе поза шапкою (портал): усередині скляної шапки її скло не розмивало б сторінку.
+    const [anchor, setAnchor] = useState({ top: 64, right: 12 });
 
     useEffect(
         () => setUnread(counters?.notifications ?? 0),
@@ -79,7 +120,11 @@ export function NotificationsMenu() {
 
     useEffect(() => {
         const onClick = (event: MouseEvent) => {
-            if (!boxRef.current?.contains(event.target as Node)) {
+            const target = event.target as Node;
+            if (
+                !boxRef.current?.contains(target) &&
+                !panelRef.current?.contains(target)
+            ) {
                 setOpen(false);
             }
         };
@@ -90,6 +135,13 @@ export function NotificationsMenu() {
 
     const toggle = () => {
         const next = !open;
+        const rect = boxRef.current?.getBoundingClientRect();
+        if (next && rect) {
+            setAnchor({
+                top: Math.round(rect.bottom + 8),
+                right: Math.max(12, Math.round(window.innerWidth - rect.right)),
+            });
+        }
         setOpen(next);
 
         if (next) {
@@ -114,7 +166,7 @@ export function NotificationsMenu() {
                 type="button"
                 onClick={toggle}
                 className={cn(
-                    'relative flex size-10 items-center justify-center rounded-full bg-black/25 text-white/75 ring-1 ring-white/[0.06] transition hover:bg-black/40 hover:text-white',
+                    'gc-icon-button relative flex size-10 items-center justify-center rounded-xl transition',
                     open && 'bg-white/[0.07] text-white',
                 )}
                 aria-label={
@@ -123,121 +175,203 @@ export function NotificationsMenu() {
                         : tr('Сповіщення')
                 }
             >
-                <Bell className="size-[19px]" />
+                <ModuleIcon name="bell" animated size={19} />
                 {unread > 0 && (
                     <span
                         aria-hidden
-                        className="absolute -top-0.5 -right-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-gradient-to-r from-rose-500 to-pink-500 px-1 text-[11px] leading-none font-bold text-white ring-2 ring-background"
+                        className="absolute top-0.5 right-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-red-500 px-1 text-[11px] leading-none font-bold text-white"
                     >
                         {unread > 99 ? '99+' : unread}
                     </span>
                 )}
             </button>
 
-            {open && (
-                <>
-                    <button
-                        type="button"
-                        aria-label={tr('Закрити сповіщення')}
-                        onClick={() => setOpen(false)}
-                        className="fixed inset-0 z-40 bg-background/70 sm:hidden"
-                    />
-                    <div className="fixed inset-x-3 top-16 z-50 flex max-h-[min(70dvh,calc(100dvh-env(safe-area-inset-bottom)-8.5rem))] animate-rise flex-col overflow-hidden rounded-2xl border border-white/10 bg-deep shadow-[0_24px_80px_-24px_rgb(0_0_0/0.9)] sm:absolute sm:inset-x-auto sm:top-12 sm:right-0 sm:max-h-[60vh] sm:w-[min(380px,calc(100vw-2rem))]">
-                        <div className="flex shrink-0 items-center justify-between border-b border-white/5 px-4 py-3">
-                            <span className="font-display text-sm font-semibold">
-                                {tr('Сповіщення')}
-                            </span>
-                            <WebPushButton />
-                        </div>
-                        <div className="min-h-0 overflow-y-auto overscroll-contain p-1.5">
-                            {items === null ? (
-                                Array.from({ length: 4 }).map((_, i) => (
-                                    <div
-                                        key={i}
-                                        className="flex items-center gap-3 px-2.5 py-2.5"
-                                    >
-                                        <span className="skeleton size-10 rounded-full" />
-                                        <span className="flex-1 space-y-2">
-                                            <span className="skeleton block h-3 w-3/4 rounded" />
-                                            <span className="skeleton block h-3 w-1/3 rounded" />
-                                        </span>
-                                    </div>
-                                ))
-                            ) : items.length === 0 ? (
-                                <div className="px-4 py-10 text-center">
-                                    <Bell className="mx-auto mb-3 size-8 text-white/20" />
-                                    <p className="text-sm text-white/50">
-                                        {tr(
-                                            "Поки що тихо. Тут з'являться лайки, коментарі та заявки.",
-                                        )}
-                                    </p>
-                                </div>
-                            ) : (
-                                items.map((item) => {
-                                    const meta =
-                                        kindIcon[item.kind] ??
-                                        (item.kind.startsWith('family_')
-                                            ? familyIcon
-                                            : {
-                                                  icon: Bell,
-                                                  className: 'bg-white/20',
-                                              });
-                                    const Icon = meta.icon;
-
-                                    return (
-                                        <Link
-                                            key={item.id}
-                                            href={item.url ?? '#'}
-                                            onClick={() => setOpen(false)}
-                                            className={cn(
-                                                'flex gap-3 rounded-xl px-2.5 py-2.5 transition hover:bg-white/5',
-                                                !item.read &&
-                                                    'bg-gc-blue/[0.06]',
-                                            )}
+            {open &&
+                createPortal(
+                    <>
+                        <button
+                            type="button"
+                            aria-label={tr('Закрити сповіщення')}
+                            onClick={() => setOpen(false)}
+                            className="fixed inset-0 z-40 bg-background/70 sm:hidden"
+                        />
+                        <div
+                            ref={panelRef}
+                            style={
+                                {
+                                    '--nt': `${anchor.top}px`,
+                                    '--nr': `${anchor.right}px`,
+                                } as CSSProperties
+                            }
+                            className="gc-float-menu fixed inset-x-3 top-16 z-[60] flex max-h-[min(70dvh,calc(100dvh-env(safe-area-inset-bottom)-8.5rem))] animate-rise flex-col overflow-hidden rounded-2xl bg-deep sm:inset-x-auto sm:top-[var(--nt)] sm:right-[var(--nr)] sm:max-h-[60vh] sm:w-[min(380px,calc(100vw-2rem))]"
+                        >
+                            <div className="flex shrink-0 items-center justify-between px-4 py-3">
+                                <span className="font-display text-sm font-semibold">
+                                    {tr('Сповіщення')}
+                                </span>
+                                <WebPushButton />
+                            </div>
+                            <div className="min-h-0 overflow-y-auto overscroll-contain p-1.5">
+                                {items === null ? (
+                                    Array.from({ length: 4 }).map((_, i) => (
+                                        <div
+                                            key={i}
+                                            className="flex items-center gap-3 px-2.5 py-2.5"
                                         >
-                                            <span className="relative">
-                                                {item.actor ? (
-                                                    <UserAvatar
-                                                        user={item.actor}
-                                                        size="md"
-                                                        showOnline={false}
-                                                    />
-                                                ) : (
-                                                    <span className="block size-11 rounded-full bg-white/5" />
+                                            <span className="skeleton size-10 rounded-full" />
+                                            <span className="flex-1 space-y-2">
+                                                <span className="skeleton block h-3 w-3/4 rounded" />
+                                                <span className="skeleton block h-3 w-1/3 rounded" />
+                                            </span>
+                                        </div>
+                                    ))
+                                ) : items.length === 0 ? (
+                                    <div className="px-4 py-10 text-center">
+                                        <Bell className="mx-auto mb-3 size-8 text-white/20" />
+                                        <p className="text-sm text-white/50">
+                                            {tr(
+                                                "Поки що тихо. Тут з'являться лайки, коментарі та заявки.",
+                                            )}
+                                        </p>
+                                    </div>
+                                ) : (
+                                    items.map((item) => {
+                                        if (item.alert)
+                                            return (
+                                                <AlertNotification
+                                                    key={item.id}
+                                                    item={item}
+                                                    onOpen={() =>
+                                                        setOpen(false)
+                                                    }
+                                                />
+                                            );
+                                        const meta =
+                                            kindIcon[item.kind] ??
+                                            (item.kind.startsWith('family_')
+                                                ? familyIcon
+                                                : {
+                                                      icon: Bell,
+                                                      className: 'bg-white/20',
+                                                  });
+                                        const Icon = meta.icon;
+
+                                        return (
+                                            <Link
+                                                key={item.id}
+                                                href={item.url ?? '#'}
+                                                onClick={() => setOpen(false)}
+                                                className={cn(
+                                                    'flex gap-3 rounded-xl px-2.5 py-2.5 transition hover:bg-white/5',
+                                                    !item.read &&
+                                                        'bg-gc-blue/[0.06]',
                                                 )}
-                                                <span
-                                                    className={cn(
-                                                        'absolute -right-1 -bottom-1 flex size-5 items-center justify-center rounded-full ring-2 ring-[#0d1222]',
-                                                        meta.className,
+                                            >
+                                                <span className="relative">
+                                                    {(item.actors?.length ??
+                                                        0) > 1 &&
+                                                    (item.count ?? 1) > 1 ? (
+                                                        <span className="relative block size-11">
+                                                            <UserAvatar
+                                                                user={
+                                                                    item
+                                                                        .actors![1]
+                                                                }
+                                                                size="sm"
+                                                                showOnline={
+                                                                    false
+                                                                }
+                                                                className="absolute top-0 left-0"
+                                                            />
+                                                            <UserAvatar
+                                                                user={
+                                                                    item
+                                                                        .actors![0]
+                                                                }
+                                                                size="sm"
+                                                                showOnline={
+                                                                    false
+                                                                }
+                                                                className="absolute right-0 bottom-0 ring-2 ring-[#0d1222]"
+                                                            />
+                                                        </span>
+                                                    ) : item.actor ? (
+                                                        <UserAvatar
+                                                            user={item.actor}
+                                                            size="md"
+                                                            showOnline={false}
+                                                        />
+                                                    ) : (
+                                                        <span className="block size-11 rounded-full bg-white/5" />
                                                     )}
-                                                >
-                                                    <Icon className="size-3 text-white" />
-                                                </span>
-                                            </span>
-                                            <span className="min-w-0 flex-1 text-sm leading-snug break-words">
-                                                <span className="font-semibold text-white">
-                                                    {item.actor?.name}
-                                                </span>{' '}
-                                                <span className="text-white/70">
-                                                    {item.text}
-                                                </span>
-                                                {item.excerpt && (
-                                                    <span className="mt-0.5 block truncate text-xs text-white/45">
-                                                        «{item.excerpt}»
+                                                    <span
+                                                        className={cn(
+                                                            'absolute -right-1 -bottom-1 flex size-5 items-center justify-center rounded-full ring-2 ring-[#0d1222]',
+                                                            meta.className,
+                                                        )}
+                                                    >
+                                                        <Icon className="size-3 text-white" />
                                                     </span>
-                                                )}
-                                                <span className="mt-1 block text-xs text-white/40">
-                                                    {timeAgo(item.created_at)}
                                                 </span>
-                                            </span>
-                                        </Link>
-                                    );
-                                })
-                            )}
+                                                <span className="min-w-0 flex-1 text-sm leading-snug break-words">
+                                                    {groupedLine(item) ?? (
+                                                        <>
+                                                            <span className="font-semibold text-white">
+                                                                {
+                                                                    item.actor
+                                                                        ?.name
+                                                                }
+                                                            </span>{' '}
+                                                            <span className="text-white/70">
+                                                                {item.text}
+                                                            </span>
+                                                        </>
+                                                    )}
+                                                    {item.excerpt && (
+                                                        <span className="mt-0.5 block truncate text-xs text-white/45">
+                                                            «{item.excerpt}»
+                                                        </span>
+                                                    )}
+                                                    <span className="mt-1 block text-xs text-white/40">
+                                                        {timeAgo(
+                                                            item.created_at,
+                                                        )}
+                                                    </span>
+                                                </span>
+                                            </Link>
+                                        );
+                                    })
+                                )}
+                            </div>
                         </div>
-                    </div>
-                </>
-            )}
+                    </>,
+                    document.body,
+                )}
         </div>
+    );
+}
+
+/** «Олена, Петро та ще 3 оцінили ваш запис» — для згрупованих лайків, реакцій на фото й коментарів. */
+function groupedLine(item: NotificationItem) {
+    const count = item.count ?? 1;
+    const actors = item.actors ?? [];
+    if (count < 2 || actors.length === 0) return null;
+    const shown = actors.slice(0, 2).map((a) => a.name);
+    const rest = count - shown.length;
+    const verb =
+        {
+            post_like: tr('оцінили ваш запис'),
+            photo_like: tr('оцінили ваше фото'),
+            post_comment: tr('прокоментували ваш запис'),
+        }[item.kind] ?? item.text;
+
+    return (
+        <>
+            <span className="font-semibold text-white">
+                {shown.join(', ')}
+                {rest > 0 && ` ${tr('та ще {n}', { n: rest })}`}
+            </span>{' '}
+            <span className="text-white/70">{verb}</span>
+        </>
     );
 }

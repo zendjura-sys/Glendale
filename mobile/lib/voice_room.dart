@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+
+import 'core/widgets/arctic_glass/arctic_fit_text.dart';
 import 'package:flutter_background/flutter_background.dart';
 import 'package:go_router/go_router.dart';
 import 'package:livekit_client/livekit_client.dart';
@@ -378,10 +380,10 @@ class _VoiceRoomsPanelState extends State<VoiceRoomsPanel> {
         padding: const EdgeInsets.fromLTRB(14, 12, 8, 10),
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           Row(children: [
-            const Icon(LucideIcons.volume2, size: 18, color: primary),
+            Icon(LucideIcons.volume2, size: 18, color: primary),
             const SizedBox(width: 8),
             Expanded(child: Text(tr('Голосові кімнати'), style: body(15, weight: FontWeight.w700))),
-            if (manage) IconButton(onPressed: _create, icon: const Icon(LucideIcons.plus, size: 20, color: muted), tooltip: tr('Нова кімната')),
+            if (manage) IconButton(onPressed: _create, icon: Icon(LucideIcons.plus, size: 20, color: muted), tooltip: tr('Нова кімната')),
           ]),
           if (!enabled)
             Padding(
@@ -422,16 +424,12 @@ class _VoiceRoomsPanelState extends State<VoiceRoomsPanel> {
                 Icon(locked ? LucideIcons.lock : LucideIcons.volume2, size: 18, color: locked ? faint : (here ? green : muted)),
               const SizedBox(width: 10),
               Expanded(
-                child: Text(
-                  text(room['name']) ?? '',
-                  overflow: TextOverflow.ellipsis,
-                  style: body(14.5, color: locked ? faint : (here ? ink : soft), weight: here ? FontWeight.w700 : FontWeight.w500),
-                ),
+                child: FitText(text(room['name']) ?? '', style: body(14.5, color: locked ? faint : (here ? ink : soft), weight: here ? FontWeight.w700 : FontWeight.w500)),
               ),
               if (count > 0) Text('$count', style: body(12.5, color: muted)),
               if (manage) ...[
                 const SizedBox(width: 4),
-                InkResponse(onTap: () => _roomMenu(room), radius: 18, child: const Icon(LucideIcons.ellipsis, size: 18, color: faint)),
+                InkResponse(onTap: () => _roomMenu(room), radius: 18, child: Icon(LucideIcons.ellipsis, size: 18, color: faint)),
               ],
             ]),
           ),
@@ -456,7 +454,7 @@ class _VoiceRoomsPanelState extends State<VoiceRoomsPanel> {
                   child: Avatar(name: text(person['name']) ?? '', url: absolute(person['avatar_url']), size: 26),
                 ),
                 const SizedBox(width: 8),
-                Expanded(child: Text(text(person['name']) ?? '', overflow: TextOverflow.ellipsis, style: body(13, color: soft))),
+                Expanded(child: FitText(text(person['name']) ?? '', style: body(13, color: soft))),
                 if (person['muted'] == true) const Icon(LucideIcons.micOff, size: 15, color: dangerSoft),
               ]),
             ),
@@ -539,8 +537,8 @@ class _VoiceBarState extends State<VoiceBar> {
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(call.roomName, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14, weight: FontWeight.w700)),
-                    Text(call.status == 'connecting' ? tr('Підключення…') : (call.kind == 'call' ? '${call.label} · ${_elapsed(call.connectedAt)}' : call.label), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: muted)),
+                    FitText(call.roomName, style: body(14, weight: FontWeight.w700)),
+                    FitText(call.status == 'connecting' ? tr('Підключення…') : (call.kind == 'call' ? '${call.label} · ${_elapsed(call.connectedAt)}' : call.label), style: body(12, color: muted)),
                   ]),
                 ),
                 _BarButton(
@@ -580,7 +578,7 @@ class _BarButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bg = leave ? danger : (active ? Colors.white.withValues(alpha: 0.06) : danger.withValues(alpha: 0.16));
+    final bg = leave ? danger : (active ? palette.fg.withValues(alpha: 0.06) : danger.withValues(alpha: 0.16));
     final fg = leave ? Colors.white : (active ? ink : dangerSoft);
     return Padding(
       padding: const EdgeInsets.only(left: 6),

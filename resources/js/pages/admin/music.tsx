@@ -1,21 +1,28 @@
 import { Head, Link, router } from '@inertiajs/react';
 import {
+    Activity,
+    CircleCheck,
+    CircleDashed,
     Download,
+    Globe,
     HardDrive,
     Headphones,
     ListMusic,
     Music2,
     Pause,
     Play,
+    RefreshCw,
     RotateCcw,
     Search,
     Trash2,
 } from 'lucide-react';
 import { useState } from 'react';
 import type { FormEvent } from 'react';
+import { toast } from 'sonner';
 import { PageHeader, Pagination, StatCard } from '@/components/gc/admin';
 import { TrackCover } from '@/components/music/track-cover';
 import { Input } from '@/components/ui/input';
+import { api } from '@/lib/api';
 import {
     compactNumber,
     formatBytes,
@@ -35,7 +42,23 @@ type AdminTrack = LocalTrack & {
     deleted_at: string | null;
 };
 
+type MetadataSource = {
+    key: string;
+    label: string;
+    status: 'ok' | 'missing' | 'public';
+    hint: string;
+};
+
+type MetadataStatus = {
+    online: boolean;
+    pending: number;
+    enriched: number;
+    recognized: number;
+    sources: MetadataSource[];
+};
+
 type Props = {
+    metadata: MetadataStatus;
     tracks: Paginated<AdminTrack>;
     filters: { q: string; trashed: boolean };
     stats: {
@@ -48,7 +71,163 @@ type Props = {
     };
 };
 
-export default function AdminMusic({ tracks, filters, stats }: Props) {
+/** «Музичні метадані»: інструменти й джерела на сервері та запуск оновлення для старих треків. */
+type CheckResult = { ok: boolean; ms: number; message: string };
+
+function MetadataPanel({ metadata }: { metadata: MetadataStatus }) {
+    const [busy, setBusy] = useState(false);
+    const [checking, setChecking] = useState(false);
+    const [checks, setChecks] = useState<Record<string, CheckResult> | null>(
+        null,
+    );
+
+    // «Перевірити зараз»: справжній запит до кожного сервісу, а не лише «ключ збережено».
+    const check = async () => {
+        setChecking(true);
+        try {
+            const { results } = await api<{
+                results: Record<string, CheckResult>;
+            }>('POST', '/admin/music/metadata/check');
+            setChecks(results);
+        } catch {
+            toast.error(tr('Не вдалося перевірити джерела.'));
+        } finally {
+            setChecking(false);
+        }
+    };
+    const statusLabel = {
+        ok: tr('Готово'),
+        missing: tr('Немає'),
+        public: tr('без ключа'),
+    } as const;
+
+    const refresh = () => {
+        setBusy(true);
+        router.post(
+            '/admin/music/enrich',
+            {},
+            { preserveScroll: true, onFinish: () => setBusy(false) },
+        );
+    };
+
+    return (
+        <section className="gc-solid mb-5 rounded-2xl p-5">
+            <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+                <div>
+                    <h2 className="font-display text-lg font-semibold text-white">
+                        {tr('Музичні метадані')}
+                    </h2>
+                    <p className="text-sm text-white/45">
+                        {tr(
+                            'Оброблено {enriched}, розпізнано MusicBrainz {recognized}, чекають {pending}',
+                            {
+                                enriched: metadata.enriched,
+                                recognized: metadata.recognized,
+                                pending: metadata.pending,
+                            },
+                        )}
+                    </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                    <button
+                        type="button"
+                        disabled={checking || !metadata.online}
+                        onClick={() => void check()}
+                        className="gc-solid-2 flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium text-white/85 transition hover:bg-white/[0.1] disabled:opacity-50"
+                    >
+                        <Activity
+                            className={cn(
+                                'size-4',
+                                checking && 'animate-pulse',
+                            )}
+                        />
+                        {checking ? tr('Перевіряємо…') : tr('Перевірити зараз')}
+                    </button>
+                    <button
+                        type="button"
+                        disabled={busy || !metadata.online}
+                        onClick={refresh}
+                        className="flex items-center gap-2 rounded-xl bg-indigo-500/90 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-500 disabled:opacity-50"
+                    >
+                        <RefreshCw
+                            className={cn('size-4', busy && 'animate-spin')}
+                        />
+                        {tr('Оновити метадані')}
+                    </button>
+                </div>
+            </div>
+            <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-5">
+                {metadata.sources.map((source) => {
+                    const result = checks?.[source.key];
+                    const Icon =
+                        source.status === 'ok'
+                            ? CircleCheck
+                            : source.status === 'public'
+                              ? Globe
+                              : CircleDashed;
+
+                    return (
+                        <li
+                            key={source.key}
+                            className="gc-solid-2 rounded-2xl px-3 py-2.5"
+                            title={source.hint}
+                        >
+                            <div className="flex items-center gap-2">
+                                <Icon
+                                    className={cn(
+                                        'size-4 shrink-0',
+                                        source.status === 'missing'
+                                            ? 'text-white/30'
+                                            : 'text-indigo-300',
+                                    )}
+                                />
+                                <span className="text-sm font-medium break-words text-white">
+                                    {source.label}
+                                </span>
+                                <span
+                                    className={cn(
+                                        'ml-auto shrink-0 text-xs',
+                                        result
+                                            ? result.ok
+                                                ? 'text-emerald-300'
+                                                : 'text-red-400'
+                                            : 'text-white/40',
+                                    )}
+                                >
+                                    {result
+                                        ? result.ok
+                                            ? tr('Працює · {ms} мс', {
+                                                  ms: result.ms,
+                                              })
+                                            : tr('Помилка')
+                                        : statusLabel[source.status]}
+                                </span>
+                            </div>
+                            <p
+                                className={cn(
+                                    'mt-1 text-xs break-words',
+                                    result && !result.ok
+                                        ? 'text-red-400/80'
+                                        : 'text-white/40',
+                                )}
+                                title={result?.message ?? source.hint}
+                            >
+                                {result?.message ?? source.hint}
+                            </p>
+                        </li>
+                    );
+                })}
+            </ul>
+        </section>
+    );
+}
+
+export default function AdminMusic({
+    tracks,
+    filters,
+    stats,
+    metadata,
+}: Props) {
     const [q, setQ] = useState(filters.q);
     const player = usePlayer();
 
@@ -91,7 +270,7 @@ export default function AdminMusic({ tracks, filters, stats }: Props) {
                           )
                 }
                 actions={
-                    <div className="glass flex rounded-xl p-1 text-sm">
+                    <div className="gc-solid flex rounded-xl p-1 text-sm">
                         {[
                             { label: tr('Активні'), value: false },
                             {
@@ -108,7 +287,7 @@ export default function AdminMusic({ tracks, filters, stats }: Props) {
                                 className={cn(
                                     'rounded-lg px-3.5 py-1.5 font-medium transition',
                                     filters.trashed === tab.value
-                                        ? 'bg-gradient-brand text-white'
+                                        ? 'bg-sky-500 text-white'
                                         : 'text-white/55 hover:text-white',
                                 )}
                             >
@@ -163,24 +342,26 @@ export default function AdminMusic({ tracks, filters, stats }: Props) {
                 />
             </div>
 
+            {!filters.trashed && <MetadataPanel metadata={metadata} />}
+
             <form
                 onSubmit={submit}
-                className="glass relative mb-4 rounded-2xl p-2.5"
+                className="gc-solid relative mb-4 rounded-2xl p-2.5"
             >
                 <Search className="pointer-events-none absolute top-1/2 left-6 size-4 -translate-y-1/2 text-white/30" />
                 <Input
                     value={q}
                     onChange={(e) => setQ(e.target.value)}
-                    placeholder={tr('Назва, виконавець, альбом або жанр')}
+                    placeholder={tr('Пошук треку')}
                     className="h-10 pl-10"
                 />
             </form>
 
-            <div className="glass overflow-hidden rounded-3xl">
+            <div className="gc-solid overflow-hidden rounded-2xl">
                 <div className="overflow-x-auto">
                     <table className="w-full min-w-[820px] text-sm">
                         <thead>
-                            <tr className="border-b border-white/[0.06] text-left text-xs text-white/40">
+                            <tr className="text-left text-xs text-white/40">
                                 <th className="px-4 py-3 font-medium">
                                     {tr('Трек')}
                                 </th>
@@ -212,7 +393,7 @@ export default function AdminMusic({ tracks, filters, stats }: Props) {
                                     <tr
                                         key={track.id}
                                         className={cn(
-                                            'border-b border-white/[0.04] transition last:border-0 hover:bg-white/[0.03]',
+                                            'transition last:border-0 hover:bg-[var(--gc-l3)]',
                                             track.deleted_at && 'opacity-60',
                                         )}
                                     >
@@ -326,7 +507,7 @@ export default function AdminMusic({ tracks, filters, stats }: Props) {
                                                     onClick={() =>
                                                         remove(track)
                                                     }
-                                                    className="flex size-8 items-center justify-center rounded-lg text-rose-300 hover:bg-rose-400/10"
+                                                    className="flex size-8 items-center justify-center rounded-lg text-red-400 hover:bg-red-400/10"
                                                     title={
                                                         track.deleted_at
                                                             ? tr(

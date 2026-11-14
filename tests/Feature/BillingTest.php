@@ -185,6 +185,26 @@ class BillingTest extends TestCase
         $this->assertSame(0, $user->fresh()->balance);
     }
 
+    public function test_balance_top_up_is_paid_by_card_and_refund_takes_back_unused_units(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $user = User::factory()->create();
+        app(Wallet::class)->credit($user, 3000, 'topup', 'Залишок');
+        // Поповнення — лише карткою: наявний баланс у нього не зараховується.
+        $order = $this->buy($user, ['product' => 'balance_250']);
+        $this->assertSame(0, $order->credit_used);
+        $this->assertSame(25000, $order->amount);
+
+        $this->webhook(['invoiceId' => $order->invoice_id, 'status' => 'success', 'modifiedDate' => '2026-10-16T10:00:00Z'])->assertOk();
+        $this->assertSame(28000, $user->fresh()->balance);
+        $this->assertFalse($user->fresh()->isPlus());
+
+        app(Wallet::class)->debit($user->fresh(), 10000, 'author_sub', 'Підписка');
+        $this->actingAs($admin)->post("/admin/billing/orders/{$order->id}/refund")->assertSessionHasNoErrors();
+        // Повертаються гроші за поповнення, а з балансу списуються невикористані одиниці (не більше суми поповнення).
+        $this->assertSame(0, $user->fresh()->balance);
+    }
+
     public function test_refund_returns_only_the_balance_that_was_really_debited(): void
     {
         $admin = User::factory()->admin()->create();
@@ -247,7 +267,7 @@ class BillingTest extends TestCase
             'old_price' => $p['key'] === 'plus_month' ? 149 : null, 'days' => $p['days'], 'recurring' => true, 'enabled' => $p['key'] !== 'gift_year', 'badge' => null,
         ])->values()->push(['key' => 'plus_quarter', 'kind' => 'plus', 'promo' => null, 'name' => 'GameCon+ · 3 місяці', 'price' => 399, 'old_price' => null, 'days' => 90, 'recurring' => true, 'enabled' => true, 'badge' => 'Вигідно'])->all();
         $this->actingAs($admin)->put('/admin/billing/products', ['products' => $plans])->assertSessionHasNoErrors();
-        $this->actingAs($admin)->put('/admin/billing/rules', ['renew_before_hours' => 48, 'retry_hours' => 12, 'retry_max' => 4, 'order_hours' => 2, 'card_renewals' => true, 'offer_save_card' => true, 'badges' => ['visa', 'mastercard', 'prostir']])->assertSessionHasNoErrors();
+        $this->actingAs($admin)->put('/admin/billing/rules', ['renew_before_hours' => 48, 'retry_hours' => 12, 'retry_max' => 4, 'order_hours' => 2, 'trial_days' => 7, 'card_renewals' => true, 'offer_save_card' => true, 'badges' => ['visa', 'mastercard', 'prostir']])->assertSessionHasNoErrors();
         $this->actingAs($admin)->put('/admin/billing/google-pay', ['enabled' => true, 'environment' => 'TEST', 'merchant_name' => 'GameCon', 'gateway' => 'monobank', 'gateway_merchant_id' => 'mono-123'])->assertSessionHasNoErrors();
 
         $this->actingAs($user)->get('/plus/billing')->assertInertia(fn (Assert $page) => $page

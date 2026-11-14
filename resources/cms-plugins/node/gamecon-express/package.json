@@ -1,0 +1,9 @@
+{
+  "name": "gamecon-express-example",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Express + Passport: увійти через GameCon (OAuth 2.1 + PKCE)",
+  "scripts": {"start": "node server.js"},
+  "dependencies": {"express": "^4.21.0", "express-session": "^1.18.0", "passport": "^0.7.0", "passport-oauth2": "^1.8.0"}
+}

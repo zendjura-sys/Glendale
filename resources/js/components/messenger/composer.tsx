@@ -1,5 +1,9 @@
 import { usePage } from '@inertiajs/react';
+import { GifPicker } from '@/components/gc/gif-picker';
 import {
+    BarChart3,
+    Eye,
+    Camera,
     Clock,
     FileUp,
     ImagePlus,
@@ -16,7 +20,8 @@ import {
     UserRound,
     X,
 } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { FlyingSendIcon } from '@/components/gc/animated-icons';
 import { toast } from 'sonner';
 import { useVoiceRecorder } from '@/hooks/use-voice-recorder';
 import { api } from '@/lib/api';
@@ -25,8 +30,12 @@ import { usePlayer } from '@/lib/player';
 import { fitTextarea } from '@/lib/textarea';
 import { cn, dockedAboveNav } from '@/lib/utils';
 import type { ChatMessage, OutgoingMessage } from '@/types';
+import { CreatePollDialog } from './chat-poll';
 import { ContactShareDialog } from './contact-share-dialog';
+import { AiWriter } from './ai-writer';
 import { EmojiPanel } from './emoji-panel';
+import { VideoNoteRecorder } from './video-note';
+import { useDraft, writeDraft } from '@/lib/drafts';
 import { LOCALE, tr } from '@/lib/i18n';
 import { usePlugin } from '@/lib/plugins';
 
@@ -35,6 +44,8 @@ const MAX_LENGTH = 4096;
 
 type Props = {
     canWrite: boolean;
+    /** Чому писати не можна (за замовчуванням — обмеження в особистих). */
+    lockedText?: string | null;
     replyTo: ChatMessage | null;
     editing: ChatMessage | null;
     onCancel: () => void;
@@ -43,6 +54,11 @@ type Props = {
     onTyping: () => void;
     onEditLast: () => void;
     draft?: string | null;
+    /** Ключ чернетки незакінченого повідомлення (на цьому пристрої). */
+    draftKey?: string | null;
+    /** Групова бесіда, де можна створити опитування (null — пункт ховається). */
+    pollConversationId?: number | null;
+    onPollCreated?: (message: ChatMessage) => void;
 };
 
 function useOutsideClose(
@@ -63,6 +79,7 @@ function useOutsideClose(
 
 export function Composer({
     canWrite,
+    lockedText = null,
     replyTo,
     editing,
     onCancel,
@@ -71,13 +88,32 @@ export function Composer({
     onTyping,
     onEditLast,
     draft = null,
+    draftKey = null,
+    pollConversationId = null,
+    onPollCreated,
 }: Props) {
-    const { site } = usePage().props;
+    const { site, modules } = usePage().props;
+    // Картки — лише розділів режиму (гра, фільм, сервер); без жодного пункт ховається.
+    const cardWords = [
+        modules.includes('games') && tr('гра'),
+        modules.includes('cinema') && tr('фільм'),
+        modules.includes('servers') && tr('сервер'),
+    ].filter((word): word is string => Boolean(word));
+    const cardScope = cardWords.join(', ');
     const vanishOn = usePlugin('disappearing_messages');
     const scheduleOn = usePlugin('scheduled_messages');
+    const videoNotesPlugin = usePlugin('video_notes');
     const [body, setBody] = useState(draft ?? '');
+    // Лічильник відправок — літачок на кнопці «відлітає» з кожним повідомленням.
+    const [sentCount, setSentCount] = useState(0);
+    const draftsOn = usePlugin('local_drafts');
+    useDraft(draftsOn && !editing ? draftKey : null, body, setBody);
+    const aiWriterOn = usePlugin('ai_writer');
     const [publishAt, setPublishAt] = useState('');
     const [vanish, setVanish] = useState(false);
+    // Одне фото можна надіслати «на один перегляд».
+    const onceOn = usePlugin('view_once');
+    const [once, setOnce] = useState(false);
     const [card, setCard] = useState<{
         kind: string;
         id: number;
@@ -89,6 +125,8 @@ export function Composer({
     const [cardQuery, setCardQuery] = useState('');
     const [cardHits, setCardHits] = useState<NonNullable<typeof card>[]>([]);
     const [pickingCard, setPickingCard] = useState(false);
+    const gifOn = usePlugin('gif_search');
+    const [pickingGif, setPickingGif] = useState(false);
     const [images, setImages] = useState<File[]>([]);
     const [docs, setDocs] = useState<File[]>([]);
     const [emojiOpen, setEmojiOpen] = useState(false);
@@ -98,6 +136,7 @@ export function Composer({
     const sendTimer = useRef<number | null>(null);
     const sendHeld = useRef(false);
     const [contactOpen, setContactOpen] = useState(false);
+    const [pollOpen, setPollOpen] = useState(false);
     const textRef = useRef<HTMLTextAreaElement>(null);
     const imageRef = useRef<HTMLInputElement>(null);
     const docRef = useRef<HTMLInputElement>(null);
@@ -206,9 +245,16 @@ export function Composer({
         ? trimmed.length > 0 && trimmed !== editing.body
         : trimmed.length > 0 || hasAttachments || card !== null;
     const showMic = !editing && !canSubmit && voice.supported;
+    const videoNotesOn =
+        videoNotesPlugin &&
+        typeof MediaRecorder !== 'undefined' &&
+        !!navigator.mediaDevices;
+    const [noteOpen, setNoteOpen] = useState(false);
+    const closeNote = useCallback(() => setNoteOpen(false), []);
 
     const reset = () => {
         setBody('');
+        if (draftKey) writeDraft(draftKey, '');
         setImages([]);
         setDocs([]);
         setPublishAt('');
@@ -239,8 +285,11 @@ export function Composer({
                 files: docs,
                 publishAt: publishAt || null,
                 vanish,
+                once: once && images.length === 1 && docs.length === 0,
                 card,
             });
+            setOnce(false);
+            setSentCount((n) => n + 1);
         }
 
         reset();
@@ -283,17 +332,13 @@ export function Composer({
 
     if (!canWrite) {
         return (
-            <div
-                className={cn(
-                    'border-t border-white/[0.06] px-4 pt-4',
-                    dockedAboveNav(playing),
-                )}
-            >
+            <div className={cn('px-4 pt-4', dockedAboveNav(playing))}>
                 <p className="flex items-center justify-center gap-2 text-center text-sm text-white/45">
                     <Lock className="size-4" />
-                    {tr(
-                        'Користувач обмежив коло осіб, які можуть надсилати йому повідомлення.',
-                    )}
+                    {lockedText ??
+                        tr(
+                            'Користувач обмежив коло осіб, які можуть надсилати йому повідомлення.',
+                        )}
                 </p>
             </div>
         );
@@ -301,12 +346,12 @@ export function Composer({
 
     const context = editing ?? replyTo;
     const iconButton =
-        'flex size-10 shrink-0 items-center justify-center rounded-xl text-white/55 transition hover:bg-white/[0.07] hover:text-white disabled:opacity-40';
+        'flex size-10 shrink-0 items-center justify-center rounded-xl text-white/55 transition hover:bg-[var(--gc-l3)] hover:text-white disabled:opacity-40';
 
     return (
         <div
             className={cn(
-                'relative border-t border-white/[0.06] bg-transparent px-3 pt-2 sm:px-4',
+                'relative bg-transparent px-3 pt-2 sm:px-4',
                 dockedAboveNav(playing),
             )}
             onDragOver={(event) => event.preventDefault()}
@@ -315,8 +360,43 @@ export function Composer({
                 addFiles(event.dataTransfer.files);
             }}
         >
-            {!editing && card && (
-                <div className="mb-2 flex items-center justify-between gap-2 rounded-xl bg-white/[0.04] px-3 py-2">
+            {!editing && pickingGif && (
+                <div className="mb-2">
+                    <GifPicker
+                        onPick={(gif) => {
+                            setCard({
+                                kind: 'gif',
+                                id: 0,
+                                title: gif.title,
+                                hint: 'GIF',
+                                href: gif.url,
+                                image: gif.url,
+                            });
+                            setPickingGif(false);
+                        }}
+                        onClose={() => setPickingGif(false)}
+                    />
+                </div>
+            )}
+            {!editing && card?.kind === 'gif' && (
+                <div className="relative mb-2 w-fit max-w-full">
+                    <img
+                        src={card.href}
+                        alt={card.title}
+                        className="max-h-40 rounded-xl"
+                    />
+                    <button
+                        type="button"
+                        onClick={() => setCard(null)}
+                        aria-label={tr('Прибрати')}
+                        className="absolute top-1 right-1 rounded-full bg-black/60 px-2 py-0.5 text-xs text-white"
+                    >
+                        ×
+                    </button>
+                </div>
+            )}
+            {!editing && card && card.kind !== 'gif' && (
+                <div className="gc-solid-2 mb-2 flex items-center justify-between gap-2 rounded-xl px-3 py-2">
                     <span className="min-w-0">
                         <span className="block text-[11px] text-white/40">
                             {tr(card.hint)}
@@ -335,7 +415,7 @@ export function Composer({
                 </div>
             )}
             {!editing && pickingCard && !card && (
-                <div className="mb-2 rounded-xl bg-white/[0.04] p-2">
+                <div className="gc-solid-2 mb-2 rounded-xl p-2">
                     <input
                         value={cardQuery}
                         onChange={(event) => {
@@ -350,7 +430,10 @@ export function Composer({
                                 `/messages/cards?q=${encodeURIComponent(value.trim())}`,
                             ).then((response) => setCardHits(response.cards));
                         }}
-                        placeholder={tr('Гра, фільм або сервер')}
+                        placeholder={
+                            cardScope.charAt(0).toUpperCase() +
+                            cardScope.slice(1)
+                        }
                         className="input-glass h-10 w-full rounded-xl px-3 text-sm text-white"
                     />
                     <div className="mt-1 max-h-36 overflow-y-auto">
@@ -362,7 +445,7 @@ export function Composer({
                                     setCard(hit);
                                     setPickingCard(false);
                                 }}
-                                className="flex min-h-10 w-full items-center rounded-lg px-2 text-left text-sm text-white hover:bg-white/[0.06]"
+                                className="flex min-h-10 w-full items-center rounded-lg px-2 text-left text-sm text-white hover:bg-[var(--gc-l3)]"
                             >
                                 {hit.title}
                             </button>
@@ -370,13 +453,35 @@ export function Composer({
                     </div>
                 </div>
             )}
+            {!editing &&
+                onceOn &&
+                images.length === 1 &&
+                docs.length === 0 &&
+                !publishAt && (
+                    <div className="mb-2 px-1">
+                        <button
+                            type="button"
+                            onClick={() => setOnce(!once)}
+                            aria-pressed={once}
+                            className={cn(
+                                'inline-flex min-h-8 items-center gap-1.5 rounded-chip px-3 text-xs transition',
+                                once
+                                    ? 'bg-primary text-white'
+                                    : 'bg-white/[0.07] text-white/70 hover:text-white',
+                            )}
+                        >
+                            <Eye className="size-3.5" />
+                            {tr('На один перегляд')}
+                        </button>
+                    </div>
+                )}
             {!editing && (vanish || publishAt) && (
                 <div className="mb-2 flex flex-wrap items-center gap-2 px-1 text-xs">
                     {vanish && (
                         <button
                             type="button"
                             onClick={() => setVanish(false)}
-                            className="inline-flex min-h-8 items-center gap-1.5 rounded-full bg-gc-indigo/15 px-3 text-gc-lilac-200"
+                            className="inline-flex min-h-8 items-center gap-1.5 rounded-chip bg-gc-indigo/15 px-3 text-sky-400"
                         >
                             <Timer className="size-3.5" />
                             {tr('Зникне за добу')}
@@ -387,7 +492,7 @@ export function Composer({
                         <button
                             type="button"
                             onClick={() => setPublishAt('')}
-                            className="inline-flex min-h-8 items-center gap-1.5 rounded-full bg-gc-indigo/15 px-3 text-gc-lilac-200"
+                            className="inline-flex min-h-8 items-center gap-1.5 rounded-chip bg-gc-indigo/15 px-3 text-sky-400"
                         >
                             <Clock className="size-3.5" />
                             {tr('Надішлеться {date}', {
@@ -407,13 +512,13 @@ export function Composer({
                 </div>
             )}
             {context && (
-                <div className="mb-2 flex animate-in items-center gap-3 rounded-xl bg-white/[0.04] px-3 py-2 fade-in slide-in-from-bottom-1">
+                <div className="gc-solid-2 mb-2 flex animate-in items-center gap-3 rounded-xl px-3 py-2 fade-in slide-in-from-bottom-1">
                     {editing ? (
-                        <Pencil className="size-4 shrink-0 text-gc-lilac-400" />
+                        <Pencil className="size-4 shrink-0 text-sky-400" />
                     ) : (
-                        <Reply className="size-4 shrink-0 text-gc-lilac-400" />
+                        <Reply className="size-4 shrink-0 text-sky-400" />
                     )}
-                    <span className="min-w-0 flex-1 border-l-2 border-gc-lilac-500 pl-2.5 text-[13px]">
+                    <span className="min-w-0 flex-1 border-l-2 pl-2.5 text-[13px]">
                         <span className="block font-semibold text-[#a9b6ff]">
                             {editing
                                 ? tr('Редагування')
@@ -447,7 +552,7 @@ export function Composer({
                     {previews.map((url, index) => (
                         <div
                             key={url}
-                            className="relative size-[72px] shrink-0 animate-in overflow-hidden rounded-xl ring-1 ring-white/10 zoom-in-90"
+                            className="relative size-[72px] shrink-0 animate-in overflow-hidden rounded-xl zoom-in-90"
                         >
                             <img
                                 loading="lazy"
@@ -473,7 +578,7 @@ export function Composer({
                     {docs.map((file, index) => (
                         <div
                             key={`${file.name}-${index}`}
-                            className="relative flex h-[72px] w-[188px] shrink-0 animate-in items-center gap-2.5 rounded-xl bg-white/[0.05] pr-7 pl-2.5 ring-1 ring-white/10 zoom-in-90"
+                            className="gc-solid-2 relative flex h-[72px] w-[188px] shrink-0 animate-in items-center gap-2.5 rounded-xl pr-7 pl-2.5 zoom-in-90"
                         >
                             <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-gc-blue to-gc-indigo text-white">
                                 <FileUp className="size-5" />
@@ -530,16 +635,16 @@ export function Composer({
                     <button
                         type="button"
                         onClick={voice.cancel}
-                        className={cn(iconButton, 'hover:text-rose-300')}
+                        className={cn(iconButton, 'hover:text-red-400')}
                         aria-label={tr('Скасувати запис')}
                         title={tr('Скасувати')}
                     >
                         <Trash2 className="size-5" />
                     </button>
-                    <div className="input-glass flex h-11 min-w-0 flex-1 items-center gap-3 rounded-[22px] px-4">
+                    <div className="input-glass flex h-11 min-w-0 flex-1 items-center gap-3 rounded-control px-4">
                         <span className="relative flex size-2.5 shrink-0">
-                            <span className="absolute inset-0 animate-ping rounded-full bg-rose-500/70" />
-                            <span className="relative size-2.5 rounded-full bg-rose-500" />
+                            <span className="absolute inset-0 animate-ping rounded-full bg-red-500/70" />
+                            <span className="relative size-2.5 rounded-full bg-red-500" />
                         </span>
                         <span className="w-10 shrink-0 text-sm font-medium text-white tabular-nums">
                             {formatDuration(voice.elapsed)}
@@ -557,7 +662,7 @@ export function Composer({
                     <button
                         type="button"
                         onClick={sendRecording}
-                        className="flex size-11 shrink-0 items-center justify-center rounded-full bg-gradient-brand text-white shadow-[0_0_24px_-2px_rgb(124_92_255/0.9)] transition hover:brightness-110"
+                        className="flex size-11 shrink-0 items-center justify-center rounded-full bg-sky-500 text-white transition hover:brightness-110"
                         aria-label={tr('Надіслати голосове')}
                     >
                         <SendHorizonal className="size-5" />
@@ -606,6 +711,20 @@ export function Composer({
                                             tone: 'from-gc-indigo to-gc-purple',
                                             run: () => docRef.current?.click(),
                                         },
+                                        ...(pollConversationId
+                                            ? [
+                                                  {
+                                                      label: tr('Опитування'),
+                                                      hint: tr(
+                                                          'Голосування в групі',
+                                                      ),
+                                                      icon: BarChart3,
+                                                      tone: 'from-gc-amber to-gc-coral',
+                                                      run: () =>
+                                                          setPollOpen(true),
+                                                  },
+                                              ]
+                                            : []),
                                         {
                                             label: tr('Контакт'),
                                             hint: tr('Пошук на GameCon'),
@@ -613,13 +732,22 @@ export function Composer({
                                             tone: 'from-gc-mint to-gc-cyan',
                                             run: () => setContactOpen(true),
                                         },
-                                        {
-                                            label: tr('Картка'),
-                                            hint: tr('Гра, фільм, сервер'),
-                                            icon: LayoutGrid,
-                                            tone: 'from-gc-amber to-gc-coral',
-                                            run: () => setPickingCard(true),
-                                        },
+                                        ...(cardWords.length > 0
+                                            ? [
+                                                  {
+                                                      label: tr('Картка'),
+                                                      hint:
+                                                          cardScope
+                                                              .charAt(0)
+                                                              .toUpperCase() +
+                                                          cardScope.slice(1),
+                                                      icon: LayoutGrid,
+                                                      tone: 'from-gc-amber to-gc-coral',
+                                                      run: () =>
+                                                          setPickingCard(true),
+                                                  },
+                                              ]
+                                            : []),
                                     ].map((item) => (
                                         <button
                                             key={item.label}
@@ -628,7 +756,7 @@ export function Composer({
                                                 setAttachOpen(false);
                                                 item.run();
                                             }}
-                                            className="flex w-full items-center gap-3 rounded-xl px-2.5 py-2 text-left transition hover:bg-white/[0.06]"
+                                            className="flex w-full items-center gap-3 rounded-xl px-2.5 py-2 text-left transition hover:bg-[var(--gc-l3)]"
                                         >
                                             <span
                                                 className={cn(
@@ -653,7 +781,7 @@ export function Composer({
                         </div>
                     )}
 
-                    <div className="input-glass flex min-w-0 flex-1 items-end rounded-[22px] pr-1">
+                    <div className="input-glass flex min-w-0 flex-1 items-end rounded-control pr-1">
                         <textarea
                             ref={textRef}
                             value={body}
@@ -692,9 +820,30 @@ export function Composer({
                                     onEditLast();
                                 }
                             }}
-                            placeholder={tr('Напишіть повідомлення…')}
+                            placeholder={
+                                hasAttachments
+                                    ? tr('Додайте підпис…')
+                                    : tr('Напишіть повідомлення…')
+                            }
                             className="[field-sizing:content] max-h-[180px] min-h-11 min-w-0 flex-1 resize-none bg-transparent py-[11px] pl-4 text-[14.5px] leading-[1.45] text-white placeholder:text-white/35 focus:outline-none"
                         />
+                        {aiWriterOn && !editing && (
+                            <AiWriter text={body} onResult={setBody} />
+                        )}
+                        {gifOn && !editing && (
+                            <button
+                                type="button"
+                                onClick={() => setPickingGif((v) => !v)}
+                                aria-label="GIF"
+                                title="GIF"
+                                className={cn(
+                                    'mb-1 flex h-9 items-center justify-center rounded-full px-1.5 text-[11px] font-bold text-white/50 transition hover:text-white',
+                                    pickingGif && 'text-[#7ee0b5]',
+                                )}
+                            >
+                                GIF
+                            </button>
+                        )}
                         <div ref={emojiRef} className="relative mb-1">
                             <button
                                 type="button"
@@ -726,11 +875,30 @@ export function Composer({
                         </div>
                     </div>
 
+                    {showMic && videoNotesOn && (
+                        <button
+                            type="button"
+                            onClick={() => setNoteOpen(true)}
+                            className="gc-solid-2 mb-0.5 flex size-11 shrink-0 items-center justify-center rounded-full text-white/70 transition hover:bg-white/[0.12] hover:text-white"
+                            aria-label={tr('Записати відеокружок')}
+                            title={tr('Відеокружок')}
+                        >
+                            <Camera className="size-5" />
+                        </button>
+                    )}
+                    {noteOpen && (
+                        <VideoNoteRecorder
+                            onClose={closeNote}
+                            onSend={(blob, duration) =>
+                                onSend({ kind: 'video_note', blob, duration })
+                            }
+                        />
+                    )}
                     {showMic ? (
                         <button
                             type="button"
                             onClick={startRecording}
-                            className="mb-0.5 flex size-11 shrink-0 items-center justify-center rounded-full bg-white/[0.06] text-white/70 transition hover:bg-gradient-brand hover:text-white hover:shadow-[0_0_24px_-2px_rgb(124_92_255/0.9)]"
+                            className="gc-solid-2 mb-0.5 flex size-11 shrink-0 items-center justify-center rounded-full text-white/70 transition hover:bg-sky-500 hover:text-white"
                             aria-label={tr('Записати голосове')}
                             title={tr('Голосове повідомлення')}
                         >
@@ -741,8 +909,8 @@ export function Composer({
                             {sendMenu && (
                                 <div className="glass-strong absolute right-0 bottom-12 z-30 w-64 animate-rise space-y-1 rounded-2xl p-1.5">
                                     {vanishOn && (
-                                        <label className="flex min-h-11 cursor-pointer items-center gap-3 rounded-xl px-2.5 text-sm text-white hover:bg-white/[0.06]">
-                                            <Timer className="size-4 text-gc-lilac-300" />
+                                        <label className="flex min-h-11 cursor-pointer items-center gap-3 rounded-xl px-2.5 text-sm text-white hover:bg-[var(--gc-l3)]">
+                                            <Timer className="size-4 text-sky-400" />
                                             <span className="flex-1">
                                                 {tr('Зникне за добу')}
                                             </span>
@@ -754,14 +922,14 @@ export function Composer({
                                                         event.target.checked,
                                                     )
                                                 }
-                                                className="size-4 accent-gc-lilac-400"
+                                                className="size-4 accent-sky-400"
                                             />
                                         </label>
                                     )}
                                     {scheduleOn && (
                                         <div className="space-y-2 rounded-xl px-2.5 py-2">
                                             <span className="flex items-center gap-3 text-sm text-white">
-                                                <Clock className="size-4 text-gc-lilac-300" />
+                                                <Clock className="size-4 text-sky-400" />
                                                 {tr('Відкласти')}
                                             </span>
                                             <input
@@ -785,7 +953,7 @@ export function Composer({
                                             setSendMenu(false);
                                             submit();
                                         }}
-                                        className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-gradient-brand text-sm font-semibold text-white"
+                                        className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-sky-500 text-sm font-semibold text-white"
                                     >
                                         <SendHorizonal className="size-4" />
                                         {publishAt
@@ -839,8 +1007,8 @@ export function Composer({
                                 className={cn(
                                     'flex size-11 shrink-0 items-center justify-center rounded-full text-white transition duration-300 select-none [-webkit-touch-callout:none]',
                                     canSubmit
-                                        ? 'scale-100 bg-gradient-brand shadow-[0_0_24px_-2px_rgb(124_92_255/0.9)] hover:brightness-110'
-                                        : 'scale-95 bg-white/[0.06] text-white/35',
+                                        ? 'scale-100 bg-sky-500 hover:brightness-110'
+                                        : 'gc-solid-2 scale-95 text-white/35',
                                 )}
                                 aria-label={
                                     editing ? tr('Зберегти') : tr('Надіслати')
@@ -848,18 +1016,26 @@ export function Composer({
                                 title={
                                     !editing && (vanishOn || scheduleOn)
                                         ? tr(
-                                              'Утримуйте, щоб відкласти або зробити зникаючим',
+                                              'Утримуйте, щоб відкласти або зробити тимчасовим',
                                           )
                                         : undefined
                                 }
                             >
-                                <SendHorizonal className="size-5" />
+                                <FlyingSendIcon sent={sentCount} />
                             </button>
                         </div>
                     )}
                 </div>
             )}
 
+            {pollConversationId && (
+                <CreatePollDialog
+                    open={pollOpen}
+                    onOpenChange={setPollOpen}
+                    conversationId={pollConversationId}
+                    onCreated={(m) => onPollCreated?.(m)}
+                />
+            )}
             <ContactShareDialog
                 open={contactOpen}
                 onOpenChange={setContactOpen}

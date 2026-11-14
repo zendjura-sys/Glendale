@@ -1,18 +1,37 @@
-import { useForm, usePage } from '@inertiajs/react';
+import { router, useForm, usePage } from '@inertiajs/react';
 import {
     BarChart3,
+    CalendarClock,
+    Check,
+    ChevronDown,
     Earth,
+    FilePen,
+    Files,
+    ImagePlay,
     ImagePlus,
+    PlusCircle,
+    Clapperboard,
+    Gamepad2,
+    Server,
     EyeOff,
     Lock,
     Megaphone,
     Music2,
+    Laugh,
     Smile,
     Sparkles,
     UsersRound,
     X,
+    SlidersHorizontal,
+    Send,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { MusicCard } from '@/components/music/music-card';
 import { MusicPicker } from '@/components/music/music-picker';
 import { musicPayload } from '@/components/music/share-track-dialog';
@@ -22,6 +41,10 @@ import { cn } from '@/lib/utils';
 import type { PostItem, TrackCard, Visibility } from '@/types';
 import { CommunityAvatar } from './community-avatar';
 import { StickerPicker, stickerEmoji } from './stickers';
+import { EmojiPanel } from './emoji-panel';
+import { GifPicker } from './gif-picker';
+import { PhotoEditor } from './photo-editor';
+import type { GifItem } from './gif-picker';
 import { UserAvatar } from './user-avatar';
 import { tr } from '@/lib/i18n';
 import { usePlugin } from '@/lib/plugins';
@@ -57,6 +80,7 @@ export function PostComposer({
 }: Props) {
     const { auth, site, modules } = usePage().props;
     const scheduleOn = usePlugin('scheduled_posts');
+    const memesOn = usePlugin('meme_maker');
     const [focused, setFocused] = useState(false);
     const [picking, setPicking] = useState(false);
     const [track, setTrack] = useState<TrackCard | null>(null);
@@ -69,8 +93,34 @@ export function PostComposer({
     );
     const [pickingCard, setPickingCard] = useState(false);
     const [publishAt, setPublishAt] = useState('');
+    const [scheduling, setScheduling] = useState(false);
     const [pickingSticker, setPickingSticker] = useState(false);
+    const gifOn = usePlugin('gif_search');
+    const photoEditorOn = usePlugin('photo_editor');
+    const openPollsOn = usePlugin('open_polls');
+    const authorSubsOn = usePlugin('author_subscriptions');
+    const [editing, setEditing] = useState<number | null>(null);
+    const [gif, setGif] = useState<GifItem | null>(null);
+    const [pickingGif, setPickingGif] = useState(false);
     const fileRef = useRef<HTMLInputElement>(null);
+    const textRef = useRef<HTMLTextAreaElement>(null);
+    const [emojiOpen, setEmojiOpen] = useState(false);
+    const [attachOpen, setAttachOpen] = useState(false);
+    // Яку картку шукаємо: «Кіно», «Гра / Конфіг» чи «Сервер GTA».
+    const [cardKind, setCardKind] = useState<'movie' | 'game' | 'server'>(
+        'game',
+    );
+    const insertEmoji = (emoji: string) => {
+        const el = textRef.current;
+        const body = form.data.body;
+        const start = el?.selectionStart ?? body.length;
+        const end = el?.selectionEnd ?? body.length;
+        form.setData('body', body.slice(0, start) + emoji + body.slice(end));
+        requestAnimationFrame(() => {
+            el?.focus();
+            el?.setSelectionRange(start + emoji.length, start + emoji.length);
+        });
+    };
     const storageKey = `gc-composer:${community?.slug ?? wall?.username ?? 'feed'}`;
     const restored = useRef(false);
     const form = useForm<{
@@ -80,14 +130,20 @@ export function PostComposer({
         community: string | null;
         as_community: boolean;
         images: File[];
-        poll: { question: string; options: string[] } | null;
+        poll: {
+            question: string;
+            options: string[];
+            anonymous?: boolean;
+        } | null;
         spoiler: boolean;
+        subscribers_only: boolean;
         sticker: string | null;
         tag: string;
     }>({
         tag: '',
         body: '',
         spoiler: false,
+        subscribers_only: false,
         sticker: null,
         visibility: 'public',
         wall: wall?.username ?? null,
@@ -146,6 +202,7 @@ export function PostComposer({
             form.data.images.length > 0 ||
             track !== null ||
             card !== null ||
+            gif !== null ||
             pollReady ||
             form.data.sticker !== null) &&
         !form.processing;
@@ -178,10 +235,15 @@ export function PostComposer({
                     data.poll &&
                     data.poll.question.trim() &&
                     options.length >= 2
-                        ? { question: data.poll.question.trim(), options }
+                        ? {
+                              question: data.poll.question.trim(),
+                              options,
+                              anonymous: data.poll.anonymous === false ? 0 : 1,
+                          }
                         : undefined,
                 ...(track ? { music: musicPayload(track) } : {}),
                 ...(card ? { card: { kind: card.kind, id: card.id } } : {}),
+                ...(gif ? { gif: { url: gif.url, title: gif.title } } : {}),
                 ...(data.sticker ? { sticker: data.sticker } : {}),
             };
         });
@@ -194,19 +256,148 @@ export function PostComposer({
                     'images',
                     'poll',
                     'spoiler',
+                    'subscribers_only',
                     'sticker',
                     'tag',
                 );
                 setPickingSticker(false);
                 setTrack(null);
                 setCard(null);
+                setGif(null);
+                setPickingGif(false);
                 setPickingCard(false);
                 setFocused(false);
                 setPublishAt('');
+                setScheduling(false);
                 window.localStorage.removeItem(storageKey);
             },
         });
     };
+
+    // Стрічка вкладень під полем: фото, GIF, стікер, музика, кіно, гра/конфіг, сервер, опитування.
+    const openCard = (kind: 'movie' | 'game' | 'server') => {
+        setCardKind(kind);
+        setCardQuery('');
+        setCardHits([]);
+        setCard(null);
+        setPickingCard(true);
+    };
+    const attachments: {
+        key: string;
+        label: string;
+        icon: typeof Earth;
+        tone: string;
+        active?: boolean;
+        onSelect: () => void;
+    }[] = [
+        {
+            key: 'photo',
+            label: tr('Фото'),
+            icon: ImagePlus,
+            tone: 'text-sky-400',
+            active: form.data.images.length > 0,
+            onSelect: () => fileRef.current?.click(),
+        },
+        ...(gifOn
+            ? [
+                  {
+                      key: 'gif',
+                      label: 'GIF',
+                      icon: ImagePlay,
+                      tone: 'text-emerald-400',
+                      active: gif !== null,
+                      onSelect: () => setPickingGif(true),
+                  },
+              ]
+            : []),
+        {
+            key: 'sticker',
+            label: tr('Стікер'),
+            icon: Smile,
+            tone: 'text-amber-400',
+            active: Boolean(form.data.sticker),
+            onSelect: () => setPickingSticker(true),
+        },
+        ...(modules.includes('music')
+            ? [
+                  {
+                      key: 'music',
+                      label: tr('Музика'),
+                      icon: Music2,
+                      tone: 'text-cyan-400',
+                      active: track !== null,
+                      onSelect: () => setPicking(true),
+                  },
+              ]
+            : []),
+        ...(modules.includes('cinema')
+            ? [
+                  {
+                      key: 'movie',
+                      label: tr('Кіно'),
+                      icon: Clapperboard,
+                      tone: 'text-sky-400',
+                      active: card?.kind === 'movie',
+                      onSelect: () => openCard('movie'),
+                  },
+              ]
+            : []),
+        ...(modules.includes('games')
+            ? [
+                  {
+                      key: 'game',
+                      label: tr('Гра / Конфіг'),
+                      icon: Gamepad2,
+                      tone: 'text-emerald-400',
+                      active:
+                          card?.kind === 'game' || card?.kind === 'game_event',
+                      onSelect: () => openCard('game'),
+                  },
+              ]
+            : []),
+        ...(modules.includes('servers')
+            ? [
+                  {
+                      key: 'server',
+                      label: tr('Сервер GTA'),
+                      icon: Server,
+                      tone: 'text-amber-400',
+                      active:
+                          card?.kind === 'server' ||
+                          card?.kind === 'server_event',
+                      onSelect: () => openCard('server'),
+                  },
+              ]
+            : []),
+        {
+            key: 'poll',
+            label: tr('Опитування'),
+            icon: BarChart3,
+            tone: 'text-cyan-400',
+            active: form.data.poll !== null,
+            onSelect: () =>
+                form.setData(
+                    'poll',
+                    form.data.poll ? null : { question: '', options: ['', ''] },
+                ),
+        },
+        ...(memesOn && !community
+            ? [
+                  {
+                      key: 'meme',
+                      label: tr('Мем'),
+                      icon: Laugh,
+                      tone: 'text-amber-400',
+                      onSelect: () => router.visit('/memes/new'),
+                  },
+              ]
+            : []),
+    ];
+
+    const currentVisibility =
+        visibilityOptions.find(
+            (option) => option.value === form.data.visibility,
+        ) ?? visibilityOptions[0];
 
     const placeholder = community
         ? asCommunity
@@ -220,10 +411,10 @@ export function PostComposer({
 
     return (
         <section
+            data-compact={expanded ? undefined : true}
             className={cn(
-                'glass relative overflow-clip rounded-3xl p-4 transition sm:p-5',
-                expanded &&
-                    'border-gc-lilac-500/30 shadow-[0_0_0_1px_rgb(124_140_255/0.15),0_30px_60px_-30px_rgb(109_93_252/0.6)]',
+                'gc-composer gc-solid relative overflow-clip rounded-2xl p-4 transition sm:p-5',
+                expanded && 'ring-primary/25',
                 className,
             )}
             onDragOver={(event) => event.preventDefault()}
@@ -232,34 +423,98 @@ export function PostComposer({
                 addFiles(event.dataTransfer.files);
             }}
         >
-            <div className="pointer-events-none absolute -top-24 -right-24 size-56 rounded-full bg-gc-indigo/20 blur-3xl" />
-            <div className="relative flex gap-3">
+            <div className="gc-composer-main relative flex items-start gap-3">
                 {asCommunity && community ? (
                     <CommunityAvatar community={community} size="md" />
                 ) : (
                     <UserAvatar user={auth.user} size="md" showOnline={false} />
                 )}
                 <div className="min-w-0 flex-1">
-                    <textarea
-                        value={form.data.body}
-                        onChange={(event) => {
-                            form.setData('body', event.target.value);
-                            fitTextarea(event.target, 420);
-                        }}
-                        onFocus={() => setFocused(true)}
-                        onKeyDown={(event) => {
-                            if (
-                                event.key === 'Enter' &&
-                                (event.metaKey || event.ctrlKey)
-                            )
-                                submit();
-                        }}
-                        rows={expanded ? 3 : 1}
-                        placeholder={placeholder}
-                        className="[field-sizing:content] max-h-[420px] w-full resize-none bg-transparent pt-2.5 text-[15px] leading-relaxed text-white placeholder:text-white/40 focus:outline-none"
-                    />
+                    {/* Поле вводу: смайлик ліворуч (панель емодзі), плюс праворуч (стрічка вкладень). */}
+                    <div className="gc-solid-2 flex items-start gap-0.5 rounded-2xl px-1">
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setEmojiOpen((v) => !v);
+                                setFocused(true);
+                            }}
+                            aria-expanded={emojiOpen}
+                            title={tr('Емодзі')}
+                            aria-label={tr('Емодзі')}
+                            className={cn(
+                                'mt-1 flex size-9 shrink-0 items-center justify-center rounded-xl transition hover:bg-[var(--gc-l3)]',
+                                emojiOpen ? 'text-sky-400' : 'text-white/60',
+                            )}
+                        >
+                            <Smile className="size-5" />
+                        </button>
+                        <textarea
+                            ref={textRef}
+                            value={form.data.body}
+                            onChange={(event) => {
+                                form.setData('body', event.target.value);
+                                fitTextarea(event.target, 420);
+                            }}
+                            onFocus={() => setFocused(true)}
+                            onKeyDown={(event) => {
+                                if (
+                                    event.key === 'Enter' &&
+                                    (event.metaKey || event.ctrlKey)
+                                )
+                                    submit();
+                            }}
+                            rows={expanded ? 3 : 1}
+                            placeholder={placeholder}
+                            className="[field-sizing:content] max-h-[420px] min-w-0 flex-1 resize-none bg-transparent py-2.5 text-[15px] leading-relaxed text-white placeholder:text-white/40 focus:outline-none"
+                        />
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setAttachOpen((v) => !v);
+                                setFocused(true);
+                            }}
+                            aria-expanded={attachOpen}
+                            title={tr('Додати до запису')}
+                            aria-label={tr('Додати до запису')}
+                            className={cn(
+                                'mt-1 flex size-9 shrink-0 items-center justify-center rounded-xl transition hover:bg-[var(--gc-l3)]',
+                                attachOpen ? 'text-sky-400' : 'text-white/60',
+                            )}
+                        >
+                            <PlusCircle
+                                className={cn(
+                                    'size-5 transition-transform',
+                                    attachOpen && 'rotate-45',
+                                )}
+                            />
+                        </button>
+                    </div>
+                    {emojiOpen && <EmojiPanel onPick={insertEmoji} />}
+                    {attachOpen && (
+                        <div className="mt-2 scrollbar-none flex gap-2 overflow-x-auto pb-1">
+                            {attachments.map((item) => (
+                                <button
+                                    key={item.key}
+                                    type="button"
+                                    onClick={item.onSelect}
+                                    aria-pressed={item.active || undefined}
+                                    className={cn(
+                                        'flex h-10 shrink-0 items-center gap-2 rounded-xl px-3 text-[13px] font-medium transition',
+                                        item.active
+                                            ? 'bg-[var(--gc-active)] text-sky-400'
+                                            : 'gc-solid-2 text-white/85 hover:bg-[var(--gc-l3)]',
+                                    )}
+                                >
+                                    <item.icon
+                                        className={cn('size-4', item.tone)}
+                                    />
+                                    {item.label}
+                                </button>
+                            ))}
+                        </div>
+                    )}
                     {form.errors.body && (
-                        <p className="mt-1 text-xs text-rose-300">
+                        <p className="mt-1 text-xs text-red-400">
                             {form.errors.body}
                         </p>
                     )}
@@ -267,11 +522,23 @@ export function PostComposer({
                         .filter(([key]) => key.startsWith('images'))
                         .slice(0, 1)
                         .map(([key, message]) => (
-                            <p key={key} className="mt-1 text-xs text-rose-300">
+                            <p key={key} className="mt-1 text-xs text-red-400">
                                 {message}
                             </p>
                         ))}
                 </div>
+                {!expanded && (
+                    <button
+                        type="button"
+                        onClick={() => setFocused(true)}
+                        className="btn-glow mt-0.5 hidden h-10 shrink-0 items-center gap-2 rounded-xl px-4 text-sm font-semibold sm:inline-flex"
+                    >
+                        <Send className="size-4" />
+                        <span className="hidden sm:inline">
+                            {tr('Опублікувати')}
+                        </span>
+                    </button>
+                )}
             </div>
 
             {previews.length > 0 && (
@@ -288,6 +555,16 @@ export function PostComposer({
                                 alt=""
                                 className="size-full object-cover"
                             />
+                            {photoEditorOn && (
+                                <button
+                                    type="button"
+                                    onClick={() => setEditing(index)}
+                                    className="absolute top-1.5 left-1.5 rounded-full bg-black/60 p-1 text-white opacity-0 backdrop-blur transition group-hover:opacity-100 [@media(hover:none)]:opacity-100"
+                                    aria-label={tr('Редагувати фото')}
+                                >
+                                    <SlidersHorizontal className="size-3.5" />
+                                </button>
+                            )}
                             <button
                                 type="button"
                                 onClick={() =>
@@ -325,13 +602,13 @@ export function PostComposer({
                 .filter(([key]) => key.startsWith('music'))
                 .slice(0, 1)
                 .map(([key, message]) => (
-                    <p key={key} className="mt-1 text-xs text-rose-300">
+                    <p key={key} className="mt-1 text-xs text-red-400">
                         {message}
                     </p>
                 ))}
 
             {card && (
-                <div className="relative mt-3 flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] p-3">
+                <div className="gc-solid-2 relative mt-3 flex items-center gap-3 rounded-2xl p-3">
                     <span className="min-w-0 flex-1">
                         <span className="block text-xs text-white/40">
                             {tr(card.hint)}
@@ -350,7 +627,7 @@ export function PostComposer({
                 </div>
             )}
             {pickingCard && !card && (
-                <div className="relative mt-3 space-y-2 rounded-2xl border border-white/10 bg-white/[0.03] p-3">
+                <div className="gc-solid-2 relative mt-3 space-y-2 rounded-2xl p-3">
                     <input
                         value={cardQuery}
                         onChange={(event) => {
@@ -365,13 +642,20 @@ export function PostComposer({
                                     cards: NonNullable<PostItem['card']>[];
                                 }>(
                                     'GET',
-                                    `/cards/search?q=${encodeURIComponent(value.trim())}`,
+                                    `/cards/search?q=${encodeURIComponent(value.trim())}&kind=${cardKind}`,
                                 ).then((response) =>
                                     setCardHits(response.cards),
                                 );
                             }, 200);
                         }}
-                        placeholder={tr('Гра, сервер або подія')}
+                        autoFocus
+                        placeholder={
+                            cardKind === 'movie'
+                                ? tr('Назва фільму чи серіалу')
+                                : cardKind === 'server'
+                                  ? tr('Назва сервера')
+                                  : tr('Гра, конфіг або подія')
+                        }
                         className="w-full bg-transparent text-sm text-white placeholder:text-white/40 focus:outline-none"
                     />
                     {cardHits.map((hit) => (
@@ -382,7 +666,7 @@ export function PostComposer({
                                 setCard(hit);
                                 setPickingCard(false);
                             }}
-                            className="block w-full rounded-xl px-2 py-1.5 text-left text-sm text-white hover:bg-white/[0.06]"
+                            className="block w-full rounded-xl px-2 py-1.5 text-left text-sm text-white hover:bg-[var(--gc-l3)]"
                         >
                             <span className="text-xs text-white/40">
                                 {tr(hit.hint)}
@@ -394,7 +678,7 @@ export function PostComposer({
             )}
 
             {form.data.poll && (
-                <div className="relative mt-3 space-y-2 rounded-2xl border border-white/10 bg-white/[0.03] p-3">
+                <div className="gc-solid-2 relative mt-3 space-y-2 rounded-2xl p-3">
                     <input
                         value={form.data.poll.question}
                         onChange={(event) =>
@@ -419,7 +703,7 @@ export function PostComposer({
                                 });
                             }}
                             placeholder={tr('Варіант {n}', { n: index + 1 })}
-                            className="w-full rounded-xl bg-white/[0.04] px-3 py-2 text-sm text-white placeholder:text-white/35 focus:outline-none"
+                            className="gc-solid-2 w-full rounded-xl px-3 py-2 text-sm text-white placeholder:text-white/35 focus:outline-none"
                         />
                     ))}
                     {form.data.poll.options.length < 4 && (
@@ -431,11 +715,75 @@ export function PostComposer({
                                     options: [...form.data.poll!.options, ''],
                                 })
                             }
-                            className="text-xs font-medium text-gc-lilac-300"
+                            className="text-xs font-medium text-sky-400"
                         >
                             {tr('Ще варіант')}
                         </button>
                     )}
+                    {openPollsOn && (
+                        <label className="flex cursor-pointer items-center justify-between gap-3 pt-1 text-xs text-white/60">
+                            <span>
+                                {form.data.poll.anonymous === false
+                                    ? tr('Відкрите: видно, хто як голосував')
+                                    : tr('Анонімне: голоси ніхто не бачить')}
+                            </span>
+                            <input
+                                type="checkbox"
+                                role="switch"
+                                checked={form.data.poll.anonymous !== false}
+                                onChange={(event) =>
+                                    form.setData('poll', {
+                                        ...form.data.poll!,
+                                        anonymous: event.target.checked,
+                                    })
+                                }
+                                className="size-4 accent-sky-500"
+                                aria-label={tr('Анонімне опитування')}
+                            />
+                        </label>
+                    )}
+                </div>
+            )}
+
+            {editing !== null && form.data.images[editing] && (
+                <PhotoEditor
+                    file={form.data.images[editing]}
+                    onClose={() => setEditing(null)}
+                    onDone={(edited) => {
+                        form.setData(
+                            'images',
+                            form.data.images.map((f, i) =>
+                                i === editing ? edited : f,
+                            ),
+                        );
+                        setEditing(null);
+                    }}
+                />
+            )}
+            {pickingGif && (
+                <GifPicker
+                    onPick={(picked) => {
+                        setGif(picked);
+                        setPickingGif(false);
+                    }}
+                    onClose={() => setPickingGif(false)}
+                />
+            )}
+            {gif && (
+                <div className="relative mt-3 w-fit max-w-full">
+                    <img
+                        src={gif.url}
+                        alt={gif.title}
+                        className="max-h-56 rounded-xl"
+                    />
+                    <button
+                        type="button"
+                        onClick={() => setGif(null)}
+                        aria-label={tr('Прибрати GIF')}
+                        className="absolute top-1.5 right-1.5 rounded-full bg-black/60 p-1 text-white backdrop-blur"
+                    >
+                        <X className="size-3.5" />
+                    </button>
                 </div>
             )}
 
@@ -456,222 +804,291 @@ export function PostComposer({
             {form.progress && (
                 <div className="mt-3 h-1 overflow-hidden rounded-full bg-white/5">
                     <div
-                        className="h-full bg-gradient-brand transition-all"
+                        className="h-full bg-sky-500 transition-all"
                         style={{ width: `${form.progress.percentage}%` }}
                     />
                 </div>
             )}
 
-            <div
-                className={cn(
-                    'relative mt-3 flex flex-wrap items-center gap-1.5',
-                    !expanded && 'sm:pl-14',
-                )}
-            >
-                {/* Інструменти — лише іконки (назва — у підказці), далі видимість, час і кнопки дії праворуч. */}
-                <div className="flex min-w-0 basis-full items-center gap-0.5 sm:basis-auto">
-                    <input
-                        ref={fileRef}
-                        type="file"
-                        accept="image/*"
-                        multiple
-                        hidden
-                        onChange={(event) => addFiles(event.target.files)}
-                    />
-                    <button
-                        type="button"
-                        title={tr('Фото')}
-                        onClick={() => fileRef.current?.click()}
-                        className="inline-flex size-9 items-center justify-center rounded-xl text-sm font-medium text-white/65 transition hover:bg-white/[0.06] hover:text-white"
-                    >
-                        <ImagePlus className="size-[18px] text-[#6fa2ff]" />
-                        <span className="sr-only">{tr('Фото')}</span>
-                    </button>
-                    <button
-                        type="button"
-                        title={tr('Стікер')}
-                        onClick={() => setPickingSticker((open) => !open)}
-                        aria-pressed={Boolean(form.data.sticker)}
-                        className={cn(
-                            'inline-flex size-9 items-center justify-center rounded-xl text-sm font-medium transition hover:bg-white/[0.06] hover:text-white',
-                            form.data.sticker
-                                ? 'bg-white/10 text-white'
-                                : 'text-white/65',
-                        )}
-                    >
-                        <Smile className="size-[18px] text-[#ffd27a]" />
-                        <span className="sr-only">{tr('Стікер')}</span>
-                    </button>
-                    <button
-                        type="button"
-                        title={tr('Спойлер')}
-                        onClick={() =>
-                            form.setData('spoiler', !form.data.spoiler)
-                        }
-                        aria-pressed={form.data.spoiler}
-                        className={cn(
-                            'inline-flex size-9 items-center justify-center rounded-xl text-sm font-medium transition hover:bg-white/[0.06] hover:text-white',
-                            form.data.spoiler
-                                ? 'bg-white/10 text-white'
-                                : 'text-white/65',
-                        )}
-                    >
-                        <EyeOff className="size-[18px] text-white/70" />
-                        <span className="sr-only">{tr('Спойлер')}</span>
-                    </button>
-                    <button
-                        type="button"
-                        title={tr('Картка')}
-                        onClick={() => setPickingCard((value) => !value)}
-                        className="inline-flex size-9 items-center justify-center rounded-xl text-sm font-medium text-white/65 transition hover:bg-white/[0.06] hover:text-white"
-                    >
-                        <Sparkles className="size-[18px] text-[#ffd27a]" />
-                        <span className="sr-only">{tr('Картка')}</span>
-                    </button>
-                    <button
-                        type="button"
-                        title={tr('Опитування')}
-                        onClick={() =>
-                            form.setData(
-                                'poll',
-                                form.data.poll
-                                    ? null
-                                    : { question: '', options: ['', ''] },
-                            )
-                        }
-                        className={cn(
-                            'inline-flex size-9 items-center justify-center rounded-xl text-sm font-medium transition hover:bg-white/[0.06] hover:text-white',
-                            form.data.poll
-                                ? 'bg-white/10 text-white'
-                                : 'text-white/65',
-                        )}
-                    >
-                        <BarChart3 className="size-[18px] text-[#7dffb3]" />
-                        <span className="sr-only">{tr('Опитування')}</span>
-                    </button>
-                    {modules.includes('music') && (
-                        <button
-                            type="button"
-                            title={tr('Музика')}
-                            onClick={() => setPicking(true)}
-                            className="inline-flex size-9 items-center justify-center rounded-xl text-sm font-medium text-white/65 transition hover:bg-white/[0.06] hover:text-white"
-                        >
-                            <Music2 className="size-[18px] text-[#c58bff]" />
-                            <span className="sr-only">{tr('Музика')}</span>
-                        </button>
+            {(form.data.spoiler ||
+                scheduling ||
+                form.data.subscribers_only) && (
+                <div
+                    className={cn(
+                        'relative mt-3 flex flex-wrap items-center gap-1.5',
+                        !expanded && 'sm:pl-14',
                     )}
-                </div>
-
-                {community &&
-                    community.type === 'group' &&
-                    community.canPostAsCommunity && (
-                        <button
-                            type="button"
-                            onClick={() =>
-                                form.setData(
-                                    'as_community',
-                                    !form.data.as_community,
-                                )
-                            }
-                            className={cn(
-                                'inline-flex h-9 items-center gap-2 rounded-xl px-3 text-xs font-medium transition',
-                                form.data.as_community
-                                    ? 'bg-gc-indigo/20 text-white'
-                                    : 'text-white/50 hover:bg-white/[0.06] hover:text-white',
-                            )}
-                        >
-                            <Megaphone className="size-4 text-gc-violet-300" />
-                            {tr('Від імені спільноти')}
-                        </button>
-                    )}
-
-                {community && (community.tags?.length ?? 0) > 0 && (
-                    <select
-                        value={form.data.tag}
-                        onChange={(event) =>
-                            form.setData('tag', event.target.value)
-                        }
-                        aria-label={tr('Мітка запису')}
-                        className="h-9 max-w-36 rounded-xl bg-white/[0.04] px-2 text-xs text-white/70"
-                    >
-                        <option value="">{tr('Без мітки')}</option>
-                        {(community.tags ?? []).map((tag) => (
-                            <option key={tag} value={tag}>
-                                #{tag}
-                            </option>
-                        ))}
-                    </select>
-                )}
-
-                {!wall && !community && (
-                    <div className="flex rounded-xl bg-white/[0.04] p-0.5">
-                        {visibilityOptions.map((option) => (
+                >
+                    {form.data.spoiler && (
+                        <span className="inline-flex h-8 items-center gap-1.5 rounded-full bg-white/[0.07] pr-1 pl-3 text-xs text-white/80">
+                            <EyeOff className="size-3.5" />
+                            {tr('Спойлер')}
                             <button
-                                key={option.value}
+                                type="button"
+                                onClick={() => form.setData('spoiler', false)}
+                                aria-label={tr('Прибрати')}
+                                className="flex size-6 items-center justify-center rounded-full text-white/50 hover:bg-white/10 hover:text-white"
+                            >
+                                <X className="size-3.5" />
+                            </button>
+                        </span>
+                    )}
+                    {form.data.subscribers_only && (
+                        <span className="inline-flex h-8 items-center gap-1.5 rounded-full bg-[var(--gc-active)] pr-1 pl-3 text-xs text-white/85">
+                            <Lock className="size-3.5 text-sky-400" />
+                            {tr('Лише для платних підписників')}
+                            <button
                                 type="button"
                                 onClick={() =>
-                                    form.setData('visibility', option.value)
+                                    form.setData('subscribers_only', false)
                                 }
-                                title={option.label}
-                                className={cn(
-                                    'inline-flex h-8 items-center gap-1.5 rounded-[10px] px-2.5 text-xs font-medium transition',
-                                    form.data.visibility === option.value
-                                        ? 'bg-white/10 text-white'
-                                        : 'text-white/45 hover:text-white/80',
-                                )}
+                                aria-label={tr('Прибрати')}
+                                className="flex size-6 items-center justify-center rounded-full text-white/50 hover:bg-white/10 hover:text-white"
                             >
-                                <option.icon className="size-3.5" />
-                                <span
+                                <X className="size-3.5" />
+                            </button>
+                        </span>
+                    )}
+                    {scheduling && (
+                        <span className="inline-flex h-8 items-center gap-1.5 rounded-full bg-[var(--gc-active)] pr-1 pl-3 text-xs text-white/85">
+                            <CalendarClock className="size-3.5 text-sky-400" />
+                            <input
+                                type="datetime-local"
+                                value={publishAt}
+                                onChange={(event) =>
+                                    setPublishAt(event.target.value)
+                                }
+                                aria-label={tr('Час публікації')}
+                                className="w-[10.5rem] min-w-0 bg-transparent text-xs text-white/85 [color-scheme:dark] focus:outline-none"
+                            />
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setScheduling(false);
+                                    setPublishAt('');
+                                }}
+                                aria-label={tr('Без розкладу')}
+                                className="flex size-6 items-center justify-center rounded-full text-white/50 hover:bg-white/10 hover:text-white"
+                            >
+                                <X className="size-3.5" />
+                            </button>
+                        </span>
+                    )}
+                </div>
+            )}
+
+            {community &&
+                ((community.type === 'group' && community.canPostAsCommunity) ||
+                    (community.tags?.length ?? 0) > 0) && (
+                    <div
+                        className={cn(
+                            'relative mt-3 flex flex-wrap items-center gap-1.5',
+                            !expanded && 'sm:pl-14',
+                        )}
+                    >
+                        {community.type === 'group' &&
+                            community.canPostAsCommunity && (
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        form.setData(
+                                            'as_community',
+                                            !form.data.as_community,
+                                        )
+                                    }
                                     className={cn(
-                                        'whitespace-nowrap',
-                                        form.data.visibility === option.value
-                                            ? 'hidden md:inline'
-                                            : 'hidden',
+                                        'inline-flex h-9 items-center gap-2 rounded-xl px-3 text-xs font-medium transition',
+                                        form.data.as_community
+                                            ? 'bg-[var(--gc-active)] text-white'
+                                            : 'text-white/50 hover:bg-[var(--gc-l3)] hover:text-white',
                                     )}
                                 >
-                                    {option.label}
-                                </span>
-                            </button>
-                        ))}
+                                    <Megaphone className="size-4 text-gc-violet-300" />
+                                    {tr('Від імені спільноти')}
+                                </button>
+                            )}
+                        {(community.tags?.length ?? 0) > 0 && (
+                            <select
+                                value={form.data.tag}
+                                onChange={(event) =>
+                                    form.setData('tag', event.target.value)
+                                }
+                                aria-label={tr('Мітка запису')}
+                                className="gc-solid-2 h-9 max-w-36 rounded-xl px-2 text-xs text-white/70"
+                            >
+                                <option value="">{tr('Без мітки')}</option>
+                                {(community.tags ?? []).map((tag) => (
+                                    <option key={tag} value={tag}>
+                                        #{tag}
+                                    </option>
+                                ))}
+                            </select>
+                        )}
                     </div>
                 )}
 
-                {scheduleOn && (
-                    <input
-                        type="datetime-local"
-                        value={publishAt}
-                        onChange={(event) => setPublishAt(event.target.value)}
-                        aria-label={tr('Час публікації')}
-                        className="h-10 w-[12.5rem] min-w-0 rounded-xl bg-white/[0.04] px-2.5 text-xs text-white/70 [color-scheme:dark]"
-                    />
+            {/* Одна лінія: фото й «＋» (на телефоні вкладення в меню, ширше — значками), праворуч — кому видно і «Пост». */}
+            <div
+                className={cn(
+                    'relative mt-3 flex flex-wrap items-center gap-1',
+                    !expanded && 'sm:pl-14',
                 )}
-                <div className="ml-auto flex items-center gap-1">
-                    <a
-                        href="/posts/drafts"
-                        className="inline-flex h-10 items-center rounded-xl px-2 text-xs font-medium text-white/45 hover:text-white"
-                    >
-                        {tr('Чернетки')}
-                    </a>
-                    <button
-                        type="button"
-                        onClick={() => submit(true)}
-                        disabled={!canSubmit}
-                        className="inline-flex h-10 items-center rounded-xl px-3 text-sm font-medium text-white/70 hover:text-white disabled:pointer-events-none disabled:opacity-40"
-                    >
-                        {tr('Чернетка')}
-                    </button>
+            >
+                <input
+                    ref={fileRef}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    hidden
+                    onChange={(event) => addFiles(event.target.files)}
+                />
+                {/* Параметри запису: спойлер, лише підписникам, розклад, чернетки — компактно значками. */}
+                <div className="flex items-center gap-0.5">
+                    {(
+                        [
+                            {
+                                key: 'spoiler',
+                                label: tr('Спойлер'),
+                                icon: EyeOff,
+                                active: form.data.spoiler,
+                                onSelect: () =>
+                                    form.setData('spoiler', !form.data.spoiler),
+                            },
+                            ...(authorSubsOn && !wall && !community
+                                ? [
+                                      {
+                                          key: 'subscribers',
+                                          label: tr('Підписникам'),
+                                          icon: Lock,
+                                          active: form.data.subscribers_only,
+                                          onSelect: () =>
+                                              form.setData(
+                                                  'subscribers_only',
+                                                  !form.data.subscribers_only,
+                                              ),
+                                      },
+                                  ]
+                                : []),
+                            ...(scheduleOn
+                                ? [
+                                      {
+                                          key: 'schedule',
+                                          label: tr('Розклад'),
+                                          icon: CalendarClock,
+                                          active: scheduling,
+                                          onSelect: () => setScheduling(true),
+                                      },
+                                  ]
+                                : []),
+                            {
+                                key: 'draft',
+                                label: tr('Чернетка'),
+                                icon: FilePen,
+                                disabled: !canSubmit,
+                                onSelect: () => submit(true),
+                            },
+                            {
+                                key: 'drafts',
+                                label: tr('Мої чернетки'),
+                                icon: Files,
+                                onSelect: () => router.visit('/posts/drafts'),
+                            },
+                        ] as {
+                            key: string;
+                            label: string;
+                            icon: typeof Earth;
+                            active?: boolean;
+                            disabled?: boolean;
+                            onSelect: () => void;
+                        }[]
+                    ).map((opt) => (
+                        <button
+                            key={opt.key}
+                            type="button"
+                            title={opt.label}
+                            aria-label={opt.label}
+                            aria-pressed={opt.active || undefined}
+                            disabled={opt.disabled}
+                            onClick={opt.onSelect}
+                            className={cn(
+                                'inline-flex size-9 shrink-0 items-center justify-center rounded-xl transition hover:bg-[var(--gc-l3)] disabled:opacity-40',
+                                opt.active
+                                    ? 'bg-[var(--gc-active)] text-sky-400'
+                                    : 'text-white/60',
+                            )}
+                        >
+                            <opt.icon className="size-[18px]" />
+                        </button>
+                    ))}
+                </div>
+
+                <div className="ml-auto flex shrink-0 items-center gap-1">
+                    {!wall && !community && (
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <button
+                                    type="button"
+                                    title={tr('Кому видно')}
+                                    className="inline-flex h-10 items-center gap-1 rounded-xl px-2.5 text-white/70 transition hover:bg-[var(--gc-l3)] hover:text-white"
+                                >
+                                    <currentVisibility.icon className="size-4" />
+                                    <span className="hidden text-xs sm:inline">
+                                        {currentVisibility.label}
+                                    </span>
+                                    <ChevronDown className="size-3.5 text-white/40" />
+                                </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent
+                                align="end"
+                                sideOffset={8}
+                                className="arctic-menu w-52 p-2"
+                            >
+                                {visibilityOptions.map((option) => (
+                                    <DropdownMenuItem
+                                        key={option.value}
+                                        onSelect={() =>
+                                            form.setData(
+                                                'visibility',
+                                                option.value,
+                                            )
+                                        }
+                                        className="arctic-row h-11 gap-3 rounded-2xl px-3.5 text-sm"
+                                    >
+                                        <option.icon className="size-4" />
+                                        <span className="flex-1">
+                                            {option.label}
+                                        </span>
+                                        {form.data.visibility ===
+                                            option.value && (
+                                            <Check className="size-4 text-sky-400" />
+                                        )}
+                                    </DropdownMenuItem>
+                                ))}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    )}
                     <button
                         type="button"
                         onClick={() => submit(false)}
                         disabled={!canSubmit}
-                        aria-label={tr('Опублікувати')}
-                        className="btn-glow inline-flex h-10 shrink-0 items-center gap-2 rounded-xl px-3.5 text-sm font-semibold disabled:pointer-events-none disabled:opacity-40 sm:px-5"
+                        aria-label={
+                            scheduling && publishAt
+                                ? tr('Запланувати')
+                                : tr('Опублікувати')
+                        }
+                        className="btn-glow inline-flex h-10 shrink-0 items-center gap-2 rounded-xl px-4 text-sm font-semibold disabled:pointer-events-none disabled:opacity-40 sm:px-5"
                     >
-                        <Sparkles className="size-4" />
-                        <span className="hidden min-[440px]:inline">
-                            {tr('Опублікувати')}
+                        {scheduling && publishAt ? (
+                            <CalendarClock className="size-4" />
+                        ) : (
+                            <Sparkles className="size-4" />
+                        )}
+                        <span className="hidden sm:inline">
+                            {scheduling && publishAt
+                                ? tr('Запланувати')
+                                : tr('Опублікувати')}
                         </span>
-                        <span className="min-[440px]:hidden">{tr('Пост')}</span>
+                        <span className="sm:hidden">{tr('Пост')}</span>
                     </button>
                 </div>
             </div>

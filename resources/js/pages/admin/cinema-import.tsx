@@ -12,6 +12,7 @@ import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { toast } from 'sonner';
 import { MoviePoster } from '@/components/cinema/movie-tile';
+import { playerName } from '@/components/cinema/player-names';
 import { PageHeader, Pill, Toggle, selectClass } from '@/components/gc/admin';
 import { EmptyState } from '@/components/gc/widget';
 import { Input } from '@/components/ui/input';
@@ -56,7 +57,7 @@ const SEARCH_BY = (provider: Provider) => [
     { key: 'imdb_id', label: 'IMDb ID' },
     ...(provider === 'videoseed'
         ? [
-              { key: 'kinopoisk_id', label: 'Kinopoisk ID' },
+              { key: 'kinopoisk_id', label: tr('ID каталогу') },
               { key: 'tmdb_id', label: 'TMDB ID' },
           ]
         : [{ key: 'shikimori_id', label: 'Shikimori ID' }]),
@@ -165,11 +166,11 @@ export default function AdminCinemaImport({ providers }: Props) {
             <PageHeader
                 title={tr('Імпорт тайтлів')}
                 description={tr(
-                    'Знайдіть фільм, серіал чи аніме в Kodik, Videoseed або FlixCDN — усі озвучки стануть плеєрами, а метадані підтягнуться з TMDB, Shikimori та IMDb.',
+                    'Знайдіть фільм, серіал чи аніме у вбудованих плеєрах — усі озвучки стануть плеєрами, а метадані підтягнуться з TMDB, Shikimori та IMDb.',
                 )}
             />
 
-            <div className="glass mb-5 space-y-3 rounded-3xl p-4">
+            <div className="gc-solid mb-5 space-y-3 rounded-2xl p-4">
                 <div className="flex flex-wrap items-center gap-2">
                     {(['kodik', 'videoseed', 'flixcdn'] as const).map((p) => (
                         <button
@@ -184,14 +185,10 @@ export default function AdminCinemaImport({ providers }: Props) {
                                 'inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition',
                                 provider === p
                                     ? 'nav-active text-white'
-                                    : 'text-white/55 hover:bg-white/[0.05] hover:text-white',
+                                    : 'text-white/55 hover:bg-[var(--gc-l3)] hover:text-white',
                             )}
                         >
-                            {p === 'kodik'
-                                ? 'Kodik'
-                                : p === 'videoseed'
-                                  ? 'Videoseed'
-                                  : 'FlixCDN'}
+                            {playerName(p)}
                             {!providers[p].configured && (
                                 <Pill tone="gold">{tr('немає ключів')}</Pill>
                             )}
@@ -219,7 +216,7 @@ export default function AdminCinemaImport({ providers }: Props) {
 
                 {!caps.configured ? (
                     <p className="rounded-2xl bg-amber-300/10 px-4 py-3 text-sm text-amber-100/90">
-                        {provider === 'kodik' ? 'Kodik' : 'FlixCDN'}{' '}
+                        {playerName(provider)}{' '}
                         {tr('ще не підключено. Вкажіть ключі в')}{' '}
                         <Link
                             href="/admin/integrations"
@@ -275,7 +272,7 @@ export default function AdminCinemaImport({ providers }: Props) {
                             onClick={() =>
                                 load(`/admin/cinema/remote/${provider}/latest`)
                             }
-                            className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-white/[0.06] px-4 text-sm text-white/80 transition hover:bg-white/10 disabled:opacity-40"
+                            className="gc-solid-2 inline-flex h-10 items-center justify-center gap-2 rounded-xl px-4 text-sm text-white/80 transition hover:bg-white/10 disabled:opacity-40"
                         >
                             <Sparkles className="size-4" />{' '}
                             {tr('Свіжі оновлення')}
@@ -309,7 +306,7 @@ export default function AdminCinemaImport({ providers }: Props) {
                             type="button"
                             disabled={fresh === 0 || importing.size > 0}
                             onClick={importAll}
-                            className="glass inline-flex h-9 items-center gap-2 rounded-xl px-4 text-sm font-semibold text-white/85 hover:text-white disabled:opacity-40"
+                            className="gc-solid inline-flex h-9 items-center gap-2 rounded-xl px-4 text-sm font-semibold text-white/85 hover:text-white disabled:opacity-40"
                         >
                             <DownloadCloud className="size-4" />{' '}
                             {tr('Імпортувати всі нові')}
@@ -319,7 +316,7 @@ export default function AdminCinemaImport({ providers }: Props) {
                         {results.map((c) => (
                             <article
                                 key={c.key}
-                                className="glass flex gap-4 rounded-3xl p-3.5"
+                                className="gc-solid flex gap-4 rounded-2xl p-3.5"
                             >
                                 <MoviePoster
                                     movie={{
@@ -327,7 +324,7 @@ export default function AdminCinemaImport({ providers }: Props) {
                                         title: c.title,
                                         poster: c.poster_url,
                                     }}
-                                    className="aspect-[2/3] w-[88px] shrink-0 rounded-xl ring-1 ring-white/10"
+                                    className="aspect-[2/3] w-[88px] shrink-0 rounded-xl"
                                 />
                                 <div className="flex min-w-0 flex-1 flex-col">
                                     <p className="line-clamp-2 font-semibold text-white">
@@ -382,7 +379,7 @@ export default function AdminCinemaImport({ providers }: Props) {
                                                 </span>
                                                 <Link
                                                     href={`/admin/cinema/${c.imported.id}/edit`}
-                                                    className="ml-auto text-xs text-gc-lilac-300 hover:text-white"
+                                                    className="ml-auto text-xs text-sky-400 hover:text-white"
                                                 >
                                                     {tr('Редагувати')}
                                                 </Link>

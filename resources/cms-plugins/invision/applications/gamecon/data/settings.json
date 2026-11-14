@@ -1,0 +1,5 @@
+[
+    {"key": "gamecon_client_id", "default": ""},
+    {"key": "gamecon_client_secret", "default": ""},
+    {"key": "gamecon_base", "default": "https://gamecon.online"}
+]

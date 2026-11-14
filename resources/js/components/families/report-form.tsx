@@ -180,10 +180,10 @@ export function ReportForm({
                             }
                             onClick={() => setData('type', type)}
                             className={cn(
-                                'flex h-14 flex-col items-center justify-center gap-0.5 rounded-2xl border text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-30',
+                                'flex h-14 flex-col items-center justify-center gap-0.5 rounded-2xl text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-30',
                                 data.type === type
-                                    ? 'border-amber-300/50 bg-amber-300/10 text-amber-100 shadow-[0_0_24px_-8px_rgb(250_204_21/0.7)]'
-                                    : 'border-white/[0.07] bg-white/[0.03] text-white/60 hover:text-white',
+                                    ? 'bg-amber-300/10 text-amber-400'
+                                    : 'gc-solid-2 text-white/60 hover:text-white',
                             )}
                         >
                             <Icon className="size-4" />
@@ -195,7 +195,7 @@ export function ReportForm({
             <FieldError message={errors.type} />
 
             <div>
-                <div className="grid grid-cols-2 gap-1 rounded-2xl bg-white/[0.04] p-1">
+                <div className="gc-solid-2 grid grid-cols-2 gap-1 rounded-2xl p-1">
                     {(
                         [
                             ['self', tr('За себе'), User],
@@ -267,8 +267,8 @@ export function ReportForm({
                             className={cn(
                                 'h-10 shrink-0 rounded-xl px-3.5 text-sm font-medium transition',
                                 data.event_date === d
-                                    ? 'bg-gradient-brand text-white'
-                                    : 'bg-white/[0.04] text-white/60 hover:text-white',
+                                    ? 'bg-sky-500 text-white'
+                                    : 'gc-solid-2 text-white/60 hover:text-white',
                             )}
                         >
                             {i === 0
@@ -289,14 +289,14 @@ export function ReportForm({
                             label={tr('Перемоги')}
                             value={data.wins}
                             onChange={(v) => setData('wins', v)}
-                            tone="text-emerald-300"
+                            tone="text-emerald-400"
                             hint={uah(toMinor(config.rates.bizwar_win ?? 0))}
                         />
                         <Stepper
                             label={tr('Поразки')}
                             value={data.losses}
                             onChange={(v) => setData('losses', v)}
-                            tone="text-rose-300"
+                            tone="text-red-400"
                             hint={uah(toMinor(config.rates.bizwar_loss ?? 0))}
                         />
                     </div>
@@ -314,8 +314,8 @@ export function ReportForm({
                                     className={cn(
                                         'h-9 w-12 rounded-lg font-mono text-sm transition',
                                         data.hours.includes(h)
-                                            ? 'bg-amber-300/20 text-amber-100 ring-1 ring-amber-300/40'
-                                            : 'bg-white/[0.04] text-white/55 hover:text-white',
+                                            ? 'bg-amber-300/20 text-amber-400'
+                                            : 'gc-solid-2 text-white/55 hover:text-white',
                                     )}
                                 >
                                     {h}:00
@@ -336,10 +336,10 @@ export function ReportForm({
                                 type="button"
                                 onClick={() => setData('tier', tier)}
                                 className={cn(
-                                    'rounded-2xl border px-2 py-2.5 text-center transition',
+                                    'rounded-2xl px-2 py-2.5 text-center transition',
                                     data.tier === tier
-                                        ? 'border-gc-lilac-500/60 bg-gc-indigo/15 text-white'
-                                        : 'border-white/[0.07] bg-white/[0.03] text-white/55 hover:text-white',
+                                        ? 'bg-gc-indigo/15 text-white'
+                                        : 'gc-solid-2 text-white/55 hover:text-white',
                                 )}
                             >
                                 <div className="text-sm font-semibold">
@@ -377,7 +377,7 @@ export function ReportForm({
                         }
                     />
                     {left === 0 && (
-                        <p className="text-xs text-rose-300">
+                        <p className="text-xs text-red-400">
                             {tr(
                                 'Ліміт контрактів цього рівня на обрану дату вичерпано.',
                             )}
@@ -425,7 +425,7 @@ export function ReportForm({
                     <span className="font-medium text-white/60">
                         {tr('Скріншоти-докази')}
                         {config.require_proof && (
-                            <span className="text-rose-300"> *</span>
+                            <span className="text-red-400"> *</span>
                         )}
                     </span>
                     <span className="text-white/35">
@@ -436,7 +436,7 @@ export function ReportForm({
                     {previews.map((src, i) => (
                         <div
                             key={src}
-                            className="relative size-20 overflow-hidden rounded-xl ring-1 ring-white/10"
+                            className="relative size-20 overflow-hidden rounded-xl"
                         >
                             <img
                                 loading="lazy"
@@ -464,7 +464,7 @@ export function ReportForm({
                         <button
                             type="button"
                             onClick={() => fileRef.current?.click()}
-                            className="flex size-20 flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-white/15 text-xs text-white/45 transition hover:border-white/30 hover:text-white"
+                            className="flex size-20 flex-col items-center justify-center gap-1 rounded-xl text-xs text-white/45 transition hover:border-white/30 hover:text-white"
                         >
                             <ImagePlus className="size-5" /> {tr('Додати')}
                         </button>
@@ -491,12 +491,12 @@ export function ReportForm({
                 />
             </div>
 
-            <div className="flex items-center gap-3 rounded-2xl bg-white/[0.03] p-3 ring-1 ring-white/[0.06]">
+            <div className="gc-solid-2 flex items-center gap-3 rounded-2xl p-3">
                 <div className="min-w-0 flex-1">
                     <div className="text-xs text-white/40">
                         {tr('Очікувана винагорода')}
                     </div>
-                    <div className="font-display text-xl font-bold text-emerald-300">
+                    <div className="font-display text-xl font-bold text-emerald-400">
                         {reward === null ? tr('визначить офіцер') : uah(reward)}
                     </div>
                 </div>
@@ -537,7 +537,7 @@ function Stepper({
     const set = (v: number) => onChange(Math.max(min, Math.min(max, v)));
 
     return (
-        <div className="rounded-2xl bg-white/[0.03] p-2.5 ring-1 ring-white/[0.06]">
+        <div className="gc-solid-2 rounded-2xl p-2.5">
             <div className="flex items-center justify-between px-1 text-xs">
                 <span className="font-medium text-white/60">{label}</span>
                 {hint && <span className="text-white/35">{hint}</span>}
@@ -546,7 +546,7 @@ function Stepper({
                 <button
                     type="button"
                     onClick={() => set(value - 1)}
-                    className="size-10 rounded-xl bg-white/[0.06] text-lg text-white/70 hover:bg-white/10"
+                    className="gc-solid-2 size-10 rounded-xl text-lg text-white/70 hover:bg-white/10"
                 >
                     −
                 </button>
@@ -561,7 +561,7 @@ function Stepper({
                 <button
                     type="button"
                     onClick={() => set(value + 1)}
-                    className="size-10 rounded-xl bg-white/[0.06] text-lg text-white/70 hover:bg-white/10"
+                    className="gc-solid-2 size-10 rounded-xl text-lg text-white/70 hover:bg-white/10"
                 >
                     +
                 </button>

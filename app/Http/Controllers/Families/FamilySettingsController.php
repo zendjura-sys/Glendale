@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Families;
 
 use App\Models\Family;
+use App\Models\GtaServer;
+use App\Services\Alerts\UkraineAlarm;
 use App\Services\Donations\MonobankJar;
 use App\Services\Families\FamilyAudit;
 use App\Services\Families\FamilyBot;
@@ -10,11 +12,15 @@ use App\Services\Families\FamilyChat;
 use App\Services\Families\FamilyNotifier;
 use App\Services\Families\WeeklyDigest;
 use App\Services\ImageStorage;
+use Carbon\CarbonInterface;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -27,6 +33,7 @@ class FamilySettingsController extends FamilyBaseController
 
         return $this->page($family, $member, 'families/settings', 'settings', [
             'settings' => $family->resolvedSettings(),
+            'onboarding' => ['questions' => $family->applicationQuestions(), 'steps' => $family->onboardingSteps()],
             'profile' => [
                 'name' => $family->name,
                 'tag' => $family->tag,
@@ -37,8 +44,18 @@ class FamilySettingsController extends FamilyBaseController
                 'discord' => $family->webhook('discord') ? Str::mask((string) $family->webhook('discord'), '•', 40, -6) : null,
                 'telegram_token' => $family->webhook('telegram_token') ? Str::mask((string) $family->webhook('telegram_token'), '•', 4, -4) : null,
                 'telegram_chat' => $family->webhook('telegram_chat'),
+                // Тривоги в боті: обране місце з довідника UkraineAlarm.
+                'alerts' => $this->alertPlace($family->webhook('alerts')),
             ],
             'jar' => ['url' => $family->donation_jar, 'note' => $family->donation_note],
+            'can_delete' => $family->owner_id === $request->user()->id || $request->user()->isStaff(),
+            'server' => [
+                'current' => $family->server_id,
+                'servers' => array_values(GtaServer::query()->published()->orderBy('name')->limit(500)->get(['id', 'name'])
+                    ->map(fn (GtaServer $s) => ['id' => $s->id, 'name' => $s->name])->all()),
+                'can_change' => $family->owner_id === $request->user()->id || $request->user()->isStaff(),
+                'next_at' => $this->serverChangeAt($family)?->toIso8601String(),
+            ],
             'digest' => [
                 'text' => $digest->format($family, $preview),
                 'members' => count($preview['lines']),
@@ -46,6 +63,66 @@ class FamilySettingsController extends FamilyBaseController
                 'last' => $family->settings['digest_last'] ?? null,
             ],
         ]);
+    }
+
+    /** Сервер сім’ї можна змінювати раз на тиждень (персонал — будь-коли). */
+    private const SERVER_COOLDOWN_DAYS = 7;
+
+    private function serverChangeAt(Family $family): ?CarbonInterface
+    {
+        $last = $family->settings['server_changed_at'] ?? null;
+        $next = $last ? Carbon::parse($last)->addDays(self::SERVER_COOLDOWN_DAYS) : null;
+
+        return $next !== null && $next->isFuture() ? $next : null;
+    }
+
+    /** Змінити сервер сім’ї: засновник або персонал; тег має бути вільним на новому сервері. */
+    public function server(Request $request, Family $family, FamilyAudit $audit): RedirectResponse
+    {
+        $member = $this->member($request, $family, 'settings.manage', write: true);
+        $user = $request->user();
+        abort_unless($family->owner_id === $user->id || $user->isStaff(), 403, 'Змінити сервер може засновник сім’ї.');
+        $data = $request->validate([
+            'server_id' => ['required', 'integer', Rule::exists('gta_servers', 'id')->where('status', GtaServer::STATUS_PUBLISHED)],
+        ]);
+        $to = (int) $data['server_id'];
+        if ($to === $family->server_id) {
+            return back();
+        }
+        if (! $user->isStaff() && ($next = $this->serverChangeAt($family)) !== null) {
+            throw ValidationException::withMessages(['server_id' => 'Сервер можна змінювати раз на тиждень. Наступна зміна — '.$next->timezone('Europe/Kyiv')->format('d.m H:i').'.']);
+        }
+        if (Family::query()->where('server_id', $to)->where('tag', $family->tag)->whereKeyNot($family->id)->exists()) {
+            throw ValidationException::withMessages(['server_id' => 'На цьому сервері вже є сім’я з тегом ['.$family->tag.'] — спершу змініть тег.']);
+        }
+
+        $from = $family->server_id;
+        $family->forceFill([
+            'server_id' => $to,
+            'settings' => [...($family->settings ?? []), 'server_changed_at' => now()->toIso8601String()],
+        ])->save();
+        $audit->log($family, 'FAMILY_UPDATE', $member, null, ['server' => ['from' => $from, 'to' => $to]]);
+        Log::info('family: server changed', ['family' => $family->id, 'from' => $from, 'to' => $to, 'by' => $user->id]);
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Сервер сім’ї змінено.']);
+
+        return back();
+    }
+
+    /** Видалити сім’ю: лідер-засновник або персонал сайту, з підтвердженням адресою (м’яке видалення). */
+    public function destroy(Request $request, Family $family): RedirectResponse
+    {
+        $user = $request->user();
+        abort_unless($family->owner_id === $user->id || $user->isStaff(), 403);
+        $request->validate(['confirm' => ['required', 'string']]);
+        if ($request->input('confirm') !== $family->slug) {
+            throw ValidationException::withMessages(['confirm' => 'Введіть адресу сім’ї, щоб підтвердити видалення.']);
+        }
+
+        $family->delete();
+        Log::info('family: deleted', ['family' => $family->id, 'slug' => $family->slug, 'by' => $user->id, 'staff' => $family->owner_id !== $user->id]);
+        Inertia::flash('toast', ['type' => 'success', 'message' => "Сім’ю «{$family->name}» видалено."]);
+
+        return to_route('families.index');
     }
 
     /** Банка Monobank для донатів сім’ї (картка «Підтримати» на сторінці; лише сайт). */
@@ -145,6 +222,13 @@ class FamilySettingsController extends FamilyBaseController
             'cashout.min_amount' => $money,
             'digest.enabled' => ['required', 'boolean'],
             'digest.chat' => ['required', 'boolean'],
+            'sections.events' => ['required', 'boolean'],
+            'sections.warehouse' => ['required', 'boolean'],
+            'sections.rating' => ['required', 'boolean'],
+            'shifts.enabled' => ['required', 'boolean'],
+            'shifts.self_claim' => ['required', 'boolean'],
+            'shifts.week_limit' => ['required', 'integer', 'min:0', 'max:21'],
+            'shifts.remind' => ['required', 'boolean'],
         ]);
 
         $before = $family->resolvedSettings();
@@ -187,7 +271,8 @@ class FamilySettingsController extends FamilyBaseController
             'discord' => ['nullable', 'string', 'max:300', 'regex:'.FamilyBot::DISCORD_PATTERN],
             'telegram_token' => ['nullable', 'string', 'max:80', 'regex:'.FamilyBot::TELEGRAM_TOKEN_PATTERN],
             'telegram_chat' => ['nullable', 'string', 'max:40', 'regex:/^(-?\d{5,20}|@\w{4,40})$/'],
-            'clear' => ['nullable', Rule::in(['discord', 'telegram'])],
+            'alerts' => ['nullable', 'string', 'max:20'],
+            'clear' => ['nullable', Rule::in(['discord', 'telegram', 'alerts'])],
         ], [
             'discord.regex' => 'Вставте адресу вебхука Discord: https://discord.com/api/webhooks/…',
             'telegram_token.regex' => 'Токен бота від @BotFather має вигляд 123456789:AA…',
@@ -199,7 +284,13 @@ class FamilySettingsController extends FamilyBaseController
             unset($hooks['discord']);
         } elseif (($data['clear'] ?? null) === 'telegram') {
             unset($hooks['telegram_token'], $hooks['telegram_chat']);
+        } elseif (($data['clear'] ?? null) === 'alerts') {
+            unset($hooks['alerts']);
         } else {
+            if (filled($data['alerts'] ?? null)) {
+                abort_unless($this->alertPlace($data['alerts']) !== null, 422, 'Такого місця немає в довіднику тривог.');
+                $hooks['alerts'] = $data['alerts'];
+            }
             foreach (['discord', 'telegram_token'] as $key) {
                 if (filled($data[$key] ?? null)) {
                     $hooks[$key] = trim((string) $data[$key]);
@@ -214,6 +305,7 @@ class FamilySettingsController extends FamilyBaseController
         $audit->log($family, 'WEBHOOKS_UPDATE', $member, null, [
             'discord' => isset($hooks['discord']),
             'telegram' => isset($hooks['telegram_token'], $hooks['telegram_chat']),
+            'alerts' => $hooks['alerts'] ?? null,
         ]);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Налаштування бота збережено.']);
@@ -242,5 +334,17 @@ class FamilySettingsController extends FamilyBaseController
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Тижневий звіт надіслано: '.(collect($result)->filter()->keys()->map(fn ($k) => ['chat' => 'чат', 'discord' => 'Discord', 'telegram' => 'Telegram'][$k] ?? $k)->implode(', ') ?: 'немає каналів')]);
 
         return back();
+    }
+
+    /** @return array{id: string, name: string, path: string}|null */
+    private function alertPlace(?string $id): ?array
+    {
+        $api = app(UkraineAlarm::class);
+        if ($id === null || ! $api->enabled()) {
+            return null;
+        }
+        $node = $api->regions()[$id] ?? null;
+
+        return $node === null ? null : ['id' => $id, 'name' => $node['name'], 'path' => $api->pathLabel($id)];
     }
 }

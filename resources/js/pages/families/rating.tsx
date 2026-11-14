@@ -1,5 +1,12 @@
 import { router } from '@inertiajs/react';
-import { BarChart3, Flag, Trophy } from 'lucide-react';
+import {
+    BarChart3,
+    Download,
+    Flag,
+    ImageIcon,
+    Send,
+    Trophy,
+} from 'lucide-react';
 import { FamilyShell } from '@/components/families/family-shell';
 import { Empty, Panel, RankBadge, Segmented } from '@/components/families/ui';
 import { uah } from '@/lib/money';
@@ -14,6 +21,8 @@ type Season = {
     started_at: string | null;
     ended_at: string;
     top: { place: number; name: string; points: number }[];
+    /** Картинка підсумків для Discord/Telegram. */
+    image: string;
 };
 
 type Props = FamilyShellProps & {
@@ -21,6 +30,8 @@ type Props = FamilyShellProps & {
     periods: Record<Period, string>;
     season: { number: number; started_at: string | null; can_end: boolean };
     seasons: Season[];
+    /** Чи можна надіслати підсумки в підключені Discord/Telegram. */
+    can_share?: boolean;
     leaderboard: LeaderboardRow[];
     config: {
         bizwar: boolean;
@@ -31,7 +42,7 @@ type Props = FamilyShellProps & {
 };
 
 const podium = [
-    'from-amber-300/30 to-amber-500/10 ring-amber-300/40',
+    'from-amber-300/30 to-amber-500/10 ',
     'from-slate-200/20 to-slate-400/10 ring-slate-200/30',
     'from-orange-400/25 to-orange-700/10 ring-orange-400/30',
 ];
@@ -107,7 +118,7 @@ export default function FamilyRating(props: Props) {
             {period === 'season' && (
                 <Panel>
                     <div className="flex flex-wrap items-center gap-3">
-                        <Flag className="size-5 text-amber-200" />
+                        <Flag className="size-5 text-amber-400" />
                         <div className="mr-auto">
                             <p className="font-semibold text-white">
                                 {tr('Сезон {number}', {
@@ -119,14 +130,16 @@ export default function FamilyRating(props: Props) {
                                     ? tr('З {date}', {
                                           date: day(season.started_at),
                                       })
-                                    : tr('Перший сезон — рахуються всі бали')}
+                                    : tr(
+                                          'Перший сезон — враховуються всі бали',
+                                      )}
                             </p>
                         </div>
                         {season.can_end && (
                             <button
                                 type="button"
                                 onClick={endSeason}
-                                className="inline-flex h-10 items-center gap-2 rounded-xl bg-white/[0.06] px-4 text-sm font-medium text-white/80 hover:bg-white/10 hover:text-white"
+                                className="gc-solid-2 inline-flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-medium text-white/80 hover:bg-white/10 hover:text-white"
                             >
                                 <Trophy className="size-4" />
                                 {tr('Завершити сезон')}
@@ -138,7 +151,7 @@ export default function FamilyRating(props: Props) {
                             {seasons.map((s) => (
                                 <li
                                     key={s.number}
-                                    className="rounded-2xl bg-white/[0.03] p-3"
+                                    className="gc-solid-2 rounded-2xl p-3"
                                 >
                                     <p className="text-sm font-semibold text-white">
                                         {tr('Сезон {number}', {
@@ -168,12 +181,51 @@ export default function FamilyRating(props: Props) {
                                                     <span className="min-w-0 flex-1 truncate font-mono">
                                                         {r.name}
                                                     </span>
-                                                    <span className="text-amber-200">
+                                                    <span className="text-amber-400">
                                                         {r.points}
                                                     </span>
                                                 </li>
                                             ))}
                                         </ol>
+                                    )}
+                                    {s.top.length > 0 && (
+                                        <div className="mt-2.5 flex flex-wrap gap-1.5">
+                                            <a
+                                                href={s.image}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-white/[0.06] px-2.5 text-xs font-medium text-white/75 hover:text-white"
+                                            >
+                                                <ImageIcon className="size-3.5" />
+                                                {tr('Картинка')}
+                                            </a>
+                                            <a
+                                                href={s.image}
+                                                download={`season-${s.number}.png`}
+                                                className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-white/[0.06] px-2.5 text-xs font-medium text-white/75 hover:text-white"
+                                            >
+                                                <Download className="size-3.5" />
+                                                {tr('Завантажити')}
+                                            </a>
+                                            {props.can_share && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        router.post(
+                                                            `/f/${family.slug}/rating/seasons/${s.number}/share`,
+                                                            {},
+                                                            {
+                                                                preserveScroll: true,
+                                                            },
+                                                        )
+                                                    }
+                                                    className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-indigo-500/15 px-2.5 text-xs font-semibold text-indigo-300"
+                                                >
+                                                    <Send className="size-3.5" />
+                                                    {tr('У Discord / Telegram')}
+                                                </button>
+                                            )}
+                                        </div>
                                     )}
                                 </li>
                             ))}
@@ -196,7 +248,7 @@ export default function FamilyRating(props: Props) {
                             <div
                                 key={row.id}
                                 className={cn(
-                                    'glass relative overflow-hidden rounded-3xl bg-gradient-to-br p-5 text-center ring-1',
+                                    'gc-solid relative overflow-hidden rounded-2xl bg-gradient-to-br p-5 text-center',
                                     podium[i],
                                     i === 0 && 'sm:order-2 sm:-mt-2',
                                     i === 1 && 'sm:order-1 sm:mt-4',
@@ -207,7 +259,7 @@ export default function FamilyRating(props: Props) {
                                     className={cn(
                                         'mx-auto size-8',
                                         i === 0
-                                            ? 'text-amber-300'
+                                            ? 'text-amber-400'
                                             : i === 1
                                               ? 'text-slate-200'
                                               : 'text-orange-300',
@@ -235,7 +287,7 @@ export default function FamilyRating(props: Props) {
                         <div className="overflow-x-auto">
                             <table className="w-full min-w-[640px] text-sm">
                                 <thead className="text-left text-xs text-white/35">
-                                    <tr className="border-b border-white/[0.06]">
+                                    <tr className=" ">
                                         <th className="px-4 py-3 font-medium">
                                             #
                                         </th>
@@ -283,14 +335,14 @@ export default function FamilyRating(props: Props) {
                                                 </div>
                                             </td>
                                             <td className="py-2.5 text-center text-white/70">
-                                                <span className="text-emerald-300">
+                                                <span className="text-emerald-400">
                                                     {row.bizwar_wins}
                                                 </span>
                                                 <span className="text-white/25">
                                                     {' '}
                                                     /{' '}
                                                 </span>
-                                                <span className="text-rose-300">
+                                                <span className="text-red-400">
                                                     {row.bizwar_losses}
                                                 </span>
                                             </td>
@@ -303,10 +355,10 @@ export default function FamilyRating(props: Props) {
                                             <td className="py-2.5 text-center text-white/70">
                                                 {row.events}
                                             </td>
-                                            <td className="py-2.5 text-right text-emerald-300">
+                                            <td className="py-2.5 text-right text-emerald-400">
                                                 {uah(row.earned)}
                                             </td>
-                                            <td className="px-4 py-2.5 text-right font-display font-bold text-amber-200">
+                                            <td className="px-4 py-2.5 text-right font-display font-bold text-amber-400">
                                                 {row.points}
                                             </td>
                                         </tr>

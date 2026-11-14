@@ -10,15 +10,20 @@ use App\Models\ClanLog;
 use App\Models\ClanMatch;
 use App\Models\ClanMember;
 use App\Models\ClanNews;
+use App\Models\ClanShift;
 use App\Models\Game;
 use App\Models\User;
 use App\Notifications\ComeBackNudge;
+use App\Services\Clans\ClanMvp;
 use App\Services\Clans\ClanService;
+use App\Support\Plugins\Plugins;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -106,6 +111,17 @@ class ClanController extends Controller
         return to_route('clans.show', $clan);
     }
 
+    public function mvp(Request $request, Clan $clan, ClanMvp $mvp): RedirectResponse
+    {
+        app(Plugins::class)->ensure('clan_mvp');
+        abort_unless((bool) $clan->setting('mvp'), 404, 'Голосування вимкнено в налаштуваннях клану.');
+        $data = $request->validate(['user_id' => ['required', 'integer']]);
+        $mvp->vote($clan, $this->user($request), User::query()->findOrFail((int) $data['user_id']));
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Голос зараховано. Переможця оголосимо на початку наступного місяця.']);
+
+        return back();
+    }
+
     public function show(Request $request, Clan $clan): Response
     {
         $user = $this->user($request);
@@ -136,6 +152,7 @@ class ClanController extends Controller
                 'description' => $clan->description,
                 'rules' => $clan->hasFeature('rules') ? $clan->rules : null,
                 'features' => $clan->features,
+                'options' => $clan->resolvedSettings(),
                 'currency' => $clan->currency,
                 'treasury' => $member && $clan->hasFeature('treasury') ? $clan->treasury : null,
                 'owner' => $clan->owner?->toCard(),
@@ -148,13 +165,15 @@ class ClanController extends Controller
                 ))),
             ],
             'me' => $me ? [...$me->toCard($clan), 'can' => $can] : null,
+            // «Гравець місяця»: переможець минулого місяця й голосування за поточний.
+            'mvp' => $member && $clan->setting('mvp') && app(Plugins::class)->on('clan_mvp') ? app(ClanMvp::class)->state($clan, $user) : null,
             'application' => $application ? ['applied_at' => $application->created_at->toIso8601String()] : null,
             'features' => Clan::FEATURES,
             'join_modes' => Clan::JOIN_MODES,
             'members' => $member
                 ? $clan->activeMembers()->with('user')->orderByDesc('rank')->orderBy('joined_at')->get()->map(fn (ClanMember $m) => [
                     ...$m->toCard($clan),
-                    'away' => $m->user !== null && ($m->user->last_seen_at === null || $m->user->last_seen_at->lt(now()->subDays(ComeBackNudge::DAYS))),
+                    'away' => $clan->setting('nudge') && $m->user !== null && ($m->user->last_seen_at === null || $m->user->last_seen_at->lt(now()->subDays(ComeBackNudge::DAYS))),
                 ])->values()
                 : [],
             'applications' => $can['members.manage']
@@ -165,6 +184,16 @@ class ClanController extends Controller
                     ->map(fn (ClanNews $n) => ['id' => $n->id, 'title' => $n->title, 'body' => $n->body, 'is_pinned' => $n->is_pinned, 'user' => $n->user?->toCard(), 'created_at' => $n->created_at->toIso8601String(), 'mine' => $n->user_id === $user->id])
                 : [],
             'events' => $events,
+            'shifts' => $member && $clan->hasFeature('shifts')
+                ? ClanShift::query()->with('user')->where('clan_id', $clan->id)
+                    ->where('ends_at', '>=', now())->where('starts_at', '<', now()->addDays(14))
+                    ->orderBy('starts_at')->limit(80)->get()
+                    ->map(fn (ClanShift $s) => [
+                        'id' => $s->id, 'title' => $s->title,
+                        'starts_at' => $s->starts_at->toIso8601String(), 'ends_at' => $s->ends_at->toIso8601String(),
+                        'user' => $s->user?->toCard(), 'mine' => $s->user_id === $user->id,
+                    ])->values()
+                : [],
             'contributions' => $member && $clan->hasFeature('treasury')
                 ? ClanContribution::query()->with('user')->where('clan_id', $clan->id)
                     ->when(! $can['treasury.manage'], fn (Builder $q) => $q->where(fn (Builder $w) => $w->where('status', ClanContribution::STATUS_APPROVED)->orWhere('user_id', $user->id)))
@@ -179,6 +208,8 @@ class ClanController extends Controller
                 'questions' => array_values(array_filter((array) $clan->questions, 'is_string')),
             ] : null,
             'allies' => $this->allies($clan),
+            // Персонал: кнопка «Видалити клан» прямо на сторінці (у журнал).
+            'can_staff_delete' => $request->user()?->isAdmin() === true,
             'alliance_requests' => $request->user()?->id === $clan->owner_id
                 ? ClanAlliance::query()->with('clan')->where('ally_id', $clan->id)->where('status', ClanAlliance::PENDING)->latest('id')->get()
                     ->map(fn (ClanAlliance $row) => ['id' => $row->id, 'name' => $row->clan->display_name, 'slug' => $row->clan->slug])->values()
@@ -237,6 +268,24 @@ class ClanController extends Controller
         return $this->done('Збережено.');
     }
 
+    /** Видалити клан чи гільдію: засновник або персонал сайту, з підтвердженням адресою. */
+    public function destroy(Request $request, Clan $clan): RedirectResponse
+    {
+        $user = $request->user();
+        abort_unless($clan->owner_id === $user->id || $user->isStaff(), 403);
+        $request->validate(['confirm' => ['required', 'string']]);
+        if ($request->input('confirm') !== $clan->slug) {
+            throw ValidationException::withMessages(['confirm' => 'Введіть адресу, щоб підтвердити видалення.']);
+        }
+
+        $clan->delete();
+        Log::info('clan: deleted', ['clan' => $clan->id, 'slug' => $clan->slug, 'type' => $clan->type, 'by' => $user->id, 'staff' => $clan->owner_id !== $user->id]);
+        $kind = $clan->type === 'guild' ? 'Гільдію' : 'Клан';
+        Inertia::flash('toast', ['type' => 'success', 'message' => "{$kind} «{$clan->name}» видалено."]);
+
+        return to_route('clans.index');
+    }
+
     public function update(Request $request, Clan $clan): RedirectResponse
     {
         $actor = $this->me($request, $clan);
@@ -257,6 +306,14 @@ class ClanController extends Controller
             'permissions' => ['sometimes', 'array'],
             'permissions.*' => ['array'],
             'permissions.*.*' => ['integer', 'between:1,4'],
+            'settings' => ['sometimes', 'array'],
+            'settings.mvp' => ['sometimes', 'boolean'],
+            'settings.bracket' => ['sometimes', 'boolean'],
+            'settings.nudge' => ['sometimes', 'boolean'],
+            'settings.listen' => ['sometimes', 'boolean'],
+            'settings.shifts_self_claim' => ['sometimes', 'boolean'],
+            'settings.shifts_week_limit' => ['sometimes', 'integer', 'min:0', 'max:21'],
+            'settings.shifts_remind' => ['sometimes', 'boolean'],
             'logo' => ['nullable', 'image', 'max:5120'],
         ], ['tag.regex' => 'Тег — лише літери й цифри без пробілів.']);
 
@@ -319,9 +376,78 @@ class ClanController extends Controller
         return $this->done('Захід видалено.');
     }
 
+    /** Нова зміна (можна одразу на кілька тижнів поспіль). */
+    public function shift(Request $request, Clan $clan): RedirectResponse
+    {
+        $this->feature($clan, 'shifts');
+        $actor = $this->clans->authorize($this->me($request, $clan), $clan, 'shifts.manage');
+        $data = $request->validate([
+            'title' => ['required', 'string', 'min:2', 'max:80'],
+            'starts_at' => ['required', 'date'],
+            'hours' => ['required', 'numeric', 'min:0.5', 'max:24'],
+            'user_id' => ['nullable', 'integer'],
+            'repeat_weeks' => ['nullable', 'integer', 'min:1', 'max:8'],
+        ]);
+        $userId = $this->shiftUser($clan, $data['user_id'] ?? null);
+        $start = Carbon::parse($data['starts_at'], 'Europe/Kyiv')->utc();
+        $minutes = (int) round((float) $data['hours'] * 60);
+        for ($w = 0; $w < (int) ($data['repeat_weeks'] ?? 1); $w++) {
+            $from = $start->copy()->addWeeks($w);
+            ClanShift::query()->create([
+                'clan_id' => $clan->id, 'title' => trim($data['title']), 'starts_at' => $from,
+                'ends_at' => $from->copy()->addMinutes($minutes), 'user_id' => $userId, 'created_by' => $actor->user_id,
+            ]);
+        }
+        $this->clans->log($clan, $actor->user, 'shift', 'Зміна «'.trim($data['title']).'»');
+
+        return $this->done('Зміну додано.');
+    }
+
+    /** Взяти вільну зміну, віддати свою або (з правом на заходи) призначити/видалити. */
+    public function shiftAction(Request $request, Clan $clan, ClanShift $shift): RedirectResponse
+    {
+        $this->feature($clan, 'shifts');
+        abort_unless($shift->clan_id === $clan->id, 404);
+        $me = $this->me($request, $clan);
+        $data = $request->validate(['action' => ['required', Rule::in(['claim', 'release', 'assign', 'delete'])], 'user_id' => ['nullable', 'integer']]);
+        switch ($data['action']) {
+            case 'claim':
+                abort_unless($shift->user_id === null && $shift->ends_at->isFuture(), 422, 'Цю зміну вже взяли.');
+                abort_unless($clan->setting('shifts_self_claim') || $this->clans->can($me, $clan, 'shifts.manage'), 403, 'Зміни в цьому клані призначає керівництво.');
+                $limit = (int) $clan->setting('shifts_week_limit');
+                if ($limit > 0) {
+                    $from = $shift->starts_at->copy()->timezone('Europe/Kyiv')->startOfWeek()->utc();
+                    $taken = ClanShift::query()->where('clan_id', $clan->id)->where('user_id', $me->user_id)
+                        ->where('starts_at', '>=', $from)->where('starts_at', '<', $from->copy()->addWeek())->count();
+                    abort_if($taken >= $limit, 422, "Ліміт клану — {$limit} змін на тиждень.");
+                }
+                $shift->update(['user_id' => $me->user_id]);
+                $message = 'Зміну взято.';
+                break;
+            case 'release':
+                abort_unless($shift->user_id === $me->user_id && $shift->starts_at->isFuture(), 403);
+                $shift->update(['user_id' => null]);
+                $message = 'Зміну віддано — вона знову вільна.';
+                break;
+            case 'assign':
+                $this->clans->authorize($me, $clan, 'shifts.manage');
+                $shift->update(['user_id' => $this->shiftUser($clan, $data['user_id'] ?? null)]);
+                $message = 'Призначено.';
+                break;
+            default:
+                $this->clans->authorize($me, $clan, 'shifts.manage');
+                $shift->delete();
+                $message = 'Зміну видалено.';
+        }
+        $this->clans->log($clan, $me->user, 'shift_'.$data['action'], 'Зміна «'.$shift->title.'»');
+
+        return $this->done($message);
+    }
+
     public function bracket(Request $request, Clan $clan, ClanEvent $event): RedirectResponse
     {
         $this->feature($clan, 'events');
+        abort_unless((bool) $clan->setting('bracket'), 404, 'Турнірну сітку вимкнено в налаштуваннях клану.');
         $data = $request->validate([
             'teams' => ['required', 'array', 'size:4'],
             'teams.*' => ['required', 'string', 'max:40'],
@@ -344,6 +470,16 @@ class ClanController extends Controller
         ]);
 
         return $this->done('Сітку збережено.');
+    }
+
+    /** Жива сітка заходу: учасники клану опитують її, поки йде турнір. */
+    public function bracketState(Request $request, Clan $clan, ClanEvent $event): JsonResponse
+    {
+        $this->feature($clan, 'events');
+        $this->me($request, $clan);
+        abort_unless($event->clan_id === $clan->id, 404);
+
+        return response()->json(['bracket' => $event->bracket, 'updated_at' => $event->updated_at?->toIso8601String()]);
     }
 
     public function contribute(Request $request, Clan $clan): RedirectResponse
@@ -463,6 +599,7 @@ class ClanController extends Controller
     public function nudge(Request $request, Clan $clan, ClanMember $member): RedirectResponse
     {
         abort_unless($member->clan_id === $clan->id && $member->status === ClanMember::STATUS_ACTIVE, 404);
+        abort_unless((bool) $clan->setting('nudge'), 404, 'Нагадування вимкнено в налаштуваннях клану.');
         $actor = $this->clans->authorize($this->me($request, $clan), $clan, 'members.manage');
         $target = User::query()->findOrFail($member->user_id);
         if (! ComeBackNudge::allowed($target, 'clan.'.$clan->id)) {
@@ -471,6 +608,16 @@ class ClanController extends Controller
         $target->notify(new ComeBackNudge(User::query()->findOrFail($actor->user_id), $clan->display_name, '/clans/'.$clan->slug));
 
         return $this->done('Нагадування надіслано.');
+    }
+
+    private function shiftUser(Clan $clan, ?int $userId): ?int
+    {
+        if ($userId === null) {
+            return null;
+        }
+        abort_unless($clan->activeMembers()->where('user_id', $userId)->exists(), 422, 'Цієї людини немає в клані.');
+
+        return $userId;
     }
 
     private function feature(Clan $clan, string $feature): void

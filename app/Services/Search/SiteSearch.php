@@ -40,7 +40,7 @@ class SiteSearch
             });
 
         if ($this->modules->enabled('communities')) {
-            Community::query()->where('name', 'like', $like)->orderByDesc('members_count')->limit(3)->get()
+            Community::query()->where('is_listed', true)->where('name', 'like', $like)->orderByDesc('members_count')->limit(3)->get()
                 ->each(function (Community $community) use (&$hits) {
                     $hits[] = ['kind' => 'community', 'title' => $community->name, 'hint' => 'Спільнота', 'href' => '/c/'.$community->slug];
                 });
@@ -52,7 +52,7 @@ class SiteSearch
                 });
         }
         if ($this->modules->enabled('cinema')) {
-            Movie::query()->published()->where('title', 'like', $like)->limit(3)->get()
+            Movie::query()->published()->search($q)->limit(3)->get()
                 ->each(function (Movie $movie) use (&$hits) {
                     $hits[] = ['kind' => 'movie', 'title' => $movie->title, 'hint' => 'Кіно', 'href' => '/cinema/'.$movie->slug];
                 });

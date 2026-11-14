@@ -1,0 +1,731 @@
+/*
+ * GameCon Overlay SDK — CSS-ядро.
+ * Безбарвне матове скло (iOS 27+ Achromatic Frosted Glass) на 100 % прозорому полотні.
+ * Кольорова лише крапка акценту гри (--gc-accent) на дрібних індикаторах — без заливок.
+ */
+
+.gc-sdk-viewport {
+    --gc-accent: #4f7cff;
+    --gc-radius: 22px;
+    --gc-ease: cubic-bezier(0.32, 0.72, 0, 1);
+    --gc-glass: rgba(16, 18, 24, 0.78);
+    --gc-glass-hud: rgba(14, 16, 22, 0.62);
+    --gc-glass-active: rgba(16, 18, 24, 0.84);
+    --gc-glass-solid: rgba(16, 18, 24, 0.94);
+    --gc-ink: #f8fafc;
+    --gc-sub: rgba(248, 250, 252, 0.58);
+    --gc-line: rgba(255, 255, 255, 0.14);
+    position: fixed;
+    inset: 0;
+    background: transparent !important;
+    /* Усі кліки повз віджети вільно проходять у саму гру */
+    pointer-events: none;
+    z-index: 2147483647;
+    font-family:
+        -apple-system, BlinkMacSystemFont, 'Inter', system-ui, sans-serif;
+    font-size: 13px;
+    line-height: 1.35;
+    color: var(--gc-ink);
+    user-select: none;
+    -webkit-font-smoothing: antialiased;
+}
+/* Вбудовано в контейнер (пісочниця, прев'ю в порталі) */
+.gc-sdk-viewport.gc-sdk-contained {
+    position: absolute;
+    z-index: 5;
+}
+.gc-sdk-viewport *,
+.gc-sdk-viewport *::before,
+.gc-sdk-viewport *::after {
+    box-sizing: border-box;
+}
+.gc-sdk-viewport svg {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.gc-sdk-interactive {
+    /* Клікабельні лише самі скляні капсули й вікна */
+    pointer-events: auto;
+}
+
+/* ───────── Еталонне матове безбарвне скло ───────── */
+.gc-sdk-frosted-glass {
+    background: var(--gc-glass);
+    backdrop-filter: blur(36px) saturate(145%) contrast(105%);
+    -webkit-backdrop-filter: blur(36px) saturate(145%) contrast(105%);
+    border: 1px solid var(--gc-line);
+    box-shadow:
+        inset 0 1px 0 0 rgba(255, 255, 255, 0.24),
+        inset 0 -1px 0 0 rgba(255, 255, 255, 0.05),
+        0 16px 40px -8px rgba(0, 0, 0, 0.75);
+    border-radius: var(--gc-radius);
+    color: var(--gc-ink);
+    transition:
+        transform 0.22s var(--gc-ease),
+        opacity 0.22s var(--gc-ease),
+        background-color 0.2s ease;
+}
+
+/* Компактний HUD (гравець бігає й стріляє): прозоріше, щоб не закривати огляд */
+.gc-sdk-viewport[data-mode='hud'] .gc-sdk-frosted-glass {
+    background: var(--gc-glass-hud);
+    backdrop-filter: blur(24px) saturate(140%);
+    -webkit-backdrop-filter: blur(24px) saturate(140%);
+    opacity: 0.88;
+}
+/* Активний режим (хоткей чи наведення): щільне скло й легке притягування фокуса */
+.gc-sdk-viewport[data-mode='active'] .gc-sdk-frosted-glass,
+.gc-sdk-viewport[data-mode='hud'] .gc-sdk-frosted-glass:hover {
+    background: var(--gc-glass-active);
+    backdrop-filter: blur(40px) saturate(145%) contrast(105%);
+    -webkit-backdrop-filter: blur(40px) saturate(145%) contrast(105%);
+    opacity: 1;
+    transform: scale(1);
+}
+
+/* Старі ігрові CEF без GPU-розмиття: щільніша підкладка з дрібним зерном */
+.gc-sdk-viewport.gc-sdk-no-blur .gc-sdk-frosted-glass,
+.gc-sdk-viewport.gc-sdk-no-blur[data-mode] .gc-sdk-frosted-glass {
+    background-color: var(--gc-glass-solid);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .05 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+@supports not
+((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .gc-sdk-frosted-glass {
+        background-color: var(--gc-glass-solid) !important;
+    }
+}
+
+/* Світла тема гри — те саме безбарвне скло, тільки світле */
+.gc-sdk-viewport[data-theme='light'] {
+    --gc-glass: rgba(248, 250, 252, 0.72);
+    --gc-glass-hud: rgba(248, 250, 252, 0.58);
+    --gc-glass-active: rgba(248, 250, 252, 0.82);
+    --gc-glass-solid: rgba(248, 250, 252, 0.94);
+    --gc-ink: #0f172a;
+    --gc-sub: rgba(15, 23, 42, 0.58);
+    --gc-line: rgba(15, 23, 42, 0.1);
+}
+
+/* Внутрішні кнопки й слоти */
+.gc-sdk-slot {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    transition:
+        background-color 0.16s ease,
+        border-color 0.16s ease;
+}
+.gc-sdk-slot:hover {
+    background: rgba(255, 255, 255, 0.11);
+    border-color: rgba(255, 255, 255, 0.18);
+}
+button.gc-sdk-slot {
+    cursor: pointer;
+}
+.gc-sdk-viewport[data-theme='light'] .gc-sdk-slot {
+    background: rgba(15, 23, 42, 0.05);
+    border-color: rgba(15, 23, 42, 0.07);
+}
+.gc-sdk-sub {
+    color: var(--gc-sub);
+    font-size: 11px;
+}
+.gc-sdk-title {
+    font-weight: 600;
+    font-size: 13px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.gc-sdk-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+.gc-sdk-grow {
+    flex: 1;
+    min-width: 0;
+}
+.gc-sdk-icon-btn {
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 10px;
+    border: 0;
+    background: transparent;
+    color: var(--gc-sub);
+    cursor: pointer;
+}
+.gc-sdk-icon-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--gc-ink);
+}
+.gc-sdk-avatar {
+    position: relative;
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.12) center / cover no-repeat;
+    display: grid;
+    place-items: center;
+    font-size: 11px;
+    font-weight: 600;
+}
+.gc-sdk-avatar[data-online='1']::after {
+    content: '';
+    position: absolute;
+    right: -1px;
+    bottom: -1px;
+    width: 9px;
+    height: 9px;
+    border-radius: 999px;
+    background: #34d399;
+    box-shadow: 0 0 0 2px rgba(16, 18, 24, 0.9);
+}
+.gc-sdk-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+    background: var(--gc-accent);
+    flex-shrink: 0;
+}
+.gc-sdk-kbd {
+    padding: 2px 6px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.08);
+    font-size: 10px;
+    color: var(--gc-sub);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.gc-sdk-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    height: 32px;
+    padding: 0 12px;
+    border-radius: 11px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    background: rgba(255, 255, 255, 0.14);
+    color: var(--gc-ink);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+.gc-sdk-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+.gc-sdk-btn[aria-pressed='true'] {
+    border-color: var(--gc-accent);
+    box-shadow: inset 0 0 0 1px var(--gc-accent);
+}
+.gc-sdk-mute {
+    color: var(--gc-sub);
+}
+.gc-sdk-live {
+    color: #34d399;
+}
+
+/* ───────── Капсула-док (HUD) ───────── */
+.gc-sdk-pill {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    height: 40px;
+    padding: 0 8px 0 6px;
+    border-radius: 999px !important;
+    cursor: pointer;
+}
+.gc-sdk-logo {
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.12);
+    font-weight: 800;
+    font-size: 14px;
+    background-size: cover;
+    background-position: center;
+}
+.gc-sdk-sep {
+    width: 1px;
+    height: 18px;
+    background: rgba(255, 255, 255, 0.14);
+}
+
+/* ───────── Картки-віджети (паті, сім'я) ───────── */
+.gc-sdk-card {
+    position: absolute;
+    width: 280px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.gc-sdk-card-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: grab;
+}
+.gc-sdk-card-head:active {
+    cursor: grabbing;
+}
+.gc-sdk-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 220px;
+    overflow: auto;
+    scrollbar-width: thin;
+}
+.gc-sdk-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+}
+.gc-sdk-stat {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+}
+.gc-sdk-stat b {
+    font-size: 15px;
+    font-variant-numeric: tabular-nums;
+}
+
+/* ───────── Чат, що виїжджає справа ───────── */
+.gc-sdk-drawer {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    bottom: 12px;
+    width: min(340px, calc(100% - 24px));
+    display: flex;
+    flex-direction: column;
+    padding: 12px;
+    gap: 10px;
+    transform: translateX(calc(100% + 24px));
+    opacity: 0;
+    transition:
+        transform 0.42s var(--gc-ease),
+        opacity 0.3s var(--gc-ease) !important;
+}
+.gc-sdk-viewport[data-hud-corner='top-right'] .gc-sdk-drawer {
+    top: 62px;
+}
+.gc-sdk-drawer[data-open='1'] {
+    transform: translateX(0);
+    opacity: 1;
+}
+.gc-sdk-messages {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding-right: 2px;
+    scrollbar-width: thin;
+}
+.gc-sdk-bubble {
+    max-width: 82%;
+    padding: 7px 10px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.08);
+    user-select: text;
+    word-wrap: break-word;
+}
+.gc-sdk-bubble[data-mine='1'] {
+    align-self: flex-end;
+    background: rgba(255, 255, 255, 0.16);
+}
+.gc-sdk-input {
+    display: flex;
+    gap: 6px;
+}
+.gc-sdk-input input {
+    flex: 1;
+    min-width: 0;
+    height: 36px;
+    padding: 0 12px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--gc-ink);
+    font: inherit;
+    outline: none;
+    user-select: text;
+}
+.gc-sdk-input input:focus {
+    border-color: rgba(255, 255, 255, 0.3);
+}
+.gc-sdk-convs {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+.gc-sdk-chip {
+    flex-shrink: 0;
+    padding: 5px 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--gc-sub);
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+}
+.gc-sdk-chip[aria-selected='true'] {
+    color: var(--gc-ink);
+    background: rgba(255, 255, 255, 0.14);
+}
+
+/* ───────── «Крапля» зі стрілкою + панель ───────── */
+.gc-sdk-drop {
+    position: absolute;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--gc-line);
+    cursor: pointer;
+    color: var(--gc-ink);
+    padding: 0;
+}
+.gc-sdk-drop::before {
+    /* Тоненька лінія акценту гри по внутрішньому краю */
+    content: '';
+    position: absolute;
+    border-radius: 999px;
+    background: var(--gc-accent);
+    opacity: 0.9;
+}
+.gc-sdk-drop[data-side='left'] {
+    left: 0;
+    width: 26px;
+    height: 58px;
+    border-left: 0;
+    border-radius: 0 999px 999px 0 !important;
+    transform: translateY(-50%);
+}
+.gc-sdk-drop[data-side='right'] {
+    right: 0;
+    width: 26px;
+    height: 58px;
+    border-right: 0;
+    border-radius: 999px 0 0 999px !important;
+    transform: translateY(-50%);
+}
+.gc-sdk-drop[data-side='top'] {
+    top: 0;
+    width: 58px;
+    height: 26px;
+    border-top: 0;
+    border-radius: 0 0 999px 999px !important;
+    transform: translateX(-50%);
+}
+.gc-sdk-drop[data-side='left']::before,
+.gc-sdk-drop[data-side='right']::before {
+    top: 16px;
+    bottom: 16px;
+    width: 2px;
+}
+.gc-sdk-drop[data-side='left']::before {
+    left: 3px;
+}
+.gc-sdk-drop[data-side='right']::before {
+    right: 3px;
+}
+.gc-sdk-drop[data-side='top']::before {
+    left: 16px;
+    right: 16px;
+    height: 2px;
+    top: 3px;
+}
+.gc-sdk-viewport[data-busy='1'] .gc-sdk-drop,
+.gc-sdk-viewport[data-busy='1'] .gc-sdk-pill {
+    opacity: 0.18 !important;
+}
+
+.gc-sdk-panel {
+    position: absolute;
+    width: min(320px, calc(100% - 48px));
+    max-height: min(480px, calc(100% - 48px));
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px;
+    opacity: 0;
+    pointer-events: none;
+}
+.gc-sdk-panel[data-open='1'] {
+    opacity: 1;
+    pointer-events: auto;
+}
+.gc-sdk-panel[data-side='left'] {
+    left: 34px;
+    transform: translate(-12px, -50%) scale(0.97);
+}
+.gc-sdk-panel[data-side='right'] {
+    right: 34px;
+    transform: translate(12px, -50%) scale(0.97);
+}
+.gc-sdk-panel[data-side='top'] {
+    top: 34px;
+    transform: translate(-50%, -12px) scale(0.97);
+}
+.gc-sdk-panel[data-side='left'][data-open='1'],
+.gc-sdk-panel[data-side='right'][data-open='1'] {
+    transform: translate(0, -50%) scale(1);
+}
+.gc-sdk-panel[data-side='top'][data-open='1'] {
+    transform: translate(-50%, 0) scale(1);
+}
+.gc-sdk-tabs {
+    display: flex;
+    gap: 4px;
+}
+.gc-sdk-tab {
+    flex: 1;
+    display: grid;
+    place-items: center;
+    height: 32px;
+    border-radius: 10px;
+    border: 0;
+    background: transparent;
+    color: var(--gc-sub);
+    cursor: pointer;
+    position: relative;
+}
+.gc-sdk-tab:hover {
+    background: rgba(255, 255, 255, 0.07);
+}
+.gc-sdk-tab[aria-selected='true'] {
+    background: rgba(255, 255, 255, 0.14);
+    color: var(--gc-ink);
+}
+.gc-sdk-tab[aria-selected='true']::after {
+    content: '';
+    position: absolute;
+    bottom: 3px;
+    width: 14px;
+    height: 2px;
+    border-radius: 2px;
+    background: var(--gc-accent);
+}
+.gc-sdk-body {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    overflow: auto;
+    min-height: 0;
+    scrollbar-width: thin;
+}
+
+/* Відкрита панель — інші картки відступають на другий план */
+.gc-sdk-viewport[data-panel='1'] .gc-sdk-card {
+    opacity: 0.22;
+    pointer-events: none;
+}
+
+/* ───────── Тост ───────── */
+.gc-sdk-toasts {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: min(320px, calc(100% - 24px));
+}
+.gc-sdk-toast {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 12px 9px 10px;
+    border-radius: 999px !important;
+    transform: translateY(-8px);
+    opacity: 0;
+}
+.gc-sdk-toast[data-in='1'] {
+    transform: none;
+    opacity: 1;
+}
+
+/* Перетягування віджетів (пісочниця й ігри з draggable: true) */
+.gc-sdk-dragging {
+    transition: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .gc-sdk-viewport *,
+    .gc-sdk-frosted-glass,
+    .gc-sdk-drawer {
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* Закриті панелі сильніші за прозорість режиму HUD */
+.gc-sdk-viewport .gc-sdk-panel[data-open='0'],
+.gc-sdk-viewport .gc-sdk-drawer[data-open='0'] {
+    opacity: 0 !important;
+    visibility: hidden;
+    pointer-events: none;
+    transition:
+        transform 0.3s var(--gc-ease),
+        opacity 0.2s var(--gc-ease),
+        visibility 0s linear 0.3s !important;
+}
+.gc-sdk-viewport .gc-sdk-toast[data-in='0'],
+.gc-sdk-viewport .gc-sdk-toast:not([data-in]) {
+    opacity: 0 !important;
+}
+
+/* ───────── Стопки в кутах: капсула й окремі вікна не перекривають одне одного ───────── */
+.gc-sdk-stack {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    /* Кожна стопка — не вище за пів екрана: верхня й нижня ніколи не зійдуться.
+       Без overflow/mask на стопці: вони обрізали б тінь і розмиття скла (квадратні кути). */
+    max-height: calc(50% - 18px);
+    zoom: var(--gc-scale, 1);
+}
+.gc-sdk-stack[data-corner^='bottom'] {
+    flex-direction: column-reverse;
+}
+.gc-sdk-stack[data-corner$='right'] {
+    align-items: flex-end;
+}
+.gc-sdk-stack > .gc-sdk-card,
+.gc-sdk-stack > .gc-sdk-pill {
+    position: relative;
+    inset: auto;
+    flex-shrink: 0;
+}
+/* Мало місця — картка стискається сама, а прокручується лише список усередині */
+.gc-sdk-stack > .gc-sdk-card {
+    flex-shrink: 1;
+    min-height: 96px;
+}
+.gc-sdk-card > .gc-sdk-list {
+    flex: 1 1 auto;
+    min-height: 0;
+}
+.gc-sdk-panel,
+.gc-sdk-drawer,
+.gc-sdk-welcome {
+    zoom: var(--gc-scale, 1);
+}
+.gc-sdk-card .gc-sdk-list {
+    max-height: 260px;
+}
+
+/* ───────── Шестерня ───────── */
+.gc-sdk-seg {
+    display: flex;
+    gap: 2px;
+    padding: 2px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.06);
+}
+.gc-sdk-seg button {
+    flex: 1;
+    padding: 6px 4px;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--gc-sub);
+    font: inherit;
+    font-size: 11px;
+    cursor: pointer;
+}
+.gc-sdk-seg button[aria-pressed='true'] {
+    background: rgba(255, 255, 255, 0.16);
+    color: var(--gc-ink);
+}
+.gc-sdk-switch {
+    position: relative;
+    width: 30px;
+    height: 18px;
+    flex-shrink: 0;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.16);
+    transition: background-color 0.2s ease;
+}
+.gc-sdk-switch::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 14px;
+    height: 14px;
+    border-radius: 999px;
+    background: #fff;
+    transition: transform 0.22s var(--gc-ease);
+}
+.gc-sdk-switch[data-on='1'] {
+    background: var(--gc-accent);
+}
+.gc-sdk-switch[data-on='1']::after {
+    transform: translateX(12px);
+}
+.gc-sdk-range input {
+    width: 110px;
+    accent-color: var(--gc-accent);
+}
+.gc-sdk-btn-sm {
+    height: 26px;
+    padding: 0 9px;
+    font-size: 11px;
+}
+.gc-sdk-btn-ghost {
+    background: transparent;
+    border-color: rgba(255, 255, 255, 0.12);
+}
+
+/* ───────── Привітання при першому запуску ───────── */
+.gc-sdk-welcome {
+    position: absolute;
+    left: 50%;
+    bottom: 24px;
+    width: min(440px, calc(100% - 24px));
+    transform: translateX(-50%);
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* ───────── Режим стрімера: ніки, повідомлення й коди входу не видно на трансляції ───────── */
+.gc-sdk-streamer .gc-sdk-name,
+.gc-sdk-streamer .gc-sdk-bubble,
+.gc-sdk-streamer .gc-sdk-secret,
+.gc-sdk-streamer .gc-sdk-avatar {
+    filter: blur(6px);
+}
+.gc-sdk-streamer .gc-sdk-name:hover,
+.gc-sdk-streamer .gc-sdk-bubble:hover {
+    filter: none;
+}

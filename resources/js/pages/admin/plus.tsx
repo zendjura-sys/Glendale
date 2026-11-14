@@ -94,7 +94,7 @@ const SOURCES = (): Record<string, string> => ({
 });
 
 const button =
-    'inline-flex h-10 items-center justify-center rounded-xl bg-[var(--btn-primary,#6366f1)] px-4 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-40';
+    'inline-flex h-10 items-center justify-center rounded-xl bg-primary px-4 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-40';
 
 export default function AdminPlus({
     stats,
@@ -160,7 +160,7 @@ export default function AdminPlus({
             <div className="mb-5 grid gap-5 lg:grid-cols-2">
                 <form
                     onSubmit={submitGrant}
-                    className="glass space-y-3 rounded-3xl p-5"
+                    className="gc-solid space-y-3 rounded-2xl p-5"
                 >
                     <h2 className="font-display text-lg font-bold text-white">
                         {tr('Видати GameCon+')}
@@ -208,9 +208,9 @@ export default function AdminPlus({
                 <PromoForm products={products} />
             </div>
 
-            <section className="glass mb-5 rounded-3xl p-5">
+            <section className="gc-solid mb-5 rounded-2xl p-5">
                 <h2 className="font-display text-lg font-bold text-white">
-                    {tr('Діючі періоди')}
+                    {tr('Чинні періоди')}
                 </h2>
                 {grants.length === 0 ? (
                     <p className="mt-3 text-sm text-white/40">
@@ -261,7 +261,7 @@ export default function AdminPlus({
                                     <button
                                         type="button"
                                         title={tr('Зняти')}
-                                        className="text-white/40 transition hover:text-rose-300"
+                                        className="text-white/40 transition hover:text-red-400"
                                         onClick={() => {
                                             if (
                                                 window.confirm(
@@ -287,7 +287,7 @@ export default function AdminPlus({
             </section>
 
             <div className="grid gap-5 lg:grid-cols-2">
-                <section className="glass rounded-3xl p-5">
+                <section className="gc-solid rounded-2xl p-5">
                     <h2 className="font-display text-lg font-bold text-white">
                         {tr('Промокоди')}
                     </h2>
@@ -338,7 +338,7 @@ export default function AdminPlus({
                                 <button
                                     type="button"
                                     title={tr('Видалити')}
-                                    className="ml-auto text-white/40 transition hover:text-rose-300"
+                                    className="ml-auto text-white/40 transition hover:text-red-400"
                                     onClick={() =>
                                         router.delete(
                                             `/admin/plus/codes/${c.id}`,
@@ -358,7 +358,7 @@ export default function AdminPlus({
                     </ul>
                 </section>
 
-                <section className="glass rounded-3xl p-5">
+                <section className="gc-solid rounded-2xl p-5">
                     <h2 className="font-display text-lg font-bold text-white">
                         {tr('Останні оплати')}
                     </h2>
@@ -405,6 +405,15 @@ export default function AdminPlus({
 const field = 'space-y-1 text-xs text-white/50';
 
 /** Новий промокод: тип (дні / знижка на підписку / на перший платіж / безкоштовний період) і обмеження. */
+/** Групи платних функцій для вибору в промокоді. */
+const PRODUCT_GROUPS = (): { kind: string; title: string }[] => [
+    { kind: 'plus', title: tr('GameCon+') },
+    { kind: 'family', title: tr('GameCon+ для сім’ї') },
+    { kind: 'gift', title: tr('Подарунок GameCon+') },
+    { kind: 'promo', title: tr('Просування сервера') },
+    { kind: 'phone', title: tr('Номери +777') },
+];
+
 function PromoForm({ products }: { products: Props['products'] }) {
     const form = useForm({
         code: '',
@@ -423,13 +432,27 @@ function PromoForm({ products }: { products: Props['products'] }) {
     });
     const type = form.data.type;
     const isDiscount = type === 'discount' || type === 'first_payment';
+    // Знижка діє на будь-яку платну функцію, крім поповнення балансу; пробний період — лише на GameCon+.
     const choices = products.filter((p) =>
         type === 'trial'
             ? p.kind === 'plus'
             : type === 'days'
               ? false
-              : p.kind !== 'promo',
+              : p.kind !== 'balance',
     );
+    const groups = PRODUCT_GROUPS()
+        .map((g) => ({
+            ...g,
+            items: choices.filter((p) => p.kind === g.kind),
+        }))
+        .filter((g) => g.items.length > 0);
+    const toggleGroup = (keys: string[], on: boolean) =>
+        form.setData(
+            'products',
+            on
+                ? Array.from(new Set([...form.data.products, ...keys]))
+                : form.data.products.filter((k) => !keys.includes(k)),
+        );
 
     const submit = (event: FormEvent) => {
         event.preventDefault();
@@ -460,7 +483,7 @@ function PromoForm({ products }: { products: Props['products'] }) {
     };
 
     return (
-        <form onSubmit={submit} className="glass space-y-3 rounded-3xl p-5">
+        <form onSubmit={submit} className="gc-solid space-y-3 rounded-2xl p-5">
             <h2 className="flex items-center gap-2 font-display text-lg font-bold text-white">
                 <Ticket className="size-5 text-indigo-300" />
                 {tr('Новий промокод')}
@@ -472,10 +495,10 @@ function PromoForm({ products }: { products: Props['products'] }) {
                         type="button"
                         onClick={() => form.setData('type', key)}
                         className={cn(
-                            'rounded-lg border px-2.5 py-1 text-xs transition',
+                            'rounded-lg px-2.5 py-1 text-xs transition',
                             type === key
                                 ? 'border-indigo-400/50 bg-indigo-500/15 text-white'
-                                : 'border-white/10 text-white/50 hover:text-white',
+                                : 'text-white/50 hover:text-white',
                         )}
                     >
                         {PROMO_TYPES()[key].label}
@@ -537,7 +560,7 @@ function PromoForm({ products }: { products: Props['products'] }) {
                         <label className={field}>
                             {tr('Знижка')}
                             <select
-                                className="h-9 w-full rounded-md border border-white/10 bg-white/[0.04] px-2 text-sm text-white"
+                                className="gc-solid-2 h-9 w-full rounded-md px-2 text-sm text-white"
                                 value={form.data.unit}
                                 onChange={(e) =>
                                     form.setData(
@@ -638,36 +661,66 @@ function PromoForm({ products }: { products: Props['products'] }) {
                                   'Лише для тарифів (порожньо — для всіх підписок)',
                               )}
                     </p>
-                    <div className="mt-1.5 flex flex-wrap gap-1.5">
-                        {choices.map((p) => {
-                            const on = form.data.products.includes(p.key);
+                    <p className="mt-0.5 text-[11px] text-white/35">
+                        {tr(
+                            'Подарунок, просування сервера й номери +777 — не підписки: знижка діє на них, лише якщо їх обрано тут явно.',
+                        )}
+                    </p>
+                    <div className="mt-2 space-y-2.5">
+                        {groups.map((g) => {
+                            const keys = g.items.map((p) => p.key);
+                            const all = keys.every((k) =>
+                                form.data.products.includes(k),
+                            );
 
                             return (
-                                <button
-                                    key={p.key}
-                                    type="button"
-                                    onClick={() =>
-                                        form.setData(
-                                            'products',
-                                            on
-                                                ? form.data.products.filter(
-                                                      (k) => k !== p.key,
-                                                  )
-                                                : [
-                                                      ...form.data.products,
-                                                      p.key,
-                                                  ],
-                                        )
-                                    }
-                                    className={cn(
-                                        'rounded-lg border px-2 py-0.5 text-xs transition',
-                                        on
-                                            ? 'border-indigo-400/50 bg-indigo-500/15 text-white'
-                                            : 'border-white/10 text-white/50 hover:text-white',
-                                    )}
-                                >
-                                    {p.name}
-                                </button>
+                                <div key={g.kind}>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-xs font-semibold text-white/70">
+                                            {g.title}
+                                        </span>
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                toggleGroup(keys, !all)
+                                            }
+                                            className="text-[11px] text-sky-400 hover:underline"
+                                        >
+                                            {all
+                                                ? tr('Зняти всі')
+                                                : tr('Обрати всі')}
+                                        </button>
+                                    </div>
+                                    <div className="mt-1 flex flex-wrap gap-1.5">
+                                        {g.items.map((p) => {
+                                            const on =
+                                                form.data.products.includes(
+                                                    p.key,
+                                                );
+
+                                            return (
+                                                <button
+                                                    key={p.key}
+                                                    type="button"
+                                                    onClick={() =>
+                                                        toggleGroup(
+                                                            [p.key],
+                                                            !on,
+                                                        )
+                                                    }
+                                                    className={cn(
+                                                        'rounded-lg px-2 py-0.5 text-xs transition',
+                                                        on
+                                                            ? 'border-indigo-400/50 bg-indigo-500/15 text-white'
+                                                            : 'text-white/50 hover:text-white',
+                                                    )}
+                                                >
+                                                    {p.name}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
                             );
                         })}
                     </div>

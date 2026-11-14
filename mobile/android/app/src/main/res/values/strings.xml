@@ -2,4 +2,13 @@
 <resources>
     <string name="family_widget_label">Моя сім’я</string>
     <string name="family_widget_description">Рахунок у банку сім’ї, заробіток за тиждень, місце в рейтингу й найближча подія</string>
+    <string name="shortcut_shelter_short">Я в укритті</string>
+    <string name="shortcut_shelter_long">Позначити «Я в укритті»</string>
+    <string name="shortcut_alerts_short">Мапа тривог</string>
+    <string name="shortcut_alerts_long">Відкрити мапу тривог</string>
+    <string name="tile_shelter">Я в укритті</string>
+    <string name="alert_widget_label">Тривога в моєму місці</string>
+    <string name="alert_widget_description">Чи є зараз тривога у вашому місці, її тип і скільки триває</string>
+    <string name="pulse_widget_label">Пульс GameCon</string>
+    <string name="pulse_widget_description">Непрочитані чати й сповіщення, друзі онлайн і в що грають, завдання дня й рівень сезону</string>
 </resources>
