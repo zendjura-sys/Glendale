@@ -153,7 +153,14 @@ Future<void> main() async {
             path: '/messages',
             builder: (_, _) => const MessagesScreen(),
             routes: [
-              GoRoute(path: ':id', builder: (_, state) => ChatScreen(key: ValueKey(state.pathParameters['id']), id: int.tryParse(state.pathParameters['id']!) ?? 0)),
+              // Планшет: бесіда відкривається праворуч від списку (дві панелі), телефон — окремим екраном.
+              GoRoute(
+                path: ':id',
+                builder: (context, state) {
+                  final id = int.tryParse(state.pathParameters['id']!) ?? 0;
+                  return MediaQuery.sizeOf(context).width >= MessagesScreen.splitWidth ? MessagesScreen(key: ValueKey('split-$id'), selected: id) : ChatScreen(key: ValueKey(state.pathParameters['id']), id: id);
+                },
+              ),
             ],
           ),
           GoRoute(path: '/friends', builder: (_, state) => FriendsScreen(tab: state.uri.queryParameters['tab'] ?? 'all')),

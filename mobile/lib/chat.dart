@@ -30,7 +30,13 @@ import 'skeletons.dart';
 // ───────────────────────── Список бесід ─────────────────────────
 
 class MessagesScreen extends StatefulWidget {
-  const MessagesScreen({super.key});
+  const MessagesScreen({this.selected, super.key});
+
+  /// Планшет (ширина ≥ 900): відкрита бесіда праворуч, список ліворуч.
+  final int? selected;
+
+  /// З якої ширини чати — дві панелі.
+  static const splitWidth = 900.0;
 
   @override
   State<MessagesScreen> createState() => _MessagesScreenState();
@@ -38,6 +44,7 @@ class MessagesScreen extends StatefulWidget {
 
 class _MessagesScreenState extends State<MessagesScreen> {
   final query = TextEditingController();
+  late int? selected = widget.selected;
   List<Map<String, dynamic>> conversations = [];
   bool loading = true;
   Timer? poll;
@@ -77,6 +84,27 @@ class _MessagesScreenState extends State<MessagesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final split = MediaQuery.sizeOf(context).width >= MessagesScreen.splitWidth;
+    if (!split) return _list(context, split: false);
+    // Планшет: список (360) | бесіда. Вибір бесіди не відкриває новий екран, а міняє праву панель.
+    return Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      SizedBox(width: 360, child: _list(context, split: true)),
+      VerticalDivider(width: 1, thickness: 1, color: fg.withValues(alpha: 0.08)),
+      Expanded(
+        child: selected == null
+            ? Center(
+                child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  Icon(LucideIcons.messagesSquare, size: 42, color: muted),
+                  const SizedBox(height: 10),
+                  Text(tr('Оберіть бесіду ліворуч'), style: body(15, color: muted)),
+                ]),
+              )
+            : ChatScreen(key: ValueKey('split-$selected'), id: selected!),
+      ),
+    ]);
+  }
+
+  Widget _list(BuildContext context, {required bool split}) {
     final q = query.text.trim().toLowerCase();
     final shown = q.isEmpty ? conversations : conversations.where((c) => (text(c['title']) ?? '').toLowerCase().contains(q)).toList();
     return ScreenScroll(
@@ -110,7 +138,12 @@ class _MessagesScreenState extends State<MessagesScreen> {
               else if (shown.isEmpty)
                 QuietEmpty(icon: LucideIcons.searchX, text: tr('Нічого не знайдено'))
               else
-                for (final conversation in shown) _ConversationRow(conversation: conversation),
+                for (final conversation in shown)
+                  _ConversationRow(
+                    conversation: conversation,
+                    active: split && intOf(conversation['id']) == selected,
+                    onOpen: split ? () => setState(() => selected = intOf(conversation['id'])) : null,
+                  ),
             ],
           ),
         ),
@@ -120,8 +153,10 @@ class _MessagesScreenState extends State<MessagesScreen> {
 }
 
 class _ConversationRow extends StatelessWidget {
-  const _ConversationRow({required this.conversation});
+  const _ConversationRow({required this.conversation, this.active = false, this.onOpen});
   final Map<String, dynamic> conversation;
+  final bool active;
+  final VoidCallback? onOpen;
 
   @override
   Widget build(BuildContext context) {
@@ -133,8 +168,10 @@ class _ConversationRow extends StatelessWidget {
     final prefix = last == null ? '' : (last['is_own'] == true ? tr('Ви: ') : (group && text(last['author']) != null ? '${last['author']}: ' : ''));
     return InkWell(
       borderRadius: BorderRadius.circular(16),
-      onTap: () => context.push('/messages/${conversation['id']}'),
-      child: Padding(
+      onTap: onOpen ?? () => context.push('/messages/${conversation['id']}'),
+      child: Container(
+        decoration: active ? BoxDecoration(color: primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(16)) : null,
+        child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 4),
         child: Row(
           children: [
@@ -182,6 +219,7 @@ class _ConversationRow extends StatelessWidget {
             ),
           ],
         ),
+      ),
       ),
     );
   }
