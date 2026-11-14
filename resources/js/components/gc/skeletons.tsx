@@ -416,6 +416,51 @@ export function TableSkeleton({
 }
 
 /** Заголовок сторінки: назва й підзаголовок. */
+/** Каталог ігор: шапка з пошуком та інструментами, панель фільтрів з алфавітом, сітка карток. */
+export function GamesSkeleton() {
+    return (
+        <div
+            role="status"
+            aria-label={tr('Завантаження')}
+            className="space-y-3"
+        >
+            <div className="gc-solid space-y-4 rounded-2xl p-4 sm:p-5">
+                <div className="flex flex-wrap items-center gap-4">
+                    <Sk className="size-11 shrink-0 rounded-xl" />
+                    <span className="min-w-0 flex-1 space-y-2">
+                        <Sk className="h-7 w-48 rounded-lg" />
+                        <Sk className="h-3.5 w-72 max-w-full" />
+                    </span>
+                    <Sk className="h-11 w-full rounded-xl sm:w-72" />
+                </div>
+                <span className="flex flex-wrap gap-2">
+                    <Sk className="h-9 w-32 rounded-xl" />
+                    <Sk className="h-9 w-40 rounded-xl" />
+                    <Sk className="h-9 w-40 rounded-xl" />
+                    <Sk className="h-9 w-20 rounded-xl" />
+                </span>
+            </div>
+            <div className="gc-solid space-y-3 rounded-2xl p-3 sm:p-4">
+                <div className="flex flex-wrap gap-2">
+                    <Sk className="h-10 w-80 max-w-full rounded-xl" />
+                    <Sk className="ml-auto h-10 w-44 rounded-xl" />
+                    <Sk className="h-10 w-44 rounded-xl" />
+                </div>
+                <span className="flex gap-1.5 overflow-hidden">
+                    {times(7).map((i) => (
+                        <Sk
+                            key={i}
+                            className="h-8 w-24 shrink-0 rounded-full"
+                        />
+                    ))}
+                </span>
+                <Sk className="block h-10 w-full rounded-xl" />
+            </div>
+            <GridSkeleton shape="card" count={8} />
+        </div>
+    );
+}
+
 /** Велика картка-шапка розділу: заголовок, опис, фільтри й кнопка праворуч (сервери, ігри, спільноти). */
 export function HeroSkeleton({
     stats = false,
@@ -690,12 +735,7 @@ export function PageSkeleton({ kind }: { kind: PageSkeletonKind }) {
                 </div>
             );
         case 'games':
-            return (
-                <>
-                    <HeroSkeleton filters={3} />
-                    <GridSkeleton shape="card" count={8} />
-                </>
-            );
+            return <GamesSkeleton />;
         case 'cinema':
             return <CinemaHomeSkeleton />;
         case 'people':

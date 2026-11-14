@@ -17,11 +17,24 @@ import {
     CalendarClock,
     Crosshair,
     Newspaper,
+    Check,
+    Ellipsis,
+    LayoutGrid,
+    RotateCcw,
+    Search,
+    X,
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Pagination } from '@/components/gc/admin';
 import { EmptyState } from '@/components/gc/widget';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import type { GameCard, Paginated } from '@/types';
 import { tr } from '@/lib/i18n';
@@ -64,11 +77,15 @@ export function GameCover({
     game: GameCard;
     className?: string;
 }) {
-    return game.cover ? (
+    // Обкладинка не завантажилась — показуємо ту саму заглушку з ініціалами, а не биту картинку.
+    const [broken, setBroken] = useState(false);
+
+    return game.cover && !broken ? (
         <img
             src={game.cover}
             alt=""
             loading="lazy"
+            onError={() => setBroken(true)}
             className={cn('size-full object-cover', className)}
         />
     ) : (
@@ -83,29 +100,72 @@ export function GameCover({
     );
 }
 
-function Chip({
+type Tool = { href: string; label: string; icon: LucideIcon };
+
+/** Кнопка-інструмент у шапці каталогу. */
+function ToolLink({ tool }: { tool: Tool }) {
+    return (
+        <Link
+            href={tool.href}
+            className="gc-solid-2 inline-flex h-9 items-center gap-2 rounded-xl px-3 text-sm font-medium text-white/80 transition hover:bg-[var(--gc-l3)] hover:text-white"
+        >
+            <tool.icon className="size-4 text-primary" />
+            {tool.label}
+        </Link>
+    );
+}
+
+/** Сегмент перемикача платформ. */
+function Segment({
     active,
-    small,
     onClick,
     children,
 }: {
     active: boolean;
-    small?: boolean;
     onClick: () => void;
     children: ReactNode;
 }) {
     return (
         <button
             type="button"
+            role="radio"
+            aria-checked={active}
             onClick={onClick}
             className={cn(
-                'inline-flex shrink-0 items-center gap-1.5 rounded-lg font-medium whitespace-nowrap transition',
-                small ? 'h-8 px-3 text-xs' : 'h-9 px-3 text-sm',
+                'inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg px-3 text-sm font-medium whitespace-nowrap transition',
                 active
-                    ? 'bg-sky-500 text-white'
-                    : 'gc-solid-2 text-white/60 hover:bg-[var(--gc-l3)] hover:text-white',
+                    ? 'bg-primary text-white shadow-sm'
+                    : 'text-white/60 hover:text-white',
             )}
         >
+            {children}
+        </button>
+    );
+}
+
+/** Фільтр-перемикач: підбірка чи режим гри. */
+function Toggle({
+    active,
+    onClick,
+    children,
+}: {
+    active: boolean;
+    onClick: () => void;
+    children: ReactNode;
+}) {
+    return (
+        <button
+            type="button"
+            aria-pressed={active}
+            onClick={onClick}
+            className={cn(
+                'inline-flex h-8 shrink-0 items-center gap-1 rounded-full px-3 text-xs font-medium whitespace-nowrap ring-1 transition',
+                active
+                    ? 'bg-primary/15 text-white ring-primary/60'
+                    : 'text-white/60 ring-white/10 hover:text-white hover:ring-white/20',
+            )}
+        >
+            {active && <Check className="size-3.5 text-primary" />}
             {children}
         </button>
     );
@@ -149,6 +209,94 @@ export default function GamesIndex({
             { preserveState: true, preserveScroll: true, replace: true },
         );
 
+    // Інструменти для гравців: перші три — кнопками, решта — у меню «Ще», щоб шапка не розросталась.
+    const tools: Tool[] = [
+        backlogOn &&
+            signedIn && {
+                href: '/games/backlog',
+                label: tr('Мій беклог'),
+                icon: ListChecks,
+            },
+        signedIn && {
+            href: '/games/news',
+            label: tr('Новини моїх ігор'),
+            icon: Newspaper,
+        },
+        (giveawaysOn || dealsOn) && {
+            href: '/games/deals',
+            label: tr('Роздачі й знижки'),
+            icon: Gift,
+        },
+        tierOn &&
+            signedIn && {
+                href: '/tierlists',
+                label: tr('Тір-листи'),
+                icon: LayoutList,
+            },
+        duelsOn &&
+            signedIn && { href: '/duels', label: tr('Дуелі'), icon: Swords },
+        configsOn &&
+            signedIn && {
+                href: '/configs',
+                label: tr('Конфіги й приціли'),
+                icon: Crosshair,
+            },
+        nightsOn &&
+            signedIn && {
+                href: '/game-nights',
+                label: tr('Ігровий вечір'),
+                icon: CalendarClock,
+            },
+        awardsOn &&
+            signedIn && {
+                href: '/games/awards',
+                label: tr('Гра року'),
+                icon: Crown,
+            },
+        trailersOn &&
+            signedIn && {
+                href: '/games/trailers',
+                label: tr('Трейлери'),
+                icon: Clapperboard,
+            },
+        triviaOn &&
+            signedIn && {
+                href: '/games/trivia',
+                label: tr('Вікторина дня'),
+                icon: Trophy,
+            },
+        journalOn &&
+            signedIn && {
+                href: '/journal',
+                label: tr('Ігровий щоденник'),
+                icon: BookOpen,
+            },
+        nickOn &&
+            signedIn && {
+                href: '/tools/nicknames',
+                label: tr('Генератор ніків'),
+                icon: WandSparkles,
+            },
+    ].filter((tool): tool is Tool => Boolean(tool));
+
+    const modeList = Object.entries(modes).filter(([key]) => key !== 'single');
+    const active = [
+        filters.q,
+        filters.category,
+        filters.letter,
+        filters.genre,
+        filters.mode,
+        filters.collection,
+    ].filter(Boolean).length;
+    const reset = () => {
+        setQ('');
+        router.get('/games', filters.sort ? { sort: filters.sort } : {}, {
+            preserveState: true,
+            preserveScroll: true,
+            replace: true,
+        });
+    };
+
     useEffect(() => {
         if (q === filters.q) return;
         const timer = setTimeout(() => visit({ q, letter: null }), 300);
@@ -160,234 +308,131 @@ export default function GamesIndex({
     return (
         <>
             <Head title={tr('Каталог ігор')} />
-            <div className="mb-4 flex flex-wrap items-end gap-3">
-                <div className="min-w-[16rem] flex-1">
-                    <h1 className="flex items-center gap-2 font-display text-2xl font-semibold text-white">
-                        <Gamepad2 className="size-6 text-sky-400" />{' '}
-                        {tr('Каталог ігор')}
-                    </h1>
-                    <p className="text-sm text-white/50">
-                        {total}{' '}
-                        {tr(
-                            'мультиплеєрних ігор — від ПК до телефонів. Оновлюється щодня.',
-                        )}
-                    </p>
-                </div>
-                {backlogOn && signedIn && (
-                    <Link
-                        href="/games/backlog"
-                        className="gc-solid-2 inline-flex h-10 items-center gap-2 rounded-xl px-3.5 text-sm font-semibold text-white/80 transition hover:bg-white/10 hover:text-white"
-                    >
-                        <ListChecks className="size-4 text-sky-400" />
-                        {tr('Мій беклог')}
-                    </Link>
-                )}
-                {signedIn && (
-                    <Link
-                        href="/games/news"
-                        className="gc-solid-2 inline-flex h-10 items-center gap-2 rounded-xl px-3.5 text-sm font-semibold text-white/80 transition hover:bg-white/10 hover:text-white"
-                    >
-                        <Newspaper className="size-4 text-sky-400" />
-                        {tr('Новини моїх ігор')}
-                    </Link>
-                )}
-                {tierOn && signedIn && (
-                    <Link
-                        href="/tierlists"
-                        className="gc-solid-2 inline-flex h-10 items-center gap-2 rounded-xl px-3.5 text-sm font-semibold text-white/80 transition hover:bg-white/10 hover:text-white"
-                    >
-                        <LayoutList className="size-4 text-red-400" />
-                        {tr('Тір-листи')}
-                    </Link>
-                )}
-                {duelsOn && signedIn && (
-                    <Link
-                        href="/duels"
-                        className="gc-solid-2 inline-flex h-10 items-center gap-2 rounded-xl px-3.5 text-sm font-semibold text-white/80 transition hover:bg-white/10 hover:text-white"
-                    >
-                        <Swords className="size-4 text-sky-400" />
-                        {tr('Дуелі')}
-                    </Link>
-                )}
-                {configsOn && signedIn && (
-                    <Link
-                        href="/configs"
-                        className="gc-solid-2 inline-flex h-10 items-center gap-2 rounded-xl px-3.5 text-sm font-semibold text-white/80 transition hover:bg-white/10 hover:text-white"
-                    >
-                        <Crosshair className="size-4 text-sky-400" />
-                        {tr('Конфіги й приціли')}
-                    </Link>
-                )}
-                {nightsOn && signedIn && (
-                    <Link
-                        href="/game-nights"
-                        className="gc-solid-2 inline-flex h-10 items-center gap-2 rounded-xl px-3.5 text-sm font-semibold text-white/80 transition hover:bg-white/10 hover:text-white"
-                    >
-                        <CalendarClock className="size-4 text-cyan-300" />
-                        {tr('Ігровий вечір')}
-                    </Link>
-                )}
-                {awardsOn && signedIn && (
-                    <Link
-                        href="/games/awards"
-                        className="gc-solid-2 inline-flex h-10 items-center gap-2 rounded-xl px-3.5 text-sm font-semibold text-white/80 transition hover:bg-white/10 hover:text-white"
-                    >
-                        <Crown className="size-4 text-amber-300" />
-                        {tr('Гра року')}
-                    </Link>
-                )}
-                {trailersOn && signedIn && (
-                    <Link
-                        href="/games/trailers"
-                        className="gc-solid-2 inline-flex h-10 items-center gap-2 rounded-xl px-3.5 text-sm font-semibold text-white/80 transition hover:bg-white/10 hover:text-white"
-                    >
-                        <Clapperboard className="size-4 text-sky-400" />
-                        {tr('Трейлери')}
-                    </Link>
-                )}
-                {triviaOn && signedIn && (
-                    <Link
-                        href="/games/trivia"
-                        className="gc-solid-2 inline-flex h-10 items-center gap-2 rounded-xl px-3.5 text-sm font-semibold text-white/80 transition hover:bg-white/10 hover:text-white"
-                    >
-                        <Trophy className="size-4 text-amber-300" />
-                        {tr('Вікторина дня')}
-                    </Link>
-                )}
-                {journalOn && signedIn && (
-                    <Link
-                        href="/journal"
-                        className="gc-solid-2 inline-flex h-10 items-center gap-2 rounded-xl px-3.5 text-sm font-semibold text-white/80 transition hover:bg-white/10 hover:text-white"
-                    >
-                        <BookOpen className="size-4 text-sky-400" />
-                        {tr('Ігровий щоденник')}
-                    </Link>
-                )}
-                {nickOn && signedIn && (
-                    <Link
-                        href="/tools/nicknames"
-                        className="gc-solid-2 inline-flex h-10 items-center gap-2 rounded-xl px-3.5 text-sm font-semibold text-white/80 transition hover:bg-white/10 hover:text-white"
-                    >
-                        <WandSparkles className="size-4 text-amber-300" />
-                        {tr('Генератор ніків')}
-                    </Link>
-                )}
-                {(giveawaysOn || dealsOn) && (
-                    <Link
-                        href="/games/deals"
-                        className="gc-solid-2 inline-flex h-10 items-center gap-2 rounded-xl px-3.5 text-sm font-semibold text-white/80 transition hover:bg-white/10 hover:text-white"
-                    >
-                        <Gift className="size-4 text-emerald-300" />
-                        {tr('Роздачі й знижки')}
-                    </Link>
-                )}
-            </div>
-
-            <div className="gc-solid mb-4 space-y-3 rounded-2xl p-3">
-                {q && (
-                    <button
-                        type="button"
-                        onClick={() => setQ('')}
-                        className="gc-chip self-start"
-                        title={tr('Скинути пошук')}
-                    >
-                        «{q}»{' '}
-                        <span aria-hidden className="text-white/45">
-                            ×
-                        </span>
-                    </button>
-                )}
-
-                <div className="-mx-1 flex [scrollbar-width:none] gap-1 overflow-x-auto px-1">
-                    <Chip
-                        active={!filters.category}
-                        onClick={() => visit({ category: null })}
-                    >
-                        {tr('Усі')}
-                    </Chip>
-                    {(Object.keys(categories) as Category[]).map((c) => {
-                        const Icon = CATEGORY_ICONS[c];
-
-                        return (
-                            <Chip
-                                key={c}
-                                active={filters.category === c}
-                                onClick={() =>
-                                    visit({ category: c, letter: null })
-                                }
-                            >
-                                <Icon className="size-4" /> {categories[c]}
-                            </Chip>
-                        );
-                    })}
-                </div>
-
-                {collectionsOn && (
-                    <div className="-mx-1 flex [scrollbar-width:none] gap-1 overflow-x-auto px-1">
-                        <Chip
-                            small
-                            active={filters.collection === 'duo'}
-                            onClick={() =>
-                                visit({
-                                    collection:
-                                        filters.collection === 'duo'
-                                            ? null
-                                            : 'duo',
-                                })
-                            }
-                        >
-                            {tr('На двох')}
-                        </Chip>
-                        <Chip
-                            small
-                            active={filters.collection === 'evening'}
-                            onClick={() =>
-                                visit({
-                                    collection:
-                                        filters.collection === 'evening'
-                                            ? null
-                                            : 'evening',
-                                })
-                            }
-                        >
-                            {tr('На вечір')}
-                        </Chip>
+            <header className="gc-solid mb-3 space-y-4 rounded-2xl p-4 sm:p-5">
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
+                    <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-primary/15 text-primary">
+                        <Gamepad2 className="size-6" />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                        <h1 className="font-display text-2xl leading-tight font-bold text-white">
+                            {tr('Каталог ігор')}
+                        </h1>
+                        <p className="text-sm text-white/50">
+                            {tr(
+                                '{n} мультиплеєрних ігор — від ПК до телефонів',
+                                { n: total },
+                            )}
+                        </p>
                     </div>
-                )}
+                    <label className="input-glass flex h-11 w-full items-center gap-2 rounded-xl px-3 sm:w-72">
+                        <Search className="size-4 shrink-0 text-white/40" />
+                        <input
+                            value={q}
+                            onChange={(e) => setQ(e.target.value)}
+                            placeholder={tr('Знайти гру')}
+                            aria-label={tr('Знайти гру')}
+                            className="min-w-0 flex-1 bg-transparent text-sm text-white placeholder:text-white/40 focus:outline-none"
+                        />
+                        {q && (
+                            <button
+                                type="button"
+                                onClick={() => setQ('')}
+                                aria-label={tr('Скинути пошук')}
+                                className="grid size-6 place-items-center rounded-md text-white/50 hover:bg-white/10 hover:text-white"
+                            >
+                                <X className="size-3.5" />
+                            </button>
+                        )}
+                    </label>
+                </div>
 
-                {Object.keys(modes).length > 0 && (
-                    <div className="-mx-1 flex [scrollbar-width:none] gap-1 overflow-x-auto px-1">
-                        {Object.entries(modes)
-                            .filter(([key]) => key !== 'single')
-                            .map(([key, label]) => (
-                                <Chip
-                                    key={key}
-                                    small
-                                    active={filters.mode === key}
+                {tools.length > 0 && (
+                    <nav
+                        aria-label={tr('Інструменти для гравців')}
+                        className="flex flex-wrap items-center gap-2"
+                    >
+                        {tools.slice(0, 3).map((tool) => (
+                            <ToolLink key={tool.href} tool={tool} />
+                        ))}
+                        {tools.length > 3 && (
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <button
+                                        type="button"
+                                        className="inline-flex h-9 items-center gap-1.5 rounded-xl px-3 text-sm font-medium text-white/65 transition hover:bg-white/[0.06] hover:text-white"
+                                    >
+                                        <Ellipsis className="size-4" />
+                                        {tr('Ще {n}', { n: tools.length - 3 })}
+                                    </button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent
+                                    align="start"
+                                    className="w-60 rounded-xl p-1.5"
+                                >
+                                    {tools.slice(3).map((tool) => (
+                                        <DropdownMenuItem
+                                            key={tool.href}
+                                            asChild
+                                            className="rounded-lg focus:bg-white/[0.06]"
+                                        >
+                                            <Link
+                                                href={tool.href}
+                                                className="flex items-center gap-2.5"
+                                            >
+                                                <tool.icon className="size-4 text-white/55" />
+                                                {tool.label}
+                                            </Link>
+                                        </DropdownMenuItem>
+                                    ))}
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        )}
+                    </nav>
+                )}
+            </header>
+
+            <section
+                aria-label={tr('Фільтри')}
+                className="gc-solid mb-4 space-y-3 rounded-2xl p-3 sm:p-4"
+            >
+                <div className="flex flex-wrap items-center gap-2">
+                    <div
+                        role="radiogroup"
+                        aria-label={tr('Платформа')}
+                        className="flex max-w-full min-w-0 [scrollbar-width:none] gap-0.5 overflow-x-auto rounded-xl bg-white/[0.04] p-1"
+                    >
+                        <Segment
+                            active={!filters.category}
+                            onClick={() => visit({ category: null })}
+                        >
+                            <LayoutGrid className="size-4" />
+                            {tr('Усі')}
+                        </Segment>
+                        {(Object.keys(categories) as Category[]).map((c) => {
+                            const Icon = CATEGORY_ICONS[c];
+
+                            return (
+                                <Segment
+                                    key={c}
+                                    active={filters.category === c}
                                     onClick={() =>
-                                        visit({
-                                            mode:
-                                                filters.mode === key
-                                                    ? null
-                                                    : key,
-                                        })
+                                        visit({ category: c, letter: null })
                                     }
                                 >
-                                    {label}
-                                </Chip>
-                            ))}
+                                    <Icon className="size-4" />
+                                    {categories[c]}
+                                </Segment>
+                            );
+                        })}
                     </div>
-                )}
-
-                {(genres.length > 0 || Object.keys(sorts).length > 0) && (
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="ml-auto grid w-full grid-cols-2 gap-2 sm:w-auto">
                         {genres.length > 0 && (
                             <select
                                 value={filters.genre ?? ''}
                                 onChange={(e) =>
                                     visit({ genre: e.target.value || null })
                                 }
-                                className="input-glass h-10 w-full min-w-0 rounded-xl px-3 text-sm text-white"
+                                className="input-glass h-10 min-w-0 rounded-xl px-3 text-sm text-white sm:w-44"
                                 aria-label={tr('Жанр')}
                             >
                                 <option value="">{tr('Усі жанри')}</option>
@@ -405,7 +450,7 @@ export default function GamesIndex({
                                     visit({ sort: e.target.value })
                                 }
                                 className={cn(
-                                    'input-glass h-10 w-full min-w-0 rounded-xl px-3 text-sm text-white',
+                                    'input-glass h-10 min-w-0 rounded-xl px-3 text-sm text-white sm:w-44',
                                     genres.length === 0 && 'col-span-2',
                                 )}
                                 aria-label={tr('Сортування')}
@@ -418,21 +463,72 @@ export default function GamesIndex({
                             </select>
                         )}
                     </div>
+                </div>
+
+                {(collectionsOn || modeList.length > 0) && (
+                    <div className="-mx-1 flex [scrollbar-width:none] items-center gap-1.5 overflow-x-auto px-1">
+                        {collectionsOn &&
+                            (
+                                [
+                                    ['duo', tr('На двох')],
+                                    ['evening', tr('На вечір')],
+                                ] as const
+                            ).map(([key, label]) => (
+                                <Toggle
+                                    key={key}
+                                    active={filters.collection === key}
+                                    onClick={() =>
+                                        visit({
+                                            collection:
+                                                filters.collection === key
+                                                    ? null
+                                                    : key,
+                                        })
+                                    }
+                                >
+                                    {label}
+                                </Toggle>
+                            ))}
+                        {collectionsOn && modeList.length > 0 && (
+                            <span
+                                aria-hidden
+                                className="mx-1 h-5 w-px shrink-0 bg-white/10"
+                            />
+                        )}
+                        {modeList.map(([key, label]) => (
+                            <Toggle
+                                key={key}
+                                active={filters.mode === key}
+                                onClick={() =>
+                                    visit({
+                                        mode: filters.mode === key ? null : key,
+                                    })
+                                }
+                            >
+                                {label}
+                            </Toggle>
+                        ))}
+                    </div>
                 )}
 
-                {/* A–Z: на телефоні — один рядок з прокруткою, на ширших екранах — переноситься. Літери без ігор неактивні. */}
-                <div className="-mx-1 flex [scrollbar-width:none] gap-1 overflow-x-auto px-1 pt-3 sm:flex-wrap">
+                {/* A–Z: на ширших екранах — рівна смуга на всю ширину, на телефоні — прокрутка. Літери без ігор неактивні. */}
+                <div
+                    role="group"
+                    aria-label={tr('Перша літера назви')}
+                    className="flex [scrollbar-width:none] gap-0.5 overflow-x-auto rounded-xl bg-white/[0.03] p-1 lg:grid lg:grid-cols-[auto_repeat(27,minmax(0,1fr))]"
+                >
                     <button
                         type="button"
                         onClick={() => visit({ letter: null })}
+                        aria-pressed={!filters.letter}
                         className={cn(
                             'h-8 shrink-0 rounded-lg px-2.5 text-xs font-semibold transition',
                             !filters.letter
-                                ? 'bg-sky-500 text-white'
-                                : 'text-white/60 hover:bg-white/10',
+                                ? 'bg-primary text-white'
+                                : 'text-white/60 hover:bg-white/[0.06] hover:text-white',
                         )}
                     >
-                        A–Z
+                        {tr('Усі')}
                     </button>
                     {ALPHABET.map((l) => {
                         const has = letters.includes(l);
@@ -442,15 +538,16 @@ export default function GamesIndex({
                                 key={l}
                                 type="button"
                                 disabled={!has}
+                                aria-pressed={filters.letter === l}
                                 onClick={() => {
                                     setQ('');
                                     visit({ letter: l, q: '' });
                                 }}
                                 className={cn(
-                                    'size-8 shrink-0 rounded-lg text-xs font-semibold transition disabled:cursor-default disabled:opacity-25',
+                                    'h-8 min-w-8 shrink-0 rounded-lg text-xs font-semibold tabular-nums transition disabled:cursor-default disabled:text-white/20',
                                     filters.letter === l
-                                        ? 'bg-sky-500 text-white'
-                                        : 'text-white/70 hover:bg-white/10',
+                                        ? 'bg-primary text-white'
+                                        : 'text-white/70 hover:bg-white/[0.06] hover:text-white',
                                 )}
                             >
                                 {l}
@@ -458,7 +555,21 @@ export default function GamesIndex({
                         );
                     })}
                 </div>
-            </div>
+
+                {active > 0 && (
+                    <div className="flex items-center justify-between gap-3 px-1 text-xs text-white/50">
+                        <span>{tr('Знайдено: {n}', { n: games.total })}</span>
+                        <button
+                            type="button"
+                            onClick={reset}
+                            className="inline-flex items-center gap-1 rounded-lg px-2 py-1 font-medium text-primary hover:bg-white/[0.06]"
+                        >
+                            <RotateCcw className="size-3.5" />
+                            {tr('Скинути фільтри')}
+                        </button>
+                    </div>
+                )}
+            </section>
 
             {games.data.length === 0 ? (
                 <EmptyState

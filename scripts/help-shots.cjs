@@ -176,6 +176,25 @@ const SHOTS = [
         },
     },
     {
+        id: 'games-pc',
+        url: '/games',
+        device: PC,
+        regions: {
+            search: (p) =>
+                p.getByRole('textbox', { name: 'Знайти гру' }).locator('..'),
+            tools: (p) =>
+                p.locator('nav[aria-label="Інструменти для гравців"]'),
+            platform: (p) =>
+                p.locator('[role="radiogroup"][aria-label="Платформа"]'),
+            genre: (p) => p.locator('select[aria-label="Жанр"]'),
+            sort: (p) => p.locator('select[aria-label="Сортування"]'),
+            modes: (p) =>
+                p.getByRole('button', { name: 'На двох' }).locator('..'),
+            letters: (p) =>
+                p.locator('[role="group"][aria-label="Перша літера назви"]'),
+        },
+    },
+    {
         id: 'dev-portal',
         url: '/developers',
         device: PC,
