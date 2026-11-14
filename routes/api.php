@@ -491,6 +491,8 @@ Route::prefix('v1')->group(function () {
             Route::get('cinema/roulette', [MovieRouletteController::class, 'index'])->middleware('module:cinema');
             Route::get('cinema/overview', [CinemaController::class, 'overview'])->middleware('module:cinema');
             Route::get('cinema/for-you', [CinemaController::class, 'forYou'])->middleware(['module:cinema', 'throttle:60,1']);
+            Route::get('cinema/handoff', [CinemaController::class, 'handoff'])->middleware(['module:cinema', 'throttle:60,1']);
+            Route::delete('cinema/handoff', [CinemaController::class, 'dismissHandoff'])->middleware('module:cinema');
             Route::post('cinema/{movie}/dismiss', [CinemaController::class, 'dismiss'])->middleware(['module:cinema', 'throttle:60,1']);
             Route::get('cinema/schedule', [CinemaController::class, 'schedule'])->middleware('module:cinema');
             Route::get('cinema/my', [CinemaController::class, 'my'])->middleware('module:cinema');

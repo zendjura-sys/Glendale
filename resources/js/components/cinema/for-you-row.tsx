@@ -1,5 +1,5 @@
 import { EyeOff, Sparkles } from 'lucide-react';
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
+import { AnimatePresence, m, useReducedMotion } from 'motion/react';
 import { useState } from 'react';
 import { MovieTile } from '@/components/cinema/movie-tile';
 import { api } from '@/lib/api';
@@ -25,7 +25,7 @@ export function ForYouRow({ movies: initial }: { movies: MovieCard[] }) {
         <div className="-mx-1 scrollbar-none flex snap-x gap-3 overflow-x-auto px-1 pt-1 pb-1">
             <AnimatePresence initial={false}>
                 {movies.map((movie) => (
-                    <motion.div
+                    <m.div
                         key={movie.id}
                         layout={!reduce}
                         exit={
@@ -58,7 +58,7 @@ export function ForYouRow({ movies: initial }: { movies: MovieCard[] }) {
                                 <EyeOff className="size-3.5" />
                             </button>
                         </div>
-                    </motion.div>
+                    </m.div>
                 ))}
             </AnimatePresence>
         </div>

@@ -88,6 +88,7 @@ class AppSiteParityTest extends TestCase
             ->assertJsonPath('movies.data.0.progress.voice', 'AniLibria');
         $this->withToken($token)->getJson('/api/v1/site/cinema/overview')->assertOk()->assertJsonStructure(['featured', 'discussed', 'watchingNow', 'collections', 'comments', 'recommended']);
         $this->withToken($token)->getJson('/api/v1/site/cinema/for-you')->assertOk()->assertJsonStructure(['movies']);
+        $this->withToken($token)->getJson('/api/v1/site/cinema/handoff')->assertOk()->assertJsonStructure(['handoff']);
         $this->withToken($token)->getJson('/api/v1/site/cinema/schedule')->assertOk()->assertJsonPath('days.0.movies.0.slug', 'bleach');
         $this->withToken($token)->getJson('/api/v1/site/cinema/random')->assertOk()->assertJsonPath('redirect', '/cinema/bleach');
         $this->withToken($token)->getJson('/api/v1/site/search/quick?q='.urlencode('Бліч'))->assertOk()->assertJsonPath('hits.0.kind', 'movie');

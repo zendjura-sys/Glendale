@@ -3,6 +3,7 @@ import { createInertiaApp, router } from '@inertiajs/react';
 import { installVitals } from '@/lib/vitals';
 import { registerOffline } from '@/lib/offline';
 import { SkipLink } from '@/components/gc/skip-link';
+import { HandoffCard } from '@/components/cinema/handoff-card';
 import { CookieConsent } from '@/components/gc/cookie-consent';
 import { ErrorBoundary } from '@/components/gc/error-boundary';
 import { Toaster } from '@/components/ui/sonner';
@@ -204,6 +205,11 @@ void createInertiaApp({
         const analytics =
             (page.props as { site?: { analytics?: string | null } }).site
                 ?.analytics ?? null;
+        // «Продовжити на цьому пристрої» — лише для входу й увімкненого «Кіно».
+        const handoff = Boolean(
+            (page.props as { auth?: { user?: unknown } }).auth?.user &&
+            (page.props as { modules?: string[] }).modules?.includes('cinema'),
+        );
 
         return (
             <LazyMotion features={motionFeatures} strict>
@@ -231,6 +237,7 @@ void createInertiaApp({
                     <ErrorBoundary fallback={null}>
                         <Toaster />
                         <CookieConsent analytics={analytics} />
+                        <HandoffCard enabled={handoff} />
                     </ErrorBoundary>
                 </TooltipProvider>
             </LazyMotion>

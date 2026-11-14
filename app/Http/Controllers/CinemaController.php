@@ -18,6 +18,7 @@ use App\Services\Cinema\CinemaSidebar;
 use App\Services\Cinema\EpisodeGuide;
 use App\Services\Cinema\EpisodeMarks;
 use App\Services\Cinema\FlixcdnPlayer;
+use App\Services\Cinema\Handoff;
 use App\Services\Cinema\KodikClient;
 use App\Services\Cinema\Metadata\MetadataEnricher;
 use App\Services\Cinema\Metadata\TmdbProvider;
@@ -607,6 +608,20 @@ class CinemaController extends Controller
         return response()->json(['movies' => $this->recommended($request->user(), 48)]);
     }
 
+    /** «Продовжити на іншому пристрої»: пропозиція, якщо дивились на іншому пристрої. */
+    public function handoff(Request $request): JsonResponse
+    {
+        return response()->json(['handoff' => app(Handoff::class)->offer($request->user(), $request)]);
+    }
+
+    /** «Продовжити на іншому пристрої» — відхилити пропозицію. */
+    public function dismissHandoff(Request $request): JsonResponse
+    {
+        app(Handoff::class)->clear($request->user());
+
+        return response()->json(['ok' => true]);
+    }
+
     /** «Не цікаво»: прибрати тайтл із рекомендацій назавжди. */
     public function dismiss(Request $request, Movie $movie): JsonResponse
     {
@@ -724,6 +739,15 @@ class CinemaController extends Controller
             $episode,
             isset($data['position']) ? (int) $data['position'] : null,
             $data['player_key'] ?? null,
+        );
+        // «Продовжити на іншому пристрої»: запам'ятовуємо, де й на чому зупинились.
+        app(Handoff::class)->record(
+            $request->user(),
+            $movie,
+            isset($data['season']) ? (int) $data['season'] : null,
+            $episode,
+            isset($data['position']) ? (int) $data['position'] : null,
+            $request,
         );
 
         return $this->stateResponse($request->user(), $movie);

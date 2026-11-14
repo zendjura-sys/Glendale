@@ -118,6 +118,7 @@ class _CinemaScreenState extends State<CinemaScreen> {
       if (!filtered && featured.isNotEmpty) ...[CinemaBleed(height: 460, child: CinemaHero(movies: featured)), const SizedBox(height: 16)],
       const CinemaNav(active: 'home'),
       const SizedBox(height: 14),
+      if (!filtered) const _HandoffBanner(),
       CinemaSearchBar(
         initial: query ?? '',
         filterActive: sort != 'new' || type != null || release != null || genre != null || year != null,
@@ -512,6 +513,70 @@ class CinemaOverviewScreen extends StatelessWidget {
           ],
         );
       },
+    );
+  }
+}
+
+/// «Продовжити на цьому пристрої»: фільм чи серію дивились на сайті — продовжити тут.
+class _HandoffBanner extends StatefulWidget {
+  const _HandoffBanner();
+
+  @override
+  State<_HandoffBanner> createState() => _HandoffBannerState();
+}
+
+class _HandoffBannerState extends State<_HandoffBanner> {
+  Map<String, dynamic>? offer;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      try {
+        final data = await AppScope.read(context).session.api.get(Api.site('/cinema/handoff'));
+        if (mounted && data['handoff'] is Map) setState(() => offer = Map<String, dynamic>.from(data['handoff'] as Map));
+      } catch (_) {
+        // Без пропозиції — нічого не показуємо.
+      }
+    });
+  }
+
+  void _dismiss() {
+    setState(() => offer = null);
+    AppScope.read(context).session.api.delete(Api.site('/cinema/handoff')).catchError((_) => <String, dynamic>{});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final o = offer;
+    if (o == null) return const SizedBox.shrink();
+    final movie = mapOf(o['movie']);
+    final season = o['season'];
+    final episode = o['episode'];
+    final where = [
+      if (season != null) tr('Сезон {season}, серія {episode}', {'season': '$season', 'episode': '$episode'})
+      else if (movie['episodes_count'] != null) tr('Серія {episode}', {'episode': '$episode'}),
+      ?text(o['time']),
+    ].join(' · ');
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Glass(
+        padding: const EdgeInsets.all(10),
+        onTap: () => context.push('/cinema/${movie['slug']}'),
+        child: Row(children: [
+          ClipRRect(borderRadius: BorderRadius.circular(8), child: SizedBox(width: 40, height: 58, child: NetImage(text(movie['poster'])))),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(tr('Ви дивились {where}', {'where': tr(text(o['device_label']) ?? '')}), style: body(12, color: muted)),
+              Text(text(movie['title']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(15, weight: FontWeight.w700)),
+              if (where.isNotEmpty) Text(where, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: muted)),
+            ]),
+          ),
+          Icon(LucideIcons.play, size: 20, color: accent),
+          IconButton(onPressed: _dismiss, icon: Icon(LucideIcons.x, size: 18, color: muted), tooltip: tr('Закрити')),
+        ]),
+      ),
     );
   }
 }

@@ -748,6 +748,8 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::post('import/requests', [AnimeImportController::class, 'requestMissing'])->middleware('throttle:5,1')->name('import.requests');
         Route::get('overview', [CinemaController::class, 'overview'])->name('overview');
         Route::get('for-you', [CinemaController::class, 'forYou'])->middleware('throttle:60,1')->name('for-you');
+        Route::get('handoff', [CinemaController::class, 'handoff'])->middleware('throttle:60,1')->name('handoff');
+        Route::delete('handoff', [CinemaController::class, 'dismissHandoff'])->name('handoff.dismiss');
         Route::post('{movie}/dismiss', [CinemaController::class, 'dismiss'])->middleware('throttle:60,1')->name('dismiss');
         Route::get('schedule', [CinemaController::class, 'schedule'])->name('schedule');
         Route::get('random', [CinemaController::class, 'random'])->middleware('throttle:60,1')->name('random');
