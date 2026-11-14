@@ -413,6 +413,21 @@ html[data-palette='copper'] {
         @apply border-border;
     }
 
+    /*
+     * Сітка без явних колонок (`grid gap-2`) має неявну колонку auto: довгий рядок розтягує її
+     * ширше за картку, і truncate усередині не спрацьовує — текст вилазить за межі блоку.
+     * Даємо таким сіткам колонку minmax(0, 1fr). :where — нульова специфічність, тож
+     * grid-cols-*, sm:grid-cols-* і grid-flow-col перекривають це правило як і раніше
+     * (базові grid-cols-* виключені селектором, адаптивні перемагають завдяки :where).
+     */
+    :where(
+        .grid:not([class^='grid-cols']):not([class*=' grid-cols']):not(
+                [class*='grid-flow-col']
+            )
+    ) {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
     html {
         /* Тло — на <html> (полотно), а не на <body>: інакше body зафарбовує живий фон із z-index < 0. */
         background-color: var(--background);

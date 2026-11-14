@@ -54,6 +54,13 @@ class AppSiteParityTest extends TestCase
         return app(ApiTokens::class)->issue($user, 'android');
     }
 
+    public function test_app_reaches_sdk_docs(): void
+    {
+        $token = $this->app_token(User::factory()->create());
+        $this->withToken($token)->getJson('/api/v1/site/developers/sdk')->assertOk()
+            ->assertJsonPath('defaults.layout', 'custom')->assertJsonStructure(['script', 'overlay', 'sections', 'scopes', 'endpoints' => ['device', 'link']]);
+    }
+
     public function test_app_reaches_air_alerts(): void
     {
         Http::fake(['*' => Http::response(['states' => []])]);

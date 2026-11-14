@@ -195,14 +195,14 @@ export default function DeveloperPlugins({ plugins, version }: Props) {
                 </section>
 
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                    <nav className="gc-solid-2 flex gap-1 rounded-xl p-1 text-sm">
+                    <nav className="gc-solid-2 flex max-w-full min-w-0 [scrollbar-width:none] gap-1 overflow-x-auto rounded-xl p-1 text-sm">
                         {FILTERS.map(([key, label]) => (
                             <button
                                 key={key}
                                 type="button"
                                 onClick={() => setFilter(key)}
                                 className={cn(
-                                    'rounded-lg px-3 py-1.5 font-medium transition',
+                                    'shrink-0 rounded-lg px-3 py-1.5 font-medium whitespace-nowrap transition',
                                     filter === key
                                         ? 'bg-primary text-white'
                                         : 'text-white/60 hover:text-white',

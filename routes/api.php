@@ -40,6 +40,7 @@ use App\Http\Controllers\Developer\DeveloperApiController;
 use App\Http\Controllers\Developer\EmbedKitController;
 use App\Http\Controllers\Developer\SdkApiController;
 use App\Http\Controllers\Developer\SdkGameController;
+use App\Http\Controllers\Developer\SdkPageController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\Families;
 use App\Http\Controllers\FeedController;
@@ -471,6 +472,8 @@ Route::prefix('v1')->group(function () {
         Route::prefix('site')->middleware(BridgeSiteAction::class)->group(function () {
             // Один пошук на весь сайт: люди, кіно, музика, ігри, сервери, спільноти, клани, сім'ї.
             Route::get('search/quick', [PeopleController::class, 'quick'])->middleware('throttle:120,1');
+            // GameCon SDK: документація й пісочниця оверлею (той самий контролер, що на сайті).
+            Route::get('developers/sdk', [SdkPageController::class, 'index']);
             Route::post('search/recent', [PeopleController::class, 'remember'])->middleware('throttle:60,1');
             Route::delete('search/recent', [PeopleController::class, 'forgetSearch'])->middleware('throttle:60,1');
             Route::get('games/steam-import', [SteamImportController::class, 'show'])->middleware(['module:games', 'throttle:20,1']);

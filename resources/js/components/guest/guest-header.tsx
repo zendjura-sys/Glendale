@@ -24,12 +24,12 @@ export function GuestHeader() {
                     <Logo className="max-[419px]:hidden" />
                 </Link>
                 <nav className="ml-auto flex shrink-0 items-center gap-0.5 sm:gap-1.5">
-                    {/* Довідка, мова й тема — тихі іконки поруч; на вузьких екранах лишаються лише іконки. */}
+                    {/* Довідка, мова й тема — тихі іконки поруч; на вузьких екранах лише іконки, а довідка (є й у футері) ховається до 400 px. */}
                     <Link
                         href="/help"
                         aria-label={tr('Довідка')}
                         title={tr('Довідка')}
-                        className="gc-icon-button flex h-10 items-center justify-center gap-1.5 rounded-xl px-2.5 text-[13px] font-medium transition"
+                        className="gc-icon-button flex h-10 items-center justify-center gap-1.5 rounded-xl px-2.5 text-[13px] font-medium transition max-[399px]:hidden"
                     >
                         <CircleHelp className="size-[18px]" />
                         <span className="max-lg:hidden">{tr('Довідка')}</span>

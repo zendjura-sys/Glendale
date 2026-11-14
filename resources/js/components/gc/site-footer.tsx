@@ -135,7 +135,7 @@ export function SiteFooter({
                             <p className="mb-2 px-1 text-[11px] font-semibold text-white/40">
                                 {group.title}
                             </p>
-                            <ul className="grid gap-1.5">
+                            <ul className="grid grid-cols-[minmax(0,1fr)] gap-1.5">
                                 {group.links.map((item) => {
                                     const Icon = item.icon;
                                     const inner = (
@@ -148,7 +148,10 @@ export function SiteFooter({
                                     );
 
                                     return (
-                                        <li key={item.label}>
+                                        <li
+                                            key={item.label}
+                                            className="min-w-0"
+                                        >
                                             {item.href ? (
                                                 <Link
                                                     href={item.href}

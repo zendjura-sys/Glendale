@@ -60,7 +60,7 @@ export function UserTitle({
     return (
         <span
             className={cn(
-                'inline-flex max-w-[12rem] shrink-0 items-center gap-1 truncate rounded-md px-1.5 py-0.5 text-[11px] leading-none font-semibold',
+                'inline-flex max-w-[12rem] min-w-0 shrink items-center gap-1 truncate rounded-md px-1.5 py-0.5 text-[11px] leading-none font-semibold',
                 titleColor(role.color),
                 className,
             )}
@@ -101,7 +101,7 @@ export function RoleChip({
         <span
             title={role.description ?? undefined}
             className={cn(
-                'inline-flex max-w-[12rem] shrink-0 items-center gap-1 truncate rounded-md px-1.5 py-0.5 text-[11px] leading-none font-semibold',
+                'inline-flex max-w-[12rem] min-w-0 shrink items-center gap-1 truncate rounded-md px-1.5 py-0.5 text-[11px] leading-none font-semibold',
                 titleColor(role.color),
                 className,
             )}

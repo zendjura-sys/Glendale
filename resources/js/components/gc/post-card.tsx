@@ -168,7 +168,7 @@ export function PostCard({
                     <div className="flex flex-wrap items-center gap-x-1.5 text-[15px] leading-tight">
                         <Link
                             href={publisherHref}
-                            className="flex items-center gap-1 font-semibold text-white hover:underline"
+                            className="flex max-w-full min-w-0 flex-wrap items-center gap-1 font-semibold text-white hover:underline"
                         >
                             {post.publisher ? (
                                 post.publisher.name

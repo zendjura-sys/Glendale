@@ -76,10 +76,14 @@ const ACCENTS = [
     '#06b6d4',
 ];
 
-type SdkInstance = {
+export type SdkInstance = {
     configure: (o: Record<string, unknown>) => void;
     destroy: () => void;
     toggle: (force?: boolean) => void;
+    openChat: (force?: boolean) => void;
+    setBusy: (on: boolean) => void;
+    setContext: (ctx: 'menu' | 'lobby' | 'match' | null) => void;
+    toast: (title: string, body?: string, icon?: string) => void;
 };
 type SdkGlobal = { init: (o: Record<string, unknown>) => Promise<SdkInstance> };
 
@@ -130,11 +134,13 @@ export function SdkStage({
     className,
     background,
     children,
+    onSdk,
 }: {
     options: Record<string, unknown>;
     className?: string;
     background?: string | null;
     children?: React.ReactNode;
+    onSdk?: (sdk: SdkInstance) => void;
 }) {
     const ref = useRef<HTMLDivElement>(null);
     const sdk = useRef<SdkInstance | null>(null);
@@ -152,6 +158,7 @@ export function SdkStage({
                 draggable: true,
                 ...latest.current,
             });
+            onSdk?.(sdk.current);
         });
         return () => {
             alive = false;
@@ -865,7 +872,7 @@ function Text({
     );
 }
 
-function Range({
+export function Range({
     min,
     max,
     value,
@@ -888,7 +895,7 @@ function Range({
     );
 }
 
-function Seg<T extends string>({
+export function Seg<T extends string>({
     value,
     onChange,
     options,
@@ -920,7 +927,7 @@ function Seg<T extends string>({
 }
 
 /** Підписи передаються українською (ключі tr) — перекладаються тут. */
-function Chips({
+export function Chips({
     label,
     items,
     value,

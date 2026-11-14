@@ -161,6 +161,7 @@ const PUBLIC_PAGES = new Set([
     'developers/oauth',
     'developers/plugins',
     'developers/plugin',
+    'developers/sdk',
 ]);
 
 void createInertiaApp({

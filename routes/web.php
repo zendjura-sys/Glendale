@@ -160,6 +160,7 @@ Route::get('link/qr.svg', [Developer\SdkAssetsController::class, 'qr'])->middlew
 Route::get('embed.js', [Developer\EmbedKitController::class, 'script'])->name('embed.script');
 Route::get('share', [Developer\EmbedKitController::class, 'share'])->middleware('auth')->name('share.intent');
 // Розробникам → плагіни «Увійти через GameCon» для CMS і форумів.
+Route::get('developers/sdk', [Developer\SdkPageController::class, 'index'])->name('developers.sdk');
 Route::get('developers/plugins', [Developer\CmsPluginsController::class, 'index'])->name('developers.plugins');
 Route::get('developers/plugins/{plugin}', [Developer\CmsPluginsController::class, 'show'])->where('plugin', '[a-z]+')->name('developers.plugins.show');
 Route::get('developers/plugins/{plugin}/install.sh', [Developer\CmsPluginsController::class, 'install'])->where('plugin', '[a-z]+')->middleware(['signed', 'throttle:30,1'])->name('developers.plugins.install');
