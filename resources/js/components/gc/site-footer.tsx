@@ -95,7 +95,7 @@ export function SiteFooter({
         },
     ];
     const button =
-        'flex min-h-11 w-full items-center gap-2.5 rounded-xl bg-white/[0.04] px-3 text-left text-[13px] font-medium text-white/80 transition hover:bg-white/[0.08] hover:text-white active:scale-[0.98] [html[data-theme=light]_&]:bg-black/[0.04] [html[data-theme=light]_&]:text-slate-700 [html[data-theme=light]_&]:hover:text-slate-900';
+        'flex min-h-11 w-full items-center gap-2 rounded-xl bg-white/[0.04] px-2.5 py-1.5 sm:gap-2.5 sm:px-3 text-left text-[13px] font-medium text-white/80 transition hover:bg-white/[0.08] hover:text-white active:scale-[0.98] [html[data-theme=light]_&]:bg-black/[0.04] [html[data-theme=light]_&]:text-slate-700 [html[data-theme=light]_&]:hover:text-slate-900';
 
     return (
         <footer
@@ -141,7 +141,8 @@ export function SiteFooter({
                                     const inner = (
                                         <>
                                             <Icon className="size-4 shrink-0 text-primary/80" />
-                                            <span className="min-w-0 truncate">
+                                            {/* Довгі назви на вузькому екрані з великим шрифтом — у два рядки, а не «Конфіден…» */}
+                                            <span className="min-w-0 leading-tight [overflow-wrap:break-word] hyphens-auto">
                                                 {item.label}
                                             </span>
                                         </>
