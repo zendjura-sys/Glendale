@@ -1,67 +1,85 @@
 {{-- Refund & Cancellation Policy — English translation. Master version: uk.blade.php. --}}
-<p>This policy forms an integral part of the <a href="{{ $legal['site'] }}/terms">public offer</a> and explains how to cancel a subscription, withdraw from the contract and get a refund for paid {{ $legal['name'] }} electronic services (GameCon+, GameCon+ for families, gifts, server promotion and GameCon balance top-ups). It follows the Laws of Ukraine "On Consumer Rights Protection", "On Digital Content and Digital Services" and "On Electronic Commerce" and does not limit your statutory rights.</p>
+<p>This policy forms an integral part of the <a href="{{ $legal['site'] }}/terms">public offer</a> and explains how to cancel a subscription and when payments for paid {{ $legal['name'] }} electronic services are refunded. It follows the Civil Code of Ukraine and the Laws of Ukraine "On Consumer Rights Protection", "On Digital Content and Digital Services" and "On Electronic Commerce". It does not limit any rights that the law does not allow to be limited by contract. In case of discrepancies the Ukrainian version prevails.</p>
 
-<h2>1. How payment works</h2>
+<h2>1. In short</h2>
 <ul>
-    <li>Payment is by Visa or Mastercard card, Apple Pay, Google Pay or in the monobank app on the secure page of monobank (JSC "Universal Bank"). We never receive your card details.</li>
+    <li>A <strong>GameCon+ subscription</strong> (including GameCon+ for families) can be refunded <strong>within 24 hours</strong> of payment — in full.</li>
+    <li><strong>All other paid services</strong> — GameCon+ gifts, server and community promotion, GameCon balance top-ups, Creator subscriptions, numbers and other digital services — are <strong>non-refundable</strong> once provided (section 4).</li>
+    <li>Double charges, charges without the service being provided, or a service that does not work through our fault are <strong>always refunded</strong> (section 5).</li>
+</ul>
+
+<h2>2. How payment works</h2>
+<ul>
+    <li>On the website you pay by Visa or Mastercard card, Apple Pay, Google Pay or in the monobank app on the secure page of monobank (JSC "Universal Bank"). We never receive your card details.</li>
+    <li>In the payment window you confirm that you <strong>ask us to start providing the service immediately</strong> and understand that you then lose the right to withdraw from the contract, except for the 24-hour subscription refund under this policy.</li>
     <li>The service is activated as soon as the payment is credited. Payment history and receipts are in GameCon+ → Payments &amp; subscriptions.</li>
 </ul>
 
-<h2>2. Cancelling a subscription (auto-renewal)</h2>
+<h2>3. Subscription refund within 24 hours</h2>
 <ul>
-    <li>Auto-renewal is enabled only at your choice and can be turned off at any time in GameCon+ → Payments &amp; subscriptions with one click — no fees, penalties or minimum terms.</li>
-    <li>After you turn it off, access continues until the end of the paid period; there will be no further charges.</li>
-    <li>You can delete a saved card in the same place; auto-renewal with it switches to manual payment.</li>
+    <li>Applies to <strong>GameCon+</strong> and <strong>GameCon+ for families</strong> — both the first payment and an automatic renewal.</li>
+    <li>The request must be sent <strong>within 24 hours</strong> of the payment time shown on the receipt (Kyiv time). We refund the <strong>full amount</strong>, no reason needed.</li>
+    <li>With the refund the subscription for that payment is switched off immediately; the days added by that payment are removed.</li>
+    <li>After 24 hours the subscription is non-refundable: you can only switch it off (section 6) and keep access until the end of the paid period.</li>
+    <li>One person may use the subscription refund no more than once every 90 days; we may refuse in case of abuse (section 8).</li>
 </ul>
 
-<h2>3. Right of withdrawal — 14 days</h2>
-<p>The contract is concluded at a distance, so you may withdraw from it within <strong>14 days</strong> of payment without giving a reason.</p>
-<p>Paid services are electronic services and digital content supplied immediately. By clicking the payment button you ask us to start supplying the service before the 14-day period ends. Under consumer protection law, if you then withdraw, we refund the payment <strong>pro rata to the unused period</strong>; once the service has been fully supplied (for example, a promotion has ended), the right of withdrawal no longer applies.</p>
-<p>Going beyond the law, we voluntarily refund the <strong>full amount</strong> if you contact us within 14 days and have not used the paid features since paying (for a gift — if the recipient has not used it; for promotion — if it has not started yet).</p>
-
-<h2>4. Automatic renewal</h2>
-<p>If you forgot to turn off auto-renewal and have not used paid features since the charge, write to us within 14 days and we will refund the renewal price in full.</p>
-
-<h2>5. Faults, double charges, defective service</h2>
+<h2>4. What is not refunded</h2>
+<p>GameCon paid services are digital content and digital services provided immediately after payment at your express request. Under consumer protection law, if provision has started with your prior express consent and you acknowledged losing the right of withdrawal, the contract is not terminated and the payment is not refunded after provision has started. Therefore, apart from sections 3 and 5, the following are <strong>not refunded</strong>:</p>
 <ul>
-    <li>A double charge or a charge without the service being supplied is refunded in full regardless of time limits.</li>
-    <li>If a paid feature does not work through our fault and we have not fixed it within a reasonable time, we refund the relevant period in full or pro rata, at your choice, as provided by the Law "On Digital Content and Digital Services".</li>
+    <li>GameCon+ gifts (credited to the recipient immediately);</li>
+    <li>server and community promotion (catalogue placement, banner, highlighted card);</li>
+    <li>GameCon balance top-ups — units are credited immediately and cannot be exchanged for money;</li>
+    <li>Creator subscriptions and access to locked content paid with balance units;</li>
+    <li>numbers, cosmetics, frames and other digital goods;</li>
+    <li>a GameCon+ subscription more than 24 hours after payment.</li>
 </ul>
 
-<h2>6. How refunds are paid</h2>
+<h2>5. Refunds guaranteed by law</h2>
+<p>Regardless of section 4 we refund in full if:</p>
 <ul>
-    <li>Money is returned <strong>to the same card</strong> used for payment, via monobank, within 14 days of receiving your request. The time to appear on the card depends on the issuing bank (usually up to 7 business days).</li>
-    <li>Any part of the price paid with GameCon balance units is returned to the balance as units.</li>
-    <li>With the refund, the related access (GameCon+, gift, promotion) ends.</li>
+    <li>your card was charged twice for one order;</li>
+    <li>you were charged but the service was not provided (e.g. the subscription was not activated because of a failure);</li>
+    <li>a paid feature does not work through our fault and we did not fix it within a reasonable time — you may then request a full or proportional refund for that period, as provided by the Law "On Digital Content and Digital Services".</li>
 </ul>
 
-<h2>7. GameCon balance and Author subscriptions</h2>
+<h2>6. Cancelling a subscription (auto-renewal)</h2>
 <ul>
-    <li>A GameCon balance top-up is a prepayment for electronic services of the portal; the service is deemed supplied when the units are credited (section 8 of the <a href="{{ $legal['site'] }}/terms">offer</a>).</li>
-    <li>A double or erroneous charge, or a top-up for which units were not credited because of a technical failure, is refunded to the card in full. On a refund, the corresponding number of not-yet-used units is debited from the balance.</li>
-    <li>Balance units cannot be exchanged for money or withdrawn to a card (including units credited to Authors for subscriptions).</li>
-    <li>Units debited for an Author subscription or community promotion are not returned once access has been opened (section 9 of the offer). Auto-renewal of a subscription can be turned off at any time in Settings → Subscriptions.</li>
+    <li>Auto-renewal is enabled only by your choice and can be switched off at any time in GameCon+ → Payments &amp; subscriptions with one tap — no fees or penalties.</li>
+    <li>After switching it off you keep access until the end of the paid period; there will be no further charges.</li>
+    <li>We remind you about the next charge in advance. If a renewal has already happened and you did not want it, you have 24 hours to request a refund (section 3).</li>
 </ul>
 
-<h2>8. When no refund is made</h2>
+<h2>7. How refunds are paid</h2>
 <ul>
-    <li>After the service has been fully supplied, if you asked for it to start immediately (section 3).</li>
-    <li>If the account was blocked for a serious breach of the <a href="{{ $legal['site'] }}/terms">offer</a> (fraud, illegal content, etc.), except where a refund is required by law.</li>
-    <li>In case of abuse: repeated buy-and-refund cycles, or a chargeback filed while we are handling your request.</li>
+    <li>To the same card used for the payment, via monobank — within 7 days of receiving the request (the statutory limit is 14 days). The time for the money to reach the card depends on the issuing bank.</li>
+    <li>If part of the price was paid with GameCon balance units, those units are returned to the balance.</li>
+    <li>If a refund to the card is technically impossible (e.g. the card is closed or the bank rejects the refund), we refund by bank transfer to the details you provide.</li>
+    <li><strong>Alternative at your choice</strong> (for double charges and failures under section 5): instead of a refund we can provide <strong>2 months of GameCon+ free of charge</strong> as a personal promo code. The code is given only with your written consent (e-mail or ticket), is valid for your account only, has no cash value and cannot be exchanged for money. Accepting it is your right, not an obligation: you keep the right to a monetary refund.</li>
+</ul>
+
+<h2>8. When we may refuse</h2>
+<ul>
+    <li>The request came later than the deadline in section 3 and section 5 does not apply.</li>
+    <li>The account was blocked for a serious breach of the <a href="{{ $legal['site'] }}/terms">offer</a> (fraud, illegal content) — except where the law requires a refund.</li>
+    <li>Signs of abuse: repeated "buy — refund" cycles, a chargeback while we are reviewing your request.</li>
 </ul>
 
 <h2>9. How to request a refund</h2>
-<p>Write to <a href="mailto:{{ $legal['email'] }}">{{ $legal['email'] }}</a> from your account e-mail with your username, order number (GC-…, shown in payment history), date and reason. We reply within 3 business days.</p>
+<p>Write to <a href="mailto:{{ $legal['email'] }}">{{ $legal['email'] }}</a> from your account e-mail or via Help → Support: username, order number (GC-…, see payment history), payment date and reason. For a subscription refund it is enough that your e-mail or ticket arrives within 24 hours of payment. We reply within 3 business days.</p>
 
-<h2>10. In-app purchases through Google Play</h2>
+<h2>10. In-app purchases via Google Play</h2>
 <ul>
-    <li>A subscription bought in the Android app is cancelled in Google Play → Payments &amp; subscriptions; access continues until the end of the paid period.</li>
-    <li>Refunds for such purchases are made by Google under Google Play's rules: request one at play.google.com (Order history → "Report a problem") within the periods set by Google. We can also initiate a refund — write to us with the GPA.… order number.</li>
-    <li>When Google refunds a purchase it notifies us, and GameCon+ from that purchase is switched off automatically.</li>
+    <li>A subscription bought in the Android app is cancelled in Google Play → Payments &amp; subscriptions; access remains until the end of the paid period.</li>
+    <li>Google accepts the payment, so refunds for such purchases are made by Google under Google Play rules (play.google.com → Order history → "Report a problem"). We can also initiate a refund within 24 hours of payment — write to us with the GPA.… order number.</li>
+    <li>After a refund Google notifies us and GameCon+ for that purchase is switched off automatically.</li>
 </ul>
 
 <h2>11. Chargebacks</h2>
-<p>Please contact us before disputing a payment with your bank — it is faster. If the bank reverses a payment, the related access ends.</p>
+<p>Please contact us before disputing a payment with your bank — it is faster. If the bank reverses the payment, the related access ends.</p>
 
-<h2>12. Details</h2>
+<h2>12. Disputes</h2>
+<p>We resolve disputes through negotiation. You may also contact the State Service of Ukraine on Food Safety and Consumer Protection or a court under the laws of Ukraine.</p>
+
+<h2>13. Seller details</h2>
 @include('legal.partials.seller_en')

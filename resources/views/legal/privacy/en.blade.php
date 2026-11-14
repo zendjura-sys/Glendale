@@ -8,7 +8,10 @@
     <li><strong>Connected accounts</strong> (only if you connect them): identifiers and public data from Google, Discord, Telegram, Steam, Spotify, Twitch or YouTube.</li>
     <li><strong>Technical data:</strong> IP address, approximate country, device and browser data, logs, sessions and security events, push tokens.</li>
     <li><strong>Payment data:</strong> order number, product, amount, status, date, monobank payment ID, <strong>masked card number</strong> (e.g. 4441 11** **** 1234) and card network. If you agreed to save a card for auto-renewal, we store only the card token issued by monobank, encrypted. <strong>We never receive or store the full card number, expiry date or CVV</strong> — they are handled by the bank.</li>
-    <li><strong>Voice:</strong> voice rooms and calls are relayed in real time through our media server and are <strong>not recorded</strong>.</li>
+    <li><strong>Voice:</strong> voice rooms and calls are relayed in real time through our media server and are <strong>not recorded</strong>. Voice messages in chats are stored as conversation attachments; if a participant taps "Text", the recording is sent to a speech recognition service and the resulting text is stored with the message.</li>
+    <li><strong>Air alerts and shelters</strong> (Ukraine only): the place you chose for alert notifications and extra places with labels. To find shelters nearby you may share browser coordinates — we use them only for that request and do not store them in your account.</li>
+    <li><strong>Developer apps:</strong> if you allowed a third-party app access via "Sign in with {{ $legal['name'] }}", we store the consent, granted permissions and time of the last request. For developers — their app data and hashed keys.</li>
+    <li><strong>Only on your phone</strong> (never sent to our server): the app lock PIN (hashed) and the keys of the built-in two-factor authenticator.</li>
 </ul>
 
 <h2>2. Purposes and legal bases</h2>
@@ -26,9 +29,11 @@
     <li><strong>monobank (JSC "Universal Bank")</strong> — accepting payments, card tokens, refunds; the bank processes card data under its own policy;</li>
     <li>Google (Google Pay — if you pay with it; Google Play — in-app purchases; Firebase — push notifications);</li>
     <li>hosting, storage, e-mail and backup providers;</li>
-    <li>Sightengine — automatic checks of uploaded images; DeepL — only text you ask to translate;</li>
+    <li>Sightengine — automatic checks of uploaded images; DeepL and other translation services — only text you ask to translate;</li>
+    <li>AI providers connected by the administration (Anthropic, OpenAI-compatible services such as Groq) — only the text or recording for which you or moderators used an AI feature (rewrite, chat summary, voice transcription, report review);</li>
+    <li>UkraineAlarm — no personal data (alert status requests); OpenStreetMap (Overpass, Nominatim) — coordinates or a place name to find shelters, without account data;</li>
     <li>Google, Discord, Telegram, Steam, Spotify, Twitch — only when you use the relevant feature;</li>
-    <li>game servers you authorised via "Sign in with {{ $legal['name'] }}" — within the permissions you granted;</li>
+    <li>game servers and developer apps you authorised via "Sign in with {{ $legal['name'] }}" — within the permissions you granted; you can revoke access at any time in Settings → Apps;</li>
     <li>public authorities — in cases and in the manner required by law.</li>
 </ul>
 <p>Embedded third-party players and media (partner video players, YouTube, Twitch, etc.) load from their servers and may process your IP address and set cookies under their own rules.</p>

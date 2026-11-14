@@ -129,6 +129,8 @@ function PurchaseDialog({
     const [quote, setQuote] = useState<Quote | null>(null);
     const [renew, setRenew] = useState(true);
     const [saveCard, setSaveCard] = useState(billing.save_card);
+    // Згода на негайне надання цифрової послуги (ЗУ «Про захист прав споживачів»): без неї оплата недоступна.
+    const [consent, setConsent] = useState(false);
     const [code, setCode] = useState('');
     const [busy, setBusy] = useState(false);
     const [done, setDone] = useState(false);
@@ -155,6 +157,8 @@ function PurchaseDialog({
         ...request.extra,
         renew: renewable && renew,
         save_card: renewable && renew && saveCard,
+        // Без оплати карткою (повністю балансом) погоджуватися нема на що — галочки не показуємо.
+        consent: consent || quote?.amount === 0,
     });
 
     const finish = (order: PaymentOrderCard, redirect: string | null) => {
@@ -380,6 +384,26 @@ function PurchaseDialog({
                             </label>
                         )}
 
+                    {quote.amount > 0 && (
+                        <label className="flex cursor-pointer items-start gap-3 rounded-2xl bg-white/[0.04] p-3.5">
+                            <input
+                                type="checkbox"
+                                checked={consent}
+                                onChange={(e) => setConsent(e.target.checked)}
+                                className="mt-0.5 size-4 shrink-0 accent-primary"
+                            />
+                            <span className="text-xs leading-relaxed text-white/70">
+                                {renewable
+                                    ? tr(
+                                          'Прошу почати надання послуги одразу. Розумію, що підписку можна повернути лише протягом 24 годин від оплати, а після цього — тільки вимкнути продовження.',
+                                      )
+                                    : tr(
+                                          'Прошу почати надання послуги одразу й розумію, що після цього втрачаю право на відмову від договору: кошти за цю послугу не повертаються.',
+                                      )}
+                            </span>
+                        </label>
+                    )}
+
                     {!quote.available && quote.amount > 0 ? (
                         <p className="rounded-2xl bg-amber-500/10 p-3 text-sm text-amber-100">
                             {tr(
@@ -391,7 +415,9 @@ function PurchaseDialog({
                             <button
                                 type="button"
                                 className={cn(primary, 'w-full')}
-                                disabled={busy}
+                                disabled={
+                                    busy || (quote.amount > 0 && !consent)
+                                }
                                 onClick={pay}
                             >
                                 {busy ? (
@@ -409,7 +435,7 @@ function PurchaseDialog({
                                 <GooglePayButton
                                     config={billing.google_pay}
                                     amount={quote.amount}
-                                    disabled={busy}
+                                    disabled={busy || !consent}
                                     onToken={googlePay}
                                 />
                             )}
@@ -420,7 +446,7 @@ function PurchaseDialog({
                         <ShieldCheck className="mt-0.5 size-3.5 shrink-0" />
                         <span>
                             {tr(
-                                'Оплата на захищеній сторінці monobank: Visa, Mastercard, Apple Pay, Google Pay. Натискаючи «Оплатити», ви приймаєте публічну оферту й просите почати надання послуги одразу; у такому разі під час відмови протягом 14 днів кошти повертаються пропорційно невикористаному періоду.',
+                                'Оплата на захищеній сторінці monobank: Visa, Mastercard, Apple Pay, Google Pay. Натискаючи «Оплатити», ви приймаєте публічну оферту. Повернення — лише підписки протягом 24 годин; подвійне списання чи збій повертаємо завжди.',
                             )}{' '}
                             <a
                                 href="/terms"

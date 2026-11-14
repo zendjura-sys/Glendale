@@ -76,6 +76,7 @@
 
 <h3>7.3. Supply</h3>
 <p>The service is supplied <strong>immediately after the payment is credited</strong>, on the website and in the app. A new GameCon+ period starts after the current one ends, so paid days are never lost. A gift is credited to the recipient immediately; promotion starts immediately or from the first free slot shown before payment.</p>
+<p>Before paying, the Customer confirms in the payment window that they <strong>ask for the digital service to start immediately</strong> and agree that once provision starts they lose the right to withdraw from the contract (Art. 13 of the Law of Ukraine "On Consumer Rights Protection" on digital content not supplied on a tangible medium), except for the voluntary 24-hour subscription refund under the <a href="{{ $legal['site'] }}/refund-policy">Refund Policy</a>.</p>
 
 <h3>7.4. Auto-renewal (subscription)</h3>
 <ul>
@@ -87,7 +88,7 @@
 </ul>
 
 <h3>7.5. Refunds</h3>
-<p>Withdrawal and refunds are governed by the <a href="{{ $legal['site'] }}/refund-policy">Refund &amp; Cancellation Policy</a>, which forms an integral part of this offer.</p>
+<p>A GameCon+ subscription (including for families) is refunded in full if the Customer requests it <strong>within 24 hours</strong> of payment. Other paid services are non-refundable once provision has started, except where the law guarantees a refund (double charge, service not provided or not working through the Contractor's fault). Full terms are in the <a href="{{ $legal['site'] }}/refund-policy">Refund &amp; Cancellation Policy</a>, an integral part of this offer.</p>
 
 <h3>7.6. Android app</h3>
 <p>In our Android app GameCon+ can be bought only through <strong>Google Play Billing</strong>: Google accepts the payment under Google Play's rules, and Google Play shows the price and period before payment. The subscription renews automatically until you cancel it in Google Play (Google Play → Payments &amp; subscriptions); access continues until the end of the paid period. We verify every purchase with Google and enable GameCon+ in your account on both the website and the app. Refunds for such purchases are handled through Google Play (see the Refund Policy).</p>

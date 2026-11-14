@@ -16,6 +16,7 @@ use App\Services\Plus\PromoCodes;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -72,7 +73,10 @@ class BillingController extends Controller
             'gift_at' => ['nullable', 'date_format:Y-m-d'],
             'renew' => ['boolean'],
             'save_card' => ['boolean'],
-        ]);
+            // Згода на негайне надання цифрової послуги й втрату права на відмову (оферта 7.3, Політика повернення).
+            'consent' => ['accepted'],
+        ], ['consent.accepted' => 'Підтвердіть, що просите почати надання послуги одразу (галочка над кнопкою оплати).']);
+        Log::info('billing.consent', ['user' => $request->user()->id, 'product' => $data['product'], 'ip' => $request->ip(), 'at' => now()->toIso8601String()]);
         $order = $this->checkout->start($request->user(), $data['product'], $data, $request->boolean('renew'), $request->boolean('save_card'));
 
         return response()->json([
