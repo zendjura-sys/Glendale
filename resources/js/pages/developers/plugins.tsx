@@ -195,7 +195,10 @@ export default function DeveloperPlugins({ plugins, version }: Props) {
                 </section>
 
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                    <nav className="gc-solid-2 flex max-w-full min-w-0 [scrollbar-width:none] gap-1 overflow-x-auto rounded-xl p-1 text-sm">
+                    <nav
+                        data-plugins="filters"
+                        className="gc-solid-2 flex max-w-full min-w-0 [scrollbar-width:none] gap-1 overflow-x-auto rounded-xl p-1 text-sm"
+                    >
                         {FILTERS.map(([key, label]) => (
                             <button
                                 key={key}
@@ -230,6 +233,7 @@ export default function DeveloperPlugins({ plugins, version }: Props) {
                                 duration: 0.25,
                                 delay: reduce ? 0 : Math.min(i, 10) * 0.025,
                             }}
+                            data-plugins="card"
                             className="gc-solid group relative flex items-center gap-3 rounded-2xl p-4 transition hover:bg-white/[0.06]"
                         >
                             <EngineMark plugin={plugin} />

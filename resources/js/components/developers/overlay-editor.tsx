@@ -174,6 +174,7 @@ export function SdkStage({
     return (
         <div
             ref={ref}
+            data-sdk-stage
             className={cn(
                 'relative isolate overflow-hidden rounded-2xl bg-[#05070d] [clip-path:inset(0_round_1rem)]',
                 className,
@@ -279,7 +280,7 @@ export function OverlayEditor({
         router.delete(`/developers/apps/${appId}/overlay`, opts);
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-4" data-overlay-editor>
             <SdkStage
                 options={sdkOptions(cfg)}
                 className="aspect-video w-full"
@@ -737,7 +738,10 @@ export function OverlayEditor({
                 </Group>
             )}
 
-            <div className="flex flex-wrap items-center justify-end gap-2">
+            <div
+                data-overlay-actions
+                className="flex flex-wrap items-center justify-end gap-2"
+            >
                 <span className="mr-auto flex items-center gap-1.5 text-xs text-white/45">
                     <Monitor className="size-3.5" />
                     {dirty

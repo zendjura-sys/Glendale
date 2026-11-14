@@ -262,7 +262,10 @@ function Topbar() {
             {/* Шапка — плаваюча капсула з безбарвного матового скла (як острів-меню знизу); обгортка прозора. */}
             {/* Шапка — парящий скляний острів (одне з трьох місць зі склом: шапка, навбар, плеєр). */}
             <div className="ios-glass-panel ios-glass-bar ios-header-pill gc-glass-island [view-transition-name:gc-topbar]">
-                <Link href="/feed" className="shrink-0 md:w-[264px]">
+                <Link
+                    href="/feed"
+                    className="flex shrink-0 items-center self-center md:mr-4"
+                >
                     <Logo className="hidden sm:inline-flex" />
                     <LogoMark className="sm:hidden" />
                 </Link>

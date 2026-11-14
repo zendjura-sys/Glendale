@@ -2,6 +2,7 @@ import { Link, usePage } from '@inertiajs/react';
 import {
     ChevronRight,
     Clapperboard,
+    Code,
     Film,
     Gamepad2,
     Info,
@@ -22,6 +23,8 @@ import {
 } from 'lucide-react';
 import type { LucideIcon, LucideProps } from 'lucide-react';
 import { Fragment } from 'react';
+import { HelpShot } from '@/components/help/help-shot';
+import type { HelpShotPin } from '@/components/help/help-shot';
 import type { ReactNode } from 'react';
 import { PublicShell } from '@/layouts/public-layout';
 import { tr } from '@/lib/i18n';
@@ -30,7 +33,8 @@ import { cn } from '@/lib/utils';
 /** Блок статті довідки (App\Support\Help\HelpCatalog). */
 export type HelpBlock =
     | { type: 'p' | 'h' | 'tip' | 'note'; text: string }
-    | { type: 'steps' | 'list'; items: string[] };
+    | { type: 'steps' | 'list'; items: string[] }
+    | { type: 'shot'; shot: string; alt: string; pins: HelpShotPin[] };
 
 export type HelpCategoryBrief = {
     slug: string;
@@ -52,6 +56,7 @@ const icons: Record<string, LucideIcon> = {
     film: Film,
     music: Music,
     clapperboard: Clapperboard,
+    code: Code,
     target: Target,
     sparkles: Sparkles,
     smartphone: Smartphone,
@@ -179,6 +184,16 @@ export function HelpBlocks({ blocks }: { blocks: HelpBlock[] }) {
         <div className="space-y-4 text-[15px] leading-relaxed text-white/80">
             {blocks.map((block, i) => {
                 switch (block.type) {
+                    case 'shot':
+                        return (
+                            <HelpShot
+                                key={i}
+                                shot={block.shot}
+                                alt={block.alt}
+                                pins={block.pins}
+                                renderText={(text) => <HelpText text={text} />}
+                            />
+                        );
                     case 'h':
                         return (
                             <h2

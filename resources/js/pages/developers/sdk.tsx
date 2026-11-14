@@ -152,7 +152,10 @@ window.postMessage({ target: 'gamecon-sdk', cmd: 'setBusy', args: [true] }, '*')
                             </p>
                         </div>
                     </div>
-                    <div className="flex flex-wrap gap-1.5">
+                    <div
+                        data-sdk="platforms"
+                        className="flex flex-wrap gap-1.5"
+                    >
                         {PLATFORMS.map(([name, ready]) => (
                             <span
                                 key={name}
@@ -185,7 +188,10 @@ window.postMessage({ target: 'gamecon-sdk', cmd: 'setBusy', args: [true] }, '*')
                     </div>
                 </m.header>
 
-                <section className="gc-solid min-w-0 space-y-4 rounded-2xl p-4 sm:p-5">
+                <section
+                    data-sdk="sandbox"
+                    className="gc-solid min-w-0 space-y-4 rounded-2xl p-4 sm:p-5"
+                >
                     <div className="flex flex-wrap items-center justify-between gap-2">
                         <h2 className="font-display text-lg font-bold text-white">
                             {tr('Пісочниця')}
@@ -316,7 +322,10 @@ window.postMessage({ target: 'gamecon-sdk', cmd: 'setBusy', args: [true] }, '*')
                     </div>
                 </section>
 
-                <section className="gc-solid min-w-0 space-y-3 rounded-2xl p-4 sm:p-5">
+                <section
+                    data-sdk="code"
+                    className="gc-solid min-w-0 space-y-3 rounded-2xl p-4 sm:p-5"
+                >
                     <div className="flex flex-wrap items-center gap-2">
                         <h2 className="mr-auto font-display text-lg font-bold text-white">
                             {tr('Код ініціалізації')}

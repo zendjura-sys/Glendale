@@ -45,6 +45,13 @@ export function NavigationSkeleton({ children }: { children: ReactNode }) {
         const offFinish = router.on('finish', stop);
         const offError = router.on('networkError', stop);
         const offNavigate = router.on('navigate', stop);
+        // Для перевірки й автотестів: показати скелетон адреси без переходу
+        // (window.dispatchEvent(new CustomEvent('gc:skeleton', { detail: '/feed' })), null — сховати).
+        const onProbe = (event: Event) => {
+            const path = (event as CustomEvent<string | null>).detail;
+            setKind(path ? skeletonFor(path) : null);
+        };
+        window.addEventListener('gc:skeleton', onProbe);
 
         return () => {
             window.clearTimeout(timer);
@@ -52,6 +59,7 @@ export function NavigationSkeleton({ children }: { children: ReactNode }) {
             offFinish();
             offError();
             offNavigate();
+            window.removeEventListener('gc:skeleton', onProbe);
         };
     }, []);
 

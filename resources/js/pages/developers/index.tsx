@@ -269,7 +269,7 @@ function AppForm({
     )?.[1];
 
     return (
-        <section className="gc-solid space-y-3 rounded-2xl p-5">
+        <section data-app-form className="gc-solid space-y-3 rounded-2xl p-5">
             <h2 className="font-display text-lg font-bold text-white">
                 {app ? tr('Налаштування застосунку') : tr('Новий застосунок')}
             </h2>
