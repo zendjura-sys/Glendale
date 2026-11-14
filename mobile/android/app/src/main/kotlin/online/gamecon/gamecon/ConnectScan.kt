@@ -48,7 +48,7 @@ object ConnectScan {
         val activeKeys: Set<String>? = if (Build.VERSION.SDK_INT >= 33) {
             try {
                 val attrs = AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).build()
-                am.getDevicesForAttributes(attrs).map { "${it.type}|${it.address}" }.toSet()
+                am.getAudioDevicesForAttributes(attrs).map { "${it.type}|${it.address}" }.toSet()
             } catch (e: Exception) {
                 null
             }
