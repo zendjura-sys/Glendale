@@ -1,4 +1,4 @@
-import { Link, usePage } from "@inertiajs/react";
+import { Link, usePage } from '@inertiajs/react';
 import {
     BarChart3,
     Code2,
@@ -11,17 +11,17 @@ import {
     ShieldCheck,
     Smartphone,
     Tag,
-} from "lucide-react";
-import type { LucideIcon } from "lucide-react";
-import { PaymentBadges } from "@/components/billing/payment-badges";
-import { LogoMark } from "@/components/gc/logo";
-import { reopenConsent } from "@/lib/consent";
-import { tr } from "@/lib/i18n";
-import { cn } from "@/lib/utils";
+} from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
+import { PaymentBadges } from '@/components/billing/payment-badges';
+import { LogoMark } from '@/components/gc/logo';
+import { reopenConsent } from '@/lib/consent';
+import { tr } from '@/lib/i18n';
+import { cn } from '@/lib/utils';
 
 /** «Публічна оферта (договір про надання…)» → «Публічна оферта»: у футері — коротко, повна назва на сторінці. */
 function short(label: string | undefined): string {
-    return (label ?? "").replace(/\s*\(.*\)\s*$/, "").trim();
+    return (label ?? '').replace(/\s*\(.*\)\s*$/, '').trim();
 }
 
 /**
@@ -37,7 +37,7 @@ export function SiteFooter({
     /** На юридичних сторінках — підписи мовою документа. */
     labels?: Partial<
         Record<
-            "terms" | "privacy" | "refund" | "pricing" | "contacts" | "rights",
+            'terms' | 'privacy' | 'refund' | 'pricing' | 'contacts' | 'rights',
             string
         >
     >;
@@ -46,7 +46,7 @@ export function SiteFooter({
 }) {
     const { footer, name, site } = usePage().props;
     const t = { ...footer, ...labels };
-    const q = lang ? `?lang=${lang}` : "";
+    const q = lang ? `?lang=${lang}` : '';
     // Кнопки з іконкою й коротким підписом (повні назви документів — на самих сторінках).
     const groups: {
         title: string;
@@ -58,49 +58,49 @@ export function SiteFooter({
         }[];
     }[] = [
         {
-            title: tr("Сервіс"),
+            title: tr('Сервіс'),
             links: [
-                { href: "/help", label: tr("Довідка"), icon: LifeBuoy },
+                { href: '/help', label: tr('Довідка'), icon: LifeBuoy },
                 { href: `/pricing${q}`, label: short(t.pricing), icon: Tag },
                 { href: `/contacts${q}`, label: short(t.contacts), icon: Mail },
-                { href: "/developers", label: tr("Розробникам"), icon: Code2 },
+                { href: '/developers', label: tr('Розробникам'), icon: Code2 },
                 {
-                    href: "/transparency",
-                    label: tr("Прозорість"),
+                    href: '/transparency',
+                    label: tr('Прозорість'),
                     icon: BarChart3,
                 },
             ],
         },
         {
-            title: tr("Документи"),
+            title: tr('Документи'),
             links: [
-                { href: `/terms${q}`, label: tr("Оферта"), icon: FileText },
+                { href: `/terms${q}`, label: tr('Оферта'), icon: FileText },
                 {
                     href: `/privacy${q}`,
-                    label: tr("Конфіденційність"),
+                    label: tr('Конфіденційність'),
                     icon: Lock,
                 },
                 {
                     href: `/refund-policy${q}`,
-                    label: tr("Повернення коштів"),
+                    label: tr('Повернення коштів'),
                     icon: RotateCcw,
                 },
                 {
                     href: `/child-safety${q}`,
-                    label: tr("Безпека дітей"),
+                    label: tr('Безпека дітей'),
                     icon: ShieldCheck,
                 },
-                { label: tr("Cookie"), icon: Cookie, onClick: reopenConsent },
+                { label: tr('Cookie'), icon: Cookie, onClick: reopenConsent },
             ],
         },
     ];
     const button =
-        "flex min-h-11 w-full items-center gap-2.5 rounded-xl bg-white/[0.04] px-3 text-left text-[13px] font-medium text-white/80 transition hover:bg-white/[0.08] hover:text-white active:scale-[0.98] [html[data-theme=light]_&]:bg-black/[0.04]";
+        'flex min-h-11 w-full items-center gap-2.5 rounded-xl bg-white/[0.04] px-3 text-left text-[13px] font-medium text-white/80 transition hover:bg-white/[0.08] hover:text-white active:scale-[0.98] [html[data-theme=light]_&]:bg-black/[0.04]';
 
     return (
         <footer
             className={cn(
-                "mt-8 px-5 py-6 text-left text-xs text-white/40",
+                'mt-8 px-5 py-6 text-left text-xs text-white/40',
                 className,
             )}
         >
@@ -110,10 +110,10 @@ export function SiteFooter({
                     <LogoMark className="size-11 drop-shadow-[0_2px_8px_rgb(0_150_255/0.22)]" />
                     <div className="min-w-0 flex-1 leading-tight">
                         <p className="font-display text-[15px] font-bold tracking-tight text-white">
-                            {name || "GameCon"}
+                            {name || 'GameCon'}
                         </p>
                         <p className="mt-0.5 text-xs text-white/50">
-                            {tr("Соцмережа для геймерів")}
+                            {tr('Соцмережа для геймерів')}
                         </p>
                     </div>
                     <Link
@@ -121,13 +121,13 @@ export function SiteFooter({
                         className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-white/[0.05] px-3 text-xs font-semibold text-white/80 transition hover:bg-white/[0.1] hover:text-white [html[data-theme=light]_&]:bg-black/[0.04]"
                     >
                         <Smartphone className="size-3.5 text-primary" />
-                        {tr("Застосунок")}
+                        {tr('Застосунок')}
                     </Link>
                 </div>
 
                 {/* Дві колонки навіть на телефоні: ліве вирівнювання, рядки по 40 px — легко влучити пальцем. */}
                 <nav
-                    aria-label={tr("Посилання футера")}
+                    aria-label={tr('Посилання футера')}
                     className="mt-5 grid grid-cols-2 gap-x-2 gap-y-4 sm:max-w-xl sm:gap-x-4"
                 >
                     {groups.map((group) => (
@@ -176,7 +176,7 @@ export function SiteFooter({
                 <div className="mt-5 border-t border-white/[0.07] pt-4">
                     <PaymentBadges className="justify-center gap-1.5 [&>li]:h-7 [&>li]:min-w-10 [&>li]:px-2" />
                     <p className="mt-3 text-center text-xs text-white/40">
-                        © {footer.year} {name || "GameCon"}. {t.rights}
+                        © {footer.year} {name || 'GameCon'}. {t.rights}
                     </p>
                     {site.release && (
                         <p className="mt-1 text-center text-[11px] text-white/30">

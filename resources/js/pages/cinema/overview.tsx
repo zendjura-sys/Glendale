@@ -1,4 +1,4 @@
-import { Head, Link } from "@inertiajs/react";
+import { Head, Link } from '@inertiajs/react';
 import {
     CalendarDays,
     Flame,
@@ -6,22 +6,22 @@ import {
     MessageSquare,
     Shuffle,
     SlidersHorizontal,
-} from "lucide-react";
-import { CinemaNav } from "@/components/cinema/cinema-nav";
-import { CinemaShell } from "@/components/cinema/cinema-side";
-import type { CinemaSideData } from "@/components/cinema/cinema-side";
-import { ForYouRow } from "@/components/cinema/for-you-row";
-import { Hero } from "@/components/cinema/hero";
-import { ListCard } from "@/components/cinema/list-card";
-import type { MovieListCard } from "@/components/cinema/list-card";
-import { MovieRow } from "@/components/cinema/movie-row";
-import type { MovieRowItem } from "@/components/cinema/movie-row";
-import { PosterRow } from "@/components/cinema/movie-tile";
-import { UserAvatar } from "@/components/gc/user-avatar";
-import { formatDate } from "@/lib/format";
-import { tr } from "@/lib/i18n";
-import { usePlugin } from "@/lib/plugins";
-import type { MovieCard, MovieFeatured, UserCard } from "@/types";
+} from 'lucide-react';
+import { CinemaNav } from '@/components/cinema/cinema-nav';
+import { CinemaShell } from '@/components/cinema/cinema-side';
+import type { CinemaSideData } from '@/components/cinema/cinema-side';
+import { ForYouRow } from '@/components/cinema/for-you-row';
+import { Hero } from '@/components/cinema/hero';
+import { ListCard } from '@/components/cinema/list-card';
+import type { MovieListCard } from '@/components/cinema/list-card';
+import { MovieRow } from '@/components/cinema/movie-row';
+import type { MovieRowItem } from '@/components/cinema/movie-row';
+import { PosterRow } from '@/components/cinema/movie-tile';
+import { UserAvatar } from '@/components/gc/user-avatar';
+import { formatDate } from '@/lib/format';
+import { tr } from '@/lib/i18n';
+import { usePlugin } from '@/lib/plugins';
+import type { MovieCard, MovieFeatured, UserCard } from '@/types';
 
 type WeekComment = {
     id: number;
@@ -64,7 +64,7 @@ function SectionTitle({
                     href={href}
                     className="shrink-0 text-sm font-medium text-white/80 hover:text-white"
                 >
-                    {tr("Показати все")}
+                    {tr('Показати все')}
                 </Link>
             )}
         </div>
@@ -81,24 +81,24 @@ export default function CinemaOverview({
     comments,
     side,
 }: Props) {
-    const listsOn = usePlugin("movie_lists");
+    const listsOn = usePlugin('movie_lists');
     const tiles = [
-        { href: "/cinema?sort=popular", label: tr("Популярне"), icon: Flame },
-        { href: "/cinema/schedule", label: tr("Розклад"), icon: CalendarDays },
+        { href: '/cinema?sort=popular', label: tr('Популярне'), icon: Flame },
+        { href: '/cinema/schedule', label: tr('Розклад'), icon: CalendarDays },
         ...(listsOn
-            ? [{ href: "/cinema/lists", label: tr("Колекції"), icon: Layers }]
+            ? [{ href: '/cinema/lists', label: tr('Колекції'), icon: Layers }]
             : []),
         {
-            href: "/cinema?sort=rating",
-            label: tr("Фільтр"),
+            href: '/cinema?sort=rating',
+            label: tr('Фільтр'),
             icon: SlidersHorizontal,
         },
-        { href: "/cinema/random", label: tr("Рандом"), icon: Shuffle },
+        { href: '/cinema/random', label: tr('Рандом'), icon: Shuffle },
     ];
 
     return (
         <>
-            <Head title={tr("Огляд кіно")} />
+            <Head title={tr('Огляд кіно')} />
             <CinemaShell side={side}>
                 <CinemaNav active="overview" />
                 {featured.length > 0 && <Hero items={featured} />}
@@ -118,9 +118,9 @@ export default function CinemaOverview({
 
                 <section>
                     <SectionTitle
-                        title={tr("Вам сподобається")}
+                        title={tr('Вам сподобається')}
                         subtitle={tr(
-                            "За вашими оцінками й смаком глядачів, схожих на вас",
+                            'За вашими оцінками й смаком глядачів, схожих на вас',
                         )}
                     />
                     {recommended.length > 0 ? (
@@ -128,7 +128,7 @@ export default function CinemaOverview({
                     ) : (
                         <div className="glass rounded-2xl p-5 text-[15px] text-white/55">
                             {tr(
-                                "Продовжуйте дивитися й оцінювати. Чим чесніше виставлені оцінки, тим точніше будуть підібрані рекомендації.",
+                                'Продовжуйте дивитися й оцінювати. Чим чесніше виставлені оцінки, тим точніше будуть підібрані рекомендації.',
                             )}
                         </div>
                     )}
@@ -136,7 +136,7 @@ export default function CinemaOverview({
 
                 {discussed.length > 0 && (
                     <section className="glass rounded-2xl p-5">
-                        <SectionTitle title={tr("Обговорюване сьогодні")} />
+                        <SectionTitle title={tr('Обговорюване сьогодні')} />
                         <div className="grid gap-5 lg:grid-cols-2">
                             {discussed.map((movie) => (
                                 <MovieRow
@@ -146,7 +146,7 @@ export default function CinemaOverview({
                                     extra={
                                         <p className="mt-2 flex items-center gap-1.5 text-[13px] text-white/55">
                                             <MessageSquare className="size-4" />
-                                            {tr("{n} коментарів", {
+                                            {tr('{n} коментарів', {
                                                 n: movie.comments_count,
                                             })}
                                         </p>
@@ -159,7 +159,7 @@ export default function CinemaOverview({
 
                 {watchingNow.length > 0 && (
                     <PosterRow
-                        title={tr("Дивляться зараз")}
+                        title={tr('Дивляться зараз')}
                         movies={watchingNow}
                     />
                 )}
@@ -167,7 +167,7 @@ export default function CinemaOverview({
                 {listsOn && collections.length > 0 && (
                     <section>
                         <SectionTitle
-                            title={tr("Колекції тижня")}
+                            title={tr('Колекції тижня')}
                             href="/cinema/lists"
                         />
                         <div className="grid gap-4 sm:grid-cols-2">
@@ -180,7 +180,7 @@ export default function CinemaOverview({
 
                 {comments.length > 0 && (
                     <section>
-                        <SectionTitle title={tr("Коментарі тижня")} />
+                        <SectionTitle title={tr('Коментарі тижня')} />
                         <div className="grid gap-3 sm:grid-cols-2">
                             {comments.map((c) => (
                                 <div
@@ -194,8 +194,8 @@ export default function CinemaOverview({
                                         <p className="truncate text-sm text-white/55">
                                             <span className="font-semibold text-white">
                                                 {c.user?.first_name}
-                                            </span>{" "}
-                                            {tr("до релізу")}{" "}
+                                            </span>{' '}
+                                            {tr('до релізу')}{' '}
                                             <Link
                                                 href={c.movie.href}
                                                 className="text-white/80 hover:underline"
