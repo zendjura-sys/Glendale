@@ -173,7 +173,7 @@ export default function Communities({
                     <div className="relative mt-5 flex flex-col gap-3 lg:flex-row lg:items-center">
                         <div
                             className={cn(
-                                'gc-solid-2 flex shrink-0 rounded-xl p-1',
+                                'gc-solid-2 scrollbar-none flex max-w-full min-w-0 overflow-x-auto rounded-xl p-1',
                                 !signedIn && 'hidden',
                             )}
                         >
@@ -183,7 +183,7 @@ export default function Communities({
                                     type="button"
                                     onClick={() => visit({ tab: item.value })}
                                     className={cn(
-                                        'inline-flex h-9 items-center gap-2 rounded-lg px-3 text-sm font-medium transition',
+                                        'inline-flex h-9 shrink-0 items-center gap-2 rounded-lg px-3 text-sm font-medium whitespace-nowrap transition',
                                         tab === item.value
                                             ? 'bg-white/10 text-white'
                                             : 'text-white/50 hover:text-white',

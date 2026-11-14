@@ -21,7 +21,7 @@ export default function ReadLater({ posts }: { posts: PostItem[] }) {
         <>
             <Head title={tr('Прочитати пізніше')} />
             <div className="mx-auto max-w-[640px] space-y-4">
-                <div className="flex items-end justify-between gap-3">
+                <div className="flex flex-wrap items-end justify-between gap-x-3 gap-y-1">
                     <div>
                         <h1 className="font-display text-2xl font-semibold text-white">
                             {tr('Прочитати пізніше')}

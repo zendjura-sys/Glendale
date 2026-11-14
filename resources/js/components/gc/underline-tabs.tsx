@@ -44,7 +44,12 @@ export function UnderlineTabs({
     }, [active]);
 
     return (
-        <div className={cn('flex items-center gap-1', className)}>
+        <div
+            className={cn(
+                'flex max-w-full min-w-0 items-center gap-1',
+                className,
+            )}
+        >
             {before}
             <div
                 ref={scroller}

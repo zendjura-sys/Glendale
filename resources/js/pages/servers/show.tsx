@@ -401,7 +401,7 @@ export default function ServerShow({
                 {tournaments &&
                     (tournaments.list.length > 0 || tournaments.can_host) && (
                         <section className="gc-solid rounded-2xl p-5">
-                            <div className="flex items-center justify-between gap-3">
+                            <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
                                 <h2 className="font-display text-lg font-semibold text-white">
                                     {tr('Турніри')}
                                 </h2>

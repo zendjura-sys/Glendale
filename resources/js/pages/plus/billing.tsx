@@ -391,7 +391,7 @@ function RenewalRow({
                         setProduct(e.target.value);
                         if (renewal.active) save(true, e.target.value);
                     }}
-                    className="gc-solid-2 h-9 rounded-xl px-2 text-xs text-white"
+                    className="gc-solid-2 h-9 max-w-full min-w-0 rounded-xl px-2 text-xs text-white"
                     aria-label={tr('Тариф')}
                 >
                     {options.map((key) => (
@@ -411,7 +411,7 @@ function RenewalRow({
                         setCardId(next);
                         if (renewal.active) save(true, product, next);
                     }}
-                    className="gc-solid-2 h-9 rounded-xl px-2 text-xs text-white"
+                    className="gc-solid-2 h-9 max-w-full min-w-0 rounded-xl px-2 text-xs text-white"
                     aria-label={tr('Картка')}
                 >
                     {cards.map((card) => (

@@ -37,14 +37,14 @@ export default function Lists({
                         )}
                     </p>
                 </header>
-                <div className="flex gap-2">
+                <div className="scrollbar-none flex max-w-full gap-2 overflow-x-auto">
                     {tabs.map(([key, label]) => (
                         <Link
                             key={key}
                             href={`/cinema/lists?tab=${key}`}
                             preserveScroll
                             className={cn(
-                                'rounded-chip px-4 py-1.5 text-sm font-semibold transition',
+                                'shrink-0 rounded-chip px-4 py-1.5 text-sm font-semibold whitespace-nowrap transition',
                                 tab === key
                                     ? 'bg-primary text-white'
                                     : 'bg-white/[0.06] text-white/70 hover:text-white',

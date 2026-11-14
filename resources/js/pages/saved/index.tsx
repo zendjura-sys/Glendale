@@ -24,7 +24,7 @@ export default function Saved({ items }: { items: Item[] }) {
         <>
             <Head title={tr('Збережене')} />
             <div className="mx-auto max-w-[640px] space-y-4">
-                <div className="flex items-end justify-between gap-3">
+                <div className="flex flex-wrap items-end justify-between gap-x-3 gap-y-1">
                     <h1 className="font-display text-2xl font-semibold text-white">
                         {tr('Збережене')}
                     </h1>

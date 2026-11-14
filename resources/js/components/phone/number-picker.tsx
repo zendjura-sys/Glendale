@@ -172,11 +172,11 @@ function RandomCard({
                     <li
                         key={tier}
                         className={cn(
-                            'flex items-center justify-between gap-2',
+                            'flex min-w-0 items-center justify-between gap-2',
                             `phone-tier--${tier}`,
                         )}
                     >
-                        <span className="text-[color:var(--tier)]">
+                        <span className="min-w-0 truncate text-[color:var(--tier)]">
                             {labels[tier]}
                         </span>
                         <span className="whitespace-nowrap text-white/45 tabular-nums">
