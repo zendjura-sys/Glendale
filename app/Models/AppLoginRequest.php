@@ -17,6 +17,7 @@ use Illuminate\Support\Carbon;
  * @property string $id
  * @property int|null $user_id той, хто підтвердив або відхилив у застосунку
  * @property string|null $login_hint логін або пошта, які браузер указав для push
+ * @property string|null $purpose куди входять: «Форум X» (сайт розробника через OAuth)
  * @property string $secret_hash sha256 секрету, який знає лише браузер
  * @property string $code 2 цифри, які браузер показує, а людина вибирає в застосунку
  * @property string $status pending | approved | denied
@@ -31,7 +32,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon $updated_at
  * @property-read User|null $user
  */
-#[Fillable(['user_id', 'login_hint', 'secret_hash', 'code', 'status', 'ip', 'user_agent', 'country', 'city', 'approved_at', 'consumed_at', 'expires_at'])]
+#[Fillable(['user_id', 'login_hint', 'purpose', 'secret_hash', 'code', 'status', 'ip', 'user_agent', 'country', 'city', 'approved_at', 'consumed_at', 'expires_at'])]
 class AppLoginRequest extends Model
 {
     use HasUuids, MassPrunable;

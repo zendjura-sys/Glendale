@@ -3,6 +3,7 @@
 namespace App\Services\Auth;
 
 use App\Models\AppLoginRequest;
+use App\Models\DeveloperApp;
 use App\Models\User;
 use App\Services\Geo\VisitorCountry;
 use App\Services\Push\PushNotifier;
@@ -47,6 +48,7 @@ class AppLogin
 
         $entry = AppLoginRequest::query()->create([
             'login_hint' => $login !== null ? Str::limit($login, 255, '') : null,
+            'purpose' => $this->purpose($request),
             'secret_hash' => hash('sha256', $secret),
             'code' => (string) random_int(10, 99),
             'status' => AppLoginRequest::PENDING,
@@ -63,6 +65,26 @@ class AppLogin
         }
 
         return [$entry, $secret];
+    }
+
+    /**
+     * Вхід почався з екрана згоди OAuth (сайт чи форум розробника) — назва застосунку й домен.
+     */
+    private function purpose(Request $request): ?string
+    {
+        $intended = (string) $request->session()->get('url.intended', '');
+        $parts = parse_url($intended);
+        if (($parts['path'] ?? '') !== '/oauth/authorize') {
+            return null;
+        }
+        parse_str($parts['query'] ?? '', $query);
+        $app = DeveloperApp::query()->where('client_id', (string) ($query['client_id'] ?? ''))->first();
+        if ($app === null) {
+            return null;
+        }
+        $host = parse_url((string) ($query['redirect_uri'] ?? ''), PHP_URL_HOST);
+
+        return Str::limit($app->name.(is_string($host) && $host !== '' ? ' · '.$host : ''), 160, '');
     }
 
     public function owns(AppLoginRequest $entry, string $secret): bool
@@ -140,6 +162,8 @@ class AppLogin
             'created_at' => $entry->created_at->toIso8601String(),
             'expires_at' => $entry->expires_at->toIso8601String(),
             'code_choices' => $this->choices($entry->code),
+            // Сайт розробника, на який входять через GameCon (OAuth) — людина бачить, куди дає доступ.
+            'purpose' => $entry->purpose,
         ];
     }
 

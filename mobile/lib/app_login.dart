@@ -259,6 +259,8 @@ class _AppLoginScreenState extends State<AppLoginScreen> {
       const SizedBox(height: 6),
       Text(tr('Хтось намагається увійти у ваш акаунт'), textAlign: TextAlign.center, style: display(20)),
       const SizedBox(height: 18),
+      // Вхід на сайт чи форум розробника через «Увійти через GameCon».
+      if (text(request['purpose']) case final purpose?) _Detail(icon: LucideIcons.appWindow, label: tr('Вхід у «{app}» через GameCon', {'app': purpose})),
       _Detail(icon: LucideIcons.monitor, label: device.isEmpty ? tr('Невідомий браузер') : device),
       _Detail(icon: LucideIcons.mapPin, label: place.isEmpty ? tr('Місце невідоме') : tr('Приблизно: {place}', {'place': place})),
       if (at != null) _Detail(icon: LucideIcons.clock, label: _when(at)),
