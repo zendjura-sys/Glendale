@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Notifications\BillingNotice;
 use App\Services\Phones\PhoneNumbers;
 use App\Services\Plus\PromoCodes;
+use App\Services\System\AdminAlerts;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -342,6 +343,7 @@ class Checkout
             ->update(['status' => PaymentOrder::FAILED, 'failure' => mb_substr($reason, 0, 255)]);
         if ($changed > 0) {
             $this->releasePhone($order);
+            app(AdminAlerts::class)->paymentFailed($order, $reason);
         }
         if ($changed === 0 || $order->kind !== 'renewal' || $order->renewal_id === null) {
             return;

@@ -50,6 +50,7 @@ use App\Services\Push\FcmClient;
 use App\Services\Spellcheck\Spellchecker;
 use App\Services\Spotify\SpotifyClient;
 use App\Services\Streams\LiveStreams;
+use App\Services\System\AdminAlerts;
 use App\Services\Voice\LiveKit;
 use App\Support\Settings\SiteSettings;
 use Illuminate\Http\RedirectResponse;
@@ -397,10 +398,27 @@ class IntegrationController extends Controller
                 ],
                 'configured' => app(TelegramApi::class)->token() !== null,
                 'stat' => BotLink::query()->where('platform', BotLink::TELEGRAM)->count().' груп · '.User::query()->whereNotNull('telegram_id')->count().' прив’язаних акаунтів',
-                'test' => fn () => app(TelegramApi::class)->connect(url('/api/bots/telegram')) !== null,
+                'test' => function () {
+                    $ok = app(TelegramApi::class)->connect(url('/api/bots/telegram')) !== null;
+                    // Якщо вказано чат адміністраторів — заодно надсилаємо туди тестовий алерт.
+                    if ($ok && app(AdminAlerts::class)->chat() !== null) {
+                        $ok = app(AdminAlerts::class)->test();
+                    }
+                    Log::info('admin.integrations.telegram_test', ['admin_id' => auth()->id(), 'ok' => $ok]);
+
+                    return $ok;
+                },
                 'fields' => [
                     ['name' => 'token', 'setting' => 'telegram_bot_token', 'type' => 'secret', 'label' => 'Токен бота', 'env' => config('services.telegram.bot_token'),
                         'rules' => ['nullable', 'string', 'regex:/^\d{6,12}:[A-Za-z0-9_-]{30,50}$/'], 'message' => 'Токен від @BotFather має вигляд 123456789:AA…'],
+                    ['name' => 'admin_chat', 'setting' => 'admin_alert_chat', 'type' => 'text', 'label' => 'Чат для алертів адміністраторам', 'placeholder' => '-1001234567890 або @channel',
+                        'help' => 'Сюди бот надсилатиме збої, нові помилки, невдалі платежі й скарги. Додайте бота в групу чи канал адмінів.',
+                        'info' => 'ID чату дізнайтеся через @userinfobot (особистий) або перешліть повідомлення з групи боту @getidsbot. Для групи ID починається з -100. Для публічного каналу можна вказати @назву — бот має бути адміністратором каналу.',
+                        'rules' => ['nullable', 'string', 'regex:/^(-?\d{5,20}|@[A-Za-z0-9_]{5,64})$/'], 'message' => 'Вкажіть числовий ID чату або @назву каналу.'],
+                    ['name' => 'alert_errors', 'setting' => 'admin_alert_errors', 'type' => 'bool', 'label' => 'Алерт: Нові помилки сайту'],
+                    ['name' => 'alert_health', 'setting' => 'admin_alert_health', 'type' => 'bool', 'label' => 'Алерт: Збої: черга задач, пуші, тривоги'],
+                    ['name' => 'alert_payments', 'setting' => 'admin_alert_payments', 'type' => 'bool', 'label' => 'Алерт: Невдалі платежі'],
+                    ['name' => 'alert_reports', 'setting' => 'admin_alert_reports', 'type' => 'bool', 'label' => 'Алерт: Скарги в черзі модерації'],
                 ],
             ],
             'discord_bot' => [

@@ -54,7 +54,7 @@ class ErrorJournal
                 'resolved_at' => null,
             ]);
             if ($updated === 0) {
-                DB::table('error_logs')->insertOrIgnore([
+                $inserted = DB::table('error_logs')->insertOrIgnore([
                     'fingerprint' => $fingerprint,
                     'class' => Str::limit($e::class, 200, ''),
                     'message' => Str::limit($e->getMessage(), 2000),
@@ -67,6 +67,10 @@ class ErrorJournal
                     'first_seen_at' => $now,
                     'last_seen_at' => $now,
                 ]);
+                // Нова група помилок — алерт адміністраторам у Telegram.
+                if ($inserted > 0) {
+                    app(AdminAlerts::class)->newError($e::class, $e->getMessage(), $file, $e->getLine(), $request ? $request->fullUrl() : 'console');
+                }
             }
         }, report: false);
     }

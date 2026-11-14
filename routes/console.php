@@ -8,6 +8,7 @@ use App\Services\Billing\AuthorSubscriptions;
 use App\Services\Profile\UserRoles;
 use App\Services\Quality\PageVitals;
 use App\Services\Support\SupportDesk;
+use App\Services\System\AdminAlerts;
 use App\Support\RecentSearches;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
@@ -106,3 +107,6 @@ Schedule::call(fn () => app(ActivityMetrics::class)->prune())->name('metrics:pru
 
 // Лічильники запитів пошуку старші за 30 днів не потрібні.
 Schedule::call(fn () => RecentSearches::prune())->name('search-queries:prune')->dailyAt('05:12')->withoutOverlapping();
+
+// Алерти адміністраторам у Telegram: черга, пуші, тривоги, скарги.
+Schedule::call(fn () => app(AdminAlerts::class)->health())->name('admin-alerts:health')->everyTenMinutes()->withoutOverlapping();
