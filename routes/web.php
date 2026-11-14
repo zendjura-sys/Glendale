@@ -153,6 +153,10 @@ Route::get('/', WelcomeController::class)->name('home');
 // Розробникам (публічно): документація, OAuth 2.1 токени й метадані RFC 8414.
 Route::get('developers', [Developer\DeveloperPortalController::class, 'index'])->name('developers.index');
 // Набір для сайтів: картка профілю, «Поділитися», віджети, дзвіночок (див. resources/embed/embed.js).
+// GameCon Overlay SDK: скрипт, прозорий оверлей для CEF/iframe, QR для входу в гру за кодом.
+Route::get('sdk/v1/gamecon-sdk.js', [Developer\SdkAssetsController::class, 'script'])->name('sdk.script');
+Route::get('embed/overlay', [Developer\SdkAssetsController::class, 'overlay'])->name('sdk.overlay');
+Route::get('link/qr.svg', [Developer\SdkAssetsController::class, 'qr'])->middleware('throttle:60,1')->name('oauth.link.qr');
 Route::get('embed.js', [Developer\EmbedKitController::class, 'script'])->name('embed.script');
 Route::get('share', [Developer\EmbedKitController::class, 'share'])->middleware('auth')->name('share.intent');
 // Розробникам → плагіни «Увійти через GameCon» для CMS і форумів.
@@ -1165,6 +1169,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     Route::prefix('developers')->name('developers.')->group(function () {
         Route::post('apps', [Developer\DeveloperPortalController::class, 'store'])->middleware('throttle:10,1')->name('apps.store');
         Route::put('apps/{app}', [Developer\DeveloperPortalController::class, 'update'])->whereNumber('app')->name('apps.update');
+        Route::put('apps/{app}/overlay', [Developer\DeveloperPortalController::class, 'overlay'])->whereNumber('app')->middleware('throttle:30,1')->name('apps.overlay');
         Route::post('apps/{app}/rotate', [Developer\DeveloperPortalController::class, 'rotate'])->whereNumber('app')->middleware('throttle:10,1')->name('apps.rotate');
         Route::post('apps/{app}/personal-token', [Developer\DeveloperPortalController::class, 'personal'])->whereNumber('app')->middleware('throttle:10,1')->name('apps.personal');
         Route::delete('apps/{app}', [Developer\DeveloperPortalController::class, 'destroy'])->whereNumber('app')->name('apps.destroy');

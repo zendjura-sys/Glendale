@@ -40,6 +40,26 @@ class SdkGameController extends Controller
         return $token->app;
     }
 
+    /** Публічний конфіг для SDK при старті гри: назва, вигляд оверлею, адреси входу. Без токена. */
+    public function config(string $clientId): JsonResponse
+    {
+        $data = Cache::remember('sdk_config:'.$clientId, 300, function () use ($clientId) {
+            $app = DeveloperApp::query()->where('client_id', $clientId)->first();
+            if ($app === null || $app->blocked()) {
+                return null;
+            }
+
+            return [
+                'name' => $app->name, 'website' => $app->website, 'overlay' => $app->overlayConfig(),
+                'scopes' => $app->scopes, 'confidential' => $app->confidential,
+                'endpoints' => ['authorize' => url('/oauth/authorize'), 'token' => url('/oauth/token'), 'device' => url('/oauth/device'), 'link' => url('/link'), 'api' => url('/api/developer/v1')],
+            ];
+        });
+        abort_if($data === null, 404, 'Застосунок не знайдено.');
+
+        return response()->json(['data' => $data])->header('Cache-Control', 'public, max-age=300');
+    }
+
     // ───────────── Друзі й присутність ─────────────
 
     public function friends(Request $request, FriendshipService $friendships): JsonResponse

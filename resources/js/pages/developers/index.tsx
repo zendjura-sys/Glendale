@@ -5,6 +5,7 @@ import {
     Check,
     Copy,
     KeyRound,
+    Layers,
     Plus,
     RotateCw,
     ShieldCheck,
@@ -12,6 +13,10 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import {
+    OverlayEditor,
+    type OverlayConfig,
+} from '@/components/developers/overlay-editor';
 import { tr } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
@@ -31,6 +36,7 @@ type DevApp = {
     blocked: boolean;
     blocked_reason: string | null;
     users: number;
+    overlay: OverlayConfig;
 };
 
 type Props = {
@@ -395,6 +401,7 @@ function AppCard({
     reveal: Props['reveal'];
 }) {
     const [editing, setEditing] = useState(false);
+    const [overlay, setOverlay] = useState(false);
     const [personal, setPersonal] = useState<string[]>(['profile']);
     const post = (url: string, data: Record<string, string | string[]> = {}) =>
         router.post(url, data, { preserveScroll: true });
@@ -442,6 +449,15 @@ function AppCard({
                 </div>
                 <button
                     type="button"
+                    onClick={() => setOverlay((o) => !o)}
+                    aria-expanded={overlay}
+                    className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm text-white/70 hover:bg-white/[0.06] hover:text-white"
+                >
+                    <Layers className="size-4" />
+                    {tr('Оверлей')}
+                </button>
+                <button
+                    type="button"
                     onClick={() => setEditing(true)}
                     className="rounded-lg px-3 py-1.5 text-sm text-white/70 hover:bg-white/[0.06] hover:text-white"
                 >
@@ -466,6 +482,15 @@ function AppCard({
                     <Trash2 className="size-4" />
                 </button>
             </div>
+
+            {overlay && (
+                <OverlayEditor
+                    appId={app.id}
+                    appName={app.name}
+                    initial={app.overlay}
+                    onClose={() => setOverlay(false)}
+                />
+            )}
 
             {reveal && (
                 <div className="space-y-2 rounded-2xl bg-amber-500/[0.07] p-3">

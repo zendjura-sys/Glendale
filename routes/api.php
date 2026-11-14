@@ -174,6 +174,7 @@ Route::prefix('developer/v1')->group(function () {
         Route::post('chat/direct/{username}', [SdkApiController::class, 'direct'])->middleware(['oauth:chat', 'throttle:20,1']);
         Route::get('groups', [SdkApiController::class, 'groups'])->middleware('oauth:groups');
         Route::get('groups/clans/{clan}/members', [SdkApiController::class, 'clanMembers'])->whereNumber('clan')->middleware('oauth:groups');
+        Route::get('groups/families/{family}/members', [SdkApiController::class, 'familyMembers'])->whereNumber('family')->middleware('oauth:groups');
         Route::post('groups/clans/{clan}/members/{member}', [SdkApiController::class, 'clanManage'])->whereNumber(['clan', 'member'])->middleware(['oauth:groups:manage', 'throttle:30,1']);
         Route::get('music/now', [SdkApiController::class, 'nowPlaying'])->middleware('oauth:music');
         Route::post('music/command', [SdkApiController::class, 'musicCommand'])->middleware(['oauth:music', 'throttle:60,1']);
@@ -185,6 +186,7 @@ Route::prefix('developer/v1')->group(function () {
         Route::get('leaderboards/{board}', [SdkGameController::class, 'leaderboard'])->middleware('oauth:achievements');
         Route::post('leaderboards/{board}/scores', [SdkGameController::class, 'submitScore'])->middleware(['oauth:achievements', 'throttle:60,1']);
     });
+    Route::get('sdk/config/{clientId}', [SdkGameController::class, 'config'])->middleware('throttle:120,1');
     // Сервер гри (client_id + client_secret): досягнення, результати, сповіщення гравцям.
     Route::prefix('server')->middleware('throttle:600,1')->group(function () {
         Route::put('achievements/{key}', [SdkGameController::class, 'defineAchievement']);

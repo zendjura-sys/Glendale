@@ -11,6 +11,7 @@ use App\Services\Developer\OAuthServer;
 use App\Support\Plugins\Plugins;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -61,6 +62,36 @@ class DeveloperPortalController extends Controller
         $app->update($this->validated($request));
 
         return back()->with('success', 'Збережено.');
+    }
+
+    /** Вигляд оверлею SDK у грі — кожна гра налаштовує під свій стиль. */
+    public function overlay(Request $request, DeveloperApp $app): RedirectResponse
+    {
+        $this->mine($request, $app);
+        $data = $request->validate([
+            'enabled' => ['required', 'boolean'],
+            'accent' => ['required', 'regex:/^#[0-9a-f]{6}$/i'],
+            'logo_url' => ['nullable', 'url:https', 'max:500'],
+            'title' => ['nullable', 'string', 'max:40'],
+            'side' => ['required', Rule::in(['left', 'right', 'top'])],
+            'offset' => ['required', 'integer', 'min:5', 'max:95'],
+            'hotkey' => ['required', 'string', 'max:24', 'regex:/^((Ctrl|Shift|Alt|Meta)\+){0,3}([A-Z0-9]|F([1-9]|1[0-2])|Tab|Home|End|Insert|`)$/'],
+            'gamepad' => ['required', 'boolean'],
+            'swipe' => ['required', 'boolean'],
+            'hide_when_busy' => ['required', 'boolean'],
+            'theme' => ['required', Rule::in(['dark', 'light', 'auto'])],
+            'radius' => ['required', 'integer', 'min:0', 'max:32'],
+            'opacity' => ['required', 'integer', 'min:60', 'max:100'],
+            'toasts' => ['required', Rule::in(['top-right', 'top-left', 'bottom-right', 'bottom-left', 'top', 'off'])],
+            'tabs' => ['required', 'array', 'min:1'],
+            'tabs.*' => [Rule::in(DeveloperApp::OVERLAY_TABS)],
+        ], ['hotkey.regex' => 'Клавіша: напр. Shift+Tab, Ctrl+G, F10.']);
+        $data['tabs'] = array_values(array_intersect(DeveloperApp::OVERLAY_TABS, $data['tabs']));
+        $app->update(['overlay' => $data]);
+        Cache::forget('sdk_config:'.$app->client_id);
+        Log::info('developer.app.overlay', ['by' => $request->user()->id, 'app' => $app->id]);
+
+        return back()->with('success', 'Оверлей збережено — ігри підхоплять його за кілька хвилин.');
     }
 
     /** Новий секретний ключ, токен бота чи публічний ключ — старий одразу перестає діяти. */
@@ -138,6 +169,7 @@ class DeveloperPortalController extends Controller
             'name' => $app->name,
             'description' => $app->description,
             'website' => $app->website,
+            'overlay' => $app->overlayConfig(),
             'client_id' => $app->client_id,
             'public_key' => $app->public_key,
             'has_secret' => $app->client_secret !== null,

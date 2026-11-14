@@ -7,6 +7,7 @@ use App\Models\Clan;
 use App\Models\ClanMember;
 use App\Models\Conversation;
 use App\Models\DeveloperToken;
+use App\Models\Family;
 use App\Models\FamilyMember;
 use App\Models\User;
 use App\Services\Clans\ClanService;
@@ -123,6 +124,25 @@ class SdkApiController extends Controller
             ]);
 
         return response()->json(['data' => [...$families->values()->all(), ...$clans->values()->all()]]);
+    }
+
+    /** Склад сім'ї (RP-штаб) для віджета оверлею: учасники з онлайном, казна й свій баланс. */
+    public function familyMembers(Request $request, Family $family): JsonResponse
+    {
+        $me = FamilyMember::query()->where('family_id', $family->id)->where('user_id', $request->user()->id)->where('status', FamilyMember::STATUS_ACTIVE)->first();
+        abort_if($me === null, 404);
+        $members = FamilyMember::query()->with('user')->where('family_id', $family->id)->where('status', FamilyMember::STATUS_ACTIVE)
+            ->orderByDesc('rank')->limit(300)->get()
+            ->map(fn (FamilyMember $m) => [
+                'id' => $m->id, 'nickname' => $m->rp_nickname, 'rank' => $m->rank, 'rank_title' => $family->rankTitle($m->rank),
+                'user' => $m->user ? ['id' => $m->user->id, 'username' => $m->user->username, 'name' => $m->user->name, 'avatar_url' => $m->user->avatar_url, 'online' => $m->user->is_online] : null,
+            ])->sortByDesc(fn ($m) => $m['user']['online'] ?? false)->values();
+
+        return response()->json(['data' => $members, 'family' => [
+            'id' => $family->id, 'name' => $family->name, 'tag' => $family->tag, 'logo_url' => $family->logo_url,
+            'treasury' => $family->treasury, 'my_balance' => $me->balance, 'members_count' => $family->members_count,
+            'online' => $members->filter(fn ($m) => $m['user']['online'] ?? false)->count(),
+        ]]);
     }
 
     public function clanMembers(Request $request, Clan $clan, ClanService $clans): JsonResponse
