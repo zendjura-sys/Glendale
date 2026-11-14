@@ -39,6 +39,7 @@ use App\Http\Controllers\Developer\ConnectedAppsController;
 use App\Http\Controllers\Developer\DeveloperApiController;
 use App\Http\Controllers\Developer\EmbedKitController;
 use App\Http\Controllers\Developer\SdkApiController;
+use App\Http\Controllers\Developer\SdkGameController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\Families;
 use App\Http\Controllers\FeedController;
@@ -176,6 +177,20 @@ Route::prefix('developer/v1')->group(function () {
         Route::post('groups/clans/{clan}/members/{member}', [SdkApiController::class, 'clanManage'])->whereNumber(['clan', 'member'])->middleware(['oauth:groups:manage', 'throttle:30,1']);
         Route::get('music/now', [SdkApiController::class, 'nowPlaying'])->middleware('oauth:music');
         Route::post('music/command', [SdkApiController::class, 'musicCommand'])->middleware(['oauth:music', 'throttle:60,1']);
+        Route::get('friends/online', [SdkGameController::class, 'friends'])->middleware('oauth:friends');
+        Route::put('presence', [SdkGameController::class, 'presence'])->middleware(['oauth:presence', 'throttle:60,1']);
+        Route::post('invites', [SdkGameController::class, 'invite'])->middleware(['oauth:invites', 'throttle:30,1']);
+        Route::get('achievements', [SdkGameController::class, 'achievements'])->middleware('oauth:achievements');
+        Route::post('achievements/{key}/unlock', [SdkGameController::class, 'unlock'])->middleware(['oauth:achievements', 'throttle:60,1']);
+        Route::get('leaderboards/{board}', [SdkGameController::class, 'leaderboard'])->middleware('oauth:achievements');
+        Route::post('leaderboards/{board}/scores', [SdkGameController::class, 'submitScore'])->middleware(['oauth:achievements', 'throttle:60,1']);
+    });
+    // Сервер гри (client_id + client_secret): досягнення, результати, сповіщення гравцям.
+    Route::prefix('server')->middleware('throttle:600,1')->group(function () {
+        Route::put('achievements/{key}', [SdkGameController::class, 'defineAchievement']);
+        Route::post('achievements/{key}/unlock', [SdkGameController::class, 'serverUnlock']);
+        Route::post('leaderboards/{board}/scores', [SdkGameController::class, 'serverScore']);
+        Route::post('notify', [SdkGameController::class, 'notify']);
     });
     Route::middleware('appkey')->prefix('public')->group(function () {
         Route::get('app', [DeveloperApiController::class, 'app']);
