@@ -490,8 +490,21 @@ class NotificationRow extends StatelessWidget {
     if (mapOf(row['alert']).isNotEmpty) return AlertNoticeRow(row: row, onTap: onTap);
     final actor = mapOf(row['actor']);
     final kind = noticeKind(text(row['kind']) ?? '');
-    final name = text(actor['name']) ?? '';
     final read = row['read'] == true;
+    // Згруповані лайки й коментарі: «Олена, Петро та ще 3 оцінили ваш запис» і дві аватарки.
+    final count = intOf(row['count']);
+    final actors = maps(row['actors']);
+    final grouped = count > 1 && actors.length > 1;
+    final shown = actors.take(2).map((a) => text(a['name']) ?? '').where((n) => n.isNotEmpty).toList();
+    final name = grouped ? '${shown.join(', ')}${count - shown.length > 0 ? ' ${tr('та ще {n}', {'n': count - shown.length})}' : ''}' : (text(actor['name']) ?? '');
+    final verb = grouped
+        ? (switch (text(row['kind'])) {
+            'post_like' => tr('оцінили ваш запис'),
+            'photo_like' => tr('оцінили ваше фото'),
+            'post_comment' => tr('прокоментували ваш запис'),
+            _ => text(row['text']) ?? '',
+          })
+        : (text(row['text']) ?? '');
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
@@ -504,7 +517,24 @@ class NotificationRow extends StatelessWidget {
             Stack(
               clipBehavior: Clip.none,
               children: [
-                Avatar(url: text(actor['avatar_url']), name: name.isEmpty ? 'GameCon' : name, size: 42),
+                if (grouped)
+                  SizedBox(
+                    width: 42,
+                    height: 42,
+                    child: Stack(children: [
+                      Positioned(left: 0, top: 0, child: Avatar(url: text(actors[1]['avatar_url']), name: text(actors[1]['name']) ?? '?', size: 28)),
+                      Positioned(
+                        right: 0,
+                        bottom: 0,
+                        child: Container(
+                          decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: popover, width: 2)),
+                          child: Avatar(url: text(actors[0]['avatar_url']), name: text(actors[0]['name']) ?? '?', size: 28),
+                        ),
+                      ),
+                    ]),
+                  )
+                else
+                  Avatar(url: text(actor['avatar_url']), name: name.isEmpty ? 'GameCon' : name, size: 42),
                 Positioned(
                   right: -3,
                   bottom: -3,
@@ -525,7 +555,7 @@ class NotificationRow extends StatelessWidget {
                   Text.rich(
                     TextSpan(children: [
                       if (name.isNotEmpty) TextSpan(text: '$name ', style: body(14, weight: FontWeight.w700)),
-                      TextSpan(text: text(row['text']) ?? '', style: body(14, color: soft)),
+                      TextSpan(text: verb, style: body(14, color: soft)),
                     ]),
                   ),
                   if (text(row['excerpt']) != null)

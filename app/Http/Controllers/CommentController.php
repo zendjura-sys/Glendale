@@ -16,6 +16,7 @@ use App\Services\Moderation\ContentFilter;
 use App\Services\Moderation\ToxicComments;
 use App\Services\PhotoService;
 use App\Services\PostPresenter;
+use App\Services\ReactionDigest;
 use App\Support\CommentOrder;
 use App\Support\Stickers;
 use Illuminate\Http\JsonResponse;
@@ -98,7 +99,8 @@ class CommentController extends Controller
 
         if ($post->author_id !== $user->id && $comment->hidden_at === null) {
             $excerpt = $comment->spoiler ? 'Спойлер' : ($comment->body !== '' ? Str::limit($comment->body, 80) : Stickers::emoji($comment->sticker));
-            $post->author->notify(new PostInteraction(PostInteraction::COMMENT, $user, $post, $excerpt));
+            // Кілька коментарів до того самого запису — одне сповіщення «N людей прокоментували».
+            app(ReactionDigest::class)->record($post->author, new PostInteraction(PostInteraction::COMMENT, $user, $post, $excerpt));
         }
 
         app(Mentions::class)->notify($user, $comment->body, route('posts.show', $post, absolute: false));

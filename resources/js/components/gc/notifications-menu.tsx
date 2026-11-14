@@ -268,7 +268,34 @@ export function NotificationsMenu() {
                                                 )}
                                             >
                                                 <span className="relative">
-                                                    {item.actor ? (
+                                                    {(item.actors?.length ??
+                                                        0) > 1 &&
+                                                    (item.count ?? 1) > 1 ? (
+                                                        <span className="relative block size-11">
+                                                            <UserAvatar
+                                                                user={
+                                                                    item
+                                                                        .actors![1]
+                                                                }
+                                                                size="sm"
+                                                                showOnline={
+                                                                    false
+                                                                }
+                                                                className="absolute top-0 left-0"
+                                                            />
+                                                            <UserAvatar
+                                                                user={
+                                                                    item
+                                                                        .actors![0]
+                                                                }
+                                                                size="sm"
+                                                                showOnline={
+                                                                    false
+                                                                }
+                                                                className="absolute right-0 bottom-0 ring-2 ring-[#0d1222]"
+                                                            />
+                                                        </span>
+                                                    ) : item.actor ? (
                                                         <UserAvatar
                                                             user={item.actor}
                                                             size="md"
@@ -287,12 +314,19 @@ export function NotificationsMenu() {
                                                     </span>
                                                 </span>
                                                 <span className="min-w-0 flex-1 text-sm leading-snug break-words">
-                                                    <span className="font-semibold text-white">
-                                                        {item.actor?.name}
-                                                    </span>{' '}
-                                                    <span className="text-white/70">
-                                                        {item.text}
-                                                    </span>
+                                                    {groupedLine(item) ?? (
+                                                        <>
+                                                            <span className="font-semibold text-white">
+                                                                {
+                                                                    item.actor
+                                                                        ?.name
+                                                                }
+                                                            </span>{' '}
+                                                            <span className="text-white/70">
+                                                                {item.text}
+                                                            </span>
+                                                        </>
+                                                    )}
                                                     {item.excerpt && (
                                                         <span className="mt-0.5 block truncate text-xs text-white/45">
                                                             «{item.excerpt}»
@@ -314,5 +348,30 @@ export function NotificationsMenu() {
                     document.body,
                 )}
         </div>
+    );
+}
+
+/** «Олена, Петро та ще 3 оцінили ваш запис» — для згрупованих лайків, реакцій на фото й коментарів. */
+function groupedLine(item: NotificationItem) {
+    const count = item.count ?? 1;
+    const actors = item.actors ?? [];
+    if (count < 2 || actors.length === 0) return null;
+    const shown = actors.slice(0, 2).map((a) => a.name);
+    const rest = count - shown.length;
+    const verb =
+        {
+            post_like: tr('оцінили ваш запис'),
+            photo_like: tr('оцінили ваше фото'),
+            post_comment: tr('прокоментували ваш запис'),
+        }[item.kind] ?? item.text;
+
+    return (
+        <>
+            <span className="font-semibold text-white">
+                {shown.join(', ')}
+                {rest > 0 && ` ${tr('та ще {n}', { n: rest })}`}
+            </span>{' '}
+            <span className="text-white/70">{verb}</span>
+        </>
     );
 }

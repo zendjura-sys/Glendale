@@ -243,6 +243,9 @@ export type NotificationItem = {
     excerpt: string | null;
     url: string | null;
     actor: UserCard | null;
+    /** Згруповане сповіщення: скільки людей і до трьох останніх. */
+    count?: number;
+    actors?: UserCard[];
     /** Тривога: червона — в укриття, жовта — увага; ended — відбій. */
     alert?: {
         severity: 'red' | 'yellow' | 'clear';
