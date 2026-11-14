@@ -141,6 +141,7 @@ return [
     ['key' => 'crossposting', 'group' => 'Профіль', 'name' => 'Автопостинг у Discord і Telegram', 'description' => 'Свої записи й початок стріму, новини сервера — одразу в канал Discord (вебхук) чи Telegram (бот GameCon).'],
     ['key' => 'stream_schedule', 'group' => 'Профіль', 'name' => 'Розклад стрімів', 'description' => 'Щотижневі слоти стрімів на сторінці людини й «Наступний стрім».'],
     ['key' => 'join_forms', 'group' => 'Спільноти', 'name' => 'Анкета вступу', 'description' => 'Закрита спільнота ставить до 5 питань; відповіді бачать адміни в заявці.', 'module' => 'communities'],
+    ['key' => 'developers', 'group' => 'Сайт', 'name' => 'Розробникам (API й OAuth)', 'description' => 'Сторінка /developers: свої застосунки, вхід через GameCon (OAuth 2.1 з PKCE) і публічний API.'],
     ['key' => 'voice_transcripts', 'group' => 'Чати', 'name' => 'Розшифровка голосових', 'description' => 'Кнопка «Текст» під голосовим: розпізнавання мовлення з ключем з «Інтеграцій» (Whisper).', 'module' => 'messages'],
     ['key' => 'chat_threads', 'group' => 'Чати', 'name' => 'Гілки в групах', 'description' => 'Відповіді на повідомлення окремою гілкою — основна стрічка групи не засмічується.', 'module' => 'messages'],
     ['key' => 'chat_pins', 'group' => 'Чати', 'name' => 'Кілька закріплених', 'description' => 'До 10 закріплених повідомлень у бесіді; у групах закріплює адміністрація.', 'module' => 'messages'],

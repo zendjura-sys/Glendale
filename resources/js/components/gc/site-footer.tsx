@@ -36,6 +36,7 @@ export function SiteFooter({
         { href: `/contacts${q}`, label: t.contacts },
         { href: `/child-safety${q}`, label: t.child_safety },
         { href: '/transparency', label: tr('Звіт прозорості') },
+        { href: '/developers', label: tr('Розробникам') },
     ];
 
     return (

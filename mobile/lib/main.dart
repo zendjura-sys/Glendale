@@ -19,6 +19,7 @@ import 'movie_screen.dart';
 import 'clans.dart';
 import 'communities.dart';
 import 'connect.dart';
+import 'developer.dart';
 import 'downloads.dart';
 import 'families.dart';
 import 'i18n.dart';
@@ -284,6 +285,8 @@ Future<void> main() async {
           GoRoute(path: '/tools/nicknames', builder: (_, _) => const NicknamesScreen()),
           GoRoute(path: '/memes/new', builder: (_, _) => const MemeScreen()),
           GoRoute(path: '/settings/links', builder: (_, _) => const BioLinksScreen()),
+          GoRoute(path: '/settings/connected-apps', builder: (_, _) => const ConnectedAppsScreen()),
+          GoRoute(path: '/authenticator', builder: (_, _) => const AuthenticatorScreen()),
           GoRoute(path: '/settings/account-type', builder: (_, _) => const AccountTypeScreen()),
           GoRoute(path: '/settings/pixel-avatar', builder: (_, _) => const PixelAvatarScreen()),
           GoRoute(path: '/tierlists/:id', builder: (_, state) => TierListScreen(key: ValueKey(state.pathParameters['id']), id: int.tryParse(state.pathParameters['id']!) ?? 0)),

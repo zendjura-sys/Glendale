@@ -33,6 +33,7 @@ use App\Http\Controllers\CommunityStickerController;
 use App\Http\Controllers\CommunityWidgetController;
 use App\Http\Controllers\CreatorController;
 use App\Http\Controllers\CrosspostController;
+use App\Http\Controllers\Developer;
 use App\Http\Controllers\EmbedWidgetController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\Families;
@@ -148,6 +149,11 @@ Route::post('locale', [LocaleController::class, 'update'])->middleware('throttle
 Route::get('i18n/{locale}.js', [LocaleController::class, 'script'])->where('locale', '[A-Za-z]{2,3}(-[A-Za-z0-9]{2,4}){0,2}')->name('locale.script');
 
 Route::get('/', WelcomeController::class)->name('home');
+// Розробникам (публічно): документація, OAuth 2.1 токени й метадані RFC 8414.
+Route::get('developers', [Developer\DeveloperPortalController::class, 'index'])->name('developers.index');
+Route::post('oauth/token', [Developer\OAuthController::class, 'token'])->middleware('throttle:60,1')->name('oauth.token');
+Route::post('oauth/revoke', [Developer\OAuthController::class, 'revoke'])->middleware('throttle:60,1')->name('oauth.revoke');
+Route::get('.well-known/oauth-authorization-server', [Developer\OAuthController::class, 'metadata'])->name('oauth.metadata');
 
 // Вебхук еквайрингу monobank (без входу й CSRF; підпис X-Sign перевіряє контролер).
 Route::post('billing/monobank/webhook', MonobankWebhookController::class)->middleware('throttle:120,1')->name('billing.monobank.webhook');
@@ -439,9 +445,8 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     Route::post('report/{user}', [ProfileController::class, 'report'])->middleware('throttle:10,10')->name('users.report');
     Route::post('feedback', [FeedbackController::class, 'store'])->middleware('throttle:5,10')->name('feedback.store');
     Route::post('thanks', [ThanksController::class, 'store'])->middleware('throttle:60,1')->name('thanks.store');
-    Route::get('oauth/authorize', [OAuth\AuthorizeController::class, 'show'])->name('oauth.authorize');
-    Route::post('oauth/authorize', [OAuth\AuthorizeController::class, 'decide'])->middleware('throttle:30,1')->name('oauth.decide');
-    Route::get('developers', fn () => Inertia\Inertia::render('developers/oauth', ['scopes' => ServerOAuth::SCOPES, 'base' => url('/')]))->name('developers');
+    // «Увійти через GameCon» для серверів — документація (OAuth серверів і застосунків розробників — один /oauth/authorize).
+    Route::get('developers/servers', fn () => Inertia\Inertia::render('developers/oauth', ['scopes' => ServerOAuth::SCOPES, 'base' => url('/')]))->name('developers.servers');
     Route::prefix('bots')->name('bots.')->group(function () {
         Route::get('{type}/{id}', [Bots\BotLinkController::class, 'state'])->whereIn('type', BotLink::OWNERS)->whereNumber('id')->middleware('throttle:30,1')->name('state');
         Route::post('{type}/{id}/telegram', [Bots\BotLinkController::class, 'telegram'])->whereIn('type', BotLink::OWNERS)->whereNumber('id')->middleware('throttle:20,1')->name('telegram');
@@ -1138,6 +1143,20 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     Route::put('ready', [ReadyToPlayController::class, 'update'])->middleware('throttle:30,1')->name('ready.update');
     Route::delete('ready', [ReadyToPlayController::class, 'destroy'])->name('ready.destroy');
     // Мапа тривог і радар цілей (лише для України).
+    // Розробникам: свої застосунки, ключі, токен бота, особистий токен.
+    Route::prefix('developers')->name('developers.')->group(function () {
+        Route::post('apps', [Developer\DeveloperPortalController::class, 'store'])->middleware('throttle:10,1')->name('apps.store');
+        Route::put('apps/{app}', [Developer\DeveloperPortalController::class, 'update'])->whereNumber('app')->name('apps.update');
+        Route::post('apps/{app}/rotate', [Developer\DeveloperPortalController::class, 'rotate'])->whereNumber('app')->middleware('throttle:10,1')->name('apps.rotate');
+        Route::post('apps/{app}/personal-token', [Developer\DeveloperPortalController::class, 'personal'])->whereNumber('app')->middleware('throttle:10,1')->name('apps.personal');
+        Route::delete('apps/{app}', [Developer\DeveloperPortalController::class, 'destroy'])->whereNumber('app')->name('apps.destroy');
+    });
+    // OAuth: екран згоди (лише для тих, хто увійшов).
+    Route::get('oauth/authorize', [Developer\OAuthController::class, 'authorize'])->name('oauth.authorize');
+    Route::post('oauth/authorize', [Developer\OAuthController::class, 'decide'])->middleware('throttle:30,1')->name('oauth.decide');
+    // Налаштування → Підключені застосунки.
+    Route::get('settings/connected-apps', [Developer\ConnectedAppsController::class, 'index'])->name('connected-apps.index');
+    Route::delete('settings/connected-apps/{app}', [Developer\ConnectedAppsController::class, 'destroy'])->whereNumber('app')->name('connected-apps.destroy');
     Route::get('alerts', [AirAlertController::class, 'index'])->name('alerts.index');
     Route::get('alerts/state', [AirAlertController::class, 'state'])->middleware('throttle:120,1')->name('alerts.state');
     Route::put('alerts/preferences', [AirAlertController::class, 'preferences'])->middleware('throttle:30,1')->name('alerts.preferences');
@@ -1428,6 +1447,8 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::delete('banners/{banner}', [Admin\PromoBannerController::class, 'destroy'])->whereNumber('banner')->name('banners.destroy');
         Route::get('vitals', [Admin\VitalsController::class, 'index'])->name('vitals.index');
         Route::get('alerts', [Admin\AlertsController::class, 'index'])->name('alerts.index');
+        Route::get('developer-apps', [Admin\DeveloperAppsController::class, 'index'])->name('developer-apps.index');
+        Route::post('developer-apps/{app}/block', [Admin\DeveloperAppsController::class, 'block'])->whereNumber('app')->name('developer-apps.block');
         Route::post('alerts/check', [Admin\AlertsController::class, 'check'])->middleware('throttle:10,1')->name('alerts.check');
         Route::post('alerts/webhook', [Admin\AlertsController::class, 'webhook'])->middleware('throttle:10,1')->name('alerts.webhook');
         Route::get('links', [Admin\LinkCheckController::class, 'index'])->name('links.index');

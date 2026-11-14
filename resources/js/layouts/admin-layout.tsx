@@ -52,6 +52,7 @@ import {
     LifeBuoy,
     Swords,
     Siren,
+    Code2,
 } from 'lucide-react';
 import { AnimatePresence, m, useReducedMotion } from 'motion/react';
 import { useEffect, useState } from 'react';
@@ -287,6 +288,11 @@ function groups(): { title: string; items: Item[] }[] {
                     label: tr('Інтеграції'),
                     href: '/admin/integrations',
                     icon: PlugZap,
+                },
+                {
+                    label: tr('Розробники'),
+                    href: '/admin/developer-apps',
+                    icon: Code2,
                 },
                 { label: tr('Модулі'), href: '/admin/modules', icon: Blocks },
                 { label: tr('Плагіни'), href: '/admin/plugins', icon: Puzzle },

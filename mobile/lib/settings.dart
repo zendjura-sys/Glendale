@@ -380,6 +380,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           child: Column(children: [
             if (session.pluginOn('bio_links'))
               ListTile(leading: Icon(LucideIcons.link, color: accent), title: Text(tr('Посилання в профілі'), style: body(14.5, weight: FontWeight.w600)), trailing: Icon(LucideIcons.chevronRight, color: faint), onTap: () => context.push('/settings/links')),
+              ListTile(leading: Icon(LucideIcons.appWindow, color: accent), title: Text(tr('Підключені застосунки'), style: body(14.5, weight: FontWeight.w600)), trailing: Icon(LucideIcons.chevronRight, color: faint), onTap: () => context.push('/settings/connected-apps')),
+              ListTile(leading: Icon(LucideIcons.shieldCheck, color: accent), title: Text(tr('Автентифікатор (коди 2FA)'), style: body(14.5, weight: FontWeight.w600)), trailing: Icon(LucideIcons.chevronRight, color: faint), onTap: () => context.push('/authenticator')),
             if (session.pluginOn('account_types'))
               ListTile(leading: Icon(LucideIcons.badgeCheck, color: accent), title: Text(tr('Тип акаунта й верифікація'), style: body(14.5, weight: FontWeight.w600)), trailing: Icon(LucideIcons.chevronRight, color: faint), onTap: () => context.push('/settings/account-type')),
             if (session.pluginOn('pixel_avatar'))

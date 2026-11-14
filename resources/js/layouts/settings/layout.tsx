@@ -1,5 +1,6 @@
 import { Link } from '@inertiajs/react';
 import {
+    AppWindow,
     LifeBuoy,
     MonitorSmartphone,
     Palette,
@@ -60,6 +61,12 @@ const items = [
         description: tr('Платні рівні й ваші підписки'),
         href: '/settings/subscriptions',
         icon: HeartHandshake,
+    },
+    {
+        title: tr('Застосунки'),
+        description: tr('Підключені сайти й боти'),
+        href: '/settings/connected-apps',
+        icon: AppWindow,
     },
     {
         title: tr('Слова'),

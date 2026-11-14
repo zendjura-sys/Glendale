@@ -35,6 +35,8 @@ use App\Http\Controllers\CommunityMemberController;
 use App\Http\Controllers\CommunityStickerController;
 use App\Http\Controllers\CreatorController;
 use App\Http\Controllers\CrosspostController;
+use App\Http\Controllers\Developer\ConnectedAppsController;
+use App\Http\Controllers\Developer\DeveloperApiController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\Families;
 use App\Http\Controllers\FeedController;
@@ -146,6 +148,24 @@ Route::post('livekit/webhook', [VoiceController::class, 'webhook'])->middleware(
 // Боти GameCon: оновлення Telegram (секрет у заголовку) і кнопки Discord (підпис Ed25519).
 Route::post('bots/telegram', Bots\TelegramWebhookController::class)->middleware('throttle:600,1')->name('bots.telegram.webhook');
 // Вебхук UkraineAlarm v3 (миттєві тривоги й відбої): лише сигнал перевірити API.
+// Публічний API для сторонніх застосунків (OAuth-токен людини або ключ застосунку).
+Route::prefix('developer/v1')->group(function () {
+    Route::middleware('oauth')->group(function () {
+        Route::get('me', [DeveloperApiController::class, 'me'])->middleware('oauth:profile');
+        Route::get('users/{username}', [DeveloperApiController::class, 'user'])->middleware('oauth:profile');
+        Route::get('me/friends', [DeveloperApiController::class, 'friends'])->middleware('oauth:friends');
+        Route::get('me/posts', [DeveloperApiController::class, 'posts'])->middleware('oauth:posts:read');
+        Route::post('me/posts', [DeveloperApiController::class, 'createPost'])->middleware(['oauth:posts:write', 'throttle:10,1']);
+        Route::put('me/status', [DeveloperApiController::class, 'status'])->middleware('oauth:status');
+        Route::delete('me/status', [DeveloperApiController::class, 'clearStatus'])->middleware('oauth:status');
+        Route::get('me/notifications', [DeveloperApiController::class, 'notifications'])->middleware('oauth:notifications');
+    });
+    Route::middleware('appkey')->prefix('public')->group(function () {
+        Route::get('app', [DeveloperApiController::class, 'app']);
+        Route::get('users/{username}', [DeveloperApiController::class, 'publicUser']);
+        Route::get('users/{username}/posts', [DeveloperApiController::class, 'publicPosts']);
+    });
+});
 Route::post('webhooks/ukraine-alarm', UkraineAlarmWebhookController::class)->middleware('throttle:120,1')->name('alerts.ukraine-alarm.webhook');
 Route::post('bots/discord/interactions', Bots\DiscordInteractionsController::class)->middleware('throttle:600,1')->name('bots.discord.interactions');
 
@@ -491,6 +511,9 @@ Route::prefix('v1')->group(function () {
                 Route::get('alerts/places', [AirAlertController::class, 'places'])->middleware('throttle:120,1');
                 Route::get('alerts/history', [AirAlertController::class, 'history'])->middleware('throttle:60,1');
                 Route::get('alerts/shelters', [AirAlertController::class, 'shelters'])->middleware('throttle:20,1');
+                // Підключені застосунки (OAuth розробників).
+                Route::get('settings/connected-apps', [ConnectedAppsController::class, 'index']);
+                Route::delete('settings/connected-apps/{app}', [ConnectedAppsController::class, 'destroy'])->whereNumber('app');
                 Route::get('games/awards', [GameAwardsController::class, 'index']);
                 Route::get('games/awards/candidates', [GameAwardsController::class, 'candidates'])->middleware('throttle:120,1');
                 Route::post('games/awards/vote', [GameAwardsController::class, 'vote'])->middleware('throttle:60,1');
