@@ -6,7 +6,9 @@ use App\Models\Family;
 use App\Models\FamilyMember;
 use App\Models\FamilyReport;
 use App\Models\FamilyShift;
+use App\Models\FamilyShiftPartner;
 use App\Services\Families\FamilyAudit;
+use App\Services\Families\FamilyNotifier;
 use App\Services\Families\ShiftGoals;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
@@ -18,7 +20,8 @@ use Inertia\Response;
 
 /**
  * Календар змін і чергувань: тиждень із днями, створення (з повтором на кілька тижнів),
- * призначення учасника, «Взяти зміну» й «Віддати». Кожна дія — у журнал сім’ї.
+ * призначення учасника, «Взяти зміну» й «Віддати». Хто взяв зміну — бригадир: інші просяться
+ * в напарники, бригадир (або керівництво) схвалює. Кожна дія — у журнал сім’ї.
  */
 class FamilyShiftController extends FamilyBaseController
 {
@@ -30,7 +33,8 @@ class FamilyShiftController extends FamilyBaseController
         $start = CarbonImmutable::now($tz)->startOfWeek()->addWeeks($offset);
         $end = $start->addWeek();
 
-        $shifts = FamilyShift::query()->with('member')->where('family_id', $family->id)
+        $manage = $this->gate->can($member, $family, 'events.manage');
+        $shifts = FamilyShift::query()->with(['member', 'partners.member'])->where('family_id', $family->id)
             ->where('starts_at', '>=', $start->utc())->where('starts_at', '<', $end->utc())
             ->orderBy('starts_at')->get()
             ->map(fn (FamilyShift $s) => [
@@ -41,6 +45,26 @@ class FamilyShiftController extends FamilyBaseController
                 'ends_at' => $s->ends_at->toIso8601String(),
                 'member' => $s->member ? ['id' => $s->member->id, 'display' => $s->member->displayName()] : null,
                 'mine' => $s->member_id === $member->id,
+                // Напарники: бригадир і керівництво бачать заявки, решта — лише схвалених.
+                'partners' => $s->partners
+                    ->filter(fn (FamilyShiftPartner $p) => $p->status === FamilyShiftPartner::APPROVED || $s->member_id === $member->id || $manage || $p->member_id === $member->id)
+                    ->map(fn (FamilyShiftPartner $p) => [
+                        'id' => $p->id,
+                        'member_id' => $p->member_id,
+                        'display' => $p->member?->displayName(),
+                        'status' => $p->status,
+                        'me' => $p->member_id === $member->id,
+                        // Завдання кожен виконує сам — свій прогрес у кожного напарника.
+                        'goal' => $s->goal && $p->status === FamilyShiftPartner::APPROVED ? [
+                            'progress' => $p->completed_at ? max($p->progress, (int) $s->goal['count']) : min((int) $s->goal['count'], $goals->progressFor($s, $p->member_id)),
+                            'done' => $p->completed_at !== null,
+                        ] : null,
+                    ])
+                    ->values(),
+                'partner' => $s->partners->firstWhere('member_id', $member->id)?->status,
+                'can_lead' => $s->member_id !== null && ($s->member_id === $member->id || $manage),
+                'can_join' => $s->member_id !== null && $s->member_id !== $member->id && ! $s->ends_at->isPast()
+                    && $s->partners->firstWhere('member_id', $member->id) === null && $s->partners->count() < FamilyShiftPartner::LIMIT,
                 // Завдання зміни: прогрес зі схвалених звітів (рахуємо наживо, поки зміна не закрита).
                 'goal' => $s->goal ? [
                     'label' => ShiftGoals::label($s->goal),
@@ -114,6 +138,11 @@ class FamilyShiftController extends FamilyBaseController
         abort_unless($shift->family_id === $family->id, 404);
         $assignee = $this->assignee($family, $request->integer('member_id') ?: null);
         $shift->update(['member_id' => $assignee?->id]);
+        if ($assignee === null) {
+            $shift->partners()->delete();
+        } else {
+            $shift->partners()->where('member_id', $assignee->id)->delete();
+        }
         $audit->log($family, 'SHIFT_ASSIGN', $actor, $assignee, ['shift_id' => $shift->id, 'title' => $shift->title]);
 
         return back();
@@ -142,13 +171,80 @@ class FamilyShiftController extends FamilyBaseController
     }
 
     /** Віддати свою зміну — вона знову вільна. */
-    public function release(Request $request, Family $family, FamilyShift $shift, FamilyAudit $audit): RedirectResponse
+    public function release(Request $request, Family $family, FamilyShift $shift, FamilyAudit $audit, FamilyNotifier $notifier): RedirectResponse
     {
         $member = $this->member($request, $family, write: true);
         abort_unless($shift->family_id === $family->id && $shift->member_id === $member->id, 403);
         abort_if($shift->starts_at->isPast(), 422, 'Зміна вже почалась — домовтеся з керівництвом.');
-        $shift->update(['member_id' => null]);
-        $audit->log($family, 'SHIFT_RELEASE', $member, null, ['shift_id' => $shift->id, 'title' => $shift->title]);
+        // Є схвалені напарники — бригадиром стає перший із них, інакше зміна знову вільна.
+        $next = $shift->partners()->where('status', FamilyShiftPartner::APPROVED)->orderBy('approved_at')->first();
+        DB::transaction(function () use ($shift, $next) {
+            if ($next !== null) {
+                // Прогрес завдання — особистий, тож новий бригадир зберігає свій.
+                $shift->update(['member_id' => $next->member_id, 'progress' => $next->progress, 'completed_at' => $next->completed_at]);
+                $next->delete();
+            } else {
+                $shift->update(['member_id' => null, 'progress' => 0, 'completed_at' => null]);
+                $shift->partners()->delete();
+            }
+        });
+        $audit->log($family, 'SHIFT_RELEASE', $member, $next?->member, ['shift_id' => $shift->id, 'title' => $shift->title]);
+        if ($next?->member) {
+            $notifier->members($next->member, $family, 'shift', "Ви тепер бригадир зміни «{$shift->title}»", route('families.shifts', $family, absolute: false));
+        }
+
+        return back();
+    }
+
+    /** Попроситися в напарники до бригадира зміни. */
+    public function join(Request $request, Family $family, FamilyShift $shift, FamilyAudit $audit, FamilyNotifier $notifier): RedirectResponse
+    {
+        $member = $this->member($request, $family, write: true);
+        abort_unless($shift->family_id === $family->id, 404);
+        abort_if($shift->member_id === null, 422, 'Зміна вільна — просто візьміть її.');
+        abort_if($shift->member_id === $member->id, 422, 'Ви вже бригадир цієї зміни.');
+        abort_if($shift->ends_at->isPast(), 422, 'Зміна вже минула.');
+        abort_if($shift->partners()->where('member_id', $member->id)->exists(), 422, 'Заявку вже подано.');
+        abort_if($shift->partners()->count() >= FamilyShiftPartner::LIMIT, 422, 'На зміні вже повна бригада.');
+        $shift->partners()->create(['member_id' => $member->id, 'status' => FamilyShiftPartner::PENDING]);
+        $audit->log($family, 'SHIFT_PARTNER_REQUEST', $member, $shift->member, ['shift_id' => $shift->id, 'title' => $shift->title]);
+        if ($shift->member) {
+            $notifier->members($shift->member, $family, 'shift', "{$member->displayName()} проситься в напарники на зміну «{$shift->title}»", route('families.shifts', $family, absolute: false));
+        }
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Заявку надіслано бригадиру.']);
+
+        return back();
+    }
+
+    /** Бригадир чи керівництво схвалює або відхиляє напарника. */
+    public function partner(Request $request, Family $family, FamilyShift $shift, FamilyShiftPartner $partner, FamilyAudit $audit, FamilyNotifier $notifier): RedirectResponse
+    {
+        $actor = $this->member($request, $family, write: true);
+        abort_unless($shift->family_id === $family->id && $partner->shift_id === $shift->id, 404);
+        abort_unless($shift->member_id === $actor->id || $this->gate->can($actor, $family, 'events.manage'), 403, 'Напарників схвалює бригадир зміни.');
+        $accept = $request->boolean('accept');
+        $target = $partner->member;
+        if ($accept) {
+            $partner->update(['status' => FamilyShiftPartner::APPROVED, 'approved_at' => now()]);
+        } else {
+            $partner->delete();
+        }
+        $audit->log($family, $accept ? 'SHIFT_PARTNER_APPROVE' : 'SHIFT_PARTNER_DECLINE', $actor, $target, ['shift_id' => $shift->id, 'title' => $shift->title]);
+        if ($target) {
+            $notifier->members($target, $family, 'shift', $accept ? "Вас узяли напарником на зміну «{$shift->title}»" : "Бригадир не взяв вас на зміну «{$shift->title}»", route('families.shifts', $family, absolute: false));
+        }
+
+        return back();
+    }
+
+    /** Напарник виходить зі зміни (або скасовує заявку). */
+    public function leave(Request $request, Family $family, FamilyShift $shift, FamilyAudit $audit): RedirectResponse
+    {
+        $member = $this->member($request, $family, write: true);
+        abort_unless($shift->family_id === $family->id, 404);
+        $partner = $shift->partners()->where('member_id', $member->id)->firstOrFail();
+        $partner->delete();
+        $audit->log($family, 'SHIFT_PARTNER_LEAVE', $member, $shift->member, ['shift_id' => $shift->id, 'title' => $shift->title]);
 
         return back();
     }

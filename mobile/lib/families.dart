@@ -10,6 +10,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'api.dart';
 import 'core/widgets/arctic_glass/arctic_glass.dart';
 import 'family_chat_card.dart';
+import 'family_extras.dart';
 import 'family_tabs.dart';
 import 'feed.dart';
 import 'posts.dart';
@@ -502,6 +503,10 @@ final familySections = [
   ('discipline', tr('Дисципліна'), LucideIcons.gavel),
   ('events', tr('Події'), LucideIcons.calendarDays),
   ('shifts', tr('Зміни'), LucideIcons.calendarClock),
+  ('charter', tr('Статут'), LucideIcons.scale),
+  ('wiki', tr('Вікі'), LucideIcons.bookOpen),
+  ('relations', tr('Союзи й війни'), LucideIcons.handshake),
+  ('history', tr('Історія'), LucideIcons.history),
   ('rating', tr('Рейтинг'), LucideIcons.chartNoAxesColumnIncreasing),
   ('audit', tr('Аудит'), LucideIcons.receipt),
   ('settings', tr('Налаштування'), LucideIcons.settings),
@@ -676,6 +681,10 @@ class _FamilyScreenState extends State<FamilyScreen> {
             'discipline' => [DisciplineTab(ctx: ctx)],
             'events' => [EventsTab(ctx: ctx)],
             'shifts' => [ShiftsTab(ctx: ctx)],
+            'charter' => [CharterTab(ctx: ctx)],
+            'wiki' => [WikiTab(ctx: ctx)],
+            'relations' => [RelationsTab(ctx: ctx)],
+            'history' => [HistoryTab(ctx: ctx)],
             'rating' => ratingTab(ctx),
             'audit' => auditTab(ctx),
             'settings' => [SettingsTab(ctx: ctx)],
@@ -851,13 +860,35 @@ class FamilyPublic extends StatelessWidget {
     final nickname = TextEditingController();
     final staticId = TextEditingController();
     final note = TextEditingController();
+    // Тест за статутом: відповіді — індекси варіантів, сервер перевіряє й не пустить без проходження.
+    final quiz = maps(mapOf(data['charter'])['quiz']);
+    final pass = intOf(mapOf(data['charter'])['pass'], 80);
+    final answers = List<int?>.filled(quiz.length, null);
     final sent = await showGcSheet<bool>(
       context,
       title: tr('Заявка на вступ'),
       subtitle: tr('Офіцери сім’ї побачать ваш RP-нікнейм і Static ID.'),
-      builder: (sheet) => SingleChildScrollView(
+      builder: (sheet) => StatefulBuilder(
+        builder: (sheet, setSheet) => SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          if (quiz.isNotEmpty) ...[
+            Text(tr('Тест за статутом'), style: body(15, weight: FontWeight.w700)),
+            Text(tr('Потрібно {pass}% правильних відповідей. Статут — у вкладці «Статут» сім’ї.', {'pass': pass}), style: body(12, color: muted)),
+            const SizedBox(height: 8),
+            for (var i = 0; i < quiz.length; i++) ...[
+              Text('${i + 1}. ${text(quiz[i]['q']) ?? ''}', style: body(13.5, weight: FontWeight.w600)),
+              RadioGroup<int>(
+                groupValue: answers[i],
+                onChanged: (v) => setSheet(() => answers[i] = v),
+                child: Column(children: [
+                  for (final (j, option) in (quiz[i]['options'] is List ? quiz[i]['options'] as List : const []).indexed)
+                    RadioListTile<int>(value: j, dense: true, contentPadding: EdgeInsets.zero, title: Text('$option', style: body(13))),
+                ]),
+              ),
+            ],
+            const SizedBox(height: 10),
+          ],
           GcField(controller: nickname, label: tr('Нікнейм: Ім’я_Прізвище')),
           const SizedBox(height: 10),
           GcField(controller: staticId, label: 'Static ID', keyboard: TextInputType.number),
@@ -871,11 +902,13 @@ class FamilyPublic extends StatelessWidget {
                     'rp_nickname': nickname.text.trim(),
                     'static_id': staticId.text.trim(),
                     'note': note.text.trim(),
+                    if (quiz.isNotEmpty) 'quiz': [for (final a in answers) a],
                   }));
               if (ok && sheet.mounted) Navigator.pop(sheet, true);
             },
           ),
         ]),
+      ),
       ),
     );
     if (sent == true) await onChanged();

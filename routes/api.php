@@ -1205,6 +1205,9 @@ Route::prefix('v1')->group(function () {
                     Route::post('shifts/{shift}/assign', [Families\FamilyShiftController::class, 'assign'])->middleware('family.section:shifts')->whereNumber('shift');
                     Route::post('shifts/{shift}/claim', [Families\FamilyShiftController::class, 'claim'])->middleware('family.section:shifts')->whereNumber('shift')->middleware('throttle:30,1');
                     Route::post('shifts/{shift}/release', [Families\FamilyShiftController::class, 'release'])->middleware('family.section:shifts')->whereNumber('shift');
+                    Route::post('shifts/{shift}/join', [Families\FamilyShiftController::class, 'join'])->middleware('family.section:shifts')->whereNumber('shift')->middleware('throttle:30,1');
+                    Route::post('shifts/{shift}/partners/{partner}', [Families\FamilyShiftController::class, 'partner'])->middleware('family.section:shifts')->whereNumber(['shift', 'partner']);
+                    Route::post('shifts/{shift}/leave', [Families\FamilyShiftController::class, 'leave'])->middleware('family.section:shifts')->whereNumber('shift');
                     Route::delete('shifts/{shift}', [Families\FamilyShiftController::class, 'destroy'])->middleware('family.section:shifts')->whereNumber('shift');
                     Route::get('rating', [Families\FamilyEventController::class, 'rating'])->middleware('family.section:rating');
                     Route::get('rating/seasons/{number}.png', [Families\FamilyEventController::class, 'seasonImage'])->whereNumber('number')->middleware('family.section:rating');

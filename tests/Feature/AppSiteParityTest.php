@@ -5,6 +5,8 @@ namespace Tests\Feature;
 use App\Jobs\BuildDataExport;
 use App\Models\Community;
 use App\Models\DeveloperApp;
+use App\Models\FamilyMember;
+use App\Models\FamilyShift;
 use App\Models\Friendship;
 use App\Models\Game;
 use App\Models\GameConfig;
@@ -1036,6 +1038,24 @@ class AppSiteParityTest extends TestCase
         $this->withToken($token)->getJson("/api/v1/site/f/{$family->slug}/wiki")->assertOk()->assertJsonCount(1, 'pages');
         $this->withToken($token)->getJson("/api/v1/site/f/{$family->slug}/relations")->assertOk()->assertJsonStructure(['relations', 'candidates']);
         $this->withToken($token)->getJson("/api/v1/site/f/{$family->slug}/history")->assertOk()->assertJsonStructure(['events', 'achievements']);
+    }
+
+    public function test_app_joins_family_shift_as_partner_and_foreman_approves_through_bridge(): void
+    {
+        $server = GtaServer::query()->create(['slug' => 'd-rp', 'name' => 'D RP', 'platform' => 'pc', 'multiplayer' => 'ragemp', 'status' => GtaServer::STATUS_PUBLISHED, 'origin' => 'seed']);
+        $owner = User::factory()->create();
+        $family = app(FamilyService::class)->create($owner, ['server_id' => $server->id, 'name' => 'Barzini', 'tag' => 'BRZ', 'rp_nickname' => 'Emilio_Barzini', 'static_id' => '3']);
+        $mate = User::factory()->create();
+        FamilyMember::query()->create(['family_id' => $family->id, 'user_id' => $mate->id, 'rp_nickname' => 'Rocco_Lampone', 'static_id' => '4', 'rank' => 1, 'status' => FamilyMember::STATUS_ACTIVE, 'joined_at' => now()]);
+        $shift = FamilyShift::query()->create(['family_id' => $family->id, 'title' => 'Склад', 'starts_at' => now()->addHour(), 'ends_at' => now()->addHours(3),
+            'member_id' => $family->members()->where('user_id', $owner->id)->value('id'), 'goal' => ['type' => 'contract', 'tier' => null, 'count' => 2]]);
+
+        $this->withToken($this->app_token($mate))->postJson("/api/v1/site/f/{$family->slug}/shifts/{$shift->id}/join")->assertSuccessful();
+        $partner = $shift->partners()->firstOrFail();
+        $this->withToken($this->app_token($owner))->postJson("/api/v1/site/f/{$family->slug}/shifts/{$shift->id}/partners/{$partner->id}", ['accept' => true])->assertSuccessful();
+        $this->assertSame('approved', $partner->fresh()->status);
+        $this->withToken($this->app_token($mate))->postJson("/api/v1/site/f/{$family->slug}/shifts/{$shift->id}/leave")->assertSuccessful();
+        $this->assertSame(0, $shift->partners()->count());
     }
 
     public function test_app_changes_family_server_through_bridge(): void

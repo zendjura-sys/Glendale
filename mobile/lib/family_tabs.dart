@@ -1736,6 +1736,12 @@ class ShiftsTab extends StatelessWidget {
     final title = TextEditingController();
     DateTime start = DateTime.now().add(const Duration(hours: 1));
     double hours = 2;
+    // Завдання зміни: зараховується кожному окремо зі схвалених звітів.
+    final goalTypes = mapOf(ctx.data['goal_types']);
+    final tiers = mapOf(ctx.data['tiers']);
+    String? goalType;
+    String? goalTier;
+    final goalCount = TextEditingController(text: '1');
     final ok = await showGcSheet<bool>(
       context,
       title: tr('Нова зміна'),
@@ -1759,12 +1765,43 @@ class ShiftsTab extends StatelessWidget {
             Text(tr('Тривалість: {n} год', {'n': hours % 1 == 0 ? hours.toInt() : hours}), style: body(13.5)),
             Expanded(child: Slider(value: hours, min: 0.5, max: 12, divisions: 23, onChanged: (v) => setSheet(() => hours = v))),
           ]),
+          DropdownButtonFormField<String>(
+            initialValue: goalType,
+            decoration: InputDecoration(labelText: tr('Завдання зміни')),
+            items: [
+              DropdownMenuItem(value: null, child: Text(tr('Без завдання'))),
+              for (final e in goalTypes.entries) DropdownMenuItem(value: e.key, child: Text(tr('${e.value}'))),
+            ],
+            onChanged: (v) => setSheet(() => goalType = v),
+          ),
+          if (goalType == 'contract') ...[
+            const SizedBox(height: 8),
+            DropdownButtonFormField<String>(
+              initialValue: goalTier,
+              decoration: InputDecoration(labelText: tr('Складність')),
+              items: [
+                DropdownMenuItem(value: null, child: Text(tr('Будь-яка'))),
+                for (final e in tiers.entries) DropdownMenuItem(value: e.key, child: Text(tr('${e.value}'))),
+              ],
+              onChanged: (v) => setSheet(() => goalTier = v),
+            ),
+          ],
+          if (goalType != null) ...[
+            const SizedBox(height: 8),
+            GcField(controller: goalCount, label: tr('Скільки разів (кожному)'), keyboard: TextInputType.number),
+          ],
+          const SizedBox(height: 12),
           PrimaryButton(label: tr('Створити'), onPressed: () => Navigator.pop(sheet, true)),
         ]),
       ),
     );
     if (ok != true || !context.mounted || title.text.trim().length < 2) return;
-    await ctx.act(context, () => ctx.api.post(ctx.path('shifts'), {'title': title.text.trim(), 'starts_at': start.toUtc().toIso8601String(), 'hours': hours}));
+    await ctx.act(context, () => ctx.api.post(ctx.path('shifts'), {
+          'title': title.text.trim(),
+          'starts_at': start.toUtc().toIso8601String(),
+          'hours': hours,
+          if (goalType != null) ...{'goal_type': goalType, 'goal_tier': goalTier, 'goal_count': int.tryParse(goalCount.text) ?? 1},
+        }));
   }
 
   @override
@@ -1783,18 +1820,31 @@ class ShiftsTab extends StatelessWidget {
           for (final s in shifts)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 6),
-              child: Row(children: [
+              child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              Row(children: [
                 Expanded(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Text(text(s['title']) ?? '', style: body(14, weight: FontWeight.w600)),
                     Text('${shortStamp(s['starts_at'])} ${clock(s['starts_at'])}–${clock(s['ends_at'])}', style: body(12, color: muted)),
-                    Text(mapOf(s['member'])['display'] != null ? '${mapOf(s['member'])['display']}' : tr('Вільна'), style: body(12, color: s['member'] == null ? green : soft)),
+                    Row(children: [
+                      if (s['member'] != null) ...[Icon(LucideIcons.crown, size: 13, color: gold), const SizedBox(width: 4)],
+                      Flexible(child: Text(mapOf(s['member'])['display'] != null ? '${mapOf(s['member'])['display']}' : tr('Вільна'), style: body(12, color: s['member'] == null ? green : soft))),
+                    ]),
                   ]),
                 ),
                 if (s['member'] == null)
                   PrimaryButton(label: tr('Взяти'), compact: true, expand: false, onPressed: () => ctx.act(context, () => ctx.api.post(ctx.path('shifts/${s['id']}/claim'))))
                 else if (s['mine'] == true)
-                  GhostButton(label: tr('Відмовитися'), compact: true, expand: false, onPressed: () => ctx.act(context, () => ctx.api.post(ctx.path('shifts/${s['id']}/release')))),
+                  GhostButton(label: tr('Відмовитися'), compact: true, expand: false, onPressed: () => ctx.act(context, () => ctx.api.post(ctx.path('shifts/${s['id']}/release'))))
+                else if (s['can_join'] == true)
+                  GhostButton(label: tr('В напарники'), icon: LucideIcons.userRoundPlus, compact: true, expand: false, onPressed: () => ctx.act(context, () => ctx.api.post(ctx.path('shifts/${s['id']}/join'))))
+                else if (s['partner'] != null)
+                  GhostButton(
+                    label: s['partner'] == 'pending' ? tr('Скасувати заявку') : tr('Вийти зі зміни'),
+                    compact: true,
+                    expand: false,
+                    onPressed: () => ctx.act(context, () => ctx.api.post(ctx.path('shifts/${s['id']}/leave'))),
+                  ),
                 if (manage)
                   IconButton(
                     tooltip: tr('Видалити'),
@@ -1806,9 +1856,69 @@ class ShiftsTab extends StatelessWidget {
                     },
                   ),
               ]),
+              if (s['goal'] is Map) _ShiftGoal(goal: mapOf(s['goal'])),
+              for (final p in maps(s['partners'])) _ShiftPartner(ctx: ctx, shift: s, partner: p),
+              ]),
             ),
         ],
       ),
     ]);
+  }
+}
+
+/// Завдання зміни: прогрес бригадира (у кожного напарника — свій, у рядку напарника).
+class _ShiftGoal extends StatelessWidget {
+  const _ShiftGoal({required this.goal});
+  final Map<String, dynamic> goal;
+
+  @override
+  Widget build(BuildContext context) {
+    final count = intOf(goal['count'], 1);
+    final progress = intOf(goal['progress']).clamp(0, count);
+    final done = goal['done'] == true;
+    final color = done ? green : (goal['missed'] == true ? dangerSoft : primary);
+    return Padding(
+      padding: const EdgeInsets.only(top: 6),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Icon(LucideIcons.target, size: 14, color: color),
+          const SizedBox(width: 6),
+          Expanded(child: Text(tr(text(goal['label']) ?? ''), style: body(12.5, color: done ? green : soft))),
+          Text('$progress/$count', style: body(12, color: muted)),
+        ]),
+        const SizedBox(height: 4),
+        LinearProgressIndicator(value: count == 0 ? 0 : progress / count, minHeight: 5, borderRadius: BorderRadius.circular(9), color: color, backgroundColor: fg.withValues(alpha: 0.08)),
+      ]),
+    );
+  }
+}
+
+/// Напарник зміни: бригадир схвалює заявки; у схваленого — свій прогрес завдання.
+class _ShiftPartner extends StatelessWidget {
+  const _ShiftPartner({required this.ctx, required this.shift, required this.partner});
+  final FamilyContext ctx;
+  final Map<String, dynamic> shift;
+  final Map<String, dynamic> partner;
+
+  @override
+  Widget build(BuildContext context) {
+    final pending = partner['status'] == 'pending';
+    final goal = partner['goal'] is Map ? mapOf(partner['goal']) : null;
+    final count = intOf(mapOf(shift['goal'])['count'], 1);
+    final url = ctx.path('shifts/${shift['id']}/partners/${partner['id']}');
+    return Padding(
+      padding: const EdgeInsets.only(top: 6),
+      child: Row(children: [
+        Icon(LucideIcons.usersRound, size: 14, color: muted),
+        const SizedBox(width: 6),
+        Expanded(child: Text(text(partner['display']) ?? '', style: body(12.5, color: soft), overflow: TextOverflow.ellipsis)),
+        if (pending) Text(tr('чекає'), style: body(12, color: gold)),
+        if (goal != null) Text('${intOf(goal['progress']).clamp(0, count)}/$count', style: body(12, color: goal['done'] == true ? green : muted)),
+        if (pending && shift['can_lead'] == true) ...[
+          IconButton(tooltip: tr('Взяти в напарники'), visualDensity: VisualDensity.compact, icon: Icon(LucideIcons.check, size: 18, color: green), onPressed: () => ctx.act(context, () => ctx.api.post(url, {'accept': true}))),
+          IconButton(tooltip: tr('Відхилити'), visualDensity: VisualDensity.compact, icon: Icon(LucideIcons.x, size: 18, color: muted), onPressed: () => ctx.act(context, () => ctx.api.post(url, {'accept': false}))),
+        ],
+      ]),
+    );
   }
 }

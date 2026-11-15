@@ -71,6 +71,8 @@ class FamilyCharterController extends FamilyBaseController
     {
         $member = $this->member($request, $family);
         $can = $this->gate->abilities($member, $family);
+        // Застосунок відкриває сторінку через ?page=slug.
+        $slug ??= $request->filled('page') ? (string) $request->query('page') : null;
         $pages = FamilyWikiPage::query()->with('editor')->where('family_id', $family->id)->orderBy('position')->orderBy('title')->get();
         $page = $slug !== null ? $pages->firstWhere('slug', $slug) : $pages->first();
         abort_if($slug !== null && $page === null, 404);
@@ -99,7 +101,7 @@ class FamilyCharterController extends FamilyBaseController
             'title' => ['required', 'string', 'max:120'],
             'body' => ['nullable', 'string', 'max:50000'],
         ]);
-        $page = $data['slug'] ? FamilyWikiPage::query()->where('family_id', $family->id)->where('slug', $data['slug'])->first() : null;
+        $page = ($data['slug'] ?? null) ? FamilyWikiPage::query()->where('family_id', $family->id)->where('slug', $data['slug'])->first() : null;
         if ($page === null) {
             abort_if(FamilyWikiPage::query()->where('family_id', $family->id)->count() >= 100, 422, 'У вікі вже 100 сторінок.');
             $base = Str::slug($data['title']) ?: 'page';

@@ -6,11 +6,13 @@ use App\Models\Family;
 use App\Models\FamilyMember;
 use App\Models\FamilyReport;
 use App\Models\FamilyShift;
+use App\Models\FamilyShiftPartner;
 
 /**
  * Завдання змін: «виконати N контрактів складності X», «перемогти в N бізварах», «взяти участь у N бізварах».
  * Зараховуються автоматично: учасник подає звіт, офіцер схвалює — прогрес зміни росте сам.
- * Рахуються лише схвалені звіти учасника зміни, подані під час зміни (і до доби після кінця).
+ * Кожен на зміні виконує завдання сам: бригадир і кожен схвалений напарник мають свій прогрес
+ * зі своїх схвалених звітів, поданих під час зміни (і до доби після кінця), і зараховується окремо.
  */
 class ShiftGoals
 {
@@ -59,17 +61,23 @@ class ShiftGoals
         };
     }
 
-    /** Порахувати прогрес зміни зі схвалених звітів. */
+    /** Прогрес бригадира зміни. */
     public function progress(FamilyShift $shift): int
     {
+        return $shift->member_id === null ? 0 : $this->progressFor($shift, $shift->member_id);
+    }
+
+    /** Прогрес одного учасника зміни — лише з його власних схвалених звітів. */
+    public function progressFor(FamilyShift $shift, int $memberId): int
+    {
         $goal = (array) $shift->goal;
-        if ($shift->member_id === null || $goal === []) {
+        if ($goal === []) {
             return 0;
         }
         $type = $goal['type'] === 'contract' ? FamilyReport::TYPE_CONTRACT : FamilyReport::TYPE_BIZWAR;
         $reports = FamilyReport::query()
             ->where('family_id', $shift->family_id)
-            ->where('beneficiary_id', $shift->member_id)
+            ->where('beneficiary_id', $memberId)
             ->where('type', $type)
             ->where('status', FamilyReport::STATUS_APPROVED)
             ->whereBetween('created_at', [$shift->starts_at, $shift->ends_at->copy()->addHours(self::GRACE_HOURS)])
@@ -87,31 +95,55 @@ class ShiftGoals
         });
     }
 
-    /** Перерахувати відкриті зміни учасника після схваленого звіту. */
+    /** Перерахувати відкриті зміни учасника після схваленого звіту: як бригадира й як напарника. */
     public function recheck(Family $family, FamilyMember $member): void
     {
-        $shifts = FamilyShift::query()
-            ->where('family_id', $family->id)
-            ->where('member_id', $member->id)
+        $open = fn ($q) => $q->where('family_id', $family->id)
             ->whereNotNull('goal')
-            ->whereNull('completed_at')
             ->where('starts_at', '<=', now())
-            ->where('ends_at', '>=', now()->subHours(self::GRACE_HOURS))
-            ->get();
-        foreach ($shifts as $shift) {
-            $progress = $this->progress($shift);
-            $count = (int) ($shift->goal['count'] ?? 0);
-            $shift->forceFill([
-                'progress' => $progress,
-                'completed_at' => $progress >= $count && $count > 0 ? now() : null,
-            ])->save();
-            if ($shift->completed_at !== null) {
-                $label = self::label((array) $shift->goal);
-                $this->audit->log($family, 'SHIFT_DONE', null, $member, ['shift_id' => $shift->id, 'title' => $shift->title, 'goal' => $label]);
-                $url = route('families.shifts', $family, absolute: false);
-                $this->notifier->members($member, $family, 'shift', "Завдання зміни «{$shift->title}» виконано: {$label}", $url);
-                $this->notifier->holders($family, 'events.manage', 'shift', "{$member->displayName()} виконав(-ла) завдання зміни «{$shift->title}»: {$label}", $url, $member);
+            ->where('ends_at', '>=', now()->subHours(self::GRACE_HOURS));
+
+        $led = FamilyShift::query()->where($open)->where('member_id', $member->id)->whereNull('completed_at')->get();
+        foreach ($led as $shift) {
+            $progress = $this->progressFor($shift, $member->id);
+            $done = $this->reached($shift, $progress);
+            $shift->forceFill(['progress' => $progress, 'completed_at' => $done ? now() : null])->save();
+            if ($done) {
+                $this->celebrate($family, $member, $shift);
             }
         }
+
+        $partnered = FamilyShiftPartner::query()->with('shift')
+            ->where('member_id', $member->id)->where('status', FamilyShiftPartner::APPROVED)->whereNull('completed_at')
+            ->whereHas('shift', $open)->get();
+        foreach ($partnered as $partner) {
+            $shift = $partner->shift;
+            if ($shift === null) {
+                continue;
+            }
+            $progress = $this->progressFor($shift, $member->id);
+            $done = $this->reached($shift, $progress);
+            $partner->forceFill(['progress' => $progress, 'completed_at' => $done ? now() : null])->save();
+            if ($done) {
+                $this->celebrate($family, $member, $shift);
+            }
+        }
+    }
+
+    private function reached(FamilyShift $shift, int $progress): bool
+    {
+        $count = (int) ($shift->goal['count'] ?? 0);
+
+        return $count > 0 && $progress >= $count;
+    }
+
+    /** Зарахування конкретному учаснику: журнал і сповіщення йому та керівництву. */
+    private function celebrate(Family $family, FamilyMember $member, FamilyShift $shift): void
+    {
+        $label = self::label((array) $shift->goal);
+        $this->audit->log($family, 'SHIFT_DONE', null, $member, ['shift_id' => $shift->id, 'title' => $shift->title, 'goal' => $label]);
+        $url = route('families.shifts', $family, absolute: false);
+        $this->notifier->members($member, $family, 'shift', "Завдання зміни «{$shift->title}» зараховано: {$label}", $url);
+        $this->notifier->holders($family, 'events.manage', 'shift', "{$member->displayName()} виконав(-ла) завдання зміни «{$shift->title}»: {$label}", $url, $member);
     }
 }

@@ -237,6 +237,16 @@ class Family extends Model
     }
 
     /**
+     * Зміни сім’ї (потрібно й для вкладених маршрутів /f/{family}/shifts/{shift}).
+     *
+     * @return HasMany<FamilyShift, $this>
+     */
+    public function shifts(): HasMany
+    {
+        return $this->hasMany(FamilyShift::class);
+    }
+
+    /**
      * @return HasMany<FamilyMember, $this>
      */
     public function activeMembers(): HasMany

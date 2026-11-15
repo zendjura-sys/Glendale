@@ -1,23 +1,28 @@
-import { Link, router, useForm } from '@inertiajs/react';
+import { Link, router, useForm } from "@inertiajs/react";
 import {
     CalendarClock,
     ChevronLeft,
     ChevronRight,
+    Check,
+    Crown,
     Hand,
     Plus,
     Target,
     Trash2,
     Undo2,
     UserRound,
-} from 'lucide-react';
-import { useState } from 'react';
-import { FamilyShell } from '@/components/families/family-shell';
-import { Modal, Panel, btnGhost, btnPrimary } from '@/components/families/ui';
-import { selectClass } from '@/components/gc/admin';
-import { Field, inputClass } from '@/components/servers/server-form';
-import { tr } from '@/lib/i18n';
-import { cn } from '@/lib/utils';
-import type { FamilyShellProps, RosterEntry } from '@/types';
+    UserRoundPlus,
+    UsersRound,
+    X,
+} from "lucide-react";
+import { useState } from "react";
+import { FamilyShell } from "@/components/families/family-shell";
+import { Modal, Panel, btnGhost, btnPrimary } from "@/components/families/ui";
+import { selectClass } from "@/components/gc/admin";
+import { Field, inputClass } from "@/components/servers/server-form";
+import { tr } from "@/lib/i18n";
+import { cn } from "@/lib/utils";
+import type { FamilyShellProps, RosterEntry } from "@/types";
 
 type Shift = {
     id: number;
@@ -27,6 +32,17 @@ type Shift = {
     ends_at: string;
     member: { id: number; display: string } | null;
     mine: boolean;
+    partners: {
+        id: number;
+        member_id: number;
+        display: string | null;
+        status: "pending" | "approved";
+        me: boolean;
+        goal: { progress: number; done: boolean } | null;
+    }[];
+    partner: "pending" | "approved" | null;
+    can_lead: boolean;
+    can_join: boolean;
     goal: {
         label: string;
         count: number;
@@ -46,15 +62,15 @@ type Props = FamilyShellProps & {
     tiers: Record<string, string>;
 };
 
-const KYIV = 'Europe/Kyiv';
+const KYIV = "Europe/Kyiv";
 const time = (iso: string) =>
-    new Date(iso).toLocaleTimeString('uk-UA', {
-        hour: '2-digit',
-        minute: '2-digit',
+    new Date(iso).toLocaleTimeString("uk-UA", {
+        hour: "2-digit",
+        minute: "2-digit",
         timeZone: KYIV,
     });
 const dayKey = (iso: string) =>
-    new Date(iso).toLocaleDateString('en-CA', { timeZone: KYIV });
+    new Date(iso).toLocaleDateString("en-CA", { timeZone: KYIV });
 
 /** Сім’я → Зміни: тиждень по днях; вільні зміни можна взяти, свої — віддати. */
 export default function Shifts(props: Props) {
@@ -70,18 +86,18 @@ export default function Shifts(props: Props) {
         tiers,
     } = props;
     const base = `/f/${family.slug}`;
-    const manage = can['events.manage'];
+    const manage = can["events.manage"];
     const [creating, setCreating] = useState(false);
     const form = useForm({
-        title: '',
-        note: '',
-        starts_at: '',
-        hours: '4',
-        member_id: '',
-        repeat_weeks: '1',
-        goal_type: '',
-        goal_tier: '',
-        goal_count: '',
+        title: "",
+        note: "",
+        starts_at: "",
+        hours: "4",
+        member_id: "",
+        repeat_weeks: "1",
+        goal_type: "",
+        goal_tier: "",
+        goal_count: "",
     });
 
     const days = Array.from({ length: 7 }, (_, i) => {
@@ -90,37 +106,37 @@ export default function Shifts(props: Props) {
 
         return d;
     });
-    const today = new Date().toLocaleDateString('en-CA', { timeZone: KYIV });
+    const today = new Date().toLocaleDateString("en-CA", { timeZone: KYIV });
     const post = (url: string, data: Record<string, unknown> = {}) =>
         router.post(url, data as never, { preserveScroll: true });
 
     return (
-        <FamilyShell {...props} title={tr('Зміни')}>
+        <FamilyShell {...props} title={tr("Зміни")}>
             <div className="flex flex-wrap items-center gap-2">
                 <Link
                     href={`${base}/shifts?week=${week.offset - 1}`}
                     preserveScroll
                     className={btnGhost}
-                    aria-label={tr('Попередній тиждень')}
+                    aria-label={tr("Попередній тиждень")}
                 >
                     <ChevronLeft className="size-4" />
                 </Link>
                 <h2 className="font-display text-lg font-semibold text-white">
-                    {days[0].toLocaleDateString('uk-UA', {
-                        day: 'numeric',
-                        month: 'long',
-                    })}{' '}
-                    —{' '}
-                    {days[6].toLocaleDateString('uk-UA', {
-                        day: 'numeric',
-                        month: 'long',
+                    {days[0].toLocaleDateString("uk-UA", {
+                        day: "numeric",
+                        month: "long",
+                    })}{" "}
+                    —{" "}
+                    {days[6].toLocaleDateString("uk-UA", {
+                        day: "numeric",
+                        month: "long",
                     })}
                 </h2>
                 <Link
                     href={`${base}/shifts?week=${week.offset + 1}`}
                     preserveScroll
                     className={btnGhost}
-                    aria-label={tr('Наступний тиждень')}
+                    aria-label={tr("Наступний тиждень")}
                 >
                     <ChevronRight className="size-4" />
                 </Link>
@@ -130,16 +146,16 @@ export default function Shifts(props: Props) {
                         preserveScroll
                         className="text-sm font-medium text-primary hover:underline"
                     >
-                        {tr('Цей тиждень')}
+                        {tr("Цей тиждень")}
                     </Link>
                 )}
                 <span className="ml-auto text-sm text-white/55">
                     {rules.week_limit > 0
-                        ? tr('Моїх змін цього тижня: {n} з {max}', {
+                        ? tr("Моїх змін цього тижня: {n} з {max}", {
                               n: my_week,
                               max: rules.week_limit,
                           })
-                        : tr('Моїх змін цього тижня: {n}', { n: my_week })}
+                        : tr("Моїх змін цього тижня: {n}", { n: my_week })}
                 </span>
                 {manage && (
                     <button
@@ -148,14 +164,14 @@ export default function Shifts(props: Props) {
                         className={btnPrimary}
                     >
                         <Plus className="size-4" />
-                        {tr('Нова зміна')}
+                        {tr("Нова зміна")}
                     </button>
                 )}
             </div>
 
             <div className="grid gap-3 min-[1920px]:grid-cols-7 sm:grid-cols-2 xl:grid-cols-4">
                 {days.map((d) => {
-                    const key = d.toLocaleDateString('en-CA');
+                    const key = d.toLocaleDateString("en-CA");
                     const list = shifts.filter(
                         (s) => dayKey(s.starts_at) === key,
                     );
@@ -164,14 +180,14 @@ export default function Shifts(props: Props) {
                         <Panel
                             key={key}
                             className={cn(
-                                'min-h-36',
-                                key === today && 'ring-2 ring-primary/60',
+                                "min-h-36",
+                                key === today && "ring-2 ring-primary/60",
                             )}
                             title={
                                 <span className="capitalize">
-                                    {d.toLocaleDateString('uk-UA', {
-                                        weekday: 'long',
-                                    })}{' '}
+                                    {d.toLocaleDateString("uk-UA", {
+                                        weekday: "long",
+                                    })}{" "}
                                     <span className="font-normal text-white/45">
                                         {d.getDate()}
                                     </span>
@@ -180,7 +196,7 @@ export default function Shifts(props: Props) {
                         >
                             {list.length === 0 ? (
                                 <p className="text-sm text-white/35">
-                                    {tr('Змін немає')}
+                                    {tr("Змін немає")}
                                 </p>
                             ) : (
                                 <ul className="space-y-2">
@@ -188,12 +204,12 @@ export default function Shifts(props: Props) {
                                         <li
                                             key={s.id}
                                             className={cn(
-                                                'rounded-xl p-2.5',
+                                                "rounded-xl p-2.5",
                                                 s.mine
-                                                    ? 'bg-primary/20'
+                                                    ? "bg-primary/20"
                                                     : s.member
-                                                      ? 'bg-white/[0.05]'
-                                                      : 'bg-amber-500/10',
+                                                      ? "bg-white/[0.05]"
+                                                      : "bg-amber-500/10",
                                             )}
                                         >
                                             <p className="text-xs font-semibold text-white/60 tabular-nums">
@@ -215,16 +231,16 @@ export default function Shifts(props: Props) {
                                                 >
                                                     <p
                                                         className={cn(
-                                                            'flex items-center gap-1 text-xs font-medium',
+                                                            "flex items-center gap-1 text-xs font-medium",
                                                             s.goal.done
-                                                                ? 'text-emerald-300'
+                                                                ? "text-emerald-300"
                                                                 : s.goal.missed
-                                                                  ? 'text-red-300'
-                                                                  : 'text-white/70',
+                                                                  ? "text-red-300"
+                                                                  : "text-white/70",
                                                         )}
                                                     >
                                                         <Target className="size-3.5 shrink-0" />
-                                                        {tr(s.goal.label)} ·{' '}
+                                                        {tr(s.goal.label)} ·{" "}
                                                         {Math.min(
                                                             s.goal.progress,
                                                             s.goal.count,
@@ -234,10 +250,10 @@ export default function Shifts(props: Props) {
                                                     <div className="h-1.5 overflow-hidden rounded-full bg-white/[0.08]">
                                                         <div
                                                             className={cn(
-                                                                'h-full rounded-full',
+                                                                "h-full rounded-full",
                                                                 s.goal.done
-                                                                    ? 'bg-emerald-400'
-                                                                    : 'bg-primary',
+                                                                    ? "bg-emerald-400"
+                                                                    : "bg-primary",
                                                             )}
                                                             style={{
                                                                 width: `${Math.min(100, (s.goal.progress / s.goal.count) * 100)}%`,
@@ -247,15 +263,119 @@ export default function Shifts(props: Props) {
                                                 </div>
                                             )}
                                             <p className="mt-1 flex items-center gap-1.5 text-xs text-white/70">
-                                                <UserRound className="size-3.5" />
                                                 {s.member ? (
-                                                    s.member.display
+                                                    <>
+                                                        <Crown
+                                                            className="size-3.5 text-amber-300"
+                                                            aria-label={tr(
+                                                                "Бригадир",
+                                                            )}
+                                                        />
+                                                        {s.member.display}
+                                                    </>
                                                 ) : (
-                                                    <span className="text-amber-300">
-                                                        {tr('Вільна')}
-                                                    </span>
+                                                    <>
+                                                        <UserRound className="size-3.5" />
+                                                        <span className="text-amber-300">
+                                                            {tr("Вільна")}
+                                                        </span>
+                                                    </>
                                                 )}
                                             </p>
+                                            {s.partners.length > 0 && (
+                                                <ul
+                                                    className="mt-1 space-y-1"
+                                                    data-shift-partners
+                                                >
+                                                    {s.partners.map((p) => (
+                                                        <li
+                                                            key={p.id}
+                                                            className="flex items-center gap-1.5 text-xs text-white/70"
+                                                        >
+                                                            <UsersRound className="size-3.5 shrink-0" />
+                                                            <span className="min-w-0 truncate">
+                                                                {p.display}
+                                                            </span>
+                                                            {p.goal &&
+                                                                s.goal && (
+                                                                    <span
+                                                                        className={cn(
+                                                                            "ml-auto shrink-0 tabular-nums",
+                                                                            p
+                                                                                .goal
+                                                                                .done
+                                                                                ? "text-emerald-300"
+                                                                                : "text-white/55",
+                                                                        )}
+                                                                    >
+                                                                        {Math.min(
+                                                                            p
+                                                                                .goal
+                                                                                .progress,
+                                                                            s
+                                                                                .goal
+                                                                                .count,
+                                                                        )}
+                                                                        /
+                                                                        {
+                                                                            s
+                                                                                .goal
+                                                                                .count
+                                                                        }
+                                                                    </span>
+                                                                )}
+                                                            {p.status ===
+                                                                "pending" && (
+                                                                <span className="text-amber-300">
+                                                                    {tr(
+                                                                        "чекає",
+                                                                    )}
+                                                                </span>
+                                                            )}
+                                                            {s.can_lead &&
+                                                                p.status ===
+                                                                    "pending" && (
+                                                                    <span className="ml-auto flex gap-1">
+                                                                        <button
+                                                                            type="button"
+                                                                            aria-label={tr(
+                                                                                "Взяти в напарники",
+                                                                            )}
+                                                                            onClick={() =>
+                                                                                post(
+                                                                                    `${base}/shifts/${s.id}/partners/${p.id}`,
+                                                                                    {
+                                                                                        accept: true,
+                                                                                    },
+                                                                                )
+                                                                            }
+                                                                            className="grid size-7 place-items-center rounded-lg bg-emerald-500/15 text-emerald-300"
+                                                                        >
+                                                                            <Check className="size-3.5" />
+                                                                        </button>
+                                                                        <button
+                                                                            type="button"
+                                                                            aria-label={tr(
+                                                                                "Відхилити",
+                                                                            )}
+                                                                            onClick={() =>
+                                                                                post(
+                                                                                    `${base}/shifts/${s.id}/partners/${p.id}`,
+                                                                                    {
+                                                                                        accept: false,
+                                                                                    },
+                                                                                )
+                                                                            }
+                                                                            className="grid size-7 place-items-center rounded-lg bg-white/[0.06] text-white/70"
+                                                                        >
+                                                                            <X className="size-3.5" />
+                                                                        </button>
+                                                                    </span>
+                                                                )}
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            )}
                                             <div className="mt-2 flex flex-wrap gap-1.5">
                                                 {!s.member &&
                                                     (rules.self_claim ||
@@ -272,9 +392,44 @@ export default function Shifts(props: Props) {
                                                             className="inline-flex h-8 items-center gap-1 rounded-lg bg-emerald-500/15 px-2.5 text-xs font-semibold text-emerald-300"
                                                         >
                                                             <Hand className="size-3.5" />
-                                                            {tr('Взяти')}
+                                                            {tr("Взяти")}
                                                         </button>
                                                     )}
+                                                {s.can_join && (
+                                                    <button
+                                                        type="button"
+                                                        data-shift-join
+                                                        onClick={() =>
+                                                            post(
+                                                                `${base}/shifts/${s.id}/join`,
+                                                            )
+                                                        }
+                                                        className="inline-flex h-8 items-center gap-1 rounded-lg bg-primary/15 px-2.5 text-xs font-semibold text-primary"
+                                                    >
+                                                        <UserRoundPlus className="size-3.5" />
+                                                        {tr("В напарники")}
+                                                    </button>
+                                                )}
+                                                {s.partner && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() =>
+                                                            post(
+                                                                `${base}/shifts/${s.id}/leave`,
+                                                            )
+                                                        }
+                                                        className="inline-flex h-8 items-center gap-1 rounded-lg bg-white/[0.06] px-2.5 text-xs font-medium text-white/75"
+                                                    >
+                                                        <Undo2 className="size-3.5" />
+                                                        {s.partner === "pending"
+                                                            ? tr(
+                                                                  "Скасувати заявку",
+                                                              )
+                                                            : tr(
+                                                                  "Вийти зі зміни",
+                                                              )}
+                                                    </button>
+                                                )}
                                                 {s.mine &&
                                                     new Date(s.starts_at) >
                                                         new Date() && (
@@ -288,7 +443,7 @@ export default function Shifts(props: Props) {
                                                             className="inline-flex h-8 items-center gap-1 rounded-lg bg-white/[0.06] px-2.5 text-xs font-medium text-white/75"
                                                         >
                                                             <Undo2 className="size-3.5" />
-                                                            {tr('Віддати')}
+                                                            {tr("Віддати")}
                                                         </button>
                                                     )}
                                                 {manage && (
@@ -296,7 +451,7 @@ export default function Shifts(props: Props) {
                                                         <select
                                                             value={
                                                                 s.member?.id ??
-                                                                ''
+                                                                ""
                                                             }
                                                             onChange={(e) =>
                                                                 post(
@@ -311,12 +466,12 @@ export default function Shifts(props: Props) {
                                                                 )
                                                             }
                                                             aria-label={tr(
-                                                                'Призначити',
+                                                                "Призначити",
                                                             )}
                                                             className="input-glass h-8 max-w-36 rounded-lg px-2 text-xs text-white"
                                                         >
                                                             <option value="">
-                                                                {tr('Вільна')}
+                                                                {tr("Вільна")}
                                                             </option>
                                                             {roster.map((r) => (
                                                                 <option
@@ -332,7 +487,7 @@ export default function Shifts(props: Props) {
                                                             onClick={() =>
                                                                 window.confirm(
                                                                     tr(
-                                                                        'Видалити зміну?',
+                                                                        "Видалити зміну?",
                                                                     ),
                                                                 ) &&
                                                                 router.delete(
@@ -343,7 +498,7 @@ export default function Shifts(props: Props) {
                                                                 )
                                                             }
                                                             aria-label={tr(
-                                                                'Видалити',
+                                                                "Видалити",
                                                             )}
                                                             className="grid size-8 place-items-center rounded-lg text-white/40 hover:bg-white/[0.06] hover:text-white"
                                                         >
@@ -367,11 +522,11 @@ export default function Shifts(props: Props) {
                 title={
                     <span className="flex items-center gap-2">
                         <CalendarClock className="size-5 text-sky-400" />
-                        {tr('Нова зміна')}
+                        {tr("Нова зміна")}
                     </span>
                 }
                 description={tr(
-                    'Чергування на складі, патруль, набір — хто й коли. Без учасника зміна вільна: її може взяти будь-хто.',
+                    "Чергування на складі, патруль, набір — хто й коли. Без учасника зміна вільна: її може взяти будь-хто.",
                 )}
             >
                 <form
@@ -387,33 +542,33 @@ export default function Shifts(props: Props) {
                         });
                     }}
                 >
-                    <Field label={tr('Назва')} error={form.errors.title}>
+                    <Field label={tr("Назва")} error={form.errors.title}>
                         <input
                             value={form.data.title}
                             onChange={(e) =>
-                                form.setData('title', e.target.value)
+                                form.setData("title", e.target.value)
                             }
                             maxLength={80}
-                            placeholder={tr('Чергування на складі')}
+                            placeholder={tr("Чергування на складі")}
                             className={inputClass}
                         />
                     </Field>
                     <div className="grid grid-cols-2 gap-3">
                         <Field
-                            label={tr('Початок')}
+                            label={tr("Початок")}
                             error={form.errors.starts_at}
                         >
                             <input
                                 type="datetime-local"
                                 value={form.data.starts_at}
                                 onChange={(e) =>
-                                    form.setData('starts_at', e.target.value)
+                                    form.setData("starts_at", e.target.value)
                                 }
                                 className={inputClass}
                             />
                         </Field>
                         <Field
-                            label={tr('Тривалість, год')}
+                            label={tr("Тривалість, год")}
                             error={form.errors.hours}
                         >
                             <input
@@ -423,22 +578,22 @@ export default function Shifts(props: Props) {
                                 step={0.5}
                                 value={form.data.hours}
                                 onChange={(e) =>
-                                    form.setData('hours', e.target.value)
+                                    form.setData("hours", e.target.value)
                                 }
                                 className={inputClass}
                             />
                         </Field>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
-                        <Field label={tr('Хто')} error={form.errors.member_id}>
+                        <Field label={tr("Хто")} error={form.errors.member_id}>
                             <select
                                 value={form.data.member_id}
                                 onChange={(e) =>
-                                    form.setData('member_id', e.target.value)
+                                    form.setData("member_id", e.target.value)
                                 }
                                 className={selectClass}
                             >
-                                <option value="">{tr('Вільна зміна')}</option>
+                                <option value="">{tr("Вільна зміна")}</option>
                                 {roster.map((r) => (
                                     <option key={r.id} value={r.id}>
                                         {r.display}
@@ -447,21 +602,21 @@ export default function Shifts(props: Props) {
                             </select>
                         </Field>
                         <Field
-                            label={tr('Повторити')}
+                            label={tr("Повторити")}
                             error={form.errors.repeat_weeks}
                         >
                             <select
                                 value={form.data.repeat_weeks}
                                 onChange={(e) =>
-                                    form.setData('repeat_weeks', e.target.value)
+                                    form.setData("repeat_weeks", e.target.value)
                                 }
                                 className={selectClass}
                             >
                                 {[1, 2, 3, 4, 6, 8].map((n) => (
                                     <option key={n} value={n}>
                                         {n === 1
-                                            ? tr('Лише раз')
-                                            : tr('{n} тижн. поспіль', { n })}
+                                            ? tr("Лише раз")
+                                            : tr("{n} тижн. поспіль", { n })}
                                     </option>
                                 ))}
                             </select>
@@ -472,17 +627,17 @@ export default function Shifts(props: Props) {
                         data-shift-goal-form
                     >
                         <Field
-                            label={tr('Завдання зміни')}
+                            label={tr("Завдання зміни")}
                             error={form.errors.goal_type}
                         >
                             <select
                                 value={form.data.goal_type}
                                 onChange={(e) =>
-                                    form.setData('goal_type', e.target.value)
+                                    form.setData("goal_type", e.target.value)
                                 }
                                 className={selectClass}
                             >
-                                <option value="">{tr('Без завдання')}</option>
+                                <option value="">{tr("Без завдання")}</option>
                                 {Object.entries(goal_types).map(([k, v]) => (
                                     <option key={k} value={k}>
                                         {tr(v)}
@@ -490,22 +645,22 @@ export default function Shifts(props: Props) {
                                 ))}
                             </select>
                         </Field>
-                        {form.data.goal_type === 'contract' && (
+                        {form.data.goal_type === "contract" && (
                             <Field
-                                label={tr('Складність')}
+                                label={tr("Складність")}
                                 error={form.errors.goal_tier}
                             >
                                 <select
                                     value={form.data.goal_tier}
                                     onChange={(e) =>
                                         form.setData(
-                                            'goal_tier',
+                                            "goal_tier",
                                             e.target.value,
                                         )
                                     }
                                     className={selectClass}
                                 >
-                                    <option value="">{tr('Будь-яка')}</option>
+                                    <option value="">{tr("Будь-яка")}</option>
                                     {Object.entries(tiers).map(([k, v]) => (
                                         <option key={k} value={k}>
                                             {tr(v)}
@@ -516,7 +671,7 @@ export default function Shifts(props: Props) {
                         )}
                         {form.data.goal_type && (
                             <Field
-                                label={tr('Скільки разів')}
+                                label={tr("Скільки разів")}
                                 error={form.errors.goal_count}
                             >
                                 <input
@@ -526,7 +681,7 @@ export default function Shifts(props: Props) {
                                     value={form.data.goal_count}
                                     onChange={(e) =>
                                         form.setData(
-                                            'goal_count',
+                                            "goal_count",
                                             e.target.value,
                                         )
                                     }
@@ -538,18 +693,18 @@ export default function Shifts(props: Props) {
                     {form.data.goal_type && (
                         <p className="text-xs text-white/45">
                             {tr(
-                                'Зараховується само: учасник подає звіт, офіцер схвалює — прогрес зміни росте. Рахуються звіти, подані під час зміни й до доби після неї.',
+                                "Зараховується само: учасник подає звіт, офіцер схвалює — прогрес зміни росте. Рахуються звіти, подані під час зміни й до доби після неї.",
                             )}
                         </p>
                     )}
-                    <Field label={tr('Примітка')} error={form.errors.note}>
+                    <Field label={tr("Примітка")} error={form.errors.note}>
                         <input
                             value={form.data.note}
                             onChange={(e) =>
-                                form.setData('note', e.target.value)
+                                form.setData("note", e.target.value)
                             }
                             maxLength={200}
-                            placeholder={tr('Напр. ключі в сейфі №2')}
+                            placeholder={tr("Напр. ключі в сейфі №2")}
                             className={inputClass}
                         />
                     </Field>
@@ -560,9 +715,9 @@ export default function Shifts(props: Props) {
                             !form.data.title.trim() ||
                             !form.data.starts_at
                         }
-                        className={cn(btnPrimary, 'w-full')}
+                        className={cn(btnPrimary, "w-full")}
                     >
-                        {tr('Додати')}
+                        {tr("Додати")}
                     </button>
                 </form>
             </Modal>
