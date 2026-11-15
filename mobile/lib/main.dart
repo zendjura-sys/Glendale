@@ -268,6 +268,7 @@ Future<void> main() async {
           GoRoute(path: '/tournaments/:id', builder: (_, state) => TournamentScreen(id: int.tryParse(state.pathParameters['id']!) ?? 0)),
           GoRoute(path: '/saved', builder: (_, _) => const SavedScreen()),
           GoRoute(path: '/later', builder: (_, _) => const ReadLaterScreen()),
+          GoRoute(path: '/archive', builder: (_, _) => const PostArchiveScreen()),
           GoRoute(path: '/podcasts', builder: (_, _) => const PodcastsScreen()),
           GoRoute(path: '/ideas', builder: (_, _) => const IdeasScreen()),
           GoRoute(path: '/series/:id', builder: (_, s) => SeriesScreen(id: int.tryParse(s.pathParameters['id'] ?? '') ?? 0)),

@@ -152,6 +152,7 @@ class _PostCardState extends State<PostCard> {
             if (can['hide'] == true) _SheetAction(icon: LucideIcons.eyeOff, label: tr('Не цікаво'), onTap: () => Navigator.pop(sheet, 'hide')),
             if (can['mute'] == true) _SheetAction(icon: post['muted'] == true ? LucideIcons.volume2 : LucideIcons.volumeX, label: post['muted'] == true ? tr('Зняти заглушку') : tr('Заглушити'), onTap: () => Navigator.pop(sheet, 'mute')),
             if (can['series'] == true) _SheetAction(icon: LucideIcons.listOrdered, label: post['series'] is Map ? tr('Змінити серію') : tr('Додати в серію'), onTap: () => Navigator.pop(sheet, 'series')),
+            if (can['archive'] == true) _SheetAction(icon: post['archived'] == true ? LucideIcons.archiveRestore : LucideIcons.archive, label: post['archived'] == true ? tr('Повернути на стіну') : tr('В архів'), onTap: () => Navigator.pop(sheet, 'archive')),
             if (can['pin'] == true) _SheetAction(icon: post['is_pinned'] == true ? LucideIcons.pinOff : LucideIcons.pin, label: post['is_pinned'] == true ? tr('Відкріпити') : tr('Закріпити'), onTap: () => Navigator.pop(sheet, 'pin')),
             if (can['slow_mode'] == true) _SheetAction(icon: LucideIcons.timer, label: post['slow_mode'] is Map ? tr('Повільний режим: змінити') : tr('Повільний режим'), onTap: () => Navigator.pop(sheet, 'slow')),
             if (can['delete'] == true) _SheetAction(icon: LucideIcons.trash2, label: tr('Видалити запис'), color: dangerSoft, onTap: () => Navigator.pop(sheet, 'delete')),
@@ -243,6 +244,21 @@ class _PostCardState extends State<PostCard> {
       final seriesId = picked == 0 ? null : picked;
       if (await attempt(context, () => api.post(Api.site('/posts/${post['id']}/series'), {'series_id': seriesId}), success: seriesId == null ? tr('Запис прибрано із серії.') : tr('Запис додано в серію.'))) {
         widget.onChanged?.call();
+      }
+      return;
+    }
+    if (choice == 'archive') {
+      final wasArchived = post['archived'] == true;
+      if (await attempt(context, () => api.post(Api.site('/posts/${post['id']}/archive')))) {
+        if (!mounted) return;
+        toast(context, wasArchived ? tr('Запис повернуто на стіну.') : tr('Запис перенесено в архів — його бачите лише ви.'));
+        // Зі стіни й стрічки запис зникає одразу, як після видалення.
+        if (!wasArchived) {
+          setState(() => deleted = true);
+          widget.onDeleted?.call();
+        } else {
+          widget.onChanged?.call();
+        }
       }
       return;
     }

@@ -302,7 +302,10 @@ class PostPresenter
                 'share' => $shareable,
                 'quote' => $viewer !== null && ! $post->is_draft && ! $post->publish_at?->isFuture(),
                 'series' => $viewer !== null && $post->author_id === $viewer->id && ! $post->as_community,
+                // Архів — лише свої опубліковані записи.
+                'archive' => $viewer !== null && $post->author_id === $viewer->id && ! $post->as_community && ! $post->is_draft && ! $post->publish_at?->isFuture(),
             ],
+            'archived' => $post->archived_at !== null,
             'subscribers_only' => $post->subscribers_only,
             'locked' => false,
         ];

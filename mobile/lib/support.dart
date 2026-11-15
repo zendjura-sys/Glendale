@@ -624,6 +624,83 @@ class _ReadLaterScreenState extends State<ReadLaterScreen> {
   }
 }
 
+// ——— Архів записів ———
+
+/// Свої записи, сховані зі стіни: «Повернути на стіну» й автоархів старих записів — як на сайті (/archive).
+class PostArchiveScreen extends StatefulWidget {
+  const PostArchiveScreen({super.key});
+
+  @override
+  State<PostArchiveScreen> createState() => _PostArchiveScreenState();
+}
+
+class _PostArchiveScreenState extends State<PostArchiveScreen> {
+  int _version = 0;
+  int? _auto;
+
+  String _label(int days) => switch (days) {
+        0 => tr('Вимкнено'),
+        365 => tr('Через рік'),
+        _ when days > 30 && days % 30 == 0 => tr('Через {n} міс.', {'n': days ~/ 30}),
+        _ => tr('Через {n} днів', {'n': days}),
+      };
+
+  @override
+  Widget build(BuildContext context) {
+    final api = AppScope.read(context).session.api;
+    return Remote(
+      watch: _version,
+      load: () => api.get(Api.site('/archive')),
+      builder: (d, reload) {
+        final posts = maps(d['posts']);
+        final options = [for (final o in (d['options'] as List? ?? const [])) intOf(o)];
+        final auto = _auto ?? intOf(d['auto']);
+        return ScreenScroll(
+          onRefresh: reload,
+          children: [
+            PageTitle(tr('Архів записів'), subtitle: tr('Записи зі стіни, які ви сховали. Їх бачите лише ви — повернути можна будь-коли.')),
+            Text(tr('Автоархів старих записів'), style: body(14, weight: FontWeight.w600)),
+            const SizedBox(height: 4),
+            Text(tr('Записи на вашій стіні старші за обраний строк самі переходять в архів. Закріплені лишаються на місці.'), style: body(12, color: muted)),
+            const SizedBox(height: 10),
+            Segmented(
+              scroll: true,
+              options: [for (final o in options) SegmentOption('$o', _label(o))],
+              selected: '$auto',
+              onSelect: (id) async {
+                final value = int.parse(id);
+                final previous = auto;
+                setState(() => _auto = value);
+                final ok = await attempt(context, () => api.put(Api.site('/settings/archive'), {'auto': value}));
+                if (!ok && mounted) setState(() => _auto = previous);
+              },
+            ),
+            const SizedBox(height: 16),
+            if (posts.isEmpty) EmptyState(icon: LucideIcons.archive, title: tr('Архів порожній'), text: tr('У меню «…» свого запису оберіть «В архів» — він зникне зі стіни, але не видалиться.')),
+            for (final post in posts) ...[
+              PostCard(post: post, onChanged: () => reload()),
+              Align(
+                alignment: Alignment.centerRight,
+                child: GhostButton(
+                  label: tr('Повернути на стіну'),
+                  icon: LucideIcons.archiveRestore,
+                  expand: false,
+                  compact: true,
+                  onPressed: () async {
+                    await attempt(context, () => api.post(Api.site('/posts/${post['id']}/archive')));
+                    if (mounted) setState(() => _version++);
+                  },
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
+          ],
+        );
+      },
+    );
+  }
+}
+
 // ——— Сповіщення за словами ———
 
 /// До 10 слів: сповіщення про нові публічні записи з ними (не частіше разу на годину за словом).

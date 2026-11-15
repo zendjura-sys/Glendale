@@ -630,7 +630,7 @@ class PostController extends Controller
 
     private function authorizeView(?User $viewer, Post $post): void
     {
-        if ($post->is_draft || $post->publish_at?->isFuture() || $post->is_pending) {
+        if ($post->is_draft || $post->publish_at?->isFuture() || $post->is_pending || $post->archived_at !== null) {
             abort_unless($viewer && ($viewer->id === $post->author_id || $viewer->isStaff()), 404);
 
             return;

@@ -36,6 +36,7 @@ use Illuminate\Support\Carbon;
  * @property bool $subscribers_only Лише для платних підписників автора
  * @property Carbon|null $edited_at
  * @property Carbon|null $publish_at
+ * @property Carbon|null $archived_at
  * @property bool $is_pending
  * @property string|null $tag
  * @property string|null $lang Мова тексту (вгадана за текстом)
@@ -49,7 +50,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon $created_at
  * @property Carbon $updated_at
  */
-#[Fillable(['author_id', 'wall_type', 'wall_id', 'as_community', 'body', 'music', 'movie_id', 'link', 'card', 'visibility', 'is_pinned', 'is_draft', 'comments_enabled', 'spoiler', 'edited_at', 'publish_at', 'shared_post_id', 'quoted_post_id', 'sticker', 'is_pending', 'tag', 'lang', 'subscribers_only', 'series_id', 'series_position', 'slow_mode_seconds', 'slow_mode_until', 'slow_mode_auto'])]
+#[Fillable(['author_id', 'wall_type', 'wall_id', 'as_community', 'body', 'music', 'movie_id', 'link', 'card', 'visibility', 'is_pinned', 'is_draft', 'comments_enabled', 'spoiler', 'edited_at', 'publish_at', 'archived_at', 'shared_post_id', 'quoted_post_id', 'sticker', 'is_pending', 'tag', 'lang', 'subscribers_only', 'series_id', 'series_position', 'slow_mode_seconds', 'slow_mode_until', 'slow_mode_auto'])]
 class Post extends Model
 {
     /** @use HasFactory<PostFactory> */
@@ -93,6 +94,7 @@ class Post extends Model
             'card' => 'array',
             'edited_at' => 'datetime',
             'publish_at' => 'datetime',
+            'archived_at' => 'datetime',
         ];
     }
 
@@ -188,7 +190,7 @@ class Post extends Model
      */
     public function scopeVisibleTo(Builder $query, ?User $viewer, array $friendIds = []): void
     {
-        $query->where('is_draft', false)->where('is_pending', false);
+        $query->where('is_draft', false)->where('is_pending', false)->whereNull('archived_at');
         $query->where(fn (Builder $query) => $query->whereNull('publish_at')->orWhere('publish_at', '<=', now()));
         if ($viewer && ! $viewer->isStaff()) {
             $query->whereNotIn('author_id', UserBlock::query()->where('blocked_id', $viewer->id)->select('user_id'));

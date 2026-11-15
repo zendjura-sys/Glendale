@@ -222,7 +222,10 @@ export type PostItem = {
         quote?: boolean;
         series?: boolean;
         slow_mode?: boolean;
+        archive?: boolean;
     };
+    /** Запис в архіві автора: на стіні й у стрічці не показується. */
+    archived?: boolean;
 };
 
 export type NavEntry = {

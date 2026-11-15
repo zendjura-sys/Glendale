@@ -99,6 +99,7 @@ use App\Http\Controllers\PlayingController;
 use App\Http\Controllers\PlaylistController;
 use App\Http\Controllers\PlusController;
 use App\Http\Controllers\PodcastController;
+use App\Http\Controllers\PostArchiveController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\PostSeriesController;
 use App\Http\Controllers\ProfileController;
@@ -424,6 +425,10 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     Route::post('posts/{post}/poll', [PostController::class, 'vote'])->middleware('throttle:60,1')->name('posts.poll');
     Route::get('saved', [SavedController::class, 'index'])->name('saved.index');
     Route::get('later', [ReadingController::class, 'later'])->name('later.index');
+    // Архів записів: сховати свій запис зі стіни й повернути; автоархів старих записів.
+    Route::get('archive', [PostArchiveController::class, 'index'])->name('posts.archive');
+    Route::post('posts/{post}/archive', [PostArchiveController::class, 'toggle'])->middleware('throttle:60,1')->name('posts.archive.toggle');
+    Route::put('settings/archive', [PostArchiveController::class, 'settings'])->middleware('throttle:20,1')->name('posts.archive.settings');
     // Підтримка: звернення людини й робоче місце персоналу (адміністратори й модератори — права в контролері).
     Route::prefix('support')->name('support.')->controller(SupportController::class)->group(function () {
         Route::get('/', 'index')->name('index');

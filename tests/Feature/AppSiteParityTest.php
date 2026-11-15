@@ -845,6 +845,17 @@ class AppSiteParityTest extends TestCase
         $post(['body' => 'Завтра зранку', 'publish_at' => now()->addDay()->toIso8601String()])->assertCreated();
     }
 
+    public function test_app_reaches_post_archive_through_bridge(): void
+    {
+        $user = User::factory()->create();
+        $token = $user->createToken('app')->plainTextToken;
+        $post = Post::query()->create(['author_id' => $user->id, 'wall_type' => $user->getMorphClass(), 'wall_id' => $user->id, 'body' => 'Старий запис', 'visibility' => 'public']);
+
+        $this->withToken($token)->postJson("/api/v1/site/posts/{$post->id}/archive")->assertOk()->assertJsonPath('archived', true);
+        $this->withToken($token)->getJson('/api/v1/site/archive')->assertOk()->assertJsonCount(1, 'posts');
+        $this->withToken($token)->putJson('/api/v1/site/settings/archive', ['auto' => 90])->assertOk()->assertJsonPath('auto', 90);
+    }
+
     public function test_app_reaches_read_later_and_keyword_alerts_through_bridge(): void
     {
         $token = $this->app_token(User::factory()->create());

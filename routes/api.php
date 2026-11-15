@@ -96,6 +96,7 @@ use App\Http\Controllers\PlayingController;
 use App\Http\Controllers\PlaylistController;
 use App\Http\Controllers\PlusController;
 use App\Http\Controllers\PodcastController;
+use App\Http\Controllers\PostArchiveController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\PostSeriesController;
 use App\Http\Controllers\ProfileController;
@@ -748,6 +749,9 @@ Route::prefix('v1')->group(function () {
             // Збережене: пости, фільми, ігри й сервери.
             Route::get('saved', [SavedController::class, 'index']);
             Route::get('later', [ReadingController::class, 'later']);
+            Route::get('archive', [PostArchiveController::class, 'index']);
+            Route::post('posts/{post}/archive', [PostArchiveController::class, 'toggle'])->middleware('throttle:60,1');
+            Route::put('settings/archive', [PostArchiveController::class, 'settings'])->middleware('throttle:20,1');
             Route::get('help', [HelpController::class, 'index']);
             Route::get('help/{category}', [HelpController::class, 'category'])->where('category', '[a-z0-9-]+');
             Route::get('help/{category}/{article}', [HelpController::class, 'article'])->where(['category' => '[a-z0-9-]+', 'article' => '[a-z0-9-]+']);

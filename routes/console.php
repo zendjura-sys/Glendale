@@ -6,6 +6,7 @@ use App\Services\Account\DataExporter;
 use App\Services\Analytics\ActivityMetrics;
 use App\Services\Billing\AuthorSubscriptions;
 use App\Services\Edge\EdgeNode;
+use App\Services\Feed\PostArchive;
 use App\Services\Profile\UserRoles;
 use App\Services\Quality\PageVitals;
 use App\Services\Support\SupportDesk;
@@ -118,3 +119,6 @@ Schedule::command('developers:cms-icons --force')->name('developers:cms-icons:re
 
 // Edge-вузол: щохвилини перевіряємо, чи живий; два збої поспіль — сайт тимчасово віддає голос і файли сам.
 Schedule::call(fn () => app(EdgeNode::class)->probe())->name('edge:probe')->everyMinute()->withoutOverlapping(5);
+
+// Автоархів старих записів (за налаштуванням автора): нічого не видаляє, лише ховає в архів.
+Schedule::call(fn () => app(PostArchive::class)->run())->name('posts:auto-archive')->dailyAt('04:10')->timezone('Europe/Kyiv')->withoutOverlapping(30);

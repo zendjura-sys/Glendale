@@ -255,6 +255,15 @@ const SHOTS = [
         },
     },
     {
+        id: 'archive',
+        url: '/archive',
+        device: PC,
+        regions: {
+            auto: (p) => p.locator('[data-archive-auto]'),
+            restore: B('Повернути на стіну'),
+        },
+    },
+    {
         id: 'games-pc',
         url: '/games',
         device: PC,

@@ -1146,6 +1146,7 @@ List<({String title, List<_MenuEntry> items})> _menuGroups(BuildContext context,
       items: <_MenuEntry>[
         if (fresh('/saved')) go(LucideIcons.bookmark, tr('Збережене'), '/saved'),
         if (fresh('/later')) go(LucideIcons.clock, tr('Прочитати пізніше'), '/later'),
+        if (fresh('/archive')) go(LucideIcons.archive, tr('Архів записів'), '/archive'),
         if (fresh('/drafts')) go(LucideIcons.filePen, tr('Чернетки'), '/drafts'),
         if (fresh('/starred')) go(LucideIcons.star, tr('Обрані повідомлення'), '/starred'),
         if (fresh('/keyword-alerts')) go(LucideIcons.bellRing, tr('Сповіщення за словами'), '/keyword-alerts'),

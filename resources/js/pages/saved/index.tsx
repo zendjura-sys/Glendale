@@ -28,14 +28,22 @@ export default function Saved({ items }: { items: Item[] }) {
                     <h1 className="font-display text-2xl font-semibold text-white">
                         {tr('Збережене')}
                     </h1>
-                    {laterOn && (
+                    <div className="flex shrink-0 items-center gap-4">
+                        {laterOn && (
+                            <Link
+                                href="/later"
+                                className="text-sm text-white/55 hover:text-white"
+                            >
+                                {tr('Прочитати пізніше')}
+                            </Link>
+                        )}
                         <Link
-                            href="/later"
-                            className="shrink-0 text-sm text-white/55 hover:text-white"
+                            href="/archive"
+                            className="text-sm text-white/55 hover:text-white"
                         >
-                            {tr('Прочитати пізніше')}
+                            {tr('Архів')}
                         </Link>
-                    )}
+                    </div>
                 </div>
                 {items.length === 0 ? (
                     <EmptyState

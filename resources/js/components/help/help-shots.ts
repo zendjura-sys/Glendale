@@ -110,6 +110,26 @@ const HELP_SHOTS: Record<string, HelpShotMeta> = {
             },
         },
     },
+    archive: {
+        src: '/images/help/archive.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            auto: {
+                x: 37.5,
+                y: 20.9,
+                w: 44.4,
+                h: 15.6,
+            },
+            restore: {
+                x: 68.1,
+                y: 58.8,
+                w: 13.8,
+                h: 4.4,
+            },
+        },
+    },
     'author-subscriptions': {
         src: '/images/help/author-subscriptions.webp',
         w: 1440,

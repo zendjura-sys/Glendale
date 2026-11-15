@@ -1,6 +1,8 @@
 import { QuoteSelection } from '@/components/gc/quote-selection';
 import { Link, router, usePage } from '@inertiajs/react';
 import {
+    Archive,
+    ArchiveRestore,
     BookmarkPlus,
     ChevronRight,
     Clock,
@@ -391,6 +393,27 @@ export function PostCard({
                                 {post.series
                                     ? tr('Змінити серію')
                                     : tr('Додати в серію')}
+                            </DropdownMenuItem>
+                        )}
+                        {post.can.archive && (
+                            <DropdownMenuItem
+                                className="rounded-lg focus:bg-white/[0.06]"
+                                onSelect={() =>
+                                    router.post(
+                                        `/posts/${post.id}/archive`,
+                                        {},
+                                        { preserveScroll: true },
+                                    )
+                                }
+                            >
+                                {post.archived ? (
+                                    <ArchiveRestore />
+                                ) : (
+                                    <Archive />
+                                )}{' '}
+                                {post.archived
+                                    ? tr('Повернути на стіну')
+                                    : tr('В архів')}
                             </DropdownMenuItem>
                         )}
                         {post.can.pin && (
