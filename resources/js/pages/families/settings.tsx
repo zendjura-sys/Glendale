@@ -9,6 +9,7 @@ import {
     LayoutGrid,
     Package,
     PiggyBank,
+    Target,
     Send,
     Settings as SettingsIcon,
     Server,
@@ -26,6 +27,8 @@ import {
 } from '@/components/gc/settings-kit';
 import { DonationJarForm } from '@/components/gc/donation-jar';
 import { OnboardingSettings } from '@/components/families/onboarding-settings';
+import { WeeklyGoalsSettings } from '@/components/families/weekly-goals';
+import type { WeeklyGoal } from '@/components/families/weekly-goals';
 import type { Question, Step } from '@/components/families/onboarding-settings';
 import { useRef, useState } from 'react';
 import type { ReactNode } from 'react';
@@ -66,6 +69,11 @@ type Settings = {
 type Props = FamilyShellProps & {
     settings: Settings;
     onboarding: { questions: Question[]; steps: Step[] };
+    goals: {
+        list: WeeklyGoal[];
+        types: Record<string, string>;
+        max: number;
+    };
     jar: { url: string | null; note: string | null };
     can_delete: boolean;
     server: {
@@ -212,6 +220,7 @@ export default function FamilySettings(props: Props) {
                         label: tr('Анкета й новачки'),
                         icon: ClipboardList,
                     },
+                    { id: 'goals', label: tr('Завдання тижня'), icon: Target },
                     { id: 'jar', label: tr('Банка'), icon: PiggyBank },
                     { id: 'bots', label: tr('Боти й звіт'), icon: Bot },
                     ...(props.can_delete
@@ -243,6 +252,12 @@ export default function FamilySettings(props: Props) {
                 <OnboardingSettings
                     action={`${base}/settings/onboarding`}
                     initial={props.onboarding}
+                />
+            </SettingsAnchor>
+            <SettingsAnchor id="goals">
+                <WeeklyGoalsSettings
+                    action={`${base}/settings/goals`}
+                    initial={props.goals}
                 />
             </SettingsAnchor>
             <SettingsAnchor id="jar">

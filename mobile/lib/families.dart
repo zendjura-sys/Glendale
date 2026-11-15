@@ -1019,6 +1019,39 @@ List<Widget> overviewTab(FamilyContext ctx, {required VoidCallback onReport, req
       ]),
     ),
     const SizedBox(height: 12),
+    // Тижневі завдання сім’ї: прогрес рахується сам зі звітів, балів і подій.
+    _OverviewCard(
+      title: tr('Завдання тижня'),
+      icon: LucideIcons.target,
+      empty: (LucideIcons.target, tr('Лідер ще не поставив завдань на тиждень')),
+      children: [
+        for (final g in maps(data['goals']))
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(children: [
+                Expanded(child: Text(text(g['label']) ?? '', style: body(13.5))),
+                Text('${g['progress'] ?? 0} / ${g['target']}', style: body(12.5, color: g['done'] == true ? green : muted, weight: FontWeight.w700)),
+              ]),
+              const SizedBox(height: 6),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(99),
+                child: LinearProgressIndicator(
+                  minHeight: 6,
+                  value: (intOf(g['target']) > 0 ? intOf(g['progress']) / intOf(g['target']) : 0).clamp(0, 1).toDouble(),
+                  color: g['done'] == true ? green : accent,
+                  backgroundColor: fg.withValues(alpha: 0.08),
+                ),
+              ),
+              if (text(g['reward']) != null) ...[
+                const SizedBox(height: 4),
+                Text(tr('Нагорода: {reward}', {'reward': text(g['reward'])}), style: body(12, color: muted)),
+              ],
+            ]),
+          ),
+      ],
+    ),
+    const SizedBox(height: 12),
     _OverviewCard(
       title: tr('Лідери тижня'),
       icon: LucideIcons.chartNoAxesColumnIncreasing,

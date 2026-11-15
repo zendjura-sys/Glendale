@@ -30,6 +30,7 @@ use App\Services\Families\FamilyService;
 use App\Services\Families\MemberStats;
 use App\Services\Families\ReportService;
 use App\Services\Families\WeeklyDigest;
+use App\Services\Families\WeeklyGoals;
 use App\Services\PostPresenter;
 use App\Services\Servers\ServerVotes;
 use App\Support\Money;
@@ -237,6 +238,7 @@ class GroupsApiController extends ApiController
             'abilities' => $can,
             'chat_id' => $family->conversation_id,
             'overview' => [
+                'goals' => app(WeeklyGoals::class)->progress($family),
                 'stats' => [
                     'week_earned' => (int) (collect($week['lines'])->firstWhere('member.id', $member->id)['total'] ?? 0),
                     'week_total' => $week['total'],

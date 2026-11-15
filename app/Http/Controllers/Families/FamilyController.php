@@ -16,6 +16,7 @@ use App\Services\Donations\MonobankJar;
 use App\Services\Families\FamilyRating;
 use App\Services\Families\FamilyService;
 use App\Services\Families\MemberStats;
+use App\Services\Families\WeeklyGoals;
 use App\Services\ImageStorage;
 use App\Support\Modules\ModuleManager;
 use App\Support\Plugins\Plugins;
@@ -132,6 +133,8 @@ class FamilyController extends FamilyBaseController
             'chat' => fn () => $this->chatCard($request->user(), $family),
             'stats' => $stats->overview($family, $member),
             'leaders' => array_slice($rating->leaderboard($family, 'week'), 0, 5),
+            // Тижневі завдання сім’ї з прогресом (задає лідер у налаштуваннях).
+            'goals' => app(WeeklyGoals::class)->progress($family),
             'events' => FamilyEvent::query()->where('family_id', $family->id)
                 ->where('status', FamilyEvent::STATUS_PLANNED)
                 ->where('starts_at', '>=', now()->subHours(3))

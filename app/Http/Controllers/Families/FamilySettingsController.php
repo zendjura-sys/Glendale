@@ -11,6 +11,7 @@ use App\Services\Families\FamilyBot;
 use App\Services\Families\FamilyChat;
 use App\Services\Families\FamilyNotifier;
 use App\Services\Families\WeeklyDigest;
+use App\Services\Families\WeeklyGoals;
 use App\Services\ImageStorage;
 use Carbon\CarbonInterface;
 use Illuminate\Http\RedirectResponse;
@@ -34,6 +35,7 @@ class FamilySettingsController extends FamilyBaseController
         return $this->page($family, $member, 'families/settings', 'settings', [
             'settings' => $family->resolvedSettings(),
             'onboarding' => ['questions' => $family->applicationQuestions(), 'steps' => $family->onboardingSteps()],
+            'goals' => ['list' => app(WeeklyGoals::class)->goals($family), 'types' => WeeklyGoals::TYPES, 'max' => WeeklyGoals::MAX],
             'profile' => [
                 'name' => $family->name,
                 'tag' => $family->tag,

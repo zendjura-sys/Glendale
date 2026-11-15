@@ -37,6 +37,8 @@ import type {
     LedgerEntry,
 } from '@/types';
 import { tr } from '@/lib/i18n';
+import { WeeklyGoalsCard } from '@/components/families/weekly-goals';
+import type { WeeklyGoal } from '@/components/families/weekly-goals';
 
 type Props = FamilyShellProps & {
     onboarding?: OnboardingCardData | null;
@@ -48,6 +50,7 @@ type Props = FamilyShellProps & {
         warn_limit: number;
     };
     leaders: LeaderboardRow[];
+    goals?: WeeklyGoal[];
     events: {
         id: number;
         title: string;
@@ -153,6 +156,15 @@ export default function FamilyOverview(props: Props) {
                             </div>
                         </div>
                     </Link>
+
+                    <WeeklyGoalsCard
+                        goals={props.goals ?? []}
+                        settingsHref={
+                            props.can['settings.manage']
+                                ? `${base}/settings`
+                                : null
+                        }
+                    />
 
                     <Panel
                         title={tr('Лідери тижня')}

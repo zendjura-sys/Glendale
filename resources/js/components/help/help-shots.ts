@@ -362,6 +362,58 @@ const HELP_SHOTS: Record<string, HelpShotMeta> = {
             }
         }
     },
+    "family-goals": {
+        "src": "/images/help/family-goals.webp",
+        "w": 648,
+        "h": 274,
+        "phone": false,
+        "regions": {
+            "goal": {
+                "x": 4.9,
+                "y": 26.3,
+                "w": 90.1,
+                "h": 20.4
+            },
+            "edit": {
+                "x": 87,
+                "y": 13.1,
+                "w": 8.1,
+                "h": 5.8
+            }
+        }
+    },
+    "family-goals-settings": {
+        "src": "/images/help/family-goals-settings.webp",
+        "w": 1144,
+        "h": 412,
+        "phone": false,
+        "regions": {
+            "type": {
+                "x": 3.8,
+                "y": 27.2,
+                "w": 38.3,
+                "h": 10.7
+            },
+            "target": {
+                "x": 42.8,
+                "y": 27.2,
+                "w": 9.8,
+                "h": 10.7
+            },
+            "reward": {
+                "x": 53.3,
+                "y": 27.2,
+                "w": 38.3,
+                "h": 10.7
+            },
+            "add": {
+                "x": 88.3,
+                "y": 82.5,
+                "w": 8.9,
+                "h": 9.7
+            }
+        }
+    },
     "family-weekly": {
         "src": "/images/help/family-weekly.webp",
         "w": 1440,

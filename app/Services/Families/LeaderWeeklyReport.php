@@ -57,7 +57,7 @@ class LeaderWeeklyReport
         if ($data['quiet'] > 0) {
             $text .= ' Без активності: '.$data['quiet'].($data['quiet_names'] !== [] ? ' ('.implode(', ', $data['quiet_names']).($data['quiet'] > count($data['quiet_names']) ? '…' : '').')' : '').'.';
         }
-        $this->notifier->holders($family, 'members.manage', 'weekly_report', $text, '/families/'.$family->slug.'/rating');
+        $this->notifier->holders($family, 'members.manage', 'weekly_report', $text, route('families.rating', $family, absolute: false));
         Cache::put($key, true, now()->addDays(8));
 
         return $data;

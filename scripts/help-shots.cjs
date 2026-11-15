@@ -257,6 +257,41 @@ const SHOTS = [
         },
     },
     {
+        id: 'family-goals',
+        url: '/f/scaletta-family',
+        device: PC,
+        prepare: async (p) => {
+            await p.locator('[data-weekly-goals]').scrollIntoViewIfNeeded();
+            await p.waitForTimeout(1200);
+        },
+        clip: (p) =>
+            p
+                .locator('[data-weekly-goals]')
+                .locator('xpath=ancestor::section[1]'),
+        regions: {
+            goal: (p) => p.locator('[data-weekly-goals] li').first(),
+            edit: (p) => p.getByRole('link', { name: 'Змінити' }).first(),
+        },
+    },
+    {
+        id: 'family-goals-settings',
+        url: '/f/scaletta-family/settings#goals',
+        device: PC,
+        prepare: async (p) => {
+            await p.locator('#goals').scrollIntoViewIfNeeded();
+            await p.waitForTimeout(1000);
+        },
+        clip: (p) => p.locator('#goals'),
+        regions: {
+            type: (p) => p.locator('#goals select').first(),
+            target: (p) => p.locator('#goals input[type="number"]').first(),
+            reward: (p) =>
+                p.locator('#goals input[placeholder^="Нагорода"]').first(),
+            add: (p) =>
+                p.locator('#goals').getByRole('button', { name: 'Зберегти' }),
+        },
+    },
+    {
         id: 'dev-portal',
         url: '/developers',
         device: PC,

@@ -65,6 +65,7 @@ class FamilyAuditLog extends Model
         'SHIFT_RELEASE' => 'Зміну віддано',
         'SHIFT_DELETE' => 'Зміну видалено',
         'ONBOARDING_UPDATE' => 'Анкету чи чек-лист новачка змінено',
+        'GOALS_UPDATE' => 'Тижневі завдання змінено',
         'SEASON_SHARE' => 'Підсумки сезону надіслано в Discord/Telegram',
         'ONBOARDING_DONE' => 'Новачок пройшов чек-лист',
         'EVENT_CLOSE' => 'Підсумок події',
