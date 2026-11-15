@@ -620,6 +620,44 @@ const HELP_SHOTS: Record<string, HelpShotMeta> = {
             }
         }
     },
+    "overlay-companion": {
+        "src": "/images/help/overlay-companion.webp",
+        "w": 670,
+        "h": 365,
+        "phone": false,
+        "regions": {
+            "preset": {
+                "x": 64,
+                "y": 27.7,
+                "w": 32.4,
+                "h": 11
+            },
+            "layout": {
+                "x": 55.8,
+                "y": 41.9,
+                "w": 40.6,
+                "h": 11
+            },
+            "density": {
+                "x": 63,
+                "y": 56.7,
+                "w": 33.4,
+                "h": 4.4
+            },
+            "streamer": {
+                "x": 89.9,
+                "y": 76.4,
+                "w": 6.6,
+                "h": 6.6
+            },
+            "reset": {
+                "x": 3.6,
+                "y": 87.9,
+                "w": 28.1,
+                "h": 6.6
+            }
+        }
+    },
     "post-pc": {
         "src": "/images/help/post-pc.webp",
         "w": 804,

@@ -93,6 +93,10 @@ class _ConnectedAppsScreenState extends State<ConnectedAppsScreen> {
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       Text(text(app['name']) ?? '', style: body(15, weight: FontWeight.w700)),
                       const SizedBox(height: 4),
+                      if (app['playing'] is Map && (app['playing'] as Map)['status'] != null) ...[
+                        Text(tr('Зараз у грі: {status}', {'status': '${(app['playing'] as Map)['status']}'}), style: body(12.5, color: green)),
+                        const SizedBox(height: 4),
+                      ],
                       Text((app['scope_labels'] is List ? (app['scope_labels'] as List) : const []).map((s) => tr('$s')).join(' · '), style: body(12.5, color: muted)),
                       const SizedBox(height: 8),
                       Row(children: [
@@ -104,14 +108,24 @@ class _ConnectedAppsScreenState extends State<ConnectedAppsScreen> {
                       if (app['overlay'] != false) ...[
                         const SizedBox(height: 10),
                         // Як оверлей виглядає в грі: та сама скляна капсула, що й у SDK.
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: GcOverlayHud(items: [
+                        Row(children: [
+                          GcOverlayHud(items: [
                             (LucideIcons.users, tr('Паті')),
                             (LucideIcons.messageCircle, tr('Чат')),
                             (LucideIcons.shield, tr('Сім’я')),
                           ]),
-                        ),
+                          const Spacer(),
+                          TextButton.icon(
+                            onPressed: () => showGcSheet<void>(
+                              context,
+                              title: text(app['name']) ?? tr('Оверлей GameCon'),
+                              subtitle: tr('Як оверлей виглядає в цій грі'),
+                              builder: (_) => OverlayCompanionSheet(appId: app['id'] as int),
+                            ),
+                            icon: Icon(LucideIcons.slidersHorizontal, size: 16, color: primary),
+                            label: Text(tr('Налаштувати'), style: body(13, color: primary)),
+                          ),
+                        ]),
                       ],
                     ]),
                   ),
@@ -469,6 +483,127 @@ class _OtpScanScreenState extends State<_OtpScanScreen> {
           ),
         ),
       ),
+    );
+  }
+}
+
+
+/// Компаньйон оверлею: з телефона те саме, що шестерня в грі — набір віджетів, розділи,
+/// щільність скла, геймпад і режим стрімера. Що змінювати можна, вирішує розробник гри.
+class OverlayCompanionSheet extends StatefulWidget {
+  const OverlayCompanionSheet({required this.appId, super.key});
+  final int appId;
+
+  @override
+  State<OverlayCompanionSheet> createState() => _OverlayCompanionSheetState();
+}
+
+class _OverlayCompanionSheetState extends State<OverlayCompanionSheet> {
+  Map<String, dynamic>? data;
+  Timer? _save;
+
+  String get _url => Api.site('/settings/connected-apps/${widget.appId}/overlay-prefs');
+  Map<String, dynamic> get _prefs => data?['prefs'] is Map ? Map<String, dynamic>.from(data!['prefs'] as Map) : {};
+  bool _can(String key) => (data?['allowed'] as List?)?.contains(key) ?? false;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  @override
+  void dispose() {
+    _save?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _load() async {
+    try {
+      final d = await AppScope.read(context).session.api.get(_url);
+      if (mounted) setState(() => data = Map<String, dynamic>.from(d['data'] as Map));
+    } catch (e) {
+      if (mounted) toast(context, e);
+    }
+  }
+
+  /// Одразу на екрані, на сервер — з паузою (повзунок шле багато змін).
+  void _set(Map<String, dynamic> patch) {
+    setState(() => data = {...?data, 'prefs': {..._prefs, ...patch}});
+    _save?.cancel();
+    _save = Timer(const Duration(milliseconds: 400), () async {
+      try {
+        await AppScope.read(context).session.api.put(_url, {'prefs': patch});
+      } catch (e) {
+        if (mounted) toast(context, e);
+      }
+    });
+  }
+
+  Future<void> _reset() async {
+    try {
+      final d = await AppScope.read(context).session.api.delete(_url);
+      if (mounted) setState(() => data = Map<String, dynamic>.from(d['data'] as Map));
+    } catch (e) {
+      if (mounted) toast(context, e);
+    }
+  }
+
+  Widget _row(String label, Widget control, {bool locked = false, String? hint}) => Padding(
+        padding: const EdgeInsets.only(bottom: 14),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(label, style: body(14, weight: FontWeight.w600)),
+          if (locked || hint != null) Text(locked ? tr('Розробник гри не дозволяє це змінювати') : hint!, style: body(12, color: muted)),
+          const SizedBox(height: 8),
+          IgnorePointer(ignoring: locked, child: Opacity(opacity: locked ? .4 : 1, child: control)),
+        ]),
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    if (data == null) return const Padding(padding: EdgeInsets.all(24), child: Center(child: CircularProgressIndicator()));
+    final p = _prefs;
+    final density = ((p['density'] ?? (data!['defaults'] as Map?)?['density'] ?? 84) as num).toDouble();
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        _row(
+          tr('Що видно в грі'),
+          Segmented(
+            scroll: true,
+            options: [SegmentOption('minimal', tr('Мінімум')), SegmentOption('standard', tr('Стандарт')), SegmentOption('full', tr('Усе'))],
+            selected: '${p['preset'] ?? ''}',
+            onSelect: (v) => _set({'preset': v}),
+          ),
+          locked: !_can('modules'),
+        ),
+        _row(
+          tr('Розділи'),
+          Segmented(
+            scroll: true,
+            options: [SegmentOption('unified', tr('Одним вікном')), SegmentOption('separate', tr('Окремо')), SegmentOption('custom', tr('Як у грі'))],
+            selected: '${p['layout'] ?? ''}',
+            onSelect: (v) => _set({'layout': v}),
+          ),
+          locked: !_can('modules'),
+        ),
+        _row(
+          tr('Щільність скла: {n} %', {'n': density.round()}),
+          Slider(min: 60, max: 100, value: density.clamp(60, 100), onChanged: (v) => _set({'density': v.round()})),
+          locked: !_can('density'),
+        ),
+        _row(
+          tr('Геймпад відкриває панель'),
+          Align(alignment: Alignment.centerLeft, child: GcSwitch(value: p['gamepad'] != false, onChanged: (v) => _set({'gamepad': v}))),
+          locked: !_can('hotkeys'),
+        ),
+        _row(
+          tr('Режим стрімера'),
+          Align(alignment: Alignment.centerLeft, child: GcSwitch(value: p['streamer'] == true, onChanged: (v) => _set({'streamer': v}))),
+          hint: tr('Ховає імена й повідомлення від глядачів трансляції'),
+        ),
+        GhostButton(label: tr('Скинути до вигляду гри'), icon: LucideIcons.rotateCcw, onPressed: _reset),
+      ]),
     );
   }
 }

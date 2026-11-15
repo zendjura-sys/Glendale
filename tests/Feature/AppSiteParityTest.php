@@ -71,6 +71,10 @@ class AppSiteParityTest extends TestCase
         $token = $this->app_token($user);
         $this->withToken($token)->getJson('/api/v1/site/settings/connected-apps')->assertOk()->assertJsonPath('apps.0.overlay', true);
         $this->withToken($token)->putJson("/api/v1/site/settings/connected-apps/{$app->id}/overlay", ['enabled' => false])->assertOk()->assertJsonPath('apps.0.overlay', false);
+        // Компаньйон: налаштування оверлею гри з телефона.
+        $this->withToken($token)->getJson("/api/v1/site/settings/connected-apps/{$app->id}/overlay-prefs")->assertOk()->assertJsonStructure(['data' => ['enabled', 'prefs', 'allowed', 'defaults', 'presets']]);
+        $this->withToken($token)->putJson("/api/v1/site/settings/connected-apps/{$app->id}/overlay-prefs", ['prefs' => ['streamer' => true]])->assertOk()->assertJsonPath('data.prefs.streamer', true);
+        $this->withToken($token)->deleteJson("/api/v1/site/settings/connected-apps/{$app->id}/overlay-prefs")->assertOk();
     }
 
     public function test_app_reaches_air_alerts(): void

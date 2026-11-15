@@ -1188,6 +1188,9 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     Route::get('settings/connected-apps', [Developer\ConnectedAppsController::class, 'index'])->name('connected-apps.index');
     Route::delete('settings/connected-apps/{app}', [Developer\ConnectedAppsController::class, 'destroy'])->whereNumber('app')->name('connected-apps.destroy');
     Route::put('settings/connected-apps/{app}/overlay', [Developer\ConnectedAppsController::class, 'overlay'])->whereNumber('app')->name('connected-apps.overlay');
+    Route::get('settings/connected-apps/{app}/overlay-prefs', [Developer\ConnectedAppsController::class, 'overlayPrefs'])->whereNumber('app')->name('connected-apps.overlay-prefs');
+    Route::put('settings/connected-apps/{app}/overlay-prefs', [Developer\ConnectedAppsController::class, 'saveOverlayPrefs'])->whereNumber('app')->middleware('throttle:30,1')->name('connected-apps.overlay-prefs.save');
+    Route::delete('settings/connected-apps/{app}/overlay-prefs', [Developer\ConnectedAppsController::class, 'resetOverlayPrefs'])->whereNumber('app')->name('connected-apps.overlay-prefs.reset');
     Route::get('alerts', [AirAlertController::class, 'index'])->name('alerts.index');
     Route::get('alerts/state', [AirAlertController::class, 'state'])->middleware('throttle:120,1')->name('alerts.state');
     Route::put('alerts/preferences', [AirAlertController::class, 'preferences'])->middleware('throttle:30,1')->name('alerts.preferences');

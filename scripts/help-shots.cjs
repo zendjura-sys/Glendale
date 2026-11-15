@@ -525,6 +525,42 @@ const SHOTS = [
                     .first(),
         },
     },
+    {
+        id: 'overlay-companion',
+        url: '/settings/connected-apps',
+        device: PC,
+        prepare: async (p) => {
+            // Демо-гравець міг вимкнути оверлей — для кадру вмикаємо.
+            const toggle = p
+                .getByRole('switch', { name: 'Оверлей GameCon у цій грі' })
+                .first();
+            if ((await toggle.getAttribute('aria-checked')) !== 'true') {
+                await toggle.click();
+                await p.waitForTimeout(1500);
+            }
+            await p
+                .getByRole('button', { name: 'Налаштувати' })
+                .first()
+                .click();
+            await p.waitForTimeout(1500);
+        },
+        clip: (p) => p.locator('[data-overlay-row]').first(),
+        regions: {
+            preset: (p) =>
+                p
+                    .locator('[data-overlay-companion] [role="radiogroup"]')
+                    .first(),
+            layout: (p) =>
+                p
+                    .locator('[data-overlay-companion] [role="radiogroup"]')
+                    .nth(1),
+            density: (p) =>
+                p.locator('[data-overlay-companion] input[type="range"]'),
+            streamer: (p) => p.getByRole('switch', { name: 'Режим стрімера' }),
+            reset: (p) =>
+                p.getByRole('button', { name: 'Скинути до вигляду гри' }),
+        },
+    },
 ];
 
 /** Входимо один раз і ділимо сесію між кадрами (вхід має ліміт спроб). */

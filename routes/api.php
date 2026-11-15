@@ -562,6 +562,9 @@ Route::prefix('v1')->group(function () {
                 Route::get('settings/connected-apps', [ConnectedAppsController::class, 'index']);
                 Route::delete('settings/connected-apps/{app}', [ConnectedAppsController::class, 'destroy'])->whereNumber('app');
                 Route::put('settings/connected-apps/{app}/overlay', [ConnectedAppsController::class, 'overlay'])->whereNumber('app');
+                Route::get('settings/connected-apps/{app}/overlay-prefs', [ConnectedAppsController::class, 'overlayPrefs'])->whereNumber('app');
+                Route::put('settings/connected-apps/{app}/overlay-prefs', [ConnectedAppsController::class, 'saveOverlayPrefs'])->whereNumber('app')->middleware('throttle:30,1');
+                Route::delete('settings/connected-apps/{app}/overlay-prefs', [ConnectedAppsController::class, 'resetOverlayPrefs'])->whereNumber('app');
                 Route::get('games/awards', [GameAwardsController::class, 'index']);
                 Route::get('games/awards/candidates', [GameAwardsController::class, 'candidates'])->middleware('throttle:120,1');
                 Route::post('games/awards/vote', [GameAwardsController::class, 'vote'])->middleware('throttle:60,1');
