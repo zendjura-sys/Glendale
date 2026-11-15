@@ -5,6 +5,7 @@ import {
     ChevronRight,
     Hand,
     Plus,
+    Target,
     Trash2,
     Undo2,
     UserRound,
@@ -26,6 +27,13 @@ type Shift = {
     ends_at: string;
     member: { id: number; display: string } | null;
     mine: boolean;
+    goal: {
+        label: string;
+        count: number;
+        progress: number;
+        done: boolean;
+        missed: boolean;
+    } | null;
 };
 
 type Props = FamilyShellProps & {
@@ -34,6 +42,8 @@ type Props = FamilyShellProps & {
     roster: RosterEntry[];
     my_week: number;
     rules: { self_claim: boolean; week_limit: number; remind: boolean };
+    goal_types: Record<string, string>;
+    tiers: Record<string, string>;
 };
 
 const KYIV = 'Europe/Kyiv';
@@ -48,7 +58,17 @@ const dayKey = (iso: string) =>
 
 /** Сім’я → Зміни: тиждень по днях; вільні зміни можна взяти, свої — віддати. */
 export default function Shifts(props: Props) {
-    const { family, can, week, shifts, roster, my_week, rules } = props;
+    const {
+        family,
+        can,
+        week,
+        shifts,
+        roster,
+        my_week,
+        rules,
+        goal_types,
+        tiers,
+    } = props;
     const base = `/f/${family.slug}`;
     const manage = can['events.manage'];
     const [creating, setCreating] = useState(false);
@@ -59,6 +79,9 @@ export default function Shifts(props: Props) {
         hours: '4',
         member_id: '',
         repeat_weeks: '1',
+        goal_type: '',
+        goal_tier: '',
+        goal_count: '',
     });
 
     const days = Array.from({ length: 7 }, (_, i) => {
@@ -184,6 +207,44 @@ export default function Shifts(props: Props) {
                                                 <p className="text-xs break-words text-white/50">
                                                     {s.note}
                                                 </p>
+                                            )}
+                                            {s.goal && (
+                                                <div
+                                                    className="mt-1.5 space-y-1"
+                                                    data-shift-goal
+                                                >
+                                                    <p
+                                                        className={cn(
+                                                            'flex items-center gap-1 text-xs font-medium',
+                                                            s.goal.done
+                                                                ? 'text-emerald-300'
+                                                                : s.goal.missed
+                                                                  ? 'text-red-300'
+                                                                  : 'text-white/70',
+                                                        )}
+                                                    >
+                                                        <Target className="size-3.5 shrink-0" />
+                                                        {tr(s.goal.label)} ·{' '}
+                                                        {Math.min(
+                                                            s.goal.progress,
+                                                            s.goal.count,
+                                                        )}
+                                                        /{s.goal.count}
+                                                    </p>
+                                                    <div className="h-1.5 overflow-hidden rounded-full bg-white/[0.08]">
+                                                        <div
+                                                            className={cn(
+                                                                'h-full rounded-full',
+                                                                s.goal.done
+                                                                    ? 'bg-emerald-400'
+                                                                    : 'bg-primary',
+                                                            )}
+                                                            style={{
+                                                                width: `${Math.min(100, (s.goal.progress / s.goal.count) * 100)}%`,
+                                                            }}
+                                                        />
+                                                    </div>
+                                                </div>
                                             )}
                                             <p className="mt-1 flex items-center gap-1.5 text-xs text-white/70">
                                                 <UserRound className="size-3.5" />
@@ -406,6 +467,81 @@ export default function Shifts(props: Props) {
                             </select>
                         </Field>
                     </div>
+                    <div
+                        className="grid gap-3 sm:grid-cols-3"
+                        data-shift-goal-form
+                    >
+                        <Field
+                            label={tr('Завдання зміни')}
+                            error={form.errors.goal_type}
+                        >
+                            <select
+                                value={form.data.goal_type}
+                                onChange={(e) =>
+                                    form.setData('goal_type', e.target.value)
+                                }
+                                className={selectClass}
+                            >
+                                <option value="">{tr('Без завдання')}</option>
+                                {Object.entries(goal_types).map(([k, v]) => (
+                                    <option key={k} value={k}>
+                                        {tr(v)}
+                                    </option>
+                                ))}
+                            </select>
+                        </Field>
+                        {form.data.goal_type === 'contract' && (
+                            <Field
+                                label={tr('Складність')}
+                                error={form.errors.goal_tier}
+                            >
+                                <select
+                                    value={form.data.goal_tier}
+                                    onChange={(e) =>
+                                        form.setData(
+                                            'goal_tier',
+                                            e.target.value,
+                                        )
+                                    }
+                                    className={selectClass}
+                                >
+                                    <option value="">{tr('Будь-яка')}</option>
+                                    {Object.entries(tiers).map(([k, v]) => (
+                                        <option key={k} value={k}>
+                                            {tr(v)}
+                                        </option>
+                                    ))}
+                                </select>
+                            </Field>
+                        )}
+                        {form.data.goal_type && (
+                            <Field
+                                label={tr('Скільки разів')}
+                                error={form.errors.goal_count}
+                            >
+                                <input
+                                    type="number"
+                                    min={1}
+                                    max={1000}
+                                    value={form.data.goal_count}
+                                    onChange={(e) =>
+                                        form.setData(
+                                            'goal_count',
+                                            e.target.value,
+                                        )
+                                    }
+                                    className={inputClass}
+                                />
+                            </Field>
+                        )}
+                    </div>
+                    {form.data.goal_type && (
+                        <p className="text-xs text-white/45">
+                            {tr(
+                                'Зараховується само: учасник подає звіт, офіцер схвалює — прогрес зміни росте. Рахуються звіти, подані під час зміни й до доби після неї.',
+                            )}
+                        </p>
+                    )}
                     <Field label={tr('Примітка')} error={form.errors.note}>
                         <input
                             value={form.data.note}

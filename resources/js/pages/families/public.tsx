@@ -29,6 +29,12 @@ type Props = {
     can_block: boolean;
     /** Анкета сім’ї: питання, на які відповідає кандидат. */
     questions?: { id: string; text: string; required: boolean }[];
+    /** Статут і тест за ним (без правильних відповідей). */
+    charter?: {
+        has_text: boolean;
+        quiz: { q: string; options: string[] }[];
+        pass: number;
+    };
     /** Банка Monobank сім’ї (відкладений проп). */
     donation?: DonationJar | null;
 };
@@ -41,17 +47,21 @@ export default function FamilyPublic({
     can_block,
     donation,
     questions = [],
+    charter,
 }: Props) {
+    const quiz = charter?.quiz ?? [];
     const form = useForm({
         rp_nickname: '',
         static_id: '',
         note: '',
         answers: {} as Record<string, string>,
+        quiz: [] as (number | null)[],
     });
     const errors = form.errors as Record<string, string>;
-    const unanswered = questions.some(
-        (q) => q.required && !(form.data.answers[q.id] ?? '').trim(),
-    );
+    const unanswered =
+        questions.some(
+            (q) => q.required && !(form.data.answers[q.id] ?? '').trim(),
+        ) || quiz.some((_, i) => form.data.quiz[i] == null);
     const pending = application?.status === 'pending';
     const canApply =
         family.status === 'verified' &&
@@ -290,6 +300,79 @@ export default function FamilyPublic({
                                                 />
                                             </Field>
                                         ))}
+                                    </div>
+                                )}
+                                {quiz.length > 0 && (
+                                    <div
+                                        className="space-y-3 rounded-2xl bg-white/[0.04] p-3"
+                                        data-charter-quiz-apply
+                                    >
+                                        <p className="text-xs font-semibold text-white/55">
+                                            {tr(
+                                                'Тест за статутом — потрібно {pass}% правильних',
+                                                { pass: charter?.pass ?? 80 },
+                                            )}
+                                            {charter?.has_text && (
+                                                <>
+                                                    {' · '}
+                                                    <Link
+                                                        href={`/f/${family.slug}/charter`}
+                                                        className="text-primary hover:underline"
+                                                    >
+                                                        {tr('Прочитати статут')}
+                                                    </Link>
+                                                </>
+                                            )}
+                                        </p>
+                                        {quiz.map((item, i) => (
+                                            <fieldset
+                                                key={i}
+                                                className="space-y-1.5"
+                                            >
+                                                <legend className="text-sm text-white/85">
+                                                    {i + 1}. {item.q}
+                                                </legend>
+                                                {item.options.map(
+                                                    (option, o) => (
+                                                        <label
+                                                            key={o}
+                                                            className="flex cursor-pointer items-center gap-2 text-sm text-white/70"
+                                                        >
+                                                            <input
+                                                                type="radio"
+                                                                name={`quiz-${i}`}
+                                                                checked={
+                                                                    form.data
+                                                                        .quiz[
+                                                                        i
+                                                                    ] === o
+                                                                }
+                                                                onChange={() => {
+                                                                    const next =
+                                                                        [
+                                                                            ...form
+                                                                                .data
+                                                                                .quiz,
+                                                                        ];
+                                                                    next[i] = o;
+                                                                    form.setData(
+                                                                        'quiz',
+                                                                        next,
+                                                                    );
+                                                                }}
+                                                                className="accent-gc-indigo"
+                                                            />
+                                                            {option}
+                                                        </label>
+                                                    ),
+                                                )}
+                                            </fieldset>
+                                        ))}
+                                        {errors.quiz && (
+                                            <p className="text-sm text-red-400">
+                                                {errors.quiz}
+                                            </p>
+                                        )}
                                     </div>
                                 )}
                                 <textarea

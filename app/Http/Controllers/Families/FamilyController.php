@@ -13,6 +13,7 @@ use App\Models\GtaServer;
 use App\Models\Message;
 use App\Models\User;
 use App\Services\Donations\MonobankJar;
+use App\Services\Families\FamilyCharter;
 use App\Services\Families\FamilyRating;
 use App\Services\Families\FamilyService;
 use App\Services\Families\MemberStats;
@@ -187,7 +188,7 @@ class FamilyController extends FamilyBaseController
 
     public function apply(Request $request, Family $family, FamilyService $families): RedirectResponse
     {
-        $rules = [...self::nicknameRules(), 'note' => ['nullable', 'string', 'max:1000'], 'answers' => ['nullable', 'array']];
+        $rules = [...self::nicknameRules(), 'note' => ['nullable', 'string', 'max:1000'], 'answers' => ['nullable', 'array'], 'quiz' => ['nullable', 'array', 'max:'.FamilyCharter::MAX_QUESTIONS], 'quiz.*' => ['nullable', 'integer', 'min:0', 'max:9']];
         foreach ($family->applicationQuestions() as $q) {
             $rules['answers.'.$q['id']] = [$q['required'] ? 'required' : 'nullable', 'string', 'max:500'];
         }
@@ -277,6 +278,11 @@ class FamilyController extends FamilyBaseController
                 ? User::query()->whereIn('id', DB::table('family_blocks')->where('family_id', $family->id)->pluck('user_id'))->get()->map(fn (User $user) => $user->toCard())->values()
                 : [],
             'questions' => $family->applicationQuestions(),
+            'charter' => [
+                'has_text' => app(FamilyCharter::class)->text($family) !== null,
+                'quiz' => app(FamilyCharter::class)->publicQuiz($family),
+                'pass' => app(FamilyCharter::class)->passPercent($family),
+            ],
             'application' => $application ? [
                 'status' => $application->status,
                 'display' => $application->displayName(),

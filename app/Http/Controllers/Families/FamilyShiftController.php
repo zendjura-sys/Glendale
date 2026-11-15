@@ -4,12 +4,15 @@ namespace App\Http\Controllers\Families;
 
 use App\Models\Family;
 use App\Models\FamilyMember;
+use App\Models\FamilyReport;
 use App\Models\FamilyShift;
 use App\Services\Families\FamilyAudit;
+use App\Services\Families\ShiftGoals;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -19,7 +22,7 @@ use Inertia\Response;
  */
 class FamilyShiftController extends FamilyBaseController
 {
-    public function index(Request $request, Family $family): Response
+    public function index(Request $request, Family $family, ShiftGoals $goals): Response
     {
         $member = $this->member($request, $family);
         $tz = 'Europe/Kyiv';
@@ -38,6 +41,14 @@ class FamilyShiftController extends FamilyBaseController
                 'ends_at' => $s->ends_at->toIso8601String(),
                 'member' => $s->member ? ['id' => $s->member->id, 'display' => $s->member->displayName()] : null,
                 'mine' => $s->member_id === $member->id,
+                // Завдання зміни: прогрес зі схвалених звітів (рахуємо наживо, поки зміна не закрита).
+                'goal' => $s->goal ? [
+                    'label' => ShiftGoals::label($s->goal),
+                    'count' => (int) $s->goal['count'],
+                    'progress' => $s->completed_at ? max($s->progress, (int) $s->goal['count']) : min((int) $s->goal['count'], $goals->progress($s)),
+                    'done' => $s->completed_at !== null,
+                    'missed' => $s->completed_at === null && $s->ends_at->copy()->addHours(ShiftGoals::GRACE_HOURS)->isPast(),
+                ] : null,
             ])->values();
 
         return $this->page($family, $member, 'families/shifts', 'shifts', [
@@ -49,6 +60,8 @@ class FamilyShiftController extends FamilyBaseController
                 'week_limit' => (int) $family->setting('shifts.week_limit', 0),
                 'remind' => (bool) $family->setting('shifts.remind', true),
             ],
+            'goal_types' => ShiftGoals::TYPES,
+            'tiers' => FamilyReport::TIERS,
             'my_week' => FamilyShift::query()->where('family_id', $family->id)->where('member_id', $member->id)
                 ->where('starts_at', '>=', $start->utc())->where('starts_at', '<', $end->utc())->count(),
         ]);
@@ -64,18 +77,23 @@ class FamilyShiftController extends FamilyBaseController
             'hours' => ['required', 'numeric', 'min:0.5', 'max:24'],
             'member_id' => ['nullable', 'integer'],
             'repeat_weeks' => ['nullable', 'integer', 'min:1', 'max:8'],
+            'goal_type' => ['nullable', Rule::in(array_keys(ShiftGoals::TYPES))],
+            'goal_tier' => ['nullable', Rule::in(array_keys(FamilyReport::TIERS))],
+            'goal_count' => ['nullable', 'integer', 'min:1', 'max:1000'],
         ]);
+        $goal = ShiftGoals::normalize($data['goal_type'] ?? null, $data['goal_tier'] ?? null, isset($data['goal_count']) ? (int) $data['goal_count'] : null);
         $assignee = $this->assignee($family, $data['member_id'] ?? null);
         $start = CarbonImmutable::parse($data['starts_at'], 'Europe/Kyiv')->utc();
         $minutes = (int) round((float) $data['hours'] * 60);
         $weeks = (int) ($data['repeat_weeks'] ?? 1);
-        DB::transaction(function () use ($family, $actor, $data, $assignee, $start, $minutes, $weeks) {
+        DB::transaction(function () use ($family, $actor, $data, $assignee, $start, $minutes, $weeks, $goal) {
             for ($w = 0; $w < $weeks; $w++) {
                 $from = $start->addWeeks($w);
                 FamilyShift::query()->create([
                     'family_id' => $family->id,
                     'title' => trim($data['title']),
                     'note' => isset($data['note']) ? trim($data['note']) : null,
+                    'goal' => $goal,
                     'starts_at' => $from,
                     'ends_at' => $from->addMinutes($minutes),
                     'member_id' => $assignee?->id,

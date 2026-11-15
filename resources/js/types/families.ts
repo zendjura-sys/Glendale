@@ -104,6 +104,10 @@ export type FamilySection =
     | 'events'
     | 'shifts'
     | 'rating'
+    | 'charter'
+    | 'wiki'
+    | 'relations'
+    | 'history'
     | 'audit'
     | 'settings';
 

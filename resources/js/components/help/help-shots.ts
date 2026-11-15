@@ -858,6 +858,26 @@ const HELP_SHOTS: Record<string, HelpShotMeta> = {
             },
         },
     },
+    'family-charter': {
+        src: '/images/help/family-charter.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            text: {
+                x: 22.2,
+                y: 24.4,
+                w: 75,
+                h: 10.1,
+            },
+            quiz: {
+                x: 22.2,
+                y: 70.4,
+                w: 75,
+                h: 29.6,
+            },
+        },
+    },
     'family-goals': {
         src: '/images/help/family-goals.webp',
         w: 648,
@@ -910,6 +930,60 @@ const HELP_SHOTS: Record<string, HelpShotMeta> = {
             },
         },
     },
+    'family-history': {
+        src: '/images/help/family-history.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            achievements: {
+                x: 22.2,
+                y: 28.9,
+                w: 32.1,
+                h: 37.6,
+            },
+            timeline: {
+                x: 58.2,
+                y: 25.8,
+                w: 39,
+                h: 29.8,
+            },
+        },
+    },
+    'family-relations': {
+        src: '/images/help/family-relations.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            form: {
+                x: 22.2,
+                y: 24.4,
+                w: 75,
+                h: 13.8,
+            },
+            list: {
+                x: 22.2,
+                y: 48.4,
+                w: 75,
+                h: 15.1,
+            },
+        },
+    },
+    'family-shift-goal': {
+        src: '/images/help/family-shift-goal.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            goal: {
+                x: 62.2,
+                y: 28.9,
+                w: 14.7,
+                h: 2.9,
+            },
+        },
+    },
     'family-weekly': {
         src: '/images/help/family-weekly.webp',
         w: 1440,
@@ -927,6 +1001,26 @@ const HELP_SHOTS: Record<string, HelpShotMeta> = {
                 y: 13.3,
                 w: 25.6,
                 h: 13,
+            },
+        },
+    },
+    'family-wiki': {
+        src: '/images/help/family-wiki.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            nav: {
+                x: 22.2,
+                y: 24.4,
+                w: 12.5,
+                h: 8.4,
+            },
+            page: {
+                x: 38.6,
+                y: 24.4,
+                w: 58.6,
+                h: 13.7,
             },
         },
     },

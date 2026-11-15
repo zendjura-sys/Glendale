@@ -281,6 +281,55 @@ const SHOTS = [
         },
     },
     {
+        id: 'family-charter',
+        url: '/f/scaletta-family/charter',
+        device: PC,
+        prepare: scrollTo((p) => p.locator('[data-charter-text]'), 220),
+        regions: {
+            text: (p) => p.locator('[data-charter-text]'),
+            quiz: (p) => p.locator('[data-charter-quiz]'),
+        },
+    },
+    {
+        id: 'family-wiki',
+        url: '/f/scaletta-family/wiki',
+        device: PC,
+        prepare: scrollTo((p) => p.locator('[data-wiki-nav]'), 220),
+        regions: {
+            nav: (p) => p.locator('[data-wiki-nav]'),
+            page: (p) => p.locator('[data-wiki-page]'),
+        },
+    },
+    {
+        id: 'family-relations',
+        url: '/f/scaletta-family/relations',
+        device: PC,
+        prepare: scrollTo((p) => p.locator('[data-relation-form]'), 220),
+        regions: {
+            form: (p) => p.locator('[data-relation-form]'),
+            list: (p) => p.locator('[data-relations]'),
+        },
+    },
+    {
+        id: 'family-history',
+        url: '/f/scaletta-family/history',
+        device: PC,
+        prepare: scrollTo((p) => p.locator('[data-achievements]'), 260),
+        regions: {
+            achievements: (p) => p.locator('[data-achievements]'),
+            timeline: (p) => p.locator('[data-timeline]'),
+        },
+    },
+    {
+        id: 'family-shift-goal',
+        url: '/f/scaletta-family/shifts',
+        device: PC,
+        prepare: scrollTo((p) => p.locator('[data-shift-goal]').first(), 260),
+        regions: {
+            goal: (p) => p.locator('[data-shift-goal]').first(),
+        },
+    },
+    {
         id: 'games-pc',
         url: '/games',
         device: PC,

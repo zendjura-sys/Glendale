@@ -1134,6 +1134,19 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
             Route::post('events/{event}/album', [Families\FamilyEventController::class, 'album'])->middleware('family.section:events')->whereNumber('event')->middleware('throttle:10,1')->name('events.album');
             Route::put('settings/onboarding', [Families\FamilyOnboardingController::class, 'update'])->name('settings.onboarding');
             Route::put('settings/goals', [Families\FamilyGoalsController::class, 'update'])->name('settings.goals');
+            // Статут (+ тест при вступі) і вікі для учасників.
+            // Союзи й війни (лише сім’ї одного сервера) та історія сім’ї.
+            Route::get('relations', [Families\FamilyRelationController::class, 'index'])->name('relations');
+            Route::post('relations', [Families\FamilyRelationController::class, 'propose'])->middleware('throttle:10,1')->name('relations.propose');
+            Route::post('relations/{relation}/respond', [Families\FamilyRelationController::class, 'respond'])->whereNumber('relation')->withoutScopedBindings()->name('relations.respond');
+            Route::post('relations/{relation}/end', [Families\FamilyRelationController::class, 'end'])->whereNumber('relation')->withoutScopedBindings()->name('relations.end');
+            Route::get('history', [Families\FamilyRelationController::class, 'history'])->name('history');
+            Route::get('charter', [Families\FamilyCharterController::class, 'show'])->name('charter');
+            Route::put('settings/charter', [Families\FamilyCharterController::class, 'update'])->name('settings.charter');
+            Route::get('wiki', [Families\FamilyCharterController::class, 'wiki'])->name('wiki');
+            Route::get('wiki/{slug}', [Families\FamilyCharterController::class, 'wiki'])->where('slug', '[a-z0-9-]{1,80}')->name('wiki.page');
+            Route::post('wiki', [Families\FamilyCharterController::class, 'saveWiki'])->middleware('throttle:30,1')->name('wiki.save');
+            Route::delete('wiki/{slug}', [Families\FamilyCharterController::class, 'deleteWiki'])->where('slug', '[a-z0-9-]{1,80}')->name('wiki.delete');
             Route::post('onboarding/{step}', [Families\FamilyOnboardingController::class, 'tick'])->where('step', '[a-z0-9]{1,12}')->middleware('throttle:60,1')->name('onboarding.tick');
             Route::get('shifts', [Families\FamilyShiftController::class, 'index'])->middleware('family.section:shifts')->name('shifts');
             Route::post('shifts', [Families\FamilyShiftController::class, 'store'])->middleware('family.section:shifts')->middleware('throttle:30,1')->name('shifts.store');

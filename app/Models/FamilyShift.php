@@ -18,14 +18,17 @@ use Illuminate\Support\Carbon;
  * @property Carbon $ends_at
  * @property int|null $member_id
  * @property int|null $created_by
+ * @property array{type: string, tier: string|null, count: int}|null $goal
+ * @property int $progress
+ * @property Carbon|null $completed_at
  * @property-read FamilyMember|null $member
  */
-#[Fillable(['family_id', 'title', 'note', 'starts_at', 'ends_at', 'member_id', 'created_by'])]
+#[Fillable(['family_id', 'title', 'note', 'goal', 'progress', 'completed_at', 'starts_at', 'ends_at', 'member_id', 'created_by'])]
 class FamilyShift extends Model
 {
     protected function casts(): array
     {
-        return ['starts_at' => 'datetime', 'ends_at' => 'datetime'];
+        return ['starts_at' => 'datetime', 'ends_at' => 'datetime', 'goal' => 'array', 'completed_at' => 'datetime'];
     }
 
     /** @return BelongsTo<FamilyMember, $this> */

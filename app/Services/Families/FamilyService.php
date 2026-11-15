@@ -90,6 +90,12 @@ class FamilyService
 
         $this->ensureIdentityFree($family, $data['rp_nickname'], $data['static_id'], $existing);
 
+        // Тест за статутом: без проходження заявку не подати (запрошеним — не потрібно).
+        $score = $invited ? null : app(FamilyCharter::class)->grade($family, (array) ($data['quiz'] ?? []));
+        if ($score !== null) {
+            $data['note'] = trim('Тест за статутом: '.$score.'. '.($data['note'] ?? ''));
+        }
+
         $member = DB::transaction(function () use ($family, $user, $data, $existing) {
             $member = $existing ?? new FamilyMember(['family_id' => $family->id, 'user_id' => $user->id]);
             $member->fill([

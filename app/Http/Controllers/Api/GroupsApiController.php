@@ -274,6 +274,9 @@ class GroupsApiController extends ApiController
         $data = $request->validate([
             ...FamilyBaseController::nicknameRules(),
             'note' => ['nullable', 'string', 'max:1000'],
+            'answers' => ['nullable', 'array'],
+            'quiz' => ['nullable', 'array', 'max:10'],
+            'quiz.*' => ['nullable', 'integer', 'min:0', 'max:9'],
         ], FamilyBaseController::nicknameMessages());
 
         $families->apply($family, $this->user($request), $data);

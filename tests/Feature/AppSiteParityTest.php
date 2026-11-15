@@ -1022,6 +1022,22 @@ class AppSiteParityTest extends TestCase
             ->assertOk()->assertJsonPath('source', 'anixart')->assertJsonStructure(['preview' => ['matched', 'missing', 'total']]);
     }
 
+    public function test_app_reaches_family_charter_wiki_relations_and_history_through_bridge(): void
+    {
+        $server = GtaServer::query()->create(['slug' => 'c-rp', 'name' => 'C RP', 'platform' => 'pc', 'multiplayer' => 'ragemp', 'status' => GtaServer::STATUS_PUBLISHED, 'origin' => 'seed']);
+        $owner = User::factory()->create();
+        $family = app(FamilyService::class)->create($owner, ['server_id' => $server->id, 'name' => 'Corleone', 'tag' => 'CRL', 'rp_nickname' => 'Vito_Corleone', 'static_id' => '7']);
+        $token = $this->app_token($owner);
+        $quiz = [['q' => 'Звіт до?', 'options' => ['20:00', '23:00'], 'correct' => 1]];
+
+        $this->withToken($token)->putJson("/api/v1/site/f/{$family->slug}/settings/charter", ['text' => 'Повага.', 'quiz' => $quiz, 'pass' => 100])->assertSuccessful();
+        $this->withToken($token)->getJson("/api/v1/site/f/{$family->slug}/charter")->assertOk()->assertJsonPath('quiz.0.q', 'Звіт до?');
+        $this->withToken($token)->postJson("/api/v1/site/f/{$family->slug}/wiki", ['title' => 'Як подавати звіти', 'body' => '…'])->assertOk();
+        $this->withToken($token)->getJson("/api/v1/site/f/{$family->slug}/wiki")->assertOk()->assertJsonCount(1, 'pages');
+        $this->withToken($token)->getJson("/api/v1/site/f/{$family->slug}/relations")->assertOk()->assertJsonStructure(['relations', 'candidates']);
+        $this->withToken($token)->getJson("/api/v1/site/f/{$family->slug}/history")->assertOk()->assertJsonStructure(['events', 'achievements']);
+    }
+
     public function test_app_changes_family_server_through_bridge(): void
     {
         $servers = [GtaServer::query()->create(['slug' => 'a-rp', 'name' => 'A RP', 'platform' => 'pc', 'multiplayer' => 'ragemp', 'status' => GtaServer::STATUS_PUBLISHED, 'origin' => 'seed']),

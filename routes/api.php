@@ -1171,6 +1171,18 @@ Route::prefix('v1')->group(function () {
                     Route::get('/', [Families\FamilyController::class, 'show']);
                     Route::post('apply', [Families\FamilyController::class, 'apply'])->middleware('throttle:10,10');
                     Route::get('chat', [Families\FamilyController::class, 'chat']);
+                    // Союзи й війни (лише сім’ї одного сервера) та історія сім’ї.
+                    Route::get('relations', [Families\FamilyRelationController::class, 'index']);
+                    Route::post('relations', [Families\FamilyRelationController::class, 'propose'])->middleware('throttle:10,1');
+                    Route::post('relations/{relation}/respond', [Families\FamilyRelationController::class, 'respond'])->whereNumber('relation')->withoutScopedBindings();
+                    Route::post('relations/{relation}/end', [Families\FamilyRelationController::class, 'end'])->whereNumber('relation')->withoutScopedBindings();
+                    Route::get('history', [Families\FamilyRelationController::class, 'history']);
+                    Route::get('charter', [Families\FamilyCharterController::class, 'show']);
+                    Route::put('settings/charter', [Families\FamilyCharterController::class, 'update']);
+                    Route::get('wiki', [Families\FamilyCharterController::class, 'wiki']);
+                    Route::get('wiki/{slug}', [Families\FamilyCharterController::class, 'wiki'])->where('slug', '[a-z0-9-]{1,80}');
+                    Route::post('wiki', [Families\FamilyCharterController::class, 'saveWiki'])->middleware('throttle:30,1');
+                    Route::delete('wiki/{slug}', [Families\FamilyCharterController::class, 'deleteWiki'])->where('slug', '[a-z0-9-]{1,80}');
                     Route::get('reports', [Families\FamilyReportController::class, 'index']);
                     Route::post('reports', [Families\FamilyReportController::class, 'store'])->middleware('throttle:30,1');
                     Route::get('queue', [Families\FamilyReportController::class, 'queue']);
