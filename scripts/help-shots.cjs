@@ -238,6 +238,25 @@ const SHOTS = [
         },
     },
     {
+        id: 'family-weekly',
+        url: '/dashboard',
+        device: PC,
+        prepare: async (p) => {
+            await p.locator('header button[aria-label^="Сповіщення"]').click();
+            await p.waitForTimeout(1500);
+        },
+        regions: {
+            bell: (p) => p.locator('header button[aria-label^="Сповіщення"]'),
+            report: (p) =>
+                p
+                    .getByText(/^Тиждень у сім’ї/)
+                    .first()
+                    .locator(
+                        'xpath=ancestor::*[self::a or self::button or self::li][1]',
+                    ),
+        },
+    },
+    {
         id: 'dev-portal',
         url: '/developers',
         device: PC,

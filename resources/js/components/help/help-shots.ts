@@ -362,6 +362,26 @@ const HELP_SHOTS: Record<string, HelpShotMeta> = {
             }
         }
     },
+    "family-weekly": {
+        "src": "/images/help/family-weekly.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "bell": {
+                "x": 83.4,
+                "y": 2.4,
+                "w": 2.8,
+                "h": 4.4
+            },
+            "report": {
+                "x": 60.2,
+                "y": 13.3,
+                "w": 25.6,
+                "h": 13
+            }
+        }
+    },
     "games-pc": {
         "src": "/images/help/games-pc.webp",
         "w": 1440,
