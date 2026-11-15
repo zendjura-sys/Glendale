@@ -23,6 +23,7 @@ use App\Services\Accounts\AccountSwitcher;
 use App\Services\Auth\AccountSecurity;
 use App\Services\Communities\CommunityPoints;
 use App\Services\CommunityService;
+use App\Services\Edge\EdgeNode;
 use App\Services\Families\FamilyGate;
 use App\Services\Feed\KeywordAlerts;
 use App\Services\FriendshipService;
@@ -99,6 +100,13 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureDefaults();
+
+        // Edge-вузол (Інтеграції → Edge-вузол): збірка й медіа з кешу вузла, якщо так обрано й він живий.
+        try {
+            app(EdgeNode::class)->apply();
+        } catch (\Throwable) {
+            // Без бази чи кешу (встановлення, тести) — усе з основного сервера.
+        }
 
         // Захист від флуду на рівні застосунку (nginx стримує грубіше — deploy/nginx): запитів на хвилину
         // з одного акаунта чи адреси. Із запасом для звичайної роботи й оновлень у реальному часі.

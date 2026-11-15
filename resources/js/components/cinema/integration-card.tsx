@@ -31,15 +31,18 @@ export type IntegrationField = {
     type: 'secret' | 'url' | 'text' | 'select' | 'bool' | 'textarea';
     placeholder: string | null;
     help: string | null;
-    /** Довідка за значком (?): що робить поле й які моделі підходять. */
-    info?: {
-        text: string;
-        models: {
-            provider: string;
-            docs: string;
-            items: { id: string; note: string }[];
-        }[];
-    } | null;
+    /** Довідка за значком (?): що робить поле й які моделі підходять (або просто текст). */
+    info?:
+        | string
+        | {
+              text: string;
+              models: {
+                  provider: string;
+                  docs: string;
+                  items: { id: string; note: string }[];
+              }[];
+          }
+        | null;
     options: { value: string; label: string }[] | null;
     value: string | boolean | null;
     hint: string | null;
@@ -376,6 +379,9 @@ function FieldInfo({
     info: NonNullable<IntegrationField['info']>;
     onPick: (model: string) => void;
 }) {
+    // Поле може мати лише текст пояснення (без переліку моделей).
+    const text = typeof info === 'string' ? info : info.text;
+    const models = typeof info === 'string' ? [] : (info.models ?? []);
     const [open, setOpen] = useState(false);
 
     return (
@@ -391,10 +397,10 @@ function FieldInfo({
             <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-lg">
                 <DialogTitle>{label}</DialogTitle>
                 <DialogDescription className="text-sm text-white/70">
-                    {info.text}
+                    {text}
                 </DialogDescription>
                 <div className="grid gap-3">
-                    {info.models.map((group) => (
+                    {models.map((group) => (
                         <section key={group.provider}>
                             <div className="mb-1 flex items-center justify-between gap-2">
                                 <h3 className="text-sm font-semibold text-white">

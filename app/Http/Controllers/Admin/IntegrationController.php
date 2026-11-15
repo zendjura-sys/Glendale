@@ -34,6 +34,7 @@ use App\Services\Cinema\Metadata\OmdbProvider;
 use App\Services\Cinema\Metadata\ShikimoriProvider;
 use App\Services\Cinema\Metadata\TmdbProvider;
 use App\Services\Cinema\VideoseedClient;
+use App\Services\Edge\EdgeNode;
 use App\Services\Games\GameCatalog;
 use App\Services\Games\Igdb;
 use App\Services\I18n\AzureTranslator;
@@ -503,6 +504,38 @@ class IntegrationController extends Controller
                         'rules' => ['nullable', 'string', 'regex:/^[A-Za-z0-9_\-]{6,64}$/'], 'message' => 'API Key — латинські літери й цифри.'],
                     ['name' => 'api_secret', 'setting' => 'livekit_api_secret', 'type' => 'secret', 'label' => 'API Secret',
                         'env' => config('services.livekit.secret'),
+                        'rules' => ['nullable', 'string', 'min:16', 'max:128'], 'message' => 'Секрет LiveKit — щонайменше 16 символів.'],
+                ],
+            ],
+            'edge' => [
+                'label' => 'Edge-вузол: сервер голосу й файлів',
+                'group' => 'voice',
+                'description' => 'Окремий сервер (напр. Oracle Cloud) з LiveKit і кешем файлів. Тут обираєте, хто обслуговує голос і файли — основний сервер чи вузол. Якщо вузол перестає відповідати, сайт за 1–2 хвилини сам повертається на основний.',
+                'steps' => [
+                    'На вузлі: sudo LIVEKIT_API_KEY=… LIVEKIT_API_SECRET=… bash deploy/edge/setup-edge.sh — наприкінці скрипт покаже адресу вузла.',
+                    'Вставте адресу нижче й натисніть «Перевірити» — має відповісти /edge-health.',
+                    'Перемкніть «Сервер голосу» й «Сервер файлів» на «Edge-вузол». Повернути — так само, на «Основний».',
+                ],
+                'configured' => app(EdgeNode::class)->host() !== null,
+                'stat' => (function () {
+                    $edge = app(EdgeNode::class);
+                    $state = $edge->host() === null ? 'адреса не задана' : ($edge->healthy() ? 'вузол відповідає' : 'вузол не відповідає — працює основний');
+
+                    return 'Голос: '.($edge->voice() ? 'вузол' : 'основний').' · файли: '.($edge->cdn() ? 'вузол' : 'основний').' · '.$state;
+                })(),
+                'test' => fn () => app(EdgeNode::class)->test(),
+                'fields' => [
+                    ['name' => 'host', 'setting' => 'edge_host', 'type' => 'text', 'label' => 'Адреса вузла', 'placeholder' => 'https://1-2-3-4.sslip.io',
+                        'rules' => ['nullable', 'string', 'max:255', 'regex:#^(https://)?[A-Za-z0-9.\-]+$#'], 'message' => 'Лише https://ім’я-вузла, без шляху.'],
+                    ['name' => 'voice', 'setting' => 'edge_voice', 'type' => 'select', 'label' => 'Сервер голосу',
+                        'options' => [['value' => 'main', 'label' => 'Основний'], ['value' => 'edge', 'label' => 'Edge-вузол']],
+                        'rules' => ['nullable', 'in:main,edge'], 'message' => 'Оберіть сервер.'],
+                    ['name' => 'cdn', 'setting' => 'edge_cdn', 'type' => 'select', 'label' => 'Сервер файлів (збірка, фото, відео)',
+                        'options' => [['value' => 'main', 'label' => 'Основний'], ['value' => 'edge', 'label' => 'Edge-вузол']],
+                        'rules' => ['nullable', 'in:main,edge'], 'message' => 'Оберіть сервер.'],
+                    ['name' => 'api_key', 'setting' => 'edge_livekit_api_key', 'type' => 'text', 'label' => 'API Key LiveKit на вузлі (порожньо — як в основного)', 'placeholder' => 'APIxxxxxxxx',
+                        'rules' => ['nullable', 'string', 'regex:/^[A-Za-z0-9_\-]{6,64}$/'], 'message' => 'API Key — латинські літери й цифри.'],
+                    ['name' => 'api_secret', 'setting' => 'edge_livekit_api_secret', 'type' => 'secret', 'label' => 'API Secret LiveKit на вузлі',
                         'rules' => ['nullable', 'string', 'min:16', 'max:128'], 'message' => 'Секрет LiveKit — щонайменше 16 символів.'],
                 ],
             ],

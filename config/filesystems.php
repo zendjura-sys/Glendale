@@ -41,7 +41,8 @@ return [
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),
-            'url' => rtrim((string) env('APP_URL', 'http://localhost'), '/').'/storage',
+            // MEDIA_URL — адреса CDN-вузла (deploy/edge), напр. https://1-2-3-4.sslip.io/storage; порожньо — сам сайт.
+            'url' => rtrim((string) (env('MEDIA_URL') ?: rtrim((string) env('APP_URL', 'http://localhost'), '/').'/storage'), '/'),
             'visibility' => 'public',
             'throw' => false,
             'report' => false,

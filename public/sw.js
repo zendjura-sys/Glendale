@@ -42,7 +42,9 @@ self.addEventListener('fetch', (event) => {
     const request = event.request;
     if (request.method !== 'GET') return;
     const url = new URL(request.url);
-    if (url.origin !== self.location.origin) return;
+    // Збірка може йти з CDN-вузла (ASSET_URL) — її кешуємо так само; інше чуже не чіпаємо.
+    const build = url.pathname.startsWith('/build/');
+    if (url.origin !== self.location.origin && !build) return;
 
     // Вихід або вхід — чужі сторінки в кеші не лишаємо.
     if (/^\/(login|logout)/.test(url.pathname)) {
@@ -51,7 +53,7 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    if (url.pathname.startsWith('/build/')) {
+    if (build) {
         event.respondWith(
             caches.open(STATIC).then(async (cache) => {
                 const hit = await cache.match(request);

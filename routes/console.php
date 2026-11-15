@@ -5,6 +5,7 @@ use App\Models\SpamBlock;
 use App\Services\Account\DataExporter;
 use App\Services\Analytics\ActivityMetrics;
 use App\Services\Billing\AuthorSubscriptions;
+use App\Services\Edge\EdgeNode;
 use App\Services\Profile\UserRoles;
 use App\Services\Quality\PageVitals;
 use App\Services\Support\SupportDesk;
@@ -114,3 +115,6 @@ Schedule::call(fn () => app(AdminAlerts::class)->health())->name('admin-alerts:h
 // Фавікони рушіїв для каталогу плагінів: бракує — щодня, усі — щотижня.
 Schedule::command('developers:cms-icons')->name('developers:cms-icons')->dailyAt('04:47')->withoutOverlapping();
 Schedule::command('developers:cms-icons --force')->name('developers:cms-icons:refresh')->weeklyOn(0, '04:53')->withoutOverlapping();
+
+// Edge-вузол: щохвилини перевіряємо, чи живий; два збої поспіль — сайт тимчасово віддає голос і файли сам.
+Schedule::call(fn () => app(EdgeNode::class)->probe())->name('edge:probe')->everyMinute()->withoutOverlapping(5);
