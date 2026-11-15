@@ -12,6 +12,7 @@ use App\Services\Engagement\Streaks;
 use App\Services\FriendshipService;
 use App\Services\Messenger;
 use App\Services\MessengerPresenter;
+use App\Services\Music\MusicCatalog;
 use App\Services\Quests\SeasonPass;
 use App\Support\Modules\ModuleManager;
 use App\Support\Plugins\Plugins;
@@ -38,6 +39,12 @@ class RailController extends Controller
             }
         }
 
+        $contacts = User::query()->whereIn('id', $friendIds === [] ? [0] : $friendIds)
+            ->orderByDesc('last_seen_at')->limit(10)->get();
+        $listening = $modules->enabled('music')
+            ? app(MusicCatalog::class)->listeningMap($user, $contacts->pluck('id')->map(fn ($id) => (int) $id)->all())
+            : [];
+
         return response()->json([
             // Ліва колонка (Gamer Dock): картка гравця, голосові кімнати сімей, друзі в грі.
             'me' => $this->me($user, $modules),
@@ -52,13 +59,13 @@ class RailController extends Controller
             'requests' => $friendships->incomingQuery($user)->latest('id')->limit(3)->get()
                 ->map(fn (User $u) => $u->toCard())->values(),
             'requests_total' => $friendships->incomingCount($user),
-            'contacts' => User::query()->whereIn('id', $friendIds === [] ? [0] : $friendIds)
-                ->orderByDesc('last_seen_at')->limit(10)->get()
-                ->map(fn (User $u) => [
-                    ...$u->toCard(),
-                    'chat_id' => $unread[$u->id]['chat'] ?? null,
-                    'unread' => $unread[$u->id]['unread'] ?? 0,
-                ])->values(),
+            'contacts' => $contacts->map(fn (User $u) => [
+                ...$u->toCard(),
+                'chat_id' => $unread[$u->id]['chat'] ?? null,
+                'unread' => $unread[$u->id]['unread'] ?? 0,
+                // Що друг слухає зараз — «Слухати разом» з того самого місця.
+                'listening' => $listening[$u->id] ?? null,
+            ])->values(),
             'contacts_total' => count($friendIds),
             'online' => User::query()->whereIn('id', $friendIds === [] ? [0] : $friendIds)
                 ->where('last_seen_at', '>=', now()->subMinutes(5))

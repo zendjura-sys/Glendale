@@ -640,6 +640,26 @@ const HELP_SHOTS: Record<string, HelpShotMeta> = {
             }
         }
     },
+    "listen-together": {
+        "src": "/images/help/listen-together.webp",
+        "w": 344,
+        "h": 594,
+        "phone": false,
+        "regions": {
+            "track": {
+                "x": 22.1,
+                "y": 12.8,
+                "w": 58.1,
+                "h": 2.7
+            },
+            "join": {
+                "x": 83.7,
+                "y": 9.8,
+                "w": 9.3,
+                "h": 5.4
+            }
+        }
+    },
     "overlay-companion": {
         "src": "/images/help/overlay-companion.webp",
         "w": 670,

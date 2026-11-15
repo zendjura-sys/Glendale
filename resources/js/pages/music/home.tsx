@@ -19,7 +19,7 @@ import { UserAvatar } from '@/components/gc/user-avatar';
 import { BackToGameCon } from '@/layouts/music-layout';
 import { tr } from '@/lib/i18n';
 import { usePlugin } from '@/lib/plugins';
-import { playQueue, playStation } from '@/lib/player';
+import { playFrom, playQueue, playStation } from '@/lib/player';
 import type {
     LocalTrack,
     MixCard,
@@ -35,7 +35,7 @@ type Home = {
     /** Плейлисти під настрій («Рейд», «Катка», «Чіл»…). */
     moods?: MixCard[];
     replay: { year: number; tracks: LocalTrack[] };
-    friends: { user: UserCard; track: LocalTrack }[];
+    friends: { user: UserCard; track: LocalTrack; position?: number }[];
     stations: StationCard[];
 };
 
@@ -218,10 +218,26 @@ export default function MusicHome({ home }: { home: Home }) {
                 <>
                     <SectionHeader title={tr('Друзі слухають')} />
                     <Shelf>
-                        {home.friends.map(({ user, track }) => (
+                        {home.friends.map(({ user, track, position }) => (
                             <Tile
                                 key={user.id}
-                                onClick={() => playQueue([track], 0)}
+                                // «Слухати разом»: той самий трек із того місця, де зараз друг.
+                                onClick={() =>
+                                    void playFrom(
+                                        [track],
+                                        0,
+                                        position ?? 0,
+                                        true,
+                                        {
+                                            label: tr('Разом з {name}', {
+                                                name:
+                                                    user.first_name ||
+                                                    user.name,
+                                            }),
+                                            href: `/${user.username}`,
+                                        },
+                                    )
+                                }
                                 art={
                                     <div className="relative">
                                         <Artwork

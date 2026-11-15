@@ -217,6 +217,9 @@ class _HomeTab extends StatelessWidget {
                 return TrackTile(
                   tracks: [track],
                   index: 0,
+                  // «Слухати разом» — з того місця, де зараз друг.
+                  startAt: (f['position'] as num?)?.toInt(),
+                  from: PlayFrom(tr('Разом з {name}', {'name': name}), '/${text(user['username']) ?? ''}'),
                   subtitle: '$name · ${text(track['artist']) ?? ''}',
                   badge: Container(
                     decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: voidColor, width: 2)),

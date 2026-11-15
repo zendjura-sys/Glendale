@@ -3,9 +3,16 @@ import { useCallback, useEffect, useState } from 'react';
 import { UserAvatar } from '@/components/gc/user-avatar';
 import { api } from '@/lib/api';
 import { tr } from '@/lib/i18n';
-import type { UserCard } from '@/types';
+import { Headphones } from 'lucide-react';
+import { playFrom } from '@/lib/player';
+import type { TrackCard, UserCard } from '@/types';
 
-type Contact = UserCard & { chat_id: number | null; unread: number };
+type Contact = UserCard & {
+    chat_id: number | null;
+    unread: number;
+    /** Що друг слухає зараз: трек і секунда, з якої «Слухати разом». */
+    listening?: { track: TrackCard; position: number } | null;
+};
 
 export type RailData = {
     me?: {
@@ -170,25 +177,65 @@ export function Contacts({ data }: { data: RailData }) {
             <Heading title={tr('Контакти')} count={data.contacts_total} />
             <div className="gc-solid space-y-0.5 rounded-2xl p-2">
                 {data.contacts.map((contact) => (
-                    <Link
+                    <div
                         key={contact.id}
-                        href={
-                            contact.chat_id
-                                ? `/messages/${contact.chat_id}`
-                                : `/${contact.username}`
-                        }
-                        className="flex items-center gap-3 rounded-xl px-2 py-2 text-sm font-medium text-white transition hover:bg-[var(--gc-l3)]"
+                        className="flex items-center gap-1 rounded-xl transition hover:bg-[var(--gc-l3)]"
                     >
-                        <UserAvatar user={contact} size="sm" />
-                        <span className="min-w-0 flex-1 truncate">
-                            {contact.name}
-                        </span>
-                        {contact.unread > 0 && (
-                            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-[11px] font-bold text-white tabular-nums">
-                                {contact.unread}
+                        <Link
+                            href={
+                                contact.chat_id
+                                    ? `/messages/${contact.chat_id}`
+                                    : `/${contact.username}`
+                            }
+                            className="flex min-w-0 flex-1 items-center gap-3 px-2 py-2 text-sm font-medium text-white"
+                        >
+                            <UserAvatar user={contact} size="sm" />
+                            <span className="min-w-0 flex-1">
+                                <span className="block truncate">
+                                    {contact.name}
+                                </span>
+                                {contact.listening && (
+                                    <span className="block truncate text-xs font-normal text-primary">
+                                        ♪ {contact.listening.track.title} —{' '}
+                                        {contact.listening.track.artist}
+                                    </span>
+                                )}
                             </span>
+                            {contact.unread > 0 && (
+                                <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-[11px] font-bold text-white tabular-nums">
+                                    {contact.unread}
+                                </span>
+                            )}
+                        </Link>
+                        {contact.listening && (
+                            <button
+                                type="button"
+                                onClick={() =>
+                                    void playFrom(
+                                        [contact.listening!.track],
+                                        0,
+                                        contact.listening!.position,
+                                        true,
+                                        {
+                                            label: tr('Разом з {name}', {
+                                                name:
+                                                    contact.first_name ||
+                                                    contact.name,
+                                            }),
+                                            href: `/${contact.username}`,
+                                        },
+                                    )
+                                }
+                                aria-label={tr('Слухати разом з {name}', {
+                                    name: contact.name,
+                                })}
+                                title={tr('Слухати разом')}
+                                className="mr-1 grid size-8 shrink-0 place-items-center rounded-lg text-primary hover:bg-white/[0.08]"
+                            >
+                                <Headphones className="size-4" />
+                            </button>
                         )}
-                    </Link>
+                    </div>
                 ))}
             </div>
         </section>

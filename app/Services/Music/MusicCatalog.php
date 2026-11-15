@@ -99,8 +99,41 @@ class MusicCatalog
             ->where('source', 'local')->whereNotNull('track_id')->with(['user', 'track'])
             ->latest('updated_at')->limit(12)->get()
             ->filter(fn (MusicStatus $s) => $s->user !== null && $s->track !== null)
-            ->map(fn (MusicStatus $s) => ['user' => $s->user->toCard(), 'track' => $s->track->toCard()])
+            // position — де друг зараз у треку: «Слухати разом» починає з того самого місця.
+            ->map(fn (MusicStatus $s) => ['user' => $s->user->toCard(), 'track' => $s->track->toCard(), 'position' => $this->position($s)])
             ->all());
+    }
+
+    /**
+     * Що слухає кожен із цих друзів зараз (для списку контактів): user id → трек і позиція.
+     *
+     * @param  list<int>  $ids
+     * @return array<int, array{track: array<string, mixed>, position: int}>
+     */
+    public function listeningMap(User $user, array $ids): array
+    {
+        $allowed = array_values(array_intersect($ids, $this->listeningFriendIds($user)));
+        if ($allowed === []) {
+            return [];
+        }
+        $out = [];
+        foreach (MusicStatus::query()->whereIn('user_id', $allowed)->where('expires_at', '>', now())
+            ->where('source', 'local')->whereNotNull('track_id')->with('track')->get() as $status) {
+            if ($status->track !== null) {
+                $out[$status->user_id] = ['track' => $status->track->toCard(), 'position' => $this->position($status)];
+            }
+        }
+
+        return $out;
+    }
+
+    /** Секунда треку, на якій друг зараз (від старту, не довше за сам трек). */
+    private function position(MusicStatus $status): int
+    {
+        $elapsed = (int) max(0, $status->updated_at?->diffInSeconds(now(), true) ?? 0);
+        $duration = (int) ($status->track?->duration ?? 0);
+
+        return $duration > 0 ? min($elapsed, max(0, $duration - 5)) : $elapsed;
     }
 
     /**

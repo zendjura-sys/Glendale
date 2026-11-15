@@ -419,19 +419,27 @@ class StationTile extends StatelessWidget {
 
 /// Трек на полиці («Нещодавно прослухане», сингли): дотик — грати всю полицю з нього.
 class TrackTile extends StatelessWidget {
-  const TrackTile({required this.tracks, required this.index, this.width, this.subtitle, this.badge, super.key});
+  const TrackTile({required this.tracks, required this.index, this.width, this.subtitle, this.badge, this.startAt, this.from, super.key});
   final List<Map<String, dynamic>> tracks;
   final int index;
   final double? width;
   final String? subtitle;
   final Widget? badge;
 
+  /// «Слухати разом»: почати не з початку, а з секунди, де зараз друг.
+  final int? startAt;
+  final PlayFrom? from;
+
   @override
   Widget build(BuildContext context) {
     final t = tracks[index];
     return Tile(
       width: width ?? tileWidth(context),
-      onTap: () => playTracks(context, tracks, index),
+      onTap: () async {
+        final player = AppScope.read(context).player;
+        await playTracks(context, tracks, index, from: from);
+        if ((startAt ?? 0) > 1) await player.seek(Duration(seconds: startAt!));
+      },
       art: Stack(clipBehavior: Clip.none, children: [
         Artwork(url: text(t['cover_url']), seed: trackKey(t), icon: t['live'] == true ? LucideIcons.radio : LucideIcons.music),
         if (badge != null) Positioned(left: -4, bottom: -4, child: badge!),

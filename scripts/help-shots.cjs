@@ -213,6 +213,31 @@ const SHOTS = [
         },
     },
     {
+        id: 'listen-together',
+        url: '/dashboard',
+        device: PC,
+        prepare: async (p) => {
+            const contacts = p
+                .locator('section', {
+                    has: p.getByRole('heading', { name: 'Контакти' }),
+                })
+                .first();
+            await contacts.scrollIntoViewIfNeeded();
+            await p.waitForTimeout(800);
+        },
+        clip: (p) =>
+            p
+                .locator('section', {
+                    has: p.getByRole('heading', { name: 'Контакти' }),
+                })
+                .first(),
+        regions: {
+            track: (p) => p.getByText(/^♪ /).first(),
+            join: (p) =>
+                p.getByRole('button', { name: /^Слухати разом з/ }).first(),
+        },
+    },
+    {
         id: 'dev-portal',
         url: '/developers',
         device: PC,
