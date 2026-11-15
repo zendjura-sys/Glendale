@@ -52,6 +52,9 @@ async function tidy(p) {
                 a.getBoundingClientRect().width,
         );
         banners[0]?.remove();
+        [...document.querySelectorAll('button')]
+            .find((b) => b.textContent.includes('Лише обов'))
+            ?.click();
         document
             .querySelectorAll('[data-sonner-toaster]')
             .forEach((el) => el.remove());
@@ -192,6 +195,21 @@ const SHOTS = [
                 p.getByRole('button', { name: 'На двох' }).locator('..'),
             letters: (p) =>
                 p.locator('[role="group"][aria-label="Перша літера назви"]'),
+        },
+    },
+    {
+        id: 'cinema-assist',
+        url: '/cinema/sintel-2010',
+        device: PC,
+        prepare: async (p) => {
+            const bar = p.locator('[data-player-assist]');
+            await bar.locator('select').selectOption('30');
+            await bar.scrollIntoViewIfNeeded();
+            await p.waitForTimeout(800);
+        },
+        clip: (p) => p.locator('[data-player-assist]'),
+        regions: {
+            sleep: (p) => p.locator('[data-player-assist] label').first(),
         },
     },
     {

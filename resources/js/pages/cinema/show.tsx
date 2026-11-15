@@ -22,6 +22,7 @@ import {
     firstPick,
     supportsEpisodes,
 } from '@/components/cinema/episode-picker';
+import { PlayerAssist } from '@/components/cinema/player-assist';
 import type { EpisodePick, Season } from '@/components/cinema/episode-picker';
 import { MoviePoster, PosterRow } from '@/components/cinema/movie-tile';
 import { CinemaShell } from '@/components/cinema/cinema-side';
@@ -529,6 +530,15 @@ export default function CinemaShow({
                                             referrerPolicy="origin"
                                         />
                                     </div>
+                                    {provider !== 'trailer' && player && (
+                                        <PlayerAssist
+                                            frame={frameRef}
+                                            provider={player.provider}
+                                            seasons={episodes}
+                                            pick={episodeMode ? pick : null}
+                                            onPick={setPick}
+                                        />
+                                    )}
                                     {episodes &&
                                         episodes.length > 0 &&
                                         provider !== 'trailer' && (

@@ -2,6 +2,20 @@
 import type { HelpShotMeta } from '@/components/help/help-shot';
 
 const HELP_SHOTS: Record<string, HelpShotMeta> = {
+    "cinema-assist": {
+        "src": "/images/help/cinema-assist.webp",
+        "w": 824,
+        "h": 76,
+        "phone": false,
+        "regions": {
+            "sleep": {
+                "x": 2.9,
+                "y": 28.9,
+                "w": 34,
+                "h": 42.1
+            }
+        }
+    },
     "connected-apps": {
         "src": "/images/help/connected-apps.webp",
         "w": 1440,
