@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:home_widget/home_widget.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'ai_helpers.dart';
 import 'api.dart';
 import 'app_login.dart';
 import 'audio.dart';
@@ -270,6 +271,7 @@ Future<void> main() async {
           GoRoute(path: '/saved', builder: (_, _) => const SavedScreen()),
           GoRoute(path: '/later', builder: (_, _) => const ReadLaterScreen()),
           GoRoute(path: '/archive', builder: (_, _) => const PostArchiveScreen()),
+          GoRoute(path: '/today', builder: (_, _) => const TodayScreen()),
           GoRoute(path: '/podcasts', builder: (_, _) => const PodcastsScreen()),
           GoRoute(path: '/ideas', builder: (_, _) => const IdeasScreen()),
           GoRoute(path: '/series/:id', builder: (_, s) => SeriesScreen(id: int.tryParse(s.pathParameters['id'] ?? '') ?? 0)),

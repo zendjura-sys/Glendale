@@ -462,11 +462,18 @@ Future<void> showFeedbackSheet(BuildContext context, {String screen = 'menu'}) a
 
 
 /// Що нового в цій версії застосунку — один раз після оновлення.
-const whatsNewVersion = '1.2611.0.1';
+const whatsNewVersion = '1.2611.0.2';
 
 /// Нове саме в цій версії — зверху, окремим блоком.
 List<String> _whatsNewCurrent() => [
-      // Наступна версія (1.2611.0.2): нове з’являється зверху; при підвищенні версії старіші пункти — у «раніше».
+      // Наступна версія (1.2611.0.3): нове з’являється зверху; при підвищенні версії старіші пункти — у «раніше».
+      tr('«Сьогодні» — ШІ-зведення дня: зміни сім’ї, події, друзі й непрочитане коротко й з переходами. Меню → «Моє».'),
+      tr('Помічник по сайту в довідці: запитайте словами «як…» — відповідь по кроках із посиланнями на статті.'),
+      tr('Підбір тиммейтів словами: «двоє в CS2 ввечері з мікрофоном» — ШІ знайде гравців і пояснить, чому вони підходять.'),
+    ];
+
+/// Версія 1.2611.0.1.
+List<String> _whatsNew2611_1() => [
       tr('Зміни сім’ї з напарниками: хто взяв зміну — бригадир, інші просяться «В напарники», бригадир схвалює.'),
       tr('Завдання зміни — «N контрактів складності X», перемоги чи участь у бізварах — зараховуються самі після схвалення звіту, кожному окремо.'),
       tr('Сім’я: вкладки «Статут», «Вікі», «Союзи й війни» та «Історія» з досягненнями.'),
@@ -761,7 +768,7 @@ Future<void> showWhatsNew(BuildContext context, SharedPreferences prefs, {bool f
   await prefs.setString('whats_new', whatsNewVersion);
   if (!context.mounted) return;
   final current = _whatsNewCurrent();
-  final earlier = [..._whatsNew2611_0(), ..._whatsNew124(), ..._whatsNew123(), ..._whatsNew122(), ..._whatsNew121(), ..._whatsNew119(), ..._whatsNew118(), ..._whatsNew117(), ..._whatsNew116(), ..._whatsNew115(), ..._whatsNew113(), ..._whatsNew112(), ..._whatsNew111(), ..._whatsNewPrev(), ..._whatsNew()];
+  final earlier = [..._whatsNew2611_1(), ..._whatsNew2611_0(), ..._whatsNew124(), ..._whatsNew123(), ..._whatsNew122(), ..._whatsNew121(), ..._whatsNew119(), ..._whatsNew118(), ..._whatsNew117(), ..._whatsNew116(), ..._whatsNew115(), ..._whatsNew113(), ..._whatsNew112(), ..._whatsNew111(), ..._whatsNewPrev(), ..._whatsNew()];
   Widget card(String item, {bool fresh = false}) => Container(
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.fromLTRB(12, 12, 14, 12),

@@ -1058,6 +1058,19 @@ class AppSiteParityTest extends TestCase
         $this->assertSame(0, $shift->partners()->count());
     }
 
+    public function test_app_reaches_today_brief_help_assistant_and_ai_teammates_through_bridge(): void
+    {
+        $user = User::factory()->create();
+        $token = $this->app_token($user);
+
+        $this->withToken($token)->getJson('/api/v1/site/today')->assertOk()->assertJsonStructure(['date', 'facts', 'summary', 'ai']);
+        $this->withToken($token)->postJson('/api/v1/site/help-assistant', ['question' => 'як створити сім’ю?'])
+            ->assertOk()->assertJsonStructure(['answer', 'sources', 'ai']);
+        $this->withToken($token)->postJson('/api/v1/site/party/match/ai', ['query' => 'шукаю двох у CS2 ввечері з мікрофоном'])
+            ->assertOk()->assertJsonStructure(['criteria' => ['games', 'times', 'mic'], 'matches', 'ai'])
+            ->assertJsonPath('criteria.mic', true)->assertJsonPath('criteria.times.0', 'evening');
+    }
+
     public function test_app_changes_family_server_through_bridge(): void
     {
         $servers = [GtaServer::query()->create(['slug' => 'a-rp', 'name' => 'A RP', 'platform' => 'pc', 'multiplayer' => 'ragemp', 'status' => GtaServer::STATUS_PUBLISHED, 'origin' => 'seed']),

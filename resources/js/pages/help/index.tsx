@@ -2,6 +2,7 @@ import { Head, usePage } from '@inertiajs/react';
 import { Search, X } from 'lucide-react';
 import { AnimatePresence, m, useReducedMotion } from 'motion/react';
 import { useMemo, useState } from 'react';
+import { SiteAssistant } from '@/components/ai/site-assistant';
 import { openFeedback, ReleaseLine } from '@/components/gc/site-extras';
 import {
     HelpBadge,
@@ -88,6 +89,8 @@ export default function HelpIndex({ categories, popular }: Props) {
                     </button>
                 )}
             </div>
+
+            {terms.length === 0 && <SiteAssistant />}
 
             <AnimatePresence mode="wait" initial={false}>
                 {terms.length > 0 ? (

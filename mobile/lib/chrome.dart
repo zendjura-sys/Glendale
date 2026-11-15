@@ -1144,6 +1144,7 @@ List<({String title, List<_MenuEntry> items})> _menuGroups(BuildContext context,
     (
       title: tr('Моє'),
       items: <_MenuEntry>[
+        if (fresh('/today')) go(LucideIcons.sparkles, tr('Сьогодні — зведення дня'), '/today'),
         if (fresh('/saved')) go(LucideIcons.bookmark, tr('Збережене'), '/saved'),
         if (fresh('/later')) go(LucideIcons.clock, tr('Прочитати пізніше'), '/later'),
         if (fresh('/archive')) go(LucideIcons.archive, tr('Архів записів'), '/archive'),

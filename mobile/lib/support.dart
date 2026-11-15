@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import 'ai_helpers.dart';
 import 'api.dart';
 import 'i18n.dart';
 import 'posts.dart';
@@ -56,6 +57,8 @@ class HelpScreen extends StatelessWidget {
         onRefresh: reload,
         children: [
           PageTitle(tr('Довідка'), subtitle: tr('Відповіді на питання про GameCon')),
+          const SiteAssistantCard(),
+          const SizedBox(height: 14),
           if (maps(d['popular']).isNotEmpty) ...[
             SectionLabel(tr('Популярне')),
             Glass(

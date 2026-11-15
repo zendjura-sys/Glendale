@@ -4,6 +4,7 @@ use App\Http\Controllers\AccountSwitchController;
 use App\Http\Controllers\Admin;
 use App\Http\Controllers\AiController;
 use App\Http\Controllers\AirAlertController;
+use App\Http\Controllers\AiToolsController;
 use App\Http\Controllers\AnimeImportController;
 use App\Http\Controllers\AppDownloadController;
 use App\Http\Controllers\AppLinksController;
@@ -202,6 +203,8 @@ Route::prefix('help')->name('help.')->controller(HelpController::class)->where([
     Route::get('{category}/{article}', 'article')->name('article');
     Route::post('{category}/{article}/vote', 'vote')->middleware('throttle:20,1')->name('vote');
 });
+// Помічник по сайту: гостям — пошук у довідці, тим, хто увійшов, — відповідь ШІ за статтями.
+Route::post('help-assistant', [AiToolsController::class, 'assistant'])->middleware('throttle:20,1')->name('help.assistant');
 
 Route::redirect('dashboard', '/feed')->name('dashboard');
 
@@ -229,6 +232,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     Route::post('join/{token}', [InviteLinkController::class, 'accept'])->middleware('throttle:20,1')->name('invites.accept');
 
     Route::get('feed', [FeedController::class, 'index'])->middleware('module:feed')->name('feed');
+    Route::get('today', [AiToolsController::class, 'today'])->middleware('throttle:30,1')->name('today');
     Route::get('feed/activity', [FeedController::class, 'activity'])->middleware(['module:feed', 'throttle:60,1'])->name('feed.activity');
     Route::get('feed/widgets', [FeedController::class, 'widgets'])->middleware('throttle:60,1')->name('feed.widgets');
     // Банери з A/B-тестами: показ, перехід (рахує клік), закрити.
@@ -1050,6 +1054,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::get('/', [PartyController::class, 'index'])->name('index');
         Route::post('/', [PartyController::class, 'store'])->middleware('throttle:10,10')->name('store');
         Route::get('match', [TeammateController::class, 'index'])->name('match');
+        Route::post('match/ai', [AiToolsController::class, 'teammates'])->middleware('throttle:10,1')->name('match.ai');
         Route::put('match/profile', [TeammateController::class, 'update'])->middleware('throttle:20,1')->name('match.profile');
         Route::post('match/looking', [TeammateController::class, 'looking'])->middleware('throttle:20,1')->name('match.looking');
         Route::post('{party}/invite', [TeammateController::class, 'invite'])->middleware('throttle:30,1')->name('invite');

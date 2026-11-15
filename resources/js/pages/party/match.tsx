@@ -1,6 +1,7 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { ArrowLeft, Radar, Settings2, UsersRound, X } from 'lucide-react';
 import { useState } from 'react';
+import { TeammateFinder } from '@/components/ai/teammate-finder';
 import { selectClass } from '@/components/gc/admin';
 import { EmptyState } from '@/components/gc/widget';
 import { PARTY_PLATFORMS } from '@/components/party/party-card';
@@ -339,6 +340,8 @@ export default function TeammateMatch({
                         </button>
                     )}
                 </header>
+
+                <TeammateFinder parties={parties} />
 
                 <section className="gc-solid rounded-xl p-4 sm:p-5">
                     <div className="flex items-center justify-between gap-3">

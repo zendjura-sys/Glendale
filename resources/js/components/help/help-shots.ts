@@ -76,6 +76,20 @@ const HELP_SHOTS: Record<string, HelpShotMeta> = {
             },
         },
     },
+    'ai-teammates': {
+        src: '/images/help/ai-teammates.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            finder: {
+                x: 33.1,
+                y: 23.6,
+                w: 53.3,
+                h: 76.4,
+            },
+        },
+    },
     'app-download': {
         src: '/images/help/app-download.webp',
         w: 1440,
@@ -1137,6 +1151,20 @@ const HELP_SHOTS: Record<string, HelpShotMeta> = {
                 y: 40,
                 w: 75.6,
                 h: 4.4,
+            },
+        },
+    },
+    'help-assistant': {
+        src: '/images/help/help-assistant.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            assistant: {
+                x: 29.9,
+                y: 29,
+                w: 59.7,
+                h: 14.1,
             },
         },
     },
@@ -2555,6 +2583,26 @@ const HELP_SHOTS: Record<string, HelpShotMeta> = {
                 y: 15.1,
                 w: 8.8,
                 h: 4.4,
+            },
+        },
+    },
+    today: {
+        src: '/images/help/today.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            summary: {
+                x: 37.5,
+                y: 18.2,
+                w: 44.4,
+                h: 16.1,
+            },
+            facts: {
+                x: 37.5,
+                y: 35.7,
+                w: 44.4,
+                h: 24.9,
             },
         },
     },

@@ -63,6 +63,7 @@ String appPathFor(String? sitePath) {
     case 'invite':
     case 'later':
     case 'archive':
+    case 'today':
     case 'alerts':
     case 'playing':
       return '/$head';

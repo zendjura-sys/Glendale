@@ -4,6 +4,7 @@ import 'core/widgets/arctic_glass/arctic_fit_text.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import 'ai_helpers.dart';
 import 'api.dart';
 import 'i18n.dart';
 import 'party.dart' show partyPlatforms;
@@ -170,6 +171,8 @@ class _TeammatesScreenState extends State<TeammatesScreen> {
                       if (await attempt(context, () => api.post(Api.site('/party/match/looking'), {'on': true}), success: tr('Вас побачать першими протягом двох годин.'))) await reload();
                     },
                   ),
+          const SizedBox(height: 12),
+          TeammateFinderCard(onInvite: parties.isEmpty ? null : (m) => _invite(parties, m)),
           const SizedBox(height: 12),
           Glass(
             radius: 12,

@@ -1,5 +1,13 @@
 import { Link } from '@inertiajs/react';
-import { Bell, Heart, Music, Newspaper, UserPlus, X } from 'lucide-react';
+import {
+    Bell,
+    Heart,
+    Music,
+    Newspaper,
+    Sparkles,
+    UserPlus,
+    X,
+} from 'lucide-react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { useState } from 'react';
 import { UserAvatar } from '@/components/gc/user-avatar';
@@ -75,6 +83,14 @@ export function WhileAway({ data }: { data: WhileAwayData | null }) {
                                     time: away(data.hours),
                                 })}
                             </p>
+                            <Link
+                                href="/today"
+                                className="mt-1 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+                                data-today-link
+                            >
+                                <Sparkles className="size-3.5" />
+                                {tr('Зведення дня')}
+                            </Link>
                         </div>
                         <button
                             type="button"

@@ -9,6 +9,7 @@ import {
     PenSquare,
     Search,
     Settings,
+    Sparkles,
     User,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -123,6 +124,12 @@ export function CommandPalette() {
                 label: tr('Збережене'),
                 icon: Bookmark,
                 run: go('/saved'),
+            },
+            {
+                id: 'today',
+                label: tr('Сьогодні — зведення дня'),
+                icon: Sparkles,
+                run: go('/today'),
             },
             ...(nav ?? []).map((item) => ({
                 id: `nav-${item.key}`,

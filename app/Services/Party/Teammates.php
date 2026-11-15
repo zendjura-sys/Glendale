@@ -129,7 +129,7 @@ class Teammates
      *
      * @return Collection<int, TeammateProfile>
      */
-    private function candidates(User $viewer): Collection
+    public function candidates(User $viewer): Collection
     {
         $blocked = UserBlock::query()->where('user_id', $viewer->id)->pluck('blocked_id')
             ->merge(UserBlock::query()->where('blocked_id', $viewer->id)->pluck('user_id'))->all();
@@ -208,7 +208,7 @@ class Teammates
      * @param  array<int, string>  $names
      * @return array<string, mixed>
      */
-    private function card(TeammateProfile $profile, array $match, array $names, bool $friend): array
+    public function card(TeammateProfile $profile, array $match, array $names, bool $friend): array
     {
         $shared = array_values(array_filter(array_map(fn (int $id) => $names[$id] ?? null, $match['games'])));
 
@@ -230,7 +230,7 @@ class Teammates
      * @param  array<int, int>  $ids
      * @return array<int, string>
      */
-    private function gameNames(array $ids): array
+    public function gameNames(array $ids): array
     {
         return $ids === [] ? [] : Game::query()->whereIn('id', array_unique($ids))->pluck('name', 'id')->all();
     }

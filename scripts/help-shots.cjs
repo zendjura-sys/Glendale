@@ -342,6 +342,43 @@ const SHOTS = [
         },
     },
     {
+        id: 'today',
+        url: '/today',
+        device: PC,
+        regions: {
+            summary: (p) => p.locator('[data-today-summary]'),
+            facts: (p) => p.locator('[data-today-facts]'),
+        },
+    },
+    {
+        id: 'help-assistant',
+        url: '/help',
+        device: PC,
+        prepare: async (p) => {
+            await p
+                .locator('[data-site-assistant] input')
+                .fill('Як взяти зміну в сім’ї?');
+        },
+        regions: {
+            assistant: (p) => p.locator('[data-site-assistant]'),
+        },
+    },
+    {
+        id: 'ai-teammates',
+        url: '/party/match',
+        device: PC,
+        prepare: async (p) => {
+            await p
+                .locator('[data-ai-teammates] input')
+                .fill('Шукаю двох у CS2 ввечері, з мікрофоном');
+            await p.locator('[data-ai-teammates] button[type=submit]').click();
+            await p.waitForTimeout(1500);
+        },
+        regions: {
+            finder: (p) => p.locator('[data-ai-teammates]'),
+        },
+    },
+    {
         id: 'games-pc',
         url: '/games',
         device: PC,

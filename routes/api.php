@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AiController;
 use App\Http\Controllers\AirAlertController;
+use App\Http\Controllers\AiToolsController;
 use App\Http\Controllers\AnimeImportController;
 use App\Http\Controllers\Api\AccountApiController;
 use App\Http\Controllers\Api\AppLoginApiController;
@@ -471,6 +472,9 @@ Route::prefix('v1')->group(function () {
          * шляхами з префіксом /api/v1/site. BridgeSiteAction перетворює редиректи й Inertia-сторінки на JSON.
          */
         Route::prefix('site')->middleware(BridgeSiteAction::class)->group(function () {
+            // ШІ: зведення дня й помічник по сайту (ті самі контролери, що й на сайті).
+            Route::get('today', [AiToolsController::class, 'today'])->middleware('throttle:30,1');
+            Route::post('help-assistant', [AiToolsController::class, 'assistant'])->middleware('throttle:20,1');
             // Один пошук на весь сайт: люди, кіно, музика, ігри, сервери, спільноти, клани, сім'ї.
             Route::get('search/quick', [PeopleController::class, 'quick'])->middleware('throttle:120,1');
             // GameCon SDK: документація й пісочниця оверлею (той самий контролер, що на сайті).
@@ -1139,6 +1143,7 @@ Route::prefix('v1')->group(function () {
                 Route::get('/', [PartyController::class, 'index']);
                 Route::post('/', [PartyController::class, 'store'])->middleware('throttle:10,10');
                 Route::get('match', [TeammateController::class, 'index']);
+                Route::post('match/ai', [AiToolsController::class, 'teammates'])->middleware('throttle:10,1');
                 Route::put('match/profile', [TeammateController::class, 'update'])->middleware('throttle:20,1');
                 Route::post('match/looking', [TeammateController::class, 'looking'])->middleware('throttle:20,1');
                 Route::post('{party}/invite', [TeammateController::class, 'invite'])->middleware('throttle:30,1');

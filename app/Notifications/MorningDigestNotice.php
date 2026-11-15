@@ -31,7 +31,7 @@ class MorningDigestNotice extends Notification
             'actor_id' => null,
             'text' => 'Доброго ранку! Ось що на сьогодні',
             'excerpt' => implode(' · ', $this->lines),
-            'url' => '/feed',
+            'url' => '/today',
         ];
     }
 }
