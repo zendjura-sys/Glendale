@@ -8,6 +8,7 @@ import {
     LogIn,
     LogOut,
     Plus,
+    ScrollText,
     UserPlus,
 } from 'lucide-react';
 import { useState } from 'react';
@@ -23,6 +24,7 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { api } from '@/lib/api';
 import { usePlugin } from '@/lib/plugins';
 import { cn } from '@/lib/utils';
 import type { CommunityCard, CommunityRole, MembershipStatus } from '@/types';
@@ -32,6 +34,8 @@ type Props = {
     community: Pick<CommunityCard, 'slug' | 'type' | 'privacy'> & {
         has_password?: boolean;
         join_questions?: string[];
+        rules_accept?: boolean;
+        rules_text?: string | null;
     };
     status: MembershipStatus | null;
     role?: CommunityRole | null;
@@ -48,6 +52,8 @@ export function JoinButton({
 }: Props) {
     const [busy, setBusy] = useState(false);
     const [asking, setAsking] = useState(false);
+    const [rulesOk, setRulesOk] = useState(false);
+    const [rulesOpen, setRulesOpen] = useState(false);
     const signedIn = Boolean(usePage().props.auth.user);
     const formsOn = usePlugin('join_forms');
     const isPublic = community.type === 'public';
@@ -59,6 +65,48 @@ export function JoinButton({
         onStart: () => setBusy(true),
         onFinish: () => setBusy(false),
     };
+
+    // Правила при вступі: спершу «Погоджуюся», далі — звичайний вступ (пароль, анкета чи одразу).
+    const needsRules =
+        signedIn && status === null && community.rules_accept && !rulesOk;
+    const acceptRules = async () => {
+        await api('POST', `/c/${community.slug}/rules/accept`);
+        setRulesOk(true);
+        setRulesOpen(false);
+        const dialog =
+            community.has_password ||
+            ((community.join_questions ?? []).length > 0 && formsOn);
+        if (dialog) {
+            setAsking(true);
+        } else {
+            router.post(url, {}, options);
+        }
+    };
+    if (needsRules) {
+        return (
+            <>
+                <button
+                    type="button"
+                    onClick={() => setRulesOpen(true)}
+                    className={cn(
+                        'btn-glow inline-flex items-center justify-center gap-2 rounded-xl font-semibold',
+                        height,
+                        className,
+                    )}
+                >
+                    <ScrollText className="size-4" />
+                    {isPublic ? tr('Підписатися') : tr('Вступити')}
+                </button>
+                <RulesDialog
+                    open={rulesOpen}
+                    onOpenChange={setRulesOpen}
+                    rules={community.rules_text ?? ''}
+                    rulesHref={`/c/${community.slug}/rules`}
+                    onAccept={acceptRules}
+                />
+            </>
+        );
+    }
 
     // Гість (без акаунта) — спершу вхід.
     if (!signedIn) {
@@ -366,6 +414,69 @@ function QuestionsDialog({
                         {tr('Надіслати заявку')}
                     </button>
                 </form>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+/** Правила спільноти перед вступом: прочитати й погодитися. */
+function RulesDialog({
+    open,
+    onOpenChange,
+    rules,
+    rulesHref,
+    onAccept,
+}: {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    rules: string;
+    rulesHref: string;
+    onAccept: () => Promise<void>;
+}) {
+    const [agree, setAgree] = useState(false);
+    const [busy, setBusy] = useState(false);
+
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="sm:max-w-lg" data-rules-dialog>
+                <DialogTitle>{tr('Правила спільноти')}</DialogTitle>
+                <DialogDescription>
+                    {tr(
+                        'Щоб вступити, прочитайте правила й погодьтеся з ними.',
+                    )}
+                </DialogDescription>
+                <div className="gc-solid-2 max-h-[45vh] overflow-y-auto rounded-xl p-4 text-sm leading-relaxed whitespace-pre-line text-white/80">
+                    {rules || (
+                        <Link href={rulesHref} className="text-primary">
+                            {tr('Відкрити правила')}
+                        </Link>
+                    )}
+                </div>
+                <label className="flex items-center gap-3 text-sm text-white/85">
+                    <input
+                        type="checkbox"
+                        checked={agree}
+                        onChange={(event) => setAgree(event.target.checked)}
+                        className="size-4 accent-gc-indigo"
+                    />
+                    {tr('Я прочитав(-ла) правила й погоджуюся з ними')}
+                </label>
+                <button
+                    type="button"
+                    disabled={!agree || busy}
+                    onClick={async () => {
+                        setBusy(true);
+                        try {
+                            await onAccept();
+                        } finally {
+                            setBusy(false);
+                        }
+                    }}
+                    className="btn-glow inline-flex h-10 items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold disabled:opacity-40"
+                >
+                    <Check className="size-4" />
+                    {tr('Погоджуюся і вступаю')}
+                </button>
             </DialogContent>
         </Dialog>
     );

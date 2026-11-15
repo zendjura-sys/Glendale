@@ -845,6 +845,21 @@ class AppSiteParityTest extends TestCase
         $post(['body' => 'Завтра зранку', 'publish_at' => now()->addDay()->toIso8601String()])->assertCreated();
     }
 
+    public function test_app_reaches_community_rules_and_log_through_bridge(): void
+    {
+        $owner = User::factory()->create();
+        $user = User::factory()->create();
+        $community = Community::query()->create(['slug' => 'rules-club', 'name' => 'Rules Club', 'type' => 'group', 'privacy' => 'open', 'owner_id' => $owner->id, 'rules' => 'Без образ.', 'rules_accept' => true]);
+        $community->memberships()->create(['user_id' => $owner->id, 'role' => 'owner', 'status' => 'active']);
+        $token = $user->createToken('app')->plainTextToken;
+
+        $this->withToken($token)->postJson('/api/v1/site/c/rules-club/join')->assertStatus(422);
+        $this->withToken($token)->postJson('/api/v1/site/c/rules-club/rules/accept')->assertOk();
+        $this->withToken($token)->postJson('/api/v1/site/c/rules-club/join');
+        $this->assertDatabaseHas('community_members', ['community_id' => $community->id, 'user_id' => $user->id]);
+        $this->withToken($owner->createToken('app')->plainTextToken)->getJson('/api/v1/site/c/rules-club/log')->assertOk()->assertJsonStructure(['entries']);
+    }
+
     public function test_app_reaches_post_archive_through_bridge(): void
     {
         $user = User::factory()->create();

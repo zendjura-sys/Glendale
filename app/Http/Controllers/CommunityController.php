@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Community;
+use App\Models\CommunityLog;
 use App\Models\CommunityMember;
 use App\Models\Photo;
 use App\Models\Post;
@@ -22,6 +23,7 @@ use App\Support\Modules\ModuleManager;
 use App\Support\Plugins\Plugins;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -233,6 +235,7 @@ class CommunityController extends Controller
             'widget' => $community->isClosed() ? null : url('/widget/'.$community->slug.'/card.js'),
             'extras' => [
                 'rules' => $community->rules ?? '',
+                'rules_accept' => $community->rules_accept,
                 'handbook' => $community->handbook ?? '',
                 'welcome' => $community->welcome ?? '',
                 'banned_words' => implode("\n", $community->banned_words ?? []),
@@ -295,6 +298,7 @@ class CommunityController extends Controller
             $community->join_password = $data['password'];
         }
         $community->save();
+        CommunityLog::record($community, $request->user(), 'settings.access');
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Доступ збережено.']);
 
         return back();
@@ -337,6 +341,7 @@ class CommunityController extends Controller
             'weekly_digest' => ['sometimes', 'boolean'],
             'join_questions' => ['nullable', 'string', 'max:1500'],
             'wiki_open' => ['sometimes', 'boolean'],
+            'rules_accept' => ['sometimes', 'boolean'],
         ]);
 
         $trimmed = fn (?string $text) => ($text = trim((string) $text)) === '' ? null : $text;
@@ -355,6 +360,7 @@ class CommunityController extends Controller
             'weekly_digest' => (bool) ($data['weekly_digest'] ?? $community->weekly_digest),
             'join_questions' => $questions === [] ? null : $questions,
             'wiki_open' => (bool) ($data['wiki_open'] ?? $community->wiki_open),
+            'rules_accept' => (bool) ($data['rules_accept'] ?? $community->rules_accept),
         ]);
 
         if (! $community->premoderation) {
@@ -364,6 +370,7 @@ class CommunityController extends Controller
             }
         }
 
+        CommunityLog::record($community, $request->user(), 'settings.rules');
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Правила збережено.']);
 
         return to_route('communities.edit', $community);
@@ -392,6 +399,7 @@ class CommunityController extends Controller
     {
         $this->authorizeModerator($request, $community, $post);
         $this->wall->approve($post);
+        CommunityLog::record($community, $request->user(), 'post.approve', $post->author, mb_substr((string) $post->body, 0, 120));
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Запис опубліковано.']);
 
         return back();
@@ -401,6 +409,7 @@ class CommunityController extends Controller
     {
         $this->authorizeModerator($request, $community, $post);
         $this->wall->reject($post);
+        CommunityLog::record($community, $request->user(), 'post.reject', $post->author, mb_substr((string) $post->body, 0, 120));
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Запис відхилено.']);
 
         return back();
@@ -443,6 +452,7 @@ class CommunityController extends Controller
             $this->communities->recount($community);
         }
 
+        CommunityLog::record($community, $request->user(), 'settings.update');
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Налаштування збережено.']);
 
         return to_route('communities.edit', $community);
@@ -464,6 +474,7 @@ class CommunityController extends Controller
         $this->images->delete($community->{$column});
         $community->update([$column => $stored['path']]);
 
+        CommunityLog::record($community, $request->user(), 'settings.image');
         Inertia::flash('toast', ['type' => 'success', 'message' => $field === 'avatar' ? 'Аватар оновлено.' : 'Обкладинку оновлено.']);
 
         return back();
@@ -498,6 +509,35 @@ class CommunityController extends Controller
             : ($community->isPublic() ? 'Ви підписалися на сторінку.' : 'Ласкаво просимо до спільноти!')]);
 
         return back();
+    }
+
+    /** «Погоджуюся з правилами» перед вступом. */
+    public function acceptRules(Request $request, Community $community): RedirectResponse|JsonResponse
+    {
+        $this->communities->acceptRules($community, $request->user());
+
+        return $request->wantsJson() ? response()->json(['ok' => true]) : back();
+    }
+
+    /** Журнал дій керівників: хто кого прийняв, видалив, що змінив. Бачать адміністратори й редактори. */
+    public function log(Request $request, Community $community): Response|JsonResponse
+    {
+        $member = $community->membershipFor($request->user());
+        abort_unless(($member && $member->isActive() && in_array($member->role, [CommunityMember::ROLE_OWNER, CommunityMember::ROLE_ADMIN, CommunityMember::ROLE_EDITOR], true)) || $request->user()->isStaff(), 403);
+        $entries = CommunityLog::query()->where('community_id', $community->id)->with(['actor', 'target'])
+            ->latest('id')->limit(200)->get()
+            ->map(fn (CommunityLog $log) => [
+                'id' => $log->id,
+                'action' => $log->action,
+                'label' => CommunityLog::LABELS[$log->action] ?? $log->action,
+                'actor' => $log->actor?->toCard(),
+                'target' => $log->target?->toCard(),
+                'note' => $log->note,
+                'at' => $log->created_at?->toIso8601String(),
+            ])->all();
+        $data = ['community' => $community->toCard(), 'entries' => $entries];
+
+        return $request->wantsJson() ? response()->json($data) : Inertia::render('communities/log', $data);
     }
 
     public function leave(Request $request, Community $community): RedirectResponse

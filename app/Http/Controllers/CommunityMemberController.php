@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Community;
+use App\Models\CommunityLog;
 use App\Models\CommunityMember;
 use App\Models\User;
 use App\Services\CommunityService;
@@ -78,6 +79,7 @@ class CommunityMemberController extends Controller
     {
         $this->authorizeAdmin($request, $community);
         $this->communities->approve($community, $user);
+        CommunityLog::record($community, $request->user(), 'member.approve', $user);
 
         return back();
     }
@@ -86,6 +88,7 @@ class CommunityMemberController extends Controller
     {
         $this->authorizeAdmin($request, $community);
         $community->memberships()->where('user_id', $user->id)->where('status', CommunityMember::STATUS_PENDING)->delete();
+        CommunityLog::record($community, $request->user(), 'member.decline', $user);
 
         return back();
     }
@@ -97,6 +100,7 @@ class CommunityMemberController extends Controller
         ]);
 
         $this->communities->setRole($community, $request->user(), $user, $data['role']);
+        CommunityLog::record($community, $request->user(), 'member.role', $user, ['owner' => 'Власник', 'admin' => 'Адміністратор', 'editor' => 'Редактор', 'member' => 'Учасник'][$data['role']] ?? $data['role']);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => $data['role'] === CommunityMember::ROLE_OWNER
             ? "Права власника передано {$user->name}."
@@ -121,6 +125,7 @@ class CommunityMemberController extends Controller
             'title' => $title === '' ? null : $title,
             'color' => $title === '' ? null : ($data['color'] ?? CommunityMember::COLORS[0]),
         ]);
+        CommunityLog::record($community, $request->user(), 'member.title', $user, $title === '' ? null : $title);
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Підпис збережено.']);
 
         return back();
@@ -129,6 +134,9 @@ class CommunityMemberController extends Controller
     public function destroy(Request $request, Community $community, User $user): RedirectResponse
     {
         $this->communities->remove($community, $request->user(), $user);
+        if ($request->user()->id !== $user->id) {
+            CommunityLog::record($community, $request->user(), 'member.remove', $user);
+        }
 
         return back();
     }

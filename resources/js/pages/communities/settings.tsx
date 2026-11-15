@@ -1,6 +1,13 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import { toast } from 'sonner';
-import { ArrowLeft, Globe2, Lock, Megaphone, UsersRound } from 'lucide-react';
+import {
+    ArrowLeft,
+    Globe2,
+    History,
+    Lock,
+    Megaphone,
+    UsersRound,
+} from 'lucide-react';
 import { AccessCard } from '@/components/communities/access-card';
 import type { CommunityAccess } from '@/components/communities/access-card';
 import { DonationJarForm } from '@/components/gc/donation-jar';
@@ -147,6 +154,14 @@ export default function CommunitySettings({
                             {community.name}
                         </p>
                     </div>
+                    <Link
+                        href={`/c/${community.slug}/log`}
+                        className="gc-solid-2 ml-auto inline-flex h-10 items-center gap-2 rounded-xl px-3.5 text-sm font-medium text-white/75 transition hover:text-white"
+                        data-community-log-link
+                    >
+                        <History className="size-4" />
+                        {tr('Журнал дій')}
+                    </Link>
                 </div>
 
                 <form onSubmit={submit} className="space-y-5">

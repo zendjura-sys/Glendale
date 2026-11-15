@@ -178,6 +178,7 @@ Future<void> main() async {
                 routes: [
                   GoRoute(path: 'members', builder: (_, state) => CommunityMembersScreen(slug: state.pathParameters['slug']!, tab: state.uri.queryParameters['tab'] ?? 'all')),
                   GoRoute(path: 'settings', builder: (_, state) => CommunitySettingsScreen(slug: state.pathParameters['slug']!)),
+                  GoRoute(path: 'log', builder: (_, state) => CommunityLogScreen(slug: state.pathParameters['slug']!)),
                   GoRoute(path: 'photos', builder: (_, state) => PhotosScreen(community: state.pathParameters['slug'])),
                   GoRoute(path: 'channels', builder: (_, state) => CommunityChannelsScreen(slug: state.pathParameters['slug']!)),
                   GoRoute(path: 'calendar', builder: (_, state) => CommunityCalendarScreen(slug: state.pathParameters['slug']!)),

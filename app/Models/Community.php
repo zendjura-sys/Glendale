@@ -55,7 +55,7 @@ use Illuminate\Support\Facades\Storage;
  */
 // Банка — лише для сторінок сайту (картка «Підтримати»); у застосунок і API не віддається.
 #[Hidden(['donation_jar', 'donation_note', 'join_password'])]
-#[Fillable(['slug', 'name', 'type', 'privacy', 'wall', 'category', 'status', 'description', 'website', 'city', 'avatar_path', 'cover_path', 'owner_id', 'is_verified', 'rules', 'handbook', 'welcome', 'banned_words', 'post_tags', 'slow_mode', 'premoderation', 'weekly_digest', 'is_listed', 'guest_view', 'guest_chat_channel_id', 'join_questions', 'wiki_open'])]
+#[Fillable(['slug', 'name', 'type', 'privacy', 'wall', 'category', 'status', 'description', 'website', 'city', 'avatar_path', 'cover_path', 'owner_id', 'is_verified', 'rules', 'rules_accept', 'handbook', 'welcome', 'banned_words', 'post_tags', 'slow_mode', 'premoderation', 'weekly_digest', 'is_listed', 'guest_view', 'guest_chat_channel_id', 'join_questions', 'wiki_open'])]
 class Community extends Model
 {
     use SoftDeletes;
@@ -101,6 +101,7 @@ class Community extends Model
     {
         return [
             'is_verified' => 'boolean',
+            'rules_accept' => 'boolean',
             'banned_words' => 'array',
             'post_tags' => 'array',
             'join_questions' => 'array',
@@ -237,6 +238,15 @@ class Community extends Model
             'is_verified' => $this->is_verified,
             'has_password' => $this->join_password !== null,
             'join_questions' => $this->isClosed() ? $this->join_questions ?? [] : [],
+            // Вступ лише після згоди з правилами: текст правил одразу в картці, щоб показати у вікні.
+            'rules_accept' => $this->rulesRequired(),
+            'rules_text' => $this->rulesRequired() ? $this->rules : null,
         ];
+    }
+
+    /** Чи треба погодитися з правилами перед вступом. */
+    public function rulesRequired(): bool
+    {
+        return $this->rules_accept && trim((string) $this->rules) !== '';
     }
 }

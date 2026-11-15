@@ -10,6 +10,7 @@ use App\Services\Chat\ChatBots;
 use App\Services\Communities\CommunityChannels;
 use App\Support\Plugins\Plugins;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
@@ -79,6 +80,11 @@ class CommunityService
     public function join(Community $community, User $user, bool $invited = false, ?string $password = null, array $answers = []): string
     {
         $existing = $community->membershipFor($user);
+        // Правила при вступі: спершу «Погоджуюся з правилами» (позначка живе 2 години).
+        if (! $existing && ! $invited && $community->rulesRequired() && ! $user->isStaff()
+            && ! Cache::has(self::rulesKey($community, $user))) {
+            throw ValidationException::withMessages(['rules' => 'Спершу прочитайте правила спільноти й погодьтеся з ними.']);
+        }
         // Спільнота з паролем: правильний пароль одразу робить учасником (без заявки), запрошення — без пароля.
         $byPassword = false;
         if (! $existing && ! $invited && $community->join_password !== null && ! $user->isStaff()) {
@@ -316,5 +322,16 @@ class CommunityService
         }
 
         return $result;
+    }
+
+    public static function rulesKey(Community $community, User $user): string
+    {
+        return 'community.rules.'.$community->id.'.'.$user->id;
+    }
+
+    /** Людина погодилася з правилами — можна вступати. */
+    public function acceptRules(Community $community, User $user): void
+    {
+        Cache::put(self::rulesKey($community, $user), true, now()->addHours(2));
     }
 }

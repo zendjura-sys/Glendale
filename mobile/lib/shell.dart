@@ -43,7 +43,7 @@ String appPathFor(String? sitePath) {
     case 'c':
       final sub = rest(2);
       if (sub == 'wiki') return '/communities/${rest(1)}/wiki${parts.length > 3 ? '/${rest(3)}' : ''}';
-      return '/communities/${rest(1)}${['members', 'settings', 'photos', 'channels', 'calendar'].contains(sub) ? '/$sub' : ''}${sub == 'members' ? query : ''}';
+      return '/communities/${rest(1)}${['members', 'settings', 'photos', 'channels', 'calendar', 'log'].contains(sub) ? '/$sub' : ''}${sub == 'members' ? query : ''}';
     case 'messages':
       if (rest(1) == 'saved') return '/starred';
       return parts.length > 1 && int.tryParse(rest(1)) != null ? '/messages/${rest(1)}' : '/messages';

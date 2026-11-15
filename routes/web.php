@@ -639,6 +639,8 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
             Route::patch('members/{user}/title', [CommunityMemberController::class, 'title'])->name('members.title');
             Route::post('images/{field}', [CommunityController::class, 'updateImage'])->whereIn('field', ['avatar', 'cover'])->name('image');
             Route::post('join', [CommunityController::class, 'join'])->middleware('throttle:60,1')->name('join');
+            Route::post('rules/accept', [CommunityController::class, 'acceptRules'])->middleware('throttle:30,1')->name('rules.accept');
+            Route::get('log', [CommunityController::class, 'log'])->name('log');
             Route::post('invite-link', [InviteLinkController::class, 'community'])->middleware('throttle:20,1')->name('invite-link');
             Route::delete('join', [CommunityController::class, 'leave'])->name('leave');
 

@@ -14,6 +14,7 @@ export type CommunityExtras = {
     post_tags: string;
     join_questions?: string;
     wiki_open?: boolean;
+    rules_accept?: boolean;
     slow_mode: number;
     premoderation: boolean;
     weekly_digest?: boolean;
@@ -196,6 +197,32 @@ export function RulesForm({
                                 <span className="block text-xs text-white/45">
                                     {tr(
                                         'Записи учасників з’являються після схвалення редактором.',
+                                    )}
+                                </span>
+                            </span>
+                        </label>
+                        <label
+                            className="flex items-start gap-3 rounded-2xl p-3.5 text-sm text-white/80"
+                            data-rules-accept
+                        >
+                            <input
+                                type="checkbox"
+                                checked={data.rules_accept ?? false}
+                                onChange={(event) =>
+                                    setData(
+                                        'rules_accept',
+                                        event.target.checked,
+                                    )
+                                }
+                                className="mt-0.5 size-4 accent-gc-indigo"
+                            />
+                            <span>
+                                <span className="block font-medium text-white">
+                                    {tr('Погодитися з правилами при вступі')}
+                                </span>
+                                <span className="block text-xs text-white/45">
+                                    {tr(
+                                        'Перед вступом людина бачить правила й ставить позначку «Погоджуюся». Без неї вступити не вийде.',
                                     )}
                                 </span>
                             </span>

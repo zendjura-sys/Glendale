@@ -949,6 +949,8 @@ Route::prefix('v1')->group(function () {
                 Route::patch('channel-categories/{category}', [CommunityChannelController::class, 'updateCategory'])->whereNumber('category');
                 Route::delete('channel-categories/{category}', [CommunityChannelController::class, 'destroyCategory'])->whereNumber('category');
                 Route::post('join', [CommunityController::class, 'join'])->middleware('throttle:60,1');
+                Route::post('rules/accept', [CommunityController::class, 'acceptRules'])->middleware('throttle:30,1');
+                Route::get('log', [CommunityController::class, 'log']);
                 Route::delete('join', [CommunityController::class, 'leave']);
                 Route::get('photos', [PhotoController::class, 'community'])->middleware('module:photos');
                 Route::delete('/', [CommunityController::class, 'destroy']);

@@ -264,6 +264,23 @@ const SHOTS = [
         },
     },
     {
+        id: 'community-rules-accept',
+        url: '/c/gamecon/settings',
+        device: PC,
+        prepare: scrollTo((p) => p.locator('[data-rules-accept]'), 260),
+        regions: {
+            toggle: (p) => p.locator('[data-rules-accept]'),
+        },
+    },
+    {
+        id: 'community-log',
+        url: '/c/gamecon/log',
+        device: PC,
+        regions: {
+            list: (p) => p.locator('main ol').first(),
+        },
+    },
+    {
         id: 'games-pc',
         url: '/games',
         device: PC,

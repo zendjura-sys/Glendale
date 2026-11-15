@@ -256,6 +256,10 @@ class _JoinButtonState extends State<JoinButton> {
     final slug = widget.community['slug'];
     final public = widget.community['type'] == 'public';
     if (status == 'active' && !await confirm(context, public ? tr('Відписатися?') : tr('Вийти зі спільноти?'), action: public ? tr('Відписатися') : tr('Вийти'), danger: true)) return;
+    // Правила при вступі: спершу прочитати й погодитися — як на сайті.
+    if (status == null && widget.community['rules_accept'] == true) {
+      if (!await _acceptRules(api, slug)) return;
+    }
     setState(() => busy = true);
     try {
       final data = status == null ? await api.post('/api/v1/communities/$slug/join') : await api.delete('/api/v1/communities/$slug/join');
@@ -267,6 +271,38 @@ class _JoinButtonState extends State<JoinButton> {
     } finally {
       if (mounted) setState(() => busy = false);
     }
+  }
+
+  Future<bool> _acceptRules(Api api, Object? slug) async {
+    var agree = false;
+    final ok = await showGcSheet<bool>(
+      context,
+      title: tr('Правила спільноти'),
+      subtitle: tr('Щоб вступити, прочитайте правила й погодьтеся з ними.'),
+      builder: (sheet) => StatefulBuilder(
+        builder: (sheet, setSheet) => Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(text(widget.community['rules_text']) ?? '', style: body(14, color: fg.withValues(alpha: 0.85)).copyWith(height: 1.5)),
+              const SizedBox(height: 12),
+              CheckboxListTile(
+                value: agree,
+                contentPadding: EdgeInsets.zero,
+                controlAffinity: ListTileControlAffinity.leading,
+                onChanged: (v) => setSheet(() => agree = v == true),
+                title: Text(tr('Я прочитав(-ла) правила й погоджуюся з ними'), style: body(14)),
+              ),
+              const SizedBox(height: 8),
+              PrimaryButton(label: tr('Погоджуюся і вступаю'), icon: LucideIcons.check, onPressed: agree ? () => Navigator.pop(sheet, true) : null),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (ok != true || !mounted) return false;
+    return attempt(context, () => api.post(Api.site('/c/$slug/rules/accept')));
   }
 
   @override
@@ -1011,6 +1047,7 @@ class _CommunitySettingsScreenState extends State<CommunitySettingsScreen> {
           RoundIcon(icon: LucideIcons.arrowLeft, onTap: () => context.pop()),
           const SizedBox(width: 8),
           Expanded(child: Text(tr('Керування спільнотою'), style: display(18))),
+          RoundIcon(icon: LucideIcons.history, onTap: () => context.push('/communities/${widget.slug}/log')),
         ]),
         const SizedBox(height: 12),
         Glass(
@@ -1090,6 +1127,47 @@ class _CommunitySettingsScreenState extends State<CommunitySettingsScreen> {
           DangerButton(label: tr('Видалити спільноту'), icon: LucideIcons.trash2, expand: true, onPressed: _delete),
         ],
       ],
+    );
+  }
+}
+
+/// Журнал дій керівників спільноти — як «Журнал дій» на сайті (/c/{slug}/log).
+class CommunityLogScreen extends StatelessWidget {
+  const CommunityLogScreen({required this.slug, super.key});
+  final String slug;
+
+  @override
+  Widget build(BuildContext context) {
+    final api = AppScope.read(context).session.api;
+    return Remote(
+      load: () => api.get(Api.site('/c/$slug/log')),
+      builder: (d, reload) {
+        final entries = maps(d['entries']);
+        return ScreenScroll(
+          onRefresh: reload,
+          children: [
+            PageTitle(tr('Журнал дій'), subtitle: tr('Хто з керівників кого прийняв, видалив, яку роль змінив і що в налаштуваннях.')),
+            if (entries.isEmpty) EmptyState(icon: LucideIcons.history, title: tr('Поки порожньо'), text: tr('Тут з’являтимуться дії адміністраторів і редакторів.')),
+            for (final e in entries)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Glass(
+                  child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Avatar(url: text(mapOf(e['actor'])['avatar_url']), name: text(mapOf(e['actor'])['name']) ?? '?', size: 36),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Text('${text(mapOf(e['actor'])['name']) ?? tr('Система')} · ${tr(text(e['label']) ?? '')}${e['target'] is Map ? ' · ${text(mapOf(e['target'])['name'])}' : ''}', style: body(14)),
+                        if (text(e['note']) != null) Text(text(e['note'])!, style: body(12, color: muted), maxLines: 2, overflow: TextOverflow.ellipsis),
+                        Text(ago(e['at']), style: body(11, color: muted)),
+                      ]),
+                    ),
+                  ]),
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 }

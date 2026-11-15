@@ -360,6 +360,34 @@ const HELP_SHOTS: Record<string, HelpShotMeta> = {
             },
         },
     },
+    'community-log': {
+        src: '/images/help/community-log.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            list: {
+                x: 33.1,
+                y: 16.4,
+                w: 53.3,
+                h: 27.4,
+            },
+        },
+    },
+    'community-rules-accept': {
+        src: '/images/help/community-rules-accept.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            toggle: {
+                x: 34.4,
+                y: 28.9,
+                w: 24.7,
+                h: 10.7,
+            },
+        },
+    },
     'community-settings': {
         src: '/images/help/community-settings.webp',
         w: 1440,
