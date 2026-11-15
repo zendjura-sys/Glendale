@@ -333,7 +333,10 @@ const SHOTS = [
         id: 'family-shift-partners',
         url: '/f/scaletta-family/shifts',
         device: PC,
-        prepare: scrollTo((p) => p.locator('[data-shift-partners]').first(), 300),
+        prepare: scrollTo(
+            (p) => p.locator('[data-shift-partners]').first(),
+            300,
+        ),
         regions: {
             partners: (p) => p.locator('[data-shift-partners]').first(),
         },
