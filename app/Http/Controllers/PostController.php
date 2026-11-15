@@ -37,6 +37,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -154,7 +155,12 @@ class PostController extends Controller
             'as_community' => ['nullable', 'boolean'],
             'tag' => ['nullable', 'string', 'max:24'],
             'images' => ['nullable', 'array', 'max:'.$maxFiles],
-            'images.*' => ['image', 'mimes:jpg,jpeg,png,webp,gif', 'max:'.$maxKb],
+            // Фото й відео разом — до max_attachments; відео до 50 МБ (фото — за налаштуванням сайту).
+            'images.*' => ['file', 'mimes:jpg,jpeg,png,webp,gif,mp4,webm,mov', 'max:'.max($maxKb, 51200), function (string $attribute, mixed $file, \Closure $fail) use ($maxKb) {
+                if ($file instanceof UploadedFile && str_starts_with((string) $file->getMimeType(), 'image/') && $file->getSize() > $maxKb * 1024) {
+                    $fail('Фото завелике: до '.intdiv($maxKb, 1024).' МБ.');
+                }
+            }],
             'music' => ['nullable', 'array'],
             'music.source' => ['required_with:music', Rule::in(['local', 'spotify'])],
             'music.id' => ['required_with:music'],
@@ -255,6 +261,20 @@ class PostController extends Controller
             }
 
             foreach (array_values($request->file('images', [])) as $position => $file) {
+                // Відео — як є (браузер грає mp4/webm); фото проходять обробку й стискання.
+                if (str_starts_with((string) $file->getMimeType(), 'video/')) {
+                    $post->attachments()->create([
+                        'type' => PostAttachment::TYPE_VIDEO,
+                        'path' => $file->store('posts/videos', 'public'),
+                        'mime' => (string) $file->getMimeType(),
+                        'width' => null,
+                        'height' => null,
+                        'size' => (int) $file->getSize(),
+                        'position' => $position,
+                    ]);
+
+                    continue;
+                }
                 $stored = $this->images->store($file, 'posts');
                 $post->attachments()->create([
                     'type' => PostAttachment::TYPE_IMAGE,

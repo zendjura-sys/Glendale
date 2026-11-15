@@ -8,6 +8,7 @@ import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:video_player/video_player.dart';
 
 import 'affiliation_badges.dart';
 import 'api.dart';
@@ -570,39 +571,40 @@ class SheetAction extends _SheetAction {
 
 // ───────────────────────── Вкладення ─────────────────────────
 
-/// Сітка фото як `MediaGrid` сайту: 1 — на всю ширину, 2 — поруч, 3+ — мозаїка.
+bool _isVideoName(String name) => RegExp(r'\.(mp4|webm|mov|m4v|3gp)$', caseSensitive: false).hasMatch(name);
+
+/// Медіа поста як `MediaGrid` сайту: 1 — на всю ширину, 2 — поруч, 3 — мозаїка, 4–10 — карусель-альбом.
 class MediaGrid extends StatelessWidget {
   const MediaGrid({required this.items, super.key});
   final List<Map<String, dynamic>> items;
 
+  static bool isVideo(Map<String, dynamic> item) => item['type'] == 'video';
+
   void _open(BuildContext context, int index) {
+    final item = items[index];
+    if (isVideo(item)) {
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(fullscreenDialog: true, builder: (_) => PostVideoView(url: absolute(item['url'])!)),
+      );
+      return;
+    }
+    // Переглядач гортає лише фото; відео відкриваються окремо.
+    final photos = [for (final i in items) if (!isVideo(i)) i];
     Navigator.of(context).push(
       MaterialPageRoute<void>(
         fullscreenDialog: true,
-        builder: (_) => PhotoViewer(urls: [for (final item in items) absolute(item['url'])!], initial: index),
+        builder: (_) => PhotoViewer(urls: [for (final p in photos) absolute(p['url'])!], initial: photos.indexOf(item)),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    if (items.length > 3) return _MediaCarousel(items: items, onOpen: (i) => _open(context, i));
     final shown = items.take(4).toList();
     Widget tile(int i, {double? height}) => GestureDetector(
       onTap: () => _open(context, i),
-      child: Stack(
-        fit: StackFit.passthrough,
-        children: [
-          NetImage(text(shown[i]['url']), height: height, width: double.infinity),
-          if (i == 3 && items.length > 4)
-            Positioned.fill(
-              child: Container(
-                color: Colors.black54,
-                alignment: Alignment.center,
-                child: Text('+${items.length - 4}', style: display(22)),
-              ),
-            ),
-        ],
-      ),
+      child: MediaThumb(item: shown[i], height: height),
     );
     return ClipRRect(
       borderRadius: BorderRadius.circular(18),
@@ -641,33 +643,157 @@ class MediaGrid extends StatelessWidget {
             ],
           ),
         ),
-        _ => SizedBox(
-          height: 280,
-          child: Column(
-            children: [
-              Expanded(
-                child: Row(
-                  children: [
-                    Expanded(child: tile(0)),
-                    const SizedBox(width: 3),
-                    Expanded(child: tile(1)),
-                  ],
+        _ => const SizedBox.shrink(),
+      },
+    );
+  }
+}
+
+/// Прев’ю вкладення: фото або темна плитка відео з кнопкою «відтворити».
+class MediaThumb extends StatelessWidget {
+  const MediaThumb({required this.item, this.height, super.key});
+  final Map<String, dynamic> item;
+  final double? height;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!MediaGrid.isVideo(item)) return NetImage(text(item['url']), height: height, width: double.infinity);
+    return Container(
+      height: height,
+      width: double.infinity,
+      color: Colors.black,
+      alignment: Alignment.center,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: const BoxDecoration(color: Colors.white24, shape: BoxShape.circle),
+        child: const Icon(LucideIcons.play, color: Colors.white),
+      ),
+    );
+  }
+}
+
+/// Карусель альбому: гортається пальцем, лічильник угорі й крапки знизу — як на сайті.
+class _MediaCarousel extends StatefulWidget {
+  const _MediaCarousel({required this.items, required this.onOpen});
+  final List<Map<String, dynamic>> items;
+  final void Function(int index) onOpen;
+
+  @override
+  State<_MediaCarousel> createState() => _MediaCarouselState();
+}
+
+class _MediaCarouselState extends State<_MediaCarousel> {
+  int current = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    final items = widget.items;
+    return Column(
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(18),
+          child: AspectRatio(
+            aspectRatio: 4 / 3,
+            child: Stack(
+              children: [
+                PageView.builder(
+                  itemCount: items.length,
+                  onPageChanged: (i) => setState(() => current = i),
+                  itemBuilder: (_, i) => GestureDetector(
+                    onTap: () => widget.onOpen(i),
+                    child: MediaThumb(item: items[i], height: double.infinity),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 3),
-              Expanded(
-                child: Row(
-                  children: [
-                    Expanded(child: tile(2)),
-                    const SizedBox(width: 3),
-                    Expanded(child: tile(3)),
-                  ],
+                Positioned(
+                  top: 10,
+                  right: 10,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(99)),
+                    child: Text('${current + 1} / ${items.length}', style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
-      },
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            for (var i = 0; i < items.length; i++)
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                margin: const EdgeInsets.symmetric(horizontal: 3),
+                height: 6,
+                width: i == current ? 16 : 6,
+                decoration: BoxDecoration(
+                  color: i == current ? Theme.of(context).colorScheme.primary : Colors.white24,
+                  borderRadius: BorderRadius.circular(99),
+                ),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+/// Відео з поста на весь екран: торкання — пауза/відтворення.
+class PostVideoView extends StatefulWidget {
+  const PostVideoView({required this.url, super.key});
+  final String url;
+
+  @override
+  State<PostVideoView> createState() => _PostVideoViewState();
+}
+
+class _PostVideoViewState extends State<PostVideoView> {
+  late final VideoPlayerController controller = VideoPlayerController.networkUrl(Uri.parse(widget.url));
+
+  @override
+  void initState() {
+    super.initState();
+    controller.initialize().then((_) {
+      if (!mounted) return;
+      setState(() {});
+      controller.play();
+    });
+    controller.addListener(_tick);
+  }
+
+  void _tick() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void dispose() {
+    controller.removeListener(_tick);
+    controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ready = controller.value.isInitialized;
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(backgroundColor: Colors.black, foregroundColor: Colors.white),
+      body: GestureDetector(
+        onTap: () => controller.value.isPlaying ? controller.pause() : controller.play(),
+        child: Center(
+          child: !ready
+              ? const CircularProgressIndicator()
+              : Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    AspectRatio(aspectRatio: controller.value.aspectRatio, child: VideoPlayer(controller)),
+                    if (!controller.value.isPlaying) const Icon(LucideIcons.play, color: Colors.white, size: 56),
+                    Positioned(left: 0, right: 0, bottom: 0, child: VideoProgressIndicator(controller, allowScrubbing: true)),
+                  ],
+                ),
+        ),
+      ),
     );
   }
 }
@@ -1202,7 +1328,8 @@ class _ComposerState extends State<Composer> {
   }
 
   Future<void> _pickImages() async {
-    final picked = await ImagePicker().pickMultiImage(imageQuality: 88);
+    // Фото й відео разом — альбом до 10, як на сайті.
+    final picked = await ImagePicker().pickMultipleMedia(imageQuality: 88);
     if (picked.isNotEmpty) setState(() => images.addAll(picked.take(10 - images.length)));
   }
 
@@ -1345,7 +1472,7 @@ class _ComposerState extends State<Composer> {
 
   /// Стрічка вкладень під «+» (як на сайті): фото, GIF, стікер, музика, кіно, гра/конфіг, сервер, опитування, мем.
   List<_Tool> _attachments(Session session) => [
-    _Tool(LucideIcons.imagePlus, tr('Фото'), const Color(0xFF38BDF8), active: images.isNotEmpty, onTap: _pickImages),
+    _Tool(LucideIcons.imagePlus, tr('Фото й відео'), const Color(0xFF38BDF8), active: images.isNotEmpty, onTap: _pickImages),
     if (session.pluginOn('gif_search')) _Tool(LucideIcons.imagePlay, 'GIF', const Color(0xFF34D399), active: gif != null, onTap: _pickGif),
     _Tool(LucideIcons.smile, tr('Стікер'), const Color(0xFFFBBF24), active: sticker != null, onTap: _pickSticker),
     if (session.modules?.contains('music') ?? true) _Tool(LucideIcons.music2, tr('Музика'), const Color(0xFF22D3EE), active: track != null, onTap: _pickMusic),
@@ -1506,7 +1633,15 @@ class _ComposerState extends State<Composer> {
                 itemBuilder: (_, i) => removable(
                   ClipRRect(
                     borderRadius: BorderRadius.circular(12),
-                    child: Image(image: XFileImage(images[i]), width: 76, height: 76, fit: BoxFit.cover),
+                    child: _isVideoName(images[i].name)
+                        ? Container(
+                            width: 76,
+                            height: 76,
+                            color: Colors.black87,
+                            alignment: Alignment.center,
+                            child: const Icon(LucideIcons.play, color: Colors.white),
+                          )
+                        : Image(image: XFileImage(images[i]), width: 76, height: 76, fit: BoxFit.cover),
                   ),
                   () => setState(() => images.removeAt(i)),
                 ),

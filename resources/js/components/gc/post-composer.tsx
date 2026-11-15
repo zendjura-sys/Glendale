@@ -209,8 +209,11 @@ export function PostComposer({
 
     const addFiles = (files: FileList | null) => {
         if (!files) return;
-        const images = Array.from(files).filter((file) =>
-            file.type.startsWith('image/'),
+        // Фото й відео разом — до ліміту сайту (альбом-карусель у стрічці).
+        const images = Array.from(files).filter(
+            (file) =>
+                file.type.startsWith('image/') ||
+                file.type.startsWith('video/'),
         );
         form.setData(
             'images',
@@ -548,23 +551,38 @@ export function PostComposer({
                             key={url}
                             className="group relative aspect-square animate-rise overflow-hidden rounded-xl bg-white/5"
                         >
-                            <img
-                                loading="lazy"
-                                decoding="async"
-                                src={url}
-                                alt=""
-                                className="size-full object-cover"
-                            />
-                            {photoEditorOn && (
-                                <button
-                                    type="button"
-                                    onClick={() => setEditing(index)}
-                                    className="absolute top-1.5 left-1.5 rounded-full bg-black/60 p-1 text-white opacity-0 backdrop-blur transition group-hover:opacity-100 [@media(hover:none)]:opacity-100"
-                                    aria-label={tr('Редагувати фото')}
-                                >
-                                    <SlidersHorizontal className="size-3.5" />
-                                </button>
+                            {form.data.images[index]?.type.startsWith(
+                                'video/',
+                            ) ? (
+                                <video
+                                    src={url}
+                                    muted
+                                    playsInline
+                                    preload="metadata"
+                                    className="size-full object-cover"
+                                />
+                            ) : (
+                                <img
+                                    loading="lazy"
+                                    decoding="async"
+                                    src={url}
+                                    alt=""
+                                    className="size-full object-cover"
+                                />
                             )}
+                            {photoEditorOn &&
+                                !form.data.images[index]?.type.startsWith(
+                                    'video/',
+                                ) && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setEditing(index)}
+                                        className="absolute top-1.5 left-1.5 rounded-full bg-black/60 p-1 text-white opacity-0 backdrop-blur transition group-hover:opacity-100 [@media(hover:none)]:opacity-100"
+                                        aria-label={tr('Редагувати фото')}
+                                    >
+                                        <SlidersHorizontal className="size-3.5" />
+                                    </button>
+                                )}
                             <button
                                 type="button"
                                 onClick={() =>
@@ -937,7 +955,7 @@ export function PostComposer({
                 <input
                     ref={fileRef}
                     type="file"
-                    accept="image/*"
+                    accept="image/*,video/mp4,video/webm,video/quicktime"
                     multiple
                     hidden
                     onChange={(event) => addFiles(event.target.files)}

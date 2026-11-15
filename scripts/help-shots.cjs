@@ -179,6 +179,29 @@ const SHOTS = [
         },
     },
     {
+        id: 'post-album',
+        url: '/dashboard',
+        device: PC,
+        prepare: async (p) => {
+            const post = p
+                .locator('article:has([data-media-carousel])')
+                .first();
+            await post.scrollIntoViewIfNeeded();
+            await p.evaluate(() => window.scrollBy(0, -120));
+            await p.locator('[data-media-carousel]').first().hover();
+            await p.waitForTimeout(800);
+        },
+        clip: (p) => p.locator('article:has([data-media-carousel])').first(),
+        regions: {
+            counter: (p) => p.locator('[data-media-carousel] > span').first(),
+            next: (p) =>
+                p.locator('[data-media-carousel]').getByRole('button', {
+                    name: 'Наступне',
+                }),
+            dots: (p) => p.locator('[data-media-carousel] > div').last(),
+        },
+    },
+    {
         id: 'games-pc',
         url: '/games',
         device: PC,
