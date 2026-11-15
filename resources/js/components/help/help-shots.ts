@@ -2,6 +2,160 @@
 import type { HelpShotMeta } from '@/components/help/help-shot';
 
 const HELP_SHOTS: Record<string, HelpShotMeta> = {
+    'account-appeal': {
+        src: '/images/help/account-appeal.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            what: {
+                x: 45.8,
+                y: 25.6,
+                w: 46.5,
+                h: 4.9,
+            },
+            send: {
+                x: 84.3,
+                y: 44.3,
+                w: 8.1,
+                h: 4.4,
+            },
+        },
+    },
+    'account-appeal-strikes': {
+        src: '/images/help/account-appeal-strikes.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            appeal: {
+                x: 44.7,
+                y: 17.8,
+                w: 48.8,
+                h: 2.5,
+            },
+        },
+    },
+    'account-data': {
+        src: '/images/help/account-data.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            export: {
+                x: 45.8,
+                y: 27.5,
+                w: 13.1,
+                h: 4.4,
+            },
+            freeze: {
+                x: 44.7,
+                y: 44.9,
+                w: 48.8,
+                h: 2.5,
+            },
+        },
+    },
+    'account-notify': {
+        src: '/images/help/account-notify.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            browser: {
+                x: 44.7,
+                y: 19.3,
+                w: 48.8,
+                h: 2.5,
+            },
+            bots: {
+                x: 44.7,
+                y: 36.9,
+                w: 48.8,
+                h: 2.5,
+            },
+        },
+    },
+    'app-download': {
+        src: '/images/help/app-download.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            install: {
+                x: 27.5,
+                y: 17.8,
+                w: 64.4,
+                h: 3.1,
+            },
+            apk: {
+                x: 27.5,
+                y: 25.3,
+                w: 64.4,
+                h: 7.1,
+            },
+        },
+    },
+    'app-page': {
+        src: '/images/help/app-page.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            title: {
+                x: 28.6,
+                y: 25.3,
+                w: 40.7,
+                h: 5.6,
+            },
+        },
+    },
+    'author-subscriptions': {
+        src: '/images/help/author-subscriptions.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            tiers: {
+                x: 44.7,
+                y: 19.3,
+                w: 48.8,
+                h: 2.5,
+            },
+            add: {
+                x: 45.8,
+                y: 40.5,
+                w: 11,
+                h: 4.4,
+            },
+            mine: {
+                x: 44.7,
+                y: 48.5,
+                w: 48.8,
+                h: 2.5,
+            },
+        },
+    },
+    awards: {
+        src: '/images/help/awards.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            year: {
+                x: 22.2,
+                y: 23.6,
+                w: 3.7,
+                h: 2.7,
+            },
+            nominee: {
+                x: 27.6,
+                y: 42.6,
+                w: 8.1,
+                h: 2.2,
+            },
+        },
+    },
     'chat-call': {
         src: '/images/help/chat-call.webp',
         w: 1440,
@@ -105,6 +259,130 @@ const HELP_SHOTS: Record<string, HelpShotMeta> = {
                 y: 28.9,
                 w: 34,
                 h: 42.1,
+            },
+        },
+    },
+    'cinema-roulette': {
+        src: '/images/help/cinema-roulette.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            type: {
+                x: 38.2,
+                y: 20,
+                w: 4.8,
+                h: 4,
+            },
+            seen: {
+                x: 57.8,
+                y: 26.4,
+                w: 11.2,
+                h: 2.2,
+            },
+            spin: {
+                x: 34.2,
+                y: 31.1,
+                w: 9.3,
+                h: 4.9,
+            },
+        },
+    },
+    clans: {
+        src: '/images/help/clans.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            create: {
+                x: 89.8,
+                y: 9.8,
+                w: 8.8,
+                h: 4.4,
+            },
+            filter: {
+                x: 29.1,
+                y: 31.6,
+                w: 5,
+                h: 3.6,
+            },
+            list: {
+                x: 25.8,
+                y: 20.4,
+                w: 19.7,
+                h: 2.2,
+            },
+        },
+    },
+    'community-calendar': {
+        src: '/images/help/community-calendar.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            add: {
+                x: 84,
+                y: 10.2,
+                w: 6.9,
+                h: 4.4,
+            },
+            month: {
+                x: 87.2,
+                y: 18.2,
+                w: 2.5,
+                h: 4,
+            },
+            next: {
+                x: 29.7,
+                y: 87.2,
+                w: 60,
+                h: 2.7,
+            },
+        },
+    },
+    'community-settings': {
+        src: '/images/help/community-settings.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            type: {
+                x: 33.1,
+                y: 17.8,
+                w: 53.3,
+                h: 17.2,
+            },
+            access: {
+                x: 33.3,
+                y: 17.8,
+                w: 52.8,
+                h: 2.5,
+            },
+        },
+    },
+    configs: {
+        src: '/images/help/configs.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            share: {
+                x: 34.2,
+                y: 20.9,
+                w: 9.9,
+                h: 4.4,
+            },
+            sort: {
+                x: 34.2,
+                y: 33.8,
+                w: 6.7,
+                h: 3.6,
+            },
+            kind: {
+                x: 54.5,
+                y: 33.8,
+                w: 5.1,
+                h: 3.6,
             },
         },
     },
@@ -480,6 +758,58 @@ const HELP_SHOTS: Record<string, HelpShotMeta> = {
             },
         },
     },
+    events: {
+        src: '/images/help/events.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            filter: {
+                x: 24.5,
+                y: 31.1,
+                w: 4.2,
+                h: 4,
+            },
+            subscribe: {
+                x: 43.8,
+                y: 25.8,
+                w: 14.3,
+                h: 3.6,
+            },
+            releases: {
+                x: 29,
+                y: 16.6,
+                w: 7.7,
+                h: 2,
+            },
+        },
+    },
+    families: {
+        src: '/images/help/families.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            create: {
+                x: 83.7,
+                y: 22.2,
+                w: 13,
+                h: 5.3,
+            },
+            mine: {
+                x: 20.8,
+                y: 31.9,
+                w: 77.8,
+                h: 3.1,
+            },
+            catalog: {
+                x: 20.8,
+                y: 49.3,
+                w: 9.4,
+                h: 3.1,
+            },
+        },
+    },
     'family-goals': {
         src: '/images/help/family-goals.webp',
         w: 648,
@@ -552,6 +882,58 @@ const HELP_SHOTS: Record<string, HelpShotMeta> = {
             },
         },
     },
+    'footer-legal': {
+        src: '/images/help/footer-legal.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            terms: {
+                x: 46.4,
+                y: 56,
+                w: 19.4,
+                h: 4.9,
+            },
+            privacy: {
+                x: 46.4,
+                y: 61.6,
+                w: 19.4,
+                h: 4.9,
+            },
+            refund: {
+                x: 46.4,
+                y: 67.1,
+                w: 19.4,
+                h: 4.9,
+            },
+        },
+    },
+    'game-nights': {
+        src: '/images/help/game-nights.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            plan: {
+                x: 34.2,
+                y: 20.9,
+                w: 10.6,
+                h: 4.4,
+            },
+            time: {
+                x: 35.3,
+                y: 44.2,
+                w: 9.1,
+                h: 2.2,
+            },
+            invite: {
+                x: 72.1,
+                y: 90.1,
+                w: 12.1,
+                h: 4.4,
+            },
+        },
+    },
     'games-pc': {
         src: '/images/help/games-pc.webp',
         w: 1440,
@@ -599,6 +981,26 @@ const HELP_SHOTS: Record<string, HelpShotMeta> = {
                 y: 40,
                 w: 75.6,
                 h: 4.4,
+            },
+        },
+    },
+    'help-home': {
+        src: '/images/help/help-home.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            popular: {
+                x: 29.9,
+                y: 29,
+                w: 59.7,
+                h: 3.7,
+            },
+            sections: {
+                x: 29.9,
+                y: 79.2,
+                w: 59.7,
+                h: 3.7,
             },
         },
     },
@@ -810,6 +1212,92 @@ const HELP_SHOTS: Record<string, HelpShotMeta> = {
             },
         },
     },
+    invite: {
+        src: '/images/help/invite.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            copy: {
+                x: 81.4,
+                y: 24.4,
+                w: 2.8,
+                h: 4.4,
+            },
+            share: {
+                x: 34.7,
+                y: 31.1,
+                w: 10.5,
+                h: 4.9,
+            },
+            rewards: {
+                x: 34.7,
+                y: 52,
+                w: 50,
+                h: 3.1,
+            },
+        },
+    },
+    journal: {
+        src: '/images/help/journal.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            mood: {
+                x: 37.5,
+                y: 39,
+                w: 6.5,
+                h: 4,
+            },
+            save: {
+                x: 74.3,
+                y: 44.3,
+                w: 7.7,
+                h: 4.4,
+            },
+        },
+    },
+    languages: {
+        src: '/images/help/languages.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            langs: {
+                x: 45.8,
+                y: 22.2,
+                w: 46.5,
+                h: 2.2,
+            },
+        },
+    },
+    level: {
+        src: '/images/help/level.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            level: {
+                x: 38.3,
+                y: 14.7,
+                w: 40.1,
+                h: 4,
+            },
+            xp: {
+                x: 30,
+                y: 30.2,
+                w: 31.6,
+                h: 3.1,
+            },
+            daily: {
+                x: 79.9,
+                y: 16,
+                w: 9.3,
+                h: 4.4,
+            },
+        },
+    },
     link: {
         src: '/images/help/link.webp',
         w: 1440,
@@ -914,6 +1402,20 @@ const HELP_SHOTS: Record<string, HelpShotMeta> = {
             },
         },
     },
+    memories: {
+        src: '/images/help/memories.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            title: {
+                x: 36.4,
+                y: 9.8,
+                w: 46.7,
+                h: 4.4,
+            },
+        },
+    },
     messages: {
         src: '/images/help/messages.webp',
         w: 1440,
@@ -943,6 +1445,250 @@ const HELP_SHOTS: Record<string, HelpShotMeta> = {
                 y: 11,
                 w: 2.5,
                 h: 4,
+            },
+        },
+    },
+    moments: {
+        src: '/images/help/moments.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            add: {
+                x: 84.4,
+                y: 13.6,
+                w: 12.5,
+                h: 4.9,
+            },
+            week: {
+                x: 28.4,
+                y: 22.2,
+                w: 14.8,
+                h: 4,
+            },
+            winners: {
+                x: 21.9,
+                y: 32.4,
+                w: 45,
+                h: 2.2,
+            },
+        },
+    },
+    'movie-lists': {
+        src: '/images/help/movie-lists.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            tabs: {
+                x: 20.8,
+                y: 18.2,
+                w: 7.7,
+                h: 3.6,
+            },
+            mine: {
+                x: 34.2,
+                y: 18.2,
+                w: 4.1,
+                h: 3.6,
+            },
+            list: {
+                x: 21.9,
+                y: 40.5,
+                w: 15.1,
+                h: 2.8,
+            },
+        },
+    },
+    'movie-status': {
+        src: '/images/help/movie-status.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            status: {
+                x: 29.9,
+                y: 21.9,
+                w: 6.8,
+                h: 4,
+            },
+            collection: {
+                x: 50.7,
+                y: 75.2,
+                w: 8.3,
+                h: 4.9,
+            },
+        },
+    },
+    'movie-together': {
+        src: '/images/help/movie-together.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            together: {
+                x: 59,
+                y: 45.4,
+                w: 15.6,
+                h: 4.4,
+            },
+        },
+    },
+    'music-connect': {
+        src: '/images/help/music-connect.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            devices: {
+                x: 72.8,
+                y: 92.7,
+                w: 2.5,
+                h: 4,
+            },
+        },
+    },
+    'music-player': {
+        src: '/images/help/music-player.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            lyrics: {
+                x: 70.3,
+                y: 92.7,
+                w: 2.5,
+                h: 4,
+            },
+            volume: {
+                x: 63.9,
+                y: 93.8,
+                w: 5.6,
+                h: 1.8,
+            },
+            next: {
+                x: 40,
+                y: 92.7,
+                w: 2.5,
+                h: 4,
+            },
+        },
+    },
+    'music-queue': {
+        src: '/images/help/music-queue.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            queue: {
+                x: 70.3,
+                y: 92.7,
+                w: 2.5,
+                h: 4,
+            },
+            shuffle: {
+                x: 31.9,
+                y: 92.7,
+                w: 2.5,
+                h: 4,
+            },
+            together: {
+                x: 80.3,
+                y: 92.7,
+                w: 2.5,
+                h: 4,
+            },
+        },
+    },
+    'music-radio': {
+        src: '/images/help/music-radio.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            mine: {
+                x: 20.8,
+                y: 28.2,
+                w: 31.1,
+                h: 1.4,
+            },
+            together: {
+                x: 20.8,
+                y: 24.6,
+                w: 12.4,
+                h: 2.2,
+            },
+            groups: {
+                x: 22,
+                y: 85.8,
+                w: 10.5,
+                h: 9.1,
+            },
+        },
+    },
+    'music-track-menu': {
+        src: '/images/help/music-track-menu.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            menu: {
+                x: 29.4,
+                y: 52.4,
+                w: 17.8,
+                h: 47.6,
+            },
+            edit: {
+                x: 29.9,
+                y: 84.1,
+                w: 16.9,
+                h: 4.3,
+            },
+        },
+    },
+    'music-upload': {
+        src: '/images/help/music-upload.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            file: {
+                x: 28.6,
+                y: 32.6,
+                w: 6.7,
+                h: 4,
+            },
+            link: {
+                x: 35.6,
+                y: 32.6,
+                w: 11.8,
+                h: 4,
+            },
+        },
+    },
+    'nav-settings': {
+        src: '/images/help/nav-settings.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            bar: {
+                x: 45.8,
+                y: 38.5,
+                w: 46.5,
+                h: 2.2,
+            },
+            up: {
+                x: 83.2,
+                y: 41.8,
+                w: 2.5,
+                h: 4,
+            },
+            menu: {
+                x: 45.8,
+                y: 65.4,
+                w: 3.6,
+                h: 2.2,
             },
         },
     },
@@ -981,6 +1727,32 @@ const HELP_SHOTS: Record<string, HelpShotMeta> = {
                 y: 87.9,
                 w: 28.1,
                 h: 6.6,
+            },
+        },
+    },
+    party: {
+        src: '/images/help/party.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            match: {
+                x: 72.5,
+                y: 13.6,
+                w: 12.9,
+                h: 4.9,
+            },
+            ready: {
+                x: 22.2,
+                y: 40,
+                w: 75,
+                h: 4.4,
+            },
+            now: {
+                x: 23.9,
+                y: 37.1,
+                w: 73.3,
+                h: 2,
             },
         },
     },
@@ -1038,6 +1810,106 @@ const HELP_SHOTS: Record<string, HelpShotMeta> = {
                 x: 21.9,
                 y: 78.2,
                 w: 75.6,
+                h: 2.2,
+            },
+        },
+    },
+    'playing-status': {
+        src: '/images/help/playing-status.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            status: {
+                x: 59.1,
+                y: 86.7,
+                w: 11.4,
+                h: 1.8,
+            },
+        },
+    },
+    plus: {
+        src: '/images/help/plus.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            buy: {
+                x: 31.7,
+                y: 48.9,
+                w: 26.5,
+                h: 4.4,
+            },
+            billing: {
+                x: 38.8,
+                y: 10.2,
+                w: 13.7,
+                h: 4.4,
+            },
+            compare: {
+                x: 51.5,
+                y: 27.2,
+                w: 18,
+                h: 2,
+            },
+        },
+    },
+    'plus-billing': {
+        src: '/images/help/plus-billing.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            auto: {
+                x: 34.4,
+                y: 62.9,
+                w: 50.6,
+                h: 3.1,
+            },
+            cards: {
+                x: 34.4,
+                y: 92.3,
+                w: 50.6,
+                h: 3.1,
+            },
+        },
+    },
+    'plus-style': {
+        src: '/images/help/plus-style.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            style: {
+                x: 30,
+                y: 17.8,
+                w: 59.4,
+                h: 3.1,
+            },
+        },
+    },
+    podcasts: {
+        src: '/images/help/podcasts.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            create: {
+                x: 83.6,
+                y: 15.1,
+                w: 10.6,
+                h: 4.4,
+            },
+            cats: {
+                x: 33,
+                y: 20.9,
+                w: 7.1,
+                h: 3.6,
+            },
+            show: {
+                x: 26.1,
+                y: 51.9,
+                w: 14.9,
                 h: 2.2,
             },
         },
@@ -1137,6 +2009,20 @@ const HELP_SHOTS: Record<string, HelpShotMeta> = {
                 y: 68.8,
                 w: 92.5,
                 h: 16.6,
+            },
+        },
+    },
+    'quiet-hours': {
+        src: '/images/help/quiet-hours.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            quiet: {
+                x: 44.7,
+                y: 22.3,
+                w: 48.8,
+                h: 2.5,
             },
         },
     },
@@ -1284,13 +2170,13 @@ const HELP_SHOTS: Record<string, HelpShotMeta> = {
         regions: {
             block: {
                 x: 44.4,
-                y: 64.8,
+                y: 15.6,
                 w: 49.3,
                 h: 20.3,
             },
             enable: {
                 x: 45.8,
-                y: 78.4,
+                y: 29.2,
                 w: 9.7,
                 h: 4.4,
             },
@@ -1304,15 +2190,61 @@ const HELP_SHOTS: Record<string, HelpShotMeta> = {
         regions: {
             block: {
                 x: 44.4,
-                y: 61.1,
+                y: 13.3,
                 w: 49.3,
                 h: 37.8,
             },
             add: {
                 x: 45.8,
-                y: 92.2,
+                y: 44.5,
                 w: 9,
                 h: 4.4,
+            },
+        },
+    },
+    'server-characters': {
+        src: '/images/help/server-characters.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            chars: {
+                x: 22.2,
+                y: 17.8,
+                w: 12.6,
+                h: 3.1,
+            },
+            reviews: {
+                x: 22.2,
+                y: 30.7,
+                w: 75,
+                h: 3.1,
+            },
+        },
+    },
+    'server-owner': {
+        src: '/images/help/server-owner.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            news: {
+                x: 22.2,
+                y: 22.2,
+                w: 75,
+                h: 3.1,
+            },
+            claim: {
+                x: 22.2,
+                y: 39.6,
+                w: 9.5,
+                h: 4.4,
+            },
+            badge: {
+                x: 22.2,
+                y: 3.4,
+                w: 75,
+                h: 3.1,
             },
         },
     },
@@ -1359,6 +2291,208 @@ const HELP_SHOTS: Record<string, HelpShotMeta> = {
                 y: 92.4,
                 w: 10.2,
                 h: 4.4,
+            },
+        },
+    },
+    shortcuts: {
+        src: '/images/help/shortcuts.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            dialog: {
+                x: 34.4,
+                y: 8.7,
+                w: 31.1,
+                h: 82.7,
+            },
+        },
+    },
+    status: {
+        src: '/images/help/status.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            now: {
+                x: 38.3,
+                y: 12.4,
+                w: 33.6,
+                h: 3.6,
+            },
+            history: {
+                x: 33.1,
+                y: 73.3,
+                w: 53.3,
+                h: 2.2,
+            },
+        },
+    },
+    support: {
+        src: '/images/help/support.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            new: {
+                x: 33.3,
+                y: 18.2,
+                w: 12.5,
+                h: 4.4,
+            },
+            title: {
+                x: 33.3,
+                y: 9.8,
+                w: 43.9,
+                h: 4.4,
+            },
+        },
+    },
+    'teen-mode': {
+        src: '/images/help/teen-mode.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            words: {
+                x: 44.7,
+                y: 17.7,
+                w: 48.8,
+                h: 2.5,
+            },
+            teen: {
+                x: 44.7,
+                y: 32,
+                w: 48.8,
+                h: 2.5,
+            },
+        },
+    },
+    terms: {
+        src: '/images/help/terms.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            title: {
+                x: 26.7,
+                y: 15.6,
+                w: 46.5,
+                h: 8,
+            },
+        },
+    },
+    tierlists: {
+        src: '/images/help/tierlists.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            title: {
+                x: 25.3,
+                y: 12.4,
+                w: 24.5,
+                h: 4.4,
+            },
+            new: {
+                x: 85.3,
+                y: 15.1,
+                w: 8.8,
+                h: 4.4,
+            },
+        },
+    },
+    trailers: {
+        src: '/images/help/trailers.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            title: {
+                x: 20.8,
+                y: 9.8,
+                w: 77.8,
+                h: 4.4,
+            },
+        },
+    },
+    transparency: {
+        src: '/images/help/transparency.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            reports: {
+                x: 30,
+                y: 33.3,
+                w: 59.4,
+                h: 3.1,
+            },
+            decisions: {
+                x: 30,
+                y: 55.8,
+                w: 59.4,
+                h: 3.1,
+            },
+            quarter: {
+                x: 38.6,
+                y: 23.6,
+                w: 9.1,
+                h: 3.6,
+            },
+        },
+    },
+    trivia: {
+        src: '/images/help/trivia.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            title: {
+                x: 36.4,
+                y: 9.8,
+                w: 46.7,
+                h: 4.4,
+            },
+            answer: {
+                x: 37.5,
+                y: 32.9,
+                w: 21.9,
+                h: 4.9,
+            },
+        },
+    },
+    'video-cover': {
+        src: '/images/help/video-cover.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            video: {
+                x: 22.8,
+                y: 12.9,
+                w: 11.2,
+                h: 3.6,
+            },
+            cover: {
+                x: 84.1,
+                y: 12.9,
+                w: 12.6,
+                h: 3.6,
+            },
+        },
+    },
+    wrapped: {
+        src: '/images/help/wrapped.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            title: {
+                x: 35.8,
+                y: 41.3,
+                w: 28.3,
+                h: 11.2,
             },
         },
     },

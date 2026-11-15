@@ -76,6 +76,13 @@ const B = (name) => (p) =>
     p.locator('main').getByRole('button', { name }).first();
 const H = (name) => (p) =>
     p.locator('main').getByRole('heading', { name }).first();
+/** Кнопка або посилання з такою назвою. */
+const C = (name) => (p) =>
+    p
+        .locator('main')
+        .getByRole('button', { name })
+        .or(p.locator('main').getByRole('link', { name }))
+        .first();
 const L = (name) => (p) =>
     p.locator('main').getByRole('link', { name }).first();
 const F = (label) => (p) => p.locator('main').getByLabel(label).first();
@@ -88,8 +95,16 @@ const CARD = (name) => (p) =>
 const scrollTo =
     (find, offset = 140) =>
     async (p) => {
-        await find(p).scrollIntoViewIfNeeded();
-        await p.evaluate((o) => window.scrollBy(0, -o), offset);
+        const el = find(p);
+        await el.waitFor();
+        await el.evaluate(
+            (e, o) =>
+                window.scrollTo(
+                    0,
+                    e.getBoundingClientRect().top + window.scrollY - o,
+                ),
+            offset,
+        );
         await p.waitForTimeout(600);
     };
 /** Підтвердити пароль, якщо сторінка просить. */
@@ -977,6 +992,590 @@ const SHOTS = [
         regions: {
             pin: B('Закріпити'),
             more: B('Ще'),
+        },
+    },
+    {
+        id: 'community-settings',
+        url: '/c/gamecon/settings',
+        device: PC,
+        prepare: scrollTo(H('Тип і доступ'), 160),
+        regions: {
+            type: CARD('Тип і доступ'),
+            access: H('Доступ'),
+        },
+    },
+    {
+        id: 'community-calendar',
+        url: '/c/gamecon/calendar',
+        device: PC,
+        regions: {
+            add: B('Подія'),
+            month: (p) =>
+                p
+                    .locator('main')
+                    .getByRole('link', { name: 'Наступний місяць' })
+                    .first(),
+            next: H('Найближчі'),
+        },
+    },
+    {
+        id: 'families',
+        url: '/families',
+        device: PC,
+        regions: {
+            create: C('Створити сім’ю'),
+            mine: H('Мої сім’ї'),
+            catalog: H('Каталог сімей'),
+        },
+    },
+    {
+        id: 'clans',
+        url: '/clans',
+        device: PC,
+        regions: {
+            create: C('Створити'),
+            filter: B('Гільдія'),
+            list: T('Night Wolves'),
+        },
+    },
+    {
+        id: 'events',
+        url: '/events',
+        device: PC,
+        regions: {
+            filter: B('Сім’ї'),
+            subscribe: B('Копіювати посилання'),
+            releases: (p) =>
+                p.locator('main').getByText('Релізи і сезони').first(),
+        },
+    },
+    {
+        id: 'party',
+        url: '/party',
+        device: PC,
+        regions: {
+            match: C('Підбір тиммейтів'),
+            ready: B('Я готовий грати'),
+            now: H('Готові грати зараз'),
+        },
+    },
+    {
+        id: 'tierlists',
+        url: '/tierlists',
+        device: PC,
+        regions: {
+            title: H('Тір-листи'),
+            new: (p) => p.locator('main a[href$="/tierlists/new"]').first(),
+        },
+    },
+    {
+        id: 'configs',
+        url: '/configs',
+        device: PC,
+        regions: {
+            share: B('Поділитися'),
+            sort: B('Популярні'),
+            kind: B('Приціл'),
+        },
+    },
+    {
+        id: 'game-nights',
+        url: '/game-nights',
+        device: PC,
+        regions: {
+            plan: B('Запланувати'),
+            time: B('+ Ще варіант часу'),
+            invite: B('Покликати друзів'),
+        },
+    },
+    {
+        id: 'server-owner',
+        url: '/servers/quant-rp',
+        device: PC,
+        prepare: scrollTo(H('Новини власника'), 200),
+        regions: {
+            news: H('Новини власника'),
+            claim: B('Це мій сервер'),
+            badge: H('Значок перевіреного сервера'),
+        },
+    },
+    {
+        id: 'server-characters',
+        url: '/servers/quant-rp',
+        device: PC,
+        prepare: scrollTo(H('Персонажі гравців'), 160),
+        regions: {
+            chars: H('Персонажі гравців'),
+            reviews: H('Відгуки'),
+        },
+    },
+    {
+        id: 'playing-status',
+        url: '/dashboard',
+        device: PC,
+        regions: {
+            status: (p) => p.locator('main').getByText('Граю зараз').first(),
+        },
+    },
+    {
+        id: 'movie-status',
+        url: '/cinema/sintel-2010',
+        device: PC,
+        regions: {
+            status: B('В планах'),
+            collection: B('У добірку'),
+        },
+    },
+    {
+        id: 'movie-together',
+        url: '/cinema/sintel-2010',
+        device: PC,
+        prepare: async (p) => {
+            await B('Ще')(p).click();
+            await p.waitForTimeout(800);
+        },
+        regions: {
+            together: (p) =>
+                p.getByRole('menuitem', { name: 'Дивитися разом' }),
+        },
+    },
+    {
+        id: 'cinema-roulette',
+        url: '/cinema/roulette',
+        device: PC,
+        regions: {
+            type: B('Фільм'),
+            seen: (p) =>
+                p.locator('main').getByText('Без переглянутого').first(),
+            spin: B('Крутити'),
+        },
+    },
+    {
+        id: 'movie-lists',
+        url: '/cinema/lists',
+        device: PC,
+        regions: {
+            tabs: C('Популярні'),
+            mine: C('Мої'),
+            list: T('Найкраща фантастика'),
+        },
+    },
+    {
+        id: 'music-upload',
+        url: '/music',
+        device: PC,
+        prepare: async (p) => {
+            await p
+                .locator('main')
+                .getByRole('button', { name: 'Завантажити' })
+                .first()
+                .click();
+            await p.waitForTimeout(1200);
+        },
+        regions: {
+            file: (p) => p.getByRole('tab', { name: 'Файл' }),
+            link: (p) => p.getByRole('tab', { name: 'За посиланням' }),
+        },
+    },
+    {
+        id: 'music-track-menu',
+        url: '/music',
+        device: PC,
+        prepare: async (p) => {
+            await p
+                .locator('main')
+                .getByRole('button', { name: 'Ще' })
+                .first()
+                .click();
+            await p.waitForTimeout(900);
+        },
+        regions: {
+            menu: (p) => p.getByRole('menu').first(),
+            edit: (p) =>
+                p
+                    .getByRole('menuitem', { name: /Редагувати|Відомості/ })
+                    .first(),
+        },
+    },
+    {
+        id: 'music-player',
+        url: '/music',
+        device: PC,
+        prepare: async (p) => {
+            await p
+                .locator('main')
+                .getByRole('button', { name: /Карпатський дрифт/ })
+                .first()
+                .click();
+            await p.waitForTimeout(1500);
+        },
+        regions: {
+            lyrics: (p) =>
+                p.getByRole('button', { name: 'Текст пісні' }).first(),
+            volume: (p) => p.getByRole('slider', { name: 'Гучність' }).first(),
+            next: (p) => p.getByRole('button', { name: 'Наступний' }).first(),
+        },
+    },
+    {
+        id: 'music-queue',
+        url: '/music',
+        device: PC,
+        prepare: async (p) => {
+            await p
+                .locator('main')
+                .getByRole('button', { name: /Карпатський дрифт/ })
+                .first()
+                .click();
+            await p.waitForTimeout(1500);
+        },
+        regions: {
+            queue: (p) =>
+                p.getByRole('button', { name: 'Далі в черзі' }).first(),
+            shuffle: (p) =>
+                p.getByRole('button', { name: 'Перемішати' }).first(),
+            together: (p) =>
+                p.getByRole('button', { name: 'Слухати разом' }).last(),
+        },
+    },
+    {
+        id: 'music-radio',
+        url: '/music/radio',
+        device: PC,
+        regions: {
+            mine: T('Твоя станція'),
+            together: C('Слухати радіо разом'),
+            groups: T('Станція «Scaletta Family»'),
+        },
+    },
+    {
+        id: 'music-connect',
+        url: '/music',
+        device: PC,
+        prepare: async (p) => {
+            await p
+                .locator('main')
+                .getByRole('button', { name: /Карпатський дрифт/ })
+                .first()
+                .click();
+            await p.waitForTimeout(1500);
+        },
+        regions: {
+            devices: (p) => p.getByRole('button', { name: 'Пристрої' }).last(),
+        },
+    },
+    {
+        id: 'moments',
+        url: '/moments',
+        device: PC,
+        regions: {
+            add: B('Додати момент'),
+            week: B('Найкраще за тиждень'),
+            winners: H('Минулі переможці'),
+        },
+    },
+    {
+        id: 'wrapped',
+        url: '/wrapped',
+        device: PC,
+        regions: {
+            title: (p) => p.getByRole('heading').first(),
+        },
+    },
+    {
+        id: 'level',
+        url: '/level',
+        device: PC,
+        regions: {
+            level: H('Гравець'),
+            xp: H('Звідки досвід'),
+            daily: C('Завдання дня'),
+        },
+    },
+    {
+        id: 'invite',
+        url: '/invite',
+        device: PC,
+        regions: {
+            copy: B('Копіювати'),
+            share: B('Поділитися'),
+            rewards: H('Нагороди'),
+        },
+    },
+    {
+        id: 'trivia',
+        url: '/games/trivia',
+        device: PC,
+        regions: {
+            title: H('Вікторина дня'),
+            answer: B('ПК'),
+        },
+    },
+    {
+        id: 'journal',
+        url: '/journal',
+        device: PC,
+        regions: {
+            mood: B('Чудово'),
+            save: B('Записати'),
+        },
+    },
+    {
+        id: 'memories',
+        url: '/memories',
+        device: PC,
+        regions: {
+            title: H('Цього дня'),
+        },
+    },
+    {
+        id: 'awards',
+        url: '/games/awards',
+        device: PC,
+        regions: {
+            year: C('2025'),
+            nominee: T('Counter-Strike 2'),
+        },
+    },
+    {
+        id: 'trailers',
+        url: '/games/trailers',
+        device: PC,
+        regions: {
+            title: H('Трейлери'),
+        },
+    },
+    {
+        id: 'plus',
+        url: '/plus',
+        device: PC,
+        regions: {
+            buy: B('Продовжити'),
+            billing: L('Оплата й підписки'),
+            compare: L('Порівняти тарифи й часті питання'),
+        },
+    },
+    {
+        id: 'app-page',
+        url: '/app',
+        device: PC,
+        regions: {
+            title: (p) =>
+                p.getByRole('heading', { name: 'GameCon у вашій кишені' }),
+        },
+    },
+    {
+        id: 'plus-style',
+        url: '/plus',
+        device: PC,
+        prepare: scrollTo(H('Оформлення'), 160),
+        regions: {
+            style: H('Оформлення'),
+        },
+    },
+    {
+        id: 'plus-billing',
+        url: '/plus/billing',
+        device: PC,
+        regions: {
+            auto: H('Автопродовження'),
+            cards: H('Збережені картки'),
+        },
+    },
+    {
+        id: 'author-subscriptions',
+        url: '/settings/subscriptions',
+        device: PC,
+        regions: {
+            tiers: H('Платна підписка на вас'),
+            add: B('Додати рівень'),
+            mine: H('Мої підписки'),
+        },
+    },
+    {
+        id: 'video-cover',
+        url: '/mark',
+        device: PC,
+        regions: {
+            video: B('Відеообкладинка'),
+            cover: B('Змінити обкладинку'),
+        },
+    },
+    {
+        id: 'podcasts',
+        url: '/podcasts',
+        device: PC,
+        regions: {
+            create: B('Свій подкаст'),
+            cats: B('Кіберспорт'),
+            show: T('Патч-нотатки'),
+        },
+    },
+    {
+        id: 'account-notify',
+        url: '/settings/account',
+        device: PC,
+        regions: {
+            browser: H('Сповіщення в браузері'),
+            bots: H('Telegram і Discord'),
+        },
+    },
+    {
+        id: 'app-download',
+        url: '/app',
+        device: PC,
+        prepare: scrollTo(H('Як встановити без магазину'), 160),
+        regions: {
+            install: H('Як встановити без магазину'),
+            apk: (p) => p.getByRole('button', { name: /APK для Android/ }),
+        },
+    },
+    {
+        id: 'nav-settings',
+        url: '/settings/navigation',
+        device: PC,
+        regions: {
+            bar: H('У панелі'),
+            up: B('Вище'),
+            menu: H('У меню'),
+        },
+    },
+    {
+        id: 'quiet-hours',
+        url: '/settings/appearance',
+        device: PC,
+        prepare: scrollTo(
+            (p) => p.locator('main').getByText('Тихі години').first(),
+            200,
+        ),
+        regions: {
+            quiet: (p) => p.locator('main').getByText('Тихі години').first(),
+        },
+    },
+    {
+        id: 'account-data',
+        url: '/settings/account',
+        device: PC,
+        prepare: scrollTo(H('Мої дані'), 160),
+        regions: {
+            export: B('Підготувати архів'),
+            freeze: H('Заморозити акаунт'),
+        },
+    },
+    {
+        id: 'teen-mode',
+        url: '/settings/account',
+        device: PC,
+        prepare: scrollTo(H('Образливі слова'), 160),
+        regions: {
+            words: H('Образливі слова'),
+            teen: H('Підлітковий режим'),
+        },
+    },
+    {
+        id: 'terms',
+        url: '/terms',
+        device: PC,
+        regions: {
+            title: (p) => p.getByRole('heading').first(),
+        },
+    },
+    {
+        id: 'transparency',
+        url: '/transparency',
+        device: PC,
+        regions: {
+            reports: H('Скарги'),
+            decisions: H('Рішення модерації'),
+            quarter: B('3 квартал 2026'),
+        },
+    },
+    {
+        id: 'account-appeal-strikes',
+        url: '/settings/account',
+        device: PC,
+        prepare: scrollTo(H('Оскарження рішення модерації'), 160),
+        regions: {
+            appeal: H('Оскарження рішення модерації'),
+        },
+    },
+    {
+        id: 'account-appeal',
+        url: '/settings/account',
+        device: PC,
+        prepare: scrollTo(H('Оскарження рішення модерації'), 160),
+        regions: {
+            what: (p) => p.locator('main').getByRole('combobox').last(),
+            send: B('Надіслати'),
+        },
+    },
+    {
+        id: 'footer-legal',
+        url: '/terms',
+        device: PC,
+        prepare: async (p) => {
+            await p.evaluate(() =>
+                window.scrollTo(0, document.body.scrollHeight),
+            );
+            await p.waitForTimeout(700);
+        },
+        regions: {
+            terms: (p) => p.getByRole('link', { name: 'Оферта' }).last(),
+            privacy: (p) =>
+                p.getByRole('link', { name: 'Конфіденційність' }).last(),
+            refund: (p) =>
+                p.getByRole('link', { name: 'Повернення коштів' }).last(),
+        },
+    },
+    {
+        id: 'help-home',
+        url: '/help',
+        device: PC,
+        regions: {
+            popular: H('Популярне'),
+            sections: H('Розділи'),
+        },
+    },
+    {
+        id: 'support',
+        url: '/support',
+        device: PC,
+        regions: {
+            new: B('Нове звернення'),
+            title: H('Підтримка'),
+        },
+    },
+    {
+        id: 'shortcuts',
+        url: '/dashboard',
+        device: PC,
+        prepare: async (p) => {
+            await p.keyboard.press('Shift+?');
+            await p.waitForTimeout(900);
+        },
+        regions: {
+            dialog: (p) => p.getByRole('dialog').first(),
+        },
+    },
+    {
+        id: 'languages',
+        url: '/settings/appearance',
+        device: PC,
+        prepare: scrollTo(
+            (p) => p.locator('main').getByText('Мови, якими говорю').first(),
+            200,
+        ),
+        regions: {
+            langs: (p) =>
+                p.locator('main').getByText('Мови, якими говорю').first(),
+        },
+    },
+    {
+        id: 'status',
+        url: '/status',
+        device: PC,
+        regions: {
+            now: (p) => p.locator('main').getByRole('heading').first(),
+            history: H('Останні 30 днів'),
         },
     },
 ];
