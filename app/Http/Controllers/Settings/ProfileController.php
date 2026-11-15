@@ -47,6 +47,8 @@ class ProfileController extends Controller
                 'website' => $user->website,
                 'is_private' => $user->is_private,
                 'message_privacy' => $user->message_privacy,
+                'call_privacy' => $user->pref('call_privacy', 'everyone'),
+                'group_add' => $user->pref('group_add', 'friends'),
                 'email_social' => $user->email_social,
             ],
             'countries' => Countries::options(),
@@ -62,7 +64,7 @@ class ProfileController extends Controller
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
-        $request->user()->fill($request->validated());
+        $request->user()->fill($request->user()->applyContactPrivacy($request->validated()));
 
         // Статус, змінений у налаштуваннях, — постійний: таймер швидкого статусу знімається.
         if ($request->user()->isDirty('status')) {

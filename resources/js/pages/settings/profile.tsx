@@ -1,5 +1,14 @@
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
-import { AtSign, Globe, Lock, Mail, MapPin, MessageCircle } from 'lucide-react';
+import {
+    AtSign,
+    Globe,
+    Lock,
+    Mail,
+    MapPin,
+    MessageCircle,
+    Phone,
+    UsersRound,
+} from 'lucide-react';
 import type { FormEvent } from 'react';
 import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
 import { ConnectedAccounts } from '@/components/auth/connected-accounts';
@@ -40,6 +49,8 @@ type ProfileForm = {
     website: string;
     is_private: boolean;
     message_privacy: string;
+    call_privacy?: string;
+    group_add?: string;
     email_social: boolean;
 };
 
@@ -80,6 +91,8 @@ export default function Profile({
         website: profile.website ?? '',
         is_private: !!profile.is_private,
         message_privacy: profile.message_privacy ?? 'everyone',
+        call_privacy: profile.call_privacy ?? 'everyone',
+        group_add: profile.group_add ?? 'friends',
         email_social: profile.email_social !== false,
     });
     const { data, setData, errors, processing } = form;
@@ -412,6 +425,37 @@ export default function Profile({
                             ))}
                         </div>
                     </SettingsRow>
+                    <SettingsRow
+                        icon={<Phone />}
+                        label={tr('Хто може дзвонити мені')}
+                        hint={tr(
+                            'Особисті дзвінки; у групових бесідах — усі учасники',
+                        )}
+                    >
+                        <PrivacySeg
+                            value={data.call_privacy ?? 'everyone'}
+                            onChange={(v) => setData('call_privacy', v)}
+                            options={[
+                                { value: 'everyone', label: tr('Усі') },
+                                { value: 'friends', label: tr('Лише друзі') },
+                                { value: 'nobody', label: tr('Ніхто') },
+                            ]}
+                        />
+                    </SettingsRow>
+                    <SettingsRow
+                        icon={<UsersRound />}
+                        label={tr('Хто може додавати мене в бесіди')}
+                        hint={tr('«Ніхто» — лише за посиланням-запрошенням')}
+                    >
+                        <PrivacySeg
+                            value={data.group_add ?? 'friends'}
+                            onChange={(v) => setData('group_add', v)}
+                            options={[
+                                { value: 'friends', label: tr('Друзі') },
+                                { value: 'nobody', label: tr('Ніхто') },
+                            ]}
+                        />
+                    </SettingsRow>
                 </SettingsCard>
 
                 <div
@@ -460,5 +504,37 @@ export default function Profile({
 
             <DeleteUser />
         </>
+    );
+}
+
+/** Перемикач приватності: «Усі / Лише друзі / Ніхто». */
+function PrivacySeg({
+    value,
+    options,
+    onChange,
+}: {
+    value: string;
+    options: { value: string; label: string }[];
+    onChange: (value: string) => void;
+}) {
+    return (
+        <div className="gc-solid-2 flex rounded-lg p-0.5 text-sm">
+            {options.map((option) => (
+                <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => onChange(option.value)}
+                    aria-pressed={value === option.value}
+                    className={cn(
+                        'rounded-md px-3 py-1.5 font-medium transition',
+                        value === option.value
+                            ? 'bg-primary text-primary-foreground'
+                            : 'text-white/55 hover:text-white',
+                    )}
+                >
+                    {option.label}
+                </button>
+            ))}
+        </div>
     );
 }

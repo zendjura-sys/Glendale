@@ -513,6 +513,32 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
     /** Мережевий статус, який обирає людина (як у Discord). */
     public const PRESENCES = ['online', 'idle', 'dnd', 'invisible'];
 
+    /** Хто може дзвонити: усі, кому можна писати, лише друзі чи ніхто. */
+    public const CALL_PRIVACY = ['everyone', 'friends', 'nobody'];
+
+    /** Хто може додавати в групові бесіди: друзі (типово) чи ніхто — тоді лише за посиланням. */
+    public const GROUP_ADD_PRIVACY = ['friends', 'nobody'];
+
+    /**
+     * Зберегти налаштування приватності дзвінків і бесід у preferences (поруч із message_privacy).
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed> решта полів без цих двох
+     */
+    public function applyContactPrivacy(array $data): array
+    {
+        $prefs = $this->preferences ?? [];
+        foreach (['call_privacy', 'group_add'] as $key) {
+            if (array_key_exists($key, $data)) {
+                $prefs[$key] = $data[$key];
+                unset($data[$key]);
+            }
+        }
+        $this->preferences = $prefs;
+
+        return $data;
+    }
+
     /**
      * Що бачать інші: online, idle («Неактивний» — сам після 10 хв без дій), dnd («Не турбувати») чи offline
      * («Невидимий» або давно не заходив).

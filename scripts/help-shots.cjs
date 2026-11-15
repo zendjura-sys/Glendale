@@ -292,6 +292,32 @@ const SHOTS = [
         },
     },
     {
+        id: 'contact-privacy',
+        url: '/settings/profile',
+        device: PC,
+        prepare: async (p) => {
+            await p
+                .getByText('Хто може додавати мене в бесіди')
+                .scrollIntoViewIfNeeded();
+            await p.evaluate(() => window.scrollBy(0, -160));
+            await p.waitForTimeout(800);
+        },
+        regions: {
+            messages: (p) =>
+                p
+                    .getByText('Хто може писати мені')
+                    .locator('xpath=ancestor::*[.//button][1]'),
+            calls: (p) =>
+                p
+                    .getByText('Хто може дзвонити мені')
+                    .locator('xpath=ancestor::*[.//button][1]'),
+            groups: (p) =>
+                p
+                    .getByText('Хто може додавати мене в бесіди')
+                    .locator('xpath=ancestor::*[.//button][1]'),
+        },
+    },
+    {
         id: 'dev-portal',
         url: '/developers',
         device: PC,

@@ -8,6 +8,7 @@ use App\Models\Call;
 use App\Models\CallParticipant;
 use App\Models\Conversation;
 use App\Models\User;
+use App\Services\FriendshipService;
 use App\Services\Messenger;
 use App\Services\Push\PushNotifier;
 use Illuminate\Support\Facades\DB;
@@ -45,7 +46,16 @@ class Calls
         }
         $peer = $conversation->activeParticipants()->where('user_id', '!=', $user->id)->with('user')->first()?->user;
 
-        return $peer instanceof User && $this->messenger->canMessage($user, $peer);
+        if (! $peer instanceof User || ! $this->messenger->canMessage($user, $peer)) {
+            return false;
+        }
+
+        // Налаштування співрозмовника «Хто може дзвонити».
+        return match ($peer->pref('call_privacy', 'everyone')) {
+            'nobody' => false,
+            'friends' => app(FriendshipService::class)->status($user, $peer) === FriendshipService::FRIENDS,
+            default => true,
+        };
     }
 
     /**

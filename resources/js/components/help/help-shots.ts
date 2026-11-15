@@ -42,6 +42,32 @@ const HELP_SHOTS: Record<string, HelpShotMeta> = {
             }
         }
     },
+    "contact-privacy": {
+        "src": "/images/help/contact-privacy.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "messages": {
+                "x": 45.8,
+                "y": 46.1,
+                "w": 46.5,
+                "h": 9.5
+            },
+            "calls": {
+                "x": 45.8,
+                "y": 55.6,
+                "w": 46.5,
+                "h": 9.5
+            },
+            "groups": {
+                "x": 45.8,
+                "y": 65.1,
+                "w": 46.5,
+                "h": 9.5
+            }
+        }
+    },
     "dev-keys": {
         "src": "/images/help/dev-keys.webp",
         "w": 920,

@@ -68,6 +68,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   DateTime? birthday;
   bool private = false;
   String messages = 'everyone';
+  String calls = 'everyone';
+  String groupAdd = 'friends';
   bool saving = false;
 
   // Тема видно одразу (попередній перегляд), а в акаунт вона йде разом з рештою змін — як на сайті.
@@ -97,6 +99,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         'birthday': birthday == null ? null : '${birthday!.year.toString().padLeft(4, '0')}-${birthday!.month.toString().padLeft(2, '0')}-${birthday!.day.toString().padLeft(2, '0')}',
         'is_private': private,
         'message_privacy': messages,
+        'call_privacy': calls,
+        'group_add': groupAdd,
       };
 
   int get _changes {
@@ -145,6 +149,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       birthday = DateTime.tryParse(text(me['birthday']) ?? '');
       private = me['is_private'] == true;
       messages = text(me['message_privacy']) ?? 'everyone';
+      calls = text(me['call_privacy']) ?? 'everyone';
+      groupAdd = text(me['group_add']) ?? 'friends';
       saved = _form;
     });
   }
@@ -414,6 +420,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
             options: [SegmentOption('everyone', tr('Усі')), SegmentOption('friends', tr('Лише друзі'))],
             selected: messages,
             onSelect: (value) => setState(() => messages = value),
+          ),
+          const SizedBox(height: 12),
+          Text(tr('Хто може дзвонити мені'), style: body(13, color: muted)),
+          const SizedBox(height: 6),
+          Segmented(
+            options: [SegmentOption('everyone', tr('Усі')), SegmentOption('friends', tr('Лише друзі')), SegmentOption('nobody', tr('Ніхто'))],
+            selected: calls,
+            onSelect: (value) => setState(() => calls = value),
+          ),
+          const SizedBox(height: 12),
+          Text(tr('Хто може додавати мене в бесіди'), style: body(13, color: muted)),
+          const SizedBox(height: 6),
+          Segmented(
+            options: [SegmentOption('friends', tr('Друзі')), SegmentOption('nobody', tr('Ніхто'))],
+            selected: groupAdd,
+            onSelect: (value) => setState(() => groupAdd = value),
           ),
         ]),
       ),

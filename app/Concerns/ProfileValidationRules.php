@@ -42,6 +42,8 @@ trait ProfileValidationRules
             'website' => ['nullable', 'url:http,https', 'max:255'],
             'is_private' => ['boolean'],
             'message_privacy' => ['sometimes', Rule::in(User::MESSAGE_PRIVACY)],
+            'call_privacy' => ['sometimes', Rule::in(User::CALL_PRIVACY)],
+            'group_add' => ['sometimes', Rule::in(User::GROUP_ADD_PRIVACY)],
         ];
     }
 

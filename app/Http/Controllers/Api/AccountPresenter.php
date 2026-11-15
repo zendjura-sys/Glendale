@@ -50,6 +50,8 @@ class AccountPresenter
             'website' => $user->website,
             'is_private' => $user->is_private,
             'message_privacy' => $user->message_privacy,
+            'call_privacy' => $user->pref('call_privacy', 'everyone'),
+            'group_add' => $user->pref('group_add', 'friends'),
             'role' => $user->role,
             // Як на сайті: панель і меню лише з розділів поточного режиму («Геймер», «Класика»…).
             'nav_tabs' => array_values(array_intersect(app(ModuleManager::class)->navTabsFor($user), $modes->modulesFor($user))),

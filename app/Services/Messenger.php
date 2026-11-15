@@ -770,8 +770,14 @@ class Messenger
     private function invitableFriends(User $actor, array $userIds): array
     {
         $friendIds = $this->friendships->friendIds($actor);
+        $ids = array_values(array_unique(array_map('intval', array_intersect($userIds, $friendIds))));
+        if ($ids === []) {
+            return [];
+        }
+        // «Хто може додавати мене в бесіди: ніхто» — таких лише за посиланням-запрошенням.
+        $closed = User::query()->whereIn('id', $ids)->where('preferences->group_add', 'nobody')->pluck('id')->map(fn ($id) => (int) $id)->all();
 
-        return array_values(array_unique(array_map('intval', array_intersect($userIds, $friendIds))));
+        return array_values(array_diff($ids, $closed));
     }
 
     private function ensureGroup(Conversation $conversation): void

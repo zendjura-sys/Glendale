@@ -193,9 +193,11 @@ class SocialApiController extends ApiController
             'website' => ['nullable', 'url:http,https', 'max:255'],
             'is_private' => ['sometimes', 'boolean'],
             'message_privacy' => ['sometimes', Rule::in(User::MESSAGE_PRIVACY)],
+            'call_privacy' => ['sometimes', Rule::in(User::CALL_PRIVACY)],
+            'group_add' => ['sometimes', Rule::in(User::GROUP_ADD_PRIVACY)],
         ]);
 
-        $user->fill($data)->save();
+        $user->fill($user->applyContactPrivacy($data))->save();
 
         return response()->json(['user' => AccountPresenter::make($user->refresh())]);
     }
