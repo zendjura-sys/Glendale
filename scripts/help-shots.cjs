@@ -338,11 +338,8 @@ const SHOTS = [
                     .locator('[data-overlay-editor]')
                     .getByText('Розділи', { exact: true })
                     .locator('..'),
-            corners: (p) =>
-                p
-                    .locator('[data-overlay-editor]')
-                    .getByText(/^Кути вікон/)
-                    .locator('..'),
+            corners: (p) => p.locator('[data-layout-board] > div').first(),
+            tray: (p) => p.locator('[data-layout-board] > div').last(),
         },
     },
     {
@@ -628,6 +625,12 @@ async function capture(browser, state, shot, manifest) {
         await tidy(p);
         if (shot.prepare) await shot.prepare(p);
 
+        // Фрагмент сторінки: плаваюча шапка сайту не повинна перекривати кадр.
+        if (shot.clip) {
+            await p.addStyleTag({
+                content: '.app-header-wrapper{visibility:hidden !important}',
+            });
+        }
         const view = p.viewportSize();
         let clip = { x: 0, y: 0, width: view.width, height: view.height };
         if (shot.clip) {

@@ -434,48 +434,10 @@ export function OverlayEditor({
                         onChange={(v) => set('offset', v)}
                     />
                 </Row>
-                <div className="space-y-2">
-                    <p className="text-xs text-white/50">
-                        {tr(
-                            'Кути вікон (гравець може перетягнути, якщо дозволено)',
-                        )}
-                    </p>
-                    <div className="grid gap-2 sm:grid-cols-2">
-                        {[
-                            ['hud', tr('Капсула HUD')] as [string, string],
-                            ...SECTIONS,
-                        ].map(([k, l]) => (
-                            <label
-                                key={k}
-                                className="flex min-w-0 items-center gap-2 rounded-lg bg-white/[0.04] px-3 py-1.5"
-                            >
-                                <span className="min-w-0 flex-1 truncate text-xs text-white/70">
-                                    {l}
-                                </span>
-                                <select
-                                    value={cfg.positions[k] ?? ''}
-                                    onChange={(e) =>
-                                        set('positions', {
-                                            ...cfg.positions,
-                                            [k]: e.target.value as Corner,
-                                        })
-                                    }
-                                    aria-label={l}
-                                    className="h-7 rounded-md bg-transparent text-xs text-white outline-none"
-                                >
-                                    {k !== 'hud' && (
-                                        <option value="">{tr('Типово')}</option>
-                                    )}
-                                    {CORNERS.map(([c, cl]) => (
-                                        <option key={c} value={c}>
-                                            {cl}
-                                        </option>
-                                    ))}
-                                </select>
-                            </label>
-                        ))}
-                    </div>
-                </div>
+                <LayoutBoard
+                    positions={cfg.positions}
+                    onChange={(positions) => set('positions', positions)}
+                />
                 <Row label={tr('Сповіщення в грі')}>
                     <select
                         value={cfg.toasts}
@@ -794,6 +756,141 @@ export function OverlayEditor({
                     {tr('Опублікувати')}
                 </button>
             </div>
+        </div>
+    );
+}
+
+/**
+ * Розкладка перетягуванням: мініатюра екрана гри з чотирма кутами. Вікно можна перетягнути
+ * мишею в кут, а на телефоні чи з клавіатури — вибрати натисканням і натиснути на кут.
+ * «Типово» — вікно стоїть там, де його ставить SDK.
+ */
+function LayoutBoard({
+    positions,
+    onChange,
+}: {
+    positions: Record<string, Corner>;
+    onChange: (positions: Record<string, Corner>) => void;
+}) {
+    const reduce = useReducedMotion();
+    const [picked, setPicked] = useState<string | null>(null);
+    const [over, setOver] = useState<string | null>(null);
+    const items: [string, string][] = [['hud', tr('Капсула HUD')], ...SECTIONS];
+    const label = Object.fromEntries(items);
+
+    const move = (key: string, corner: Corner | null) => {
+        const next = { ...positions };
+        if (corner) next[key] = corner;
+        else delete next[key];
+        onChange(next);
+        setPicked(null);
+        setOver(null);
+    };
+
+    // Обгортка анімує переїзд між кутами; сама кнопка — звичайна, щоб HTML-перетягування працювало.
+    const chip = (key: string) => (
+        <m.span
+            key={key}
+            layout={!reduce}
+            layoutId={reduce ? undefined : `board-${key}`}
+            className="inline-flex"
+        >
+            <button
+                type="button"
+                draggable
+                onDragStart={(e) => {
+                    e.dataTransfer.setData('text/plain', key);
+                    e.dataTransfer.effectAllowed = 'move';
+                }}
+                onClick={(e) => {
+                    e.stopPropagation();
+                    setPicked(picked === key ? null : key);
+                }}
+                aria-pressed={picked === key}
+                className={cn(
+                    'inline-flex h-7 cursor-grab items-center rounded-lg px-2.5 text-xs font-medium whitespace-nowrap ring-1 transition active:cursor-grabbing',
+                    picked === key
+                        ? 'bg-primary text-white ring-primary'
+                        : 'bg-white/[0.08] text-white/85 ring-white/10 hover:bg-white/[0.12]',
+                )}
+            >
+                {label[key]}
+            </button>
+        </m.span>
+    );
+
+    const zone = (corner: Corner | null, title: string, className: string) => {
+        const id = corner ?? 'default';
+        const keys = items
+            .map(([k]) => k)
+            .filter(
+                (k) =>
+                    (positions[k] ?? null) === corner &&
+                    !(k === 'hud' && corner === null && false),
+            );
+
+        return (
+            <div
+                role="button"
+                tabIndex={0}
+                aria-label={tr('Перемістити сюди: {place}', { place: title })}
+                onClick={() => picked && move(picked, corner)}
+                onKeyDown={(e) => {
+                    if ((e.key === 'Enter' || e.key === ' ') && picked) {
+                        e.preventDefault();
+                        move(picked, corner);
+                    }
+                }}
+                onDragOver={(e) => {
+                    e.preventDefault();
+                    setOver(id);
+                }}
+                onDragLeave={() => setOver(null)}
+                onDrop={(e) => {
+                    e.preventDefault();
+                    const key = e.dataTransfer.getData('text/plain');
+                    if (key) move(key, corner);
+                }}
+                className={cn(
+                    'flex min-h-16 flex-col gap-1.5 overflow-hidden rounded-xl p-2 ring-1 transition outline-none focus-visible:ring-primary',
+                    over === id || (picked && 'cursor-pointer')
+                        ? 'bg-primary/10 ring-primary/50'
+                        : 'bg-white/[0.03] ring-white/10',
+                    className,
+                )}
+            >
+                <span className="text-[11px] text-white/40">{title}</span>
+                <div className="flex flex-wrap gap-1.5">{keys.map(chip)}</div>
+            </div>
+        );
+    };
+
+    return (
+        <div className="space-y-2" data-layout-board>
+            <p className="text-xs text-white/50">
+                {tr(
+                    'Перетягніть вікна в кути екрана гри або натисніть вікно, а потім кут. Гравець зможе пересунути їх сам, якщо це дозволено.',
+                )}
+            </p>
+            <div className="relative mx-auto grid aspect-[16/9] w-full max-w-lg grid-cols-2 grid-rows-2 gap-2 rounded-2xl bg-black/30 p-2 ring-1 ring-white/10">
+                {zone('top-left', tr('Згори ліворуч'), 'justify-start')}
+                {zone(
+                    'top-right',
+                    tr('Згори праворуч'),
+                    'items-end text-right',
+                )}
+                {zone('bottom-left', tr('Знизу ліворуч'), 'justify-end')}
+                {zone(
+                    'bottom-right',
+                    tr('Знизу праворуч'),
+                    'items-end justify-end text-right',
+                )}
+                <span
+                    aria-hidden
+                    className="pointer-events-none absolute top-1/2 left-1/2 size-4 -translate-x-1/2 -translate-y-1/2 rounded-full ring-2 ring-white/20"
+                />
+            </div>
+            {zone(null, tr('Типово — де ставить SDK'), '')}
         </div>
     );
 }

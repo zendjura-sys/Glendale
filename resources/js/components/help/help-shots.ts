@@ -139,20 +139,26 @@ const HELP_SHOTS: Record<string, HelpShotMeta> = {
     "dev-overlay-layout": {
         "src": "/images/help/dev-overlay-layout.webp",
         "w": 880,
-        "h": 718,
+        "h": 835,
         "phone": false,
         "regions": {
             "sections": {
                 "x": 3.2,
-                "y": 7.8,
+                "y": 6.7,
                 "w": 93.6,
-                "h": 3.9
+                "h": 3.4
             },
             "corners": {
+                "x": 20.9,
+                "y": 49.1,
+                "w": 58.2,
+                "h": 34.5
+            },
+            "tray": {
                 "x": 3.2,
-                "y": 53.8,
+                "y": 84.6,
                 "w": 93.6,
-                "h": 35.7
+                "h": 8
             }
         }
     },
