@@ -67,6 +67,44 @@ async function tidy(p) {
 
 const app = (p) => p.locator('section', { hasText: 'Client ID' }).first();
 
+// Короткі пошуки зон для типових кадрів: текст, кнопка, заголовок, посилання, поле.
+const T =
+    (text, n = 0) =>
+    (p) =>
+        p.locator('main').getByText(text).nth(n);
+const B = (name) => (p) =>
+    p.locator('main').getByRole('button', { name }).first();
+const H = (name) => (p) =>
+    p.locator('main').getByRole('heading', { name }).first();
+const L = (name) => (p) =>
+    p.locator('main').getByRole('link', { name }).first();
+const F = (label) => (p) => p.locator('main').getByLabel(label).first();
+/** Блок-картка навколо заголовка. */
+const CARD = (name) => (p) =>
+    H(name)(p).locator(
+        'xpath=ancestor::*[self::section or self::form or contains(@class,"rounded")][1]',
+    );
+/** Прокрутити так, щоб елемент був під шапкою. */
+const scrollTo =
+    (find, offset = 140) =>
+    async (p) => {
+        await find(p).scrollIntoViewIfNeeded();
+        await p.evaluate((o) => window.scrollBy(0, -o), offset);
+        await p.waitForTimeout(600);
+    };
+/** Підтвердити пароль, якщо сторінка просить. */
+const confirmPassword = async (p) => {
+    const pw = p.locator('main input[type=password]');
+    if (
+        (await pw.count()) === 1 &&
+        (await p.getByText('Підтвердьте пароль').count())
+    ) {
+        await pw.fill(PASSWORD);
+        await pw.press('Enter');
+        await p.waitForTimeout(2500);
+    }
+};
+
 /**
  * Кадри: id → сторінка, пристрій, підготовка й зони (назва → локатор).
  * @type {Array<{id: string, url: string, device: object, guest?: boolean, prepare?: (p: import('playwright').Page) => Promise<void>, clip?: (p: import('playwright').Page) => import('playwright').Locator, regions: Record<string, (p: import('playwright').Page) => import('playwright').Locator>}>}
@@ -702,6 +740,243 @@ const SHOTS = [
             streamer: (p) => p.getByRole('switch', { name: 'Режим стрімера' }),
             reset: (p) =>
                 p.getByRole('button', { name: 'Скинути до вигляду гри' }),
+        },
+    },
+    {
+        id: 'register',
+        url: '/register',
+        device: PC,
+        guest: true,
+        regions: {
+            name: (p) => p.getByLabel("Ім'я").first(),
+            email: (p) => p.getByLabel('Електронна пошта').first(),
+            password: (p) => p.getByLabel('Пароль', { exact: true }).first(),
+            create: (p) =>
+                p.getByRole('button', { name: 'Створити акаунт' }).first(),
+            login: (p) => p.getByRole('link', { name: /Уже є акаунт/ }).first(),
+        },
+    },
+    {
+        id: 'login',
+        url: '/login',
+        device: PC,
+        guest: true,
+        regions: {
+            app: (p) =>
+                p
+                    .getByRole('button', {
+                        name: 'Увійти через застосунок GameCon',
+                    })
+                    .first(),
+            passkey: (p) =>
+                p.getByRole('button', { name: 'Ключ доступу' }).first(),
+            email: (p) => p.getByLabel('Електронна пошта').first(),
+            forgot: (p) =>
+                p.getByRole('link', { name: 'Забули пароль?' }).first(),
+            submit: (p) =>
+                p.getByRole('button', { name: 'Увійти', exact: true }).first(),
+        },
+    },
+    {
+        id: 'login-app',
+        url: '/login',
+        device: PC,
+        guest: true,
+        prepare: async (p) => {
+            await p
+                .getByRole('button', {
+                    name: 'Увійти через застосунок GameCon',
+                })
+                .click();
+            await p.waitForTimeout(2000);
+        },
+        regions: {
+            qr: (p) => p.getByRole('dialog').locator('svg, img, canvas').nth(1),
+            wait: (p) => p.getByText('Чекаємо на підтвердження'),
+            send: (p) =>
+                p.getByRole('button', { name: 'Надіслати запит у застосунок' }),
+        },
+    },
+    {
+        id: 'security-2fa',
+        url: '/settings/security',
+        device: PC,
+        prepare: async (p) => {
+            await confirmPassword(p);
+            await scrollTo(H('Двофакторна автентифікація'))(p);
+        },
+        regions: {
+            block: CARD('Двофакторна автентифікація'),
+            enable: B('Увімкнути 2FA'),
+        },
+    },
+    {
+        id: 'security-passkeys',
+        url: '/settings/security',
+        device: PC,
+        prepare: async (p) => {
+            await confirmPassword(p);
+            await scrollTo(B('Додати ключ'), 400)(p);
+        },
+        regions: {
+            block: CARD('Ключі доступу'),
+            add: B('Додати ключ'),
+        },
+    },
+    {
+        id: 'settings-profile',
+        url: '/settings/profile',
+        device: PC,
+        regions: {
+            menu: L('Профіль'),
+            main: CARD('Основне'),
+            save: B('Зберегти зміни'),
+        },
+    },
+    {
+        id: 'settings-appearance',
+        url: '/settings/appearance',
+        device: PC,
+        regions: {
+            theme: CARD('Тема'),
+            style: H('Стиль інтерфейсу'),
+        },
+    },
+    {
+        id: 'read-later',
+        url: '/later',
+        device: PC,
+        regions: {
+            title: H('Прочитати пізніше'),
+            saved: L('Збережене'),
+        },
+    },
+    {
+        id: 'post-menu',
+        url: '/dashboard',
+        device: PC,
+        prepare: async (p) => {
+            const post = p
+                .locator('article')
+                .filter({ hasNot: p.getByText('Марк Шевченко') })
+                .first();
+            await post.scrollIntoViewIfNeeded();
+            await p.evaluate(() => window.scrollBy(0, -120));
+            await post
+                .locator('button:has(svg.lucide-ellipsis)')
+                .first()
+                .click();
+            await p.waitForTimeout(800);
+        },
+        regions: {
+            menu: (p) => p.getByRole('menu').first(),
+            hide: (p) =>
+                p.getByRole('menuitem', { name: /Не цікаво|Сховати/ }).first(),
+            mute: (p) => p.getByRole('menuitem', { name: /Заглушити/ }).first(),
+        },
+    },
+    {
+        id: 'saved',
+        url: '/saved',
+        device: PC,
+        regions: {
+            title: H('Збережене'),
+            later: L('Прочитати пізніше'),
+        },
+    },
+    {
+        id: 'photos',
+        url: '/photos',
+        device: PC,
+        regions: {
+            create: B('Створити альбом'),
+            albums: H('Альбоми'),
+            all: H('Усі фотографії'),
+        },
+    },
+    {
+        id: 'post-menu-own',
+        url: '/dashboard',
+        device: PC,
+        prepare: async (p) => {
+            const post = p.locator('article').first();
+            await post.scrollIntoViewIfNeeded();
+            await p.evaluate(() => window.scrollBy(0, -120));
+            await post
+                .locator('button:has(svg.lucide-ellipsis)')
+                .first()
+                .click();
+            await p.waitForTimeout(800);
+        },
+        regions: {
+            menu: (p) => p.getByRole('menu').first(),
+            series: (p) => p.getByRole('menuitem', { name: /серію/ }).first(),
+        },
+    },
+    {
+        id: 'messages',
+        url: '/messages/10',
+        device: PC,
+        regions: {
+            new: B('Нове повідомлення'),
+            list: T('Рейд у п’ятницю'),
+            attach: B('Прикріпити'),
+            info: B('Інформація про бесіду'),
+        },
+    },
+    {
+        id: 'chat-header',
+        url: '/messages/10',
+        device: PC,
+        regions: {
+            receipts: B('Звіти про прочитання'),
+            more: B('Ще'),
+            ai: B('ШІ-редактор'),
+        },
+    },
+    {
+        id: 'chat-call',
+        url: '/messages/1',
+        device: PC,
+        regions: {
+            call: (p) =>
+                p
+                    .locator('main')
+                    .getByRole('button', {
+                        name: /Зателефонувати|Дзвінок|Подзвонити/,
+                    })
+                    .first(),
+            listen: B('Слухати музику разом'),
+        },
+    },
+    {
+        id: 'chat-voice',
+        url: '/messages/10',
+        device: PC,
+        regions: {
+            voice: B('Записати голосове'),
+            circle: B('Записати відеокружок'),
+            gif: B('GIF'),
+        },
+    },
+    {
+        id: 'phone',
+        url: '/phone',
+        device: PC,
+        regions: {
+            dialer: B('Подзвонити'),
+            write: B('Написати'),
+            privacy: H('Хто може дзвонити й писати за номером'),
+            buy: H('Купити гарний номер'),
+        },
+    },
+    {
+        id: 'chat-pins',
+        url: '/messages/10',
+        device: PC,
+        regions: {
+            pin: B('Закріпити'),
+            more: B('Ще'),
         },
     },
 ];

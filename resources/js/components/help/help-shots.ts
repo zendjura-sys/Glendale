@@ -2,6 +2,98 @@
 import type { HelpShotMeta } from '@/components/help/help-shot';
 
 const HELP_SHOTS: Record<string, HelpShotMeta> = {
+    'chat-call': {
+        src: '/images/help/chat-call.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            call: {
+                x: 88.3,
+                y: 11,
+                w: 2.5,
+                h: 4,
+            },
+            listen: {
+                x: 91.7,
+                y: 11,
+                w: 2.5,
+                h: 4,
+            },
+        },
+    },
+    'chat-header': {
+        src: '/images/help/chat-header.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            receipts: {
+                x: 75,
+                y: 11,
+                w: 2.5,
+                h: 4,
+            },
+            more: {
+                x: 85,
+                y: 11,
+                w: 2.5,
+                h: 4,
+            },
+            ai: {
+                x: 83.1,
+                y: 92.9,
+                w: 2.5,
+                h: 4,
+            },
+        },
+    },
+    'chat-pins': {
+        src: '/images/help/chat-pins.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            pin: {
+                x: 78.3,
+                y: 11,
+                w: 2.5,
+                h: 4,
+            },
+            more: {
+                x: 85,
+                y: 11,
+                w: 2.5,
+                h: 4,
+            },
+        },
+    },
+    'chat-voice': {
+        src: '/images/help/chat-voice.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            voice: {
+                x: 94.4,
+                y: 92.2,
+                w: 3.1,
+                h: 4.9,
+            },
+            circle: {
+                x: 91,
+                y: 92.2,
+                w: 3.1,
+                h: 4.9,
+            },
+            gif: {
+                x: 85.6,
+                y: 92.9,
+                w: 2.2,
+                h: 4,
+            },
+        },
+    },
     'cinema-assist': {
         src: '/images/help/cinema-assist.webp',
         w: 824,
@@ -758,6 +850,102 @@ const HELP_SHOTS: Record<string, HelpShotMeta> = {
             },
         },
     },
+    login: {
+        src: '/images/help/login.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            app: {
+                x: 63,
+                y: 34.5,
+                w: 25.4,
+                h: 5.3,
+            },
+            passkey: {
+                x: 63,
+                y: 40.9,
+                w: 25.4,
+                h: 5.3,
+            },
+            email: {
+                x: 63,
+                y: 53.7,
+                w: 25.4,
+                h: 5.3,
+            },
+            forgot: {
+                x: 81.4,
+                y: 70,
+                w: 7,
+                h: 1.8,
+            },
+            submit: {
+                x: 63,
+                y: 76,
+                w: 25.4,
+                h: 5.3,
+            },
+        },
+    },
+    'login-app': {
+        src: '/images/help/login-app.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            qr: {
+                x: 42.3,
+                y: 62.5,
+                w: 1,
+                h: 1.6,
+            },
+            wait: {
+                x: 42.3,
+                y: 62.4,
+                w: 15.4,
+                h: 1.8,
+            },
+            send: {
+                x: 38.3,
+                y: 77.2,
+                w: 23.3,
+                h: 4.4,
+            },
+        },
+    },
+    messages: {
+        src: '/images/help/messages.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            new: {
+                x: 40.8,
+                y: 11.6,
+                w: 2.5,
+                h: 4,
+            },
+            list: {
+                x: 26.3,
+                y: 31.2,
+                w: 8.7,
+                h: 2.3,
+            },
+            attach: {
+                x: 45.6,
+                y: 92.7,
+                w: 2.8,
+                h: 4.4,
+            },
+            info: {
+                x: 95,
+                y: 11,
+                w: 2.5,
+                h: 4,
+            },
+        },
+    },
     'overlay-companion': {
         src: '/images/help/overlay-companion.webp',
         w: 670,
@@ -796,6 +984,64 @@ const HELP_SHOTS: Record<string, HelpShotMeta> = {
             },
         },
     },
+    phone: {
+        src: '/images/help/phone.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            dialer: {
+                x: 39,
+                y: 62.1,
+                w: 10.8,
+                h: 6.2,
+            },
+            write: {
+                x: 27.6,
+                y: 62.1,
+                w: 10.8,
+                h: 6.2,
+            },
+            privacy: {
+                x: 60.7,
+                y: 24.7,
+                w: 36.6,
+                h: 2,
+            },
+            buy: {
+                x: 65.4,
+                y: 74.6,
+                w: 31.8,
+                h: 2.7,
+            },
+        },
+    },
+    photos: {
+        src: '/images/help/photos.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            create: {
+                x: 83.4,
+                y: 14.3,
+                w: 13.5,
+                h: 4.9,
+            },
+            albums: {
+                x: 20.8,
+                y: 25.1,
+                w: 77.8,
+                h: 2.2,
+            },
+            all: {
+                x: 21.9,
+                y: 78.2,
+                w: 75.6,
+                h: 2.2,
+            },
+        },
+    },
     'post-album': {
         src: '/images/help/post-album.webp',
         w: 804,
@@ -822,6 +1068,52 @@ const HELP_SHOTS: Record<string, HelpShotMeta> = {
             },
         },
     },
+    'post-menu': {
+        src: '/images/help/post-menu.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            menu: {
+                x: 57.1,
+                y: 22.3,
+                w: 16.7,
+                h: 27.2,
+            },
+            hide: {
+                x: 57.5,
+                y: 37.2,
+                w: 15.8,
+                h: 3.6,
+            },
+            mute: {
+                x: 57.5,
+                y: 40.8,
+                w: 15.8,
+                h: 3.6,
+            },
+        },
+    },
+    'post-menu-own': {
+        src: '/images/help/post-menu-own.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            menu: {
+                x: 57.1,
+                y: 27.1,
+                w: 16.7,
+                h: 27.2,
+            },
+            series: {
+                x: 57.5,
+                y: 42,
+                w: 15.8,
+                h: 3.6,
+            },
+        },
+    },
     'post-pc': {
         src: '/images/help/post-pc.webp',
         w: 804,
@@ -845,6 +1137,84 @@ const HELP_SHOTS: Record<string, HelpShotMeta> = {
                 y: 68.8,
                 w: 92.5,
                 h: 16.6,
+            },
+        },
+    },
+    'read-later': {
+        src: '/images/help/read-later.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            title: {
+                x: 37.5,
+                y: 9.8,
+                w: 39.1,
+                h: 4.4,
+            },
+            saved: {
+                x: 37.5,
+                y: 17.3,
+                w: 5.7,
+                h: 2.2,
+            },
+        },
+    },
+    register: {
+        src: '/images/help/register.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            name: {
+                x: 63,
+                y: 41.6,
+                w: 12.3,
+                h: 5.3,
+            },
+            email: {
+                x: 63,
+                y: 48.7,
+                w: 25.4,
+                h: 5.3,
+            },
+            password: {
+                x: 63,
+                y: 55.8,
+                w: 25.4,
+                h: 5.3,
+            },
+            create: {
+                x: 63,
+                y: 71.4,
+                w: 25.4,
+                h: 5.3,
+            },
+            login: {
+                x: 63,
+                y: 78.5,
+                w: 25.4,
+                h: 2.2,
+            },
+        },
+    },
+    saved: {
+        src: '/images/help/saved.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            title: {
+                x: 37.5,
+                y: 9.8,
+                w: 13.2,
+                h: 4.4,
+            },
+            later: {
+                x: 72.3,
+                y: 12,
+                w: 9.6,
+                h: 2.2,
             },
         },
     },
@@ -903,6 +1273,92 @@ const HELP_SHOTS: Record<string, HelpShotMeta> = {
                 y: 1.3,
                 w: 19.4,
                 h: 36,
+            },
+        },
+    },
+    'security-2fa': {
+        src: '/images/help/security-2fa.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            block: {
+                x: 44.4,
+                y: 64.8,
+                w: 49.3,
+                h: 20.3,
+            },
+            enable: {
+                x: 45.8,
+                y: 78.4,
+                w: 9.7,
+                h: 4.4,
+            },
+        },
+    },
+    'security-passkeys': {
+        src: '/images/help/security-passkeys.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            block: {
+                x: 44.4,
+                y: 61.1,
+                w: 49.3,
+                h: 37.8,
+            },
+            add: {
+                x: 45.8,
+                y: 92.2,
+                w: 9,
+                h: 4.4,
+            },
+        },
+    },
+    'settings-appearance': {
+        src: '/images/help/settings-appearance.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            theme: {
+                x: 44.4,
+                y: 50.9,
+                w: 49.3,
+                h: 34.8,
+            },
+            style: {
+                x: 44.7,
+                y: 87,
+                w: 48.8,
+                h: 2.5,
+            },
+        },
+    },
+    'settings-profile': {
+        src: '/images/help/settings-profile.webp',
+        w: 1440,
+        h: 900,
+        phone: false,
+        regions: {
+            menu: {
+                x: 26.1,
+                y: 20,
+                w: 16.5,
+                h: 7.6,
+            },
+            main: {
+                x: 44.4,
+                y: 19.3,
+                w: 49.3,
+                h: 56.9,
+            },
+            save: {
+                x: 82.7,
+                y: 92.4,
+                w: 10.2,
+                h: 4.4,
             },
         },
     },
