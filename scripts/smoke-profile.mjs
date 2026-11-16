@@ -40,6 +40,6 @@ console.log(
 );
 
 await browser.close();
-process.exit(crash > 0 || errors.some((e) => /TypeError|Cannot read/i.test(e))
-    ? 1
-    : 0);
+process.exit(
+    crash > 0 || errors.some((e) => /TypeError|Cannot read/i.test(e)) ? 1 : 0,
+);
