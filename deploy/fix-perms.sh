@@ -45,4 +45,10 @@ chown -R www-data:www-data storage/framework/views storage/framework/views-cli
 chmod -R ug+rwX storage/framework/views storage/framework/views-cli
 find storage/framework/views storage/framework/views-cli -type d -exec chmod 2775 {} \;
 
+# Якщо optimize зібрав config у консолі зі старим config(['view.compiled'=>views-cli]),
+# веб успадкує неправильний шлях. Примусово повертаємо шлях сайту.
+if [ -f bootstrap/cache/config.php ]; then
+    sed -i 's|framework/views-cli|framework/views|g' bootstrap/cache/config.php
+fi
+
 echo "✓ Права: storage/bootstrap → $OWNER:www-data, views → www-data:www-data ($APP)"

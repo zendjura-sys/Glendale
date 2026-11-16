@@ -11,6 +11,9 @@ cd "$(git rev-parse --show-toplevel)"
 REVISION="$(git rev-parse --short "$REF") $(git log -1 --format=%s "$REF")"
 
 echo "→ Синхронізація $REVISION"
+# Агент має писати в дерево коду (інакше rsync code 23 на файлах від monsory).
+"${SSH[@]}" 'sudo chown -R "$(id -un)":www-data /var/www/gamecon && sudo chmod -R ug+rwX /var/www/gamecon && sudo chmod 640 /var/www/gamecon/.env 2>/dev/null || true'
+
 TMP="$(mktemp -d)"
 chmod 2775 "$TMP"
 git archive "$REF" | tar -x -C "$TMP"

@@ -74,12 +74,23 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        // Скомпільовані шаблони консолі (черга, планувальник — інший користувач ОС) окремо від сайту:
-        // інакше файл належить іншому власнику, і Blade на сайті падає на touch() «Utime failed».
-        // Тут, а не в config/view.php: кеш конфігу збирається в консолі й переніс би шлях на сайт.
-        if ($this->app->runningInConsole() && ! $this->app->runningUnitTests()) {
-            config(['view.compiled' => storage_path('framework/views-cli')]);
-        }
+        // Скомпільовані шаблони консолі (черга, планувальник — інший uid) окремо від сайту:
+        // інакше Blade на сайті падає на touch() «Utime failed» (7684343a / 68c1b85a).
+        // НЕ через config(): `artisan optimize` крутиться в консолі й запише views-cli у
+        // bootstrap/cache/config.php — тоді веб теж піде в views-cli. Міняємо лише compiler у runtime.
+        $this->app->booted(function () {
+            if (! $this->app->runningInConsole() || $this->app->runningUnitTests()) {
+                return;
+            }
+            $compiler = $this->app->make('blade.compiler');
+            $path = storage_path('framework/views-cli');
+            if (! is_dir($path)) {
+                @mkdir($path, 0775, true);
+            }
+            $prop = new \ReflectionProperty($compiler, 'cachePath');
+            $prop->setAccessible(true);
+            $prop->setValue($compiler, $path);
+        });
         // Значки біля ніка збираються раз на запит (і для черги — окремо на кожну задачу).
         $this->app->scoped(Affiliations::class);
         $this->app->scoped(UserRoles::class);
