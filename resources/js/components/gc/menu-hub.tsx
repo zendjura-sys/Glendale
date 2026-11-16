@@ -564,6 +564,7 @@ export function MenuHub({ onClose }: { onClose: () => void }) {
                                     >
                                         <ModuleIcon
                                             name={item.icon}
+                                            animated
                                             size={16}
                                             className="shrink-0 text-sky-400"
                                         />
