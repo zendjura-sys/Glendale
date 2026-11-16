@@ -34,7 +34,14 @@ fi
 # Скрипти composer (package:discover) запускаємо вже після режиму обслуговування.
 composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader --no-progress --no-scripts
 php artisan down --retry=15 >/dev/null 2>&1 || true
-trap 'php artisan up >/dev/null 2>&1 || true' EXIT
+
+# Завжди перед підйомом сайту (клод 7684343a / 68c1b85a): views → www-data, інакше 500 на touch().
+# У EXIT — навіть якщо деплой обірветься між optimize і кінцем скрипта.
+fix_perms() {
+    sudo bash deploy/fix-perms.sh /var/www/gamecon
+}
+trap 'fix_perms; php artisan up >/dev/null 2>&1 || true' EXIT
+
 composer run-script post-autoload-dump --no-interaction
 # Кеш маршрутів від попереднього релізу: без очищення Wayfinder під час збірки не бачить нових маршрутів.
 php artisan optimize:clear
@@ -46,16 +53,7 @@ php artisan db:seed --force
 php artisan storage:link 2>/dev/null || true
 php artisan optimize
 
-sudo chown -R cursor-agent:www-data storage bootstrap/cache
-sudo chmod -R ug+rwX storage bootstrap/cache
-# Скомпільовані шаблони — власність PHP-FPM: Blade робить touch() на файлі, а змінити час може лише власник
-# (інакше 500 «touch(): Utime failed: Operation not permitted» на кожній сторінці).
-sudo chown -R www-data:www-data storage/framework/views
-# Шаблони консолі (черга, планувальник) — окремо, див. config/view.php.
-mkdir -p storage/framework/views-cli
-# Журнали: нові файли успадковують групу www-data (setgid) і доступні на запис і сайту, і черзі.
-sudo chmod g+s storage/logs
-sudo chmod -R ug+rw storage/logs
+fix_perms
 
 # Версія PHP-FPM залежить від релізу Ubuntu (24.04 — 8.3, 26.04 — 8.5): беремо ту, що встановлена.
 PHP_FPM="php$(php -r 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;')-fpm"

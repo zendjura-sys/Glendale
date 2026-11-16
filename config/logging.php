@@ -70,8 +70,10 @@ return [
             'path' => storage_path('logs/laravel.log'),
             'level' => env('LOG_LEVEL', 'debug'),
             'max_files' => env('LOG_DAILY_DAYS', 14),
-            // Сайт (www-data) і черга пишуть в один файл: група теж може дописувати.
-            'permission' => 0664,
+            // Не викликати chmod(): сайт (www-data), черга й деплой пишуть в один файл
+            // від різних uid — chmod від не-власника дає «Operation not permitted» і валить запис.
+            // Права нових файлів дає setgid на storage/logs (deploy/fix-perms.sh → 0664 через umask).
+            'permission' => null,
             'replace_placeholders' => true,
         ],
 
