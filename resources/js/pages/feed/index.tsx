@@ -68,8 +68,9 @@ function FeedTabs({
                     key={item.key}
                     href={item.href}
                     preserveScroll={false}
+                    aria-current={tab === item.key ? 'page' : undefined}
                     className={cn(
-                        'flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold transition',
+                        'flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold transition',
                         tab === item.key
                             ? 'nav-active text-white'
                             : 'text-white/55 hover:bg-white/[0.04] hover:text-white',
@@ -77,6 +78,7 @@ function FeedTabs({
                     )}
                 >
                     <item.icon
+                        aria-hidden
                         className={cn(
                             'size-4',
                             tab === item.key && 'text-gc-lilac-400',
