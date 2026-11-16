@@ -12,12 +12,15 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 
 const args = process.argv.slice(2);
-const flag = (name) => args.find((a) => a.startsWith(`--${name}=`))?.split('=')[1];
+const flag = (name) =>
+    args.find((a) => a.startsWith(`--${name}=`))?.split('=')[1];
 const today = flag('date') ?? new Date().toISOString().slice(0, 10);
 const yymm = today.slice(2, 4) + today.slice(5, 7);
 
 export function nextVersion(current, date = today) {
-    const [g, month, y, x] = String(current).split('.').map((p) => p.trim());
+    const [g, month, y, x] = String(current)
+        .split('.')
+        .map((p) => p.trim());
     const generation = Number(g) || 1;
     const now = date.slice(2, 4) + date.slice(5, 7);
     if (month !== now) return `${generation}.${now}.0.0`;
@@ -33,14 +36,26 @@ if (command === 'next') {
 } else if (command === 'app') {
     const path = 'mobile/pubspec.yaml';
     let pubspec = readFileSync(path, 'utf8');
-    const current = pubspec.match(/^gamecon_version:\s*(\S+)/m)?.[1] ?? `1.${yymm}.0.0`;
-    const next = pubspec.match(/^gamecon_version:/m) ? nextVersion(current) : `1.${yymm}.0.0`;
+    const current =
+        pubspec.match(/^gamecon_version:\s*(\S+)/m)?.[1] ?? `1.${yymm}.0.0`;
+    const next = pubspec.match(/^gamecon_version:/m)
+        ? nextVersion(current)
+        : `1.${yymm}.0.0`;
     console.log(next);
     if (write) {
         pubspec = pubspec.match(/^gamecon_version:/m)
-            ? pubspec.replace(/^gamecon_version:.*$/m, `gamecon_version: ${next}`)
-            : pubspec.replace(/^(version:.*)$/m, `$1\ngamecon_version: ${next}`);
-        pubspec = pubspec.replace(/^version:\s*([^+\s]+)\+(\d+)/m, (_, v, b) => `version: ${v}+${Number(b) + 1}`);
+            ? pubspec.replace(
+                  /^gamecon_version:.*$/m,
+                  `gamecon_version: ${next}`,
+              )
+            : pubspec.replace(
+                  /^(version:.*)$/m,
+                  `$1\ngamecon_version: ${next}`,
+              );
+        pubspec = pubspec.replace(
+            /^version:\s*([^+\s]+)\+(\d+)/m,
+            (_, v, b) => `version: ${v}+${Number(b) + 1}`,
+        );
         writeFileSync(path, pubspec);
     }
 } else if (command === 'site') {
@@ -50,11 +65,19 @@ if (command === 'next') {
     let key = today;
     for (let n = 2; config.includes(`'${key}' =>`); n++) key = `${today}.${n}`;
     if (write) {
-        writeFileSync(path, config.replace(/(\$releases = \[[\s\S]*?)(\n\];)/, `$1\n    '${key}' => null,$2`));
+        writeFileSync(
+            path,
+            config.replace(
+                /(\$releases = \[[\s\S]*?)(\n\];)/,
+                `$1\n    '${key}' => null,$2`,
+            ),
+        );
         console.log(`Додано реліз ${key}.`);
     } else {
         console.log(`Буде додано реліз ${key} (запустіть з --write).`);
     }
 } else {
-    console.log('Використання: node scripts/version.mjs next <версія> | app [--write] | site [--write] [--date=YYYY-MM-DD]');
+    console.log(
+        'Використання: node scripts/version.mjs next <версія> | app [--write] | site [--write] [--date=YYYY-MM-DD]',
+    );
 }

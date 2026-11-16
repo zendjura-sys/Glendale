@@ -8,6 +8,6 @@
     "mobileFriendly": true,
     "settingsUrl": "/settings/gamecon",
     "settingsPermission": "Garden.Settings.Manage",
-    "authors": [{"name": "GameCon", "homepage": "https://gamecon.online"}],
-    "require": {"vanilla": ">=3.3"}
+    "authors": [{ "name": "GameCon", "homepage": "https://gamecon.online" }],
+    "require": { "vanilla": ">=3.3" }
 }

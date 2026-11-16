@@ -585,7 +585,7 @@ export function OverlayEditor({
                                     'custom_items',
                                     cfg.custom_items.map((x, j) =>
                                         j === i
-                                            ? /^https:\/\//.test(v)
+                                            ? v.startsWith('https://')
                                                 ? {
                                                       ...x,
                                                       url: v,

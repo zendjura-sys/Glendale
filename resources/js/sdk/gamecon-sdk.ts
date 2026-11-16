@@ -412,12 +412,12 @@ class Sdk {
                 hud: 'top-right',
                 party: 'bottom-left',
                 family: 'top-left',
-                ...(opts.position ?? {}),
+                ...opts.position,
             },
             hotkeys: {
                 toggle: 'Shift+Tab',
                 chat: 'Alt+G',
-                ...(opts.hotkeys ?? {}),
+                ...opts.hotkeys,
             },
         };
         this.o.base = this.o.base.replace(/\/+$/, '');
@@ -654,8 +654,8 @@ class Sdk {
     /** Змінити налаштування на льоту (пісочниця, гра в рантаймі). */
     configure(patch: Partial<GameConOptions>): void {
         Object.assign(this.o, patch, {
-            position: { ...this.o.position, ...(patch.position ?? {}) },
-            hotkeys: { ...this.o.hotkeys, ...(patch.hotkeys ?? {}) },
+            position: { ...this.o.position, ...patch.position },
+            hotkeys: { ...this.o.hotkeys, ...patch.hotkeys },
         });
         this.applyVars();
         this.render();
@@ -747,7 +747,7 @@ class Sdk {
                     Accept: 'application/json',
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${this.token}`,
-                    ...(init.headers ?? {}),
+                    ...init.headers,
                 },
             },
         );

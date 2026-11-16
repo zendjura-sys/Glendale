@@ -4,11 +4,11 @@
 
 ```yaml
 hooks:
-  after_code:
-    - exec:
-        cd: $home/plugins
-        cmd:
-          - wget -qO gamecon.zip https://gamecon.online/developers/plugins/discourse/download && unzip -oq gamecon.zip && rm gamecon.zip
+    after_code:
+        - exec:
+              cd: $home/plugins
+              cmd:
+                  - wget -qO gamecon.zip https://gamecon.online/developers/plugins/discourse/download && unzip -oq gamecon.zip && rm gamecon.zip
 ```
 
 2. `./launcher rebuild app`

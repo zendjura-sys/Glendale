@@ -2,9 +2,9 @@
 
 ```yaml
 dependencies:
-  flutter_web_auth_2: ^4.0.0
-  http: ^1.2.0
-  crypto: ^3.0.3
+    flutter_web_auth_2: ^4.0.0
+    http: ^1.2.0
+    crypto: ^3.0.3
 ```
 
 Налаштуйте схему повернення за інструкцією flutter_web_auth_2 (Android-маніфест, iOS Info.plist).
