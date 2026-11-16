@@ -405,7 +405,7 @@ export function GamerDock({ footer }: { footer?: ReactNode }) {
     const { data } = useRail();
 
     return (
-        <aside className="sticky top-[calc(88px+env(safe-area-inset-top))] hidden h-[calc(100dvh-104px)] w-[264px] shrink-0 [scrollbar-width:none] flex-col gap-3 overflow-y-auto overscroll-contain pb-4 [view-transition-name:gc-sidebar] md:flex">
+        <aside className="gc-col-dock sticky top-[calc(88px+env(safe-area-inset-top))] hidden h-[calc(100dvh-104px)] w-[264px] shrink-0 [scrollbar-width:none] flex-col gap-3 overflow-y-auto overscroll-contain pb-4 [view-transition-name:gc-sidebar] min-[2560px]:w-[300px] md:flex">
             <PlayerCard me={data?.me} />
             <BentoMenu />
             <VoiceHub data={data} />

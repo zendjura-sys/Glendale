@@ -2475,20 +2475,26 @@ html[data-text='xl'] {
     overflow: hidden;
 }
 /*
- * Ширина макета за екраном: телефон — одна колонка; планшет (768+) — меню + вміст;
- * 1280+ — три колонки; FHD (1920+) — ширше; 2K і більше (2400+) — чотири колонки.
+ * Ширина макета за екраном (весь сайт):
+ * телефон — 1 колонка; HD (768–1919) — 2 (меню+віджети | контент);
+ * FHD (1920+) — 3; 2K (2560+) — 3 широкі; 4K+ (3000+) — 4.
  */
 :root {
-    --gc-shell-max: 1320px;
+    --gc-shell-max: 1280px;
 }
 @media (min-width: 1920px) {
     :root {
-        --gc-shell-max: 1600px;
+        --gc-shell-max: 1760px;
     }
 }
-@media (min-width: 2400px) {
+@media (min-width: 2560px) {
     :root {
-        --gc-shell-max: 2000px;
+        --gc-shell-max: 2320px;
+    }
+}
+@media (min-width: 3000px) {
+    :root {
+        --gc-shell-max: 3000px;
     }
 }
 .season-pine {
@@ -6067,9 +6073,39 @@ html:root.gc-vk[data-theme] {
     --color-gc-lilac-400: var(--gc-accent);
     --color-gc-lilac-300: var(--gc-accent);
 }
-/* Ширина оболонки: шапка-острів і три колонки (Gamer Dock, стрічка, права колонка). */
+/*
+ * Ширина оболонки Arctic (весь сайт): HD → FHD → 2K → 4K.
+ * Колонки: 1 (mobile) / 2 (HD) / 3 (FHD–2K) / 4 (4K+).
+ */
 :root.gc-vk[data-skin][data-theme] {
-    --gc-shell-max: 1600px;
+    --gc-shell-max: 1280px;
+}
+@media (min-width: 1920px) {
+    :root.gc-vk[data-skin][data-theme] {
+        --gc-shell-max: 1760px;
+    }
+}
+@media (min-width: 2560px) {
+    :root.gc-vk[data-skin][data-theme] {
+        --gc-shell-max: 2320px;
+    }
+}
+@media (min-width: 3000px) {
+    :root.gc-vk[data-skin][data-theme] {
+        --gc-shell-max: 3000px;
+    }
+}
+
+/* Мобільна 1 колонка: трохи щільніший ритм під контентом над таббаром. */
+@media (max-width: 767px) {
+    html:root.gc-vk[data-theme] .gc-vk-shell {
+        gap: 0;
+        padding-left: 12px;
+        padding-right: 12px;
+    }
+    html:root.gc-vk[data-theme] .gc-vt-main > *:first-child {
+        margin-top: 0;
+    }
 }
 html:root.gc-vk[data-theme='light'] {
     --gc-page: #f1f5f9;
@@ -6095,6 +6131,46 @@ html:root.gc-vk[data-theme] body {
 }
 .gc-solid-2 {
     background: var(--gc-l2);
+}
+.gc-solid-3 {
+    background: var(--gc-l3);
+}
+
+/*
+ * Типографіка соцмережі (Montserrat лишається): ролі, не нові шрифти.
+ * display — ім’я/бренд; title — заголовок блоку; body — пост; meta — час, підказки.
+ */
+.gc-type-display {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    line-height: 1.2;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+}
+.gc-type-title {
+    font-family: var(--font-display);
+    font-size: 0.9375rem;
+    line-height: 1.3;
+    font-weight: 700;
+}
+.gc-type-body {
+    font-size: 0.875rem;
+    line-height: 1.5;
+    font-weight: 500;
+}
+.gc-type-meta {
+    font-size: 0.75rem;
+    line-height: 1.35;
+    font-weight: 500;
+    color: color-mix(in oklab, var(--gc-text-2, #94a3b8) 92%, transparent);
+}
+@media (min-width: 640px) {
+    .gc-type-display {
+        font-size: 1.75rem;
+    }
+    .gc-type-title {
+        font-size: 1rem;
+    }
 }
 html:root.gc-vk[data-theme]
     :is(

@@ -51,6 +51,7 @@ import {
 } from '@/components/feed/side-widgets';
 import { WhileAway } from '@/components/feed/while-away';
 import type { WhileAwayData } from '@/components/feed/while-away';
+import { FeedMore } from '@/components/feed/feed-more';
 import { EmptyState, Widget, WidgetSkeleton } from '@/components/gc/widget';
 import { formatDate } from '@/lib/format';
 import type { PersonCard, PostItem, ScrollData, UserCard } from '@/types';
@@ -61,6 +62,7 @@ import { tr } from '@/lib/i18n';
 import { usePlugin } from '@/lib/plugins';
 import { cn } from '@/lib/utils';
 import { useFeature } from '@/lib/plugins';
+import type { ReactNode } from 'react';
 
 type Props = {
     whileAway?: WhileAwayData | null;
@@ -221,85 +223,134 @@ export default function Feed({
             <Head title={tr('Новини')} />
             <div className="flex gap-5">
                 <div className="min-w-0 flex-1 space-y-4">
-                    {/* Верх стрічки за макетом: моменти, одна смуга «серія · готовий грати · завдання»,
-                        далі — Wrapped, «Завтра» й трансляції друзів (порожні не показуються). */}
+                    {/* Соцмережа першою: історії → що пропустили → пульс → допис → вкладки → пости.
+                        Промо, підбірки й «продовжити» — у «Ще для вас», щоб не відтісняти стіну. */}
                     {storiesOn && <StoriesBar />}
                     <WhileAway data={whileAway} />
                     <FeedPulse quests={quests ?? []} />
-                    <WrappedBanner />
-                    <SiteEventBanner />
-                    <TomorrowCard events={tomorrow ?? []} />
-                    {liveOn && <FriendsLive streams={streaming ?? []} />}
-                    {(picks?.length ?? 0) > 0 && (
-                        <div className="flex gap-2 overflow-x-auto">
-                            {picks?.map((pick) => (
-                                <Link
-                                    key={pick.href}
-                                    href={pick.href}
-                                    className="gc-solid shrink-0 rounded-2xl px-3 py-2 text-sm font-medium text-white"
-                                >
-                                    {pick.title}
-                                </Link>
-                            ))}
-                        </div>
-                    )}
-                    {(sameGame?.length ?? 0) > 0 && (
-                        <div className="gc-solid flex gap-2 overflow-x-auto rounded-2xl p-3">
-                            {sameGame?.map((person) => (
-                                <Link
-                                    key={person.id}
-                                    href={`/${person.username}`}
-                                    className="gc-solid-2 min-w-[140px] rounded-xl px-3 py-2"
-                                >
-                                    <span className="block truncate text-sm font-medium text-white">
-                                        {person.first_name}
-                                    </span>
-                                    <span className="block truncate text-[11px] text-white/45">
-                                        {person.shared_game}
-                                    </span>
-                                </Link>
-                            ))}
-                        </div>
-                    )}
-                    {(playingNow?.length ?? 0) > 0 && (
-                        <div className="gc-solid flex gap-2 overflow-x-auto rounded-2xl p-3">
-                            {playingNow?.map((person) => (
-                                <Link
-                                    key={person.id}
-                                    href={
-                                        person.playing?.url ||
-                                        `/${person.username}`
-                                    }
-                                    className="gc-solid-2 flex min-w-[140px] items-center gap-2 rounded-xl px-2.5 py-2"
-                                >
-                                    <UserAvatar user={person} size="sm" />
-                                    <span className="min-w-0">
-                                        <span className="block truncate text-xs font-medium text-white">
-                                            {person.first_name}
-                                        </span>
-                                        <span className="block truncate text-[11px] text-sky-400">
-                                            {person.playing?.label}
-                                        </span>
-                                    </span>
-                                </Link>
-                            ))}
-                        </div>
-                    )}
                     {newcomer && <NewcomerWeek data={newcomer} />}
                     <PostComposer />
-                    <PromoBanner />
-                    {/* «Продовжити»: на чому зупинились — серія, пісня, гра, чернетка. */}
-                    {widgets?.continue && widgets.continue.length > 0 && (
-                        <section
-                            aria-label={tr('Продовжити')}
-                            className="space-y-2"
-                        >
-                            <h2 className="px-1 text-sm font-semibold text-white/70">
-                                {tr('Продовжити')}
-                            </h2>
-                            <ContinueList items={widgets.continue} horizontal />
-                        </section>
-                    )}
+                    {(() => {
+                        const more: ReactNode[] = [];
+                        // Банери самі ховаються, якщо порожні — тримаємо в «Ще», щоб не займали місце над стіною.
+                        more.push(<WrappedBanner key="wrapped" />);
+                        more.push(<SiteEventBanner key="season" />);
+                        more.push(<PromoBanner key="promo" />);
+                        let known = 3;
+                        if ((tomorrow?.length ?? 0) > 0) {
+                            known += 1;
+                            more.push(
+                                <TomorrowCard
+                                    key="tomorrow"
+                                    events={tomorrow ?? []}
+                                />,
+                            );
+                        }
+                        if (liveOn && (streaming?.length ?? 0) > 0) {
+                            known += 1;
+                            more.push(
+                                <FriendsLive
+                                    key="live"
+                                    streams={streaming ?? []}
+                                />,
+                            );
+                        }
+                        if ((picks?.length ?? 0) > 0) {
+                            known += 1;
+                            more.push(
+                                <div
+                                    key="picks"
+                                    className="flex gap-2 overflow-x-auto"
+                                >
+                                    {picks?.map((pick) => (
+                                        <Link
+                                            key={pick.href}
+                                            href={pick.href}
+                                            className="gc-solid shrink-0 rounded-2xl px-3 py-2 text-sm font-medium text-white"
+                                        >
+                                            {pick.title}
+                                        </Link>
+                                    ))}
+                                </div>,
+                            );
+                        }
+                        if ((sameGame?.length ?? 0) > 0) {
+                            known += 1;
+                            more.push(
+                                <div
+                                    key="same-game"
+                                    className="gc-solid flex gap-2 overflow-x-auto rounded-2xl p-3"
+                                >
+                                    {sameGame?.map((person) => (
+                                        <Link
+                                            key={person.id}
+                                            href={`/${person.username}`}
+                                            className="gc-solid-2 min-w-[140px] rounded-xl px-3 py-2"
+                                        >
+                                            <span className="block truncate text-sm font-medium text-white">
+                                                {person.first_name}
+                                            </span>
+                                            <span className="block truncate text-[11px] text-white/45">
+                                                {person.shared_game}
+                                            </span>
+                                        </Link>
+                                    ))}
+                                </div>,
+                            );
+                        }
+                        if ((playingNow?.length ?? 0) > 0) {
+                            known += 1;
+                            more.push(
+                                <div
+                                    key="playing"
+                                    className="gc-solid flex gap-2 overflow-x-auto rounded-2xl p-3"
+                                >
+                                    {playingNow?.map((person) => (
+                                        <Link
+                                            key={person.id}
+                                            href={
+                                                person.playing?.url ||
+                                                `/${person.username}`
+                                            }
+                                            className="gc-solid-2 flex min-w-[140px] items-center gap-2 rounded-xl px-2.5 py-2"
+                                        >
+                                            <UserAvatar
+                                                user={person}
+                                                size="sm"
+                                            />
+                                            <span className="min-w-0">
+                                                <span className="block truncate text-xs font-medium text-white">
+                                                    {person.first_name}
+                                                </span>
+                                                <span className="block truncate text-[11px] text-sky-400">
+                                                    {person.playing?.label}
+                                                </span>
+                                            </span>
+                                        </Link>
+                                    ))}
+                                </div>,
+                            );
+                        }
+                        if (widgets?.continue && widgets.continue.length > 0) {
+                            known += 1;
+                            more.push(
+                                <section
+                                    key="continue"
+                                    aria-label={tr('Продовжити')}
+                                    className="space-y-2"
+                                >
+                                    <h2 className="gc-type-meta px-1 text-white/70">
+                                        {tr('Продовжити')}
+                                    </h2>
+                                    <ContinueList
+                                        items={widgets.continue}
+                                        horizontal
+                                    />
+                                </section>,
+                            );
+                        }
+                        return <FeedMore count={known}>{more}</FeedMore>;
+                    })()}
                     <FeedTabs tab={tab} hasFriends={hasFriends} />
                     {tab !== 'activity' && (
                         <div className="flex flex-wrap items-center gap-2">
@@ -395,7 +446,7 @@ export default function Feed({
                     )}
                 </div>
 
-                <aside className="gc-split-hide sticky top-[calc(88px+env(safe-area-inset-top))] hidden h-fit w-[320px] shrink-0 space-y-4 min-[1920px]:w-[360px] xl:block">
+                <aside className="gc-split-hide gc-col-context sticky top-[calc(88px+env(safe-area-inset-top))] hidden h-fit w-[320px] shrink-0 space-y-4 min-[1920px]:block min-[1920px]:w-[340px] min-[2560px]:w-[380px] min-[3000px]:w-[340px]">
                     {rail && (
                         <>
                             <FriendRequests data={rail} reload={reloadRail} />

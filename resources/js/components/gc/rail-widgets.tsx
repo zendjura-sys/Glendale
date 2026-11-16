@@ -69,6 +69,14 @@ export type RailData = {
     requests_total: number;
     contacts: Contact[];
     contacts_total: number;
+    online?: UserCard[];
+    chats?: {
+        id: number;
+        title: string;
+        avatar_url: string | null;
+        peer: UserCard | null;
+        unread: number;
+    }[];
 };
 
 /** Дані бічної колонки (/me/rail), оновлення раз на хвилину. */
