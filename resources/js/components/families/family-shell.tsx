@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { m, useReducedMotion } from 'motion/react';
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
 import { PlusBadge } from '@/components/gc/plus';
 import { ServerIcon } from '@/components/servers/server-icon';
@@ -57,6 +57,17 @@ export function FamilyShell({
     const base = `/f/${family.slug}`;
     const playing = usePlayer().current !== null;
     const reduce = useReducedMotion();
+    const tabStrip = useRef<HTMLElement | null>(null);
+
+    useEffect(() => {
+        tabStrip.current
+            ?.querySelector<HTMLElement>('[aria-current="page"]')
+            ?.scrollIntoView({
+                behavior: 'smooth',
+                block: 'nearest',
+                inline: 'center',
+            });
+    }, [section]);
     const reload = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     useRealtime(`family.${family.id}`, {
@@ -312,7 +323,12 @@ export function FamilyShell({
                             )}
                         </div>
                     </div>
-                    <nav className="flex [scrollbar-width:none] gap-1 overflow-x-auto px-2 py-1.5 sm:px-4 [&::-webkit-scrollbar]:hidden">
+                    <nav
+                        ref={(el) => {
+                            tabStrip.current = el;
+                        }}
+                        className="flex [scrollbar-width:none] gap-1 overflow-x-auto px-2 py-1.5 sm:px-4 [&::-webkit-scrollbar]:hidden"
+                    >
                         {tabs
                             .filter((t) => t.visible)
                             .map((t) => {
@@ -322,8 +338,10 @@ export function FamilyShell({
                                         key={t.section}
                                         href={t.href}
                                         preserveScroll
+                                        preserveState
                                         prefetch={['hover']}
                                         cacheFor="1m"
+                                        aria-current={on ? 'page' : undefined}
                                         className={cn(
                                             'relative inline-flex h-10 shrink-0 items-center gap-2 rounded-xl px-3 text-sm font-medium transition-colors',
                                             on

@@ -205,15 +205,15 @@ type Props = {
     blockOrder?: string[];
     canPost: boolean;
     canMessage: boolean;
-    stats: {
+    stats?: {
         friends: number;
         posts: number;
         photos: number;
         mutual: number;
         thanks?: number;
     };
-    friends: UserCard[];
-    photos: {
+    friends?: UserCard[];
+    photos?: {
         id: number;
         url: string;
         href: string;
@@ -233,7 +233,7 @@ type Props = {
     } | null;
     audio: { href: string; tracks: number } | null;
     nowPlaying?: NowPlaying | null;
-    posts: ScrollData<PostItem>;
+    posts?: ScrollData<PostItem>;
     steamLibrary?: { name: string; hours: number; href: string | null }[];
     characters?: CharacterCardData[];
     stream?: StreamInfo | null;
@@ -465,9 +465,9 @@ export default function ProfileShow({
     blockOrder = [],
     canPost,
     canMessage,
-    stats,
-    friends,
-    photos,
+    stats = { friends: 0, posts: 0, photos: 0, mutual: 0 },
+    friends = [],
+    photos = [],
     photosHref,
     achievements,
     tieredBadges = [],
@@ -478,7 +478,7 @@ export default function ProfileShow({
     ready = null,
     audio,
     nowPlaying,
-    posts,
+    posts = { data: [] },
     steamLibrary,
     together = [],
     togetherOff = false,
@@ -1642,7 +1642,7 @@ export default function ProfileShow({
                                 <PostComposer wall={isSelf ? null : profile} />
                             )}
 
-                            {posts.data.length === 0 ? (
+                            {(posts?.data?.length ?? 0) === 0 ? (
                                 <EmptyState
                                     icon={PenLine}
                                     title={tr('На стіні поки порожньо')}
@@ -1668,18 +1668,21 @@ export default function ProfileShow({
                                     loading={<PostSkeleton />}
                                     className={cn('space-y-4')}
                                 >
-                                    {posts.data.some((p) => p.is_pinned) && (
+                                    {(posts.data ?? []).some(
+                                        (p) => p.is_pinned,
+                                    ) && (
                                         <p className="flex items-center gap-1.5 px-1 text-xs font-semibold text-white/50">
                                             <Pin className="size-3.5" />
                                             {tr('Закріплене')}
                                         </p>
                                     )}
-                                    {posts.data.map((post, i) => (
+                                    {(posts.data ?? []).map((post, i) => (
                                         <Fragment key={post.id}>
                                             {/* Межа між закріпленими й рештою стрічки. */}
                                             {i > 0 &&
                                                 !post.is_pinned &&
-                                                posts.data[i - 1].is_pinned && (
+                                                (posts.data ?? [])[i - 1]
+                                                    ?.is_pinned && (
                                                     <p className="px-1 pt-2 text-xs font-semibold text-white/50">
                                                         {tr('Усі записи')}
                                                     </p>

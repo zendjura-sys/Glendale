@@ -5622,17 +5622,17 @@ iframe {
     border-radius: 26px;
     pointer-events: none;
     z-index: -1;
-    background: rgba(20, 22, 28, 0.82);
-    -webkit-backdrop-filter: blur(40px) saturate(150%);
-    backdrop-filter: blur(40px) saturate(150%);
+    background: rgba(15, 18, 26, 0.5);
+    -webkit-backdrop-filter: blur(28px) saturate(180%);
+    backdrop-filter: blur(28px) saturate(180%);
     border: 1px solid rgba(255, 255, 255, 0.14);
     box-shadow:
-        inset 0 1px 0 0 rgba(255, 255, 255, 0.24),
-        0 12px 32px -4px rgba(0, 0, 0, 0.7);
+        inset 0 1px 0 0 rgba(255, 255, 255, 0.22),
+        0 8px 32px 0 rgba(0, 0, 0, 0.45);
 }
 html[data-theme='light'] :root.gc-vk .gc-vk-tabbar.ios27-glass-capsule::before,
 :root.gc-vk[data-theme='light'] .gc-vk-tabbar.ios27-glass-capsule::before {
-    background: rgba(255, 255, 255, 0.82);
+    background: rgba(255, 255, 255, 0.55);
     border-color: rgba(15, 23, 42, 0.1);
     box-shadow:
         inset 0 1px 0 0 rgba(255, 255, 255, 0.95),
@@ -6916,23 +6916,43 @@ html:root.gc-vk[data-theme='light'] {
         box-shadow 0.45s var(--gc-theme-ease);
 }
 
-/* iOS 27+ achromatic frosted glass — без синеви (хідер + док). */
+/* iOS 27+ матове скло: напівпрозоре, контент розмивається крізь капсулу. */
 .ios27-glass-capsule {
-    background: rgba(20, 22, 28, 0.82) !important;
-    -webkit-backdrop-filter: blur(40px) saturate(150%) !important;
-    backdrop-filter: blur(40px) saturate(150%) !important;
+    background: rgba(15, 18, 26, 0.5) !important;
+    -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
+    backdrop-filter: blur(28px) saturate(180%) !important;
     border: 1px solid rgba(255, 255, 255, 0.14) !important;
     box-shadow:
-        inset 0 1px 0 0 rgba(255, 255, 255, 0.24),
-        0 12px 32px -4px rgba(0, 0, 0, 0.7) !important;
+        inset 0 1px 0 0 rgba(255, 255, 255, 0.22),
+        0 8px 32px 0 rgba(0, 0, 0, 0.45) !important;
 }
 html[data-theme='light'] .ios27-glass-capsule,
 :root[data-theme='light'] .ios27-glass-capsule {
-    background: rgba(255, 255, 255, 0.82) !important;
+    background: rgba(255, 255, 255, 0.55) !important;
     border: 1px solid rgba(15, 23, 42, 0.1) !important;
     box-shadow:
-        inset 0 1px 0 0 rgba(255, 255, 255, 0.95),
-        0 12px 32px -4px rgba(15, 23, 42, 0.12) !important;
+        inset 0 1px 0 0 rgba(255, 255, 255, 0.9),
+        0 8px 32px 0 rgba(15, 23, 42, 0.12) !important;
+}
+/* Перебиває суцільний фон VK-шапки: обгортка лишається прозорою, скло — на капсулі. */
+:root.gc-vk .ios-glass-bar.ios-header-pill.ios27-glass-capsule,
+html:root.gc-vk[data-theme]
+    .ios-glass-bar.ios-header-pill.gc-glass-island.ios27-glass-capsule {
+    background: rgba(15, 18, 26, 0.5) !important;
+    background-image: none !important;
+    -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
+    backdrop-filter: blur(28px) saturate(180%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.14) !important;
+    box-shadow:
+        inset 0 1px 0 0 rgba(255, 255, 255, 0.22),
+        0 8px 32px 0 rgba(0, 0, 0, 0.45) !important;
+}
+html[data-theme='light']
+    :root.gc-vk
+    .ios-glass-bar.ios-header-pill.ios27-glass-capsule,
+:root.gc-vk[data-theme='light']
+    .ios-glass-bar.ios-header-pill.ios27-glass-capsule {
+    background: rgba(255, 255, 255, 0.55) !important;
 }
 .app-header-wrapper .ios27-glass-capsule.ios-header-pill {
     max-width: var(--gc-shell-max);

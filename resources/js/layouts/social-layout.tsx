@@ -368,14 +368,19 @@ function MobileNav() {
     const [open, setOpen] = useState(false);
     const reduce = useReducedMotion();
     const close = useCallback(() => setOpen(false), []);
+    const { url } = usePage();
 
     const { primary, rest } = useMobileSplit(items);
     const restActive = rest.some((i) => isActive(i.href, i.key));
     const restBadge = rest.reduce((sum, i) => sum + i.badge, 0);
 
+    // Будь-яка зміна URL миттєво ховає шторку — інакше меню лишається поверх нової сторінки.
+    useEffect(() => {
+        setOpen(false);
+    }, [url]);
+
     useEffect(() => {
         if (!open) return;
-        // Prefetch (hover/mount) не згортає шторку — лише реальний перехід.
         const offNavigate = router.on('start', (event) => {
             if (!event.detail.visit.prefetch) {
                 close();
@@ -412,18 +417,25 @@ function MobileNav() {
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
-                            transition={{ duration: reduce ? 0 : 0.2 }}
-                            className="fixed inset-0 z-[54] bg-black/45"
+                            transition={{ duration: 0 }}
+                            className="fixed inset-0 z-[54] bg-[#07090E]/92 backdrop-blur-2xl"
                         />
                         <m.div
                             key="menu"
                             role="dialog"
                             aria-label={tr('Меню')}
+                            onClick={(event) => {
+                                if (
+                                    (event.target as HTMLElement).closest('a')
+                                ) {
+                                    close();
+                                }
+                            }}
                             initial={reduce ? false : { y: '100%' }}
                             animate={{ y: 0 }}
-                            exit={reduce ? { opacity: 0 } : { y: '100%' }}
+                            exit={{ opacity: 0, transition: { duration: 0 } }}
                             transition={motionOr(reduce, SNAP)}
-                            className="gc-vk-sheet gc-solid fixed inset-x-0 bottom-[calc(var(--vkui_internal--tabbar_height,48px)+env(safe-area-inset-bottom))] z-[55] max-h-[calc(100dvh-env(safe-area-inset-top)-7rem)] overflow-y-auto overscroll-contain rounded-t-3xl px-3 pt-2 pb-3 shadow-[0_-12px_40px_rgb(0_0_0/0.35)]"
+                            className="fixed inset-x-0 bottom-[calc(var(--vkui_internal--tabbar_height,48px)+env(safe-area-inset-bottom))] z-[55] max-h-[calc(100dvh-env(safe-area-inset-top)-7rem)] overflow-y-auto overscroll-contain rounded-t-3xl bg-[#07090E]/92 px-3 pt-2 pb-3 shadow-[0_-12px_40px_rgb(0_0_0/0.35)] backdrop-blur-2xl"
                         >
                             <div
                                 aria-hidden
@@ -604,8 +616,6 @@ export default function SocialLayout({ children }: PropsWithChildren) {
                 <SiteBackground />
                 <Seasonal />
                 <Konami />
-                <div aria-hidden className="gc-scrim-top" />
-                <div aria-hidden className="gc-scrim-bottom md:hidden" />
                 <Topbar />
                 <div
                     className={cn(

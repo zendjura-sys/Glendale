@@ -20,7 +20,11 @@ export class ErrorBoundary extends Component<
     }
 
     componentDidCatch(error: Error, info: ErrorInfo): void {
-        console.error(error, info.componentStack);
+        console.error(
+            '[ErrorBoundary]',
+            error?.stack ?? error,
+            info.componentStack,
+        );
     }
 
     componentDidUpdate(prev: Readonly<{ resetKey?: string }>): void {
