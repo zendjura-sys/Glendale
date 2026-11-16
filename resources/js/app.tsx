@@ -22,6 +22,7 @@ import {
     primaryWarmUrls,
     warmIdle,
 } from '@/lib/prefetch';
+import { warmBootRoutes } from '@/lib/boot-orchestrator';
 
 // Швидкий перший кадр: стартовий файл без макетів. Кожен макет (соцмережа, адмінка, вхід, налаштування) —
 // окремим файлом, що вантажиться, коли вперше знадобиться, і далі лишається в кеші.
@@ -115,6 +116,8 @@ function SplashDone({
                     ).connection?.saveData,
                 ),
         );
+        // Під час сплешу вже гріємо ключові маршрути; після — ховаємо скло й акорд.
+        warmBootRoutes(user?.username);
         const frame = requestAnimationFrame(() => {
             (
                 window as unknown as { gcHideSplash?: () => void }

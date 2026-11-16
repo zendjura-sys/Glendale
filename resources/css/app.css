@@ -6879,6 +6879,105 @@ html:root.gc-vk[data-theme='light'] {
         box-shadow 0.45s var(--gc-theme-ease);
 }
 
+/*
+ * iOS 27+ Liquid Glass (21st.dev Liquid Glass Navbar / Nimbus «Waterline»).
+ * Той самий рецепт для шапки-острова й нижнього навбару: tint + rim + soft depth.
+ */
+:root {
+    --gc-liquid-tint: rgba(255, 255, 255, 0.14);
+    --gc-liquid-fg: #0b132b;
+    --gc-liquid-fg-soft: rgba(11, 19, 43, 0.6);
+    --gc-liquid-rim: rgba(255, 255, 255, 0.7);
+    --gc-liquid-drop: rgba(255, 255, 255, 0.42);
+    --gc-liquid-drop-hi: rgba(255, 255, 255, 0.85);
+    --gc-liquid-shadow: 0 12px 32px -14px rgba(0, 40, 90, 0.45),
+        0 2px 6px rgba(0, 40, 90, 0.1);
+}
+html[data-theme='dark'],
+.dark {
+    --gc-liquid-tint: rgba(10, 18, 40, 0.26);
+    --gc-liquid-fg: #f1f7ff;
+    --gc-liquid-fg-soft: rgba(241, 247, 255, 0.66);
+    --gc-liquid-rim: rgba(255, 255, 255, 0.34);
+    --gc-liquid-drop: rgba(255, 255, 255, 0.16);
+    --gc-liquid-drop-hi: rgba(255, 255, 255, 0.55);
+    --gc-liquid-shadow: 0 12px 32px -14px rgba(0, 0, 0, 0.55),
+        0 2px 6px rgba(0, 40, 90, 0.18);
+}
+
+.gc-liquid-glass {
+    isolation: isolate;
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+    background: var(--gc-liquid-tint) !important;
+    -webkit-backdrop-filter: blur(18px) saturate(1.35) brightness(1.06) !important;
+    backdrop-filter: blur(18px) saturate(1.35) brightness(1.06) !important;
+    border: 1px solid transparent !important;
+    box-shadow:
+        inset 0 1px 1px var(--gc-liquid-rim),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.18),
+        var(--gc-liquid-shadow) !important;
+}
+
+.gc-liquid-glass-inner {
+    background: color-mix(in oklab, var(--gc-liquid-tint) 55%, transparent);
+    border: 1px solid color-mix(in oklab, var(--gc-liquid-rim) 35%, transparent);
+    box-shadow: inset 0 1px 0 color-mix(in oklab, var(--gc-liquid-rim) 50%, transparent);
+}
+
+/* Активна «водяна крапля» (fallback без WebGL з Nimbus). */
+.gc-liquid-drop {
+    background:
+        radial-gradient(
+            120% 140% at 30% 0%,
+            var(--gc-liquid-drop-hi),
+            transparent 55%
+        ),
+        var(--gc-liquid-drop) !important;
+    box-shadow:
+        inset 0 1px 1px rgba(255, 255, 255, 0.9),
+        inset 0 -2px 6px rgba(0, 162, 255, 0.18),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.4),
+        0 6px 16px -6px rgba(0, 70, 140, 0.35) !important;
+    border: 0 !important;
+}
+
+html:root.gc-vk[data-theme] .gc-header-nav {
+    background: color-mix(in oklab, var(--gc-liquid-tint) 70%, transparent);
+}
+html:root.gc-vk[data-theme] .gc-header-nav-active {
+    background: transparent;
+}
+html:root.gc-vk[data-theme] .gc-header-nav a {
+    color: var(--gc-liquid-fg-soft);
+}
+html:root.gc-vk[data-theme] .gc-header-nav a[aria-current='page'],
+html:root.gc-vk[data-theme] .gc-header-nav a:hover {
+    color: var(--gc-liquid-fg);
+}
+
+/* Нижній док: liquid glass поверх VKUI Tabbar. */
+html:root.gc-vk[data-theme] .gc-vk-tabbar.gc-liquid-glass {
+    background: var(--gc-liquid-tint) !important;
+}
+html:root.gc-vk[data-theme] .gc-vk-tabbar .gc-liquid-tab {
+    color: var(--gc-liquid-fg-soft);
+}
+html:root.gc-vk[data-theme]
+    .gc-vk-tabbar
+    .vkuiTabbarItem--selected.gc-liquid-tab,
+html:root.gc-vk[data-theme] .gc-vk-tabbar .gc-liquid-tab[aria-current='page'] {
+    color: var(--gc-liquid-fg);
+}
+
+@media (prefers-reduced-transparency: reduce) {
+    .gc-liquid-glass {
+        background: var(--gc-glass-bg) !important;
+        -webkit-backdrop-filter: none !important;
+        backdrop-filter: none !important;
+    }
+}
+
 .gc-scrim-top,
 .gc-scrim-bottom {
     pointer-events: none;
@@ -6920,6 +7019,15 @@ html.gc-theme-vt::view-transition-new(root) {
     }
 }
 
+/* Spotlight на інтерактивних картках (GcInteractiveCard). */
+.gc-interactive {
+    transform-origin: center;
+}
+.gc-interactive:hover,
+.gc-interactive[data-hover] {
+    --gc-interactive-glow: 1;
+}
+
 /* Boot preloader iOS 27 glass */
 #gc-boot-root {
     position: fixed;
@@ -6933,6 +7041,11 @@ html.gc-theme-vt::view-transition-new(root) {
     -webkit-backdrop-filter: blur(48px) saturate(140%);
     backdrop-filter: blur(48px) saturate(140%);
     color: #f8fafc;
+    transition:
+        opacity 0.42s var(--gc-theme-ease),
+        transform 0.42s var(--gc-theme-ease),
+        visibility 0.42s,
+        filter 0.42s var(--gc-theme-ease);
 }
 html[data-theme='light'] #gc-boot-root {
     background: rgba(242, 244, 248, 0.92);
@@ -6940,11 +7053,8 @@ html[data-theme='light'] #gc-boot-root {
 }
 #gc-boot-root.gc-boot-exit {
     opacity: 0;
+    visibility: hidden;
     transform: scale(1.04);
     filter: blur(0px);
     pointer-events: none;
-    transition:
-        opacity 0.42s cubic-bezier(0.22, 1, 0.36, 1),
-        transform 0.42s cubic-bezier(0.22, 1, 0.36, 1),
-        filter 0.42s cubic-bezier(0.22, 1, 0.36, 1);
 }

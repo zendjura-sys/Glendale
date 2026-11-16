@@ -23,11 +23,11 @@
                 d.style.colorScheme = t;
                 document.addEventListener('DOMContentLoaded', function () {
                     var m = document.querySelector('meta[name=theme-color]');
-                    if (m) m.content = light ? '#e9f1f8' : '#05070f';
+                    if (m) m.content = light ? '#F2F4F8' : '#07090E';
                 });
             })();
         </script>
-        <meta name="theme-color" content="#05070f">
+        <meta name="theme-color" content="#07090E">
         <meta name="color-scheme" content="dark light">
 
         @php
@@ -109,8 +109,9 @@
         </script>
 
         <style>
-            html { background-color: #05070f; }
-            html[data-theme='light'] { background-color: #e9f1f8; }
+            html { background-color: #07090E; }
+            html[data-theme='light'] { background-color: #F2F4F8; }
+            html, body { transition: background-color .45s cubic-bezier(.22,1,.36,1), color .45s cubic-bezier(.22,1,.36,1); }
             /* Текст головної для пошуковиків і браузерів без JavaScript; з JavaScript його замінює сайт. */
             html.js .seo-static { display: none; }
         </style>
@@ -151,42 +152,55 @@
         <script>try { if (sessionStorage.getItem('gc_splash_seen')) document.documentElement.classList.add('gc-splash-skip'); } catch (e) {}</script>
         <div id="gc-splash-loader" role="status" aria-live="polite">
             <style>
-                #gc-splash-loader{--sp-bg:#05070f;--sp-glow:rgba(37,99,235,.28);--sp-glow2:rgba(0,210,255,.14);--sp-tile:#0a1222;--sp-text:rgba(226,232,240,.72);--sp-track:rgba(255,255,255,.08);position:fixed;inset:0;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(60% 45% at 50% 42%,var(--sp-glow),transparent 70%),radial-gradient(40% 35% at 70% 70%,var(--sp-glow2),transparent 70%),var(--sp-bg);transition:opacity .35s cubic-bezier(.22,1,.36,1),visibility .35s}
-                html[data-theme='light'] #gc-splash-loader{--sp-bg:#e9f1f8;--sp-glow:rgba(56,189,248,.30);--sp-glow2:rgba(99,102,241,.16);--sp-tile:#ffffff;--sp-text:#475569;--sp-track:rgba(15,23,42,.08)}
+                #gc-splash-loader{--sp-bg:#07090E;--sp-tile:rgba(255,255,255,.06);--sp-text:rgba(248,250,252,.72);--sp-track:rgba(255,255,255,.10);position:fixed;inset:0;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(10,12,16,.90);-webkit-backdrop-filter:blur(48px) saturate(140%);backdrop-filter:blur(48px) saturate(140%);transition:opacity .42s cubic-bezier(.22,1,.36,1),transform .42s cubic-bezier(.22,1,.36,1),visibility .42s}
+                html[data-theme='light'] #gc-splash-loader{--sp-bg:#F2F4F8;--sp-tile:rgba(255,255,255,.82);--sp-text:#64748B;--sp-track:rgba(15,23,42,.08);background:rgba(242,244,248,.92)}
                 html.gc-splash-skip #gc-splash-loader{display:none}
-                @keyframes gcSplashPulse{0%,100%{transform:scale(.98);box-shadow:0 0 28px rgba(0,210,255,.22)}50%{transform:scale(1.02);box-shadow:0 0 44px rgba(0,210,255,.38)}}
                 @keyframes gcSplashBeam{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
-                #gc-splash-loader .gc-sq{width:88px;height:88px;border-radius:26px;padding:2px;background:linear-gradient(45deg,#1D4ED8,#00D2FF);animation:gcSplashPulse 2s ease-in-out infinite}
-                #gc-splash-loader .gc-sq>div{width:100%;height:100%;border-radius:24px;background:var(--sp-tile);display:flex;align-items:center;justify-content:center;overflow:hidden}
-                #gc-splash-loader img{width:100%;height:100%;object-fit:cover}
-                #gc-splash-loader .gc-bar{width:140px;height:3px;border-radius:999px;background:var(--sp-track);overflow:hidden;margin-top:26px}
-                #gc-splash-loader .gc-bar>i{display:block;width:100%;height:100%;background:linear-gradient(90deg,transparent,#2563EB,#00D2FF,transparent);animation:gcSplashBeam 1.1s ease-in-out infinite}
-                #gc-splash-loader .gc-name{margin-top:18px;font:700 20px/1 'Montserrat Variable','Montserrat',ui-sans-serif,system-ui,sans-serif;color:var(--sp-text);letter-spacing:-.01em}
-                #gc-splash-loader .gc-name b{color:#0EA5E9;font-weight:700}
-                #gc-splash-loader .gc-st{font:500 13px/1.4 'Montserrat Variable','Montserrat',ui-sans-serif,system-ui,sans-serif;color:var(--sp-text);margin-top:12px;min-height:18px}
-                @media (prefers-reduced-motion:reduce){#gc-splash-loader .gc-sq,#gc-splash-loader .gc-bar>i{animation:none}}
+                @keyframes gcSplashDraw{to{stroke-dashoffset:0}}
+                #gc-splash-loader .gc-sq{width:96px;height:96px;border-radius:28px;border:1px solid rgba(255,255,255,.16);background:var(--sp-tile);box-shadow:inset 0 1px 0 rgba(255,255,255,.28),0 14px 36px -6px rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center}
+                html[data-theme='light'] #gc-splash-loader .gc-sq{border-color:rgba(15,23,42,.09);box-shadow:inset 0 1px 0 rgba(255,255,255,.95),0 14px 36px -6px rgba(15,23,42,.10)}
+                #gc-splash-loader .gc-sq svg{width:52px;height:52px}
+                #gc-splash-loader .gc-sq path{stroke:currentColor;stroke-width:5;stroke-linecap:round;fill:none;stroke-dasharray:120;stroke-dashoffset:120;animation:gcSplashDraw 900ms cubic-bezier(.22,1,.36,1) forwards;color:#F8FAFC}
+                html[data-theme='light'] #gc-splash-loader .gc-sq path{color:#0F172A}
+                #gc-splash-loader .gc-pct{margin-top:18px;font:700 14px/1 'Montserrat Variable','Montserrat',ui-sans-serif,system-ui,sans-serif;color:var(--sp-text);font-variant-numeric:tabular-nums;letter-spacing:.04em}
+                #gc-splash-loader .gc-bar{width:148px;height:3px;border-radius:999px;background:var(--sp-track);overflow:hidden;margin-top:12px}
+                #gc-splash-loader .gc-bar>i{display:block;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.75),transparent);animation:gcSplashBeam 1.05s linear infinite}
+                #gc-splash-loader .gc-st{font:500 13px/1.4 'Montserrat Variable','Montserrat',ui-sans-serif,system-ui,sans-serif;color:var(--sp-text);margin-top:14px;min-height:18px}
+                @media (prefers-reduced-motion:reduce){#gc-splash-loader .gc-bar>i,#gc-splash-loader .gc-sq path{animation:none}#gc-splash-loader .gc-sq path{stroke-dashoffset:0}}
             </style>
-            <div class="gc-sq"><div><img src="/images/app/logo.webp" alt="GameCon" width="84" height="84" onerror="this.outerHTML='<svg width=&quot;52&quot; height=&quot;52&quot; viewBox=&quot;0 0 52 52&quot;><defs><linearGradient id=&quot;gcG&quot; x1=&quot;0&quot; y1=&quot;1&quot; x2=&quot;1&quot; y2=&quot;0&quot;><stop offset=&quot;0&quot; stop-color=&quot;#2563EB&quot;/><stop offset=&quot;1&quot; stop-color=&quot;#00D2FF&quot;/></linearGradient></defs><path d=&quot;M40 14a17 17 0 1 0 2 20H27&quot; fill=&quot;none&quot; stroke=&quot;url(#gcG)&quot; stroke-width=&quot;5&quot; stroke-linecap=&quot;round&quot;/></svg>'"></div></div>
-            <div class="gc-name">Game<b>Con</b></div>
+            <div class="gc-sq" aria-hidden="true"><svg viewBox="0 0 52 52"><path d="M40 14a17 17 0 1 0 2 20H27"/></svg></div>
+            <div class="gc-pct" id="gc-splash-pct">00%</div>
             <div class="gc-bar"><i></i></div>
             <div class="gc-st" id="gc-splash-status">Ініціалізація GameCon OS...</div>
             <script>
                 (function () {
-                    var lines = ['Ініціалізація GameCon OS...', 'Синхронізація ігрового профілю...', 'Підключення до серверів та штабу...'];
+                    var lines = ['Ініціалізація GameCon OS...', 'Предзавантаження інтерфейсу...', 'Синхронізація профілю та серверів...'];
                     var i = 0, el = document.getElementById('gc-splash-status');
+                    var pctEl = document.getElementById('gc-splash-pct');
                     var skip = document.documentElement.classList.contains('gc-splash-skip');
-                    var timer = skip ? 0 : setInterval(function () { i = (i + 1) % lines.length; if (el) el.textContent = lines[i]; }, 900);
+                    var fast = skip;
+                    var dur = fast ? 450 : 1000;
+                    var started = performance.now();
+                    var timer = skip ? 0 : setInterval(function () { i = (i + 1) % lines.length; if (el) el.textContent = lines[i]; }, Math.max(280, dur / lines.length));
+                    var raf = 0;
+                    function tick(now) {
+                        var t = Math.min(1, (now - started) / dur);
+                        if (pctEl) pctEl.textContent = String(Math.round(t * 100)).padStart(2, '0') + '%';
+                        if (t < 1) raf = requestAnimationFrame(tick);
+                    }
+                    if (!skip) raf = requestAnimationFrame(tick); else if (pctEl) pctEl.textContent = '100%';
                     window.gcHideSplash = function () {
                         var s = document.getElementById('gc-splash-loader');
                         if (!s) return;
                         clearInterval(timer);
+                        cancelAnimationFrame(raf);
+                        if (pctEl) pctEl.textContent = '100%';
                         try { sessionStorage.setItem('gc_splash_seen', '1'); } catch (e) {}
-                        if (skip) { s.parentNode.removeChild(s); return; }
-                        s.style.opacity = '0'; s.style.pointerEvents = 'none'; s.style.visibility = 'hidden';
-                        setTimeout(function () { if (s.parentNode) s.parentNode.removeChild(s); }, 350);
+                        if (skip) { s.parentNode && s.parentNode.removeChild(s); return; }
+                        s.style.opacity = '0'; s.style.transform = 'scale(1.04)'; s.style.pointerEvents = 'none'; s.style.visibility = 'hidden';
+                        setTimeout(function () { if (s.parentNode) s.parentNode.removeChild(s); }, 420);
                     };
-                    // Страховка: навіть на повільній мережі сплеш зникне за 2,5 с після завантаження сторінки.
-                    window.addEventListener('load', function () { setTimeout(window.gcHideSplash, 2500); });
+                    window.addEventListener('load', function () { setTimeout(window.gcHideSplash, fast ? 500 : 2500); });
                 })();
             </script>
         </div>

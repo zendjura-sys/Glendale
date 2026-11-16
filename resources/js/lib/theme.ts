@@ -55,7 +55,7 @@ function setTheme(root: HTMLElement, pref: string, theme: 'light' | 'dark') {
     const meta = document.querySelector<HTMLMetaElement>(
         'meta[name=theme-color]',
     );
-    if (meta) meta.content = theme === 'light' ? '#e9f1f8' : '#05070f';
+    if (meta) meta.content = theme === 'light' ? '#F2F4F8' : '#07090E';
 
     // Токени VKUI — одразу, щоб у знімок нового стану потрапили й вони.
     if (root.classList.contains('gc-vk')) {

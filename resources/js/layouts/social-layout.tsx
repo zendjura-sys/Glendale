@@ -62,6 +62,7 @@ import { usePlugin } from '@/lib/plugins';
 import { cn } from '@/lib/utils';
 import { NavigationSkeleton } from '@/components/gc/navigation-skeleton';
 import { PageTransition } from '@/components/gc/page-transition';
+import { GcPageTransition } from '@/components/motion/GcPageTransition';
 import { AppPromoCard } from '@/components/app-promo/app-promo-card';
 import { DockWidgets } from '@/components/feed/side-widgets';
 import { LanguageMenu } from '@/components/gc/language-switcher';
@@ -260,9 +261,8 @@ function Topbar() {
 
     return (
         <header className="app-header-wrapper">
-            {/* Шапка — плаваюча капсула з безбарвного матового скла (як острів-меню знизу); обгортка прозора. */}
-            {/* Шапка — парящий скляний острів (одне з трьох місць зі склом: шапка, навбар, плеєр). */}
-            <div className="ios-glass-panel ios-glass-bar ios-header-pill gc-glass-island [view-transition-name:gc-topbar]">
+            {/* Шапка — iOS 27+ Liquid Glass острів (21st Nimbus / Liquid Glass Navbar). */}
+            <div className="ios-glass-panel ios-glass-bar ios-header-pill gc-glass-island gc-frosted-capsule gc-liquid-glass [view-transition-name:gc-topbar]">
                 <Link
                     href="/feed"
                     className="flex shrink-0 items-center self-center md:mr-4"
@@ -429,31 +429,55 @@ function MobileNav() {
             </AnimatePresence>
             <Tabbar
                 aria-label={tr('Розділи')}
-                className="ios-glass-panel gc-vk-tabbar z-[56] border-t border-white/[0.06] [view-transition-name:gc-tabbar]"
+                className="ios-glass-panel gc-frosted-capsule gc-liquid-glass gc-vk-tabbar z-[56] [view-transition-name:gc-tabbar]"
             >
-                {primary.map((item) => (
-                    <TabbarItem
-                        key={item.key}
-                        Component={Link}
-                        href={item.href}
-                        // Телефон: mount гріє розділи одразу; ПК: ще й hover. Кеш 2 хв.
-                        {...({
-                            prefetch: ['mount', 'hover'],
-                            cacheFor: '2m',
-                        } as object)}
-                        onClick={() => playNavTick()}
-                        selected={!open && isActive(item.href, item.key)}
-                        aria-current={
-                            !open && isActive(item.href, item.key)
-                                ? 'page'
-                                : undefined
-                        }
-                        label={MOBILE_LABEL[item.key] ?? item.label}
-                        indicator={counter(item.badge)}
-                    >
-                        <ModuleIcon name={item.icon} animated size={26} />
-                    </TabbarItem>
-                ))}
+                {primary.map((item) => {
+                    const selected = !open && isActive(item.href, item.key);
+                    return (
+                        <TabbarItem
+                            key={item.key}
+                            Component={Link}
+                            href={item.href}
+                            // Телефон: mount гріє розділи одразу; ПК: ще й hover. Кеш 2 хв.
+                            {...({
+                                prefetch: ['mount', 'hover'],
+                                cacheFor: '2m',
+                            } as object)}
+                            onClick={() => playNavTick()}
+                            selected={selected}
+                            aria-current={selected ? 'page' : undefined}
+                            label={MOBILE_LABEL[item.key] ?? item.label}
+                            indicator={counter(item.badge)}
+                            className="gc-liquid-tab"
+                        >
+                            <span className="relative inline-flex size-[42px] items-center justify-center">
+                                {selected && (
+                                    <m.span
+                                        layoutId="gc-mobile-nav-drop"
+                                        className="gc-liquid-drop absolute inset-0 rounded-full"
+                                        transition={
+                                            reduce
+                                                ? { duration: 0 }
+                                                : {
+                                                      type: 'spring',
+                                                      stiffness: 380,
+                                                      damping: 32,
+                                                      mass: 0.85,
+                                                  }
+                                        }
+                                        aria-hidden
+                                    />
+                                )}
+                                <ModuleIcon
+                                    name={item.icon}
+                                    animated
+                                    size={26}
+                                    className="relative"
+                                />
+                            </span>
+                        </TabbarItem>
+                    );
+                })}
                 <TabbarItem
                     Component="button"
                     type="button"
@@ -462,13 +486,38 @@ function MobileNav() {
                     selected={open || restActive}
                     onClick={() => setOpen((value) => !value)}
                     label={tr('Меню')}
+                    className="gc-liquid-tab"
                     indicator={
                         restBadge > 0 && !open ? (
                             <Badge mode="prominent" />
                         ) : undefined
                     }
                 >
-                    <ModuleIcon name="menu" animated size={26} />
+                    <span className="relative inline-flex size-[42px] items-center justify-center">
+                        {(open || restActive) && (
+                            <m.span
+                                layoutId="gc-mobile-nav-drop"
+                                className="gc-liquid-drop absolute inset-0 rounded-full"
+                                transition={
+                                    reduce
+                                        ? { duration: 0 }
+                                        : {
+                                              type: 'spring',
+                                              stiffness: 380,
+                                              damping: 32,
+                                              mass: 0.85,
+                                          }
+                                }
+                                aria-hidden
+                            />
+                        )}
+                        <ModuleIcon
+                            name="menu"
+                            animated
+                            size={26}
+                            className="relative"
+                        />
+                    </span>
                 </TabbarItem>
             </Tabbar>
         </div>
@@ -599,6 +648,8 @@ export default function SocialLayout({ children }: PropsWithChildren) {
                 <SiteBackground />
                 <Seasonal />
                 <Konami />
+                <div aria-hidden className="gc-scrim-top" />
+                <div aria-hidden className="gc-scrim-bottom md:hidden" />
                 <Topbar />
                 <div
                     className={cn(
@@ -629,7 +680,10 @@ export default function SocialLayout({ children }: PropsWithChildren) {
                         <AlertBanner />
                         <Announcement />
                         <NavigationSkeleton>
-                            <PageTransition>{children}</PageTransition>
+                            {/* View Transitions лишаються в app.tsx; у layout — пружинний каскад сторінки. */}
+                            <GcPageTransition>
+                                <PageTransition>{children}</PageTransition>
+                            </GcPageTransition>
                         </NavigationSkeleton>
                         <SiteFooter className="glass-matte gc-footer-card mb-4" />
                     </main>
