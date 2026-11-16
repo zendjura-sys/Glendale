@@ -260,8 +260,8 @@ function Topbar() {
 
     return (
         <header className="app-header-wrapper">
-            {/* Шапка — iOS 27+ матове безбарвне скло; поза будь-яким motion (fixed лишається fixed). */}
-            <div className="ios27-glass-capsule ios-glass-bar ios-header-pill gc-glass-island [view-transition-name:gc-topbar]">
+            {/* Зовнішня обгортка без blur/transform. Капсула — всередині відступів екрана. */}
+            <div className="ios27-glass-capsule ios-header-pill gc-glass-island pointer-events-auto mx-auto box-border w-full max-w-[460px] [view-transition-name:gc-topbar] sm:max-w-3xl xl:max-w-[var(--gc-shell-max)]">
                 <Link
                     href="/feed"
                     className="flex shrink-0 items-center self-center md:mr-4"
@@ -435,7 +435,7 @@ function MobileNav() {
                             animate={{ y: 0 }}
                             exit={{ opacity: 0, transition: { duration: 0 } }}
                             transition={motionOr(reduce, SNAP)}
-                            className="fixed inset-x-0 bottom-[calc(var(--vkui_internal--tabbar_height,48px)+env(safe-area-inset-bottom))] z-[55] max-h-[calc(100dvh-env(safe-area-inset-top)-7rem)] overflow-y-auto overscroll-contain rounded-t-3xl bg-[#07090E]/92 px-3 pt-2 pb-3 shadow-[0_-12px_40px_rgb(0_0_0/0.35)] backdrop-blur-2xl"
+                            className="fixed inset-x-0 bottom-[calc(86px+env(safe-area-inset-bottom))] z-[55] max-h-[calc(100dvh-env(safe-area-inset-top)-7rem)] overflow-y-auto overscroll-contain rounded-t-3xl bg-[#07090E]/92 px-3 pt-2 pb-24 shadow-[0_-12px_40px_rgb(0_0_0/0.35)]"
                         >
                             <div
                                 aria-hidden
@@ -446,48 +446,55 @@ function MobileNav() {
                     </>
                 )}
             </AnimatePresence>
-            <Tabbar
-                aria-label={tr('Розділи')}
-                className="ios27-glass-capsule gc-vk-tabbar [view-transition-name:gc-tabbar]"
-            >
-                {primary.map((item) => {
-                    const selected = !open && isActive(item.href, item.key);
-                    return (
-                        <TabbarItem
-                            key={item.key}
-                            Component={Link}
-                            href={item.href}
-                            {...({
-                                prefetch: ['mount', 'hover'],
-                                cacheFor: '2m',
-                            } as object)}
-                            onClick={() => playNavTick()}
-                            selected={selected}
-                            aria-current={selected ? 'page' : undefined}
-                            label={MOBILE_LABEL[item.key] ?? item.label}
-                            indicator={counter(item.badge)}
-                        >
-                            <ModuleIcon name={item.icon} animated size={26} />
-                        </TabbarItem>
-                    );
-                })}
-                <TabbarItem
-                    Component="button"
-                    type="button"
-                    data-test="mobile-menu"
-                    aria-expanded={open}
-                    selected={open || restActive}
-                    onClick={() => setOpen((value) => !value)}
-                    label={tr('Меню')}
-                    indicator={
-                        restBadge > 0 && !open ? (
-                            <Badge mode="prominent" />
-                        ) : undefined
-                    }
+            {/* Обгортка без backdrop-filter, transform і filter — інакше blur капсули не працює. */}
+            <div className="gc-dock-frame pointer-events-none fixed inset-x-0 bottom-0 z-[100] flex justify-center px-3 pt-2 pb-[max(env(safe-area-inset-bottom,0px),10px)]">
+                <Tabbar
+                    aria-label={tr('Розділи')}
+                    className="ios27-glass-capsule gc-vk-tabbar pointer-events-auto box-border h-[62px] w-full max-w-[460px] rounded-[26px] px-2 [view-transition-name:gc-tabbar]"
                 >
-                    <ModuleIcon name="menu" animated size={26} />
-                </TabbarItem>
-            </Tabbar>
+                    {primary.map((item) => {
+                        const selected = !open && isActive(item.href, item.key);
+                        return (
+                            <TabbarItem
+                                key={item.key}
+                                Component={Link}
+                                href={item.href}
+                                {...({
+                                    prefetch: ['mount', 'hover'],
+                                    cacheFor: '2m',
+                                } as object)}
+                                onClick={() => playNavTick()}
+                                selected={selected}
+                                aria-current={selected ? 'page' : undefined}
+                                label={MOBILE_LABEL[item.key] ?? item.label}
+                                indicator={counter(item.badge)}
+                            >
+                                <ModuleIcon
+                                    name={item.icon}
+                                    animated
+                                    size={26}
+                                />
+                            </TabbarItem>
+                        );
+                    })}
+                    <TabbarItem
+                        Component="button"
+                        type="button"
+                        data-test="mobile-menu"
+                        aria-expanded={open}
+                        selected={open || restActive}
+                        onClick={() => setOpen((value) => !value)}
+                        label={tr('Меню')}
+                        indicator={
+                            restBadge > 0 && !open ? (
+                                <Badge mode="prominent" />
+                            ) : undefined
+                        }
+                    >
+                        <ModuleIcon name="menu" animated size={26} />
+                    </TabbarItem>
+                </Tabbar>
+            </div>
         </div>
     );
 }

@@ -5592,51 +5592,50 @@ iframe {
     display: none !important;
 }
 
-/* ---------- Телефон: Tabbar VKUI — фіксований док (завжди до viewport) ---------- */
-:root.gc-vk .gc-vk-tabbar {
-    --vkui_internal--tabbar_height: 62px;
-    position: fixed !important;
-    left: 0 !important;
-    right: 0 !important;
-    bottom: 0 !important;
-    z-index: 100 !important;
-    width: 100% !important;
-    max-width: none !important;
-    margin: 0 !important;
-    padding: 0 12px max(env(safe-area-inset-bottom, 0px), 8px) !important;
-    border-radius: 0 !important;
-    background: transparent !important;
-    box-shadow: none !important;
-    border: 0 !important;
+/* Док: зовнішня рамка без blur/transform (інакше backdrop-filter капсули вимикається). */
+.gc-dock-frame {
+    background: linear-gradient(
+        to top,
+        rgba(7, 9, 14, 0.85) 15%,
+        rgba(7, 9, 14, 0.4) 60%,
+        transparent 100%
+    );
     -webkit-backdrop-filter: none !important;
     backdrop-filter: none !important;
     transform: none !important;
     filter: none !important;
 }
-/* Скло дока — капсула на ::before (сам Tabbar прозорий і fixed). */
-:root.gc-vk .gc-vk-tabbar.ios27-glass-capsule::before {
-    content: '';
-    position: absolute;
-    inset: 0 12px max(env(safe-area-inset-bottom, 0px), 8px);
-    height: 62px;
-    border-radius: 26px;
-    pointer-events: none;
-    z-index: -1;
-    background: rgba(15, 18, 26, 0.5);
-    -webkit-backdrop-filter: blur(28px) saturate(180%);
-    backdrop-filter: blur(28px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    box-shadow:
-        inset 0 1px 0 0 rgba(255, 255, 255, 0.22),
-        0 8px 32px 0 rgba(0, 0, 0, 0.45);
+html[data-theme='light'] .gc-dock-frame,
+:root[data-theme='light'] .gc-dock-frame {
+    background: linear-gradient(
+        to top,
+        rgba(246, 248, 252, 0.92) 15%,
+        rgba(246, 248, 252, 0.45) 60%,
+        transparent 100%
+    );
 }
-html[data-theme='light'] :root.gc-vk .gc-vk-tabbar.ios27-glass-capsule::before,
-:root.gc-vk[data-theme='light'] .gc-vk-tabbar.ios27-glass-capsule::before {
-    background: rgba(255, 255, 255, 0.55);
-    border-color: rgba(15, 23, 42, 0.1);
-    box-shadow:
-        inset 0 1px 0 0 rgba(255, 255, 255, 0.95),
-        0 12px 32px -4px rgba(15, 23, 42, 0.12);
+/* ---------- Телефон: капсула всередині рамки, не fixed і не ширша за екран ---------- */
+:root.gc-vk .gc-vk-tabbar {
+    --vkui_internal--tabbar_height: 62px;
+    position: relative !important;
+    left: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+    z-index: 1 !important;
+    width: 100% !important;
+    max-width: 460px !important;
+    height: 62px !important;
+    margin: 0 !important;
+    padding: 0 8px !important;
+    border-radius: 26px !important;
+    box-sizing: border-box !important;
+    transform: none !important;
+    filter: none !important;
+}
+:root.gc-vk .gc-vk-tabbar.ios27-glass-capsule::before,
+:root.gc-vk .gc-vk-tabbar.ios27-glass-capsule::after {
+    content: none !important;
+    display: none !important;
 }
 :root.gc-vk .gc-vk-tabbar .vkuiTabbarItem__label {
     font-size: 11px;
@@ -6916,46 +6915,74 @@ html:root.gc-vk[data-theme='light'] {
         box-shadow 0.45s var(--gc-theme-ease);
 }
 
-/* iOS 27+ матове скло: напівпрозоре, контент розмивається крізь капсулу. */
+/* iOS 27+ матове скло: щільне, blur на самій капсулі (не на ::before і не на батьку). */
 .ios27-glass-capsule {
-    background: rgba(15, 18, 26, 0.5) !important;
-    -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
-    backdrop-filter: blur(28px) saturate(180%) !important;
-    border: 1px solid rgba(255, 255, 255, 0.14) !important;
+    background: rgba(14, 17, 24, 0.78) !important;
+    -webkit-backdrop-filter: blur(40px) saturate(160%) !important;
+    backdrop-filter: blur(40px) saturate(160%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
     box-shadow:
-        inset 0 1px 0 0 rgba(255, 255, 255, 0.22),
-        0 8px 32px 0 rgba(0, 0, 0, 0.45) !important;
+        inset 0 1px 0 0 rgba(255, 255, 255, 0.18),
+        0 12px 32px -4px rgba(0, 0, 0, 0.75) !important;
+    transform: none !important;
+    filter: none !important;
 }
 html[data-theme='light'] .ios27-glass-capsule,
 :root[data-theme='light'] .ios27-glass-capsule {
-    background: rgba(255, 255, 255, 0.55) !important;
+    background: rgba(255, 255, 255, 0.82) !important;
     border: 1px solid rgba(15, 23, 42, 0.1) !important;
     box-shadow:
-        inset 0 1px 0 0 rgba(255, 255, 255, 0.9),
-        0 8px 32px 0 rgba(15, 23, 42, 0.12) !important;
+        inset 0 1px 0 0 rgba(255, 255, 255, 0.95),
+        0 12px 32px -4px rgba(15, 23, 42, 0.16) !important;
 }
-/* Перебиває суцільний фон VK-шапки: обгортка лишається прозорою, скло — на капсулі. */
-:root.gc-vk .ios-glass-bar.ios-header-pill.ios27-glass-capsule,
+/* Перебиває суцільний фон і backdrop-filter:none у VK-шапки. */
+:root.gc-vk .ios-header-pill.gc-glass-island.ios27-glass-capsule,
 html:root.gc-vk[data-theme]
-    .ios-glass-bar.ios-header-pill.gc-glass-island.ios27-glass-capsule {
-    background: rgba(15, 18, 26, 0.5) !important;
+    .ios-header-pill.gc-glass-island.ios27-glass-capsule,
+:root.gc-vk .gc-vk-tabbar.ios27-glass-capsule {
+    background: rgba(14, 17, 24, 0.78) !important;
     background-image: none !important;
-    -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
-    backdrop-filter: blur(28px) saturate(180%) !important;
-    border: 1px solid rgba(255, 255, 255, 0.14) !important;
+    -webkit-backdrop-filter: blur(40px) saturate(160%) !important;
+    backdrop-filter: blur(40px) saturate(160%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
     box-shadow:
-        inset 0 1px 0 0 rgba(255, 255, 255, 0.22),
-        0 8px 32px 0 rgba(0, 0, 0, 0.45) !important;
+        inset 0 1px 0 0 rgba(255, 255, 255, 0.18),
+        0 12px 32px -4px rgba(0, 0, 0, 0.75) !important;
+    transform: none !important;
+    filter: none !important;
 }
 html[data-theme='light']
     :root.gc-vk
-    .ios-glass-bar.ios-header-pill.ios27-glass-capsule,
+    .ios-header-pill.gc-glass-island.ios27-glass-capsule,
 :root.gc-vk[data-theme='light']
-    .ios-glass-bar.ios-header-pill.ios27-glass-capsule {
-    background: rgba(255, 255, 255, 0.55) !important;
+    .ios-header-pill.gc-glass-island.ios27-glass-capsule,
+html[data-theme='light'] :root.gc-vk .gc-vk-tabbar.ios27-glass-capsule,
+:root.gc-vk[data-theme='light'] .gc-vk-tabbar.ios27-glass-capsule {
+    background: rgba(255, 255, 255, 0.82) !important;
+}
+.app-header-wrapper {
+    box-sizing: border-box;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    transform: none !important;
+    filter: none !important;
 }
 .app-header-wrapper .ios27-glass-capsule.ios-header-pill {
-    max-width: var(--gc-shell-max);
+    width: 100%;
+    max-width: 460px;
+    height: 60px;
+    margin-inline: auto;
+    box-sizing: border-box;
+}
+@media (min-width: 640px) {
+    .app-header-wrapper .ios27-glass-capsule.ios-header-pill {
+        max-width: 48rem;
+    }
+}
+@media (min-width: 1280px) {
+    .app-header-wrapper .ios27-glass-capsule.ios-header-pill {
+        max-width: var(--gc-shell-max);
+    }
 }
 .app-header-wrapper .ios-header-search {
     background: rgba(255, 255, 255, 0.06) !important;
