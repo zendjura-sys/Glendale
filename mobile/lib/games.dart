@@ -17,6 +17,7 @@ import 'theme.dart';
 import 'widgets.dart';
 import 'i18n.dart';
 import 'extras.dart';
+import 'skeletons.dart';
 
 final _categories = [('', tr('Усі')), ('pc', tr('ПК')), ('mobile', tr('Мобільні')), ('console', tr('Консолі'))];
 
@@ -263,7 +264,7 @@ class _GamesScreenState extends State<GamesScreen> {
                 ]),
               ),
             ),
-        if (page < last) const Padding(padding: EdgeInsets.all(16), child: Center(child: CircularProgressIndicator(strokeWidth: 2.4))),
+        if (page < last) const Padding(padding: EdgeInsets.fromLTRB(0, 4, 0, 12), child: ListSkeleton(rows: 2, square: true)),
         Padding(padding: EdgeInsets.only(top: 8), child: Text(tr('Дані про ігри: IGDB і RAWG'), textAlign: TextAlign.center, style: TextStyle(fontSize: 11, color: faint))),
       ],
     );

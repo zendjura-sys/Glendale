@@ -62,16 +62,22 @@ class PostPager {
 }
 
 /// Хвіст списку: підвантажує наступну сторінку, коли доходить до низу.
+/// Замість спінера — 1–2 скелетони (стрічка: картка запису; решта — рядки списку).
 class LoadMore extends StatelessWidget {
-  const LoadMore({required this.more, required this.onMore, super.key});
+  const LoadMore({required this.more, required this.onMore, this.feed = false, super.key});
   final bool more;
   final VoidCallback onMore;
+  /// Стрічка новин — одна картка-запис; інакше два рядки списку.
+  final bool feed;
 
   @override
   Widget build(BuildContext context) {
     if (!more) return const SizedBox(height: 8);
     WidgetsBinding.instance.addPostFrameCallback((_) => onMore());
-    return const Padding(padding: EdgeInsets.all(18), child: Center(child: SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2))));
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(0, 4, 0, 12),
+      child: feed ? const FeedSkeleton(count: 1) : const ListSkeleton(rows: 2),
+    );
   }
 }
 
@@ -234,7 +240,7 @@ class _FeedScreenState extends State<FeedScreen> {
           )
         else ...[
           for (final post in pager.posts) PostCard(key: ValueKey('post-${post['id']}'), post: post, onDeleted: () => pager.posts.remove(post)),
-          LoadMore(more: pager.more, onMore: _more),
+          LoadMore(more: pager.more, onMore: _more, feed: true),
         ],
         if (suggestions.isNotEmpty && ready && shows('suggestions')) ...[
           const SizedBox(height: 4),

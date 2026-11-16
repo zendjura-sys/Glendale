@@ -97,7 +97,8 @@ function Tile({
 }) {
     return (
         <Link
-            prefetch
+            prefetch={['mount', 'hover']}
+            cacheFor="2m"
             href={href}
             className={cn(inner, 'flex flex-col gap-2 p-3')}
         >
@@ -139,7 +140,12 @@ function Row({
     );
 
     return href ? (
-        <Link prefetch href={href} className={cls}>
+        <Link
+            prefetch={['mount', 'hover']}
+            cacheFor="2m"
+            href={href}
+            className={cls}
+        >
             {content}
         </Link>
     ) : (
@@ -216,7 +222,8 @@ export function MenuHub({ onClose }: { onClose: () => void }) {
                         </div>
                     ) : (
                         <Link
-                            prefetch
+                            prefetch={['mount', 'hover']}
+                            cacheFor="2m"
                             href={`/${user.username}`}
                             className="flex min-w-0 flex-1 items-center gap-3"
                         >
@@ -291,7 +298,8 @@ export function MenuHub({ onClose }: { onClose: () => void }) {
                                 : tr('Рамки, ник, теми й більше')}
                         </span>
                         <Link
-                            prefetch
+                            prefetch={['mount', 'hover']}
+                            cacheFor="2m"
                             href="/plus"
                             className="shrink-0 rounded-lg bg-[var(--gc-active)] px-4 py-2 text-xs font-semibold text-sky-400"
                         >
@@ -304,7 +312,8 @@ export function MenuHub({ onClose }: { onClose: () => void }) {
             {/* 2. Інформер тривог (лише для України) */}
             {airAlerts && (
                 <Link
-                    prefetch
+                    prefetch={['mount', 'hover']}
+                    cacheFor="2m"
                     href="/alerts"
                     className={cn(block, 'flex items-center gap-3')}
                 >
@@ -347,7 +356,8 @@ export function MenuHub({ onClose }: { onClose: () => void }) {
                 {on('families') &&
                     (family ? (
                         <Link
-                            prefetch
+                            prefetch={['mount', 'hover']}
+                            cacheFor="2m"
                             href={`/f/${family.slug}`}
                             className={cn(inner, 'block p-3')}
                         >
@@ -401,7 +411,8 @@ export function MenuHub({ onClose }: { onClose: () => void }) {
                         </Link>
                     ) : (
                         <Link
-                            prefetch
+                            prefetch={['mount', 'hover']}
+                            cacheFor="2m"
                             href="/families"
                             className={cn(inner, 'flex items-center gap-3 p-3')}
                         >
@@ -478,7 +489,8 @@ export function MenuHub({ onClose }: { onClose: () => void }) {
                         .filter(([key]) => on(key))
                         .map(([key, href, Icon, label]) => (
                             <Link
-                                prefetch
+                                prefetch={['mount', 'hover']}
+                                cacheFor="2m"
                                 key={key}
                                 href={href}
                                 className={cn(
@@ -496,7 +508,8 @@ export function MenuHub({ onClose }: { onClose: () => void }) {
                 <div className="grid grid-cols-2 gap-2">
                     {on('phone') && (
                         <Link
-                            prefetch
+                            prefetch={['mount', 'hover']}
+                            cacheFor="2m"
                             href="/phone"
                             className={cn(
                                 inner,
@@ -508,7 +521,8 @@ export function MenuHub({ onClose }: { onClose: () => void }) {
                         </Link>
                     )}
                     <Link
-                        prefetch
+                        prefetch={['mount', 'hover']}
+                        cacheFor="2m"
                         href="/saved"
                         className={cn(
                             inner,
@@ -539,7 +553,8 @@ export function MenuHub({ onClose }: { onClose: () => void }) {
                             <div className="grid grid-cols-2 gap-1.5">
                                 {rest.map((item) => (
                                     <Link
-                                        prefetch
+                                        prefetch={['mount', 'hover']}
+                                        cacheFor="2m"
                                         key={item.key}
                                         href={item.href}
                                         className={cn(

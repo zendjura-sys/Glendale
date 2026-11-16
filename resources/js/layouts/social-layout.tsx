@@ -431,8 +431,11 @@ function MobileNav() {
                         key={item.key}
                         Component={Link}
                         href={item.href}
-                        // Дані сторінки підтягуються при наведенні/дотику — перехід без очікування.
-                        {...({ prefetch: true } as object)}
+                        // Телефон: mount гріє розділи одразу; ПК: ще й hover. Кеш 2 хв.
+                        {...({
+                            prefetch: ['mount', 'hover'],
+                            cacheFor: '2m',
+                        } as object)}
                         onClick={() => playNavTick()}
                         selected={!open && isActive(item.href, item.key)}
                         aria-current={

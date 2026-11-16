@@ -80,7 +80,8 @@ export function AlertMapButton({
     return (
         <Link
             href="/alerts"
-            prefetch
+            prefetch={['mount', 'hover']}
+            cacheFor="2m"
             aria-current={current ? 'page' : undefined}
             aria-label={
                 active.length

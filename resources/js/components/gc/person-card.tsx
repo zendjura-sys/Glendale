@@ -23,11 +23,18 @@ export function PersonCard({ person }: { person: Person }) {
     return (
         <div className="gc-solid group relative flex flex-col items-center overflow-hidden rounded-2xl p-5 text-center transition hover:-translate-y-0.5 hover:border-white/15">
             <div className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-gc-indigo/20 to-transparent opacity-0 transition group-hover:opacity-100" />
-            <Link href={`/${person.username}`} className="relative">
+            <Link
+                href={`/${person.username}`}
+                prefetch="hover"
+                cacheFor="1m"
+                className="relative"
+            >
                 <UserAvatar user={person} size="xl" />
             </Link>
             <Link
                 href={`/${person.username}`}
+                prefetch="hover"
+                cacheFor="1m"
                 className="relative mt-3 flex max-w-full flex-wrap items-center justify-center gap-1 text-[15px] font-semibold break-words text-white hover:underline"
             >
                 <span
@@ -179,12 +186,19 @@ export function PersonRow({
     return (
         // Кнопка дії переноситься під ім'я, коли колонка вузька, — ім'я й підпис лишаються в один рядок.
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-2xl px-2 py-2 transition hover:bg-white/[0.035]">
-            <Link href={`/${person.username}`} className="shrink-0">
+            <Link
+                href={`/${person.username}`}
+                prefetch="hover"
+                cacheFor="1m"
+                className="shrink-0"
+            >
                 <UserAvatar user={person} size="md" />
             </Link>
             <div className="min-w-[9rem] flex-1">
                 <Link
                     href={`/${person.username}`}
+                    prefetch="hover"
+                    cacheFor="1m"
                     className="flex flex-wrap items-center gap-1 text-sm font-semibold break-words text-white hover:underline"
                 >
                     <span

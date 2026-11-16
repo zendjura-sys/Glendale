@@ -2,6 +2,7 @@ import { router, usePage } from '@inertiajs/react';
 import { Gauge } from 'lucide-react';
 import { useState } from 'react';
 import { SettingsSwitch } from '@/layouts/settings/layout';
+import { syncDataSaverFlag } from '@/lib/data-saver';
 import { tr } from '@/lib/i18n';
 
 /** «Економія трафіку»: фото в стрічці по дотику, відео й живий фон не грають самі. */
@@ -19,6 +20,7 @@ export function DataSaverSwitch() {
             checked={pending ?? saved}
             onChange={(on) => {
                 setPending(on);
+                syncDataSaverFlag(on);
                 router.patch(
                     '/settings/data-saver',
                     { data_saver: on },

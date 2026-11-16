@@ -256,9 +256,4 @@ LiveKit, наші модулі й режими). Вихідні файли ск�
 ## Дизайн
 
 - [x] Скелетони «Крижана Арктика» з бігучим крижаним бліком (shimmer) замість порожнього екрана чи спінера під час завантаження: картки записів, каталог ігор і аніме, список серверів. Напівпрозорі скляні плейсхолдери, як картки; без руху за `prefers-reduced-motion`. Діють на всьому сайті: перехід між сторінками (вигляд за адресою), підвантаження списків, панелі й діалоги — `components/gc/skeletons.tsx`, `navigation-skeleton.tsx`.
-- [ ] Застосунок: скелетони через пакет `skeletonizer` (план, ще не почато):
-    1. Додати `skeletonizer` у `mobile/pubspec.yaml`, спільний віджет `ArcticSkeleton` у `mobile/lib/widgets.dart` — `Skeletonizer` з `ShimmerEffect` у крижаних кольорах теми (Неоновий синій / Крижана Арктика) і скляними картками.
-    2. Замінити `CircularProgressIndicator` на екранах завантаження: стрічка, каталог ігор, аніме й кіно, сервери, чати, профіль, списки людей і спільнот — `Skeletonizer(enabled: loading)` поверх справжньої верстки з фейковими даними.
-    3. Підвантаження списків (кінець стрічки) — 1–2 картки-скелетони замість спінера.
-    4. Без руху, якщо в системі вимкнено анімації (`MediaQuery.disableAnimations`).
-    5. Підняти `version` і `whatsNewVersion`, перевірити `flutter analyze` і `flutter test`.
+- [x] Застосунок: скелетони «Arctic Glass» без пакету `skeletonizer` — свій `mobile/lib/skeletons.dart` (`SkeletonShimmer`, `FeedSkeleton`, `ListSkeleton`, `GridSkeleton`, `ScreenSkeleton`), без руху при `MediaQuery.disableAnimations`; підвантаження списків — 1–2 скелетони замість спінера (`LoadMore`).

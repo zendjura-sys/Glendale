@@ -1,5 +1,5 @@
 import type { VisitOptions } from '@inertiajs/core';
-import { createInertiaApp, router } from '@inertiajs/react';
+import { createInertiaApp } from '@inertiajs/react';
 import { installVitals } from '@/lib/vitals';
 import { registerOffline } from '@/lib/offline';
 import { SkipLink } from '@/components/gc/skip-link';
@@ -14,6 +14,14 @@ import { LazyMotion } from 'motion/react';
 import { lazy, Suspense, useEffect } from 'react';
 import { bootChimeOnce } from '@/lib/sound-fx';
 import { PageSkeleton, skeletonFor } from '@/components/gc/skeletons';
+import { syncDataSaverFlag } from '@/lib/data-saver';
+import {
+    CONTENT_CACHE,
+    NAV_CACHE,
+    installTouchPrefetch,
+    primaryWarmUrls,
+    warmIdle,
+} from '@/lib/prefetch';
 
 // Швидкий перший кадр: стартовий файл без макетів. Кожен макет (соцмережа, адмінка, вхід, налаштування) —
 // окремим файлом, що вантажиться, коли вперше знадобиться, і далі лишається в кеші.
@@ -83,24 +91,51 @@ if (
 }
 
 /**
- * Перший рендер готовий: ховаємо сплеш з app.blade.php, тихо підтягуємо найчастіші сторінки
- * (стрічка, чати, профіль) і граємо привітальний акорд — раз за сесію вкладки.
+ * Перший рендер готовий: ховаємо сплеш з app.blade.php, тихо підтягуємо головні розділи
+ * (телефон і ПК — одні й ті самі адреси; на дотик гріємо посилання pointerdown’ом)
+ * і граємо привітальний акорд — раз за сесію вкладки.
  */
-function SplashDone({ user }: { user: { username?: string } | null }) {
+function SplashDone({
+    user,
+    modules,
+    dataSaver,
+}: {
+    user: { username?: string } | null;
+    modules?: string[] | null;
+    dataSaver?: boolean;
+}) {
     useEffect(() => {
+        syncDataSaverFlag(
+            Boolean(dataSaver) ||
+                Boolean(
+                    (
+                        navigator as Navigator & {
+                            connection?: { saveData?: boolean };
+                        }
+                    ).connection?.saveData,
+                ),
+        );
         const frame = requestAnimationFrame(() => {
             (
                 window as unknown as { gcHideSplash?: () => void }
             ).gcHideSplash?.();
             bootChimeOnce();
             if (user) {
-                for (const url of ['/feed', '/messages', `/${user.username}`]) {
-                    router.prefetch(url, { method: 'get' }, { cacheFor: '1m' });
-                }
+                warmIdle(
+                    primaryWarmUrls({
+                        username: user.username,
+                        modules,
+                    }),
+                    NAV_CACHE,
+                );
             }
         });
+        const stopTouch = installTouchPrefetch();
 
-        return () => cancelAnimationFrame(frame);
+        return () => {
+            cancelAnimationFrame(frame);
+            stopTouch();
+        };
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     return null;
@@ -203,6 +238,11 @@ void createInertiaApp({
     },
     strictMode: true,
     defaults: {
+        // Довший кеш і швидший hover — перехід частіше з готових даних.
+        prefetch: {
+            cacheFor: CONTENT_CACHE,
+            hoverDelay: 40,
+        },
         visitOptions: (_href: string, options: VisitOptions) => ({
             viewTransition: shouldViewTransition(options),
         }),
@@ -216,20 +256,26 @@ void createInertiaApp({
             (page.props as { auth?: { user?: unknown } }).auth?.user &&
             (page.props as { modules?: string[] }).modules?.includes('cinema'),
         );
+        const authUser =
+            (
+                page.props as {
+                    auth?: {
+                        user?: {
+                            username?: string;
+                            data_saver?: boolean;
+                        } | null;
+                    };
+                }
+            ).auth?.user ?? null;
+        const modules = (page.props as { modules?: string[] }).modules ?? null;
 
         return (
             <LazyMotion features={motionFeatures} strict>
                 <TooltipProvider delayDuration={0}>
                     <SplashDone
-                        user={
-                            (
-                                page.props as {
-                                    auth?: {
-                                        user?: { username?: string } | null;
-                                    };
-                                }
-                            ).auth?.user ?? null
-                        }
+                        user={authUser}
+                        modules={modules}
+                        dataSaver={authUser?.data_saver}
                     />
                     <SkipLink />
                     {/* Збій сторінки — картка з кнопкою оновлення; збій тостів чи банера — лише вони зникають. */}

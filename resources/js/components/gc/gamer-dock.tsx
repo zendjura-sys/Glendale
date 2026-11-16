@@ -224,7 +224,8 @@ function BentoMenu() {
         <Link
             key={item.key}
             href={item.href}
-            prefetch
+            prefetch={['mount', 'hover']}
+            cacheFor="2m"
             aria-current={active(item.href) ? 'page' : undefined}
             className={cn(
                 'relative flex min-w-0 items-center gap-2 rounded-xl transition',

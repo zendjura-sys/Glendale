@@ -1,4 +1,4 @@
-import { Link, usePage } from '@inertiajs/react';
+import { usePage } from '@inertiajs/react';
 import {
     Clapperboard,
     Music,
@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { m, useReducedMotion } from 'motion/react';
 import { useEffect, useState } from 'react';
+import { PrefetchLink } from '@/components/gc/prefetch-link';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import { api } from '@/lib/api';
 import { tr } from '@/lib/i18n';
@@ -76,11 +77,11 @@ export function HeaderNav({ className }: { className?: string }) {
             )}
         >
             {items.map((item) => (
-                <Link
+                <PrefetchLink
                     key={item.key}
+                    kind="nav"
                     href={item.href}
                     title={item.label}
-                    prefetch
                     aria-current={active === item.key ? 'page' : undefined}
                     className={cn(
                         'relative flex h-9 items-center gap-1.5 rounded-full px-3.5 text-[13px] font-semibold transition-colors',
@@ -108,7 +109,7 @@ export function HeaderNav({ className }: { className?: string }) {
                     <span className="relative hidden 2xl:inline">
                         {item.label}
                     </span>
-                </Link>
+                </PrefetchLink>
             ))}
         </nav>
     );
@@ -133,8 +134,8 @@ export function ReadyIndicator() {
     const count = state.friends.length + (state.mine ? 1 : 0);
 
     return (
-        <Link
-            prefetch
+        <PrefetchLink
+            kind="nav"
             href="/feed#ready"
             title={tr('Готові грати зараз')}
             className="gc-icon-button hidden h-9 items-center gap-1.5 rounded-full px-2.5 text-xs font-semibold sm:flex"
@@ -145,6 +146,6 @@ export function ReadyIndicator() {
             {count > 0 && (
                 <span className="text-emerald-400 tabular-nums">{count}</span>
             )}
-        </Link>
+        </PrefetchLink>
     );
 }

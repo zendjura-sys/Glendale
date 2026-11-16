@@ -1,5 +1,5 @@
 import { usePage } from '@inertiajs/react';
-import { useSyncExternalStore } from 'react';
+import { useEffect, useSyncExternalStore } from 'react';
 
 /** Браузер просить економити дані (Android «Заощадження трафіку», Chrome Lite). */
 function browserSaveData(): boolean {
@@ -7,6 +7,16 @@ function browserSaveData(): boolean {
         (navigator as Navigator & { connection?: { saveData?: boolean } })
             .connection?.saveData,
     );
+}
+
+/** Синхрон для prefetch поза React: `document.documentElement.dataset.dataSaver`. */
+export function syncDataSaverFlag(on: boolean): void {
+    if (typeof document === 'undefined') return;
+    if (on) {
+        document.documentElement.dataset.dataSaver = '1';
+    } else {
+        delete document.documentElement.dataset.dataSaver;
+    }
 }
 
 /**
@@ -20,6 +30,11 @@ export function useDataSaver(): boolean {
         browserSaveData,
         () => false,
     );
+    const on = pref || browser;
 
-    return pref || browser;
+    useEffect(() => {
+        syncDataSaverFlag(on);
+    }, [on]);
+
+    return on;
 }

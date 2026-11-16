@@ -99,6 +99,8 @@ export function UnderlineTabs({
                             aria-selected={on}
                             data-active={on || undefined}
                             preserveScroll
+                            prefetch={['mount', 'hover']}
+                            cacheFor="1m"
                             className={className}
                         >
                             {body}

@@ -481,7 +481,8 @@ function NavPanel({
                                         <Link
                                             key={href}
                                             href={href}
-                                            prefetch
+                                            prefetch={['mount', 'hover']}
+                                            cacheFor="2m"
                                             onClick={onNavigate}
                                             aria-current={
                                                 active ? 'page' : undefined
