@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\FreesUniqueOnDelete;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Builder;
@@ -58,6 +59,7 @@ use Illuminate\Support\Facades\Storage;
 #[Fillable(['slug', 'name', 'type', 'privacy', 'wall', 'category', 'status', 'description', 'website', 'city', 'avatar_path', 'cover_path', 'owner_id', 'is_verified', 'rules', 'rules_accept', 'handbook', 'welcome', 'banned_words', 'post_tags', 'slow_mode', 'premoderation', 'weekly_digest', 'is_listed', 'guest_view', 'guest_chat_channel_id', 'join_questions', 'wiki_open'])]
 class Community extends Model
 {
+    use FreesUniqueOnDelete;
     use SoftDeletes;
 
     public const TYPE_GROUP = 'group';

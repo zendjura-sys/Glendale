@@ -507,7 +507,7 @@ class ClanService
         $base = Str::limit(Str::slug($name) ?: 'clan', 60, '');
         $slug = $base;
         $n = 2;
-        while (Clan::query()->where('slug', $slug)->exists()) {
+        while (Clan::withTrashed()->where('slug', $slug)->exists()) {
             $slug = $base.'-'.$n++;
         }
 

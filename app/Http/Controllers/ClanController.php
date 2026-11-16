@@ -278,10 +278,15 @@ class ClanController extends Controller
             throw ValidationException::withMessages(['confirm' => 'Введіть адресу, щоб підтвердити видалення.']);
         }
 
-        $clan->delete();
-        Log::info('clan: deleted', ['clan' => $clan->id, 'slug' => $clan->slug, 'type' => $clan->type, 'by' => $user->id, 'staff' => $clan->owner_id !== $user->id]);
+        $name = $clan->name;
         $kind = $clan->type === 'guild' ? 'Гільдію' : 'Клан';
-        Inertia::flash('toast', ['type' => 'success', 'message' => "{$kind} «{$clan->name}» видалено."]);
+        $id = $clan->id;
+        $slug = $clan->slug;
+        $type = $clan->type;
+        $staff = $clan->owner_id !== $user->id;
+        $clan->delete();
+        Log::info('clan: deleted', ['clan' => $id, 'slug' => $slug, 'type' => $type, 'by' => $user->id, 'staff' => $staff]);
+        Inertia::flash('toast', ['type' => 'success', 'message' => "{$kind} «{$name}» видалено."]);
 
         return to_route('clans.index');
     }

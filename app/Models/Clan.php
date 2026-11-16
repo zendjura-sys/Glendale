@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\FreesUniqueOnDelete;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
@@ -39,6 +40,7 @@ use Illuminate\Support\Facades\Storage;
 #[Fillable(['slug', 'type', 'name', 'tag', 'game_id', 'owner_id', 'description', 'rules', 'logo_path', 'features', 'rank_titles', 'permissions', 'settings', 'join_mode', 'is_recruiting', 'currency', 'questions'])]
 class Clan extends Model
 {
+    use FreesUniqueOnDelete;
     use SoftDeletes;
 
     public const TYPES = ['clan' => 'Клан', 'guild' => 'Гільдія'];

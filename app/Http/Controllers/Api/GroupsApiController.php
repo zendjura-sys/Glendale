@@ -500,7 +500,7 @@ class GroupsApiController extends ApiController
         $request->merge(['tag' => strtoupper(trim($request->string('tag')->toString()))]);
         $data = $request->validate([
             'name' => ['required', 'string', 'min:2', 'max:60'],
-            'tag' => ['required', 'string', 'min:2', 'max:8', 'regex:/^[A-Za-z0-9А-Яа-яІіЇїЄєҐґ]+$/u', Rule::unique('families', 'tag')->where('server_id', $family->server_id)->ignore($family->id)],
+            'tag' => ['required', 'string', 'min:2', 'max:8', 'regex:/^[A-Za-z0-9А-Яа-яІіЇїЄєҐґ]+$/u', Rule::unique('families', 'tag')->where('server_id', $family->server_id)->whereNull('deleted_at')->ignore($family->id)],
             'description' => ['nullable', 'string', 'max:2000'],
             'is_recruiting' => ['required', 'boolean'],
         ]);

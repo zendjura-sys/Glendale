@@ -424,7 +424,7 @@ class CommunityController extends Controller
             'slug' => [
                 'required', 'string', 'min:3', 'max:32', 'regex:/^[a-z][a-z0-9_]*[a-z0-9]$/',
                 Rule::notIn(CommunityService::RESERVED_SLUGS),
-                Rule::unique('communities', 'slug')->ignore($community->id),
+                Rule::unique('communities', 'slug')->whereNull('deleted_at')->ignore($community->id),
             ],
             'type' => ['required', Rule::in(Community::TYPES)],
             'privacy' => ['required', Rule::in(Community::PRIVACIES)],
@@ -491,10 +491,14 @@ class CommunityController extends Controller
             throw ValidationException::withMessages(['confirm' => 'Введіть адресу спільноти, щоб підтвердити видалення.']);
         }
 
+        $name = $community->name;
+        $id = $community->id;
+        $slug = $community->slug;
+        $staff = $community->owner_id !== $user->id;
         $community->delete();
-        Log::info('community: deleted', ['community' => $community->id, 'slug' => $community->slug, 'by' => $user->id, 'staff' => $community->owner_id !== $user->id]);
+        Log::info('community: deleted', ['community' => $id, 'slug' => $slug, 'by' => $user->id, 'staff' => $staff]);
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => "Спільноту «{$community->name}» видалено."]);
+        Inertia::flash('toast', ['type' => 'success', 'message' => "Спільноту «{$name}» видалено."]);
 
         return to_route('communities.index');
     }

@@ -76,9 +76,12 @@ class FamilyController extends Controller
     /** Видалити сім’ю з адмінки (м’яке видалення, у журнал). */
     public function destroy(Request $request, Family $family): RedirectResponse
     {
+        $label = "[{$family->tag}] {$family->name}";
+        $id = $family->id;
+        $slug = $family->slug;
         $family->delete();
-        Log::info('admin: family deleted', ['family' => $family->id, 'slug' => $family->slug, 'by' => $request->user()->id]);
-        Inertia::flash('toast', ['type' => 'success', 'message' => "Сім’ю [{$family->tag}] {$family->name} видалено."]);
+        Log::info('admin: family deleted', ['family' => $id, 'slug' => $slug, 'by' => $request->user()->id]);
+        Inertia::flash('toast', ['type' => 'success', 'message' => "Сім’ю {$label} видалено."]);
 
         return back();
     }
