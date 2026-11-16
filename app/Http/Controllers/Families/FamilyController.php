@@ -92,7 +92,7 @@ class FamilyController extends FamilyBaseController
         $data = $request->validate([
             'server_id' => ['required', 'integer', Rule::exists('gta_servers', 'id')->where('status', GtaServer::STATUS_PUBLISHED)->whereNull('deleted_at')],
             'name' => ['required', 'string', 'min:2', 'max:60'],
-            'tag' => ['required', 'string', 'min:2', 'max:8', 'regex:/^[A-Za-z0-9А-Яа-яІіЇїЄєҐґ]+$/u', Rule::unique('families', 'tag')->where('server_id', $request->integer('server_id'))],
+            'tag' => ['required', 'string', 'min:2', 'max:8', 'regex:/^[A-Za-z0-9А-Яа-яІіЇїЄєҐґ]+$/u', Rule::unique('families', 'tag')->where('server_id', $request->integer('server_id'))->whereNull('deleted_at')],
             'description' => ['nullable', 'string', 'max:2000'],
             'logo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:8192'],
             ...self::nicknameRules(),

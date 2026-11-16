@@ -557,7 +557,22 @@ class _FamilyScreenState extends State<FamilyScreen> {
       final result = await api.get(query.isEmpty ? path : '$path?${Uri(queryParameters: query).query}');
       if (!mounted) return;
       setState(() {
-        data = result;
+        // Зберігаємо family/me/can/badges з попереднього розділу, якщо відповідь без оболонки
+        // (захист від «голого» JSON без page() — вкладка інакше падає в FamilyPublic).
+        final prev = data;
+        if (prev != null && prev['me'] != null && result['me'] == null) {
+          data = {
+            ...prev,
+            ...result,
+            'family': prev['family'],
+            'me': prev['me'],
+            'can': prev['can'],
+            'badges': result['badges'] ?? prev['badges'],
+            'section': result['section'] ?? next,
+          };
+        } else {
+          data = result;
+        }
         section = next;
         params = query;
         error = null;

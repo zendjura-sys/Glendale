@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\FreesUniqueOnDelete;
 use App\Support\PlusStyle;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -52,6 +53,7 @@ use Illuminate\Support\Facades\Storage;
 ])]
 class Family extends Model
 {
+    use FreesUniqueOnDelete;
     use SoftDeletes;
 
     public const STATUS_PENDING = 'pending_verification';

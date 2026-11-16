@@ -28,9 +28,8 @@ class FamilyCharterController extends FamilyBaseController
             'quiz' => $charter->publicQuiz($family),
             'pass' => $charter->passPercent($family),
         ];
-        if ($request->wantsJson()) {
-            return response()->json($data);
-        }
+        // Завжди Inertia::render / page() — міст сайту для застосунку знімає props з X-Inertia.
+        // Не можна віддавати «голий» JSON через wantsJson: без family/me вкладка ламається.
         if ($member !== null) {
             $can = $this->gate->abilities($member, $family);
 
@@ -88,7 +87,7 @@ class FamilyCharterController extends FamilyBaseController
             'can_edit' => (bool) ($can['settings.manage'] ?? false) || (bool) ($can['members.manage'] ?? false),
         ];
 
-        return $request->wantsJson() ? response()->json($data) : $this->page($family, $member, 'families/wiki', 'wiki', $data);
+        return $this->page($family, $member, 'families/wiki', 'wiki', $data);
     }
 
     public function saveWiki(Request $request, Family $family, FamilyAudit $audit): RedirectResponse|JsonResponse

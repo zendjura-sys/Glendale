@@ -1722,6 +1722,35 @@ class _SettingsTabState extends State<SettingsTab> {
           ),
         ],
       ),
+      if (ctx.data['can_delete'] == true) ...[
+        const SizedBox(height: 12),
+        Glass(
+          border: danger,
+          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            CardTitle(tr('Видалення сім’ї'), icon: LucideIcons.trash2),
+            const SizedBox(height: 8),
+            Text(tr('Сім’я зникне для всіх учасників разом зі штабом, банком і складом.'), style: body(13, color: muted)),
+            const SizedBox(height: 12),
+            DangerButton(
+              label: tr('Видалити сім’ю'),
+              icon: LucideIcons.trash2,
+              expand: true,
+              onPressed: () async {
+                final slug = text(ctx.family['slug']) ?? ctx.slug;
+                final typed = await askText(context, tr('Підтвердження видалення'), hint: tr('Введіть «{slug}»', {'slug': slug}), action: tr('Видалити'));
+                if (typed == null || !context.mounted) return;
+                if (typed.trim() != slug) {
+                  toast(context, tr('Введіть адресу сім’ї, щоб підтвердити видалення.'));
+                  return;
+                }
+                if (await attempt(context, () => ctx.api.delete(familyPath(ctx.slug), {'confirm': slug})) && context.mounted) {
+                  context.go('/families');
+                }
+              },
+            ),
+          ]),
+        ),
+      ],
     ]);
   }
 }
