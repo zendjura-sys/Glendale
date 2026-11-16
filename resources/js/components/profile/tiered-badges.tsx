@@ -190,12 +190,13 @@ function BadgesDialog({
                             </DialogTitle>
                             <DialogDescription className="mt-1">
                                 {tr('Отримано {n} з {total}', {
-                                    n: badges.filter((b) => b.level > 0).length,
-                                    total: badges.length,
+                                    n: (badges ?? []).filter((b) => b.level > 0)
+                                        .length,
+                                    total: (badges ?? []).length,
                                 })}
                             </DialogDescription>
                             <div className="mt-4 grid grid-cols-3 gap-2 sm:grid-cols-4">
-                                {badges.map((b) => (
+                                {(badges ?? []).map((b) => (
                                     <button
                                         key={b.key}
                                         type="button"

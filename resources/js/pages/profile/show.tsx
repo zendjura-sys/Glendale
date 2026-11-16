@@ -8,6 +8,7 @@ import {
     router,
     usePage,
 } from '@inertiajs/react';
+import { ErrorBoundary } from '@/components/gc/error-boundary';
 import { CrosspostButton } from '@/components/gc/crosspost-button';
 import { AuthorStatsButton } from '@/components/profile/author-stats';
 import { AccountCard } from '@/components/profile/account-card';
@@ -485,23 +486,28 @@ export default function ProfileShow({
     characters = [],
     stream = null,
 }: Props) {
-    // deferIf повертає null (не undefined) — дефолти параметрів тоді не спрацьовують.
-    const safeStats = stats ?? {
-        friends: 0,
-        posts: 0,
-        photos: 0,
-        mutual: 0,
+    // deferIf / Deferred можуть віддати null або не-масив — не покладаємось на дефолти параметрів.
+    const asList = <T,>(value: T[] | null | undefined): T[] =>
+        Array.isArray(value) ? value : [];
+    const safeStats = {
+        friends: stats?.friends ?? 0,
+        posts: stats?.posts ?? 0,
+        photos: stats?.photos ?? 0,
+        mutual: stats?.mutual ?? 0,
+        thanks: stats?.thanks,
     };
-    const safeFriends = friends ?? [];
-    const safePhotos = photos ?? [];
-    const safeVisitors = visitors ?? [];
-    const safeBlockOrder = blockOrder ?? [];
-    const safeTieredBadges = tieredBadges ?? [];
-    const safeLinkedAccounts = linkedAccounts ?? [];
-    const safeTogether = together ?? [];
-    const safeCharacters = characters ?? [];
-    const safeSteamLibrary = steamLibrary ?? [];
-    const safePosts = posts ?? { data: [] };
+    const safeFriends = asList(friends);
+    const safePhotos = asList(photos);
+    const safeVisitors = asList(visitors);
+    const safeBlockOrder = asList(blockOrder);
+    const safeTieredBadges = asList(tieredBadges);
+    const safeLinkedAccounts = asList(linkedAccounts);
+    const safeTogether = asList(together);
+    const safeCharacters = asList(characters);
+    const safeSteamLibrary = asList(steamLibrary);
+    const safePosts = {
+        data: asList(posts?.data),
+    };
     const { modules, auth } = usePage().props;
     const isSelf = relation === 'self';
     const [section, setSection] = useState<ProfileSection>('main');
@@ -867,12 +873,14 @@ export default function ProfileShow({
                             roles={profile.roles}
                             className="px-2.5 py-1 text-xs"
                         />
-                        <Deferred data="tieredBadges" fallback={null}>
-                            <BadgeStrip
-                                badges={safeTieredBadges}
-                                isSelf={isSelf}
-                            />
-                        </Deferred>
+                        <ErrorBoundary fallback={null}>
+                            <Deferred data="tieredBadges" fallback={null}>
+                                <BadgeStrip
+                                    badges={safeTieredBadges}
+                                    isSelf={isSelf}
+                                />
+                            </Deferred>
+                        </ErrorBoundary>
                         <Deferred data="questPoints" fallback={null}>
                             {questPoints !== null && questPoints > 0 ? (
                                 <span
@@ -1007,21 +1015,25 @@ export default function ProfileShow({
                             )}
                         </div>
                     )}
-                    <Deferred data="together" fallback={null}>
-                        <WatchedTogether
-                            key={profile.id}
-                            people={safeTogether}
-                            isSelf={isSelf}
-                            hiddenForOthers={togetherOff}
-                        />
-                    </Deferred>
-                    <Deferred data="compatibility" fallback={null}>
-                        {compatibility && compatibility.score > 0 ? (
-                            <div className="mt-2">
-                                <CompatibilityChip data={compatibility} />
-                            </div>
-                        ) : null}
-                    </Deferred>
+                    <ErrorBoundary fallback={null}>
+                        <Deferred data="together" fallback={null}>
+                            <WatchedTogether
+                                key={profile.id}
+                                people={safeTogether}
+                                isSelf={isSelf}
+                                hiddenForOthers={togetherOff}
+                            />
+                        </Deferred>
+                    </ErrorBoundary>
+                    <ErrorBoundary fallback={null}>
+                        <Deferred data="compatibility" fallback={null}>
+                            {compatibility && compatibility.score > 0 ? (
+                                <div className="mt-2">
+                                    <CompatibilityChip data={compatibility} />
+                                </div>
+                            ) : null}
+                        </Deferred>
+                    </ErrorBoundary>
                     <div className="mt-4 flex flex-wrap items-center gap-2 lg:hidden">
                         <Link
                             href={`/${profile.username}/card`}
@@ -1337,7 +1349,11 @@ export default function ProfileShow({
                             {liveOn && stream && (
                                 <ProfileStream stream={stream} />
                             )}
-                            {account && <AccountCard data={account} />}
+                            {account && (
+                                <ErrorBoundary fallback={null}>
+                                    <AccountCard data={account} />
+                                </ErrorBoundary>
+                            )}
                             {blockSequence(safeBlockOrder).map((key) => {
                                 const widgets: Record<string, ReactNode> = {
                                     // Ігрові блоки — лише в режимах, де є «Граю в…» (не в «Класиці», «Кіномані»…).
@@ -1657,7 +1673,12 @@ export default function ProfileShow({
                                 const node = widgets[key];
                                 if (!node) return null;
 
-                                return <Fragment key={key}>{node}</Fragment>;
+                                // Віджет не валить усю сторінку — лише ховається.
+                                return (
+                                    <ErrorBoundary key={key} fallback={null}>
+                                        {node}
+                                    </ErrorBoundary>
+                                );
                             })}
                         </aside>
 
@@ -1665,60 +1686,69 @@ export default function ProfileShow({
                             id="wall"
                             className="min-w-0 flex-1 scroll-mt-24 space-y-4"
                         >
-                            {canPost && (
-                                <PostComposer wall={isSelf ? null : profile} />
-                            )}
+                            <ErrorBoundary fallback={null}>
+                                {canPost && (
+                                    <PostComposer
+                                        wall={isSelf ? null : profile}
+                                    />
+                                )}
 
-                            {(safePosts.data?.length ?? 0) === 0 ? (
-                                <EmptyState
-                                    icon={PenLine}
-                                    title={tr('На стіні поки порожньо')}
-                                    text={
-                                        isSelf
-                                            ? tr(
-                                                  'Розкажіть світу щось цікаве — перший запис завжди найкращий.',
-                                              )
-                                            : tr(
-                                                  '{first_name} ще нічого не публікував(-ла).',
-                                                  {
-                                                      first_name:
-                                                          profile.first_name,
-                                                  },
-                                              )
-                                    }
-                                />
-                            ) : (
-                                <InfiniteScroll
-                                    data="posts"
-                                    preserveUrl
-                                    buffer={600}
-                                    loading={<PostSkeleton />}
-                                    className={cn('space-y-4')}
-                                >
-                                    {(safePosts.data ?? []).some(
-                                        (p) => p.is_pinned,
-                                    ) && (
-                                        <p className="flex items-center gap-1.5 px-1 text-xs font-semibold text-white/50">
-                                            <Pin className="size-3.5" />
-                                            {tr('Закріплене')}
-                                        </p>
-                                    )}
-                                    {(safePosts.data ?? []).map((post, i) => (
-                                        <Fragment key={post.id}>
-                                            {/* Межа між закріпленими й рештою стрічки. */}
-                                            {i > 0 &&
-                                                !post.is_pinned &&
-                                                (safePosts.data ?? [])[i - 1]
-                                                    ?.is_pinned && (
-                                                    <p className="px-1 pt-2 text-xs font-semibold text-white/50">
-                                                        {tr('Усі записи')}
-                                                    </p>
-                                                )}
-                                            <PostCard post={post} />
-                                        </Fragment>
-                                    ))}
-                                </InfiniteScroll>
-                            )}
+                                {(safePosts.data?.length ?? 0) === 0 ? (
+                                    <EmptyState
+                                        icon={PenLine}
+                                        title={tr('На стіні поки порожньо')}
+                                        text={
+                                            isSelf
+                                                ? tr(
+                                                      'Розкажіть світу щось цікаве — перший запис завжди найкращий.',
+                                                  )
+                                                : tr(
+                                                      '{first_name} ще нічого не публікував(-ла).',
+                                                      {
+                                                          first_name:
+                                                              profile.first_name,
+                                                      },
+                                                  )
+                                        }
+                                    />
+                                ) : (
+                                    <InfiniteScroll
+                                        data="posts"
+                                        preserveUrl
+                                        buffer={600}
+                                        loading={<PostSkeleton />}
+                                        className={cn('space-y-4')}
+                                    >
+                                        {(safePosts.data ?? []).some(
+                                            (p) => p.is_pinned,
+                                        ) && (
+                                            <p className="flex items-center gap-1.5 px-1 text-xs font-semibold text-white/50">
+                                                <Pin className="size-3.5" />
+                                                {tr('Закріплене')}
+                                            </p>
+                                        )}
+                                        {(safePosts.data ?? []).map(
+                                            (post, i) => (
+                                                <Fragment key={post.id}>
+                                                    {/* Межа між закріпленими й рештою стрічки. */}
+                                                    {i > 0 &&
+                                                        !post.is_pinned &&
+                                                        (safePosts.data ?? [])[
+                                                            i - 1
+                                                        ]?.is_pinned && (
+                                                            <p className="px-1 pt-2 text-xs font-semibold text-white/50">
+                                                                {tr(
+                                                                    'Усі записи',
+                                                                )}
+                                                            </p>
+                                                        )}
+                                                    <PostCard post={post} />
+                                                </Fragment>
+                                            ),
+                                        )}
+                                    </InfiniteScroll>
+                                )}
+                            </ErrorBoundary>
                         </div>
                     </div>
                 </>

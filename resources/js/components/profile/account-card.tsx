@@ -40,7 +40,9 @@ const LINKS = ['website', 'twitch', 'youtube', 'kick'];
 /** Спеціальний акаунт на сторінці: тип, поля, склад і де людина сама в складі. */
 export function AccountCard({ data }: { data: AccountCardData }) {
     const Icon = ACCOUNT_ICONS[data.icon] ?? UserRound;
-    const details = Object.entries(data.details);
+    const details = Object.entries(data.details ?? {});
+    const memberOf = Array.isArray(data.member_of) ? data.member_of : [];
+    const roster = Array.isArray(data.roster) ? data.roster : null;
 
     return (
         <Widget title={data.type === 'personal' ? tr('У складі') : data.label}>
@@ -80,16 +82,16 @@ export function AccountCard({ data }: { data: AccountCardData }) {
                         ))}
                     </dl>
                 )}
-                {data.roster && data.roster.length > 0 && (
+                {roster && roster.length > 0 && (
                     <div>
                         <p className="mb-1.5 flex items-center gap-1.5 text-xs text-white/45">
                             <Icon className="size-3.5" />
                             {tr('Склад · {count}', {
-                                count: data.roster.length,
+                                count: roster.length,
                             })}
                         </p>
                         <div className="flex flex-wrap gap-2">
-                            {data.roster.slice(0, 12).map((person) => (
+                            {roster.slice(0, 12).map((person) => (
                                 <Link
                                     key={person.id}
                                     href={`/${person.username}`}
@@ -103,14 +105,14 @@ export function AccountCard({ data }: { data: AccountCardData }) {
                         </div>
                     </div>
                 )}
-                {data.member_of.length > 0 && (
+                {memberOf.length > 0 && (
                     <div className="space-y-1.5">
                         {data.type !== 'personal' && (
                             <p className="text-xs text-white/45">
                                 {tr('У складі')}
                             </p>
                         )}
-                        {data.member_of.map((org) => (
+                        {memberOf.map((org) => (
                             <Link
                                 key={org.id}
                                 href={`/${org.username}`}

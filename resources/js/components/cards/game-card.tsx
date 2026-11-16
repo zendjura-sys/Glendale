@@ -190,9 +190,11 @@ export function CardShowcase({
     data,
     isSelf,
 }: {
-    data: ShowcaseData;
+    data: ShowcaseData | null | undefined;
     isSelf: boolean;
 }) {
+    const cards = Array.isArray(data?.cards) ? data.cards : [];
+    if (!data) return null;
     return (
         <Widget
             title={tr('Найдорожчі картки')}
@@ -200,7 +202,7 @@ export function CardShowcase({
             href={isSelf ? '/cards' : undefined}
         >
             <div className="grid grid-cols-5 gap-1.5 px-1">
-                {data.cards.map((c) => (
+                {cards.map((c) => (
                     <div
                         key={c.key}
                         title={`${c.name} · ${rarityLabel(c.rarity)}`}

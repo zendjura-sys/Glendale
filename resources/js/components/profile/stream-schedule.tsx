@@ -44,19 +44,20 @@ export function StreamSchedule({
     slots,
     isSelf,
 }: {
-    slots: StreamSlot[];
+    slots?: StreamSlot[] | null;
     isSelf: boolean;
 }) {
+    const list = Array.isArray(slots) ? slots : [];
     const [open, setOpen] = useState(false);
-    const [form, setForm] = useState(
-        slots.map(({ day, time, title }) => ({
+    const [form, setForm] = useState(() =>
+        list.map(({ day, time, title }) => ({
             day,
             time,
             title: title ?? '',
         })),
     );
-    if (slots.length === 0 && !isSelf) return null;
-    const [next, ...rest] = slots;
+    if (list.length === 0 && !isSelf) return null;
+    const [next, ...rest] = list;
 
     const save = () =>
         router.put(
@@ -94,7 +95,7 @@ export function StreamSchedule({
                         </span>
                     </div>
                 ))}
-                {slots.length === 0 && (
+                {list.length === 0 && (
                     <p className="text-sm text-white/45">
                         {tr(
                             'Коли ви стрімите? Глядачі побачать найближчий стрім.',
@@ -108,7 +109,7 @@ export function StreamSchedule({
                         className="mt-1 inline-flex items-center gap-1.5 text-xs font-medium text-sky-400 hover:text-white"
                     >
                         <Pencil className="size-3.5" />
-                        {slots.length === 0
+                        {list.length === 0
                             ? tr('Додати розклад')
                             : tr('Змінити')}
                     </button>
