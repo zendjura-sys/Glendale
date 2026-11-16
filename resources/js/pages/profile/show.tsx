@@ -264,21 +264,21 @@ function ProfileTabs({
             key: 'posts',
             label: tr('Записи'),
             icon: Newspaper,
-            value: stats.posts,
+            value: stats?.posts ?? 0,
             href: '#wall',
         },
         {
             key: 'friends',
             label: tr('Друзі'),
             icon: UsersRound,
-            value: stats.friends,
+            value: stats?.friends ?? 0,
             href: isSelf ? '/friends' : undefined,
         },
         {
             key: 'photos',
             label: tr('Фото'),
             icon: ImageIcon,
-            value: stats.photos,
+            value: stats?.photos ?? 0,
             href: photosHref ?? undefined,
         },
         ...(audio
@@ -287,18 +287,18 @@ function ProfileTabs({
                       key: 'audio',
                       label: tr('Аудіо'),
                       icon: Music2,
-                      value: audio.tracks,
+                      value: audio.tracks ?? 0,
                       href: audio.href,
                   },
               ]
             : []),
-        ...((stats.thanks ?? 0) > 0
+        ...((stats?.thanks ?? 0) > 0
             ? [
                   {
                       key: 'thanks',
                       label: tr('Подяки'),
                       icon: HeartHandshake,
-                      value: stats.thanks ?? 0,
+                      value: stats?.thanks ?? 0,
                   },
               ]
             : []),
@@ -485,6 +485,23 @@ export default function ProfileShow({
     characters = [],
     stream = null,
 }: Props) {
+    // deferIf повертає null (не undefined) — дефолти параметрів тоді не спрацьовують.
+    const safeStats = stats ?? {
+        friends: 0,
+        posts: 0,
+        photos: 0,
+        mutual: 0,
+    };
+    const safeFriends = friends ?? [];
+    const safePhotos = photos ?? [];
+    const safeVisitors = visitors ?? [];
+    const safeBlockOrder = blockOrder ?? [];
+    const safeTieredBadges = tieredBadges ?? [];
+    const safeLinkedAccounts = linkedAccounts ?? [];
+    const safeTogether = together ?? [];
+    const safeCharacters = characters ?? [];
+    const safeSteamLibrary = steamLibrary ?? [];
+    const safePosts = posts ?? { data: [] };
     const { modules, auth } = usePage().props;
     const isSelf = relation === 'self';
     const [section, setSection] = useState<ProfileSection>('main');
@@ -827,7 +844,7 @@ export default function ProfileShow({
                 </div>
 
                 <ProfileTabs
-                    stats={stats}
+                    stats={safeStats}
                     audio={audio}
                     isSelf={isSelf}
                     photosHref={photosHref}
@@ -851,7 +868,10 @@ export default function ProfileShow({
                             className="px-2.5 py-1 text-xs"
                         />
                         <Deferred data="tieredBadges" fallback={null}>
-                            <BadgeStrip badges={tieredBadges} isSelf={isSelf} />
+                            <BadgeStrip
+                                badges={safeTieredBadges}
+                                isSelf={isSelf}
+                            />
                         </Deferred>
                         <Deferred data="questPoints" fallback={null}>
                             {questPoints !== null && questPoints > 0 ? (
@@ -866,7 +886,7 @@ export default function ProfileShow({
                                 </span>
                             ) : null}
                         </Deferred>
-                        {linkedAccounts.map((a) =>
+                        {safeLinkedAccounts.map((a) =>
                             a.href ? (
                                 <a
                                     key={a.kind}
@@ -990,7 +1010,7 @@ export default function ProfileShow({
                     <Deferred data="together" fallback={null}>
                         <WatchedTogether
                             key={profile.id}
-                            people={together}
+                            people={safeTogether}
                             isSelf={isSelf}
                             hiddenForOthers={togetherOff}
                         />
@@ -1278,13 +1298,13 @@ export default function ProfileShow({
                                             </p>
                                         }
                                     >
-                                        {visitors.length === 0 ? (
+                                        {safeVisitors.length === 0 ? (
                                             <p className="px-1 text-sm text-white/45">
                                                 {tr('Поки ніхто не заходив.')}
                                             </p>
                                         ) : (
                                             <div className="space-y-2">
-                                                {visitors.map((visitor) => (
+                                                {safeVisitors.map((visitor) => (
                                                     <Link
                                                         key={visitor.id}
                                                         href={`/${visitor.username}`}
@@ -1318,7 +1338,7 @@ export default function ProfileShow({
                                 <ProfileStream stream={stream} />
                             )}
                             {account && <AccountCard data={account} />}
-                            {blockSequence(blockOrder).map((key) => {
+                            {blockSequence(safeBlockOrder).map((key) => {
                                 const widgets: Record<string, ReactNode> = {
                                     // Ігрові блоки — лише в режимах, де є «Граю в…» (не в «Класиці», «Кіномані»…).
                                     track: (
@@ -1352,14 +1372,14 @@ export default function ProfileShow({
                                             data="steamLibrary"
                                             fallback={null}
                                         >
-                                            {(steamLibrary?.length ?? 0) > 0 ? (
+                                            {safeSteamLibrary.length > 0 ? (
                                                 <Widget
                                                     title={tr(
                                                         'Бібліотека Steam',
                                                     )}
                                                 >
                                                     <div className="space-y-1 px-1">
-                                                        {steamLibrary?.map(
+                                                        {safeSteamLibrary.map(
                                                             (game) =>
                                                                 game.href ? (
                                                                     <Link
@@ -1463,10 +1483,10 @@ export default function ProfileShow({
                                             data="characters"
                                             fallback={null}
                                         >
-                                            {(characters.length > 0 ||
+                                            {(safeCharacters.length > 0 ||
                                                 (isSelf && charactersOn)) && (
                                                 <CharactersWidget
-                                                    characters={characters}
+                                                    characters={safeCharacters}
                                                     isSelf={isSelf}
                                                 />
                                             )}
@@ -1546,46 +1566,53 @@ export default function ProfileShow({
                                             title={tr('Друзі')}
                                             icon={UsersRound}
                                             action={
-                                                stats.mutual > 0 ? (
+                                                safeStats.mutual > 0 ? (
                                                     <span className="text-xs text-white/45">
-                                                        {stats.mutual}{' '}
-                                                        {plural(stats.mutual, [
-                                                            'спільний',
-                                                            'спільні',
-                                                            'спільних',
-                                                        ])}
+                                                        {safeStats.mutual}{' '}
+                                                        {plural(
+                                                            safeStats.mutual,
+                                                            [
+                                                                'спільний',
+                                                                'спільні',
+                                                                'спільних',
+                                                            ],
+                                                        )}
                                                     </span>
                                                 ) : undefined
                                             }
                                         >
-                                            {friends.length === 0 ? (
+                                            {safeFriends.length === 0 ? (
                                                 <p className="px-1 text-sm text-white/45">
                                                     {tr('Поки немає друзів.')}
                                                 </p>
                                             ) : (
                                                 <div className="grid grid-cols-3 gap-2">
-                                                    {friends.map((friend) => (
-                                                        <Link
-                                                            key={friend.id}
-                                                            href={`/${friend.username}`}
-                                                            className="flex flex-col items-center gap-1.5 rounded-2xl p-2 text-center transition hover:bg-[var(--gc-l3)]"
-                                                        >
-                                                            <UserAvatar
-                                                                user={friend}
-                                                                size="lg"
-                                                            />
-                                                            <span className="w-full truncate text-xs text-white/75">
-                                                                {
-                                                                    friend.first_name
-                                                                }
-                                                            </span>
-                                                        </Link>
-                                                    ))}
+                                                    {safeFriends.map(
+                                                        (friend) => (
+                                                            <Link
+                                                                key={friend.id}
+                                                                href={`/${friend.username}`}
+                                                                className="flex flex-col items-center gap-1.5 rounded-2xl p-2 text-center transition hover:bg-[var(--gc-l3)]"
+                                                            >
+                                                                <UserAvatar
+                                                                    user={
+                                                                        friend
+                                                                    }
+                                                                    size="lg"
+                                                                />
+                                                                <span className="w-full truncate text-xs text-white/75">
+                                                                    {
+                                                                        friend.first_name
+                                                                    }
+                                                                </span>
+                                                            </Link>
+                                                        ),
+                                                    )}
                                                 </div>
                                             )}
                                         </Widget>
                                     ),
-                                    photos: photos.length > 0 && (
+                                    photos: safePhotos.length > 0 && (
                                         <Widget
                                             title={tr('Фото')}
                                             icon={ImageIcon}
@@ -1596,13 +1623,13 @@ export default function ProfileShow({
                                                         className="text-xs text-cyan-300/80 transition hover:text-cyan-200"
                                                     >
                                                         {tr('Усі')}{' '}
-                                                        {stats.photos}
+                                                        {safeStats.photos}
                                                     </Link>
                                                 ) : undefined
                                             }
                                         >
                                             <div className="grid grid-cols-3 gap-1.5 overflow-hidden rounded-2xl">
-                                                {photos.map((photo) => (
+                                                {safePhotos.map((photo) => (
                                                     <Link
                                                         key={photo.id}
                                                         href={photo.href}
@@ -1642,7 +1669,7 @@ export default function ProfileShow({
                                 <PostComposer wall={isSelf ? null : profile} />
                             )}
 
-                            {(posts?.data?.length ?? 0) === 0 ? (
+                            {(safePosts.data?.length ?? 0) === 0 ? (
                                 <EmptyState
                                     icon={PenLine}
                                     title={tr('На стіні поки порожньо')}
@@ -1668,7 +1695,7 @@ export default function ProfileShow({
                                     loading={<PostSkeleton />}
                                     className={cn('space-y-4')}
                                 >
-                                    {(posts.data ?? []).some(
+                                    {(safePosts.data ?? []).some(
                                         (p) => p.is_pinned,
                                     ) && (
                                         <p className="flex items-center gap-1.5 px-1 text-xs font-semibold text-white/50">
@@ -1676,12 +1703,12 @@ export default function ProfileShow({
                                             {tr('Закріплене')}
                                         </p>
                                     )}
-                                    {(posts.data ?? []).map((post, i) => (
+                                    {(safePosts.data ?? []).map((post, i) => (
                                         <Fragment key={post.id}>
                                             {/* Межа між закріпленими й рештою стрічки. */}
                                             {i > 0 &&
                                                 !post.is_pinned &&
-                                                (posts.data ?? [])[i - 1]
+                                                (safePosts.data ?? [])[i - 1]
                                                     ?.is_pinned && (
                                                     <p className="px-1 pt-2 text-xs font-semibold text-white/50">
                                                         {tr('Усі записи')}

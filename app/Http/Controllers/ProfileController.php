@@ -149,7 +149,9 @@ class ProfileController extends Controller
             && $user->birthday->day === now()->day;
 
         // Важкі блоки (Steam HTTP, досягнення, «разом», картки) — лише після першого кадру.
+        // Коли умову не виконано — []/null, а не Inertia::defer: інакше фронт чекає deferred-ключ вічно.
         $deferIf = fn (bool $ok, callable $load) => $ok ? Inertia::defer($load) : null;
+        $deferList = fn (bool $ok, callable $load) => $ok ? Inertia::defer($load) : [];
 
         return Inertia::render('profile/show', [
             'compatibility' => $deferIf(
@@ -169,7 +171,7 @@ class ProfileController extends Controller
                 fn () => ProfileTrack::of($user),
             ),
             'account' => app(Plugins::class)->on('account_types') ? $this->accountCard($user) : null,
-            'streamSchedule' => $deferIf(
+            'streamSchedule' => $deferList(
                 app(Plugins::class)->on('stream_schedule') && $canSeeContent,
                 fn () => app(StreamSchedule::class)->of($user),
             ),
@@ -211,11 +213,11 @@ class ProfileController extends Controller
                 'note' => $mark?->note,
                 'list' => $mark?->list,
             ],
-            'steamLibrary' => $deferIf(
+            'steamLibrary' => $deferList(
                 $canSeeContent && $modules->enabled('games'),
                 fn () => app(SteamPresence::class)->library($user),
             ),
-            'together' => $deferIf(
+            'together' => $deferList(
                 $canSeeContent && ($modules->enabled('games') || $modules->enabled('servers')),
                 fn () => app(PlayedTogether::class)->cards($user, owner: $viewer?->id === $user->id),
             ),
@@ -285,7 +287,7 @@ class ProfileController extends Controller
                 $canSeeContent,
                 fn () => app(Achievements::class)->for($user),
             ),
-            'tieredBadges' => $deferIf(
+            'tieredBadges' => $deferList(
                 $canSeeContent,
                 fn () => app(TieredBadges::class)->for($user),
             ),
@@ -296,7 +298,7 @@ class ProfileController extends Controller
             'linkedAccounts' => $canSeeContent ? $this->linkedAccounts($user) : [],
             'wishlistVisible' => $this->wishlistVisible($user, $viewer, $relation),
             'stream' => app(NetworkModes::class)->featuresFor($viewer)['live'] && ($stream = UserStream::query()->where('user_id', $user->id)->first()) ? app(LiveStreams::class)->card($stream, $request->getHost()) : null,
-            'characters' => $deferIf(
+            'characters' => $deferList(
                 $canSeeContent && $modules->enabled('servers'),
                 fn () => CharacterController::cards(player: $user),
             ),
