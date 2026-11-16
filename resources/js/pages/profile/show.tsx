@@ -874,14 +874,17 @@ export default function ProfileShow({
                             className="px-2.5 py-1 text-xs"
                         />
                         <ErrorBoundary fallback={null}>
-                            <Deferred data="tieredBadges" fallback={null}>
+                            <Deferred
+                                data="tieredBadges"
+                                fallback={<span hidden />}
+                            >
                                 <BadgeStrip
                                     badges={safeTieredBadges}
                                     isSelf={isSelf}
                                 />
                             </Deferred>
                         </ErrorBoundary>
-                        <Deferred data="questPoints" fallback={null}>
+                        <Deferred data="questPoints" fallback={<span hidden />}>
                             {questPoints !== null && questPoints > 0 ? (
                                 <span
                                     title={tr('Очки за виконані завдання')}
@@ -1016,7 +1019,7 @@ export default function ProfileShow({
                         </div>
                     )}
                     <ErrorBoundary fallback={null}>
-                        <Deferred data="together" fallback={null}>
+                        <Deferred data="together" fallback={<span hidden />}>
                             <WatchedTogether
                                 key={profile.id}
                                 people={safeTogether}
@@ -1026,7 +1029,10 @@ export default function ProfileShow({
                         </Deferred>
                     </ErrorBoundary>
                     <ErrorBoundary fallback={null}>
-                        <Deferred data="compatibility" fallback={null}>
+                        <Deferred
+                            data="compatibility"
+                            fallback={<span hidden />}
+                        >
                             {compatibility && compatibility.score > 0 ? (
                                 <div className="mt-2">
                                     <CompatibilityChip data={compatibility} />
@@ -1360,7 +1366,7 @@ export default function ProfileShow({
                                     track: (
                                         <Deferred
                                             data="profileTrack"
-                                            fallback={null}
+                                            fallback={<span hidden />}
                                         >
                                             {(profileTrack ||
                                                 (isSelf && profileTrackOn)) && (
@@ -1386,7 +1392,7 @@ export default function ProfileShow({
                                     steam: playingOn && (
                                         <Deferred
                                             data="steamLibrary"
-                                            fallback={null}
+                                            fallback={<span hidden />}
                                         >
                                             {safeSteamLibrary.length > 0 ? (
                                                 <Widget
@@ -1452,7 +1458,10 @@ export default function ProfileShow({
                                             />
                                         ),
                                     setup: (
-                                        <Deferred data="setup" fallback={null}>
+                                        <Deferred
+                                            data="setup"
+                                            fallback={<span hidden />}
+                                        >
                                             {setup ? (
                                                 <MySetup
                                                     data={setup}
@@ -1464,7 +1473,7 @@ export default function ProfileShow({
                                     stream_schedule: (
                                         <Deferred
                                             data="streamSchedule"
-                                            fallback={null}
+                                            fallback={<span hidden />}
                                         >
                                             {streamSchedule ? (
                                                 <StreamSchedule
@@ -1477,7 +1486,7 @@ export default function ProfileShow({
                                     cards: (
                                         <Deferred
                                             data="cardShowcase"
-                                            fallback={null}
+                                            fallback={<span hidden />}
                                         >
                                             {cardShowcase ? (
                                                 <CardShowcase
@@ -1497,7 +1506,7 @@ export default function ProfileShow({
                                     characters: (
                                         <Deferred
                                             data="characters"
-                                            fallback={null}
+                                            fallback={<span hidden />}
                                         >
                                             {(safeCharacters.length > 0 ||
                                                 (isSelf && charactersOn)) && (
@@ -1511,7 +1520,7 @@ export default function ProfileShow({
                                     games: (
                                         <Deferred
                                             data="backlog"
-                                            fallback={null}
+                                            fallback={<span hidden />}
                                         >
                                             {backlog ? (
                                                 <BacklogWidget
@@ -1524,7 +1533,7 @@ export default function ProfileShow({
                                     achievements: (
                                         <Deferred
                                             data="achievements"
-                                            fallback={null}
+                                            fallback={<span hidden />}
                                         >
                                             {achievements ? (
                                                 <AchievementsCard
