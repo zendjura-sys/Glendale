@@ -1,3 +1,4 @@
+import { ContextRail } from '@/components/gc/context-rail';
 import { SideRail } from '@/components/gc/side-rail';
 import { playNavTick } from '@/lib/sound-fx';
 import { GamerDock } from '@/components/gc/gamer-dock';
@@ -415,8 +416,12 @@ function MobileNav() {
                             animate={{ y: 0 }}
                             exit={reduce ? { opacity: 0 } : { y: '100%' }}
                             transition={motionOr(reduce, SNAP)}
-                            className="gc-vk-sheet fixed inset-x-0 bottom-[calc(var(--vkui_internal--tabbar_height,48px)+env(safe-area-inset-bottom))] z-[55] max-h-[calc(100dvh-env(safe-area-inset-top)-7rem)] overflow-y-auto overscroll-contain rounded-t-2xl px-3 pt-3 pb-2"
+                            className="gc-vk-sheet gc-solid fixed inset-x-0 bottom-[calc(var(--vkui_internal--tabbar_height,48px)+env(safe-area-inset-bottom))] z-[55] max-h-[calc(100dvh-env(safe-area-inset-top)-7rem)] overflow-y-auto overscroll-contain rounded-t-3xl px-3 pt-2 pb-3 shadow-[0_-12px_40px_rgb(0_0_0/0.35)]"
                         >
+                            <div
+                                aria-hidden
+                                className="mx-auto mb-3 h-1 w-10 rounded-full bg-white/20"
+                            />
                             <MenuHub onClose={close} />
                         </m.div>
                     </>
@@ -424,7 +429,7 @@ function MobileNav() {
             </AnimatePresence>
             <Tabbar
                 aria-label={tr('Розділи')}
-                className="ios-glass-panel gc-vk-tabbar z-[56] [view-transition-name:gc-tabbar]"
+                className="ios-glass-panel gc-vk-tabbar z-[56] border-t border-white/[0.06] [view-transition-name:gc-tabbar]"
             >
                 {primary.map((item) => (
                     <TabbarItem
@@ -628,6 +633,9 @@ export default function SocialLayout({ children }: PropsWithChildren) {
                         </NavigationSkeleton>
                         <SiteFooter className="glass-matte gc-footer-card mb-4" />
                     </main>
+                    {/* FHD+: третя колонка на всьому сайті; /feed і кіно мають свій aside. */}
+                    <ContextRail />
+                    {/* 4K+: четверта колонка. */}
                     <SideRail />
                 </div>
                 <VoiceBar />

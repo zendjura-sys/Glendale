@@ -432,17 +432,17 @@ export function CinemaShell({
                     type="button"
                     onClick={() => setOpen((v) => !v)}
                     aria-expanded={open}
-                    className="glass flex w-full items-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold text-white xl:hidden"
+                    className="glass flex w-full items-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold text-white min-[1920px]:hidden"
                 >
                     <PanelRightOpen className="size-4 text-primary" />
                     {open
                         ? tr('Сховати бічне меню')
                         : tr('Бічне меню: жанри, роки, популярне')}
                 </button>
-                {open && <div className="xl:hidden">{panel}</div>}
+                {open && <div className="min-[1920px]:hidden">{panel}</div>}
                 {children}
             </div>
-            <aside className="hidden w-[300px] shrink-0 xl:block">
+            <aside className="gc-col-context hidden w-[300px] shrink-0 min-[1920px]:block min-[2560px]:w-[340px]">
                 {panel}
             </aside>
         </div>

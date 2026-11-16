@@ -162,7 +162,7 @@ export function FeedPageSkeleton() {
                     <PostSkeleton key={i} card />
                 ))}
             </div>
-            <div className="hidden w-[320px] shrink-0 space-y-4 min-[1920px]:w-[360px] xl:block">
+            <div className="hidden w-[320px] shrink-0 space-y-4 min-[1920px]:block min-[1920px]:w-[340px] min-[2560px]:w-[380px]">
                 <Sk className="mx-1 block h-3 w-20 rounded" />
                 {times(2).map((i) => (
                     <div key={i} className="gc-solid space-y-3 rounded-2xl p-4">
@@ -666,7 +666,7 @@ export function CinemaHomeSkeleton() {
                     </div>
                 </div>
             </div>
-            <div className="hidden w-[300px] shrink-0 space-y-4 xl:block">
+            <div className="hidden w-[300px] shrink-0 space-y-4 min-[1920px]:block min-[2560px]:w-[340px]">
                 <div className="gc-solid space-y-3 rounded-2xl p-4">
                     {times(6).map((i) => (
                         <span key={i} className="grid grid-cols-2 gap-3">

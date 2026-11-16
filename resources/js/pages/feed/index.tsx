@@ -446,7 +446,7 @@ export default function Feed({
                     )}
                 </div>
 
-                <aside className="gc-split-hide sticky top-[calc(88px+env(safe-area-inset-top))] hidden h-fit w-[320px] shrink-0 space-y-4 min-[1920px]:w-[360px] xl:block">
+                <aside className="gc-split-hide gc-col-context sticky top-[calc(88px+env(safe-area-inset-top))] hidden h-fit w-[320px] shrink-0 space-y-4 min-[1920px]:block min-[1920px]:w-[340px] min-[2560px]:w-[380px] min-[3000px]:w-[340px]">
                     {rail && (
                         <>
                             <FriendRequests data={rail} reload={reloadRail} />
