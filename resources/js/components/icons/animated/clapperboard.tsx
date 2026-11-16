@@ -15,75 +15,76 @@ interface ClapperboardIconProps extends HTMLAttributes<HTMLDivElement> {
     size?: number;
 }
 
-const ClapperboardIcon = forwardRef<ClapperboardIconHandle, ClapperboardIconProps>(
-    ({ onMouseEnter, onMouseLeave, className, size = 28, ...props }, ref) => {
-        const controls = useAnimation();
-        const isControlledRef = useRef(false);
+const ClapperboardIcon = forwardRef<
+    ClapperboardIconHandle,
+    ClapperboardIconProps
+>(({ onMouseEnter, onMouseLeave, className, size = 28, ...props }, ref) => {
+    const controls = useAnimation();
+    const isControlledRef = useRef(false);
 
-        useImperativeHandle(ref, () => {
-            isControlledRef.current = true;
+    useImperativeHandle(ref, () => {
+        isControlledRef.current = true;
 
-            return {
-                startAnimation: () => void controls.start('animate'),
-                stopAnimation: () => void controls.start('normal'),
-            };
-        });
+        return {
+            startAnimation: () => void controls.start('animate'),
+            stopAnimation: () => void controls.start('normal'),
+        };
+    });
 
-        const handleMouseEnter = useCallback(
-            (e: React.MouseEvent<HTMLDivElement>) => {
-                if (isControlledRef.current) {
-                    onMouseEnter?.(e);
-                } else {
-                    void controls.start('animate');
-                }
-            },
-            [controls, onMouseEnter],
-        );
+    const handleMouseEnter = useCallback(
+        (e: React.MouseEvent<HTMLDivElement>) => {
+            if (isControlledRef.current) {
+                onMouseEnter?.(e);
+            } else {
+                void controls.start('animate');
+            }
+        },
+        [controls, onMouseEnter],
+    );
 
-        const handleMouseLeave = useCallback(
-            (e: React.MouseEvent<HTMLDivElement>) => {
-                if (isControlledRef.current) {
-                    onMouseLeave?.(e);
-                } else {
-                    void controls.start('normal');
-                }
-            },
-            [controls, onMouseLeave],
-        );
+    const handleMouseLeave = useCallback(
+        (e: React.MouseEvent<HTMLDivElement>) => {
+            if (isControlledRef.current) {
+                onMouseLeave?.(e);
+            } else {
+                void controls.start('normal');
+            }
+        },
+        [controls, onMouseLeave],
+    );
 
-        return (
-            <div
-                className={cn(className)}
-                onMouseEnter={handleMouseEnter}
-                onMouseLeave={handleMouseLeave}
-                {...props}
+    return (
+        <div
+            className={cn(className)}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+            {...props}
+        >
+            <motion.svg
+                animate={controls}
+                fill="none"
+                height={size}
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                variants={{
+                    normal: { x: 0, y: 0 },
+                    animate: { x: [0, 0, -2, 0], y: [0, -3, 0, 0] },
+                }}
+                transition={{ duration: 0.55, ease: 'easeInOut' }}
+                viewBox="0 0 24 24"
+                width={size}
+                xmlns="http://www.w3.org/2000/svg"
             >
-                <motion.svg
-                    animate={controls}
-                    fill="none"
-                    height={size}
-                    stroke="currentColor"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    variants={{
-                        normal: { x: 0, y: 0 },
-                        animate: { x: [0, 0, -2, 0], y: [0, -3, 0, 0] },
-                    }}
-                    transition={{ duration: 0.55, ease: 'easeInOut' }}
-                    viewBox="0 0 24 24"
-                    width={size}
-                    xmlns="http://www.w3.org/2000/svg"
-                >
-                    <path d="M20.2 6 3 11l-.9-2.4c-.3-1.1.3-2.2 1.3-2.5l13.5-4c1.1-.3 2.2.3 2.5 1.3Z" />
-                    <path d="m6.2 5.3 3.1 3.9" />
-                    <path d="m12.4 3.4 3.1 4" />
-                    <path d="M3 11h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z" />
-                </motion.svg>
-            </div>
-        );
-    },
-);
+                <path d="M20.2 6 3 11l-.9-2.4c-.3-1.1.3-2.2 1.3-2.5l13.5-4c1.1-.3 2.2.3 2.5 1.3Z" />
+                <path d="m6.2 5.3 3.1 3.9" />
+                <path d="m12.4 3.4 3.1 4" />
+                <path d="M3 11h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z" />
+            </motion.svg>
+        </div>
+    );
+});
 
 ClapperboardIcon.displayName = 'ClapperboardIcon';
 

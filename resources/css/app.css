@@ -6890,8 +6890,8 @@ html:root.gc-vk[data-theme='light'] {
     --gc-liquid-rim: rgba(255, 255, 255, 0.7);
     --gc-liquid-drop: rgba(255, 255, 255, 0.42);
     --gc-liquid-drop-hi: rgba(255, 255, 255, 0.85);
-    --gc-liquid-shadow: 0 12px 32px -14px rgba(0, 40, 90, 0.45),
-        0 2px 6px rgba(0, 40, 90, 0.1);
+    --gc-liquid-shadow:
+        0 12px 32px -14px rgba(0, 40, 90, 0.45), 0 2px 6px rgba(0, 40, 90, 0.1);
 }
 html[data-theme='dark'],
 .dark {
@@ -6901,8 +6901,8 @@ html[data-theme='dark'],
     --gc-liquid-rim: rgba(255, 255, 255, 0.34);
     --gc-liquid-drop: rgba(255, 255, 255, 0.16);
     --gc-liquid-drop-hi: rgba(255, 255, 255, 0.55);
-    --gc-liquid-shadow: 0 12px 32px -14px rgba(0, 0, 0, 0.55),
-        0 2px 6px rgba(0, 40, 90, 0.18);
+    --gc-liquid-shadow:
+        0 12px 32px -14px rgba(0, 0, 0, 0.55), 0 2px 6px rgba(0, 40, 90, 0.18);
 }
 
 .gc-liquid-glass {
@@ -6922,7 +6922,8 @@ html[data-theme='dark'],
 .gc-liquid-glass-inner {
     background: color-mix(in oklab, var(--gc-liquid-tint) 55%, transparent);
     border: 1px solid color-mix(in oklab, var(--gc-liquid-rim) 35%, transparent);
-    box-shadow: inset 0 1px 0 color-mix(in oklab, var(--gc-liquid-rim) 50%, transparent);
+    box-shadow: inset 0 1px 0
+        color-mix(in oklab, var(--gc-liquid-rim) 50%, transparent);
 }
 
 /* Активна «водяна крапля» (fallback без WebGL з Nimbus). */

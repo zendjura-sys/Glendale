@@ -10,9 +10,7 @@ const BOOT_ROUTES = ['/feed', '/messages', '/friends', '/communities'] as const;
 export function warmBootRoutes(username?: string | null): void {
     const routes = [
         ...BOOT_ROUTES,
-        ...(username
-            ? primaryWarmUrls({ username, modules: null })
-            : []),
+        ...(username ? primaryWarmUrls({ username, modules: null }) : []),
     ];
     for (const href of new Set(routes)) {
         warm(href, NAV_CACHE);

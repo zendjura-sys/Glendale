@@ -233,7 +233,9 @@ function BentoMenu() {
                     aria-current={on ? 'page' : undefined}
                     className={cn(
                         'relative flex min-w-0 items-center gap-2 rounded-xl transition',
-                        big ? 'flex-col justify-center px-2 py-3' : 'px-2.5 py-2',
+                        big
+                            ? 'flex-col justify-center px-2 py-3'
+                            : 'px-2.5 py-2',
                         on
                             ? 'gc-liquid-drop text-[var(--gc-liquid-fg)]'
                             : 'gc-solid-2 text-white/85 hover:bg-[var(--gc-l3)]',
