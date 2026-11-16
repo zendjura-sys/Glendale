@@ -62,6 +62,7 @@ import { tr } from '@/lib/i18n';
 import { usePlugin } from '@/lib/plugins';
 import { cn } from '@/lib/utils';
 import { useFeature } from '@/lib/plugins';
+import { m, useReducedMotion } from 'motion/react';
 import type { ReactNode } from 'react';
 
 type Props = {
@@ -99,6 +100,7 @@ function FeedTabs({
     hasFriends: boolean;
 }) {
     const topicsOn = usePlugin('topic_follows');
+    const reduce = useReducedMotion();
     const tabs = [
         {
             key: 'friends',
@@ -145,7 +147,7 @@ function FeedTabs({
             : []),
     ];
 
-    // Пігулки: активна — суцільна небесна; прокручуються вбік, активна — завжди в полі зору.
+    // Пігулки з morphing-індикатором (без різкого стрибка кольору).
     return (
         <nav
             ref={(el) => {
@@ -156,23 +158,45 @@ function FeedTabs({
             aria-label={tr('Стрічка')}
             className="flex [scrollbar-width:none] gap-2 overflow-x-auto"
         >
-            {tabs.map((item) => (
-                <Link
-                    key={item.key}
-                    href={item.href}
-                    preserveScroll
-                    aria-current={tab === item.key ? 'page' : undefined}
-                    className={cn(
-                        'flex h-10 shrink-0 items-center gap-2 rounded-xl px-4 text-sm font-semibold transition',
-                        tab === item.key
-                            ? 'bg-sky-500 text-white'
-                            : 'gc-solid text-white/70 hover:text-white',
-                    )}
-                >
-                    <item.icon aria-hidden className="size-4" />
-                    {item.label}
-                </Link>
-            ))}
+            {tabs.map((item) => {
+                const on = tab === item.key;
+                return (
+                    <Link
+                        key={item.key}
+                        href={item.href}
+                        preserveScroll
+                        prefetch={['hover']}
+                        cacheFor="1m"
+                        aria-current={on ? 'page' : undefined}
+                        className={cn(
+                            'relative flex h-10 shrink-0 items-center gap-2 rounded-xl px-4 text-sm font-semibold transition-colors',
+                            on
+                                ? 'text-white'
+                                : 'gc-solid text-white/70 hover:text-white',
+                        )}
+                    >
+                        {on && (
+                            <m.span
+                                layoutId="gc-feed-tab"
+                                className="absolute inset-0 rounded-xl bg-sky-500"
+                                transition={
+                                    reduce
+                                        ? { duration: 0 }
+                                        : {
+                                              type: 'spring',
+                                              stiffness: 420,
+                                              damping: 34,
+                                              mass: 0.8,
+                                          }
+                                }
+                                aria-hidden
+                            />
+                        )}
+                        <item.icon aria-hidden className="relative size-4" />
+                        <span className="relative">{item.label}</span>
+                    </Link>
+                );
+            })}
         </nav>
     );
 }

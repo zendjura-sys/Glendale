@@ -281,8 +281,8 @@ void createInertiaApp({
                         dataSaver={authUser?.data_saver}
                     />
                     <SkipLink />
-                    {/* Збій сторінки — картка з кнопкою оновлення; збій тостів чи банера — лише вони зникають. */}
-                    <ErrorBoundary>
+                    {/* Збій сторінки — картка з кнопкою оновлення; resetKey скидає після переходу. */}
+                    <ErrorBoundary resetKey={page.url}>
                         <Suspense
                             fallback={<BootSkeleton name={page.component} />}
                         >

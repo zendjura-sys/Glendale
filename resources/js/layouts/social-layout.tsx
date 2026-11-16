@@ -61,7 +61,6 @@ import { MOBILE_LABEL } from '@/lib/nav';
 import { usePlugin } from '@/lib/plugins';
 import { cn } from '@/lib/utils';
 import { NavigationSkeleton } from '@/components/gc/navigation-skeleton';
-import { PageTransition } from '@/components/gc/page-transition';
 import { GcPageTransition } from '@/components/motion/GcPageTransition';
 import { AppPromoCard } from '@/components/app-promo/app-promo-card';
 import { DockWidgets } from '@/components/feed/side-widgets';
@@ -261,14 +260,17 @@ function Topbar() {
 
     return (
         <header className="app-header-wrapper">
-            {/* Шапка — iOS 27+ Liquid Glass острів (21st Nimbus / Liquid Glass Navbar). */}
-            <div className="ios-glass-panel ios-glass-bar ios-header-pill gc-glass-island gc-frosted-capsule gc-liquid-glass [view-transition-name:gc-topbar]">
+            {/* Шапка — iOS 27+ матове безбарвне скло; поза будь-яким motion (fixed лишається fixed). */}
+            <div className="ios27-glass-capsule ios-glass-bar ios-header-pill gc-glass-island [view-transition-name:gc-topbar]">
                 <Link
                     href="/feed"
                     className="flex shrink-0 items-center self-center md:mr-4"
+                    aria-label="GameCon"
                 >
                     <Logo className="hidden sm:inline-flex" />
-                    <LogoMark className="sm:hidden" />
+                    <span className="inline-flex size-10 items-center justify-center rounded-[14px] border border-white/[0.14] bg-white/[0.07] sm:hidden">
+                        <LogoMark className="size-6 drop-shadow-none" />
+                    </span>
                 </Link>
                 <QuickSearch className="max-w-[340px] min-w-0 flex-1" />
                 <HeaderNav className="mx-auto hidden xl:flex" />
@@ -373,7 +375,12 @@ function MobileNav() {
 
     useEffect(() => {
         if (!open) return;
-        const offNavigate = router.on('start', close);
+        // Prefetch (hover/mount) не згортає шторку — лише реальний перехід.
+        const offNavigate = router.on('start', (event) => {
+            if (!event.detail.visit.prefetch) {
+                close();
+            }
+        });
         const onKey = (e: KeyboardEvent) => e.key === 'Escape' && close();
         const overflow = document.body.style.overflow;
         document.body.style.overflow = 'hidden';
@@ -429,7 +436,7 @@ function MobileNav() {
             </AnimatePresence>
             <Tabbar
                 aria-label={tr('Розділи')}
-                className="ios-glass-panel gc-frosted-capsule gc-liquid-glass gc-vk-tabbar z-[56] [view-transition-name:gc-tabbar]"
+                className="ios27-glass-capsule gc-vk-tabbar [view-transition-name:gc-tabbar]"
             >
                 {primary.map((item) => {
                     const selected = !open && isActive(item.href, item.key);
@@ -438,7 +445,6 @@ function MobileNav() {
                             key={item.key}
                             Component={Link}
                             href={item.href}
-                            // Телефон: mount гріє розділи одразу; ПК: ще й hover. Кеш 2 хв.
                             {...({
                                 prefetch: ['mount', 'hover'],
                                 cacheFor: '2m',
@@ -448,33 +454,8 @@ function MobileNav() {
                             aria-current={selected ? 'page' : undefined}
                             label={MOBILE_LABEL[item.key] ?? item.label}
                             indicator={counter(item.badge)}
-                            className="gc-liquid-tab"
                         >
-                            <span className="relative inline-flex size-[42px] items-center justify-center">
-                                {selected && (
-                                    <m.span
-                                        layoutId="gc-mobile-nav-drop"
-                                        className="gc-liquid-drop absolute inset-0 rounded-full"
-                                        transition={
-                                            reduce
-                                                ? { duration: 0 }
-                                                : {
-                                                      type: 'spring',
-                                                      stiffness: 380,
-                                                      damping: 32,
-                                                      mass: 0.85,
-                                                  }
-                                        }
-                                        aria-hidden
-                                    />
-                                )}
-                                <ModuleIcon
-                                    name={item.icon}
-                                    animated
-                                    size={26}
-                                    className="relative"
-                                />
-                            </span>
+                            <ModuleIcon name={item.icon} animated size={26} />
                         </TabbarItem>
                     );
                 })}
@@ -486,38 +467,13 @@ function MobileNav() {
                     selected={open || restActive}
                     onClick={() => setOpen((value) => !value)}
                     label={tr('Меню')}
-                    className="gc-liquid-tab"
                     indicator={
                         restBadge > 0 && !open ? (
                             <Badge mode="prominent" />
                         ) : undefined
                     }
                 >
-                    <span className="relative inline-flex size-[42px] items-center justify-center">
-                        {(open || restActive) && (
-                            <m.span
-                                layoutId="gc-mobile-nav-drop"
-                                className="gc-liquid-drop absolute inset-0 rounded-full"
-                                transition={
-                                    reduce
-                                        ? { duration: 0 }
-                                        : {
-                                              type: 'spring',
-                                              stiffness: 380,
-                                              damping: 32,
-                                              mass: 0.85,
-                                          }
-                                }
-                                aria-hidden
-                            />
-                        )}
-                        <ModuleIcon
-                            name="menu"
-                            animated
-                            size={26}
-                            className="relative"
-                        />
-                    </span>
+                    <ModuleIcon name="menu" animated size={26} />
                 </TabbarItem>
             </Tabbar>
         </div>
@@ -680,10 +636,8 @@ export default function SocialLayout({ children }: PropsWithChildren) {
                         <AlertBanner />
                         <Announcement />
                         <NavigationSkeleton>
-                            {/* View Transitions лишаються в app.tsx; у layout — пружинний каскад сторінки. */}
-                            <GcPageTransition>
-                                <PageTransition>{children}</PageTransition>
-                            </GcPageTransition>
+                            {/* Лише {children} анімуються; Topbar/MobileNav — поза motion (fixed). */}
+                            <GcPageTransition>{children}</GcPageTransition>
                         </NavigationSkeleton>
                         <SiteFooter className="glass-matte gc-footer-card mb-4" />
                     </main>
