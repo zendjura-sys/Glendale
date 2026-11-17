@@ -6,6 +6,7 @@ use App\Models\Livecast;
 use App\Models\LivecastIntegration;
 use App\Models\LivecastMessage;
 use App\Models\User;
+use App\Services\Ai\StreamCopilot;
 use App\Services\Voice\LiveKit;
 use App\Support\LiveCast\DonationPresets;
 use App\Support\LiveCast\StreamGifts;
@@ -214,6 +215,11 @@ class LiveCastService
             ] : null,
             'can_manage' => $viewer !== null && ($isHost || $viewer->isStaff()),
             'go_live_on_app' => true,
+            'ai' => [
+                'available' => app(StreamCopilot::class)->available('livecast')
+                    && $viewer !== null
+                    && ($isHost || $viewer->isStaff()),
+            ],
         ];
     }
 

@@ -66,6 +66,7 @@ use App\Http\Controllers\GamePlayController;
 use App\Http\Controllers\GameQaController;
 use App\Http\Controllers\GameRatingController;
 use App\Http\Controllers\GameSoundtrackController;
+use App\Http\Controllers\GcGiftController;
 use App\Http\Controllers\GifController;
 use App\Http\Controllers\GuestBanController;
 use App\Http\Controllers\HelpController;
@@ -135,6 +136,7 @@ use App\Http\Controllers\StatusController;
 use App\Http\Controllers\StatusPageController;
 use App\Http\Controllers\SteamImportController;
 use App\Http\Controllers\StoryController;
+use App\Http\Controllers\StreamAiController;
 use App\Http\Controllers\SupportController;
 use App\Http\Controllers\TeammateController;
 use App\Http\Controllers\ThanksController;
@@ -833,24 +835,34 @@ Route::prefix('v1')->group(function () {
                     Route::post('{livecast}/messages', 'message')->middleware('throttle:60,1');
                     Route::post('{livecast}/gifts', 'gift')->middleware('throttle:30,1');
                     Route::put('{livecast}/donations', 'donations')->middleware('throttle:20,1');
+                    Route::post('{livecast}/ai/watch', [StreamAiController::class, 'watchLiveCast'])->middleware('throttle:20,1');
+                    Route::post('{livecast}/ai/promo', [StreamAiController::class, 'promoLiveCast'])->middleware('throttle:20,1');
                 });
             });
             // Шоу наживо: сцена, гості з питанням на таймері, слухачі.
-            Route::prefix('shows')->controller(LiveShowController::class)->whereNumber(['show', 'user'])->group(function () {
-                Route::get('/', 'index');
-                Route::get('pulse', 'pulse')->middleware('throttle:60,1');
-                Route::post('/', 'store')->middleware('throttle:6,1');
-                Route::get('{show}', 'show');
-                Route::get('{show}/state', 'state')->middleware('throttle:120,1');
-                Route::post('{show}/join', 'join')->middleware('throttle:20,1');
-                Route::post('{show}/leave', 'leave');
-                Route::post('{show}/hand', 'hand')->middleware('throttle:30,1');
-                Route::post('{show}/floor/{user:id}', 'floor')->withoutScopedBindings()->middleware('throttle:60,1');
-                Route::delete('{show}/floor/{user:id}', 'unfloor')->withoutScopedBindings();
-                Route::post('{show}/speakers', 'addSpeaker')->middleware('throttle:30,1');
-                Route::delete('{show}/speakers/{user:id}', 'removeSpeaker')->withoutScopedBindings();
-                Route::post('{show}/start', 'start');
-                Route::post('{show}/end', 'end');
+            Route::prefix('shows')->whereNumber(['show', 'user'])->group(function () {
+                Route::controller(LiveShowController::class)->group(function () {
+                    Route::get('/', 'index');
+                    Route::get('pulse', 'pulse')->middleware('throttle:60,1');
+                    Route::post('/', 'store')->middleware('throttle:6,1');
+                    Route::get('{show}', 'show');
+                    Route::get('{show}/state', 'state')->middleware('throttle:120,1');
+                    Route::post('{show}/join', 'join')->middleware('throttle:20,1');
+                    Route::post('{show}/leave', 'leave');
+                    Route::post('{show}/hand', 'hand')->middleware('throttle:30,1');
+                    Route::post('{show}/floor/{user:id}', 'floor')->withoutScopedBindings()->middleware('throttle:60,1');
+                    Route::delete('{show}/floor/{user:id}', 'unfloor')->withoutScopedBindings();
+                    Route::post('{show}/speakers', 'addSpeaker')->middleware('throttle:30,1');
+                    Route::delete('{show}/speakers/{user:id}', 'removeSpeaker')->withoutScopedBindings();
+                    Route::post('{show}/start', 'start');
+                    Route::post('{show}/end', 'end');
+                });
+                Route::get('gifts/shop', [GcGiftController::class, 'shop'])->middleware('throttle:60,1');
+                Route::post('gifts/packs/{pack}', [GcGiftController::class, 'buy'])->whereNumber('pack')->middleware('throttle:20,1');
+                Route::post('{show}/like/{user:id}', [GcGiftController::class, 'like'])->withoutScopedBindings()->middleware('throttle:60,1');
+                Route::post('{show}/gift/{user:id}', [GcGiftController::class, 'gift'])->withoutScopedBindings()->middleware('throttle:30,1');
+                Route::post('{show}/ai/watch', [StreamAiController::class, 'watchShow'])->middleware('throttle:20,1');
+                Route::post('{show}/ai/promo', [StreamAiController::class, 'promoShow'])->middleware('throttle:20,1');
             });
             // Персонаж-аватар: той самий конструктор, що й на сайті.
             Route::get('settings/character', [AvatarCharacterController::class, 'edit']);

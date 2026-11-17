@@ -19,6 +19,7 @@ import {
 } from 'react';
 import { toast } from 'sonner';
 import { UserAvatar } from '@/components/gc/user-avatar';
+import { StreamAiPanel } from '@/components/shows/stream-ai-panel';
 import { Input } from '@/components/ui/input';
 import { api, ApiError } from '@/lib/api';
 import { tr } from '@/lib/i18n';
@@ -53,6 +54,7 @@ type State = {
     me: { is_host: boolean; can_publish: boolean } | null;
     can_manage: boolean;
     go_live_on_app?: boolean;
+    ai?: { available: boolean };
 };
 
 /** Сторінка стріму на сайті: перегляд, чат, подарунки, донати. Без виходу в ефір. */
@@ -386,6 +388,11 @@ export default function LiveCastShow(initial: State) {
                     )}
                 </aside>
             </div>
+            {state.ai?.available && (
+                <div className="mx-auto mt-4 max-w-3xl px-4 pb-8">
+                    <StreamAiPanel endpointBase={`/livecast/${stream.id}`} />
+                </div>
+            )}
         </>
     );
 }

@@ -6,6 +6,7 @@ use App\Jobs\EndShowQuestion;
 use App\Models\LiveShow;
 use App\Models\LiveShowMember;
 use App\Models\User;
+use App\Services\Ai\StreamCopilot;
 use App\Services\Feed\Topics;
 use App\Services\Moderation\ContentFilter;
 use App\Services\Voice\LiveKit;
@@ -347,17 +348,37 @@ class LiveShows
         $stageView = $me !== null && in_array($me->role, ['host', 'speaker'], true);
         $person = fn (LiveShowMember $m) => [...($m->user?->toCard() ?? []), 'role' => $m->role];
 
+        $gifts = app(GiftPacks::class);
+        $likes = $gifts->likesFor($show, $viewer);
+        $withLikes = function (array $card) use ($likes): array {
+            $id = (int) ($card['id'] ?? 0);
+
+            return [
+                ...$card,
+                'likes' => (int) ($likes['counts'][$id] ?? 0),
+                'liked' => in_array($id, $likes['mine'], true),
+            ];
+        };
+
         return [
             'show' => [...$this->card($show), 'stage_seats' => $show->stage_seats, 'guest_seats' => $show->guest_seats, 'question_seconds' => $show->question_seconds, 'peak_listeners' => $show->peak_listeners],
-            'stage' => $members->whereIn('role', ['host', 'speaker'])->sortBy(fn (LiveShowMember $m) => [$m->role === 'host' ? 0 : 1, $m->id])->map($person)->values(),
+            'stage' => $members->whereIn('role', ['host', 'speaker'])->sortBy(fn (LiveShowMember $m) => [$m->role === 'host' ? 0 : 1, $m->id])->map($person)->map($withLikes)->values(),
             'guests' => $members->where('role', 'guest')->filter(fn (LiveShowMember $m) => $m->mic_until?->isFuture())
-                ->map(fn (LiveShowMember $m) => [...$person($m), 'seconds_left' => max(0, (int) now()->diffInSeconds($m->mic_until, true))])->values(),
+                ->map(fn (LiveShowMember $m) => $withLikes([...$person($m), 'seconds_left' => max(0, (int) now()->diffInSeconds($m->mic_until, true))]))->values(),
             // Черга рук — лише сцені; слухачі бачать тільки свою.
             'hands' => $stageView ? $here->whereNotNull('hand_at')->sortBy('hand_at')->map($person)->values() : [],
             'listeners' => $here->whereIn('role', ['listener', 'guest'])->take(40)->map($person)->values(),
             'listeners_count' => $here->count(),
             'me' => $me ? ['role' => $me->role, 'hand' => $me->hand_at !== null, 'can_speak' => $me->canSpeak()] : null,
             'can_manage' => $viewer !== null && ($show->host_id === $viewer->id || $viewer->isStaff()),
+            'recent_gifts' => $gifts->recentGifts($show),
+            'gift_spotlight' => $gifts->spotlight($show),
+            'inventory' => $viewer ? $gifts->inventory($viewer) : [],
+            'ai' => [
+                'available' => app(StreamCopilot::class)->available('gamecast')
+                    && $viewer !== null
+                    && ($show->host_id === $viewer->id || $viewer->isStaff()),
+            ],
         ];
     }
 }
