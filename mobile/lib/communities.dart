@@ -30,7 +30,7 @@ String membersLabel(Map<String, dynamic> c, int n) =>
 List<String> communityJoinQuestions(Map<String, dynamic> c) {
   final raw = c['join_questions'];
   if (raw is List) {
-    return [for (final item in raw) if (text(item) case final q?) q];
+    return [for (final item in raw) ?text(item)];
   }
   final block = text(raw);
   if (block == null) return const [];
@@ -282,7 +282,7 @@ class _JoinButtonState extends State<JoinButton> {
       return;
     }
     // Анкета вступу (join_forms): відповіді в тілі join, як на сайті.
-    final questions = _joinQuestions(widget.community);
+    final questions = communityJoinQuestions(widget.community);
     if (status == null && questions.isNotEmpty && AppScope.read(context).session.pluginOn('join_forms')) {
       final next = await _joinWithAnswers(api, slug, questions);
       if (next == null || !mounted) return;
@@ -303,15 +303,6 @@ class _JoinButtonState extends State<JoinButton> {
     }
   }
 
-  static List<String> _joinQuestions(Map<String, dynamic> c) {
-    final raw = c['join_questions'];
-    if (raw is List) return [for (final q in raw) if (text(q) != null) text(q)!];
-    if (raw is String && raw.trim().isNotEmpty) {
-      return [for (final line in raw.split('\n')) if (line.trim().isNotEmpty) line.trim()];
-    }
-    return const [];
-  }
-
   Future<String?> _joinWithAnswers(Api api, Object? slug, List<String> questions) async {
     final answers = [for (final _ in questions) TextEditingController()];
     var error = '';
@@ -319,16 +310,17 @@ class _JoinButtonState extends State<JoinButton> {
     final next = await showGcSheet<String>(
       context,
       title: tr('Анкета вступу'),
-      subtitle: tr('Відповідайте на запитання адміністрації — і заявку буде надіслано.'),
+      subtitle: tr('Адміністрація прочитає відповіді й вирішить щодо заявки.'),
       builder: (sheet) => StatefulBuilder(
         builder: (sheet, setSheet) {
+          void clip(TextEditingController field, String value) {
+            if (value.length <= 1000) return;
+            field.value = TextEditingValue(text: value.substring(0, 1000), selection: const TextSelection.collapsed(offset: 1000));
+          }
+
           Future<void> submit() async {
-            if (busy) return;
             final filled = [for (final a in answers) a.text.trim()];
-            if (filled.any((a) => a.isEmpty)) {
-              setSheet(() => error = tr('Заповніть усі поля.'));
-              return;
-            }
+            if (busy || filled.any((a) => a.isEmpty)) return;
             setSheet(() {
               busy = true;
               error = '';
@@ -346,6 +338,7 @@ class _JoinButtonState extends State<JoinButton> {
             }
           }
 
+          final ready = answers.every((field) => field.text.trim().isNotEmpty);
           return Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
             child: Column(
@@ -355,14 +348,24 @@ class _JoinButtonState extends State<JoinButton> {
                   if (i > 0) const SizedBox(height: 10),
                   Text(questions[i], style: body(13.5, weight: FontWeight.w600)),
                   const SizedBox(height: 6),
-                  GcField(controller: answers[i], label: tr('Ваша відповідь'), maxLines: 3, minLines: 1),
+                  GcField(
+                    controller: answers[i],
+                    label: tr('Ваша відповідь'),
+                    maxLines: 3,
+                    minLines: 2,
+                    autofocus: i == 0,
+                    onChanged: (value) {
+                      clip(answers[i], value);
+                      setSheet(() => error = '');
+                    },
+                  ),
                 ],
                 if (error.isNotEmpty) ...[
                   const SizedBox(height: 8),
                   Text(error, style: body(12.5, color: dangerSoft)),
                 ],
                 const SizedBox(height: 14),
-                PrimaryButton(label: tr('Подати заявку'), icon: LucideIcons.clipboardList, busy: busy, onPressed: busy ? null : () => unawaited(submit())),
+                PrimaryButton(label: tr('Надіслати заявку'), icon: LucideIcons.userPlus, busy: busy, onPressed: ready && !busy ? () => unawaited(submit()) : null),
               ],
             ),
           );
@@ -480,7 +483,7 @@ class _JoinButtonState extends State<JoinButton> {
     }
     // Пароль / анкета (і ще немає правил на цей крок) — як на сайті.
     final passwordGate = status == null && c['has_password'] == true && c['rules_accept'] != true;
-    final formGate = status == null && !passwordGate && _joinQuestions(c).isNotEmpty && AppScope.read(context).session.pluginOn('join_forms');
+    final formGate = status == null && !passwordGate && communityJoinQuestions(c).isNotEmpty && AppScope.read(context).session.pluginOn('join_forms');
     final joinLabel = passwordGate
         ? tr('Вступити')
         : (formGate || c['privacy'] == 'closed'
@@ -1123,9 +1126,9 @@ class _RequestAnswers extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(56, 0, 12, 10),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         for (final a in answers) ...[
-          Text(text(a['question']) ?? '', style: body(12, color: muted, weight: FontWeight.w600)),
+          Text(text(a['q']) ?? text(a['question']) ?? '', style: body(12, color: muted, weight: FontWeight.w600)),
           const SizedBox(height: 2),
-          Text(text(a['answer']) ?? text(a['text']) ?? '$a', style: body(13, color: soft)),
+          Text(text(a['a']) ?? text(a['answer']) ?? '', style: body(13, color: soft)),
           const SizedBox(height: 6),
         ],
       ]),
@@ -1187,7 +1190,7 @@ class _CommunitySettingsScreenState extends State<CommunitySettingsScreen> {
         description.text = text(c['description']) ?? '';
         website.text = text(c['website']) ?? '';
         city.text = text(c['city']) ?? '';
-        joinQuestions.text = text(c['join_questions']) ?? (c['join_questions'] is List ? (c['join_questions'] as List).map((e) => '$e').where((s) => s.trim().isNotEmpty).join('\n') : '');
+        joinQuestions.text = text(mapOf(data['extras'])['join_questions']) ?? communityJoinQuestions(c).join('\n');
         type = text(c['type']) ?? 'group';
         privacy = text(c['privacy']) ?? 'open';
         wall = text(c['wall']) ?? 'open';
@@ -1198,9 +1201,32 @@ class _CommunitySettingsScreenState extends State<CommunitySettingsScreen> {
     }
   }
 
+  /// Анкета живе в правилах спільноти (PATCH settings/rules), не в основній картці.
+  Future<void> _saveQuestions() async {
+    final extras = mapOf(page?['extras']);
+    // Без уже збережених правил не шлемо патч: порожній набір затер би їх.
+    if (!extras.containsKey('slow_mode')) return;
+    await api.patch(Api.site('/c/${widget.slug}/settings/rules'), {
+      'rules': extras['rules'] ?? '',
+      'handbook': extras['handbook'] ?? '',
+      'welcome': extras['welcome'] ?? '',
+      'banned_words': extras['banned_words'] ?? '',
+      'post_tags': extras['post_tags'] ?? '',
+      'slow_mode': intOf(extras['slow_mode']),
+      'premoderation': extras['premoderation'] == true,
+      'weekly_digest': extras['weekly_digest'] == true,
+      'join_questions': joinQuestions.text.trim(),
+      'wiki_open': extras['wiki_open'] == true,
+      'rules_accept': extras['rules_accept'] == true,
+    });
+  }
+
   Future<void> _save() async {
     setState(() => busy = true);
     try {
+      final editQuestions = page?['isOwner'] == true && AppScope.read(context).session.pluginOn('join_forms');
+      if (editQuestions) await _saveQuestions();
+      if (!mounted) return;
       final result = await api.patch(Api.site('/c/${widget.slug}/settings'), {
         'name': name.text.trim(),
         'slug': slug.text.trim(),
@@ -1212,13 +1238,16 @@ class _CommunitySettingsScreenState extends State<CommunitySettingsScreen> {
         'description': description.text.trim(),
         'website': website.text.trim(),
         'city': city.text.trim(),
-        'join_questions': joinQuestions.text.trim(),
       });
       if (!mounted) return;
       toast(context, text(result['message']) ?? tr('Збережено.'));
       final redirect = text(result['redirect']);
       final nextSlug = redirect != null && redirect.startsWith('/c/') ? redirect.split('/')[2] : slug.text.trim();
-      if (nextSlug != widget.slug) context.go('/communities/$nextSlug');
+      if (nextSlug != widget.slug) {
+        context.go('/communities/$nextSlug');
+      } else if (editQuestions) {
+        await _load();
+      }
     } catch (e) {
       if (mounted) toast(context, e);
     } finally {
@@ -1295,12 +1324,21 @@ class _CommunitySettingsScreenState extends State<CommunitySettingsScreen> {
             LabeledField(label: tr('Сайт'), child: GcField(controller: website, label: 'https://', keyboard: TextInputType.url)),
             const SizedBox(height: 10),
             LabeledField(label: tr('Місто'), child: GcField(controller: city, label: tr('Місто'))),
-            if (privacy == 'closed' || type != 'public') ...[
+            if (data['isOwner'] == true && AppScope.read(context).session.pluginOn('join_forms')) ...[
               const SizedBox(height: 10),
               LabeledField(
                 label: tr('Анкета вступу'),
-                hint: tr('Кожне питання з нового рядка (до 5). Порожньо — без анкети.'),
-                child: GcField(controller: joinQuestions, label: tr('Питання для заявки'), maxLines: 6, minLines: 3),
+                hint: tr('Для закритої спільноти: до 5 питань, по одному в рядку. Відповіді — у заявці.'),
+                child: GcField(
+                  controller: joinQuestions,
+                  label: tr('Питання для заявки'),
+                  maxLines: 6,
+                  minLines: 3,
+                  onChanged: (value) {
+                    if (value.length <= 1500) return;
+                    joinQuestions.value = TextEditingValue(text: value.substring(0, 1500), selection: const TextSelection.collapsed(offset: 1500));
+                  },
+                ),
               ),
             ],
           ]),

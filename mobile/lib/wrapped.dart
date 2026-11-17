@@ -1,3 +1,7 @@
+import 'dart:async';
+import 'dart:typed_data';
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 
 import 'core/widgets/arctic_glass/arctic_fit_text.dart';
@@ -13,7 +17,7 @@ import 'widgets.dart';
 
 // «Підсумки року» — як на сайті (pages/wrapped.tsx): історія з карток, дотик праворуч — далі,
 // ліворуч — назад, утримання — пауза, картки йдуть самі. Порожні розділи пропускаються.
-// Дані — через міст /api/v1/site/wrapped. Поділитися — нативний Share з посиланням на картку.
+// Дані — через міст /api/v1/site/wrapped. Поділитися — картинка 1080×1350 у системне меню (share_plus).
 
 const _slideTime = Duration(seconds: 7);
 
@@ -53,6 +57,78 @@ String _num(int value) {
     out.write(s[i]);
   }
   return out.toString();
+}
+
+/// Ключові цифри картки, як summaryStats на сайті: не більше чотирьох ненульових.
+List<(int, String)> _shareStats(Map<String, dynamic> w) {
+  (int, String) stat(int value, String one, String few, String many) => (value, _n(value, one, few, many));
+  final posts = mapOf(w['posts']);
+  final social = mapOf(w['social']);
+  final music = mapOf(w['music']);
+  final cinema = mapOf(w['cinema']);
+  final games = mapOf(w['games']);
+  final all = <(int, String)>[
+    stat(intOf(w['active_days']), tr('день з GameCon'), tr('дні з GameCon'), tr('днів з GameCon')),
+    stat(intOf(posts['count']), tr('пост'), tr('пости'), tr('постів')),
+    stat(intOf(social['new_friends']), tr('новий друг'), tr('нові друзі'), tr('нових друзів')),
+    stat(intOf(music['plays']), tr('прослуховування'), tr('прослуховування'), tr('прослуховувань')),
+    stat(intOf(cinema['watched']), tr('перегляд'), tr('перегляди'), tr('переглядів')),
+    stat(intOf(games['play_days']), tr('ігровий день'), tr('ігрові дні'), tr('ігрових днів')),
+  ];
+  return [for (final item in all) if (item.$1 > 0) item].take(4).toList();
+}
+
+/// Картинка 1080×1350 для поширення: те саме, що canvas shareImage на сайті.
+Future<Uint8List?> wrappedSharePng(Map<String, dynamic> w) async {
+  const width = 1080.0;
+  const height = 1350.0;
+  final recorder = ui.PictureRecorder();
+  final canvas = Canvas(recorder, const Rect.fromLTWH(0, 0, width, height));
+  canvas.drawRect(const Rect.fromLTWH(0, 0, width, height), Paint()..color = const Color(0xFF050913));
+  void glow(Offset center, double radius, Color color) {
+    final paint = Paint()..shader = ui.Gradient.radial(center, radius, [color, const Color(0x00050913)]);
+    canvas.drawRect(const Rect.fromLTWH(0, 0, width, height), paint);
+  }
+
+  glow(const Offset(180, 160), 760, const Color.fromRGBO(47, 123, 255, 0.9));
+  glow(const Offset(960, 1250), 760, const Color.fromRGBO(34, 211, 238, 0.7));
+
+  TextStyle font(double size, FontWeight weight, Color color) => TextStyle(fontFamily: 'Montserrat', fontSize: size, fontWeight: weight, color: color, height: 1);
+
+  void paintText(String value, TextStyle style, Offset at, {double maxWidth = 900}) {
+    final painter = TextPainter(text: TextSpan(text: value, style: style), textDirection: TextDirection.ltr, maxLines: 1, ellipsis: '…')..layout(maxWidth: maxWidth);
+    painter.paint(canvas, at);
+    painter.dispose();
+  }
+
+  final user = mapOf(w['user']);
+  final name = text(user['name']) ?? '';
+  final persona = (_personas()[text(w['persona'])] ?? _personas()['newcomer']!).$1;
+  paintText(tr('Підсумки року · GameCon'), font(40, FontWeight.w600, Colors.white.withValues(alpha: 0.75)), const Offset(90, 100));
+  paintText('${intOf(w['year'])}', font(200, FontWeight.w800, Colors.white), const Offset(80, 170), maxWidth: 920);
+  paintText(name.length <= 28 ? name : name.substring(0, 28), font(56, FontWeight.w700, Colors.white), const Offset(90, 410));
+  paintText(persona, font(40, FontWeight.w500, Colors.white.withValues(alpha: 0.8)), const Offset(90, 486));
+
+  final stats = _shareStats(w);
+  for (var i = 0; i < stats.length; i++) {
+    final x = 90.0 + (i % 2) * 470;
+    final y = 640.0 + (i ~/ 2) * 260.0;
+    final rect = RRect.fromRectAndRadius(Rect.fromLTWH(x, y, 430, 220), const Radius.circular(36));
+    canvas.drawRRect(rect, Paint()..color = Colors.white.withValues(alpha: 0.08));
+    canvas.drawRRect(rect, Paint()
+      ..color = Colors.white.withValues(alpha: 0.18)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2);
+    paintText(_num(stats[i].$1), font(88, FontWeight.w800, Colors.white), Offset(x + 40, y + 36), maxWidth: 350);
+    paintText(stats[i].$2, font(34, FontWeight.w500, Colors.white.withValues(alpha: 0.75)), Offset(x + 40, y + 148), maxWidth: 350);
+  }
+
+  paintText('gamecon.online', font(36, FontWeight.w600, Colors.white.withValues(alpha: 0.7)), const Offset(90, 1220));
+  final image = await recorder.endRecording().toImage(width.toInt(), height.toInt());
+  final data = await image.toByteData(format: ui.ImageByteFormat.png);
+  image.dispose();
+  final bytes = data?.buffer.asUint8List();
+  return bytes == null ? null : Uint8List.fromList(bytes);
 }
 
 class WrappedScreen extends StatefulWidget {
@@ -155,28 +231,32 @@ class _Teaser extends StatelessWidget {
 }
 
 class _Button extends StatelessWidget {
-  const _Button({required this.label, required this.onTap, this.icon, this.light = false});
+  const _Button({required this.label, required this.onTap, this.icon, this.light = false, this.busy = false});
   final String label;
   final VoidCallback onTap;
   final IconData? icon;
   final bool light;
+  final bool busy;
 
   @override
   Widget build(BuildContext context) {
+    final ink = light ? const Color(0xFF050913) : Colors.white;
     return Material(
       color: light ? Colors.white : Colors.white.withValues(alpha: 0.12),
       shape: StadiumBorder(side: light ? BorderSide.none : BorderSide(color: Colors.white.withValues(alpha: 0.2))),
       child: InkWell(
         customBorder: const StadiumBorder(),
-        onTap: onTap,
+        onTap: busy ? null : onTap,
         child: Container(
           constraints: const BoxConstraints(minHeight: 50),
           padding: const EdgeInsets.symmetric(horizontal: 22),
           alignment: Alignment.center,
-          child: Row(mainAxisSize: MainAxisSize.min, children: [
-            if (icon != null) ...[Icon(icon, size: 20, color: light ? const Color(0xFF050913) : Colors.white), const SizedBox(width: 8)],
-            Text(label, style: body(15.5, weight: FontWeight.w600, color: light ? const Color(0xFF050913) : Colors.white)),
-          ]),
+          child: busy
+              ? SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2, color: ink))
+              : Row(mainAxisSize: MainAxisSize.min, children: [
+                  if (icon != null) ...[Icon(icon, size: 20, color: ink), const SizedBox(width: 8)],
+                  Text(label, style: body(15.5, weight: FontWeight.w600, color: ink)),
+                ]),
         ),
       ),
     );
@@ -202,8 +282,28 @@ class _StoryState extends State<_Story> with SingleTickerProviderStateMixin {
       if (status == AnimationStatus.completed) _go(1);
     });
   int index = 0;
+  bool sharing = false;
 
   bool get last => index == slides.length - 1;
+
+  /// Картинка підсумків у системне «Поділитися», як canvas на сайті.
+  Future<void> _shareImage() async {
+    if (sharing) return;
+    setState(() => sharing = true);
+    try {
+      final png = await wrappedSharePng(widget.w);
+      if (png == null) throw StateError('png');
+      final year = intOf(widget.w['year']);
+      await SharePlus.instance.share(ShareParams(
+        files: [XFile.fromData(png, mimeType: 'image/png', name: 'gamecon-$year.png')],
+        text: tr('Мій {year} у GameCon', {'year': year}),
+      ));
+    } catch (_) {
+      if (mounted) toast(context, tr('Не вдалося поділитися підсумками.'), kind: ToastKind.error);
+    } finally {
+      if (mounted) setState(() => sharing = false);
+    }
+  }
 
   @override
   void initState() {
@@ -538,14 +638,8 @@ class _StoryState extends State<_Story> with SingleTickerProviderStateMixin {
           label: tr('Поділитися'),
           icon: LucideIcons.share2,
           light: true,
-          onTap: () {
-            final name = text(user['name']) ?? 'GameCon';
-            final url = '${Api.root}/wrapped';
-            SharePlus.instance.share(ShareParams(
-              text: tr('Мій {year} у GameCon — {persona}. {url}', {'year': year, 'persona': persona.$1, 'url': url}),
-              subject: tr('{name}: підсумки {year}', {'name': name, 'year': year}),
-            ));
-          },
+          busy: sharing,
+          onTap: () => unawaited(_shareImage()),
         ),
         const SizedBox(height: 10),
         _Button(label: tr('До стрічки'), icon: LucideIcons.messageCircle, onTap: widget.onClose),
