@@ -64,7 +64,7 @@ export default function MusicUser({
                 </div>
             </div>
 
-            <Deferred data="nowPlaying" fallback={null}>
+            <Deferred data="nowPlaying" fallback={<span hidden />}>
                 {nowPlaying ? (
                     <div className="px-[var(--am-gutter)] pt-5 lg:max-w-xl">
                         <NowPlayingCard track={nowPlaying} />
