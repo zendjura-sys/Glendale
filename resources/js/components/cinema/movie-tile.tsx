@@ -2,6 +2,7 @@ import { Link } from '@inertiajs/react';
 import { ChevronLeft, ChevronRight, Clapperboard, Star } from 'lucide-react';
 import { useRef } from 'react';
 import type { ReactNode } from 'react';
+import { contentPrefetch } from '@/lib/prefetch';
 import { cn } from '@/lib/utils';
 import type { MovieCard } from '@/types';
 import { tr } from '@/lib/i18n';
@@ -86,7 +87,7 @@ export function MovieTile({
         <Link
             href={movie.href}
             className={cn('group block min-w-0', className)}
-            prefetch="hover"
+            prefetch={contentPrefetch()}
             cacheFor="1m"
         >
             <div className="relative aspect-[2/3] overflow-hidden rounded-2xl bg-white/[0.04] ring-1 ring-white/[0.08] transition duration-300 group-hover:-translate-y-1 group-hover:shadow-[0_18px_40px_-18px_rgb(124_92_255/0.9)] group-hover:ring-gc-lilac-400/50">

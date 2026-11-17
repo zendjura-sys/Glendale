@@ -1,6 +1,8 @@
 /**
  * Офлайн-режим сайту (public/sw.js): реєструємо service worker на всіх сторінках
  * і чистимо збережені сторінки при виході з акаунта.
+ * Після деплою новий SW (gc-static-v3) забирає контроль і один раз перезавантажує
+ * вкладку — інакше звичайний браузер лишається на старому JS, а інкогніто вже новий.
  */
 export const OFFLINE_PAGES_CACHE = 'gc-pages-v2';
 
@@ -11,9 +13,21 @@ export function registerOffline(): void {
         !import.meta.env.PROD
     )
         return;
+
+    // Один reload, коли новий SW став controlling (після skipWaiting + claim).
+    let refreshing = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (refreshing) return;
+        refreshing = true;
+        window.location.reload();
+    });
+
     window.addEventListener('load', () => {
         void navigator.serviceWorker
-            .register('/sw.js', { scope: '/' })
+            .register('/sw.js', { scope: '/', updateViaCache: 'none' })
+            .then((reg) => {
+                void reg.update();
+            })
             .catch(() => undefined);
     });
 }

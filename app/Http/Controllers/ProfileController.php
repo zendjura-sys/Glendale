@@ -148,16 +148,18 @@ class ProfileController extends Controller
             && $user->birthday->day === now()->day;
 
         $viewer = $request->user();
-        $compatibility = $viewer && $viewer->id !== $user->id && app(Plugins::class)->on('gamer_compatibility')
-            ? app(GamerCompatibility::class)->between($viewer, $user) : null;
+        // Важкі віджети — Inertia::defer (група widgets): перший кадр профілю без них,
+        // потім один догруз. На телефоні це прибирає довгий скелетон навігації.
+        $defer = 'widgets';
 
         return Inertia::render('profile/show', [
-            'compatibility' => $compatibility,
-            'cardShowcase' => $canSeeContent && app(ModuleManager::class)->enabled('quests') ? app(CardCollection::class)->showcase($user) : null,
-            'setup' => app(Plugins::class)->on('my_setup') ? app(MySetup::class)->visibleFor($user, $viewer) : null,
-            'profileTrack' => app(Plugins::class)->on('profile_track') && $canSeeContent ? ProfileTrack::of($user) : null,
-            'account' => app(Plugins::class)->on('account_types') ? $this->accountCard($user) : null,
-            'streamSchedule' => app(Plugins::class)->on('stream_schedule') && $canSeeContent ? app(StreamSchedule::class)->of($user) : null,
+            'compatibility' => Inertia::defer(fn () => $viewer && $viewer->id !== $user->id && app(Plugins::class)->on('gamer_compatibility')
+                ? app(GamerCompatibility::class)->between($viewer, $user) : null, $defer),
+            'cardShowcase' => Inertia::defer(fn () => $canSeeContent && app(ModuleManager::class)->enabled('quests') ? app(CardCollection::class)->showcase($user) : null, $defer),
+            'setup' => Inertia::defer(fn () => app(Plugins::class)->on('my_setup') ? app(MySetup::class)->visibleFor($user, $viewer) : null, $defer),
+            'profileTrack' => Inertia::defer(fn () => app(Plugins::class)->on('profile_track') && $canSeeContent ? ProfileTrack::of($user) : null, $defer),
+            'account' => Inertia::defer(fn () => app(Plugins::class)->on('account_types') ? $this->accountCard($user) : null, $defer),
+            'streamSchedule' => Inertia::defer(fn () => app(Plugins::class)->on('stream_schedule') && $canSeeContent ? app(StreamSchedule::class)->of($user) : null, $defer),
             'steamAchievements' => app(Plugins::class)->on('steam_achievements') && $user->steam_id !== null && ! $user->is_private,
             'profile' => [
                 ...$user->toCard(),
@@ -196,8 +198,8 @@ class ProfileController extends Controller
                 'note' => $mark?->note,
                 'list' => $mark?->list,
             ],
-            'steamLibrary' => $canSeeContent && $modules->enabled('games') ? app(SteamPresence::class)->library($user) : [],
-            'together' => $canSeeContent && ($modules->enabled('games') || $modules->enabled('servers')) ? app(PlayedTogether::class)->cards($user, owner: $viewer?->id === $user->id) : [],
+            'steamLibrary' => Inertia::defer(fn () => $canSeeContent && $modules->enabled('games') ? app(SteamPresence::class)->library($user) : [], $defer),
+            'together' => Inertia::defer(fn () => $canSeeContent && ($modules->enabled('games') || $modules->enabled('servers')) ? app(PlayedTogether::class)->cards($user, owner: $viewer?->id === $user->id) : [], $defer),
             'togetherOff' => $viewer?->id === $user->id && (bool) $user->pref('together_off'),
             'relation' => $relation,
             'canSeeContent' => $canSeeContent,
@@ -211,7 +213,7 @@ class ProfileController extends Controller
             'anniversaryYears' => $friendship?->accepted_at ? now()->year - $friendship->accepted_at->year : 0,
             'birthdayToday' => $birthdayToday,
             'showVisitors' => $showVisitors,
-            'visitors' => $showVisitors
+            'visitors' => Inertia::defer(fn () => $showVisitors
                 ? ProfileVisit::query()
                     ->where('user_id', $user->id)
                     ->with('visitor')
@@ -231,7 +233,7 @@ class ProfileController extends Controller
                     ->filter()
                     ->values()
                     ->all()
-                : [],
+                : [], $defer),
             'blockOrder' => ProfileBlocks::visible($user->pref('profile_blocks')),
             'canMessage' => $viewer !== null && $messenger->canMessage($viewer, $user),
             'canPost' => $viewer !== null && in_array($relation, [FriendshipService::SELF, FriendshipService::FRIENDS], true),
@@ -252,28 +254,28 @@ class ProfileController extends Controller
                 ->all() : [],
             'photos' => $photoItems,
             // «Готовий грати зараз» — бачать ті, кому видно профіль.
-            'ready' => $viewer !== null && $canSeeContent && app(Plugins::class)->on('ready_to_play') ? app(ReadyBoard::class)->mine($user)?->toCard() : null,
+            'ready' => Inertia::defer(fn () => $viewer !== null && $canSeeContent && app(Plugins::class)->on('ready_to_play') ? app(ReadyBoard::class)->mine($user)?->toCard() : null, $defer),
             // Беклог ігор: у що грає зараз і скільки ігор у кожному стані.
-            'backlog' => $viewer !== null && $canSeeContent && $modules->enabled('games') && app(Plugins::class)->on('game_backlog')
+            'backlog' => Inertia::defer(fn () => $viewer !== null && $canSeeContent && $modules->enabled('games') && app(Plugins::class)->on('game_backlog')
                 ? [...app(Backlog::class)->summary($user), 'href' => '/games/backlog/'.$user->username]
-                : null,
-            'achievements' => app(Achievements::class)->for($user),
+                : null, $defer),
+            'achievements' => Inertia::defer(fn () => app(Achievements::class)->for($user), $defer),
             // Багаторівневі значки (стаж, ігри, GameCon+, підтримка спільноти…) — рядок у профілі й екран «Значки».
-            'tieredBadges' => $canSeeContent ? app(TieredBadges::class)->for($user) : [],
+            'tieredBadges' => Inertia::defer(fn () => $canSeeContent ? app(TieredBadges::class)->for($user) : [], $defer),
             // Очки за завдання — внутрішня «валюта» профілю (тільки показ).
-            'questPoints' => $canSeeContent && $modules->enabled('quests') ? app(TieredBadges::class)->questPoints($user) : null,
+            'questPoints' => Inertia::defer(fn () => $canSeeContent && $modules->enabled('quests') ? app(TieredBadges::class)->questPoints($user) : null, $defer),
             // Прив’язані акаунти з посиланнями.
             'linkedAccounts' => $canSeeContent ? $this->linkedAccounts($user) : [],
             // Вкладки «Активність» і «Вішлист»: чи можна глядачеві бачити вішлист.
             'wishlistVisible' => $this->wishlistVisible($user, $viewer, $relation),
             'stream' => app(NetworkModes::class)->featuresFor($viewer)['live'] && ($stream = UserStream::query()->where('user_id', $user->id)->first()) ? app(LiveStreams::class)->card($stream, $request->getHost()) : null,
-            'characters' => $canSeeContent && $modules->enabled('servers') ? CharacterController::cards(player: $user) : [],
+            'characters' => Inertia::defer(fn () => $canSeeContent && $modules->enabled('servers') ? CharacterController::cards(player: $user) : [], $defer),
             'photosHref' => $modules->enabled('photos') ? '/photos/u/'.$user->username : null,
             'audio' => $modules->enabled('music') && $canSeeContent ? [
                 'href' => '/music/u/'.$user->username,
                 'tracks' => $user->library()->count(),
             ] : null,
-            'nowPlaying' => $modules->enabled('music') && $canSeeContent ? Inertia::defer(fn () => app(MusicService::class)->currentFor($user, $viewer)) : null,
+            'nowPlaying' => $modules->enabled('music') && $canSeeContent ? Inertia::defer(fn () => app(MusicService::class)->currentFor($user, $viewer), $defer) : null,
             'posts' => Inertia::scroll(fn () => $posts->setCollection(collect($items))),
         ])->withViewData(PageSeo::profile($user, $canSeeContent));
     }

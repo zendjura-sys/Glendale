@@ -1,10 +1,11 @@
 /*
  * GameCon: сповіщення сайту (Web Push) і офлайн-режим.
- * Файли збірки (/build/) — з кешу; стрічка, повідомлення й сповіщення — спершу мережа,
- * без мережі — остання збережена версія; інші сторінки без мережі — «Немає мережі».
+ * Файли збірки (/build/) — network-first (щоб після деплою не лишався старий JS);
+ * стрічка, повідомлення й сповіщення — спершу мережа, без мережі — остання версія;
+ * інші сторінки без мережі — «Немає мережі».
  * Кеш сторінок очищається при виході з акаунта.
  */
-const STATIC = 'gc-static-v1';
+const STATIC = 'gc-static-v3';
 const PAGES = 'gc-pages-v2';
 const OFFLINE = '/offline.html';
 /** Що відкривається без інтернету (адреса сторінки або її Inertia-запит). */
@@ -46,6 +47,9 @@ self.addEventListener('fetch', (event) => {
     const build = url.pathname.startsWith('/build/');
     if (url.origin !== self.location.origin && !build) return;
 
+    // Сам SW ніколи не з кешу — інакше клієнт лишається на старій логіці.
+    if (url.pathname === '/sw.js') return;
+
     // Вихід або вхід — чужі сторінки в кеші не лишаємо.
     if (/^\/(login|logout)/.test(url.pathname)) {
         event.waitUntil(caches.delete(PAGES));
@@ -54,14 +58,20 @@ self.addEventListener('fetch', (event) => {
     }
 
     if (build) {
+        // Network-first: після деплою беремо свіжий hashed-файл, офлайн — з кешу.
         event.respondWith(
             caches.open(STATIC).then(async (cache) => {
-                const hit = await cache.match(request);
-                if (hit) return hit;
-                const response = await fetch(request);
-                if (response.ok) cache.put(request, response.clone());
+                try {
+                    const response = await fetch(request);
+                    if (response.ok) cache.put(request, response.clone());
 
-                return response;
+                    return response;
+                } catch {
+                    const hit = await cache.match(request);
+                    if (hit) return hit;
+
+                    return Response.error();
+                }
             }),
         );
 
