@@ -15,13 +15,14 @@ use Illuminate\Support\Carbon;
  * @property int $host_id
  * @property string $title
  * @property string|null $category
+ * @property array<int, array{provider: string, name: string, url: string}>|null $donations
  * @property string $status live | ended
  * @property int $viewers
  * @property int $peak_viewers
  * @property Carbon|null $started_at
  * @property Carbon|null $ended_at
  */
-#[Fillable(['host_id', 'title', 'category', 'status', 'viewers', 'peak_viewers', 'started_at', 'ended_at'])]
+#[Fillable(['host_id', 'title', 'category', 'donations', 'status', 'viewers', 'peak_viewers', 'started_at', 'ended_at'])]
 class Livecast extends Model
 {
     public const LIVE = 'live';
@@ -33,7 +34,11 @@ class Livecast extends Model
     /** @return array<string, string> */
     protected function casts(): array
     {
-        return ['started_at' => 'datetime', 'ended_at' => 'datetime'];
+        return [
+            'started_at' => 'datetime',
+            'ended_at' => 'datetime',
+            'donations' => 'array',
+        ];
     }
 
     /** @return BelongsTo<User, $this> */

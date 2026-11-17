@@ -390,6 +390,8 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::post('{livecast}/leave', 'leave')->name('leave');
         Route::post('{livecast}/end', 'end')->name('end');
         Route::post('{livecast}/messages', 'message')->middleware('throttle:60,1')->name('messages');
+        Route::post('{livecast}/gifts', 'gift')->middleware('throttle:30,1')->name('gifts');
+        Route::put('{livecast}/donations', 'donations')->middleware('throttle:20,1')->name('donations');
     });
     // Шоу наживо: сцена, гості з питанням на таймері, слухачі.
     Route::prefix('shows')->name('shows.')->controller(LiveShowController::class)->whereNumber(['show', 'user'])->group(function () {

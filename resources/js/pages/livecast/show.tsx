@@ -1,42 +1,39 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link } from "@inertiajs/react";
 import {
     ArrowLeft,
+    ExternalLink,
+    Gift,
+    HeartHandshake,
     Loader2,
     LogOut,
-    MonitorUp,
     Radio,
     Send,
     Users,
-    Video,
-    VideoOff,
-} from 'lucide-react';
+} from "lucide-react";
 import {
     useCallback,
     useEffect,
     useRef,
     useState,
     type FormEvent,
-    type ReactNode,
-} from 'react';
-import { toast } from 'sonner';
-import { UserAvatar } from '@/components/gc/user-avatar';
-import { Input } from '@/components/ui/input';
-import { api, ApiError } from '@/lib/api';
-import { tr } from '@/lib/i18n';
-import { cn } from '@/lib/utils';
-import {
-    joinBroadcast,
-    leaveVoice,
-    toggleCamera,
-    toggleMic,
-    toggleScreenShare,
-    useVoice,
-} from '@/lib/voice';
-import type { LiveCastCard } from '@/pages/livecast/index';
-import type { UserCard } from '@/types';
+} from "react";
+import { toast } from "sonner";
+import { UserAvatar } from "@/components/gc/user-avatar";
+import { Input } from "@/components/ui/input";
+import { api, ApiError } from "@/lib/api";
+import { tr } from "@/lib/i18n";
+import { cn } from "@/lib/utils";
+import { joinBroadcast, leaveVoice, useVoice } from "@/lib/voice";
+import type { LiveCastCard, LiveCastDonation } from "@/pages/livecast/index";
+import type { UserCard } from "@/types";
+
+type StreamGift = { key: string; emoji: string; label: string };
 
 type ChatMsg = {
     id: number;
+    kind: string;
+    gift_key: string | null;
+    gift: StreamGift | null;
     body: string;
     created_at: string | null;
     user: UserCard | null;
@@ -45,67 +42,66 @@ type ChatMsg = {
 type State = {
     broadcast: LiveCastCard & { ended_at?: string | null };
     messages: ChatMsg[];
+    gifts: StreamGift[];
     me: { is_host: boolean; can_publish: boolean } | null;
     can_manage: boolean;
+    go_live_on_app?: boolean;
 };
 
-/** Сторінка стріму LiveCast: відео, чат, керування ефіром для ведучого. */
+/** Сторінка стріму на сайті: перегляд, чат, подарунки, донати. Без виходу в ефір. */
 export default function LiveCastShow(initial: State) {
     const [state, setState] = useState<State>(initial);
-    const [text, setText] = useState('');
+    const [text, setText] = useState("");
+    const [giftBusy, setGiftBusy] = useState<string | null>(null);
     const voice = useVoice();
     const chatEnd = useRef<HTMLDivElement>(null);
     const { broadcast: stream } = state;
     const inStream =
-        voice.kind === 'broadcast' &&
+        voice.kind === "broadcast" &&
         voice.roomId === stream.id &&
-        voice.status !== 'idle';
-    const isHost = state.me?.is_host === true;
+        voice.status !== "idle";
+    const gifts = state.gifts?.length
+        ? state.gifts
+        : [
+              { key: "rose", emoji: "🌹", label: tr("Троянда") },
+              { key: "fire", emoji: "🔥", label: tr("Вогонь") },
+              { key: "heart", emoji: "💜", label: tr("Серце") },
+              { key: "gg", emoji: "🎮", label: "GG" },
+          ];
+    const donations: LiveCastDonation[] = stream.donations ?? [];
 
     const refresh = useCallback(async () => {
         try {
-            setState(await api<State>('GET', `/livecast/${stream.id}/state`));
+            setState(await api<State>("GET", `/livecast/${stream.id}/state`));
         } catch {
             // Мережа — наступне опитування.
         }
     }, [stream.id]);
 
     useEffect(() => {
-        const ms = stream.status === 'live' ? 2500 : 15000;
+        const ms = stream.status === "live" ? 2500 : 15000;
         const id = window.setInterval(refresh, ms);
 
         return () => window.clearInterval(id);
     }, [refresh, stream.status]);
 
     useEffect(() => {
-        if (stream.status === 'ended' && inStream) void leaveVoice();
+        if (stream.status === "ended" && inStream) void leaveVoice();
     }, [stream.status, inStream]);
 
     useEffect(() => {
-        chatEnd.current?.scrollIntoView({ behavior: 'smooth' });
+        chatEnd.current?.scrollIntoView({ behavior: "smooth" });
     }, [state.messages.length]);
 
     const connect = async () => {
         try {
             await joinBroadcast({ id: stream.id, title: stream.title });
-            if (isHost) {
-                toggleCamera();
-            }
         } catch (e) {
             toast.error(
                 e instanceof ApiError
                     ? e.message
-                    : tr('Не вдалося підключитись'),
+                    : tr("Не вдалося підключитись"),
             );
-        }
-    };
-
-    const end = async () => {
-        try {
-            setState(await api<State>('POST', `/livecast/${stream.id}/end`));
-            await leaveVoice();
-        } catch (e) {
-            toast.error(e instanceof ApiError ? e.message : tr('Не вдалося'));
         }
     };
 
@@ -113,18 +109,35 @@ export default function LiveCastShow(initial: State) {
         e.preventDefault();
         const body = text.trim();
         if (!body) return;
-        setText('');
+        setText("");
         try {
             setState(
-                await api<State>('POST', `/livecast/${stream.id}/messages`, {
+                await api<State>("POST", `/livecast/${stream.id}/messages`, {
                     body,
                 }),
             );
         } catch (err) {
             toast.error(
-                err instanceof ApiError ? err.message : tr('Не вдалося'),
+                err instanceof ApiError ? err.message : tr("Не вдалося"),
             );
             setText(body);
+        }
+    };
+
+    const sendGift = async (key: string) => {
+        setGiftBusy(key);
+        try {
+            setState(
+                await api<State>("POST", `/livecast/${stream.id}/gifts`, {
+                    gift: key,
+                }),
+            );
+        } catch (err) {
+            toast.error(
+                err instanceof ApiError ? err.message : tr("Не вдалося"),
+            );
+        } finally {
+            setGiftBusy(null);
         }
     };
 
@@ -138,12 +151,12 @@ export default function LiveCastShow(initial: State) {
                     <div className="flex items-center gap-2">
                         <Link
                             href="/livecast"
-                            aria-label={tr('До LiveCast')}
+                            aria-label={tr("До LiveCast")}
                             className="grid size-10 place-items-center rounded-xl text-white/70 hover:bg-white/[0.06]"
                         >
                             <ArrowLeft className="size-5" />
                         </Link>
-                        {stream.status === 'live' && (
+                        {stream.status === "live" && (
                             <span className="rounded-md bg-rose-500 px-1.5 py-0.5 text-xs font-bold text-white">
                                 LIVE
                             </span>
@@ -163,34 +176,11 @@ export default function LiveCastShow(initial: State) {
                                 <VideoMount tile={primary} />
                             ) : (
                                 <div className="absolute inset-0 grid place-items-center text-white/50">
-                                    {inStream ? (
-                                        <p className="text-sm">
-                                            {isHost
-                                                ? tr(
-                                                      'Увімкніть камеру або поділіться екраном',
-                                                  )
-                                                : tr('Очікування відео…')}
-                                        </p>
-                                    ) : (
-                                        <p className="text-sm">
-                                            {tr('Підключіться, щоб дивитись')}
-                                        </p>
-                                    )}
-                                </div>
-                            )}
-                            {voice.videos.length > 1 && (
-                                <div className="absolute right-3 bottom-3 flex gap-2">
-                                    {voice.videos
-                                        .filter((v) => v.id !== primary?.id)
-                                        .slice(0, 2)
-                                        .map((tile) => (
-                                            <div
-                                                key={tile.id}
-                                                className="h-24 w-36 overflow-hidden rounded-xl border border-white/15"
-                                            >
-                                                <VideoMount tile={tile} />
-                                            </div>
-                                        ))}
+                                    <p className="text-sm">
+                                        {inStream
+                                            ? tr("Очікування відео…")
+                                            : tr("Підключіться, щоб дивитись")}
+                                    </p>
                                 </div>
                             )}
                         </div>
@@ -219,81 +209,67 @@ export default function LiveCastShow(initial: State) {
                             </div>
 
                             <div className="flex flex-wrap gap-2">
-                                {!inStream && stream.status === 'live' && (
+                                {!inStream && stream.status === "live" && (
                                     <button
                                         type="button"
                                         onClick={() => void connect()}
                                         className="inline-flex h-10 items-center gap-2 rounded-xl bg-rose-500 px-4 text-sm font-bold text-white"
                                     >
-                                        {voice.status === 'connecting' ? (
+                                        {voice.status === "connecting" ? (
                                             <Loader2 className="size-4 animate-spin" />
                                         ) : (
                                             <Radio className="size-4" />
                                         )}
-                                        {isHost
-                                            ? tr('Вийти в ефір')
-                                            : tr('Дивитись')}
+                                        {tr("Дивитись")}
                                     </button>
                                 )}
-                                {inStream && isHost && (
-                                    <>
-                                        <Ctrl
-                                            onClick={toggleMic}
-                                            active={voice.micOn}
-                                            label={
-                                                voice.micOn
-                                                    ? tr('Мікрофон')
-                                                    : tr('Мікрофон вимк.')
-                                            }
-                                        />
-                                        <Ctrl
-                                            onClick={toggleCamera}
-                                            active={voice.cameraOn}
-                                            label={
-                                                voice.cameraOn
-                                                    ? tr('Камера')
-                                                    : tr('Камера вимк.')
-                                            }
-                                            icon={
-                                                voice.cameraOn ? (
-                                                    <Video className="size-4" />
-                                                ) : (
-                                                    <VideoOff className="size-4" />
-                                                )
-                                            }
-                                        />
-                                        <Ctrl
-                                            onClick={toggleScreenShare}
-                                            active={voice.screenShareOn}
-                                            label={tr('Екран')}
-                                            icon={
-                                                <MonitorUp className="size-4" />
-                                            }
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={() => void end()}
-                                            className="inline-flex h-10 items-center gap-2 rounded-xl bg-rose-600 px-4 text-sm font-bold text-white"
-                                        >
-                                            <LogOut className="size-4" />
-                                            {tr('Завершити')}
-                                        </button>
-                                    </>
-                                )}
-                                {inStream && !isHost && (
+                                {inStream && (
                                     <button
                                         type="button"
                                         onClick={() => void leaveVoice()}
                                         className="inline-flex h-10 items-center gap-2 rounded-xl bg-white/[0.08] px-4 text-sm font-semibold text-white"
                                     >
                                         <LogOut className="size-4" />
-                                        {tr('Вийти')}
+                                        {tr("Вийти")}
                                     </button>
                                 )}
+                                {state.me?.is_host &&
+                                    !state.me.can_publish &&
+                                    stream.status === "live" && (
+                                        <span className="inline-flex h-10 items-center gap-2 rounded-xl bg-white/[0.06] px-3 text-xs text-white/55">
+                                            {tr(
+                                                "Вихід в ефір — у застосунку GameCon",
+                                            )}
+                                        </span>
+                                    )}
                             </div>
-                            {stream.status === 'ended' && (
+
+                            {donations.length > 0 && (
+                                <div className="space-y-2 border-t border-white/10 pt-3">
+                                    <p className="flex items-center gap-1.5 text-xs font-semibold tracking-wide text-white/45 uppercase">
+                                        <HeartHandshake className="size-3.5" />
+                                        {tr("Підтримати стрім")}
+                                    </p>
+                                    <div className="flex flex-wrap gap-2">
+                                        {donations.map((d) => (
+                                            <a
+                                                key={`${d.provider}-${d.url}`}
+                                                href={d.url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-emerald-500/15 px-3 text-sm font-semibold text-emerald-200 hover:bg-emerald-500/25"
+                                            >
+                                                {d.name}
+                                                <ExternalLink className="size-3.5 opacity-70" />
+                                            </a>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {stream.status === "ended" && (
                                 <p className="text-sm text-white/55">
-                                    {tr('Стрім завершено · пік глядачів: {n}', {
+                                    {tr("Стрім завершено · пік глядачів: {n}", {
                                         n: stream.peak_viewers,
                                     })}
                                 </p>
@@ -304,16 +280,23 @@ export default function LiveCastShow(initial: State) {
 
                 <aside className="gc-solid flex h-[min(70vh,640px)] flex-col rounded-3xl p-3">
                     <p className="mb-2 px-1 text-xs font-semibold tracking-wide text-white/45 uppercase">
-                        {tr('Чат стріму')}
+                        {tr("Чат стріму")}
                     </p>
                     <div className="min-h-0 flex-1 space-y-2 overflow-y-auto px-1">
                         {state.messages.length === 0 && (
                             <p className="py-6 text-center text-sm text-white/40">
-                                {tr('Поки тихо — напишіть першим')}
+                                {tr("Поки тихо — напишіть першим")}
                             </p>
                         )}
                         {state.messages.map((m) => (
-                            <div key={m.id} className="flex gap-2 text-sm">
+                            <div
+                                key={m.id}
+                                className={cn(
+                                    "flex gap-2 text-sm",
+                                    m.kind === "gift" &&
+                                        "rounded-xl bg-rose-500/10 px-2 py-1.5",
+                                )}
+                            >
                                 {m.user ? (
                                     <UserAvatar
                                         user={m.user}
@@ -325,68 +308,67 @@ export default function LiveCastShow(initial: State) {
                                 )}
                                 <div className="min-w-0">
                                     <span className="font-semibold text-white/80">
-                                        {m.user?.name ?? '…'}
-                                    </span>{' '}
-                                    <span className="break-words text-white/70">
-                                        {m.body}
-                                    </span>
+                                        {m.user?.name ?? "…"}
+                                    </span>{" "}
+                                    {m.kind === "gift" && m.gift ? (
+                                        <span className="font-semibold text-rose-200">
+                                            {m.gift.emoji} {m.gift.label}
+                                        </span>
+                                    ) : (
+                                        <span className="break-words text-white/70">
+                                            {m.body}
+                                        </span>
+                                    )}
                                 </div>
                             </div>
                         ))}
                         <div ref={chatEnd} />
                     </div>
-                    {stream.status === 'live' && (
-                        <form
-                            onSubmit={send}
-                            className="mt-2 flex gap-2 border-t border-white/10 pt-2"
-                        >
-                            <Input
-                                value={text}
-                                onChange={(e) => setText(e.target.value)}
-                                maxLength={280}
-                                placeholder={tr('Повідомлення…')}
-                                className="flex-1"
-                            />
-                            <button
-                                type="submit"
-                                aria-label={tr('Надіслати')}
-                                className="grid size-10 place-items-center rounded-xl bg-white/[0.08] text-white hover:bg-white/15"
-                            >
-                                <Send className="size-4" />
-                            </button>
-                        </form>
+                    {stream.status === "live" && (
+                        <div className="mt-2 space-y-2 border-t border-white/10 pt-2">
+                            <div className="flex gap-1.5 overflow-x-auto pb-0.5">
+                                {gifts.map((g) => (
+                                    <button
+                                        key={g.key}
+                                        type="button"
+                                        disabled={giftBusy === g.key}
+                                        title={g.label}
+                                        onClick={() => void sendGift(g.key)}
+                                        className="grid size-9 shrink-0 place-items-center rounded-xl bg-white/[0.06] text-lg hover:bg-white/12 disabled:opacity-50"
+                                    >
+                                        {giftBusy === g.key ? (
+                                            <Loader2 className="size-4 animate-spin text-white/70" />
+                                        ) : (
+                                            g.emoji
+                                        )}
+                                    </button>
+                                ))}
+                                <span className="ml-1 flex items-center gap-1 text-[10px] font-semibold tracking-wide text-white/35 uppercase">
+                                    <Gift className="size-3" />
+                                    {tr("Подарунки")}
+                                </span>
+                            </div>
+                            <form onSubmit={send} className="flex gap-2">
+                                <Input
+                                    value={text}
+                                    onChange={(e) => setText(e.target.value)}
+                                    maxLength={280}
+                                    placeholder={tr("Повідомлення…")}
+                                    className="flex-1"
+                                />
+                                <button
+                                    type="submit"
+                                    aria-label={tr("Надіслати")}
+                                    className="grid size-10 place-items-center rounded-xl bg-white/[0.08] text-white hover:bg-white/15"
+                                >
+                                    <Send className="size-4" />
+                                </button>
+                            </form>
+                        </div>
                     )}
                 </aside>
             </div>
         </>
-    );
-}
-
-function Ctrl({
-    onClick,
-    active,
-    label,
-    icon,
-}: {
-    onClick: () => void;
-    active: boolean;
-    label: string;
-    icon?: ReactNode;
-}) {
-    return (
-        <button
-            type="button"
-            onClick={onClick}
-            className={cn(
-                'inline-flex h-10 items-center gap-2 rounded-xl px-3 text-sm font-semibold',
-                active
-                    ? 'bg-white/[0.08] text-white'
-                    : 'bg-rose-500/15 text-rose-200',
-            )}
-        >
-            {icon}
-            {label}
-        </button>
     );
 }
 

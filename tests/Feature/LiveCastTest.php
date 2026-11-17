@@ -3,7 +3,9 @@
 namespace Tests\Feature;
 
 use App\Models\Livecast;
+use App\Models\LivecastMessage;
 use App\Models\User;
+use App\Services\Auth\ApiTokens;
 use App\Support\Settings\SiteSettings;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
@@ -25,19 +27,49 @@ class LiveCastTest extends TestCase
         $settings->putSecret('livekit_api_secret', 'test-livekit-secret-0123456789');
     }
 
-    public function test_host_starts_joins_with_video_sources_chats_and_ends(): void
+    private function appToken(User $user): string
+    {
+        return app(ApiTokens::class)->issue($user, 'android');
+    }
+
+    public function test_host_starts_from_app_with_donations_gifts_and_web_cannot_publish(): void
     {
         $host = User::factory()->create();
         $viewer = User::factory()->create();
+        $hostToken = $this->appToken($host);
+        $viewerToken = $this->appToken($viewer);
 
-        $this->actingAs($host)->postJson(route('livecast.store'), ['title' => 'Raid boss', 'category' => 'MMO'])
+        // З сайту стрімити не можна.
+        $this->actingAs($host)->postJson(route('livecast.store'), ['title' => 'Raid boss'])
+            ->assertForbidden();
+
+        $this->withToken($hostToken)->postJson('/api/v1/site/livecast', [
+            'title' => 'Raid boss',
+            'category' => 'MMO',
+            'donations' => [
+                ['provider' => 'donatik', 'url' => 'https://donatik.ua/streamer'],
+                ['provider' => 'donatello', 'url' => 'https://donatello.to/streamer'],
+            ],
+        ])
             ->assertCreated()
             ->assertJsonPath('broadcast.title', 'Raid boss')
-            ->assertJsonPath('broadcast.status', Livecast::LIVE);
+            ->assertJsonPath('broadcast.status', Livecast::LIVE)
+            ->assertJsonCount(2, 'broadcast.donations')
+            ->assertJsonPath('broadcast.donations.0.provider', 'donatik')
+            ->assertJsonPath('broadcast.donations.1.provider', 'donatello');
+
+        // Чужі майданчики (не Donatik/Donatello) відхиляє валідація.
+        $this->withToken($hostToken)->postJson('/api/v1/site/livecast', [
+            'title' => 'Other',
+            'donations' => [
+                ['provider' => 'donatepay', 'url' => 'https://donatepay.ru/@x'],
+            ],
+        ])->assertStatus(422);
 
         $stream = Livecast::query()->sole();
 
-        $token = $this->actingAs($host)->postJson(route('livecast.join', $stream))
+        // Ведучий з застосунку може публікувати.
+        $token = $this->withToken($hostToken)->postJson("/api/v1/site/livecast/{$stream->id}/join")
             ->assertOk()
             ->json('token');
         $parts = explode('.', (string) $token);
@@ -47,8 +79,14 @@ class LiveCastTest extends TestCase
             $payload['video']['canPublishSources'] ?? [],
         );
 
-        $viewerToken = $this->actingAs($viewer)->postJson(route('livecast.join', $stream))->assertOk()->json('token');
-        $viewerParts = explode('.', (string) $viewerToken);
+        // Той самий ведучий через веб-маршрут — лише глядач (без publish).
+        $webToken = $this->actingAs($host)->postJson(route('livecast.join', $stream))->assertOk()->json('token');
+        $webParts = explode('.', (string) $webToken);
+        $webPayload = json_decode((string) base64_decode(strtr($webParts[1], '-_', '+/').str_repeat('=', (4 - strlen($webParts[1]) % 4) % 4)), true);
+        $this->assertFalse($webPayload['video']['canPublish'] ?? true);
+
+        $viewerJoin = $this->withToken($viewerToken)->postJson("/api/v1/site/livecast/{$stream->id}/join")->assertOk()->json('token');
+        $viewerParts = explode('.', (string) $viewerJoin);
         $viewerPayload = json_decode((string) base64_decode(strtr($viewerParts[1], '-_', '+/').str_repeat('=', (4 - strlen($viewerParts[1]) % 4) % 4)), true);
         $this->assertFalse($viewerPayload['video']['canPublish'] ?? true);
 
@@ -56,7 +94,12 @@ class LiveCastTest extends TestCase
             ->assertOk()
             ->assertJsonPath('messages.0.body', 'GG');
 
-        $this->actingAs($host)->postJson(route('livecast.end', $stream))->assertOk()
+        $this->actingAs($viewer)->postJson(route('livecast.gifts', $stream), ['gift' => 'rose'])
+            ->assertOk()
+            ->assertJsonPath('messages.1.kind', LivecastMessage::GIFT)
+            ->assertJsonPath('messages.1.gift_key', 'rose');
+
+        $this->withToken($hostToken)->postJson("/api/v1/site/livecast/{$stream->id}/end")->assertOk()
             ->assertJsonPath('broadcast.status', Livecast::ENDED);
         $this->assertSame(Livecast::ENDED, $stream->fresh()->status);
     }
@@ -64,8 +107,9 @@ class LiveCastTest extends TestCase
     public function test_one_live_stream_per_host(): void
     {
         $host = User::factory()->create();
-        $this->actingAs($host)->postJson(route('livecast.store'), ['title' => 'First'])->assertCreated();
-        $this->actingAs($host)->postJson(route('livecast.store'), ['title' => 'Second'])->assertStatus(422);
+        $token = $this->appToken($host);
+        $this->withToken($token)->postJson('/api/v1/site/livecast', ['title' => 'First'])->assertCreated();
+        $this->withToken($token)->postJson('/api/v1/site/livecast', ['title' => 'Second'])->assertStatus(422);
         $this->assertSame(1, Livecast::query()->where('status', Livecast::LIVE)->count());
     }
 
@@ -79,7 +123,7 @@ class LiveCastTest extends TestCase
             ->assertJsonPath('live', 0)
             ->assertJsonPath('viewers', 0);
 
-        $this->actingAs($host)->postJson(route('livecast.store'), ['title' => 'Boss'])->assertCreated();
+        $this->withToken($this->appToken($host))->postJson('/api/v1/site/livecast', ['title' => 'Boss'])->assertCreated();
         $stream = Livecast::query()->sole();
         $this->actingAs($viewer)->postJson(route('livecast.join', $stream))->assertOk();
 
@@ -88,5 +132,16 @@ class LiveCastTest extends TestCase
             ->assertJsonPath('live', 1)
             ->json();
         $this->assertGreaterThanOrEqual(1, (int) $pulse['viewers']);
+    }
+
+    public function test_catalog_exposes_donatik_donatello_presets(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user)->getJson(route('livecast.index'))
+            ->assertOk()
+            ->assertJsonPath('go_live_on_app', true)
+            ->assertJsonPath('donation_presets.0.key', 'donatik')
+            ->assertJsonPath('donation_presets.1.key', 'donatello')
+            ->assertJsonCount(2, 'donation_presets');
     }
 }

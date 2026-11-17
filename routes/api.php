@@ -817,6 +817,8 @@ Route::prefix('v1')->group(function () {
                 Route::post('{livecast}/leave', 'leave');
                 Route::post('{livecast}/end', 'end');
                 Route::post('{livecast}/messages', 'message')->middleware('throttle:60,1');
+                Route::post('{livecast}/gifts', 'gift')->middleware('throttle:30,1');
+                Route::put('{livecast}/donations', 'donations')->middleware('throttle:20,1');
             });
             // Шоу наживо: сцена, гості з питанням на таймері, слухачі.
             Route::prefix('shows')->controller(LiveShowController::class)->whereNumber(['show', 'user'])->group(function () {

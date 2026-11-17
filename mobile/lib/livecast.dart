@@ -3,8 +3,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'api.dart';
+import 'core/widgets/arctic_glass/arctic_glass.dart';
 import 'i18n.dart';
 import 'state.dart';
 import 'theme.dart';
@@ -13,6 +15,7 @@ import 'widgets.dart';
 import 'skeletons.dart';
 
 /// LiveCast — нативні відеостріми (окремо від GameCast).
+/// Вихід в ефір — лише в застосунку; веб — перегляд / чат / подарунки / донати.
 class LiveCastScreen extends StatefulWidget {
   const LiveCastScreen({super.key});
 
@@ -43,16 +46,41 @@ class _LiveCastScreenState extends State<LiveCastScreen> {
   Future<void> _start() async {
     final title = TextEditingController();
     final category = TextEditingController();
+    final donatik = TextEditingController();
+    final donatello = TextEditingController();
+    final presets = maps(page?['donation_presets']);
     final id = await showGcSheet<int>(
       context,
       title: 'LiveCast',
-      subtitle: tr('Стрім камерою або екраном через VoiceKit.'),
+      subtitle: tr('Стрім камерою або екраном. Донати — Donatik і Donatello.'),
       builder: (sheet) => Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           TextField(controller: title, autofocus: true, maxLength: 80, decoration: InputDecoration(hintText: tr('Назва стріму'), counterText: '')),
           const SizedBox(height: 10),
           TextField(controller: category, maxLength: 60, decoration: InputDecoration(hintText: tr('Категорія (необов’язково)'), counterText: '')),
+          const SizedBox(height: 14),
+          Text(tr('Донат-лінки (необов’язково)'), style: body(12, color: muted, weight: FontWeight.w600)),
+          const SizedBox(height: 8),
+          TextField(
+            controller: donatik,
+            keyboardType: TextInputType.url,
+            decoration: InputDecoration(
+              hintText: presets.isNotEmpty
+                  ? text(presets.firstWhere((p) => text(p['key']) == 'donatik', orElse: () => const {})['placeholder']) ?? 'https://donatik.ua/…'
+                  : 'https://donatik.ua/…',
+              labelText: 'Donatik',
+            ),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: donatello,
+            keyboardType: TextInputType.url,
+            decoration: InputDecoration(
+              hintText: 'https://donatello.to/…',
+              labelText: 'Donatello',
+            ),
+          ),
           const SizedBox(height: 14),
           PrimaryButton(
             label: tr('Почати стрім'),
@@ -63,10 +91,18 @@ class _LiveCastScreenState extends State<LiveCastScreen> {
                 toast(sheet, tr('Назва має бути щонайменше 3 символи.'));
                 return;
               }
+              final donations = <Map<String, String>>[];
+              if (donatik.text.trim().isNotEmpty) {
+                donations.add({'provider': 'donatik', 'url': donatik.text.trim()});
+              }
+              if (donatello.text.trim().isNotEmpty) {
+                donations.add({'provider': 'donatello', 'url': donatello.text.trim()});
+              }
               try {
                 final created = await api.post(Api.site('/livecast'), {
                   'title': name,
                   if (category.text.trim().isNotEmpty) 'category': category.text.trim(),
+                  if (donations.isNotEmpty) 'donations': donations,
                 });
                 if (sheet.mounted) Navigator.pop(sheet, intOf(mapOf(created['broadcast'])['id']));
               } catch (e) {
@@ -79,6 +115,8 @@ class _LiveCastScreenState extends State<LiveCastScreen> {
     );
     title.dispose();
     category.dispose();
+    donatik.dispose();
+    donatello.dispose();
     await _load();
     if (id != null && mounted) context.push('/livecast/$id');
   }
@@ -159,6 +197,7 @@ class _LiveCastShowScreenState extends State<LiveCastShowScreen> {
   Map<String, dynamic>? state;
   Timer? _poll;
   final chat = TextEditingController();
+  String? giftBusy;
 
   Api get api => AppScope.read(context).session.api;
   VoiceCall get voice => VoiceCall.instance;
@@ -213,6 +252,18 @@ class _LiveCastShowScreenState extends State<LiveCastShowScreen> {
     }
   }
 
+  Future<void> _gift(String key) async {
+    setState(() => giftBusy = key);
+    try {
+      final data = await api.post(Api.site('/livecast/${widget.id}/gifts'), {'gift': key});
+      if (mounted) setState(() => state = data);
+    } catch (e) {
+      if (mounted) toast(context, e);
+    } finally {
+      if (mounted) setState(() => giftBusy = null);
+    }
+  }
+
   Future<void> _end() async {
     try {
       final data = await api.post(Api.site('/livecast/${widget.id}/end'));
@@ -230,8 +281,11 @@ class _LiveCastShowScreenState extends State<LiveCastShowScreen> {
     final stream = mapOf(data['broadcast']);
     final me = mapOf(data['me']);
     final messages = maps(data['messages']);
+    final gifts = maps(data['gifts']);
+    final donations = maps(stream['donations']);
     final live = text(stream['status']) == 'live';
     final host = me['is_host'] == true;
+    final canPublish = me['can_publish'] == true;
     final inStream = voice.kind == 'broadcast' && voice.roomId == widget.id && voice.active;
 
     return ScreenScroll(
@@ -243,11 +297,11 @@ class _LiveCastShowScreenState extends State<LiveCastShowScreen> {
         ),
         if (!inStream && live)
           PrimaryButton(
-            label: host ? tr('Вийти в ефір') : tr('Дивитись'),
+            label: host && canPublish ? tr('Вийти в ефір') : tr('Дивитись'),
             icon: LucideIcons.radio,
-            onPressed: () => _join(host: host),
+            onPressed: () => _join(host: host && canPublish),
           ),
-        if (inStream && host) ...[
+        if (inStream && host && canPublish) ...[
           const SizedBox(height: 8),
           Wrap(
             spacing: 8,
@@ -276,33 +330,91 @@ class _LiveCastShowScreenState extends State<LiveCastShowScreen> {
             ],
           ),
         ],
-        if (inStream && !host)
+        if (inStream && !(host && canPublish))
           Padding(
             padding: const EdgeInsets.only(top: 8),
             child: GhostButton(label: tr('Вийти'), icon: LucideIcons.logOut, onPressed: () => voice.leave()),
           ),
+        if (donations.isNotEmpty) ...[
+          const SizedBox(height: 14),
+          SectionLabel(tr('Підтримати стрім')),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final d in donations)
+                GhostButton(
+                  label: text(d['name']) ?? text(d['provider']) ?? 'Donate',
+                  icon: LucideIcons.heartHandshake,
+                  compact: true,
+                  onPressed: () {
+                    final url = text(d['url']);
+                    if (url != null) launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+                  },
+                ),
+            ],
+          ),
+        ],
         const SizedBox(height: 16),
         SectionLabel(tr('Чат стріму')),
         for (final m in messages)
           Padding(
             padding: const EdgeInsets.only(bottom: 8),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Avatar(url: text(mapOf(m['user'])['avatar_url']), name: text(mapOf(m['user'])['name']) ?? '?', size: 28),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text.rich(
-                    TextSpan(children: [
-                      TextSpan(text: '${text(mapOf(m['user'])['name']) ?? '…'} ', style: body(13, weight: FontWeight.w700)),
-                      TextSpan(text: text(m['body']) ?? '', style: body(13, color: ink.withValues(alpha: 0.85))),
-                    ]),
+            child: Container(
+              padding: text(m['kind']) == 'gift' ? const EdgeInsets.symmetric(horizontal: 8, vertical: 6) : EdgeInsets.zero,
+              decoration: text(m['kind']) == 'gift'
+                  ? BoxDecoration(color: danger.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(12))
+                  : null,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Avatar(url: text(mapOf(m['user'])['avatar_url']), name: text(mapOf(m['user'])['name']) ?? '?', size: 28),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text.rich(
+                      TextSpan(children: [
+                        TextSpan(text: '${text(mapOf(m['user'])['name']) ?? '…'} ', style: body(13, weight: FontWeight.w700)),
+                        if (text(m['kind']) == 'gift' && mapOf(m['gift']).isNotEmpty)
+                          TextSpan(
+                            text: '${text(mapOf(m['gift'])['emoji']) ?? ''} ${text(mapOf(m['gift'])['label']) ?? ''}',
+                            style: body(13, color: danger, weight: FontWeight.w700),
+                          )
+                        else
+                          TextSpan(text: text(m['body']) ?? '', style: body(13, color: ink.withValues(alpha: 0.85))),
+                      ]),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         if (live) ...[
+          if (gifts.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  for (final g in gifts)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 6),
+                      child: ArcticPressable(
+                        onTap: giftBusy == text(g['key']) ? null : () => _gift(text(g['key']) ?? ''),
+                        child: Container(
+                          width: 40,
+                          height: 40,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(color: soft, borderRadius: BorderRadius.circular(12)),
+                          child: giftBusy == text(g['key'])
+                              ? SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: muted))
+                              : Text(text(g['emoji']) ?? '🎁', style: const TextStyle(fontSize: 18)),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
           const SizedBox(height: 8),
           Row(
             children: [

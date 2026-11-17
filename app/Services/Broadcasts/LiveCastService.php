@@ -6,11 +6,13 @@ use App\Models\Livecast;
 use App\Models\LivecastMessage;
 use App\Models\User;
 use App\Services\Voice\LiveKit;
+use App\Support\LiveCast\DonationPresets;
+use App\Support\LiveCast\StreamGifts;
 use Illuminate\Support\Facades\Cache;
 
 /**
  * LiveCast — нативна стрім-площадка на LiveKit (окремо від GameCast).
- * Ведучий публікує камеру/екран; глядачі лише дивляться й пишуть у чат.
+ * Вихід в ефір — лише з застосунку; веб — перегляд, чат, подарунки й донат-лінки.
  */
 class LiveCastService
 {
@@ -19,7 +21,10 @@ class LiveCastService
 
     public function __construct(private readonly LiveKit $livekit) {}
 
-    public function start(User $host, string $title, ?string $category = null): Livecast
+    /**
+     * @param  list<array{provider?: string, key?: string, url?: string}>|null  $donations
+     */
+    public function start(User $host, string $title, ?string $category = null, ?array $donations = null): Livecast
     {
         abort_unless($this->livekit->configured(), 503, 'Голосовий сервер не налаштовано.');
         abort_if(
@@ -32,6 +37,7 @@ class LiveCastService
             'host_id' => $host->id,
             'title' => $title,
             'category' => $category,
+            'donations' => DonationPresets::sanitize($donations ?? []),
             'status' => Livecast::LIVE,
             'started_at' => now(),
             'viewers' => 0,
@@ -43,16 +49,17 @@ class LiveCastService
     }
 
     /**
-     * Токен LiveKit: ведучий — камера/екран/мікрофон; глядач — лише підписка.
+     * Токен LiveKit. Публікувати (камера/екран) може лише ведучий із застосунку.
      *
      * @return array{url: string, token: string, identity: string, broadcast: array<string, mixed>}
      */
-    public function join(Livecast $livecast, User $user): array
+    public function join(Livecast $livecast, User $user, bool $canPublish = false): array
     {
         abort_unless($livecast->isLive(), 422, 'Стрім уже завершено.');
         abort_unless($this->livekit->configured(), 503, 'Голосовий сервер не налаштовано.');
 
         $host = $livecast->host_id === $user->id;
+        $publish = $host && $canPublish;
         $identity = 'u'.$user->id;
         $this->touch($livecast, $user);
         Cache::forget('livecast.pulse');
@@ -63,10 +70,10 @@ class LiveCastService
                 $identity,
                 $user->name,
                 $livecast->livekitName(),
-                $host
+                $publish
                     ? ['canPublishSources' => LiveKit::BROADCAST_SOURCES]
                     : ['canPublish' => false, 'canPublishSources' => []],
-                (string) json_encode(['user_id' => $user->id, 'role' => $host ? 'host' : 'viewer']),
+                (string) json_encode(['user_id' => $user->id, 'role' => $publish ? 'host' : 'viewer']),
             ),
             'identity' => $identity,
             'broadcast' => $this->card($livecast),
@@ -100,6 +107,17 @@ class LiveCastService
         }
     }
 
+    /**
+     * @param  list<array{provider?: string, key?: string, url?: string}>  $donations
+     */
+    public function updateDonations(Livecast $livecast, User $actor, array $donations): Livecast
+    {
+        abort_unless($livecast->host_id === $actor->id || $actor->isStaff(), 403, 'Лише ведучий.');
+        $livecast->update(['donations' => DonationPresets::sanitize($donations)]);
+
+        return $livecast->fresh();
+    }
+
     public function chat(Livecast $livecast, User $user, string $body): LivecastMessage
     {
         abort_unless($livecast->isLive(), 422, 'Стрім уже завершено.');
@@ -109,7 +127,29 @@ class LiveCastService
         return LivecastMessage::query()->create([
             'livecast_id' => $livecast->id,
             'user_id' => $user->id,
+            'kind' => LivecastMessage::CHAT,
+            'gift_key' => null,
             'body' => mb_substr($body, 0, 280),
+        ]);
+    }
+
+    public function gift(Livecast $livecast, User $user, string $giftKey, ?string $note = null): LivecastMessage
+    {
+        abort_unless($livecast->isLive(), 422, 'Стрім уже завершено.');
+        $gift = StreamGifts::find($giftKey);
+        abort_unless($gift !== null, 422, 'Невідомий подарунок.');
+        $note = trim((string) $note);
+        $body = $gift['emoji'].' '.$gift['label'];
+        if ($note !== '') {
+            $body .= ' — '.mb_substr($note, 0, 120);
+        }
+
+        return LivecastMessage::query()->create([
+            'livecast_id' => $livecast->id,
+            'user_id' => $user->id,
+            'kind' => LivecastMessage::GIFT,
+            'gift_key' => $gift['key'],
+            'body' => $body,
         ]);
     }
 
@@ -124,6 +164,7 @@ class LiveCastService
             'id' => $livecast->id,
             'title' => $livecast->title,
             'category' => $livecast->category,
+            'donations' => array_values($livecast->donations ?? []),
             'status' => $livecast->status,
             'started_at' => $livecast->started_at?->toIso8601String(),
             'ended_at' => $livecast->ended_at?->toIso8601String(),
@@ -136,7 +177,7 @@ class LiveCastService
     /**
      * @return array<string, mixed>
      */
-    public function state(Livecast $livecast, ?User $viewer): array
+    public function state(Livecast $livecast, ?User $viewer, bool $fromApp = false): array
     {
         if ($viewer !== null && $livecast->isLive()) {
             $this->touch($livecast, $viewer);
@@ -156,21 +197,22 @@ class LiveCastService
             ->get()
             ->reverse()
             ->values()
-            ->map(fn (LivecastMessage $m) => [
-                'id' => $m->id,
-                'body' => $m->body,
-                'created_at' => $m->created_at?->toIso8601String(),
-                'user' => $m->user?->toCard(),
-            ]);
+            ->map(fn (LivecastMessage $m) => $this->messageCard($m));
+
+        $isHost = $viewer !== null && $livecast->host_id === $viewer->id;
 
         return [
             'broadcast' => $this->card($livecast->fresh()),
             'messages' => $messages,
+            'gifts' => StreamGifts::all(),
+            'donation_presets' => DonationPresets::all(),
             'me' => $viewer ? [
-                'is_host' => $livecast->host_id === $viewer->id,
-                'can_publish' => $livecast->host_id === $viewer->id && $livecast->isLive(),
+                'is_host' => $isHost,
+                // Публікувати відео можна лише з застосунку.
+                'can_publish' => $isHost && $fromApp && $livecast->isLive(),
             ] : null,
-            'can_manage' => $viewer !== null && ($livecast->host_id === $viewer->id || $viewer->isStaff()),
+            'can_manage' => $viewer !== null && ($isHost || $viewer->isStaff()),
+            'go_live_on_app' => true,
         ];
     }
 
@@ -198,6 +240,36 @@ class LiveCastService
 
             return ['live' => $live->count(), 'viewers' => $viewers];
         });
+    }
+
+    /**
+     * @return array{live: list<array<string, mixed>>, pulse: array{live: int, viewers: int}, gifts: list<array<string, mixed>>, donation_presets: list<array<string, mixed>>, go_live_on_app: bool}
+     */
+    public function catalog(): array
+    {
+        return [
+            'live' => $this->live(),
+            'pulse' => $this->pulse(),
+            'gifts' => StreamGifts::all(),
+            'donation_presets' => DonationPresets::all(),
+            'go_live_on_app' => true,
+        ];
+    }
+
+    /** @return array<string, mixed> */
+    private function messageCard(LivecastMessage $m): array
+    {
+        $gift = $m->gift_key ? StreamGifts::find($m->gift_key) : null;
+
+        return [
+            'id' => $m->id,
+            'kind' => $m->kind ?: LivecastMessage::CHAT,
+            'gift_key' => $m->gift_key,
+            'gift' => $gift,
+            'body' => $m->body,
+            'created_at' => $m->created_at?->toIso8601String(),
+            'user' => $m->user?->toCard(),
+        ];
     }
 
     private function touch(Livecast $livecast, User $user): void
