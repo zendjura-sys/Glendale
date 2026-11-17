@@ -899,7 +899,7 @@ class _ChatScreenState extends State<ChatScreen> {
           _AttachOption(icon: LucideIcons.file, color: violet, title: tr('Файл'), subtitle: tr('до 50 МБ'), onTap: () => Navigator.pop(sheet, 'file')),
           _AttachOption(icon: LucideIcons.userRound, color: Color(0xFF2DD4BF), title: tr('Контакт'), subtitle: tr('Пошук на GameCon'), onTap: () => Navigator.pop(sheet, 'contact')),
           if (group)
-            _AttachOption(icon: LucideIcons.chartBar, color: Color(0xFFFBBF24), title: tr('Опитування'), subtitle: tr('Питання й варіанти в групі'), onTap: () => Navigator.pop(sheet, 'poll')),
+            _AttachOption(icon: LucideIcons.chartBar, color: Color(0xFFFBBF24), title: tr('Опитування'), subtitle: tr('Голосування в групі'), onTap: () => Navigator.pop(sheet, 'poll')),
         ]),
       ),
     );
@@ -922,20 +922,24 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
+  /// Нове опитування в групі: питання, 2–10 варіантів, кілька відповідей, анонімно.
   Future<void> _createPoll() async {
     final question = TextEditingController();
     final options = [TextEditingController(), TextEditingController()];
+    final retired = <TextEditingController>[];
     var multiple = false;
     var anonymous = false;
     var busy = false;
     final created = await showGcSheet<Map<String, dynamic>>(
       context,
       title: tr('Опитування'),
+      height: MediaQuery.sizeOf(context).height * 0.78,
       builder: (sheet) => StatefulBuilder(
         builder: (sheet, setSheet) {
+          final filled = [for (final o in options) if (o.text.trim().isNotEmpty) o.text.trim()];
+          final ready = question.text.trim().length >= 2 && filled.length >= 2;
           Future<void> submit() async {
-            final filled = [for (final o in options) if (o.text.trim().isNotEmpty) o.text.trim()];
-            if (busy || question.text.trim().length < 2 || filled.length < 2) return;
+            if (busy || !ready) return;
             setSheet(() => busy = true);
             try {
               final data = await api.post(Api.site('/messages/${widget.id}/polls'), {
@@ -953,35 +957,80 @@ class _ChatScreenState extends State<ChatScreen> {
             }
           }
 
-          return Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+          return SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
             child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-              GcField(controller: question, label: tr('Питання'), maxLines: 2, autofocus: true),
-              const SizedBox(height: 8),
-              for (var i = 0; i < options.length; i++) ...[
-                if (i > 0) const SizedBox(height: 6),
-                GcField(controller: options[i], label: tr('Варіант {n}', {'n': i + 1})),
-              ],
+              TextField(
+                controller: question,
+                maxLength: 200,
+                autofocus: true,
+                onChanged: (_) => setSheet(() {}),
+                decoration: InputDecoration(hintText: tr('Питання'), counterText: ''),
+              ),
+              for (var i = 0; i < options.length; i++)
+                Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
+                  Expanded(
+                    child: TextField(
+                      controller: options[i],
+                      maxLength: 80,
+                      onChanged: (_) => setSheet(() {}),
+                      decoration: InputDecoration(hintText: tr('Варіант {n}', {'n': '${i + 1}'}), counterText: ''),
+                    ),
+                  ),
+                  if (options.length > 2)
+                    IconButton(
+                      tooltip: tr('Прибрати варіант'),
+                      onPressed: () {
+                        final removed = options[i];
+                        setSheet(() {
+                          options.removeAt(i);
+                          retired.add(removed);
+                        });
+                      },
+                      icon: Icon(LucideIcons.x, size: 18, color: muted),
+                    ),
+                ]),
               if (options.length < 10)
-                TextButton.icon(
-                  onPressed: () => setSheet(() => options.add(TextEditingController())),
-                  icon: const Icon(LucideIcons.plus, size: 16),
-                  label: Text(tr('Ще варіант')),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    onPressed: () => setSheet(() => options.add(TextEditingController())),
+                    icon: const Icon(LucideIcons.plus, size: 16),
+                    label: Text(tr('Додати варіант')),
+                  ),
                 ),
-              SwitchListTile(contentPadding: EdgeInsets.zero, value: multiple, onChanged: (v) => setSheet(() => multiple = v), title: Text(tr('Кілька відповідей'), style: body(14))),
-              SwitchListTile(contentPadding: EdgeInsets.zero, value: anonymous, onChanged: (v) => setSheet(() => anonymous = v), title: Text(tr('Анонімно'), style: body(14))),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                value: multiple,
+                onChanged: busy ? null : (v) => setSheet(() => multiple = v),
+                title: Text(tr('Можна обрати кілька'), style: body(14)),
+              ),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                value: anonymous,
+                onChanged: busy ? null : (v) => setSheet(() => anonymous = v),
+                title: Text(tr('Анонімне — не показувати, хто як голосував'), style: body(14)),
+              ),
               const SizedBox(height: 8),
-              PrimaryButton(label: tr('Створити'), icon: LucideIcons.chartBar, busy: busy, onPressed: busy ? null : () => unawaited(submit())),
+              PrimaryButton(
+                label: tr('Надіслати опитування'),
+                icon: LucideIcons.chartBar,
+                busy: busy,
+                onPressed: busy || !ready ? null : () => unawaited(submit()),
+              ),
             ]),
           );
         },
       ),
     );
     question.dispose();
-    for (final o in options) {
+    for (final o in [...options, ...retired]) {
       o.dispose();
     }
-    if (created != null && mounted) setState(() => messages.add(created));
+    if (created != null && mounted) {
+      setState(() => messages.add(created));
+      if (scroll.hasClients) unawaited(scroll.animateTo(0, duration: const Duration(milliseconds: 250), curve: Curves.easeOut));
+    }
   }
 
   /// Одне фото «на один перегляд» — одразу, без підпису.
@@ -1344,6 +1393,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                 conversationId: widget.id,
                                 onThread: () => _openThread(message),
                                 canReact: reactionsOn,
+                                canClosePoll: chat['can_pin'] == true,
                                 mine: _myReaction(message),
                                 onToggle: reactionsOn ? (emoji) => _react(message, emoji) : null,
                                 onAdd: reactionsOn ? () => _openReactions(message) : null,
@@ -1883,8 +1933,23 @@ class _ChatPollCard extends StatefulWidget {
 
 class _ChatPollCardState extends State<_ChatPollCard> {
   late Map<String, dynamic> poll = Map<String, dynamic>.from(widget.poll);
-  late List<int> mine = [for (final o in (poll['mine'] is List ? poll['mine'] as List : const [])) intOf(o)];
+  late List<int> mine = _mineOf(poll);
   bool busy = false;
+
+  List<int> _mineOf(Map<String, dynamic> source) {
+    final raw = source['mine'];
+    if (raw is! List) return [];
+    return [for (final o in raw) intOf(o)];
+  }
+
+  @override
+  void didUpdateWidget(covariant _ChatPollCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!busy && oldWidget.poll != widget.poll) {
+      poll = Map<String, dynamic>.from(widget.poll);
+      mine = _mineOf(poll);
+    }
+  }
 
   bool get closed => poll['closed'] == true;
   bool get multiple => poll['multiple'] == true;
@@ -1906,7 +1971,7 @@ class _ChatPollCardState extends State<_ChatPollCard> {
       if (!mounted) return;
       setState(() {
         poll = updated;
-        mine = [for (final o in (updated['mine'] is List ? updated['mine'] as List : const [])) intOf(o)];
+        mine = _mineOf(updated);
         busy = false;
       });
       widget.onUpdated(updated);
@@ -1943,54 +2008,100 @@ class _ChatPollCardState extends State<_ChatPollCard> {
   Widget build(BuildContext context) {
     final options = maps(poll['options']);
     final total = intOf(poll['total']);
-    final fg = widget.own ? Colors.white : ink;
+    final tone = widget.own ? Colors.white : ink;
+    final softTone = widget.own ? Colors.white70 : muted;
+    final title = closed
+        ? tr('Опитування закрито')
+        : (poll['anonymous'] == true ? tr('Анонімне опитування') : tr('Опитування'));
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      Row(children: [
+        Icon(LucideIcons.chartBar, size: 14, color: softTone),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Text(
+            multiple ? '$title · ${tr('кілька відповідей')}' : title,
+            style: body(11.5, color: softTone, weight: FontWeight.w700),
+          ),
+        ),
+      ]),
       if (widget.body != null && widget.body!.isNotEmpty) ...[
-        Text(widget.body!, style: body(15, color: fg, weight: FontWeight.w700)),
-        const SizedBox(height: 6),
+        const SizedBox(height: 4),
+        Text(widget.body!, style: body(15, color: tone, weight: FontWeight.w700)),
       ],
-      Text(
-        [
-          if (closed) tr('Закрито'),
-          if (poll['anonymous'] == true) tr('Анонімно'),
-          if (multiple) tr('кілька відповідей'),
-        ].where((s) => s.isNotEmpty).join(' · '),
-        style: body(11.5, color: widget.own ? Colors.white70 : muted),
-      ),
-      const SizedBox(height: 6),
+      const SizedBox(height: 8),
       for (var i = 0; i < options.length; i++) ...[
         if (i > 0) const SizedBox(height: 6),
-        Builder(builder: (context) {
-          final opt = options[i];
-          final count = intOf(opt['count']);
-          final percent = total > 0 ? ((count / total) * 100).round() : 0;
-          final selected = mine.contains(i);
-          return Material(
-            color: selected ? (widget.own ? Colors.white24 : primary.withValues(alpha: 0.2)) : (widget.own ? Colors.white10 : fg.withValues(alpha: 0.06)),
-            borderRadius: BorderRadius.circular(12),
-            child: InkWell(
-              onTap: closed || busy ? null : () => unawaited(_vote(i)),
-              borderRadius: BorderRadius.circular(12),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
-                child: Row(children: [
-                  Icon(selected ? LucideIcons.circleCheck : LucideIcons.circle, size: 16, color: fg),
-                  const SizedBox(width: 8),
-                  Expanded(child: Text(text(opt['text']) ?? '', style: body(13.5, color: fg, weight: FontWeight.w600))),
-                  if (reveal) Text('$percent% · $count', style: body(12, color: widget.own ? Colors.white70 : muted)),
-                ]),
-              ),
-            ),
-          );
-        }),
+        _option(options[i], i, total, tone, softTone),
       ],
       const SizedBox(height: 6),
       Row(children: [
-        Text(tr('Голосів: {n}', {'n': total}), style: body(12, color: widget.own ? Colors.white70 : muted)),
+        Text('$total ${plural(total, tr('голос'), tr('голоси'), tr('голосів'))}', style: body(12, color: softTone)),
         const Spacer(),
         if (widget.canClose && !closed)
-          TextButton(onPressed: busy ? null : () => unawaited(_close()), child: Text(tr('Закрити'), style: body(12, color: widget.own ? Colors.white : soft))),
+          TextButton.icon(
+            onPressed: busy ? null : () => unawaited(_close()),
+            style: TextButton.styleFrom(visualDensity: VisualDensity.compact, padding: const EdgeInsets.symmetric(horizontal: 6)),
+            icon: Icon(LucideIcons.lock, size: 14, color: softTone),
+            label: Text(tr('Закрити'), style: body(12, color: widget.own ? Colors.white : soft, weight: FontWeight.w600)),
+          ),
       ]),
+    ]);
+  }
+
+  Widget _option(Map<String, dynamic> opt, int index, int total, Color tone, Color softTone) {
+    final count = intOf(opt['count']);
+    final percent = total > 0 ? ((count / total) * 100).round() : 0;
+    final selected = mine.contains(index);
+    final voters = maps(opt['voters']);
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Material(
+        color: widget.own ? Colors.white.withValues(alpha: 0.08) : fg.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(12),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: closed || busy ? null : () => unawaited(_vote(index)),
+          child: Stack(children: [
+            if (reveal)
+              Positioned.fill(
+                child: FractionallySizedBox(
+                  alignment: Alignment.centerLeft,
+                  widthFactor: (percent / 100).clamp(0.0, 1.0),
+                  child: ColoredBox(color: selected ? primary.withValues(alpha: 0.45) : Colors.white.withValues(alpha: widget.own ? 0.16 : 0.08)),
+                ),
+              ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+              child: Row(children: [
+                Container(
+                  width: 16,
+                  height: 16,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(multiple ? 4 : 8),
+                    border: Border.all(color: selected ? primary : (widget.own ? Colors.white70 : muted), width: 1.4),
+                    color: selected ? primary : Colors.transparent,
+                  ),
+                  child: selected ? const Icon(LucideIcons.check, size: 11, color: Colors.white) : null,
+                ),
+                const SizedBox(width: 8),
+                Expanded(child: Text(text(opt['text']) ?? '', style: body(13.5, color: tone, weight: FontWeight.w600))),
+                if (reveal) Text('$percent%', style: body(12, color: softTone, weight: FontWeight.w700).copyWith(fontFeatures: const [FontFeature.tabularFigures()])),
+              ]),
+            ),
+          ]),
+        ),
+      ),
+      if (reveal && poll['anonymous'] != true && voters.isNotEmpty)
+        Padding(
+          padding: const EdgeInsets.only(top: 4, left: 2),
+          child: Row(children: [
+            for (final voter in voters.take(5))
+              Padding(
+                padding: const EdgeInsets.only(right: 3),
+                child: Avatar(url: text(voter['avatar_url']), name: text(voter['name']) ?? '', size: 18),
+              ),
+          ]),
+        ),
     ]);
   }
 }
@@ -2007,6 +2118,7 @@ class _Bubble extends StatelessWidget {
     required this.conversationId,
     this.onThread,
     this.canReact = false,
+    this.canClosePoll = false,
     this.mine,
     this.onToggle,
     this.onAdd,
@@ -2020,6 +2132,7 @@ class _Bubble extends StatelessWidget {
   final int conversationId;
   final VoidCallback? onThread;
   final bool canReact;
+  final bool canClosePoll;
   final String? mine;
   final ValueChanged<String>? onToggle;
   final VoidCallback? onAdd;
@@ -2106,7 +2219,7 @@ class _Bubble extends StatelessWidget {
               poll: mapOf(message['poll']),
               body: bodyText,
               own: own,
-              canClose: own || message['can_close_poll'] == true,
+              canClose: own || canClosePoll || message['can_close_poll'] == true,
               onUpdated: (next) => message['poll'] = next,
             ),
           )

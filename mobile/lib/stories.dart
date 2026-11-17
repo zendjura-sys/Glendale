@@ -219,8 +219,10 @@ Future<bool?> showStoryComposer(BuildContext context, Api api) async {
   final publish = await showGcSheet<bool>(
     context,
     title: video ? tr('Відео в історію') : tr('Фото в історію'),
+    height: pollsOn ? MediaQuery.sizeOf(context).height * 0.72 : null,
     builder: (sheet) => StatefulBuilder(
-      builder: (sheet, setSheet) => Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      builder: (sheet, setSheet) {
+        final form = Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         TextField(controller: caption, maxLength: 200, decoration: InputDecoration(hintText: tr('Підпис (необов’язково)'))),
         SizedBox(height: 8),
         Segmented(
@@ -234,27 +236,32 @@ Future<bool?> showStoryComposer(BuildContext context, Api api) async {
             contentPadding: EdgeInsets.zero,
             value: pollOn,
             onChanged: (v) => setSheet(() => pollOn = v),
-            title: Text(tr('Опитування'), style: body(14.5, weight: FontWeight.w600)),
+            title: Text(pollOn ? tr('Прибрати опитування') : tr('Додати опитування'), style: body(14.5, weight: FontWeight.w600)),
             subtitle: Text(tr('Питання й 2–4 варіанти'), style: body(12, color: muted)),
           ),
           if (pollOn) ...[
-            GcField(controller: pollQuestion, label: tr('Питання'), maxLines: 2),
-            const SizedBox(height: 8),
-            for (var i = 0; i < pollOptions.length; i++) ...[
-              if (i > 0) const SizedBox(height: 6),
-              GcField(controller: pollOptions[i], label: tr('Варіант {n}', {'n': i + 1})),
-            ],
+            TextField(controller: pollQuestion, maxLength: 80, decoration: InputDecoration(hintText: tr('Питання'), counterText: '')),
+            for (var i = 0; i < pollOptions.length; i++)
+              TextField(
+                controller: pollOptions[i],
+                maxLength: 40,
+                decoration: InputDecoration(hintText: tr('Варіант {n}', {'n': '${i + 1}'}), counterText: ''),
+              ),
             if (pollOptions.length < 4)
-              TextButton.icon(
-                onPressed: () => setSheet(() => pollOptions.add(TextEditingController())),
-                icon: Icon(LucideIcons.plus, size: 16),
-                label: Text(tr('Ще варіант')),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton(
+                  onPressed: () => setSheet(() => pollOptions.add(TextEditingController())),
+                  child: Text(tr('+ ще варіант')),
+                ),
               ),
           ],
         ],
         const SizedBox(height: 14),
         PrimaryButton(label: tr('Опублікувати'), icon: LucideIcons.send, onPressed: () => Navigator.pop(sheet, true)),
-      ]),
+      ]);
+        return pollsOn ? SingleChildScrollView(child: form) : form;
+      },
     ),
   );
   if (publish != true || !context.mounted) {
@@ -304,6 +311,7 @@ class _StoryPollCard extends StatefulWidget {
     required this.onChange,
     required this.onInteract,
     required this.onIdle,
+    super.key,
   });
   final int storyId;
   final bool own;
@@ -333,9 +341,10 @@ class _StoryPollCardState extends State<_StoryPollCard> {
   @override
   void didUpdateWidget(_StoryPollCard oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.storyId != widget.storyId || oldWidget.initial != widget.initial) {
+    if (oldWidget.storyId != widget.storyId) {
       poll = Map<String, dynamic>.from(widget.initial);
       refresh?.cancel();
+      refresh = null;
       if (reveal) _startRefresh();
     }
   }
@@ -374,6 +383,8 @@ class _StoryPollCardState extends State<_StoryPollCard> {
         });
         widget.onChange(poll);
         _startRefresh();
+      } else if (mounted) {
+        setState(() => busy = false);
       }
     } catch (e) {
       if (mounted) {
@@ -388,44 +399,67 @@ class _StoryPollCardState extends State<_StoryPollCard> {
   @override
   Widget build(BuildContext context) {
     final options = maps(poll['options']);
-    final total = intOf(poll['total']);
     final voted = poll['voted'];
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
-      decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(16)),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        Text(text(poll['question']) ?? '', style: body(14, color: Colors.white, weight: FontWeight.w700)),
-        const SizedBox(height: 8),
-        for (var i = 0; i < options.length; i++) ...[
-          if (i > 0) const SizedBox(height: 6),
-          Builder(builder: (context) {
-            final opt = options[i];
-            final label = text(opt['text']) ?? '${opt}';
-            final votes = opt['votes'];
-            final percent = opt['percent'];
-            return Material(
-              color: voted == i ? const Color(0xFF0EA5E9) : Colors.white12,
-              borderRadius: BorderRadius.circular(12),
-              child: InkWell(
-                onTap: reveal ? null : () => unawaited(_vote(i)),
-                borderRadius: BorderRadius.circular(12),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                  child: Row(children: [
-                    Expanded(child: Text(label, style: body(13.5, color: Colors.white, weight: FontWeight.w600))),
-                    if (reveal && votes != null)
-                      Text('${intOf(votes)}${percent != null ? ' · ${intOf(percent)}%' : ''}', style: body(12, color: Colors.white70)),
-                  ]),
-                ),
-              ),
-            );
-          }),
-        ],
-        if (reveal) ...[
-          const SizedBox(height: 6),
-          Text(tr('Голосів: {n}', {'n': total}), style: body(12, color: Colors.white60)),
-        ],
+    return GestureDetector(
+      onTap: () {},
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
+        decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.55), borderRadius: BorderRadius.circular(16)),
+        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Text(text(poll['question']) ?? '', textAlign: TextAlign.center, style: body(14, color: Colors.white, weight: FontWeight.w700)),
+          const SizedBox(height: 10),
+          for (var i = 0; i < options.length; i++) ...[
+            if (i > 0) const SizedBox(height: 6),
+            reveal ? _result(options[i], i, voted) : _choice(options[i], i),
+          ],
+          if (reveal) ...[
+            const SizedBox(height: 6),
+            Text(tr('Голосів: {n}', {'n': '${poll['total'] ?? 0}'}), textAlign: TextAlign.center, style: body(11, color: Colors.white60)),
+          ],
+        ]),
+      ),
+    );
+  }
+
+  /// До голосу — біла кнопка варіанта. Після (і автору) — смужка відсотка.
+  Widget _choice(Map<String, dynamic> option, int index) {
+    return Material(
+      color: Colors.white.withValues(alpha: 0.92),
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: busy ? null : () => unawaited(_vote(index)),
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          child: Text(text(option['text']) ?? '', textAlign: TextAlign.center, style: body(13.5, color: const Color(0xFF0D1B2E), weight: FontWeight.w700)),
+        ),
+      ),
+    );
+  }
+
+  Widget _result(Map<String, dynamic> option, int index, dynamic voted) {
+    final chosen = voted != null && intOf(voted) == index;
+    final percent = intOf(option['percent']).clamp(0, 100);
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: Stack(children: [
+        const Positioned.fill(child: ColoredBox(color: Color(0x1AFFFFFF))),
+        Positioned.fill(
+          child: FractionallySizedBox(
+            alignment: Alignment.centerLeft,
+            widthFactor: percent / 100,
+            child: ColoredBox(color: chosen ? primary.withValues(alpha: 0.65) : Colors.white.withValues(alpha: 0.22)),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          child: Row(children: [
+            Expanded(child: Text(text(option['text']) ?? '', style: body(13.5, color: Colors.white, weight: FontWeight.w600))),
+            Text('$percent%', style: body(13, color: Colors.white, weight: FontWeight.w700).copyWith(fontFeatures: const [FontFeature.tabularFigures()])),
+          ]),
+        ),
       ]),
     );
   }
@@ -675,31 +709,35 @@ class _StoryViewerPageState extends State<StoryViewerPage> with SingleTickerProv
                   IconButton(onPressed: () => Navigator.of(context).maybePop(), icon: const Icon(LucideIcons.x, color: Colors.white, size: 26)),
                 ]),
               ),
-              if (text(current['caption']) != null || current['poll'] is Map)
+              if (current['poll'] is Map)
+                Positioned(
+                  left: 24,
+                  right: 24,
+                  top: top + 72,
+                  bottom: text(current['caption']) != null ? 72 : 24,
+                  child: Center(
+                    child: _StoryPollCard(
+                      key: ValueKey('poll-${current['id']}'),
+                      storyId: intOf(current['id']),
+                      own: own,
+                      initial: mapOf(current['poll']),
+                      api: widget.api,
+                      onChange: (poll) => setState(() => current['poll'] = poll),
+                      onInteract: _pause,
+                      onIdle: _resume,
+                    ),
+                  ),
+                ),
+              if (text(current['caption']) != null)
                 Positioned(
                   left: 16,
                   right: 16,
                   bottom: 16,
-                  child: Column(mainAxisSize: MainAxisSize.min, children: [
-                    if (current['poll'] is Map)
-                      _StoryPollCard(
-                        storyId: intOf(current['id']),
-                        own: own,
-                        initial: mapOf(current['poll']),
-                        api: widget.api,
-                        onChange: (poll) => setState(() => current['poll'] = poll),
-                        onInteract: _pause,
-                        onIdle: _resume,
-                      ),
-                    if (text(current['caption']) != null) ...[
-                      if (current['poll'] is Map) const SizedBox(height: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        decoration: BoxDecoration(color: Colors.black45, borderRadius: BorderRadius.circular(12)),
-                        child: Text(current['caption'], textAlign: TextAlign.center, style: body(14, color: Colors.white)),
-                      ),
-                    ],
-                  ]),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(color: Colors.black45, borderRadius: BorderRadius.circular(12)),
+                    child: Text(current['caption'], textAlign: TextAlign.center, style: body(14, color: Colors.white)),
+                  ),
                 ),
             ]),
           ),
