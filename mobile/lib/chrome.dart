@@ -10,6 +10,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'account.dart';
+import 'accounts.dart';
 import 'api.dart';
 import 'core/widgets/arctic_glass/arctic_glass.dart';
 import 'i18n.dart';
@@ -288,6 +289,7 @@ class _UserMenu extends StatelessWidget {
         item('theme', palette.isLight ? LucideIcons.moon : LucideIcons.sun, palette.isLight ? tr('Темна тема') : tr('Світла тема')),
         item('language', LucideIcons.languages, tr('Мова')),
         PopupMenuDivider(height: 1),
+        ...accountMenuEntries(session),
         item('logout', LucideIcons.logOut, tr('Вийти'), color: dangerSoft),
       ],
       child: Padding(
@@ -326,8 +328,17 @@ class _UserMenu extends StatelessWidget {
         session.setTheme(palette.isLight ? 'dark' : 'light');
       case 'language':
         showLanguageSheet(context, session);
+      case 'add-account':
+        beginAddingAccount(context, session, player);
       case 'logout':
         signOut(session, player);
+      case _ when value.startsWith('account:'):
+        final id = int.tryParse(value.substring('account:'.length));
+        if (id != null) switchStoredAccount(context, session, player, id);
+      case _ when value.startsWith('forget:'):
+        final id = int.tryParse(value.substring('forget:'.length));
+        final account = id == null ? null : session.stored(id);
+        if (account != null) removeStoredAccount(context, session, player, account);
     }
   }
 }
@@ -901,11 +912,17 @@ class _MenuContentState extends State<MenuContent> {
         ]),
       ),
     ]);
+    // Кнопка перемикача — поруч із карткою, не всередині неї: інакше тап відкрив би профіль.
+    final profile = profilePinned ? Padding(padding: const EdgeInsets.all(4), child: identity) : ArcticPressable(onTap: () => widget.onGo('/profile'), child: Padding(padding: const EdgeInsets.all(4), child: identity));
 
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       // 1. Профіль і GameCon+
       _block(Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        profilePinned ? Padding(padding: const EdgeInsets.all(4), child: identity) : ArcticPressable(onTap: () => widget.onGo('/profile'), child: Padding(padding: const EdgeInsets.all(4), child: identity)),
+        Row(children: [
+          Expanded(child: profile),
+          AccountQuickButton(session: session, player: widget.player, onClose: widget.onClose),
+        ]),
+        AccountSwitcherList(session: session, player: widget.player, onClose: widget.onClose),
         const SizedBox(height: 8),
         // RP-досьє персонажа — для учасників сім'ї (дані /me/hub).
         if (family['dossier'] is Map) ...[

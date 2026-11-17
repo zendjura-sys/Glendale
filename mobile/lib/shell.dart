@@ -283,6 +283,8 @@ class _AppShellState extends State<AppShell> {
             // Сезон із профілю (App\Support\Seasons): прикраси тла, вмісту, шапки й аватарів.
             final season = text(widget.session.me?['season']);
             if (currentSeason.value != season) WidgetsBinding.instance.addPostFrameCallback((_) => currentSeason.value = season);
+            // Новий акаунт — ті самі маршрути, але екрани з нуля (стрічка, чати, лічильники).
+            final page = KeyedSubtree(key: ValueKey(widget.session.shellEpoch), child: widget.child);
             return ShellChrome(
               bottom: bottom,
               child: Scaffold(
@@ -301,12 +303,12 @@ class _AppShellState extends State<AppShell> {
                         right: contentRight,
                         child: LayoutBuilder(
                           builder: (context, box) => Center(
-                            child: SizedBox(width: math.min(box.maxWidth, contentWidth), height: box.maxHeight, child: widget.child),
+                            child: SizedBox(width: math.min(box.maxWidth, contentWidth), height: box.maxHeight, child: page),
                           ),
                         ),
                       )
                     else
-                      widget.child,
+                      page,
                     // Маски-скрими під шапкою й доком: текст розчиняється ДО входу під скляні капсули,
                     // а не просвічує навколо них.
                     Positioned(

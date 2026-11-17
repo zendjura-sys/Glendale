@@ -129,6 +129,9 @@ class GameConnect extends ChangeNotifier with WidgetsBindingObserver {
 
   Timer? _timer;
   Timer? _debounce;
+
+  /// Епоха акаунта, щоб після перемикання скинути пристрої попередньої людини.
+  int? _accountEpoch;
   bool _started = false;
   bool _foreground = true;
   Future<void>? _running;
@@ -157,6 +160,7 @@ class GameConnect extends ChangeNotifier with WidgetsBindingObserver {
   void start() {
     if (_started) return;
     _started = true;
+    _accountEpoch = session.shellEpoch;
     session.addListener(_onSession);
     player.addListener(_onPlayer);
     WidgetsBinding.instance.addObserver(this);
@@ -174,7 +178,10 @@ class GameConnect extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   void _onSession() {
-    if (session.token == null) {
+    final epoch = session.shellEpoch;
+    final switched = _accountEpoch != null && epoch != _accountEpoch;
+    _accountEpoch = epoch;
+    if (session.token == null || switched) {
       _timer?.cancel();
       _debounce?.cancel();
       if (devices.isNotEmpty || activeDeviceId != null) {
@@ -182,9 +189,9 @@ class GameConnect extends ChangeNotifier with WidgetsBindingObserver {
         activeDeviceId = null;
         notifyListeners();
       }
-    } else if (_foreground && _timer?.isActive != true && _running == null) {
-      unawaited(heartbeat());
+      if (session.token == null) return;
     }
+    if (_foreground && _timer?.isActive != true && _running == null) unawaited(heartbeat());
   }
 
   /// Наступне опитування: 3 с на екрані, 10 с у фоні під час відтворення, інакше — до повернення.
