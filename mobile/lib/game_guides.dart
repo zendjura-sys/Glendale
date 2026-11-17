@@ -123,7 +123,7 @@ class GuideCard extends StatelessWidget {
           behavior: HitTestBehavior.opaque,
           onTap: () async {
             await context.push('/games/$slug/guides/${guide['id']}');
-            await onChanged();
+            if (context.mounted) await onChanged();
           },
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(text(guide['title']) ?? '', style: body(16, weight: FontWeight.w700)),
@@ -145,7 +145,7 @@ class GuideCard extends StatelessWidget {
           if (guide['mine'] == true)
             GestureDetector(
               onTap: () async {
-                if (await deleteGuide(context, slug, guide)) await onChanged();
+                if (await deleteGuide(context, slug, guide) && context.mounted) await onChanged();
               },
               child: Text(tr('Видалити'), style: body(12.5, color: dangerSoft, weight: FontWeight.w600)),
             ),
@@ -193,7 +193,7 @@ Future<void> writeGuide(BuildContext context, String slug, Future<void> Function
   );
   title.dispose();
   body.dispose();
-  if (saved == true) await reload();
+  if (saved == true && context.mounted) await reload();
 }
 
 Future<bool> deleteGuide(BuildContext context, String slug, Map<String, dynamic> guide) async {
