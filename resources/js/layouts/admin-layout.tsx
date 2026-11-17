@@ -66,6 +66,7 @@ import { PlayerBar } from '@/components/music/player-bar';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import { usePlayer } from '@/lib/player';
 import { motionOr, POP, SNAP } from '@/lib/motion';
+import { navPrefetch } from '@/lib/prefetch';
 import { cn } from '@/lib/utils';
 import { VkProvider } from '@/components/vk/vk-provider';
 import { PageTransition } from '@/components/gc/page-transition';
@@ -481,7 +482,7 @@ function NavPanel({
                                         <Link
                                             key={href}
                                             href={href}
-                                            prefetch={['mount', 'hover']}
+                                            prefetch={navPrefetch()}
                                             cacheFor="2m"
                                             onClick={onNavigate}
                                             aria-current={

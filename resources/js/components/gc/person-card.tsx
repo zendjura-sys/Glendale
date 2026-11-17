@@ -1,4 +1,5 @@
 import { cn } from '@/lib/utils';
+import { contentPrefetch } from '@/lib/prefetch';
 import { Link, router, usePage } from '@inertiajs/react';
 import { MapPin } from 'lucide-react';
 import { useState } from 'react';
@@ -25,7 +26,7 @@ export function PersonCard({ person }: { person: Person }) {
             <div className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-gc-indigo/20 to-transparent opacity-0 transition group-hover:opacity-100" />
             <Link
                 href={`/${person.username}`}
-                prefetch="hover"
+                prefetch={contentPrefetch()}
                 cacheFor="1m"
                 className="relative"
             >
@@ -33,7 +34,7 @@ export function PersonCard({ person }: { person: Person }) {
             </Link>
             <Link
                 href={`/${person.username}`}
-                prefetch="hover"
+                prefetch={contentPrefetch()}
                 cacheFor="1m"
                 className="relative mt-2 flex max-w-full flex-wrap items-center justify-center gap-1 text-xs font-semibold break-words text-white hover:underline sm:text-sm"
             >
@@ -188,7 +189,7 @@ export function PersonRow({
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-2xl px-2 py-2 transition hover:bg-white/[0.035]">
             <Link
                 href={`/${person.username}`}
-                prefetch="hover"
+                prefetch={contentPrefetch()}
                 cacheFor="1m"
                 className="shrink-0"
             >
@@ -197,7 +198,7 @@ export function PersonRow({
             <div className="min-w-[9rem] flex-1">
                 <Link
                     href={`/${person.username}`}
-                    prefetch="hover"
+                    prefetch={contentPrefetch()}
                     cacheFor="1m"
                     className="flex flex-wrap items-center gap-1 text-sm font-semibold break-words text-white hover:underline"
                 >
