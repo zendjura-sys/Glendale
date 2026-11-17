@@ -53,6 +53,7 @@ import 'offline_music.dart';
 import 'party.dart';
 import 'people.dart';
 import 'photos.dart';
+import 'screenshots.dart';
 import 'parity.dart';
 import 'play_extras.dart';
 import 'links_data.dart';
@@ -192,6 +193,15 @@ Future<void> main() async {
             ],
           ),
           GoRoute(path: '/photos', builder: (_, state) => PhotosScreen(key: ValueKey(state.uri.queryParameters['user']), username: state.uri.queryParameters['user'])),
+          GoRoute(
+            path: '/screenshots',
+            builder: (_, state) => ScreenshotsScreen(
+              key: ValueKey(state.uri.query),
+              game: state.uri.queryParameters['game'],
+              sort: state.uri.queryParameters['sort'],
+              page: int.tryParse(state.uri.queryParameters['page'] ?? ''),
+            ),
+          ),
           GoRoute(
             path: '/albums/:id',
             builder: (_, state) => AlbumScreen(key: ValueKey(state.uri.toString()), id: int.tryParse(state.pathParameters['id']!) ?? 0, openPhoto: int.tryParse(state.uri.queryParameters['photo'] ?? '')),

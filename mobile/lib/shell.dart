@@ -116,6 +116,8 @@ String appPathFor(String? sitePath) {
       return '/albums/${rest(1)}$query';
     case 'photos':
       return parts.length > 2 && rest(1) == 'u' ? '/photos?user=${rest(2)}' : '/photos';
+    case 'screenshots':
+      return '$path$query';
     case 'music':
       if (rest(1) == 'u' && parts.length > 2) return '/music?user=${rest(2)}';
       if (rest(1) == 'playlists' && parts.length > 2) return '/music/playlists/${rest(2)}';
