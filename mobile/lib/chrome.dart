@@ -750,6 +750,8 @@ class _MenuContentState extends State<MenuContent> {
   Map<String, dynamic>? hub;
   /// GameCast pulse (`/shows/pulse`) — як `GameCastTile` на сайті.
   Map<String, dynamic>? castPulse;
+  /// LiveCast pulse (`/livecast/pulse`) — як `LiveCastTile` на сайті.
+  Map<String, dynamic>? livePulse;
   bool more = false;
   bool system = false;
 
@@ -772,6 +774,11 @@ class _MenuContentState extends State<MenuContent> {
     if (widget.session.pluginOn('live_shows')) {
       widget.session.api.get(Api.site('/shows/pulse')).then((d) {
         if (mounted) setState(() => castPulse = mapOf(d));
+      }).catchError((_) {});
+    }
+    if (widget.session.pluginOn('livecast')) {
+      widget.session.api.get(Api.site('/livecast/pulse')).then((d) {
+        if (mounted) setState(() => livePulse = mapOf(d));
       }).catchError((_) {});
     }
   }
@@ -813,6 +820,15 @@ class _MenuContentState extends State<MenuContent> {
     if (live == 0) return tr('Зараз тихо — почніть першу розмову');
     if (listeners == 0) return tr('{rooms} в ефірі — заходьте першими', {'rooms': '$live'});
     return tr('{rooms} в ефірі · {people} слухають', {'rooms': '$live', 'people': '$listeners'});
+  }
+
+  String get _liveCastSummary {
+    final live = intOf(livePulse?['live']);
+    final viewers = intOf(livePulse?['viewers']);
+    if (livePulse == null) return tr('Стріми камерою чи екраном');
+    if (live == 0) return tr('Ніхто не стрімить — будьте першими');
+    if (viewers == 0) return tr('{streams} наживо — зайдіть першими', {'streams': '$live'});
+    return tr('{streams} наживо · {people} дивляться', {'streams': '$live', 'people': '$viewers'});
   }
 
   /// Широка кнопка GameCast у меню — паритет з сайтом (еквалайзер + статус ефіру).
@@ -860,6 +876,61 @@ class _MenuContentState extends State<MenuContent> {
             ]),
             const SizedBox(height: 2),
             Text(_castSummary, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: muted)),
+          ]),
+        ),
+        Icon(LucideIcons.chevronRight, size: 18, color: muted),
+      ]),
+    );
+  }
+
+  /// Широка кнопка LiveCast — еквалайзер + статус стріму (як на сайті).
+  Widget _liveCastTile() {
+    final live = intOf(livePulse?['live']) > 0;
+    return _inner(
+      onTap: () => widget.onGo('/livecast'),
+      padding: const EdgeInsets.fromLTRB(12, 12, 10, 12),
+      child: Row(children: [
+        Container(
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(
+            color: _rose.withValues(alpha: live ? 0.15 : 0.1),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+            for (final h in live
+                ? const [10.0, 18.0, 12.0, 20.0, 10.0]
+                : const [8.0, 12.0, 9.0, 14.0, 8.0]) ...[
+              Container(
+                width: 3,
+                height: h,
+                decoration: BoxDecoration(
+                  color: live ? _rose : _rose.withValues(alpha: 0.55),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(width: 2),
+            ],
+          ]),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [
+              Text('LiveCast', style: body(15, weight: FontWeight.w800)),
+              const SizedBox(width: 8),
+              Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(shape: BoxShape.circle, color: live ? _rose : muted.withValues(alpha: 0.45)),
+              ),
+              if (live) ...[
+                const SizedBox(width: 6),
+                Text(tr('НАЖИВО'), style: body(10, color: _rose, weight: FontWeight.w800)),
+              ],
+            ]),
+            const SizedBox(height: 2),
+            Text(_liveCastSummary, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: muted)),
           ]),
         ),
         Icon(LucideIcons.chevronRight, size: 18, color: muted),
@@ -1056,26 +1127,7 @@ class _MenuContentState extends State<MenuContent> {
         ],
         if (widget.session.pluginOn('livecast')) ...[
           const SizedBox(height: 8),
-          _inner(
-            padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
-            onTap: () => widget.onGo('/livecast'),
-            child: Row(children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(color: _rose.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(12)),
-                child: const Icon(LucideIcons.video, size: 22, color: _rose),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text('LiveCast', style: body(15, weight: FontWeight.w800)),
-                  Text(tr('Стріми камерою чи екраном'), style: body(12, color: muted)),
-                ]),
-              ),
-              Icon(LucideIcons.chevronRight, size: 18, color: muted),
-            ]),
-          ),
+          _liveCastTile(),
         ],
       ])),
 

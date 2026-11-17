@@ -28,7 +28,7 @@ class LiveCastService
             'У вас уже є стрім LiveCast — завершіть його спершу.',
         );
 
-        return Livecast::query()->create([
+        $stream = Livecast::query()->create([
             'host_id' => $host->id,
             'title' => $title,
             'category' => $category,
@@ -37,6 +37,9 @@ class LiveCastService
             'viewers' => 0,
             'peak_viewers' => 0,
         ]);
+        Cache::forget('livecast.pulse');
+
+        return $stream;
     }
 
     /**
@@ -52,6 +55,7 @@ class LiveCastService
         $host = $livecast->host_id === $user->id;
         $identity = 'u'.$user->id;
         $this->touch($livecast, $user);
+        Cache::forget('livecast.pulse');
 
         return [
             'url' => (string) $this->livekit->url(),
