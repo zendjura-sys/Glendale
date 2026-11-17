@@ -138,23 +138,27 @@ export function voiceState(): VoiceState {
 }
 
 function publishVideos() {
-    set({ videos: [...videoEls.entries()].map(([id, el]) => {
-        const meta = (el.dataset.meta ? JSON.parse(el.dataset.meta) : {}) as {
-            identity?: string;
-            name?: string;
-            screen?: boolean;
-            local?: boolean;
-        };
+    set({
+        videos: [...videoEls.entries()].map(([id, el]) => {
+            const meta = (
+                el.dataset.meta ? JSON.parse(el.dataset.meta) : {}
+            ) as {
+                identity?: string;
+                name?: string;
+                screen?: boolean;
+                local?: boolean;
+            };
 
-        return {
-            id,
-            identity: meta.identity ?? id,
-            name: meta.name ?? id,
-            screen: Boolean(meta.screen),
-            local: Boolean(meta.local),
-            el,
-        };
-    }) });
+            return {
+                id,
+                identity: meta.identity ?? id,
+                name: meta.name ?? id,
+                screen: Boolean(meta.screen),
+                local: Boolean(meta.local),
+                el,
+            };
+        }),
+    });
 }
 
 function attachVideo(
@@ -180,7 +184,10 @@ function attachVideo(
     publishVideos();
 }
 
-function detachVideo(id: string, track?: { detach: (el?: HTMLMediaElement) => HTMLMediaElement[] }) {
+function detachVideo(
+    id: string,
+    track?: { detach: (el?: HTMLMediaElement) => HTMLMediaElement[] },
+) {
     const el = videoEls.get(id);
     if (!el) return;
     if (track) track.detach(el);
@@ -279,7 +286,8 @@ async function connect(
 
                 return;
             }
-            if (track.kind === Track.Kind.Video) detachVideo(pub.trackSid, track);
+            if (track.kind === Track.Kind.Video)
+                detachVideo(pub.trackSid, track);
         });
         next.on(RoomEvent.LocalTrackPublished, (pub, participant) => {
             const track = pub.track;
@@ -292,7 +300,8 @@ async function connect(
             });
         });
         next.on(RoomEvent.LocalTrackUnpublished, (pub) => {
-            if (pub.track?.kind === Track.Kind.Video) detachVideo(pub.trackSid, pub.track);
+            if (pub.track?.kind === Track.Kind.Video)
+                detachVideo(pub.trackSid, pub.track);
         });
         next.on(RoomEvent.ActiveSpeakersChanged, (speakers) =>
             set({ speaking: speakers.map((p) => p.identity) }),

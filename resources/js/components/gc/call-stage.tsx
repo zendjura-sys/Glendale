@@ -19,7 +19,7 @@ export function CallStage() {
 
     return (
         <div className="pointer-events-none fixed inset-x-3 top-[88px] bottom-24 z-30 sm:inset-x-auto sm:right-4 sm:left-auto sm:w-[min(420px,calc(100vw-2rem))]">
-            <div className="pointer-events-auto glass flex h-full max-h-[min(560px,calc(100vh-12rem))] flex-col overflow-hidden rounded-2xl shadow-xl">
+            <div className="glass pointer-events-auto flex h-full max-h-[min(560px,calc(100vh-12rem))] flex-col overflow-hidden rounded-2xl shadow-xl">
                 <div className="flex items-center gap-2 px-3 py-2">
                     <Video className="size-4 text-white/70" />
                     <span className="min-w-0 flex-1 truncate text-sm font-semibold text-white">
@@ -72,7 +72,10 @@ function VideoMount({
 
     return (
         <div className={cn('relative bg-[#12141A]', className)}>
-            <div ref={host} className="absolute inset-0 [&>video]:h-full [&>video]:w-full [&>video]:object-cover" />
+            <div
+                ref={host}
+                className="absolute inset-0 [&>video]:h-full [&>video]:w-full [&>video]:object-cover"
+            />
             <span className="absolute bottom-2 left-2 max-w-[85%] truncate rounded-lg bg-black/55 px-2 py-0.5 text-[11px] font-semibold text-white">
                 {tile.screen ? (
                     <span className="inline-flex items-center gap-1">
