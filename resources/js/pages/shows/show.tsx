@@ -1,7 +1,9 @@
 import { Head, Link } from '@inertiajs/react';
 import {
     ArrowLeft,
+    Gift,
     Hand,
+    Heart,
     Headphones,
     LogOut,
     Mic,
@@ -17,6 +19,7 @@ import { useCallback, useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { toast } from 'sonner';
 import { ShowPerson } from '@/components/shows/show-person';
+import { StreamAiPanel } from '@/components/shows/stream-ai-panel';
 import { Input } from '@/components/ui/input';
 import { api, ApiError } from '@/lib/api';
 import { tr } from '@/lib/i18n';
@@ -25,8 +28,28 @@ import { joinShow, leaveVoice, toggleMic, useVoice } from '@/lib/voice';
 import type { ShowCard } from '@/pages/shows/index';
 import type { UserCard } from '@/types';
 
-type Person = UserCard & { role: string };
+type Person = UserCard & {
+    role: string;
+    likes?: number;
+    liked?: boolean;
+};
 type Guest = Person & { seconds_left: number };
+type InvGift = {
+    id: number;
+    gift: {
+        id: number;
+        name: string;
+        emoji: string;
+        rarity: string;
+        rarity_label: string;
+    } | null;
+};
+type RecentGift = {
+    id: number;
+    from: UserCard | null;
+    to: UserCard | null;
+    gift: InvGift['gift'];
+};
 
 type State = {
     show: ShowCard & {
@@ -42,6 +65,10 @@ type State = {
     listeners_count: number;
     me: { role: string; hand: boolean; can_speak: boolean } | null;
     can_manage: boolean;
+    recent_gifts?: RecentGift[];
+    gift_spotlight?: RecentGift | null;
+    inventory?: InvGift[];
+    ai?: { available: boolean };
 };
 
 /** Сторінка шоу: сцена з персонажами, гості з таймером, черга рук, слухачі й керування ефіром. */
@@ -196,6 +223,14 @@ export default function ShowPage(initial: State) {
                                         ? tr('Ведучий')
                                         : tr('Співведучий')}
                                 </span>
+                                {show.status === 'live' && state.me && (
+                                    <StageFanActions
+                                        showId={show.id}
+                                        person={person}
+                                        inventory={state.inventory ?? []}
+                                        onDone={refresh}
+                                    />
+                                )}
                                 {isHost && person.role === 'speaker' && (
                                     <button
                                         type="button"
@@ -235,6 +270,10 @@ export default function ShowPage(initial: State) {
                                         onStop={() =>
                                             act('DELETE', `/floor/${g.id}`)
                                         }
+                                        showId={show.id}
+                                        inventory={state.inventory ?? []}
+                                        canFan={Boolean(state.me)}
+                                        onFan={refresh}
                                     />
                                 ))}
                             </motion.div>
@@ -292,6 +331,47 @@ export default function ShowPage(initial: State) {
                     />
                 )}
 
+                {state.ai?.available && (
+                    <StreamAiPanel
+                        endpointBase={`/shows/${show.id}`}
+                        className="mt-4"
+                    />
+                )}
+
+                {(state.recent_gifts?.length ?? 0) > 0 && (
+                    <section className="gc-solid mt-4 rounded-2xl p-4">
+                        <h2 className="mb-2 flex items-center gap-2 font-display text-base font-bold text-white">
+                            <Gift className="size-4 text-amber-300" />
+                            {tr('Подарунки в ефірі')}
+                        </h2>
+                        {state.gift_spotlight && (
+                            <p className="mb-2 rounded-xl bg-amber-400/15 px-3 py-2 text-sm font-semibold text-amber-100">
+                                {state.gift_spotlight.gift?.emoji}{' '}
+                                {state.gift_spotlight.from?.name} →{' '}
+                                {state.gift_spotlight.to?.name}:{' '}
+                                {state.gift_spotlight.gift?.name}
+                            </p>
+                        )}
+                        <ul className="space-y-1.5 text-sm text-white/70">
+                            {(state.recent_gifts ?? []).slice(0, 8).map((g) => (
+                                <li key={g.id}>
+                                    {g.gift?.emoji} {g.from?.name} →{' '}
+                                    {g.to?.name} · {g.gift?.name}
+                                    {g.gift?.rarity_label
+                                        ? ` (${g.gift.rarity_label})`
+                                        : ''}
+                                </li>
+                            ))}
+                        </ul>
+                        <Link
+                            href="/shows/gifts/shop"
+                            className="mt-3 inline-flex text-xs font-semibold text-amber-200 hover:underline"
+                        >
+                            {tr('Купити пак подарунків')}
+                        </Link>
+                    </section>
+                )}
+
                 {state.listeners.length > 0 && (
                     <section className="mt-4">
                         <h2 className="mb-2 text-sm font-semibold text-white/60">
@@ -339,17 +419,109 @@ export default function ShowPage(initial: State) {
     );
 }
 
+function StageFanActions({
+    showId,
+    person,
+    inventory,
+    onDone,
+}: {
+    showId: number;
+    person: Person;
+    inventory: InvGift[];
+    onDone: () => void | Promise<void>;
+}) {
+    const [open, setOpen] = useState(false);
+
+    const like = async () => {
+        try {
+            await api('POST', `/shows/${showId}/like/${person.id}`);
+            await onDone();
+        } catch (e) {
+            toast.error(e instanceof ApiError ? e.message : tr('Не вдалося'));
+        }
+    };
+
+    const send = async (userGiftId: number) => {
+        try {
+            await api('POST', `/shows/${showId}/gift/${person.id}`, {
+                user_gift_id: userGiftId,
+            });
+            setOpen(false);
+            toast.success(tr('Подарунок надіслано'));
+            await onDone();
+        } catch (e) {
+            toast.error(e instanceof ApiError ? e.message : tr('Не вдалося'));
+        }
+    };
+
+    return (
+        <div className="mt-1 flex flex-col items-center gap-1">
+            <button
+                type="button"
+                onClick={() => void like()}
+                className={cn(
+                    'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold',
+                    person.liked
+                        ? 'bg-rose-500/25 text-rose-200'
+                        : 'bg-white/10 text-white/60 hover:text-rose-200',
+                )}
+            >
+                <Heart
+                    className={cn('size-3', person.liked && 'fill-current')}
+                />
+                {person.likes ?? 0}
+            </button>
+            {inventory.length > 0 && (
+                <>
+                    <button
+                        type="button"
+                        onClick={() => setOpen((v) => !v)}
+                        className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-200/90 hover:underline"
+                    >
+                        <Gift className="size-3" /> {tr('Подарувати')}
+                    </button>
+                    {open && (
+                        <div className="z-10 mt-1 max-h-40 w-40 overflow-y-auto rounded-xl bg-black/80 p-1.5 shadow-xl">
+                            {inventory.map((item) => (
+                                <button
+                                    key={item.id}
+                                    type="button"
+                                    onClick={() => void send(item.id)}
+                                    className="flex w-full items-center gap-1.5 rounded-lg px-1.5 py-1 text-left text-[11px] text-white hover:bg-white/10"
+                                >
+                                    <span>{item.gift?.emoji}</span>
+                                    <span className="truncate">
+                                        {item.gift?.name}
+                                    </span>
+                                </button>
+                            ))}
+                        </div>
+                    )}
+                </>
+            )}
+        </div>
+    );
+}
+
 /** Гість з питанням: персонаж і кільце, що спадає до нуля. */
 function GuestSeat({
     guest,
     total,
     canStop,
     onStop,
+    showId,
+    inventory,
+    canFan,
+    onFan,
 }: {
     guest: Guest;
     total: number;
     canStop: boolean;
     onStop: () => void;
+    showId: number;
+    inventory: InvGift[];
+    canFan: boolean;
+    onFan: () => void | Promise<void>;
 }) {
     const [left, setLeft] = useState(guest.seconds_left);
     useEffect(() => setLeft(guest.seconds_left), [guest.seconds_left]);
@@ -409,6 +581,14 @@ function GuestSeat({
                     s: `${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}`,
                 })}
             </span>
+            {canFan && (
+                <StageFanActions
+                    showId={showId}
+                    person={guest}
+                    inventory={inventory}
+                    onDone={onFan}
+                />
+            )}
             {canStop && (
                 <button
                     type="button"

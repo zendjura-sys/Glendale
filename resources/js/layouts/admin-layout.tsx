@@ -54,6 +54,7 @@ import {
     Siren,
     Code2,
     BellRing,
+    Gift,
 } from 'lucide-react';
 import { AnimatePresence, m, useReducedMotion } from 'motion/react';
 import { useEffect, useState } from 'react';
@@ -171,6 +172,11 @@ function groups(): { title: string; items: Item[] }[] {
                     label: tr('Стікери'),
                     href: '/admin/stickers',
                     icon: Sticker,
+                },
+                {
+                    label: tr('Паки GameCast'),
+                    href: '/admin/gift-packs',
+                    icon: Gift,
                 },
             ],
         },

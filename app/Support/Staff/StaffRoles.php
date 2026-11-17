@@ -26,6 +26,7 @@ class StaffRoles
         'games' => 'Ігри',
         'families' => 'Сім’ї',
         'stickers' => 'Стікери',
+        'gift-packs' => 'Паки GameCast',
         'seasons' => 'Сезони',
         'status' => 'Статус',
     ];

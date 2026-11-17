@@ -87,6 +87,7 @@ class SiteSettings
         'ai_model_teammates' => null,
         'ai_model_moderation' => null,
         'ai_model_bot' => null,
+        'ai_model_streams' => null,
         'ai_model_vision' => null,
         'ai_model_cards' => null,
         'ai_model_cinema' => null,
