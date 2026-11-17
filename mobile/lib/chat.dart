@@ -887,6 +887,7 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Future<void> _attach() async {
+    final group = mapOf(conversation)['type'] == 'group';
     final choice = await showGcSheet<String>(
       context,
       builder: (sheet) => Padding(
@@ -897,6 +898,8 @@ class _ChatScreenState extends State<ChatScreen> {
             _AttachOption(icon: LucideIcons.eye, color: Color(0xFFF59E0B), title: tr('Фото на один перегляд'), subtitle: tr('Відкриється лише раз'), onTap: () => Navigator.pop(sheet, 'once')),
           _AttachOption(icon: LucideIcons.file, color: violet, title: tr('Файл'), subtitle: tr('до 50 МБ'), onTap: () => Navigator.pop(sheet, 'file')),
           _AttachOption(icon: LucideIcons.userRound, color: Color(0xFF2DD4BF), title: tr('Контакт'), subtitle: tr('Пошук на GameCon'), onTap: () => Navigator.pop(sheet, 'contact')),
+          if (group)
+            _AttachOption(icon: LucideIcons.chartBar, color: Color(0xFFFBBF24), title: tr('Опитування'), subtitle: tr('Питання й варіанти в групі'), onTap: () => Navigator.pop(sheet, 'poll')),
         ]),
       ),
     );
@@ -914,7 +917,71 @@ class _ChatScreenState extends State<ChatScreen> {
       case 'contact':
         final user = await _pickContact();
         if (user != null) await _send(extra: {'contact_id': '${user['id']}'});
+      case 'poll':
+        await _createPoll();
     }
+  }
+
+  Future<void> _createPoll() async {
+    final question = TextEditingController();
+    final options = [TextEditingController(), TextEditingController()];
+    var multiple = false;
+    var anonymous = false;
+    var busy = false;
+    final created = await showGcSheet<Map<String, dynamic>>(
+      context,
+      title: tr('Опитування'),
+      builder: (sheet) => StatefulBuilder(
+        builder: (sheet, setSheet) {
+          Future<void> submit() async {
+            final filled = [for (final o in options) if (o.text.trim().isNotEmpty) o.text.trim()];
+            if (busy || question.text.trim().length < 2 || filled.length < 2) return;
+            setSheet(() => busy = true);
+            try {
+              final data = await api.post(Api.site('/messages/${widget.id}/polls'), {
+                'question': question.text.trim(),
+                'options': filled,
+                'multiple': multiple,
+                'anonymous': anonymous,
+              });
+              if (sheet.mounted && data['message'] is Map) Navigator.pop(sheet, mapOf(data['message']));
+            } catch (e) {
+              if (sheet.mounted) {
+                setSheet(() => busy = false);
+                toast(sheet, e);
+              }
+            }
+          }
+
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              GcField(controller: question, label: tr('Питання'), maxLines: 2, autofocus: true),
+              const SizedBox(height: 8),
+              for (var i = 0; i < options.length; i++) ...[
+                if (i > 0) const SizedBox(height: 6),
+                GcField(controller: options[i], label: tr('Варіант {n}', {'n': i + 1})),
+              ],
+              if (options.length < 10)
+                TextButton.icon(
+                  onPressed: () => setSheet(() => options.add(TextEditingController())),
+                  icon: const Icon(LucideIcons.plus, size: 16),
+                  label: Text(tr('Ще варіант')),
+                ),
+              SwitchListTile(contentPadding: EdgeInsets.zero, value: multiple, onChanged: (v) => setSheet(() => multiple = v), title: Text(tr('Кілька відповідей'), style: body(14))),
+              SwitchListTile(contentPadding: EdgeInsets.zero, value: anonymous, onChanged: (v) => setSheet(() => anonymous = v), title: Text(tr('Анонімно'), style: body(14))),
+              const SizedBox(height: 8),
+              PrimaryButton(label: tr('Створити'), icon: LucideIcons.chartBar, busy: busy, onPressed: busy ? null : () => unawaited(submit())),
+            ]),
+          );
+        },
+      ),
+    );
+    question.dispose();
+    for (final o in options) {
+      o.dispose();
+    }
+    if (created != null && mounted) setState(() => messages.add(created));
   }
 
   /// Одне фото «на один перегляд» — одразу, без підпису.
@@ -1791,6 +1858,143 @@ class _SwipeToReplyState extends State<_SwipeToReply> with SingleTickerProviderS
 /// Той самий набір, що `MessageReaction::EMOJI` і пікер реакцій на сайті.
 const _messageReactions = ['👍', '❤️', '🔥', '😂', '😮', '😢', '🎉', '👎'];
 
+/// Опитування в груповому чаті — як chat-poll на сайті.
+class _ChatPollCard extends StatefulWidget {
+  const _ChatPollCard({
+    required this.conversationId,
+    required this.messageId,
+    required this.poll,
+    required this.own,
+    required this.canClose,
+    required this.onUpdated,
+    this.body,
+  });
+  final int conversationId;
+  final int messageId;
+  final Map<String, dynamic> poll;
+  final bool own;
+  final bool canClose;
+  final String? body;
+  final ValueChanged<Map<String, dynamic>> onUpdated;
+
+  @override
+  State<_ChatPollCard> createState() => _ChatPollCardState();
+}
+
+class _ChatPollCardState extends State<_ChatPollCard> {
+  late Map<String, dynamic> poll = Map<String, dynamic>.from(widget.poll);
+  late List<int> mine = [for (final o in (poll['mine'] is List ? poll['mine'] as List : const [])) intOf(o)];
+  bool busy = false;
+
+  bool get closed => poll['closed'] == true;
+  bool get multiple => poll['multiple'] == true;
+  bool get reveal => closed || mine.isNotEmpty;
+
+  Future<void> _vote(int index) async {
+    if (busy || closed) return;
+    final next = multiple
+        ? (mine.contains(index) ? [for (final i in mine) if (i != index) i] : [...mine, index])
+        : (mine.length == 1 && mine.first == index ? <int>[] : [index]);
+    setState(() => busy = true);
+    try {
+      final data = await AppScope.read(context).session.api.post(
+            Api.site('/messages/${widget.conversationId}/messages/${widget.messageId}/vote'),
+            {'options': next},
+          );
+      final message = mapOf(data['message']);
+      final updated = message['poll'] is Map ? mapOf(message['poll']) : poll;
+      if (!mounted) return;
+      setState(() {
+        poll = updated;
+        mine = [for (final o in (updated['mine'] is List ? updated['mine'] as List : const [])) intOf(o)];
+        busy = false;
+      });
+      widget.onUpdated(updated);
+    } catch (e) {
+      if (mounted) {
+        setState(() => busy = false);
+        toast(context, e);
+      }
+    }
+  }
+
+  Future<void> _close() async {
+    if (busy || closed || !widget.canClose) return;
+    setState(() => busy = true);
+    try {
+      final data = await AppScope.read(context).session.api.post(Api.site('/messages/${widget.conversationId}/messages/${widget.messageId}/close-poll'));
+      final message = mapOf(data['message']);
+      final updated = message['poll'] is Map ? mapOf(message['poll']) : poll;
+      if (!mounted) return;
+      setState(() {
+        poll = updated;
+        busy = false;
+      });
+      widget.onUpdated(updated);
+    } catch (e) {
+      if (mounted) {
+        setState(() => busy = false);
+        toast(context, e);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final options = maps(poll['options']);
+    final total = intOf(poll['total']);
+    final fg = widget.own ? Colors.white : ink;
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      if (widget.body != null && widget.body!.isNotEmpty) ...[
+        Text(widget.body!, style: body(15, color: fg, weight: FontWeight.w700)),
+        const SizedBox(height: 6),
+      ],
+      Text(
+        [
+          if (closed) tr('Закрито'),
+          if (poll['anonymous'] == true) tr('Анонімно'),
+          if (multiple) tr('кілька відповідей'),
+        ].where((s) => s.isNotEmpty).join(' · '),
+        style: body(11.5, color: widget.own ? Colors.white70 : muted),
+      ),
+      const SizedBox(height: 6),
+      for (var i = 0; i < options.length; i++) ...[
+        if (i > 0) const SizedBox(height: 6),
+        Builder(builder: (context) {
+          final opt = options[i];
+          final count = intOf(opt['count']);
+          final percent = total > 0 ? ((count / total) * 100).round() : 0;
+          final selected = mine.contains(i);
+          return Material(
+            color: selected ? (widget.own ? Colors.white24 : primary.withValues(alpha: 0.2)) : (widget.own ? Colors.white10 : fg.withValues(alpha: 0.06)),
+            borderRadius: BorderRadius.circular(12),
+            child: InkWell(
+              onTap: closed || busy ? null : () => unawaited(_vote(i)),
+              borderRadius: BorderRadius.circular(12),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+                child: Row(children: [
+                  Icon(selected ? LucideIcons.circleCheck : LucideIcons.circle, size: 16, color: fg),
+                  const SizedBox(width: 8),
+                  Expanded(child: Text(text(opt['text']) ?? '', style: body(13.5, color: fg, weight: FontWeight.w600))),
+                  if (reveal) Text('$percent% · $count', style: body(12, color: widget.own ? Colors.white70 : muted)),
+                ]),
+              ),
+            ),
+          );
+        }),
+      ],
+      const SizedBox(height: 6),
+      Row(children: [
+        Text(tr('Голосів: {n}', {'n': total}), style: body(12, color: widget.own ? Colors.white70 : muted)),
+        const Spacer(),
+        if (widget.canClose && !closed)
+          TextButton(onPressed: busy ? null : () => unawaited(_close()), child: Text(tr('Закрити'), style: body(12, color: widget.own ? Colors.white : soft))),
+      ]),
+    ]);
+  }
+}
+
 /// Повідомлення: текст, відповідь, фото, файли, голосове, відеокружок, стікер, контакт, системне.
 class _Bubble extends StatelessWidget {
   const _Bubble({
@@ -1893,8 +2097,22 @@ class _Bubble extends StatelessWidget {
               ]),
             ),
           ),
-        if (photos.isNotEmpty) Padding(padding: const EdgeInsets.only(bottom: 4), child: SizedBox(width: 240, child: MediaGrid(items: photos))),
-        for (final a in once) ViewOnceChip(attachment: a, own: own),
+        if (type == 'poll' && message['poll'] is Map)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: _ChatPollCard(
+              conversationId: conversationId,
+              messageId: intOf(message['id']),
+              poll: mapOf(message['poll']),
+              body: bodyText,
+              own: own,
+              canClose: own || message['can_close_poll'] == true,
+              onUpdated: (next) => message['poll'] = next,
+            ),
+          )
+        else if (photos.isNotEmpty)
+          Padding(padding: const EdgeInsets.only(bottom: 4), child: SizedBox(width: 240, child: MediaGrid(items: photos))),
+        if (type != 'poll') for (final a in once) ViewOnceChip(attachment: a, own: own),
         if (thread != null && intOf(thread['count']) > 0)
           Padding(
             padding: const EdgeInsets.only(bottom: 4),
@@ -1926,7 +2144,7 @@ class _Bubble extends StatelessWidget {
           ),
         if (partyInvite(rawBody) case final invite?)
           _PartyInviteCard(invite: invite, own: own)
-        else if (bodyText != null && bodyText.isNotEmpty)
+        else if (type != 'poll' && bodyText != null && bodyText.isNotEmpty)
           Text(bodyText, style: body(15, color: own ? Colors.white : ink).copyWith(height: 1.35)),
         const SizedBox(height: 3),
         Align(alignment: Alignment.bottomRight, widthFactor: 1, child: meta),
