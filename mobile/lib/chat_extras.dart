@@ -543,7 +543,7 @@ class _ChatSharedPanelState extends State<ChatSharedPanel> {
                   borderRadius: BorderRadius.circular(10),
                   child: ColoredBox(
                     color: ink.withValues(alpha: 0.06),
-                    child: url == null
+                    child: text(item['type']) == 'video_note' || url == null
                         ? Icon(text(item['type']) == 'video_note' ? LucideIcons.video : LucideIcons.image, color: muted)
                         : NetImage(url),
                   ),

@@ -361,7 +361,12 @@ class Messenger
     /** Відеоповідомлення-кружок (до хвилини, з камери). */
     public function sendVideoNote(Conversation $conversation, User $sender, UploadedFile $video, int $duration, ?int $replyToId = null): Message
     {
-        $extension = str_contains((string) $video->getMimeType(), 'mp4') ? 'mp4' : 'webm';
+        $mime = (string) $video->getMimeType();
+        $extension = match (true) {
+            str_contains($mime, 'mp4') => 'mp4',
+            str_contains($mime, 'quicktime') => 'mov',
+            default => 'webm',
+        };
 
         return $this->deliver($conversation, $sender, ['type' => Message::TYPE_VIDEO_NOTE], $replyToId, function (Message $message) use ($video, $duration, $extension) {
             $message->attachments()->create([

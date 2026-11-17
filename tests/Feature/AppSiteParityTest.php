@@ -182,6 +182,7 @@ class AppSiteParityTest extends TestCase
         // Реакції в застосунку йдуть тим самим мостом, що й на сайті: одна на людину, повтор знімає.
         $this->withToken($token)->getJson('/api/v1/me')->assertOk()
             ->assertJsonPath('user.plugins.message_reactions', true)
+            ->assertJsonPath('user.plugins.video_notes', true)
             ->assertJsonPath('user.plugins.account_switcher', true)
             ->assertJsonPath('user.plugins.chat_media_panel', true)
             ->assertJsonPath('user.plugins.ip_bans', true)

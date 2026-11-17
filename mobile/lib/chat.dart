@@ -23,6 +23,7 @@ import 'posts.dart';
 import 'push.dart';
 import 'state.dart';
 import 'theme.dart';
+import 'video_note.dart';
 import 'voice_note.dart';
 import 'voice_room.dart';
 import 'widgets.dart';
@@ -738,6 +739,70 @@ class _ChatScreenState extends State<ChatScreen> {
     if (note != null) await _sendVoice(note);
   }
 
+  /// Відеокружок: системна камера або коротке відео з галереї (окремого пакета камери немає).
+  Future<void> _videoNote() async {
+    if (recorder.active || sending) return;
+    final choice = await showGcSheet<String>(
+      context,
+      title: tr('Відеокружок'),
+      builder: (sheet) => Padding(
+        padding: const EdgeInsets.fromLTRB(12, 0, 12, 20),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          _AttachOption(icon: LucideIcons.camera, color: const Color(0xFFEF4444), title: tr('Зняти'), subtitle: tr('Фронтальна камера, до 60 с'), onTap: () => Navigator.pop(sheet, 'camera')),
+          _AttachOption(icon: LucideIcons.image, color: const Color(0xFF38BDF8), title: tr('З галереї'), subtitle: tr('Коротке відео до 60 с'), onTap: () => Navigator.pop(sheet, 'gallery')),
+        ]),
+      ),
+    );
+    if (!mounted || choice == null) return;
+    final XFile? file;
+    try {
+      file = await ImagePicker().pickVideo(
+        source: choice == 'camera' ? ImageSource.camera : ImageSource.gallery,
+        preferredCameraDevice: CameraDevice.front,
+        maxDuration: const Duration(seconds: videoNoteMaxSeconds),
+      );
+    } catch (_) {
+      if (mounted) toast(context, tr('Немає доступу до камери або мікрофона.'));
+      return;
+    }
+    if (file == null || !mounted) return;
+    final prepared = await prepareVideoNote(path: file.path, name: file.name, mime: file.mimeType);
+    if (!mounted) return;
+    if (prepared.error != null) {
+      toast(context, prepared.error!);
+      return;
+    }
+    await _sendVideoNote(prepared);
+  }
+
+  Future<void> _sendVideoNote(PreparedVideoNote note) async {
+    final path = note.path;
+    final filename = note.filename;
+    final seconds = note.seconds;
+    if (path == null || filename == null || seconds == null) return;
+    setState(() => sending = true);
+    try {
+      final data = await api.upload(
+        '/api/v1/messages/${widget.id}',
+        {
+          'video_duration': '$seconds',
+          if (replyTo != null) 'reply_to_id': '${replyTo!['id']}',
+        },
+        [await http.MultipartFile.fromPath('video_note', path, filename: filename)],
+      );
+      if (!mounted) return;
+      setState(() {
+        if (data['message'] is Map) messages.add(mapOf(data['message']));
+        replyTo = null;
+      });
+      if (scroll.hasClients) unawaited(scroll.animateTo(0, duration: const Duration(milliseconds: 250), curve: Curves.easeOut));
+    } catch (e) {
+      if (mounted) toast(context, e);
+    } finally {
+      if (mounted) setState(() => sending = false);
+    }
+  }
+
   Future<void> _sendVoice(VoiceNote note) async {
     setState(() => sending = true);
     try {
@@ -1362,29 +1427,33 @@ class _ChatScreenState extends State<ChatScreen> {
       return RoundIcon(icon: editing != null ? LucideIcons.check : LucideIcons.send, onTap: sending || empty ? null : _send, filled: true, size: 44);
     }
     final recording = recorder.active;
-    return Tooltip(
-      message: tr('Утримуйте, щоб записати голосове'),
-      child: GestureDetector(
-        onTap: sending ? null : () => _startVoice(hold: false),
-        onLongPressStart: sending ? null : (_) => _startVoice(hold: true),
-        onLongPressMoveUpdate: _onHoldMove,
-        onLongPressEnd: (_) => _onHoldEnd(),
-        onLongPressCancel: _onHoldEnd,
-        child: AnimatedScale(
-          scale: recording ? 1.3 : 1,
-          duration: const Duration(milliseconds: 160),
-          child: Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              gradient: buttonGradient,
-              shape: BoxShape.circle,
+    final notes = AppScope.read(context).session.pluginOn('video_notes');
+    return Row(mainAxisSize: MainAxisSize.min, children: [
+      if (notes && !recording) ...[
+        RoundIcon(icon: LucideIcons.camera, onTap: sending ? null : _videoNote, color: soft, size: 44, tooltip: tr('Відеокружок')),
+        const SizedBox(width: 6),
+      ],
+      Tooltip(
+        message: tr('Утримуйте, щоб записати голосове'),
+        child: GestureDetector(
+          onTap: sending ? null : () => _startVoice(hold: false),
+          onLongPressStart: sending ? null : (_) => _startVoice(hold: true),
+          onLongPressMoveUpdate: _onHoldMove,
+          onLongPressEnd: (_) => _onHoldEnd(),
+          onLongPressCancel: _onHoldEnd,
+          child: AnimatedScale(
+            scale: recording ? 1.3 : 1,
+            duration: const Duration(milliseconds: 160),
+            child: Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(gradient: buttonGradient, shape: BoxShape.circle),
+              child: const Icon(LucideIcons.mic, color: Colors.white, size: 21),
             ),
-            child: const Icon(LucideIcons.mic, color: Colors.white, size: 21),
           ),
         ),
       ),
-    );
+    ]);
   }
 
   Widget _recordingBar() {
@@ -1722,7 +1791,7 @@ class _SwipeToReplyState extends State<_SwipeToReply> with SingleTickerProviderS
 /// Той самий набір, що `MessageReaction::EMOJI` і пікер реакцій на сайті.
 const _messageReactions = ['👍', '❤️', '🔥', '😂', '😮', '😢', '🎉', '👎'];
 
-/// Повідомлення: текст, відповідь, фото, файли, голосове, стікер, контакт, системне.
+/// Повідомлення: текст, відповідь, фото, файли, голосове, відеокружок, стікер, контакт, системне.
 class _Bubble extends StatelessWidget {
   const _Bubble({
     required this.message,
@@ -1772,11 +1841,21 @@ class _Bubble extends StatelessWidget {
     final thread = message['thread'] is Map ? mapOf(message['thread']) : null;
     final docs = attachments.where((a) => a['type'] == 'file').toList();
     final voice = attachments.where((a) => a['type'] == 'voice').toList();
+    final notes = attachments.where((a) => a['type'] == 'video_note').toList();
     final sticker = message['sticker'] is Map ? mapOf(message['sticker']) : null;
     final contact = message['contact'] is Map ? mapOf(message['contact']) : null;
     final reply = message['reply_to'] is Map ? mapOf(message['reply_to']) : null;
     final rawBody = text(message['body']);
     final bodyText = rawBody == null ? null : maskProfanity(rawBody, text(AppScope.read(context).session.me?['profanity_mask']));
+    final bareNote = notes.length == 1 &&
+        photos.isEmpty &&
+        once.isEmpty &&
+        docs.isEmpty &&
+        voice.isEmpty &&
+        contact == null &&
+        reply == null &&
+        (bodyText == null || bodyText.isEmpty) &&
+        (thread == null || intOf(thread['count']) == 0);
     final meta = Row(mainAxisSize: MainAxisSize.min, children: [
       if (message['edited_at'] != null) Text(tr('ред. '), style: body(11, color: own ? fg.withValues(alpha: 0.60) : faint)),
       Text(clock(message['created_at']), style: body(11, color: own ? fgSoft : faint)),
@@ -1830,6 +1909,9 @@ class _Bubble extends StatelessWidget {
           ),
         for (final doc in docs) _FileChip(file: doc, own: own),
         for (final clip in voice) _VoiceClip(clip: clip, own: own, conversationId: conversationId, messageId: intOf(message['id'])),
+        if (!bareNote)
+          for (final note in notes)
+            Padding(padding: const EdgeInsets.only(bottom: 4), child: VideoNotePlayer(key: ValueKey('vn-${note['id']}'), note: note)),
         if (contact != null)
           GestureDetector(
             onTap: () => context.push('/u/${contact['username']}'),
@@ -1862,6 +1944,21 @@ class _Bubble extends StatelessWidget {
             SizedBox(width: 130, height: 130, child: NetImage(text(sticker['url']), fit: BoxFit.contain)),
             meta,
           ])
+        : bareNote
+            ? Column(crossAxisAlignment: own ? CrossAxisAlignment.end : CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+                if (showAuthor)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 3),
+                    child: Wrap(spacing: 6, crossAxisAlignment: WrapCrossAlignment.center, children: [
+                      Text(authorName, style: body(12.5, color: bot ? const Color(0xFF7CC8FF) : (guest ? muted : const Color(0xFF9AA8FF)), weight: FontWeight.w700)),
+                      if (bot) Pill(label: tr('бот'), color: const Color(0xFF7CC8FF)),
+                      if (guest) Pill(label: tr('гість'), color: muted),
+                    ]),
+                  ),
+                VideoNotePlayer(key: ValueKey('vn-${notes.first['id']}'), note: notes.first),
+                const SizedBox(height: 3),
+                meta,
+              ])
         : Container(
             constraints: BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width * 0.74),
             padding: const EdgeInsets.fromLTRB(12, 8, 12, 6),
