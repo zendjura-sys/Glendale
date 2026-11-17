@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.2611.0+143
+version: 1.2611.0+144
 # Версія для людей і Google Play — Г.ГГММ.X.Y (див. AGENTS.md): Г — глобальна, ГГММ — рік і місяць,
 # X.Y — номер збірки в місяці (Y 0–10, далі X+1; новий місяць — 0.0). Збірка передає її як --build-name.
 gamecon_version: 1.2611.0.5
