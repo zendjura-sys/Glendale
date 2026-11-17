@@ -53,7 +53,7 @@ class CatchUpCard extends StatelessWidget {
                     children: [
                       Text(tr('Поки тебе не було'), style: body(14, weight: FontWeight.w700)),
                       Text(
-                        '${count} ${plural(count, tr('повідомлення'), tr('повідомлення'), tr('повідомлень'))} ${tr('від')} $people ${plural(people, tr('людини'), tr('людей'), tr('людей'))}',
+                        '$count ${plural(count, tr('повідомлення'), tr('повідомлення'), tr('повідомлень'))} ${tr('від')} $people ${plural(people, tr('людини'), tr('людей'), tr('людей'))}',
                         style: body(11.5, color: muted),
                       ),
                     ],
