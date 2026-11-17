@@ -295,7 +295,8 @@ function VideoScene({
                     loop
                     playsInline
                     disablePictureInPicture
-                    preload="auto"
+                    // Телефон: не тягнемо ролик наперед — poster + autoplay вистачить.
+                    preload={phone ? 'none' : 'auto'}
                     tabIndex={-1}
                     className="bg-video__frame"
                 />

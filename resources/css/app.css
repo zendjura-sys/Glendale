@@ -926,6 +926,24 @@ html[data-palette='copper'] {
     }
 
     /*
+     * Легший мобільний UI: без smooth-scroll і без анімацій переходів сторінок
+     * (View Transitions + каскад .gc-page їдять GPU на слабких телефонах).
+     */
+    html {
+        scroll-behavior: auto;
+    }
+
+    .gc-page:not(.gc-page-settled) {
+        animation: none;
+    }
+
+    ::view-transition-group(*),
+    ::view-transition-old(*),
+    ::view-transition-new(*) {
+        animation: none !important;
+    }
+
+    /*
      * Менше 16px змушує Chrome масштабувати поле. Зум під час утримання
      * пробілу зсуває каретку, і клавіатура згортається замість зміни мови.
      */

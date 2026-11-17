@@ -34,6 +34,7 @@ import { AccountSwitcher } from '@/components/gc/account-switcher';
 import { useStreamerMode } from '@/components/settings/streamer-mode-switch';
 import { IncomingCall } from '@/components/gc/incoming-call';
 import { forgetOfflinePages } from '@/lib/offline';
+import { NAV_CACHE, navPrefetch } from '@/lib/prefetch';
 import { InboxListener } from '@/components/gc/inbox-listener';
 import { Logo, LogoMark } from '@/components/gc/logo';
 import { ModuleIcon } from '@/components/gc/module-icon';
@@ -433,8 +434,9 @@ function MobileNav() {
                         href={item.href}
                         // Телефон: mount гріє розділи одразу; ПК: ще й hover. Кеш 2 хв.
                         {...({
-                            prefetch: ['mount', 'hover'],
-                            cacheFor: '2m',
+                            // На телефоні navPrefetch() → false (без mount-прогріву всіх табів).
+                            prefetch: navPrefetch(),
+                            cacheFor: NAV_CACHE,
                         } as object)}
                         onClick={() => playNavTick()}
                         selected={!open && isActive(item.href, item.key)}

@@ -23,6 +23,7 @@ import { useCurrentUrl } from '@/hooks/use-current-url';
 import { useUnreadMessages } from '@/lib/inbox';
 import { tr } from '@/lib/i18n';
 import { playQueue } from '@/lib/player';
+import { navPrefetch } from '@/lib/prefetch';
 import { cn } from '@/lib/utils';
 import type { TrackCard } from '@/types';
 
@@ -224,7 +225,7 @@ function BentoMenu() {
         <Link
             key={item.key}
             href={item.href}
-            prefetch={['mount', 'hover']}
+            prefetch={navPrefetch()}
             cacheFor="2m"
             aria-current={active(item.href) ? 'page' : undefined}
             className={cn(
