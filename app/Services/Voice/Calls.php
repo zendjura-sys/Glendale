@@ -116,7 +116,7 @@ class Calls
                 'u'.$user->id,
                 $user->name,
                 $call->livekitName(),
-                [],
+                ['canPublishSources' => LiveKit::CALL_SOURCES],
                 (string) json_encode(['user_id' => $user->id, 'avatar_url' => $user->avatar_url]),
             ),
             'room' => $call->livekitName(),

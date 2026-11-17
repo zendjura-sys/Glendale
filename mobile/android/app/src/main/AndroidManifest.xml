@@ -16,6 +16,8 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"/>
     <!-- Голосові кімнати (LiveKit/WebRTC): мікрофон у фоні, маршрутизація звуку, гарнітури. -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE"/>
+    <!-- Демонстрація екрана під час відеодзвінка (LiveKit media projection). -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION"/>
     <!-- Вхідний дзвінок поверх екрана блокування (як у телефонних застосунках). -->
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT"/>
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS"/>
@@ -104,10 +106,10 @@
                 <action android:name="android.media.browse.MediaBrowserService"/>
             </intent-filter>
         </service>
-        <!-- Розмова в голосовій кімнаті не обривається, коли застосунок згорнуто (flutter_background). -->
+        <!-- Розмова / демонстрація екрана не обривається, коли застосунок згорнуто (flutter_background). -->
         <service
             android:name="de.julianassmann.flutter_background.IsolateHolderService"
-            android:foregroundServiceType="microphone"
+            android:foregroundServiceType="microphone|mediaProjection"
             android:exported="false" />
         <receiver
             android:name="com.ryanheise.audioservice.MediaButtonReceiver"

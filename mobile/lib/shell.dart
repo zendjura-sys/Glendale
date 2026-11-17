@@ -20,6 +20,7 @@ import 'player_view.dart';
 import 'state.dart';
 import 'backgrounds.dart';
 import 'theme.dart';
+import 'call_stage.dart';
 import 'voice_room.dart';
 import 'rail.dart';
 import 'wear.dart';
@@ -381,6 +382,8 @@ class _AppShellState extends State<AppShell> {
                           ],
                         ),
                       ),
+                    // Відеодзвінок / демонстрація екрана поверх контенту.
+                    if (inCall) const CallStage(),
                     // Острів — поверх усього, щоб розгорнуте меню й затемнення накривали екран.
                     if (!wide && !hideChrome) Positioned.fill(child: IslandNav(session: widget.session, player: widget.player, path: path)),
                   ],

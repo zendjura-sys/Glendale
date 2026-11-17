@@ -42,6 +42,7 @@ import { NotificationsMenu } from '@/components/gc/notifications-menu';
 import { QuickSearch } from '@/components/gc/quick-search';
 import { StatusDialog } from '@/components/gc/status-dialog';
 import { UserAvatar } from '@/components/gc/user-avatar';
+import { CallStage } from '@/components/gc/call-stage';
 import { VoiceBar } from '@/components/gc/voice-bar';
 import { BillingHost } from '@/components/billing/billing-host';
 import { PhonePrompt } from '@/components/phone/phone-prompt';
@@ -636,6 +637,7 @@ export default function SocialLayout({ children }: PropsWithChildren) {
                     <SideRail />
                 </div>
                 <VoiceBar />
+                <CallStage />
                 {modules.includes('music') && (
                     <>
                         <PlayerBar />
